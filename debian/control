@@ -1,0 +1,21 @@
+Source: signal-desktop
+Section: utils
+Priority: optional
+Maintainer: Cédric Bellegarde <cedric.bellegarde@adishatz.org>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ build-essential,
+ nodejs,
+ npm,
+ git
+Standards-Version: 4.6.2
+Homepage: https://github.com/bellegarde-c/Signal-Desktop
+
+Package: signal-desktop
+Architecture: any
+Depends:
+ dbus,
+ ${shlibs:Depends},
+ ${misc:Depends},
+Description: A private messenger for Windows, macOS, and Linux. 
