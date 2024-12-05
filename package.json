@@ -529,7 +529,7 @@
       },
       "artifactName": "${name}_${version}_${arch}.${ext}",
       "target": [
-        "deb"
+        "dir"
       ],
       "icon": "build/icons/png",
       "publish": [
@@ -546,20 +546,6 @@
             "org.signalapp.*.policy"
           ]
         }
-      ]
-    },
-    "deb": {
-      "depends": [
-        "libnotify4",
-        "libxtst6",
-        "libnss3",
-        "libasound2",
-        "libpulse0",
-        "libxss1",
-        "libc6 (>= 2.31)",
-        "libgtk-3-0",
-        "libgbm1",
-        "libx11-xcb1"
       ]
     },
     "protocols": {
