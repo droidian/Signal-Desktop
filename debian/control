@@ -8,14 +8,24 @@ Build-Depends:
  build-essential,
  nodejs,
  npm,
- git
+ git,
+ git-lfs,
+ libnotify4,
+ libxtst6,
+ libnss3,
+ libasound2t64,
+ libpulse0,
+ libxss1,
+ libc6 (>= 2.31),
+ libgtk-3-0,
+ libgbm1,
+ libx11-xcb1
 Standards-Version: 4.6.2
-Homepage: https://github.com/bellegarde-c/Signal-Desktop
+Homepage: https://github.com/droidian/Signal-Desktop
 
 Package: signal-desktop
 Architecture: any
 Depends:
- dbus,
  ${shlibs:Depends},
  ${misc:Depends},
 Description: A private messenger for Windows, macOS, and Linux. 
