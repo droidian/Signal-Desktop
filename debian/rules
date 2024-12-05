@@ -14,6 +14,12 @@
 # Package maintainers to append LDFLAGS.
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+override_dh_dwz:
+
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+
 override_dh_auto_build:
 	git lfs install
 	sed 's#"node": "#&>=#' -i package.json
@@ -21,7 +27,16 @@ override_dh_auto_build:
 	npm install --ignore-engines
 	npm --prefix ./sticker-creator/ run build
 	npm run build
-	ls -l
+
+override_dh_auto_install:
+	install -d debian/signal-desktop/usr/bin
+	install -d debian/signal-desktop/usr/lib
+	mv release/linux-unpacked debian/signal-desktop/usr/lib/signal-desktop || true
+	mv release/linux-arm64-unpacked debian/signal-desktop/usr/lib/signal-desktop || true
+	ln -s /usr/lib/signal-desktop/signal-desktop debian/signal-desktop/usr/bin/signal-desktop-mobile
+	chmod u+s debian/signal-desktop/usr/lib/signal-desktop/chrome-sandbox
+	for i in 16 24 32 48 64 128 256 512 1024; do install -Dm 644 "build/icons/png/$${i}x$${i}.png" "debian/signal-desktop/usr/share/icons/hicolor/$${i}x$${i}/apps/signal-desktop.png"; done
+	install -Dm 644 ./signal-desktop.desktop -t debian/signal-desktop/usr/share/applications
 
 %:
 	dh $@
