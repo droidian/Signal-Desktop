@@ -4634,7 +4634,7 @@ type ShowConversationArgsType = ReadonlyDeep<{
 export type ShowConversationType = ReadonlyDeep<
   (options: ShowConversationArgsType) => unknown
 >;
-
+export { showConversation };
 function showConversation({
   conversationId,
   messageId,
@@ -4665,6 +4665,13 @@ function showConversation({
       dispatch(setComposerFocus(conversationId));
 
       return;
+    }
+
+    const navtabs = document.getElementsByClassName('NavTabs') as HTMLElement;
+    if (conversationId == undefined) {
+        navtabs[0].style.display = 'block';
+    } else {
+        navtabs[0].style.display = 'none';
     }
 
     // notify composer in case we need to stop recording a voice note
