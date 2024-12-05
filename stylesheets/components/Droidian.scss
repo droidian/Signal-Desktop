@@ -1,0 +1,107 @@
+
+.module-conversation-list__item--contact-or-conversation {
+	height: 48px !important;
+	margin-block: 0px !important;
+	margin-inline: 0 !important;
+	padding-block: 0px !important;
+	padding-inline: 0px !important;
+}
+.ReactVirtualized__Grid__innerScrollContainer {
+	.module-Avatar {
+		min-width: 32px !important;
+		width: 32px !important;
+		height: 32px !important;
+	}
+}
+.module-conversation-list--width-narrow {
+	.module-conversation-list__item--header {
+		margin-inline: 0 !important;
+	}
+	padding-inline: 0px 0px !important;
+}
+.NavSidebar__HeaderTitle {
+	display: none !important;
+}
+.NavSidebar {
+	&:has(.NavSidebar__Header) {
+		max-width: 50px !important;
+	}
+}
+.NavSidebar__Header {
+	flex-direction: column !important;
+	.NavTabs__Toggle {
+		max-width: 48px !important;
+	}
+}
+.NavSidebar__HeaderActions {
+	flex-direction: column !important;
+}
+.NavSidebar__HeaderContent {
+	padding-inline: 0px !important;
+}
+.NavSidebarEmpty {
+	display: none !important;
+}
+.AudioCapture__microphone {
+	display: none !important;
+}
+.AudioCapture {
+	display: none !important;
+}
+.module-ConversationHeader__button.module-ConversationHeader__button--video {
+	display: none !important;
+}
+.module-conversation-list__item--contact-or-conversation__avatar-container {
+	margin-left: 20% !important;
+	.module-conversation-list__item--contact-or-conversation__unread-indicator {
+		margin-right: 4px !important;
+	}
+}
+::-webkit-scrollbar {
+	display: none !important;
+}
+.module-reaction-viewer {
+	width: 220px !important;
+	height: 220px !important;
+}
+.Preferences__page-selector {
+	min-width: 48px !important;
+	padding-top: 0px !important;
+}
+.Preferences__button {
+	font-size: 0px !important;
+	width: 48px !important;
+}
+.Preferences {
+	width: 50% !important;
+}
+.Preferences__control {
+	flex-direction: column !important;
+}
+.ConversationDetails-panel-row__root {
+	flex-direction: column !important;
+	align-items: stretch !important;
+}
+.LeftPaneDialog--width-narrow {
+	padding-inline-start: 25% !important;
+}
+.module-message--incoming {
+	.module-message__buttons {
+		opacity: 1 !important;
+	}
+}
+.module-sticker-manager__preview-modal__modal.module-Modal {
+	width: initial !important;
+}
+.react-contextmenu-submenu {
+	>.react-contextmenu {
+		right: 10px !important;
+	}
+}
+.module-InstallScreenQrCodeNotScannedStep__contents {
+	flex-direction: column !important;
+	top: 44px !important;
+}
+.module-InstallScreenQrCodeNotScannedStep__qr-code {
+	margin-inline: 50% !important;
+}
