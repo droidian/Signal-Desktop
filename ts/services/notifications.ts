@@ -145,6 +145,23 @@ class NotificationService extends EventEmitter {
     this.update();
   }
 
+  private async feedback(): void {
+    try {
+        let dbus = require('dbus-next');
+        let bus = dbus.sessionBus();
+        let object = await bus.getProxyObject('org.sigxcpu.Feedback', '/org/sigxcpu/Feedback');
+        let iface = object.getInterface('org.sigxcpu.Feedback');
+        await iface.TriggerFeedback(
+            "signal-desktop",
+            "message-new-instant",
+            {},
+            -1
+        );
+    } catch(error) {
+        console.log(error);
+    }
+  }
+
   /**
    * A lower-level wrapper around `window.Notification`. You may prefer to use `add`,
    * which includes debouncing and user permission logic.
@@ -226,14 +243,8 @@ class NotificationService extends EventEmitter {
         }
       };
 
+      this.feedback();
       this.lastNotification = notification;
-    }
-
-    if (!silent) {
-      const soundType =
-        messageId && !useTriToneSound ? SoundType.Pop : SoundType.TriTone;
-      // We kick off the sound to be played. No need to await it.
-      drop(new Sound({ soundType }).play());
     }
   }
 

@@ -120,6 +120,7 @@
     "config": "3.3.12",
     "copy-text-to-clipboard": "2.1.0",
     "dashdash": "2.0.0",
+    "dbus-next": "0.10.2",
     "direction": "1.0.4",
     "emoji-datasource": "15.1.2",
     "emoji-datasource-apple": "15.1.2",
@@ -189,6 +190,7 @@
     "uuid": "11.0.2",
     "websocket": "1.0.34",
     "write-file-atomic": "6.0.0",
+    "x11": "2.3.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
