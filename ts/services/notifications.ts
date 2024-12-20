@@ -309,19 +309,6 @@ class NotificationService extends EventEmitter {
     const isAppFocused = window.SignalContext.activeWindowService.isActive();
     const userSetting = this.getNotificationSetting();
 
-    if (OS.isWindows()) {
-      // Note: notificationData will be set if we're replacing the previous notification
-      //   with a new one, so we won't clear here. That's because we always clear before
-      //   adding anythhing new; just one notification at a time. Electron forces it, so
-      //   we replicate it with our Windows notifications.
-      if (!notificationData) {
-        drop(window.IPC.clearAllWindowsNotifications());
-      }
-    } else if (this.#lastNotification) {
-      this.#lastNotification.close();
-      this.#lastNotification = null;
-    }
-
     // This isn't a boolean because TypeScript isn't smart enough to know that, if
     //   `Boolean(notificationData)` is true, `notificationData` is truthy.
     const shouldShowNotification =
