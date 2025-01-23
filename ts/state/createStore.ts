@@ -3,11 +3,11 @@
 
 /* eslint-disable no-console */
 
-import type { Middleware, Store } from 'redux';
+import type { Middleware, Store, UnknownAction } from 'redux';
 import { applyMiddleware, createStore as reduxCreateStore } from 'redux';
 
 import promise from 'redux-promise-middleware';
-import thunk from 'redux-thunk';
+import { thunk } from 'redux-thunk';
 import { createLogger } from 'redux-logger';
 
 import * as log from '../logging/log';
@@ -16,6 +16,7 @@ import { reducer } from './reducer';
 import { dispatchItemsMiddleware } from '../shims/dispatchItemsMiddleware';
 import { isOlderThan } from '../util/timestamp';
 import { SECOND } from '../util/durations';
+import { getEnvironment } from '../environment';
 
 declare global {
   // We want to extend `window`'s properties, so we need an interface.
@@ -25,7 +26,7 @@ declare global {
   }
 }
 
-const env = window.getEnvironment();
+const env = getEnvironment();
 
 // So Redux logging doesn't go to disk, and so we can get colors/styles
 const directConsole = {
@@ -59,7 +60,9 @@ const actionStats: ActionStats = {
   timestamp: Date.now(),
   names: [],
 };
-export const actionRateLogger: Middleware = () => next => action => {
+export const actionRateLogger: Middleware = () => next => _action => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const action = _action as any as UnknownAction;
   const name = action.type;
   const lastTimestamp = actionStats.timestamp;
   let count = actionStats.names.length;
@@ -100,4 +103,6 @@ const enhancer = applyMiddleware(...middlewareList);
 
 export const createStore = (
   initialState: Readonly<StateType>
-): Store<StateType> => reduxCreateStore(reducer, initialState, enhancer);
+): Store<StateType> =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reduxCreateStore<any, any>(reducer, initialState, enhancer);

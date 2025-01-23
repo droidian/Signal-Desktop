@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "விதிமுறைகள் மற்றும் தனியுரிமைக் கொள்கை"
   },
-  "icu:appleSilicon": {
-    "messageformat": "ஆப்பிள் சிலிகான்"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "பிழையை நகலெடுத்து வெளியேற்றவும்"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "டெஸ்க்டாப்பில் {name} , சாதனம் {deviceId}- இருந்து மறைகுறியாக்கப் பிழை ஏற்பட்டது"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "பதிவைச் சமர்ப்பிக்கவும்"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "கோப்புகளுடன் புகைப்படங்களையும் வீடியோக்களையும் தேர்ந்தெடுக்க முடியாது."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "தேடல்"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "படிக்காத சாட்களைத் தேடுங்கள்"
+  },
   "icu:clearSearch": {
     "messageformat": "தேடலை நீக்கு"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "\"{searchTerm}\" க்கான முடிவுகள் எதுவும் இல்லை"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "படிக்காத சாட்ஸில் \"{searchTerm}\" க்கான முடிவுகள் இல்லை"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "படிக்காத சாட்ஸ் எதுவுமில்லை"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "எஸ் எம் எஸ்/எம் எம் எஸ் தொடர்புகள் கிடைக்கவில்லை டெஸ்க்டாப்."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "{conversationName}  இல் \"{searchTerm}\" க்கான முடிவுகள் எதுவும் இல்லை"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "படிக்காதவை வடிகட்டப்பட்டுள்ளன"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "படிக்காதவையின் படி வடிகட்டு"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "ஃபில்டரை அழி"
   },
   "icu:conversationsHeader": {
     "messageformat": "சாட்ஸ்"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "குரல் ரெக்கார்டரில் பிழை."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "இணைப்பு சேமிக்கப்பட்டது."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {இணைப்பு சேமிக்கப்பட்டது} other {{count,number} இணைப்புகள் சேமிக்கப்பட்டன}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "கோப்புறையில் காட்டு"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {பதிவிறக்கத்தை நிறைவு செய்யாத காரணத்தால், இணைப்பைச் சேமிக்க முடியவில்லை} other {பதிவிறக்கத்தை நிறைவு செய்யாத காரணத்தால், {count,number}இணைப்புகளைச் சேமிக்க முடியவில்லை}}"
   },
   "icu:you": {
     "messageformat": "நீங்கள்"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "குறிப்பு"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "சமீபத்திய ஊடகங்களைக் காண்க"
+  "icu:allMediaMenuItem": {
+    "messageformat": "அனைத்து மீடியா"
   },
   "icu:back": {
     "messageformat": "மீண்டும்"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "தகவல்"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "மெசேஜ்களை நீக்கு"
+  "icu:deleteConversation": {
+    "messageformat": "நீக்கு"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "மெசேஜ்களை நீக்க வேண்டுமா?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "சாட்டை நீக்க வேண்டுமா?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "இந்த சாட்டில் உள்ள அனைத்து மெசேஜ்களும் இந்த டிவைஸிலிருந்து நீக்கப்படும். மெசேஜ்களை நீக்கிய பிறகும் நீங்கள் இந்த சாட்டைத் தேடலாம்."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "இந்த சாட்டில் உள்ள அனைத்து மெசேஜ்களும் இந்த டிவைஸிலிருந்து நீக்கப்படும்."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "இந்தச் சாட்டில் உள்ள அனைத்து மெசேஜ்களும் உங்கள் எல்லா சாதனங்களிலிருந்தும் அழிக்கப்படும். மெசேஜ்களை அழித்த பிறகும் நீங்கள் இந்தச் சாட்டில் தேடலாம்."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "இந்தச் சாட்டில் உள்ள அனைத்து மெசேஜ்களும் உங்கள் எல்லா சாதனங்களிலிருந்தும் அழிக்கப்படும்."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "குழுவிலுருந்து விலகு"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "இந்த படத்திற்கு ஒரு தலைப்பு இருப்பதைக் காட்டும் ஐகான்"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "பெரிய காட்சியில் இந்த இணைப்பைத் திறந்திடுங்கள்"
+  },
+  "icu:startDownload": {
+    "messageformat": "பதிவிறக்கத்தைத் தொடங்குங்கள்"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "பதிவிறக்கத்தை ரத்து செய்"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} பொருள்} other {{count,number} உருப்படிகள்}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "இந்த ஊடகம் இனி கிடைக்கப்பெறாது."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "மேலும் அறிக"
+  },
   "icu:save": {
     "messageformat": "சேமி"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "மீண்டும் முயற்சி செய்"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "புதுப்பிப்புக் குறியீடு"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "உதவி பெறுக"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "அழைப்பில் சேர முடியவில்லை"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "நீங்கள் ஏற்கனவே ஒரு அழைப்பில் உள்ளீர்கள்."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "அழைப்பு இணைப்புத் தகவலைப் பெற முடியவில்லை. உங்கள் நெட்வொர்க் இணைப்பைச் சரிபார்த்து, மீண்டும் முயற்சிக்கவும்."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal அழைப்பு"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "இணைப்பை அழிக்க முடியவில்லை. உங்கள் இணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "இந்த அழைப்பில் சேருவதற்கான உங்கள் கோரிக்கை நிராகரிக்கப்பட்டது."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second}, மற்றும் {others,number}நபர்கள் அழைப்பில் உள்ளனர்} other {{first}, {second}, மற்றும் கூடுதலாக{others,number} நபர்கள் அழைப்பில் உள்ளனர்}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number}நபர் இந்த அழைப்பில் உள்ளார்} other {{count,number}நபர்கள் இந்த அழைப்பில் உள்ளனர்}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "சிக்னல் {person}-ஐ அழைக்கும்"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "{name}இலிருந்து ஆடியோ மற்றும் வீடியோவைப் பெற முடியவில்லை"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "ஆடியோ மற்றும் வீடியோவைப் பெற முடியவில்லை"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "இது உங்கள் பாதுகாப்பு எண் மாற்றத்தை அவர்கள் சரிபார்க்கவில்லை அல்லது அவர்களின் சாதனத்தில் சிக்கல் இருப்பதால் அல்லது அவர்கள் உங்களைத் தடுத்ததால் இருக்கலாம்."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal பகிர்கிறது {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "சிக்னல் திரைப் பகிர்வு செயலில் உள்ளது"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "மீண்டும் இணைக்கிறது…"
@@ -1521,7 +1584,7 @@
     "messageformat": "Signal டெஸ்க்டாப்பின் இந்தப் பதிப்பிலிருந்து எல்லா தரவையும் மெசேஜ்களையும் நீக்க வேண்டுமா? நீங்கள் எப்போதும் இந்த டெஸ்க்டாப்பை மீண்டும் இணைக்கலாம், ஆனால் உங்கள் மெசேஜ்கள் மீட்டெடுக்கப்படாது. உங்கள் Signal கணக்கு மற்றும் உங்கள் ஃபோன் அல்லது இணைக்கப்பட்ட பிற டிவைஸ்களில் உள்ள தரவு நீக்கப்படாது."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "எல்லா தரவையும் துண்டித்து நீக்குகிறது"
+    "messageformat": "எல்லாத தரவையும் துண்டித்து நீக்குகிறது…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "சிக்னல் டெஸ்க்டாப்பின் முந்தைய நிறுவலிலிருந்து பயன்படுத்த முடியாத தரவு உங்கள் டெஸ்க்டாப்பில் உள்ளது. தொடர நீங்கள் தேர்வுசெய்தால் Signal desktop update, அது நீக்கப்படும், நீங்கள் புதிதாகத் தொடங்குவீர்கள்."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "நேற்று {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "சிக்னல் உள்வரும் மெசேஜைச் செயலாக்கத் தவறியிருக்கலாம்."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "செய்தி உடல் மிக நீளமானது."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} உங்களை, {first}, {second}, மற்றும் {remaining,number} நபரை அழைக்கிறார்} other {{ringer} உங்களை அழைக்கிறார், {first}, {second}, மற்றும் {remaining,number} நபர்கள்}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "இணைக்கிறது…"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "ஒலிக்கிறது…"
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "அழைப்பு இணைப்பு"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "குழு அழைப்பு"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "அனுமதிக்கக் காத்திருக்கிறது"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "மைக் ஆன்"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "உங்கள் கையைத் தாழ்த்துகிறீர்களா?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "தாழ்த்தவும்"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "ரிங்கிங் ஆன்"
@@ -2961,7 +3039,7 @@
     "messageformat": "ஒரு நிர்வாகி உங்களை நீக்கியதால், குழு இணைப்பு வாயிலாக இந்தக் குழுவில் உங்களால் சேர முடியாது."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "இதன் நிர்வாகி குழு உங்களால் முடியும் முன் உங்கள் கோரிக்கையை அங்கீகரிக்க வேண்டும் சேர இது குழு. என்றால் அங்கீகரிக்கப்பட்டது, உங்கள் பெயர் மற்றும் புகைப்படம் அதன் உறுப்பினர்களுடன் பகிரப்படும்."
+    "messageformat": "இந்த குழுவில் சேருவதற்கு முன்பு இந்த குழுவின் நிர்வாகி உங்கள் கோரிக்கையை அங்கீகரிக்க வேண்டும். நீங்கள் சேரக் கோரும்போது, உங்கள் பெயர் மற்றும் புகைப்படம் அதன் உறுப்பினர்களுடன் பகிரப்படும்."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "சேரவும்"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "குழுவில் சேர ஒரு கோரிக்கை {joinerName} மறுக்கப்பட்டது."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} குழு இணைப்பு மூலம் சேருவதற்கான அவர்களின் கோரிக்கையை விடுத்தார் மற்றும் ரத்து செய்தார்"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} குழு இணைப்பு மூலம் சேருவதற்கான கோரிக்கையை விடுத்தார் மற்றும் {numberOfRequests,number} கோரிக்கைகளை ரத்து செய்தார்"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் சேருவதற்கான கோரிக்கையை ரத்து செய்துள்ளார்} other {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் சேருவதற்கான {numberOfRequests,number} கோரிக்கைகளை ரத்து செய்துள்ளார்}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "அடுத்தது"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "உங்கள் மெசேஜ் வரலாற்றின் அளவைப் பொறுத்து இதற்குச் சில நிமிடங்கள் ஆகலாம்"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signal-க்கு நன்கொடை அளி"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "\"சிக்னலுக்கு நன்கொடை அளி\" என்பதைத் தட்டி சப்ஸ்கிரைப் செய்யவும்"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "மெசேஜ்களை ஒத்திசைக்கிறது"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{totalSize} இல் {currentSize} ஐப் பதிவிறக்குகிறது({fractionComplete,number,percent})..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "மெசேஜ் இடமாற்றத்தை உறுதிசெய்கிறது..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "பதிவிறக்கத் தயாராகிறது..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "உங்கள் மெசேஜ் வரலாற்றின் அளவைப் பொறுத்து இதற்குச் சில நிமிடங்கள் ஆகலாம்"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "ரத்துசெய்"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "ஒத்திசைவு செயல்முறை உட்பட, மெசேஜ்கள் மற்றும் சாட் தகவல் ஆகியவை எண்டு-டு-எண்டு குறியாக்கத்தால் பாதுகாக்கப்படுகின்றன. <learnMoreLink>மேலும் அறிக</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "பரிமாற்றத்தை ரத்து செய்ய வேண்டுமா?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "உங்கள் மெசேஜ்களும் ஊடகமும் முழுமையாக மீட்டமைக்கப்படவில்லை. ரத்துசெய்ய நீங்கள் தேர்வுசெய்தால், மெசேஜ் வரலாறு இல்லாமல் உங்கள் சாதனம் இணைக்கப்படும்."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "பரிமாற்றத்தைத் தொடர்க"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "பரிமாற்றத்தை ரத்துசெய்க"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "உங்கள் மெசேஜ்களை இடமாற்றுவதில் பிழை"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "உங்கள் மெசேஜ்களை இடமாற்ற முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "பிழையின் காரணமாக உங்கள் மெசேஜ்களை இடமாற்ற முடியவில்லை. இந்த டெஸ்க்டாப்பை மீண்டும் இணைப்பதன் மூலம் மீண்டும் முயலுங்கள்."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "மீண்டும் முயற்சி செய்"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "தவிர்"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "மெசேஜ் இடமாற்றத்தைத் தவிர்ப்பதா?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "நீங்கள் தவிர் என்ற விருப்பத்தைத் தேர்ந்தெடுத்தால், இந்த சாதனத்தில் உள்ள உங்கள் மெசேஜ்கள் அல்லது மீடியாவை அணுக முடியாது. அமைப்புகள் > சாட்ஸ் > இடமாற்றம் என்பதற்குச் சென்ற பிறகு புதிய இடமாற்றத்தைத் தொடங்கலாம்."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "ரத்துசெய்"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "மீடியாவை மீட்டமைக்கிறது"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "மீட்டமைப்பு இடைநிறுத்தப்பட்டது"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{totalSize} இல் {currentSize} மீட்டெடுக்கப்பட்டது"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "மீடியா பின்னணியில் தொடர்ந்து பதிவிறக்கம் செய்யப்படும்"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "பரிமாற்றத்தை இடைநிறுத்துக"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "பரிமாற்றத்தைத் தொடர்க"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "பரிமாற்றத்தை ரத்துசெய்க"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "அதிக விருப்பத்தேர்வுகள்"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "மீட்டெடுப்பு முடிந்தது"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{totalSize} இன் {currentSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "மீடியா பரிமாற்றத்தை ரத்து செய்யவதா?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "உங்கள் மெசேஜ்களும் மீடியாவும் முழுமையாக மீட்டடைமைக்கப்படவில்லை. ரத்துசெய்க என்பதை நீங்கள் தேர்ந்தெடுத்தால், நீங்கள் மீண்டும் அமைப்புகளில் இருந்து பரிமாற்றம் செய்யலாம்."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "பரிமாற்றத்தைத் தொடர்க"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "பரிமாற்றத்தை ரத்துசெய்க"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "விரிவாக்கு"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "குழுவிலிருந்து அகற்று"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "நீங்கள் ஏற்கனவே அழைப்பில் உள்ளீர்கள்"
+  "icu:ContactModal--voice": {
+    "messageformat": "குரல்"
   },
   "icu:showChatColorEditor": {
     "messageformat": "சாட் கலர்"
@@ -3762,7 +3927,7 @@
     "messageformat": "இணைப்பை மீட்டமைக்கவும்"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "புதிய உறுப்பினர்களை அங்கீகரிக்கவும்"
+    "messageformat": "நிர்வாகி அனுமதி தேவை"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "வழியாக புதிய உறுப்பினர்களை அனுமதிக்க நிர்வாகி தேவை குழு இணைப்பு"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ".5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "செய்தியை அனுப்ப, மேலே உள்ள {composeIcon} அழுத்தி உங்கள் தொடர்புகள் அல்லது குழுக்களைத் தேடுங்கள்."
-  },
-  "icu:composeIcon": {
-    "messageformat": "எழுது பொத்தானை"
   },
   "icu:emptyInbox__title": {
     "messageformat": "சாட்ஸ் ஏதும் இல்லை"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal தொழில்நுட்ப சிக்கல்களை எதிர்கொள்கிறது. சேவையை விரைவாக மீட்டெடுக்க நாங்கள் விரைவாக வேலை செய்து வருகிறோம்."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "புதுப்பித்தல் தேவை"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "உங்கள் மெசேஜ்களை ஒத்திசைப்பதை முடிக்க, சிக்னல் டெஸ்க்டாப்பை இப்போதே புதுப்பிக்கவும்."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "புதுப்பிக்கப்பட்டது"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "புதுப்பித்தல் தேவை"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "ஒரு ஸ்டோரியைப் பார்க்க கிளிக் செய்யவும்"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "ஒரு புதுப்பிப்பைச் சேர்க்க <newStoryIcon>ஒரு ஸ்டோரியைச் சேர்</newStoryIcon> என்பதைக் கிளிக் செய்யவும்."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "புதுப்பிப்பைச் சேர்க்க <newStoryButtonIcon></newStoryButtonIcon> ஐக் க்ளிக் செய்யவும்."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} - {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "பதில்கள்"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
-    "messageformat": "ஸ்டோரிக்கு எதிர்வினையாற்றினார்"
-  },
   "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "ஸ்டோரிக்கு ரியாக்ட் செய்துள்ளார்"
   },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "ஸ்டோரிக்கு ரியாக்ட் செய்துள்ளார்"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "You can’t reply to this story because you’re no longer a member of this group."
@@ -5142,7 +5304,7 @@
     "messageformat": "ஸ்டோரி"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "ஸ்டோரீஸ்-ஐக் காட்டவும்"
+    "messageformat": "ஸ்டோரியின் மறைநிலையை மாற்றவும்"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "ஸ்டோரியை மறைக்கவும்"
@@ -5413,7 +5575,10 @@
     "messageformat": "அழைப்பு வரலாற்றை அழிக்க வேண்டுமா?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "இது அனைத்து அழைப்பு வரலாற்றையும் நிரந்தரமாக நீக்கும்"
+    "messageformat": "இது அனைத்து அழைப்பு வரலாற்றையும் நிரந்தரமாக அழிக்கும்."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "இது அனைத்து அழைப்பு வரலாற்றையும் நிரந்தரமாக நீக்கும். நீங்கள் உருவாக்கிய அழைப்பு இணைப்புகளை வைத்திருப்பவர்களுக்கு அவை இனி வேலை செய்யாது. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "அழி"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "அழைப்பு வரலாறு அழிக்கப்பட்டது"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "பார்க்க அல்லது அழைப்பைத் தொடங்க கிளிக் செய்யவும்"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "அனைத்து கால் இணைப்புகளையும் அழிக்க முடியாது. உங்கள் இணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "புதிய குரல் அல்லது வீடியோ அழைப்பைத் தொடங்க <newCallIcon>புதிய அழைப்பு</newCallIcon> என்பதைக் கிளிக் செய்யவும்."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "அனைத்து அழைப்பு வரலாற்றையும் அழிக்க முடியாது. உங்கள் இணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "புதிய குரல் அல்லது வீடியோ அழைப்பை மேற்கொள்ள <newCallButtonIcon></newCallButtonIcon> ஐக் க்ளிக் செய்யவும்."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "தவறவிட்ட அழைப்புகளைத் தேடுக"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "தேடல்"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "தவறியதன் மூலம் வடிகட்டப்பட்டது"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "தவறவிட்டவை அடிப்படையில் வடிகட்டு"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "நிலைமாற்று"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "சமீபத்திய அழைப்புகள் இல்லை. ஒரு நண்பருக்கு செய்தி அனுப்புவதன் மூலம் தொடங்கவும்."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "அழைப்புகள் ஏதும் இல்லை"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "சமீபத்திய அழைப்புகள் இங்கே தோன்றும்."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "தவறிய அழைப்புகள் ஏதும் இல்லை"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "தவறிய அழைப்புகள் இங்கே தோன்றும்."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "''{query}' க்கான முடிவுகள் எதுவும் கிடைக்கவில்லை"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "தவறவிட்ட அழைப்புகளில் “{query}”க்கான முடிவுகள் இல்லை"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "தவறிய அழைப்புகள் ஏதும் இல்லை"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "அழைப்பு இணைப்பை உருவாக்கவும்"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "மீண்டும் இணைக"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "புதிய அழைப்பில் சேர்வதற்கு முன் தற்போதைய அழைப்பிலிருந்து வெளியேற வேண்டும்"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {வெளிச்செல்லும் குரல் அழைப்பு} other {உள்வரும் குரல் அழைப்பு}}} Video {{direction, select, Outgoing {வெளிச்செல்லும் காணொளி அழைப்பு} other {உள்வரும் காணொளி அழைப்பு}}} Group {{direction, select, Outgoing {வெளிச்செல்லும் குழு அழைப்பு} other {உள்வரும் குழு அழைப்பு}}} other {{direction, select, Outgoing {வெளிசெல்லும் அழைப்பு} other {உள்வரும் அழைப்பு}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {தவறவிட்ட குரல் அழைப்பு} Video {காணொளி அழைப்பு தவறவிட்டது} Group {தவறிய குழு அழைப்பு} other {தவறிய அழைப்பு}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {பதிலளிக்கப்படாத குரல் அழைப்பு} Video {பதிலளிக்கப்படாத காணொளி அழைப்பு} Group {பதிலளிக்கப்படாத குழு அழைப்பு} other {பதிலளிக்கப்படாத அழைப்பு}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {நிராகரிக்கப்பட்ட குரல் அழைப்பு} Video {நிராகரிக்கப்பட்ட வீடியோ அழைப்பு} Group {நிராகரிக்கப்பட்ட குழு அழைப்பு} other {நிராகரிக்கப்பட்ட அழைப்பு}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "அழைப்பு இணைப்பு"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "அழைப்பின் பெயரைத் திருத்தவும்"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "அனைத்து உறுப்பினர்களையும் அங்கீகரிக்கவும்"
+    "messageformat": "நிர்வாகி அனுமதி தேவை"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "அழைப்பு செயலில் இருக்கும்போது இந்த அமைப்பை மாற்ற முடியாது"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "இணைப்பை நகலெடு"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "நீக்கு"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "அழைப்பு செயலில் இருக்கும்போது இந்த இணைப்பை அழிக்க முடியாது"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "அழைப்பு இணைப்பு விவரங்கள்"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "அழைப்பின் பெயரைத் திருத்தவும்"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "அனைத்து உறுப்பினர்களையும் அங்கீகரிக்கவும்"
+    "messageformat": "நிர்வாகி அனுமதி தேவை"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "நுழைவை அங்கீகரி"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "நுழைவை மறு"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "அணை"
@@ -5629,13 +5794,10 @@
     "messageformat": "சிறு மாற்றங்கள், பிழை திருத்தங்கள் மற்றும் செயல்திறன் மேம்பாடுகள். சிக்னலைப் பயன்படுத்தியதற்கு நன்றி!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "சிக்னல் டெஸ்க்டாப்பால் இப்போது குறுக்கிடப்பட்ட இணைப்புப் பதிவிறக்கங்களை தானாகத் தொடர முடியும்."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "சில சமயங்களில் உங்கள் சொந்தக் கணக்கைத் தானியங்கு நிரப்புப் பரிந்துரைப் பட்டியலில் தவறாகச் சேர்க்கும் @ குறிப்புகள் கொண்ட பிழையை நாங்கள் சரிசெய்துள்ளோம். ஒரு நாசீசிஸ்டிக் தீர்வாக, இந்தப் பிழையை நீங்கள் எப்போதாவது தவறவிட்டால், உங்கள் குழு சாட்ஸில் உங்களைப் பற்றி பேச மூன்றாம் நபர் விவரிப்பு அம்சத்தைப் பயன்படுத்தலாம்."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "இப்போது நீங்கள் தொடுதிரை சாதனங்களில் சாட் பட்டியல் பக்கப்பட்டியின் அளவை மாற்றியமைக்கலாம்."
   }
 }

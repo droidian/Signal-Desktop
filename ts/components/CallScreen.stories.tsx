@@ -34,6 +34,7 @@ import { fakeGetGroupCallVideoFrameSource } from '../test-both/helpers/fakeGetGr
 import enMessages from '../../_locales/en/messages.json';
 import { CallingToastProvider, useCallingToasts } from './CallingToast';
 import type { CallingImageDataCache } from './CallManager';
+import { MINUTE } from '../util/durations';
 
 const MAX_PARTICIPANTS = 75;
 const LOCAL_DEMUX_ID = 1;
@@ -65,13 +66,15 @@ type DirectCallOverrideProps = OverridePropsBase & {
 };
 
 type GroupCallOverrideProps = OverridePropsBase & {
-  callMode: CallMode.Group;
+  callMode: CallMode.Group | CallMode.Adhoc;
   connectionState?: GroupCallConnectionState;
+  groupMembers?: Array<ConversationType>;
   peekedParticipants?: Array<ConversationType>;
   pendingParticipants?: Array<ConversationType>;
   raisedHands?: Set<number>;
   remoteParticipants?: Array<GroupCallRemoteParticipantType>;
   remoteAudioLevel?: number;
+  suggestLowerHand?: boolean;
 };
 
 const createActiveDirectCallProp = (
@@ -131,7 +134,8 @@ const createActiveGroupCallProp = (overrideProps: GroupCallOverrideProps) => ({
   localDemuxId: LOCAL_DEMUX_ID,
   maxDevices: 5,
   deviceCount: (overrideProps.remoteParticipants || []).length,
-  groupMembers: overrideProps.remoteParticipants || [],
+  groupMembers:
+    overrideProps.groupMembers || overrideProps.remoteParticipants || [],
   // Because remote participants are a superset, we can use them in place of peeked
   //   participants.
   isConversationTooBigToRing: false,
@@ -150,18 +154,19 @@ const createActiveGroupCallProp = (overrideProps: GroupCallOverrideProps) => ({
     ])
   ),
   reactions: overrideProps.reactions || [],
+  suggestLowerHand: overrideProps.suggestLowerHand ?? false,
 });
 
 const createActiveCallProp = (
   overrideProps: DirectCallOverrideProps | GroupCallOverrideProps
 ) => {
   const baseResult = {
-    joinedAt: Date.now(),
+    joinedAt: Date.now() - MINUTE,
     conversation,
     hasLocalAudio: overrideProps.hasLocalAudio ?? false,
     hasLocalVideo: overrideProps.hasLocalVideo ?? false,
     localAudioLevel: overrideProps.localAudioLevel ?? 0,
-    viewMode: overrideProps.viewMode ?? CallViewMode.Overflow,
+    viewMode: overrideProps.viewMode ?? CallViewMode.Sidebar,
     outgoingRing: true,
     pip: false,
     settingsDialogOpen: false,
@@ -173,6 +178,12 @@ const createActiveCallProp = (
       return { ...baseResult, ...createActiveDirectCallProp(overrideProps) };
     case CallMode.Group:
       return { ...baseResult, ...createActiveGroupCallProp(overrideProps) };
+    case CallMode.Adhoc:
+      return {
+        ...baseResult,
+        ...createActiveGroupCallProp(overrideProps),
+        callMode: CallMode.Adhoc as CallMode.Adhoc,
+      };
     default:
       throw missingCaseError(overrideProps);
   }
@@ -194,7 +205,6 @@ const createProps = (
   i18n,
   imageDataCache: React.createRef<CallingImageDataCache>(),
   isCallLinkAdmin: true,
-  isGroupCallRaiseHandEnabled: true,
   me: getDefaultConversation({
     color: AvatarColors[1],
     id: '6146087e-f7ef-457e-9a8d-47df1fdd6b25',
@@ -206,17 +216,20 @@ const createProps = (
   openSystemPreferencesAction: action('open-system-preferences-action'),
   renderEmojiPicker: () => <>EmojiPicker</>,
   renderReactionPicker: () => <div />,
+  cancelPresenting: action('cancel-presenting'),
   sendGroupCallRaiseHand: action('send-group-call-raise-hand'),
   sendGroupCallReaction: action('send-group-call-reaction'),
   setGroupCallVideoRequest: action('set-group-call-video-request'),
   setLocalAudio: action('set-local-audio'),
-  setLocalPreview: action('set-local-preview'),
+  setLocalPreviewContainer: action('set-local-preview-container'),
   setLocalVideo: action('set-local-video'),
-  setPresenting: action('toggle-presenting'),
   setRendererCanvas: action('set-renderer-canvas'),
   stickyControls: false,
   switchToPresentationView: action('switch-to-presentation-view'),
   switchFromPresentationView: action('switch-from-presentation-view'),
+  toggleCallLinkPendingParticipantModal: action(
+    'toggle-call-link-pending-participant-modal'
+  ),
   toggleParticipants: action('toggle-participants'),
   togglePip: action('toggle-pip'),
   toggleScreenRecordingPermissionsDialog: action(
@@ -439,7 +452,7 @@ export function GroupCallManyOverflow(): JSX.Element {
       {...createProps({
         callMode: CallMode.Group,
         remoteParticipants: allRemoteParticipants,
-        viewMode: CallViewMode.Overflow,
+        viewMode: CallViewMode.Sidebar,
       })}
     />
   );
@@ -450,7 +463,7 @@ export function GroupCallManyOverflowEveryoneTalking(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants: allRemoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
     })
   );
 
@@ -657,7 +670,7 @@ export function GroupCallReactions(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
     })
   );
 
@@ -674,7 +687,7 @@ export function GroupCallReactionsSpam(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
     })
   );
 
@@ -692,7 +705,7 @@ export function GroupCallReactionsSkinTones(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
     })
   );
 
@@ -720,7 +733,7 @@ export function GroupCallReactionsManyInOrder(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
       reactions,
     })
   );
@@ -779,13 +792,44 @@ export function GroupCallHandRaising(): JSX.Element {
     createProps({
       callMode: CallMode.Group,
       remoteParticipants,
-      viewMode: CallViewMode.Overflow,
+      viewMode: CallViewMode.Sidebar,
     })
   );
 
   const activeCall = useHandRaiser(props.activeCall as ActiveGroupCallType);
 
   return <CallScreen {...props} activeCall={activeCall} />;
+}
+
+export function GroupCallSuggestLowerHand(): JSX.Element {
+  const remoteParticipants = allRemoteParticipants.slice(0, 10);
+
+  const [props, setProps] = React.useState(
+    createProps({
+      callMode: CallMode.Group,
+      remoteParticipants,
+      raisedHands: new Set([LOCAL_DEMUX_ID]),
+      viewMode: CallViewMode.Sidebar,
+      suggestLowerHand: false,
+    })
+  );
+
+  React.useEffect(() => {
+    setTimeout(
+      () =>
+        setProps(
+          createProps({
+            callMode: CallMode.Group,
+            remoteParticipants,
+            viewMode: CallViewMode.Sidebar,
+            suggestLowerHand: true,
+          })
+        ),
+      200
+    );
+  }, [remoteParticipants]);
+
+  return <CallScreen {...props} />;
 }
 
 // Every [frequency] ms, all hands are lowered and [random min to max] random hands
@@ -864,6 +908,29 @@ export function GroupCallSomeoneBlocked(): JSX.Element {
           .map((participant, index) => ({
             ...participant,
             isBlocked: index === 1,
+          })),
+      })}
+    />
+  );
+}
+
+export function CallLinkUnknownContactMissingMediaKeys(): JSX.Element {
+  return (
+    <CallScreen
+      {...createProps({
+        callMode: CallMode.Adhoc,
+        groupMembers: [],
+        remoteParticipants: allRemoteParticipants
+          .slice(0, 5)
+          .map((participant, index) => ({
+            ...participant,
+            title: index === 1 ? 'Unknown Contact' : participant.title,
+            titleNoDefault:
+              index === 1 ? undefined : participant.titleNoDefault,
+            addedTime: index === 1 ? Date.now() - 60000 : undefined,
+            hasRemoteAudio: false,
+            hasRemoteVideo: false,
+            mediaKeysReceived: index !== 1,
           })),
       })}
     />

@@ -17,6 +17,7 @@ import { parseIntWithFallback } from '../util/parseIntWithFallback';
 import type { WebAPIType } from '../textsecure/WebAPI';
 import { HTTPError } from '../textsecure/Errors';
 import { sleeper } from '../util/sleeper';
+import { parseUnknown } from '../util/schemas';
 
 const RETRY_WAIT_TIME = durations.MINUTE;
 const RETRYABLE_4XX_FAILURE_STATUSES = new Set([
@@ -37,14 +38,14 @@ const reportSpamJobDataSchema = z.object({
 export type ReportSpamJobData = z.infer<typeof reportSpamJobDataSchema>;
 
 export class ReportSpamJobQueue extends JobQueue<ReportSpamJobData> {
-  private server?: WebAPIType;
+  #server?: WebAPIType;
 
   public initialize({ server }: { server: WebAPIType }): void {
-    this.server = server;
+    this.#server = server;
   }
 
   protected parseData(data: unknown): ReportSpamJobData {
-    return reportSpamJobDataSchema.parse(data);
+    return parseUnknown(reportSpamJobDataSchema, data);
   }
 
   protected async run(
@@ -64,7 +65,7 @@ export class ReportSpamJobQueue extends JobQueue<ReportSpamJobData> {
 
     await waitForOnline();
 
-    const { server } = this;
+    const server = this.#server;
     strictAssert(server !== undefined, 'ReportSpamJobQueue not initialized');
 
     try {

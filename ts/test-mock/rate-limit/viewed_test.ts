@@ -10,7 +10,7 @@ import { Bootstrap } from '../bootstrap';
 import type { App } from '../bootstrap';
 import { ReceiptType } from '../../types/Receipt';
 import { toUntaggedPni } from '../../types/ServiceId';
-import { typeIntoInput } from '../helpers';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers';
 
 export const debug = createDebug('mock:test:challenge:receipts');
 
@@ -43,7 +43,6 @@ describe('challenge/receipts', function (this: Mocha.Suite) {
 
     state = state.updateAccount({
       profileKey: phone.profileKey.serialize(),
-      e164: phone.device.number,
       givenName: phone.profileName,
       readReceipts: true,
     });
@@ -121,7 +120,7 @@ describe('challenge/receipts', function (this: Mocha.Suite) {
 
     debug('Sending a message back to user - will trigger captcha!');
     {
-      const input = await app.waitForEnabledComposer();
+      const input = await waitForEnabledComposer(window);
       await typeIntoInput(input, 'Hi, good to hear from you!');
       await input.press('Enter');
     }
@@ -201,7 +200,7 @@ describe('challenge/receipts', function (this: Mocha.Suite) {
 
     debug('Sending a message back to ContactB - will trigger captcha!');
     {
-      const input = await app.waitForEnabledComposer();
+      const input = await waitForEnabledComposer(window);
       await typeIntoInput(input, 'Hi, good to hear from you!');
       await input.press('Enter');
     }
@@ -257,5 +256,139 @@ describe('challenge/receipts', function (this: Mocha.Suite) {
         'receipts2: Failed to find both timestampA and timestampB'
       );
     }
+  });
+
+  it('if server rejects our captcha, should show a toast and defer challenge based on error code', async () => {
+    const { server, desktop } = bootstrap;
+
+    debug(
+      `Rate limiting (desktop: ${desktop.aci}) -> (contact: ${contact.device.aci})`
+    );
+    server.rateLimit({ source: desktop.aci, target: contact.device.aci });
+    server.rateLimit({ source: desktop.aci, target: contactB.device.aci });
+
+    const timestamp = bootstrap.getTimestamp();
+
+    debug('Sending a message from contact');
+    await contact.sendText(desktop, 'Hello there!', {
+      timestamp,
+    });
+
+    const window = await app.getWindow();
+    const leftPane = window.locator('#LeftPane');
+    const conversationStack = window.locator('.Inbox__conversation-stack');
+
+    debug(`Opening conversation with contact (${contact.toContact().aci})`);
+    await leftPane
+      .locator(`[data-testid="${contact.toContact().aci}"]`)
+      .click();
+
+    debug('Accept conversation from contact - does not trigger captcha!');
+    await conversationStack
+      .locator('.module-message-request-actions button >> "Accept"')
+      .click();
+
+    debug('Sending a message back to user - will trigger captcha!');
+    {
+      const input = await waitForEnabledComposer(window);
+      await typeIntoInput(input, 'Hi, good to hear from you!');
+      await input.press('Enter');
+    }
+
+    /** First, challenge returns 428 (try again) */
+    debug('Waiting for challenge');
+    const firstChallengeRequest = await app.waitForChallenge();
+    const challengeDialog = await window
+      .getByTestId('CaptchaDialog.pending')
+      .elementHandle();
+
+    assert.exists(challengeDialog);
+    server.respondToChallengesWith(428);
+
+    debug('Solving challenge');
+    await app.solveChallenge({
+      seq: firstChallengeRequest.seq,
+      data: { captcha: 'anything' },
+    });
+
+    debug('Waiting for verification failure toast');
+    const failedChallengeToastLocator = window.locator(
+      '.Toast__content >> "Verification failed. Please retry later."'
+    );
+    await failedChallengeToastLocator.isVisible();
+    // The existing dialog is removed, but then the conversations will retry their sends,
+    // which will result in another one
+    await challengeDialog.isHidden();
+
+    /** Second, challenge returns 413 (rate limit) */
+    debug(
+      'Waiting for second challenge, should be triggered quickly with the sends being retried'
+    );
+    const secondChallengeRequest = await app.waitForChallenge();
+
+    server.respondToChallengesWith(413);
+
+    debug('Solving challenge');
+    await app.solveChallenge({
+      seq: secondChallengeRequest.seq,
+      data: { captcha: 'anything' },
+    });
+
+    debug('Waiting for verification failure toast');
+    await failedChallengeToastLocator.isVisible();
+
+    debug('Sending another message - this time it should not trigger captcha!');
+    {
+      const input = await waitForEnabledComposer(window);
+      await typeIntoInput(input, 'How have you been lately?');
+      await input.press('Enter');
+    }
+
+    debug('Sending a message from Contact B');
+    await contactB.sendText(desktop, 'Wanna buy a cow?', {
+      timestamp,
+    });
+
+    debug(`Opening conversation with Contact B (${contactB.toContact().aci})`);
+    await leftPane
+      .locator(`[data-testid="${contactB.toContact().aci}"]`)
+      .click();
+
+    debug('Accept conversation from Contact B - does not trigger captcha!');
+    await conversationStack
+      .locator('.module-message-request-actions button >> "Accept"')
+      .click();
+
+    debug(
+      'Sending to Contact B - we should not pop captcha because we are waiting!'
+    );
+    {
+      const input = await waitForEnabledComposer(window);
+      await typeIntoInput(input, 'You the cow guy from craigslist?');
+      await input.press('Enter');
+    }
+
+    debug('Checking for no other captcha dialogs');
+    assert.equal(
+      await app.getPendingEventCount('captchaDialog'),
+      2,
+      'Just two captcha dialogs, the first one, and the one after the 428'
+    );
+
+    const requests = server.stopRateLimiting({
+      source: desktop.aci,
+      target: contact.device.aci,
+    });
+
+    debug(`Rate-limited requests: ${requests}`);
+    assert.strictEqual(requests, 2, 'rate limit requests');
+
+    const requestsContactB = server.stopRateLimiting({
+      source: desktop.aci,
+      target: contactB.device.aci,
+    });
+
+    debug(`Rate-limited requests to Contact B: ${requests}`);
+    assert.strictEqual(requestsContactB, 1, 'Contact B rate limit requests');
   });
 });

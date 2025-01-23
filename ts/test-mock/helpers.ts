@@ -1,6 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import createDebug from 'debug';
 import {
   type Device,
   type Group,
@@ -12,6 +13,10 @@ import { assert } from 'chai';
 import Long from 'long';
 import type { Locator, Page } from 'playwright';
 import { expect } from 'playwright/test';
+import type { SignalService } from '../protobuf';
+import { strictAssert } from '../util/assert';
+
+const debug = createDebug('mock:test:helpers');
 
 export function bufferToUuid(buffer: Buffer): string {
   const hex = buffer.toString('hex');
@@ -279,4 +284,142 @@ export function getMessageInTimelineByTimestamp(
   timestamp: number
 ): Locator {
   return getTimeline(page).getByTestId(`${timestamp}`);
+}
+
+export function getTimelineMessageWithText(page: Page, text: string): Locator {
+  return getTimeline(page).locator('.module-message').filter({ hasText: text });
+}
+
+export async function composerAttachImages(
+  page: Page,
+  filePaths: ReadonlyArray<string>
+): Promise<void> {
+  const AttachmentInput = page.getByTestId('attachfile-input');
+
+  const AttachmentsList = page.locator('.module-attachments');
+  const AttachmentsListImage = AttachmentsList.locator('.module-image');
+  const AttachmentsListImageLoaded = AttachmentsListImage.locator(
+    '.module-image__image'
+  );
+
+  debug('setting input files');
+  await AttachmentInput.setInputFiles(filePaths);
+
+  debug(`waiting for ${filePaths.length} items`);
+  await AttachmentsListImage.nth(filePaths.length - 1).waitFor();
+
+  await Promise.all(
+    filePaths.map(async (_, index) => {
+      debug(`waiting for ${index} image to render in attachments list`);
+      await AttachmentsListImageLoaded.nth(index).waitFor({
+        state: 'visible',
+      });
+    })
+  );
+}
+
+export async function sendMessageWithAttachments(
+  page: Page,
+  receiver: PrimaryDevice,
+  text: string,
+  filePaths: Array<string>
+): Promise<Array<SignalService.IAttachmentPointer>> {
+  await composerAttachImages(page, filePaths);
+
+  debug('sending message');
+  const input = await waitForEnabledComposer(page);
+  await typeIntoInput(input, text);
+  await input.press('Enter');
+
+  const Message = getTimelineMessageWithText(page, text);
+  const MessageImageLoaded = Message.locator('.module-image__image');
+
+  await Message.waitFor();
+
+  await Promise.all(
+    filePaths.map(async (_, index) => {
+      debug(`waiting for ${index} image to render in timeline`);
+      await MessageImageLoaded.nth(index).waitFor({
+        state: 'visible',
+      });
+    })
+  );
+
+  debug('get received message data');
+  const receivedMessage = await receiver.waitForMessage();
+  const attachments = receivedMessage.dataMessage.attachments ?? [];
+  strictAssert(
+    attachments.length === filePaths.length,
+    'attachments must exist'
+  );
+
+  return attachments;
+}
+
+export async function waitForEnabledComposer(page: Page): Promise<Locator> {
+  const composeArea = page.locator(
+    '.composition-area-wrapper, .Inbox__conversation .ConversationView'
+  );
+  const composeContainer = composeArea.locator(
+    '[data-testid=CompositionInput][data-enabled=true]'
+  );
+  await composeContainer.waitFor();
+
+  return composeContainer.locator('.ql-editor');
+}
+
+export async function createCallLink(
+  page: Page,
+  {
+    name,
+    isAdminApprovalRequired = undefined,
+  }: { name: string; isAdminApprovalRequired?: boolean | undefined }
+): Promise<string | undefined> {
+  await page.locator('[data-testid="NavTabsItem--Calls"]').click();
+  await page.locator('.NavSidebar__HeaderTitle').getByText('Calls').waitFor();
+
+  await page
+    .locator('.CallsList__ItemTile')
+    .getByText('Create a Call Link')
+    .click();
+
+  const editModal = page.locator('.CallLinkEditModal');
+  await editModal.waitFor();
+
+  if (isAdminApprovalRequired !== undefined) {
+    const restrictionsInput = editModal.getByLabel('Require admin approval');
+    if (isAdminApprovalRequired) {
+      await expect(restrictionsInput).toHaveJSProperty('value', '0');
+      await restrictionsInput.selectOption({ label: 'On' });
+      await expect(restrictionsInput).toHaveJSProperty('value', '1');
+    } else {
+      await expect(restrictionsInput).toHaveJSProperty('value', '0');
+    }
+  }
+
+  await editModal.locator('button', { hasText: 'Add call name' }).click();
+
+  const addNameModal = page.locator('.CallLinkAddNameModal');
+  await addNameModal.waitFor();
+
+  const nameInput = addNameModal.getByLabel('Call name');
+  await nameInput.fill(name);
+
+  const saveBtn = addNameModal.getByText('Save');
+  await saveBtn.click();
+
+  await editModal.waitFor();
+
+  const doneBtn = editModal.getByText('Done');
+  await doneBtn.click();
+
+  const callLinkTitle = await page
+    .locator('.CallsList__ItemTile')
+    .getByText(name);
+
+  const callLinkItem = await page.locator('.CallsList__Item', {
+    has: callLinkTitle,
+  });
+  const testId = await callLinkItem.getAttribute('data-testid');
+  return testId || undefined;
 }

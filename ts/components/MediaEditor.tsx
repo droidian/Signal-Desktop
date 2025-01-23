@@ -56,6 +56,7 @@ import { Theme } from '../util/theme';
 import { ThemeType } from '../types/Util';
 import { arrow } from '../util/keyboard';
 import { canvasToBytes } from '../util/canvasToBytes';
+import { loadImage } from '../util/loadImage';
 import { getConversationSelector } from '../state/selectors/conversations';
 import { hydrateRanges } from '../types/BodyRange';
 import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
@@ -88,6 +89,7 @@ export type PropsType = {
     | 'isFormattingEnabled'
     | 'onPickEmoji'
     | 'onTextTooLong'
+    | 'ourConversationId'
     | 'platform'
     | 'sortedGroupMembers'
   > &
@@ -156,6 +158,7 @@ export function MediaEditor({
   isFormattingEnabled,
   onPickEmoji,
   onTextTooLong,
+  ourConversationId,
   platform,
   sortedGroupMembers,
 
@@ -1213,17 +1216,19 @@ export function MediaEditor({
                 i18n={i18n}
                 installedPacks={installedPacks}
                 knownPacks={[]}
-                onPickSticker={(_packId, _stickerId, src: string) => {
+                onPickSticker={async (_packId, _stickerId, src: string) => {
                   if (!fabricCanvas) {
                     return;
                   }
+
+                  const img = await loadImage(src);
 
                   const STICKER_SIZE_RELATIVE_TO_CANVAS = 4;
                   const size =
                     Math.min(imageState.width, imageState.height) /
                     STICKER_SIZE_RELATIVE_TO_CANVAS;
 
-                  const sticker = new MediaEditorFabricSticker(src);
+                  const sticker = new MediaEditorFabricSticker(img);
                   sticker.scaleToHeight(size);
                   sticker.setPositionByOrigin(
                     new fabric.Point(
@@ -1312,8 +1317,10 @@ export function MediaEditor({
                   onPickEmoji={onPickEmoji}
                   onSubmit={noop}
                   onTextTooLong={onTextTooLong}
+                  ourConversationId={ourConversationId}
                   placeholder={i18n('icu:MediaEditor__input-placeholder')}
                   platform={platform}
+                  quotedMessageId={null}
                   sendCounter={0}
                   sortedGroupMembers={sortedGroupMembers}
                   theme={ThemeType.dark}

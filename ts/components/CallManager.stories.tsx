@@ -105,9 +105,8 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   hangUpActiveCall: action('hang-up-active-call'),
   hasInitialLoadCompleted: true,
   i18n,
-  incomingCall: null,
+  ringingCall: null,
   callLink: storyProps.callLink ?? undefined,
-  isGroupCallRaiseHandEnabled: true,
   me: {
     ...getDefaultConversation({
       color: AvatarColors[0],
@@ -120,17 +119,18 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   playRingtone: action('play-ringtone'),
   removeClient: action('remove-client'),
   blockClient: action('block-client'),
+  cancelPresenting: action('cancel-presenting'),
   renderDeviceSelection: () => <div />,
   renderEmojiPicker: () => <>EmojiPicker</>,
   renderReactionPicker: () => <div />,
   sendGroupCallRaiseHand: action('send-group-call-raise-hand'),
   sendGroupCallReaction: action('send-group-call-reaction'),
+  selectPresentingSource: action('select-presenting-source'),
   setGroupCallVideoRequest: action('set-group-call-video-request'),
   setIsCallActive: action('set-is-call-active'),
   setLocalAudio: action('set-local-audio'),
-  setLocalPreview: action('set-local-preview'),
+  setLocalPreviewContainer: action('set-local-preview-container'),
   setLocalVideo: action('set-local-video'),
-  setPresenting: action('toggle-presenting'),
   setRendererCanvas: action('set-renderer-canvas'),
   setOutgoingRing: action('set-outgoing-ring'),
   showContactModal: action('show-contact-modal'),
@@ -139,13 +139,15 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   stopRingtone: action('stop-ringtone'),
   switchToPresentationView: action('switch-to-presentation-view'),
   switchFromPresentationView: action('switch-from-presentation-view'),
+  toggleCallLinkPendingParticipantModal: action(
+    'toggle-call-link-pending-participant-modal'
+  ),
   toggleParticipants: action('toggle-participants'),
   togglePip: action('toggle-pip'),
   toggleScreenRecordingPermissionsDialog: action(
     'toggle-screen-recording-permissions-dialog'
   ),
   toggleSettings: action('toggle-settings'),
-  isConversationTooBigToRing: false,
   pauseVoiceNotePlayer: action('pause-audio-player'),
 });
 
@@ -179,6 +181,7 @@ const getActiveCallForCallLink = (
     pendingParticipants: overrideProps.pendingParticipants ?? [],
     raisedHands: new Set<number>(),
     remoteAudioLevels: new Map<number, number>(),
+    suggestLowerHand: false,
   };
 };
 
@@ -230,6 +233,7 @@ export function OngoingGroupCall(): JSX.Element {
           raisedHands: new Set<number>(),
           remoteParticipants: [],
           remoteAudioLevels: new Map<number, number>(),
+          suggestLowerHand: false,
         },
       })}
     />
@@ -240,7 +244,7 @@ export function RingingDirectCall(): JSX.Element {
   return (
     <CallManager
       {...createProps({
-        incomingCall: {
+        ringingCall: {
           callMode: CallMode.Direct as const,
           conversation: getConversation(),
           isVideoCall: true,
@@ -254,7 +258,7 @@ export function RingingGroupCall(): JSX.Element {
   return (
     <CallManager
       {...createProps({
-        incomingCall: {
+        ringingCall: {
           callMode: CallMode.Group as const,
           connectionState: GroupCallConnectionState.NotConnected,
           joinState: GroupCallJoinState.NotJoined,

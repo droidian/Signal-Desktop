@@ -9,7 +9,7 @@ import type { IPCType } from '../../window.d';
 import { parseIntWithFallback } from '../../util/parseIntWithFallback';
 import { getSignalConnections } from '../../util/getSignalConnections';
 import { ThemeType } from '../../types/Util';
-import { getEnvironment, Environment } from '../../environment';
+import { Environment } from '../../environment';
 import { SignalContext } from '../context';
 import * as log from '../../logging/log';
 import { formatCountForLogging } from '../../logging/formatCountForLogging';
@@ -22,7 +22,6 @@ import type {
   NotificationClickData,
   WindowsNotificationData,
 } from '../../services/notifications';
-import { isAdhocCallingEnabled } from '../../util/isAdhocCallingEnabled';
 import { AggregatedStats } from '../../textsecure/WebsocketResources';
 import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager';
 
@@ -48,7 +47,6 @@ window.RETRY_DELAY = false;
 
 window.platform = process.platform;
 window.getTitle = () => title;
-window.getEnvironment = getEnvironment;
 window.getAppInstance = () => config.appInstance;
 window.getVersion = () => config.version;
 window.getBuildCreation = () => parseIntWithFallback(config.buildCreation, 0);
@@ -61,8 +59,8 @@ window.getBackupServerPublicParams = () => config.backupServerPublicParams;
 window.getSfuUrl = () => config.sfuUrl;
 
 let title = config.name;
-if (getEnvironment() !== Environment.Production) {
-  title += ` - ${getEnvironment()}`;
+if (config.environment !== Environment.PackagedApp) {
+  title += ` - ${config.environment}`;
 }
 if (config.appInstance) {
   title += ` - ${config.appInstance}`;
@@ -127,6 +125,12 @@ const IPC: IPCType = {
     log.info('shutdown');
     ipc.send('shutdown');
   },
+  startTrackingQueryStats: () => {
+    ipc.send('start-tracking-query-stats');
+  },
+  stopTrackingQueryStats: options => {
+    ipc.send('stop-tracking-query-stats', options);
+  },
   titleBarDoubleClick: () => {
     ipc.send('title-bar-double-click');
   },
@@ -169,7 +173,7 @@ window.logAuthenticatedConnect = () => {
 window.open = () => null;
 
 // Playwright uses `eval` for `.evaluate()` API
-if (config.ciMode !== 'full' && config.environment !== 'test') {
+if (config.ciMode !== 'full' && config.environment !== Environment.Test) {
   // eslint-disable-next-line no-eval, no-multi-assign
   window.eval = global.eval = () => null;
 }
@@ -345,24 +349,17 @@ ipc.on('start-call-lobby', (_event, { conversationId }) => {
 });
 
 ipc.on('start-call-link', (_event, { key }) => {
-  if (isAdhocCallingEnabled()) {
-    window.reduxActions?.calling?.startCallLinkLobby({
-      rootKey: key,
-    });
-  } else {
-    const { unknownSignalLink } = window.Events;
-    if (unknownSignalLink) {
-      unknownSignalLink();
-    }
-  }
+  window.reduxActions?.calling?.startCallLinkLobby({
+    rootKey: key,
+  });
 });
 
 ipc.on('show-window', () => {
   window.IPC.showWindow();
 });
 
-ipc.on('set-is-presenting', () => {
-  window.reduxActions?.calling?.setPresenting();
+ipc.on('cancel-presenting', () => {
+  window.reduxActions?.calling?.cancelPresenting();
 });
 
 ipc.on(

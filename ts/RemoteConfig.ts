@@ -15,9 +15,7 @@ import { HashType } from './types/Crypto';
 import { getCountryCode } from './types/PhoneNumber';
 
 export type ConfigKeyType =
-  | 'desktop.calling.adhoc'
-  | 'desktop.calling.adhoc.create'
-  | 'desktop.calling.raiseHand'
+  | 'desktop.calling.ringrtcAdm'
   | 'desktop.clientExpiration'
   | 'desktop.backup.credentialFetch'
   | 'desktop.internalUser'
@@ -31,11 +29,15 @@ export type ConfigKeyType =
   | 'desktop.experimentalTransportEnabled.beta'
   | 'desktop.experimentalTransportEnabled.prod'
   | 'desktop.cdsiViaLibsignal'
+  | 'desktop.releaseNotes'
+  | 'desktop.releaseNotes.beta'
+  | 'desktop.releaseNotes.dev'
   | 'global.attachments.maxBytes'
   | 'global.attachments.maxReceiveBytes'
   | 'global.calling.maxGroupCallRingSize'
   | 'global.groupsv2.groupSizeHardLimit'
   | 'global.groupsv2.maxGroupSize'
+  | 'global.messageQueueTimeInSeconds'
   | 'global.nicknames.max'
   | 'global.nicknames.min'
   | 'global.textAttachmentLimitBytes';

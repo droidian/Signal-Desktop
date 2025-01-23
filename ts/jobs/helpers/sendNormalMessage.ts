@@ -3,7 +3,6 @@
 
 import { isNumber } from 'lodash';
 import PQueue from 'p-queue';
-import { v4 as generateUuid } from 'uuid';
 
 import { DataWriter } from '../../sql/Client';
 import * as Errors from '../../types/errors';
@@ -30,11 +29,8 @@ import type {
 import type {
   AttachmentType,
   UploadedAttachmentType,
-  AttachmentWithHydratedData,
 } from '../../types/Attachment';
 import { copyCdnFields } from '../../util/attachments';
-import { LONG_MESSAGE } from '../../types/MIME';
-import { LONG_ATTACHMENT_LIMIT } from '../../types/Message';
 import type { RawBodyRange } from '../../types/BodyRange';
 import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact';
 import type { StoryContextType } from '../../types/Util';
@@ -52,13 +48,14 @@ import { sendToGroup } from '../../util/sendToGroup';
 import type { DurationInSeconds } from '../../util/durations';
 import type { ServiceIdString } from '../../types/ServiceId';
 import { normalizeAci } from '../../util/normalizeAci';
-import * as Bytes from '../../Bytes';
 import {
   getPropForTimestamp,
   getTargetOfThisEditTimestamp,
   getChangesForPropAtTimestamp,
 } from '../../util/editHelpers';
 import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp';
+import { isSignalConversation } from '../../util/isSignalConversation';
+import { isBodyTooLong, trimBody } from '../../util/longAttachment';
 
 const MAX_CONCURRENT_ATTACHMENT_UPLOADS = 5;
 
@@ -76,7 +73,10 @@ export async function sendNormalMessage(
   const { Message } = window.Signal.Types;
 
   const { messageId, revision, editedMessageTimestamp } = data;
-  const message = await __DEPRECATED$getMessageById(messageId);
+  const message = await __DEPRECATED$getMessageById(
+    messageId,
+    'sendNormalMessage'
+  );
   if (!message) {
     log.info(
       `message ${messageId} was not found, maybe because it was deleted. Giving up on sending it`
@@ -88,6 +88,13 @@ export async function sendNormalMessage(
   if (messageConversation !== conversation) {
     log.error(
       `Message conversation '${messageConversation?.idForLogging()}' does not match job conversation ${conversation.idForLogging()}`
+    );
+    return;
+  }
+
+  if (isSignalConversation(messageConversation)) {
+    log.error(
+      `Message conversation '${messageConversation?.idForLogging()}' is the Signal serviceId, not sending`
     );
     return;
   }
@@ -584,18 +591,15 @@ async function getMessageSendData({
     prop: 'body',
     targetTimestamp,
   });
-  let maybeLongAttachment: AttachmentWithHydratedData | undefined;
-  if (body && body.length > LONG_ATTACHMENT_LIMIT) {
-    const data = Bytes.fromString(body);
+  const maybeLongAttachment = getPropForTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+  });
 
-    maybeLongAttachment = {
-      contentType: LONG_MESSAGE,
-      clientUuid: generateUuid(),
-      fileName: `long-message-${targetTimestamp}.txt`,
-      data,
-      size: data.byteLength,
-    };
-    body = body.slice(0, LONG_ATTACHMENT_LIMIT);
+  if (body && isBodyTooLong(body)) {
+    body = trimBody(body);
   }
 
   const uploadQueue = new PQueue({
@@ -630,7 +634,14 @@ async function getMessageSendData({
       )
     ),
     uploadQueue.add(async () =>
-      maybeLongAttachment ? uploadAttachment(maybeLongAttachment) : undefined
+      maybeLongAttachment
+        ? uploadLongMessageAttachment({
+            attachment: maybeLongAttachment,
+            log,
+            message,
+            targetTimestamp,
+          })
+        : undefined
     ),
     uploadMessageContacts(message, uploadQueue),
     uploadMessagePreviews({
@@ -646,7 +657,9 @@ async function getMessageSendData({
       uploadQueue,
     }),
     uploadMessageSticker(message, uploadQueue),
-    storyId ? __DEPRECATED$getMessageById(storyId) : undefined,
+    storyId
+      ? __DEPRECATED$getMessageById(storyId, 'sendNormalMessage')
+      : undefined,
   ]);
 
   // Save message after uploading attachments
@@ -758,6 +771,52 @@ async function uploadSingleAttachment({
   return uploaded;
 }
 
+async function uploadLongMessageAttachment({
+  attachment,
+  log,
+  message,
+  targetTimestamp,
+}: {
+  attachment: AttachmentType;
+  log: LoggerType;
+  message: MessageModel;
+  targetTimestamp: number;
+}): Promise<UploadedAttachmentType> {
+  const { loadAttachmentData } = window.Signal.Migrations;
+
+  const withData = await loadAttachmentData(attachment);
+  const uploaded = await uploadAttachment(withData);
+
+  // Add digest to the attachment
+  const logId = `uploadLongMessageAttachment(${message.idForLogging()}`;
+  const oldAttachment = getPropForTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+  });
+  strictAssert(
+    oldAttachment !== undefined,
+    `${logId}: Attachment was uploaded, but message doesn't ` +
+      'have long message attachment anymore'
+  );
+
+  const newBodyAttachment = { ...oldAttachment, ...copyCdnFields(uploaded) };
+
+  const attributesToUpdate = getChangesForPropAtTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+    value: newBodyAttachment,
+  });
+  if (attributesToUpdate) {
+    message.set(attributesToUpdate);
+  }
+
+  return uploaded;
+}
+
 async function uploadMessageQuote({
   log,
   message,
@@ -859,7 +918,7 @@ async function uploadMessageQuote({
 
   return {
     isGiftBadge: loadedQuote.isGiftBadge,
-    id: loadedQuote.id,
+    id: loadedQuote.id ?? undefined,
     authorAci: loadedQuote.authorAci
       ? normalizeAci(loadedQuote.authorAci, 'sendNormalMessage.quote.authorAci')
       : undefined,

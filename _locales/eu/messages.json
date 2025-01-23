@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Baldintzak eta pribatutasun arauak"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Kopiatu errorea eta irten"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Ordenagailurako bertsioak desenkriptatze-errore bat gertatu da ({name}; gailua: {deviceId})"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Bidali erregistroa"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Fitxategiekin batera, ezin dituzu hautatu argazki eta bideoak."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "Bilatu"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Bilatu irakurri gabeko txatak"
+  },
   "icu:clearSearch": {
     "messageformat": "Garbitu Bilaketa"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "Ez da topatu emaitzarik \"{searchTerm}\" bilaketarako"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Ez dago \"{searchTerm}\" bilaketaren emaitzarik irakurri gabeko txatetan"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Ez dago irakurri gabeko txatik"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "SMS/MMS kontaktuak ez daude erabilgarri ordenagailurako bertsioan."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "Ez da topatu emaitzarik \"{searchTerm}\" bilaketarako {conversationName} solasaldian"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Irakurri gabekoen arabera iragazita"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Iragazi irakurri gabekoen arabera"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Garbitu iragazkia"
   },
   "icu:conversationsHeader": {
     "messageformat": "Txatak"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Errore bat izan da ahots-grabagailuarekin."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Gorde da eranskina."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Gorde da eranskina} other {Gorde dira {count,number} eranskinak}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Erakutsi karpetan"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Ezin da gorde eranskina, oraindik ez baita guztiz deskargatu} other {Ezin dira gorde eranskinak, oraindik ez baitira guztiz deskargatu {count,number}}}"
   },
   "icu:you": {
     "messageformat": "Zu"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Oharra"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Ikusi arestiko medioak"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Ikusi denak"
   },
   "icu:back": {
     "messageformat": "Atzera"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Info"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Ezabatu mezuak"
+  "icu:deleteConversation": {
+    "messageformat": "Ezabatu"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Mezuak ezabatu nahi dituzu?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Txata ezabatu nahi duzu?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Txat honetako mezuak gailu honetatik ezabatuko dira. Mezuak ezabatuta ere, txat hau bilatu ahalko duzu."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Txat honetako mezuak gailu honetatik ezabatuko dira."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "Txat honetako mezuak gailu guztietatik ezabatuko dira. Mezuak ezabatuta ere, txat hau bilatu ahalko duzu."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Txat honetako mezuak gailu guztietatik ezabatuko dira."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Irten taldetik"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "Irudi honek azpitestu bak duela erakusteko ikonoa"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "Ireki eranskin hau ikuspegi handiago batean"
+  },
+  "icu:startDownload": {
+    "messageformat": "Hasi deskargatzen"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Utzi deskarga bertan behera"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {Elementu {count,number}} other {{count,number} elementu}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "Multimedia-eduki hau jada ez dago erabilgarri."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Informazio gehiago"
+  },
   "icu:save": {
     "messageformat": "Gorde"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "Berriro saiatu"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Freskatu kodea"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "Lortu laguntza"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Ezin zara sartu deian"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Deian zaude."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Ezin izan da eskuratu deiaren estekari buruzko informazioa. Egiaztatu sareko konexioa eta saiatu berriro."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal deia"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Ezin da ezabatu esteka. Egiaztatu Internetera konektatuta zaudela eta saiatu berriro."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Dei honetan sartzeko egin duzun eskaera ukatu egin da."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second}, eta beste {others,number} dei honetan daude} other {{first}, {second}, eta beste {others,number} dei honetan daude.}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number} pertsona dago dei honetan} other {{count,number} pertsona daude dei honetan}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal-ek {person}(r)i deituko dio"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "Ezin da {name} erabiltzailearen audio eta bideorik jaso."
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Ezin dira jaso audioa eta bideoa"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Beharbada ez duzu egiaztatu segurtasun-zenbakiaren aldaketa, arazoren bat du gailuan, edo blokeatu egin zaituzte."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal {window} partekatzen ari da."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Signal-eko pantaila partekatzen"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Berriro konektatzen…"
@@ -1521,7 +1584,7 @@
     "messageformat": "Signal-en ordenagailurako bertsio honetako datu eta mezu guztiak ezabatu nahi dituzu? Nahi duzunean lot dezakezu berriro ordenagailu hau, baina mezuak ez dira leheneratuko. Telefonoan nahiz lotutako beste gailu batzuetan, Signal-eko kontua eta datuak ez dira ezabatuko."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "Deskonektatzen eta datu guztiak ezabatzen"
+    "messageformat": "Deskonektatzen eta datu guztiak ezabatzen…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Ordenagailurako Signal-en aurreko instalazio baten datu zaharkituak dauzkazu. Aurrera jarraituz gero, ezabatu egingo dira, eta zerotik hasi beharko duzu."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Atzo {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Agian Signal-ek ezin du prozesatu sarrerako mezu bat."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Mezuaren gorputza luzeegia da."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} zu, {first}, {second} eta beste {remaining,number} deitzen ari da} other {{ringer} zuri, {first}(r)i, {second}(r)i eta beste {remaining,number} pertsonari deitzen ari da}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Konektatzen…"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Deitzen…"
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Deiaren esteka"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Talde-deia"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Sartzen uzteko zain"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Mikrofonoa aktibatuta"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Eskua jaitsi nahi duzu?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Jaitsi"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Dei-tonua aktibatuta"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "{joinerName} erabiltzaileak taldean sartzeko egindako eskaera ukatua izan da."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName}(e)k, taldearen estekaren bidez sartzeko eskaera egin, eta bertan behera utzi du"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName}(e)k, taldearen estekaren bidez sartzeko {numberOfRequests,number} eskaera egin, eta bertan behera utzi ditu"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName}(e)k, esteka bidez taldean sartzeko eskaera egin, eta bertan behera utzi du.} other {{joinerName}(e)k, esteka bidez taldean sartzeko {numberOfRequests,number} eskaera egin, eta bertan behera utzi ditu.}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "hurrengoa"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Agian minutu batzuk beharko dira, mezu-historiaren tamainaren arabera"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Egin dohaintza Signal-i"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "Sakatu \"Egin dohaintza Signal-i\" eta harpidetu"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "Mezuak sinkronizatzen"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{currentSize}/{totalSize} deskargatzen ({fractionComplete,number,percent})..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Mezuen transferentzia amaitzen..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Deskargatzeko prestatzen…"
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "Agian minutu batzuk beharko dira, mezu-historiaren tamainaren arabera"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Utzi"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "Mezuak eta txatari buruzko informazioa muturretik muturrerako enkriptatzearen bidez daude babestuta (sinkronizazio-prozesua barne). <learnMoreLink>Informazio gehiago</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Transferentzia bertan behera utzi nahi duzu?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Oraindik ez dira leheneratu mezuak eta multimedia-fitxategiak. Bertan behera uztea aukeratzen baduzu, mezu-historia gabe lotuko da gailua."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Jarraitu transferitzen"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Utzi transferentzia bertan behera"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Errore bat gertatu da mezuak transferitzean"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Ezin izan dira transferitu mezuak. Egiaztatu Internetera konektatuta zaudela eta saiatu berriro."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "Errore bat dela eta, ezin izan dira transferitu mezuak. Saiatu berriro ordenagailu hau berriro lotuta."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Berriro saiatu"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Saltatu"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Mezuen transferentzia saltatu nahi duzu?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Saltatzea aukeratzen baduzu, ezingo dituzu atzitu gailu honetako mezuak eta multimedia-edukia. Saltatu arren, geroago ere egin dezakezu transferentzia Ezarpenak > Txatak > Transferentzia atalean."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Utzi"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Multimedia-edukia leheneratzen"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Leheneratzea pausatu egin da"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize}/{totalSize} leheneratuta"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "Multimedia-edukia atzeko planoan deskargatzen jarraituko da"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Pausatu transferentzia"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Berrekin transferentziari"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Utzi transferentzia bertan behera"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Aukera gehiago"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Leheneratzea osatuta"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} / {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Multimedia-edukiaren transferentzia bertan behera utzi nahi duzu?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Oraindik ez dira leheneratu mezuak eta multimedia-fitxategiak. Bertan behera utzi arren, berriro transferitu ahalko dituzu ezarpenetatik."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Jarraitu transferitzen"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Utzi transferentzia bertan behera"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Zabaldu"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Kendu taldetik"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Deian zaude"
+  "icu:ContactModal--voice": {
+    "messageformat": "Ahotsa"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Txat-kolorea"
@@ -3762,7 +3927,7 @@
     "messageformat": "Berrezarri esteka"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Onartu kide berriak"
+    "messageformat": "Eskatu administratzaile baten onespena"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Kideak talde esteka bidez sartzen badira taldean, derrigorrezkotzat jo administratzaile batek onartzea."
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Egin klik {composeIcon}goiko aldean eta bilatu zure kontaktuak edo taldeak bidaltzeko."
-  },
-  "icu:composeIcon": {
-    "messageformat": "idazteko botoia"
   },
   "icu:emptyInbox__title": {
     "messageformat": "Txatik ez"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal arazo teknikoak izaten ari da. Gogor ari gara lanean zerbitzua ahal bezain laster berriro martxan jartzeko."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Eguneratu behar da"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Mezuak sinkronizatzen amaitzeko, eguneratu Signal Desktop."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Eguneratu"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Eguneratu behar da"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "Istorio bat ikusteko, egin klik hartan"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "Sakatu <newStoryIcon>Istorio bat gehitu</newStoryIcon> eguneraketa bat gehitzeko."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "Egin klik hemen: <newStoryButtonIcon></newStoryButtonIcon> eguneraketa bat gehitzeko."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} erabiltzaileak hona: {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Erantzunak"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
     "messageformat": "Erreakzio bat bidali dio istorioari"
   },
-  "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
-  },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "Erreakzio bat bidali dio istorioari"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "You can’t reply to this story because you’re no longer a member of this group."
@@ -5142,7 +5304,7 @@
     "messageformat": "Istorioa"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Erakutsi istorioak"
+    "messageformat": "Erakutsi istorioa"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Ezkutatu istorioa"
@@ -5413,7 +5575,10 @@
     "messageformat": "Deien historia garbitu nahi duzu?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Behin betiko ezabatuko da deien historia osoa"
+    "messageformat": "Behin betiko ezabatuko da deien historia osoa."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Behin betiko ezabatuko da deien historia osoa. Sortu dituzun deien estekek ez dute funtzionatuko haiek dituzten pertsonentzat. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Garbitu"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Deien historia garbitu da"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Egin klik dei bat ikusteko edo hasteko"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Ezin izan dira ezabatu dei guztien estekak. Egiaztatu Internetera konektatuta zaudela eta saiatu berriro."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "Sakatu <newCallIcon>Dei berria</newCallIcon> dei edo bideodei berri bat hasteko."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Ezin izan da garbitu deien historia osoa. Egiaztatu Internetera konektatuta zaudela eta saiatu berriro."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "Egin klik hemen: <newCallButtonIcon></newCallButtonIcon> beste dei edo bideodei bat hasteko."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Bilatu dei galduak"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Bilatu"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Galduen arabera iragazita"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Iragazi dei galduen arabera"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Kommutatu"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Ez dago azken deirik. Hasi lagun bati deitzen."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "Deirik ez"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "Azken deiak hemen agertuko dira."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "Dei galdurik ez"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "Dei galduak hemen agertuko dira."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Ez dago honen emaitzarik: \"{query}\""
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Ez dago \"{query}\" bilaketaren emaitzarik dei galduetan"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Dei galdurik ez"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Sortu dei-esteka bat"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Itzuli"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Beste dei batean sartzeko, oraingo deitik irten behar duzu"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Irteerako ahots-deia} other {Sarrerako ahots-deia}}} Video {{direction, select, Outgoing {Irteerako bideodeia} other {Sarrerako bideodeia}}} Group {{direction, select, Outgoing {Irteerako talde-deia} other {Sarrerako talde-deia}}} other {{direction, select, Outgoing {Irteerako deia} other {Sarrerako dei}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Ahots-dei galdua} Video {Bideodei galdua} Group {Talde-deia galdua} other {Erantzun gabeko deia}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Erantzun gabeko ahots-deia} Video {Erantzun gabeo bideodeia} Group {Erantzun gabeko taldeko deia} other {Erantzun gabeko deia}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Ahots-deia baztertu da} Video {Bideodeia baztertu da} Group {Talde-deia baztertu da} other {Deia baztertu da}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Deiaren esteka"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "Editatu deiaren izena"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "Kide guztiak onartu"
+    "messageformat": "Eskatu administratzaile baten onespena"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Ezarpen hau ezin da aldatu deia aktibo dagoen bitartean"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Kopiatu esteka"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Ezabatu"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Esteka hau ezin da ezabatu deia aktibo dagoen bitartean"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Deiaren estekaren xehetasunak"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "Editatu deiaren izena"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Kide guztiak onartu"
+    "messageformat": "Eskatu administratzaile baten onespena"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Utzi sartzen"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Ez utzi sartzen"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Desaktibatuta"
@@ -5629,13 +5794,10 @@
     "messageformat": "Doikuntza txikiak, akats-konponketak eta errendimendu-hobekuntzak. Eskerrik asko Signal erabiltzeagatik!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "Signal Desktop-ek automatikoki berrekin ditzake eten diren eranskinen deskargak utzi zituzten lekutik, beraz, ez duzu barre egiteko hainbeste itxaron beharko ordenagailu eramangarriaren estalkia itxi baduzu zure lagunak bidali dizun memea transferitzen amaitu baino lehen."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "@Aipamenak automatikoki osatzeko iradokizun-zerrendan batzuetan zeure kontua agerrarazten zuen akats bat konpondu dugu."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "Orain, txat-zerrendaren alboko barraren tamaina doitu egin dezakezu ukipen-pantaila duten gailuetan."
   }
 }

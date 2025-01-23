@@ -76,12 +76,14 @@ const getDefaultProps = () => ({
   retryDeleteForEveryone: action('retryDeleteForEveryone'),
   retryMessageSend: action('retryMessageSend'),
   blockGroupLinkRequests: action('blockGroupLinkRequests'),
+  cancelAttachmentDownload: action('cancelAttachmentDownload'),
   kickOffAttachmentDownload: action('kickOffAttachmentDownload'),
   markAttachmentAsCorrupted: action('markAttachmentAsCorrupted'),
   messageExpanded: action('messageExpanded'),
   showConversation: action('showConversation'),
   openGiftBadge: action('openGiftBadge'),
   saveAttachment: action('saveAttachment'),
+  saveAttachments: action('saveAttachments'),
   onOpenEditNicknameAndNoteModal: action('onOpenEditNicknameAndNoteModal'),
   onOutgoingAudioCallInConversation: action(
     'onOutgoingAudioCallInConversation'
@@ -96,12 +98,16 @@ const getDefaultProps = () => ({
   toggleForwardMessagesModal: action('toggleForwardMessagesModal'),
   showLightboxForViewOnceMedia: action('showLightboxForViewOnceMedia'),
   doubleCheckMissingQuoteReference: action('doubleCheckMissingQuoteReference'),
+  showAttachmentDownloadStillInProgressToast: action(
+    'showAttachmentDownloadStillInProgressToast'
+  ),
   showExpiredIncomingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
   showExpiredOutgoingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
+  showMediaNoLongerAvailableToast: action('showMediaNoLongerAvailableToast'),
   scrollToQuotedMessage: action('scrollToQuotedMessage'),
   showSpoiler: action('showSpoiler'),
   startConversation: action('startConversation'),

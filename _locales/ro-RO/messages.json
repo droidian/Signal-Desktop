@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Termeni și politică de confidențialitate"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Copiază eroarea și închide aplicația"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Desktop a întâmpinat o eroare de decriptare de la {name}, dispozitiv {deviceId}"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Trimite jurnalul"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nu poți selecta fotografii și videoclipuri împreună cu fișiere."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "Caută"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Caută conversații necitite"
+  },
   "icu:clearSearch": {
     "messageformat": "Șterge căutarea"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "Nici un rezultat pentru \"{searchTerm}\""
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Nu există rezultate pentru „ {searchTerm} ” în conversațiile necitite"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Fără conversații necitite"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "Contactele SMS/MMS nu sunt disponibile pe Desktop."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "Nici un rezultat pentru \"{searchTerm}\" în {conversationName}"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Filtrează după necitite"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Filtrează după Necitite"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Șterge filtru"
   },
   "icu:conversationsHeader": {
     "messageformat": "Conversații"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Am întâmpinat o eroare cu înregistrarea vocală."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Atașamentul a fost salvat."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Atașamentul a fost salvat} few {{count,number} atașamente au fost salvate} other {{count,number} de atașamente au fost salvate}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Afișează în director"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Nu se poate salva atașamentul, deoarece încă nu s-a terminat de descărcat} few {Nu se pot salva atașamentele, deoarece {count,number} încă nu au fost descărcate} other {Nu se pot salva atașamentele, deoarece {count,number} încă nu au fost descărcate}}"
   },
   "icu:you": {
     "messageformat": "Tu"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Notă"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Afișare media recente"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Toate fișierele media"
   },
   "icu:back": {
     "messageformat": "Înapoi"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Informații"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Șterge mesajele"
+  "icu:deleteConversation": {
+    "messageformat": "Șterge"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Ștergi mesajele?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Ștergi conversația?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Mesajele din această conversație vor fi șterse de pe acest dispozitiv. Poți căuta în continuare acest chat, după ce ștergi mesajele."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Mesajele din această conversație vor fi șterse de pe acest dispozitiv."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "Toate mesajele din această conversație vor fi eliminate de pe toate dispozitivele tale. Poți căuta în continuare această conversație după ce ștergi mesajele."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Toate mesajele din această conversație vor fi eliminate de pe toate dispozitivele tale."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Părăsește grupul"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "Pictogramă ce arată că această imagine are titlu"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "Deschide acest atașament într-o vizualizare mai mare"
+  },
+  "icu:startDownload": {
+    "messageformat": "Începe descărcarea"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Anulează descărcarea"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} articol} few {{count,number} itemi} other {{count,number} de itemi}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "Acest fișier nu mai este disponibil."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Află mai multe"
+  },
   "icu:save": {
     "messageformat": "Salvează"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "Încearcă din nou"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Actualizează codul"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "Obține ajutor"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Nu se poate realiza alăturarea la apel"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Ești deja într-un apel."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Nu s-au putut prelua informații despre linkul de apel. Te rugăm să verifici conexiunea și să încerci din nou."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Apel Signal"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Nu se poate elimina linkul. Verifică-ți conexiunea și încearcă din nou."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Solicitarea ta de a participa la acest apel a fost respinsă."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second} și alte {others,number} persoane sunt în acest apel} few {{first}, {second} și alți {others,number} sunt în acest apel} other {{first}, {second} și alți {others,number} sunt în acest apel}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number} persoană este în acest apel} few {{count,number} persoane sunt în acest apel} other {{count,number} de persoane sunt în acest apel}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal va suna pe {person}"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "Nu pot primi semnal voce și semnal video de la {name}"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Nu pot primi semnal voce și semnal video"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Acest lucru se poate datora faptului că nu au verificat modificarea numărului tău de siguranță, există o problemă cu dispozitivul lor sau v-au blocat."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal partajează {window}"
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Distribuirea ecranului Signal este activă"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Se reconectează…"
@@ -1521,7 +1584,7 @@
     "messageformat": "Ștergi toate datele și mesajele din această versiune de Signal Desktop? Poți oricând să re-asociezi acest desktop, dar mesajele tale nu se vor restabili. Contul tău Signal și datele de pe telefon sau alte dispozitive conectate nu vor fi șterse."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "Se deconectează și se șterg toate datele"
+    "messageformat": "Se deconectează și se șterg toate datele…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Ai date învechite de la o instalare anterioara a Signal Desktop. Dacă alegi să continui, acestea vor fi șterse și vei începe de la zero."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Ieri {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Este posibil ca semnalul să nu proceseze un mesaj primit."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Conținutul mesajului este prea lung."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} apelează pe tine, {first}, {second} și {remaining,number} altul} few {{ringer} apelează pe tine, {first}, {second} și {remaining,number} alții} other {{ringer} apelează pe tine, {first}, {second} și {remaining,number} alții}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Se conectează..."
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Sună..."
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Link de apel"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Apel de grup"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Așteaptă să fie lăsat să intre"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Microfon activat"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Lași mâna jos?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Coboară"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Sunet de apel activat"
@@ -2961,7 +3039,7 @@
     "messageformat": "Nu te poți alătura acestui grup prin linkul grupului deoarece un administrator te-a eliminat."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Un administrator al acestui grup trebuie să îți aprobe solicitarea înainte de a te alătura grupului. Dacă este aprobată, numele și fotografia ta vor fi partajate cu membrii grupului."
+    "messageformat": "Un administrator al acestui grup trebuie să îți aprobe solicitarea înainte de a te putea alătura grupului. Când soliciți să te înscri, numele și fotografia ta vor fi distribuite membrilor săi."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Alătură-te"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "O solicitare de aderare la grup de la {joinerName} a fost respinsă."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} a solicitat și apoi a anulat solicitarea de alăturare folosind linkul grupului"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} a solicitat și apoi a anulat {numberOfRequests,number} solicitări de alăturare folosind linkul grupului"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} a solicitat și apoi a anulat solicitarea de alăturare folosind linkul grupului} few {{joinerName} a solicitat și apoi a anulat {numberOfRequests,number} solicitări de alăturare folosind linkul grupului} other {{joinerName} a cerut și a anulat {numberOfRequests,number} de solicitări pentru a se alătura prin linkul de grup}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "următorul"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Poate dura câteva minute, în funcție de dimensiunea istoricului mesajelor"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Donează pentru Signal"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "Atinge „Donează pentru Signal” și abonează-te"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "Se sincronizează mesajele"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "Se descarcă {currentSize} din {totalSize} ({fractionComplete,number,percent})..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Se finalizează transferul mesajelor..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Se pregătește descărcarea..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "Poate dura câteva minute, în funcție de dimensiunea istoricului mesajelor"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Anulează"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "Mesajele și informațiile legate de conversații sunt protejate prin criptare end-to-end, inclusiv prin procesul de sincronizare. <learnMoreLink>Află mai multe</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Anulezi transferul?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Nu s-a finalizat restabilirea mesajelor și a fișierelor. Dacă alegi să anulezi, dispozitivul tău va fi asociat fără istoricul mesajelor."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Continuă transferul"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Anulează transferul"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Eroare la transferul mesajelor tale"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Mesajele tale nu au putut fi transferate. Verifică conexiunea la internet a telefonului și încearcă din nou."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "Mesajele tale nu au putut fi transferate din cauza unei erori. Încearcă din nou reconectând acest desktop."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Încearcă din nou"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Omite"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Omiți transferul de mesaje?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Dacă alegi să le omiți, nu vei avea acces la niciunul dintre mesajele sau fișierele tale de pe acest dispozitiv. Poți începe un nou transfer după ce omiți din Setări > Conversații > Transfer."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Anulează"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Se restaurează fișierele"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Restaurare întreruptă"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize} din {totalSize} restaurat"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "Fișierele vor continua să se descarce în fundal"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Întrerupe transferul"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Reia transferul"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Anulează transferul"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Mai multe opțiuni"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Restaurarea a fost finalizată"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} din {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Anulezi transferul de fișiere?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Nu s-a finalizat restabilirea mesajelor și ale fișierelor. Dacă alegi să anulezi, poți transfera din nou din Setări."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Continuă transferul"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Anulează transferul"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Extinde"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Elimină din grup"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Ești deja într-un apel"
+  "icu:ContactModal--voice": {
+    "messageformat": "Voce"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Culoare conversație"
@@ -3762,7 +3927,7 @@
     "messageformat": "Resetare link"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Aprobare membrii noi"
+    "messageformat": "Necesită aprobarea administratorului"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Solicită unui administrator să aprobe membrii noi care se alătură prin linkul grupului"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ".5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Apasă {composeIcon} de mai sus și caută contactele sau grupurile cu care vrei să comunici."
-  },
-  "icu:composeIcon": {
-    "messageformat": "buton compunere"
   },
   "icu:emptyInbox__title": {
     "messageformat": "Fără conversații"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal întâmpină dificultăți tehnice. Muncim din greu pentru a restabili serviciul cât mai repede posibil."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Actualizare necesară"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Pentru a finaliza sincronizarea mesajelor, actualizează acum Signal Desktop."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Actualizează"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Actualizare necesară"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "Fă click pentru a vedea o poveste"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "Dă clic pe <newStoryIcon>Adaugă o poveste</newStoryIcon> și adaugă o actualizare."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "Clic <newStoryButtonIcon></newStoryButtonIcon> pentru a adăuga o actualizare."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} către {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Răspunsuri"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
     "messageformat": "Ai reacționat la poveste"
   },
-  "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
-  },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "A reacționat la poveste"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "Nu poți răspunde la această poveste pentru că nu mai ești membru al acestui grup."
@@ -5142,7 +5304,7 @@
     "messageformat": "Poveste"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Afișează povești"
+    "messageformat": "Afișează povestea"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Ascunde povestea"
@@ -5413,7 +5575,10 @@
     "messageformat": "Ștergi istoricul apelurilor?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Aceasta va șterge definitiv tot istoricul apelurilor"
+    "messageformat": "Se va șterge definitiv tot istoricul apelurilor."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Se va elimina definitiv tot istoricul apelurilor. Linkurile apelurilor pe care le-ai creat nu vor mai funcționa pentru persoanele care le au. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Eliminare"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Istoria apelurilor a fost ștearsă"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Dă clic și vezi sau începe un apel"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Nu au putut fi eliminate toate linkurile apelurilor. Verifică-ți conexiunea și încearcă din nou."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "Dă clic pe <newCallIcon>Apel nou</newCallIcon> pentru a începe un nou apel vocal sau video."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Nu a putut fi eliminat tot istoricul apelurilor. Verifică-ți conexiunea și încearcă din nou."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "Dă clic pe <newCallButtonIcon></newCallButtonIcon> pentru a începe un nou apel video sau vocal."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Caută apeluri pierdute"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Caută"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Filtrat pe bază de ratate"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Filtrează după apeluri ratate"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Comutare"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Nu exista apeluri recente. Începe prin a suna un prieten."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "Nu aveți apeluri"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "Apelurile recente vor apărea aici."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "Nu există apeluri pierdute"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "Apelurile pierdute vor apărea aici."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Fără rezultate pentru „{query}“"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Nu există rezultate pentru „ {query}” în apelurile nepreluate"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Nu există apeluri pierdute"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Creează un Link de Apel"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Întoarce-te"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Trebuie să părăsești apelul curent înainte de a intra într-un nou apel"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Apel de ieșire vocal} other {Apel de intrare vocal}}} Video {{direction, select, Outgoing {Apel de ieșire video} other {Apel de intrare video}}} Group {{direction, select, Outgoing {Apel de ieșire de grup} other {Apel de intrare de grup}}} other {{direction, select, Outgoing {Apel de ieșire} other {Apel de intrare}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Apel vocal nepreluat} Video {Apel video nepreluat} Group {Apel de grup ratat} other {Apel ratat}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Apel vocal nepreluat} Video {Apel video nepreluat} Group {Apel de grup fără răspuns} other {Apel  fără răspuns}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Apel video respins} Video {Apel video respins} Group {Apel de grup respins} other {Respinge apelul}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Link de apel"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "Editează numele apelului"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "Aprobă toți membrii"
+    "messageformat": "Necesită aprobarea administratorului"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Această setare nu poate fi modificată în timp ce apelul este activ"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Copiază linkul"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Șterge"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Acest link nu poate fi șters în timp ce apelul este activ"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Detalii despre linkul apelului"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "Editează numele apelului"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Aprobă toți membrii"
+    "messageformat": "Necesită aprobarea administratorului"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Aprobă intrarea"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Respinge intrarea"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Dezactivat"
@@ -5629,13 +5794,10 @@
     "messageformat": "Mici ajustări, soluționări de bug-uri și îmbunătățiri ale performanței. Mersi că folosești Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "Signal Desktop poate relua acum automat descărcările de atașamente întrerupte de unde au rămas, așa că nu va trebui să aștepți atât de mult ca să râzi, chiar dacă închizi laptopul înainte ca meme-ul pe care ți l-a trimis prietenul tău să se termine de încărcat."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "Am remediat o eroare cu mențiunile @ care, uneori, includeau incorect propriul tău cont în lista de sugestii de completare automată. Dacă ai un ego puternic, poți folosi în continuare vorbirea la persoana a treia pentru a spune ceva despre tine în conversațiile de grup, dacă îți scapă vreodată această eroare."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "Pe dispozitivele cu ecran tactil, acum poți ajusta bara laterală în lista conversațiilor. Astfel, atunci când tragi de ea să o dimensionezi, nu vei simți că ai tras din greu, iar urmele de pe ecran vor fi doar o dovadă că ți-ai folosit degetele."
   }
 }

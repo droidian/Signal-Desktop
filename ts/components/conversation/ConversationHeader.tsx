@@ -100,7 +100,7 @@ export type PropsDataType = {
   isMissingMandatoryProfileSharing?: boolean;
   isSelectMode: boolean;
   isSignalConversation?: boolean;
-  isSMSOnly?: boolean;
+  isSmsOnlyOrUnregistered?: boolean;
   outgoingCallButtonStyle: OutgoingCallButtonStyle;
   sharedGroupNames: ReadonlyArray<string>;
   theme: ThemeType;
@@ -130,8 +130,8 @@ export type PropsActionsType = {
   onSearchInConversation: () => void;
   onSelectModeEnter: () => void;
   onShowMembers: () => void;
+  onViewAllMedia: () => void;
   onViewConversationDetails: () => void;
-  onViewRecentMedia: () => void;
   onViewUserStories: () => void;
 };
 
@@ -159,7 +159,7 @@ export const ConversationHeader = memo(function ConversationHeader({
   isMissingMandatoryProfileSharing,
   isSelectMode,
   isSignalConversation,
-  isSMSOnly,
+  isSmsOnlyOrUnregistered,
   localDeleteWarningShown,
   onConversationAccept,
   onConversationArchive,
@@ -180,8 +180,8 @@ export const ConversationHeader = memo(function ConversationHeader({
   onSearchInConversation,
   onSelectModeEnter,
   onShowMembers,
+  onViewAllMedia,
   onViewConversationDetails,
-  onViewRecentMedia,
   onViewUserStories,
   outgoingCallButtonStyle,
   setLocalDeleteWarningShown,
@@ -295,7 +295,7 @@ export const ConversationHeader = memo(function ConversationHeader({
               onViewUserStories={onViewUserStories}
               onViewConversationDetails={onViewConversationDetails}
             />
-            {!isSMSOnly && !isSignalConversation && (
+            {!isSmsOnlyOrUnregistered && !isSignalConversation && (
               <OutgoingCallButtons
                 conversation={conversation}
                 hasActiveCall={hasActiveCall}
@@ -380,7 +380,7 @@ export const ConversationHeader = memo(function ConversationHeader({
                 setHasCustomDisappearingTimeoutModal(true);
               }}
               onShowMembers={onShowMembers}
-              onViewRecentMedia={onViewRecentMedia}
+              onViewAllMedia={onViewAllMedia}
               onViewConversationDetails={onViewConversationDetails}
               triggerId={triggerId}
             />
@@ -544,7 +544,7 @@ function HeaderMenu({
   onSelectModeEnter,
   onSetupCustomDisappearingTimeout,
   onShowMembers,
-  onViewRecentMedia,
+  onViewAllMedia,
   onViewConversationDetails,
   triggerId,
 }: {
@@ -570,7 +570,7 @@ function HeaderMenu({
   onSelectModeEnter: () => void;
   onSetupCustomDisappearingTimeout: () => void;
   onShowMembers: () => void;
-  onViewRecentMedia: () => void;
+  onViewAllMedia: () => void;
   onViewConversationDetails: () => void;
   triggerId: string;
 }) {
@@ -631,6 +631,19 @@ function HeaderMenu({
             </MenuItem>
           )}
         </SubMenu>
+        {conversation.isArchived ? (
+          <MenuItem onClick={onConversationUnarchive}>
+            {i18n('icu:moveConversationToInbox')}
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={onConversationArchive}>
+            {i18n('icu:archiveConversation')}
+          </MenuItem>
+        )}
+
+        <MenuItem onClick={onConversationDeleteMessages}>
+          {i18n('icu:deleteConversation')}
+        </MenuItem>
       </ContextMenu>
     );
   }
@@ -639,8 +652,8 @@ function HeaderMenu({
     return (
       <ContextMenu id={triggerId}>
         <MenuItem onClick={onShowMembers}>{i18n('icu:showMembers')}</MenuItem>
-        <MenuItem onClick={onViewRecentMedia}>
-          {i18n('icu:viewRecentMedia')}
+        <MenuItem onClick={onViewAllMedia}>
+          {i18n('icu:allMediaMenuItem')}
         </MenuItem>
         <MenuItem divider />
         {conversation.isArchived ? (
@@ -654,7 +667,7 @@ function HeaderMenu({
         )}
 
         <MenuItem onClick={onConversationDeleteMessages}>
-          {i18n('icu:deleteMessagesInConversation')}
+          {i18n('icu:deleteConversation')}
         </MenuItem>
       </ContextMenu>
     );
@@ -750,8 +763,8 @@ function HeaderMenu({
                 : i18n('icu:showConversationDetails--direct')}
             </MenuItem>
           ) : null}
-          <MenuItem onClick={onViewRecentMedia}>
-            {i18n('icu:viewRecentMedia')}
+          <MenuItem onClick={onViewAllMedia}>
+            {i18n('icu:allMediaMenuItem')}
           </MenuItem>
           <MenuItem divider />
           <MenuItem onClick={onSelectModeEnter}>
@@ -792,7 +805,7 @@ function HeaderMenu({
             </MenuItem>
           )}
           <MenuItem onClick={onConversationDeleteMessages}>
-            {i18n('icu:deleteMessagesInConversation')}
+            {i18n('icu:deleteConversation')}
           </MenuItem>
           {isGroup && (
             <MenuItem onClick={onConversationLeaveGroup}>
@@ -1002,17 +1015,17 @@ function DeleteMessagesConfirmationDialog({
 
   const dialogBody = isDeleteSyncSendEnabled
     ? i18n(
-        'icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync'
+        'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
       )
     : i18n(
-        'icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description'
+        'icu:ConversationHeader__DeleteConversationConfirmation__description'
       );
 
   return (
     <ConfirmationDialog
       dialogName="ConversationHeader.destroyMessages"
       title={i18n(
-        'icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title'
+        'icu:ConversationHeader__DeleteConversationConfirmation__title'
       )}
       actions={[
         {

@@ -31,9 +31,17 @@ import type {
   CallHistoryPagination,
   CallLogEventTarget,
 } from '../types/CallDisposition';
-import type { CallLinkStateType, CallLinkType } from '../types/CallLink';
+import type {
+  CallLinkRecord,
+  CallLinkStateType,
+  CallLinkType,
+  DefunctCallLinkType,
+} from '../types/CallLink';
 import type { AttachmentDownloadJobType } from '../types/AttachmentDownload';
-import type { GroupSendEndorsementsData } from '../types/GroupSendEndorsements';
+import type {
+  GroupSendEndorsementsData,
+  GroupSendMemberEndorsementRecord,
+} from '../types/GroupSendEndorsements';
 import type { SyncTaskType } from '../util/syncTasks';
 import type { AttachmentBackupJobType } from '../types/AttachmentBackup';
 import type { SingleProtoJobQueue } from '../jobs/singleProtoJobQueue';
@@ -50,6 +58,7 @@ export type AdjacentMessagesByConversationOptionsType = Readonly<{
   sentAt?: number;
   storyId: string | undefined;
   requireVisualMediaAttachments?: boolean;
+  requireFileAttachments?: boolean;
 }>;
 
 export type GetNearbyMessageFromDeletedSetOptionsType = Readonly<{
@@ -197,8 +206,7 @@ export type SessionType = {
   serviceId: ServiceIdString;
   conversationId: string;
   deviceId: number;
-  record: string;
-  version?: number;
+  record: Uint8Array;
 };
 export type SessionIdType = SessionType['id'];
 export type SignedPreKeyType = {
@@ -475,6 +483,13 @@ type ReadableInterface = {
   ) => Array<ConversationType>;
 
   getGroupSendCombinedEndorsementExpiration: (groupId: string) => number | null;
+  getGroupSendEndorsementsData: (
+    groupId: string
+  ) => GroupSendEndorsementsData | null;
+  getGroupSendMemberEndorsement: (
+    groupId: string,
+    memberAci: AciString
+  ) => GroupSendMemberEndorsementRecord | null;
 
   getMessageCount: (conversationId?: string) => number;
   getStoryCount: (conversationId: string) => number;
@@ -526,7 +541,9 @@ type ReadableInterface = {
   getMessagesUnexpectedlyMissingExpirationStartTimestamp: () => Array<MessageType>;
   getSoonestMessageExpiry: () => undefined | number;
   getNextTapToViewMessageTimestampToAgeOut: () => undefined | number;
-  getTapToViewMessagesNeedingErase: () => Array<MessageType>;
+  getTapToViewMessagesNeedingErase: (
+    maxTimestamp: number
+  ) => Array<MessageType>;
   // getOlderMessagesByConversation is JSON on server, full message on Client
   getAllStories: (options: {
     conversationId?: string;
@@ -566,9 +583,14 @@ type ReadableInterface = {
     eraId: string
   ) => boolean;
   callLinkExists(roomId: string): boolean;
+  defunctCallLinkExists(roomId: string): boolean;
   getAllCallLinks: () => ReadonlyArray<CallLinkType>;
   getCallLinkByRoomId: (roomId: string) => CallLinkType | undefined;
-  getAllMarkedDeletedCallLinks(): ReadonlyArray<CallLinkType>;
+  getCallLinkRecordByRoomId: (roomId: string) => CallLinkRecord | undefined;
+  getAllAdminCallLinks(): ReadonlyArray<CallLinkType>;
+  getAllCallLinkRecordsWithAdminKey(): ReadonlyArray<CallLinkRecord>;
+  getAllDefunctCallLinksWithAdminKey(): ReadonlyArray<DefunctCallLinkType>;
+  getAllMarkedDeletedCallLinkRoomIds(): ReadonlyArray<string>;
   getMessagesBetween: (
     conversationId: string,
     options: GetMessagesBetweenOptions
@@ -629,14 +651,6 @@ type ReadableInterface = {
   getMessagesNeedingUpgrade: (
     limit: number,
     options: { maxVersion: number }
-  ) => Array<MessageType>;
-  getMessagesWithVisualMediaAttachments: (
-    conversationId: string,
-    options: { limit: number }
-  ) => Array<MessageType>;
-  getMessagesWithFileAttachments: (
-    conversationId: string,
-    options: { limit: number }
   ) => Array<MessageType>;
   getMessageServerGuidsForSpam: (conversationId: string) => Array<string>;
 
@@ -712,7 +726,6 @@ type WritableInterface = {
     sessions: Array<SessionType>;
     unprocessed: Array<UnprocessedType>;
   }): void;
-  bulkAddSessions: (array: Array<SessionType>) => void;
   removeSessionById: (id: SessionIdType) => number;
   removeSessionsByConversation: (conversationId: string) => void;
   removeSessionsByServiceId: (serviceId: ServiceIdString) => void;
@@ -748,6 +761,10 @@ type WritableInterface = {
     arrayOfMessages: ReadonlyArray<ReadonlyDeep<MessageType>>,
     options: { forceSave?: boolean; ourAci: AciString }
   ) => Array<string>;
+  saveMessagesIndividually: (
+    arrayOfMessages: ReadonlyArray<ReadonlyDeep<MessageType>>,
+    options: { forceSave?: boolean; ourAci: AciString }
+  ) => { failedIndices: Array<number> };
 
   getUnreadByConversationAndMarkRead: (options: {
     conversationId: string;
@@ -799,15 +816,20 @@ type WritableInterface = {
   markCallHistoryMissed(callIds: ReadonlyArray<string>): void;
   getRecentStaleRingsAndMarkOlderMissed(): ReadonlyArray<MaybeStaleCallHistory>;
   insertCallLink(callLink: CallLinkType): void;
+  updateCallLink(callLink: CallLinkType): void;
   updateCallLinkAdminKeyByRoomId(roomId: string, adminKey: string): void;
   updateCallLinkState(
     roomId: string,
     callLinkState: CallLinkStateType
   ): CallLinkType;
-  beginDeleteAllCallLinks(): void;
-  beginDeleteCallLink(roomId: string): void;
+  beginDeleteAllCallLinks(): boolean;
+  beginDeleteCallLink(roomId: string): boolean;
+  deleteCallHistoryByRoomId(roomid: string): void;
+  deleteCallLinkAndHistory(roomId: string): void;
   finalizeDeleteCallLink(roomId: string): void;
   _removeAllCallLinks(): void;
+  insertDefunctCallLink(defunctCallLink: DefunctCallLinkType): void;
+  updateDefunctCallLink(defunctCallLink: DefunctCallLinkType): void;
   deleteCallLinkFromSync(roomId: string): void;
   migrateConversationMessages: (obsoleteId: string, currentId: string) => void;
   saveEditedMessage: (
@@ -823,7 +845,10 @@ type WritableInterface = {
 
   removeSyncTaskById: (id: string) => void;
   saveSyncTasks: (tasks: Array<SyncTaskType>) => void;
-  getAllSyncTasks: () => Array<SyncTaskType>;
+  dequeueOldestSyncTasks: (previousRowId: number | null) => {
+    tasks: Array<SyncTaskType>;
+    lastRowId: number | null;
+  };
 
   getAllUnprocessedIds: () => Array<string>;
   getUnprocessedByIdsAndIncrementAttempts: (
@@ -841,11 +866,14 @@ type WritableInterface = {
   getNextAttachmentDownloadJobs: (options: {
     limit: number;
     prioritizeMessageIds?: Array<string>;
+    sources?: Array<AttachmentDownloadSource>;
     timestamp?: number;
   }) => Array<AttachmentDownloadJobType>;
   saveAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
+  saveAttachmentDownloadJobs: (jobs: Array<AttachmentDownloadJobType>) => void;
   resetAttachmentDownloadActive: () => void;
   removeAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
+  removeAttachmentDownloadJobsForMessage: (messageId: string) => void;
   removeAllBackupAttachmentDownloadJobs: () => void;
 
   getNextAttachmentBackupJobs: (options: {
@@ -863,6 +891,7 @@ type WritableInterface = {
   ) => void;
 
   createOrUpdateStickerPack: (pack: StickerPackType) => void;
+  createOrUpdateStickerPacks: (packs: ReadonlyArray<StickerPackType>) => void;
   updateStickerPackStatus: (
     id: string,
     status: StickerPackStatusType,
@@ -883,6 +912,9 @@ type WritableInterface = {
   ) => ReadonlyArray<string> | undefined;
   deleteStickerPack: (packId: string) => Array<string>;
   addUninstalledStickerPack: (pack: UninstalledStickerPackType) => void;
+  addUninstalledStickerPacks: (
+    pack: ReadonlyArray<UninstalledStickerPackType>
+  ) => void;
   removeUninstalledStickerPack: (packId: string) => void;
   installStickerPack: (packId: string, timestamp: number) => void;
   uninstallStickerPack: (packId: string, timestamp: number) => void;
@@ -923,6 +955,10 @@ type WritableInterface = {
 
   insertJob(job: Readonly<StoredJob>): void;
   deleteJob(id: string): void;
+
+  disableMessageInsertTriggers(): void;
+  enableMessageInsertTriggersAndBackfill(): void;
+  ensureMessageInsertTriggersAreEnabled(): void;
 
   processGroupCallRingCancellation(ringId: bigint): void;
   cleanExpiredGroupCallRingCancellations(): void;

@@ -6,6 +6,7 @@ export enum ToastType {
   AddedUsersToCall = 'AddedUsersToCall',
   AlreadyGroupMember = 'AlreadyGroupMember',
   AlreadyRequestedToJoin = 'AlreadyRequestedToJoin',
+  AttachmentDownloadStillInProgress = 'AttachmentDownloadStillInProgress',
   Blocked = 'Blocked',
   BlockedGroup = 'BlockedGroup',
   CallHistoryCleared = 'CallHistoryCleared',
@@ -33,6 +34,8 @@ export enum ToastType {
   FailedToDeleteUsername = 'FailedToDeleteUsername',
   FailedToFetchPhoneNumber = 'FailedToFetchPhoneNumber',
   FailedToFetchUsername = 'FailedToFetchUsername',
+  FailedToSendWithEndorsements = 'FailedToSendWithEndorsements',
+  FailedToImportBackup = 'FailedToImportBackup',
   FileSaved = 'FileSaved',
   FileSize = 'FileSize',
   GroupLinkCopied = 'GroupLinkCopied',
@@ -41,7 +44,9 @@ export enum ToastType {
   LinkCopied = 'LinkCopied',
   LoadingFullLogs = 'LoadingFullLogs',
   MaxAttachments = 'MaxAttachments',
+  MediaNoLongerAvailable = 'MediaNoLongerAvailable',
   MessageBodyTooLong = 'MessageBodyTooLong',
+  MessageLoop = 'MessageLoop',
   OriginalMessageNotFound = 'OriginalMessageNotFound',
   PinnedConversationsFull = 'PinnedConversationsFull',
   ReactionFailed = 'ReactionFailed',
@@ -76,6 +81,10 @@ export type AnyToast =
     }
   | { toastType: ToastType.AlreadyGroupMember }
   | { toastType: ToastType.AlreadyRequestedToJoin }
+  | {
+      toastType: ToastType.AttachmentDownloadStillInProgress;
+      parameters: { count: number };
+    }
   | { toastType: ToastType.Blocked }
   | { toastType: ToastType.BlockedGroup }
   | { toastType: ToastType.CallHistoryCleared }
@@ -105,7 +114,12 @@ export type AnyToast =
   | { toastType: ToastType.FailedToDeleteUsername }
   | { toastType: ToastType.FailedToFetchPhoneNumber }
   | { toastType: ToastType.FailedToFetchUsername }
-  | { toastType: ToastType.FileSaved; parameters: { fullPath: string } }
+  | { toastType: ToastType.FailedToSendWithEndorsements }
+  | { toastType: ToastType.FailedToImportBackup }
+  | {
+      toastType: ToastType.FileSaved;
+      parameters: { fullPath: string; countOfFiles?: number };
+    }
   | {
       toastType: ToastType.FileSize;
       parameters: { limit: number; units: string };
@@ -123,7 +137,9 @@ export type AnyToast =
   | { toastType: ToastType.LinkCopied }
   | { toastType: ToastType.LoadingFullLogs }
   | { toastType: ToastType.MaxAttachments }
+  | { toastType: ToastType.MediaNoLongerAvailable }
   | { toastType: ToastType.MessageBodyTooLong }
+  | { toastType: ToastType.MessageLoop }
   | { toastType: ToastType.OriginalMessageNotFound }
   | { toastType: ToastType.PinnedConversationsFull }
   | { toastType: ToastType.ReactionFailed }

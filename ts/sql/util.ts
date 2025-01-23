@@ -1,8 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
+/* eslint-disable max-classes-per-file */
 
 import { isNumber, last } from 'lodash';
 import type { ReadableDB, WritableDB } from './Interface';
+import type { LoggerType } from '../types/Logging';
 
 export type EmptyQuery = [];
 export type ArrayQuery = Array<ReadonlyArray<null | number | bigint | string>>;
@@ -44,10 +46,12 @@ export type QueryTemplateParam =
   | undefined;
 export type QueryFragmentValue = QueryFragment | QueryTemplateParam;
 
-export type QueryFragment = [
-  { fragment: string },
-  ReadonlyArray<QueryTemplateParam>,
-];
+export class QueryFragment {
+  constructor(
+    public readonly fragment: string,
+    public readonly fragmentParams: ReadonlyArray<QueryTemplateParam>
+  ) {}
+}
 
 /**
  * You can use tagged template literals to build "fragments" of SQL queries
@@ -79,8 +83,8 @@ export function sqlFragment(
     query += string;
 
     if (index < values.length) {
-      if (Array.isArray(value)) {
-        const [{ fragment }, fragmentParams] = value;
+      if (value instanceof QueryFragment) {
+        const { fragment, fragmentParams } = value;
         query += fragment;
         params.push(...fragmentParams);
       } else {
@@ -90,7 +94,7 @@ export function sqlFragment(
     }
   });
 
-  return [{ fragment: query }, params];
+  return new QueryFragment(query, params);
 }
 
 export function sqlConstant(value: QueryTemplateParam): QueryFragment {
@@ -104,7 +108,7 @@ export function sqlConstant(value: QueryTemplateParam): QueryFragment {
   } else {
     fragment = `'${value}'`;
   }
-  return [{ fragment }, []];
+  return new QueryFragment(fragment, []);
 }
 
 /**
@@ -118,7 +122,7 @@ export function sqlJoin(
   const params: Array<QueryTemplateParam> = [];
 
   items.forEach((item, index) => {
-    const [{ fragment }, fragmentParams] = sqlFragment`${item}`;
+    const { fragment, fragmentParams } = sqlFragment`${item}`;
     query += fragment;
     params.push(...fragmentParams);
 
@@ -127,7 +131,7 @@ export function sqlJoin(
     }
   });
 
-  return [{ fragment: query }, params];
+  return new QueryFragment(query, params);
 }
 
 export type QueryTemplate = [string, ReadonlyArray<QueryTemplateParam>];
@@ -155,20 +159,9 @@ export function sql(
   strings: TemplateStringsArray,
   ...values: Array<QueryFragment | QueryTemplateParam>
 ): QueryTemplate {
-  const [{ fragment }, params] = sqlFragment(strings, ...values);
-  return [fragment, params];
+  const { fragment, fragmentParams } = sqlFragment(strings, ...values);
+  return [fragment, fragmentParams];
 }
-
-type QueryPlanRow = Readonly<{
-  id: number;
-  parent: number;
-  details: string;
-}>;
-
-type QueryPlan = Readonly<{
-  query: string;
-  plan: ReadonlyArray<QueryPlanRow>;
-}>;
 
 /**
  * Returns typed objects of the query plan for the given query.
@@ -186,11 +179,19 @@ type QueryPlan = Readonly<{
  */
 export function explainQueryPlan(
   db: ReadableDB,
+  logger: LoggerType,
   template: QueryTemplate
-): QueryPlan {
+): QueryTemplate {
   const [query, params] = template;
   const plan = db.prepare(`EXPLAIN QUERY PLAN ${query}`).all(params);
-  return { query, plan };
+  logger.info('EXPLAIN QUERY PLAN');
+  for (const line of query.split('\n')) {
+    logger.info(line);
+  }
+  for (const row of plan) {
+    logger.info(`id=${row.id}, parent=${row.parent}, detail=${row.detail}`);
+  }
+  return [query, params];
 }
 
 //

@@ -23,7 +23,10 @@ export default {
     i18n,
     callHistoryGroup: getFakeCallLinkHistoryGroup(),
     callLink: FAKE_CALL_LINK_WITH_ADMIN_KEY,
-    hasActiveCall: false,
+    isAnybodyInCall: false,
+    isCallActiveOnServer: false,
+    isInCall: false,
+    isInAnotherCall: false,
     onDeleteCallLink: action('onDeleteCallLink'),
     onOpenCallLinkAddNameModal: action('onOpenCallLinkAddNameModal'),
     onStartCallLinkLobby: action('onStartCallLinkLobby'),
@@ -36,10 +39,62 @@ export function Admin(args: CallLinkDetailsProps): JSX.Element {
   return <CallLinkDetails {...args} />;
 }
 
+export function AdminAndCallActive(args: CallLinkDetailsProps): JSX.Element {
+  return <CallLinkDetails {...args} isAnybodyInCall isCallActiveOnServer />;
+}
+
+export function AdminAndInCall(args: CallLinkDetailsProps): JSX.Element {
+  return (
+    <CallLinkDetails {...args} isAnybodyInCall isCallActiveOnServer isInCall />
+  );
+}
+
+export function AdminRecentlyEndedCall(
+  args: CallLinkDetailsProps
+): JSX.Element {
+  return <CallLinkDetails {...args} isCallActiveOnServer />;
+}
+
 export function NonAdmin(args: CallLinkDetailsProps): JSX.Element {
   return <CallLinkDetails {...args} callLink={FAKE_CALL_LINK} />;
 }
 
+export function NonAdminAndCallActive(args: CallLinkDetailsProps): JSX.Element {
+  return (
+    <CallLinkDetails
+      {...args}
+      callLink={FAKE_CALL_LINK}
+      isAnybodyInCall
+      isCallActiveOnServer
+    />
+  );
+}
+
 export function InAnotherCall(args: CallLinkDetailsProps): JSX.Element {
-  return <CallLinkDetails {...args} callLink={FAKE_CALL_LINK} hasActiveCall />;
+  return (
+    <CallLinkDetails
+      {...args}
+      callLink={FAKE_CALL_LINK}
+      isInAnotherCall
+      isCallActiveOnServer
+    />
+  );
+}
+
+export function InAnotherCallAndCallActive(
+  args: CallLinkDetailsProps
+): JSX.Element {
+  return (
+    <CallLinkDetails
+      {...args}
+      callLink={FAKE_CALL_LINK}
+      isAnybodyInCall
+      isCallActiveOnServer
+      isInAnotherCall
+    />
+  );
+}
+
+export function MissingCallLink(args: CallLinkDetailsProps): JSX.Element {
+  return <CallLinkDetails {...args} callLink={undefined} />;
 }

@@ -108,6 +108,7 @@ const defaultMessageProps: TimelineMessagesProps = {
   isSMS: false,
   isSpoilerExpanded: {},
   toggleSelectMessage: action('toggleSelectMessage'),
+  cancelAttachmentDownload: action('default--cancelAttachmentDownload'),
   kickOffAttachmentDownload: action('default--kickOffAttachmentDownload'),
   markAttachmentAsCorrupted: action('default--markAttachmentAsCorrupted'),
   messageExpanded: action('default--message-expanded'),
@@ -125,6 +126,7 @@ const defaultMessageProps: TimelineMessagesProps = {
   copyMessageText: action('copyMessageText'),
   retryDeleteForEveryone: action('default--retryDeleteForEveryone'),
   saveAttachment: action('saveAttachment'),
+  saveAttachments: action('saveAttachments'),
   scrollToQuotedMessage: action('default--scrollToQuotedMessage'),
   targetMessage: action('default--targetMessage'),
   shouldCollapseAbove: false,
@@ -133,12 +135,16 @@ const defaultMessageProps: TimelineMessagesProps = {
   showSpoiler: action('showSpoiler'),
   pushPanelForConversation: action('default--pushPanelForConversation'),
   showContactModal: action('default--showContactModal'),
+  showAttachmentDownloadStillInProgressToast: action(
+    'showAttachmentDownloadStillInProgressToast'
+  ),
   showExpiredIncomingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
   showExpiredOutgoingTapToViewToast: action(
     'showExpiredOutgoingTapToViewToast'
   ),
+  showMediaNoLongerAvailableToast: action('showMediaNoLongerAvailableToast'),
   toggleDeleteMessagesModal: action('default--toggleDeleteMessagesModal'),
   toggleForwardMessagesModal: action('default--toggleForwardMessagesModal'),
   showLightbox: action('default--showLightbox'),

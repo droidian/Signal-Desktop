@@ -74,8 +74,8 @@ const commonProps: PropsType = {
   onSearchInConversation: action('onSearchInConversation'),
   onSelectModeEnter: action('onSelectModeEnter'),
   onShowMembers: action('onShowMembers'),
+  onViewAllMedia: action('onViewAllMedia'),
   onViewConversationDetails: action('onViewConversationDetails'),
-  onViewRecentMedia: action('onViewRecentMedia'),
   onViewUserStories: action('onViewUserStories'),
 };
 
@@ -211,7 +211,7 @@ export function PrivateConvo(): JSX.Element {
       title: 'SMS-only conversation',
       props: {
         ...commonProps,
-        isSMSOnly: true,
+        isSmsOnlyOrUnregistered: true,
         conversation: getDefaultConversation({
           color: getRandomColor(),
           title: '(202) 555-0006',

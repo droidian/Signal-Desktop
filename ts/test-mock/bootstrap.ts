@@ -4,16 +4,18 @@
 import assert from 'assert';
 import fs from 'fs/promises';
 import crypto from 'crypto';
-import path from 'path';
+import path, { join } from 'path';
 import os from 'os';
+import { PassThrough } from 'node:stream';
 import createDebug from 'debug';
 import pTimeout from 'p-timeout';
 import normalizePath from 'normalize-path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import type { Page } from 'playwright';
+import { v4 as uuid } from 'uuid';
 
-import type { Device, PrimaryDevice } from '@signalapp/mock-server';
+import type { Device, PrimaryDevice, Proto } from '@signalapp/mock-server';
 import {
   Server,
   ServiceIdKind,
@@ -23,8 +25,14 @@ import { MAX_READ_KEYS as MAX_STORAGE_READ_KEYS } from '../services/storageConst
 import * as durations from '../util/durations';
 import { drop } from '../util/drop';
 import type { RendererConfigType } from '../types/RendererConfig';
+import type { MIMEType } from '../types/MIME';
 import { App } from './playwright';
 import { CONTACT_COUNT } from './benchmarks/fixtures';
+import { strictAssert } from '../util/assert';
+import {
+  encryptAttachmentV2,
+  generateAttachmentKeys,
+} from '../AttachmentCrypto';
 
 export { App };
 
@@ -106,6 +114,18 @@ export type BootstrapOptions = Readonly<{
   unknownContactCount?: number;
   contactNames?: ReadonlyArray<string>;
   contactPreKeyCount?: number;
+
+  useLegacyStorageEncryption?: boolean;
+}>;
+
+export type EphemeralBackupType = Readonly<{
+  cdn: 3;
+  key: string;
+}>;
+
+export type LinkOptionsType = Readonly<{
+  extraConfig?: Partial<RendererConfigType>;
+  ephemeralBackup?: EphemeralBackupType;
 }>;
 
 type BootstrapInternalOptions = BootstrapOptions &
@@ -149,29 +169,31 @@ function sanitizePathComponent(component: string): string {
 //
 export class Bootstrap {
   public readonly server: Server;
+  public readonly cdn3Path: string;
 
-  private readonly options: BootstrapInternalOptions;
-  private privContacts?: ReadonlyArray<PrimaryDevice>;
-  private privContactsWithoutProfileKey?: ReadonlyArray<PrimaryDevice>;
-  private privUnknownContacts?: ReadonlyArray<PrimaryDevice>;
-  private privPhone?: PrimaryDevice;
-  private privDesktop?: Device;
-  private storagePath?: string;
-  private backupPath?: string;
-  private cdn3Path: string;
-  private timestamp: number = Date.now() - durations.WEEK;
-  private lastApp?: App;
-  private readonly randomId = crypto.randomBytes(8).toString('hex');
+  readonly #options: BootstrapInternalOptions;
+  #privContacts?: ReadonlyArray<PrimaryDevice>;
+  #privContactsWithoutProfileKey?: ReadonlyArray<PrimaryDevice>;
+  #privUnknownContacts?: ReadonlyArray<PrimaryDevice>;
+  #privPhone?: PrimaryDevice;
+  #privDesktop?: Device;
+  #storagePath?: string;
+  #timestamp: number = Date.now() - durations.WEEK;
+  #lastApp?: App;
+  readonly #randomId = crypto.randomBytes(8).toString('hex');
 
   constructor(options: BootstrapOptions = {}) {
-    this.cdn3Path = path.join(os.tmpdir(), 'mock-signal-cdn3-');
+    this.cdn3Path = path.join(
+      os.tmpdir(),
+      `mock-signal-cdn3-${this.#randomId}`
+    );
     this.server = new Server({
       // Limit number of storage read keys for easier testing
       maxStorageReadKeys: MAX_STORAGE_READ_KEYS,
       cdn3Path: this.cdn3Path,
     });
 
-    this.options = {
+    this.#options = {
       linkedDevices: 5,
       contactCount: CONTACT_COUNT,
       contactsWithoutProfileKey: 0,
@@ -183,10 +205,10 @@ export class Bootstrap {
     };
 
     const totalContactCount =
-      this.options.contactCount +
-      this.options.contactsWithoutProfileKey +
-      this.options.unknownContactCount;
-    assert(totalContactCount <= this.options.contactNames.length);
+      this.#options.contactCount +
+      this.#options.contactsWithoutProfileKey +
+      this.#options.unknownContactCount;
+    assert(totalContactCount <= this.#options.contactNames.length);
     assert(totalContactCount <= MAX_CONTACTS);
   }
 
@@ -199,19 +221,19 @@ export class Bootstrap {
     debug('started server on port=%d', port);
 
     const totalContactCount =
-      this.options.contactCount +
-      this.options.contactsWithoutProfileKey +
-      this.options.unknownContactCount;
+      this.#options.contactCount +
+      this.#options.contactsWithoutProfileKey +
+      this.#options.unknownContactCount;
 
     const allContacts = await Promise.all(
-      this.options.contactNames
+      this.#options.contactNames
         .slice(0, totalContactCount)
         .map(async profileName => {
           const primary = await this.server.createPrimaryDevice({
             profileName,
           });
 
-          for (let i = 0; i < this.options.linkedDevices; i += 1) {
+          for (let i = 0; i < this.#options.linkedDevices; i += 1) {
             // eslint-disable-next-line no-await-in-loop
             await this.server.createSecondaryDevice(primary);
           }
@@ -220,28 +242,30 @@ export class Bootstrap {
         })
     );
 
-    this.privContacts = allContacts.splice(0, this.options.contactCount);
-    this.privContactsWithoutProfileKey = allContacts.splice(
+    this.#privContacts = allContacts.splice(0, this.#options.contactCount);
+    this.#privContactsWithoutProfileKey = allContacts.splice(
       0,
-      this.options.contactsWithoutProfileKey
+      this.#options.contactsWithoutProfileKey
     );
-    this.privUnknownContacts = allContacts.splice(
+    this.#privUnknownContacts = allContacts.splice(
       0,
-      this.options.unknownContactCount
+      this.#options.unknownContactCount
     );
 
-    this.privPhone = await this.server.createPrimaryDevice({
+    this.#privPhone = await this.server.createPrimaryDevice({
       profileName: 'Myself',
       contacts: this.contacts,
       contactsWithoutProfileKey: this.contactsWithoutProfileKey,
     });
+    if (this.#options.useLegacyStorageEncryption) {
+      this.#privPhone.storageRecordIkm = undefined;
+    }
 
-    this.storagePath = await fs.mkdtemp(path.join(os.tmpdir(), 'mock-signal-'));
-    this.backupPath = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'mock-signal-backup-')
+    this.#storagePath = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'mock-signal-')
     );
 
-    debug('setting storage path=%j', this.storagePath);
+    debug('setting storage path=%j', this.#storagePath);
   }
 
   public static benchmark(
@@ -253,35 +277,36 @@ export class Bootstrap {
 
   public get logsDir(): string {
     assert(
-      this.storagePath !== undefined,
+      this.#storagePath !== undefined,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
 
-    return path.join(this.storagePath, 'logs');
+    return path.join(this.#storagePath, 'logs');
   }
 
-  public getBackupPath(fileName: string): string {
+  public get ephemeralConfigPath(): string {
     assert(
-      this.backupPath !== undefined,
+      this.#storagePath !== undefined,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
 
-    return path.join(this.backupPath, fileName);
+    return path.join(this.#storagePath, 'ephemeral.json');
   }
 
   public eraseStorage(): Promise<void> {
-    return this.resetAppStorage();
+    return this.#resetAppStorage();
   }
 
-  private async resetAppStorage(): Promise<void> {
+  async #resetAppStorage(): Promise<void> {
     assert(
-      this.storagePath !== undefined,
+      this.#storagePath !== undefined,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
 
-    // Note that backupPath must remain unchanged!
-    await fs.rm(this.storagePath, { recursive: true });
-    this.storagePath = await fs.mkdtemp(path.join(os.tmpdir(), 'mock-signal-'));
+    await fs.rm(this.#storagePath, { recursive: true });
+    this.#storagePath = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'mock-signal-')
+    );
   }
 
   public async teardown(): Promise<void> {
@@ -289,17 +314,20 @@ export class Bootstrap {
 
     await Promise.race([
       Promise.all([
-        ...[this.storagePath, this.backupPath, this.cdn3Path].map(tmpPath =>
+        ...[this.#storagePath, this.cdn3Path].map(tmpPath =>
           tmpPath ? fs.rm(tmpPath, { recursive: true }) : Promise.resolve()
         ),
         this.server.close(),
-        this.lastApp?.close(),
+        this.#lastApp?.close(),
       ]),
       new Promise(resolve => setTimeout(resolve, CLOSE_TIMEOUT).unref()),
     ]);
   }
 
-  public async link(extraConfig?: Partial<RendererConfigType>): Promise<App> {
+  public async link({
+    extraConfig,
+    ephemeralBackup,
+  }: LinkOptionsType = {}): Promise<App> {
     debug('linking');
 
     const app = await this.startApp(extraConfig);
@@ -325,10 +353,14 @@ export class Bootstrap {
     const provisionURL = await app.waitForProvisionURL();
 
     debug('completing provision');
-    this.privDesktop = await provision.complete({
+    this.#privDesktop = await provision.complete({
       provisionURL,
       primaryDevice: this.phone,
     });
+
+    if (ephemeralBackup != null) {
+      await this.server.provideTransferArchive(this.desktop, ephemeralBackup);
+    }
 
     debug('new desktop device %j', this.desktop.debugId);
 
@@ -342,11 +374,6 @@ export class Bootstrap {
         // eslint-disable-next-line no-await-in-loop
         await contact.addSingleUseKey(this.desktop, contactKey, serviceIdKind);
       }
-    }
-
-    if (extraConfig?.ciBackupPath) {
-      debug('waiting for backup import to complete');
-      await app.waitForBackupImportComplete();
     }
 
     await this.phone.waitForSync(this.desktop);
@@ -368,13 +395,13 @@ export class Bootstrap {
     extraConfig?: Partial<RendererConfigType>
   ): Promise<App> {
     assert(
-      this.storagePath !== undefined,
+      this.#storagePath !== undefined,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
 
     debug('starting the app');
 
-    const { port } = this.server.address();
+    const { port, family } = this.server.address();
 
     let startAttempts = 0;
     const MAX_ATTEMPTS = 4;
@@ -388,7 +415,7 @@ export class Bootstrap {
       }
 
       // eslint-disable-next-line no-await-in-loop
-      const config = await this.generateConfig(port, extraConfig);
+      const config = await this.#generateConfig(port, family, extraConfig);
 
       const startedApp = new App({
         main: ELECTRON,
@@ -407,14 +434,14 @@ export class Bootstrap {
         );
 
         // eslint-disable-next-line no-await-in-loop
-        await this.resetAppStorage();
+        await this.#resetAppStorage();
         continue;
       }
 
-      this.lastApp = startedApp;
+      this.#lastApp = startedApp;
       startedApp.on('close', () => {
-        if (this.lastApp === startedApp) {
-          this.lastApp = undefined;
+        if (this.#lastApp === startedApp) {
+          this.#lastApp = undefined;
         }
       });
 
@@ -425,14 +452,14 @@ export class Bootstrap {
   }
 
   public getTimestamp(): number {
-    const result = this.timestamp;
-    this.timestamp += 1;
+    const result = this.#timestamp;
+    this.#timestamp += 1;
     return result;
   }
 
   public async maybeSaveLogs(
     test?: Mocha.Runnable,
-    app: App | undefined = this.lastApp
+    app: App | undefined = this.#lastApp
   ): Promise<void> {
     const { FORCE_ARTIFACT_SAVE } = process.env;
     if (test?.state !== 'passed' || FORCE_ARTIFACT_SAVE) {
@@ -441,10 +468,10 @@ export class Bootstrap {
   }
 
   public async saveLogs(
-    app: App | undefined = this.lastApp,
+    app: App | undefined = this.#lastApp,
     testName?: string
   ): Promise<void> {
-    const outDir = await this.getArtifactsDir(testName);
+    const outDir = await this.#getArtifactsDir(testName);
     if (outDir == null) {
       return;
     }
@@ -524,7 +551,7 @@ export class Bootstrap {
           `screenshot difference for ${name}: ${numPixels}/${width * height}`
         );
 
-        const outDir = await this.getArtifactsDir(test?.fullTitle());
+        const outDir = await this.#getArtifactsDir(test?.fullTitle());
         if (outDir != null) {
           debug('saving screenshots and diff');
           const prefix = `${index}-${sanitizePathComponent(name)}`;
@@ -544,47 +571,84 @@ export class Bootstrap {
     };
   }
 
+  public getAbsoluteAttachmentPath(relativePath: string): string {
+    strictAssert(this.#storagePath, 'storagePath must exist');
+    return join(this.#storagePath, 'attachments.noindex', relativePath);
+  }
+
+  public async storeAttachmentOnCDN(
+    data: Buffer,
+    contentType: MIMEType
+  ): Promise<Proto.IAttachmentPointer> {
+    const cdnKey = uuid();
+    const keys = generateAttachmentKeys();
+    const cdnNumber = 3;
+
+    const passthrough = new PassThrough();
+
+    const [{ digest }] = await Promise.all([
+      encryptAttachmentV2({
+        keys,
+        plaintext: {
+          data,
+        },
+        needIncrementalMac: false,
+        sink: passthrough,
+      }),
+      this.server.storeAttachmentOnCdn(cdnNumber, cdnKey, passthrough),
+    ]);
+
+    return {
+      size: data.byteLength,
+      contentType,
+      cdnKey,
+      cdnNumber,
+      key: keys,
+      digest,
+    };
+  }
+
   //
   // Getters
   //
 
   public get phone(): PrimaryDevice {
     assert(
-      this.privPhone,
+      this.#privPhone,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
-    return this.privPhone;
+    return this.#privPhone;
   }
 
   public get desktop(): Device {
     assert(
-      this.privDesktop,
+      this.#privDesktop,
       'Bootstrap has to be linked first, see: bootstrap.link()'
     );
-    return this.privDesktop;
+    return this.#privDesktop;
   }
 
   public get contacts(): ReadonlyArray<PrimaryDevice> {
     assert(
-      this.privContacts,
+      this.#privContacts,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
-    return this.privContacts;
+    return this.#privContacts;
   }
 
   public get contactsWithoutProfileKey(): ReadonlyArray<PrimaryDevice> {
     assert(
-      this.privContactsWithoutProfileKey,
+      this.#privContactsWithoutProfileKey,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
-    return this.privContactsWithoutProfileKey;
+    return this.#privContactsWithoutProfileKey;
   }
   public get unknownContacts(): ReadonlyArray<PrimaryDevice> {
     assert(
-      this.privUnknownContacts,
+      this.#privUnknownContacts,
       'Bootstrap has to be initialized first, see: bootstrap.init()'
     );
-    return this.privUnknownContacts;
+    return this.#privUnknownContacts;
   }
 
   public get allContacts(): ReadonlyArray<PrimaryDevice> {
@@ -599,9 +663,7 @@ export class Bootstrap {
   // Private
   //
 
-  private async getArtifactsDir(
-    testName?: string
-  ): Promise<string | undefined> {
+  async #getArtifactsDir(testName?: string): Promise<string | undefined> {
     const { ARTIFACTS_DIR } = process.env;
     if (!ARTIFACTS_DIR) {
       // eslint-disable-next-line no-console
@@ -612,8 +674,8 @@ export class Bootstrap {
     }
 
     const normalizedPath = testName
-      ? `${this.randomId}-${sanitizePathComponent(testName)}`
-      : this.randomId;
+      ? `${this.#randomId}-${sanitizePathComponent(testName)}`
+      : this.#randomId;
 
     const outDir = path.join(ARTIFACTS_DIR, normalizedPath);
     await fs.mkdir(outDir, { recursive: true });
@@ -644,19 +706,22 @@ export class Bootstrap {
     }
   }
 
-  private async generateConfig(
+  async #generateConfig(
     port: number,
+    family: string,
     extraConfig?: Partial<RendererConfigType>
   ): Promise<string> {
-    const url = `https://127.0.0.1:${port}`;
+    const host = family === 'IPv6' ? '[::1]' : '127.0.0.1';
+
+    const url = `https://${host}:${port}`;
     return JSON.stringify({
       ...(await loadCertificates()),
 
-      forcePreloadBundle: this.options.benchmark,
+      forcePreloadBundle: this.#options.benchmark,
       ciMode: 'full',
 
       buildExpiration: Date.now() + durations.MONTH,
-      storagePath: this.storagePath,
+      storagePath: this.#storagePath,
       storageProfile: 'mock',
       serverUrl: url,
       storageUrl: url,

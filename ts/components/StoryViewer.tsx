@@ -103,6 +103,7 @@ export type PropsType = {
   ) => unknown;
   onUseEmoji: (_: EmojiPickDataType) => unknown;
   onMediaPlaybackStart: () => void;
+  ourConversationId: string | undefined;
   platform: string;
   preferredReactionEmoji: ReadonlyArray<string>;
   queueStoryDownload: (storyId: string) => unknown;
@@ -159,6 +160,7 @@ export function StoryViewer({
   onTextTooLong,
   onUseEmoji,
   onMediaPlaybackStart,
+  ourConversationId,
   platform,
   preferredReactionEmoji,
   queueStoryDownload,
@@ -516,7 +518,9 @@ export function StoryViewer({
         onClick: () => setCurrentViewTarget(StoryViewTargetType.Details),
       },
       {
-        icon: 'StoryListItem__icon--hide',
+        icon: isHidden
+          ? 'StoryListItem__icon--unhide'
+          : 'StoryListItem__icon--hide',
         label: isHidden
           ? i18n('icu:StoryListItem__unhide')
           : i18n('icu:StoryListItem__hide'),
@@ -976,6 +980,7 @@ export function StoryViewer({
             onSetSkinTone={onSetSkinTone}
             onTextTooLong={onTextTooLong}
             onUseEmoji={onUseEmoji}
+            ourConversationId={ourConversationId}
             preferredReactionEmoji={preferredReactionEmoji}
             recentEmojis={recentEmojis}
             renderEmojiPicker={renderEmojiPicker}

@@ -3,6 +3,8 @@
 
 import { assert } from 'chai';
 import * as sinon from 'sinon';
+import { noop } from 'lodash';
+
 import { DataWriter } from '../../sql/Client';
 import { IMAGE_PNG } from '../../types/MIME';
 import {
@@ -12,7 +14,7 @@ import {
 import { MediaTier } from '../../types/AttachmentDownload';
 import { HTTPError } from '../../textsecure/Errors';
 import { getCdnNumberForBackupTier } from '../../textsecure/downloadAttachment';
-import { MASTER_KEY } from '../backup/helpers';
+import { MASTER_KEY, MEDIA_ROOT_KEY } from '../backup/helpers';
 import { getMediaIdFromMediaName } from '../../services/backups/util/mediaId';
 import { AttachmentVariant } from '../../types/Attachment';
 
@@ -22,6 +24,7 @@ describe('utils/downloadAttachment', () => {
     contentType: IMAGE_PNG,
     digest: 'digest',
   };
+  const abortController = new AbortController();
 
   let sandbox: sinon.SinonSandbox;
   const fakeServer = {};
@@ -42,6 +45,10 @@ describe('utils/downloadAttachment', () => {
     };
     await downloadAttachment({
       attachment,
+      options: {
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
+      },
       dependencies: {
         downloadAttachmentFromServer: stubDownload,
       },
@@ -53,6 +60,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.STANDARD,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -72,6 +81,10 @@ describe('utils/downloadAttachment', () => {
     await assert.isRejected(
       downloadAttachment({
         attachment,
+        options: {
+          onSizeUpdate: noop,
+          abortSignal: abortController.signal,
+        },
         dependencies: {
           downloadAttachmentFromServer: stubDownload,
         },
@@ -86,6 +99,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.STANDARD,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -103,6 +118,10 @@ describe('utils/downloadAttachment', () => {
     };
     await downloadAttachment({
       attachment,
+      options: {
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
+      },
       dependencies: {
         downloadAttachmentFromServer: stubDownload,
       },
@@ -114,6 +133,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.BACKUP,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -135,6 +156,10 @@ describe('utils/downloadAttachment', () => {
     };
     await downloadAttachment({
       attachment,
+      options: {
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
+      },
       dependencies: {
         downloadAttachmentFromServer: stubDownload,
       },
@@ -146,6 +171,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.BACKUP,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -155,6 +182,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.STANDARD,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -176,6 +205,10 @@ describe('utils/downloadAttachment', () => {
     };
     await downloadAttachment({
       attachment,
+      options: {
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
+      },
       dependencies: {
         downloadAttachmentFromServer: stubDownload,
       },
@@ -187,6 +220,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.BACKUP,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -196,6 +231,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.STANDARD,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -218,6 +255,10 @@ describe('utils/downloadAttachment', () => {
     await assert.isRejected(
       downloadAttachment({
         attachment,
+        options: {
+          onSizeUpdate: noop,
+          abortSignal: abortController.signal,
+        },
         dependencies: {
           downloadAttachmentFromServer: stubDownload,
         },
@@ -231,6 +272,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.BACKUP,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -240,6 +283,8 @@ describe('utils/downloadAttachment', () => {
       {
         mediaTier: MediaTier.STANDARD,
         variant: AttachmentVariant.Default,
+        onSizeUpdate: noop,
+        abortSignal: abortController.signal,
         logPrefix: '[REDACTED]est',
       },
     ]);
@@ -254,6 +299,9 @@ describe('getCdnNumberForBackupTier', () => {
     sandbox.stub(window.storage, 'get').callsFake(key => {
       if (key === 'masterKey') {
         return MASTER_KEY;
+      }
+      if (key === 'backupMediaRootKey') {
+        return MEDIA_ROOT_KEY;
       }
       return undefined;
     });

@@ -47,6 +47,7 @@ message ManifestRecord {
       ACCOUNT = 4;
       STORY_DISTRIBUTION_LIST = 5;
       STICKER_PACK = 6;
+      CALL_LINK = 7;
     }
 
     optional bytes raw  = 1;
@@ -56,7 +57,8 @@ message ManifestRecord {
   optional uint64      version = 1;
   optional uint32 sourceDevice = 3;
   repeated Identifier     keys = 2;
-  // Next ID: 4
+  optional bytes recordIkm = 4;
+  // Next ID: 5
 }
 
 message StorageRecord {
@@ -67,6 +69,7 @@ message StorageRecord {
     AccountRecord account = 4;
     StoryDistributionListRecord storyDistributionList = 5;
     StickerPackRecord stickerPack = 6;
+    CallLinkRecord callLink = 7;
   }
 }
 
@@ -173,6 +176,17 @@ message AccountRecord {
     optional Color color = 3; // color of the QR code itself
   }
 
+  message IAPSubscriberData {
+    optional bytes subscriberId = 1;
+
+    oneof iapSubscriptionId {
+      // Identifies an Android Play Store IAP subscription.
+      string purchaseToken = 2;
+      // Identifies an iOS App Store IAP subscription.
+      uint64 originalTransactionId = 3;
+    }
+  }
+
   optional bytes profileKey = 1;
   optional string givenName = 2;
   optional string familyName = 3;
@@ -207,9 +221,14 @@ message AccountRecord {
   optional string username = 33;
   optional bool hasCompletedUsernameOnboarding = 34;
   optional UsernameLink usernameLink = 35;
-  optional bytes backupsSubscriberId = 36;
-  optional string backupsSubscriberCurrencyCode = 37;
-  optional bool backupsSubscriptionManuallyCancelled = 38;
+  reserved /*backupsSubscriberId*/ 36;
+  reserved /*backupsSubscriberCurrencyCode*/ 37;
+  reserved /*backupsSubscriptionManuallyCancelled*/ 38;
+  // Set to true after backups are enabled and one is uploaded.
+  optional bool hasBackup = 39;
+  // See zkgroup for integer particular values
+  optional uint64 backupTier = 40;
+  optional IAPSubscriberData backupSubscriberData = 41;
 }
 
 message StoryDistributionListRecord {
@@ -240,4 +259,11 @@ message StickerPackRecord {
   optional uint64 deletedAtTimestamp = 4; // Timestamp in milliseconds. When present and
                                           // non-zero - `packKey` and `position` should
                                           // be unset
+}
+
+message CallLinkRecord {
+  optional bytes rootKey = 1; // 16 bytes
+  optional bytes adminPasskey = 2; // Non-empty when the current user is an admin
+  optional uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey`
+                                            // should be cleared
 }

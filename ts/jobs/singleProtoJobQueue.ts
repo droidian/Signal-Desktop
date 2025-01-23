@@ -24,26 +24,27 @@ import {
 } from './helpers/handleMultipleSendErrors';
 import { isConversationUnregistered } from '../util/isConversationUnregistered';
 import { isConversationAccepted } from '../util/isConversationAccepted';
+import { parseUnknown } from '../util/schemas';
 
 const MAX_RETRY_TIME = DAY;
 const MAX_PARALLEL_JOBS = 5;
 const MAX_ATTEMPTS = exponentialBackoffMaxAttempts(MAX_RETRY_TIME);
 
 export class SingleProtoJobQueue extends JobQueue<SingleProtoJobData> {
-  private parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
+  #parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
 
   protected override getQueues(): ReadonlySet<PQueue> {
-    return new Set([this.parallelQueue]);
+    return new Set([this.#parallelQueue]);
   }
 
   protected override getInMemoryQueue(
     _parsedJob: ParsedJob<SingleProtoJobData>
   ): PQueue {
-    return this.parallelQueue;
+    return this.#parallelQueue;
   }
 
   protected parseData(data: unknown): SingleProtoJobData {
-    return singleProtoJobDataSchema.parse(data);
+    return parseUnknown(singleProtoJobDataSchema, data);
   }
 
   protected async run(

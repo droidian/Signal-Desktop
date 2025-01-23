@@ -7,12 +7,12 @@ import {
   flatten,
   fromPairs,
   isNumber,
+  omit,
   values,
 } from 'lodash';
 import Long from 'long';
 import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup';
-import { v4 as getGuid } from 'uuid';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import * as log from './logging/log';
 import {
   getCheckedGroupCredentialsForToday,
@@ -96,7 +96,12 @@ import { SeenStatus } from './MessageSeenStatus';
 import { incrementMessageCounter } from './util/incrementMessageCounter';
 import { sleep } from './util/sleep';
 import { groupInvitesRoute } from './util/signalRoutes';
-import { decodeGroupSendEndorsementResponse } from './util/groupSendEndorsements';
+import {
+  decodeGroupSendEndorsementResponse,
+  validateGroupSendEndorsementsExpiration,
+} from './util/groupSendEndorsements';
+import { getProfile } from './util/getProfile';
+import { generateMessageId } from './util/generateMessageId';
 
 type AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 
@@ -259,7 +264,7 @@ export type GroupFields = {
 
 const MAX_CACHED_GROUP_FIELDS = 100;
 
-const groupFieldsCache = new LRU<string, GroupFields>({
+const groupFieldsCache = new LRUCache<string, GroupFields>({
   max: MAX_CACHED_GROUP_FIELDS,
 });
 
@@ -289,7 +294,7 @@ type UploadedAvatarType = {
 
 type BasicMessageType = Pick<
   MessageAttributesType,
-  'id' | 'schemaVersion' | 'readStatus' | 'seenStatus'
+  'readStatus' | 'seenStatus'
 >;
 
 type GroupV2ChangeMessageType = {
@@ -330,14 +335,6 @@ const GROUP_NONEXISTENT_CODE = 404;
 const SUPPORTED_CHANGE_EPOCH = 5;
 export const LINK_VERSION_ERROR = 'LINK_VERSION_ERROR';
 const GROUP_INVITE_LINK_PASSWORD_LENGTH = 16;
-
-function generateBasicMessage(): BasicMessageType {
-  return {
-    id: getGuid(),
-    schemaVersion: MAX_MESSAGE_SCHEMA,
-    // this is missing most properties to fulfill this type
-  };
-}
 
 // Group Links
 
@@ -2003,7 +2000,7 @@ export async function createGroupV2(
   );
 
   await conversation.queueJob('storageServiceUploadJob', async () => {
-    await storageServiceUploadJob();
+    await storageServiceUploadJob({ reason: 'createGroupV2' });
   });
 
   const timestamp = Date.now();
@@ -2020,12 +2017,13 @@ export async function createGroupV2(
   });
 
   const createdTheGroupMessage: MessageAttributesType = {
-    ...generateBasicMessage(),
+    ...generateMessageId(incrementMessageCounter()),
+
+    schemaVersion: MAX_MESSAGE_SCHEMA,
     type: 'group-v2-change',
     sourceServiceId: ourAci,
     conversationId: conversation.id,
     readStatus: ReadStatus.Read,
-    received_at: incrementMessageCounter(),
     received_at_ms: timestamp,
     timestamp,
     seenStatus: SeenStatus.Seen,
@@ -2464,7 +2462,6 @@ export async function initiateMigrationToGroupV2(
 
       const groupChangeMessages: Array<GroupChangeMessageType> = [];
       groupChangeMessages.push({
-        ...generateBasicMessage(),
         type: 'group-v1-migration',
         groupMigration: {
           areWeInvited: false,
@@ -2605,7 +2602,6 @@ export function buildMigrationBubble(
   );
 
   return {
-    ...generateBasicMessage(),
     type: 'group-v1-migration',
     groupMigration: {
       areWeInvited,
@@ -2619,7 +2615,6 @@ export function buildMigrationBubble(
 
 export function getBasicMigrationBubble(): GroupChangeMessageType {
   return {
-    ...generateBasicMessage(),
     type: 'group-v1-migration',
     groupMigration: {
       areWeInvited: false,
@@ -2693,7 +2688,6 @@ export async function joinGroupV2ViaLinkAndMigrate({
   };
   const groupChangeMessages: Array<GroupChangeMessageType> = [
     {
-      ...generateBasicMessage(),
       type: 'group-v1-migration',
       groupMigration: {
         areWeInvited: false,
@@ -2789,6 +2783,7 @@ export async function respondToGroupV2Migration({
   let groupSendEndorsementResponse: Uint8Array | null | undefined;
 
   try {
+    const fetchedAt = Date.now();
     const response: GroupLogResponseType = await makeRequestWithCredentials({
       logId: `getGroupLog/${logId}`,
       publicParams,
@@ -2805,6 +2800,7 @@ export async function respondToGroupV2Migration({
           options
         ),
     });
+    setLastSuccessfulGroupFetch(conversation.id, fetchedAt);
 
     // Attempt to start with the first group state, only later processing future updates
     firstGroupState = response?.changes?.groupChanges?.[0]?.groupState;
@@ -2815,12 +2811,14 @@ export async function respondToGroupV2Migration({
         `respondToGroupV2Migration/${logId}: Failed to access log endpoint; fetching full group state`
       );
       try {
+        const fetchedAt = Date.now();
         const groupResponse = await makeRequestWithCredentials({
           logId: `getGroup/${logId}`,
           publicParams,
           secretParams,
           request: (sender, options) => sender.getGroup(options),
         });
+        setLastSuccessfulGroupFetch(conversation.id, fetchedAt);
 
         firstGroupState = groupResponse.group;
         groupSendEndorsementResponse =
@@ -2861,7 +2859,6 @@ export async function respondToGroupV2Migration({
                     seenStatus: SeenStatus.Seen,
                   },
                   {
-                    ...generateBasicMessage(),
                     type: 'group-v2-change',
                     groupV2Change: {
                       details: [
@@ -2942,7 +2939,6 @@ export async function respondToGroupV2Migration({
   if (!areWeInvited && !areWeMember) {
     // Add a message to the timeline saying the user was removed. This shouldn't happen.
     groupChangeMessages.push({
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         details: [
@@ -3029,11 +3025,10 @@ export async function waitThenMaybeUpdateGroup(
   { viaFirstStorageSync = false } = {}
 ): Promise<void> {
   const { conversation } = options;
+  const logId = `waitThenMaybeUpdateGroup(${conversation.idForLogging()})`;
 
   if (conversation.isBlocked()) {
-    log.info(
-      `waitThenMaybeUpdateGroup: Group ${conversation.idForLogging()} is blocked, returning early`
-    );
+    log.info(`${logId}: Conversation is blocked, returning early`);
     return;
   }
 
@@ -3048,22 +3043,22 @@ export async function waitThenMaybeUpdateGroup(
   ) {
     const waitTime = lastSuccessfulGroupFetch + FIVE_MINUTES - Date.now();
     log.info(
-      `waitThenMaybeUpdateGroup/${conversation.idForLogging()}: group update ` +
-        `was fetched recently, skipping for ${waitTime}ms`
+      `${logId}: group update was fetched recently, skipping for ${waitTime}ms`
     );
     return;
   }
+
+  log.info(`${logId}: group update was not fetched recently, queuing update`);
 
   // Then wait to process all outstanding messages for this conversation
   await conversation.queueJob('waitThenMaybeUpdateGroup', async () => {
     try {
       // And finally try to update the group
       await maybeUpdateGroup(options, { viaFirstStorageSync });
-
-      conversation.lastSuccessfulGroupFetch = Date.now();
     } catch (error) {
+      setLastSuccessfulGroupFetch(conversation.id, undefined);
       log.error(
-        `waitThenMaybeUpdateGroup/${conversation.idForLogging()}: maybeUpdateGroup failure:`,
+        `${logId}: maybeUpdateGroup failure:`,
         Errors.toLogFormat(error)
       );
     }
@@ -3081,7 +3076,7 @@ export async function maybeUpdateGroup(
   }: MaybeUpdatePropsType,
   { viaFirstStorageSync = false } = {}
 ): Promise<void> {
-  const logId = conversation.idForLogging();
+  const logId = `maybeUpdateGroup/${conversation.idForLogging()}`;
 
   try {
     // Ensure we have the credentials we need before attempting GroupsV2 operations
@@ -3100,13 +3095,23 @@ export async function maybeUpdateGroup(
       { viaFirstStorageSync }
     );
   } catch (error) {
-    log.error(
-      `maybeUpdateGroup/${logId}: Failed to update group:`,
-      Errors.toLogFormat(error)
-    );
+    log.error(`${logId}: Failed to update group:`, Errors.toLogFormat(error));
     throw error;
   }
 }
+
+/**
+ * UpdateGroup runs on the conversation's queue, and it overwrites all of conversation
+ * attributes. This would be fine, except we have some time-sensitive conversation-related
+ * tasks that happen off-queue, notably: updateUnread(). This is a non-exhaustive list of
+ * attributes that should never be stomped by updateGroup. Attributes should be added here
+ * if:
+ * 1) [most importantly!] they will never be updated by updateGroup, and
+ * 2) they are updated off-queue and therefore at risk of being stomped on.
+ *
+ * TODO (DESKTOP-7729): consider better separating conversation data to avoid this
+ */
+const FIELDS_UNRELATED_TO_GROUP_STATE = ['unreadCount', 'unreadMentionsOfMe'];
 
 async function updateGroup(
   {
@@ -3152,7 +3157,12 @@ async function updateGroup(
   // By updating activeAt we force this conversation into the left panel. We don't want
   //   all groups to show up on link, and we don't want Unknown Group in the left pane.
   let activeAt = conversation.get('active_at') || null;
-  if (!viaFirstStorageSync && newAttributes.name) {
+  const justDiscoveredGroupName =
+    !conversation.get('name') && newAttributes.name;
+  if (
+    !viaFirstStorageSync &&
+    (justDiscoveredGroupName || groupChangeMessages.length)
+  ) {
     activeAt = initialSentAt;
   }
 
@@ -3167,8 +3177,9 @@ async function updateGroup(
 
     return {
       ...changeMessage,
+      ...generateMessageId(finalReceivedAt),
+      schemaVersion: MAX_MESSAGE_SCHEMA,
       conversationId: conversation.id,
-      received_at: finalReceivedAt,
       received_at_ms: syntheticSentAt,
       sent_at: syntheticSentAt,
       timestamp,
@@ -3188,7 +3199,7 @@ async function updateGroup(
       contact.get('profileKey') !== profileKey
     ) {
       contactsWithoutProfileKey.push(contact);
-      drop(contact.setProfileKey(profileKey));
+      drop(contact.setProfileKey(profileKey, { reason: 'updateGroup' }));
     }
   }
 
@@ -3200,7 +3211,13 @@ async function updateGroup(
     );
 
     profileFetches = Promise.all(
-      contactsWithoutProfileKey.map(contact => contact.getProfiles())
+      contactsWithoutProfileKey.map(contact => {
+        return getProfile({
+          serviceId: contact.getServiceId() ?? null,
+          e164: contact.get('e164') ?? null,
+          groupId: newAttributes.groupId ?? null,
+        });
+      })
     );
   }
 
@@ -3259,7 +3276,7 @@ async function updateGroup(
   }
 
   conversation.set({
-    ...newAttributes,
+    ...omit(newAttributes, FIELDS_UNRELATED_TO_GROUP_STATE),
     active_at: activeAt,
   });
 
@@ -3449,7 +3466,10 @@ async function appendChangeMessages(
 
   let newMessages = 0;
   for (const changeMessage of mergedMessages) {
-    const existing = window.MessageCache.__DEPRECATED$getById(changeMessage.id);
+    const existing = window.MessageCache.__DEPRECATED$getById(
+      changeMessage.id,
+      'appendChangeMessages'
+    );
 
     // Update existing message
     if (existing) {
@@ -3524,7 +3544,10 @@ async function getGroupUpdates({
       groupChange.changeEpoch <= SUPPORTED_CHANGE_EPOCH;
 
     if (isChangeSupported) {
-      if (!wrappedGroupChange.isTrusted) {
+      const { isTrusted } = wrappedGroupChange;
+      let isUntrustedChangeVerified = false;
+
+      if (!isTrusted) {
         strictAssert(
           groupChange.serverSignature,
           'Server signature must be present in untrusted group change'
@@ -3551,13 +3574,34 @@ async function getGroupUpdates({
             newProfileKeys: new Map(),
           };
         }
+
+        const { groupId: groupIdBytes } = Proto.GroupChange.Actions.decode(
+          groupChange.actions || new Uint8Array(0)
+        );
+        const actionsGroupId: string | undefined =
+          groupIdBytes && groupIdBytes.length !== 0
+            ? Bytes.toBase64(groupIdBytes)
+            : undefined;
+        if (actionsGroupId && actionsGroupId === group.groupId) {
+          isUntrustedChangeVerified = true;
+        } else if (!actionsGroupId) {
+          log.warn(
+            `getGroupUpdates/${logId}: Missing groupId in group change actions`
+          );
+        } else {
+          log.warn(
+            `getGroupUpdates/${logId}: Incorrect groupId in group change actions`
+          );
+        }
       }
 
-      return updateGroupViaSingleChange({
-        group,
-        newRevision,
-        groupChange,
-      });
+      if (isTrusted || isUntrustedChangeVerified) {
+        return updateGroupViaSingleChange({
+          group,
+          newRevision,
+          groupChange,
+        });
+      }
     }
 
     log.info(
@@ -3758,24 +3802,20 @@ async function updateGroupViaState({
   dropInitialJoinMessage?: boolean;
   group: ConversationAttributesType;
 }): Promise<UpdatesResultType> {
-  const logId = idForLogging(group.groupId);
-  const { publicParams, secretParams } = group;
+  const { id, publicParams, secretParams } = group;
+  const logId = `updateGroupViaState/${idForLogging(group.groupId)}`;
 
-  strictAssert(
-    secretParams,
-    'updateGroupViaState: group was missing secretParams!'
-  );
-  strictAssert(
-    publicParams,
-    'updateGroupViaState: group was missing publicParams!'
-  );
+  strictAssert(secretParams, `${logId}: Missing secretParams`);
+  strictAssert(publicParams, `${logId}: Missing publicParams`);
 
+  const fetchedAt = Date.now();
   const groupResponse = await makeRequestWithCredentials({
     logId: `getGroup/${logId}`,
     publicParams,
     secretParams,
     request: (sender, requestOptions) => sender.getGroup(requestOptions),
   });
+  setLastSuccessfulGroupFetch(id, fetchedAt);
 
   const { group: groupState, groupSendEndorsementResponse } = groupResponse;
   strictAssert(groupState, 'updateGroupViaState: Group state must be present');
@@ -3844,6 +3884,9 @@ async function updateGroupViaSingleChange({
   const previouslyKnewAboutThisGroup =
     isNumber(group.revision) && group.membersV2?.length;
   const wasInGroup = !group.left;
+
+  setLastSuccessfulGroupFetch(group.id, undefined);
+
   const singleChangeResult: UpdatesResultType = await integrateGroupChange({
     group,
     groupChange,
@@ -3878,7 +3921,6 @@ async function updateGroupViaSingleChange({
       catchupMessages.length > 0
     ) {
       groupChangeMessages.push({
-        ...generateBasicMessage(),
         type: 'group-v2-change',
         groupV2Change: {
           details: [
@@ -3981,10 +4023,23 @@ async function updateGroupViaLogs({
   let cachedEndorsementsExpiration =
     await DataReader.getGroupSendCombinedEndorsementExpiration(groupId);
 
+  if (cachedEndorsementsExpiration != null) {
+    const result = validateGroupSendEndorsementsExpiration(
+      cachedEndorsementsExpiration * 1000
+    );
+    if (!result.valid) {
+      log.info(
+        `updateGroupViaLogs/${logId}: Endorsements are expired (${result.reason}), fetching new endorsements`
+      );
+    }
+    cachedEndorsementsExpiration = null;
+  }
+
   let response: GroupLogResponseType;
   let groupSendEndorsementResponse: Uint8Array | null = null;
   const changes: Array<Proto.IGroupChanges> = [];
   do {
+    const fetchedAt = Date.now();
     // eslint-disable-next-line no-await-in-loop
     response = await makeRequestWithCredentials({
       logId: `getGroupLog/${logId}`,
@@ -4004,6 +4059,7 @@ async function updateGroupViaLogs({
           requestOptions
         ),
     });
+    setLastSuccessfulGroupFetch(group.id, fetchedAt);
 
     // When the log is long enough that it needs to be paginated, the server is
     // not stateful enough to only give us endorsements when we need them.
@@ -4489,6 +4545,10 @@ async function integrateGroupChange({
   };
 }
 
+function normalizeTextField(text: string | null | undefined): string {
+  return text?.trim() ?? '';
+}
+
 function extractDiffs({
   current,
   dropInitialJoinMessage,
@@ -4593,11 +4653,12 @@ function extractDiffs({
   }
 
   // name
-
-  if (old.name !== current.name) {
+  const oldName = normalizeTextField(old.name);
+  const newName = normalizeTextField(current.name);
+  if (oldName !== newName) {
     details.push({
       type: 'title',
-      newTitle: current.name,
+      newTitle: newName,
     });
   }
 
@@ -4616,11 +4677,13 @@ function extractDiffs({
   }
 
   // description
-  if (old.description !== current.description) {
+  const oldDescription = normalizeTextField(old.description);
+  const newDescription = normalizeTextField(current.description);
+  if (oldDescription !== newDescription) {
     details.push({
       type: 'description',
-      removed: !current.description,
-      description: current.description,
+      removed: !newDescription,
+      description: newDescription,
     });
   }
 
@@ -4874,7 +4937,6 @@ function extractDiffs({
   if (firstUpdate && serviceIdKindInvitedToGroup !== undefined) {
     // Note, we will add 'you were invited' to group even if dropInitialJoinMessage = true
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         from: whoInvitedUsUserId || from,
@@ -4892,7 +4954,6 @@ function extractDiffs({
     };
   } else if (firstUpdate && areWePendingApproval) {
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         from: ourAci,
@@ -4913,7 +4974,6 @@ function extractDiffs({
     sourceServiceId === ourAci
   ) {
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         from,
@@ -4935,7 +4995,6 @@ function extractDiffs({
     );
 
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         from,
@@ -4946,7 +5005,6 @@ function extractDiffs({
     };
   } else if (firstUpdate && current.revision === 0) {
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       groupV2Change: {
         from,
@@ -4975,7 +5033,6 @@ function extractDiffs({
     }
 
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       sourceServiceId,
       groupV2Change: {
@@ -4987,7 +5044,6 @@ function extractDiffs({
     };
   } else if (details.length > 0) {
     message = {
-      ...generateBasicMessage(),
       type: 'group-v2-change',
       sourceServiceId,
       groupV2Change: {
@@ -5014,7 +5070,6 @@ function extractDiffs({
       `extractDiffs/${logId}: generating change notification for new ${expireTimer} timer`
     );
     timerNotification = {
-      ...generateBasicMessage(),
       type: 'timer-notification',
       sourceServiceId: isReJoin ? undefined : sourceServiceId,
       flags: Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE,
@@ -5133,8 +5188,17 @@ async function applyGroupChange({
     }
 
     // Capture who added us
-    if (ourAci && sourceServiceId && addedUuid === ourAci) {
+    if (addedUuid === ourAci && pendingAdminApprovalMembers[ourAci]) {
+      result.addedBy = ourAci;
+    } else if (addedUuid === ourAci && sourceServiceId) {
       result.addedBy = sourceServiceId;
+    }
+
+    if (pendingAdminApprovalMembers[addedUuid]) {
+      log.warn(
+        `applyGroupChange/${logId}: Removing newly-added member from pendingAdminApprovalMembers.`
+      );
+      delete pendingAdminApprovalMembers[addedUuid];
     }
 
     if (added.profileKey) {
@@ -5278,6 +5342,7 @@ async function applyGroupChange({
       log.warn(
         `applyGroupChange/${logId}: Attempt to promote pendingMember failed; was not in pendingMembers.`
       );
+      return;
     }
 
     if (members[aci]) {
@@ -5347,7 +5412,7 @@ async function applyGroupChange({
   if (actions.modifyTitle) {
     const { title } = actions.modifyTitle;
     if (title && title.content === 'title') {
-      result.name = dropNull(title.title);
+      result.name = dropNull(title.title)?.trim();
     } else {
       log.warn(
         `applyGroupChange/${logId}: Clearing group title due to missing data.`
@@ -5505,6 +5570,7 @@ async function applyGroupChange({
         log.warn(
           `applyGroupChange/${logId}: Attempt to promote pendingAdminApproval failed; was not in pendingAdminApprovalMembers.`
         );
+        return;
       }
       if (pendingMembers[userId]) {
         delete pendingAdminApprovalMembers[userId];
@@ -5518,6 +5584,11 @@ async function applyGroupChange({
           `applyGroupChange/${logId}: Attempt to promote pendingMember failed; was already in members.`
         );
         return;
+      }
+
+      // If we had requested to join, and are approved, we added ourselves
+      if (userId === ourAci) {
+        result.addedBy = ourAci;
       }
 
       members[userId] = {
@@ -5543,7 +5614,7 @@ async function applyGroupChange({
   if (actions.modifyDescription) {
     const { descriptionBytes } = actions.modifyDescription;
     if (descriptionBytes && descriptionBytes.content === 'descriptionText') {
-      result.description = dropNull(descriptionBytes.descriptionText);
+      result.description = dropNull(descriptionBytes.descriptionText)?.trim();
     } else {
       log.warn(
         `applyGroupChange/${logId}: Clearing group description due to missing data.`
@@ -5656,7 +5727,7 @@ export async function applyNewAvatar(
     // Group has avatar; has it changed?
     if (
       newAvatarUrl &&
-      (!attributes.avatar || attributes.avatar.url !== newAvatarUrl)
+      (!attributes.avatar?.path || attributes.avatar.url !== newAvatarUrl)
     ) {
       if (!attributes.secretParams) {
         throw new Error('applyNewAvatar: group was missing secretParams!');
@@ -5777,7 +5848,7 @@ async function applyGroupState({
   // Note: During decryption, title becomes a GroupAttributeBlob
   const { title } = groupState;
   if (title && title.content === 'title') {
-    result.name = dropNull(title.title);
+    result.name = dropNull(title.title)?.trim();
   } else {
     result.name = undefined;
   }
@@ -5827,7 +5898,9 @@ async function applyGroupState({
         result.left = false;
 
         // Capture who added us if we were previously not in group
-        if (
+        if (pendingAdminApprovalMembers[ourAci] && !wasPreviouslyAMember) {
+          result.addedBy = sourceServiceId;
+        } else if (
           sourceServiceId &&
           !wasPreviouslyAMember &&
           isNumber(member.joinedAtVersion) &&
@@ -5985,7 +6058,7 @@ async function applyGroupState({
   // descriptionBytes
   const { descriptionBytes } = groupState;
   if (descriptionBytes && descriptionBytes.content === 'descriptionText') {
-    result.description = dropNull(descriptionBytes.descriptionText);
+    result.description = dropNull(descriptionBytes.descriptionText)?.trim();
   } else {
     result.description = undefined;
   }
@@ -7207,4 +7280,16 @@ export function getMembershipList(
     const uuidCiphertext = encryptServiceId(clientZkGroupCipher, aci);
     return { aci, uuidCiphertext };
   });
+}
+
+function setLastSuccessfulGroupFetch(
+  conversationId: string,
+  timestamp: number | undefined
+): void {
+  const conversation = window.ConversationController.get(conversationId);
+  strictAssert(
+    conversation,
+    `setLastSuccessfulGroupFetch/${idForLogging(conversationId)}: Conversation must exist`
+  );
+  conversation.lastSuccessfulGroupFetch = timestamp;
 }

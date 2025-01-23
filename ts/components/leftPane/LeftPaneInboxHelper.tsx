@@ -30,26 +30,20 @@ export type LeftPaneInboxPropsType = {
   searchDisabled: boolean;
   searchTerm: string;
   searchConversation: undefined | ConversationType;
+  filterByUnread: boolean;
 };
 
 export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> {
-  private readonly conversations: ReadonlyArray<ConversationListItemPropsType>;
-
-  private readonly archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
-
-  private readonly pinnedConversations: ReadonlyArray<ConversationListItemPropsType>;
-
-  private readonly isAboutToSearch: boolean;
-
-  private readonly isSearchingGlobally: boolean;
-
-  private readonly startSearchCounter: number;
-
-  private readonly searchDisabled: boolean;
-
-  private readonly searchTerm: string;
-
-  private readonly searchConversation: undefined | ConversationType;
+  readonly #conversations: ReadonlyArray<ConversationListItemPropsType>;
+  readonly #archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
+  readonly #pinnedConversations: ReadonlyArray<ConversationListItemPropsType>;
+  readonly #isAboutToSearch: boolean;
+  readonly #isSearchingGlobally: boolean;
+  readonly #startSearchCounter: number;
+  readonly #searchDisabled: boolean;
+  readonly #searchTerm: string;
+  readonly #searchConversation: undefined | ConversationType;
+  readonly #filterByUnread: boolean;
 
   constructor({
     conversations,
@@ -61,62 +55,69 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     searchDisabled,
     searchTerm,
     searchConversation,
+    filterByUnread,
   }: Readonly<LeftPaneInboxPropsType>) {
     super();
 
-    this.conversations = conversations;
-    this.archivedConversations = archivedConversations;
-    this.pinnedConversations = pinnedConversations;
-    this.isAboutToSearch = isAboutToSearch;
-    this.isSearchingGlobally = isSearchingGlobally;
-    this.startSearchCounter = startSearchCounter;
-    this.searchDisabled = searchDisabled;
-    this.searchTerm = searchTerm;
-    this.searchConversation = searchConversation;
+    this.#conversations = conversations;
+    this.#archivedConversations = archivedConversations;
+    this.#pinnedConversations = pinnedConversations;
+    this.#isAboutToSearch = isAboutToSearch;
+    this.#isSearchingGlobally = isSearchingGlobally;
+    this.#startSearchCounter = startSearchCounter;
+    this.#searchDisabled = searchDisabled;
+    this.#searchTerm = searchTerm;
+    this.#searchConversation = searchConversation;
+    this.#filterByUnread = filterByUnread;
   }
 
   getRowCount(): number {
-    const headerCount = this.hasPinnedAndNonpinned() ? 2 : 0;
-    const buttonCount = this.archivedConversations.length ? 1 : 0;
+    const headerCount = this.#hasPinnedAndNonpinned() ? 2 : 0;
+    const buttonCount = this.#archivedConversations.length ? 1 : 0;
     return (
       headerCount +
-      this.pinnedConversations.length +
-      this.conversations.length +
+      this.#pinnedConversations.length +
+      this.#conversations.length +
       buttonCount
     );
   }
 
   override getSearchInput({
     clearConversationSearch,
-    clearSearch,
+    clearSearchQuery,
     endConversationSearch,
     endSearch,
     i18n,
     showConversation,
     updateSearchTerm,
+    updateFilterByUnread,
   }: Readonly<{
     clearConversationSearch: () => unknown;
-    clearSearch: () => unknown;
+    clearSearchQuery: () => unknown;
     endConversationSearch: () => unknown;
     endSearch: () => unknown;
     i18n: LocalizerType;
     showConversation: ShowConversationType;
     updateSearchTerm: (searchTerm: string) => unknown;
+    updateFilterByUnread: (filterByUnread: boolean) => void;
   }>): ReactChild {
     return (
       <LeftPaneSearchInput
         clearConversationSearch={clearConversationSearch}
-        clearSearch={clearSearch}
+        clearSearchQuery={clearSearchQuery}
         endConversationSearch={endConversationSearch}
         endSearch={endSearch}
-        disabled={this.searchDisabled}
+        disabled={this.#searchDisabled}
         i18n={i18n}
-        isSearchingGlobally={this.isSearchingGlobally}
-        searchConversation={this.searchConversation}
-        searchTerm={this.searchTerm}
+        isSearchingGlobally={this.#isSearchingGlobally}
+        searchConversation={this.#searchConversation}
+        searchTerm={this.#searchTerm}
         showConversation={showConversation}
-        startSearchCounter={this.startSearchCounter}
+        startSearchCounter={this.#startSearchCounter}
         updateSearchTerm={updateSearchTerm}
+        onFilterClick={updateFilterByUnread}
+        filterButtonEnabled={!this.#searchConversation}
+        filterPressed={this.#filterByUnread}
       />
     );
   }
@@ -139,11 +140,13 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
   }
 
   getRow(rowIndex: number): undefined | Row {
-    const { conversations, archivedConversations, pinnedConversations } = this;
+    const pinnedConversations = this.#pinnedConversations;
+    const archivedConversations = this.#archivedConversations;
+    const conversations = this.#conversations;
 
     const archivedConversationsCount = archivedConversations.length;
 
-    if (this.hasPinnedAndNonpinned()) {
+    if (this.#hasPinnedAndNonpinned()) {
       switch (rowIndex) {
         case 0:
           return {
@@ -216,9 +219,9 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     const isConversationSelected = (
       conversation: Readonly<ConversationListItemPropsType>
     ) => conversation.id === selectedConversationId;
-    const hasHeaders = this.hasPinnedAndNonpinned();
+    const hasHeaders = this.#hasPinnedAndNonpinned();
 
-    const pinnedConversationIndex = this.pinnedConversations.findIndex(
+    const pinnedConversationIndex = this.#pinnedConversations.findIndex(
       isConversationSelected
     );
     if (pinnedConversationIndex !== -1) {
@@ -226,11 +229,11 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
       return pinnedConversationIndex + headerOffset;
     }
 
-    const conversationIndex = this.conversations.findIndex(
+    const conversationIndex = this.#conversations.findIndex(
       isConversationSelected
     );
     if (conversationIndex !== -1) {
-      const pinnedOffset = this.pinnedConversations.length;
+      const pinnedOffset = this.#pinnedConversations.length;
       const headerOffset = hasHeaders ? 2 : 0;
       return conversationIndex + pinnedOffset + headerOffset;
     }
@@ -240,20 +243,21 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
 
   override requiresFullWidth(): boolean {
     const hasNoConversations =
-      !this.conversations.length &&
-      !this.pinnedConversations.length &&
-      !this.archivedConversations.length;
-    return hasNoConversations || this.isAboutToSearch;
+      !this.#conversations.length &&
+      !this.#pinnedConversations.length &&
+      !this.#archivedConversations.length;
+    return hasNoConversations || this.#isAboutToSearch;
   }
 
   shouldRecomputeRowHeights(old: Readonly<LeftPaneInboxPropsType>): boolean {
-    return old.pinnedConversations.length !== this.pinnedConversations.length;
+    return old.pinnedConversations.length !== this.#pinnedConversations.length;
   }
 
   getConversationAndMessageAtIndex(
     conversationIndex: number
   ): undefined | { conversationId: string } {
-    const { conversations, pinnedConversations } = this;
+    const pinnedConversations = this.#pinnedConversations;
+    const conversations = this.#conversations;
     const conversation =
       pinnedConversations[conversationIndex] ||
       conversations[conversationIndex - pinnedConversations.length] ||
@@ -268,7 +272,7 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     _targetedMessageId: unknown
   ): undefined | { conversationId: string } {
     return getConversationInDirection(
-      [...this.pinnedConversations, ...this.conversations],
+      [...this.#pinnedConversations, ...this.#conversations],
       toFind,
       selectedConversationId
     );
@@ -285,9 +289,9 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     handleKeydownForSearch(event, options);
   }
 
-  private hasPinnedAndNonpinned(): boolean {
+  #hasPinnedAndNonpinned(): boolean {
     return Boolean(
-      this.pinnedConversations.length && this.conversations.length
+      this.#pinnedConversations.length && this.#conversations.length
     );
   }
 }

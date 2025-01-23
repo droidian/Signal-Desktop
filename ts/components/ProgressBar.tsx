@@ -5,15 +5,24 @@ import React from 'react';
 
 export function ProgressBar({
   fractionComplete,
+  isRTL,
 }: {
-  fractionComplete: number;
+  fractionComplete: number | null;
+  isRTL: boolean;
 }): JSX.Element {
+  if (fractionComplete == null) {
+    return (
+      <div className="ProgressBar">
+        <div className="ProgressBar__fill ProgressBar__fill--spinning" />
+      </div>
+    );
+  }
   return (
     <div className="ProgressBar">
       <div
         className="ProgressBar__fill"
         style={{
-          marginInlineEnd: `${(1 - fractionComplete) * 100}%`,
+          transform: `translateX(${(isRTL ? -1 : 1) * (fractionComplete - 1) * 100}%)`,
         }}
       />
     </div>

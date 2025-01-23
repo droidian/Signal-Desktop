@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "လိုက်နာဆောင်ရွက်ရမည့် အချက်များ"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple Silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "ချို့ယွင်းချက်ကို ကူးပြီး ထွက်ရန်"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Desktop သည် {name} ၊ စက် {deviceId} မှ ကုဒ်ဖြေရာတွင် ချို့ယွင်းချက် ဖြစ်ပေါ်ခဲ့ပါသည်"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "မှတ်တမ်းကို ပေးပို့ရန်"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "ဖိုင်များနှင့်အတူ ဓာတ်ပုံများနှင့် ဗီဒီယိုများကို ရွေး၍ မရနိုင်ပါ။"
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "ရှာရန်"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "မဖတ်ရသေးသော ချက်(တ်)များကို ရှာရန်"
+  },
   "icu:clearSearch": {
     "messageformat": "ရှာဖွေမှုကို ရှင်းရန်"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "\"{searchTerm}\" အတွက် ရလဒ်များ မရှိပါ"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "မဖတ်ရသေးသော ချက်(တ်)များတွင် \"{searchTerm}\" အတွက် ရလဒ်မရှိပါ"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "မဖတ်ရသေးသည့် ချက်(တ်)များ မရှိပါ"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "SMS/MMS အဆက်အသွယ်များကို Desktop တွင် မရရှိနိုင်ပါ။"
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "{conversationName} တွင် \"{searchTerm}\" အတွက် ရလဒ်များ မရှိပါ"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "မဖတ်ရသေးများကို စစ်ထုတ်ပြီး"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "မဖတ်ရသေးသည်များကို စစ်ထုတ်ရန်"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "စစ်ထုတ်မှုကို ရှင်းရန်"
   },
   "icu:conversationsHeader": {
     "messageformat": "ချက်(တ်)များ"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "အသံဖမ်းစက်တွင် ချို့ယွင်းချက် ဖြစ်ခဲ့ပါသည်။"
   },
-  "icu:attachmentSaved": {
-    "messageformat": "ပူးတွဲဖိုင်ကို သိမ်းပြီး။"
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, other {ပူးတွဲဖိုင် {count,number} ခုကို သိမ်းပြီး}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "ဖိုင်တွဲတွင် ပြရန်"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, other {ဖိုင် {count,number} ခု ဒေါင်းလုဒ်မပြီးသေးသောကြောင့် ပူးတွဲဖိုင်များကို သိမ်းဆည်း၍မရပါ}}"
   },
   "icu:you": {
     "messageformat": "သင်"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "မှတ်ချက်"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "မကြာမီက မီဒီယာကို ကြည့်ရန်"
+  "icu:allMediaMenuItem": {
+    "messageformat": "မီဒီယာအားလုံး"
   },
   "icu:back": {
     "messageformat": "နောက်သို့"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "အချက်အလက်"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "မက်ဆေ့ချ်များကို ဖျက်ရန်"
+  "icu:deleteConversation": {
+    "messageformat": "ဖျက်ရန်"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "မက်ဆေ့ချ်များကို ဖျက်မည်လား။"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "ချက်(တ်)ကို ဖျက်မည်လား။"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "ဤချက်(တ်)မှ မက်ဆေ့ချ်များအားလုံးကို ယခုစက်မှ ဖျက်လိုက်ပါမည်။ မက်ဆေ့ချ်များကို ဖျက်ပြီးနောက် ဤချက်(တ်)ကို သင် ရှာ၍ရပါသေးသည်။"
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "ဤချက်(တ်)မှ မက်ဆေ့ချ်များအားလုံးကို ယခုစက်မှ ဖျက်လိုက်ပါမည်။"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "ဤချက်(တ်)ရှိ မက်ဆေ့ချ်များအားလုံးကို သင်၏စက်များအားလုံးမှ ဖျက်လိုက်ပါမည်။ မက်ဆေ့ချ်များကို ဖျက်ပြီးနောက် ဤချက်(တ်)ကို သင် ရှာ၍ရပါသေးသည်။"
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "ဤချက်(တ်)ရှိ မက်ဆေ့ချ်များအားလုံးကို သင်၏စက်များအားလုံးမှ ဖျက်လိုက်ပါမည်။"
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "အဖွဲ့မှ ထွက်မည်"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "ဤပုံတွင် စာတန်းပါကြောင်း ပြသသည့် အိုင်ကွန်"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "ဤပူးတွဲပါဖိုင်ကို ပိုကြီးသောမြင်ကွင်းဖြင့် ဖွင့်ပါ"
+  },
+  "icu:startDownload": {
+    "messageformat": "စတင်ဒေါင်းလုဒ် လုပ်မည်"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "ဒေါင်းလုဒ်လုပ်ခြင်း ပယ်ဖျက်မည်"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, other {ဒေါင်းလုဒ် {count,number} ခု}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "ဤမီဒီယာ မရှိတော့ပါ။"
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "ပိုမိုသိရှိရန်"
+  },
   "icu:save": {
     "messageformat": "သိမ်းမယ်"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "ထပ်ကြိုးစားပါ"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "ကုဒ်ကို ပြန်လည်စတင်ပါ"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "အကူအညီရယူပါ"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "ကောလ်တွင် ပါဝင်၍ မရနိုင်ပါ"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "သင်သည် ကောလ်ထဲတွင် ရှိပြီးဖြစ်သည်။"
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "ကောလ်လင့်ခ် အချက်အလက်ကို ရယူနိုင်ခြင်းမရှိပါ။ သင့်ကွန်ရက် ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ။"
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal ခေါ်ဆိုမှု"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "လင့်ခ်ကို ဖျက်၍မရပါ။ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။"
   },
   "icu:calling__join-request-denied": {
     "messageformat": "ဤကောလ်တွင် ပါဝင်ရန် သင့်တောင်းဆိုမှုကို ပယ်ချလိုက်ပါသည်။"
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, other {{first}၊ {second}၊ နှင့် အခြား {others,number} ယောက်များသည် ၎င်းခေါ်ဆိုမှုထဲတွင် ရှိပါသည်}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, other {ဤကောလ်တွင် လူ {count,number} ဦးရှိသည်}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal သည် {person} အတွက် အသံမြည်ပါမည်"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "{name} မှ အသံနှင့် ဗီဒီယို မရရှိနိုင်ပါ"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "အော်ဒီယိုနှင့် ဗီဒီယိုကို လက်ခံ၍မရပါ"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "သင့်လုံခြုံရေးနံပါတ် ပြောင်းလဲမှုကို ၎င်းတို့ အတည်မပြုရသေးသောကြောင့် သော်လည်းကောင်း၊ ၎င်းတို့ စက်တွင် ပြဿနာရှိနေသောကြောင့် သော်လည်းကောင်း၊ ၎င်းတို့က သင့်ကို ဘလော့ခ်ထားသောကြောင့် သော်လည်းကောင်း ဖြစ်နိုင်ပါသည်။"
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal သည် {window} ကို ဝေမျှနေသည်။"
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Signal မျက်နှာပြင်မျှဝေခြင်း လုပ်ဆောင်နေသည်"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "ပြန်ချိတ်ဆက်နေဆဲ..."
@@ -1521,7 +1584,7 @@
     "messageformat": "ဤ Signal Desktop ဗားရှင်းမှ ဒေတာနှင့် မက်ဆေ့ချ်အားလုံးကို ဖျက်ပါမည်လား။ ဤ Desktop ကို သင် အချိန်မရွေး ပြန်လည်ချိတ်ဆက်နိုင်သော်လည်း သင့်မက်ဆေ့ချ်များကို ပြန်သိမ်းနိုင်မည်မဟုတ်ပါ။ သင့်ဖုန်း သို့မဟုတ် အခြား ချိတ်ထားသည့် စက်များမှ သင့် Signal အကောင့်နှင့် ဒေတာကို ဖျက်မည်မဟုတ်ပါ။"
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "ဒေတာအားလုံးကို ဖျက်ပြီး ချိတ်ဆက်မှုမှ ဖြုတ်ရန်"
+    "messageformat": "ချိတ်ဆက်မှုကိုဖြုတ်၍ ဒေတာအားလုံးကို ဖျက်နေသည်..."
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "သင့်တွင် ယခင် Signal Desktop ထည့်သွင်းမှုမှ ဒေတာအဟောင်းများ ရှိပါသည်။ ဆက်လုပ်ရန်ကို ရွေးချယ်ပါက ၎င်းကို ဖျက်မည်ဖြစ်ပြီး အစမှ စတင်ပါလိမ့်မည်။"
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "ယမန်နေ့ {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Signal သည် အဝင်မက်ဆေ့ချ်ကို ဆောင်ရွက်ရန် ပျက်ကွက်နေနိုင်သည်။"
   },
   "icu:messageBodyTooLong": {
     "messageformat": "မက်ဆေ့ချ် စာကိုယ် ရှည်လွန်းနေပါသည်။"
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, other {{ringer} က သင်၊ {first} ၊ {second} နှင့် အခြား {remaining,number} ဦးကို ခေါ်နေပါသည်}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "ချိတ်ဆက်နေသည်"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "ဖုန်းမြည်နေဆဲ..."
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "ကောလ်လင့်ခ်"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "အဖွဲ့လိုက် ခေါ်ဆိုမှု"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "ပါဝင်ခွင့်ရရန် စောင့်ဆိုင်းနေဆဲ"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "မိုက် ဖွင့်ထားသည်"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "လက်ပြန်ချမည်လား။"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "လက်ပြန်ချမည်"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "ဖုန်းမြည်သံ ဖွင့်ထားသည်"
@@ -2961,7 +3039,7 @@
     "messageformat": "အက်ဒ်မင်သည် သင့်အား ဖယ်ရှားခဲ့သောကြောင့် အဖွဲ့လင့်ခ်မှတစ်ဆင့် ဤအဖွဲ့တွင် ပါဝင်၍ မရနိုင်ပါ။"
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "ဤအဖွဲ့တွင် သင်မပါဝင်မီ ဤအဖွဲ့ အက်ဒ်မင်က သင့်တောင်းဆိုချက်ကို အတည်ပြုရပါမည်။ အတည်ပြုပြီးပါက သင့်အမည်နှင့် ဓာတ်ပုံကို ၎င်းမန်ဘာများနှင့် ဝေမျှပါမည်။"
+    "messageformat": "သင်သည် အဖွဲ့ထဲသို့မဝင်နိုင်ခင် သင်၏ တောင်းဆိုမှုကို အဖွဲ့၏ စီမံသူတစ်ဦးမှ လက်ခံရပါမည်။ သင်မှ​ဝင်ရောက်ရန် တောင်းဆိုလျှင် သင်၏ အမည် နှင့် ရုပ်ပုံကို အဖွဲ့ဝင်များနှင့် မျှဝေပါမည်။"
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "ဝင်ပါမယ်"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "{joinerName} မှ အဖွဲ့သို့ဝင်ရန် တောင်းဆိုချက်သည် ငြင်းဆိုခံခဲ့ရပါသည်။"
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} သည် အဖွဲ့လင့်ခ်မှတစ်ဆင့် ပါဝင်ရန် တောင်းဆိုခဲ့ပြီး ၎င်းတို့၏ တောင်းဆိုချက်ကို ပယ်ဖျက်ခဲ့ပါသည်။"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} သည် အဖွဲ့လင့်ခ်မှတစ်ဆင့် ပါဝင်ရန် တောင်းဆိုချက် {numberOfRequests,number} ခုကို တောင်းဆိုပြီးနောက် ပယ်ဖျက်ခဲ့ပါသည်။"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, other {{joinerName} သည် အဖွဲ့လင့်ခ်မှတစ်ဆင့် ပါဝင်ရန် တောင်းဆိုချက် {numberOfRequests,number} ခုကို တောင်းဆိုပြီးနောက် ဖျက်သိမ်းခဲ့ပါသည်}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "ရှေ့သို့"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "သင့် မက်ဆေ့ချ်မှတ်တမ်း အရွယ်အစားပေါ်မူတည်၍ မိနစ်အနည်းငယ် ကြာနိုင်ပါသည်"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signal ကိုလှူဒါန်းပါ"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "\"Signal အတွက် လှူရန်\" ကို နှိပ်ပြီး ပုံမှန်လှူဒါန်းပါ"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "မက်ဆေ့ချ်များကို တူအောင်ညှိနေသည်"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{totalSize} ({fractionComplete,number,percent}) မှ {currentSize} ကို ဒေါင်းလုဒ်လုပ်နေသည်..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "မက်ဆေ့ချ်လွှဲပြောင်းခြင်းကို အပြီးသတ်နေသည်..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "ဒေါင်းလုဒ်လုပ်ရန် ပြင်ဆင်နေသည်..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "သင့် မက်ဆေ့ချ်မှတ်တမ်း အရွယ်အစားပေါ်မူတည်၍ မိနစ်အနည်းငယ် ကြာနိုင်ပါသည်"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "မလုပ်တော့ပါ"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "ချိန်ကိုက်မှု လုပ်ငန်းစဉ်အပါအဝင် မက်ဆေ့ချ်များနှင့် ချက်(တ်)အချက်အလက်ကို ဟိုဘက်သည်ဘက် ကုဒ်ပြောင်းဝှက်ခြင်းဖြင့် ကာကွယ်ထားသည်။ <learnMoreLink>ပိုမိုလေ့လာရန်</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "လွှဲပြောင်းမှုကို ပယ်ဖျက်မလား။"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "သင့် မက်ဆေ့ချ်များနှင့် မီဒီယာများကို ပြန်လည်ရယူခြင်း မပြီးပြတ်သေးပါ။ ပယ်ဖျက်ရန်ကို ရွေးချယ်ပါက သင့်စက်သည် မက်ဆေ့ချ်မှတ်တမ်းမပါဘဲ ချိတ်ဆက်သွားမည်။"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "ဆက်လက်လွှဲပြောင်းမည်"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "လွှဲပြောင်းမှုကို ပယ်ဖျက်မည်"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "သင့်မက်ဆေ့ချ် လွှဲပြောင်းရာတွင် ချွတ်ယွင်းချက်ရှိနေသည်"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "မက်ဆေ့ချ်ကို လွှဲပြောင်း၍မရနိုင်ပါ။ သင့်အင်တာနက်ချိတ်ဆက်မှုကို ပြန်စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။"
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "ချွတ်ယွင်းချက်တစ်ခုကြောင့် သင့်မက်ဆေ့ချ်များကို လွှဲပြောင်း၍မရပါ။ ဤ Desktop ကို ပြန်လည်ချိတ်ဆက်၍ ထပ်စမ်းကြည့်ပါ။"
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "ထပ်ကြိုးစားပါ"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "ကျော်ပါ"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "မက်ဆေ့ချ်လွှဲပြောင်းမှုကို ကျော်လိုပါသလား။"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "ကျော်ရန်ရွေးချယ်ပါက ဤစက်ပေါ်ရှိ သင့်မက်ဆေ့ချ်များ သို့မဟုတ် မီဒီယာများကို သင် ဝင်ရောက်ခွင့်ရှိမည်မဟုတ်တော့ပါ။ ဆက်တင် > ချက်(တ်) > လွှဲပြောင်းမှုကို ကျော်သွားပြီးနောက် လွှဲပြောင်းမှုအသစ်တစ်ခု စတင်နိုင်သည်။"
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "မလုပ်တော့ပါ"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "မီဒီယာကို ပြန်လည်ရယူနေသည်"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "ပြန်လည်ရယူခြင်းကို ခေတ္တရပ်ထားသည်"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{totalSize} မှ {currentSize} ကို ပြန်လည်ရယူခဲ့သည်"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "မီဒီယာသည် နောက်ခံတွင် ဆက်လက်ဒေါင်းလုဒ်လုပ်ပါမည်"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "လွှဲပြောင်းမှုကို ခေတ္တရပ်ပါ"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "ပြန်လည်စတင် လွှဲပြောင်းမည်"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "လွှဲပြောင်းမှုကို ပယ်ဖျက်မည်"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "နောက်ထပ် ရွေးစရာများ"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "ပြန်လည်ရယူခြင်း ပြီးစီးပါပြီ"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{totalSize} ၏ {currentSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "မီဒီယာလွှဲပြောင်းမှုကို ပယ်ဖျက်လိုပါသလား။"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "သင့်မက်ဆေ့ချ်များနှင့် မီဒီယာများကို ပြန်လည်ရယူခြင်း မပြီးပြတ်သေးပါ။ ပယ်ဖျက်ရန်ကို ရွေးချယ်ပါက ဆက်တင်မှ ထပ်မံလွှဲပြောင်းနိုင်ပါသည်။"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "ဆက်လက်လွှဲပြောင်းမည်"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "လွှဲပြောင်းမှုကို ပယ်ဖျက်မည်"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "ဖြန့်ရန်"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "အဖွဲ့မှ ဖယ်ရှားရန်"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "သင်သည် ကောလ်ထဲတွင် ရှိပြီးဖြစ်သည်"
+  "icu:ContactModal--voice": {
+    "messageformat": "အသံ"
   },
   "icu:showChatColorEditor": {
     "messageformat": "ချက်(တ်)အရောင်"
@@ -3762,7 +3927,7 @@
     "messageformat": "link ကိုပြန်လည်သတ်မှတ်"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "အဖွဲ့ဝင်အသစ်များကိုလက်ခံပါ"
+    "messageformat": "အက်ဒ်မင်၏ ခွင့်ပြုချက်လိုအပ်သည်"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "အဖွဲ့လင့်ခ်မှတစ်ဆင့် ပါဝင်သည့် မန်ဘာအသစ်များအား အတည်ပြုရန် အက်ဒ်မင် လိုအပ်ပါသည်"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ".5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "အထက်ပါ {composeIcon} ကို နှိပ်ပြီး မက်ဆေ့ချ်ပို့ရန် သင့်အဆက်အသွယ်များ သို့မဟုတ် အဖွဲ့များကို ရှာပါ။"
-  },
-  "icu:composeIcon": {
-    "messageformat": "ရေးသားရန် ခလုတ်"
   },
   "icu:emptyInbox__title": {
     "messageformat": "ချက်(တ်)များမရှိပါ"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal သည် နည်းပညာပိုင်းဆိုင်ရာ အခက်အခဲများ ကြုံတွေ့နေပါသည်။ ဝန်ဆောင်မှုများကို အမြန်ဆုံးပြန်လည်စတင်နိုင်ရန် ကျွနု်ပ်တို့ ကြိုးစားနေပါသည်။"
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "အပ်ဒိတ် လိုအပ်ပါသည်"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "သင့်မက်ဆေ့ချ်များကို ချိန်ကိုက်မှု အပြီးသတ်ရန် Signal Desktop ကို ယခု အပ်ဒိတ်လုပ်ပါ။"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "အပ်ဒိတ်လုပ်မည်"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "အပ်ဒိတ် လိုအပ်ပါသည်"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "စတိုရီကို ကြည့်ရန် နှိပ်ပါ"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "အပ်ဒိတ်တစ်ခုထည့်ရန် <newStoryIcon>စတိုရီတစ်ခု ပေါင်းထည့်ရန်</newStoryIcon>ကို နှိပ်ပါ။"
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "အပ်ဒိတ်တစ်ခုထည့်ရန် <newStoryButtonIcon></newStoryButtonIcon> ကို နှိပ်ပါ။"
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} မှ {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "ပြန်စာများ"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
     "messageformat": "စတိုရီကို တုံ့ပြန်မှု ပေးခဲ့ပါသည်"
   },
-  "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
-  },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "စတိုရီကို တုံ့ပြန်မှု ပေးခဲ့ပါသည်"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "You can’t reply to this story because you’re no longer a member of this group."
@@ -5142,7 +5304,7 @@
     "messageformat": "စတိုရီ"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "စတိုရီများ ပြသရန်"
+    "messageformat": "စတိုရီကို ဝှက်ထားမှုမှ ဖျက်ရန်"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "စတိုရီကို ဝှက်ရန်"
@@ -5413,7 +5575,10 @@
     "messageformat": "ကောလ်မှတ်တမ်းကို ရှင်းမည်လား။"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "ဤသို့လုပ်ဆောင်ခြင်းဖြင့် ကောလ်မှတ်တမ်း အားလုံးကို အပြီးတိုင် ဖျက်ပစ်လိုက်ပါမည်။"
+    "messageformat": "ဤသို့လုပ်ဆောင်ခြင်းဖြင့် ကောလ်မှတ်တမ်းအားလုံးကို အပြီးတိုင်ဖျက်ပစ်လိုက်ပါမည်။"
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "ဤသို့လုပ်ဆောင်ခြင်းဖြင့် ကောလ်မှတ်တမ်း အားလုံးကို အပြီးတိုင် ဖျက်ပစ်လိုက်ပါမည်။ သင်ဖန်တီးထားသော ကောလ်လင့်ခ်များသည် ၎င်းတို့ကို ရရှိထားသူများအတွက် အလုပ်လုပ်တော့မည်မဟုတ်ပါ။ "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "ဖယ်ရှားမည်"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "ကောလ်မှတ်တမ်း ရှင်းလင်းပြီး"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "ကောလ်တစ်ခုကို ကြည့်ရှုရန် သို့မဟုတ် စတင်ရန် နှိပ်ပါ"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "ကောလ်လင့်ခ်အားလုံးကို ဖျက်၍ မရနိုင်ခဲ့ပါ။ သင့်အင်တာနက်ချိတ်ဆက်မှုကို ပြန်စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။"
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "အသံ သို့မဟုတ် ဗီဒီယိုကောလ် အသစ်တစ်ခုစတင်ရန် <newCallIcon>ကောလ်အသစ်</newCallIcon> ကိုနှိပ်ပါ။"
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "ကောလ်မှတ်တမ်းအားလုံးကို ရှင်း၍မရနိုင်ခဲ့ပါ။ သင့်အင်တာနက်ချိတ်ဆက်မှုကို ပြန်စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။"
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "အသံ သို့မဟုတ် ဗီဒီယိုကောလ်ခေါ်ဆိုမှုအသစ်တစ်ခု စတင်ရန် <newCallButtonIcon></newCallButtonIcon> ကို နှိပ်ပါ။"
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "လွတ်သွားသော ခေါ်ဆိုမှုများကို ရှာဖွေရန်"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "ရှာရန်"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "လွတ်သွားသည်များကို စစ်ထုတ်ပြီး"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "လွတ်သွားသည်များကို စစ်ထုတ်ရန်"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "ပုံစံပြောင်းရန်"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "လတ်တလော ခေါ်ဆိုမှုများမရှိ။ သူငယ်ချင်းတစ်ယောက်ကို ခေါ်ဆိုခြင်းဖြင့် စတင်လိုက်ပါ။"
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "ကောလ်များ မရှိပါ"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "လတ်တလောကောလ်များ ဤနေရာတွင် ပေါ်လာပါမည်။"
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "လွတ်သွားသော ကောလ်များမရှိပါ"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "လွတ်သွားသော ကောလ်များ ဤနေရာတွင် ပေါ်လာပါမည်။"
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "“{query}” အတွက် ရလဒ်မရှိပါ"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "လွတ်သွားသော ခေါ်ဆိုမှုများတွင် “{query}” အတွက် ရလဒ်မရှိပါ"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "လွတ်သွားသော ကောလ်များမရှိပါ"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "ကောလ်လင့်ခ်တစ်ခု ဖန်တီးရန်"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "နောက်ပြန်သွားရန်"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "ခေါ်ဆိုမှုအသစ်တစ်ခုတွင် မပါဝင်မီ လက်ရှိခေါ်ဆိုမှုကို ရပ်နားရပါမည်"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {အထွက် အော်ဒီယိုကောလ်} other {အဝင် အော်ဒီယိုကောလ်}}} Video {{direction, select, Outgoing {ဗီဒီယိုကောလ် အထွက်} other {ဗီဒီယိုကောလ် အဝင်}}} Group {{direction, select, Outgoing {အထွက် အဖွဲ့ကောလ်} other {အဝင် အဖွဲ့ကောလ်}}} other {{direction, select, Outgoing {ဖုန်းခေါ်ဆိုမှု} other {အဝင်ဖုန်းလာသည်}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {လွတ်သွားသော အော်ဒီယိုကောလ်} Video {ဗီဒီယိုခေါ်ဆိုမှုလွဲချော်} Group {လွတ်သွားသော အဖွဲ့ကောလ်} other {လွတ်သွားသော ဖုန်းခေါ်ဆိုမှု}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {မဖြေဆိုသော အော်ဒီယိုကောလ်} Video {မဖြေဆိုသော ဗီဒီယိုကောလ်} Group {မဖြေဆိုခဲ့သော အဖွဲ့ကောလ်} other {မဖြေဆိုခဲ့သော  ကောလ်}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {ငြင်းပယ်ခဲ့သော အော်ဒီယိုကောလ်} Video {ငြင်းပယ်ခဲ့သော ဗီဒီယိုကောလ်} Group {ငြင်းပယ်ခဲ့သော အဖွဲ့ကောလ်} other {ငြင်းပယ်ခဲ့သော  ကောလ်}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "ကောလ်လင့်ခ်"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "ကောလ်အမည် ပြင်ဆင်ရန်"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "မန်ဘာအားလုံးကို အတည်ပြုရန်"
+    "messageformat": "အက်ဒ်မင်၏ ခွင့်ပြုချက်လိုအပ်သည်"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "ခေါ်ဆိုမှုပြုလုပ်နေစဉ်တွင် ဤဆက်တင်ကို ပြောင်း၍မရပါ"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "လင့်ခ် ကူးရန်"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "ဖျက်ရန်"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "ခေါ်ဆိုမှုပြုလုပ်နေစဉ်တွင် ဤလင့်ခ်ကို ဖျက်၍မရပါ"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Signal ဖြင့်ဖုန်းခေါ်ဆိုရန် လင့်ခ်အသေးစိတ်"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "ကောလ်အမည် ပြင်ဆင်ရန်"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "မန်ဘာအားလုံးကို အတည်ပြုရန်"
+    "messageformat": "အက်ဒ်မင်၏ ခွင့်ပြုချက်လိုအပ်သည်"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "ဝင်ရောက်မှုကို ခွင့်ပြုမည်"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "ဝင်ရောက်မှုကို ငြင်းပယ်မည်"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "ပိတ်မည်"
@@ -5629,13 +5794,10 @@
     "messageformat": "အနေအထား ပြုပြင်မှုလေးများ၊ ချို့ယွင်းချက် ပြင်ဆင်မှုများနှင့် စွမ်းဆောင်ရည် မြှင့်တင်မှုများ။ Signal ကို သုံးသည့်အတွက် ကျေးဇူးတင်ပါသည်။",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "ယခုအခါ Signal Desktop သည် ဒေါင်းလုဒ် လုပ်လက်စဖြင့် ပြတ်တောက်သွားသော ပူးတွဲဖိုင်များကို အလိုအလျောက် ဆက်၍ဒေါင်းလုဒ်လုပ်နိုင်ပါပြီ။"
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "တစ်ခါတစ်ရံတွင် သင့်ကိုယ်ပိုင်အကောင့်ကို အလိုအလျောက်ဖြည့်စွက်မှု အကြံပြုချက်စာရင်းတွင် @ မန်းရှင်းထည့်သွင်းသည့် ချွတ်ယွင်းချက်တစ်ခုကို ကျွန်ုပ်တို့ ပြင်ဆင်ထားပါသည်။"
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "ယခု သင်သည် Touchscreen စက်များတွင် ချက်(တ်)စာရင်းဘေးမှ ဘား၏ အရွယ်အစားကို ချိန်ညှိနိုင်ပါပြီ။"
   }
 }

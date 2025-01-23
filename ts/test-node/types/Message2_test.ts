@@ -13,6 +13,7 @@ import type { EmbeddedContactType } from '../../types/EmbeddedContact';
 import type { MessageAttributesType } from '../../model-types.d';
 import type {
   AddressableAttachmentType,
+  AttachmentType,
   LocalAttachmentV2Type,
 } from '../../types/Attachment';
 import type { LoggerType } from '../../types/Logging';
@@ -60,6 +61,10 @@ describe('Message', () => {
         width: 10,
         height: 20,
       }),
+      doesAttachmentExist: async () => true,
+      // @ts-expect-error ensureAttachmentIsReencryptable has type guards that we don't
+      // implement here
+      ensureAttachmentIsReencryptable: async attachment => attachment,
       getRegionCode: () => 'region-code',
       logger,
       makeImageThumbnail: async (_params: {
@@ -265,15 +270,19 @@ describe('Message', () => {
           upgrade: v3,
         });
 
-        const context = getDefaultContext({ logger });
-        const upgradeSchema = async (message: MessageAttributesType) =>
-          toVersion3(
-            await toVersion2(await toVersion1(message, context), context),
-            context
-          );
-
-        const actual = await upgradeSchema(input);
+        const actual = await Message.upgradeSchema(input, getDefaultContext(), {
+          versions: [toVersion1, toVersion2, toVersion3],
+        });
         assert.deepEqual(actual, expected);
+
+        // if we try to upgrade it again, it will fail since it could not upgrade any
+        // versions
+        const upgradeAgainPromise = Message.upgradeSchema(
+          actual,
+          getDefaultContext(),
+          { versions: [toVersion1, toVersion2, toVersion3] }
+        );
+        await assert.isRejected(upgradeAgainPromise);
       });
 
       it('should skip out-of-order upgrade steps', async () => {
@@ -386,12 +395,12 @@ describe('Message', () => {
       assert.deepEqual(actual, expected);
     });
 
-    it('should return original message if upgrade function throws', async () => {
+    it('should throw if upgrade function throws', async () => {
       const upgrade = async () => {
         throw new Error('boom!');
       };
       const upgradeWithVersion = Message._withSchemaVersion({
-        schemaVersion: 3,
+        schemaVersion: 1,
         upgrade,
       });
 
@@ -399,15 +408,12 @@ describe('Message', () => {
         id: 'guid-guid-guid-guid',
         schemaVersion: 0,
       });
-      const expected = getDefaultMessage({
-        id: 'guid-guid-guid-guid',
-        schemaVersion: 0,
-      });
-      const actual = await upgradeWithVersion(
+
+      const upgradePromise = upgradeWithVersion(
         input,
         getDefaultContext({ logger })
       );
-      assert.deepEqual(actual, expected);
+      await assert.isRejected(upgradePromise);
     });
 
     it('should return original message if upgrade function returns null', async () => {
@@ -460,7 +466,6 @@ describe('Message', () => {
           text: 'hey!',
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
@@ -472,7 +477,6 @@ describe('Message', () => {
           attachments: [],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -496,7 +500,6 @@ describe('Message', () => {
           attachments: [],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -525,7 +528,6 @@ describe('Message', () => {
           ],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -558,7 +560,6 @@ describe('Message', () => {
           ],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -578,7 +579,6 @@ describe('Message', () => {
           ],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -613,7 +613,6 @@ describe('Message', () => {
           ],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -633,7 +632,6 @@ describe('Message', () => {
           ],
           id: 34233,
           isViewOnce: false,
-          messageId: 'message-id',
           referencedMessageNotFound: false,
         },
       });
@@ -673,7 +671,7 @@ describe('Message', () => {
         contact: [
           {
             name: {
-              displayName: 'Someone somewhere',
+              nickname: 'Someone somewhere',
             },
           },
         ],
@@ -683,13 +681,181 @@ describe('Message', () => {
         contact: [
           {
             name: {
-              displayName: 'Someone somewhere',
+              nickname: 'Someone somewhere',
             },
           },
         ],
       });
       const result = await upgradeVersion(message, getDefaultContext());
       assert.deepEqual(result, expected);
+    });
+  });
+
+  describe('_mapAllAttachments', () => {
+    function composeAttachment(
+      overrides?: Partial<AttachmentType>
+    ): AttachmentType {
+      return {
+        size: 128,
+        contentType: MIME.IMAGE_JPEG,
+        ...overrides,
+      };
+    }
+
+    it('updates all attachments on message', async () => {
+      const upgradeAttachment = (attachment: AttachmentType) =>
+        Promise.resolve({ ...attachment, key: 'upgradedKey' });
+
+      const upgradeVersion = Message._mapAllAttachments(upgradeAttachment);
+
+      const message = getDefaultMessage({
+        body: 'hey there!',
+        attachments: [
+          composeAttachment({ path: '/attachment/1' }),
+          composeAttachment({ path: '/attachment/2' }),
+        ],
+        quote: {
+          text: 'quote!',
+          attachments: [
+            {
+              contentType: MIME.TEXT_ATTACHMENT,
+              thumbnail: composeAttachment({ path: 'quoted/thumbnail' }),
+            },
+          ],
+          id: 34233,
+          isViewOnce: false,
+          referencedMessageNotFound: false,
+        },
+        preview: [
+          { url: 'url', image: composeAttachment({ path: 'preview/image' }) },
+        ],
+        contact: [
+          {
+            avatar: {
+              isProfile: false,
+              avatar: composeAttachment({ path: 'contact/avatar' }),
+            },
+          },
+        ],
+        sticker: {
+          packId: 'packId',
+          stickerId: 1,
+          packKey: 'packKey',
+          data: composeAttachment({ path: 'sticker/data' }),
+        },
+        bodyAttachment: composeAttachment({ path: 'body/attachment' }),
+      });
+
+      const expected = getDefaultMessage({
+        body: 'hey there!',
+        attachments: [
+          composeAttachment({ path: '/attachment/1', key: 'upgradedKey' }),
+          composeAttachment({ path: '/attachment/2', key: 'upgradedKey' }),
+        ],
+        quote: {
+          text: 'quote!',
+          attachments: [
+            {
+              contentType: MIME.TEXT_ATTACHMENT,
+              thumbnail: composeAttachment({
+                path: 'quoted/thumbnail',
+                key: 'upgradedKey',
+              }),
+            },
+          ],
+          id: 34233,
+          isViewOnce: false,
+          referencedMessageNotFound: false,
+        },
+        preview: [
+          {
+            url: 'url',
+            image: composeAttachment({
+              path: 'preview/image',
+              key: 'upgradedKey',
+            }),
+          },
+        ],
+        contact: [
+          {
+            avatar: {
+              isProfile: false,
+              avatar: composeAttachment({
+                path: 'contact/avatar',
+                key: 'upgradedKey',
+              }),
+            },
+          },
+        ],
+        sticker: {
+          packId: 'packId',
+          stickerId: 1,
+          packKey: 'packKey',
+          data: composeAttachment({ path: 'sticker/data', key: 'upgradedKey' }),
+        },
+        bodyAttachment: composeAttachment({
+          path: 'body/attachment',
+          key: 'upgradedKey',
+        }),
+      });
+      const result = await upgradeVersion(message, getDefaultContext());
+      assert.deepEqual(result, expected);
+    });
+  });
+  describe('migrateBodyAttachmentToDisk', () => {
+    it('writes long text attachment to disk, but does not truncate body', async () => {
+      const message = getDefaultMessage({
+        body: 'a'.repeat(3000),
+      });
+      const expected = getDefaultMessage({
+        body: 'a'.repeat(3000),
+        bodyAttachment: {
+          contentType: MIME.LONG_MESSAGE,
+          ...FAKE_LOCAL_ATTACHMENT,
+        },
+      });
+      const result = await Message.migrateBodyAttachmentToDisk(
+        message,
+        getDefaultContext()
+      );
+      assert.deepEqual(result, expected);
+    });
+    it('does nothing if body is not too long', async () => {
+      const message = getDefaultMessage({
+        body: 'a'.repeat(2048),
+      });
+
+      const result = await Message.migrateBodyAttachmentToDisk(
+        message,
+        getDefaultContext()
+      );
+      assert.deepEqual(result, message);
+    });
+  });
+
+  describe('toVersion14: ensureAttachmentsAreReencryptable', () => {
+    it('migrates message if the file does not exist', async () => {
+      const message = getDefaultMessage({
+        schemaVersion: 13,
+        schemaMigrationAttempts: 0,
+        attachments: [
+          {
+            size: 128,
+            contentType: MIME.IMAGE_BMP,
+            path: 'no/file/here.png',
+            iv: 'iv',
+            digest: 'digest',
+            key: 'key',
+          },
+        ],
+        contact: [],
+      });
+      const result = await Message.upgradeSchema(message, {
+        ...getDefaultContext(),
+        doesAttachmentExist: async () => false,
+      });
+
+      assert.deepEqual({ ...message, schemaVersion: 14 }, result);
     });
   });
 });

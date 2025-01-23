@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Adatvédelmi és Általános Szerződési Feltételek"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple Silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Hiba másolása és kilépés"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "A Desktop titkosítással kapcsolatos hibába ütközött {name} nevű partnereddel kapcsolatban (eszköz: {deviceId})"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Naplófájl küldése"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nem választhatsz ki képeket és videókat fájlokkal együtt."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "Keresés"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Keresés az olvasatlan csevegések között"
+  },
   "icu:clearSearch": {
     "messageformat": "Keresés törlése"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "Nincs találat a \"{searchTerm}\" keresőkifejezése"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Nincs találat a(z) „{searchTerm}” kifejezésre az olvasatlan csevegésekben"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Nincs olvasatlan csevegés"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "Az SMS/MMS kontaktok nem érhetőek el Desktopon."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "Nem található \"{searchTerm}\" itt: {conversationName}"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Olvasatlan szerint szűrve"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Szűrés Olvasatlan szerint"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Szűrő törlése"
   },
   "icu:conversationsHeader": {
     "messageformat": "Csevegések"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Probléma történt a hangrögzítés során."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Csatolmány elmentve."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Melléklet mentve} other {{count,number} melléklet mentve}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Megjelenítés mappában"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {A mellékletet nem lehet menteni, mert a letöltés még nem fejeződött be} other {A mellékleteket nem lehet menteni, mert {count,number} letöltés még nem fejeződött be}}"
   },
   "icu:you": {
     "messageformat": "Te"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Megjegyzés"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Friss médiafájlok megtekintése"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Összes médiafájl"
   },
   "icu:back": {
     "messageformat": "Vissza"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Részletek"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Üzenetek törlése"
+  "icu:deleteConversation": {
+    "messageformat": "Törlés"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Üzenetek törlése?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Csevegés törlése?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Az ebben a csevegésben lévő összes üzenet törlődik erről az eszközről. Az üzenetek törlése után továbbra is rákereshetsz erre a csevegésre."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Az ebben a csevegésben lévő összes üzenet törlődik erről az eszközről."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "A csevegésben lévő összes üzenet törlődik az összes eszközödről. Az üzenetek törlése után továbbra is rákereshetsz erre a csevegésre."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "A csevegésben lévő összes üzenet törlődik az összes eszközödről."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Kilépés a csoportból"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "Ikon, amely azt jelzi, hogy a kép feliratot tartalmaz"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "Nyisd meg ezt a mellékletet nagyobb nézetben"
+  },
+  "icu:startDownload": {
+    "messageformat": "Letöltés elindítása"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Letöltés megszakítása"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} db elem} other {{count,number} elem}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "Ez a médiafájl már nem érhető el."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Tudj meg többet!"
+  },
   "icu:save": {
     "messageformat": "Mentés"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "Újra"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Kód frissítése"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "Kérj segítséget!"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Nem lehet csatlakozni a híváshoz"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Már csatlakoztál egy híváshoz."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Nem sikerült lehívni a híváskapcsolati információkat. Kérjük, ellenőrizd a hálózati kapcsolatot és próbáld újra."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal hívás"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "A linket nem lehet törölni. Ellenőrizd az internetkapcsolatod, és próbáld újra!"
   },
   "icu:calling__join-request-denied": {
     "messageformat": "A híváshoz való csatlakozási kérelmedet elutasították."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second} és még {others,number} másik személy van ebben a hívásban} other {{first}, {second} és még {others,number} másik személy van ebben a hívásban}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number} személy vesz részt ebben a hívásban} other {{count,number} személy vesz részt ebben a hívásban}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "A Signal megcsörgeti őt: {person}"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "{name} hang és kép adása nem megjeleníthető"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Nem tudsz hangot és videót fogadni"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Ennek oka lehet, hogy esetleg nem ellenőrizte le a biztonsági azonosítód megváltozását, készülék problémája van, vagy letiltott téged."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "A Signal a következő ablakot osztja meg: {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "A Signal-képernyő megosztása aktív"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Újracsatlakozás…"
@@ -1521,7 +1584,7 @@
     "messageformat": "Törlöd az összes adatot és üzenetet a Signal Desktop ezen verziójából? Ezt az asztali számítógépet bármikor újra összekapcsolhatod, de az üzenetek nem állnak helyre. A Signal-fiókod és a telefonodon vagy más társított eszközökön lévő adatok nem törlődnek."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "Lecsatlakozás és összes adat törlése"
+    "messageformat": "Lecsatlakozás és az összes adat törlése…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Egy korábbi Signal Desktop telepítés elavult adatokat hagyott hátra. Ha úgy döntesz, hogy folytatod, akkor ezek az adatok törölve lesznek, és elölről kell kezdened."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Tegnap {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Lehet, hogy a Signal nem tudja feldolgozni a bejövő üzenetet."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Az üzenet szövege túl hosszú."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} hív téged, {first}-t, és {second}-t és {remaining,number} más személyt} other {{ringer} hív téged, {first}-t, és {second}-t és {remaining,number} más személyt}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Kapcsolódás…"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Kicseng…"
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Híváshivatkozás"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Csoporthívás"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Beengedésre vár"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Mikrofon be"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Leteszed a kezed?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Letétel"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Csengés be"
@@ -2961,7 +3039,7 @@
     "messageformat": "Egy admin távolított el, így már nem tudsz csoporthivatkozás használatával csatlakozni ehhez a csoporthoz."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "A csoportba történő belépéshez a csoport egy adminjának jóváhagyása szükséges. A csatlakozási igény jóváhagyása után neved és képed láthatóvá válik a csoport tagjai számára."
+    "messageformat": "A csoportba történő belépéshez a csoport egy adminjának jóváhagyása szükséges. A csatlakozási igény elküldésével neved és képed láthatóvá válik a csoport tagjai számára."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Belépés"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "{joinerName} csoport csatlakozási igénye elutasításra került."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} csatlakozási kérést küldött a csoporthivatkozás segítségével, majd visszavonta"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} csatlakozási kérést küldött a csoporthivatkozás segítségével, majd visszavonta {numberOfRequests,number} alkalommal"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} jelezte, majd visszavonta csatlakozási igényét a csoporthivatkozás használatával.} other {{joinerName} {numberOfRequests,number} alkalommal jelezte, majd visszavonta csatlakozási igényét a csoporthivatkozás használatával.}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "következő"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Ez az üzenet-előzmények méretétől függően eltarthat néhány percig"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Adomány a Signal számára"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "Koppints az „Adományozás a Signalnak” lehetőségre, és iratkozz fel"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "Üzenetek szinkronizálása"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{totalSize}/{currentSize} ({fractionComplete,number,percent}) letöltése..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Üzenetátvitel befejezése..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Felkészülés a letöltésre..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "Ez az üzenet-előzmények méretétől függően eltarthat néhány percig"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Mégse"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "Az üzeneteket és a csevegési információkat végpontok közötti titkosítás védi, beleértve a szinkronizálási folyamatot is. <learnMoreLink>Tudj meg többet!</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Átvitel törlése?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Az üzenetek és a médiafájl helyreállítása nem fejeződött be. Ha a törlés mellett döntesz, az eszköz az üzenet-előzmények nélkül lesz összekapcsolva."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Átvitel folytatása"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Átvitel törlése"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Hiba történt az üzenetek átvitele során"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Az üzeneteidet nem sikerült átvinni. Ellenőrizd az internetkapcsolatot, és próbáld újra."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "Az üzeneteidet egy hiba miatt nem sikerült átvinni. Próbáld újra az eszköz újbóli összekapcsolásával."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Újra"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Kihagyás"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Kihagyod az üzenetátvitelt?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Ha úgy döntesz, hogy kihagyod, ezen az eszközön nem fogsz hozzáférni egyetlen üzenetedhez vagy médiafájlhoz sem. Ha kihagyod, a Beállítások > Csevegés > Átvitel menüpontban új átvitelt indíthatsz."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Mégse"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Médiafájl visszaállítása"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Visszaállítás szünetel"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize}/{totalSize} visszaállítva"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "A médiafájl letöltése a háttérben folytatódik"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Átvitel szüneteltetése"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Átvitel folytatása"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Átvitel törlése"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "További lehetőségek"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Visszaállítás kész"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} / {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Médiafájl átvitelének törlése?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Az üzenetek és a médiafájl helyreállítása nem fejeződött be. Ha a törlés mellett döntesz, újra átviheted a fájljaid a Beállításokból."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Átvitel folytatása"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Átvitel törlése"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Bővítés"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Eltávolítás a csoportból"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Már beléptél a hívásba"
+  "icu:ContactModal--voice": {
+    "messageformat": "Hang"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Csevegés színe"
@@ -3762,7 +3927,7 @@
     "messageformat": "Hivatkozás cseréje"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Új tagok jóváhagyása"
+    "messageformat": "Adminisztrátori jóváhagyás szükséges"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Admin általi jóváhagyás szükséges csoporthivatkozással csatlakozó tagok felvételéhez."
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ",5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Kattints az {composeIcon}ra a címzettnek szánt kontakt vagy csoport kikereséséhez!"
-  },
-  "icu:composeIcon": {
-    "messageformat": "új üzenet gomb"
   },
   "icu:emptyInbox__title": {
     "messageformat": "Nincs csevegés"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "A Signal technikai nehézségekkel küzd. Keményen dolgozunk a gyors helyreállásért."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Frissítés szükséges"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Az üzenetek szinkronizálásának befejezéséhez frissítsd most a Signal Desktopot."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Frissítés"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Frissítés szükséges"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "Kattints ide a Történet megtekintéséhez"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "Kattints a <newStoryIcon>Történet hozzáadása</newStoryIcon> lehetőségre frissítés hozzáadásához."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "Kattints a <newStoryButtonIcon></newStoryButtonIcon> lehetőségre frissítés hozzáadásához."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} → {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Válaszok"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
-    "messageformat": "Reagált a Történetre"
-  },
   "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "Reagáltál a történetre"
   },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "Reagált a történetre"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "Nem válaszolhatsz erre a Történetre, mert már nem vagy tagja ennek a csoportnak."
@@ -5142,7 +5304,7 @@
     "messageformat": "Történet"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Történetek megjelenítése"
+    "messageformat": "Történet megjelenítése"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Történet elrejtése"
@@ -5413,7 +5575,10 @@
     "messageformat": "Híváselőzmények törlése?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Ezzel véglegesen törlöd az összes híváselőzményt"
+    "messageformat": "Ezzel véglegesen törlöd az összes híváselőzményt."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Ezzel véglegesen törlöd az összes híváselőzményt. Az általad létrehozott híváslnkek a továbbiakban nem működnek azoknál, akik használni próbálják őket. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Törlés"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Hívás napló törölve"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "A hívás megtekintéséhez vagy indításához kattints ide"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "A híváslinket nem sikerült törölni. Ellenőrizd az internetkapcsolatod, és próbáld újra!"
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "Kattints az <newCallIcon>Új hívás</newCallIcon> lehetőségre új hang- vagy videohívás indításához."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Nem sikerült az összes híváselőzményt törölni. Ellenőrizd az internetkapcsolatod, és próbáld újra!"
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "Kattints a <newCallButtonIcon></newCallButtonIcon> lehetőségre új hang- vagy videohívás indításához."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Nem fogadott hívások keresése"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Keresés"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Szűrve nem fogadott hívás szerint"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Szűrés nem fogadott hívás szerint"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Váltás"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Nincsenek legutóbbi hívások. Először hívd fel egy ismerősödet."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "Nincsenek hívások"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "Itt jelennek meg a legutóbbi hívások."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "Nincs nem fogadott hívás"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "Itt jelennek meg a nem fogadott hívások."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Nincs találat a következőre: „{query}”"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Nincs találat a(z) „{query}” kifejezésre a nem fogadott hívások között"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Nincs nem fogadott hívás"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Híváshivatkozás létrehozása"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Vissza"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Egy új híváshoz való csatlakozáshoz előbb ki kell lépned az aktuális hívásból"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Kimenő hanghívás} other {Bejövő hanghívás}}} Video {{direction, select, Outgoing {Kimenő videóhívás} other {Bejövő videóhívás}}} Group {{direction, select, Outgoing {Kimenő csoportos hívás} other {Bejövő csoportos hívás}}} other {{direction, select, Outgoing {Kimenő hívás} other {Bejövő hívás}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Nem fogadott hanghívás} Video {Nem fogadott videóhívás} Group {Nem fogadott csoporthívás} other {Nem fogadott hívás}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Nem fogadott hanghívás} Video {Nem fogadott videóhívás} Group {Nem fogadott csoporthívás} other {Nem fogadott hívás}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Elutasított hanghívás} Video {Elutasított videohívás} Group {Elutasított csoporthívás} other {Elutasított hívás}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Híváshivatkozás"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "Hívás nevének szerkesztése"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "Összes tag jóváhagyása"
+    "messageformat": "Adminisztrátori jóváhagyás szükséges"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Ez a beállítás nem módosítható, amíg a hívás aktív"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Hivatkozás másolása"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Törlés"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Ez a hivatkozás nem törölhető, amíg a hívás aktív"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Híváslink részletei"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "Hívás nevének szerkesztése"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Összes tag jóváhagyása"
+    "messageformat": "Adminisztrátori jóváhagyás szükséges"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Csatlakozás jóváhagyása"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Csatlakozás megtagadása"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Ki"
@@ -5629,13 +5794,10 @@
     "messageformat": "Apró finomítások, hibajavítások és teljesítménynövelések. Köszönjük, hogy a Signalt használod!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "A Signal Desktop mostantól automatikusan folytathatja a megszakított mellékletletöltéseket."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "Kijavítottunk egy hibát a @ jellel való említésekkel kapcsolatban, amelyek néha a saját fiókodat is tartalmazták az automatikus kiegészítési javaslatok listáján."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "Mostantól beállíthatod a csevegési lista oldalsávjának méretét az érintőképernyős eszközökön."
   }
 }

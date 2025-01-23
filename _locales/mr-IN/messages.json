@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "अटी आणि गोपनीयता धोरण"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple सिलिकॉन"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "त्रुटी कॉपी करा आणि सोडा"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "डेस्कटॉप {name}, उपकरण {deviceId} कडून कूटबद्धीकरण त्रुटी मध्ये गेला"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "लॉग सादर करा"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "आपण फाईल्ससह फोटो आणि व्हिडिओ निवडू शकत नाही."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "शोध"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "न वाचलेले चॅटस् शोधा"
+  },
   "icu:clearSearch": {
     "messageformat": "शोध साफ करा"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "\"{searchTerm}\" करिता कुठलेही परिणाम नाहीत"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "न वाचलेल्या चॅट्समध्ये \"{searchTerm}\" साठी कोणतेही परिणाम नाहीत"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "न वाचलेले कोणतेही चॅटस् नाहीत"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "SMS/MMS संपर्क डेस्कटॉपवर उपलब्ध नाहीत."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "{conversationName} मध्ये \"{searchTerm}\" करिता कुठलेही परिणाम नाहीत"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "न वाचलेल्यानुसार फिल्टर केले"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "न वाचलेल्यानुसार फिल्टर करा"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "फिल्टर साफ करा"
   },
   "icu:conversationsHeader": {
     "messageformat": "चॅट्स"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "व्हॉइस रेकॉर्डरमध्ये दोष होते."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "संलग्नक/अटॅचमेंट सेव्ह झाली"
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {संलग्नक जतन केले} other {{count,number} संलग्नके जतन केली}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "फोल्डर मध्ये दाखवा"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {संलग्नक जतन करू शकत नाही, कारण ते अजून पूर्ण डाऊनलोड झाले नाही} other {संलग्नके जतन करू शकत नाही, कारण {count,number} अजून पूर्ण डाऊनलोड झालेली नाहीत}}"
   },
   "icu:you": {
     "messageformat": "आपण"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "टीप"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "अलीकडील मिडिया बघा"
+  "icu:allMediaMenuItem": {
+    "messageformat": "सर्व मिडिया"
   },
   "icu:back": {
     "messageformat": "मागे"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "माहिती"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "संदेश हटवा"
+  "icu:deleteConversation": {
+    "messageformat": "हटवा"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "संदेश हटवायचा?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "चॅट हटवायचे?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "या चॅट्समधील सर्व संदेश या डिव्हाइस वरून हटवले जातील. आपण संदेश हटवल्यानंतर देखील अद्याप हे चॅट्स शोधू शकता."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "या चॅट्समधील सर्व संदेश या डिव्हाइस वरून हटवले जातील."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "या चॅट्स मधील सर्व संदेश आपल्या सर्व डिव्हाइसेस वरून हटवण्यात येतील. आपण संदेश हटवल्यानंतर देखील अद्याप आपण हे चॅट्स शोधू शकता."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "या चॅट्स मधील सर्व संदेश आपल्या सर्व डिव्हाइसेस वरून हटवण्यात येतील."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "गट सोडा"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "ह्या चित्रामध्ये कॅप्शन आहे हे दाखवणारे चिन्ह"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "हे अटॅचमेंट मोठ्या आकारात उघडून बघा"
+  },
+  "icu:startDownload": {
+    "messageformat": "डाऊनलोड सुरु करा"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "डाउनलोड रद्द करा"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} आयटम} other {{count,number} आयटम्स}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "हा मिडीया यापुढे उपलब्ध नाही."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "अधिक जाणून घ्या"
+  },
   "icu:save": {
     "messageformat": "जतन करा"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "पुन्हा प्रयत्न करा"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "कोड रीफ्रेश करा"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "मदत मिळवा"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "कॉलमध्ये सामील होऊ शकत नाही"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "आपण आधीच एका कॉलमध्ये आहात."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "कॉल लिंक माहिती मिळवण्यात अक्षम. कृपया आपले नेटवर्क कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal कॉल"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "लिंक हटवू शकत नाही. आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "या कॉलमध्ये जोडले जाण्याची आपली विनंती नाकारण्यात आली."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {या कॉल मध्ये {first}, {second}, आणि {others,number} इतर आहेत} other {या कॉल मध्ये {first}, {second}, आणि {others,number} इतर आहेत}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {या कॉल मध्ये {count,number} व्यक्ती आहेत} other {या कॉल मध्ये {count,number} लोक आहेत}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "{person} ना Signal रिंग करेल"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "{name} कडून ऑडिओ आणि व्हिडिओ प्राप्त करू शकत नाही"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "ऑडिओ आणि व्हिडीओ प्राप्त करू शकत नाही"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "त्यांनी आपला सुरक्षितता नंबर बदल सत्यापित न केल्यामुळे, त्यांच्या डिव्हाईसमध्ये काहीतरी समस्या असल्यामुळे, किंवा त्यांनी आपल्याला अवरोधित केल्यामुळे असे असू शकते."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal {window} सामायिक करत आहे."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Signal स्क्रीन शेअर करणे सक्रिय आहे"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "पुन्हा कनेक्ट करत आहे(...)"
@@ -1521,7 +1584,7 @@
     "messageformat": "Signal Desktop च्या या आवृत्तीमधील सर्व डेटा आणि संदेश हटवायचे? आपण नेहमी या डेस्कटॉपला रिलिंक करू शकता, मात्र आपले संदेश पुर्नस्थित केले जाणार नाहीत. आपले Signal खाते आणि आपल्या फोनवरील डेटा किंवा इतर लिंंक केलेली डिव्हाइसेस हटवले जाणार नाहीत."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "डिसकनेक्ट करत आहे आणि सर्व डेटा हटवत आहे"
+    "messageformat": "डिस्कनेक्ट करत आहे आणि सर्व डेटा हटवत आहे…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "आपल्याजवळ Signal Desktop च्या मागील स्थापनेचा कालबाह्य डेटा आहे. सुरू ठेवणे निवडल्यास, तो हटवला जाईल आणि आपण सुरुवातीपासून सुरुवात कराल."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "काल {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Signal येणाऱ्या संदेशांवर प्रक्रिया करू शकण्यात अयशस्वी होऊ शकते."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "संदेश अंग खूप मोठे आहे."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} तुम्हाला, {first}, {second} आणि इतर {remaining,number} जणांना काॅल करत आहे} other {{ringer} तुम्हाला, {first}, {second} आणि इतर {remaining,number} जणांना काॅल करत आहे}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "कनेक्ट करत आहे(...)"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "रिंग होत आहे…"
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "कॉल लिंक"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "गट कॉल"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "आत येण्याची वाट पाहत आहे"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "माईक चालू आहे"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "आपल्याला हात खाली करायचा आहे?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "खाली घ्या"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "रिंग होणे सुरू झाले"
@@ -2961,7 +3039,7 @@
     "messageformat": "ॲडमिनने आपल्याला काढून टाकले असल्यामुळे आपण ग्रुप लिंकद्वारे या ग्रुपमध्ये सामील होऊ शकत नाही."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "आपण या गटामध्ये सामील होण्यापूर्वी या गटाच्या प्रशासकाने आपली विनंती मंजूर करणे आवश्यक आहे. मंजूर केल्यास आपले नाव आणि फोटो याच्या सदस्यांसह सामायिक केला जाईल."
+    "messageformat": "आपण या गटामध्ये सामील होण्यापूर्वी या गटाच्या प्रशासकाने आपली विनंती मंजूर करणे आवश्यक आहे. आपण सामील होण्याची विनंती करता तेव्हा आपले नाव आणि फोटो सदस्यांसह सामायिक केला जाईल."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "सामील व्हा"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "{joinerName} कडील गटात सामील होण्याची विनंती नाकारली गेली होती."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} यांनी गट दुवा मार्गे सामील होण्याची विनंती केली आणि रद्द केली"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} नी गट दुवा मार्गे सामील होण्याची विनंती केली आणि {numberOfRequests,number} विनंत्या रद्द केल्या"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} ने विनंती केली आणि ग्रुप लिंकद्वारे सामील होण्यासाठी त्यांची विनंती रद्द केली} other {{joinerName} ने विनंती केली आणि ग्रुप लिंकद्वारे सामील होण्याच्या {numberOfRequests,number} विनंत्या रद्द केल्या}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "पुढे"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "आपल्या संदेश इतिहासाच्या प्रमाणानुसार याला काही मिनिटे लागू शकतात"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signal ला देणगी द्या"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "\"Signal ला देणगी द्या\" वर टॅप करा आणि सदस्यत्व घ्या"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "संदेश समक्रमित करत आहे"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{totalSize} ({fractionComplete,number,percent}) पैकी {currentSize} डाउनलोड करत आहे..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "संदेश हस्तांतरण पूर्ण करत आहे..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "डाउनलोड करण्याची तयारी करत आहे..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "आपल्या संदेश इतिहासाच्या प्रमाणानुसार याला काही मिनिटे लागू शकतात"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "रद्द करा"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "संदेश आणि चॅट्ची माहिती एन्ड-टू-एन्ड एन्क्रिप्शनने संरक्षित आहेत, अगदी सिंकची प्रक्रियासुद्धा. <learnMoreLink>अधिक जाणून घ्या</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "हस्तांतरण रद्द करायचे?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "आपले ,संदेश आणि मिडीया यांचे पुनर्संचयन पूर्ण झालेले नाहीत. आपण रद्द करायचे ठरवले, तर तुमचा डिव्हाइस तुमच्या संदेश इतिहासाशिवाय लिंक होईल."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "हस्तांतरण सुरू ठेवा"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "हस्तांतरण रद्द करा"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "आपले संदेश स्थलांतरित करण्यामध्ये त्रुटी"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "आपले संदेश स्थलांतरित केले जाऊ शकत नाहीत. आपले इंटरनेट कनेक्शन तपासा आणि पुन्हा तपासा."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "आपले संदेश एका त्रुटीमुळे हस्तांतरित करता आले नाहीत. हा डेस्कटॉप पुन्हा लिंक करून पुन्हा प्रयत्न करा."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "पुन्हा प्रयत्न करा"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "वगळा"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "संदेश हस्तांतरण वगळायचे?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "आपण जर वगळण्याचे निवडल्यास, आपणांकडे या डिव्हाइस वरील आपल्या संदेश किंवा मिडीया यांच्यापैकी कोणत्याहीचा अ‍ॅक्सेस असणार नाही. आपण सेटिंग्ज > चॅट्स > हस्तांतरण मधून वगळल्यानंतर नवीन हस्तांतरण सुरू करू शकता."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "रद्द करा"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "मिडीया पुर्नस्थापित करत आहे"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "विराम दिलेले पुर्नस्थित करा"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{totalSize} पैकी {currentSize} पूर्ववत केले"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "मीडिया मागे डाऊनलोड होत राहील"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "हस्तांतरणाला विराम द्या"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "हस्तांतरण पुन्हा सुरू ठेवा"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "हस्तांतरण रद्द करा"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "अधिक पर्याय"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "पुनर्संचयन पूर्ण"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} पैकी {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "मिडीया हस्तांतरण रद्द करायचे?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "आपले ,संदेश आणि मिडीया यांचे पुनर्संचयन पूर्ण झालेले नाहीत. आपण रद्द करणे निवडल्यास, आपण सेटिंग्ज मधून हस्तांतरण पुन्हा करू शकता."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "हस्तांतरण सुरू ठेवा"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "हस्तांतरण रद्द करा"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "विस्तारित करा"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "ग्रुपमधून काढून टाका"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "आपण आधीच एक कॉलमध्ये आहात"
+  "icu:ContactModal--voice": {
+    "messageformat": "व्हॉईस"
   },
   "icu:showChatColorEditor": {
     "messageformat": "चॅट रंग"
@@ -3762,7 +3927,7 @@
     "messageformat": "लिंक रीसेट करा"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "नवीन सदस्य स्वीकारा"
+    "messageformat": "प्रशासकाची मंजुरी आवश्यक आहे"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "गट लिंक द्वारे सामील होण्यासाठी नवीन सदस्यांना प्रशासकाने स्वीकार करणे आवश्यक आहे"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ".5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "वरील {composeIcon} वर क्लिक करा आणि संदेश पाठवण्यासाठी आपले संपर्क किंवा गट शोधा."
-  },
-  "icu:composeIcon": {
-    "messageformat": "लिहा बटण"
   },
   "icu:emptyInbox__title": {
     "messageformat": "कोणतेही चॅट्स नाहीत"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal तांत्रिक समस्या अनुभवत आहे. आम्ही लवकरात लवकर सेवा पुनर्स्थित करण्यासाठी कठोर परिश्रम करत आहोत."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "अद्यतन आवश्यक आहे"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "तुमचे संदेश सिंक करणे पूर्ण करण्यासाठी, Signal डेस्कटॉप आता अद्यतन करा."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "अद्यतन"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "अद्यतन आवश्यक आहे"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "स्टोरी पाहण्यास क्लिक करा"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "एक अद्यतन जोडण्यासाठी <newStoryIcon>स्टोरीज जोडा</newStoryIcon> वर क्लिक करा."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "अद्यतनित करण्यासाठी <newStoryButtonIcon></newStoryButtonIcon> क्लिक करा."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} कडून {group}ला"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "प्रत्युत्तरे"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
     "messageformat": "स्टोरीला प्रतिक्रिया दिली"
   },
-  "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
-  },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "स्टोरीला प्रतिक्रिया दिली"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "आपण या स्टोरीज ला उत्तर देऊ शकणार नाही कारण आपण यापुढे या ग्रुपचे सदस्य नाही."
@@ -5142,7 +5304,7 @@
     "messageformat": "स्टोरी"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "स्टोरीज दाखवा"
+    "messageformat": "स्टोरी उघड करा"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "स्टोरी लपवा"
@@ -5413,7 +5575,10 @@
     "messageformat": "कॉल इतिहास साफ करायचा?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "हे कायमस्वरूपी सर्व कॉल इतिहास हटवेल"
+    "messageformat": "हे कायमस्वरूपी सर्व कॉल इतिहास हटवेल."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "हे कायमस्वरूपी सर्व कॉल इतिहास हटवेल. आपण तयार केलेल्या कॉल लिंक्स ज्या लोकांकडे आहेत त्यांच्यासाठी त्या यापुढे चालणार नाहीत. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "साफ करा"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "कॉल इतिहास साफ केला"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "पाहण्यासाठी किंवा कॉल सुरू करण्यास क्लिक करा"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "सर्व कॉल लिंक्स हटवल्या जाणार नाहीत. आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "नवीन व्हॉइस किंवा व्हिडिओ कॉल सुरू करण्यासाठी <newCallIcon>नवीन कॉल</newCallIcon> वर क्लिक करा."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "सर्व कॉल इतिहास साफ केला जाणार नाही. आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "नवीन व्हॉईस किंवा व्हिडिओ कॉल सुरू करण्यासाठी <newCallButtonIcon></newCallButtonIcon> क्लिक करा."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "मिस्ड कॉल्स शोधा"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "शोध"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "मिस्ड कॉलनुसार फिल्टर केले"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "मिस्ड झालेल्यानुसार फिल्टर करा"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "टॉगल करा"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "कोणतेही अलिकडील कॉल नाहीत. मित्राला कॉल करुन सुरुवात करा."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "कोणतेही कॉल नाहीत"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "अलीकडील कॉल येथे दिसून येतील."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "कोणतेही मिस्ड कॉल नाहीत"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "मिस्ड कॉल येथे दिसून येतील."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "“{query}” साठी कोणतेही परिणाम नाहीत"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "मिस्ड कॉलमध्ये \"{query} \" साठी कोणतेही परिणाम नाहीत"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "कोणतेही मिस्ड कॉल नाहीत"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "कॉल लिंक तयार करा"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "परत जा"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "नवीन कॉलमध्ये सामील होण्यापूर्वी आपण वर्तमान कॉल सोडणे आवश्यक आहे"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {बाहेर जाणारा व्हाईस कॉल} other {येणारा व्हाईस कॉल}}} Video {{direction, select, Outgoing {जाणारा व्हिडिओ कॉल} other {येणारा व्हिडिओ कॉल}}} Group {{direction, select, Outgoing {बाहेर जाणारे ग्रुप कॉल} other {येणारे ग्रुप कॉल}}} other {{direction, select, Outgoing {जाणारा कॉल} other {येणारा कॉल}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {चूकवलेला व्हाईस कॉल} Video {सुटलेला व्हिडिओ कॉल} Group {चुकलेले ग्रुप कॉल} other {सुटलेला कॉल}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {अनुत्तरित व्हॉईस कॉल} Video {अनुत्तरित व्हिडिओ कॉल} Group {उत्तर न दिलेला ग्रुप कॉल} other {उत्तर न दिलेला कॉल}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {व्हॉईस कॉल नाकारा} Video {व्हिडिओ कॉल नाकारा} Group {नाकारलेला ग्रुप कॉल} other {नाकारलेला कॉल}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "कॉल लिंक"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "कॉल नाव संपादित करा"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "सर्व सदस्यांना मंजूर करा"
+    "messageformat": "प्रशासकाची मंजुरी आवश्यक आहे"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "कॉल सक्रिय असताना हे सेटिंग बदलले जाऊ शकत नाही"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "लिंक कॉपी करा"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "हटवा"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "कॉल सक्रिय असताना ही लिंक हटवली जाऊ शकत नाही"
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "कॉल लिंक तपशील"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "कॉल नाव संपादित करा"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "सर्व सदस्यांना मंजूर करा"
+    "messageformat": "प्रशासकाची मंजुरी आवश्यक आहे"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "प्रवेश मंजूर करा"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "प्रवेश नाकारा"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "बंद"
@@ -5629,13 +5794,10 @@
     "messageformat": "लहान ट्विक्स, दोष निवारण, आणि कामगिरी सुधारणा. Signal वापरल्याबद्दल आभारी आहोत!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "Signal डेक्सटॉप आता स्वयंचलितपणे व्यत्यय आलेली अटॅचमेंट डाउनलोड तेथून पुन्हा सुरू करू शकतो, त्यामुळे आपल्या मित्राने पाठवलेला मिम ट्रान्सफर होण्यापूर्वी आपण आपल्या लॅटटॉपला बंद केले तरी आपणाला त्यावर हसण्यासाठी फार वेळ वाट पाहावी लागणार नाही."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "आम्ही @ उल्लेखांमधील एक बग दुरुस्त केला जो कधीकधी चुकून ऑटोकम्प्लीट शिफारस यादीमध्ये तुमच्या स्वत:च्या अकाऊंटचाही समावेश करायचा. पण तुम्ही अगदीच स्वत:च्या प्रेमात असाल, आणि या बगची तुम्हाला फार आठवण येत असेल, तर ग्रूप चॅट्समध्ये स्वत:चा तृतीय पुरुषी उल्लेख करत जा."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "आता तुम्ही टचस्क्रीन डिव्हायसेस वर चॅट लिस्ट साइडबारचा आकार कमीजास्त करू शकता. त्यामुळे तुम्ही तो आता सहज ड्रॅग करू शकता आणि स्क्रीनवर उठणारे तुमच्या बोटांचे ठसे तुमच्या या नव्या शक्तीची साक्ष ठरतील."
   }
 }

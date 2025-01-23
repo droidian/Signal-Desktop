@@ -22,7 +22,7 @@ import { useGlobalModalActions } from '../ducks/globalModals';
 import { useLightboxActions } from '../ducks/lightbox';
 import { useStoriesActions } from '../ducks/stories';
 
-export { Contact } from '../../components/conversation/MessageDetail';
+export type { Contact } from '../../components/conversation/MessageDetail';
 export type OwnProps = Pick<
   MessageDetailProps,
   'contacts' | 'errors' | 'message' | 'receivedAt'
@@ -39,19 +39,23 @@ export const SmartMessageDetail = memo(
     const theme = useSelector(getTheme);
     const { checkForAccount } = useAccountsActions();
     const {
+      cancelAttachmentDownload,
       clearTargetedMessage: clearSelectedMessage,
       doubleCheckMissingQuoteReference,
       kickOffAttachmentDownload,
       markAttachmentAsCorrupted,
       messageExpanded,
       openGiftBadge,
-      retryMessageSend,
       popPanelForConversation,
       pushPanelForConversation,
+      retryMessageSend,
       saveAttachment,
+      saveAttachments,
+      showAttachmentDownloadStillInProgressToast,
       showConversation,
       showExpiredIncomingTapToViewToast,
       showExpiredOutgoingTapToViewToast,
+      showMediaNoLongerAvailableToast,
       showSpoiler,
       startConversation,
     } = useConversationsActions();
@@ -89,6 +93,7 @@ export const SmartMessageDetail = memo(
         i18n={i18n}
         platform={platform}
         interactionMode={interactionMode}
+        cancelAttachmentDownload={cancelAttachmentDownload}
         kickOffAttachmentDownload={kickOffAttachmentDownload}
         markAttachmentAsCorrupted={markAttachmentAsCorrupted}
         message={message}
@@ -99,14 +104,19 @@ export const SmartMessageDetail = memo(
         receivedAt={receivedAt}
         renderAudioAttachment={renderAudioAttachment}
         saveAttachment={saveAttachment}
+        saveAttachments={saveAttachments}
         sentAt={message.timestamp}
         showContactModal={showContactModal}
         showConversation={showConversation}
         showEditHistoryModal={showEditHistoryModal}
+        showAttachmentDownloadStillInProgressToast={
+          showAttachmentDownloadStillInProgressToast
+        }
         showExpiredIncomingTapToViewToast={showExpiredIncomingTapToViewToast}
         showExpiredOutgoingTapToViewToast={showExpiredOutgoingTapToViewToast}
         showLightbox={showLightbox}
         showLightboxForViewOnceMedia={showLightboxForViewOnceMedia}
+        showMediaNoLongerAvailableToast={showMediaNoLongerAvailableToast}
         showSpoiler={showSpoiler}
         startConversation={startConversation}
         theme={theme}

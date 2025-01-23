@@ -24,6 +24,7 @@ const LOADED_URL = {
 const DEFAULT_UPDATES = {
   dialogType: DialogType.None,
   didSnooze: false,
+  isCheckingForUpdates: false,
   showEventsCount: 0,
   downloadSize: 67 * 1024 * 1024,
   downloadedSize: 15 * 1024 * 1024,
@@ -58,10 +59,12 @@ function Simulation({
   return (
     <InstallScreenQrCodeNotScannedStep
       i18n={i18n}
+      isStaging={false}
       provisioningUrl={provisioningUrl}
       updates={DEFAULT_UPDATES}
       OS="macOS"
       startUpdate={action('startUpdate')}
+      forceUpdate={action('forceUpdate')}
       currentVersion="v6.0.0"
       retryGetQrCode={action('retryGetQrCode')}
     />
@@ -72,12 +75,14 @@ export function QrCodeLoading(): JSX.Element {
   return (
     <InstallScreenQrCodeNotScannedStep
       i18n={i18n}
+      isStaging={false}
       provisioningUrl={{
         loadingState: LoadingState.Loading,
       }}
       updates={DEFAULT_UPDATES}
       OS="macOS"
       startUpdate={action('startUpdate')}
+      forceUpdate={action('forceUpdate')}
       currentVersion="v6.0.0"
       retryGetQrCode={action('retryGetQrCode')}
     />
@@ -88,6 +93,7 @@ export function QrCodeFailedToLoad(): JSX.Element {
   return (
     <InstallScreenQrCodeNotScannedStep
       i18n={i18n}
+      isStaging={false}
       provisioningUrl={{
         loadingState: LoadingState.LoadFailed,
         error: InstallScreenQRCodeError.Unknown,
@@ -95,6 +101,7 @@ export function QrCodeFailedToLoad(): JSX.Element {
       updates={DEFAULT_UPDATES}
       OS="macOS"
       startUpdate={action('startUpdate')}
+      forceUpdate={action('forceUpdate')}
       currentVersion="v6.0.0"
       retryGetQrCode={action('retryGetQrCode')}
     />
@@ -105,10 +112,12 @@ export function QrCodeLoaded(): JSX.Element {
   return (
     <InstallScreenQrCodeNotScannedStep
       i18n={i18n}
+      isStaging={false}
       provisioningUrl={LOADED_URL}
       updates={DEFAULT_UPDATES}
       OS="macOS"
       startUpdate={action('startUpdate')}
+      forceUpdate={action('forceUpdate')}
       currentVersion="v6.0.0"
       retryGetQrCode={action('retryGetQrCode')}
     />
@@ -117,6 +126,17 @@ export function QrCodeLoaded(): JSX.Element {
 
 export function SimulatedLoading(): JSX.Element {
   return <Simulation finalResult={LOADED_URL} />;
+}
+
+export function SimulatedMaxRotationsError(): JSX.Element {
+  return (
+    <Simulation
+      finalResult={{
+        loadingState: LoadingState.LoadFailed,
+        error: InstallScreenQRCodeError.MaxRotations,
+      }}
+    />
+  );
 }
 
 export function SimulatedUnknownError(): JSX.Element {
@@ -164,6 +184,7 @@ export const WithUpdateKnobs: StoryFn<PropsType & { dialogType: DialogType }> =
     return (
       <InstallScreenQrCodeNotScannedStep
         i18n={i18n}
+        isStaging={false}
         provisioningUrl={LOADED_URL}
         hasExpired
         updates={{
@@ -172,6 +193,7 @@ export const WithUpdateKnobs: StoryFn<PropsType & { dialogType: DialogType }> =
         }}
         OS="macOS"
         startUpdate={action('startUpdate')}
+        forceUpdate={action('forceUpdate')}
         currentVersion={currentVersion}
         retryGetQrCode={action('retryGetQrCode')}
       />

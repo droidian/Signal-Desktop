@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { aciSchema, type AciString } from './ServiceId';
 import * as Bytes from '../Bytes';
+import { parseStrict } from '../util/schemas';
 
 const GROUPV2_ID_LENGTH = 32; // 32 bytes
 
@@ -73,7 +74,26 @@ export const groupSendMemberEndorsementSchema = z.object({
   endorsement: groupSendEndorsementSchema,
 });
 
-export const groupSendEndorsementsDataSchema = z.object({
-  combinedEndorsement: groupSendCombinedEndorsementSchema,
-  memberEndorsements: z.array(groupSendMemberEndorsementSchema).min(1),
-});
+export const groupSendEndorsementsDataSchema = z
+  .object({
+    combinedEndorsement: groupSendCombinedEndorsementSchema,
+    memberEndorsements: z.array(groupSendMemberEndorsementSchema).min(1),
+  })
+  .refine(data => {
+    return data.memberEndorsements.every(memberEndorsement => {
+      return (
+        memberEndorsement.groupId === data.combinedEndorsement.groupId &&
+        memberEndorsement.expiration === data.combinedEndorsement.expiration
+      );
+    });
+  });
+
+export const groupSendTokenSchema = z
+  .instanceof(Uint8Array)
+  .brand('GroupSendToken');
+
+export type GroupSendToken = z.infer<typeof groupSendTokenSchema>;
+
+export function toGroupSendToken(token: Uint8Array): GroupSendToken {
+  return parseStrict(groupSendTokenSchema, token);
+}

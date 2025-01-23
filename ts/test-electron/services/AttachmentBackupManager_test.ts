@@ -79,7 +79,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     index: number,
     overrides: Partial<ThumbnailAttachmentBackupJobType['data']> = {}
   ): ThumbnailAttachmentBackupJobType {
-    const mediaName = `thumbnail${index}`;
+    const mediaName = `thumbnail${index}_thumbnail` as const;
 
     return {
       mediaName,
@@ -107,8 +107,8 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
         absolutePath: join(__dirname, '../../../fixtures/cat-gif.mp4'),
       },
       keys: Bytes.fromBase64(LOCAL_ENCRYPTION_KEYS),
+      needIncrementalMac: false,
       sink: createWriteStream(absolutePath),
-      getAbsoluteAttachmentPath,
     });
   });
 
@@ -116,6 +116,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     await DataWriter.removeAll();
 
     await window.storage.put('masterKey', Bytes.toBase64(getRandomBytes(32)));
+    await window.storage.put('backupMediaRootKey', getRandomBytes(32));
 
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
@@ -141,15 +142,20 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     const decryptAttachmentV2ToSink = sinon.stub();
 
     const { getAbsoluteAttachmentPath } = window.Signal.Migrations;
+    const abortController = new AbortController();
     runJob = sandbox.stub().callsFake((job: AttachmentBackupJobType) => {
-      return runAttachmentBackupJob(job, false, {
-        // @ts-expect-error incomplete stubbing
-        backupsService,
-        backupMediaBatch,
-        getAbsoluteAttachmentPath,
-        encryptAndUploadAttachment,
-        decryptAttachmentV2ToSink,
-      });
+      return runAttachmentBackupJob(
+        job,
+        { abortSignal: abortController.signal, isLastAttempt: false },
+        {
+          // @ts-expect-error incomplete stubbing
+          backupsService,
+          backupMediaBatch,
+          getAbsoluteAttachmentPath,
+          encryptAndUploadAttachment,
+          decryptAttachmentV2ToSink,
+        }
+      );
     });
 
     backupManager = new AttachmentBackupManager({

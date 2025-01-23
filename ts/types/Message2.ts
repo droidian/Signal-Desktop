@@ -1,7 +1,7 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isFunction, isObject } from 'lodash';
+import { isFunction, isObject, identity } from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
 import * as Contact from './EmbeddedContact';
@@ -10,9 +10,13 @@ import type {
   AttachmentType,
   AttachmentWithHydratedData,
   LocalAttachmentV2Type,
+  LocallySavedAttachment,
+  ReencryptableAttachment,
 } from './Attachment';
 import {
   captureDimensionsAndScreenshot,
+  getAttachmentIdForLogging,
+  isAttachmentLocallySaved,
   removeSchemaVersion,
   replaceUnicodeOrderOverrides,
   replaceUnicodeV2,
@@ -21,6 +25,7 @@ import * as Errors from './errors';
 import * as SchemaVersion from './SchemaVersion';
 import { initializeAttachmentMetadata } from './message/initializeAttachmentMetadata';
 
+import { LONG_MESSAGE } from './MIME';
 import type * as MIME from './MIME';
 import type { LoggerType } from './Logging';
 import type {
@@ -45,11 +50,17 @@ import {
 } from '../util/getLocalAttachmentUrl';
 import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment';
 import { deepClone } from '../util/deepClone';
+import * as Bytes from '../Bytes';
+import { isBodyTooLong } from '../util/longAttachment';
 
 export const GROUP = 'group';
 export const PRIVATE = 'private';
 
 export type ContextType = {
+  doesAttachmentExist: (relativePath: string) => Promise<boolean>;
+  ensureAttachmentIsReencryptable: (
+    attachment: LocallySavedAttachment
+  ) => Promise<ReencryptableAttachment>;
   getImageDimensions: (params: {
     objectUrl: string;
     logger: LoggerType;
@@ -82,10 +93,6 @@ export type ContextType = {
   writeNewAttachmentData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
   writeNewStickerData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
   deleteOnDisk: (path: string) => Promise<void>;
-};
-
-export type ContextWithMessageType = ContextType & {
-  message: MessageAttributesType;
 };
 
 // Schema version history
@@ -125,8 +132,14 @@ export type ContextWithMessageType = ContextType & {
 //     attachment filenames
 // Version 10
 //   - Preview: A new type of attachment can be included in a message.
-// Version 11
+// Version 11 (deprecated)
 //   - Attachments: add sha256 plaintextHash
+// Version 12:
+//   - Attachments: encrypt attachments on disk
+// Version 13:
+//   - Attachments: write bodyAttachment to disk
+// Version 14
+//   - All attachments: ensure they are reencryptable to a known digest
 
 const INITIAL_SCHEMA_VERSION = 0;
 
@@ -232,10 +245,11 @@ export const _withSchemaVersion = ({
       upgradedMessage = await upgrade(message, context);
     } catch (error) {
       logger.error(
-        `Message._withSchemaVersion: error updating message ${message.id}:`,
+        `Message._withSchemaVersion: error updating message ${message.id}, 
+        attempt ${message.schemaMigrationAttempts}:`,
         Errors.toLogFormat(error)
       );
-      return message;
+      throw error;
     }
 
     if (!isValid(upgradedMessage)) {
@@ -260,18 +274,70 @@ export type UpgradeAttachmentType = (
   message: MessageAttributesType
 ) => Promise<AttachmentType>;
 
+// As regrettable as it is we have to fight back against esbuild's `__name`
+// wrapper for functions that are created at high rate, because `__name` affects
+// runtime performance.
+const esbuildAnonymize = identity;
+
 export const _mapAttachments =
   (upgradeAttachment: UpgradeAttachmentType) =>
   async (
     message: MessageAttributesType,
     context: ContextType
   ): Promise<MessageAttributesType> => {
-    const upgradeWithContext = (attachment: AttachmentType) =>
-      upgradeAttachment(attachment, context, message);
+    const upgradeWithContext = esbuildAnonymize((attachment: AttachmentType) =>
+      upgradeAttachment(attachment, context, message)
+    );
     const attachments = await Promise.all(
       (message.attachments || []).map(upgradeWithContext)
     );
     return { ...message, attachments };
+  };
+
+export const _mapAllAttachments =
+  (upgradeAttachment: UpgradeAttachmentType) =>
+  async (
+    message: MessageAttributesType,
+    context: ContextType
+  ): Promise<MessageAttributesType> => {
+    let result = { ...message };
+    result = await _mapAttachments(upgradeAttachment)(result, context);
+    result = await _mapQuotedAttachments(upgradeAttachment)(result, context);
+    result = await _mapPreviewAttachments(upgradeAttachment)(result, context);
+    result = await _mapContact(async contact => {
+      if (!contact.avatar?.avatar) {
+        return contact;
+      }
+
+      return {
+        ...contact,
+        avatar: {
+          ...contact.avatar,
+          avatar: await upgradeAttachment(
+            contact.avatar.avatar,
+            context,
+            result
+          ),
+        },
+      };
+    })(result, context);
+
+    if (result.sticker?.data) {
+      result.sticker.data = await upgradeAttachment(
+        result.sticker.data,
+        context,
+        result
+      );
+    }
+    if (result.bodyAttachment) {
+      result.bodyAttachment = await upgradeAttachment(
+        result.bodyAttachment,
+        context,
+        result
+      );
+    }
+
+    return result;
   };
 
 // Public API
@@ -281,7 +347,8 @@ export const _mapAttachments =
 
 export type UpgradeContactType = (
   contact: EmbeddedContactType,
-  contextWithMessage: ContextWithMessageType
+  context: ContextType,
+  message: MessageAttributesType
 ) => Promise<EmbeddedContactType>;
 export const _mapContact =
   (upgradeContact: UpgradeContactType) =>
@@ -289,9 +356,10 @@ export const _mapContact =
     message: MessageAttributesType,
     context: ContextType
   ): Promise<MessageAttributesType> => {
-    const contextWithMessage = { ...context, message };
-    const upgradeWithContext = (contact: EmbeddedContactType) =>
-      upgradeContact(contact, contextWithMessage);
+    const upgradeWithContext = esbuildAnonymize(
+      (contact: EmbeddedContactType) =>
+        upgradeContact(contact, context, message)
+    );
     const contact = await Promise.all(
       (message.contact || []).map(upgradeWithContext)
     );
@@ -314,21 +382,23 @@ export const _mapQuotedAttachments =
       throw new Error('_mapQuotedAttachments: context must have logger object');
     }
 
-    const upgradeWithContext = async (
-      attachment: QuotedAttachmentType
-    ): Promise<QuotedAttachmentType> => {
-      const { thumbnail } = attachment;
-      if (!thumbnail) {
-        return attachment;
-      }
+    const upgradeWithContext = esbuildAnonymize(
+      async (
+        attachment: QuotedAttachmentType
+      ): Promise<QuotedAttachmentType> => {
+        const { thumbnail } = attachment;
+        if (!thumbnail) {
+          return attachment;
+        }
 
-      const upgradedThumbnail = await upgradeAttachment(
-        thumbnail as AttachmentType,
-        context,
-        message
-      );
-      return { ...attachment, thumbnail: upgradedThumbnail };
-    };
+        const upgradedThumbnail = await upgradeAttachment(
+          thumbnail as AttachmentType,
+          context,
+          message
+        );
+        return { ...attachment, thumbnail: upgradedThumbnail };
+      }
+    );
 
     const quotedAttachments =
       (message.quote && message.quote.attachments) || [];
@@ -357,15 +427,17 @@ export const _mapPreviewAttachments =
       );
     }
 
-    const upgradeWithContext = async (preview: LinkPreviewType) => {
-      const { image } = preview;
-      if (!image) {
-        return preview;
-      }
+    const upgradeWithContext = esbuildAnonymize(
+      async (preview: LinkPreviewType) => {
+        const { image } = preview;
+        if (!image) {
+          return preview;
+        }
 
-      const upgradedImage = await upgradeAttachment(image, context, message);
-      return { ...preview, image: upgradedImage };
-    };
+        const upgradedImage = await upgradeAttachment(image, context, message);
+        return { ...preview, image: upgradedImage };
+      }
+    );
 
     const preview = await Promise.all(
       (message.preview || []).map(upgradeWithContext)
@@ -398,9 +470,11 @@ const toVersion4 = _withSchemaVersion({
   schemaVersion: 4,
   upgrade: _mapQuotedAttachments(migrateDataToFileSystem),
 });
+// NOOP: Used to be initializeAttachmentMetadata, but it happens in version 7
+// now.
 const toVersion5 = _withSchemaVersion({
   schemaVersion: 5,
-  upgrade: initializeAttachmentMetadata,
+  upgrade: noopUpgrade,
 });
 const toVersion6 = _withSchemaVersion({
   schemaVersion: 6,
@@ -571,6 +645,41 @@ const toVersion12 = _withSchemaVersion({
     return result;
   },
 });
+const toVersion13 = _withSchemaVersion({
+  schemaVersion: 13,
+  upgrade: migrateBodyAttachmentToDisk,
+});
+
+const toVersion14 = _withSchemaVersion({
+  schemaVersion: 14,
+  upgrade: _mapAllAttachments(
+    async (
+      attachment,
+      { logger, ensureAttachmentIsReencryptable, doesAttachmentExist }
+    ) => {
+      if (!isAttachmentLocallySaved(attachment)) {
+        return attachment;
+      }
+
+      if (!(await doesAttachmentExist(attachment.path))) {
+        // Attachments may be missing, e.g. for quote thumbnails that reference messages
+        // which have been deleted
+        logger.info(
+          `Message2.toVersion14(id=${getAttachmentIdForLogging(attachment)}: File does not exist`
+        );
+        return attachment;
+      }
+
+      if (!attachment.digest) {
+        // Messages that are being upgraded prior to being sent may not have encrypted the
+        // attachment yet
+        return attachment;
+      }
+
+      return ensureAttachmentIsReencryptable(attachment);
+    }
+  ),
+});
 
 const VERSIONS = [
   toVersion0,
@@ -586,7 +695,10 @@ const VERSIONS = [
   toVersion10,
   toVersion11,
   toVersion12,
+  toVersion13,
+  toVersion14,
 ];
+
 export const CURRENT_SCHEMA_VERSION = VERSIONS.length - 1;
 
 // We need dimensions and screenshots for images for proper display
@@ -598,6 +710,8 @@ export const upgradeSchema = async (
   {
     readAttachmentData,
     writeNewAttachmentData,
+    doesAttachmentExist,
+    ensureAttachmentIsReencryptable,
     getRegionCode,
     makeObjectUrl,
     revokeObjectUrl,
@@ -608,65 +722,57 @@ export const upgradeSchema = async (
     deleteOnDisk,
     logger,
     maxVersion = CURRENT_SCHEMA_VERSION,
-  }: ContextType
+  }: ContextType,
+  upgradeOptions: {
+    versions: ReadonlyArray<
+      (
+        message: MessageAttributesType,
+        context: ContextType
+      ) => Promise<MessageAttributesType>
+    >;
+  } = { versions: VERSIONS }
 ): Promise<MessageAttributesType> => {
-  if (!isFunction(readAttachmentData)) {
-    throw new TypeError('context.readAttachmentData is required');
-  }
-  if (!isFunction(writeNewAttachmentData)) {
-    throw new TypeError('context.writeNewAttachmentData is required');
-  }
-  if (!isFunction(getRegionCode)) {
-    throw new TypeError('context.getRegionCode is required');
-  }
-  if (!isFunction(makeObjectUrl)) {
-    throw new TypeError('context.makeObjectUrl is required');
-  }
-  if (!isFunction(revokeObjectUrl)) {
-    throw new TypeError('context.revokeObjectUrl is required');
-  }
-  if (!isFunction(getImageDimensions)) {
-    throw new TypeError('context.getImageDimensions is required');
-  }
-  if (!isFunction(makeImageThumbnail)) {
-    throw new TypeError('context.makeImageThumbnail is required');
-  }
-  if (!isFunction(makeVideoScreenshot)) {
-    throw new TypeError('context.makeVideoScreenshot is required');
-  }
-  if (!isObject(logger)) {
-    throw new TypeError('context.logger is required');
-  }
-  if (!isFunction(writeNewStickerData)) {
-    throw new TypeError('context.writeNewStickerData is required');
-  }
-  if (!isFunction(deleteOnDisk)) {
-    throw new TypeError('context.deleteOnDisk is required');
-  }
-
+  const { versions } = upgradeOptions;
   let message = rawMessage;
-  for (let index = 0, max = VERSIONS.length; index < max; index += 1) {
+  const startingVersion = message.schemaVersion ?? 0;
+  for (let index = 0, max = versions.length; index < max; index += 1) {
     if (maxVersion < index) {
       break;
     }
 
-    const currentVersion = VERSIONS[index];
-    // We really do want this intra-loop await because this is a chained async action,
-    //   each step dependent on the previous
-    // eslint-disable-next-line no-await-in-loop
-    message = await currentVersion(message, {
-      readAttachmentData,
-      writeNewAttachmentData,
-      makeObjectUrl,
-      revokeObjectUrl,
-      getImageDimensions,
-      makeImageThumbnail,
-      makeVideoScreenshot,
-      logger,
-      getRegionCode,
-      writeNewStickerData,
-      deleteOnDisk,
-    });
+    const currentVersion = versions[index];
+    try {
+      // We really do want this intra-loop await because this is a chained async action,
+      //   each step dependent on the previous
+      // eslint-disable-next-line no-await-in-loop
+      message = await currentVersion(message, {
+        readAttachmentData,
+        writeNewAttachmentData,
+        makeObjectUrl,
+        revokeObjectUrl,
+        doesAttachmentExist,
+        ensureAttachmentIsReencryptable,
+        getImageDimensions,
+        makeImageThumbnail,
+        makeVideoScreenshot,
+        logger,
+        getRegionCode,
+        writeNewStickerData,
+        deleteOnDisk,
+      });
+    } catch (e) {
+      // Throw the error if we were unable to upgrade the message at all
+      if (message.schemaVersion === startingVersion) {
+        throw e;
+      } else {
+        // Otherwise, return the message upgraded as far as it could be. On the next
+        // migration attempt, it will fail.
+        logger.error(
+          `Upgraded message from ${startingVersion} -> ${message.schemaVersion}; failed on upgrade to ${index}`
+        );
+        break;
+      }
+    }
   }
 
   return message;
@@ -677,6 +783,7 @@ export const upgradeSchema = async (
 export const processNewAttachment = async (
   attachment: AttachmentType,
   {
+    ensureAttachmentIsReencryptable,
     writeNewAttachmentData,
     makeObjectUrl,
     revokeObjectUrl,
@@ -694,6 +801,7 @@ export const processNewAttachment = async (
     | 'makeVideoScreenshot'
     | 'logger'
     | 'deleteOnDisk'
+    | 'ensureAttachmentIsReencryptable'
   >
 ): Promise<AttachmentType> => {
   if (!isFunction(writeNewAttachmentData)) {
@@ -718,15 +826,25 @@ export const processNewAttachment = async (
     throw new TypeError('context.logger is required');
   }
 
-  const finalAttachment = await captureDimensionsAndScreenshot(attachment, {
-    writeNewAttachmentData,
-    makeObjectUrl,
-    revokeObjectUrl,
-    getImageDimensions,
-    makeImageThumbnail,
-    makeVideoScreenshot,
-    logger,
-  });
+  let upgradedAttachment = attachment;
+
+  if (isAttachmentLocallySaved(upgradedAttachment)) {
+    upgradedAttachment =
+      await ensureAttachmentIsReencryptable(upgradedAttachment);
+  }
+
+  const finalAttachment = await captureDimensionsAndScreenshot(
+    upgradedAttachment,
+    {
+      writeNewAttachmentData,
+      makeObjectUrl,
+      revokeObjectUrl,
+      getImageDimensions,
+      makeImageThumbnail,
+      makeVideoScreenshot,
+      logger,
+    }
+  );
 
   return finalAttachment;
 };
@@ -953,11 +1071,22 @@ export const deleteAllExternalFiles = ({
   }
 
   return async (message: MessageAttributesType) => {
-    const { attachments, editHistory, quote, contact, preview, sticker } =
-      message;
+    const {
+      attachments,
+      bodyAttachment,
+      editHistory,
+      quote,
+      contact,
+      preview,
+      sticker,
+    } = message;
 
     if (attachments && attachments.length) {
       await Promise.all(attachments.map(deleteAttachmentData));
+    }
+
+    if (bodyAttachment) {
+      await deleteAttachmentData(bodyAttachment);
     }
 
     if (quote && quote.attachments && quote.attachments.length) {
@@ -1001,7 +1130,11 @@ export const deleteAllExternalFiles = ({
 
     if (editHistory && editHistory.length) {
       await Promise.all(
-        editHistory.map(edit => {
+        editHistory.map(async edit => {
+          if (edit.bodyAttachment) {
+            await deleteAttachmentData(edit.bodyAttachment);
+          }
+
           if (!edit.attachments || !edit.attachments.length) {
             return;
           }
@@ -1014,6 +1147,34 @@ export const deleteAllExternalFiles = ({
     }
   };
 };
+
+export async function migrateBodyAttachmentToDisk(
+  message: MessageAttributesType,
+  { logger, writeNewAttachmentData }: ContextType
+): Promise<MessageAttributesType> {
+  const logId = `Message2.toVersion13(${message.sent_at})`;
+
+  // if there is already a bodyAttachment, nothing to do
+  if (message.bodyAttachment) {
+    return message;
+  }
+
+  if (!message.body || !isBodyTooLong(message.body)) {
+    return message;
+  }
+
+  logger.info(`${logId}: Writing bodyAttachment to disk`);
+
+  const bodyAttachment = {
+    contentType: LONG_MESSAGE,
+    ...(await writeNewAttachmentData(Bytes.fromString(message.body))),
+  };
+
+  return {
+    ...message,
+    bodyAttachment,
+  };
+}
 
 async function deletePreviews(
   preview: MessageAttributesType['preview'],

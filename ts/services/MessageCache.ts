@@ -3,8 +3,11 @@
 
 import cloneDeep from 'lodash/cloneDeep';
 import { throttle } from 'lodash';
-import LRU from 'lru-cache';
-import type { MessageAttributesType } from '../model-types.d';
+import { LRUCache } from 'lru-cache';
+import type {
+  MessageAttributesType,
+  ReadonlyMessageAttributesType,
+} from '../model-types.d';
 import type { MessageModel } from '../models/messages';
 import { DataReader, DataWriter } from '../sql/Client';
 import * as Errors from '../types/errors';
@@ -14,7 +17,6 @@ import { getMessageConversation } from '../util/getMessageConversation';
 import { getMessageModelLogger } from '../util/MessageModelLogger';
 import { getSenderIdentifier } from '../util/getSenderIdentifier';
 import { isNotNil } from '../util/isNotNil';
-import { map } from '../util/iterables';
 import { softAssert, strictAssert } from '../util/assert';
 import { isStory } from '../messages/helpers';
 import type { SendStateByConversationId } from '../messages/MessageSendState';
@@ -22,7 +24,7 @@ import { getStoryDataFromMessageAttributes } from './storyLoader';
 
 const MAX_THROTTLED_REDUX_UPDATERS = 200;
 export class MessageCache {
-  private state = {
+  #state = {
     messages: new Map<string, MessageAttributesType>(),
     messageIdsBySender: new Map<string, string>(),
     messageIdsBySentAt: new Map<number, Array<string>>(),
@@ -31,16 +33,16 @@ export class MessageCache {
 
   // Stores the models so that __DEPRECATED$register always returns the existing
   // copy instead of a new model.
-  private modelCache = new Map<string, MessageModel>();
+  #modelCache = new Map<string, MessageModel>();
 
   // Synchronously access a message's attributes from internal cache. Will
   // return undefined if the message does not exist in memory.
   public accessAttributes(
     messageId: string
   ): Readonly<MessageAttributesType> | undefined {
-    const messageAttributes = this.state.messages.get(messageId);
+    const messageAttributes = this.#state.messages.get(messageId);
     return messageAttributes
-      ? this.freezeAttributes(messageAttributes)
+      ? this.#freezeAttributes(messageAttributes)
       : undefined;
   }
 
@@ -63,8 +65,8 @@ export class MessageCache {
   public deleteExpiredMessages(expiryTime: number): void {
     const now = Date.now();
 
-    for (const [messageId, messageAttributes] of this.state.messages) {
-      const timeLastAccessed = this.state.lastAccessedAt.get(messageId) ?? 0;
+    for (const [messageId, messageAttributes] of this.#state.messages) {
+      const timeLastAccessed = this.#state.lastAccessedAt.get(messageId) ?? 0;
       const conversation = getMessageConversation(messageAttributes);
 
       const state = window.reduxStore.getState();
@@ -82,7 +84,7 @@ export class MessageCache {
   public findBySender(
     senderIdentifier: string
   ): Readonly<MessageAttributesType> | undefined {
-    const id = this.state.messageIdsBySender.get(senderIdentifier);
+    const id = this.#state.messageIdsBySender.get(senderIdentifier);
     if (!id) {
       return undefined;
     }
@@ -110,7 +112,7 @@ export class MessageCache {
       };
     };
 
-    for (const [messageId, messageAttributes] of this.state.messages) {
+    for (const [messageId, messageAttributes] of this.#state.messages) {
       if (messageAttributes.conversationId !== obsoleteId) {
         continue;
       }
@@ -168,7 +170,7 @@ export class MessageCache {
       `MessageCache.resolveAttributes/${source}: no message for id ${messageId}`
     );
 
-    return this.freezeAttributes(messageAttributesFromDatabase);
+    return this.#freezeAttributes(messageAttributesFromDatabase);
   }
 
   // Updates a message's attributes and saves the message to cache and to the
@@ -221,11 +223,11 @@ export class MessageCache {
         ...partialMessageAttributes,
       } as MessageAttributesType;
 
-      this.addMessageToCache(partiallyCachedMessage);
+      this.#addMessageToCache(partiallyCachedMessage);
       messageAttributes = partiallyCachedMessage;
     }
 
-    this.state.messageIdsBySender.delete(
+    this.#state.messageIdsBySender.delete(
       getSenderIdentifier(messageAttributes)
     );
 
@@ -235,7 +237,7 @@ export class MessageCache {
     };
 
     const { id, sent_at: sentAt } = nextMessageAttributes;
-    const previousIdsBySentAt = this.state.messageIdsBySentAt.get(sentAt);
+    const previousIdsBySentAt = this.#state.messageIdsBySentAt.get(sentAt);
 
     let nextIdsBySentAtSet: Set<string>;
     if (previousIdsBySentAt) {
@@ -245,16 +247,16 @@ export class MessageCache {
       nextIdsBySentAtSet = new Set([id]);
     }
 
-    this.state.messages.set(id, nextMessageAttributes);
-    this.state.lastAccessedAt.set(id, Date.now());
-    this.state.messageIdsBySender.set(
+    this.#state.messages.set(id, nextMessageAttributes);
+    this.#state.lastAccessedAt.set(id, Date.now());
+    this.#state.messageIdsBySender.set(
       getSenderIdentifier(messageAttributes),
       id
     );
 
-    this.markModelStale(nextMessageAttributes);
+    this.#markModelStale(nextMessageAttributes);
 
-    this.throttledUpdateRedux(nextMessageAttributes);
+    this.#throttledUpdateRedux(nextMessageAttributes);
 
     if (skipSaveToDatabase) {
       return;
@@ -265,24 +267,27 @@ export class MessageCache {
     });
   }
 
-  private throttledReduxUpdaters = new LRU<string, typeof this.updateRedux>({
+  #throttledReduxUpdaters = new LRUCache<
+    string,
+    (attributes: MessageAttributesType) => void
+  >({
     max: MAX_THROTTLED_REDUX_UPDATERS,
   });
 
-  private throttledUpdateRedux(attributes: MessageAttributesType) {
-    let updater = this.throttledReduxUpdaters.get(attributes.id);
+  #throttledUpdateRedux(attributes: MessageAttributesType) {
+    let updater = this.#throttledReduxUpdaters.get(attributes.id);
     if (!updater) {
-      updater = throttle(this.updateRedux.bind(this), 200, {
+      updater = throttle(this.#updateRedux.bind(this), 200, {
         leading: true,
         trailing: true,
       });
-      this.throttledReduxUpdaters.set(attributes.id, updater);
+      this.#throttledReduxUpdaters.set(attributes.id, updater);
     }
 
     updater(attributes);
   }
 
-  private updateRedux(attributes: MessageAttributesType) {
+  #updateRedux(attributes: MessageAttributesType) {
     if (!window.reduxActions) {
       return;
     }
@@ -314,9 +319,11 @@ export class MessageCache {
   public toMessageAttributes(
     messageAttributes: MessageAttributesType
   ): Readonly<MessageAttributesType> {
-    this.addMessageToCache(messageAttributes);
+    this.#addMessageToCache(messageAttributes);
 
-    const nextMessageAttributes = this.state.messages.get(messageAttributes.id);
+    const nextMessageAttributes = this.#state.messages.get(
+      messageAttributes.id
+    );
     strictAssert(
       nextMessageAttributes,
       `MessageCache.toMessageAttributes: no message for id ${messageAttributes.id}`
@@ -334,18 +341,18 @@ export class MessageCache {
     return instance;
   }
 
-  private addMessageToCache(messageAttributes: MessageAttributesType): void {
+  #addMessageToCache(messageAttributes: MessageAttributesType): void {
     if (!messageAttributes.id) {
       return;
     }
 
-    if (this.state.messages.has(messageAttributes.id)) {
-      this.state.lastAccessedAt.set(messageAttributes.id, Date.now());
+    if (this.#state.messages.has(messageAttributes.id)) {
+      this.#state.lastAccessedAt.set(messageAttributes.id, Date.now());
       return;
     }
 
     const { id, sent_at: sentAt } = messageAttributes;
-    const previousIdsBySentAt = this.state.messageIdsBySentAt.get(sentAt);
+    const previousIdsBySentAt = this.#state.messageIdsBySentAt.get(sentAt);
 
     let nextIdsBySentAtSet: Set<string>;
     if (previousIdsBySentAt) {
@@ -355,19 +362,19 @@ export class MessageCache {
       nextIdsBySentAtSet = new Set([id]);
     }
 
-    this.state.messages.set(messageAttributes.id, { ...messageAttributes });
-    this.state.lastAccessedAt.set(messageAttributes.id, Date.now());
-    this.state.messageIdsBySentAt.set(sentAt, Array.from(nextIdsBySentAtSet));
-    this.state.messageIdsBySender.set(
+    this.#state.messages.set(messageAttributes.id, { ...messageAttributes });
+    this.#state.lastAccessedAt.set(messageAttributes.id, Date.now());
+    this.#state.messageIdsBySentAt.set(sentAt, Array.from(nextIdsBySentAtSet));
+    this.#state.messageIdsBySender.set(
       getSenderIdentifier(messageAttributes),
       id
     );
   }
 
-  private freezeAttributes(
+  #freezeAttributes(
     messageAttributes: MessageAttributesType
   ): Readonly<MessageAttributesType> {
-    this.addMessageToCache(messageAttributes);
+    this.#addMessageToCache(messageAttributes);
 
     if (getEnvironment() === Environment.Development) {
       return Object.freeze(cloneDeep(messageAttributes));
@@ -375,27 +382,30 @@ export class MessageCache {
     return messageAttributes;
   }
 
-  private removeMessage(messageId: string): void {
-    const messageAttributes = this.state.messages.get(messageId);
+  #removeMessage(messageId: string): void {
+    const messageAttributes = this.#state.messages.get(messageId);
     if (!messageAttributes) {
       return;
     }
 
     const { id, sent_at: sentAt } = messageAttributes;
     const nextIdsBySentAtSet =
-      new Set(this.state.messageIdsBySentAt.get(sentAt)) || new Set();
+      new Set(this.#state.messageIdsBySentAt.get(sentAt)) || new Set();
 
     nextIdsBySentAtSet.delete(id);
 
     if (nextIdsBySentAtSet.size) {
-      this.state.messageIdsBySentAt.set(sentAt, Array.from(nextIdsBySentAtSet));
+      this.#state.messageIdsBySentAt.set(
+        sentAt,
+        Array.from(nextIdsBySentAtSet)
+      );
     } else {
-      this.state.messageIdsBySentAt.delete(sentAt);
+      this.#state.messageIdsBySentAt.delete(sentAt);
     }
 
-    this.state.messages.delete(messageId);
-    this.state.lastAccessedAt.delete(messageId);
-    this.state.messageIdsBySender.delete(
+    this.#state.messages.delete(messageId);
+    this.#state.lastAccessedAt.delete(messageId);
+    this.#state.messageIdsBySender.delete(
       getSenderIdentifier(messageAttributes)
     );
   }
@@ -415,16 +425,16 @@ export class MessageCache {
       );
     }
 
-    const existing = this.__DEPRECATED$getById(id);
+    const existing = this.__DEPRECATED$getById(id, location);
 
     if (existing) {
-      this.addMessageToCache(existing.attributes);
+      this.#addMessageToCache(existing.attributes);
       return existing;
     }
 
-    const modelProxy = this.toModel(data);
+    const modelProxy = this.#toModel(data);
     const messageAttributes = 'attributes' in data ? data.attributes : data;
-    this.addMessageToCache(messageAttributes);
+    this.#addMessageToCache(messageAttributes);
     modelProxy.registerLocations.add(location);
 
     return modelProxy;
@@ -432,38 +442,79 @@ export class MessageCache {
 
   // Deletes the message from our cache
   public __DEPRECATED$unregister(id: string): void {
-    const model = this.modelCache.get(id);
+    const model = this.#modelCache.get(id);
     if (!model) {
       return;
     }
 
-    this.removeMessage(id);
-    this.modelCache.delete(id);
+    this.#removeMessage(id);
+    this.#modelCache.delete(id);
   }
 
   // Finds a message in the cache by Id
-  public __DEPRECATED$getById(id: string): MessageModel | undefined {
-    const data = this.state.messages.get(id);
+  public __DEPRECATED$getById(
+    id: string,
+    location: string
+  ): MessageModel | undefined {
+    const data = this.#state.messages.get(id);
     if (!data) {
       return undefined;
     }
 
-    return this.toModel(data);
+    const model = this.#toModel(data);
+    model.registerLocations.add(location);
+    return model;
+  }
+
+  public async upgradeSchema(
+    attributes: MessageAttributesType,
+    minSchemaVersion: number
+  ): Promise<MessageAttributesType> {
+    const { schemaVersion } = attributes;
+    if (!schemaVersion || schemaVersion >= minSchemaVersion) {
+      return attributes;
+    }
+    const upgradedAttributes =
+      await window.Signal.Migrations.upgradeMessageSchema(attributes);
+    await this.setAttributes({
+      messageId: upgradedAttributes.id,
+      messageAttributes: upgradedAttributes,
+      skipSaveToDatabase: false,
+    });
+    return upgradedAttributes;
   }
 
   // Finds a message in the cache by sentAt/timestamp
-  public __DEPRECATED$filterBySentAt(sentAt: number): Iterable<MessageModel> {
-    const items = this.state.messageIdsBySentAt.get(sentAt) ?? [];
-    const attrs = items.map(id => this.accessAttributes(id)).filter(isNotNil);
-    return map(attrs, data => this.toModel(data));
+  public async findBySentAt(
+    sentAt: number,
+    predicate: (attributes: ReadonlyMessageAttributesType) => boolean
+  ): Promise<MessageAttributesType | undefined> {
+    const items = this.#state.messageIdsBySentAt.get(sentAt) ?? [];
+    const inMemory = items
+      .map(id => this.accessAttributes(id))
+      .filter(isNotNil)
+      .find(predicate);
+
+    if (inMemory != null) {
+      return inMemory;
+    }
+
+    log.info(`findBySentAt(${sentAt}): db lookup needed`);
+    const allOnDisk = await DataReader.getMessagesBySentAt(sentAt);
+    const onDisk = allOnDisk.find(predicate);
+
+    if (onDisk != null) {
+      this.#addMessageToCache(onDisk);
+    }
+    return onDisk;
   }
 
   // Marks cached model as "should be stale" to discourage continued use.
   // The model's attributes are directly updated so that the model is in sync
   // with the in-memory attributes.
-  private markModelStale(messageAttributes: MessageAttributesType): void {
+  #markModelStale(messageAttributes: MessageAttributesType): void {
     const { id } = messageAttributes;
-    const model = this.modelCache.get(id);
+    const model = this.#modelCache.get(id);
 
     if (!model) {
       return;
@@ -472,19 +523,19 @@ export class MessageCache {
     model.attributes = { ...messageAttributes };
 
     if (getEnvironment() === Environment.Development) {
-      log.warn('MessageCache: stale model', {
+      log.warn('MessageCache: updating cached backbone model', {
         cid: model.cid,
-        locations: Array.from(model.registerLocations).join('+'),
+        locations: Array.from(model.registerLocations).join(', '),
       });
     }
   }
 
   // Creates a proxy object for MessageModel which logs usage in development
   // so that we're able to migrate off of models
-  private toModel(
+  #toModel(
     messageAttributes: MessageAttributesType | MessageModel
   ): MessageModel {
-    const existingModel = this.modelCache.get(messageAttributes.id);
+    const existingModel = this.#modelCache.get(messageAttributes.id);
 
     if (existingModel) {
       return existingModel;
@@ -497,7 +548,7 @@ export class MessageCache {
 
     const proxy = getMessageModelLogger(model);
 
-    this.modelCache.set(messageAttributes.id, proxy);
+    this.#modelCache.set(messageAttributes.id, proxy);
 
     return proxy;
   }

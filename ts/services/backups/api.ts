@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { type Readable } from 'node:stream';
+
 import { strictAssert } from '../../util/assert';
 import type {
   WebAPIType,
@@ -12,57 +13,66 @@ import type {
   BackupListMediaResponseType,
 } from '../../textsecure/WebAPI';
 import type { BackupCredentials } from './credentials';
+import { BackupCredentialType } from '../../types/backups';
 import { uploadFile } from '../../util/uploadAttachment';
+import { ContinueWithoutSyncingError, RelinkRequestedError } from './errors';
+import { missingCaseError } from '../../util/missingCaseError';
 
 export type DownloadOptionsType = Readonly<{
   downloadOffset: number;
   onProgress: (currentBytes: number, totalBytes: number) => void;
+  abortSignal?: AbortSignal;
 }>;
 
 export class BackupAPI {
-  private cachedBackupInfo: GetBackupInfoResponseType | undefined;
-  constructor(private credentials: BackupCredentials) {}
+  #cachedBackupInfo = new Map<
+    BackupCredentialType,
+    GetBackupInfoResponseType
+  >();
+
+  constructor(private readonly credentials: BackupCredentials) {}
 
   public async refresh(): Promise<void> {
-    // TODO: DESKTOP-6979
-    await this.server.refreshBackup(
-      await this.credentials.getHeadersForToday()
+    const headers = await Promise.all(
+      [BackupCredentialType.Messages, BackupCredentialType.Media].map(type =>
+        this.credentials.getHeadersForToday(type)
+      )
     );
+    await Promise.all(headers.map(h => this.#server.refreshBackup(h)));
   }
 
-  public async getInfo(): Promise<GetBackupInfoResponseType> {
-    const backupInfo = await this.server.getBackupInfo(
-      await this.credentials.getHeadersForToday()
+  public async getInfo(
+    credentialType: BackupCredentialType
+  ): Promise<GetBackupInfoResponseType> {
+    const backupInfo = await this.#server.getBackupInfo(
+      await this.credentials.getHeadersForToday(credentialType)
     );
-    this.cachedBackupInfo = backupInfo;
+    this.#cachedBackupInfo.set(credentialType, backupInfo);
     return backupInfo;
   }
 
-  private async getCachedInfo(): Promise<GetBackupInfoResponseType> {
-    if (this.cachedBackupInfo) {
-      return this.cachedBackupInfo;
+  async #getCachedInfo(
+    credentialType: BackupCredentialType
+  ): Promise<GetBackupInfoResponseType> {
+    const cached = this.#cachedBackupInfo.get(credentialType);
+    if (cached) {
+      return cached;
     }
 
-    return this.getInfo();
+    return this.getInfo(credentialType);
   }
 
   public async getMediaDir(): Promise<string> {
-    return (await this.getCachedInfo()).mediaDir;
+    return (await this.#getCachedInfo(BackupCredentialType.Media)).mediaDir;
   }
 
   public async getBackupDir(): Promise<string> {
-    return (await this.getCachedInfo())?.backupDir;
-  }
-
-  // Backup name will change whenever a new backup is created, so we don't want to cache
-  // it
-  public async getBackupName(): Promise<string> {
-    return (await this.getInfo()).backupName;
+    return (await this.#getCachedInfo(BackupCredentialType.Media))?.backupDir;
   }
 
   public async upload(filePath: string, fileSize: number): Promise<void> {
-    const form = await this.server.getBackupUploadForm(
-      await this.credentials.getHeadersForToday()
+    const form = await this.#server.getBackupUploadForm(
+      await this.credentials.getHeadersForToday(BackupCredentialType.Messages)
     );
 
     await uploadFile({
@@ -75,31 +85,71 @@ export class BackupAPI {
   public async download({
     downloadOffset,
     onProgress,
+    abortSignal,
   }: DownloadOptionsType): Promise<Readable> {
-    const { cdn, backupDir, backupName } = await this.getInfo();
-    const { headers } = await this.credentials.getCDNReadCredentials(cdn);
+    const { cdn, backupDir, backupName } = await this.getInfo(
+      BackupCredentialType.Messages
+    );
+    const { headers } = await this.credentials.getCDNReadCredentials(
+      cdn,
+      BackupCredentialType.Messages
+    );
 
-    return this.server.getBackupStream({
+    return this.#server.getBackupStream({
       cdn,
       backupDir,
       backupName,
       headers,
       downloadOffset,
       onProgress,
+      abortSignal,
+    });
+  }
+
+  public async downloadEphemeral({
+    downloadOffset,
+    onProgress,
+    abortSignal,
+  }: DownloadOptionsType): Promise<Readable> {
+    const response = await this.#server.getTransferArchive({
+      abortSignal,
+    });
+
+    if ('error' in response) {
+      switch (response.error) {
+        case 'RELINK_REQUESTED':
+          throw new RelinkRequestedError();
+        case 'CONTINUE_WITHOUT_UPLOAD':
+          throw new ContinueWithoutSyncingError();
+        default:
+          throw missingCaseError(response.error);
+      }
+    }
+
+    const { cdn, key } = response;
+
+    return this.#server.getEphemeralBackupStream({
+      cdn,
+      key,
+      downloadOffset,
+      onProgress,
+      abortSignal,
     });
   }
 
   public async getMediaUploadForm(): Promise<AttachmentUploadFormResponseType> {
-    return this.server.getBackupMediaUploadForm(
-      await this.credentials.getHeadersForToday()
+    return this.#server.getBackupMediaUploadForm(
+      await this.credentials.getHeadersForToday(BackupCredentialType.Media)
     );
   }
 
   public async backupMediaBatch(
     items: ReadonlyArray<BackupMediaItemType>
   ): Promise<BackupMediaBatchResponseType> {
-    return this.server.backupMediaBatch({
-      headers: await this.credentials.getHeadersForToday(),
+    return this.#server.backupMediaBatch({
+      headers: await this.credentials.getHeadersForToday(
+        BackupCredentialType.Media
+      ),
       items,
     });
   }
@@ -111,18 +161,20 @@ export class BackupAPI {
     cursor?: string;
     limit: number;
   }): Promise<BackupListMediaResponseType> {
-    return this.server.backupListMedia({
-      headers: await this.credentials.getHeadersForToday(),
+    return this.#server.backupListMedia({
+      headers: await this.credentials.getHeadersForToday(
+        BackupCredentialType.Media
+      ),
       cursor,
       limit,
     });
   }
 
   public clearCache(): void {
-    this.cachedBackupInfo = undefined;
+    this.#cachedBackupInfo.clear();
   }
 
-  private get server(): WebAPIType {
+  get #server(): WebAPIType {
     const { server } = window.textsecure;
     strictAssert(server, 'server not available');
 

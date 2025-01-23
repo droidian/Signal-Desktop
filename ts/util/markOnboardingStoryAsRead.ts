@@ -20,7 +20,9 @@ export async function markOnboardingStoryAsRead(): Promise<boolean> {
   }
 
   const messages = await Promise.all(
-    existingOnboardingStoryMessageIds.map(__DEPRECATED$getMessageById)
+    existingOnboardingStoryMessageIds.map(id =>
+      __DEPRECATED$getMessageById(id, 'markOnboardingStoryAsRead')
+    )
   );
 
   const storyReadDate = Date.now();
@@ -51,7 +53,7 @@ export async function markOnboardingStoryAsRead(): Promise<boolean> {
 
   await window.storage.put('hasViewedOnboardingStory', true);
 
-  storageServiceUploadJob();
+  storageServiceUploadJob({ reason: 'markOnboardingStoryAsRead' });
 
   return true;
 }

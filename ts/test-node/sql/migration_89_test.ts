@@ -22,6 +22,7 @@ import { getCallIdFromEra } from '../../util/callDisposition';
 import { isValidUuid } from '../../util/isValidUuid';
 import { createDB, updateToVersion } from './helpers';
 import type { WritableDB, MessageType } from '../../sql/Interface';
+import { parsePartial } from '../../util/schemas';
 
 describe('SQL/updateToSchemaVersion89', () => {
   let db: WritableDB;
@@ -152,8 +153,14 @@ describe('SQL/updateToSchemaVersion89', () => {
     return db
       .prepare(selectHistoryQuery)
       .all()
-      .map(row => {
-        return callHistoryDetailsSchema.parse(row);
+      .map((row: object) => {
+        return parsePartial(callHistoryDetailsSchema, {
+          ...row,
+
+          // Not present at the time of migration, but required by zod
+          startedById: null,
+          endedTimestamp: null,
+        });
       });
   }
 
@@ -451,6 +458,10 @@ describe('SQL/updateToSchemaVersion89', () => {
         direction: CallDirection.Incoming,
         status: DirectCallStatus.Accepted,
         timestamp: Date.now(),
+
+        // Not present at the time of migration
+        startedById: null,
+        endedTimestamp: null,
       });
       insertCallHistory({
         callId: 'abc',
@@ -461,6 +472,10 @@ describe('SQL/updateToSchemaVersion89', () => {
         direction: CallDirection.Incoming,
         status: GroupCallStatus.Accepted,
         timestamp: Date.now(),
+
+        // Not present at the time of migration
+        startedById: null,
+        endedTimestamp: null,
       });
 
       updateToVersion(db, 89);
@@ -487,6 +502,10 @@ describe('SQL/updateToSchemaVersion89', () => {
         direction: CallDirection.Incoming,
         status: DirectCallStatus.Pending,
         timestamp: Date.now() - 1000,
+
+        // Not present at the time of migration
+        startedById: null,
+        endedTimestamp: null,
       });
 
       createCallHistoryMessage({

@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Шарттар және құпиялық саясаты"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Қатені көшіру және шығу"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Компьютер {name}, {deviceId} құрылғысынан шифрлау қатесіне тап болды"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Журналды жіберу"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Бұл файлдармен бірге фотосуреттерді және видеоларды таңдай алмайсыз."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "Іздеу"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Оқылмаған чаттарды іздеу"
+  },
   "icu:clearSearch": {
     "messageformat": "Ізделген сөзді өшіру"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "\"{searchTerm}\" үшін нәтиже жоқ"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Оқылмаған чаттарда \"{searchTerm}\" бойынша нәтиже жоқ"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Оқылмаған чаттар жоқ"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "Компьютерлік нұсқада SMS/MMS контактілері жоқ."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "{conversationName} сұхбатында \"{searchTerm}\" бойынша нәтиже жоқ"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Оқылмағандар бойынша фильтр қойылды"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Оқылмаған хабарлар бойынша іріктеу"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Сүзгіні тазалау"
   },
   "icu:conversationsHeader": {
     "messageformat": "Чаттар"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Дауыстық хат жазу құралында қате шықты."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Тіркеме сақталды."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Тіркеме сақталды} other {{count,number} тіркеме сақталды}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Қалтада көрсету"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Тіркеме сақталмады, себебі ол әлі жүктеп алынып жатыр} other {Тіркемелер сақталмады, себебі {count,number} тіркеме әлі жүктеп алынып жатыр}}"
   },
   "icu:you": {
     "messageformat": "Сіз"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Ескертпе"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Соңғы мультимедианы көру"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Барлық мультимедиа"
   },
   "icu:back": {
     "messageformat": "Артқа"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Ақпарат"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Хаттарды жою"
+  "icu:deleteConversation": {
+    "messageformat": "Жою"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Хаттарды жою керек пе?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Чатты жою керек пе?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Осы чаттағы хаттардың барлығы бұл құрылғыдан жойылады. Хаттарды жойған соң да, бұл чатты іздеп табуыңызға болады."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Осы чаттағы хаттардың барлығы бұл құрылғыдан жойылады."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "Осы чаттағы хаттардың барлығы барлық құрылғыларыңыздан жойылады. Хабарларды жойғаннан кейін бұл чатты әлі де іздей аласыз."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Осы чаттағы хаттардың барлығы барлық құрылғыларыңыздан жойылады."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Топтан шығып кету"
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "Бұл суреттің атауы бар екенін білдіретін белгіше"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "Бұл тіркемені үлкенірек көріністе ашыңыз"
+  },
+  "icu:startDownload": {
+    "messageformat": "Жүктеп алуды бастау"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Жүктеп алудан бас тарту"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} элемент} other {{count,number} элемент}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "Бұл мультимедиа енді жоқ."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Толық ақпарат"
+  },
   "icu:save": {
     "messageformat": "Сақтау"
   },
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "Қайтадан байқап көру"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Кодты жаңарту"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "Анықтама алу"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Қоңырауға қосылу мүмкін емес"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Қоңырауға қатысып жатырсыз."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Қоңырау сілтемесі туралы ақпарат алу мүмкін болмады. Желі байланысын тексеріп, қайталап көріңіз."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal қоңырауы"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Сілтеме жойылмады. Байланысты тексеріп, қайталап көріңіз."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Бұл қоңырауға қосылуға өтінішіңіз қабылданбады."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second} және тағы {others,number} адам осы қоңырауға қатысып жатыр} other {{first}, {second} және тағы {others,number} адам осы қоңырауға қатысып жатыр}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {Бұл қоңырауға {count,number} адам қатысып жатыр} other {Бұл қоңырауға {count,number} адам қатысып жатыр}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal {person} деген кісіге қоңырау шалады"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "{name} жіберген аудио және видеоларды ала алмайсыз"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Аудио және видео қабылданбайды"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Бұл сіздің қауіпсіздік нөміріңіздің өзгергені верификацияланбаған, құрылғыда ақау болуы немесе ол сізді блоктап қойған болуы мүмкін."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal {window} бөлісіп жатыр."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Signal экраны көрсетіліп жатыр"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Байланыс қайта орнатылуда..."
@@ -1521,7 +1584,7 @@
     "messageformat": "Signal Desktop-тың осы нұсқасынан барлық деректі және хатты жою керек пе? Осы жұмыс үстелін кез келген уақытта қайта байланыстыра аласыз, бірақ хаттарыңыз қалпына келмейді. Signal аккаунтыңыз және телефоныңыздағы деректер немесе басқа да байланыстырылған құрылғылар жойылмайды."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "Құрылғыны ажырату және барлық деректі жою"
+    "messageformat": "Қолданба ажыратылып жатыр және деректер толығымен жойылып жатыр…"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Signal-дың компьютерлік нұсқасын бұған дейін орнатқаннан ескі деректер қалып қойған. Жалғастыратын болсаңыз, ол жойылады және бәрін басынан бастайсыз."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Кеше {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Signal кіріс хабарды өңдей алмай жатқан сияқты."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Хаттың негізгі бөлімі тым ұзақ."
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} сізге, {first}, {second} және тағы {remaining,number} адамға қоңырау шалып жатыр} other {{ringer} сізге, сондай-ақ {first}, {second} және тағы {remaining,number} адамға қоңырау шалып жатыр}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Қосылуда..."
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Қоңырау соғылуда..."
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Қоңырау сілтемесі"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Топтық қоңырау"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Рұқсат берілгені күтілуде"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Микрофон қосулы"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Қолыңызды түсіресіз бе?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Түсіру"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Қоңырау дауысы қосылды"
@@ -2961,7 +3039,7 @@
     "messageformat": "Бұл топқа топ сілтемесі арқылы кіре алмайсыз, себебі әкімші сізді шығарып тастады."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Топқа қосылар алдында топтың әкімшісі сіздің өтінішіңізді растауы қажет. Егер растаса, сіздің атыңыз бен фотосуретіңіз топ мүшелеріне көрсетілетін болады."
+    "messageformat": "Бұл топтың әкімшісі сіздің өтінішіңізді мақұлдауы керек, сонда ғана топқа қосыла аласыз. Топқа қосылу туралы өтініш жіберген соң, аты-жөніңіз бен фотосуретіңіз топ мүшелеріне қолжетімді болады."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Қосылу"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "A request to join the group from {joinerName} was denied."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} топ сілтемесі арқылы топқа қосылуға өтініш жіберді және бас тартты"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} топ сілтемесі арқылы топқа қосылуға {numberOfRequests,number} өтініш жіберді және бас тартты"
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} өтініш білдірді және топ сілтемесі арқылы топқа қосылуға өтініштен бас тартты.} other {{joinerName} өтініш білдірді және топ сілтемесі арқылы топқа қосылуға {numberOfRequests,number} өтініштен бас тартты.}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "келесі"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Хабарлар тарихының көлеміне қарай ол бірнеше минутқа созылуы мүмкін."
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signal-ды демеу"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "\"Signal-ға демеу көрсету\" түймесін басыңыз да, жазылыңыз"
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "Хабарлар синхрондалып жатыр"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{currentSize}/{totalSize} ({fractionComplete,number,percent}) жүктеп алынып жатыр..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Хабарларды тасымалдау аяқталып жатыр..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Жүктеп алуға дайындалып жатыр..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "Хабарлар тарихының көлеміне қарай ол бірнеше минутқа созылуы мүмкін."
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Бас тарту"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "Хабарлар мен чат туралы ақпарат тура шифрлау әдісімен, соның ішінде синхрондау процесімен қорғалған. <learnMoreLink>Толық ақпарат</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Тасымалдаудан бас тарту керек пе?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Хабарларыңыз бен мультимедиаңызды қалпына келтіру процесі аяқталған жоқ. Бас тарту опциясын таңдасаңыз, құрылғыңыз хабарлар тарихынсыз байланыстырылады."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Тасымалдауды жалғастыру"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Тасымалдаудан бас тарту"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Хабарларды тасымалдау кезінде қате пайда болды"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Хабарларыңыз тасымалданбады. Интернет байланысын тексеріп, қайталап көріңіз."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "Қате шыққандықтан, хабарларыңыз тасымалданбады. Осы компьютерді қайта байланыстырып көріңіз."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Қайтадан байқап көру"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Өткізіп жіберу"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Хабарларды тасымалдауды өткізіп жіберу керек пе?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Егер өткізіп жіберетін болсаңыз, бұл құрылғыдағы кез келген хабарларға немесе мультимедиаға қол жеткізе алмайсыз. Өткізіп жібергеннен кейін \"Параметрлер > Чаттар > Тасымалдау\" тармағы арқылы хабарларды жаңадан тасымалдауға болады."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Бас тарту"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Мультимедианы қалпына келтіру"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Қалпына келтіру кідіртілді"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize}/{totalSize} қалпына келтірілді"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "Мультимедиа фондық режимде жүктеп алына береді."
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Тасымалдауды кідірту"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Тасымалдауды жалғастыру"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Тасымалдаудан бас тарту"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Қосымша опциялар"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Қалпына келтірілді"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} / {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Мультимедианы тасымалдаудан бас тарту керек пе?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Хабарларыңыз бен мультимедиаңызды қалпына келтіру процесі аяқталған жоқ. Оларды тасымалдаудан бас тартсаңыз, \"Параметрлер\" бөлімінен қайта тасымалдай аласыз."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Тасымалдауды жалғастыру"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Тасымалдаудан бас тарту"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Кеңейту"
@@ -3578,8 +3743,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Топтан өшіру"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Сіздің қоңырауға қатысып жатырсыз"
+  "icu:ContactModal--voice": {
+    "messageformat": "Дауыс"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Чат түсі"
@@ -3762,7 +3927,7 @@
     "messageformat": "Сілтемені қалпына келтіру"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Жаңа мүшелерді мақұлдау"
+    "messageformat": "Админнің мақұлдауы керек"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Әкімші топ сілтемесі арқылы жаңа мүшелердің қосылуын мақұлдауын сұраңыз"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Жоғарыдағы {composeIcon} түймесін басыңыз және хат жазатын контактілерді немесе топтарды іздеңіз."
-  },
-  "icu:composeIcon": {
-    "messageformat": "хат жазу"
   },
   "icu:emptyInbox__title": {
     "messageformat": "Чаттар жоқ"
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal қолданбасында техникалық қиындықтар туындады. Қызметті мүмкіндігінше тезірек қалпына келтіру үшін аянбай жұмыс істеп жатырмыз."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Жаңарту керек"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Хабарларды синхрондау процесін аяқтау үшін Signal Desktop қолданбасын қазір жаңартыңыз."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Жаңарту"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Жаңарту керек"
   },
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "Стористі көру үшін басыңыз"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "Жаңартуды қосу үшін <newStoryIcon>Сторис қосу</newStoryIcon> түймесін басыңыз."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "Жаңалықты сториске қосу үшін <newStoryButtonIcon></newStoryButtonIcon> түймесін басыңыз."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} -> {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Жауаптар"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
-    "messageformat": "Cториске реакция қалдырды"
-  },
   "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "cториске реакция қалдырдыңыз."
   },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "cториске реакция қалдырды."
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "You can’t reply to this story because you’re no longer a member of this group."
@@ -5413,7 +5575,10 @@
     "messageformat": "Қоңыраулар тарихын өшіру керек пе?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Бұл қоңыраулар тарихын түгелдей біржола жояды"
+    "messageformat": "Бұл қоңыраулар тарихын түгелдей біржола жояды."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Бұл қоңыраулар тарихын түгелдей біржола жояды. Cіз жасаған қоңырау сілтемелерін басқа адамдар пайдалана алмайды. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Тазалау"
@@ -5421,17 +5586,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Қоңыраулар тарихы тазаланды"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Қоңырауды көру немесе бастау үшін басыңыз"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Қоңырау сілтемелерінің барлығы жойылмады. Байланысты тексеріп, қайталап көріңіз."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "Жаңа дауыстық немесе бейне қоңырауды бастау үшін <newCallIcon>Жаңа қоңырау</newCallIcon> түймесін басыңыз."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Қоңыраулар тарихы толығымен өшірілмеді. Байланысты тексеріп, қайталап көріңіз."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "Жаңа дауыстық немесе видеоқоңырау шалу үшін <newCallButtonIcon></newCallButtonIcon> түймесін басыңыз."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Өткізіп алған қоңырауларды іздеу"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Іздеу"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Қабылданбаған қоңыраулар ғана көрсетілді"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Қабылданбаған қоңырауларды ғана көрсету"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Ауыстыру"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Соңғы қоңыраулар жоқ. Досыңызға қоңырау шалудан бастаңыз."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "Қоңыраулар жоқ"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "Соңғы қоңыраулар осында көрінеді."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "Өткізіп алған қоңыраулар жоқ"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "Өткізіп алған қоңыраулар осында көрінеді."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "\"{query}\" бойынша нәтижелер жоқ"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Өткізіп алған қоңырауларда \"{query}\" бойынша нәтиже жоқ"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Өткізіп алған қоңыраулар жоқ"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Қоңырау сілтемесін жасау"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Қайту"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Жаңа қоңырауға қосылмас бұрын, қазіргі қоңыраудан шығуыңыз керек"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Шығыс дауыстық қоңырау} other {Кіріс дауыстық қоңырау}}} Video {{direction, select, Outgoing {Шығыс видеоқоңырау} other {Кіріс видеоқоңырау}}} Group {{direction, select, Outgoing {Шығыс топтық қоңырау} other {Кіріс топтық қоңырау}}} other {{direction, select, Outgoing {Шығатын қоңырау} other {Келетін қоңырау }}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Қабылданбаған дауыстық қоңырау} Video {Видео қоңырауды өткізіп алдыңыз} Group {Қабылданбаған топтық қоңырау} other {Қабылданбаған қоңырау}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Жауап берілмеген дауыстық қоңырау} Video {Жауап берілмеген видеоқоңырау} Group {Жауап берілмеген топтық қоңырау} other {Жауап берілмеген қоңырау}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Қабылданбаған дауыстық қоңырау} Video {Қабылданбаған видеоқоңырау} Group {Қабылданбаған топтық қоңырау} other {Қабылданбаған қоңырау}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Қоңырау сілтемесі"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "Қоңырау атын өңдеу"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "Барлық мүшені мақұлдау"
+    "messageformat": "Админнің мақұлдауы керек"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Қоңырау жүріп жатқанда, бұл параметрді өзгерту мүмкін емес."
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Сілтемені көшіру"
@@ -5559,6 +5715,9 @@
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Жою"
   },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Қоңырау жүріп жатқанда, бұл сілтемені жою мүмкін емес."
+  },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Қоңырауға сілтеме мәліметтері"
   },
@@ -5572,7 +5731,13 @@
     "messageformat": "Қоңырау атын өңдеу"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Барлық мүшені мақұлдау"
+    "messageformat": "Админнің мақұлдауы керек"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Қоңырауға қосу"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Қоңырауға қоспау"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Өшіру"
@@ -5629,13 +5794,10 @@
     "messageformat": "Кішігірім түзетпелер жасалды, ақаулар жөнделді және жұмысы жақсартылды. Signal-ды қолданғаныңыз үшін рақмет!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "Signal Desktop енді тіркемені жүктеп алу процесі қай жерден тоқтаса, жүктеп алу процесін сол жерден бастап автоматты түрде жалғастыра алады. Сондықтан енді досыңыз сізге жіберген мем аяқталғанға дейін ноутбуктың бетін жаба салғанның өзінде, күлкіден жарылып үлгересіз."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "Біреуді @ белгісі арқылы атап өтетін кезде автоматты түрде толтырылатын ұсыныстар тізімінде өз аккаунтыңыз қате қосылып кететін ақау түзетілді. Енді топтық чаттарда өзіңіз туралы сөз қозғағанда, өз аккаунтыңызды атап өтпейтін боласыз."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "Енді сенсорлық экраны бар құрылғыларда чаттар тізімін жылжыту жолағының өлшемін өзгерте аласыз. Жолақты жүргізу енді оп-оңай. Ол үшін экранды жұмыр саусағыңызбен жұмсақ басыңыз."
   }
 }

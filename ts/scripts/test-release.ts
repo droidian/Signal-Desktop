@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import asar from 'asar';
+import asar from '@electron/asar';
 import assert from 'assert';
 import { join } from 'path';
 import { _electron as electron } from 'playwright';
@@ -15,14 +15,14 @@ let archive: string;
 let exe: string;
 if (process.platform === 'darwin') {
   archive = join(
-    'mac',
+    'mac-arm64',
     `${packageJson.productName}.app`,
     'Contents',
     'Resources',
     'app.asar'
   );
   exe = join(
-    'mac',
+    'mac-arm64',
     `${packageJson.productName}.app`,
     'Contents',
     'MacOS',

@@ -3,7 +3,7 @@
 
 const esbuild = require('esbuild');
 const path = require('path');
-const glob = require('glob');
+const fastGlob = require('fast-glob');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const BUNDLES_DIR = 'bundles';
@@ -13,7 +13,7 @@ const isProd = process.argv.some(argv => argv === '-prod' || argv === '--prod');
 
 const nodeDefaults = {
   platform: 'node',
-  target: 'esnext',
+  target: 'es2023',
   // Disabled even in dev because the debugger is broken
   sourcemap: false,
   // Otherwise React components get renamed
@@ -35,6 +35,7 @@ const bundleDefaults = {
     '@signalapp/libsignal-client/zkgroup',
     '@signalapp/ringrtc',
     '@signalapp/better-sqlite3',
+    '@indutny/mac-screen-share',
     'electron',
     'fs-xattr',
     'fsevents',
@@ -103,12 +104,15 @@ async function main() {
       ...nodeDefaults,
       format: 'cjs',
       mainFields: ['browser', 'main'],
-      entryPoints: glob
-        .sync('{app,ts}/**/*.{ts,tsx}', {
-          nodir: true,
-          root: ROOT_DIR,
-        })
-        .filter(file => !file.endsWith('.d.ts')),
+      entryPoints: [
+        'preload.wrapper.ts',
+        ...fastGlob
+          .sync('{app,ts}/**/*.{ts,tsx}', {
+            onlyFiles: true,
+            cwd: ROOT_DIR,
+          })
+          .filter(file => !file.endsWith('.d.ts')),
+      ],
       outdir: path.join(ROOT_DIR),
     },
     preloadConfig: {

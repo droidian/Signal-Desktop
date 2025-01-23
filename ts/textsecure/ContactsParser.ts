@@ -16,6 +16,7 @@ import { dropNull } from '../util/dropNull';
 import { decryptAttachmentV2ToSink } from '../AttachmentCrypto';
 
 import Avatar = Proto.ContactDetails.IAvatar;
+import { stringToMIMEType } from '../types/MIME';
 
 const { Reader } = protobuf;
 
@@ -78,7 +79,7 @@ export class ParseContactsTransform extends Transform {
   public contacts: Array<ContactDetailsWithAvatar> = [];
 
   public activeContact: Proto.ContactDetails | undefined;
-  private unused: Uint8Array | undefined;
+  #unused: Uint8Array | undefined;
 
   override async _transform(
     chunk: Buffer | undefined,
@@ -92,9 +93,9 @@ export class ParseContactsTransform extends Transform {
 
     try {
       let data = chunk;
-      if (this.unused) {
-        data = Buffer.concat([this.unused, data]);
-        this.unused = undefined;
+      if (this.#unused) {
+        data = Buffer.concat([this.#unused, data]);
+        this.#unused = undefined;
       }
 
       const reader = Reader.create(data);
@@ -109,7 +110,7 @@ export class ParseContactsTransform extends Transform {
             if (err instanceof RangeError) {
               // Note: A failed decodeDelimited() does in fact update reader.pos, so we
               //   must reset to startPos
-              this.unused = data.subarray(startPos);
+              this.#unused = data.subarray(startPos);
               done();
               return;
             }
@@ -146,15 +147,19 @@ export class ParseContactsTransform extends Transform {
             reader.pos,
             reader.pos + attachmentSize
           );
-          const hash = computeHash(data);
+          const hash = computeHash(avatarData);
 
           const local =
             // eslint-disable-next-line no-await-in-loop
             await window.Signal.Migrations.writeNewAttachmentData(avatarData);
 
+          const contentType = this.activeContact.avatar?.contentType;
           const prepared = prepareContact(this.activeContact, {
             ...this.activeContact.avatar,
             ...local,
+            contentType: contentType
+              ? stringToMIMEType(contentType)
+              : undefined,
             hash,
           });
           if (prepared) {
@@ -169,7 +174,7 @@ export class ParseContactsTransform extends Transform {
         } else {
           // We have an attachment, but we haven't read enough data yet. We need to
           //   wait for another chunk.
-          this.unused = data.subarray(reader.pos);
+          this.#unused = data.subarray(reader.pos);
           done();
           return;
         }
@@ -201,9 +206,7 @@ function prepareContact(
     return undefined;
   }
 
-  const aci = proto.aci
-    ? normalizeAci(proto.aci, 'ContactBuffer.aci')
-    : proto.aci;
+  const aci = proto.aci ? normalizeAci(proto.aci, 'ContactBuffer.aci') : null;
 
   const result = {
     ...proto,

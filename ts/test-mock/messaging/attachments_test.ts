@@ -2,21 +2,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import createDebug from 'debug';
+import { assert } from 'chai';
 import { expect } from 'playwright/test';
+import { readFile } from 'node:fs/promises';
 import { type PrimaryDevice, StorageState } from '@signalapp/mock-server';
 import * as path from 'path';
 import type { App } from '../playwright';
 import { Bootstrap } from '../bootstrap';
 import {
   getMessageInTimelineByTimestamp,
-  getTimeline,
+  getTimelineMessageWithText,
+  sendMessageWithAttachments,
   sendTextMessage,
-  typeIntoInput,
 } from '../helpers';
 import * as durations from '../../util/durations';
 import { strictAssert } from '../../util/assert';
+import { toBase64 } from '../../Bytes';
+import type { AttachmentWithNewReencryptionInfoType } from '../../types/Attachment';
+import { IMAGE_JPEG } from '../../types/MIME';
 
 export const debug = createDebug('mock:test:attachments');
+
+const CAT_PATH = path.join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'cat-screenshot.png'
+);
 
 describe('attachments', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -60,48 +74,44 @@ describe('attachments', function (this: Mocha.Suite) {
     const page = await app.getWindow();
 
     await page.getByTestId(pinned.device.aci).click();
-    await page
-      .getByTestId('attachfile-input')
-      .setInputFiles(
-        path.join(__dirname, '..', '..', '..', 'fixtures', 'cat-screenshot.png')
-      );
-    await page
-      .locator('.module-image.module-staged-attachment .module-image__image')
-      .waitFor();
-    const input = await app.waitForEnabledComposer();
-    await typeIntoInput(input, 'This is my cat');
-    await input.press('Enter');
 
-    const allMessagesLocator = getTimeline(page).getByRole('article');
-    await expect(allMessagesLocator).toHaveCount(1);
+    const [attachmentCat] = await sendMessageWithAttachments(
+      page,
+      pinned,
+      'This is my cat',
+      [CAT_PATH]
+    );
 
-    const allMessages = await allMessagesLocator.all();
-    const message = allMessages[0];
+    const Message = getTimelineMessageWithText(page, 'This is my cat');
+    const MessageSent = Message.locator(
+      '.module-message__metadata__status-icon--sent'
+    );
 
-    await message.getByText('This is my cat').waitFor();
-    await message
-      .locator('.module-message__metadata__status-icon--sent')
-      .waitFor();
-
-    const timestamp = await message
-      .locator('.module-message.module-message--outgoing')
-      .getAttribute('data-testid');
-
+    debug('waiting for send');
+    await MessageSent.waitFor();
+    const timestamp = await Message.getAttribute('data-testid');
     strictAssert(timestamp, 'timestamp must exist');
+
+    const sentMessage = (
+      await app.getMessagesBySentAt(parseInt(timestamp, 10))
+    )[0];
+    strictAssert(sentMessage, 'message exists in DB');
+    const sentAttachment = sentMessage.attachments?.[0];
+    assert.isTrue(sentAttachment?.isReencryptableToSameDigest);
+    assert.isUndefined(
+      (sentAttachment as unknown as AttachmentWithNewReencryptionInfoType)
+        .reencryptionInfo
+    );
 
     // For this test, just send back the same attachment that was uploaded to test a
     // round-trip
-    const receivedMessage = await pinned.waitForMessage();
-    const attachment = receivedMessage.dataMessage.attachments?.[0];
-    strictAssert(attachment, 'attachment must exist');
-
     const incomingTimestamp = Date.now();
     await sendTextMessage({
       from: pinned,
       to: bootstrap.desktop,
       desktop: bootstrap.desktop,
       text: 'Wait, that is MY cat!',
-      attachments: [attachment],
+      attachments: [attachmentCat],
       timestamp: incomingTimestamp,
     });
 
@@ -110,5 +120,77 @@ describe('attachments', function (this: Mocha.Suite) {
         'img.module-image__image'
       )
     ).toBeVisible();
+
+    const incomingMessage = (
+      await app.getMessagesBySentAt(incomingTimestamp)
+    )[0];
+    strictAssert(incomingMessage, 'message exists in DB');
+    const incomingAttachment = incomingMessage.attachments?.[0];
+    assert.isTrue(incomingAttachment?.isReencryptableToSameDigest);
+    assert.isUndefined(
+      (incomingAttachment as unknown as AttachmentWithNewReencryptionInfoType)
+        .reencryptionInfo
+    );
+    assert.strictEqual(incomingAttachment?.key, sentAttachment?.key);
+    assert.strictEqual(incomingAttachment?.digest, sentAttachment?.digest);
+  });
+
+  it('receiving attachments with non-zero padding will cause new re-encryption info to be generated', async () => {
+    const page = await app.getWindow();
+
+    await page.getByTestId(pinned.device.aci).click();
+
+    const plaintextCat = await readFile(CAT_PATH);
+    const attachment = await bootstrap.storeAttachmentOnCDN(
+      // add non-zero byte to the end of the data; this will be considered padding
+      // when received since we will include the size of the un-appended data when
+      // sending
+      Buffer.concat([plaintextCat, Buffer.from([1])]),
+      IMAGE_JPEG
+    );
+
+    const incomingTimestamp = Date.now();
+    await sendTextMessage({
+      from: pinned,
+      to: bootstrap.desktop,
+      desktop: bootstrap.desktop,
+      text: 'Wait, that is MY cat! But now with weird padding!',
+      attachments: [
+        {
+          ...attachment,
+          size: plaintextCat.byteLength,
+        },
+      ],
+      timestamp: incomingTimestamp,
+    });
+
+    await expect(
+      getMessageInTimelineByTimestamp(page, incomingTimestamp).locator(
+        'img.module-image__image'
+      )
+    ).toBeVisible();
+
+    const incomingMessage = (
+      await app.getMessagesBySentAt(incomingTimestamp)
+    )[0];
+    strictAssert(incomingMessage, 'message exists in DB');
+    const incomingAttachment = incomingMessage.attachments?.[0];
+
+    assert.isFalse(incomingAttachment?.isReencryptableToSameDigest);
+    assert.exists(incomingAttachment?.reencryptionInfo);
+    assert.exists(incomingAttachment?.reencryptionInfo.digest);
+
+    assert.strictEqual(
+      incomingAttachment?.key,
+      toBase64(attachment.key ?? new Uint8Array(0))
+    );
+    assert.strictEqual(
+      incomingAttachment?.digest,
+      toBase64(attachment.digest ?? new Uint8Array(0))
+    );
+    assert.notEqual(
+      incomingAttachment?.digest,
+      incomingAttachment.reencryptionInfo.digest
+    );
   });
 });

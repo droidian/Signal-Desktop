@@ -50,8 +50,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Bedingungen & Datenschutzerklärung"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple Silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Fehler kopieren und beenden"
@@ -369,7 +375,7 @@
     "messageformat": "Chat lösen"
   },
   "icu:pinnedConversationsFull": {
-    "messageformat": "Du kannst maximal 4 Chats anheften"
+    "messageformat": "Du kannst maximal 4 Chats anheften"
   },
   "icu:loadingMessages--other": {
     "messageformat": "{daysAgo, plural, one {Nachrichten von vor 1 Tag werden geladen …} other {Nachrichten von vor {daysAgo,number} Tagen werden geladen …}}"
@@ -504,7 +510,7 @@
     "messageformat": "Verifizierung entfernen"
   },
   "icu:SafetyNumberViewer__hint": {
-    "messageformat": "Um die Ende-zu-Ende-Verschlüsselung mit {name} zu verifizieren, vergleiche die Nummern mit seinem/ihrem Gerät. Er/sie kann deinen Code auch mit seinem/ihrem Gerät scannen."
+    "messageformat": "Um die Ende-zu-Ende-Verschlüsselung mit {name} zu verifizieren, vergleiche die Nummern mit deren Gerät. Die Person kann deinen Code auch mit ihrem Gerät scannen."
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "Mehr erfahren"
@@ -575,8 +581,14 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Signal Desktop hat einen Entschlüsselungsfehler von {name}, Gerät {deviceId} festgestellt."
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Diagnoseprotokoll übermitteln"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Du kannst keine Fotos und Videos zusammen mit Dateien auswählen."
@@ -588,7 +600,7 @@
     "messageformat": "Du kannst dieser Nachricht keine weiteren Anhänge hinzufügen."
   },
   "icu:fileSizeWarning": {
-    "messageformat": "Entschuldigung, die ausgewählte Datei überschreitet die maximal erlaubte Nachrichtengröße. {limit,number}  {units}"
+    "messageformat": "Die ausgewählte Datei überschreitet leider die maximal erlaubte Nachrichtengröße. "
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "Ausgewählter Anhang kann nicht geladen werden."
@@ -674,6 +686,9 @@
   "icu:search": {
     "messageformat": "Suchen"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Ungelesene Chats durchsuchen"
+  },
   "icu:clearSearch": {
     "messageformat": "Suche zurücksetzen"
   },
@@ -683,11 +698,26 @@
   "icu:noSearchResults": {
     "messageformat": "Keine Ergebnisse für »{searchTerm}«"
   },
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Keine Ergebnisse für »{searchTerm}« in ungelesenen Chats"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Keine ungelesenen Chats"
+  },
   "icu:noSearchResults--sms-only": {
     "messageformat": "SMS-/MMS-Kontakte sind auf Signal Desktop nicht verfügbar."
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "Keine Ergebnisse für »{searchTerm}« in {conversationName}"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Gefiltert nach: Ungelesen"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Nach Ungelesen filtern"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Filter entfernen"
   },
   "icu:conversationsHeader": {
     "messageformat": "Chats"
@@ -782,11 +812,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Es gab einen Fehler bei der Sprachaufzeichnung."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Anhang gespeichert."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Anhang gesichert.} other {{count,number} Anhänge gesichert.}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Im Ordner anzeigen"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Anhang kann nicht gespeichert werden, weil der Download noch nicht abgeschlossen ist.} other {Anhänge können nicht gespeichert werden, weil der Download von {count,number} Anhängen noch nicht abgeschlossen ist.}}"
   },
   "icu:you": {
     "messageformat": "Du"
@@ -938,8 +971,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Notiz"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Letzte Medieninhalte anzeigen"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Medienübersicht"
   },
   "icu:back": {
     "messageformat": "Zurück"
@@ -986,17 +1019,17 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Info"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Nachrichten löschen"
+  "icu:deleteConversation": {
+    "messageformat": "Löschen"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Nachrichten löschen?"
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Chat löschen?"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Alle Nachrichten in diesem Chat werden von diesem Gerät gelöscht. Du kannst nach dem Löschen von Nachrichten weiterhin nach diesem Chat suchen."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Alle Nachrichten in diesem Chat werden von diesem Gerät gelöscht."
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "Alle Nachrichten in diesem Chat werden von all deinen Geräten gelöscht. Du kannst nach dem Löschen von Nachrichten weiterhin nach diesem Chat suchen."
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Alle Nachrichten in diesem Chat werden von all deinen Geräten gelöscht."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Gruppe verlassen"
@@ -1056,7 +1089,7 @@
     "messageformat": "{obsoleteConversationTitle} und {conversationTitle} gehören zum selben Konto. Deinen Nachrichtenverlauf für beide Chats findest du hier."
   },
   "icu:ConversationMerge--notification--with-e164": {
-    "messageformat": "Dein Nachrichtenverlauf mit {conversationTitle} und seiner:ihrer Nummer {obsoleteConversationNumber} wurde zusammengeführt."
+    "messageformat": "Dein Nachrichtenverlauf mit {conversationTitle} und der Nummer {obsoleteConversationNumber} wurde zusammengeführt."
   },
   "icu:ConversationMerge--notification--no-title": {
     "messageformat": "Dein Nachrichtenverlauf mit {conversationTitle} und einem anderen Chat, der dazu gehört, wurde zusammengeführt."
@@ -1065,7 +1098,7 @@
     "messageformat": "Mehr erfahren"
   },
   "icu:ConversationMerge--explainer-dialog--line-1": {
-    "messageformat": "Nach dem Nachrichtenaustausch mit {obsoleteConversationTitle} hast du erfahren, dass diese Nummer zu {conversationTitle} gehört. Deren Telefonnummer ist vertraulich."
+    "messageformat": "Nach dem Nachrichtenaustausch mit {obsoleteConversationTitle} hast du erfahren, dass diese Nummer zu {conversationTitle} gehört. Diese Telefonnummer ist privat."
   },
   "icu:ConversationMerge--explainer-dialog--line-2": {
     "messageformat": "Dein Nachrichtenverlauf für beide Chats wurde hier zusammengeführt."
@@ -1091,6 +1124,24 @@
   "icu:imageCaptionIconAlt": {
     "messageformat": "Symbol, das auf eine Beschriftung des Bildes hinweist"
   },
+  "icu:imageOpenAlt": {
+    "messageformat": "Öffne diesen Anhang in einer größeren Ansicht"
+  },
+  "icu:startDownload": {
+    "messageformat": "Download starten"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Download abbrechen"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {{count,number} Element} other {{count,number} Elemente}}"
+  },
+  "icu:mediaNoLongerAvailable": {
+    "messageformat": "Dieser Medieninhalt ist nicht mehr verfügbar."
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Mehr erfahren"
+  },
   "icu:save": {
     "messageformat": "Speichern"
   },
@@ -1101,7 +1152,7 @@
     "messageformat": "Gekoppelte Geräte"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Ein neues Gerät koppeln"
+    "messageformat": "Neues Gerät koppeln"
   },
   "icu:Install__learn-more": {
     "messageformat": "Mehr erfahren"
@@ -1132,6 +1183,9 @@
   },
   "icu:Install__qr-failed-load__retry": {
     "messageformat": "Erneut versuchen"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Code aktualisieren"
   },
   "icu:Install__qr-failed-load__get-help": {
     "messageformat": "Hol dir Hilfe"
@@ -1211,9 +1265,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Beitreten des Anrufs nicht möglich"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Du nimmst bereits an einem Anruf teil."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Die Infos zum Anruflink konnten nicht abgerufen werden. Bitte überprüfe deine Netzverbindung und versuche es erneut."
   },
@@ -1225,6 +1276,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal-Anruf"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Link kann nicht gelöscht werden. Überprüfe deine Internetverbindung und versuche es erneut."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Deine Anfrage, diesem Anruf beizutreten, wurde abgelehnt."
@@ -1367,6 +1421,9 @@
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second} und {others,number} weitere Person nehmen an diesem Anruf teil} other {{first}, {second} und {others,number} weitere Personen nehmen an diesem Anruf teil}}"
   },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number} Person nimmt an diesem Anruf teil} other {{count,number} Personen nehmen an diesem Anruf teil}}"
+  },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal wird bei {person} klingeln"
   },
@@ -1409,6 +1466,9 @@
   "icu:calling__missing-media-keys": {
     "messageformat": "Audio- und Videodaten von {name} können nicht empfangen werden"
   },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Audio und Video können nicht empfangen werden"
+  },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Dies kann daran liegen, dass der Teilnehmer die Änderung deiner Sicherheitsnummer nicht verifiziert hat, ein Problem mit dessen Gerät besteht oder er dich blockiert hat."
   },
@@ -1432,6 +1492,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal teilt gerade {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Die Signal-Bildschirmfreigabe ist aktiviert"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Neu verbinden …"
@@ -1521,7 +1584,7 @@
     "messageformat": "Alle Daten und Nachrichten von dieser Signal-Desktop-Version löschen? Du kannst diese Desktop-Version jederzeit neu verbinden, aber deine Nachrichten werden dann nicht wiederhergestellt. Dein Signal-Konto und die Daten auf deinem Telefon oder auf sonstigen verbundenen Geräten werden nicht gelöscht."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "Verbindung wird getrennt und alle Daten werden gelöscht"
+    "messageformat": "Verbindung wird getrennt und alle Daten werden gelöscht …"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Du hast veraltete Daten aus einer früheren Installation von Signal Desktop. Falls du fortfährst, werden sämtliche Daten gelöscht und du beginnst komplett neu."
@@ -1615,6 +1678,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Gestern, {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Signal kann eine eingehende Nachricht möglicherweise nicht verarbeiten."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Nachricht ist zu lang."
@@ -2001,7 +2067,7 @@
     "messageformat": "Danke für deine Unterstützung!"
   },
   "icu:modal--donation--description": {
-    "messageformat": "Du hast im Namen von {name} eine Spende an Signal getätigt. Sie erhalten die Möglichkeit, ihre Unterstützung in ihrem Profil zu zeigen."
+    "messageformat": "Du hast im Namen von {name} eine Spende an Signal getätigt. Die Person erhält die Möglichkeit, ihre Unterstützung in ihrem Profil zu zeigen."
   },
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "Sticker-Set konnte nicht installiert werden"
@@ -2481,7 +2547,7 @@
     "messageformat": "Darf {name} dir Nachrichten schreiben und deinen Namen und dein Foto sehen? Der Kontakt weiß nicht, dass du seine Nachrichten gesehen hast, bis du die Anfrage annimmst."
   },
   "icu:MessageRequests--message-direct-hidden": {
-    "messageformat": "Darf dir {name} Nachrichten schreiben und deinen Namen und dein Foto sehen? Diese Person wurde bereits entfernt."
+    "messageformat": "Darf dir {name} Nachrichten schreiben und deinen Namen und dein Foto sehen? Du hast diese Person in der Vergangenheit entfernt."
   },
   "icu:MessageRequests--message-direct-blocked": {
     "messageformat": "Darf {name} dir Nachrichten schreiben und deinen Namen und dein Foto sehen? Du wirst keine Nachrichten erhalten, es sei denn, du erteilst eine Freigabe."
@@ -2580,7 +2646,7 @@
     "messageformat": "Chat mit dieser Gruppe fortsetzen und deinen Namen und dein Foto mit deren Mitgliedern teilen? <learnMoreLink>Mehr erfahren.</learnMoreLink>"
   },
   "icu:MessageRequests--profile-sharing--direct--link": {
-    "messageformat": "Chat mit {firstName} fortsetzen und deinen Namen und dein Foto mit diesem Nutzer/dieser Nutzerin teilen? <learnMoreLink>Mehr erfahren</learnMoreLink>"
+    "messageformat": "Chat mit {firstName} fortsetzen und deinen Namen und dein Foto mit dieser Person teilen? <learnMoreLink>Mehr erfahren</learnMoreLink>"
   },
   "icu:ConversationHero--members": {
     "messageformat": "{count, plural, one {{count,number} Mitglied} other {{count,number} Mitglieder}}"
@@ -2678,6 +2744,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} ruft dich, {first}, {second} und {remaining,number} weitere Person an} other {{ringer} ruft dich, {first}, {second} und {remaining,number} weitere Personen an}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Verbindung wird hergestellt …"
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Klingelt …"
   },
@@ -2705,6 +2774,9 @@
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Anruflink"
   },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Gruppenanruf"
+  },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Warten auf Einlass"
   },
@@ -2719,6 +2791,12 @@
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Mikrofon an"
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Deine Hand senken?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Hand senken"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Klingelton an"
@@ -2877,16 +2955,16 @@
     "messageformat": "Nicht stumm"
   },
   "icu:muteHour": {
-    "messageformat": "Für eine Stunde"
+    "messageformat": "Für 1 Stunde"
   },
   "icu:muteEightHours": {
     "messageformat": "Für 8 Stunden"
   },
   "icu:muteDay": {
-    "messageformat": "Für einen Tag"
+    "messageformat": "Für 1 Tag"
   },
   "icu:muteWeek": {
-    "messageformat": "Für eine Woche"
+    "messageformat": "Für 1 Woche"
   },
   "icu:muteAlways": {
     "messageformat": "Für immer"
@@ -3338,12 +3416,6 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "Eine Gruppenbeitrittsanfrage von {joinerName} wurde abgelehnt."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} hat eine Beitrittsanfrage über den Gruppen-Link gestellt und zurückgezogen."
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} hat {numberOfRequests,number} Beitrittsanfragen über den Gruppen-Link gestellt und zurückgezogen."
-  },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
     "messageformat": "{numberOfRequests, plural, one {{joinerName} hat eine Beitrittsanfrage über den Gruppen-Link gestellt und zurückgezogen.} other {{joinerName} hat {numberOfRequests,number} Beitrittsanfragen über den Gruppen-Link gestellt und zurückgezogen.}}"
   },
@@ -3503,6 +3575,9 @@
   "icu:next": {
     "messageformat": "vor"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Das kann, abhängig von der Größe deines Nachrichtenverlaufs, ein paar Minuten dauern."
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "An Signal spenden"
   },
@@ -3522,13 +3597,103 @@
     "messageformat": "Tippe auf »An Signal spenden« und wähle einen Geldbetrag aus."
   },
   "icu:BackupImportScreen__title": {
-    "messageformat": "Syncing messages"
+    "messageformat": "Nachrichten synchronisieren"
   },
   "icu:BackupImportScreen__progressbar-hint": {
-    "messageformat": "Downloading {currentSize} of {totalSize} ({fractionComplete,number,percent})..."
+    "messageformat": "{currentSize} von {totalSize} ({fractionComplete,number,percent}) werden heruntergeladen ..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Nachrichtenübertragung wird abgeschlossen …"
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Herunterladen wird vorbereitet..."
   },
   "icu:BackupImportScreen__description": {
-    "messageformat": "This may take a few minutes depending on the size of your backup"
+    "messageformat": "Das kann, abhängig von der Größe deines Nachrichtenverlaufs, ein paar Minuten dauern."
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Abbrechen"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "Nachrichten und Chat-Infos sowie der Synchronisierungsvorgang sind durch eine Ende-zu-Ende-Verschlüsselung geschützt. <learnMoreLink>Mehr erfahren</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Übertragung abbrechen?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Die Wiederherstellung deiner Nachrichten und Medien ist noch nicht abgeschlossen. Wenn du den Vorgang abbrichst, wird dein Gerät ohne deinen Nachrichtenverlauf gekoppelt."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Übertragung fortsetzen"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Übertragung abbrechen"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Beim Übertragen deiner Nachrichten ist ein Fehler aufgetreten."
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Deine Nachrichten konnten nicht übertragen werden. Überprüfe deine Internetverbindung und versuche es erneut."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "Deine Nachrichten konnten aufgrund eines Fehlers nicht übertragen werden. Versuche es noch einmal, indem du diesen Computer erneut koppelst."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Erneut versuchen"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Überspringen"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Nachrichtenübertragung überspringen?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Wenn du »Überspringen« wählst, hast du auf diesem Gerät keinen Zugriff mehr auf deine Nachrichten oder Medien. Du kannst eine neue Übertragung nach dem Überspringen von Einstellungen > Chats > Übertragung starten."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Abbrechen"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Medien werden wiederhergestellt"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Wiederherstellung angehalten"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize} von {totalSize} wiederhergestellt"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "Der Medien-Download wird im Hintergrund fortgesetzt"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Übertragung anhalten"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Übertragung fortsetzen"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Übertragung abbrechen"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Weitere Optionen"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Wiederherstellung abgeschlossen"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} von {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Medienübertragung abbrechen?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Die Wiederherstellung deiner Nachrichten und Medien ist noch nicht abgeschlossen. Wenn du jetzt abbrichst, kannst du unter »Einstellungen« erneut eine Übertragung vornehmen."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Übertragung fortsetzen"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Übertragung abbrechen"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Erweitern"
@@ -3546,7 +3711,7 @@
     "messageformat": "Registrierungsstatus des Kontakts wird überprüft"
   },
   "icu:CompositionArea__edit-action--discard": {
-    "messageformat": "Meldung verwerfen"
+    "messageformat": "Nachricht verwerfen"
   },
   "icu:CompositionArea__edit-action--send": {
     "messageformat": "Bearbeitete Nachricht senden"
@@ -3578,11 +3743,11 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Aus Gruppe entfernen"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Du nimmst bereits an einem Anruf teil"
+  "icu:ContactModal--voice": {
+    "messageformat": "Audio"
   },
   "icu:showChatColorEditor": {
-    "messageformat": "Chatfarbe"
+    "messageformat": "Chat-Farbe"
   },
   "icu:showConversationDetails": {
     "messageformat": "Gruppeneinstellungen"
@@ -3603,7 +3768,7 @@
     "messageformat": "Bei Aktivierung werden versendete und empfangene Nachrichten dieser Gruppe nach dem Lesen verschwinden."
   },
   "icu:ConversationDetails--disappearing-messages-info--direct": {
-    "messageformat": "Bei Aktivierung werden in diesem Eins-zu-eins-Chat versendete und empfangene Nachrichten nach dem Lesen verschwinden."
+    "messageformat": "Bei Aktivierung werden in diesem Einzelchat versendete und empfangene Nachrichten nach dem Lesen verschwinden."
   },
   "icu:ConversationDetails--nickname-label": {
     "messageformat": "Spitzname"
@@ -3621,7 +3786,7 @@
     "messageformat": "Dies wird diesen Spitznamen und die Notiz unwiderruflich löschen."
   },
   "icu:ConversationDetails--notifications": {
-    "messageformat": "Mitteilungen"
+    "messageformat": "Benachrichtigungen"
   },
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "Wer kann Gruppendetails bearbeiten"
@@ -3762,7 +3927,7 @@
     "messageformat": "Link zurücksetzen"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Neue Mitglieder bestätigen"
+    "messageformat": "Administrator-Genehmigung benötigt"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Ein Admin muss Beitrittsanfragen von neuen Mitgliedern über den Gruppen-Link bestätigen."
@@ -3852,13 +4017,13 @@
     "messageformat": "{count, plural, one {Diese Nachricht wird von all deinen Geräten gelöscht.} other {Diese Nachrichten werden von all deinen Geräten gelöscht.}}"
   },
   "icu:DeleteMessagesModal--deleteForMe": {
-    "messageformat": "Löschen für mich"
+    "messageformat": "Für mich löschen"
   },
   "icu:DeleteMessagesModal--deleteFromThisDevice": {
     "messageformat": "Von diesem Gerät löschen"
   },
   "icu:DeleteMessagesModal--deleteForEveryone": {
-    "messageformat": "Löschen für alle"
+    "messageformat": "Für alle löschen"
   },
   "icu:DeleteMessagesModal--deleteFromAllDevices": {
     "messageformat": "Von allen Geräten löschen"
@@ -3949,12 +4114,6 @@
   },
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
-  },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Klicke auf {composeIcon} und suche nach deinen Kontakten oder Gruppen, um dich zu unterhalten."
-  },
-  "icu:composeIcon": {
-    "messageformat": "Verfassen-Schaltfläche"
   },
   "icu:emptyInbox__title": {
     "messageformat": "Keine Chats"
@@ -4071,16 +4230,16 @@
     "messageformat": "{num, plural, one {Diese personalisierte Farbe wird in {num,number} Chat verwendet. Möchtest du sie für alle Chats löschen?} other {Diese personalisierte Farbe wird in {num,number} Chats verwendet. Möchtest du sie für alle Chats löschen?}}"
   },
   "icu:ChatColorPicker__menu-title": {
-    "messageformat": "Chatfarbe"
+    "messageformat": "Chat-Farbe"
   },
   "icu:ChatColorPicker__reset": {
-    "messageformat": "Chatfarbe zurücksetzen"
+    "messageformat": "Chat-Farbe zurücksetzen"
   },
   "icu:ChatColorPicker__resetDefault": {
-    "messageformat": "Chatfarben zurücksetzen"
+    "messageformat": "Chat-Farben zurücksetzen"
   },
   "icu:ChatColorPicker__resetAll": {
-    "messageformat": "Alle Chatfarben zurücksetzen"
+    "messageformat": "Alle Chat-Farben zurücksetzen"
   },
   "icu:ChatColorPicker__confirm-reset-default": {
     "messageformat": "Standard zurücksetzen"
@@ -4089,13 +4248,13 @@
     "messageformat": "Zurücksetzen"
   },
   "icu:ChatColorPicker__confirm-reset-message": {
-    "messageformat": "Möchtest du alle Chatfarben zurücksetzen?"
+    "messageformat": "Möchtest du alle Chat-Farben zurücksetzen?"
   },
   "icu:ChatColorPicker__custom-color--label": {
     "messageformat": "Farbeditor anzeigen"
   },
   "icu:ChatColorPicker__sampleBubble1": {
-    "messageformat": "Hier ist eine Vorschau der Chatfarbe."
+    "messageformat": "Hier ist eine Vorschau der Chat-Farbe."
   },
   "icu:ChatColorPicker__sampleBubble2": {
     "messageformat": "Eine andere Nachricht."
@@ -4296,7 +4455,7 @@
     "messageformat": "Dein Nutzername konnte nicht gespeichert werden. Überprüfe deine Internetverbindung und versuche es erneut."
   },
   "icu:ProfileEditor--username--reservation-gone": {
-    "messageformat": "{username} nicht mehr verfügbar. Mit deinem Nutzernamen wird eine neue Ziffernfolge gekoppelt, bitte versuche erneut, ihn zu speichern."
+    "messageformat": "{username} nicht mehr verfügbar. Eine neue Ziffernfolge wird mit deinem Nutzernamen gekoppelt. Bitte versuche erneut, ihn zu speichern."
   },
   "icu:ProfileEditor--username--delete-general-error": {
     "messageformat": "Dein Nutzername konnte nicht gelöscht werden. Überprüfe deine Internetverbindung und versuche es erneut."
@@ -4410,7 +4569,7 @@
     "messageformat": "Töne für Nachrichten während eines Chats"
   },
   "icu:Preferences__message-audio-description": {
-    "messageformat": "Während des Chats kannst du einen Benachrichtigungston für gesendete und empfangene Nachrichten hören."
+    "messageformat": "Während du im Chat bist, kannst du einen Benachrichtigungston für gesendete und empfangene Nachrichten hören."
   },
   "icu:Preferences__button--general": {
     "messageformat": "Allgemein"
@@ -4425,7 +4584,7 @@
     "messageformat": "Anrufe"
   },
   "icu:Preferences__button--notifications": {
-    "messageformat": "Mitteilungen"
+    "messageformat": "Benachrichtigungen"
   },
   "icu:Preferences__button--privacy": {
     "messageformat": "Datenschutz"
@@ -4569,7 +4728,7 @@
     "messageformat": "Festlegen"
   },
   "icu:Preferences__LanguageModal__Restart__Title": {
-    "messageformat": "Für die Anwendung Signal neu starten"
+    "messageformat": "Zum Anwenden Signal neu starten"
   },
   "icu:Preferences__LanguageModal__Restart__Description": {
     "messageformat": "Um die Sprache zu ändern, muss die App neu gestartet werden."
@@ -4589,6 +4748,15 @@
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal hat derzeit technische Schwierigkeiten. Wir arbeiten hart daran, den Betrieb so schnell wie möglich wiederherzustellen."
   },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Update erforderlich"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Aktualisiere jetzt Signal Desktop, um die Synchronisierung deiner Nachrichten abzuschließen."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Aktualisieren"
+  },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Update erforderlich"
   },
@@ -4599,7 +4767,7 @@
     "messageformat": "Herunterladen {downloadSize}"
   },
   "icu:InstallScreenUpdateDialog--downloaded__body": {
-    "messageformat": "Um das Update zu installieren, klicke auf »Signal neu starten«."
+    "messageformat": "Starte Signal neu um das Update zu installieren."
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Signal Desktop konnte nicht aktualisiert werden, aber es ist eine neue Version verfügbar. Gehe zu {downloadUrl} und installiere die neue Version manuell. Kontaktiere anschließend den Support oder reiche einen Fehlerbericht zu diesem Problem ein."
@@ -4740,7 +4908,7 @@
     "messageformat": "{views, plural, one {<strong>{views,number}</strong> Aufruf} other {<strong>{views,number}</strong> Aufrufe}}"
   },
   "icu:MyStories__views-off": {
-    "messageformat": "Anzeigen aus"
+    "messageformat": "Aufrufe aus"
   },
   "icu:MyStories__replies": {
     "messageformat": "{replyCount, plural, one {<strong>{replyCount,number}</strong> Antwort} other {<strong>{replyCount,number}</strong> Antworten}}"
@@ -4871,11 +5039,8 @@
   "icu:Stories__placeholder--text": {
     "messageformat": "Anklicken, um eine Story anzusehen"
   },
-  "icu:Stories__placeholder-with-icon--text": {
-    "messageformat": "Klicke auf <newStoryIcon>Eine Story hinzufügen</newStoryIcon>, um eine Aktualisierung hinzuzufügen."
-  },
   "icu:Stories__placeholder-with-icon--text-2": {
-    "messageformat": "Click <newStoryButtonIcon></newStoryButtonIcon> to add an update."
+    "messageformat": "Klicke auf <newStoryButtonIcon></newStoryButtonIcon>, um eine Story hinzuzufügen."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} an {group}"
@@ -5117,14 +5282,11 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Antworten"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
-    "messageformat": "Hat auf Story reagiert"
-  },
   "icu:StoryViewsNRepliesModal__reacted--you": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "hast auf die Story reagiert"
   },
   "icu:StoryViewsNRepliesModal__reacted--someone-else": {
-    "messageformat": "Reacted to the story"
+    "messageformat": "hat auf die Story reagiert"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
     "messageformat": "Du kannst nicht auf diese Story antworten, weil du nicht mehr Mitglied dieser Gruppe bist."
@@ -5142,7 +5304,7 @@
     "messageformat": "Story"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Storys anzeigen"
+    "messageformat": "Story einblenden"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Story ausblenden"
@@ -5305,7 +5467,7 @@
     "messageformat": "In Zwischenablage kopieren"
   },
   "icu:UsernameLinkModalBody__help": {
-    "messageformat": "Teile deinen QR-Code und Link nur mit Personen, denen du vertraust. Wenn du diese freigibst, können andere deinen Nutzernamen sehen und einen Chat mit dir beginnen."
+    "messageformat": "Teile deinen QR-Code und Link nur mit Personen, denen du vertraust. Wenn du sie teilst, können andere deinen Nutzernamen sehen und einen Chat mit dir beginnen."
   },
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Zurücksetzen"
@@ -5371,7 +5533,7 @@
     "messageformat": "Schließen"
   },
   "icu:UnsupportedOSWarningDialog__body": {
-    "messageformat": "Signal Desktop wird bald nicht mehr die {OS}-Version deines Computers unterstützen. Um Signal weiterhin nutzen zu können, aktualisiere das Betriebssystem deines Computers bis {expirationDate}. <learnMoreLink>Mehr erfahren</learnMoreLink>"
+    "messageformat": "Signal Desktop wird die {OS}-Version deines Computers bald nicht mehr unterstützen. Um Signal weiterhin nutzen zu können, aktualisiere das Betriebssystem deines Computers bis {expirationDate}. <learnMoreLink>Mehr erfahren</learnMoreLink>"
   },
   "icu:UnsupportedOSErrorDialog__body": {
     "messageformat": "Signal Desktop funktioniert auf diesem Computer nicht mehr. Um Signal Desktop wieder verwenden zu können, aktualisiere die {OS}-Version deines Computers. <learnMoreLink>Mehr erfahren</learnMoreLink>"
@@ -5413,25 +5575,34 @@
     "messageformat": "Anrufverlauf leeren?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Dies wird den gesamten Anrufverlauf unwiderruflich löschen"
+    "messageformat": "Dies wird den gesamten Anrufverlauf unwiderruflich löschen."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Dies wird den gesamten Anrufverlauf unwiderruflich löschen. Die von dir erstellten Anruflinks werden für alle, die sie erhalten haben, nicht mehr funktionieren. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
-    "messageformat": "Entfernen"
+    "messageformat": "Leeren"
   },
   "icu:CallsTab__ToastCallHistoryCleared": {
-    "messageformat": "Anrufliste geleert"
+    "messageformat": "Anrufverlauf geleert"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Zum Anzeigen oder Starten eines Anrufs klicken"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Nicht alle Anruflinks konnten gelöscht werden. Überprüfe deine Internetverbindung und versuche es erneut."
   },
-  "icu:CallsTab__EmptyStateText--with-icon": {
-    "messageformat": "Klicke auf <newCallIcon>Neuer Anruf</newCallIcon>, um einen neuen Sprach- oder Videoanruf zu starten."
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Es war nicht möglich, den gesamten Anrufverlauf zu löschen. Überprüfe deine Internetverbindung und versuche es erneut."
   },
   "icu:CallsTab__EmptyStateText--with-icon-2": {
-    "messageformat": "Click <newCallButtonIcon></newCallButtonIcon> to start a new voice or video call."
+    "messageformat": "Klicke auf <newCallButtonIcon></newCallButtonIcon>, um einen neuen Sprach- oder Videoanruf zu starten."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Verpasste Anrufe suchen"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Suchen"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Verpasste Anrufe gefiltert"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Verpasste Anrufe filtern"
@@ -5439,23 +5610,20 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Umschalten"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Keine aktuellen Anrufe. Leg los und rufe einen Kontakt an."
-  },
   "icu:CallsList__EmptyState--noQuery__title": {
     "messageformat": "Keine Anrufe"
   },
   "icu:CallsList__EmptyState--noQuery__subtitle": {
     "messageformat": "Die letzten Anrufe werden hier angezeigt."
   },
-  "icu:CallsList__EmptyState--noQuery--missed__title": {
-    "messageformat": "Keine verpassten Anrufe"
-  },
-  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
-    "messageformat": "Verpasste Anrufe werden hier angezeigt."
-  },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Keine Ergebnisse für »{query}«"
+  },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Keine Ergebnisse für »{query}« in Verpasste Anrufe"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Keine verpassten Anrufe"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Einen Anruflink erstellen"
@@ -5496,21 +5664,6 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Zurück"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Du musst den aktuellen Anruf verlassen, bevor du einem neuen Anruf beitrittst."
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Ausgehender Sprachanruf} other {Eingehender Sprachanruf}}} Video {{direction, select, Outgoing {Ausgehender Videoanruf} other {Eingehender Videoanruf}}} Group {{direction, select, Outgoing {Ausgehender Gruppenanruf} other {Eingehender Gruppenanruf}}} other {{direction, select, Outgoing {Ausgehender Anruf} other {Eingehender Anruf}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Verpasster Sprachanruf} Video {Verpasster Videoanruf} Group {Verpasster Gruppenanruf} other {Verpasster Anruf}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Unbeantworteter Sprachanruf} Video {Unbeantworteter Videoanruf} Group {Unbeantworteter Gruppenanruf} other {Unbeantworteter Anruf}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Abgelehnter Sprachanruf} Video {Abgelehnter Videoanruf} Group {Abgelehnter Gruppenanruf} other {Abgelehnter Anruf}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Anruflink"
   },
@@ -5536,7 +5689,10 @@
     "messageformat": "Anrufnamen bearbeiten"
   },
   "icu:CallLinkDetails__ApproveAllMembersLabel": {
-    "messageformat": "Alle Teilnehmer bestätigen"
+    "messageformat": "Administrator-Genehmigung benötigt"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Diese Einstellung kann nicht geändert werden, solange der Anruf aktiv ist"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Link kopieren"
@@ -5551,13 +5707,16 @@
     "messageformat": "Anruflink löschen?"
   },
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
-    "messageformat": "Dieser Link wird für alle, die ihn benutzt haben, nicht mehr funktionieren."
+    "messageformat": "Dieser Link wird für alle, die ihn kennen, nicht mehr funktionieren."
   },
   "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
     "messageformat": "Abbrechen"
   },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Löschen"
+  },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Dieser Link kann nicht gelöscht werden, solange der Anruf aktiv ist"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Details zum Anruflink"
@@ -5572,7 +5731,13 @@
     "messageformat": "Anrufnamen bearbeiten"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Alle Teilnehmer bestätigen"
+    "messageformat": "Administrator-Genehmigung benötigt"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Beitritt zulassen"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Beitritt ablehnen"
   },
   "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Aus"
@@ -5590,7 +5755,7 @@
     "messageformat": "Anrufname"
   },
   "icu:TypingBubble__avatar--overflow-count": {
-    "messageformat": "{count, plural, one {{count,number} andere*r schreibt etwas.} other {{count,number} andere schreiben etwas.}}"
+    "messageformat": "{count, plural, one {{count,number} andere Person schreibt etwas.} other {{count,number} andere schreiben etwas.}}"
   },
   "icu:TransportError": {
     "messageformat": "Experimental WebSocket Transport is seeing too many errors. Please submit a debug log"
@@ -5629,13 +5794,10 @@
     "messageformat": "Kleine Optimierungen, Fehlerbehebungen und Leistungsverbesserungen. Danke, dass du Signal nutzt!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.22--0": {
-    "messageformat": "Signal Desktop kann jetzt unterbrochene Downloads von Anhängen automatisch an der Stelle fortsetzen, an der sie unterbrochen wurden. Auch wenn du den Laptop schließt, bevor das Meme von deinem Freund oder deiner Freundin fertig übertragen wurde, musst du jetzt nicht mehr so lange warten, bis du dich darüber amüsieren kannst."
+  "icu:WhatsNew__v7.38--0": {
+    "messageformat": "Wir haben einen Bug behoben, durch den manchmal dein eigenes Konto in der Liste der automatischen Vorschläge auftauchte, wenn du eine @-Erwähnung einfügst. Dir fehlt dieser Bug? Dann haben wir eine narzisstische Lösung für dich: Du kannst in deinen Gruppenchats immer noch in der dritten Person von dir sprechen, wenn dir danach ist."
   },
-  "icu:WhatsNew__v7.23--0": {
-    "messageformat": "Chats now open faster than ever thanks to another round of performance improvements, so you can click on your cliques and see what they're saying real quick."
-  },
-  "icu:WhatsNew__v7.23--1": {
-    "messageformat": "We also fixed a handful of bugs, including one that sometimes caused \"Unknown contact started a video call\" to appear in the chat list summary after you started the call. Even if you're still on a journey of self-discovery, you are never completely unknown to yourself."
+  "icu:WhatsNew__v7.39--0": {
+    "messageformat": "Jetzt kannst du die Seitenleisten-Größe der Chat-Liste auf Touchscreen-Geräten anpassen. Du kannst sie also mühelos größer ziehen, ohne dich anstrengen zu müssen – und die Abdrücke auf deinem Bildschirm zeigen einfach nur, wie flink deine Finger sind."
   }
 }

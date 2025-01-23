@@ -5,7 +5,6 @@ import type { AttachmentType } from '../types/Attachment';
 import type {
   MessageAttributesType,
   QuotedAttachmentType,
-  QuotedMessageType,
 } from '../model-types.d';
 import type { LinkPreviewType } from '../types/message/LinkPreviews';
 import type { StickerType } from '../types/Stickers';
@@ -19,10 +18,11 @@ import { map, take, collect } from './iterables';
 import { strictAssert } from './assert';
 import { getMessageSentTimestamp } from './getMessageSentTimestamp';
 import { getLocalAttachmentUrl } from './getLocalAttachmentUrl';
+import type { QuotedMessageForComposerType } from '../state/ducks/composer';
 
 export async function makeQuote(
   quotedMessage: MessageAttributesType
-): Promise<QuotedMessageType> {
+): Promise<QuotedMessageForComposerType['quote']> {
   const contact = getAuthor(quotedMessage);
 
   strictAssert(contact, 'makeQuote: no contact');
@@ -80,14 +80,13 @@ export async function getQuoteAttachment(
         return {
           contentType: isGIFQuote ? IMAGE_GIF : contentType,
           fileName,
-          thumbnail: thumbnail
-            ? {
-                ...(await loadAttachmentData(thumbnail)),
-                objectUrl: thumbnail.path
-                  ? getLocalAttachmentUrl(thumbnail)
-                  : undefined,
-              }
-            : undefined,
+          thumbnail:
+            thumbnail && thumbnail.path
+              ? {
+                  ...(await loadAttachmentData(thumbnail)),
+                  objectUrl: getLocalAttachmentUrl(thumbnail),
+                }
+              : undefined,
         };
       })
     );
@@ -103,14 +102,13 @@ export async function getQuoteAttachment(
 
         return {
           contentType,
-          thumbnail: image
-            ? {
-                ...(await loadAttachmentData(image)),
-                objectUrl: image.path
-                  ? getLocalAttachmentUrl(image)
-                  : undefined,
-              }
-            : undefined,
+          thumbnail:
+            image && image.path
+              ? {
+                  ...(await loadAttachmentData(image)),
+                  objectUrl: getLocalAttachmentUrl(image),
+                }
+              : undefined,
         };
       })
     );
@@ -122,10 +120,12 @@ export async function getQuoteAttachment(
     return [
       {
         contentType,
-        thumbnail: {
-          ...(await loadAttachmentData(sticker.data)),
-          objectUrl: path ? getLocalAttachmentUrl(sticker.data) : undefined,
-        },
+        thumbnail: path
+          ? {
+              ...(await loadAttachmentData(sticker.data)),
+              objectUrl: getLocalAttachmentUrl(sticker.data),
+            }
+          : undefined,
       },
     ];
   }

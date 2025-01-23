@@ -300,6 +300,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   isTapToView: overrideProps.isTapToView,
   isTapToViewError: overrideProps.isTapToViewError,
   isTapToViewExpired: overrideProps.isTapToViewExpired,
+  cancelAttachmentDownload: action('cancelAttachmentDownload'),
   kickOffAttachmentDownload: action('kickOffAttachmentDownload'),
   markAttachmentAsCorrupted: action('markAttachmentAsCorrupted'),
   messageExpanded: action('messageExpanded'),
@@ -317,6 +318,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   renderReactionPicker,
   renderAudioAttachment,
   saveAttachment: action('saveAttachment'),
+  saveAttachments: action('saveAttachments'),
   setQuoteByMessageId: action('setQuoteByMessageId'),
   retryMessageSend: action('retryMessageSend'),
   copyMessageText: action('copyMessageText'),
@@ -340,12 +342,16 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   showSpoiler: action('showSpoiler'),
   pushPanelForConversation: action('pushPanelForConversation'),
   showContactModal: action('showContactModal'),
+  showAttachmentDownloadStillInProgressToast: action(
+    'showAttachmentDownloadStillInProgressToast'
+  ),
   showExpiredIncomingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
   showExpiredOutgoingTapToViewToast: action(
     'showExpiredOutgoingTapToViewToast'
   ),
+  showMediaNoLongerAvailableToast: action('showMediaNoLongerAvailableToast'),
   toggleDeleteMessagesModal: action('toggleDeleteMessagesModal'),
   toggleForwardMessagesModal: action('toggleForwardMessagesModal'),
   showLightbox: action('showLightbox'),
@@ -1396,6 +1402,22 @@ Gif.args = {
   status: 'sent',
 };
 
+export const GifReducedMotion = Template.bind({});
+GifReducedMotion.args = {
+  attachments: [
+    fakeAttachment({
+      contentType: VIDEO_MP4,
+      flags: SignalService.AttachmentPointer.Flags.GIF,
+      fileName: 'cat-gif.mp4',
+      url: '/fixtures/cat-gif.mp4',
+      width: 400,
+      height: 332,
+    }),
+  ],
+  status: 'sent',
+  _forceTapToPlay: true,
+};
+
 export const GifInAGroup = Template.bind({});
 GifInAGroup.args = {
   attachments: [
@@ -1419,10 +1441,10 @@ NotDownloadedGif.args = {
       contentType: VIDEO_MP4,
       flags: SignalService.AttachmentPointer.Flags.GIF,
       fileName: 'cat-gif.mp4',
-      fileSize: '188.61 KB',
       blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
       width: 400,
       height: 332,
+      path: undefined,
     }),
   ],
   status: 'sent',
@@ -1436,10 +1458,48 @@ PendingGif.args = {
       contentType: VIDEO_MP4,
       flags: SignalService.AttachmentPointer.Flags.GIF,
       fileName: 'cat-gif.mp4',
-      fileSize: '188.61 KB',
+      size: 188610,
       blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
       width: 400,
       height: 332,
+      path: undefined,
+    }),
+  ],
+  status: 'sent',
+};
+
+export const DownloadingGif = Template.bind({});
+DownloadingGif.args = {
+  attachments: [
+    fakeAttachment({
+      pending: true,
+      contentType: VIDEO_MP4,
+      flags: SignalService.AttachmentPointer.Flags.GIF,
+      fileName: 'cat-gif.mp4',
+      size: 188610,
+      totalDownloaded: 101010,
+      blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+      width: 400,
+      height: 332,
+      path: undefined,
+    }),
+  ],
+  status: 'sent',
+};
+
+export const PartialDownloadNotPendingGif = Template.bind({});
+PartialDownloadNotPendingGif.args = {
+  attachments: [
+    fakeAttachment({
+      contentType: VIDEO_MP4,
+      flags: SignalService.AttachmentPointer.Flags.GIF,
+      fileName: 'cat-gif.mp4',
+      size: 188610,
+      totalDownloaded: 101010,
+      blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+      width: 400,
+      height: 332,
+      path: undefined,
     }),
   ],
   status: 'sent',
@@ -1549,7 +1609,6 @@ OtherFileType.args = {
       contentType: stringToMIMEType('text/plain'),
       fileName: 'my-resume.txt',
       url: 'my-resume.txt',
-      fileSize: '10MB',
     }),
   ],
   status: 'sent',
@@ -1562,7 +1621,6 @@ OtherFileTypeWithCaption.args = {
       contentType: stringToMIMEType('text/plain'),
       fileName: 'my-resume.txt',
       url: 'my-resume.txt',
-      fileSize: '10MB',
     }),
   ],
   status: 'sent',
@@ -1577,7 +1635,6 @@ OtherFileTypeWithLongFilename.args = {
       fileName:
         'INSERT-APP-NAME_INSERT-APP-APPLE-ID_AppStore_AppsGamesWatch.psd.zip',
       url: 'a2/a2334324darewer4234',
-      fileSize: '10MB',
     }),
   ],
   status: 'sent',
@@ -1916,7 +1973,6 @@ const fullContact = {
     prefix: 'Dr.',
     suffix: 'Jr.',
     middleName: 'James',
-    displayName: 'Jerry Jordan',
   },
   number: [
     {
@@ -1987,7 +2043,7 @@ export const EmbeddedContactLoadingAvatar = Template.bind({});
 EmbeddedContactLoadingAvatar.args = {
   contact: {
     name: {
-      displayName: 'Jerry Jordan',
+      nickname: 'Jerry',
     },
     avatar: {
       avatar: fakeAttachment({
@@ -2006,6 +2062,13 @@ GiftBadgeUnopened.args = {
     expiration: Date.now() + DAY * 30,
     level: 3,
     state: GiftBadgeStates.Unopened,
+  },
+};
+
+export const GiftBadgeFailed = Template.bind({});
+GiftBadgeFailed.args = {
+  giftBadge: {
+    state: GiftBadgeStates.Failed,
   },
 };
 
@@ -2135,4 +2198,130 @@ export function MultiSelect(): JSX.Element {
 
 MultiSelect.args = {
   name: 'Multi Select',
+};
+
+export function PermanentlyUndownloadableAttachments(): JSX.Element {
+  const imageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: IMAGE_JPEG,
+        fileName: 'bird.jpg',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+      }),
+    ],
+    status: 'sent',
+  });
+  const multipleImagesProps = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: IMAGE_JPEG,
+        fileName: 'bird.jpg',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+      }),
+      fakeAttachment({
+        contentType: IMAGE_JPEG,
+        fileName: 'bird.jpg',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+      }),
+    ],
+    status: 'sent',
+  });
+  const gifProps = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: VIDEO_MP4,
+        flags: SignalService.AttachmentPointer.Flags.GIF,
+        fileName: 'bird.gif',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+      }),
+    ],
+    status: 'sent',
+    text: 'cool gif',
+  });
+  const videoProps = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: VIDEO_MP4,
+        fileName: 'bird.mp4',
+        width: 720,
+        height: 480,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  const outgoingAuthor = {
+    ...imageProps.author,
+    id: getDefaultConversation().id,
+  };
+
+  return (
+    <>
+      <TimelineMessage {...imageProps} shouldCollapseAbove />
+      <TimelineMessage {...gifProps} />
+      <TimelineMessage {...videoProps} />
+      <TimelineMessage {...multipleImagesProps} shouldCollapseBelow />
+      <TimelineMessage
+        {...imageProps}
+        author={outgoingAuthor}
+        direction="outgoing"
+        shouldCollapseAbove
+      />
+      <TimelineMessage
+        {...gifProps}
+        author={outgoingAuthor}
+        direction="outgoing"
+      />
+      <TimelineMessage
+        {...videoProps}
+        author={outgoingAuthor}
+        direction="outgoing"
+      />
+      <TimelineMessage
+        {...multipleImagesProps}
+        author={outgoingAuthor}
+        direction="outgoing"
+        shouldCollapseBelow
+      />
+    </>
+  );
+}
+
+export const AttachmentWithError = Template.bind({});
+AttachmentWithError.args = {
+  attachments: [
+    fakeAttachment({
+      contentType: IMAGE_PNG,
+      fileName: 'test.png',
+      blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+      width: 296,
+      height: 394,
+      path: undefined,
+      error: true,
+    }),
+  ],
+  status: 'sent',
 };

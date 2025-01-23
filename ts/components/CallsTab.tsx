@@ -43,12 +43,12 @@ type CallsTabProps = Readonly<{
     pagination: CallHistoryPagination
   ) => Promise<Array<CallHistoryGroup>>;
   callHistoryEdition: number;
-  canCreateCallLinks: boolean;
   getAdhocCall: (roomId: string) => CallStateType | undefined;
   getCall: (id: string) => CallStateType | undefined;
   getCallLink: (id: string) => CallLinkType | undefined;
   getConversation: (id: string) => ConversationType | void;
   hangUpActiveCall: (reason: string) => void;
+  hasAnyAdminCallLinks: boolean;
   hasFailedStorySends: boolean;
   hasPendingUpdate: boolean;
   i18n: LocalizerType;
@@ -99,12 +99,12 @@ export function CallsTab({
   getCallHistoryGroupsCount,
   getCallHistoryGroups,
   callHistoryEdition,
-  canCreateCallLinks,
   getAdhocCall,
   getCall,
   getCallLink,
   getConversation,
   hangUpActiveCall,
+  hasAnyAdminCallLinks,
   hasFailedStorySends,
   hasPendingUpdate,
   i18n,
@@ -271,7 +271,6 @@ export function CallsTab({
             <CallsList
               key={CallsTabSidebarView.CallsListView}
               activeCall={activeCall}
-              canCreateCallLinks={canCreateCallLinks}
               getCallHistoryGroupsCount={getCallHistoryGroupsCount}
               getCallHistoryGroups={getCallHistoryGroups}
               callHistoryEdition={callHistoryEdition}
@@ -370,7 +369,9 @@ export function CallsTab({
             },
           ]}
         >
-          {i18n('icu:CallsTab__ConfirmClearCallHistory__Body')}
+          {hasAnyAdminCallLinks
+            ? i18n('icu:CallsTab__ConfirmClearCallHistory__Body--call-links')
+            : i18n('icu:CallsTab__ConfirmClearCallHistory__Body')}
         </ConfirmationDialog>
       )}
     </>

@@ -46,7 +46,20 @@ export type AddLinkPreviewOptionsType = Readonly<{
   disableFetch?: boolean;
 }>;
 
-const linkify = LinkifyIt();
+const linkify = new LinkifyIt();
+
+export function isValidLink(maybeUrl: string | undefined): boolean {
+  if (maybeUrl == null) {
+    return false;
+  }
+
+  try {
+    const url = new URL(maybeUrl);
+    return url.protocol === 'https:';
+  } catch (_error) {
+    return false;
+  }
+}
 
 export function shouldPreviewHref(href: string): boolean {
   const url = maybeParseUrl(href);
@@ -144,6 +157,14 @@ export function findLinks(text: string, caretLocation?: number): Array<string> {
       return null;
     })
   );
+}
+
+export function getSafeDomain(href: string): string | undefined {
+  try {
+    return getDomain(href);
+  } catch {
+    return undefined;
+  }
 }
 
 export function getDomain(href: string): string {

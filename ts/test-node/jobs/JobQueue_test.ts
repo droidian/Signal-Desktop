@@ -20,6 +20,7 @@ import type { JOB_STATUS } from '../../jobs/JobQueue';
 import { JobQueue } from '../../jobs/JobQueue';
 import type { ParsedJob, StoredJob, JobQueueStore } from '../../jobs/types';
 import { sleep } from '../../util/sleep';
+import { parseUnknown } from '../../util/schemas';
 
 describe('JobQueue', () => {
   describe('end-to-end tests', () => {
@@ -36,7 +37,7 @@ describe('JobQueue', () => {
 
       class Queue extends JobQueue<TestJobData> {
         parseData(data: unknown): TestJobData {
-          return testJobSchema.parse(data);
+          return parseUnknown(testJobSchema, data);
         }
 
         async run({
@@ -86,7 +87,7 @@ describe('JobQueue', () => {
 
       class Queue extends JobQueue<number> {
         parseData(data: unknown): number {
-          return z.number().parse(data);
+          return parseUnknown(z.number(), data);
         }
 
         async run(): Promise<typeof JOB_STATUS.NEEDS_RETRY | undefined> {
@@ -137,7 +138,7 @@ describe('JobQueue', () => {
 
       class Queue extends JobQueue<number> {
         parseData(data: unknown): number {
-          return z.number().parse(data);
+          return parseUnknown(z.number(), data);
         }
 
         protected override getInMemoryQueue(
@@ -180,7 +181,7 @@ describe('JobQueue', () => {
 
       class TestQueue extends JobQueue<string> {
         parseData(data: unknown): string {
-          return z.string().parse(data);
+          return parseUnknown(z.string(), data);
         }
 
         async run(): Promise<typeof JOB_STATUS.NEEDS_RETRY | undefined> {
@@ -248,7 +249,7 @@ describe('JobQueue', () => {
 
       class TestQueue extends JobQueue<string> {
         parseData(data: unknown): string {
-          return z.string().parse(data);
+          return parseUnknown(z.string(), data);
         }
 
         async run(): Promise<typeof JOB_STATUS.NEEDS_RETRY | undefined> {
@@ -353,7 +354,6 @@ describe('JobQueue', () => {
       // Chai's `assert.instanceOf` doesn't tell TypeScript anything, so we do it here.
       if (!(booErr instanceof JobError)) {
         assert.fail('Expected error to be a JobError');
-        return;
       }
       assert.include(booErr.message, 'bar job always fails in this test');
 
@@ -367,7 +367,7 @@ describe('JobQueue', () => {
 
       class TestQueue extends JobQueue<string> {
         parseData(data: unknown): string {
-          return z.string().parse(data);
+          return parseUnknown(z.string(), data);
         }
 
         async run(
@@ -412,7 +412,7 @@ describe('JobQueue', () => {
 
       class TestQueue extends JobQueue<number> {
         parseData(data: unknown): number {
-          return z.number().parse(data);
+          return parseUnknown(z.number(), data);
         }
 
         async run(
@@ -490,7 +490,6 @@ describe('JobQueue', () => {
       // Chai's `assert.instanceOf` doesn't tell TypeScript anything, so we do it here.
       if (!(jobError instanceof JobError)) {
         assert.fail('Expected error to be a JobError');
-        return;
       }
       assert.include(
         jobError.message,
@@ -734,18 +733,18 @@ describe('JobQueue', () => {
     });
 
     class FakeStream implements AsyncIterable<StoredJob> {
-      private eventEmitter = new EventEmitter();
+      #eventEmitter = new EventEmitter();
 
       async *[Symbol.asyncIterator]() {
         while (true) {
           // eslint-disable-next-line no-await-in-loop
-          const [job] = await once(this.eventEmitter, 'drip');
-          yield storedJobSchema.parse(job);
+          const [job] = await once(this.#eventEmitter, 'drip');
+          yield parseUnknown(storedJobSchema, job as unknown);
         }
       }
 
       drip(job: Readonly<StoredJob>): void {
-        this.eventEmitter.emit('drip', job);
+        this.#eventEmitter.emit('drip', job);
       }
     }
 
@@ -766,7 +765,7 @@ describe('JobQueue', () => {
 
       class TestQueue extends JobQueue<number> {
         parseData(data: unknown): number {
-          return z.number().parse(data);
+          return parseUnknown(z.number(), data);
         }
 
         async run({

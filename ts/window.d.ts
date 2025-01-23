@@ -27,8 +27,7 @@ import type * as Crypto from './Crypto';
 import type * as Curve from './Curve';
 import type * as RemoteConfig from './RemoteConfig';
 import type { OSType } from './util/os/shared';
-import type { getEnvironment } from './environment';
-import type { LocalizerType, ThemeType } from './types/Util';
+import type { LocalizerType, SystemThemeType, ThemeType } from './types/Util';
 import type { Receipt } from './types/Receipt';
 import type { ConversationController } from './ConversationController';
 import type { ReduxActions } from './state/types';
@@ -53,6 +52,7 @@ import type { initializeMigrations } from './signal';
 import type { RetryPlaceholders } from './util/retryPlaceholders';
 import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences';
 import type { WindowsNotificationData } from './services/notifications';
+import type { QueryStatsOptions } from './sql/main';
 
 export { Long } from 'long';
 
@@ -88,6 +88,8 @@ export type IPCType = {
   showWindow: () => void;
   showWindowsNotification: (data: WindowsNotificationData) => Promise<void>;
   shutdown: () => void;
+  startTrackingQueryStats: () => void;
+  stopTrackingQueryStats: (options?: QueryStatsOptions) => void;
   titleBarDoubleClick: () => void;
   updateTrayIcon: (count: number) => void;
 };
@@ -102,8 +104,8 @@ export type FeatureFlagType = {
 };
 
 type AboutWindowPropsType = {
+  appEnv: string;
   arch: string;
-  environmentText: string;
   platform: string;
 };
 
@@ -122,7 +124,7 @@ type PermissionsWindowPropsType = {
 
 type ScreenShareWindowPropsType = {
   onStopSharing: () => void;
-  presentedSourceName: string;
+  presentedSourceName: string | undefined;
   getStatus: () => ScreenShareStatus;
   setRenderCallback: (cb: () => void) => void;
 };
@@ -194,7 +196,6 @@ declare global {
     getConversations: () => ConversationModelCollectionType;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
-    getEnvironment: typeof getEnvironment;
     getHostName: () => string;
     getInteractionMode: () => 'mouse' | 'keyboard';
     getServerPublicParams: () => string;
@@ -223,7 +224,7 @@ declare global {
     sendChallengeRequest: (request: IPCChallengeRequest) => void;
     showKeyboardShortcuts: () => void;
     storage: Storage;
-    systemTheme: ThemeType;
+    systemTheme: SystemThemeType;
 
     Signal: SignalCoreType;
 
@@ -307,6 +308,11 @@ declare global {
 
   interface SharedArrayBuffer {
     __arrayBuffer: never;
+  }
+
+  interface Set<T> {
+    // Needed until TS upgrade
+    difference<U>(other: ReadonlySet<U>): Set<T>;
   }
 }
 

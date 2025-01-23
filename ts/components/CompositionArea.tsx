@@ -118,7 +118,7 @@ export type OwnProps = Readonly<{
   recordingState: RecordingState;
   messageCompositionId: string;
   shouldHidePopovers: boolean | null;
-  isSMSOnly: boolean | null;
+  isSmsOnlyOrUnregistered: boolean | null;
   left: boolean | null;
   linkPreviewLoading: boolean;
   linkPreviewResult: LinkPreviewType | null;
@@ -193,13 +193,13 @@ export type OwnProps = Readonly<{
 
 export type Props = Pick<
   CompositionInputProps,
-  | 'clearQuotedMessage'
   | 'draftText'
   | 'draftBodyRanges'
   | 'getPreferredBadge'
-  | 'getQuotedMessage'
   | 'onEditorStateChange'
   | 'onTextTooLong'
+  | 'ourConversationId'
+  | 'quotedMessageId'
   | 'sendCounter'
   | 'sortedGroupMembers'
 > &
@@ -275,14 +275,13 @@ export const CompositionArea = memo(function CompositionArea({
   setMediaQualitySetting,
   shouldSendHighQualityAttachments,
   // CompositionInput
-  clearQuotedMessage,
   draftBodyRanges,
   draftText,
   getPreferredBadge,
-  getQuotedMessage,
   isFormattingEnabled,
   onEditorStateChange,
   onTextTooLong,
+  ourConversationId,
   sendCounter,
   sortedGroupMembers,
   // EmojiButton
@@ -332,7 +331,7 @@ export const CompositionArea = memo(function CompositionArea({
   cancelJoinRequest,
   showConversation,
   // SMS-only contacts
-  isSMSOnly,
+  isSmsOnlyOrUnregistered,
   isFetchingUUID,
   renderSmartCompositionRecording,
   renderSmartCompositionRecordingDraft,
@@ -720,10 +719,10 @@ export const CompositionArea = memo(function CompositionArea({
   const handleEscape = useCallback(() => {
     if (linkPreviewResult) {
       onCloseLinkPreview(conversationId);
-    } else if (draftEditMessage) {
-      discardEditMessage(conversationId);
     } else if (quotedMessageId) {
       setQuoteByMessageId(conversationId, undefined);
+    } else if (draftEditMessage) {
+      discardEditMessage(conversationId);
     }
   }, [
     conversationId,
@@ -801,7 +800,7 @@ export const CompositionArea = memo(function CompositionArea({
     );
   }
 
-  if (conversationType === 'direct' && isSMSOnly) {
+  if (conversationType === 'direct' && isSmsOnlyOrUnregistered) {
     return (
       <div
         className={classNames([
@@ -950,6 +949,7 @@ export const CompositionArea = memo(function CompositionArea({
             }}
             onPickEmoji={onPickEmoji}
             onTextTooLong={onTextTooLong}
+            ourConversationId={ourConversationId}
             platform={platform}
             recentStickers={recentStickers}
             skinTone={skinTone}
@@ -1024,14 +1024,12 @@ export const CompositionArea = memo(function CompositionArea({
           )}
         >
           <CompositionInput
-            clearQuotedMessage={clearQuotedMessage}
             conversationId={conversationId}
             disabled={isDisabled}
             draftBodyRanges={draftBodyRanges}
             draftEditMessage={draftEditMessage}
             draftText={draftText}
             getPreferredBadge={getPreferredBadge}
-            getQuotedMessage={getQuotedMessage}
             i18n={i18n}
             inputApi={inputApiRef}
             isFormattingEnabled={isFormattingEnabled}
@@ -1047,7 +1045,9 @@ export const CompositionArea = memo(function CompositionArea({
             onPickEmoji={onPickEmoji}
             onSubmit={handleSubmit}
             onTextTooLong={onTextTooLong}
+            ourConversationId={ourConversationId}
             platform={platform}
+            quotedMessageId={quotedMessageId}
             sendCounter={sendCounter}
             shouldHidePopovers={shouldHidePopovers}
             skinTone={skinTone ?? null}

@@ -20,7 +20,10 @@ import type { ConversationType } from '../../state/ducks/conversations';
 import type { PreferredBadgeSelectorType } from '../../state/selectors/badges';
 import { groupBy } from '../../util/mapUtil';
 import type { ContactNameColorType } from '../../types/Colors';
-import { SendStatus } from '../../messages/MessageSendState';
+import {
+  SendStatus,
+  type VisibleSendStatus,
+} from '../../messages/MessageSendState';
 import { WidthBreakpoint } from '../_util';
 import * as log from '../../logging/log';
 import { formatDateTimeLong } from '../../util/timestamp';
@@ -82,6 +85,7 @@ export type PropsSmartActions = Pick<MessagePropsType, 'renderAudioAttachment'>;
 
 export type PropsReduxActions = Pick<
   MessagePropsType,
+  | 'cancelAttachmentDownload'
   | 'checkForAccount'
   | 'clearTargetedMessage'
   | 'doubleCheckMissingQuoteReference'
@@ -92,13 +96,16 @@ export type PropsReduxActions = Pick<
   | 'pushPanelForConversation'
   | 'retryMessageSend'
   | 'saveAttachment'
+  | 'saveAttachments'
   | 'showContactModal'
   | 'showConversation'
   | 'showEditHistoryModal'
+  | 'showAttachmentDownloadStillInProgressToast'
   | 'showExpiredIncomingTapToViewToast'
   | 'showExpiredOutgoingTapToViewToast'
   | 'showLightbox'
   | 'showLightboxForViewOnceMedia'
+  | 'showMediaNoLongerAvailableToast'
   | 'showSpoiler'
   | 'startConversation'
   | 'viewStory'
@@ -120,6 +127,7 @@ export function MessageDetail({
   message,
   receivedAt,
   sentAt,
+  cancelAttachmentDownload,
   checkForAccount,
   clearTargetedMessage,
   contactNameColor,
@@ -136,13 +144,16 @@ export function MessageDetail({
   retryMessageSend,
   renderAudioAttachment,
   saveAttachment,
+  saveAttachments,
   showContactModal,
   showConversation,
   showEditHistoryModal,
+  showAttachmentDownloadStillInProgressToast,
   showExpiredIncomingTapToViewToast,
   showExpiredOutgoingTapToViewToast,
   showLightbox,
   showLightboxForViewOnceMedia,
+  showMediaNoLongerAvailableToast,
   showSpoiler,
   startConversation,
   theme,
@@ -234,7 +245,7 @@ export function MessageDetail({
   }
 
   function renderContactGroupHeaderText(
-    sendStatus: undefined | SendStatus
+    sendStatus: undefined | VisibleSendStatus
   ): string {
     if (sendStatus === undefined) {
       return i18n('icu:from');
@@ -259,7 +270,7 @@ export function MessageDetail({
   }
 
   function renderContactGroup(
-    sendStatus: undefined | SendStatus,
+    sendStatus: undefined | VisibleSendStatus,
     statusContacts: undefined | ReadonlyArray<Contact>
   ): ReactNode {
     if (!statusContacts || !statusContacts.length) {
@@ -295,15 +306,17 @@ export function MessageDetail({
 
     return (
       <div className="module-message-detail__contact-container">
-        {[
-          undefined,
-          SendStatus.Failed,
-          SendStatus.Viewed,
-          SendStatus.Read,
-          SendStatus.Delivered,
-          SendStatus.Sent,
-          SendStatus.Pending,
-        ].map(sendStatus =>
+        {(
+          [
+            undefined,
+            SendStatus.Failed,
+            SendStatus.Viewed,
+            SendStatus.Read,
+            SendStatus.Delivered,
+            SendStatus.Sent,
+            SendStatus.Pending,
+          ] as Array<VisibleSendStatus | undefined>
+        ).map(sendStatus =>
           renderContactGroup(sendStatus, contactsBySendStatus.get(sendStatus))
         )}
       </div>
@@ -321,6 +334,7 @@ export function MessageDetail({
           <Message
             {...message}
             renderingContext="conversation/MessageDetail"
+            cancelAttachmentDownload={cancelAttachmentDownload}
             checkForAccount={checkForAccount}
             clearTargetedMessage={clearTargetedMessage}
             contactNameColor={contactNameColor}
@@ -343,6 +357,7 @@ export function MessageDetail({
             retryMessageSend={retryMessageSend}
             renderAudioAttachment={renderAudioAttachment}
             saveAttachment={saveAttachment}
+            saveAttachments={saveAttachments}
             shouldCollapseAbove={false}
             shouldCollapseBelow={false}
             shouldHideMetadata={false}
@@ -352,6 +367,9 @@ export function MessageDetail({
               log.warn('MessageDetail: scrollToQuotedMessage called!');
             }}
             showContactModal={showContactModal}
+            showAttachmentDownloadStillInProgressToast={
+              showAttachmentDownloadStillInProgressToast
+            }
             showExpiredIncomingTapToViewToast={
               showExpiredIncomingTapToViewToast
             }
@@ -359,6 +377,7 @@ export function MessageDetail({
               showExpiredOutgoingTapToViewToast
             }
             showLightbox={showLightbox}
+            showMediaNoLongerAvailableToast={showMediaNoLongerAvailableToast}
             startConversation={startConversation}
             theme={theme}
             viewStory={viewStory}

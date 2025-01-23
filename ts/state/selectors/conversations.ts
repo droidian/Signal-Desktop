@@ -380,10 +380,6 @@ export const _getLeftPaneLists = (
       };
     }
 
-    if (isSignalConversation(conversation)) {
-      continue;
-    }
-
     // We always show pinned conversations
     if (conversation.isPinned) {
       pinnedConversations.push(conversation);
@@ -774,7 +770,9 @@ export const getFilteredCandidateContactsForNewGroup = createSelector(
   getCandidateContactsForNewGroup,
   getNormalizedComposerConversationSearchTerm,
   getRegionCode,
-  filterAndSortConversations
+  (contacts, searchTerm, regionCode): Array<ConversationType> => {
+    return filterAndSortConversations(contacts, searchTerm, regionCode);
+  }
 );
 
 const getGroupCreationComposerState = createSelector(

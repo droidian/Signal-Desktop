@@ -5,12 +5,19 @@ import { useSelector } from 'react-redux';
 import type { CallHistoryGroup } from '../../types/CallDisposition';
 import { getIntl } from '../selectors/user';
 import { CallLinkDetails } from '../../components/CallLinkDetails';
-import { getActiveCallState, getCallLinkSelector } from '../selectors/calling';
+import {
+  getActiveCallState,
+  getAdhocCallSelector,
+  getCallLinkSelector,
+} from '../selectors/calling';
 import { useGlobalModalActions } from '../ducks/globalModals';
 import { useCallingActions } from '../ducks/calling';
-import * as log from '../../logging/log';
 import { strictAssert } from '../../util/assert';
 import type { CallLinkRestrictions } from '../../types/CallLink';
+import {
+  isAnybodyInGroupCall,
+  isGroupCallActiveOnServer,
+} from '../ducks/callingHelpers';
 
 export type SmartCallLinkDetailsProps = Readonly<{
   roomId: string;
@@ -60,21 +67,27 @@ export const SmartCallLinkDetails = memo(function SmartCallLinkDetails({
     [roomId, updateCallLinkRestrictions]
   );
 
-  const activeCall = useSelector(getActiveCallState);
-  const hasActiveCall = Boolean(
-    activeCall && callLink && activeCall?.conversationId !== callLink?.roomId
-  );
+  const adhocCallSelector = useSelector(getAdhocCallSelector);
+  const adhocCall = adhocCallSelector(roomId);
+  const isAnybodyInCall = isAnybodyInGroupCall(adhocCall?.peekInfo);
+  const isCallActiveOnServer = isGroupCallActiveOnServer(adhocCall?.peekInfo);
 
-  if (callLink == null) {
-    log.error(`SmartCallLinkDetails: callLink not found for room ${roomId}`);
-    return null;
-  }
+  const activeCall = useSelector(getActiveCallState);
+  const isInAnotherCall = Boolean(
+    activeCall && callLink && activeCall.conversationId !== callLink.roomId
+  );
+  const isInCall = Boolean(
+    activeCall && callLink && activeCall.conversationId === callLink.roomId
+  );
 
   return (
     <CallLinkDetails
       callHistoryGroup={callHistoryGroup}
       callLink={callLink}
-      hasActiveCall={hasActiveCall}
+      isAnybodyInCall={isAnybodyInCall}
+      isCallActiveOnServer={isCallActiveOnServer}
+      isInCall={isInCall}
+      isInAnotherCall={isInAnotherCall}
       i18n={i18n}
       onDeleteCallLink={handleDeleteCallLink}
       onOpenCallLinkAddNameModal={handleOpenCallLinkAddNameModal}

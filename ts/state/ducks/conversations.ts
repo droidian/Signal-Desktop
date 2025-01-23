@@ -15,7 +15,7 @@ import {
 } from 'lodash';
 import type { PhoneNumber } from 'google-libphonenumber';
 
-import { clipboard } from 'electron';
+import { clipboard, ipcRenderer } from 'electron';
 import type { ReadonlyDeep } from 'type-fest';
 import { DataReader, DataWriter } from '../../sql/Client';
 import type { AttachmentType } from '../../types/Attachment';
@@ -187,7 +187,10 @@ import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPe
 import { getConversationIdForLogging } from '../../util/idForLogging';
 import { singleProtoJobQueue } from '../../jobs/singleProtoJobQueue';
 import MessageSender from '../../textsecure/SendMessage';
-import { AttachmentDownloadUrgency } from '../../jobs/AttachmentDownloadManager';
+import {
+  AttachmentDownloadManager,
+  AttachmentDownloadUrgency,
+} from '../../jobs/AttachmentDownloadManager';
 import type {
   DeleteForMeSyncEventData,
   MessageToDelete,
@@ -199,7 +202,8 @@ import {
 import { MAX_MESSAGE_COUNT } from '../../util/deleteForMe.types';
 import { markCallHistoryReadInConversation } from './callHistory';
 import type { CapabilitiesType } from '../../textsecure/WebAPI';
-
+import { actions as searchActions } from './search';
+import type { SearchActionType } from './search';
 // State
 
 export type DBConversationType = ReadonlyDeep<{
@@ -316,6 +320,7 @@ export type ConversationType = ReadonlyDeep<
     phoneNumber?: string;
     membersCount?: number;
     hasMessages?: boolean;
+    messagesDeleted?: boolean;
     accessControlAddFromInviteLink?: number;
     accessControlAttributes?: number;
     accessControlMembers?: number;
@@ -710,18 +715,10 @@ type SetPreJoinConversationActionType = ReadonlyDeep<{
   };
 }>;
 
-type ConversationAddedActionType = ReadonlyDeep<{
-  type: 'CONVERSATION_ADDED';
+export type ConversationsUpdatedActionType = ReadonlyDeep<{
+  type: 'CONVERSATIONS_UPDATED';
   payload: {
-    id: string;
-    data: ConversationType;
-  };
-}>;
-export type ConversationChangedActionType = ReadonlyDeep<{
-  type: 'CONVERSATION_CHANGED';
-  payload: {
-    id: string;
-    data: ConversationType;
+    data: Array<ConversationType>;
   };
 }>;
 export type ConversationRemovedActionType = ReadonlyDeep<{
@@ -1024,8 +1021,7 @@ export type ConversationActionType =
   | ComposeReplaceAvatarsActionType
   | ComposeSaveAvatarActionType
   | ConsumePreloadDataActionType
-  | ConversationAddedActionType
-  | ConversationChangedActionType
+  | ConversationsUpdatedActionType
   | ConversationRemovedActionType
   | ConversationStoppedByMissingVerificationActionType
   | ConversationUnloadedActionType
@@ -1091,6 +1087,7 @@ export const actions = {
   blockAndReportSpam,
   blockConversation,
   blockGroupLinkRequests,
+  cancelAttachmentDownload,
   cancelConversationVerification,
   changeHasGroupLink,
   clearCancelledConversationVerification,
@@ -1106,8 +1103,7 @@ export const actions = {
   composeReplaceAvatar,
   composeSaveAvatarToDisk,
   consumePreloadData,
-  conversationAdded,
-  conversationChanged,
+  conversationsUpdated,
   conversationRemoved,
   conversationStoppedByMissingVerification,
   createGroup,
@@ -1162,6 +1158,7 @@ export const actions = {
   reviewConversationNameCollision,
   revokePendingMembershipsFromGroupV2,
   saveAttachment,
+  saveAttachments,
   saveAttachmentFromMessage,
   saveAvatarToDisk,
   scrollToMessage,
@@ -1188,6 +1185,7 @@ export const actions = {
   setPreJoinConversation,
   setVoiceNotePlaybackRate,
   showArchivedConversations,
+  showAttachmentDownloadStillInProgressToast,
   showChooseGroupMembers,
   showConversation,
   showExpiredIncomingTapToViewToast,
@@ -1195,6 +1193,7 @@ export const actions = {
   showFindByUsername,
   showFindByPhoneNumber,
   showInbox,
+  showMediaNoLongerAvailableToast,
   startComposing,
   startConversation,
   startSettingGroupMetadata,
@@ -1412,7 +1411,10 @@ function markMessageRead(
       return;
     }
 
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'markMessageRead'
+    );
     if (!message) {
       throw new Error(`markMessageRead: failed to load message ${messageId}`);
     }
@@ -1766,7 +1768,10 @@ function deleteMessages({
       await Promise.all(
         messageIds.map(
           async (messageId): Promise<MessageToDelete | undefined> => {
-            const message = await __DEPRECATED$getMessageById(messageId);
+            const message = await __DEPRECATED$getMessageById(
+              messageId,
+              'deleteMessages'
+            );
             if (!message) {
               throw new Error(`deleteMessages: Message ${messageId} missing!`);
             }
@@ -1850,7 +1855,7 @@ function destroyMessages(
   void,
   RootStateType,
   unknown,
-  ConversationUnloadedActionType | NoopActionType
+  ConversationUnloadedActionType | NoopActionType | SearchActionType
 > {
   return async (dispatch, getState) => {
     const conversation = window.ConversationController.get(conversationId);
@@ -1869,6 +1874,20 @@ function destroyMessages(
         );
 
         await conversation.destroyMessages({ source: 'local-delete' });
+
+        // Deselect the conversation
+        if (
+          getState().conversations.selectedConversationId === conversationId
+        ) {
+          showConversation({ conversationId: undefined });
+        }
+
+        // Clear search state, in case it's showing in search
+        dispatch({
+          type: 'CLEAR_CONVERSATION_SEARCH',
+          payload: null,
+        });
+
         drop(conversation.updateLastMessage());
       },
     });
@@ -1912,7 +1931,9 @@ function setMessageToEdit(
       return;
     }
 
-    const message = (await __DEPRECATED$getMessageById(messageId))?.attributes;
+    const message = (
+      await __DEPRECATED$getMessageById(messageId, 'setMessageToEdit')
+    )?.attributes;
     if (!message) {
       return;
     }
@@ -2005,7 +2026,10 @@ function generateNewGroupLink(
  * replace it with an actual action that fits in with the redux approach.
  */
 export const markViewed = (messageId: string): void => {
-  const message = window.MessageCache.__DEPRECATED$getById(messageId);
+  const message = window.MessageCache.__DEPRECATED$getById(
+    messageId,
+    'markViewed'
+  );
   if (!message) {
     throw new Error(`markViewed: Message ${messageId} missing!`);
   }
@@ -2269,7 +2293,10 @@ function kickOffAttachmentDownload(
   options: Readonly<{ messageId: string }>
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(options.messageId);
+    const message = await __DEPRECATED$getMessageById(
+      options.messageId,
+      'kickOffAttachmentDownload'
+    );
     if (!message) {
       throw new Error(
         `kickOffAttachmentDownload: Message ${options.messageId} missing!`
@@ -2294,6 +2321,47 @@ function kickOffAttachmentDownload(
   };
 }
 
+function cancelAttachmentDownload({
+  messageId,
+}: Readonly<{ messageId: string }>): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  NoopActionType
+> {
+  return async dispatch => {
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'cancelAttachmentDownload'
+    );
+    if (!message) {
+      log.warn(`cancelAttachmentDownload: Message ${messageId} missing!`);
+    } else {
+      message.set({
+        attachments: (message.get('attachments') || []).map(attachment => ({
+          ...attachment,
+          pending: false,
+        })),
+      });
+
+      const ourAci = window.textsecure.storage.user.getCheckedAci();
+      await DataWriter.saveMessage(message.attributes, { ourAci });
+    }
+
+    // A click kicks off downloads for every attachment in a message, so cancel does too
+    await AttachmentDownloadManager.cancelJobs(job => {
+      return job.messageId === messageId;
+    });
+
+    await DataWriter.removeAttachmentDownloadJobsForMessage(messageId);
+
+    dispatch({
+      type: 'NOOP',
+      payload: null,
+    });
+  };
+}
+
 type AttachmentOptions = ReadonlyDeep<{
   messageId: string;
   attachment: AttachmentType;
@@ -2303,7 +2371,10 @@ function markAttachmentAsCorrupted(
   options: AttachmentOptions
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(options.messageId);
+    const message = await __DEPRECATED$getMessageById(
+      options.messageId,
+      'markAttachmentAsCorrupted'
+    );
     if (!message) {
       throw new Error(
         `markAttachmentAsCorrupted: Message ${options.messageId} missing!`
@@ -2322,7 +2393,10 @@ function openGiftBadge(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, ShowToastActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'openGiftBadge'
+    );
     if (!message) {
       throw new Error(`openGiftBadge: Message ${messageId} missing!`);
     }
@@ -2342,7 +2416,10 @@ function retryMessageSend(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'retryMessageSend'
+    );
     if (!message) {
       throw new Error(`retryMessageSend: Message ${messageId} missing!`);
     }
@@ -2359,7 +2436,10 @@ export function copyMessageText(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'copyMessageText'
+    );
     if (!message) {
       throw new Error(`copy: Message ${messageId} missing!`);
     }
@@ -2378,7 +2458,10 @@ export function retryDeleteForEveryone(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async dispatch => {
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'retryDeleteForEveryone'
+    );
     if (!message) {
       throw new Error(`retryDeleteForEveryone: Message ${messageId} missing!`);
     }
@@ -2431,7 +2514,7 @@ export function setVoiceNotePlaybackRate({
 }: {
   conversationId: string;
   rate: number;
-}): ThunkAction<void, RootStateType, unknown, ConversationChangedActionType> {
+}): ThunkAction<void, RootStateType, unknown, ConversationsUpdatedActionType> {
   return async dispatch => {
     const conversationModel = window.ConversationController.get(conversationId);
     if (conversationModel) {
@@ -2445,13 +2528,14 @@ export function setVoiceNotePlaybackRate({
 
     if (conversation) {
       dispatch({
-        type: 'CONVERSATION_CHANGED',
+        type: 'CONVERSATIONS_UPDATED',
         payload: {
-          id: conversationId,
-          data: {
-            ...conversation,
-            voiceNotePlaybackRate: rate,
-          },
+          data: [
+            {
+              ...conversation,
+              voiceNotePlaybackRate: rate,
+            },
+          ],
         },
       });
     }
@@ -2671,34 +2755,34 @@ function setPreJoinConversation(
     },
   };
 }
-function conversationAdded(
-  id: string,
-  data: ConversationType
-): ConversationAddedActionType {
-  return {
-    type: 'CONVERSATION_ADDED',
-    payload: {
-      id,
-      data,
-    },
-  };
-}
-function conversationChanged(
-  id: string,
-  data: ConversationType
-): ThunkAction<void, RootStateType, unknown, ConversationChangedActionType> {
-  return dispatch => {
-    calling.groupMembersChanged(id);
+
+function conversationsUpdated(
+  data: Array<ConversationType>
+): ThunkAction<void, RootStateType, unknown, ConversationsUpdatedActionType> {
+  return (dispatch, getState) => {
+    for (const conversation of data) {
+      calling.groupMembersChanged(conversation.id);
+    }
+
+    const { conversationLookup: oldConversationLookup } =
+      getState().conversations;
 
     dispatch({
-      type: 'CONVERSATION_CHANGED',
+      type: 'CONVERSATIONS_UPDATED',
       payload: {
-        id,
         data,
       },
     });
+
+    dispatch(
+      searchActions.updateSearchResultsOnConversationUpdate(
+        oldConversationLookup,
+        data
+      )
+    );
   };
 }
+
 function conversationRemoved(id: string): ConversationRemovedActionType {
   return {
     type: 'CONVERSATION_REMOVED',
@@ -3164,7 +3248,12 @@ function pushPanelForConversation(
 
       const message =
         conversations.messagesLookup[messageId] ||
-        (await __DEPRECATED$getMessageById(messageId))?.attributes;
+        (
+          await __DEPRECATED$getMessageById(
+            messageId,
+            'pushPanelForConversation'
+          )
+        )?.attributes;
       if (!message) {
         throw new Error(
           'pushPanelForConversation: could not find message for MessageDetails'
@@ -3240,7 +3329,10 @@ function deleteMessagesForEveryone(
     await Promise.all(
       messageIds.map(async messageId => {
         try {
-          const message = window.MessageCache.__DEPRECATED$getById(messageId);
+          const message = window.MessageCache.__DEPRECATED$getById(
+            messageId,
+            'deleteMessagesForEveryone'
+          );
           if (!message) {
             throw new Error(
               `deleteMessageForEveryone: Message ${messageId} missing!`
@@ -3733,8 +3825,12 @@ function loadRecentMediaItems(
 ): ThunkAction<void, RootStateType, unknown, SetRecentMediaItemsActionType> {
   return async dispatch => {
     const messages: Array<MessageAttributesType> =
-      await DataReader.getMessagesWithVisualMediaAttachments(conversationId, {
+      await DataReader.getOlderMessagesByConversation({
+        conversationId,
         limit,
+        requireVisualMediaAttachments: true,
+        storyId: undefined,
+        includeStoryReplies: false,
       });
 
     // Cache these messages in memory to ensure Lightbox can find them
@@ -3772,9 +3868,9 @@ function loadRecentMediaItems(
                     window.ConversationController.get(message.sourceServiceId)
                       ?.id || message.conversationId,
                   id: message.id,
-                  received_at: message.received_at,
-                  received_at_ms: Number(message.received_at_ms),
-                  sent_at: message.sent_at,
+                  receivedAt: message.received_at,
+                  receivedAtMs: Number(message.received_at_ms),
+                  sentAt: message.sent_at,
                 },
               };
 
@@ -3843,12 +3939,114 @@ function saveAttachment(
   };
 }
 
+const showSaveMultiDialog = (): Promise<{
+  canceled: boolean;
+  dirPath?: string;
+}> => {
+  return ipcRenderer.invoke('show-save-multi-dialog');
+};
+
+export type SaveAttachmentsActionCreatorType = ReadonlyDeep<
+  (
+    attachments: ReadonlyArray<AttachmentType>,
+    timestamp?: number,
+    index?: number
+  ) => unknown
+>;
+
+function saveAttachments(
+  attachments: ReadonlyArray<AttachmentType>,
+  timestamp = Date.now()
+): ThunkAction<void, RootStateType, unknown, ShowToastActionType> {
+  return async dispatch => {
+    // check if any of the attachments could be dangerous
+    for (const attachment of attachments) {
+      const { fileName = '' } = attachment;
+
+      const isDangerous = isFileDangerous(fileName);
+      if (isDangerous) {
+        dispatch({
+          type: SHOW_TOAST,
+          payload: {
+            toastType: ToastType.DangerousFileType,
+          },
+        });
+        return;
+      }
+    }
+
+    const { canceled, dirPath } = await showSaveMultiDialog();
+    if (canceled || !dirPath) {
+      return;
+    }
+
+    const { readAttachmentData, saveAttachmentToDisk } =
+      window.Signal.Migrations;
+
+    let fullPath;
+    let index = 0;
+    for (const attachment of attachments) {
+      index += 1;
+
+      // eslint-disable-next-line no-await-in-loop
+      const result = await Attachment.save({
+        attachment,
+        index,
+        readAttachmentData,
+        saveAttachmentToDisk,
+        timestamp,
+        baseDir: dirPath,
+      });
+
+      if (fullPath === undefined) {
+        fullPath = result;
+      }
+    }
+
+    if (fullPath == null) {
+      throw new Error('saveAttachments: Returned path to attachment is null!');
+    }
+
+    dispatch({
+      type: SHOW_TOAST,
+      payload: {
+        toastType: ToastType.FileSaved,
+        parameters: {
+          countOfFiles: attachments.length,
+          fullPath,
+        },
+      },
+    });
+  };
+}
+
+function showAttachmentDownloadStillInProgressToast(
+  count: number
+): ShowToastActionType {
+  log.info(
+    `showAttachmentDownloadStillInProgressToast: ${count} still-pending attachments`
+  );
+  return {
+    type: SHOW_TOAST,
+    payload: {
+      toastType: ToastType.AttachmentDownloadStillInProgress,
+      parameters: {
+        count,
+      },
+    },
+  };
+}
+
+// is only used by lightbox/ gallery
 export function saveAttachmentFromMessage(
   messageId: string,
   providedAttachment?: AttachmentType
 ): ThunkAction<void, RootStateType, unknown, ShowToastActionType> {
   return async (dispatch, getState) => {
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'saveAttachmentFromMessage'
+    );
     if (!message) {
       throw new Error(
         `saveAttachmentFromMessage: Message ${messageId} missing!`
@@ -3941,7 +4139,10 @@ export function scrollToMessage(
       throw new Error('scrollToMessage: No conversation found');
     }
 
-    const message = await __DEPRECATED$getMessageById(messageId);
+    const message = await __DEPRECATED$getMessageById(
+      messageId,
+      'scrollToMessage'
+    );
     if (!message) {
       throw new Error(`scrollToMessage: failed to load message ${messageId}`);
     }
@@ -3955,7 +4156,12 @@ export function scrollToMessage(
 
     let isInMemory = true;
 
-    if (!window.MessageCache.__DEPRECATED$getById(messageId)) {
+    if (
+      !window.MessageCache.__DEPRECATED$getById(
+        messageId,
+        'scrollToMessage/notInMemory'
+      )
+    ) {
       isInMemory = false;
     }
 
@@ -4297,6 +4503,14 @@ function showInbox(): ShowInboxActionType {
     payload: null,
   };
 }
+function showMediaNoLongerAvailableToast(): ShowToastActionType {
+  return {
+    type: SHOW_TOAST,
+    payload: {
+      toastType: ToastType.MediaNoLongerAvailable,
+    },
+  };
+}
 
 type ShowConversationArgsType = ReadonlyDeep<{
   conversationId?: string;
@@ -4381,15 +4595,22 @@ function onConversationOpened(
       throw new Error('onConversationOpened: Conversation not found');
     }
 
+    const logId = `onConversationOpened(${conversation.idForLogging()})`;
+
+    log.info(`${logId}: Updating newly opened conversation state`);
+
     if (messageId) {
-      const message = await __DEPRECATED$getMessageById(messageId);
+      const message = await __DEPRECATED$getMessageById(
+        messageId,
+        'onConversationOpened'
+      );
 
       if (message) {
         drop(conversation.loadAndScroll(messageId));
         return;
       }
 
-      log.warn(`onOpened: Did not find message ${messageId}`);
+      log.warn(`${logId}: Did not find message ${messageId}`);
     }
 
     const { retryPlaceholders } = window.Signal.Services;
@@ -4423,12 +4644,12 @@ function onConversationOpened(
     promises.push(conversation.fetchLatestGroupV2Data());
     strictAssert(
       conversation.throttledMaybeMigrateV1Group !== undefined,
-      'Conversation model should be initialized'
+      `${logId}: Conversation model should be initialized`
     );
     promises.push(conversation.throttledMaybeMigrateV1Group());
     strictAssert(
       conversation.throttledFetchSMSOnlyUUID !== undefined,
-      'Conversation model should be initialized'
+      `${logId}: Conversation model should be initialized`
     );
     promises.push(conversation.throttledFetchSMSOnlyUUID());
 
@@ -4439,7 +4660,7 @@ function onConversationOpened(
     ) {
       strictAssert(
         conversation.throttledGetProfiles !== undefined,
-        'Conversation model should be initialized'
+        `${logId}: Conversation model should be initialized`
       );
       await conversation.throttledGetProfiles().catch(() => {
         /* nothing to do here; logging already happened */
@@ -4508,6 +4729,8 @@ function onConversationClosed(
         conversationId,
       },
     });
+
+    dispatch(searchActions.maybeRemoveReadConversations([conversationId]));
   };
 }
 
@@ -4519,7 +4742,10 @@ function showArchivedConversations(): ShowArchivedConversationsActionType {
 }
 
 function doubleCheckMissingQuoteReference(messageId: string): NoopActionType {
-  const message = window.MessageCache.__DEPRECATED$getById(messageId);
+  const message = window.MessageCache.__DEPRECATED$getById(
+    messageId,
+    'doubleCheckMissingQuoteReference'
+  );
   if (message) {
     void message.doubleCheckMissingQuoteReference();
   }
@@ -4560,8 +4786,8 @@ export function getEmptyState(): ConversationsStateType {
 }
 
 export function updateConversationLookups(
-  added: ConversationType | undefined,
-  removed: ConversationType | undefined,
+  added: ReadonlyArray<ConversationType> | undefined,
+  removed: ReadonlyArray<ConversationType> | undefined,
   state: ConversationsStateType
 ): Pick<
   ConversationsStateType,
@@ -4576,67 +4802,135 @@ export function updateConversationLookups(
     conversationsByGroupId: state.conversationsByGroupId,
     conversationsByUsername: state.conversationsByUsername,
   };
+  const removedE164s = removed?.map(convo => convo.e164).filter(isNotNil);
+  const removedServiceIds = removed
+    ?.map(convo => convo.serviceId)
+    .filter(isNotNil);
+  const removedPnis = removed?.map(convo => convo.pni).filter(isNotNil);
+  const removedGroupIds = removed?.map(convo => convo.groupId).filter(isNotNil);
+  const removedUsernames = removed
+    ?.map(convo => convo.username)
+    .filter(isNotNil);
 
-  if (removed && removed.e164) {
-    result.conversationsByE164 = omit(result.conversationsByE164, removed.e164);
+  if (removedE164s?.length) {
+    result.conversationsByE164 = omit(result.conversationsByE164, removedE164s);
   }
-  if (removed && removed.serviceId) {
+
+  if (removedServiceIds?.length) {
     result.conversationsByServiceId = omit(
       result.conversationsByServiceId,
-      removed.serviceId
+      removedServiceIds
     );
   }
-  if (removed && removed.pni) {
+  if (removedPnis?.length) {
     result.conversationsByServiceId = omit(
       result.conversationsByServiceId,
-      removed.pni
+      removedPnis
     );
   }
-  if (removed && removed.groupId) {
+  if (removedGroupIds?.length) {
     result.conversationsByGroupId = omit(
       result.conversationsByGroupId,
-      removed.groupId
+      removedGroupIds
     );
   }
-  if (removed && removed.username) {
+  if (removedUsernames?.length) {
     result.conversationsByUsername = omit(
       result.conversationsByUsername,
-      removed.username
+      removedUsernames
     );
   }
 
-  if (added && added.e164) {
+  function isFirstElementNotNil(val: Array<unknown>) {
+    return val[0] != null;
+  }
+  const addedE164s = added
+    ?.map(convo => [convo.e164, convo])
+    .filter(isFirstElementNotNil);
+  const addedServiceIds = added
+    ?.map(convo => [convo.serviceId, convo])
+    .filter(isFirstElementNotNil);
+  const addedPnis = added
+    ?.map(convo => [convo.pni, convo])
+    .filter(isFirstElementNotNil);
+  const addedGroupIds = added
+    ?.map(convo => [convo.groupId, convo])
+    .filter(isFirstElementNotNil);
+  const addedUsernames = added
+    ?.map(convo => [convo.username, convo])
+    .filter(isFirstElementNotNil);
+
+  if (addedE164s?.length) {
     result.conversationsByE164 = {
       ...result.conversationsByE164,
-      [added.e164]: added,
+      ...Object.fromEntries(addedE164s),
     };
   }
-  if (added && added.serviceId) {
+  if (addedServiceIds?.length) {
     result.conversationsByServiceId = {
       ...result.conversationsByServiceId,
-      [added.serviceId]: added,
+      ...Object.fromEntries(addedServiceIds),
     };
   }
-  if (added && added.pni) {
+  if (addedPnis?.length) {
     result.conversationsByServiceId = {
       ...result.conversationsByServiceId,
-      [added.pni]: added,
+      ...Object.fromEntries(addedPnis),
     };
   }
-  if (added && added.groupId) {
+  if (addedGroupIds?.length) {
     result.conversationsByGroupId = {
       ...result.conversationsByGroupId,
-      [added.groupId]: added,
+      ...Object.fromEntries(addedGroupIds),
     };
   }
-  if (added && added.username) {
+  if (addedUsernames?.length) {
     result.conversationsByUsername = {
       ...result.conversationsByUsername,
-      [added.username]: added,
+      ...Object.fromEntries(addedUsernames),
     };
   }
 
   return result;
+}
+
+function updateRootStateDueToConversationUpdate(
+  state: ConversationsStateType,
+  conversation: ConversationType
+): ConversationsStateType {
+  if (state.selectedConversationId !== conversation.id) {
+    return state;
+  }
+
+  let { showArchived } = state;
+  const { selectedConversationId, conversationLookup } = state;
+  const existing = conversationLookup[conversation.id];
+
+  const keysToOmit: Array<keyof ConversationsStateType> = [];
+  const keyValuesToAdd: { hasContactSpoofingReview?: false } = {};
+
+  // Archived -> Inbox: we go back to the normal inbox view
+  if (existing.isArchived && !conversation.isArchived) {
+    showArchived = false;
+  }
+  // Inbox -> Archived: no conversation is selected
+  // Note: With today's stacked conversations architecture, this can result in weird
+  //   behavior - no selected conversation in the left pane, but a conversation show
+  //   in the right pane.
+  if (!existing.isArchived && conversation.isArchived) {
+    keysToOmit.push('selectedConversationId');
+  }
+
+  if (!existing.isBlocked && conversation.isBlocked) {
+    keyValuesToAdd.hasContactSpoofingReview = false;
+  }
+
+  return {
+    ...omit(state, keysToOmit),
+    ...keyValuesToAdd,
+    selectedConversationId,
+    showArchived,
+  };
 }
 
 function closeComposerModal(
@@ -4868,7 +5162,7 @@ function updateNicknameAndNote(
     });
     await DataWriter.updateConversation(conversationModel.attributes);
     const conversation = conversationModel.format();
-    dispatch(conversationChanged(conversationId, conversation));
+    dispatch(conversationsUpdated([conversation]));
     conversationModel.captureChange('nicknameAndNote');
   };
 }
@@ -5153,66 +5447,39 @@ export function reducer(
       preJoinConversation: data,
     };
   }
-  if (action.type === 'CONVERSATION_ADDED') {
+  if (action.type === 'CONVERSATIONS_UPDATED') {
     const { payload } = action;
-    const { id, data } = payload;
-    const { conversationLookup } = state;
-
-    return {
-      ...state,
-      conversationLookup: {
-        ...conversationLookup,
-        [id]: data,
-      },
-      ...updateConversationLookups(data, undefined, state),
-    };
-  }
-  if (action.type === 'CONVERSATION_CHANGED') {
-    const { payload } = action;
-    const { id, data } = payload;
+    const { data: conversations } = payload;
     const { conversationLookup } = state;
 
     const { selectedConversationId } = state;
-    let { showArchived } = state;
 
-    const existing = conversationLookup[id];
-    // We only modify the lookup if we already had that conversation and the conversation
-    //   changed.
-    if (!existing || data === existing) {
-      return state;
+    const selectedConversation = conversations.find(
+      convo => convo.id === selectedConversationId
+    );
+
+    let updatedState = state;
+
+    if (selectedConversation) {
+      updatedState = updateRootStateDueToConversationUpdate(
+        state,
+        selectedConversation
+      );
     }
 
-    const keysToOmit: Array<keyof ConversationsStateType> = [];
-    const keyValuesToAdd: { hasContactSpoofingReview?: false } = {};
+    const existingConversations = conversations
+      .map(conversation => conversationLookup[conversation.id])
+      .filter(isNotNil);
 
-    if (selectedConversationId === id) {
-      // Archived -> Inbox: we go back to the normal inbox view
-      if (existing.isArchived && !data.isArchived) {
-        showArchived = false;
-      }
-      // Inbox -> Archived: no conversation is selected
-      // Note: With today's stacked conversations architecture, this can result in weird
-      //   behavior - no selected conversation in the left pane, but a conversation show
-      //   in the right pane.
-      if (!existing.isArchived && data.isArchived) {
-        keysToOmit.push('selectedConversationId');
-      }
-
-      if (!existing.isBlocked && data.isBlocked) {
-        keyValuesToAdd.hasContactSpoofingReview = false;
-      }
+    const newConversationLookup = { ...conversationLookup };
+    for (const conversation of conversations) {
+      newConversationLookup[conversation.id] = conversation;
     }
 
     return {
-      ...omit(state, keysToOmit),
-      ...keyValuesToAdd,
-      selectedConversationId,
-      showArchived,
-      conversationLookup: {
-        ...conversationLookup,
-        [id]: data,
-      },
-      ...updateConversationLookups(data, existing, state),
+      ...updatedState,
+      conversationLookup: newConversationLookup,
+      ...updateConversationLookups(conversations, existingConversations, state),
     };
   }
   if (action.type === 'CONVERSATION_REMOVED') {
@@ -5221,6 +5488,7 @@ export function reducer(
     const { conversationLookup } = state;
     const existing = getOwn(conversationLookup, id);
 
+    onConversationClosed(id, 'removed');
     // No need to make a change if we didn't have a record of this conversation!
     if (!existing) {
       return state;
@@ -5229,7 +5497,7 @@ export function reducer(
     return {
       ...state,
       conversationLookup: omit(conversationLookup, [id]),
-      ...updateConversationLookups(undefined, existing, state),
+      ...updateConversationLookups(undefined, [existing], state),
     };
   }
   if (action.type === CONVERSATION_UNLOADED) {
@@ -5631,7 +5899,7 @@ export function reducer(
   if (action.type === MESSAGE_EXPIRED) {
     return maybeUpdateSelectedMessageForDetails(
       { messageId: action.payload.id, targetedMessageForDetails: undefined },
-      state
+      dropPreloadData(state)
     );
   }
 
@@ -5945,19 +6213,20 @@ export function reducer(
   if (action.type === 'MESSAGES_ADDED') {
     const { conversationId, isActive, isJustSent, isNewMessage, messages } =
       action.payload;
-    const { messagesByConversation, messagesLookup } = state;
-
-    const existingConversation = messagesByConversation[conversationId];
-    if (!existingConversation) {
-      return state;
-    }
-
-    let { newest, oldest, oldestUnseen, totalUnseen } =
-      existingConversation.metrics;
 
     if (messages.length < 1) {
       return state;
     }
+
+    const { messagesByConversation, messagesLookup } = state;
+
+    const existingConversation = messagesByConversation[conversationId];
+    if (!existingConversation) {
+      return dropPreloadData(state);
+    }
+
+    let { newest, oldest, oldestUnseen, totalUnseen } =
+      existingConversation.metrics;
 
     const lookup = fromPairs(
       existingConversation.messageIds.map(id => [id, messagesLookup[id]])
@@ -6258,7 +6527,7 @@ export function reducer(
         ...conversationLookup,
         [id]: data,
       },
-      ...updateConversationLookups(data, undefined, state),
+      ...updateConversationLookups([data], undefined, state),
     };
   }
 
@@ -6719,7 +6988,7 @@ export function reducer(
 
       Object.assign(
         nextState,
-        updateConversationLookups(added, existing, nextState),
+        updateConversationLookups([added], [existing], nextState),
         {
           conversationLookup: {
             ...nextState.conversationLookup,
@@ -6755,7 +7024,7 @@ export function reducer(
         ...conversationLookup,
         [conversationId]: changed,
       },
-      ...updateConversationLookups(changed, existing, state),
+      ...updateConversationLookups([changed], [existing], state),
     };
   }
 
@@ -6783,7 +7052,7 @@ export function reducer(
 
       Object.assign(
         nextState,
-        updateConversationLookups(changed, existing, nextState),
+        updateConversationLookups([changed], [existing], nextState),
         {
           conversationLookup: {
             ...nextState.conversationLookup,
@@ -6816,7 +7085,7 @@ export function reducer(
         ...conversationLookup,
         [conversationId]: changed,
       },
-      ...updateConversationLookups(changed, conversation, state),
+      ...updateConversationLookups([changed], [conversation], state),
     };
   }
 

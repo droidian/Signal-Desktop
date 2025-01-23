@@ -97,7 +97,11 @@ export const setup = (
     const isMisspelled = Boolean(params.misspelledWord);
     const isLink = Boolean(params.linkURL);
     const isImage =
-      params.mediaType === 'image' && params.hasImageContents && params.srcURL;
+      params.mediaType === 'image' &&
+      params.hasImageContents &&
+      params.srcURL &&
+      !params.selectionText.trim();
+
     const showMenu =
       params.isEditable || editFlags.canCopy || isLink || isImage;
 

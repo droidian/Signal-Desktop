@@ -5,7 +5,7 @@ import * as Bytes from '../Bytes';
 import type { AttachmentDownloadJobTypeType } from '../types/AttachmentDownload';
 
 import type { AttachmentType } from '../types/Attachment';
-import { getAttachmentSignature, isDownloaded } from '../types/Attachment';
+import { getAttachmentSignatureSafe, isDownloaded } from '../types/Attachment';
 import { __DEPRECATED$getMessageById } from '../messages/getMessageById';
 
 export async function addAttachmentToMessage(
@@ -14,14 +14,17 @@ export async function addAttachmentToMessage(
   jobLogId: string,
   { type }: { type: AttachmentDownloadJobTypeType }
 ): Promise<void> {
-  const message = await __DEPRECATED$getMessageById(messageId);
+  const logPrefix = `${jobLogId}/addAttachmentToMessage`;
+  const message = await __DEPRECATED$getMessageById(messageId, logPrefix);
 
   if (!message) {
     return;
   }
 
-  const logPrefix = `${jobLogId}/addAttachmentToMessage`;
-  const attachmentSignature = getAttachmentSignature(attachment);
+  const attachmentSignature = getAttachmentSignatureSafe(attachment);
+  if (!attachmentSignature) {
+    log.error(`${logPrefix}: Attachment did not have valid signature (digest)`);
+  }
 
   if (type === 'long-message') {
     let handledAnywhere = false;
@@ -45,7 +48,8 @@ export async function addAttachmentToMessage(
           }
           // This attachment isn't destined for this edit
           if (
-            getAttachmentSignature(edit.bodyAttachment) !== attachmentSignature
+            getAttachmentSignatureSafe(edit.bodyAttachment) !==
+            attachmentSignature
           ) {
             return edit;
           }
@@ -64,7 +68,7 @@ export async function addAttachmentToMessage(
           return {
             ...edit,
             body: Bytes.toString(attachmentData),
-            bodyAttachment: undefined,
+            bodyAttachment: attachment,
           };
         });
 
@@ -79,7 +83,8 @@ export async function addAttachmentToMessage(
         return;
       }
       if (
-        getAttachmentSignature(existingBodyAttachment) !== attachmentSignature
+        getAttachmentSignatureSafe(existingBodyAttachment) !==
+        attachmentSignature
       ) {
         return;
       }
@@ -96,7 +101,7 @@ export async function addAttachmentToMessage(
 
       message.set({
         body: Bytes.toString(attachmentData),
-        bodyAttachment: undefined,
+        bodyAttachment: attachment,
       });
     } finally {
       if (attachment.path) {
@@ -116,7 +121,7 @@ export async function addAttachmentToMessage(
       return existing;
     }
 
-    if (attachmentSignature !== getAttachmentSignature(existing)) {
+    if (attachmentSignature !== getAttachmentSignatureSafe(existing)) {
       return existing;
     }
 
@@ -322,7 +327,7 @@ export async function addAttachmentToMessage(
     message.set({
       sticker: {
         ...sticker,
-        data: attachment,
+        data: sticker.data ? maybeReplaceAttachment(sticker.data) : attachment,
       },
     });
     return;

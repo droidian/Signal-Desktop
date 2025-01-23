@@ -38,6 +38,7 @@ import type { AnyPaymentEvent } from './types/Payment';
 import AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 import MemberRoleEnum = Proto.Member.Role;
 import type { MessageRequestResponseEvent } from './types/MessageRequestResponseEvent';
+import type { QuotedMessageForComposerType } from './state/ducks/composer';
 
 export type LastMessageStatus =
   | 'paused'
@@ -85,7 +86,6 @@ export type QuotedAttachmentType = {
 };
 
 export type QuotedMessageType = {
-  // TODO DESKTOP-3826
   attachments: ReadonlyArray<QuotedAttachmentType>;
   payment?: AnyPaymentEvent;
   // `author` is an old attribute that holds the author's E164. We shouldn't use it for
@@ -93,12 +93,16 @@ export type QuotedMessageType = {
   author?: string;
   authorAci?: AciString;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
-  id: number;
+  // id can be null if the referenced message was not found and we imported this quote
+  // from backup
+  id: number | null;
   isGiftBadge?: boolean;
   isViewOnce: boolean;
-  messageId: string;
   referencedMessageNotFound: boolean;
   text?: string;
+  /** @deprecated `messageId` is used only in composer state, but still may exist in DB
+   * records, particularly for messages sent from this device */
+  messageId?: string;
 };
 
 type StoryReplyContextType = {
@@ -119,7 +123,6 @@ export type MessageReactionType = {
   fromId: string;
   targetTimestamp: number;
   timestamp: number;
-  receivedAtDate: undefined | number;
   isSentByConversationId?: Record<string, boolean>;
 };
 
@@ -137,6 +140,9 @@ export type EditHistoryType = {
   timestamp: number;
   received_at: number;
   received_at_ms?: number;
+  serverTimestamp?: number;
+  readStatus?: ReadStatus;
+  unidentifiedDeliveryReceived?: boolean;
 };
 
 type MessageType =
@@ -226,13 +232,20 @@ export type MessageAttributesType = {
     targetAuthorAci: AciString;
     targetTimestamp: number;
   };
-  giftBadge?: {
-    expiration: number;
-    level: number;
-    id: string | undefined;
-    receiptCredentialPresentation: string;
-    state: GiftBadgeStates;
-  };
+  giftBadge?:
+    | {
+        state:
+          | GiftBadgeStates.Unopened
+          | GiftBadgeStates.Opened
+          | GiftBadgeStates.Redeemed;
+        expiration: number;
+        level: number;
+        id: string | undefined;
+        receiptCredentialPresentation: string;
+      }
+    | {
+        state: GiftBadgeStates.Failed;
+      };
 
   expirationTimerUpdate?: {
     expireTimer?: DurationInSeconds;
@@ -313,7 +326,7 @@ export type DraftEditMessageType = {
   body: string;
   preview?: LinkPreviewType;
   targetMessageId: string;
-  quote?: QuotedMessageType;
+  quote?: QuotedMessageForComposerType['quote'];
 };
 
 export type ConversationAttributesType = {
@@ -337,6 +350,7 @@ export type ConversationAttributesType = {
   wallpaperPhotoPointerBase64?: string;
   wallpaperPreset?: number;
   dimWallpaperInDarkMode?: boolean;
+  autoBubbleColor?: boolean;
 
   discoveredUnregisteredAt?: number;
   firstUnregisteredAt?: number;
@@ -365,6 +379,7 @@ export type ConversationAttributesType = {
   messageCount?: number;
   messageCountBeforeMessageRequests?: number | null;
   messageRequestResponseType?: number;
+  messagesDeleted?: boolean;
   muteExpiresAt?: number;
   dontNotifyForMentionsIfMuted?: boolean;
   sharingPhoneNumber?: boolean;
@@ -374,6 +389,10 @@ export type ConversationAttributesType = {
   lastProfile?: ConversationLastProfileType;
   needsTitleTransition?: boolean;
   quotedMessageId?: string | null;
+  /**
+   * TODO: Rename this key to be specific to the accessKey on the conversation
+   * It's not used for group endorsements.
+   */
   sealedSender?: unknown;
   sentMessageCount?: number;
   sharedGroupNames?: ReadonlyArray<string>;
@@ -485,6 +504,13 @@ export type ConversationAttributesType = {
 
   // Legacy field, mapped to above in getConversation()
   unblurredAvatarPath?: string;
+
+  // Only used during backup integration tests. After import, our data model merges
+  // Contact and Chat frames from a backup, and we will then by default export both, even
+  // if the Chat frame was not imported. That's fine in normal usage, but breaks
+  // integration tests that aren't expecting to see a Chat frame on export that was not
+  // there on import.
+  test_chatFrameImportedFromBackup?: boolean;
 };
 
 export type ConversationRenderInfoType = Pick<

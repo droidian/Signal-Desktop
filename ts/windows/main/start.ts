@@ -6,6 +6,7 @@ import { contextBridge } from 'electron';
 
 import * as log from '../../logging/log';
 
+import './phase0-devtools';
 import './phase1-ipc';
 import '../preload';
 import './phase2-dependencies';
@@ -24,6 +25,10 @@ import { initMessageCleanup } from '../../services/messageStateCleanup';
 import { Environment, getEnvironment } from '../../environment';
 import { isProduction } from '../../util/version';
 import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen';
+import {
+  removeUseRingrtcAdm,
+  setUseRingrtcAdm,
+} from '../../util/ringrtc/ringrtcAdm';
 
 window.addEventListener('contextmenu', e => {
   const node = e.target as Element | null;
@@ -48,18 +53,23 @@ window.Whisper.events = clone(window.Backbone.Events);
 initMessageCleanup();
 startConversationController();
 
-if (!isProduction(window.SignalContext.getVersion())) {
+if (
+  !isProduction(window.SignalContext.getVersion()) ||
+  window.SignalContext.config.devTools
+) {
   const SignalDebug = {
     cdsLookup: (options: CdsLookupOptionsType) =>
       window.textsecure.server?.cdsLookup(options),
     getSelectedConversation: () => {
       return window.ConversationController.get(
         window.reduxStore.getState().conversations.selectedConversationId
-      );
+      )?.attributes;
     },
     getConversation: (id: string) => window.ConversationController.get(id),
     getMessageById: (id: string) =>
-      window.MessageCache.__DEPRECATED$getById(id),
+      window.MessageCache.__DEPRECATED$getById(id, 'SignalDebug'),
+    getMessageBySentAt: (timestamp: number) =>
+      window.MessageCache.findBySentAt(timestamp, () => true),
     getReduxState: () => window.reduxStore.getState(),
     getSfuUrl: () => window.Signal.Services.calling._sfuUrl,
     getIceServerOverride: () =>
@@ -69,6 +79,10 @@ if (!isProduction(window.SignalContext.getVersion())) {
       name: K,
       value: StorageAccessType[K]
     ) => window.storage.put(name, value),
+    removeUseRingrtcAdm: async () => {
+      await removeUseRingrtcAdm();
+      log.info('Restart to make ADM change take effect!');
+    },
     setFlag: (name: keyof FeatureFlagType, value: boolean) => {
       if (!has(window.Flags, name)) {
         return;
@@ -77,6 +91,10 @@ if (!isProduction(window.SignalContext.getVersion())) {
     },
     setSfuUrl: (url: string) => {
       window.Signal.Services.calling._sfuUrl = url;
+    },
+    setUseRingrtcAdm: async (value: boolean) => {
+      await setUseRingrtcAdm(value);
+      log.info('Restart to make ADM change take effect!');
     },
     setIceServerOverride: (
       override: GetIceServersResultType | string | undefined

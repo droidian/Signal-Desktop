@@ -36,6 +36,9 @@ export type PropsType = {
   // CallLinkEditModal
   callLinkEditModalRoomId: string | null;
   renderCallLinkEditModal: () => JSX.Element;
+  // CallLinkPendingParticipantModal
+  callLinkPendingParticipantContactId: string | undefined;
+  renderCallLinkPendingParticipantModal: () => JSX.Element;
   // ConfirmLeaveCallModal
   confirmLeaveCallModalState: StartCallData | null;
   renderConfirmLeaveCallModal: () => JSX.Element;
@@ -50,12 +53,16 @@ export type PropsType = {
   renderEditNicknameAndNoteModal: () => JSX.Element;
   // ErrorModal
   errorModalProps:
-    | { buttonVariant?: ButtonVariant; description?: string; title?: string }
+    | {
+        buttonVariant?: ButtonVariant;
+        description?: string;
+        title?: string | null;
+      }
     | undefined;
   renderErrorModal: (opts: {
     buttonVariant?: ButtonVariant;
     description?: string;
-    title?: string;
+    title?: string | null;
   }) => JSX.Element;
   // DeleteMessageModal
   deleteMessagesProps: DeleteMessagesPropsType | undefined;
@@ -118,6 +125,9 @@ export function GlobalModalContainer({
   // CallLinkEditModal
   callLinkEditModalRoomId,
   renderCallLinkEditModal,
+  // CallLinkPendingParticipantModal
+  callLinkPendingParticipantContactId,
+  renderCallLinkPendingParticipantModal,
   // ConfirmLeaveCallModal
   confirmLeaveCallModalState,
   renderConfirmLeaveCallModal,
@@ -266,6 +276,12 @@ export function GlobalModalContainer({
 
   if (contactModalState) {
     return renderContactModal();
+  }
+
+  // This needs to be after the about contact modal because the pending participant modal
+  // opens the about contact modal
+  if (callLinkPendingParticipantContactId) {
+    return renderCallLinkPendingParticipantModal();
   }
 
   if (isStoriesSettingsVisible) {

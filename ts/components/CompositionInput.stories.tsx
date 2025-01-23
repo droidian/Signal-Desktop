@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as React from 'react';
+// @ts-expect-error -- no types
 import 'react-quill/dist/quill.core.css';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
@@ -30,9 +31,7 @@ const useProps = (overrideProps: Partial<Props> = {}): Props => {
     draftText: overrideProps.draftText ?? null,
     draftEditMessage: overrideProps.draftEditMessage ?? null,
     draftBodyRanges: overrideProps.draftBodyRanges || [],
-    clearQuotedMessage: action('clearQuotedMessage'),
     getPreferredBadge: () => undefined,
-    getQuotedMessage: action('getQuotedMessage'),
     isActive: true,
     isFormattingEnabled:
       overrideProps.isFormattingEnabled === false
@@ -44,7 +43,9 @@ const useProps = (overrideProps: Partial<Props> = {}): Props => {
     onPickEmoji: action('onPickEmoji'),
     onSubmit: action('onSubmit'),
     onTextTooLong: action('onTextTooLong'),
+    ourConversationId: 'me',
     platform: 'darwin',
+    quotedMessageId: null,
     sendCounter: 0,
     sortedGroupMembers: overrideProps.sortedGroupMembers ?? [],
     skinTone: overrideProps.skinTone ?? null,

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { isNumber, omit } from 'lodash';
+import { omit } from 'lodash';
 import { z } from 'zod';
 import { EventEmitter } from 'events';
 
@@ -27,10 +27,6 @@ import { isNotNil } from './util/isNotNil';
 import { drop } from './util/drop';
 import { Zone } from './util/Zone';
 import { isMoreRecentThan } from './util/timestamp';
-import {
-  sessionRecordToProtobuf,
-  sessionStructureToBytes,
-} from './util/sessionTranslation';
 import type {
   DeviceType,
   IdentityKeyType,
@@ -67,6 +63,7 @@ import {
   SIGNED_PRE_KEY_ID_KEY,
 } from './textsecure/AccountManager';
 import { formatGroups, groupWhile } from './util/groupWhile';
+import { parseUnknown } from './util/schemas';
 
 const TIMESTAMP_THRESHOLD = 5 * 1000; // 5 seconds
 const LOW_KEYS_THRESHOLD = 25;
@@ -99,7 +96,7 @@ const identityKeySchema = z.object({
 
 function validateIdentityKey(attrs: unknown): attrs is IdentityKeyType {
   // We'll throw if this doesn't match
-  identityKeySchema.parse(attrs);
+  parseUnknown(identityKeySchema, attrs);
   return true;
 }
 /*
@@ -181,7 +178,7 @@ async function _fillCaches<ID, T extends HasIdType<ID>, HydratedType>(
 }
 
 export function hydrateSession(session: SessionType): SessionRecord {
-  return SessionRecord.deserialize(Buffer.from(session.record, 'base64'));
+  return SessionRecord.deserialize(Buffer.from(session.record));
 }
 export function hydratePublicKey(identityKey: IdentityKeyType): PublicKey {
   return PublicKey.deserialize(Buffer.from(identityKey.publicKey));
@@ -208,9 +205,6 @@ export function hydrateSignedPreKey(
   );
 }
 
-export function freezeSession(session: SessionRecord): string {
-  return session.serialize().toString('base64');
-}
 export function freezePublicKey(publicKey: PublicKey): Uint8Array {
   return publicKey.serialize();
 }
@@ -246,11 +240,10 @@ export class SignalProtocolStore extends EventEmitter {
 
   // Cached values
 
-  private ourIdentityKeys = new Map<ServiceIdString, KeyPairType>();
+  #ourIdentityKeys = new Map<ServiceIdString, KeyPairType>();
 
-  private ourRegistrationIds = new Map<ServiceIdString, number>();
-
-  private cachedPniSignatureMessage: PniSignatureMessageType | undefined;
+  #ourRegistrationIds = new Map<ServiceIdString, number>();
+  #cachedPniSignatureMessage: PniSignatureMessageType | undefined;
 
   identityKeys?: Map<
     IdentityKeyIdType,
@@ -279,24 +272,18 @@ export class SignalProtocolStore extends EventEmitter {
 
   sessionQueueJobCounter = 0;
 
-  private readonly identityQueues = new Map<ServiceIdString, PQueue>();
-
-  private currentZone?: Zone;
-
-  private currentZoneDepth = 0;
-
-  private readonly zoneQueue: Array<ZoneQueueEntryType> = [];
-
-  private pendingSessions = new Map<SessionIdType, SessionCacheEntry>();
-
-  private pendingSenderKeys = new Map<SenderKeyIdType, SenderKeyCacheEntry>();
-
-  private pendingUnprocessed = new Map<string, UnprocessedType>();
+  readonly #identityQueues = new Map<ServiceIdString, PQueue>();
+  #currentZone?: Zone;
+  #currentZoneDepth = 0;
+  readonly #zoneQueue: Array<ZoneQueueEntryType> = [];
+  #pendingSessions = new Map<SessionIdType, SessionCacheEntry>();
+  #pendingSenderKeys = new Map<SenderKeyIdType, SenderKeyCacheEntry>();
+  #pendingUnprocessed = new Map<string, UnprocessedType>();
 
   async hydrateCaches(): Promise<void> {
     await Promise.all([
       (async () => {
-        this.ourIdentityKeys.clear();
+        this.#ourIdentityKeys.clear();
         const map = (await DataReader.getItemById(
           'identityKeyMap'
         )) as unknown as ItemType<'identityKeyMap'>;
@@ -310,14 +297,14 @@ export class SignalProtocolStore extends EventEmitter {
             'Invalid identity key serviceId'
           );
           const { privKey, pubKey } = map.value[serviceId];
-          this.ourIdentityKeys.set(serviceId, {
+          this.#ourIdentityKeys.set(serviceId, {
             privKey,
             pubKey,
           });
         }
       })(),
       (async () => {
-        this.ourRegistrationIds.clear();
+        this.#ourRegistrationIds.clear();
         const map = (await DataReader.getItemById(
           'registrationIdMap'
         )) as unknown as ItemType<'registrationIdMap'>;
@@ -330,7 +317,7 @@ export class SignalProtocolStore extends EventEmitter {
             isServiceIdString(serviceId),
             'Invalid registration id serviceId'
           );
-          this.ourRegistrationIds.set(serviceId, map.value[serviceId]);
+          this.#ourRegistrationIds.set(serviceId, map.value[serviceId]);
         }
       })(),
       _fillCaches<string, IdentityKeyType, PublicKey>(
@@ -367,25 +354,22 @@ export class SignalProtocolStore extends EventEmitter {
   }
 
   getIdentityKeyPair(ourServiceId: ServiceIdString): KeyPairType | undefined {
-    return this.ourIdentityKeys.get(ourServiceId);
+    return this.#ourIdentityKeys.get(ourServiceId);
   }
 
   async getLocalRegistrationId(
     ourServiceId: ServiceIdString
   ): Promise<number | undefined> {
-    return this.ourRegistrationIds.get(ourServiceId);
+    return this.#ourRegistrationIds.get(ourServiceId);
   }
 
-  private _getKeyId(
-    ourServiceId: ServiceIdString,
-    keyId: number
-  ): PreKeyIdType {
+  #_getKeyId(ourServiceId: ServiceIdString, keyId: number): PreKeyIdType {
     return `${ourServiceId}:${keyId}`;
   }
 
   // KyberPreKeys
 
-  private _getKyberPreKeyEntry(
+  #_getKyberPreKeyEntry(
     id: PreKeyIdType,
     logContext: string
   ):
@@ -426,8 +410,8 @@ export class SignalProtocolStore extends EventEmitter {
     ourServiceId: ServiceIdString,
     keyId: number
   ): Promise<KyberPreKeyRecord | undefined> {
-    const id: PreKeyIdType = this._getKeyId(ourServiceId, keyId);
-    const entry = this._getKyberPreKeyEntry(id, 'loadKyberPreKey');
+    const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
+    const entry = this.#_getKyberPreKeyEntry(id, 'loadKyberPreKey');
 
     return entry?.item;
   }
@@ -463,7 +447,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('storeKyberPreKey: this.kyberPreKeys not yet cached!');
     }
 
-    const id: PreKeyIdType = this._getKeyId(ourServiceId, keyId);
+    const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
     const item = kyberPreKeyCache.get(id);
     if (!item) {
       throw new Error(`confirmKyberPreKey: missing kyber prekey ${id}!`);
@@ -493,7 +477,7 @@ export class SignalProtocolStore extends EventEmitter {
     const toSave: Array<KyberPreKeyType> = [];
 
     keys.forEach(key => {
-      const id: PreKeyIdType = this._getKeyId(ourServiceId, key.keyId);
+      const id: PreKeyIdType = this.#_getKeyId(ourServiceId, key.keyId);
       if (kyberPreKeyCache.has(id)) {
         throw new Error(`storeKyberPreKey: kyber prekey ${id} already exists!`);
       }
@@ -525,8 +509,8 @@ export class SignalProtocolStore extends EventEmitter {
     ourServiceId: ServiceIdString,
     keyId: number
   ): Promise<void> {
-    const id: PreKeyIdType = this._getKeyId(ourServiceId, keyId);
-    const entry = this._getKyberPreKeyEntry(id, 'maybeRemoveKyberPreKey');
+    const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
+    const entry = this.#_getKyberPreKeyEntry(id, 'maybeRemoveKyberPreKey');
 
     if (!entry) {
       return;
@@ -550,7 +534,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('removeKyberPreKeys: this.kyberPreKeys not yet cached!');
     }
 
-    const ids = keyIds.map(keyId => this._getKeyId(ourServiceId, keyId));
+    const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
 
     log.info('removeKyberPreKeys: Removing kyber prekeys:', formatKeys(keyIds));
     const changes = await DataWriter.removeKyberPreKeyById(ids);
@@ -560,7 +544,7 @@ export class SignalProtocolStore extends EventEmitter {
     });
 
     if (kyberPreKeyCache.size < LOW_KEYS_THRESHOLD) {
-      this.emitLowKeys(
+      this.#emitLowKeys(
         ourServiceId,
         `removeKyberPreKeys@${kyberPreKeyCache.size}`
       );
@@ -585,7 +569,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('loadPreKey: this.preKeys not yet cached!');
     }
 
-    const id: PreKeyIdType = this._getKeyId(ourServiceId, keyId);
+    const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
     const entry = this.preKeys.get(id);
     if (!entry) {
       log.error('Failed to fetch prekey:', id);
@@ -634,7 +618,7 @@ export class SignalProtocolStore extends EventEmitter {
     const now = Date.now();
     const toSave: Array<PreKeyType> = [];
     keys.forEach(key => {
-      const id: PreKeyIdType = this._getKeyId(ourServiceId, key.keyId);
+      const id: PreKeyIdType = this.#_getKeyId(ourServiceId, key.keyId);
 
       if (preKeyCache.has(id)) {
         throw new Error(`storePreKeys: prekey ${id} already exists!`);
@@ -671,7 +655,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('removePreKeys: this.preKeys not yet cached!');
     }
 
-    const ids = keyIds.map(keyId => this._getKeyId(ourServiceId, keyId));
+    const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
 
     log.info('removePreKeys: Removing prekeys:', formatKeys(keyIds));
 
@@ -682,7 +666,7 @@ export class SignalProtocolStore extends EventEmitter {
     });
 
     if (preKeyCache.size < LOW_KEYS_THRESHOLD) {
-      this.emitLowKeys(ourServiceId, `removePreKeys@${preKeyCache.size}`);
+      this.#emitLowKeys(ourServiceId, `removePreKeys@${preKeyCache.size}`);
     }
   }
 
@@ -762,7 +746,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('storeKyberPreKey: this.signedPreKeys not yet cached!');
     }
 
-    const id: PreKeyIdType = this._getKeyId(ourServiceId, keyId);
+    const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
     const item = signedPreKeyCache.get(id);
     if (!item) {
       throw new Error(`confirmSignedPreKey: missing prekey ${id}!`);
@@ -791,7 +775,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('storeSignedPreKey: this.signedPreKeys not yet cached!');
     }
 
-    const id: SignedPreKeyIdType = this._getKeyId(ourServiceId, keyId);
+    const id: SignedPreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
 
     const fromDB = {
       id,
@@ -819,7 +803,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('removeSignedPreKey: this.signedPreKeys not yet cached!');
     }
 
-    const ids = keyIds.map(keyId => this._getKeyId(ourServiceId, keyId));
+    const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
 
     log.info(
       'removeSignedPreKeys: Removing signed prekeys:',
@@ -861,13 +845,13 @@ export class SignalProtocolStore extends EventEmitter {
     zone = GLOBAL_ZONE
   ): Promise<T> {
     return this.withZone(zone, 'enqueueSenderKeyJob', async () => {
-      const queue = this._getSenderKeyQueue(qualifiedAddress);
+      const queue = this.#_getSenderKeyQueue(qualifiedAddress);
 
       return queue.add<T>(task);
     });
   }
 
-  private _createSenderKeyQueue(): PQueue {
+  #_createSenderKeyQueue(): PQueue {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
@@ -875,18 +859,18 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private _getSenderKeyQueue(senderId: QualifiedAddress): PQueue {
+  #_getSenderKeyQueue(senderId: QualifiedAddress): PQueue {
     const cachedQueue = this.senderKeyQueues.get(senderId.toString());
     if (cachedQueue) {
       return cachedQueue;
     }
 
-    const freshQueue = this._createSenderKeyQueue();
+    const freshQueue = this.#_createSenderKeyQueue();
     this.senderKeyQueues.set(senderId.toString(), freshQueue);
     return freshQueue;
   }
 
-  private getSenderKeyId(
+  #getSenderKeyId(
     senderKeyId: QualifiedAddress,
     distributionId: string
   ): SenderKeyIdType {
@@ -907,7 +891,7 @@ export class SignalProtocolStore extends EventEmitter {
       const senderId = qualifiedAddress.toString();
 
       try {
-        const id = this.getSenderKeyId(qualifiedAddress, distributionId);
+        const id = this.#getSenderKeyId(qualifiedAddress, distributionId);
 
         const fromDB: SenderKeyType = {
           id,
@@ -917,7 +901,7 @@ export class SignalProtocolStore extends EventEmitter {
           lastUpdatedDate: Date.now(),
         };
 
-        this.pendingSenderKeys.set(id, {
+        this.#pendingSenderKeys.set(id, {
           hydrated: true,
           fromDB,
           item: record,
@@ -925,7 +909,7 @@ export class SignalProtocolStore extends EventEmitter {
 
         // Current zone doesn't support pending sessions - commit immediately
         if (!zone.supportsPendingSenderKeys()) {
-          await this.commitZoneChanges('saveSenderKey');
+          await this.#commitZoneChanges('saveSenderKey');
         }
       } catch (error) {
         const errorString = Errors.toLogFormat(error);
@@ -949,10 +933,10 @@ export class SignalProtocolStore extends EventEmitter {
       const senderId = qualifiedAddress.toString();
 
       try {
-        const id = this.getSenderKeyId(qualifiedAddress, distributionId);
+        const id = this.#getSenderKeyId(qualifiedAddress, distributionId);
 
-        const map = this.pendingSenderKeys.has(id)
-          ? this.pendingSenderKeys
+        const map = this.#pendingSenderKeys.has(id)
+          ? this.#pendingSenderKeys
           : this.senderKeys;
         const entry = map.get(id);
 
@@ -997,7 +981,7 @@ export class SignalProtocolStore extends EventEmitter {
     const senderId = qualifiedAddress.toString();
 
     try {
-      const id = this.getSenderKeyId(qualifiedAddress, distributionId);
+      const id = this.#getSenderKeyId(qualifiedAddress, distributionId);
 
       await DataWriter.removeSenderKeyById(id);
 
@@ -1015,8 +999,8 @@ export class SignalProtocolStore extends EventEmitter {
       if (this.senderKeys) {
         this.senderKeys.clear();
       }
-      if (this.pendingSenderKeys) {
-        this.pendingSenderKeys.clear();
+      if (this.#pendingSenderKeys) {
+        this.#pendingSenderKeys.clear();
       }
       await DataWriter.removeAllSenderKeys();
     });
@@ -1036,7 +1020,7 @@ export class SignalProtocolStore extends EventEmitter {
     const waitStart = Date.now();
 
     return this.withZone(zone, 'enqueueSessionJob', async () => {
-      const queue = this._getSessionQueue(qualifiedAddress);
+      const queue = this.#_getSessionQueue(qualifiedAddress);
 
       const waitTime = Date.now() - waitStart;
       log.info(
@@ -1054,7 +1038,7 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private _createSessionQueue(): PQueue {
+  #_createSessionQueue(): PQueue {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
@@ -1062,20 +1046,20 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private _getSessionQueue(id: QualifiedAddress): PQueue {
+  #_getSessionQueue(id: QualifiedAddress): PQueue {
     const cachedQueue = this.sessionQueues.get(id.toString());
     if (cachedQueue) {
       return cachedQueue;
     }
 
-    const freshQueue = this._createSessionQueue();
+    const freshQueue = this.#_createSessionQueue();
     this.sessionQueues.set(id.toString(), freshQueue);
     return freshQueue;
   }
 
   // Identity Queue
 
-  private _createIdentityQueue(): PQueue {
+  #_createIdentityQueue(): PQueue {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
@@ -1083,7 +1067,7 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private _runOnIdentityQueue<T>(
+  #_runOnIdentityQueue<T>(
     serviceId: ServiceIdString,
     zone: Zone,
     name: string,
@@ -1091,12 +1075,12 @@ export class SignalProtocolStore extends EventEmitter {
   ): Promise<T> {
     let queue: PQueue;
 
-    const cachedQueue = this.identityQueues.get(serviceId);
+    const cachedQueue = this.#identityQueues.get(serviceId);
     if (cachedQueue) {
       queue = cachedQueue;
     } else {
-      queue = this._createIdentityQueue();
-      this.identityQueues.set(serviceId, queue);
+      queue = this.#_createIdentityQueue();
+      this.#identityQueues.set(serviceId, queue);
     }
 
     // We run the identity queue task in zone because `saveIdentity` needs to
@@ -1130,10 +1114,10 @@ export class SignalProtocolStore extends EventEmitter {
     const debugName = `withZone(${zone.name}:${name})`;
 
     // Allow re-entering from LibSignalStores
-    if (this.currentZone && this.currentZone !== zone) {
+    if (this.#currentZone && this.#currentZone !== zone) {
       const start = Date.now();
 
-      log.info(`${debugName}: locked by ${this.currentZone.name}, waiting`);
+      log.info(`${debugName}: locked by ${this.#currentZone.name}, waiting`);
 
       return new Promise<T>((resolve, reject) => {
         const callback = async () => {
@@ -1149,33 +1133,35 @@ export class SignalProtocolStore extends EventEmitter {
           }
         };
 
-        this.zoneQueue.push({ zone, callback });
+        this.#zoneQueue.push({ zone, callback });
       });
     }
 
-    this.enterZone(zone, name);
+    this.#enterZone(zone, name);
 
     let result: T;
     try {
       result = await body();
     } catch (error) {
-      if (this.isInTopLevelZone()) {
-        await this.revertZoneChanges(name, error);
+      if (this.#isInTopLevelZone()) {
+        await this.#revertZoneChanges(name, error);
       }
-      this.leaveZone(zone);
+      this.#leaveZone(zone);
       throw error;
     }
 
-    if (this.isInTopLevelZone()) {
-      await this.commitZoneChanges(name);
+    if (this.#isInTopLevelZone()) {
+      await this.#commitZoneChanges(name);
     }
-    this.leaveZone(zone);
+    this.#leaveZone(zone);
 
     return result;
   }
 
-  private async commitZoneChanges(name: string): Promise<void> {
-    const { pendingSenderKeys, pendingSessions, pendingUnprocessed } = this;
+  async #commitZoneChanges(name: string): Promise<void> {
+    const pendingUnprocessed = this.#pendingUnprocessed;
+    const pendingSenderKeys = this.#pendingSenderKeys;
+    const pendingSessions = this.#pendingSessions;
 
     if (
       pendingSenderKeys.size === 0 &&
@@ -1192,9 +1178,9 @@ export class SignalProtocolStore extends EventEmitter {
         `pending unprocessed ${pendingUnprocessed.size}`
     );
 
-    this.pendingSenderKeys = new Map();
-    this.pendingSessions = new Map();
-    this.pendingUnprocessed = new Map();
+    this.#pendingSenderKeys = new Map();
+    this.#pendingSessions = new Map();
+    this.#pendingUnprocessed = new Map();
 
     // Commit both sender keys, sessions and unprocessed in the same database transaction
     //   to unroll both on error.
@@ -1229,28 +1215,28 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private async revertZoneChanges(name: string, error: Error): Promise<void> {
+  async #revertZoneChanges(name: string, error: Error): Promise<void> {
     log.info(
       `revertZoneChanges(${name}): ` +
-        `pending sender keys size ${this.pendingSenderKeys.size}, ` +
-        `pending sessions size ${this.pendingSessions.size}, ` +
-        `pending unprocessed size ${this.pendingUnprocessed.size}`,
+        `pending sender keys size ${this.#pendingSenderKeys.size}, ` +
+        `pending sessions size ${this.#pendingSessions.size}, ` +
+        `pending unprocessed size ${this.#pendingUnprocessed.size}`,
       Errors.toLogFormat(error)
     );
-    this.pendingSenderKeys.clear();
-    this.pendingSessions.clear();
-    this.pendingUnprocessed.clear();
+    this.#pendingSenderKeys.clear();
+    this.#pendingSessions.clear();
+    this.#pendingUnprocessed.clear();
   }
 
-  private isInTopLevelZone(): boolean {
-    return this.currentZoneDepth === 1;
+  #isInTopLevelZone(): boolean {
+    return this.#currentZoneDepth === 1;
   }
 
-  private enterZone(zone: Zone, name: string): void {
-    this.currentZoneDepth += 1;
-    if (this.currentZoneDepth === 1) {
-      assertDev(this.currentZone === undefined, 'Should not be in the zone');
-      this.currentZone = zone;
+  #enterZone(zone: Zone, name: string): void {
+    this.#currentZoneDepth += 1;
+    if (this.#currentZoneDepth === 1) {
+      assertDev(this.#currentZone === undefined, 'Should not be in the zone');
+      this.#currentZone = zone;
 
       if (zone !== GLOBAL_ZONE) {
         log.info(`SignalProtocolStore.enterZone(${zone.name}:${name})`);
@@ -1258,19 +1244,19 @@ export class SignalProtocolStore extends EventEmitter {
     }
   }
 
-  private leaveZone(zone: Zone): void {
-    assertDev(this.currentZone === zone, 'Should be in the correct zone');
+  #leaveZone(zone: Zone): void {
+    assertDev(this.#currentZone === zone, 'Should be in the correct zone');
 
-    this.currentZoneDepth -= 1;
+    this.#currentZoneDepth -= 1;
     assertDev(
-      this.currentZoneDepth >= 0,
+      this.#currentZoneDepth >= 0,
       'Unmatched number of leaveZone calls'
     );
 
     // Since we allow re-entering zones we might actually be in two overlapping
     // async calls. Leave the zone and yield to another one only if there are
     // no active zone users anymore.
-    if (this.currentZoneDepth !== 0) {
+    if (this.#currentZoneDepth !== 0) {
       return;
     }
 
@@ -1278,17 +1264,17 @@ export class SignalProtocolStore extends EventEmitter {
       log.info(`SignalProtocolStore.leaveZone(${zone.name})`);
     }
 
-    this.currentZone = undefined;
+    this.#currentZone = undefined;
 
-    const next = this.zoneQueue.shift();
+    const next = this.#zoneQueue.shift();
     if (!next) {
       return;
     }
 
     const toEnter = [next];
 
-    while (this.zoneQueue[0]?.zone === next.zone) {
-      const elem = this.zoneQueue.shift();
+    while (this.#zoneQueue[0]?.zone === next.zone) {
+      const elem = this.#zoneQueue.shift();
       assertDev(elem, 'Zone element should be present');
 
       toEnter.push(elem);
@@ -1319,8 +1305,8 @@ export class SignalProtocolStore extends EventEmitter {
       const id = qualifiedAddress.toString();
 
       try {
-        const map = this.pendingSessions.has(id)
-          ? this.pendingSessions
+        const map = this.#pendingSessions.has(id)
+          ? this.#pendingSessions
           : this.sessions;
         const entry = map.get(id);
 
@@ -1332,9 +1318,14 @@ export class SignalProtocolStore extends EventEmitter {
           return entry.item;
         }
 
-        // We'll either just hydrate the item or we'll fully migrate the session
-        //   and save it to the database.
-        return await this._maybeMigrateSession(entry.fromDB, { zone });
+        const newItem = {
+          hydrated: true,
+          item: hydrateSession(entry.fromDB),
+          fromDB: entry.fromDB,
+        };
+        map.set(id, newItem);
+
+        return newItem.item;
       } catch (error) {
         const errorString = Errors.toLogFormat(error);
         log.error(`loadSession: failed to load session ${id}: ${errorString}`);
@@ -1356,68 +1347,6 @@ export class SignalProtocolStore extends EventEmitter {
 
       return sessions.filter(isNotNil);
     });
-  }
-
-  private async _maybeMigrateSession(
-    session: SessionType,
-    { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
-  ): Promise<SessionRecord> {
-    if (!this.sessions) {
-      throw new Error('_maybeMigrateSession: this.sessions not yet cached!');
-    }
-
-    // Already migrated, hydrate and update cache
-    if (session.version === 2) {
-      const item = hydrateSession(session);
-
-      const map = this.pendingSessions.has(session.id)
-        ? this.pendingSessions
-        : this.sessions;
-      map.set(session.id, {
-        hydrated: true,
-        item,
-        fromDB: session,
-      });
-
-      return item;
-    }
-
-    // Not yet converted, need to translate to new format and save
-    if (session.version !== undefined) {
-      throw new Error('_maybeMigrateSession: Unknown session version type!');
-    }
-
-    const { ourServiceId } = session;
-
-    const keyPair = this.getIdentityKeyPair(ourServiceId);
-    if (!keyPair) {
-      throw new Error('_maybeMigrateSession: No identity key for ourself!');
-    }
-
-    const localRegistrationId = await this.getLocalRegistrationId(ourServiceId);
-    if (!isNumber(localRegistrationId)) {
-      throw new Error('_maybeMigrateSession: No registration id for ourself!');
-    }
-
-    const localUserData = {
-      identityKeyPublic: keyPair.pubKey,
-      registrationId: localRegistrationId,
-    };
-
-    log.info(`_maybeMigrateSession: Migrating session with id ${session.id}`);
-    const sessionProto = sessionRecordToProtobuf(
-      JSON.parse(session.record),
-      localUserData
-    );
-    const record = SessionRecord.deserialize(
-      Buffer.from(sessionStructureToBytes(sessionProto))
-    );
-
-    await this.storeSession(QualifiedAddress.parse(session.id), record, {
-      zone,
-    });
-
-    return record;
   }
 
   async storeSession(
@@ -1453,7 +1382,7 @@ export class SignalProtocolStore extends EventEmitter {
           conversationId: conversation.id,
           serviceId,
           deviceId,
-          record: record.serialize().toString('base64'),
+          record: record.serialize(),
         };
 
         const newSession = {
@@ -1462,13 +1391,13 @@ export class SignalProtocolStore extends EventEmitter {
           item: record,
         };
 
-        assertDev(this.currentZone, 'Must run in the zone');
+        assertDev(this.#currentZone, 'Must run in the zone');
 
-        this.pendingSessions.set(id, newSession);
+        this.#pendingSessions.set(id, newSession);
 
         // Current zone doesn't support pending sessions - commit immediately
         if (!zone.supportsPendingSessions()) {
-          await this.commitZoneChanges('storeSession');
+          await this.#commitZoneChanges('storeSession');
         }
       } catch (error) {
         const errorString = Errors.toLogFormat(error);
@@ -1484,7 +1413,7 @@ export class SignalProtocolStore extends EventEmitter {
         throw new Error('getOpenDevices: this.sessions not yet cached!');
       }
 
-      return this._getAllSessions().some(
+      return this.#_getAllSessions().some(
         ({ fromDB }) => fromDB.serviceId === serviceId
       );
     });
@@ -1509,7 +1438,7 @@ export class SignalProtocolStore extends EventEmitter {
       try {
         const serviceIdSet = new Set(serviceIds);
 
-        const allSessions = this._getAllSessions();
+        const allSessions = this.#_getAllSessions();
         const entries = allSessions.filter(
           ({ fromDB }) =>
             fromDB.ourServiceId === ourServiceId &&
@@ -1532,9 +1461,7 @@ export class SignalProtocolStore extends EventEmitter {
               return undefined;
             }
 
-            const record = await this._maybeMigrateSession(entry.fromDB, {
-              zone,
-            });
+            const record = hydrateSession(entry.fromDB);
             if (record.hasCurrentState()) {
               return { record, entry };
             }
@@ -1602,7 +1529,7 @@ export class SignalProtocolStore extends EventEmitter {
       try {
         await DataWriter.removeSessionById(id);
         this.sessions.delete(id);
-        this.pendingSessions.delete(id);
+        this.#pendingSessions.delete(id);
       } catch (e) {
         log.error(`removeSession: Failed to delete session for ${id}`);
       }
@@ -1643,7 +1570,7 @@ export class SignalProtocolStore extends EventEmitter {
           const entry = entries[i];
           if (entry.fromDB.conversationId === id) {
             this.sessions.delete(entry.fromDB.id);
-            this.pendingSessions.delete(entry.fromDB.id);
+            this.#pendingSessions.delete(entry.fromDB.id);
           }
         }
 
@@ -1668,7 +1595,7 @@ export class SignalProtocolStore extends EventEmitter {
         const entry = entries[i];
         if (entry.fromDB.serviceId === serviceId) {
           this.sessions.delete(entry.fromDB.id);
-          this.pendingSessions.delete(entry.fromDB.id);
+          this.#pendingSessions.delete(entry.fromDB.id);
         }
       }
 
@@ -1676,7 +1603,7 @@ export class SignalProtocolStore extends EventEmitter {
     });
   }
 
-  private async _archiveSession(entry?: SessionCacheEntry, zone?: Zone) {
+  async #_archiveSession(entry?: SessionCacheEntry, zone?: Zone) {
     if (!entry) {
       return;
     }
@@ -1687,9 +1614,7 @@ export class SignalProtocolStore extends EventEmitter {
       addr,
       `_archiveSession(${addr.toString()})`,
       async () => {
-        const item = entry.hydrated
-          ? entry.item
-          : await this._maybeMigrateSession(entry.fromDB, { zone });
+        const item = entry.hydrated ? entry.item : hydrateSession(entry.fromDB);
 
         if (!item.hasCurrentState()) {
           return;
@@ -1713,9 +1638,9 @@ export class SignalProtocolStore extends EventEmitter {
 
       log.info(`archiveSession: session for ${id}`);
 
-      const entry = this.pendingSessions.get(id) || this.sessions.get(id);
+      const entry = this.#pendingSessions.get(id) || this.sessions.get(id);
 
-      await this._archiveSession(entry);
+      await this.#_archiveSession(entry);
     });
   }
 
@@ -1737,7 +1662,7 @@ export class SignalProtocolStore extends EventEmitter {
 
       const { serviceId, deviceId } = encodedAddress;
 
-      const allEntries = this._getAllSessions();
+      const allEntries = this.#_getAllSessions();
       const entries = allEntries.filter(
         entry =>
           entry.fromDB.serviceId === serviceId &&
@@ -1746,7 +1671,7 @@ export class SignalProtocolStore extends EventEmitter {
 
       await Promise.all(
         entries.map(async entry => {
-          await this._archiveSession(entry, zone);
+          await this.#_archiveSession(entry, zone);
         })
       );
     });
@@ -1760,14 +1685,14 @@ export class SignalProtocolStore extends EventEmitter {
 
       log.info('archiveAllSessions: archiving all sessions for', serviceId);
 
-      const allEntries = this._getAllSessions();
+      const allEntries = this.#_getAllSessions();
       const entries = allEntries.filter(
         entry => entry.fromDB.serviceId === serviceId
       );
 
       await Promise.all(
         entries.map(async entry => {
-          await this._archiveSession(entry);
+          await this.#_archiveSession(entry);
         })
       );
     });
@@ -1778,7 +1703,7 @@ export class SignalProtocolStore extends EventEmitter {
       if (this.sessions) {
         this.sessions.clear();
       }
-      this.pendingSessions.clear();
+      this.#pendingSessions.clear();
       const changes = await DataWriter.removeAllSessions();
       log.info(`clearSessionStore: Removed ${changes} sessions`);
     });
@@ -1897,7 +1822,7 @@ export class SignalProtocolStore extends EventEmitter {
         `to ${newRecord.id}`
     );
 
-    await this._saveIdentityKey(newRecord);
+    await this.#_saveIdentityKey(newRecord);
 
     this.identityKeys.delete(record.fromDB.id);
     const changes = await DataWriter.removeIdentityKeyById(record.fromDB.id);
@@ -1998,7 +1923,7 @@ export class SignalProtocolStore extends EventEmitter {
       log.error('isTrustedForSending: Needs unverified approval!');
       return false;
     }
-    if (this.isNonBlockingApprovalRequired(identityRecord)) {
+    if (this.#isNonBlockingApprovalRequired(identityRecord)) {
       log.error('isTrustedForSending: Needs non-blocking approval!');
       return false;
     }
@@ -2040,7 +1965,7 @@ export class SignalProtocolStore extends EventEmitter {
     return Bytes.toBase64(fingerprint);
   }
 
-  private async _saveIdentityKey(data: IdentityKeyType): Promise<void> {
+  async #_saveIdentityKey(data: IdentityKeyType): Promise<void> {
     if (!this.identityKeys) {
       throw new Error('_saveIdentityKey: this.identityKeys not yet cached!');
     }
@@ -2077,7 +2002,7 @@ export class SignalProtocolStore extends EventEmitter {
       nonblockingApproval = false;
     }
 
-    return this._runOnIdentityQueue(
+    return this.#_runOnIdentityQueue(
       encodedAddress.serviceId,
       zone,
       'saveIdentity',
@@ -2092,7 +2017,7 @@ export class SignalProtocolStore extends EventEmitter {
         if (!identityRecord || !identityRecord.publicKey) {
           // Lookup failed, or the current key was removed, so save this one.
           log.info(`${logId}: Saving new identity...`);
-          await this._saveIdentityKey({
+          await this.#_saveIdentityKey({
             id,
             publicKey,
             firstUse: true,
@@ -2141,7 +2066,7 @@ export class SignalProtocolStore extends EventEmitter {
             verifiedStatus = VerifiedStatus.DEFAULT;
           }
 
-          await this._saveIdentityKey({
+          await this.#_saveIdentityKey({
             id,
             publicKey,
             firstUse: false,
@@ -2173,11 +2098,11 @@ export class SignalProtocolStore extends EventEmitter {
 
           return true;
         }
-        if (this.isNonBlockingApprovalRequired(identityRecord)) {
+        if (this.#isNonBlockingApprovalRequired(identityRecord)) {
           log.info(`${logId}: Setting approval status...`);
 
           identityRecord.nonblockingApproval = nonblockingApproval;
-          await this._saveIdentityKey(identityRecord);
+          await this.#_saveIdentityKey(identityRecord);
 
           return false;
         }
@@ -2188,9 +2113,7 @@ export class SignalProtocolStore extends EventEmitter {
   }
 
   // https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/crypto/storage/SignalBaseIdentityKeyStore.java#L257
-  private isNonBlockingApprovalRequired(
-    identityRecord: IdentityKeyType
-  ): boolean {
+  #isNonBlockingApprovalRequired(identityRecord: IdentityKeyType): boolean {
     return (
       !identityRecord.firstUse &&
       isMoreRecentThan(identityRecord.timestamp, TIMESTAMP_THRESHOLD) &&
@@ -2202,17 +2125,17 @@ export class SignalProtocolStore extends EventEmitter {
     serviceId: ServiceIdString,
     attributes: Partial<IdentityKeyType>
   ): Promise<void> {
-    return this._runOnIdentityQueue(
+    return this.#_runOnIdentityQueue(
       serviceId,
       GLOBAL_ZONE,
       'saveIdentityWithAttributes',
       async () => {
-        return this.saveIdentityWithAttributesOnQueue(serviceId, attributes);
+        return this.#saveIdentityWithAttributesOnQueue(serviceId, attributes);
       }
     );
   }
 
-  private async saveIdentityWithAttributesOnQueue(
+  async #saveIdentityWithAttributesOnQueue(
     serviceId: ServiceIdString,
     attributes: Partial<IdentityKeyType>
   ): Promise<void> {
@@ -2239,7 +2162,7 @@ export class SignalProtocolStore extends EventEmitter {
     };
 
     if (validateIdentityKey(updates)) {
-      await this._saveIdentityKey(updates);
+      await this.#_saveIdentityKey(updates);
     }
   }
 
@@ -2254,7 +2177,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('setApproval: Invalid approval status');
     }
 
-    return this._runOnIdentityQueue(
+    return this.#_runOnIdentityQueue(
       serviceId,
       GLOBAL_ZONE,
       'setApproval',
@@ -2266,7 +2189,7 @@ export class SignalProtocolStore extends EventEmitter {
         }
 
         identityRecord.nonblockingApproval = nonblockingApproval;
-        await this._saveIdentityKey(identityRecord);
+        await this.#_saveIdentityKey(identityRecord);
       }
     );
   }
@@ -2285,7 +2208,7 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('setVerified: Invalid verified status');
     }
 
-    return this._runOnIdentityQueue(
+    return this.#_runOnIdentityQueue(
       serviceId,
       GLOBAL_ZONE,
       'setVerified',
@@ -2297,7 +2220,7 @@ export class SignalProtocolStore extends EventEmitter {
         }
 
         if (validateIdentityKey(identityRecord)) {
-          await this._saveIdentityKey({
+          await this.#_saveIdentityKey({
             ...identityRecord,
             ...extra,
             verified: verifiedStatus,
@@ -2371,7 +2294,7 @@ export class SignalProtocolStore extends EventEmitter {
       `Invalid verified status: ${verifiedStatus}`
     );
 
-    return this._runOnIdentityQueue(
+    return this.#_runOnIdentityQueue(
       serviceId,
       GLOBAL_ZONE,
       'updateIdentityAfterSync',
@@ -2386,7 +2309,7 @@ export class SignalProtocolStore extends EventEmitter {
           keyMatches && verifiedStatus === identityRecord?.verified;
 
         if (!keyMatches || !statusMatches) {
-          await this.saveIdentityWithAttributesOnQueue(serviceId, {
+          await this.#saveIdentityWithAttributesOnQueue(serviceId, {
             publicKey,
             verified: verifiedStatus,
             firstUse: !hadEntry,
@@ -2507,11 +2430,11 @@ export class SignalProtocolStore extends EventEmitter {
     { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
   ): Promise<void> {
     return this.withZone(zone, 'addUnprocessed', async () => {
-      this.pendingUnprocessed.set(data.id, data);
+      this.#pendingUnprocessed.set(data.id, data);
 
       // Current zone doesn't support pending unprocessed - commit immediately
       if (!zone.supportsPendingUnprocessed()) {
-        await this.commitZoneChanges('addUnprocessed');
+        await this.#commitZoneChanges('addUnprocessed');
       }
     });
   }
@@ -2522,11 +2445,11 @@ export class SignalProtocolStore extends EventEmitter {
   ): Promise<void> {
     return this.withZone(zone, 'addMultipleUnprocessed', async () => {
       for (const elem of array) {
-        this.pendingUnprocessed.set(elem.id, elem);
+        this.#pendingUnprocessed.set(elem.id, elem);
       }
       // Current zone doesn't support pending unprocessed - commit immediately
       if (!zone.supportsPendingUnprocessed()) {
-        await this.commitZoneChanges('addMultipleUnprocessed');
+        await this.#commitZoneChanges('addMultipleUnprocessed');
       }
     });
   }
@@ -2572,8 +2495,8 @@ export class SignalProtocolStore extends EventEmitter {
     log.info(`SignalProtocolStore.removeOurOldPni(${oldPni})`);
 
     // Update caches
-    this.ourIdentityKeys.delete(oldPni);
-    this.ourRegistrationIds.delete(oldPni);
+    this.#ourIdentityKeys.delete(oldPni);
+    this.#ourRegistrationIds.delete(oldPni);
 
     const preKeyPrefix = `${oldPni}:`;
     if (this.preKeys) {
@@ -2642,11 +2565,11 @@ export class SignalProtocolStore extends EventEmitter {
     const pniPrivateKey = identityKeyPair.privateKey.serialize();
 
     // Update caches
-    this.ourIdentityKeys.set(pni, {
+    this.#ourIdentityKeys.set(pni, {
       pubKey: pniPublicKey,
       privKey: pniPrivateKey,
     });
-    this.ourRegistrationIds.set(pni, registrationId);
+    this.#ourRegistrationIds.set(pni, registrationId);
 
     // Update database
     await Promise.all<void>([
@@ -2737,8 +2660,8 @@ export class SignalProtocolStore extends EventEmitter {
       return undefined;
     }
 
-    if (this.cachedPniSignatureMessage?.pni === ourPni) {
-      return this.cachedPniSignatureMessage;
+    if (this.#cachedPniSignatureMessage?.pni === ourPni) {
+      return this.#cachedPniSignatureMessage;
     }
 
     const aciKeyPair = this.getIdentityKeyPair(ourAci);
@@ -2757,12 +2680,12 @@ export class SignalProtocolStore extends EventEmitter {
       PrivateKey.deserialize(Buffer.from(pniKeyPair.privKey))
     );
     const aciPubKey = PublicKey.deserialize(Buffer.from(aciKeyPair.pubKey));
-    this.cachedPniSignatureMessage = {
+    this.#cachedPniSignatureMessage = {
       pni: ourPni,
       signature: pniIdentity.signAlternateIdentity(aciPubKey),
     };
 
-    return this.cachedPniSignatureMessage;
+    return this.#cachedPniSignatureMessage;
   }
 
   async verifyAlternateIdentity({
@@ -2792,20 +2715,20 @@ export class SignalProtocolStore extends EventEmitter {
     );
   }
 
-  private _getAllSessions(): Array<SessionCacheEntry> {
+  #_getAllSessions(): Array<SessionCacheEntry> {
     const union = new Map<string, SessionCacheEntry>();
 
     this.sessions?.forEach((value, key) => {
       union.set(key, value);
     });
-    this.pendingSessions.forEach((value, key) => {
+    this.#pendingSessions.forEach((value, key) => {
       union.set(key, value);
     });
 
     return Array.from(union.values());
   }
 
-  private emitLowKeys(ourServiceId: ServiceIdString, source: string) {
+  #emitLowKeys(ourServiceId: ServiceIdString, source: string) {
     const logId = `SignalProtocolStore.emitLowKeys/${source}:`;
     try {
       log.info(`${logId}: Emitting event`);

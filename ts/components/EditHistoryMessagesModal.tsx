@@ -23,10 +23,8 @@ export type PropsType = {
   getPreferredBadge: PreferredBadgeSelectorType;
   i18n: LocalizerType;
   platform: string;
-  kickOffAttachmentDownload: (options: {
-    attachment: AttachmentType;
-    messageId: string;
-  }) => void;
+  kickOffAttachmentDownload: (options: { messageId: string }) => void;
+  cancelAttachmentDownload: (options: { messageId: string }) => void;
   showLightbox: (options: {
     attachment: AttachmentType;
     messageId: string;
@@ -55,6 +53,7 @@ const MESSAGE_DEFAULT_PROPS = {
   renderAudioAttachment: () => <div />,
   renderingContext: 'EditHistoryMessagesModal',
   saveAttachment: shouldNeverBeCalled,
+  saveAttachments: shouldNeverBeCalled,
   scrollToQuotedMessage: shouldNeverBeCalled,
   shouldCollapseAbove: false,
   shouldCollapseBelow: false,
@@ -62,15 +61,18 @@ const MESSAGE_DEFAULT_PROPS = {
   showContactModal: shouldNeverBeCalled,
   showConversation: noop,
   showEditHistoryModal: noop,
+  showAttachmentDownloadStillInProgressToast: shouldNeverBeCalled,
   showExpiredIncomingTapToViewToast: shouldNeverBeCalled,
   showExpiredOutgoingTapToViewToast: shouldNeverBeCalled,
   showLightboxForViewOnceMedia: shouldNeverBeCalled,
+  showMediaNoLongerAvailableToast: shouldNeverBeCalled,
   startConversation: shouldNeverBeCalled,
   textDirection: TextDirection.Default,
   viewStory: shouldNeverBeCalled,
 };
 
 export function EditHistoryMessagesModal({
+  cancelAttachmentDownload,
   closeEditHistoryModal,
   getPreferredBadge,
   editHistoryMessages,
@@ -126,6 +128,7 @@ export function EditHistoryMessagesModal({
           isSpoilerExpanded={revealedSpoilersById[currentMessageId] || {}}
           key={currentMessage.timestamp}
           kickOffAttachmentDownload={kickOffAttachmentDownload}
+          cancelAttachmentDownload={cancelAttachmentDownload}
           messageExpanded={(messageId, displayLimit) => {
             const update = {
               ...displayLimitById,
@@ -189,6 +192,7 @@ export function EditHistoryMessagesModal({
                 i18n={i18n}
                 isSpoilerExpanded={revealedSpoilersById[syntheticId] || {}}
                 kickOffAttachmentDownload={kickOffAttachmentDownload}
+                cancelAttachmentDownload={cancelAttachmentDownload}
                 messageExpanded={(messageId, displayLimit) => {
                   const update = {
                     ...displayLimitById,

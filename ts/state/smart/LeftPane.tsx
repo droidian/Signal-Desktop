@@ -69,7 +69,9 @@ import {
   hasNetworkDialog as getHasNetworkDialog,
 } from '../selectors/network';
 import {
+  getFilterByUnread,
   getHasSearchQuery,
+  getIsActivelySearching,
   getIsSearching,
   getIsSearchingGlobally,
   getQuery,
@@ -97,6 +99,12 @@ import { SmartToastManager } from './ToastManager';
 import type { PropsType as SmartUnsupportedOSDialogPropsType } from './UnsupportedOSDialog';
 import { SmartUnsupportedOSDialog } from './UnsupportedOSDialog';
 import { SmartUpdateDialog } from './UpdateDialog';
+import {
+  cancelBackupMediaDownload,
+  dismissBackupMediaDownloadBanner,
+  pauseBackupMediaDownload,
+  resumeBackupMediaDownload,
+} from '../../util/backupMediaDownload';
 
 function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
@@ -166,7 +174,7 @@ const getModeSpecificProps = (
           ...(searchConversation && searchTerm ? getSearchResults(state) : {}),
         };
       }
-      if (getHasSearchQuery(state)) {
+      if (getIsActivelySearching(state)) {
         const primarySendsSms = Boolean(
           get(state.items, ['primarySendsSms'], false)
         );
@@ -189,6 +197,7 @@ const getModeSpecificProps = (
         searchDisabled: state.network.challengeStatus !== 'idle',
         searchTerm: getQuery(state),
         startSearchCounter: getStartSearchCounter(state),
+        filterByUnread: getFilterByUnread(state),
         ...getLeftPaneLists(state),
       };
     case ComposerStep.StartDirectConversation:
@@ -323,12 +332,13 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   } = useConversationsActions();
   const {
     clearConversationSearch,
-    clearSearch,
+    clearSearchQuery,
     endConversationSearch,
     endSearch,
     searchInConversation,
     startSearch,
     updateSearchTerm,
+    updateFilterByUnread,
   } = useSearchActions();
   const {
     onOutgoingAudioCallInConversation,
@@ -366,10 +376,11 @@ export const SmartLeftPane = memo(function SmartLeftPane({
     <LeftPane
       backupMediaDownloadProgress={backupMediaDownloadProgress}
       blockConversation={blockConversation}
+      cancelBackupMediaDownload={cancelBackupMediaDownload}
       challengeStatus={challengeStatus}
       clearConversationSearch={clearConversationSearch}
       clearGroupCreationError={clearGroupCreationError}
-      clearSearch={clearSearch}
+      clearSearchQuery={clearSearchQuery}
       closeMaximumGroupSizeModal={closeMaximumGroupSizeModal}
       closeRecommendedGroupSizeModal={closeRecommendedGroupSizeModal}
       composeDeleteAvatarFromDisk={composeDeleteAvatarFromDisk}
@@ -377,6 +388,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       composeSaveAvatarToDisk={composeSaveAvatarToDisk}
       crashReportCount={crashReportCount}
       createGroup={createGroup}
+      dismissBackupMediaDownloadBanner={dismissBackupMediaDownloadBanner}
       endConversationSearch={endConversationSearch}
       endSearch={endSearch}
       getPreferredBadge={getPreferredBadge}
@@ -396,6 +408,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       onOutgoingVideoCallInConversation={onOutgoingVideoCallInConversation}
       openUsernameReservationModal={openUsernameReservationModal}
       otherTabsUnreadStats={otherTabsUnreadStats}
+      pauseBackupMediaDownload={pauseBackupMediaDownload}
       preferredWidthFromStorage={preferredWidthFromStorage}
       preloadConversation={preloadConversation}
       removeConversation={removeConversation}
@@ -408,6 +421,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       renderToastManager={renderToastManager}
       renderUnsupportedOSDialog={renderUnsupportedOSDialog}
       renderUpdateDialog={renderUpdateDialog}
+      resumeBackupMediaDownload={resumeBackupMediaDownload}
       savePreferredLeftPaneWidth={savePreferredLeftPaneWidth}
       searchInConversation={searchInConversation}
       selectedConversationId={selectedConversationId}
@@ -438,6 +452,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       updateSearchTerm={updateSearchTerm}
       usernameCorrupted={usernameCorrupted}
       usernameLinkCorrupted={usernameLinkCorrupted}
+      updateFilterByUnread={updateFilterByUnread}
     />
   );
 });

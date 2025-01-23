@@ -43,7 +43,11 @@ import type {
 } from '../../components/conversation/GroupNotification';
 import type { PropsType as ProfileChangeNotificationPropsType } from '../../components/conversation/ProfileChangeNotification';
 
-import { getDomain, isCallLink, isStickerPack } from '../../types/LinkPreview';
+import {
+  getSafeDomain,
+  isCallLink,
+  isStickerPack,
+} from '../../types/LinkPreview';
 import type {
   AciString,
   PniString,
@@ -62,11 +66,7 @@ import type {
   AttachmentForUIType,
   AttachmentType,
 } from '../../types/Attachment';
-import {
-  isVoiceMessage,
-  canBeDownloaded,
-  defaultBlurHash,
-} from '../../types/Attachment';
+import { isVoiceMessage, defaultBlurHash } from '../../types/Attachment';
 import { type DefaultConversationColorType } from '../../types/Colors';
 import { ReadStatus } from '../../messages/MessageReadStatus';
 
@@ -148,11 +148,10 @@ import { CallMode, CallDirection } from '../../types/CallDisposition';
 import { getCallIdFromEra } from '../../util/callDisposition';
 import { LONG_MESSAGE } from '../../types/MIME';
 import type { MessageRequestResponseNotificationData } from '../../components/conversation/MessageRequestResponseNotification';
-import { formatFileSize } from '../../util/formatFileSize';
 
 export { isIncoming, isOutgoing, isStory };
 
-const linkify = LinkifyIt();
+const linkify = new LinkifyIt();
 
 type FormattedContact = Partial<ConversationType> &
   Pick<
@@ -322,7 +321,6 @@ export const getAttachmentsForMessage = ({
   }
   return (
     attachments
-      .filter(attachment => !attachment.error || canBeDownloaded(attachment))
       // Long message attachments are removed from message.attachments quickly,
       // but in case they are still around, let's make sure not to show them
       .filter(attachment => attachment.contentType !== LONG_MESSAGE)
@@ -390,7 +388,7 @@ const getPreviewsForMessage = ({
     ...preview,
     isStickerPack: isStickerPack(preview.url),
     isCallLink: isCallLink(preview.url),
-    domain: getDomain(preview.url),
+    domain: getSafeDomain(preview.url),
     image: preview.image ? getPropsForAttachment(preview.image) : undefined,
   }));
 };
@@ -1833,12 +1831,11 @@ export function getPropsForAttachment(
     return undefined;
   }
 
-  const { path, pending, size, screenshot, thumbnail, thumbnailFromBackup } =
+  const { path, pending, screenshot, thumbnail, thumbnailFromBackup } =
     attachment;
 
   return {
     ...attachment,
-    fileSize: size ? formatFileSize(size) : undefined,
     isVoiceMessage: isVoiceMessage(attachment),
     pending,
     url: path ? getLocalAttachmentUrl(attachment) : undefined,
@@ -2064,15 +2061,19 @@ export function canDownload(
   message: MessageWithUIFieldsType,
   conversationSelector: GetConversationByIdType
 ): boolean {
-  if (isOutgoing(message)) {
-    return true;
-  }
-
   const conversation = getConversation(message, conversationSelector);
   const isAccepted = Boolean(
     conversation && conversation.acceptedMessageRequest
   );
-  if (!isAccepted) {
+  if (isIncoming(message) && !isAccepted) {
+    return false;
+  }
+
+  if (message.sticker) {
+    return false;
+  }
+
+  if (isTapToView(message)) {
     return false;
   }
 
@@ -2082,7 +2083,7 @@ export function canDownload(
     return attachments.every(attachment => Boolean(attachment.path));
   }
 
-  return true;
+  return false;
 }
 
 export function getLastChallengeError(

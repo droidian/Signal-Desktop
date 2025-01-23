@@ -88,7 +88,7 @@ export const AvatarColorMap = new Map([
   ],
 ]);
 
-export const AvatarColors = Array.from(AvatarColorMap.keys());
+export const AvatarColors = Array.from(AvatarColorMap.keys()).sort();
 
 export const AVATAR_COLOR_COUNT = AvatarColors.length;
 
@@ -159,8 +159,8 @@ export const ContactNameColors = [
 export type ContactNameColorType = (typeof ContactNameColors)[number];
 
 export type CustomColorType = {
-  start: { hue: number; saturation: number; luminance?: number };
-  end?: { hue: number; saturation: number; luminance?: number };
+  start: { hue: number; saturation: number; lightness?: number };
+  end?: { hue: number; saturation: number; lightness?: number };
   deg?: number;
 };
 
@@ -187,6 +187,7 @@ export const DEFAULT_CONVERSATION_COLOR: DefaultConversationColorType = {
 export type CustomColorsItemType = {
   readonly colors: Record<string, CustomColorType>;
   readonly version: number;
+  readonly order?: ReadonlyArray<string>;
 };
 
 export function getAvatarColor(color?: AvatarColorType): AvatarColorType {

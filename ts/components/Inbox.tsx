@@ -14,7 +14,7 @@ export type PropsType = {
   envelopeTimestamp: number | undefined;
   hasInitialLoadCompleted: boolean;
   i18n: LocalizerType;
-  isAlpha: boolean;
+  isNightly: boolean;
   isCustomizingPreferredReactions: boolean;
   navTabsCollapsed: boolean;
   onToggleNavTabsCollapse: (navTabsCollapsed: boolean) => unknown;
@@ -32,7 +32,7 @@ export function Inbox({
   envelopeTimestamp,
   hasInitialLoadCompleted,
   i18n,
-  isAlpha,
+  isNightly,
   isCustomizingPreferredReactions,
   navTabsCollapsed,
   onToggleNavTabsCollapse,
@@ -128,7 +128,7 @@ export function Inbox({
     }
 
     let logo: JSX.Element;
-    if (isAlpha) {
+    if (isNightly) {
       const parts = new Array<JSX.Element>();
       parts.push(
         <i key="base" className="Inbox__logo__part Inbox__logo__part--base" />
@@ -150,7 +150,9 @@ export function Inbox({
       }
       logo = <div className="Inbox__logo">{parts}</div>;
     } else {
-      logo = <div className="module-splash-screen__logo module-img--150" />;
+      logo = (
+        <div className="module-splash-screen__logo module-splash-screen__logo--128" />
+      );
     }
 
     return (

@@ -8,15 +8,18 @@ import { useSelector } from 'react-redux';
 import { getIntl } from '../selectors/user';
 import { getUpdatesState } from '../selectors/updates';
 import { getInstallerState } from '../selectors/installer';
+import { useAppActions } from '../ducks/app';
 import { useInstallerActions } from '../ducks/installer';
 import { useUpdatesActions } from '../ducks/updates';
 import { hasExpired as hasExpiredSelector } from '../selectors/expiration';
 import { missingCaseError } from '../../util/missingCaseError';
+import { backupsService } from '../../services/backups';
 import { InstallScreen } from '../../components/InstallScreen';
 import { WidthBreakpoint } from '../../components/_util';
 import { InstallScreenStep } from '../../types/InstallScreen';
 import OS from '../../util/os/osMain';
 import { fileToBytes } from '../../util/fileToBytes';
+import { isStagingServer } from '../../util/isStagingServer';
 import * as log from '../../logging/log';
 import { SmartToastManager } from './ToastManager';
 
@@ -26,8 +29,10 @@ export const SmartInstallScreen = memo(function SmartInstallScreen() {
   const i18n = useSelector(getIntl);
   const installerState = useSelector(getInstallerState);
   const updates = useSelector(getUpdatesState);
-  const { startInstaller, finishInstall } = useInstallerActions();
-  const { startUpdate } = useUpdatesActions();
+  const { openInbox } = useAppActions();
+  const { startInstaller, finishInstall, retryBackupImport } =
+    useInstallerActions();
+  const { startUpdate, forceUpdate } = useUpdatesActions();
   const hasExpired = useSelector(hasExpiredSelector);
 
   const [deviceName, setDeviceName] = useState<string>('');
@@ -36,11 +41,26 @@ export const SmartInstallScreen = memo(function SmartInstallScreen() {
   const onSubmitDeviceName = useCallback(async () => {
     if (backupFile != null) {
       // This is only for testing so don't bother catching errors
-      finishInstall({ deviceName, backupFile: await fileToBytes(backupFile) });
+      finishInstall({
+        deviceName,
+        backupFile: await fileToBytes(backupFile),
+        isLinkAndSync: false,
+      });
     } else {
-      finishInstall({ deviceName, backupFile: undefined });
+      finishInstall({
+        deviceName,
+        backupFile: undefined,
+        isLinkAndSync: false,
+      });
     }
   }, [backupFile, deviceName, finishInstall]);
+
+  const onCancelBackupImport = useCallback((): void => {
+    backupsService.cancelDownload();
+    if (installerState.step === InstallScreenStep.BackupImport) {
+      openInbox();
+    }
+  }, [installerState.step, openInbox]);
 
   const suggestedDeviceName =
     installerState.step === InstallScreenStep.ChoosingDeviceName
@@ -68,8 +88,10 @@ export const SmartInstallScreen = memo(function SmartInstallScreen() {
           updates,
           currentVersion: window.getVersion(),
           startUpdate,
+          forceUpdate,
           retryGetQrCode: startInstaller,
           OS: OS.getName(),
+          isStaging: isStagingServer(),
         },
       };
       break;
@@ -96,8 +118,15 @@ export const SmartInstallScreen = memo(function SmartInstallScreen() {
         step: InstallScreenStep.BackupImport,
         screenSpecificProps: {
           i18n,
-          currentBytes: installerState.currentBytes,
-          totalBytes: installerState.totalBytes,
+          ...installerState,
+          onCancel: onCancelBackupImport,
+          onRetry: retryBackupImport,
+          onRestartLink: startInstaller,
+          updates,
+          currentVersion: window.getVersion(),
+          forceUpdate,
+          startUpdate,
+          OS: OS.getName(),
         },
       };
       break;
