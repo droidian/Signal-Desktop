@@ -401,7 +401,8 @@
       "app-builder-lib": "patches/app-builder-lib.patch",
       "dmg-builder": "patches/dmg-builder.patch",
       "eslint-plugin-better-tailwindcss": "patches/eslint-plugin-better-tailwindcss.patch",
-      "framer-motion@6.5.1": "patches/framer-motion@6.5.1.patch"
+      "framer-motion@6.5.1": "patches/framer-motion@6.5.1.patch",
+      "fs-extra@11.2.0": "patches/fs-extra+11.2.0.patch"
     },
     "onlyBuiltDependencies": [
       "@indutny/mac-screen-share",
