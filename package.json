@@ -398,7 +398,8 @@
       "zod@3.23.8": "patches/zod+3.23.8.patch",
       "app-builder-lib": "patches/app-builder-lib.patch",
       "dmg-builder": "patches/dmg-builder.patch",
-      "eslint-plugin-better-tailwindcss": "patches/eslint-plugin-better-tailwindcss.patch"
+      "eslint-plugin-better-tailwindcss": "patches/eslint-plugin-better-tailwindcss.patch",
+      "fs-extra@11.2.0": "patches/fs-extra+11.2.0.patch"
     },
     "onlyBuiltDependencies": [
       "@indutny/mac-screen-share",
