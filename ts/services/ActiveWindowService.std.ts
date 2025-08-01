@@ -3,6 +3,7 @@
 
 import { SECOND } from '../util/durations/constants.std.ts';
 import { throttle } from '../util/throttle.std.ts';
+import dbus from 'dbus-native';
 
 // Idle timer - you're active for ACTIVE_TIMEOUT after one of these events
 const ACTIVE_TIMEOUT = 15 * SECOND;
@@ -31,6 +32,8 @@ class ActiveWindowService {
   #isInitialized = false;
 
   #isFocused = false;
+  #screenSaverIface = null;
+  #screensaverActive: boolean = false;
   #activeCallbacks: Array<() => void> = [];
   #changeCallbacks: Array<(isActive: boolean) => void> = [];
   #lastActiveEventAt = -Infinity;
@@ -53,6 +56,31 @@ class ActiveWindowService {
     }
     this.#isInitialized = true;
 
+    const sessionBus = dbus.sessionBus();
+    const service = sessionBus.getService('org.gnome.ScreenSaver');
+
+    service.getInterface(
+       '/org/gnome/ScreenSaver',
+       'org.gnome.ScreenSaver',
+       (err: Error | null, iface: any) => {
+         if (err) {
+           log.warn('Failed to connect to org.gnome.ScreenSaver:', err);
+           return;
+         }
+         this.#screenSaverIface = iface;
+
+        iface.GetActive((err: Error | null, active: boolean) => {
+          if (!err) {
+            this.#screensaverActive = active;
+          }
+        });
+
+        iface.on('ActiveChanged', (active: boolean) => {
+          this.#screensaverActive = active;
+        });
+       }
+    );
+
     this.#lastActiveEventAt = Date.now();
 
     const onActiveEvent = this.#onActiveEvent.bind(this);
@@ -67,7 +95,7 @@ class ActiveWindowService {
   }
 
   isActive(): boolean {
-    if (this.#isFocused) {
+    if (this.#isFocused && !this.#screensaverActive) {
       return Date.now() < this.#lastActiveEventAt + ACTIVE_TIMEOUT;
     }
 
@@ -77,9 +105,7 @@ class ActiveWindowService {
     }
 
     return (
-      Date.now() <
-      this.#lastActiveNonFocusingEventAt +
-        ACTIVE_AFTER_NON_FOCUSING_EVENT_TIMEOUT
+      !this.#screensaverActive
     );
   }
 
