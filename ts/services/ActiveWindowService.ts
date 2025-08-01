@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { throttle } from '../util/throttle';
+import dbus from 'dbus-native';
 
 // Idle timer - you're active for ACTIVE_TIMEOUT after one of these events
 const ACTIVE_TIMEOUT = 15 * 1000;
@@ -22,6 +23,8 @@ class ActiveWindowService {
   #isInitialized = false;
 
   #isFocused = false;
+  #screenSaverIface = null;
+  #screensaverActive: boolean = false;
   #activeCallbacks: Array<() => void> = [];
   #changeCallbacks: Array<(isActive: boolean) => void> = [];
   #lastActiveEventAt = -Infinity;
@@ -42,6 +45,31 @@ class ActiveWindowService {
     }
     this.#isInitialized = true;
 
+    const sessionBus = dbus.sessionBus();
+    const service = sessionBus.getService('org.gnome.ScreenSaver');
+
+    service.getInterface(
+       '/org/gnome/ScreenSaver',
+       'org.gnome.ScreenSaver',
+       (err: Error | null, iface: any) => {
+         if (err) {
+           log.warn('Failed to connect to org.gnome.ScreenSaver:', err);
+           return;
+         }
+         this.#screenSaverIface = iface;
+
+        iface.GetActive((err: Error | null, active: boolean) => {
+          if (!err) {
+            this.#screensaverActive = active;
+          }
+        });
+
+        iface.on('ActiveChanged', (active: boolean) => {
+          this.#screensaverActive = active;
+        });
+       }
+    );
+
     this.#lastActiveEventAt = Date.now();
 
     const onActiveEvent = this.#onActiveEvent.bind(this);
@@ -57,7 +85,9 @@ class ActiveWindowService {
 
   isActive(): boolean {
     return (
-      this.#isFocused && Date.now() < this.#lastActiveEventAt + ACTIVE_TIMEOUT
+      !this.#screensaverActive &&
+      this.#isFocused &&
+      Date.now() < this.#lastActiveEventAt + ACTIVE_TIMEOUT
     );
   }
 
