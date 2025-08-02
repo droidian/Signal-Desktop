@@ -7,6 +7,7 @@ import * as os from 'node:os';
 import fsExtra from 'fs-extra';
 import { randomBytes } from 'node:crypto';
 import { createParser } from 'dashdash';
+import dbus from 'dbus-native';
 
 import fastGlob from 'fast-glob';
 import PQueue from 'p-queue';
@@ -174,6 +175,47 @@ const activeWindows = new Set<BrowserWindow>();
 
 function getMainWindow() {
   return mainWindow;
+}
+
+function setupDbus() {
+  const sessionBus = dbus.sessionBus();
+
+  if (!sessionBus) {
+    log.error('Could not connect to D-Bus session bus.');
+    return;
+  }
+
+  const serviceName = 'org.signal.Signal';
+  const objectPath = '/org/signal/Signal';
+  const interfaceName = 'org.signal.Signal';
+
+  sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
+    if (err) {
+      log.error('Failed to request D-Bus name:', err);
+      return;
+    }
+    if (retCode !== 1) {
+      log.error('D-Bus name already taken.');
+      return;
+    }
+
+    const obj = {
+      'org.signal.Signal': {
+        ShowWindow(callback: () => void) {
+          showWindow();
+        },
+      },
+    };
+
+    sessionBus.exportInterface(obj['org.signal.Signal'], objectPath, {
+      name: interfaceName,
+      methods: {
+        ShowWindow: ['', '', [], []],
+      },
+      signals: {},
+      properties: {},
+    });
+  });
 }
 
 const development =
@@ -776,6 +818,8 @@ async function createWindow() {
   if (systemTrayService) {
     systemTrayService.setMainWindow(mainWindow);
   }
+
+  setupDbus();
 
   function saveWindowStats() {
     if (!windowConfig) {
