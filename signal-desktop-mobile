@@ -1,0 +1,9 @@
+#!/bin/sh
+
+gdbus introspect -e -d org.signal.Signal -o /org/signal/Signal >/dev/null 2>&1
+if (( $? == 0 ))
+then
+	gdbus call -e -d org.signal.Signal -o /org/signal/Signal -m org.signal.Signal.ShowWindow
+else
+	/usr/lib/signal-desktop/signal-desktop --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --wayland-text-input-version=3 $@
+fi
