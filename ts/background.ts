@@ -256,6 +256,7 @@ export async function startApp(): Promise<void> {
     i18n: window.i18n,
     storage: window.storage,
   });
+  notificationService.enable();
 
   await initializeMessageCounter();
 
@@ -1932,7 +1933,6 @@ export async function startApp(): Promise<void> {
     onDecryptionErrorQueue.pause();
     onRetryRequestQueue.pause();
     window.Whisper.deliveryReceiptQueue.pause();
-    notificationService.disable();
   }
 
   // 2. After the socket finishes processing any queued messages, restart these queues
@@ -1943,7 +1943,6 @@ export async function startApp(): Promise<void> {
     onDecryptionErrorQueue.start();
     onRetryRequestQueue.start();
     window.Whisper.deliveryReceiptQueue.start();
-    notificationService.enable();
   }
 
   function isSocketOnline() {
