@@ -89,7 +89,6 @@ class NotificationService extends EventEmitter {
 
   public isEnabled = false;
 
-  #lastNotification: null | Notification = null;
   #notificationData: null | NotificationDataType = null;
   #tokenData: { token: string; data: NotificationClickData } | undefined;
 
@@ -198,13 +197,11 @@ class NotificationService extends EventEmitter {
         })
       );
     } else {
-      this.#lastNotification?.close();
-
       const notification = new window.Notification(title, {
         body: OS.isLinux() ? filterNotificationText(message) : message,
         icon: iconUrl,
         silent: true,
-        tag: messageId,
+        tag: conversationId
       });
 
       notification.onclick = () => {
@@ -233,8 +230,6 @@ class NotificationService extends EventEmitter {
           throw missingCaseError(type);
         }
       };
-
-      this.#lastNotification = notification;
     }
 
     if (!silent) {
@@ -317,9 +312,6 @@ class NotificationService extends EventEmitter {
         this.#tokenData = undefined;
         drop(window.IPC.clearAllWindowsNotifications());
       }
-    } else if (this.#lastNotification) {
-      this.#lastNotification.close();
-      this.#lastNotification = null;
     }
 
     // This isn't a boolean because TypeScript isn't smart enough to know that, if
