@@ -53,7 +53,7 @@ export function FunSearch(props: FunSearchProps): JSX.Element {
         onBlur={handleBlur}
         placeholder={props.placeholder}
         // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={shouldAutoFocus}
+        autoFocus={false}
       />
       {props.searchInput !== '' && (
         <button
