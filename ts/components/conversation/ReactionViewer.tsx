@@ -15,14 +15,13 @@ import { emojiToData } from '../emoji/lib';
 import { useEscapeHandling } from '../../hooks/useEscapeHandling';
 import type { ThemeType } from '../../types/Util';
 import {
-  getEmojiParentByKey,
-  getEmojiParentKeyByVariantKey,
   getEmojiVariantByKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
 } from '../fun/data/emojis';
 import { strictAssert } from '../../util/assert';
 import { FunStaticEmoji } from '../fun/FunEmoji';
+import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer';
 
 export type Reaction = {
   emoji: string;
@@ -76,6 +75,7 @@ type ReactionWithEmojiData = Reaction & EmojiData;
 function ReactionViewerEmoji(props: {
   emojiVariantValue: string | undefined;
 }): JSX.Element {
+  const emojiLocalizer = useFunEmojiLocalizer();
   strictAssert(props.emojiVariantValue != null, 'Expected an emoji');
   strictAssert(
     isEmojiVariantValue(props.emojiVariantValue),
@@ -83,14 +83,10 @@ function ReactionViewerEmoji(props: {
   );
   const emojiVariantKey = getEmojiVariantKeyByValue(props.emojiVariantValue);
   const emojiVariant = getEmojiVariantByKey(emojiVariantKey);
-
-  const emojiParentKey = getEmojiParentKeyByVariantKey(emojiVariantKey);
-  const emojiParent = getEmojiParentByKey(emojiParentKey);
-
   return (
     <FunStaticEmoji
       role="img"
-      aria-label={emojiParent.englishShortNameDefault}
+      aria-label={emojiLocalizer.getLocaleShortName(emojiVariantKey)}
       size={18}
       emoji={emojiVariant}
     />
@@ -156,14 +152,17 @@ export const ReactionViewer = React.forwardRef<HTMLDivElement, Props>(
           },
           ...Object.entries(groupedAndSortedReactions)
             .filter(([key]) => key !== 'all')
-            .map(([, [{ short_name: id, emoji }, ...otherReactions]]) => {
+            .map(([, groupedReactions]) => {
+              // Find the local user's reaction first, then fall back to most recent
+              const localUserReaction = groupedReactions.find(r => r.from.isMe);
+              const firstReaction = localUserReaction || groupedReactions[0];
               return {
-                id,
-                index: DEFAULT_EMOJI_ORDER.includes(id)
-                  ? DEFAULT_EMOJI_ORDER.indexOf(id)
+                id: firstReaction.short_name,
+                index: DEFAULT_EMOJI_ORDER.includes(firstReaction.short_name)
+                  ? DEFAULT_EMOJI_ORDER.indexOf(firstReaction.short_name)
                   : Infinity,
-                emoji,
-                count: otherReactions.length + 1,
+                emoji: firstReaction.emoji,
+                count: groupedReactions.length,
               };
             }),
         ].sort((a, b) => a.index - b.index),

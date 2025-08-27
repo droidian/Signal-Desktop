@@ -10,7 +10,9 @@ import { isMockServer } from '../util/isMockServer';
 import { pemToDer } from '../util/pemToDer';
 import { drop } from '../util/drop';
 import { toLogFormat } from '../types/errors';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
+
+const log = createLogger('preconnect');
 
 // Libsignal has internally configured values for domain names
 // (and other connectivity params) of the services.
@@ -38,6 +40,7 @@ function resolveLibsignalNet(
       TESTING_localServer_chatPort: parseInt(getMockServerPort(url), 10),
       TESTING_localServer_cdsiPort: DISCARD_PORT,
       TESTING_localServer_svr2Port: DISCARD_PORT,
+      TESTING_localServer_svrBPort: DISCARD_PORT,
       TESTING_localServer_rootCertificateDer: pemToDer(certificateAuthority),
     });
   }

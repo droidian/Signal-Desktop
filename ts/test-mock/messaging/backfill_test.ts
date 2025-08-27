@@ -16,7 +16,7 @@ import type { App } from '../playwright';
 import { Bootstrap } from '../bootstrap';
 import { sendTextMessage, getTimelineMessageWithText } from '../helpers';
 
-export const debug = createDebug('mock:test:edit');
+export const debug = createDebug('mock:test:backfill');
 
 const FIXTURES_PATH = join(__dirname, '..', '..', '..', 'fixtures');
 
@@ -119,13 +119,13 @@ describe('attachment backfill', function (this: Mocha.Suite) {
       return entry.syncMessage.attachmentBackfillRequest != null;
     });
 
-    assert.strictEqual(
-      request?.targetConversation?.threadServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetConversation?.threadServiceIdBinary,
+      unknownContact.device.aciBinary
     );
-    assert.strictEqual(
-      request?.targetMessage?.authorServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetMessage?.authorServiceIdBinary,
+      unknownContact.device.aciBinary
     );
     assert.strictEqual(
       request?.targetMessage?.sentTimestamp?.toNumber(),
@@ -288,7 +288,7 @@ describe('attachment backfill', function (this: Mocha.Suite) {
     });
     await conversationListItem.getByText('Message Request').click();
 
-    debug('dowloading attachment');
+    debug('downloading attachment');
     const conversationStack = page.locator('.Inbox__conversation-stack');
     const startDownload = conversationStack.getByRole('button', {
       name: 'Start Download',
@@ -302,13 +302,13 @@ describe('attachment backfill', function (this: Mocha.Suite) {
       return entry.syncMessage.attachmentBackfillRequest != null;
     });
 
-    assert.strictEqual(
-      request?.targetConversation?.threadServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetConversation?.threadServiceIdBinary,
+      unknownContact.device.aciBinary
     );
-    assert.strictEqual(
-      request?.targetMessage?.authorServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetMessage?.authorServiceIdBinary,
+      unknownContact.device.aciBinary
     );
     assert.strictEqual(
       request?.targetMessage?.sentTimestamp?.toNumber(),
@@ -380,13 +380,13 @@ describe('attachment backfill', function (this: Mocha.Suite) {
       return entry.syncMessage.attachmentBackfillRequest != null;
     });
 
-    assert.strictEqual(
-      request?.targetConversation?.threadServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetConversation?.threadServiceIdBinary,
+      unknownContact.device.aciBinary
     );
-    assert.strictEqual(
-      request?.targetMessage?.authorServiceId,
-      unknownContact.device.aci
+    assert.deepEqual(
+      request?.targetMessage?.authorServiceIdBinary,
+      unknownContact.device.aciBinary
     );
     assert.strictEqual(
       request?.targetMessage?.sentTimestamp?.toNumber(),
@@ -439,7 +439,7 @@ describe('attachment backfill', function (this: Mocha.Suite) {
       desktop,
       quote: {
         id: Long.fromNumber(bootstrap.getTimestamp()),
-        authorAci: unknownContact.device.aci,
+        authorAciBinary: unknownContact.device.aciRawUuid,
         text: 'quote text',
         attachments: [
           {

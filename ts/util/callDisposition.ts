@@ -40,7 +40,7 @@ import {
 import type { AciString } from '../types/ServiceId';
 import { isAciString } from './isAciString';
 import { isMe } from './whatTypeOfConversation';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import * as Errors from '../types/errors';
 import { incrementMessageCounter } from './incrementMessageCounter';
 import { ReadStatus } from '../messages/MessageReadStatus';
@@ -70,6 +70,8 @@ import { parsePartial, parseStrict } from './schemas';
 import { calling } from '../services/calling';
 import { cleanupMessages } from './cleanup';
 import { MessageModel } from '../models/messages';
+
+const log = createLogger('callDisposition');
 
 // utils
 // -----
@@ -1260,10 +1262,12 @@ async function saveCallHistory({
     );
   });
 
-  conversation.set(
-    'active_at',
-    Math.max(conversation.get('active_at') ?? 0, callHistory.timestamp)
-  );
+  conversation.set({
+    active_at: Math.max(
+      conversation.get('active_at') ?? 0,
+      callHistory.timestamp
+    ),
+  });
 
   if (canConversationBeUnarchived(conversation.attributes)) {
     conversation.setArchived(false);
@@ -1455,7 +1459,7 @@ export async function markAllCallHistoryReadAndSync(
         : Proto.SyncMessage.CallLogEvent.Type.MARKED_AS_READ,
       timestamp: Long.fromNumber(latestCall.timestamp),
       peerId: getBytesForPeerId(latestCall),
-      callId: Long.fromString(latestCall.callId),
+      callId: getCallIdForProto(latestCall),
     });
 
     const syncMessage = MessageSender.createSyncMessage();

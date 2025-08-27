@@ -13,7 +13,7 @@ import {
 import Long from 'long';
 import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup';
 import { LRUCache } from 'lru-cache';
-import * as log from './logging/log';
+import { createLogger } from './logging/log';
 import {
   getCheckedGroupCredentialsForToday,
   maybeFetchNewCredentials,
@@ -106,6 +106,8 @@ import { postSaveUpdates } from './util/cleanup';
 import { MessageModel } from './models/messages';
 import { areWePending } from './util/groupMembershipUtils';
 import { isConversationAccepted } from './util/isConversationAccepted';
+
+const log = createLogger('groups');
 
 type AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 
@@ -1654,7 +1656,7 @@ export async function modifyGroupV2({
         // Fetch credentials only once
         refreshedCredentials = true;
       } else if (error.code === 409) {
-        log.error(
+        log.warn(
           `modifyGroupV2/${logId}: Conflict while updating. Timed out; not retrying.`
         );
         // We don't wait here because we're breaking out of the loop immediately.
@@ -3302,7 +3304,11 @@ async function updateGroup(
   });
 
   if (idChanged) {
-    conversation.trigger('idUpdated', conversation, 'groupId', previousId);
+    window.ConversationController.idUpdated(
+      conversation,
+      'groupId',
+      previousId
+    );
   }
 
   // Save these most recent updates to conversation
@@ -3510,7 +3516,7 @@ async function appendChangeMessages(
   // We updated the message, but didn't add new ones - refresh left pane
   if (!newMessages && mergedMessages.length > 0) {
     await conversation.updateLastMessage();
-    void conversation.updateUnread();
+    conversation.throttledUpdateUnread();
   }
 }
 

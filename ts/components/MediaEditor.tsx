@@ -4,6 +4,7 @@
 import React, {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -27,7 +28,6 @@ import type { LocalizerType } from '../types/Util';
 import type { MIMEType } from '../types/MIME';
 import type { Props as StickerButtonProps } from './stickers/StickerButton';
 import type { imageToBlurHash } from '../util/imageToBlurHash';
-
 import { MediaEditorFabricAnalogTimeSticker } from '../mediaEditor/MediaEditorFabricAnalogTimeSticker';
 import { MediaEditorFabricCropRect } from '../mediaEditor/MediaEditorFabricCropRect';
 import { MediaEditorFabricDigitalTimeSticker } from '../mediaEditor/MediaEditorFabricDigitalTimeSticker';
@@ -40,7 +40,7 @@ import {
   getTextStyleAttributes,
   TextStyle,
 } from '../mediaEditor/util/getTextStyleAttributes';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { Button, ButtonVariant } from './Button';
 import { CompositionInput } from './CompositionInput';
 import { ContextMenu } from './ContextMenu';
@@ -60,7 +60,6 @@ import { hydrateRanges } from '../types/BodyRange';
 import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
 import { useFabricHistory } from '../mediaEditor/useFabricHistory';
 import { usePortal } from '../hooks/usePortal';
-import { useUniqueId } from '../hooks/useUniqueId';
 import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
 import { FunEmojiPicker } from './fun/FunEmojiPicker';
 import { FunEmojiPickerButton, FunStickerPickerButton } from './fun/FunButton';
@@ -69,6 +68,9 @@ import { FunStickerPicker } from './fun/FunStickerPicker';
 import type { FunStickerSelection } from './fun/panels/FunPanelStickers';
 import { drop } from '../util/drop';
 import type { FunTimeStickerStyle } from './fun/constants';
+import * as Errors from '../types/errors';
+
+const log = createLogger('MediaEditor');
 
 export type MediaEditorResultType = Readonly<{
   data: Uint8Array;
@@ -79,6 +81,7 @@ export type MediaEditorResultType = Readonly<{
 }>;
 
 export type PropsType = {
+  isCreatingStory: boolean;
   doneButtonLabel?: string;
   i18n: LocalizerType;
   imageSrc: string;
@@ -153,6 +156,7 @@ export function MediaEditor({
   doneButtonLabel,
   i18n,
   imageSrc,
+  isCreatingStory,
   isSending,
   onClose,
   onDone,
@@ -195,7 +199,7 @@ export function MediaEditor({
 
   const inputApiRef = useRef<InputApi | undefined>();
 
-  const canvasId = useUniqueId();
+  const canvasId = useId();
 
   const [imageState, setImageState] =
     useState<ImageStateType>(INITIAL_IMAGE_STATE);
@@ -237,7 +241,7 @@ export function MediaEditor({
   );
 
   const handlePickSticker = useCallback(
-    (_packId, _stickerId, src: string) => {
+    (_packId: string, _stickerId: number, src: string) => {
       async function run() {
         if (!fabricCanvas) {
           return;
@@ -357,9 +361,20 @@ export function MediaEditor({
       setImageState(newImageState);
       takeSnapshot('initial state', newImageState, canvas);
     };
-    img.onerror = () => {
+    img.onerror = (
+      event: Event | string,
+      source?: string,
+      line?: number,
+      column?: number,
+      error?: Error
+    ) => {
       // This is a bad experience, but it should be impossible.
-      log.error('<MediaEditor>: image failed to load. Closing');
+      log.error(
+        '<MediaEditor>: image failed to load. Closing',
+        event,
+        Errors.toLocation(source, line, column),
+        Errors.toLogFormat(error)
+      );
       onClose();
     };
     img.src = imageSrc;
@@ -371,11 +386,17 @@ export function MediaEditor({
 
   const [editMode, setEditMode] = useState<EditMode | undefined>();
 
-  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard(i18n);
+  const tryClose = useRef<() => void | undefined>();
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'MediaEditor',
+    tryClose,
+  });
 
   const onTryClose = useCallback(() => {
-    confirmDiscardIf(canUndo, onClose);
-  }, [confirmDiscardIf, canUndo, onClose]);
+    confirmDiscardIf(canUndo || isCreatingStory, onClose);
+  }, [confirmDiscardIf, canUndo, isCreatingStory, onClose]);
+  tryClose.current = onTryClose;
 
   // Keyboard support
   useEffect(() => {
@@ -1409,6 +1430,7 @@ export function MediaEditor({
                       onSelectEmoji={handleSelectEmoji}
                       placement="top"
                       theme={ThemeType.dark}
+                      closeOnSelect={false}
                     >
                       <FunEmojiPickerButton i18n={i18n} />
                     </FunEmojiPicker>

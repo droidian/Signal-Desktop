@@ -24,14 +24,14 @@ import type {
 } from '../state/ducks/conversations';
 import { AvatarColors } from '../types/Colors';
 import { generateAci } from '../types/ServiceId';
-import { getDefaultConversation } from '../test-both/helpers/getDefaultConversation';
-import { fakeGetGroupCallVideoFrameSource } from '../test-both/helpers/fakeGetGroupCallVideoFrameSource';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource';
 import { StorySendMode } from '../types/Stories';
 import {
   FAKE_CALL_LINK,
   FAKE_CALL_LINK_WITH_ADMIN_KEY,
   getDefaultCallLinkConversation,
-} from '../test-both/helpers/fakeCallLink';
+} from '../test-helpers/fakeCallLink';
 import { allRemoteParticipants } from './CallScreen.stories';
 import { getPlaceholderContact } from '../state/selectors/conversations';
 
@@ -88,6 +88,7 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   ...storyProps,
   availableCameras: [],
   acceptCall: action('accept-call'),
+  activeNotificationProfile: undefined,
   approveUser: action('approve-user'),
   batchUserAction: action('batch-user-action'),
   bounceAppIconStart: action('bounce-app-icon-start'),
@@ -128,6 +129,7 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   setGroupCallVideoRequest: action('set-group-call-video-request'),
   setIsCallActive: action('set-is-call-active'),
   setLocalAudio: action('set-local-audio'),
+  setLocalAudioRemoteMuted: action('set-local-audio-remote-muted'),
   setLocalPreviewContainer: action('set-local-preview-container'),
   setLocalVideo: action('set-local-video'),
   setRendererCanvas: action('set-renderer-canvas'),

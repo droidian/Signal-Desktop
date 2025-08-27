@@ -30,6 +30,7 @@ if (userData !== undefined) {
   app.setPath('userData', userData);
 }
 
+// Use console.log because logger isn't fully initialized yet
 console.log(`userData: ${app.getPath('userData')}`);
 
 const userDataPath = app.getPath('userData');

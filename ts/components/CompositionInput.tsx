@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as React from 'react';
+import type { MouseEvent } from 'react';
 import classNames from 'classnames';
 import { Manager, Reference } from 'react-popper';
 import Quill, { Delta } from '@signalapp/quill-cjs';
@@ -58,9 +59,7 @@ import { SignalClipboard } from '../quill/signal-clipboard';
 import { DirectionalBlot } from '../quill/block/blot';
 import { getClassNamesFor } from '../util/getClassNamesFor';
 import { isNotNil } from '../util/isNotNil';
-import * as log from '../logging/log';
-import * as Errors from '../types/errors';
-import { useEmojiSearch } from '../hooks/useEmojiSearch';
+import { createLogger } from '../logging/log';
 import type { LinkPreviewForUIType } from '../types/message/LinkPreviews';
 import { StagedLinkPreview } from './conversation/StagedLinkPreview';
 import type { DraftEditMessageType } from '../model-types.d';
@@ -79,6 +78,12 @@ import { dropNull } from '../util/dropNull';
 import { SimpleQuillWrapper } from './SimpleQuillWrapper';
 import type { EmojiSkinTone } from './fun/data/emojis';
 import { FUN_STATIC_EMOJI_CLASS } from './fun/FunEmoji';
+import { useFunEmojiSearch } from './fun/useFunEmojiSearch';
+import type { EmojiCompletionOptions } from '../quill/emoji/completion';
+import { useFunEmojiLocalizer } from './fun/useFunEmojiLocalizer';
+import { MAX_BODY_ATTACHMENT_BYTE_LENGTH } from '../util/longAttachment';
+
+const log = createLogger('CompositionInput');
 
 Quill.register(
   {
@@ -154,7 +159,6 @@ export type Props = Readonly<{
   onCloseLinkPreview?(conversationId: string): unknown;
 }>;
 
-const MAX_LENGTH = 64 * 1024;
 const BASE_CLASS_NAME = 'module-composition-input';
 
 export function CompositionInput(props: Props): React.ReactElement {
@@ -192,7 +196,7 @@ export function CompositionInput(props: Props): React.ReactElement {
   } = props;
 
   const [emojiCompletionElement, setEmojiCompletionElement] =
-    React.useState<JSX.Element>();
+    React.useState<JSX.Element | null>();
   const [formattingChooserElement, setFormattingChooserElement] =
     React.useState<JSX.Element>();
   const [lastSelectionRange, setLastSelectionRange] =
@@ -345,16 +349,14 @@ export function CompositionInput(props: Props): React.ReactElement {
     }
 
     if (!canSendRef.current) {
-      log.warn(
-        'CompositionInput: Not submitting message - cannot send right now'
-      );
+      log.warn('Not submitting message - cannot send right now');
       return;
     }
 
     const { text, bodyRanges } = getTextAndRanges();
 
     log.info(
-      `CompositionInput: Submitting message ${timestamp} with ${bodyRanges.length} ranges`
+      `Submitting message ${timestamp} with ${bodyRanges.length} ranges`
     );
     canSendRef.current = false;
     const didSend = onSubmit(text, bodyRanges, timestamp);
@@ -610,7 +612,7 @@ export function CompositionInput(props: Props): React.ReactElement {
         node.attributes.removeNamedItem('style');
       }
 
-      if (text.length > MAX_LENGTH) {
+      if (Buffer.byteLength(text) > MAX_BODY_ATTACHMENT_BYTE_LENGTH) {
         quill.history.undo();
         propsRef.current.onTextTooLong();
         return;
@@ -694,7 +696,7 @@ export function CompositionInput(props: Props): React.ReactElement {
   React.useEffect(() => {
     const emojiCompletion = emojiCompletionRef.current;
 
-    if (emojiCompletion == null || emojiSkinToneDefault == null) {
+    if (emojiCompletion == null) {
       return;
     }
 
@@ -770,7 +772,8 @@ export function CompositionInput(props: Props): React.ReactElement {
   const callbacksRef = React.useRef(unstaleCallbacks);
   callbacksRef.current = unstaleCallbacks;
 
-  const search = useEmojiSearch(i18n.getLocale());
+  const emojiSearch = useFunEmojiSearch();
+  const emojiLocalizer = useFunEmojiLocalizer();
 
   const reactQuill = React.useMemo(
     () => {
@@ -839,8 +842,9 @@ export function CompositionInput(props: Props): React.ReactElement {
               onPickEmoji: (emoji: EmojiPickDataType) =>
                 callbacksRef.current.onPickEmoji(emoji),
               emojiSkinToneDefault,
-              search,
-            },
+              emojiSearch,
+              emojiLocalizer,
+            } satisfies EmojiCompletionOptions,
             autoSubstituteAsciiEmojis: {
               emojiSkinToneDefault,
             } satisfies AutoSubstituteAsciiEmojisOptions,
@@ -946,30 +950,32 @@ export function CompositionInput(props: Props): React.ReactElement {
   const getClassName = getClassNamesFor(BASE_CLASS_NAME, moduleClassName);
 
   const onMouseDown = React.useCallback(
-    event => {
-      const target = event.target as HTMLElement;
-      try {
-        // If the user is actually clicking the format menu, we drop this event
-        if (target.closest('.module-composition-input__format-menu')) {
-          return;
-        }
-        setIsMouseDown(true);
-
-        const onMouseUp = () => {
-          setIsMouseDown(false);
-          window.removeEventListener('mouseup', onMouseUp);
-        };
-        window.addEventListener('mouseup', onMouseUp);
-      } catch (error) {
-        log.error(
-          'CompositionInput.onMouseDown: Failed to check event target',
-          Errors.toLogFormat(error)
-        );
+    (event: MouseEvent<HTMLDivElement>) => {
+      const { currentTarget } = event;
+      // If the user is actually clicking the format menu, we drop this event
+      if (currentTarget.closest('.module-composition-input__format-menu')) {
+        return;
       }
       setIsMouseDown(true);
     },
     [setIsMouseDown]
   );
+
+  React.useEffect(() => {
+    if (!isMouseDown) {
+      return;
+    }
+
+    function onMouseUp() {
+      setIsMouseDown(false);
+    }
+
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isMouseDown]);
 
   return (
     <Manager>

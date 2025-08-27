@@ -17,12 +17,11 @@ import type {
 import type { MessagePropsType } from '../selectors/message';
 import type { RecipientsByConversation } from './stories';
 import type { SafetyNumberChangeSource } from '../../components/SafetyNumberChangeDialog';
-import type { EditState as ProfileEditorEditState } from '../../components/ProfileEditor';
 import type { StateType as RootStateType } from '../reducer';
 import * as SingleServePromise from '../../services/singleServePromise';
 import * as Stickers from '../../types/Stickers';
 import { UsernameOnboardingState } from '../../types/globalModals';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import {
   getMessagePropsSelector,
   getPropsForAttachment,
@@ -62,6 +61,8 @@ import type { DataPropsType as TapToViewNotAvailablePropsType } from '../../comp
 import type { DataPropsType as BackfillFailureModalPropsType } from '../../components/BackfillFailureModal';
 import type { SmartDraftGifMessageSendModalProps } from '../smart/DraftGifMessageSendModal';
 import { onCriticalIdlePrimaryDeviceModalDismissed } from '../../util/handleServerAlerts';
+
+const log = createLogger('globalModals');
 
 // State
 
@@ -115,6 +116,9 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   criticalIdlePrimaryDeviceModal: boolean;
   deleteMessagesProps?: DeleteMessagesPropsType;
   draftGifMessageSendModalProps: SmartDraftGifMessageSendModalProps | null;
+  debugLogErrorModalProps?: {
+    description?: string;
+  };
   editHistoryMessages?: EditHistoryMessagesType;
   editNicknameAndNoteModalProps: EditNicknameAndNoteModalPropsType | null;
   errorModalProps?: {
@@ -125,13 +129,15 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   forwardMessagesProps?: ForwardMessagesPropsType;
   gv2MigrationProps?: MigrateToGV2PropsType;
   hasConfirmationModal: boolean;
-  isProfileEditorVisible: boolean;
   isProfileNameWarningModalVisible: boolean;
   profileNameWarningModalConversationType?: string;
   isShortcutGuideModalVisible: boolean;
   isSignalConnectionsVisible: boolean;
   isStoriesSettingsVisible: boolean;
   isWhatsNewVisible: boolean;
+  lowDiskSpaceBackupImportModal: {
+    bytesNeeded: number;
+  } | null;
   messageRequestActionsConfirmationProps: MessageRequestActionsConfirmationPropsType | null;
   notePreviewModalProps: NotePreviewModalPropsType | null;
   usernameOnboardingState: UsernameOnboardingState;
@@ -140,8 +146,6 @@ export type GlobalModalsStateType = ReadonlyDeep<{
     requestor: 'call' | 'voiceNote';
     abortController: AbortController;
   };
-  profileEditorHasError: boolean;
-  profileEditorInitialEditState: ProfileEditorEditState | undefined;
   safetyNumberChangedBlockingData?: SafetyNumberChangedBlockingDataType;
   safetyNumberModalContactId?: string;
   stickerPackPreviewId?: string;
@@ -178,9 +182,6 @@ const TOGGLE_DRAFT_GIF_MESSAGE_SEND_MODAL =
 const TOGGLE_FORWARD_MESSAGES_MODAL =
   'globalModals/TOGGLE_FORWARD_MESSAGES_MODAL';
 const TOGGLE_NOTE_PREVIEW_MODAL = 'globalModals/TOGGLE_NOTE_PREVIEW_MODAL';
-const TOGGLE_PROFILE_EDITOR = 'globalModals/TOGGLE_PROFILE_EDITOR';
-export const TOGGLE_PROFILE_EDITOR_ERROR =
-  'globalModals/TOGGLE_PROFILE_EDITOR_ERROR';
 const TOGGLE_PROFILE_NAME_WARNING_MODAL =
   'globalModals/TOGGLE_PROFILE_NAME_WARNING_MODAL';
 const TOGGLE_SAFETY_NUMBER_MODAL = 'globalModals/TOGGLE_SAFETY_NUMBER_MODAL';
@@ -202,6 +203,8 @@ const SHOW_STICKER_PACK_PREVIEW = 'globalModals/SHOW_STICKER_PACK_PREVIEW';
 const CLOSE_STICKER_PACK_PREVIEW = 'globalModals/CLOSE_STICKER_PACK_PREVIEW';
 const CLOSE_ERROR_MODAL = 'globalModals/CLOSE_ERROR_MODAL';
 export const SHOW_ERROR_MODAL = 'globalModals/SHOW_ERROR_MODAL';
+const CLOSE_DEBUG_LOG_ERROR_MODAL = 'globalModals/CLOSE_DEBUG_LOG_ERROR_MODAL';
+const SHOW_DEBUG_LOG_ERROR_MODAL = 'globalModals/SHOW_DEBUG_LOG_ERROR_MODAL';
 const TOGGLE_EDIT_NICKNAME_AND_NOTE_MODAL =
   'globalModals/TOGGLE_EDIT_NICKNAME_AND_NOTE_MODAL';
 const TOGGLE_MESSAGE_REQUEST_ACTIONS_CONFIRMATION =
@@ -222,6 +225,10 @@ const SHOW_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL =
   'globalModals/SHOW_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL';
 const HIDE_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL =
   'globalModals/HIDE_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL';
+const SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL =
+  'globalModals/SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL';
+const HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL =
+  'globalModals/HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL';
 
 export type ContactModalStateType = ReadonlyDeep<{
   contactId: string;
@@ -315,17 +322,6 @@ export type ToggleConfirmLeaveCallModalActionType = ReadonlyDeep<{
 type ToggleNotePreviewModalActionType = ReadonlyDeep<{
   type: typeof TOGGLE_NOTE_PREVIEW_MODAL;
   payload: NotePreviewModalPropsType | null;
-}>;
-
-type ToggleProfileEditorActionType = ReadonlyDeep<{
-  type: typeof TOGGLE_PROFILE_EDITOR;
-  payload: {
-    initialEditState?: ProfileEditorEditState;
-  };
-}>;
-
-export type ToggleProfileEditorErrorActionType = ReadonlyDeep<{
-  type: typeof TOGGLE_PROFILE_EDITOR_ERROR;
 }>;
 
 export type ToggleProfileNameWarningModalActionType = ReadonlyDeep<{
@@ -428,6 +424,17 @@ export type ShowErrorModalActionType = ReadonlyDeep<{
   };
 }>;
 
+type CloseDebugLogErrorModalActionType = ReadonlyDeep<{
+  type: typeof CLOSE_DEBUG_LOG_ERROR_MODAL;
+}>;
+
+type ShowDebugLogErrorModalActionType = ReadonlyDeep<{
+  type: typeof SHOW_DEBUG_LOG_ERROR_MODAL;
+  payload: {
+    description?: string;
+  };
+}>;
+
 type CloseMediaPermissionsModalActionType = ReadonlyDeep<{
   type: typeof CLOSE_MEDIA_PERMISSIONS_MODAL;
 }>;
@@ -447,6 +454,17 @@ type ShowCriticalIdlePrimaryDeviceModalActionType = ReadonlyDeep<{
 
 type HideCriticalIdlePrimaryDeviceModalActionType = ReadonlyDeep<{
   type: typeof HIDE_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL;
+}>;
+
+type ShowLowDiskSpaceBackupImportModalActionType = ReadonlyDeep<{
+  type: typeof SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL;
+  payload: {
+    bytesNeeded: number;
+  };
+}>;
+
+type HideLowDiskSpaceBackupImportModalActionType = ReadonlyDeep<{
+  type: typeof HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL;
 }>;
 
 type ToggleEditNicknameAndNoteModalActionType = ReadonlyDeep<{
@@ -480,6 +498,7 @@ type CloseEditHistoryModalActionType = ReadonlyDeep<{
 
 export type GlobalModalsActionType = ReadonlyDeep<
   | CloseEditHistoryModalActionType
+  | CloseDebugLogErrorModalActionType
   | CloseErrorModalActionType
   | CloseMediaPermissionsModalActionType
   | CloseGV2MigrationDialogActionType
@@ -489,6 +508,7 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | HideBackfillFailureModalActionType
   | HideContactModalActionType
   | HideCriticalIdlePrimaryDeviceModalActionType
+  | HideLowDiskSpaceBackupImportModalActionType
   | HideSendAnywayDialogActiontype
   | HideStoriesSettingsActionType
   | HideTapToViewNotAvailableModalActionType
@@ -501,8 +521,10 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | ShowBackfillFailureModalActionType
   | ShowCriticalIdlePrimaryDeviceModalActionType
   | ShowContactModalActionType
+  | ShowDebugLogErrorModalActionType
   | ShowEditHistoryModalActionType
   | ShowErrorModalActionType
+  | ShowLowDiskSpaceBackupImportModalActionType
   | ShowMediaPermissionsModalActionType
   | ShowSendAnywayDialogActionType
   | ShowShortcutGuideModalActionType
@@ -525,8 +547,6 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | ToggleForwardMessagesModalActionType
   | ToggleMessageRequestActionsConfirmationActionType
   | ToggleNotePreviewModalActionType
-  | ToggleProfileEditorActionType
-  | ToggleProfileEditorErrorActionType
   | ToggleProfileNameWarningModalActionType
   | ToggleSafetyNumberModalActionType
   | ToggleSignalConnectionsModalActionType
@@ -536,6 +556,7 @@ export type GlobalModalsActionType = ReadonlyDeep<
 // Action Creators
 
 export const actions = {
+  closeDebugLogErrorModal,
   closeEditHistoryModal,
   closeErrorModal,
   closeGV2MigrationDialog,
@@ -548,6 +569,7 @@ export const actions = {
   hideBlockingSafetyNumberChangeDialog,
   hideContactModal,
   hideCriticalIdlePrimaryDeviceModal,
+  hideLowDiskSpaceBackupImportModal,
   hideStoriesSettings,
   hideTapToViewNotAvailableModal,
   hideUserNotFoundModal,
@@ -557,9 +579,11 @@ export const actions = {
   showBlockingSafetyNumberChangeDialog,
   showContactModal,
   showCriticalIdlePrimaryDeviceModal,
+  showDebugLogErrorModal,
   showEditHistoryModal,
   showErrorModal,
   showGV2MigrationDialog,
+  showLowDiskSpaceBackupImportModal,
   showShareCallLinkViaSignal,
   showShortcutGuideModal,
   showStickerPackPreview,
@@ -580,8 +604,6 @@ export const actions = {
   toggleForwardMessagesModal,
   toggleMessageRequestActionsConfirmation,
   toggleNotePreviewModal,
-  toggleProfileEditor,
-  toggleProfileEditorHasError,
   toggleProfileNameWarningModal,
   toggleSafetyNumberModal,
   toggleSignalConnectionsModal,
@@ -882,6 +904,7 @@ function showShareCallLinkViaSignal(
     const url = linkCallRoute
       .toWebUrl({
         key: callLink.rootKey,
+        epoch: callLink.epoch,
       })
       .toString();
     dispatch(
@@ -925,16 +948,6 @@ function toggleNotePreviewModal(
     type: TOGGLE_NOTE_PREVIEW_MODAL,
     payload,
   };
-}
-
-function toggleProfileEditor(
-  initialEditState?: ProfileEditorEditState
-): ToggleProfileEditorActionType {
-  return { type: TOGGLE_PROFILE_EDITOR, payload: { initialEditState } };
-}
-
-function toggleProfileEditorHasError(): ToggleProfileEditorErrorActionType {
-  return { type: TOGGLE_PROFILE_EDITOR_ERROR };
 }
 
 function toggleProfileNameWarningModal(
@@ -1102,6 +1115,25 @@ function showErrorModal({
   };
 }
 
+function closeDebugLogErrorModal(): CloseDebugLogErrorModalActionType {
+  return {
+    type: CLOSE_DEBUG_LOG_ERROR_MODAL,
+  };
+}
+
+function showDebugLogErrorModal({
+  description,
+}: {
+  description?: string;
+}): ShowDebugLogErrorModalActionType {
+  return {
+    type: SHOW_DEBUG_LOG_ERROR_MODAL,
+    payload: {
+      description,
+    },
+  };
+}
+
 function closeMediaPermissionsModal(): CloseMediaPermissionsModalActionType {
   return {
     type: CLOSE_MEDIA_PERMISSIONS_MODAL,
@@ -1176,6 +1208,23 @@ function hideCriticalIdlePrimaryDeviceModal(): ThunkAction<
     dispatch({
       type: HIDE_CRITICAL_IDLE_PRIMARY_DEVICE_MODAL,
     });
+  };
+}
+
+function showLowDiskSpaceBackupImportModal(
+  bytesNeeded: number
+): ShowLowDiskSpaceBackupImportModalActionType {
+  return {
+    type: SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL,
+    payload: {
+      bytesNeeded,
+    },
+  };
+}
+
+function hideLowDiskSpaceBackupImportModal(): HideLowDiskSpaceBackupImportModalActionType {
+  return {
+    type: HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL,
   };
 }
 
@@ -1296,16 +1345,14 @@ export function getEmptyState(): GlobalModalsStateType {
     criticalIdlePrimaryDeviceModal: false,
     draftGifMessageSendModalProps: null,
     editNicknameAndNoteModalProps: null,
-    isProfileEditorVisible: false,
     isProfileNameWarningModalVisible: false,
     profileNameWarningModalConversationType: undefined,
     isShortcutGuideModalVisible: false,
     isSignalConnectionsVisible: false,
     isStoriesSettingsVisible: false,
     isWhatsNewVisible: false,
+    lowDiskSpaceBackupImportModal: null,
     usernameOnboardingState: UsernameOnboardingState.NeverShown,
-    profileEditorHasError: false,
-    profileEditorInitialEditState: undefined,
     messageRequestActionsConfirmationProps: null,
     tapToViewNotAvailableModalProps: undefined,
     notePreviewModalProps: null,
@@ -1337,20 +1384,6 @@ export function reducer(
     };
   }
 
-  if (action.type === TOGGLE_PROFILE_EDITOR) {
-    return {
-      ...state,
-      isProfileEditorVisible: !state.isProfileEditorVisible,
-      profileEditorInitialEditState: action.payload.initialEditState,
-    };
-  }
-
-  if (action.type === TOGGLE_PROFILE_EDITOR_ERROR) {
-    return {
-      ...state,
-      profileEditorHasError: !state.profileEditorHasError,
-    };
-  }
   if (action.type === TOGGLE_PROFILE_NAME_WARNING_MODAL) {
     return {
       ...state,
@@ -1597,6 +1630,20 @@ export function reducer(
     };
   }
 
+  if (action.type === CLOSE_DEBUG_LOG_ERROR_MODAL) {
+    return {
+      ...state,
+      debugLogErrorModalProps: undefined,
+    };
+  }
+
+  if (action.type === SHOW_DEBUG_LOG_ERROR_MODAL) {
+    return {
+      ...state,
+      debugLogErrorModalProps: action.payload,
+    };
+  }
+
   if (action.type === TOGGLE_EDIT_NICKNAME_AND_NOTE_MODAL) {
     return {
       ...state,
@@ -1737,6 +1784,20 @@ export function reducer(
     return {
       ...state,
       criticalIdlePrimaryDeviceModal: false,
+    };
+  }
+
+  if (action.type === SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL) {
+    return {
+      ...state,
+      lowDiskSpaceBackupImportModal: action.payload,
+    };
+  }
+
+  if (action.type === HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL) {
+    return {
+      ...state,
+      lowDiskSpaceBackupImportModal: null,
     };
   }
 

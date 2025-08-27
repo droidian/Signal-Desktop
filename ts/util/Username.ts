@@ -14,13 +14,14 @@ export function getMinNickname(): number {
   return parseIntWithFallback(RemoteConfig.getValue('global.nicknames.min'), 3);
 }
 
-const USERNAME_CHARS = /^@?[a-zA-Z0-9]+(.\d+)?$/;
+// Usernames have a minimum length of 3 and maximum of 32
+const USERNAME_CHARS = /^@?[a-zA-Z_][a-zA-Z0-9_]{2,31}(.\d+)?$/;
 const ALL_DIGITS = /^\d+$/;
 
 export function getUsernameFromSearch(searchTerm: string): string | undefined {
-  let modifiedTerm = searchTerm;
+  let modifiedTerm = searchTerm.trim();
 
-  if (ALL_DIGITS.test(searchTerm)) {
+  if (ALL_DIGITS.test(modifiedTerm)) {
     return undefined;
   }
 
@@ -49,7 +50,9 @@ export function getUsernameFromSearch(searchTerm: string): string | undefined {
   }
 }
 
-export function isProbablyAUsername(searchTerm: string): boolean {
+export function isProbablyAUsername(text: string): boolean {
+  const searchTerm = text.trim();
+
   if (searchTerm.startsWith('@')) {
     return true;
   }

@@ -3,7 +3,13 @@
 
 import classNames from 'classnames';
 import { noop } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Ref } from 'react';
 import { ContextMenuTrigger } from 'react-contextmenu';
 import { createPortal } from 'react-dom';
@@ -43,11 +49,14 @@ import {
   useHandleMessageContextMenu,
 } from './MessageContextMenu';
 import { ForwardMessagesModalType } from '../ForwardMessagesModal';
+import { useGroupedAndOrderedReactions } from '../../util/groupAndOrderReactions';
+import { isNotNil } from '../../util/isNotNil';
 
 export type PropsData = {
   canDownload: boolean;
   canCopy: boolean;
   canEditMessage: boolean;
+  canForward: boolean;
   canRetry: boolean;
   canRetryDeleteForEveryone: boolean;
   canReact: boolean;
@@ -96,6 +105,7 @@ export function TimelineMessage(props: Props): JSX.Element {
     canDownload,
     canCopy,
     canEditMessage,
+    canForward,
     canReact,
     canReply,
     canRetry,
@@ -103,15 +113,11 @@ export function TimelineMessage(props: Props): JSX.Element {
     containerElementRef,
     containerWidthBreakpoint,
     conversationId,
-    deletedForEveryone,
     direction,
-    giftBadge,
     i18n,
     id,
     isTargeted,
-    isTapToView,
     kickOffAttachmentDownload,
-    payment,
     copyMessageText,
     pushPanelForConversation,
     reactToMessage,
@@ -194,7 +200,7 @@ export function TimelineMessage(props: Props): JSX.Element {
         target => {
           if (
             target instanceof Element &&
-            target.closest('.FunPopover') != null
+            target.closest('[data-fun-overlay]') != null
           ) {
             return true;
           }
@@ -255,8 +261,6 @@ export function TimelineMessage(props: Props): JSX.Element {
   );
 
   const handleContextMenu = useHandleMessageContextMenu(menuTriggerRef);
-  const canForward =
-    !isTapToView && !deletedForEveryone && !giftBadge && !payment;
 
   const shouldShowAdditional =
     doesMessageBodyOverflow(text || '') || !isWindowWidthNotNarrow;
@@ -287,6 +291,19 @@ export function TimelineMessage(props: Props): JSX.Element {
     openContextMenuKeyboard,
     toggleReactionPickerKeyboard
   );
+
+  const groupedReactions = useGroupedAndOrderedReactions(
+    props.reactions,
+    'variantKey'
+  );
+
+  const messageEmojis = useMemo(() => {
+    return groupedReactions
+      .map(groupedReaction => {
+        return groupedReaction?.[0]?.variantKey;
+      })
+      .filter(isNotNil);
+  }, [groupedReactions]);
 
   const renderMenu = useCallback(() => {
     return (
@@ -325,6 +342,7 @@ export function TimelineMessage(props: Props): JSX.Element {
                     });
                   },
                   renderEmojiPicker,
+                  messageEmojis,
                 })
               }
             </Popper>,
@@ -352,6 +370,7 @@ export function TimelineMessage(props: Props): JSX.Element {
     renderEmojiPicker,
     toggleReactionPicker,
     id,
+    messageEmojis,
   ]);
 
   return (

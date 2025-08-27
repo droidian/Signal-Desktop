@@ -8,8 +8,6 @@ import { clone } from 'lodash';
 import {
   Direction,
   IdentityKeyPair,
-  PrivateKey,
-  PublicKey,
   SenderKeyRecord,
   SessionRecord,
   SignedPreKeyRecord,
@@ -153,28 +151,16 @@ describe('SignalProtocolStore', () => {
   before(async () => {
     store = window.textsecure.storage.protocol;
     await store.hydrateCaches();
-    identityKey = {
-      pubKey: getPublicKey(),
-      privKey: getPrivateKey(),
-    };
-    testKey = {
-      pubKey: getPublicKey(),
-      privKey: getPrivateKey(),
-    };
-
-    setPublicKeyTypeByte(identityKey.pubKey);
-    setPublicKeyTypeByte(testKey.pubKey);
-
-    clampPrivateKey(identityKey.privKey);
-    clampPrivateKey(testKey.privKey);
+    identityKey = IdentityKeyPair.generate();
+    testKey = IdentityKeyPair.generate();
 
     await window.storage.put('registrationIdMap', {
       [ourAci]: 1337,
     });
     await window.storage.put('identityKeyMap', {
       [ourAci]: {
-        privKey: identityKey.privKey,
-        pubKey: identityKey.pubKey,
+        privKey: identityKey.privateKey.serialize(),
+        pubKey: identityKey.publicKey.serialize(),
       },
     });
     await window.storage.fetch();
@@ -182,6 +168,11 @@ describe('SignalProtocolStore', () => {
     window.ConversationController.reset();
     await window.ConversationController.load();
     await window.ConversationController.getOrCreateAndWait(theirAci, 'private');
+  });
+
+  after(async () => {
+    await DataWriter.removeAll();
+    await window.storage.fetch();
   });
 
   describe('getLocalRegistrationId', () => {
@@ -199,8 +190,18 @@ describe('SignalProtocolStore', () => {
         throw new Error('Missing key!');
       }
 
-      assert.isTrue(constantTimeEqual(key.pubKey, identityKey.pubKey));
-      assert.isTrue(constantTimeEqual(key.privKey, identityKey.privKey));
+      assert.isTrue(
+        constantTimeEqual(
+          key.publicKey.serialize(),
+          identityKey.publicKey.serialize()
+        )
+      );
+      assert.isTrue(
+        constantTimeEqual(
+          key.privateKey.serialize(),
+          identityKey.privateKey.serialize()
+        )
+      );
     });
   });
 
@@ -276,28 +277,30 @@ describe('SignalProtocolStore', () => {
     const identifier = new Address(theirAci, 1);
 
     it('stores identity keys', async () => {
-      await store.saveIdentity(identifier, testKey.pubKey);
+      await store.saveIdentity(identifier, testKey.publicKey.serialize());
       const key = await store.loadIdentityKey(theirAci);
       if (!key) {
         throw new Error('Missing key!');
       }
 
-      assert.isTrue(constantTimeEqual(key, testKey.pubKey));
+      assert.isTrue(constantTimeEqual(key, testKey.publicKey.serialize()));
     });
     it('allows key changes', async () => {
       const newIdentity = getPublicKey();
-      await store.saveIdentity(identifier, testKey.pubKey);
+      await store.saveIdentity(identifier, testKey.publicKey.serialize());
       await store.saveIdentity(identifier, newIdentity);
     });
     it('should not deadlock', async () => {
       const newIdentity = getPublicKey();
       const zone = new Zone('zone', {
+        pendingKyberPreKeysToRemove: true,
+        pendingPreKeysToRemove: true,
         pendingSenderKeys: true,
         pendingSessions: true,
         pendingUnprocessed: true,
       });
 
-      await store.saveIdentity(identifier, testKey.pubKey);
+      await store.saveIdentity(identifier, testKey.publicKey.serialize());
 
       const { promise, resolve } = explodePromise<void>();
 
@@ -316,7 +319,7 @@ describe('SignalProtocolStore', () => {
     describe('When there is no existing key (first use)', () => {
       before(async () => {
         await store.removeIdentityKey(theirAci);
-        await store.saveIdentity(identifier, testKey.pubKey);
+        await store.saveIdentity(identifier, testKey.publicKey.serialize());
       });
       it('marks the key firstUse', async () => {
         const identity = await DataReader.getIdentityKeyById(theirAci);
@@ -347,7 +350,7 @@ describe('SignalProtocolStore', () => {
       before(async () => {
         await DataWriter.createOrUpdateIdentityKey({
           id: theirAci,
-          publicKey: testKey.pubKey,
+          publicKey: testKey.publicKey.serialize(),
           firstUse: true,
           timestamp: oldTimestamp,
           nonblockingApproval: false,
@@ -376,7 +379,7 @@ describe('SignalProtocolStore', () => {
         before(async () => {
           await DataWriter.createOrUpdateIdentityKey({
             id: theirAci,
-            publicKey: testKey.pubKey,
+            publicKey: testKey.publicKey.serialize(),
             firstUse: true,
             timestamp: oldTimestamp,
             nonblockingApproval: false,
@@ -398,7 +401,7 @@ describe('SignalProtocolStore', () => {
         before(async () => {
           await DataWriter.createOrUpdateIdentityKey({
             id: theirAci,
-            publicKey: testKey.pubKey,
+            publicKey: testKey.publicKey.serialize(),
             firstUse: true,
             timestamp: oldTimestamp,
             nonblockingApproval: false,
@@ -423,7 +426,7 @@ describe('SignalProtocolStore', () => {
         before(async () => {
           await DataWriter.createOrUpdateIdentityKey({
             id: theirAci,
-            publicKey: testKey.pubKey,
+            publicKey: testKey.publicKey.serialize(),
             firstUse: true,
             timestamp: oldTimestamp,
             nonblockingApproval: false,
@@ -450,7 +453,7 @@ describe('SignalProtocolStore', () => {
       before(async () => {
         await DataWriter.createOrUpdateIdentityKey({
           id: theirAci,
-          publicKey: testKey.pubKey,
+          publicKey: testKey.publicKey.serialize(),
           timestamp: oldTimestamp,
           nonblockingApproval: false,
           firstUse: false,
@@ -469,7 +472,11 @@ describe('SignalProtocolStore', () => {
           await store.hydrateCaches();
         });
         it('nothing changes', async () => {
-          await store.saveIdentity(identifier, testKey.pubKey, true);
+          await store.saveIdentity(
+            identifier,
+            testKey.publicKey.serialize(),
+            true
+          );
 
           const identity = await DataReader.getIdentityKeyById(theirAci);
           if (!identity) {
@@ -502,7 +509,11 @@ describe('SignalProtocolStore', () => {
             await store.hydrateCaches();
           });
           it('sets non-blocking approval', async () => {
-            await store.saveIdentity(identifier, testKey.pubKey, true);
+            await store.saveIdentity(
+              identifier,
+              testKey.publicKey.serialize(),
+              true
+            );
 
             const identity = await DataReader.getIdentityKeyById(theirAci);
             if (!identity) {
@@ -525,7 +536,7 @@ describe('SignalProtocolStore', () => {
       now = Date.now();
       validAttributes = {
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         firstUse: true,
         timestamp: now,
         verified: store.VerifiedStatus.VERIFIED,
@@ -544,7 +555,9 @@ describe('SignalProtocolStore', () => {
         if (!identity) {
           throw new Error('Missing identity!');
         }
-        assert.isTrue(constantTimeEqual(identity.publicKey, testKey.pubKey));
+        assert.isTrue(
+          constantTimeEqual(identity.publicKey, testKey.publicKey.serialize())
+        );
       });
       it('firstUse is saved', async () => {
         const identity = await DataReader.getIdentityKeyById(theirAci);
@@ -627,7 +640,7 @@ describe('SignalProtocolStore', () => {
     async function saveRecordDefault() {
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         firstUse: true,
         timestamp: Date.now(),
         verified: store.VerifiedStatus.DEFAULT,
@@ -646,7 +659,9 @@ describe('SignalProtocolStore', () => {
         }
 
         assert.strictEqual(identity.verified, store.VerifiedStatus.VERIFIED);
-        assert.isTrue(constantTimeEqual(identity.publicKey, testKey.pubKey));
+        assert.isTrue(
+          constantTimeEqual(identity.publicKey, testKey.publicKey.serialize())
+        );
       });
     });
     describe('with the current public key', () => {
@@ -660,7 +675,9 @@ describe('SignalProtocolStore', () => {
         }
 
         assert.strictEqual(identity.verified, store.VerifiedStatus.VERIFIED);
-        assert.isTrue(constantTimeEqual(identity.publicKey, testKey.pubKey));
+        assert.isTrue(
+          constantTimeEqual(identity.publicKey, testKey.publicKey.serialize())
+        );
       });
     });
   });
@@ -677,7 +694,7 @@ describe('SignalProtocolStore', () => {
 
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         timestamp: Date.now() - 10 * 1000 * 60,
         verified: store.VerifiedStatus.DEFAULT,
         firstUse: false,
@@ -749,7 +766,7 @@ describe('SignalProtocolStore', () => {
       const needsNotification = await store.updateIdentityAfterSync(
         theirAci,
         store.VerifiedStatus.VERIFIED,
-        testKey.pubKey
+        testKey.publicKey.serialize()
       );
       assert.isTrue(needsNotification);
       assert.strictEqual(keychangeTriggered, 0);
@@ -759,7 +776,9 @@ describe('SignalProtocolStore', () => {
         throw new Error('Missing identity!');
       }
       assert.strictEqual(identity.verified, store.VerifiedStatus.VERIFIED);
-      assert.isTrue(constantTimeEqual(identity.publicKey, testKey.pubKey));
+      assert.isTrue(
+        constantTimeEqual(identity.publicKey, testKey.publicKey.serialize())
+      );
     });
   });
 
@@ -767,7 +786,7 @@ describe('SignalProtocolStore', () => {
     it('returns false if identity key old enough', async () => {
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         timestamp: Date.now() - 10 * 1000 * 60,
         verified: store.VerifiedStatus.DEFAULT,
         firstUse: false,
@@ -782,7 +801,7 @@ describe('SignalProtocolStore', () => {
     it('returns false if new but nonblockingApproval is true', async () => {
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         timestamp: Date.now(),
         verified: store.VerifiedStatus.DEFAULT,
         firstUse: false,
@@ -797,7 +816,7 @@ describe('SignalProtocolStore', () => {
     it('returns false if new but firstUse is true', async () => {
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         timestamp: Date.now(),
         verified: store.VerifiedStatus.DEFAULT,
         firstUse: true,
@@ -812,7 +831,7 @@ describe('SignalProtocolStore', () => {
     it('returns true if new, and no flags are set', async () => {
       await DataWriter.createOrUpdateIdentityKey({
         id: theirAci,
-        publicKey: testKey.pubKey,
+        publicKey: testKey.publicKey.serialize(),
         timestamp: Date.now(),
         verified: store.VerifiedStatus.DEFAULT,
         firstUse: false,
@@ -840,14 +859,18 @@ describe('SignalProtocolStore', () => {
     describe('When invalid direction is given', () => {
       it('should fail', async () => {
         await assert.isRejected(
-          store.isTrustedIdentity(identifier, testKey.pubKey, 'dir' as any)
+          store.isTrustedIdentity(
+            identifier,
+            testKey.publicKey.serialize(),
+            'dir' as any
+          )
         );
       });
     });
     describe('When direction is RECEIVING', () => {
       it('always returns true', async () => {
         const newIdentity = getPublicKey();
-        await store.saveIdentity(identifier, testKey.pubKey);
+        await store.saveIdentity(identifier, testKey.publicKey.serialize());
 
         const trusted = await store.isTrustedIdentity(
           identifier,
@@ -879,7 +902,7 @@ describe('SignalProtocolStore', () => {
       });
       describe('When there is an existing key', () => {
         before(async () => {
-          await store.saveIdentity(identifier, testKey.pubKey);
+          await store.saveIdentity(identifier, testKey.publicKey.serialize());
         });
         describe('When the existing key is different', () => {
           it('returns false', async () => {
@@ -939,8 +962,12 @@ describe('SignalProtocolStore', () => {
         privKey: key.privateKey().serialize(),
       };
 
-      assert.isTrue(constantTimeEqual(keyPair.pubKey, testKey.pubKey));
-      assert.isTrue(constantTimeEqual(keyPair.privKey, testKey.privKey));
+      assert.isTrue(
+        constantTimeEqual(keyPair.pubKey, testKey.publicKey.serialize())
+      );
+      assert.isTrue(
+        constantTimeEqual(keyPair.privKey, testKey.privateKey.serialize())
+      );
     });
   });
   describe('removePreKey', () => {
@@ -967,8 +994,12 @@ describe('SignalProtocolStore', () => {
         privKey: key.privateKey().serialize(),
       };
 
-      assert.isTrue(constantTimeEqual(keyPair.pubKey, testKey.pubKey));
-      assert.isTrue(constantTimeEqual(keyPair.privKey, testKey.privKey));
+      assert.isTrue(
+        constantTimeEqual(keyPair.pubKey, testKey.publicKey.serialize())
+      );
+      assert.isTrue(
+        constantTimeEqual(keyPair.privKey, testKey.privateKey.serialize())
+      );
     });
   });
   describe('removeSignedPreKey', () => {
@@ -1201,6 +1232,8 @@ describe('SignalProtocolStore', () => {
   describe('zones', () => {
     const distributionId = generateUuid();
     const zone = new Zone('zone', {
+      pendingKyberPreKeysToRemove: true,
+      pendingPreKeysToRemove: true,
       pendingSenderKeys: true,
       pendingSessions: true,
       pendingUnprocessed: true,
@@ -1541,19 +1574,13 @@ describe('SignalProtocolStore', () => {
 
       const newIdentity = IdentityKeyPair.generate();
 
-      const data = generateSignedPreKey(
-        {
-          pubKey: newIdentity.publicKey.serialize(),
-          privKey: newIdentity.privateKey.serialize(),
-        },
-        8201
-      );
+      const data = generateSignedPreKey(newIdentity, 8201);
       const createdAt = Date.now() - 1241;
       const signedPreKey = SignedPreKeyRecord.new(
         data.keyId,
         createdAt,
-        PublicKey.deserialize(Buffer.from(data.keyPair.pubKey)),
-        PrivateKey.deserialize(Buffer.from(data.keyPair.privKey)),
+        data.keyPair.publicKey,
+        data.keyPair.privateKey,
         Buffer.from(data.signature)
       );
 
@@ -1577,12 +1604,15 @@ describe('SignalProtocolStore', () => {
       }
       assert.isTrue(
         Bytes.areEqual(
-          storedIdentity.privKey,
+          storedIdentity.privateKey.serialize(),
           newIdentity.privateKey.serialize()
         )
       );
       assert.isTrue(
-        Bytes.areEqual(storedIdentity.pubKey, newIdentity.publicKey.serialize())
+        Bytes.areEqual(
+          storedIdentity.publicKey.serialize(),
+          newIdentity.publicKey.serialize()
+        )
       );
 
       const storedSignedPreKey = await store.loadSignedPreKey(newPni, 8201);
@@ -1592,13 +1622,13 @@ describe('SignalProtocolStore', () => {
       assert.isTrue(
         Bytes.areEqual(
           storedSignedPreKey.publicKey().serialize(),
-          data.keyPair.pubKey
+          data.keyPair.publicKey.serialize()
         )
       );
       assert.isTrue(
         Bytes.areEqual(
           storedSignedPreKey.privateKey().serialize(),
-          data.keyPair.privKey
+          data.keyPair.privateKey.serialize()
         )
       );
       assert.strictEqual(storedSignedPreKey.timestamp(), createdAt);

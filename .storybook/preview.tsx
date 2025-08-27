@@ -3,10 +3,10 @@
 
 import '../ts/window.d.ts';
 
-import React from 'react';
+import React, { StrictMode } from 'react';
 
-import 'sanitize.css';
 import '../stylesheets/manifest.scss';
+import '../stylesheets/tailwind-config.css';
 
 import * as styles from './styles.scss';
 import messages from '../_locales/en/messages.json';
@@ -23,6 +23,11 @@ import {
   createScrollerLock,
 } from '../ts/hooks/useScrollLock';
 import { Environment, setEnvironment } from '../ts/environment.ts';
+import { parseUnknown } from '../ts/util/schemas.ts';
+import { LocaleEmojiListSchema } from '../ts/types/emoji.ts';
+import { FunProvider } from '../ts/components/fun/FunProvider.tsx';
+import { EmojiSkinTone } from '../ts/components/fun/data/emojis.ts';
+import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.tsx';
 
 setEnvironment(Environment.Development, true);
 
@@ -132,6 +137,8 @@ window.SignalContext = {
     return result;
   },
 
+  getVersion: () => '7.61.0',
+
   // For test-runner
   _skipAnimation: () => {
     Globals.assign({
@@ -147,6 +154,25 @@ window.ConversationController = window.ConversationController || {};
 window.ConversationController.isSignalConversationId = () => false;
 window.ConversationController.onConvoMessageMount = noop;
 window.reduxStore = mockStore;
+window.Signal = {
+  Services: {
+    beforeNavigate: {
+      registerCallback: () => undefined,
+      unregisterCallback: () => undefined,
+      shouldCancelNavigation: () => {
+        throw new Error('Not implemented');
+      },
+    },
+  },
+};
+
+function withStrictMode(Story, context) {
+  return (
+    <StrictMode>
+      <Story {...context} />
+    </StrictMode>
+  );
+}
 
 const withGlobalTypesProvider = (Story, context) => {
   const theme =
@@ -206,10 +232,34 @@ function withScrollLockProvider(Story, context) {
   );
 }
 
+function withFunProvider(Story, context) {
+  return (
+    <FunProvider
+      i18n={window.SignalContext.i18n}
+      recentEmojis={[]}
+      recentStickers={[]}
+      recentGifs={[]}
+      emojiSkinToneDefault={EmojiSkinTone.None}
+      onEmojiSkinToneDefaultChange={noop}
+      installedStickerPacks={[]}
+      showStickerPickerHint={false}
+      onClearStickerPickerHint={noop}
+      onOpenCustomizePreferredReactionsModal={noop}
+      fetchGifsSearch={() => Promise.resolve(MOCK_GIFS_PAGINATED_ONE_PAGE)}
+      fetchGifsFeatured={() => Promise.resolve(MOCK_GIFS_PAGINATED_ONE_PAGE)}
+      fetchGif={() => Promise.resolve(new Blob([new Uint8Array(1)]))}
+    >
+      <Story {...context} />
+    </FunProvider>
+  );
+}
+
 export const decorators = [
+  withStrictMode,
   withGlobalTypesProvider,
   withMockStoreProvider,
   withScrollLockProvider,
+  withFunProvider,
 ];
 
 export const parameters = {

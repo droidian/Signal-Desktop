@@ -1,6 +1,6 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { CSSProperties, MouseEvent } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import React, {
   memo,
   useCallback,
@@ -55,10 +55,10 @@ import {
   FunSubNavScroller,
 } from '../base/FunSubNav';
 import {
+  type EmojiParentKey,
   emojiVariantConstant,
   getEmojiParentKeyByValue,
   isEmojiParentValue,
-  useEmojiSearch,
 } from '../data/emojis';
 import { FunKeyboard } from '../keyboard/FunKeyboard';
 import type { GridKeyboardState } from '../keyboard/GridKeyboardDelegate';
@@ -82,6 +82,7 @@ import {
 import { FunSticker } from '../FunSticker';
 import { getAnalogTime } from '../../../util/getAnalogTime';
 import { getDateTimeFormatter } from '../../../util/formatTimestamp';
+import { useFunEmojiSearch } from '../useFunEmojiSearch';
 
 const STICKER_GRID_COLUMNS = 4;
 const STICKER_GRID_CELL_WIDTH = 80;
@@ -136,6 +137,23 @@ function toGridSectionNode(
   };
 }
 
+function getSelectedSection(
+  hasSearchQuery: boolean,
+  hasRecentStickers: boolean,
+  firstInstalledStickerPack: StickerPackType | null
+): FunStickersSection {
+  if (hasSearchQuery) {
+    return FunSectionCommon.SearchResults;
+  }
+  if (hasRecentStickers) {
+    return FunSectionCommon.Recents;
+  }
+  if (firstInstalledStickerPack != null) {
+    return toFunStickersPackSection(firstInstalledStickerPack);
+  }
+  return FunStickersSectionBase.StickersSetup;
+}
+
 function getTitleForSection(
   i18n: LocalizerType,
   section: FunStickersSection,
@@ -185,12 +203,11 @@ export function FunPanelStickers({
   const fun = useFunContext();
   const {
     i18n,
-    searchInput,
-    onSearchInputChange,
-    selectedStickersSection,
-    onChangeSelectedStickersSection,
+    storedSearchInput,
+    onStoredSearchInputChange,
     recentStickers,
     installedStickerPacks,
+    onSelectSticker: onFunSelectSticker,
   } = fun;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -220,13 +237,29 @@ export function FunPanelStickers({
   }, [recentStickers, installedStickerPacks]);
 
   const [focusedCellKey, setFocusedCellKey] = useState<CellKey | null>(null);
-
-  const searchEmojis = useEmojiSearch(i18n);
+  const [searchInput, setSearchInput] = useState(storedSearchInput);
   const searchQuery = useMemo(() => searchInput.trim(), [searchInput]);
+
+  const [selectedSection, setSelectedSection] = useState(() => {
+    const hasSearchQuery = searchQuery !== '';
+    const hasRecentStickers = recentStickers.length > 0;
+    const firstInstalledStickerPack = installedStickerPacks.at(0) ?? null;
+    return getSelectedSection(
+      hasSearchQuery,
+      hasRecentStickers,
+      firstInstalledStickerPack
+    );
+  });
+
+  const searchEmojis = useFunEmojiSearch();
 
   const sections = useMemo(() => {
     if (searchQuery !== '') {
-      const emojiKeys = new Set(searchEmojis(searchQuery));
+      const emojiKeys = new Set<EmojiParentKey>();
+
+      for (const result of searchEmojis(searchQuery)) {
+        emojiKeys.add(result.parentKey);
+      }
 
       const allStickers = installedStickerPacks.flatMap(pack => pack.stickers);
       const matchingStickers = allStickers.filter(sticker => {
@@ -299,56 +332,69 @@ export function FunPanelStickers({
     return new GridKeyboardDelegate(virtualizer, layout);
   }, [virtualizer, layout]);
 
+  const handleSearchInputChange = useCallback(
+    (nextSearchInput: string) => {
+      const hasSearchQuery = nextSearchInput.trim() !== '';
+      const hasRecentStickers = recentStickers.length > 0;
+      const firstInstalledStickerPack = installedStickerPacks.at(0) ?? null;
+      setSelectedSection(
+        getSelectedSection(
+          hasSearchQuery,
+          hasRecentStickers,
+          firstInstalledStickerPack
+        )
+      );
+      setSearchInput(nextSearchInput);
+      onStoredSearchInputChange(nextSearchInput);
+    },
+    [onStoredSearchInputChange, recentStickers, installedStickerPacks]
+  );
+
   const handleSelectSection = useCallback(
     (section: FunStickersSection) => {
       const layoutSection = layout.sections.find(s => s.id === section);
       strictAssert(layoutSection != null, `Missing section to for ${section}`);
-      onChangeSelectedStickersSection(section);
+      setSelectedSection(section);
+      setSearchInput('');
       virtualizer.scrollToOffset(layoutSection.header.item.start, {
         align: 'start',
       });
     },
-    [virtualizer, layout, onChangeSelectedStickersSection]
+    [virtualizer, layout]
   );
 
-  const handleScrollSectionChange = useCallback(
-    (sectionId: string) => {
-      onChangeSelectedStickersSection(sectionId as FunStickersSection);
-    },
-    [onChangeSelectedStickersSection]
-  );
+  const handleScrollSectionChange = useCallback((sectionId: string) => {
+    setSelectedSection(sectionId as FunStickersSection);
+  }, []);
 
-  const handleKeyboardStateChange = useCallback(
-    (state: GridKeyboardState) => {
-      if (state.cell == null) {
-        setFocusedCellKey(null);
-        return;
-      }
+  const handleKeyboardStateChange = useCallback((state: GridKeyboardState) => {
+    if (state.cell == null) {
+      setFocusedCellKey(null);
+      return;
+    }
 
-      setFocusedCellKey(state.cell.cellKey ?? null);
-      onChangeSelectedStickersSection(
-        state.cell?.sectionKey as FunStickersSection
-      );
-    },
-    [onChangeSelectedStickersSection]
-  );
+    setFocusedCellKey(state.cell.cellKey ?? null);
+    setSelectedSection(state.cell?.sectionKey as FunStickersSection);
+  }, []);
 
   const hasSearchQuery = useMemo(() => {
     return searchInput.length > 0;
   }, [searchInput]);
 
-  const handlePressSticker = useCallback(
-    (event: MouseEvent, stickerSelection: FunStickerSelection) => {
+  const handleClickSticker = useCallback(
+    (event: PointerEvent, stickerSelection: FunStickerSelection) => {
+      onFunSelectSticker(stickerSelection);
       onSelectSticker(stickerSelection);
       if (!(event.ctrlKey || event.metaKey)) {
+        setFocusedCellKey(null);
         onClose();
       }
     },
-    [onSelectSticker, onClose]
+    [onFunSelectSticker, onSelectSticker, onClose]
   );
 
-  const handlePressTimeSticker = useCallback(
-    (event: MouseEvent, style: FunTimeStickerStyle) => {
+  const handleClickTimeSticker = useCallback(
+    (event: PointerEvent, style: FunTimeStickerStyle) => {
       onSelectTimeSticker?.(style);
       if (!(event.ctrlKey || event.metaKey)) {
         onClose();
@@ -363,7 +409,7 @@ export function FunPanelStickers({
         <FunSearch
           i18n={i18n}
           searchInput={searchInput}
-          onSearchInputChange={onSearchInputChange}
+          onSearchInputChange={handleSearchInputChange}
           placeholder={i18n('icu:FunPanelStickers__SearchPlaceholder')}
           aria-label={i18n('icu:FunPanelStickers__SearchLabel')}
         />
@@ -372,10 +418,10 @@ export function FunPanelStickers({
         <FunPanelFooter>
           <FunSubNav>
             <FunSubNavScroller>
-              {selectedStickersSection != null && (
+              {selectedSection != null && (
                 <FunSubNavListBox
                   aria-label={i18n('icu:FunPanelSticker__SubNavLabel')}
-                  selected={selectedStickersSection}
+                  selected={selectedSection}
                   onSelect={handleSelectSection}
                 >
                   {recentStickers.length > 0 && (
@@ -483,8 +529,8 @@ export function FunPanelStickers({
                               cells={row.cells}
                               stickerLookup={stickerLookup}
                               focusedCellKey={focusedCellKey}
-                              onPressSticker={handlePressSticker}
-                              onPressTimeSticker={handlePressTimeSticker}
+                              onClickSticker={handleClickSticker}
+                              onClickTimeSticker={handleClickTimeSticker}
                             />
                           );
                         })}
@@ -506,11 +552,11 @@ const Row = memo(function Row(props: {
   stickerLookup: StickerLookup;
   cells: ReadonlyArray<CellLayoutNode>;
   focusedCellKey: CellKey | null;
-  onPressSticker: (
-    event: MouseEvent,
+  onClickSticker: (
+    event: PointerEvent,
     stickerSelection: FunStickerSelection
   ) => void;
-  onPressTimeSticker: (event: MouseEvent, style: FunTimeStickerStyle) => void;
+  onClickTimeSticker: (event: PointerEvent, style: FunTimeStickerStyle) => void;
 }): JSX.Element {
   return (
     <FunGridRow rowIndex={props.rowIndex}>
@@ -528,8 +574,8 @@ const Row = memo(function Row(props: {
             colIndex={cell.colIndex}
             stickerLookup={props.stickerLookup}
             isTabbable={isTabbable}
-            onPressSticker={props.onPressSticker}
-            onPressTimeSticker={props.onPressTimeSticker}
+            onClickSticker={props.onClickSticker}
+            onClickTimeSticker={props.onClickTimeSticker}
           />
         );
       })}
@@ -544,28 +590,28 @@ const Cell = memo(function Cell(props: {
   rowIndex: number;
   stickerLookup: StickerLookup;
   isTabbable: boolean;
-  onPressSticker: (
-    event: MouseEvent,
+  onClickSticker: (
+    event: PointerEvent,
     stickerSelection: FunStickerSelection
   ) => void;
-  onPressTimeSticker: (event: MouseEvent, style: FunTimeStickerStyle) => void;
+  onClickTimeSticker: (event: PointerEvent, style: FunTimeStickerStyle) => void;
 }): JSX.Element {
-  const { onPressSticker, onPressTimeSticker } = props;
+  const { onClickSticker, onClickTimeSticker } = props;
   const stickerLookupItem = props.stickerLookup[props.value];
 
   const handleClick = useCallback(
-    (event: MouseEvent) => {
+    (event: PointerEvent) => {
       if (stickerLookupItem.kind === 'sticker') {
-        onPressSticker(event, {
+        onClickSticker(event, {
           stickerPackId: stickerLookupItem.sticker.packId,
           stickerId: stickerLookupItem.sticker.id,
           stickerUrl: stickerLookupItem.sticker.url,
         });
       } else if (stickerLookupItem.kind === 'timeSticker') {
-        onPressTimeSticker(event, stickerLookupItem.style);
+        onClickTimeSticker(event, stickerLookupItem.style);
       }
     },
-    [stickerLookupItem, onPressSticker, onPressTimeSticker]
+    [stickerLookupItem, onClickSticker, onClickTimeSticker]
   );
 
   return (
@@ -575,7 +621,7 @@ const Cell = memo(function Cell(props: {
       rowIndex={props.rowIndex}
     >
       <FunItemButton
-        tabIndex={props.isTabbable ? 0 : -1}
+        excludeFromTabOrder={!props.isTabbable}
         aria-label={
           stickerLookupItem.kind === 'sticker'
             ? (stickerLookupItem.sticker.emoji ?? '')

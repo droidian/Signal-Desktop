@@ -32,9 +32,10 @@ export type CoreAttachmentDownloadJobType = {
   attachmentType: AttachmentDownloadJobTypeType;
   ciphertextSize: number;
   contentType: MIMEType;
-  digest: string;
+  attachmentSignature: string;
   isManualDownload?: boolean;
   messageId: string;
+  originalSource: AttachmentDownloadSource;
   receivedAt: number;
   sentAt: number;
   size: number;
@@ -51,10 +52,11 @@ export const coreAttachmentDownloadJobSchema = z.object({
   attachmentType: attachmentDownloadTypeSchema,
   ciphertextSize: z.number(),
   contentType: MIMETypeSchema,
-  digest: z.string(),
+  attachmentSignature: z.string(),
   isManualDownload: z.boolean().optional(),
   messageId: z.string(),
   messageIdForLogging: z.string().optional(),
+  originalSource: z.nativeEnum(AttachmentDownloadSource),
   receivedAt: z.number(),
   sentAt: z.number(),
   size: z.number(),

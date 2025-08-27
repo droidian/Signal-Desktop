@@ -16,10 +16,14 @@ import type { ShowStickerPackPreviewActionType } from './globalModals';
 import type { ShowToastActionType } from './toast';
 import type { StateType as RootStateType } from '../reducer';
 
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { getMessageById } from '../../messages/getMessageById';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d';
-import { isGIF, isIncremental } from '../../types/Attachment';
+import {
+  getUndownloadedAttachmentSignature,
+  isGIF,
+  isIncremental,
+} from '../../types/Attachment';
 import {
   isImageTypeSupported,
   isVideoTypeSupported,
@@ -42,9 +46,11 @@ import { useBoundActions } from '../../hooks/useBoundActions';
 import { DataReader } from '../../sql/Client';
 import { deleteDownloadsJobQueue } from '../../jobs/deleteDownloadsJobQueue';
 import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
+import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../../util/queueAttachmentDownloads';
 import { getMessageIdForLogging } from '../../util/idForLogging';
 import { markViewOnceMessageViewed } from '../../services/MessageUpdater';
+
+const log = createLogger('lightbox');
 
 // eslint-disable-next-line local-rules/type-alias-readonlydeep
 export type LightboxStateType =
@@ -283,15 +289,20 @@ function showLightbox(opts: {
     }
 
     if (isIncremental(attachment)) {
-      // Queue all attachments, but this target attachment should be IMMEDIATE
-      const wasUpdated = await queueAttachmentDownloads(message, {
-        attachmentDigestForImmediate: attachment.digest,
+      // Queue this target attachment with urgency IMMEDIATE
+      await queueAttachmentDownloadsAndMaybeSaveMessage(message, {
+        signaturesToQueue: new Set([
+          getUndownloadedAttachmentSignature(attachment),
+        ]),
+        isManualDownload: true,
+        urgency: AttachmentDownloadUrgency.IMMEDIATE,
+      });
+
+      // Queue all the remaining with standard urgency.
+      await queueAttachmentDownloadsAndMaybeSaveMessage(message, {
         isManualDownload: true,
         urgency: AttachmentDownloadUrgency.STANDARD,
       });
-      if (wasUpdated) {
-        await window.MessageCache.saveMessage(message);
-      }
     }
 
     const attachments = filterValidAttachments(message.attributes);
@@ -328,10 +339,9 @@ function showLightbox(opts: {
           sentAt,
         },
         attachment: item,
-        thumbnailObjectUrl:
-          item.thumbnail?.objectUrl || item.thumbnail?.path
-            ? getLocalAttachmentUrl(item.thumbnail)
-            : undefined,
+        thumbnailObjectUrl: item.thumbnail?.path
+          ? getLocalAttachmentUrl(item.thumbnail)
+          : undefined,
         size: item.size,
         totalDownloaded: item.totalDownloaded,
       }))

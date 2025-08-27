@@ -64,14 +64,14 @@ describe('Libsignal-net', function (this: Mocha.Suite) {
     {
       const leftPane = window.locator('#LeftPane');
       const item = leftPane
-        .getByTestId(contact.toContact().aci)
+        .getByTestId(contact.device.aci)
         .getByText('incoming message');
       await item.click();
     }
 
     debug('sending outgoing message');
     const input = await waitForEnabledComposer(window);
-    await typeIntoInput(input, 'outgoing message');
+    await typeIntoInput(input, 'outgoing message', '');
     await input.press('Enter');
 
     debug('waiting for message on server side');

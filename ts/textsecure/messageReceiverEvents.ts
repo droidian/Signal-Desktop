@@ -31,16 +31,6 @@ export class EmptyEvent extends Event {
   }
 }
 
-export class ProgressEvent extends Event {
-  public readonly count: number;
-
-  constructor({ count }: { count: number }) {
-    super('progress');
-
-    this.count = count;
-  }
-}
-
 export type TypingEventData = Readonly<{
   typingMessage: Proto.ITypingMessage;
   timestamp: number;
@@ -146,12 +136,9 @@ export type SuccessfulDecryptEventData = Readonly<{
   timestamp: number;
 }>;
 
-export class SuccessfulDecryptEvent extends ConfirmableEvent {
-  constructor(
-    public readonly data: SuccessfulDecryptEventData,
-    confirm: ConfirmCallback
-  ) {
-    super('successful-decrypt', confirm);
+export class SuccessfulDecryptEvent extends Event {
+  constructor(public readonly data: SuccessfulDecryptEventData) {
+    super('successful-decrypt');
   }
 }
 
@@ -338,6 +325,9 @@ export type MessageRequestResponseOptions = {
   messageRequestResponseType: Proto.SyncMessage.IMessageRequestResponse['type'];
   groupId?: string;
   groupV2Id?: string;
+  receivedAtCounter: number;
+  receivedAtMs: number;
+  sentAt: number;
 };
 
 export class MessageRequestResponseEvent extends ConfirmableEvent {
@@ -351,6 +341,12 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
 
   public readonly envelopeId?: string;
 
+  public readonly receivedAtMs: number;
+
+  public readonly receivedAtCounter: number;
+
+  public readonly sentAt: number;
+
   constructor(
     {
       envelopeId,
@@ -358,6 +354,9 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
       messageRequestResponseType,
       groupId,
       groupV2Id,
+      receivedAtMs,
+      receivedAtCounter,
+      sentAt,
     }: MessageRequestResponseOptions,
     confirm: ConfirmCallback
   ) {
@@ -368,6 +367,9 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
     this.messageRequestResponseType = messageRequestResponseType;
     this.groupId = groupId;
     this.groupV2Id = groupV2Id;
+    this.receivedAtMs = receivedAtMs;
+    this.receivedAtCounter = receivedAtCounter;
+    this.sentAt = sentAt;
   }
 }
 
@@ -473,6 +475,7 @@ export class CallEventSyncEvent extends ConfirmableEvent {
 export type CallLinkUpdateSyncEventData = Readonly<{
   type: CallLinkUpdateSyncType;
   rootKey: Uint8Array | undefined;
+  epoch: Uint8Array | undefined;
   adminKey: Uint8Array | undefined;
 }>;
 

@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { type ComponentType, useEffect, useMemo } from 'react';
-import { useId, VisuallyHidden } from 'react-aria';
+import React, { type ComponentType, useEffect, useMemo, useId } from 'react';
+import { VisuallyHidden } from 'react-aria';
 import type { LocalizerType } from '../types/I18N';
 import { Button, ButtonVariant } from './Button';
 import { Modal } from './Modal';
@@ -81,14 +81,14 @@ export function DraftGifMessageSendModal(
         <FunGifPreview
           src={url}
           state={props.gifDownloadState.loadingState}
-          width={props.gifSelection.width}
-          height={props.gifSelection.height}
+          width={props.gifSelection.gif.attachmentMedia.width}
+          height={props.gifSelection.gif.attachmentMedia.height}
           maxHeight={256}
-          aria-label={props.gifSelection.title}
+          aria-label={props.gifSelection.gif.title}
           aria-describedby={descriptionId}
         />
         <VisuallyHidden id={descriptionId}>
-          {props.gifSelection.description}
+          {props.gifSelection.gif.description}
         </VisuallyHidden>
       </div>
       <RenderCompositionTextArea

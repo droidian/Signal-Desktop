@@ -28,7 +28,7 @@ import { ReadStatus } from '../../messages/MessageReadStatus';
 import { MessageAudio } from './MessageAudio';
 import { computePeaks } from '../VoiceNotesPlaybackContext';
 import { pngUrl } from '../../storybook/Fixtures';
-import { getDefaultConversation } from '../../test-both/helpers/getDefaultConversation';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation';
 import { WidthBreakpoint } from '../_util';
 import { DAY, HOUR, MINUTE, SECOND } from '../../util/durations';
 import { ContactFormType } from '../../types/EmbeddedContact';
@@ -37,8 +37,8 @@ import { generateAci } from '../../types/ServiceId';
 import {
   fakeAttachment,
   fakeThumbnail,
-} from '../../test-both/helpers/fakeAttachment';
-import { getFakeBadge } from '../../test-both/helpers/getFakeBadge';
+} from '../../test-helpers/fakeAttachment';
+import { getFakeBadge } from '../../test-helpers/getFakeBadge';
 import { ThemeType } from '../../types/Util';
 import { BadgeCategory } from '../../badges/BadgeCategory';
 import { PaymentEventKind } from '../../types/Payment';
@@ -255,6 +255,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   canReply: true,
   canDownload: true,
   canDeleteForEveryone: overrideProps.canDeleteForEveryone || false,
+  canForward: true,
   canRetry: overrideProps.canRetry || false,
   canRetryDeleteForEveryone: overrideProps.canRetryDeleteForEveryone || false,
   checkForAccount: action('checkForAccount'),
@@ -266,7 +267,6 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   conversationId: overrideProps.conversationId ?? '',
   conversationType: overrideProps.conversationType || 'direct',
   contact: overrideProps.contact,
-  deletedForEveryone: overrideProps.deletedForEveryone,
   // disableMenu: overrideProps.disableMenu,
   disableScroll: overrideProps.disableScroll,
   direction: overrideProps.direction || 'incoming',
@@ -796,11 +796,13 @@ export function Deleted(): JSX.Element {
   const propsSent = createProps({
     conversationType: 'direct',
     deletedForEveryone: true,
+    canForward: false,
     status: 'sent',
   });
   const propsSending = createProps({
     conversationType: 'direct',
     deletedForEveryone: true,
+    canForward: false,
     status: 'sending',
   });
 
@@ -817,6 +819,7 @@ DeletedWithExpireTimer.args = {
   timestamp: Date.now() - 60 * 1000,
   conversationType: 'group',
   deletedForEveryone: true,
+  canForward: false,
   expirationLength: 5 * 60 * 1000,
   expirationTimestamp: Date.now() + 3 * 60 * 1000,
   status: 'sent',
@@ -1387,6 +1390,226 @@ export function Image(): JSX.Element {
   );
 }
 
+export function BrokenImage(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: IMAGE_JPEG,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'the-sax.png',
+        contentType: IMAGE_PNG,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenImageWithExpirationTimer(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: IMAGE_JPEG,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'the-sax.png',
+        contentType: IMAGE_PNG,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function Video(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 3000,
+          height: 1680,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 800,
+          height: 1200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenVideo(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 7680,
+          height: 3200,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 7680,
+          height: 3200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenVideoWithExpirationTimer(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 7680,
+          height: 3200,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 7680,
+          height: 3200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
 export const MultipleImages2 = Template.bind({});
 MultipleImages2.args = {
   attachments: [
@@ -1782,6 +2005,21 @@ OtherFileType.args = {
       size: 10200000,
     }),
   ],
+  status: 'sent',
+};
+
+export const OtherFileTypeWithExpirationTimer = Template.bind({});
+OtherFileTypeWithExpirationTimer.args = {
+  attachments: [
+    fakeAttachment({
+      contentType: stringToMIMEType('text/plain'),
+      fileName: 'things.zip',
+      url: 'things.zip',
+      size: 10200000,
+    }),
+  ],
+  expirationLength: 30 * 1000,
+  expirationTimestamp: Date.now() + 30 * 1000,
   status: 'sent',
 };
 
@@ -2265,6 +2503,7 @@ const fullContact = {
 export const EmbeddedContactFullContact = Template.bind({});
 EmbeddedContactFullContact.args = {
   contact: fullContact,
+  canForward: false,
 };
 
 export const EmbeddedContactAvatarUndownloaded = Template.bind({});
@@ -2279,6 +2518,7 @@ EmbeddedContactAvatarUndownloaded.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarDownloading = Template.bind({});
 EmbeddedContactAvatarDownloading.args = {
@@ -2295,6 +2535,7 @@ EmbeddedContactAvatarDownloading.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarTransientError = Template.bind({});
 EmbeddedContactAvatarTransientError.args = {
@@ -2302,7 +2543,6 @@ EmbeddedContactAvatarTransientError.args = {
     ...fullContact,
     avatar: {
       avatar: fakeAttachment({
-        iv: 'something',
         key: 'something',
         digest: 'something',
         cdnKey: 'something',
@@ -2316,6 +2556,7 @@ EmbeddedContactAvatarTransientError.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarPermanentError = Template.bind({});
 EmbeddedContactAvatarPermanentError.args = {
@@ -2335,6 +2576,7 @@ EmbeddedContactAvatarPermanentError.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactWithSendMessage = Template.bind({});
@@ -2345,6 +2587,7 @@ EmbeddedContactWithSendMessage.args = {
     serviceId: generateAci(),
   },
   direction: 'incoming',
+  canForward: false,
 };
 
 export const EmbeddedContactOnlyEmail = Template.bind({});
@@ -2352,6 +2595,7 @@ EmbeddedContactOnlyEmail.args = {
   contact: {
     email: fullContact.email,
   },
+  canForward: false,
 };
 
 export const EmbeddedContactGivenName = Template.bind({});
@@ -2361,6 +2605,7 @@ EmbeddedContactGivenName.args = {
       givenName: 'Jerry',
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactOrganization = Template.bind({});
@@ -2368,6 +2613,7 @@ EmbeddedContactOrganization.args = {
   contact: {
     organization: 'Company 5',
   },
+  canForward: false,
 };
 
 export const EmbeddedContactGivenFamilyName = Template.bind({});
@@ -2378,6 +2624,7 @@ EmbeddedContactGivenFamilyName.args = {
       familyName: 'FamilyName',
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactFamilyName = Template.bind({});
@@ -2387,6 +2634,7 @@ EmbeddedContactFamilyName.args = {
       familyName: 'FamilyName',
     },
   },
+  canForward: false,
 };
 
 export const GiftBadgeUnopened = Template.bind({});
@@ -2397,6 +2645,7 @@ GiftBadgeUnopened.args = {
     level: 3,
     state: GiftBadgeStates.Unopened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeFailed = Template.bind({});
@@ -2404,6 +2653,7 @@ GiftBadgeFailed.args = {
   giftBadge: {
     state: GiftBadgeStates.Failed,
   },
+  canForward: false,
 };
 
 const getPreferredBadge = () => ({
@@ -2430,6 +2680,7 @@ GiftBadgeRedeemed30Days.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeRedeemed24Hours = Template.bind({});
@@ -2441,6 +2692,7 @@ GiftBadgeRedeemed24Hours.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeOpened60Minutes = Template.bind({});
@@ -2452,6 +2704,7 @@ GiftBadgeOpened60Minutes.args = {
     level: 3,
     state: GiftBadgeStates.Opened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeRedeemed1Minute = Template.bind({});
@@ -2463,6 +2716,7 @@ GiftBadgeRedeemed1Minute.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeOpenedExpired = Template.bind({});
@@ -2474,6 +2728,7 @@ GiftBadgeOpenedExpired.args = {
     level: 3,
     state: GiftBadgeStates.Opened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeMissingBadge = Template.bind({});
@@ -2485,12 +2740,14 @@ GiftBadgeMissingBadge.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const PaymentNotification = Template.bind({});
 PaymentNotification.args = {
   canReply: false,
   canReact: false,
+  canForward: false,
   payment: {
     kind: PaymentEventKind.Notification,
     note: 'Hello there',

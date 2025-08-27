@@ -41,6 +41,7 @@ import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
 import { FunEmojiPicker } from './fun/FunEmojiPicker';
 import { FunEmojiPickerButton } from './fun/FunButton';
 import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
 
 // Menu is disabled so these actions are inaccessible. We also don't support
 // link previews, tap to view messages, attachments, or gifts. Just regular
@@ -241,6 +242,17 @@ export function StoryViewsNRepliesModal({
     }
   }, [currentTab, replies.length]);
 
+  const tryClose = useRef<() => void | undefined>();
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'StoryViewsNRepliesModal',
+    tryClose,
+  });
+  const onTryClose = useCallback(() => {
+    confirmDiscardIf(emojiPickerOpen || messageBodyText.length > 0, onClose);
+  }, [confirmDiscardIf, emojiPickerOpen, messageBodyText, onClose]);
+  tryClose.current = onTryClose;
+
   if (group && group.left) {
     composerElement = (
       <div className="StoryViewsNRepliesModal__not-a-member">
@@ -323,6 +335,7 @@ export function StoryViewsNRepliesModal({
                   onSelectEmoji={handleSelectEmoji}
                   placement="top"
                   theme={ThemeType.dark}
+                  closeOnSelect={false}
                 >
                   <FunEmojiPickerButton i18n={i18n} />
                 </FunEmojiPicker>
@@ -483,6 +496,10 @@ export function StoryViewsNRepliesModal({
     return null;
   }
 
+  if (confirmDiscardModal) {
+    return confirmDiscardModal;
+  }
+
   return (
     <>
       <Modal
@@ -492,7 +509,7 @@ export function StoryViewsNRepliesModal({
           StoryViewsNRepliesModal: true,
           'StoryViewsNRepliesModal--group': Boolean(group),
         })}
-        onClose={onClose}
+        onClose={onTryClose}
         padded={false}
         theme={Theme.Dark}
       >

@@ -33,6 +33,7 @@ import {
 } from './BackfillFailureModal';
 import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal';
 import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal';
+import { LowDiskSpaceBackupImportModal } from './LowDiskSpaceBackupImportModal';
 
 // NOTE: All types should be required for this component so that the smart
 // component gives you type errors when adding/removing props.
@@ -79,6 +80,13 @@ export type PropsType = {
     description?: string;
     title?: string | null;
   }) => JSX.Element;
+  // DebugLogErrorModal
+  debugLogErrorModalProps:
+    | {
+        description?: string;
+      }
+    | undefined;
+  renderDebugLogErrorModal: (opts: { description?: string }) => JSX.Element;
   // DeleteMessageModal
   deleteMessagesProps: DeleteMessagesPropsType | undefined;
   renderDeleteMessagesModal: () => JSX.Element;
@@ -103,9 +111,6 @@ export type PropsType = {
   // NotePreviewModal
   notePreviewModalProps: { conversationId: string } | null;
   renderNotePreviewModal: () => JSX.Element;
-  // ProfileEditor
-  isProfileEditorVisible: boolean;
-  renderProfileEditor: () => JSX.Element;
   // SafetyNumberModal
   safetyNumberModalContactId: string | undefined;
   renderSafetyNumber: () => JSX.Element;
@@ -151,6 +156,9 @@ export type PropsType = {
   // CriticalIdlePrimaryDeviceModal,
   criticalIdlePrimaryDeviceModal: boolean;
   hideCriticalIdlePrimaryDeviceModal: () => void;
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal: { bytesNeeded: number } | null;
+  hideLowDiskSpaceBackupImportModal: () => void;
 };
 
 export function GlobalModalContainer({
@@ -185,6 +193,9 @@ export function GlobalModalContainer({
   // ErrorModal
   errorModalProps,
   renderErrorModal,
+  // DebugLogErrorModal
+  debugLogErrorModalProps,
+  renderDebugLogErrorModal,
   // DeleteMessageModal
   deleteMessagesProps,
   renderDeleteMessagesModal,
@@ -204,9 +215,6 @@ export function GlobalModalContainer({
   // NotePreviewModal
   notePreviewModalProps,
   renderNotePreviewModal,
-  // ProfileEditor
-  isProfileEditorVisible,
-  renderProfileEditor,
   // SafetyNumberModal
   safetyNumberModalContactId,
   renderSafetyNumber,
@@ -250,6 +258,9 @@ export function GlobalModalContainer({
   // CriticalIdlePrimaryDeviceModal
   criticalIdlePrimaryDeviceModal,
   hideCriticalIdlePrimaryDeviceModal,
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal,
+  hideLowDiskSpaceBackupImportModal,
 }: PropsType): JSX.Element | null {
   // We want the following dialogs to show in this order:
   // 1. Errors
@@ -260,6 +271,11 @@ export function GlobalModalContainer({
   // Errors
   if (errorModalProps) {
     return renderErrorModal(errorModalProps);
+  }
+
+  // Errors where we want them to submit a debug log
+  if (debugLogErrorModalProps) {
+    return renderDebugLogErrorModal(debugLogErrorModalProps);
   }
 
   // Safety Number
@@ -324,10 +340,6 @@ export function GlobalModalContainer({
 
   if (notePreviewModalProps) {
     return renderNotePreviewModal();
-  }
-
-  if (isProfileEditorVisible) {
-    return renderProfileEditor();
   }
 
   if (isProfileNameWarningModalVisible) {
@@ -437,6 +449,16 @@ export function GlobalModalContainer({
       <CriticalIdlePrimaryDeviceModal
         i18n={i18n}
         onClose={hideCriticalIdlePrimaryDeviceModal}
+      />
+    );
+  }
+
+  if (lowDiskSpaceBackupImportModal) {
+    return (
+      <LowDiskSpaceBackupImportModal
+        bytesNeeded={lowDiskSpaceBackupImportModal.bytesNeeded}
+        i18n={i18n}
+        onClose={hideLowDiskSpaceBackupImportModal}
       />
     );
   }

@@ -15,6 +15,7 @@ import type {
   SetLocalAudioType,
   SetLocalVideoType,
   SetRendererCanvasType,
+  SetMutedByType,
 } from '../state/ducks/calling';
 import { Avatar, AvatarSize } from './Avatar';
 import { CallingHeader, getCallViewIconClassname } from './CallingHeader';
@@ -91,12 +92,12 @@ import { CallingPendingParticipants } from './CallingPendingParticipants';
 import type { CallingImageDataCache } from './CallManager';
 import { FunStaticEmoji } from './fun/FunEmoji';
 import {
-  getEmojiParentByKey,
-  getEmojiParentKeyByVariantKey,
   getEmojiVariantByKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
 } from './fun/data/emojis';
+import { useFunEmojiLocalizer } from './fun/useFunEmojiLocalizer';
+import { BeforeNavigateResponse } from '../services/BeforeNavigate';
 
 export type PropsType = {
   activeCall: ActiveCallType;
@@ -136,6 +137,7 @@ export type PropsType = {
   toggleSelfViewExpanded: () => void;
   toggleSettings: () => void;
   changeCallView: (mode: CallViewMode) => void;
+  setLocalAudioRemoteMuted: SetMutedByType;
 } & Pick<ReactionPickerProps, 'renderEmojiPicker'>;
 
 export const isInSpeakerView = (
@@ -225,6 +227,7 @@ export function CallScreen({
   toggleScreenRecordingPermissionsDialog,
   toggleSelfViewExpanded,
   toggleSettings,
+  setLocalAudioRemoteMuted,
 }: PropsType): JSX.Element {
   const {
     conversation,
@@ -312,6 +315,23 @@ export function CallScreen({
     }, 5000);
     return clearTimeout.bind(null, timer);
   }, [showControls, showReactionPicker, stickyControls, controlsHover]);
+  useEffect(() => {
+    const name = 'CallScreen';
+    const callback = async () => {
+      togglePip();
+      return BeforeNavigateResponse.MadeChanges;
+    };
+    window.Signal.Services.beforeNavigate.registerCallback({
+      callback,
+      name,
+    });
+    return () => {
+      window.Signal.Services.beforeNavigate.unregisterCallback({
+        callback,
+        name,
+      });
+    };
+  }, [togglePip]);
 
   const [selfViewHover, setSelfViewHover] = useState(false);
   const onSelfViewMouseEnter = useCallback(() => {
@@ -374,7 +394,7 @@ export function CallScreen({
       target => {
         if (
           target instanceof Element &&
-          target.closest('.FunPopover') != null
+          target.closest('[data-fun-overlay]') != null
         ) {
           return true;
         }
@@ -981,7 +1001,17 @@ export function CallScreen({
             : false
         }
         isHandRaised={localHandRaised}
+        mutedBy={
+          isGroupOrAdhocActiveCall(activeCall) ? activeCall.mutedBy : undefined
+        }
+        observedRemoteMute={
+          isGroupOrAdhocActiveCall(activeCall)
+            ? activeCall.observedRemoteMute
+            : undefined
+        }
+        conversationsByDemuxId={conversationsByDemuxId}
         i18n={i18n}
+        setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
       />
       {isCallLinkAdmin ? (
         <CallingPendingParticipants
@@ -1243,6 +1273,7 @@ function useReactionsToast(props: UseReactionsToastType): void {
   >(new Map());
   const burstsShown = useRef<Map<string, number>>(new Map());
   const { showToast } = useCallingToasts();
+  const emojiLocalizer = useFunEmojiLocalizer();
 
   useEffect(() => {
     setPreviousReactions(reactions);
@@ -1257,13 +1288,15 @@ function useReactionsToast(props: UseReactionsToastType): void {
     let anyReactionWasShown = false;
     reactions.forEach(({ timestamp, demuxId, value }) => {
       const conversation = conversationsByDemuxId.get(demuxId);
+      if (!conversation) {
+        return;
+      }
+
       const key = `reactions-${timestamp}-${demuxId}`;
 
       strictAssert(isEmojiVariantValue(value), 'Expected a valid emoji value');
       const emojiVariantKey = getEmojiVariantKeyByValue(value);
       const emojiVariant = getEmojiVariantByKey(emojiVariantKey);
-      const emojiParentKey = getEmojiParentKeyByVariantKey(emojiVariantKey);
-      const emojiParent = getEmojiParentByKey(emojiParentKey);
 
       showToast({
         key,
@@ -1273,7 +1306,7 @@ function useReactionsToast(props: UseReactionsToastType): void {
           <span className="CallingReactionsToasts__reaction">
             <FunStaticEmoji
               role="img"
-              aria-label={emojiParent.englishShortNameDefault}
+              aria-label={emojiLocalizer.getLocaleShortName(emojiVariantKey)}
               size={28}
               emoji={emojiVariant}
             />
@@ -1390,6 +1423,7 @@ function useReactionsToast(props: UseReactionsToastType): void {
     localDemuxId,
     i18n,
     ourServiceId,
+    emojiLocalizer,
   ]);
 }
 

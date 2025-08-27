@@ -67,6 +67,7 @@ import {
 import {
   getChallengeStatus,
   hasNetworkDialog as getHasNetworkDialog,
+  getNetworkIsOnline,
 } from '../selectors/network';
 import {
   getFilterByUnread,
@@ -105,6 +106,7 @@ import {
   pauseBackupMediaDownload,
   resumeBackupMediaDownload,
 } from '../../util/backupMediaDownload';
+import { useNavActions } from '../ducks/nav';
 
 function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
@@ -297,6 +299,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const backupMediaDownloadProgress = useSelector(
     getBackupMediaDownloadProgress
   );
+  const isOnline = useSelector(getNetworkIsOnline);
 
   const serverAlerts = useSelector(getServerAlerts);
 
@@ -345,8 +348,8 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const { savePreferredLeftPaneWidth, toggleNavTabsCollapse } =
     useItemsActions();
   const { setChallengeStatus } = useNetworkActions();
-  const { showUserNotFoundModal, toggleProfileEditor } =
-    useGlobalModalActions();
+  const { showUserNotFoundModal } = useGlobalModalActions();
+  const { changeLocation } = useNavActions();
 
   let hasExpiredDialog = false;
   let unsupportedOSDialogType: 'error' | 'warning' | undefined;
@@ -375,6 +378,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       blockConversation={blockConversation}
       cancelBackupMediaDownload={cancelBackupMediaDownload}
       challengeStatus={challengeStatus}
+      changeLocation={changeLocation}
       clearConversationSearch={clearConversationSearch}
       clearGroupCreationError={clearGroupCreationError}
       clearSearchQuery={clearSearchQuery}
@@ -397,6 +401,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       hasUpdateDialog={hasUpdateDialog}
       i18n={i18n}
       isMacOS={isMacOS}
+      isOnline={isOnline}
       isUpdateDownloaded={isUpdateDownloaded}
       lookupConversationWithoutServiceId={lookupConversationWithoutServiceId}
       modeSpecificProps={modeSpecificProps}
@@ -445,7 +450,6 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       toggleComposeEditingAvatar={toggleComposeEditingAvatar}
       toggleConversationInChooseMembers={toggleConversationInChooseMembers}
       toggleNavTabsCollapse={toggleNavTabsCollapse}
-      toggleProfileEditor={toggleProfileEditor}
       unsupportedOSDialogType={unsupportedOSDialogType}
       updateSearchTerm={updateSearchTerm}
       usernameCorrupted={usernameCorrupted}

@@ -199,6 +199,7 @@ export type OwnProps = Readonly<{
     props: SmartCompositionRecordingDraftProps
   ) => JSX.Element | null;
   selectedMessageIds: ReadonlyArray<string> | undefined;
+  areSelectedMessagesForwardable: boolean | undefined;
   toggleSelectMode: (on: boolean) => void;
   toggleForwardMessagesModal: (
     payload: ForwardMessagesPayload,
@@ -367,6 +368,7 @@ export const CompositionArea = memo(function CompositionArea({
   renderSmartCompositionRecordingDraft,
   // Selected messages
   selectedMessageIds,
+  areSelectedMessagesForwardable,
   toggleSelectMode,
   toggleForwardMessagesModal,
   // DraftGifMessageSendModal
@@ -391,7 +393,7 @@ export const CompositionArea = memo(function CompositionArea({
   const draftEditMessageBody = draftEditMessage?.body;
   const editedMessageId = draftEditMessage?.targetMessageId;
 
-  const canSend =
+  let canSend =
     // Text or link preview edited
     dirty ||
     // Quote of edited message changed
@@ -403,6 +405,11 @@ export const CompositionArea = memo(function CompositionArea({
       !isSameLinkPreview(linkPreviewResult, draftEditMessage?.preview)) ||
     // Not edit message, but has attachments
     (draftEditMessage == null && draftAttachments.length !== 0);
+
+  // Draft attachments should finish loading
+  if (draftAttachments.some(attachment => attachment.pending)) {
+    canSend = false;
+  }
 
   const handleSubmit = useCallback(
     (
@@ -735,7 +742,6 @@ export const CompositionArea = memo(function CompositionArea({
             recentEmojis={recentEmojis}
             emojiSkinToneDefault={emojiSkinToneDefault}
             onEmojiSkinToneDefaultChange={onEmojiSkinToneDefaultChange}
-            closeOnPick
           />
         </div>
       )}
@@ -907,6 +913,7 @@ export const CompositionArea = memo(function CompositionArea({
       <SelectModeActions
         i18n={i18n}
         selectedMessageIds={selectedMessageIds}
+        areSelectedMessagesForwardable={areSelectedMessagesForwardable === true}
         onExitSelectMode={() => {
           toggleSelectMode(false);
         }}
@@ -1076,6 +1083,7 @@ export const CompositionArea = memo(function CompositionArea({
             imageSrc={attachmentToEdit.url}
             imageToBlurHash={imageToBlurHash}
             installedPacks={installedPacks}
+            isCreatingStory={false}
             isFormattingEnabled={isFormattingEnabled}
             isSending={false}
             onClose={() => setAttachmentToEdit(undefined)}

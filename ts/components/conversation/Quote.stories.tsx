@@ -14,6 +14,7 @@ import { TextDirection } from './Message';
 import {
   AUDIO_MP3,
   IMAGE_PNG,
+  IMAGE_GIF,
   LONG_MESSAGE,
   VIDEO_MP4,
   stringToMIMEType,
@@ -21,7 +22,7 @@ import {
 import type { Props } from './Quote';
 import { Quote } from './Quote';
 import { ReadStatus } from '../../messages/MessageReadStatus';
-import { getDefaultConversation } from '../../test-both/helpers/getDefaultConversation';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation';
 import { WidthBreakpoint } from '../_util';
 import { ThemeType } from '../../types/Util';
 import { PaymentEventKind } from '../../types/Payment';
@@ -74,6 +75,7 @@ const defaultMessageProps: TimelineMessagesProps = {
   }),
   canCopy: true,
   canEditMessage: true,
+  canForward: true,
   canReact: true,
   canReply: true,
   canRetry: true,
@@ -244,7 +246,7 @@ ImageOnly.args = {
       width: 100,
       size: 100,
       path: pngUrl,
-      objectUrl: pngUrl,
+      url: pngUrl,
     },
   },
 };
@@ -261,7 +263,7 @@ ImageAttachment.args = {
       width: 100,
       size: 100,
       path: pngUrl,
-      objectUrl: pngUrl,
+      url: pngUrl,
     },
   },
 };
@@ -331,7 +333,7 @@ VideoOnly.args = {
       width: 100,
       size: 100,
       path: pngUrl,
-      objectUrl: pngUrl,
+      url: pngUrl,
     },
   },
   text: undefined,
@@ -349,7 +351,7 @@ VideoAttachment.args = {
       width: 100,
       size: 100,
       path: pngUrl,
-      objectUrl: pngUrl,
+      url: pngUrl,
     },
   },
 };
@@ -449,6 +451,15 @@ VoiceMessageAttachment.args = {
     fileName: 'great-video.mp3',
     isVoiceMessage: true,
   },
+};
+
+export const GIFAttachmentOnly = Template.bind({});
+GIFAttachmentOnly.args = {
+  rawAttachment: {
+    contentType: IMAGE_GIF,
+    fileName: 'sax.png',
+  },
+  text: undefined,
 };
 
 export const OtherFileOnly = Template.bind({});
@@ -588,7 +599,7 @@ IsStoryReplyEmoji.args = {
       width: 100,
       size: 100,
       path: pngUrl,
-      objectUrl: pngUrl,
+      url: pngUrl,
     },
   },
   reactionEmoji: '🏋️',

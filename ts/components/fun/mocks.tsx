@@ -1,16 +1,15 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { type ReactNode } from 'react';
 import { strictAssert } from '../../util/assert';
-import type { EmojiParentKey } from './data/emojis';
+import type { EmojiParentKey, EmojiVariantKey } from './data/emojis';
 import {
   EmojiSkinTone,
   getEmojiParentKeyByEnglishShortName,
+  getEmojiVariantKeyByParentKeyAndSkinTone,
   isEmojiEnglishShortName,
 } from './data/emojis';
 import type { GifsPaginated } from './data/gifs';
-import { FunProvider } from './FunProvider';
 
 function getEmoji(input: string): EmojiParentKey {
   strictAssert(
@@ -19,6 +18,27 @@ function getEmoji(input: string): EmojiParentKey {
   );
   return getEmojiParentKeyByEnglishShortName(input);
 }
+
+function getSkinToneEmoji(
+  input: string,
+  skinTone: EmojiSkinTone = EmojiSkinTone.None
+): EmojiVariantKey {
+  strictAssert(
+    isEmojiEnglishShortName(input),
+    `Not an emoji short name ${input}`
+  );
+  const parentKey = getEmojiParentKeyByEnglishShortName(input);
+  return getEmojiVariantKeyByParentKeyAndSkinTone(parentKey, skinTone);
+}
+
+export const MOCK_THIS_MESSAGE_EMOJIS: ReadonlyArray<EmojiVariantKey> = [
+  getSkinToneEmoji('+1', EmojiSkinTone.None),
+  getSkinToneEmoji('+1', EmojiSkinTone.Type4),
+  getSkinToneEmoji('the_horns', EmojiSkinTone.Type1),
+  getSkinToneEmoji('the_horns', EmojiSkinTone.Type2),
+  getSkinToneEmoji('smile'),
+  getSkinToneEmoji('sweat_smile'),
+];
 
 export const MOCK_RECENT_EMOJIS: ReadonlyArray<EmojiParentKey> = [
   getEmoji('grinning'),
@@ -80,28 +100,3 @@ export const MOCK_GIFS_PAGINATED_ONE_PAGE: GifsPaginated = {
     };
   }),
 };
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const noop = () => {};
-
-export function MockFunProvider(props: { children: ReactNode }): JSX.Element {
-  return (
-    <FunProvider
-      i18n={window.SignalContext.i18n}
-      recentEmojis={[]}
-      recentStickers={[]}
-      recentGifs={[]}
-      emojiSkinToneDefault={EmojiSkinTone.None}
-      onEmojiSkinToneDefaultChange={noop}
-      installedStickerPacks={[]}
-      showStickerPickerHint={false}
-      onClearStickerPickerHint={noop}
-      onOpenCustomizePreferredReactionsModal={noop}
-      fetchGifsSearch={() => Promise.resolve(MOCK_GIFS_PAGINATED_ONE_PAGE)}
-      fetchGifsFeatured={() => Promise.resolve(MOCK_GIFS_PAGINATED_ONE_PAGE)}
-      fetchGif={() => Promise.resolve(new Blob([new Uint8Array(1)]))}
-    >
-      {props.children}
-    </FunProvider>
-  );
-}

@@ -1,10 +1,10 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { clone, has } from 'lodash';
+import { has } from 'lodash';
 import { contextBridge } from 'electron';
 
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 
 import '../context';
 
@@ -17,7 +17,6 @@ import '../preload';
 import './phase2-dependencies';
 import './phase3-post-signal';
 import './phase4-test';
-import '../../backbone/reliable_trigger';
 
 import type {
   CdsLookupOptionsType,
@@ -25,15 +24,12 @@ import type {
 } from '../../textsecure/WebAPI';
 import type { FeatureFlagType } from '../../window.d';
 import type { StorageAccessType } from '../../types/Storage.d';
-import { start as startConversationController } from '../../ConversationController';
 import { initMessageCleanup } from '../../services/messageStateCleanup';
 import { Environment, getEnvironment } from '../../environment';
 import { isProduction } from '../../util/version';
 import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen';
-import {
-  removeUseRingrtcAdm,
-  setUseRingrtcAdm,
-} from '../../util/ringrtc/ringrtcAdm';
+
+const log = createLogger('start');
 
 window.addEventListener('contextmenu', e => {
   const node = e.target as Element | null;
@@ -54,9 +50,7 @@ if (window.SignalContext.config.proxyUrl) {
   log.info('Using provided proxy url');
 }
 
-window.Whisper.events = clone(window.Backbone.Events);
 initMessageCleanup();
-startConversationController();
 
 if (
   !isProduction(window.SignalContext.getVersion()) ||
@@ -96,10 +90,6 @@ if (
       name: K,
       value: StorageAccessType[K]
     ) => window.storage.put(name, value),
-    removeUseRingrtcAdm: async () => {
-      await removeUseRingrtcAdm();
-      log.info('Restart to make ADM change take effect!');
-    },
     setFlag: (name: keyof FeatureFlagType, value: boolean) => {
       if (!has(window.Flags, name)) {
         return;
@@ -108,10 +98,6 @@ if (
     },
     setSfuUrl: (url: string) => {
       window.Signal.Services.calling._sfuUrl = url;
-    },
-    setUseRingrtcAdm: async (value: boolean) => {
-      await setUseRingrtcAdm(value);
-      log.info('Restart to make ADM change take effect!');
     },
     setIceServerOverride: (
       override: GetIceServersResultType | string | undefined
@@ -142,6 +128,14 @@ if (getEnvironment() === Environment.Test) {
   contextBridge.exposeInMainWorld('RETRY_DELAY', window.RETRY_DELAY);
   contextBridge.exposeInMainWorld('assert', window.assert);
   contextBridge.exposeInMainWorld('testUtilities', window.testUtilities);
+}
+
+// See ts/logging/log.ts
+if (getEnvironment() !== Environment.PackagedApp) {
+  const debug = (...args: Array<string>) => {
+    localStorage.setItem('debug', args.join(','));
+  };
+  contextBridge.exposeInMainWorld('debug', debug);
 }
 
 if (window.SignalContext.config.ciMode === 'full') {

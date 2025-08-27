@@ -8,7 +8,7 @@ import type { Props } from './ContactDetail';
 import { ContactDetail } from './ContactDetail';
 import { AddressType, ContactFormType } from '../../types/EmbeddedContact';
 import { IMAGE_GIF } from '../../types/MIME';
-import { fakeAttachment } from '../../test-both/helpers/fakeAttachment';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment';
 
 const { i18n } = window.SignalContext;
 
@@ -191,7 +191,6 @@ export function FullyFilledOutTransientError(): JSX.Element {
       avatar: {
         avatar: fakeAttachment({
           error: true,
-          iv: 'something',
           key: 'something',
           digest: 'something',
           cdnKey: 'something',

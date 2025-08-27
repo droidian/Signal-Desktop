@@ -34,6 +34,7 @@ import {
   getTitle,
   getTitleNoDefault,
   canHaveUsername,
+  renderNumber,
 } from './getTitle';
 import { hasDraft } from './hasDraft';
 import { isAciString } from './isAciString';
@@ -135,6 +136,8 @@ export function getConversation(model: ConversationModel): ConversationType {
 
   const { customColor, customColorId } = getCustomColorData(attributes);
 
+  const isItMe = isMe(attributes);
+
   // TODO: DESKTOP-720
   return {
     id: attributes.id,
@@ -181,8 +184,8 @@ export function getConversation(model: ConversationModel): ConversationType {
     draftPreview,
     draftText,
     draftEditMessage,
-    familyName: attributes.profileFamilyName,
-    firstName: attributes.profileName,
+    familyName: attributes.nicknameFamilyName ?? attributes.profileFamilyName,
+    firstName: attributes.nicknameGivenName ?? attributes.profileName,
     groupDescription: attributes.description,
     groupVersion,
     groupId: attributes.groupId,
@@ -193,7 +196,7 @@ export function getConversation(model: ConversationModel): ConversationType {
     isBlocked: isBlocked(attributes),
     reportingToken: attributes.reportingToken,
     removalStage: attributes.removalStage,
-    isMe: isMe(attributes),
+    isMe: isItMe,
     isGroupV1AndDisabled: isGroupV1(attributes),
     isPinned: attributes.isPinned,
     isUntrusted: model.isUntrusted(),
@@ -228,7 +231,10 @@ export function getConversation(model: ConversationModel): ConversationType {
     systemGivenName: attributes.systemGivenName,
     systemFamilyName: attributes.systemFamilyName,
     systemNickname: attributes.systemNickname,
-    phoneNumber: getNumber(attributes),
+    phoneNumber:
+      isItMe && attributes.e164
+        ? renderNumber(attributes.e164)
+        : getNumber(attributes),
     profileName: getProfileName(attributes),
     profileSharing: attributes.profileSharing,
     profileLastUpdatedAt: attributes.profileLastUpdatedAt,
@@ -242,6 +248,7 @@ export function getConversation(model: ConversationModel): ConversationType {
     title: getTitle(attributes),
     titleNoDefault: getTitleNoDefault(attributes),
     titleNoNickname: getTitle(attributes, { ignoreNickname: true }),
+    titleShortNoDefault: getTitle(attributes, { isShort: true }),
     typingContactIdTimestamps,
     searchableTitle: isMe(attributes)
       ? window.i18n('icu:noteToSelf')

@@ -33,29 +33,34 @@ export function bufferToUuid(buffer: Buffer): string {
 
 export async function typeIntoInput(
   input: Locator,
-  text: string
+  additionalText: string,
+  previousText: string
 ): Promise<void> {
-  let currentValue = '';
-  let isInputElement = true;
+  const updatedText = `${previousText}${additionalText}`;
 
+  // Check if the element is an `input` or `[contenteditable]`
+  let isInputElement = true;
   try {
-    currentValue = await input.inputValue();
+    // Discard value, we're using a matcher later to assert the previous value
+    await input.inputValue();
   } catch (e) {
     isInputElement = false;
-    // if input is actually not an input (e.g. contenteditable)
-    currentValue = (await input.textContent()) ?? '';
   }
 
-  const newValue = `${currentValue}${text}`;
+  if (isInputElement) {
+    await expect(input).toHaveValue(previousText);
+  } else {
+    await expect(input).toHaveText(previousText);
+  }
 
-  await input.fill(newValue);
+  await input.fill(updatedText);
 
   // Wait to ensure that the input (and react state controlling it) has actually
   // updated with the right value
   if (isInputElement) {
-    await expect(input).toHaveValue(newValue);
+    await expect(input).toHaveValue(updatedText);
   } else {
-    await input.locator(`:text("${newValue}")`).waitFor();
+    await expect(input).toHaveText(updatedText);
   }
 }
 
@@ -124,11 +129,11 @@ function maybeWrapInSyncMessage({
     ? {
         syncMessage: {
           sent: {
-            destinationServiceId: getDevice(to).aci,
+            destinationServiceIdBinary: getDevice(to).aciBinary,
             message: dataMessage,
             timestamp: dataMessage.timestamp,
             unidentifiedStatus: (sentTo ?? [to]).map(contact => ({
-              destinationServiceId: getDevice(contact).aci,
+              destinationServiceIdBinary: getDevice(contact).aciBinary,
               destination: getDevice(contact).number,
             })),
           },
@@ -217,7 +222,7 @@ export function sendReaction({
         timestamp: Long.fromNumber(reactionTimestamp),
         reaction: {
           emoji,
-          targetAuthorAci: getDevice(targetAuthor).aci,
+          targetAuthorAciBinary: getDevice(targetAuthor).aciRawUuid,
           targetSentTimestamp: Long.fromNumber(targetMessageTimestamp),
         },
       },
@@ -253,7 +258,7 @@ export async function createGroup(
   for (const member of otherMembers) {
     state = state.addContact(member, {
       whitelisted: true,
-      serviceE164: member.device.number,
+      e164: member.device.number,
       identityKey: member.publicKey.serialize(),
       profileKey: member.profileKey.serialize(),
       givenName: member.profileName,
@@ -330,16 +335,15 @@ export async function composerAttachImages(
   const AttachmentInput = page.getByTestId('attachfile-input');
 
   const AttachmentsList = page.locator('.module-attachments');
-  const AttachmentsListImage = AttachmentsList.locator('.module-image');
-  const AttachmentsListImageLoaded = AttachmentsListImage.locator(
-    '.module-image__image'
+  const AttachmentsListImageLoaded = AttachmentsList.locator(
+    '.module-image--loaded'
   );
 
   debug('setting input files');
   await AttachmentInput.setInputFiles(filePaths);
 
   debug(`waiting for ${filePaths.length} items`);
-  await AttachmentsListImage.nth(filePaths.length - 1).waitFor();
+  await AttachmentsListImageLoaded.nth(filePaths.length - 1).waitFor();
 
   await Promise.all(
     filePaths.map(async (_, index) => {
@@ -361,7 +365,7 @@ export async function sendMessageWithAttachments(
 
   debug('sending message');
   const input = await waitForEnabledComposer(page);
-  await typeIntoInput(input, text);
+  await typeIntoInput(input, text, '');
   await input.press('Enter');
 
   const Message = getTimelineMessageWithText(page, text);

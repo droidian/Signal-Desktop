@@ -24,14 +24,14 @@ import { ThemeType } from '../types/Util';
 import {
   getDefaultConversation,
   getDefaultGroupListItem,
-} from '../test-both/helpers/getDefaultConversation';
+} from '../test-helpers/getDefaultConversation';
 import { DialogType } from '../types/Dialogs';
 import { SocketStatus } from '../types/SocketStatus';
 import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext';
 import {
   makeFakeLookupConversationWithoutServiceId,
   useUuidFetchState,
-} from '../test-both/helpers/fakeLookupConversationWithoutServiceId';
+} from '../test-helpers/fakeLookupConversationWithoutServiceId';
 import type { GroupListItemConversationType } from './conversationList/GroupListItem';
 import { ServerAlert } from '../util/handleServerAlerts';
 
@@ -81,6 +81,7 @@ const defaultGroups: Array<GroupListItemConversationType> = [
 ];
 
 const backupMediaDownloadProgress = {
+  isBackupMediaEnabled: true,
   downloadedBytes: 1024,
   totalBytes: 4098,
   downloadBannerDismissed: false,
@@ -146,12 +147,14 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
       markedUnread: false,
     },
     backupMediaDownloadProgress: {
+      isBackupMediaEnabled: true,
       downloadBannerDismissed: false,
       isIdle: false,
       isPaused: false,
       totalBytes: 0,
       downloadedBytes: 0,
     },
+    changeLocation: action('changeLocation'),
     clearConversationSearch: action('clearConversationSearch'),
     clearGroupCreationError: action('clearGroupCreationError'),
     clearSearchQuery: action('clearSearchQuery'),
@@ -174,6 +177,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     hasPendingUpdate: false,
     i18n,
     isMacOS: false,
+    isOnline: true,
     preferredWidthFromStorage: 320,
     challengeStatus: 'idle',
     crashReportCount: 0,
@@ -280,12 +284,15 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     ),
     renderToastManager: ({ containerWidthBreakpoint }) => (
       <ToastManager
+        changeLocation={action('changeLocation')}
+        clearDonation={action('clearDonation')}
         OS="unused"
         hideToast={action('hideToast')}
         i18n={i18n}
         onShowDebugLog={action('onShowDebugLog')}
         onUndoArchive={action('onUndoArchive')}
         openFileInFolder={action('openFileInFolder')}
+        setDidResumeDonation={action('setDidResumeDonation')}
         showAttachmentNotAvailableModal={action(
           'showAttachmentNotAvailableModal'
         )}
@@ -319,7 +326,6 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
       'toggleConversationInChooseMembers'
     ),
     toggleNavTabsCollapse: action('toggleNavTabsCollapse'),
-    toggleProfileEditor: action('toggleProfileEditor'),
     updateFilterByUnread: action('updateFilterByUnread'),
     updateSearchTerm: action('updateSearchTerm'),
 

@@ -16,7 +16,7 @@ import { filterDOMProps } from '@react-aria/utils';
 import type { AvatarColorType } from '../types/Colors';
 import type { BadgeType } from '../badges/types';
 import type { LocalizerType } from '../types/Util';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { BadgeImageTheme } from '../badges/BadgeImageTheme';
 import { HasStories } from '../types/Stories';
 import { Spinner } from './Spinner';
@@ -27,6 +27,8 @@ import { getInitials } from '../util/getInitials';
 import { isBadgeVisible } from '../badges/isBadgeVisible';
 import { SIGNAL_AVATAR_PATH } from '../types/SignalConversation';
 import { getAvatarPlaceholderGradient } from '../utils/getAvatarPlaceholderGradient';
+
+const log = createLogger('Avatar');
 
 export enum AvatarBlur {
   NoBlur,
@@ -44,6 +46,7 @@ export enum AvatarSize {
   FORTY = 40,
   FORTY_EIGHT = 48,
   FIFTY_TWO = 52,
+  SEVENTY_TWO = 72,
   SIXTY_FOUR = 64,
   EIGHTY = 80,
   NINETY_SIX = 96,
@@ -93,6 +96,7 @@ const BADGE_PLACEMENT_BY_SIZE = new Map<number, BadgePlacementType>([
   [52, { bottom: -6, right: -2 }],
   [56, { bottom: -6, right: 0 }],
   [64, { bottom: -6, right: 0 }],
+  [72, { bottom: -6, right: -6 }],
   [80, { bottom: -8, right: 0 }],
   [88, { bottom: -4, right: 3 }],
   [112, { bottom: -4, right: 3 }],
@@ -134,7 +138,7 @@ export function Avatar({
     const image = new Image();
     image.src = avatarUrl;
     image.onerror = () => {
-      log.warn('Avatar: Image failed to load; failing over to placeholder');
+      log.warn('Image failed to load; failing over to placeholder');
       setImageBroken(true);
     };
 

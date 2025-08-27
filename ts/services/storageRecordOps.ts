@@ -40,19 +40,15 @@ import { isGroupV1, isGroupV2 } from '../util/whatTypeOfConversation';
 import { DurationInSeconds } from '../util/durations';
 import * as preferredReactionEmoji from '../reactions/preferredReactionEmoji';
 import { SignalService as Proto } from '../protobuf';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { normalizeStoryDistributionId } from '../types/StoryDistributionId';
 import type { StoryDistributionIdString } from '../types/StoryDistributionId';
 import type { ServiceIdString } from '../types/ServiceId';
 import {
-  normalizeServiceId,
-  normalizePni,
   ServiceIdKind,
-  isUntaggedPniString,
+  normalizeServiceId,
   toUntaggedPni,
-  toTaggedPni,
 } from '../types/ServiceId';
-import { normalizeAci } from '../util/normalizeAci';
 import { isAciString } from '../util/isAciString';
 import * as Stickers from '../types/Stickers';
 import type {
@@ -72,9 +68,11 @@ import type {
 } from '../types/CallLink';
 import {
   callLinkFromRecord,
+  fromEpochBytes,
   fromRootKeyBytes,
   getRoomIdFromRootKeyString,
   toRootKeyBytes,
+  toEpochBytes,
 } from '../util/callLinksRingrtc';
 import { fromAdminKeyBytes, toAdminKeyBytes } from '../util/callLinks';
 import { isOlderThan } from '../util/timestamp';
@@ -83,7 +81,26 @@ import { callLinkRefreshJobQueue } from '../jobs/callLinkRefreshJobQueue';
 import {
   generateBackupsSubscriberData,
   saveBackupsSubscriberData,
+  saveBackupTier,
 } from '../util/backupSubscriptionData';
+import {
+  toAciObject,
+  toPniObject,
+  toServiceIdObject,
+  fromServiceIdBinaryOrString,
+  fromAciUuidBytesOrString,
+  fromPniUuidBytesOrUntaggedString,
+} from '../util/ServiceId';
+import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled';
+import { getLinkPreviewSetting } from '../types/LinkPreview';
+import {
+  getReadReceiptSetting,
+  getSealedSenderIndicatorSetting,
+  getTypingIndicatorSetting,
+} from '../types/Util';
+import { MessageRequestResponseSource } from '../types/MessageRequestResponseEvent';
+
+const log = createLogger('storageRecordOps');
 
 const MY_STORY_BYTES = uuidToBytes(MY_STORY_ID);
 
@@ -94,18 +111,12 @@ type RecordClass =
   | Proto.IGroupV2Record;
 
 export type MergeResultType = Readonly<{
-  hasConflict: boolean;
   shouldDrop?: boolean;
   conversation?: ConversationModel;
   needsProfileFetch?: boolean;
   updatedConversations?: ReadonlyArray<ConversationModel>;
   oldStorageID?: string;
   oldStorageVersion?: number;
-  details: ReadonlyArray<string>;
-}>;
-
-type HasConflictResultType = Readonly<{
-  hasConflict: boolean;
   details: ReadonlyArray<string>;
 }>;
 
@@ -201,7 +212,7 @@ function addUnknownFields(
     // If the record doesn't have unknown fields attached but we have them
     // saved locally then we need to clear it out
     details.push('clearing unknown fields');
-    conversation.unset('storageUnknownFields');
+    conversation.set({ storageUnknownFields: undefined });
   }
 }
 
@@ -226,7 +237,11 @@ export async function toContactRecord(
   const contactRecord = new Proto.ContactRecord();
   const aci = conversation.getAci();
   if (aci) {
-    contactRecord.aci = aci;
+    if (isProtoBinaryEncodingEnabled()) {
+      contactRecord.aciBinary = toAciObject(aci).getRawUuidBytes();
+    } else {
+      contactRecord.aci = aci;
+    }
   }
   const e164 = conversation.get('e164');
   if (e164) {
@@ -239,7 +254,11 @@ export async function toContactRecord(
   }
   const pni = conversation.getPni();
   if (pni) {
-    contactRecord.pni = toUntaggedPni(pni);
+    if (isProtoBinaryEncodingEnabled()) {
+      contactRecord.pniBinary = toPniObject(pni).getRawUuidBytes();
+    } else {
+      contactRecord.pni = toUntaggedPni(pni);
+    }
   }
   contactRecord.pniSignatureVerified =
     conversation.get('pniSignatureVerified') ?? false;
@@ -344,14 +363,10 @@ export function toAccountRecord(
   accountRecord.noteToSelfMarkedUnread = Boolean(
     conversation.get('markedUnread')
   );
-  accountRecord.readReceipts = Boolean(window.Events.getReadReceiptSetting());
-  accountRecord.sealedSenderIndicators = Boolean(
-    window.storage.get('sealedSenderIndicators')
-  );
-  accountRecord.typingIndicators = Boolean(
-    window.Events.getTypingIndicatorSetting()
-  );
-  accountRecord.linkPreviews = Boolean(window.Events.getLinkPreviewSetting());
+  accountRecord.readReceipts = getReadReceiptSetting();
+  accountRecord.sealedSenderIndicators = getSealedSenderIndicatorSetting();
+  accountRecord.typingIndicators = getTypingIndicatorSetting();
+  accountRecord.linkPreviews = getLinkPreviewSetting();
 
   const preferContactAvatars = window.storage.get('preferContactAvatars');
   if (preferContactAvatars !== undefined) {
@@ -413,9 +428,19 @@ export function toAccountRecord(
           new Proto.AccountRecord.PinnedConversation();
 
         if (pinnedConversation.get('type') === 'private') {
+          const serviceId = pinnedConversation.getServiceId();
           pinnedConversationRecord.identifier = 'contact';
           pinnedConversationRecord.contact = {
-            serviceId: pinnedConversation.getServiceId(),
+            ...(isProtoBinaryEncodingEnabled()
+              ? {
+                  serviceIdBinary:
+                    serviceId == null
+                      ? null
+                      : toServiceIdObject(serviceId).getServiceIdBinary(),
+                }
+              : {
+                  serviceId,
+                }),
             e164: pinnedConversation.get('e164'),
           };
         } else if (isGroupV1(pinnedConversation.attributes)) {
@@ -460,12 +485,12 @@ export function toAccountRecord(
   if (typeof subscriberCurrencyCode === 'string') {
     accountRecord.donorSubscriberCurrencyCode = subscriberCurrencyCode;
   }
-  const donorSubscriptionManuallyCancelled = window.storage.get(
+  const donorSubscriptionManuallyCanceled = window.storage.get(
     'donorSubscriptionManuallyCancelled'
   );
-  if (typeof donorSubscriptionManuallyCancelled === 'boolean') {
+  if (typeof donorSubscriptionManuallyCanceled === 'boolean') {
     accountRecord.donorSubscriptionManuallyCancelled =
-      donorSubscriptionManuallyCancelled;
+      donorSubscriptionManuallyCanceled;
   }
 
   accountRecord.backupSubscriberData = generateBackupsSubscriberData();
@@ -623,8 +648,16 @@ export function toStoryDistributionListRecord(
   storyDistributionListRecord.isBlockList = Boolean(
     storyDistributionList.isBlockList
   );
-  storyDistributionListRecord.recipientServiceIds =
-    storyDistributionList.members;
+
+  if (isProtoBinaryEncodingEnabled()) {
+    storyDistributionListRecord.recipientServiceIdsBinary =
+      storyDistributionList.members.map(serviceId => {
+        return toServiceIdObject(serviceId).getServiceIdBinary();
+      });
+  } else {
+    storyDistributionListRecord.recipientServiceIds =
+      storyDistributionList.members;
+  }
 
   if (storyDistributionList.storageUnknownFields) {
     storyDistributionListRecord.$unknownFields = [
@@ -680,6 +713,9 @@ export function toCallLinkRecord(
       'toCallLinkRecord: no adminPasskey'
     );
     callLinkRecord.adminPasskey = callLinkDbRecord.adminKey;
+    if (callLinkDbRecord.epoch) {
+      callLinkRecord.epoch = callLinkDbRecord.epoch;
+    }
   }
 
   if (callLinkDbRecord.storageUnknownFields) {
@@ -696,6 +732,7 @@ export function toDefunctOrPendingCallLinkRecord(
   const adminKey = callLink.adminKey
     ? toAdminKeyBytes(callLink.adminKey)
     : null;
+  const epoch = callLink.epoch ? toEpochBytes(callLink.epoch) : null;
 
   strictAssert(rootKey, 'toDefunctOrPendingCallLinkRecord: no rootKey');
   strictAssert(adminKey, 'toDefunctOrPendingCallLinkRecord: no adminPasskey');
@@ -704,6 +741,10 @@ export function toDefunctOrPendingCallLinkRecord(
 
   callLinkRecord.rootKey = rootKey;
   callLinkRecord.adminPasskey = adminKey;
+
+  if (epoch) {
+    callLinkRecord.epoch = epoch;
+  }
 
   if (callLink.storageUnknownFields) {
     callLinkRecord.$unknownFields = [callLink.storageUnknownFields];
@@ -722,15 +763,15 @@ function applyMessageRequestState(
 
   if (record.blocked) {
     void conversation.applyMessageRequestResponse(messageRequestEnum.BLOCK, {
-      fromSync: true,
-      viaStorageServiceSync: true,
+      source: MessageRequestResponseSource.STORAGE_SERVICE,
+      learnedAtMs: Date.now(),
     });
   } else if (record.whitelisted) {
     // unblocking is also handled by this function which is why the next
     // condition is part of the else-if and not separate
     void conversation.applyMessageRequestResponse(messageRequestEnum.ACCEPT, {
-      fromSync: true,
-      viaStorageServiceSync: true,
+      source: MessageRequestResponseSource.STORAGE_SERVICE,
+      learnedAtMs: Date.now(),
     });
   } else if (!record.blocked) {
     // if the condition above failed the state could still be blocked=false
@@ -751,11 +792,22 @@ type RecordClassObject = {
   [key: string]: any;
 };
 
-function doRecordsConflict(
-  localRecord: RecordClassObject,
+function areNicknamesEqual(
+  local: Proto.ContactRecord.IName | undefined | null,
+  remote: Proto.ContactRecord.IName | undefined | null
+): boolean {
+  return local?.given === remote?.given && local?.family === remote?.family;
+}
+
+function logRecordChanges(
+  localRecord: RecordClassObject | undefined,
   remoteRecord: RecordClassObject
-): HasConflictResultType {
+): Array<string> {
   const details = new Array<string>();
+  if (localRecord == null) {
+    details.push('no local');
+    return details;
+  }
 
   for (const key of Object.keys(remoteRecord)) {
     const localValue = localRecord[key];
@@ -795,6 +847,14 @@ function doRecordsConflict(
       continue;
     }
 
+    if (key === 'nickname') {
+      const areEqual = areNicknamesEqual(localValue, remoteValue);
+      if (!areEqual) {
+        details.push('nickname');
+      }
+      continue;
+    }
+
     if (localValue === remoteValue) {
       continue;
     }
@@ -823,37 +883,7 @@ function doRecordsConflict(
       }
     }
   }
-
-  return {
-    hasConflict: details.length > 0,
-    details,
-  };
-}
-
-function doesRecordHavePendingChanges(
-  mergedRecord: RecordClass,
-  serviceRecord: RecordClass,
-  conversation: ConversationModel
-): HasConflictResultType {
-  const shouldSync = Boolean(conversation.get('needsStorageServiceSync'));
-
-  if (!shouldSync) {
-    return { hasConflict: false, details: [] };
-  }
-
-  const { hasConflict, details } = doRecordsConflict(
-    mergedRecord,
-    serviceRecord
-  );
-
-  if (!hasConflict) {
-    conversation.set({ needsStorageServiceSync: false });
-  }
-
-  return {
-    hasConflict,
-    details,
-  };
+  return details;
 }
 
 export async function mergeGroupV1Record(
@@ -870,7 +900,6 @@ export async function mergeGroupV1Record(
   }
 
   const groupId = Bytes.toBinary(groupV1Record.id);
-  let details = new Array<string>();
 
   // Attempt to fetch an existing group pertaining to the `groupId` or create
   // a new group and populate it with the attributes from the record.
@@ -886,6 +915,11 @@ export async function mergeGroupV1Record(
       `Record has group type mismatch ${conversation.idForLogging()}`
     );
   }
+
+  const details = logRecordChanges(
+    conversation == null ? undefined : toGroupV1Record(conversation),
+    groupV1Record
+  );
 
   if (!conversation) {
     // It's possible this group was migrated to a GV2 if so we attempt to
@@ -920,9 +954,6 @@ export async function mergeGroupV1Record(
     details.push('GV1 record for GV2 group, dropping');
 
     return {
-      // Note: conflicts cause immediate uploads, but we should upload
-      // only in response to user's action.
-      hasConflict: false,
       shouldDrop: true,
       conversation,
       oldStorageID,
@@ -934,33 +965,22 @@ export async function mergeGroupV1Record(
   conversation.set({
     storageID,
     storageVersion,
+    needsStorageServiceSync: false,
   });
-
-  let hasPendingChanges: boolean;
 
   if (isGroupV1(conversation.attributes)) {
     addUnknownFields(groupV1Record, conversation, details);
-
-    const { hasConflict, details: extraDetails } = doesRecordHavePendingChanges(
-      toGroupV1Record(conversation),
-      groupV1Record,
-      conversation
-    );
-
-    details = details.concat(extraDetails);
-    hasPendingChanges = hasConflict;
   } else {
     // We cannot preserve unknown fields if local group is V2 and the remote is
     // still V1, because the storageItem that we'll put into manifest will have
     // a different record type.
 
     // We want to upgrade group in the storage after merging it.
-    hasPendingChanges = true;
+    conversation.set({ needsStorageServiceSync: true });
     details.push('marking v1 group for an update to v2');
   }
 
   return {
-    hasConflict: hasPendingChanges,
     conversation,
     oldStorageID,
     oldStorageVersion,
@@ -1052,6 +1072,11 @@ export async function mergeGroupV2Record(
     throw missingCaseError(recordStorySendMode);
   }
 
+  const details = logRecordChanges(
+    toGroupV2Record(conversation),
+    groupV2Record
+  );
+
   conversation.set({
     hideStory: Boolean(groupV2Record.hideStory),
     isArchived: Boolean(groupV2Record.archived),
@@ -1062,6 +1087,7 @@ export async function mergeGroupV2Record(
     storageID,
     storageVersion,
     storySendMode,
+    needsStorageServiceSync: false,
   });
 
   conversation.setMuteExpiration(
@@ -1078,17 +1104,7 @@ export async function mergeGroupV2Record(
 
   applyAvatarColor(conversation, groupV2Record.avatarColor);
 
-  let details = new Array<string>();
-
   addUnknownFields(groupV2Record, conversation, details);
-
-  const { hasConflict, details: extraDetails } = doesRecordHavePendingChanges(
-    toGroupV2Record(conversation),
-    groupV2Record,
-    conversation
-  );
-
-  details = details.concat(extraDetails);
 
   if (isGroupV1(conversation.attributes)) {
     // If we found a GroupV1 conversation from this incoming GroupV2 record, we need to
@@ -1119,7 +1135,6 @@ export async function mergeGroupV2Record(
   }
 
   return {
-    hasConflict,
     conversation,
     updatedConversations: [conversation],
     oldStorageID,
@@ -1136,17 +1151,16 @@ export async function mergeContactRecord(
   const contactRecord = {
     ...originalContactRecord,
 
-    aci: originalContactRecord.aci
-      ? normalizeAci(originalContactRecord.aci, 'ContactRecord.aci')
-      : undefined,
-    pni:
-      originalContactRecord.pni &&
-      isUntaggedPniString(originalContactRecord.pni)
-        ? normalizePni(
-            toTaggedPni(originalContactRecord.pni),
-            'ContactRecord.pni'
-          )
-        : undefined,
+    aci: fromAciUuidBytesOrString(
+      originalContactRecord.aciBinary,
+      originalContactRecord.aci,
+      'ContactRecord.aci'
+    ),
+    pni: fromPniUuidBytesOrUntaggedString(
+      originalContactRecord.pniBinary,
+      originalContactRecord.pni,
+      'ContactRecord.pni'
+    ),
   };
 
   const e164 = dropNull(contactRecord.e164);
@@ -1157,18 +1171,18 @@ export async function mergeContactRecord(
 
   // All contacts must have UUID
   if (!serviceId) {
-    return { hasConflict: false, shouldDrop: true, details: ['no uuid'] };
+    return { shouldDrop: true, details: ['no uuid'] };
   }
 
   // Contacts should not have PNI as ACI
   if (aci && !isAciString(aci)) {
-    return { hasConflict: false, shouldDrop: true, details: ['invalid aci'] };
+    return { shouldDrop: true, details: ['invalid aci'] };
   }
 
   if (
     window.storage.user.getOurServiceIdKind(serviceId) !== ServiceIdKind.Unknown
   ) {
-    return { hasConflict: false, shouldDrop: true, details: ['our own uuid'] };
+    return { shouldDrop: true, details: ['our own uuid'] };
   }
 
   const { conversation } = window.ConversationController.maybeMergeContacts({
@@ -1178,6 +1192,11 @@ export async function mergeContactRecord(
     fromPniSignature: pniSignatureVerified,
     reason: 'mergeContactRecord',
   });
+
+  const details = logRecordChanges(
+    await toContactRecord(conversation),
+    originalContactRecord
+  );
 
   // We're going to ignore this; it's likely a PNI-only contact we've already merged
   if (conversation.getServiceId() !== serviceId) {
@@ -1194,9 +1213,8 @@ export async function mergeContactRecord(
         `had serviceId that didn't match provided serviceId ${serviceId}`
     );
     return {
-      hasConflict: false,
       shouldDrop: true,
-      details: [],
+      details,
     };
   }
 
@@ -1212,7 +1230,6 @@ export async function mergeContactRecord(
     );
   }
 
-  let details = new Array<string>();
   const remoteName = dropNull(contactRecord.givenName);
   const remoteFamilyName = dropNull(contactRecord.familyName);
   const localName = conversation.get('profileName');
@@ -1233,11 +1250,7 @@ export async function mergeContactRecord(
       log.info(
         `mergeContactRecord: ${conversation.idForLogging()} name doesn't match remote name; also fetching profile`
       );
-      drop(
-        conversation.getProfiles().catch(() => {
-          /* nothing to do here; logging already happened */
-        })
-      );
+      drop(conversation.getProfiles());
       details.push('refreshing profile');
     }
   }
@@ -1255,7 +1268,6 @@ export async function mergeContactRecord(
     const verified = await conversation.safeGetVerified();
     let { identityState } = contactRecord;
     if (identityState == null) {
-      details.push('identity state was null, reverting to default state');
       identityState = Proto.ContactRecord.IdentityState.DEFAULT;
     }
     const newVerified = fromRecordVerified(identityState);
@@ -1269,7 +1281,8 @@ export async function mergeContactRecord(
 
     if (verified !== newVerified) {
       details.push(
-        `updating verified state from=${verified} to=${newVerified}`
+        `updating verified state from=${verified} ` +
+          `is_null=${identityState == null} to=${newVerified}`
       );
 
       conversation.set({ verified: newVerified });
@@ -1299,6 +1312,7 @@ export async function mergeContactRecord(
     markedUnread: Boolean(contactRecord.markedUnread),
     storageID,
     storageVersion,
+    needsStorageServiceSync: false,
   });
 
   if (contactRecord.hidden) {
@@ -1338,15 +1352,7 @@ export async function mergeContactRecord(
 
   applyAvatarColor(conversation, contactRecord.avatarColor);
 
-  const { hasConflict, details: extraDetails } = doesRecordHavePendingChanges(
-    await toContactRecord(conversation),
-    contactRecord,
-    conversation
-  );
-  details = details.concat(extraDetails);
-
   return {
-    hasConflict,
     conversation,
     updatedConversations: [conversation],
     needsProfileFetch,
@@ -1361,7 +1367,6 @@ export async function mergeAccountRecord(
   storageVersion: number,
   accountRecord: Proto.IAccountRecord
 ): Promise<MergeResultType> {
-  let details = new Array<string>();
   const {
     linkPreviews,
     unlistedPhoneNumber,
@@ -1392,6 +1397,14 @@ export async function mergeAccountRecord(
     username,
     usernameLink,
   } = accountRecord;
+
+  const conversation =
+    window.ConversationController.getOurConversationOrThrow();
+
+  const details = logRecordChanges(
+    toAccountRecord(conversation),
+    accountRecord
+  );
 
   const updatedConversations = new Array<ConversationModel>();
 
@@ -1474,12 +1487,13 @@ export async function mergeAccountRecord(
   }
 
   if (pinnedConversations) {
-    const modelPinnedConversations = window
-      .getConversations()
-      .filter(conversation => Boolean(conversation.get('isPinned')));
+    const modelPinnedConversations =
+      window.ConversationController.getAll().filter(convo =>
+        Boolean(convo.get('isPinned'))
+      );
 
-    const modelPinnedConversationIds = modelPinnedConversations.map(
-      conversation => conversation.get('id')
+    const modelPinnedConversationIds = modelPinnedConversations.map(convo =>
+      convo.get('id')
     );
 
     const missingStoragePinnedConversationIds = window.storage
@@ -1497,10 +1511,7 @@ export async function mergeAccountRecord(
         .map(conversationId =>
           window.ConversationController.get(conversationId)
         )
-        .filter(
-          (conversation): conversation is ConversationModel =>
-            conversation !== undefined
-        )
+        .filter((convo): convo is ConversationModel => convo !== undefined)
     );
 
     details.push(
@@ -1510,47 +1521,50 @@ export async function mergeAccountRecord(
 
     const remotelyPinnedConversations = pinnedConversations
       .map(({ contact, legacyGroupId, groupMasterKey }) => {
-        let conversation: ConversationModel | undefined;
+        let convo: ConversationModel | undefined;
 
         if (contact) {
-          if (!contact.serviceId && !contact.e164) {
+          if (
+            !contact.serviceId &&
+            !Bytes.isNotEmpty(contact.serviceIdBinary) &&
+            !contact.e164
+          ) {
             log.error(
               'storageService.mergeAccountRecord: No serviceId or e164 on contact'
             );
             return undefined;
           }
-          conversation = window.ConversationController.lookupOrCreate({
-            serviceId: contact.serviceId
-              ? normalizeServiceId(
-                  contact.serviceId,
-                  'AccountRecord.pin.serviceId'
-                )
-              : undefined,
+          convo = window.ConversationController.lookupOrCreate({
+            serviceId: fromServiceIdBinaryOrString(
+              contact.serviceIdBinary,
+              contact.serviceId,
+              'AccountRecord.pin.serviceId'
+            ),
             e164: contact.e164,
             reason: 'storageService.mergeAccountRecord',
           });
         } else if (legacyGroupId && legacyGroupId.length) {
           const groupId = Bytes.toBinary(legacyGroupId);
-          conversation = window.ConversationController.get(groupId);
+          convo = window.ConversationController.get(groupId);
         } else if (groupMasterKey && groupMasterKey.length) {
           const groupFields = deriveGroupFields(groupMasterKey);
           const groupId = Bytes.toBase64(groupFields.id);
 
-          conversation = window.ConversationController.get(groupId);
+          convo = window.ConversationController.get(groupId);
         } else {
           log.error(
             'storageService.mergeAccountRecord: Invalid identifier received'
           );
         }
 
-        if (!conversation) {
+        if (!convo) {
           log.error(
             'storageService.mergeAccountRecord: missing conversation id.'
           );
           return undefined;
         }
 
-        return conversation;
+        return convo;
       })
       .filter(isNotNil);
 
@@ -1567,14 +1581,14 @@ export async function mergeAccountRecord(
       `pinning=${remotelyPinnedConversations.length}`
     );
 
-    conversationsToUnpin.forEach(conversation => {
-      conversation.set({ isPinned: false });
-      updatedConversations.push(conversation);
+    conversationsToUnpin.forEach(convo => {
+      convo.set({ isPinned: false });
+      updatedConversations.push(convo);
     });
 
-    remotelyPinnedConversations.forEach(conversation => {
-      conversation.set({ isPinned: true, isArchived: false });
-      updatedConversations.push(conversation);
+    remotelyPinnedConversations.forEach(convo => {
+      convo.set({ isPinned: true, isArchived: false });
+      updatedConversations.push(convo);
     });
 
     await window.storage.put(
@@ -1600,7 +1614,7 @@ export async function mergeAccountRecord(
   }
 
   await saveBackupsSubscriberData(backupSubscriberData);
-  await window.storage.put('backupTier', backupTier?.toNumber());
+  await saveBackupTier(backupTier?.toNumber());
 
   await window.storage.put(
     'displayBadgesOnProfile',
@@ -1690,17 +1704,6 @@ export async function mergeAccountRecord(
     ]);
   }
 
-  const ourID = window.ConversationController.getOurConversationId();
-
-  if (!ourID) {
-    throw new Error('Could not find ourID');
-  }
-
-  const conversation = await window.ConversationController.getOrCreateAndWait(
-    ourID,
-    'private'
-  );
-
   addUnknownFields(accountRecord, conversation, details);
 
   const oldStorageID = conversation.get('storageID');
@@ -1720,6 +1723,7 @@ export async function mergeAccountRecord(
     username: dropNull(username),
     storageID,
     storageVersion,
+    needsStorageServiceSync: false,
   });
 
   let needsProfileFetch = false;
@@ -1739,18 +1743,9 @@ export async function mergeAccountRecord(
 
   applyAvatarColor(conversation, accountRecord.avatarColor);
 
-  const { hasConflict, details: extraDetails } = doesRecordHavePendingChanges(
-    toAccountRecord(conversation),
-    accountRecord,
-    conversation
-  );
-
   updatedConversations.push(conversation);
 
-  details = details.concat(extraDetails);
-
   return {
-    hasConflict,
     conversation,
     updatedConversations,
     needsProfileFetch,
@@ -1775,8 +1770,6 @@ export async function mergeStoryDistributionListRecord(
     );
   }
 
-  const details: Array<string> = [];
-
   const isMyStory = Bytes.areEqual(
     MY_STORY_BYTES,
     storyDistributionListRecord.identifier
@@ -1797,9 +1790,27 @@ export async function mergeStoryDistributionListRecord(
   const localStoryDistributionList =
     await DataReader.getStoryDistributionWithMembers(listId);
 
-  const remoteListMembers: Array<ServiceIdString> = (
-    storyDistributionListRecord.recipientServiceIds || []
-  ).map(id => normalizeServiceId(id, 'mergeStoryDistributionListRecord'));
+  const details = logRecordChanges(
+    localStoryDistributionList == null
+      ? undefined
+      : toStoryDistributionListRecord(localStoryDistributionList),
+    storyDistributionListRecord
+  );
+
+  let remoteListMembers: Array<ServiceIdString>;
+
+  if (storyDistributionListRecord.recipientServiceIdsBinary?.length) {
+    remoteListMembers =
+      storyDistributionListRecord.recipientServiceIdsBinary.map(id =>
+        fromServiceIdBinaryOrString(id, undefined, 'unused')
+      );
+  } else if (storyDistributionListRecord.recipientServiceIds?.length) {
+    remoteListMembers = storyDistributionListRecord.recipientServiceIds.map(
+      id => normalizeServiceId(id, 'mergeStoryDistributionListRecord')
+    );
+  } else {
+    remoteListMembers = [];
+  }
 
   if (storyDistributionListRecord.$unknownFields) {
     details.push('adding unknown fields');
@@ -1823,7 +1834,7 @@ export async function mergeStoryDistributionListRecord(
     storageUnknownFields: storyDistributionListRecord.$unknownFields
       ? Bytes.concatenate(storyDistributionListRecord.$unknownFields)
       : null,
-    storageNeedsSync: Boolean(localStoryDistributionList?.storageNeedsSync),
+    storageNeedsSync: false,
   };
 
   if (!localStoryDistributionList) {
@@ -1839,7 +1850,6 @@ export async function mergeStoryDistributionListRecord(
 
     return {
       details,
-      hasConflict: false,
     };
   }
 
@@ -1861,11 +1871,6 @@ export async function mergeStoryDistributionListRecord(
       members: localStoryDistributionList.members,
     });
   }
-
-  const { hasConflict, details: conflictDetails } = doRecordsConflict(
-    toStoryDistributionListRecord(storyDistribution),
-    storyDistributionListRecord
-  );
 
   const localMembersListSet = new Set(localStoryDistributionList.members);
   const toAdd: Array<ServiceIdString> = remoteListMembers.filter(
@@ -1894,8 +1899,7 @@ export async function mergeStoryDistributionListRecord(
   });
 
   return {
-    details: [...details, ...conflictDetails],
-    hasConflict,
+    details,
     oldStorageID,
     oldStorageVersion,
   };
@@ -1914,10 +1918,16 @@ export async function mergeStickerPackRecord(
     throw new Error(`No stickerPackRecord identifier for ${redactedStorageID}`);
   }
 
-  const details: Array<string> = [];
   const id = Bytes.toHex(stickerPackRecord.packId);
 
   const localStickerPack = await DataReader.getStickerPackInfo(id);
+
+  const details = logRecordChanges(
+    localStickerPack == null
+      ? undefined
+      : toStickerPackRecord(localStickerPack),
+    stickerPackRecord
+  );
 
   if (stickerPackRecord.$unknownFields) {
     details.push('adding unknown fields');
@@ -1967,11 +1977,6 @@ export async function mergeStickerPackRecord(
   if (needsToClearUnknownFields) {
     details.push('clearing unknown fields');
   }
-
-  const { hasConflict, details: conflictDetails } = doRecordsConflict(
-    toStickerPackRecord(stickerPack),
-    stickerPackRecord
-  );
 
   const wasUninstalled = Boolean(localStickerPack?.uninstalledAt);
   const isUninstalled = Boolean(stickerPack.uninstalledAt);
@@ -2024,8 +2029,7 @@ export async function mergeStickerPackRecord(
   await DataWriter.updateStickerPackInfo(stickerPack);
 
   return {
-    details: [...details, ...conflictDetails],
-    hasConflict,
+    details,
     oldStorageID,
     oldStorageVersion,
   };
@@ -2042,12 +2046,13 @@ export async function mergeCallLinkRecord(
   });
   // callLinkRecords must have rootKey
   if (!callLinkRecord.rootKey) {
-    return { hasConflict: false, shouldDrop: true, details: ['no rootKey'] };
+    return { shouldDrop: true, details: ['no rootKey'] };
   }
 
-  const details: Array<string> = [];
-
   const rootKeyString = fromRootKeyBytes(callLinkRecord.rootKey);
+  const epochString = callLinkRecord.epoch
+    ? fromEpochBytes(callLinkRecord.epoch)
+    : null;
   const adminKeyString = callLinkRecord.adminPasskey
     ? fromAdminKeyBytes(callLinkRecord.adminPasskey)
     : null;
@@ -2057,6 +2062,13 @@ export async function mergeCallLinkRecord(
 
   const localCallLinkDbRecord =
     await DataReader.getCallLinkRecordByRoomId(roomId);
+
+  const details = logRecordChanges(
+    localCallLinkDbRecord == null
+      ? undefined
+      : toCallLinkRecord(localCallLinkDbRecord),
+    callLinkRecord
+  );
 
   // Note deletedAtTimestampMs can be 0
   const deletedAtTimestampMs = callLinkRecord.deletedAtTimestampMs?.toNumber();
@@ -2073,6 +2085,7 @@ export async function mergeCallLinkRecord(
   const callLinkDbRecord: CallLinkRecord = {
     roomId,
     rootKey: callLinkRecord.rootKey,
+    epoch: callLinkRecord.epoch ?? null,
     adminKey: callLinkRecord.adminPasskey ?? null,
     name: localCallLinkDbRecord?.name ?? '',
     restrictions: localCallLinkDbRecord?.restrictions ?? 0,
@@ -2086,7 +2099,7 @@ export async function mergeCallLinkRecord(
     storageUnknownFields: callLinkRecord.$unknownFields
       ? Bytes.concatenate(callLinkRecord.$unknownFields)
       : null,
-    storageNeedsSync: localCallLinkDbRecord?.storageNeedsSync === 1 ? 1 : 0,
+    storageNeedsSync: 0,
   };
 
   if (!localCallLinkDbRecord) {
@@ -2118,6 +2131,7 @@ export async function mergeCallLinkRecord(
         callLinkRefreshJobQueue.add({
           rootKey: callLink.rootKey,
           adminKey: callLink.adminKey,
+          epoch: callLink.epoch,
           storageID: callLink.storageID,
           storageVersion: callLink.storageVersion,
           storageUnknownFields: callLink.storageUnknownFields,
@@ -2128,7 +2142,6 @@ export async function mergeCallLinkRecord(
 
     return {
       details,
-      hasConflict: false,
       shouldDrop,
     };
   }
@@ -2150,11 +2163,6 @@ export async function mergeCallLinkRecord(
     );
   }
 
-  const { hasConflict, details: conflictDetails } = doRecordsConflict(
-    toCallLinkRecord(callLinkDbRecord),
-    callLinkRecord
-  );
-
   // First update local record
   details.push('updated');
   const callLink = callLinkFromRecord(callLinkDbRecord);
@@ -2175,13 +2183,13 @@ export async function mergeCallLinkRecord(
   } else {
     window.reduxActions.calling.handleCallLinkUpdate({
       rootKey: rootKeyString,
+      epoch: epochString,
       adminKey: adminKeyString,
     });
   }
 
   return {
-    details: [...details, ...conflictDetails],
-    hasConflict,
+    details,
     shouldDrop,
     oldStorageID,
     oldStorageVersion,

@@ -36,14 +36,20 @@ export type SubscriptionCostType = {
 };
 
 export type BackupStatusType = {
-  createdAt?: number;
+  createdTimestamp?: number;
   protoSize?: number;
-  mediaSize?: number;
+};
+
+export type BackupMediaDownloadStatusType = {
+  totalBytes: number;
+  completedBytes: number;
+  isPaused: boolean;
+  isIdle: boolean;
 };
 
 export type BackupsSubscriptionType =
   | {
-      status: 'not-found' | 'expired';
+      status: 'off' | 'not-found' | 'expired';
     }
   | {
       status: 'free';
@@ -52,12 +58,18 @@ export type BackupsSubscriptionType =
   | (
       | {
           status: 'active';
-          renewalDate?: Date;
+          renewalTimestamp?: number;
           cost?: SubscriptionCostType;
         }
       | {
           status: 'pending-cancellation';
-          expiryDate?: Date;
+          expiryTimestamp?: number;
           cost?: SubscriptionCostType;
         }
     );
+
+export type LocalBackupMetadataVerificationType = {
+  snapshotDir: string;
+  backupId: Uint8Array;
+  metadataKey: Uint8Array;
+};

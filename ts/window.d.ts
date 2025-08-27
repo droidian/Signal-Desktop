@@ -3,15 +3,14 @@
 
 // Captures the globals put in place by preload.js, background.js and others
 
+import type EventEmitter from 'node:events';
 import type { Store } from 'redux';
-import type * as Backbone from 'backbone';
 import type { SystemPreferences } from 'electron';
 import type PQueue from 'p-queue/dist';
 import type { assert } from 'chai';
 import type { PhoneNumber, PhoneNumberFormat } from 'google-libphonenumber';
 import type { MochaOptions } from 'mocha';
 
-import type { ConversationModelCollectionType } from './model-types.d';
 import type { textsecure } from './textsecure';
 import type { Storage } from './textsecure/Storage';
 import type {
@@ -21,6 +20,7 @@ import type {
 import type AccountManager from './textsecure/AccountManager';
 import type { WebAPIConnectType } from './textsecure/WebAPI';
 import type { CallingClass } from './services/calling';
+import type * as Donations from './services/donations';
 import type * as StorageService from './services/storage';
 import type { BackupsService } from './services/backups';
 import type * as Groups from './groups';
@@ -33,7 +33,6 @@ import type { Receipt } from './types/Receipt';
 import type { ConversationController } from './ConversationController';
 import type { ReduxActions } from './state/types';
 import type { createApp } from './state/roots/createApp';
-import type { ConversationModel } from './models/conversations';
 import type { BatcherType } from './util/batcher';
 import type { ConfirmationDialog } from './components/ConfirmationDialog';
 import type { SignalProtocolStore } from './SignalProtocolStore';
@@ -53,6 +52,7 @@ import type { PropsPreloadType as PreferencesPropsType } from './components/Pref
 import type { WindowsNotificationData } from './services/notifications';
 import type { QueryStatsOptions } from './sql/main';
 import type { SocketStatuses } from './textsecure/SocketManager';
+import type { BeforeNavigateService } from './services/BeforeNavigate';
 
 export { Long } from 'long';
 
@@ -66,7 +66,7 @@ export type IPCType = {
     erase: () => Promise<void>;
   };
   drawAttention: () => void;
-  getAutoLaunch: () => Promise<boolean>;
+  getAutoLaunch: () => Promise<boolean | undefined>;
   getMediaAccessStatus: (
     mediaType: 'screen' | 'microphone' | 'camera'
   ) => Promise<ReturnType<SystemPreferences['getMediaAccessStatus']>>;
@@ -74,13 +74,16 @@ export type IPCType = {
   openSystemMediaPermissions: (
     mediaType: 'microphone' | 'camera' | 'screenCapture'
   ) => Promise<void>;
-  getMediaPermissions: () => Promise<boolean>;
+  getMediaPermissions: () => Promise<boolean | undefined>;
+  whenWindowVisible: () => Promise<void>;
   logAppLoadedEvent?: (options: { processedCount?: number }) => void;
   readyForUpdates: () => void;
   removeSetupMenuItems: () => unknown;
   setAutoHideMenuBar: (value: boolean) => void;
   setAutoLaunch: (value: boolean) => Promise<void>;
   setBadge: (badge: number | 'marked-unread') => void;
+  setMediaPermissions: (value: boolean) => Promise<void>;
+  setMediaCameraPermissions: (value: boolean) => Promise<void>;
   setMenuBarVisibility: (value: boolean) => void;
   showDebugLog: () => void;
   showPermissionsPopup: (
@@ -148,17 +151,19 @@ export type SignalCoreType = {
   RemoteConfig: typeof RemoteConfig;
   ScreenShareWindowProps?: ScreenShareWindowPropsType;
   Services: {
-    calling: CallingClass;
     backups: BackupsService;
+    beforeNavigate: BeforeNavigateService;
+    calling: CallingClass;
     initializeGroupCredentialFetcher: () => Promise<void>;
     initializeNetworkObserver: (
       network: ReduxActions['network'],
       getAuthSocketStatus: () => SocketStatus
     ) => void;
     initializeUpdateListener: (updates: ReduxActions['updates']) => void;
-    retryPlaceholders?: RetryPlaceholders;
     lightSessionResetQueue?: PQueue;
+    retryPlaceholders?: RetryPlaceholders;
     storage: typeof StorageService;
+    donations: typeof Donations;
   };
   SettingsWindowProps?: SettingsWindowPropsType;
   Migrations: ReturnType<typeof initializeMigrations>;
@@ -176,7 +181,6 @@ export type SignalCoreType = {
       createApp: typeof createApp;
     };
   };
-  conversationControllerStart: () => void;
   challengeHandler?: ChallengeHandler;
 
   // Only for debugging in Dev Tools
@@ -199,7 +203,6 @@ declare global {
     enterMouseMode: () => void;
     getAccountManager: () => AccountManager;
     getAppInstance: () => string | undefined;
-    getConversations: () => ConversationModelCollectionType;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
     getHostName: () => string;
@@ -239,9 +242,6 @@ declare global {
     // ========================================================================
     // The types below have been somewhat organized. See DESKTOP-4801
     // ========================================================================
-
-    // Backbone
-    Backbone: typeof Backbone;
 
     ConversationController: ConversationController;
     Events: IPCEventsType;
@@ -319,14 +319,12 @@ declare global {
   interface Set<T> {
     // Needed until TS upgrade
     difference<U>(other: ReadonlySet<U>): Set<T>;
+    symmetricDifference<U>(other: ReadonlySet<U>): Set<T>;
   }
 }
 
 export type WhisperType = {
-  Conversation: typeof ConversationModel;
-  ConversationCollection: typeof ConversationModelCollectionType;
-
   deliveryReceiptQueue: PQueue;
   deliveryReceiptBatcher: BatcherType<Receipt>;
-  events: Backbone.Events;
+  events: EventEmitter;
 };

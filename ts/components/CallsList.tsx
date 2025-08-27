@@ -36,7 +36,7 @@ import {
   toBoundedDate,
 } from '../util/timestamp';
 import type { ConversationType } from '../state/ducks/conversations';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { refMerger } from '../util/refMerger';
 import { drop } from '../util/drop';
 import { strictAssert } from '../util/assert';
@@ -72,6 +72,8 @@ import { DAY, MINUTE, SECOND } from '../util/durations';
 import type { StartCallData } from './ConfirmLeaveCallModal';
 import { Button, ButtonVariant } from './Button';
 import type { ICUJSXMessageParamsByKeyType } from '../types/Util';
+
+const log = createLogger('CallsList');
 
 function Timestamp({
   i18n,
@@ -418,15 +420,15 @@ export function CallsList({
       return;
     }
 
-    if (isGroupOrAdhocCallMode(callMode)) {
-      peekQueueArgsRef.current.set(peerId, {
-        callMode,
-        conversationId: peerId,
-      });
-      queue.add(peerId);
-    } else {
-      log.error(`Trying to peek unsupported call mode ${callMode}`);
+    if (!isGroupOrAdhocCallMode(callMode)) {
+      return;
     }
+
+    peekQueueArgsRef.current.set(peerId, {
+      callMode,
+      conversationId: peerId,
+    });
+    queue.add(peerId);
   }, []);
 
   // Get the oldest inserted peerIds by iterating the Set in insertion order.
@@ -552,6 +554,9 @@ export function CallsList({
       };
 
       let timer = setTimeout(() => {
+        if (controller.signal.aborted) {
+          return;
+        }
         setSearchState(prevSearchState => {
           if (prevSearchState.state === 'init') {
             return defaultPendingState;
@@ -559,6 +564,10 @@ export function CallsList({
           return prevSearchState;
         });
         timer = setTimeout(() => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
           // Show loading indicator after a delay
           setSearchState(defaultPendingState);
         }, 300);
@@ -576,7 +585,7 @@ export function CallsList({
         ]);
         results = { count, items };
       } catch (error) {
-        log.error('CallsList#fetchTotal error fetching', error);
+        log.error('fetchTotal error fetching', error);
       }
 
       // Clear the loading indicator timeout
@@ -671,7 +680,7 @@ export function CallsList({
           };
         });
       } catch (error) {
-        log.error('CallsList#loadMoreRows error fetching', error);
+        log.error('loadMoreRows error fetching', error);
       }
     },
     [enqueueCallPeeks, searchState]

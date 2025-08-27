@@ -26,6 +26,7 @@ import {
   getGroupAdminsSelector,
   getHasPanelOpen,
   getLastEditableMessageId,
+  getMessages,
   getSelectedMessageIds,
   isMissingRequiredProfileSharing,
 } from '../selectors/conversations';
@@ -37,7 +38,7 @@ import {
   getShowStickersIntroduction,
   getTextFormattingEnabled,
 } from '../selectors/items';
-import { getPropsForQuote } from '../selectors/message';
+import { canForward, getPropsForQuote } from '../selectors/message';
 import {
   getBlessedStickerPacks,
   getInstalledStickerPacks,
@@ -96,6 +97,7 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
   const recentEmojis = useSelector(selectRecentEmojis);
   const selectedMessageIds = useSelector(getSelectedMessageIds);
+  const messageLookup = useSelector(getMessages);
   const isFormattingEnabled = useSelector(getTextFormattingEnabled);
   const lastEditableMessageId = useSelector(getLastEditableMessageId);
   const receivedPacks = useSelector(getReceivedStickerPacks);
@@ -125,13 +127,25 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   const {
     attachments: draftAttachments,
     focusCounter,
-    isDisabled,
+    disabledCounter,
     linkPreviewLoading,
     linkPreviewResult,
     messageCompositionId,
     sendCounter,
     shouldSendHighQualityAttachments,
   } = composerState;
+
+  const isDisabled = disabledCounter > 0;
+
+  const areSelectedMessagesForwardable = useMemo(() => {
+    return selectedMessageIds?.every(messageId => {
+      const message = messageLookup[messageId];
+      if (!message) {
+        return false;
+      }
+      return canForward(message);
+    });
+  }, [messageLookup, selectedMessageIds]);
 
   const isActive = useMemo(() => {
     return !hasGlobalModalOpen && !hasPanelOpen;
@@ -365,6 +379,7 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       sortedGroupMembers={conversation.sortedGroupMembers ?? null}
       // Select Mode
       selectedMessageIds={selectedMessageIds}
+      areSelectedMessagesForwardable={areSelectedMessagesForwardable}
       toggleSelectMode={toggleSelectMode}
       toggleForwardMessagesModal={toggleForwardMessagesModal}
       // DraftGifMessageSendModal

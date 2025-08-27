@@ -54,7 +54,7 @@ import {
   getUserNumber,
 } from './user';
 import { getPinnedConversationIds } from './items';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { TimelineMessageLoadingState } from '../../util/timelineUtil';
 import { isSignalConversation } from '../../util/isSignalConversation';
 import { reduce } from '../../util/iterables';
@@ -68,6 +68,8 @@ import {
   countAllConversationsUnreadStats,
   type UnreadStats,
 } from '../../util/countUnreadStats';
+
+const log = createLogger('conversations');
 
 export type ConversationWithStoriesType = ConversationType & {
   hasStories?: HasStories;
@@ -832,7 +834,7 @@ export const getComposeSelectedContacts = createSelector(
 // What needs to happen to pull that selector logic here?
 //   1) contactTypingTimers - that UI-only state needs to be moved to redux
 //   2) all of the message selectors need to be reselect-based; today those
-//      Backbone-based prop-generation functions expect to get Conversation information
+//      model-based prop-generation functions expect to get Conversation information
 //      directly via ConversationController
 export function _conversationSelector(
   conversation?: ConversationType
@@ -1338,6 +1340,11 @@ export const getLastEditableMessageId = createSelector(
 export const getPreloadedConversationId = createSelector(
   getConversations,
   ({ preloadData }): string | undefined => preloadData?.conversationId
+);
+
+export const getProfileUpdateError = createSelector(
+  getConversations,
+  ({ hasProfileUpdateError }): boolean => Boolean(hasProfileUpdateError)
 );
 
 export const getPendingAvatarDownloadSelector = createSelector(

@@ -34,6 +34,7 @@ import net from 'net';
 import { z } from 'zod';
 
 import type { LibSignalError, Net } from '@signalapp/libsignal-client';
+import { ErrorCode } from '@signalapp/libsignal-client';
 import { Buffer } from 'node:buffer';
 import type {
   ChatServerMessageAck,
@@ -50,7 +51,7 @@ import { isOlderThan } from '../util/timestamp';
 import { strictAssert } from '../util/assert';
 import * as Errors from '../types/errors';
 import { SignalService as Proto } from '../protobuf';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import * as Timers from '../Timers';
 import type { IResource } from './WebSocket';
 
@@ -62,6 +63,8 @@ import {
   parseServerAlertsFromHeader,
   type ServerAlert,
 } from '../util/handleServerAlerts';
+
+const log = createLogger('WebsocketResources');
 
 const THIRTY_SECONDS = 30 * durations.SECOND;
 
@@ -312,10 +315,12 @@ const UNEXPECTED_DISCONNECT_CODE = 3001;
 export function connectUnauthenticatedLibsignal({
   libsignalNet,
   name,
+  userLanguages,
   keepalive,
 }: {
   libsignalNet: Net.Net;
   name: string;
+  userLanguages: ReadonlyArray<string>;
   keepalive: KeepAliveOptionsType;
 }): AbortableProcess<LibsignalWebSocketResource> {
   const logId = `LibsignalWebSocketResource(${name})`;
@@ -335,6 +340,7 @@ export function connectUnauthenticatedLibsignal({
     abortSignal =>
       libsignalNet.connectUnauthenticatedChat(listener, {
         abortSignal,
+        languages: [...userLanguages],
       }),
     listener,
     logId,
@@ -348,6 +354,7 @@ export function connectAuthenticatedLibsignal({
   credentials,
   handler,
   receiveStories,
+  userLanguages,
   keepalive,
   onReceivedAlerts,
 }: {
@@ -357,6 +364,7 @@ export function connectAuthenticatedLibsignal({
   handler: (request: IncomingWebSocketRequest) => void;
   onReceivedAlerts: (alerts: Array<ServerAlert>) => void;
   receiveStories: boolean;
+  userLanguages: ReadonlyArray<string>;
   keepalive: KeepAliveOptionsType;
 }): AbortableProcess<LibsignalWebSocketResource> {
   const logId = `LibsignalWebSocketResource(${name})`;
@@ -408,7 +416,7 @@ export function connectAuthenticatedLibsignal({
         credentials.password,
         receiveStories,
         listener,
-        { abortSignal }
+        { abortSignal, languages: [...userLanguages] }
       ),
     listener,
     logId,
@@ -537,10 +545,21 @@ export class LibsignalWebSocketResource
     }
     log.warn(`${this.logId}: connection closed`);
 
-    const event = cause
-      ? new CloseEvent(UNEXPECTED_DISCONNECT_CODE, cause.message)
-      : // The cause was an intentional disconnect. Report normal closure.
-        new CloseEvent(NORMAL_DISCONNECT_CODE, 'normal');
+    // This is a workaround to map libsignal error codes to close codes that
+    // SocketManager's existing clients expect.
+    // TODO: When we can refactor the SocketManager API, we should come up
+    // with a better solution that is not dependent on the raw close codes.
+    let event: CloseEvent;
+    if (cause == null) {
+      event = new CloseEvent(NORMAL_DISCONNECT_CODE, 'normal');
+    } else if (cause.code === ErrorCode.ConnectedElsewhere) {
+      event = new CloseEvent(4409, cause.message);
+    } else if (cause.code === ErrorCode.ConnectionInvalidated) {
+      event = new CloseEvent(4401, cause.message);
+    } else {
+      event = new CloseEvent(UNEXPECTED_DISCONNECT_CODE, cause.message);
+    }
+
     this.#closedReasonCode = event.code;
     this.dispatchEvent(event);
   }

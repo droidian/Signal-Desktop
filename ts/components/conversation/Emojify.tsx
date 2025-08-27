@@ -6,14 +6,15 @@ import { splitByEmoji } from '../../util/emoji';
 import { missingCaseError } from '../../util/missingCaseError';
 import { FunInlineEmoji } from '../fun/FunEmoji';
 import {
-  getEmojiParentByKey,
-  getEmojiParentKeyByVariantKey,
   getEmojiVariantByKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
   isEmojiVariantValueNonQualified,
 } from '../fun/data/emojis';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
+import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer';
+
+const log = createLogger('Emojify');
 
 export type Props = {
   fontSizeOverride?: number | null;
@@ -31,13 +32,14 @@ export function Emojify({
   text,
   renderNonEmoji = defaultRenderNonEmoji,
 }: Props): JSX.Element {
+  const emojiLocalizer = useFunEmojiLocalizer();
   return (
     <>
       {splitByEmoji(text).map(({ type, value: match }, index) => {
         if (type === 'emoji') {
           // If we don't recognize the emoji, render it as text.
           if (!isEmojiVariantValue(match)) {
-            log.error(`Found emoji that we did not recognize: ${match}`);
+            log.warn('Found emoji that we did not recognize', match.length);
             return renderNonEmoji({ text: match, key: index });
           }
 
@@ -48,15 +50,13 @@ export function Emojify({
 
           const variantKey = getEmojiVariantKeyByValue(match);
           const variant = getEmojiVariantByKey(variantKey);
-          const parentKey = getEmojiParentKeyByVariantKey(variantKey);
-          const parent = getEmojiParentByKey(parentKey);
 
           return (
             <FunInlineEmoji
               // eslint-disable-next-line react/no-array-index-key
               key={index}
               role="img"
-              aria-label={parent.englishShortNameDefault}
+              aria-label={emojiLocalizer.getLocaleShortName(variantKey)}
               emoji={variant}
               size={fontSizeOverride}
             />

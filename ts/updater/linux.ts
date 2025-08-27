@@ -14,7 +14,7 @@ import { DialogType } from '../types/Dialogs';
 import * as Errors from '../types/errors';
 import type { UpdaterOptionsType } from './common';
 
-const MIN_UBUNTU_VERSION = '20.04';
+const MIN_UBUNTU_VERSION = '22.04';
 
 const PackageSchema = z.object({
   version: z.string(),
@@ -64,12 +64,19 @@ export function initLinux({ logger, getMainWindow }: UpdaterOptionsType): void {
     app.quit();
   });
 
+  // In `postinst` script we run `touch .signal-postinst`.
+  // See our patch for app-builder-lib.
+  //
+  // /opt/Signal/resources/app.asar
   const asarPath = join(__dirname, '..', '..');
   if (!asarPath.endsWith('.asar')) {
     throw new Error('updater/linux: not running from ASAR');
   }
 
-  watch(asarPath, event => {
+  // /opt/Signal/.signal-postinst
+  const postinstFile = join(asarPath, '..', '..', '.signal-postinst');
+
+  watch(postinstFile, event => {
     if (event !== 'change') {
       return;
     }
@@ -83,6 +90,11 @@ export function initLinux({ logger, getMainWindow }: UpdaterOptionsType): void {
         'updater/linux: failed to parse updated asar',
         Errors.toLogFormat(error)
       );
+      return;
+    }
+
+    if (version === app.getVersion()) {
+      logger?.info('updater/linux: ignoring asar update, no version change');
       return;
     }
 

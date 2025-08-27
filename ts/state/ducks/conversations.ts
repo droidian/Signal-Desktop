@@ -21,7 +21,7 @@ import { DataReader, DataWriter } from '../../sql/Client';
 import type { AttachmentType } from '../../types/Attachment';
 import type { StateType as RootStateType } from '../reducer';
 import * as groups from '../../groups';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { calling } from '../../services/calling';
 import { getOwn } from '../../util/getOwn';
 import { assertDev, strictAssert } from '../../util/assert';
@@ -29,6 +29,7 @@ import { drop } from '../../util/drop';
 import type { DurationInSeconds } from '../../util/durations';
 import * as universalExpireTimer from '../../util/universalExpireTimer';
 import * as Attachment from '../../types/Attachment';
+import type { LocalizerType } from '../../types/I18N';
 import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
 import { isFileDangerous } from '../../util/isFileDangerous';
 import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl';
@@ -36,13 +37,8 @@ import { instance as libphonenumberInstance } from '../../util/libphonenumberIns
 import type {
   ShowSendAnywayDialogActionType,
   ShowErrorModalActionType,
-  ToggleProfileEditorErrorActionType,
 } from './globalModals';
-import {
-  SHOW_SEND_ANYWAY_DIALOG,
-  SHOW_ERROR_MODAL,
-  TOGGLE_PROFILE_EDITOR_ERROR,
-} from './globalModals';
+import { SHOW_SEND_ANYWAY_DIALOG, SHOW_ERROR_MODAL } from './globalModals';
 import {
   MODIFY_LIST,
   DELETE_LIST,
@@ -183,8 +179,9 @@ import {
   isWithinMaxEdits,
   MESSAGE_MAX_EDIT_COUNT,
 } from '../../util/canEditMessage';
-import type { ChangeNavTabActionType } from './nav';
-import { CHANGE_NAV_TAB, NavTab, actions as navActions } from './nav';
+import type { ChangeLocationAction } from './nav';
+import { CHANGE_LOCATION, changeLocation, actions as navActions } from './nav';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../../types/Nav';
 import { sortByMessageOrder } from '../../types/ForwardDraft';
 import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
 import {
@@ -209,7 +206,7 @@ import { actions as searchActions } from './search';
 import type { SearchActionType } from './search';
 import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage';
 import { doubleCheckMissingQuoteReference as doDoubleCheckMissingQuoteReference } from '../../util/doubleCheckMissingQuoteReference';
-import { queueAttachmentDownloadsForMessage } from '../../util/queueAttachmentDownloads';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
 import { markAttachmentAsCorrupted as doMarkAttachmentAsCorrupted } from '../../messageModifiers/AttachmentDownloads';
 import {
   isSent,
@@ -220,6 +217,9 @@ import { markFailed } from '../../test-node/util/messageFailures';
 import { cleanupMessages } from '../../util/cleanup';
 import { MessageModel } from '../../models/messages';
 import type { ConversationModel } from '../../models/conversations';
+import { MessageRequestResponseSource } from '../../types/MessageRequestResponseEvent';
+
+const log = createLogger('conversations');
 
 // State
 
@@ -366,6 +366,7 @@ export type ConversationType = ReadonlyDeep<
     title: string;
     titleNoDefault?: string;
     titleNoNickname?: string;
+    titleShortNoDefault?: string;
     searchableTitle?: string;
     unreadCount?: number;
     unreadMentionsCount?: number;
@@ -419,9 +420,12 @@ export type ConversationType = ReadonlyDeep<
   )
 >;
 export type ProfileDataType = ReadonlyDeep<
-  {
-    firstName: string;
-  } & Pick<ConversationType, 'aboutEmoji' | 'aboutText' | 'familyName'>
+  Partial<
+    Pick<
+      ConversationType,
+      'firstName' | 'badges' | 'aboutEmoji' | 'aboutText' | 'familyName'
+    >
+  >
 >;
 
 export type ConversationLookupType = ReadonlyDeep<{
@@ -505,7 +509,7 @@ export type ConversationVerificationData = ReadonlyDeep<
       >;
     }
   | {
-      type: ConversationVerificationState.VerificationCancelled;
+      type: ConversationVerificationState.VerificationCanceled;
       canceledAt: number;
     }
 >;
@@ -585,6 +589,7 @@ export type ConversationsStateType = ReadonlyDeep<{
   pendingRequestedAvatarDownload: Record<string, boolean>;
 
   preloadData?: ConversationPreloadDataType;
+  hasProfileUpdateError?: boolean;
 }>;
 
 // Helpers
@@ -616,8 +621,7 @@ export const getConversationCallMode = (
 
 const CANCEL_CONVERSATION_PENDING_VERIFICATION =
   'conversations/CANCEL_CONVERSATION_PENDING_VERIFICATION';
-const CLEAR_CANCELLED_VERIFICATION =
-  'conversations/CLEAR_CANCELLED_VERIFICATION';
+const CLEAR_CANCELED_VERIFICATION = 'conversations/CLEAR_CANCELED_VERIFICATION';
 const CLEAR_CONVERSATIONS_PENDING_VERIFICATION =
   'conversations/CLEAR_CONVERSATIONS_PENDING_VERIFICATION';
 export const COLORS_CHANGED = 'conversations/COLORS_CHANGED';
@@ -648,6 +652,8 @@ export const CONVERSATION_UNLOADED = 'CONVERSATION_UNLOADED';
 export const SHOW_SPOILER = 'conversations/SHOW_SPOILER';
 export const SET_PENDING_REQUESTED_AVATAR_DOWNLOAD =
   'conversations/SET_PENDING_REQUESTED_AVATAR_DOWNLOAD';
+export const SET_PROFILE_UPDATE_ERROR =
+  'conversations/SET_PROFILE_UPDATE_ERROR';
 
 export type CancelVerificationDataByConversationActionType = ReadonlyDeep<{
   type: typeof CANCEL_CONVERSATION_PENDING_VERIFICATION;
@@ -664,8 +670,8 @@ type ClearInvitedServiceIdsForNewlyCreatedGroupActionType = ReadonlyDeep<{
 type ClearVerificationDataByConversationActionType = ReadonlyDeep<{
   type: typeof CLEAR_CONVERSATIONS_PENDING_VERIFICATION;
 }>;
-type ClearCancelledVerificationActionType = ReadonlyDeep<{
-  type: typeof CLEAR_CANCELLED_VERIFICATION;
+type ClearCanceledVerificationActionType = ReadonlyDeep<{
+  type: typeof CLEAR_CANCELED_VERIFICATION;
   payload: {
     conversationId: string;
   };
@@ -843,6 +849,12 @@ export type SetPendingRequestedAvatarDownloadActionType = ReadonlyDeep<{
   payload: {
     conversationId: string;
     value: boolean;
+  };
+}>;
+export type SetProfileUpdateErrorActionType = ReadonlyDeep<{
+  type: typeof SET_PROFILE_UPDATE_ERROR;
+  payload: {
+    newErrorState: boolean;
   };
 }>;
 
@@ -1038,7 +1050,7 @@ export type ConsumePreloadDataActionType = ReadonlyDeep<{
 export type ConversationActionType =
   | AddPreloadDataActionType
   | CancelVerificationDataByConversationActionType
-  | ClearCancelledVerificationActionType
+  | ClearCanceledVerificationActionType
   | ClearGroupCreationErrorActionType
   | ClearInvitedServiceIdsForNewlyCreatedGroupActionType
   | ClearTargetedMessageActionType
@@ -1081,6 +1093,7 @@ export type ConversationActionType =
   | ReviewConversationNameCollisionActionType
   | ScrollToMessageActionType
   | SetPendingRequestedAvatarDownloadActionType
+  | SetProfileUpdateErrorActionType
   | TargetedConversationChangedActionType
   | SetComposeGroupAvatarActionType
   | SetComposeGroupExpireTimerActionType
@@ -1123,7 +1136,7 @@ export const actions = {
   cancelAttachmentDownload,
   cancelConversationVerification,
   changeHasGroupLink,
-  clearCancelledConversationVerification,
+  clearCanceledConversationVerification,
   clearGroupCreationError,
   clearInvitedServiceIdsForNewlyCreatedGroup,
   clearTargetedMessage,
@@ -1218,6 +1231,7 @@ export const actions = {
   setMuteExpiration,
   setPinned,
   setPreJoinConversation,
+  setProfileUpdateError,
   setVoiceNotePlaybackRate,
   showArchivedConversations,
   showAttachmentDownloadStillInProgressToast,
@@ -1450,8 +1464,7 @@ function markMessageRead(
       throw new Error(`markMessageRead: failed to load message ${messageId}`);
     }
 
-    await conversation.markRead(message.get('received_at'), {
-      newestSentAt: message.get('sent_at'),
+    await conversation.markRead(message.attributes, {
       sendReadReceipts: true,
     });
 
@@ -1531,12 +1544,10 @@ async function getAvatarsAndUpdateConversation(
   const nextAvatars = getNextAvatarsData(avatars, nextAvatarId);
   // We don't save buffers to the db, but we definitely want it in-memory so
   // we don't have to re-generate them.
-  //
-  // Mutating here because we don't want to trigger a model change
-  // because we're updating redux here manually ourselves. Au revoir Backbone!
-  conversation.attributes.avatars = nextAvatars.map(avatarData =>
-    omit(avatarData, ['buffer'])
-  );
+
+  conversation.set({
+    avatars: nextAvatars.map(avatarData => omit(avatarData, ['buffer'])),
+  });
   await DataWriter.updateConversation(conversation.attributes);
 
   return nextAvatars;
@@ -1831,13 +1842,6 @@ function deleteMessages({
       dispatch(scrollToMessage(conversationId, nearbyMessageId));
     }
 
-    const ourConversation =
-      window.ConversationController.getOurConversationOrThrow();
-    const capable = Boolean(ourConversation.get('capabilities')?.deleteSync);
-
-    if (!capable) {
-      return;
-    }
     if (messages.length === 0) {
       return;
     }
@@ -1919,15 +1923,12 @@ function discardEditMessage(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, never> {
   return () => {
-    window.ConversationController.get(conversationId)?.set(
-      {
-        draftEditMessage: undefined,
-        draftBodyRanges: undefined,
-        draft: undefined,
-        quotedMessageId: undefined,
-      },
-      { unset: true }
-    );
+    window.ConversationController.get(conversationId)?.set({
+      draftEditMessage: undefined,
+      draftBodyRanges: undefined,
+      draft: undefined,
+      quotedMessageId: undefined,
+    });
   };
 }
 
@@ -2033,7 +2034,7 @@ function generateNewGroupLink(
 
 /**
  * Not an actual redux action creator, so it doesn't produce an action (or dispatch
- * itself) because updates are managed through the backbone model, which will trigger
+ * itself) because updates are managed through the model, which will trigger
  * necessary updates and refresh conversation_view.
  *
  * In practice, it's similar to an already-connected thunk action. Later on we will
@@ -2213,12 +2214,7 @@ function saveAvatarToDisk(
 function myProfileChanged(
   profileData: ProfileDataType,
   avatarUpdateOptions: AvatarUpdateOptionsType
-): ThunkAction<
-  void,
-  RootStateType,
-  unknown,
-  NoopActionType | ToggleProfileEditorErrorActionType
-> {
+): ThunkAction<void, RootStateType, unknown, SetProfileUpdateErrorActionType> {
   return async (dispatch, getState) => {
     const conversation = getMe(getState());
 
@@ -2231,16 +2227,34 @@ function myProfileChanged(
         avatarUpdateOptions
       );
 
-      // writeProfile above updates the backbone model which in turn updates
-      // redux through it's on:change event listener. Once we lose Backbone
-      // we'll need to manually sync these new changes.
+      // writeProfile above updates the model which in turn updates
+      // redux through it's on:change event listener.
+
+      // We just want to clear whatever error was there before:
       dispatch({
-        type: 'NOOP',
-        payload: null,
+        type: SET_PROFILE_UPDATE_ERROR,
+        payload: {
+          newErrorState: false,
+        },
       });
     } catch (err) {
       log.error('myProfileChanged', Errors.toLogFormat(err));
-      dispatch({ type: TOGGLE_PROFILE_EDITOR_ERROR });
+
+      // Make sure the user sees an error dialog
+      dispatch({
+        type: SET_PROFILE_UPDATE_ERROR,
+        payload: {
+          newErrorState: true,
+        },
+      });
+      // And take them to the profile editor to resolve it
+      changeLocation({
+        tab: NavTab.Settings,
+        details: {
+          page: SettingsPage.Profile,
+          state: ProfileEditorPage.None,
+        },
+      });
     }
   };
 }
@@ -2250,7 +2264,7 @@ function removeCustomColorOnConversations(
 ): ThunkAction<void, RootStateType, unknown, CustomColorRemovedActionType> {
   return async dispatch => {
     const conversationsToUpdate: Array<ConversationAttributesType> = [];
-    window.getConversations().forEach(conversation => {
+    window.ConversationController.getAll().forEach(conversation => {
       if (conversation.get('customColorId') === colorId) {
         conversation.set({
           conversationColor: undefined,
@@ -2284,7 +2298,7 @@ function resetAllChatColors(): ThunkAction<
     // Calling this with no args unsets all the colors in the db
     await DataWriter.updateAllConversationColors();
 
-    window.getConversations().forEach(conversation => {
+    window.ConversationController.getAll().forEach(conversation => {
       conversation.set({
         conversationColor: undefined,
         customColor: undefined,
@@ -2312,7 +2326,7 @@ function kickOffAttachmentDownload(
         `kickOffAttachmentDownload: Message ${options.messageId} missing!`
       );
     }
-    const didUpdateValues = await queueAttachmentDownloadsForMessage(message, {
+    const didUpdateValues = await queueAttachmentDownloads(message, {
       urgency: AttachmentDownloadUrgency.IMMEDIATE,
       isManualDownload: true,
     });
@@ -2699,7 +2713,10 @@ export function cancelConversationVerification(
         activeCall.conversationId === conversationId &&
         activeCall.callMode === CallMode.Direct
       ) {
-        calling.hangup(conversationId, 'canceled conversation verification');
+        calling.hangup({
+          conversationId,
+          reason: 'canceled conversation verification',
+        });
       }
       conversationJobQueue.resolveVerificationWaiter(conversationId);
     });
@@ -2755,11 +2772,11 @@ function verifyConversationsStoppingSend(): ThunkAction<
   };
 }
 
-export function clearCancelledConversationVerification(
+export function clearCanceledConversationVerification(
   conversationId: string
-): ClearCancelledVerificationActionType {
+): ClearCanceledVerificationActionType {
   return {
-    type: CLEAR_CANCELLED_VERIFICATION,
+    type: CLEAR_CANCELED_VERIFICATION,
     payload: {
       conversationId,
     },
@@ -3015,11 +3032,7 @@ function getProfilesForConversation(conversationId: string): NoopActionType {
     throw new Error('getProfilesForConversation: no conversation found');
   }
 
-  drop(
-    conversation.getProfiles().catch(() => {
-      /* nothing to do here; logging already happened */
-    })
-  );
+  drop(conversation.getProfiles());
 
   return {
     type: 'NOOP',
@@ -3043,11 +3056,7 @@ function conversationStoppedByMissingVerification(payload: {
     }
 
     // Intentionally not awaiting here
-    drop(
-      conversation.getProfiles().catch(() => {
-        /* nothing to do here; logging already happened */
-      })
-    );
+    drop(conversation.getProfiles());
   });
 
   return {
@@ -3063,7 +3072,7 @@ export function markOpenConversationRead(
     const state = getState();
     const { nav } = state;
 
-    if (nav.selectedNavTab !== NavTab.Chats) {
+    if (nav.selectedLocation.tab !== NavTab.Chats) {
       return;
     }
 
@@ -3298,6 +3307,16 @@ function setIsFetchingUUID(
     payload: {
       identifier,
       isFetching,
+    },
+  };
+}
+function setProfileUpdateError(
+  newErrorState: boolean
+): SetProfileUpdateErrorActionType {
+  return {
+    type: SET_PROFILE_UPDATE_ERROR,
+    payload: {
+      newErrorState,
     },
   };
 }
@@ -3591,7 +3610,14 @@ async function syncMessageRequestResponse(
 ): Promise<void> {
   // In GroupsV2, this may modify the server. We only want to continue if those
   //   server updates were successful.
-  await conversation.applyMessageRequestResponse(response, { shouldSave });
+  await conversation.applyMessageRequestResponse(
+    response,
+    {
+      source: MessageRequestResponseSource.LOCAL,
+      timestamp: Date.now(),
+    },
+    { shouldSave }
+  );
 
   const groupId = conversation.getGroupIdBuffer();
 
@@ -3804,8 +3830,10 @@ function acceptConversation(
       await conversation.applyMessageRequestResponse(
         messageRequestEnum.ACCEPT,
         {
-          shouldSave: true,
-        }
+          source: MessageRequestResponseSource.LOCAL,
+          timestamp: Date.now(),
+        },
+        { shouldSave: true }
       );
 
       try {
@@ -3880,9 +3908,14 @@ function blockConversation(
     } else {
       // In GroupsV2, this may modify the server. We only want to continue if those
       //   server updates were successful.
-      await conversation.applyMessageRequestResponse(messageRequestEnum.BLOCK, {
-        shouldSave: true,
-      });
+      await conversation.applyMessageRequestResponse(
+        messageRequestEnum.BLOCK,
+        {
+          source: MessageRequestResponseSource.LOCAL,
+          timestamp: Date.now(),
+        },
+        { shouldSave: true }
+      );
 
       try {
         await singleProtoJobQueue.add(
@@ -4054,12 +4087,13 @@ function saveAttachment(
       return;
     }
 
-    const { readAttachmentData, saveAttachmentToDisk } =
+    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
       window.Signal.Migrations;
 
     const fullPath = await Attachment.save({
       attachment,
       index: index + 1,
+      getUnusedFilename,
       readAttachmentData,
       saveAttachmentToDisk,
       timestamp,
@@ -4079,11 +4113,17 @@ function saveAttachment(
   };
 }
 
-const showSaveMultiDialog = (): Promise<{
+const showSaveMultiDialog = (
+  i18n: LocalizerType
+): Promise<{
   canceled: boolean;
   dirPath?: string;
 }> => {
-  return ipcRenderer.invoke('show-save-multi-dialog');
+  return ipcRenderer.invoke('show-open-folder-dialog', {
+    useMainWindow: true,
+    title: i18n('icu:SaveMultiDialog__title'),
+    buttonLabel: i18n('icu:save'),
+  });
 };
 
 export type SaveAttachmentsActionCreatorType = ReadonlyDeep<
@@ -4098,7 +4138,7 @@ function saveAttachments(
   attachments: ReadonlyArray<AttachmentType>,
   timestamp = Date.now()
 ): ThunkAction<void, RootStateType, unknown, ShowToastActionType> {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     // check if any of the attachments could be dangerous
     for (const attachment of attachments) {
       const { fileName = '' } = attachment;
@@ -4115,48 +4155,63 @@ function saveAttachments(
       }
     }
 
-    const { canceled, dirPath } = await showSaveMultiDialog();
+    const { canceled, dirPath } = await showSaveMultiDialog(
+      getIntl(getState())
+    );
     if (canceled || !dirPath) {
       return;
     }
 
-    const { readAttachmentData, saveAttachmentToDisk } =
+    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
       window.Signal.Migrations;
 
     let fullPath;
     let index = 0;
-    for (const attachment of attachments) {
-      index += 1;
+    try {
+      for (const attachment of attachments) {
+        index += 1;
 
-      // eslint-disable-next-line no-await-in-loop
-      const result = await Attachment.save({
-        attachment,
-        index,
-        readAttachmentData,
-        saveAttachmentToDisk,
-        timestamp,
-        baseDir: dirPath,
-      });
+        // eslint-disable-next-line no-await-in-loop
+        const result = await Attachment.save({
+          attachment,
+          index,
+          getUnusedFilename,
+          readAttachmentData,
+          saveAttachmentToDisk,
+          timestamp,
+          baseDir: dirPath,
+        });
 
-      if (fullPath === undefined) {
-        fullPath = result;
+        if (fullPath === undefined) {
+          fullPath = result;
+        }
       }
-    }
 
-    if (fullPath == null) {
-      throw new Error('saveAttachments: Returned path to attachment is null!');
-    }
+      if (fullPath == null) {
+        throw new Error(
+          'saveAttachments: Returned path to attachment is null!'
+        );
+      }
 
-    dispatch({
-      type: SHOW_TOAST,
-      payload: {
-        toastType: ToastType.FileSaved,
-        parameters: {
-          countOfFiles: attachments.length,
-          fullPath,
+      dispatch({
+        type: SHOW_TOAST,
+        payload: {
+          toastType: ToastType.FileSaved,
+          parameters: {
+            countOfFiles: attachments.length,
+            fullPath,
+          },
         },
-      },
-    });
+      });
+    } catch (e) {
+      log.error('Error in saveAttachments():', Errors.toLogFormat(e));
+      dispatch({
+        type: SHOW_TOAST,
+        payload: {
+          toastType: ToastType.Error,
+        },
+      });
+    }
   };
 }
 
@@ -4658,13 +4713,13 @@ function showConversation({
   void,
   RootStateType,
   unknown,
-  TargetedConversationChangedActionType | ChangeNavTabActionType
+  TargetedConversationChangedActionType | ChangeLocationAction
 > {
   return (dispatch, getState) => {
     const { conversations, nav } = getState();
 
-    if (nav.selectedNavTab !== NavTab.Chats) {
-      dispatch(navActions.changeNavTab(NavTab.Chats));
+    if (nav.selectedLocation.tab !== NavTab.Chats) {
+      dispatch(navActions.changeLocation({ tab: NavTab.Chats }));
       const conversation = window.ConversationController.get(conversationId);
       conversation?.setMarkedUnread(false);
     }
@@ -4749,7 +4804,7 @@ function onConversationOpened(
         Promise.all([
           conversation.loadNewestMessages(undefined, undefined),
           conversation.updateLastMessage(),
-          conversation.updateUnread(),
+          conversation.throttledUpdateUnread(),
         ])
       );
     };
@@ -4814,14 +4869,17 @@ function onConversationClosed(
 ): ThunkAction<void, RootStateType, unknown, ConversationUnloadedActionType> {
   return async dispatch => {
     const conversation = window.ConversationController.get(conversationId);
+    // Conversation was removed due to the merge
     if (!conversation) {
-      throw new Error('onConversationClosed: Conversation not found');
+      log.warn(
+        `onConversationClosed: Conversation ${conversationId} not found`
+      );
     }
 
-    const logId = `onConversationClosed/${conversation.idForLogging()}`;
+    const logId = `onConversationClosed/${conversation?.idForLogging() ?? conversationId}`;
     log.info(`${logId}: unloading due to ${reason}`);
 
-    if (conversation.get('draftChanged')) {
+    if (conversation?.get('draftChanged')) {
       if (conversation.hasDraft()) {
         log.info(`${logId}: new draft info needs update`);
         const now = Date.now();
@@ -5163,7 +5221,7 @@ function getVerificationDataForConversation({
 
   if (
     !existing ||
-    existing.type === ConversationVerificationState.VerificationCancelled
+    existing.type === ConversationVerificationState.VerificationCanceled
   ) {
     return {
       [conversationId]: {
@@ -5451,7 +5509,7 @@ export function reducer(
   action: Readonly<
     | ConversationActionType
     | StoryDistributionListsActionType
-    | ChangeNavTabActionType
+    | ChangeLocationAction
   >
 ): ConversationsStateType {
   if (action.type === CLEAR_CONVERSATIONS_PENDING_VERIFICATION) {
@@ -5461,7 +5519,7 @@ export function reducer(
     };
   }
 
-  if (action.type === CLEAR_CANCELLED_VERIFICATION) {
+  if (action.type === CLEAR_CANCELED_VERIFICATION) {
     const { conversationId } = action.payload;
     const { verificationDataByConversation } = state;
 
@@ -5502,13 +5560,13 @@ export function reducer(
 
     for (const [conversationId, data] of entries) {
       if (
-        data.type === ConversationVerificationState.VerificationCancelled &&
+        data.type === ConversationVerificationState.VerificationCanceled &&
         data.canceledAt > canceledAt
       ) {
         newverificationDataByConversation[conversationId] = data;
       } else {
         newverificationDataByConversation[conversationId] = {
-          type: ConversationVerificationState.VerificationCancelled,
+          type: ConversationVerificationState.VerificationCanceled,
           canceledAt,
         };
       }
@@ -5636,6 +5694,15 @@ export function reducer(
     return {
       ...state,
       preJoinConversation: data,
+    };
+  }
+  if (action.type === SET_PROFILE_UPDATE_ERROR) {
+    const { payload } = action;
+    const { newErrorState } = payload;
+
+    return {
+      ...state,
+      hasProfileUpdateError: newErrorState,
     };
   }
   if (action.type === 'CONVERSATIONS_UPDATED') {
@@ -7281,8 +7348,8 @@ export function reducer(
   }
 
   if (
-    action.type === CHANGE_NAV_TAB &&
-    action.payload.selectedNavTab === NavTab.Chats
+    action.type === CHANGE_LOCATION &&
+    action.payload.selectedLocation.tab === NavTab.Chats
   ) {
     const { messagesByConversation, selectedConversationId } = state;
     if (selectedConversationId == null) {

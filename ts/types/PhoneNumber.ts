@@ -3,8 +3,10 @@
 
 import memoizee from 'memoizee';
 import { instance, PhoneNumberFormat } from '../util/libphonenumberInstance';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import * as Errors from './errors';
+
+const log = createLogger('PhoneNumber');
 
 function _format(
   phoneNumber: string,
@@ -38,7 +40,9 @@ export function getCountryCode(
       return undefined;
     }
 
-    return instance.parse(phoneNumber).getCountryCode();
+    const parsed = instance.parse(phoneNumber);
+
+    return parsed.getCountryCode();
   } catch (error) {
     const errorText = Errors.toLogFormat(error);
     log.info(

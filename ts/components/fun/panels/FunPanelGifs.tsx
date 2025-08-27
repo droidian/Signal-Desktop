@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Range } from '@tanstack/react-virtual';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
-import type { MouseEvent } from 'react';
+import type { PointerEvent } from 'react';
 import React, {
   memo,
   useCallback,
@@ -10,8 +10,9 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useId,
 } from 'react';
-import { useId, VisuallyHidden } from 'react-aria';
+import { VisuallyHidden } from 'react-aria';
 import { LRUCache } from 'lru-cache';
 import { FunItemButton } from '../base/FunItem';
 import {
@@ -60,8 +61,10 @@ import type { tenorDownload } from '../data/tenor';
 import { FunGif } from '../FunGif';
 import type { LocalizerType } from '../../../types/I18N';
 import { isAbortError } from '../../../util/isAbortError';
-import * as log from '../../../logging/log';
+import { createLogger } from '../../../logging/log';
 import * as Errors from '../../../types/errors';
+
+const log = createLogger('FunPanelGifs');
 
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50 MB
 const FunGifBlobCache = new LRUCache<string, Blob>({
@@ -81,6 +84,19 @@ function readGifMediaFromCache(gifMedia: GifMediaType): Blob | null {
 function saveGifMediaToCache(gifMedia: GifMediaType, blob: Blob): void {
   FunGifBlobCache.set(gifMedia.url, blob);
   FunGifBlobLiveCache.set(gifMedia, blob);
+}
+
+function getSelectedSection(
+  hasSearchQuery: boolean,
+  hasRecentGifs: boolean
+): FunGifsSection {
+  if (hasSearchQuery) {
+    return FunSectionCommon.SearchResults;
+  }
+  if (hasRecentGifs) {
+    return FunSectionCommon.Recents;
+  }
+  return FunGifsCategory.Trending;
 }
 
 const GIF_WATERFALL_COLUMNS = 2;
@@ -111,12 +127,7 @@ type GifsQuery = Readonly<{
 }>;
 
 export type FunGifSelection = Readonly<{
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  width: number;
-  height: number;
+  gif: GifType;
 }>;
 
 export type FunPanelGifsProps = Readonly<{
@@ -131,51 +142,44 @@ export function FunPanelGifs({
   const fun = useFunContext();
   const {
     i18n,
-    searchInput,
-    onSearchInputChange,
-    selectedGifsSection,
-    onChangeSelectedSelectGifsSection,
+    storedSearchInput,
+    onStoredSearchInputChange,
     recentGifs,
     fetchGifsFeatured,
     fetchGifsSearch,
     fetchGif,
+    onSelectGif: onFunSelectGif,
   } = fun;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
 
+  const [searchInput, setSearchInput] = useState(storedSearchInput);
   const searchQuery = useMemo(() => searchInput.trim(), [searchInput]);
+
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
 
-  const handleSearchInputChange = useCallback(
-    (nextSearchInput: string) => {
-      if (nextSearchInput.trim() !== '') {
-        onChangeSelectedSelectGifsSection(FunSectionCommon.SearchResults);
-      } else if (recentGifs.length > 0) {
-        onChangeSelectedSelectGifsSection(FunSectionCommon.Recents);
-      } else {
-        onChangeSelectedSelectGifsSection(FunGifsCategory.Trending);
-      }
-      onSearchInputChange(nextSearchInput);
-    },
-    [onSearchInputChange, recentGifs, onChangeSelectedSelectGifsSection]
-  );
+  const [selectedSection, setSelectedSection] = useState(() => {
+    const hasSearchQuery = searchQuery !== '';
+    const hasRecentGifs = recentGifs.length > 0;
+    return getSelectedSection(hasSearchQuery, hasRecentGifs);
+  });
 
   const [debouncedQuery, setDebouncedQuery] = useState<GifsQuery>({
-    selectedSection: selectedGifsSection,
+    selectedSection,
     searchQuery,
   });
 
   useEffect(() => {
     if (
       debouncedQuery.searchQuery === searchQuery &&
-      debouncedQuery.selectedSection === selectedGifsSection
+      debouncedQuery.selectedSection === selectedSection
     ) {
       // don't update twice
       return;
     }
 
     const query: GifsQuery = {
-      selectedSection: selectedGifsSection,
+      selectedSection,
       searchQuery,
     };
     // Set immediately if not a search
@@ -190,7 +194,7 @@ export function FunPanelGifs({
     return () => {
       clearTimeout(timeout);
     };
-  }, [debouncedQuery, searchQuery, selectedGifsSection]);
+  }, [debouncedQuery, searchQuery, selectedSection]);
 
   const loader = useCallback(
     async (
@@ -345,12 +349,21 @@ export function FunPanelGifs({
     return new WaterfallKeyboardDelegate(virtualizer);
   }, [virtualizer]);
 
-  const handleSelectSection = useCallback(
-    (key: string) => {
-      onChangeSelectedSelectGifsSection(key as FunGifsCategory);
+  const handleSearchInputChange = useCallback(
+    (nextSearchInput: string) => {
+      const hasSearchQuery = nextSearchInput.trim() !== '';
+      const hasRecentGifs = recentGifs.length > 0;
+      setSelectedSection(getSelectedSection(hasSearchQuery, hasRecentGifs));
+      setSearchInput(nextSearchInput);
+      onStoredSearchInputChange(nextSearchInput);
     },
-    [onChangeSelectedSelectGifsSection]
+    [onStoredSearchInputChange, recentGifs]
   );
+
+  const handleSelectSection = useCallback((key: string) => {
+    setSearchInput('');
+    setSelectedSection(key as FunGifsCategory);
+  }, []);
 
   const handleKeyboardStateChange = useCallback(
     (state: WaterfallKeyboardState) => {
@@ -359,13 +372,15 @@ export function FunPanelGifs({
     []
   );
 
-  const handlePressGif = useCallback(
-    (_event: MouseEvent, gifSelection: FunGifSelection) => {
+  const handleClickGif = useCallback(
+    (_event: PointerEvent, gifSelection: FunGifSelection) => {
+      onFunSelectGif(gifSelection);
       onSelectGif(gifSelection);
+      setSelectedItemKey(null);
       // Should always close, cannot select multiple
       onClose();
     },
-    [onSelectGif, onClose]
+    [onFunSelectGif, onSelectGif, onClose]
   );
 
   const handleRetry = useCallback(() => {
@@ -521,7 +536,7 @@ export function FunPanelGifs({
                         itemOffset={item.start}
                         itemLane={item.lane}
                         isTabbable={isTabbable}
-                        onPressGif={handlePressGif}
+                        onClickGif={handleClickGif}
                         fetchGif={fetchGif}
                       />
                     );
@@ -543,23 +558,16 @@ const Item = memo(function Item(props: {
   itemOffset: number;
   itemLane: number;
   isTabbable: boolean;
-  onPressGif: (event: MouseEvent, gifSelection: FunGifSelection) => void;
+  onClickGif: (event: PointerEvent, gifSelection: FunGifSelection) => void;
   fetchGif: typeof tenorDownload;
 }) {
-  const { onPressGif, fetchGif } = props;
+  const { onClickGif, fetchGif } = props;
 
   const handleClick = useCallback(
-    async (event: MouseEvent) => {
-      onPressGif(event, {
-        id: props.gif.id,
-        title: props.gif.title,
-        description: props.gif.description,
-        url: props.gif.attachmentMedia.url,
-        width: props.gif.attachmentMedia.width,
-        height: props.gif.attachmentMedia.height,
-      });
+    async (event: PointerEvent) => {
+      onClickGif(event, { gif: props.gif });
     },
-    [props.gif, onPressGif]
+    [props.gif, onClickGif]
   );
 
   const descriptionId = `FunGifsPanelItem__GifDescription--${props.gif.id}`;
@@ -615,7 +623,7 @@ const Item = memo(function Item(props: {
       <FunItemButton
         aria-label={props.gif.title}
         onClick={handleClick}
-        tabIndex={props.isTabbable ? 0 : -1}
+        excludeFromTabOrder={!props.isTabbable}
       >
         {src != null && (
           <FunGif

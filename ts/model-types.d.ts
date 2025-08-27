@@ -1,25 +1,19 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as Backbone from 'backbone';
 import type { ReadonlyDeep } from 'type-fest';
 
 import type { GroupV2ChangeType } from './groups';
 import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange';
 import type { CustomColorType, ConversationColorType } from './types/Colors';
 import type { SendMessageChallengeData } from './textsecure/Errors';
-import type { ConversationModel } from './models/conversations';
 import type { ProfileNameChangeType } from './util/getStringForProfileChange';
 import type { CapabilitiesType } from './textsecure/WebAPI';
 import type { ReadStatus } from './messages/MessageReadStatus';
 import type { SendStateByConversationId } from './messages/MessageSendState';
 import type { GroupNameCollisionsWithIdsByTitle } from './util/groupMemberNameCollisions';
 
-import type {
-  AttachmentDraftType,
-  AttachmentType,
-  ThumbnailType,
-} from './types/Attachment';
+import type { AttachmentDraftType, AttachmentType } from './types/Attachment';
 import type { EmbeddedContactType } from './types/EmbeddedContact';
 import { SignalService as Proto } from './protobuf';
 import type { AvatarDataType, ContactAvatarType } from './types/Avatar';
@@ -82,7 +76,7 @@ export type GroupMigrationType = {
 export type QuotedAttachmentType = {
   contentType: MIMEType;
   fileName?: string;
-  thumbnail?: ThumbnailType;
+  thumbnail?: AttachmentType;
 };
 
 export type QuotedMessageType = {
@@ -186,9 +180,6 @@ export type MessageAttributesType = {
   expireTimer?: DurationInSeconds;
   groupMigration?: GroupMigrationType;
   group_update?: GroupV1Update;
-  hasAttachments?: boolean | 0 | 1;
-  hasFileAttachments?: boolean | 0 | 1;
-  hasVisualMediaAttachments?: boolean | 0 | 1;
   mentionsMe?: boolean | 0 | 1;
   isErased?: boolean;
   isTapToViewInvalid?: boolean;
@@ -493,7 +484,7 @@ export type ConversationAttributesType = {
   groupInviteLinkPassword?: string;
   previousGroupV1Id?: string;
   previousGroupV1Members?: Array<string>;
-  acknowledgedGroupNameCollisions?: GroupNameCollisionsWithIdsByTitle;
+  acknowledgedGroupNameCollisions?: ReadonlyDeep<GroupNameCollisionsWithIdsByTitle>;
 
   // Used only when user is waiting for approval to join via link
   isTemporary?: boolean;
@@ -568,7 +559,3 @@ export type ShallowChallengeError = CustomError & {
   readonly retryAfter: number;
   readonly data: SendMessageChallengeData;
 };
-
-export declare class ConversationModelCollectionType extends Backbone.Collection<ConversationModel> {
-  resetLookups(): void;
-}

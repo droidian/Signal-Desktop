@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { FunProvider } from '../../components/fun/FunProvider';
 import { getIntl } from '../selectors/user';
 import { selectRecentEmojis } from '../selectors/emojis';
-import type { GifType } from '../../components/fun/panels/FunPanelGifs';
+import type { FunGifSelection } from '../../components/fun/panels/FunPanelGifs';
 import {
   getInstalledStickerPacks,
   getRecentStickers,
@@ -23,12 +23,18 @@ import {
   getShowStickerPickerHint,
 } from '../selectors/items';
 import { useItemsActions } from '../ducks/items';
+import { useGifsActions } from '../ducks/gifs';
 import {
   fetchGifsFeatured,
   fetchGifsSearch,
 } from '../../components/fun/data/gifs';
 import { tenorDownload } from '../../components/fun/data/tenor';
 import { usePreferredReactionsActions } from '../ducks/preferredReactions';
+import { useEmojisActions } from '../ducks/emojis';
+import { useStickersActions } from '../ducks/stickers';
+import type { FunStickerSelection } from '../../components/fun/panels/FunPanelStickers';
+import type { FunEmojiSelection } from '../../components/fun/panels/FunPanelEmojis';
+import { getRecentGifs } from '../selectors/gifs';
 
 export type SmartFunProviderProps = Readonly<{
   children: ReactNode;
@@ -38,17 +44,19 @@ export const SmartFunProvider = memo(function SmartFunProvider(
   props: SmartFunProviderProps
 ) {
   const i18n = useSelector(getIntl);
-
-  // Redux
   const installedStickerPacks = useSelector(getInstalledStickerPacks);
   const recentEmojis = useSelector(selectRecentEmojis);
   const recentStickers = useSelector(getRecentStickers);
-  const recentGifs: Array<GifType> = useMemo(() => [], []);
+  const recentGifs = useSelector(getRecentGifs);
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
   const showStickerPickerHint = useSelector(getShowStickerPickerHint);
+
   const { removeItem, setEmojiSkinToneDefault } = useItemsActions();
   const { openCustomizePreferredReactionsModal } =
     usePreferredReactionsActions();
+  const { onUseEmoji } = useEmojisActions();
+  const { useSticker: onUseSticker } = useStickersActions();
+  const { onAddRecentGif } = useGifsActions();
 
   // Translate recent emojis to keys
   const recentEmojisKeys = useMemo(() => {
@@ -73,10 +81,35 @@ export const SmartFunProvider = memo(function SmartFunProvider(
     openCustomizePreferredReactionsModal();
   }, [openCustomizePreferredReactionsModal]);
 
+  const handleSelectEmoji = useCallback(
+    (emojiSelection: FunEmojiSelection) => {
+      onUseEmoji({
+        shortName: emojiSelection.englishShortName,
+        skinTone: emojiSelection.skinTone,
+      });
+    },
+    [onUseEmoji]
+  );
+
   // Stickers
   const handleClearStickerPickerHint = useCallback(() => {
     removeItem('showStickerPickerHint');
   }, [removeItem]);
+
+  const handleSelectSticker = useCallback(
+    (stickerSelection: FunStickerSelection) => {
+      onUseSticker(stickerSelection.stickerPackId, stickerSelection.stickerId);
+    },
+    [onUseSticker]
+  );
+
+  // GIFs
+  const handleSelectGif = useCallback(
+    (gifSelection: FunGifSelection) => {
+      onAddRecentGif(gifSelection.gif);
+    },
+    [onAddRecentGif]
+  );
 
   return (
     <FunProvider
@@ -91,14 +124,17 @@ export const SmartFunProvider = memo(function SmartFunProvider(
       onOpenCustomizePreferredReactionsModal={
         handleOpenCustomizePreferredReactionsModal
       }
+      onSelectEmoji={handleSelectEmoji}
       // Stickers
       installedStickerPacks={installedStickerPacks}
       showStickerPickerHint={showStickerPickerHint}
       onClearStickerPickerHint={handleClearStickerPickerHint}
+      onSelectSticker={handleSelectSticker}
       // Gifs
       fetchGifsSearch={fetchGifsSearch}
       fetchGifsFeatured={fetchGifsFeatured}
       fetchGif={tenorDownload}
+      onSelectGif={handleSelectGif}
     >
       {props.children}
     </FunProvider>

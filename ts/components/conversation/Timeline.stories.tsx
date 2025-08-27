@@ -13,7 +13,7 @@ import type { TimelineItemType } from './TimelineItem';
 import { TimelineItem } from './TimelineItem';
 import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext';
 import { ConversationHero } from './ConversationHero';
-import { getDefaultConversation } from '../../test-both/helpers/getDefaultConversation';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation';
 import { TypingBubble } from './TypingBubble';
 import { ContactSpoofingType } from '../../util/contactSpoofing';
 import { ReadStatus } from '../../messages/MessageReadStatus';
@@ -51,6 +51,7 @@ function mockMessageTimelineItem(
       canDeleteForEveryone: false,
       canDownload: true,
       canEditMessage: true,
+      canForward: true,
       canReact: true,
       canReply: true,
       canRetry: true,
@@ -414,6 +415,7 @@ const renderHeroRow = () => {
         phoneNumber={getPhoneNumber()}
         profileName={getProfileName()}
         sharedGroupNames={['NYC Rock Climbers', 'Dinner Party']}
+        memberships={[]}
         theme={theme}
         title={getTitle()}
         startAvatarDownload={action('startAvatarDownload')}
@@ -460,6 +462,7 @@ const useProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   isBlocked: false,
   isConversationSelected: true,
   isIncomingMessageRequest: overrideProps.isIncomingMessageRequest ?? false,
+  isInFullScreenCall: false,
   items: overrideProps.items ?? Object.keys(items),
   messageChangeCounter: 0,
   messageLoadingState: null,
