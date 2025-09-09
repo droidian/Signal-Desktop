@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "பார்வைக்கு ஒரு முறை மட்டுமே காணொளி"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "இந்த மெசேஜ் நீக்கப்பட்டது."
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "தயவு செய்து மீண்டும் முயற்சிக்கவும் அல்லது தொடர்பு கொள்ளவும் ஆதரவு."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "எதிர்பாராத பிழை ஏற்பட்டது"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "பிழைத்திருத்த பதிவைச் சமர்ப்பிக்கவும்"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "தேவையில்லை,நன்றி"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "சரி"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "குழுவில் சேர ஒரு கோரிக்கை {joinerName} மறுக்கப்பட்டது."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் இணைவதற்கான கோரிக்கையை ரத்து செய்துள்ளார்} other {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் இணைவதற்கான {numberOfRequests,number} கோரிக்கைகளை ரத்து செய்துள்ளார்}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "நீங்கள் இயக்கியுள்ளீர்கள் குழு இணைப்பு உடன் நிர்வாக ஒப்புதல் முடக்கப்பட்டது."
@@ -4992,10 +5004,10 @@
     "messageformat": "பயனர் பெயர் இணைப்பை மீட்டமைக்க வேண்டும்"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "பயனர் பெயர் இணைப்புத் திரையைத் திறத்தல்"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "பயனர் பெயர் இணைப்புத் திரையைத் திறத்தல்"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "உங்கள் பயனர் பெயரைப் பகிரவும்"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "எடுத்துக்காட்டாக, :-) ஆனது <emojify>🙂</emojify> ஆக மாற்றப்படும்"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "ஒலியடக்கிய சாட்களைக் காப்பகப்படுத்துக"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "புதிய மெசேஜ் வரும்போது ஒலியடக்கிய காப்பகப்படுத்தப்பட்ட சாட்கள் காப்பகப்படுத்தப்பட்டதாகவே இருக்கும்."
   },
   "icu:Preferences--advanced": {
     "messageformat": "மேம்படுத்தபட்ட"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "My Support"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount}ஒரு-முறை"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "நன்கொடையைச் செயலாக்குகிறது..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "{formattedCurrencyAmount} நன்கொடையளி"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "ரசீதுகள்"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "ரசீது விவரங்களைக் காண்க"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "நன்கொடை சார்ந்து அதிகம் கேட்கப்படும் கேள்விகள்"
+    "messageformat": "நன்கொடையாளர் அதிகம் கேட்கப்படும் கேள்விகள்"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "ரசீதுகள் சாதனங்கள் முழுவதும் ஒத்திசைக்கப்படவில்லை. நீங்கள் சிக்னலை மீண்டும் நிறுவியிருந்தால், முந்தைய நன்கொடைகளின் ரசீதுகள் கிடைக்காது."
@@ -6682,40 +6709,43 @@
     "messageformat": "சிக்கல்களை எதிர்கொள்கிறீர்களா? <contactSupportLink>ஆதரவைத் தொடர்பு கொள்க</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "விருப்பத் தொகையை உள்ளிடவும்"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "கிரெடிட் அல்லது டெபிட் கார்டு"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "உங்கள் கிரெடிட் அல்லது டெபிட் கார்டு விவரங்களை உள்ளிடுங்கள். சிக்னல் உங்கள் தனிப்பட்ட தகவல்களைச் சேகரிக்கவோ சேமிக்கவோ செய்யாது. <learnMoreLink>மேலும் அறிக</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "கார்டு எண்"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "காலாவதித் தேதி"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Signalக்கு {formattedCurrencyAmount} நன்கொடை அளிக்கவும்"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "கார்டு எண் தவறாக உள்ளது"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "கார்டு காலாவதியானது"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "ஆண்டைக் குறிப்பிடவும்"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "தவறானது"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "குறியீடு மிகவும் குறுகியது"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "30 நாட்களுக்கு சிக்னல் பூஸ்ட் பேட்ஜைப் பெறுங்கள்"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "நீங்கள் குறைந்தபட்ச நன்கொடையாக {formattedCurrencyAmount} வழங்கலாம்"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "நன்கொடை ரசீது"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "சிக்னலை ஆதரித்ததற்கு நன்றி. திறந்த மூல தனியுரிமை தொழில்நுட்பத்தின் மூலம், சுதந்திரமான வெளிப்பாட்டைப் பாதுகாப்பதற்கும் உலகெங்கிலும் உள்ள மில்லியன் கணக்கானவர்களுக்குப் பாதுகாப்பான உலகளாவிய தகவல்தொடர்புக்கு உதவுவதற்கும் உங்கள் பங்களிப்பு உதவுகிறது. நீங்கள் அமெரிக்காவில் வசிப்பவராக இருந்தால், உங்கள் வரிப் பதிவுகளுக்காக இந்த ரசீதைத் தக்கவைத்துக் கொள்ளுங்கள். சிக்னல் தொழில்நுட்ப அறக்கட்டளை என்பது உள்நாட்டு வருவாய்க் குறியீட்டின் 501c3 பிரிவின் கீழ் அமெரிக்காவில் உள்ள வரிவிலக்கு பெற்ற லாப நோக்கமற்ற அமைப்பாகும். எங்களின் ஃபெடரல் வரி ID 82-4506840 ஆகும்."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். நன்கொடையை நிறைவு செய்ய தயவுசெய்து இணையத்துடன் இணைக்கவும்."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "நன்கொடை ரத்து செய்யப்பட்டது"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "நன்கொடை நிறைவடைந்தது"
@@ -6754,16 +6787,19 @@
     "messageformat": "கூடுதல் சரிபார்ப்பு தேவைப்படும் செயலாக்கத்தில் உள்ள நன்கொடை உங்களிடம் உள்ளது."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "உறுதிப்படுத்தல் தேவைப்படும் ஒரு நன்கொடை செயல்நிலையில் உள்ளது."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "நன்கொடை வெற்றிகரமாக வழங்கப்பட்டது, ஆனால் உங்கள் பேட்ஜ் அமைப்புகளைப் புதுப்பிக்க முடியவில்லை"
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "நன்கொடை குறுக்கிட்டது"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "உங்கள் கார்டில் கட்டணம் வசூலிக்கப்படவில்லை. நன்கொடை அளிக்க மீண்டும் முயல விரும்புகிறீர்களா?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "மீண்டும் முயற்சிக்கவும்"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "பேமெண்ட் முறை நிராகரிக்கப்பட்டது"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "உங்கள் நன்கொடை செயலாக்கப்படாமல் இருக்கலாம். உங்கள் ரசீதுகளைச் சரிபார்த்து உறுதிப்படுத்த “சிக்னலுக்கு நன்கொடை அளித்திடுக” என்பதைக் கிளிக் செய்து, “நன்கொடைக்கான ரசீதுகள்” என்பதைக் கிளிக் செய்க."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "உங்கள் நன்கொடையை நிறைவு செய்வதற்கு உதவ மீண்டும் முயலுங்கள் அல்லது பிழைத்திருத்தப் பதிவை சமர்ப்பியுங்கள். பிழைத்திருத்தப் பதிவுகள் சிக்கலைக் கண்டறிந்து சரிசெய்ய உதவுகின்றன, மேலும் அடையாளம் காணும் தகவலைக் கொண்டிருக்கவில்லை."
+  },
   "icu:Donations__Processing": {
     "messageformat": "நன்கொடையைச் செயலாக்குகிறது..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "இன்னும் செயலாக்கப்படுகிறது"
+    "messageformat": "நன்கொடை இன்னும் செயலாக்கப்பட்டுக் கொண்டுள்ளது"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "உங்கள் நன்கொடை இன்னும் செயல்படுத்தப்படுகிறது. இதற்குச் சில நிமிடங்கள் எடுக்கலாம்."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "நன்கொடை ரத்து செய்யப்பட்டது"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "நீங்கள் நன்கொடை அளிக்கத் தொடங்கி மிக நீண்ட காலமாகிவிட்டது. மீண்டும் தொடங்குங்கள்."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "கூடுதல் சரிபார்ப்பு தேவை"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "நன்கொடையை ரத்து செய்க"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "உங்கள் ஆதரவுக்கு நன்றி!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Signal இல் இருந்து நன்கொடையாளர் பேட்ஜைப் பெற்றுள்ளீர்கள்! உங்கள் ஆதரவைக் காட்ட உங்கள் ப்ரொஃபைலில் அதைக் காண்பிக்கவும்."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "சுயவிவரத்தில் காண்பிக்கவும்"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "இதனை உங்கள் மொபைல் சாதனத்தில் அமைப்புகள் → சிக்னலுக்கு நன்கொடை அளித்திடுக → பேட்ஜ்கள் என்பதன் கீழ் மாற்றியமைக்கலாம்."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "இந்த பதிப்பில் சிக்னலை சீராக இயங்க வைக்க பல சிறிய மாற்றங்கள் மற்றும் பிழை திருத்தங்கள் உள்ளன.",
@@ -6851,6 +6902,9 @@
     "messageformat": "ஈமோஜி தேடல் பெட்டியில் உள்ள ஒரு பிழையைச் சரிசெய்துள்ளோம்."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "சில சிறிய பிழைகள் சரிபார்க்கப்பட்டன."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "சில பயனர்களுக்கு நன்கொடை பேட்ஜ்கள் சரியாகத் தோன்றாமல் இருந்த பிழையை நாங்கள் சரிசெய்துள்ளோம்."
   }
 }

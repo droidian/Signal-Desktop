@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Egyszer megjelenő videó"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ez az üzenet ki lett törölve."
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "Próbáld újra, vagy vedd fel a kapcsolatot a támogatással!"
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Váratlan hiba történt"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Hibanapló elküldése"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nem, köszönöm"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "OK"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "{joinerName} csoport csatlakozási igénye elutasításra került."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} jelezte, majd visszavonta csatlakozási igényét a csoporthivatkozás használatával.} other {{joinerName} {numberOfRequests,number} alkalommal jelezte, majd visszavonta csatlakozási igényét a csoporthivatkozás használatával.}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Bekapcsoltad a csoport-hivatkozásokat (adminisztrátori jóváhagyás nem szükséges)."
@@ -4992,10 +5004,10 @@
     "messageformat": "A felhasználónévhez tartozó hivatkozást vissza kell állítani"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Felhasználónév linkjét tartalmazó képernyő megnyitása"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Felhasználónév linkjét tartalmazó képernyő megnyitása"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Felhasználónév megosztása"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Például a :-) hangulatjel <emojify>🙂</emojify> hangulatjellé kerül átalakításra"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "A némított csevegések maradjanak archiválva"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Az archivált némított csevegések új üzenet érkezésekor továbbra is archiválva maradnak."
   },
   "icu:Preferences--advanced": {
     "messageformat": "Haladó"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "Támogatásaim"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "Egyszeri {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Adomány feldolgozása..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "{formattedCurrencyAmount} adományozása"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Nyugták"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "A nyugta adatainak megtekintése"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Adományozási GYIK"
+    "messageformat": "Adományozás GYIK"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "A nyugták nem szinkronizálódnak az eszközök között. Ha újratelepítetted a Signalt, korábbi adományaid nyugtái nem lesznek elérhetők."
@@ -6682,40 +6709,43 @@
     "messageformat": "Problémába ütköztél? <contactSupportLink>Segítségkérés</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "Egyedi összeg megadása"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "Hitel- vagy betéti kártya"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "Add meg a hitel- vagy bankkártyád adatait. A Signal nem gyűjti és nem tárolja a személyes adataidat. <learnMoreLink>Tudj meg többet!</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "Kártyaszám"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "Lejárati idő"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Adományozz {formattedCurrencyAmount} összeget a Signalnak"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "Érvénytelen kártyaszám"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "A kártya lejárt"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "Év megadása kötelező"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "Érvénytelen"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "A kód túl rövid"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "Szerezd meg a Signal Boost-jelvényt 30 napra"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "A minimális adomány összege: {formattedCurrencyAmount}"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Adomány nyugta"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Köszönjük, hogy támogatod a Signalt! Adományoddal hozzájárulsz a szabad véleménynyilvánítást és milliók számára biztonságos kommunikációt biztosító, nyílt forrású, magánéletet védő technológiák fejlesztéséhez. Ha az Egyesült Államokban adózol, kérünk, őrizd meg ezt a nyugtát adóbevallásodhoz. A Signal Technology Foundation egy adómentes, non-profit szervezet, amely az USA területén az 501c3 Internal Revenue Code hatálya alá tartozik. Federal Tax ID: 82-4506840."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Offline állapotban vagy. Az adományozás befejezéséhez, kérjük, csatlakozz az internethez."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Adományozás visszavonva"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "Adományozás befejeződött"
@@ -6754,16 +6787,19 @@
     "messageformat": "Van egy folyamatban lévő adományod, amely további ellenőrzést igényel."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "Van egy folyamatban lévő adományozásod, amely megerősítést igényel."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Az adományozás sikeres volt, de nem tudtuk frissíteni a jelvényed beállításait."
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "Adományozás megszakadt"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "A kártyádat nem terhelték meg. Szeretnéd újra megpróbálni az adományozást?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "Újra"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "Fizetési mód elutasítva"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "Lehetséges, hogy az adományodat nem dolgoztuk fel. A nyugták ellenőrzéséhez és megerősítéséhez kattints az „Adományozás a Signalnak” lehetőségre, majd az „Adományt igazoló nyugták” opcióra."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Próbáld újra, vagy küldj egy hibanaplót az Ügyfélszolgálatnak, és kérj segítséget az adományozás befejezéséhez. A hibanaplók segítenek diagnosztizálni és kijavítani a problémát, és nem tartalmaznak azonosító információkat."
+  },
   "icu:Donations__Processing": {
     "messageformat": "Adomány feldolgozása..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "Még dolgozunk"
+    "messageformat": "Az adomány feldolgozása folyamatban van"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "Az adományod feldolgozása még folyamatban van. Ez pár percet is igénybe vehet."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Adományozás visszavonva"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "Túl sok idő telt el az adományozás indítása óta. Kérjük, kezdd újra."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "További ellenőrzés szükséges"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "Adományozás visszavonása"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Köszönjük a támogatásodat!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Kaptál egy adományozói jelvényt a Signaltól! Tedd ki a profilodra, és mutasd meg, hogy te is adományoztál!"
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Megjelenítés profilképen"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Ezt a mobilkészülékeden a Beállítások → Adományozás a Signalnak → Jelvények menüpontban állíthatod be."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ebbe a verzióba néhány kisebb újítás és hibajavítás került annak érdekében, hogy a Signal továbbra is gond nélkül fusson.",
@@ -6851,6 +6902,9 @@
     "messageformat": "Kijavítottunk egy hibát az emoji keresőmezőben."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "Néhány apróbb hibajavítás."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "Kijavítottunk egy hibát, amely miatt az adományozási jelvények egyes felhasználóknál nem jelentek meg helyesen."
   }
 }

@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "একবার দেখার উপযোগী ভিডিও"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "এই মেসেজটি মুছে ফেলা হয়েছে।"
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "অনুগ্রহ করে আবার চেষ্টা করুন অথবা সহায়তায় যোগাযোগ করুন।"
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "একটি অপ্রত্যাশিত সমস্যা দেখা দিয়েছে"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "ডিবাগ লগ সাবমিট করুন"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "না ধন্যবাদ"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "ঠিক আছে"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "গ্রুপটিতে যোগদানের জন্য {joinerName}-এর অনুরোধ প্রত্যাখ্যান করা হয়েছে।"
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} গ্রুপ লিংকের মাধ্যমে যোগ দেওয়ার অনুরোধ পাঠিয়েছেন এবং বাতিল করেছেন} other {{joinerName} গ্রুপ লিংকের মাধ্যমে যোগ দেওয়ার {numberOfRequests,number}-টি অনুরোধ পাঠিয়েছেন এবং বাতিল করেছেন}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "অ্যাডমিনের অনুমোদন নিষ্ক্রিয় থাকা অবস্থায় আপনি গ্রুপ লিংকটি চালু করেছেন।"
@@ -4992,10 +5004,10 @@
     "messageformat": "ব্যবহারকারীর নামের লিংক রিসেট করা প্রয়োজন"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "'ব্যবহারকারীর নাম' লিংকের স্ক্রিনটি খুলুন"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "'ব্যবহারকারীর নাম' লিংকের স্ক্রিনটি খুলুন"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "আপনার 'ব্যবহারকারীর নাম' শেয়ার করুন"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "উদাহরণস্বরূপ, :-) <emojify>🙂</emojify>-এ রূপান্তরিত হবে"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "মিউট করা চ্যাট আর্কাইভকৃত অবস্থায় রাখুন"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "যখন নতুন ম্যাসেজ আসবে তখন আর্কাইভ করা মিউটকৃত চ্যাট আর্কাইভ অবস্থায়ই থাকবে।"
   },
   "icu:Preferences--advanced": {
     "messageformat": "অ্যাডভান্সড"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "আমার সমর্থন"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} এককালীন"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "ডোনেশন প্রক্রিয়া করা হচ্ছে..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "{formattedCurrencyAmount}-কে ডোনেট করুন"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "রিসিপ্ট"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "রিসিপ্টের বিবরণ দেখুন"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "ডোনেশন সম্পর্কিত প্রশ্নাবলী"
+    "messageformat": "ডোনার সম্পর্কিত প্রশ্নাবলী"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "রিসিপ্ট বিভিন্ন ডিভাইস জুড়ে সিঙ্ক হয় না। আপনি যদি Signal পুনরায় ইনস্টল করে থাকেন, তবে পূর্ববর্তী ডোনেশনের রিসিপ্ট পাওয়া যাবে না।"
@@ -6682,40 +6709,43 @@
     "messageformat": "সমস্যা হচ্ছে? <contactSupportLink>সহায়তায় যোগাযোগ করুন</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "কাস্টম পরিমাণ লিখুন"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "ক্রেডিট বা ডেবিট কার্ড"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "আপনার ক্রেডিট বা ডেবিট কার্ডের বিস্তারিত লিখুন। Signal আপনার ব্যক্তিগত তথ্য সংগ্রহ কিংবা সংরক্ষণ করে না। <learnMoreLink>আরো জানুন</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "কার্ডের নম্বর"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "মেয়াদ শেষ হওয়ার তারিখ"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Signal-এ {formattedCurrencyAmount} ডোনেট করুন"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "কার্ড নম্বর অকার্যকর"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "কার্ডের মেয়াদ শেষ হয়ে গেছে"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "বছর প্রয়োজন"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "অকার্যকর"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "কোডটি খুবই ছোট"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "30 দিনের জন্য Signal বুস্ট ব্যাজ নিন"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "আপনি সর্বনিম্ন যে পরিমাণ অর্থ ডোনেট করতে পারেন তা হলো {formattedCurrencyAmount}"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "ডোনেশন রিসিপ্ট"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Signal-এর পাশে থাকার জন্য আপনাকে ধন্যবাদ। আপনার অবদান ওপেন সোর্স গোপনীয়তা প্রযুক্তির মাধ্যমে বিশ্বজুড়ে লক্ষ লক্ষ মানুষের জন্য স্বাধীন মত প্রকাশের সুরক্ষা এবং বিশ্বব্যাপী নিরাপদ যোগাযোগ সক্ষম করার লক্ষ্যকে আরো এগিয়ে নিয়ে যেতে সাহায্য করবে। আপনি যদি মার্কিন যুক্তরাষ্ট্রের অধিবাসী হয়ে থাকেন, তাহলে অনুগ্রহ করে আপনার ট্যাক্স রেকর্ডের জন্য এই রিসিপ্টটি সংরক্ষণ করুন। Signal টেকনোলজি ফাউন্ডেশন হলো অভ্যন্তরীণ রাজস্ব কোডের ধারা 501c3-এর অধীনে মার্কিন যুক্তরাষ্ট্রের একটি কর-মুক্ত অলাভজনক সংস্থা। আমাদের ফেডারেল ট্যাক্স আইডি হলো 82-4506840।"
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "আপনি অফলাইনে আছেন। অনুদান সম্পন্ন করতে ইন্টারনেটের সাথে সংযোগ স্থাপন করুন।"
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "ডোনেশন বাতিল করা হয়েছে"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "ডোনেশন সম্পন্ন হয়েছে"
@@ -6754,16 +6787,19 @@
     "messageformat": "আপনার একটি ডোনেশন প্রক্রিয়াধীন আছে যার বাড়তি যাচাইকরণ প্রয়োজন।"
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "আপনার একটি ডোনেশন প্রক্রিয়াধীন আছে, যার নিশ্চিতকরণ প্রয়োজন।"
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "ডোনেশন সফল হয়েছে, কিন্তু আমরা আপনার ব্যাজ সেটিংস আপডেট করতে পারিনি"
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "ডোনেশন ব্যাহত হয়েছে"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "আপনার কার্ড থেকে কোনো চার্জ কাটা হয়নি। আপনি কি আবার ডোনেশন পাঠানোর চেষ্টা করতে চান?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "আবার চেষ্টা করুন"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "পেমেন্ট পদ্ধতি প্রত্যাখ্যান করা হয়েছে"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "সম্ভবত আপনার ডোনেশন প্রক্রিয়া করা যায়নি। আপনার রসিদগুলো পরীক্ষা করে নিশ্চিত করতে \"Signal-এ ডোনেট করুন\" এবং তারপর \"ডোনেশনের রসিদ\"-এ ক্লিক করুন।"
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "আবার চেষ্টা করুন অথবা আপনার ডোনেশন সম্পন্ন করতে সাহায্যের জন্য সহায়তা কেন্দ্রে একটি ডিবাগ লগ জমা দিন। ডিবাগ লগ আমাদের সমস্যা নির্ণয় ও সমাধান করতে সাহায্য করে এবং শনাক্তকরণের তথ্য ধারণ করে না।"
+  },
   "icu:Donations__Processing": {
     "messageformat": "ডোনেশন প্রক্রিয়া করা হচ্ছে..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "এখনও প্রক্রিয়া করা হচ্ছে"
+    "messageformat": "এখনো ডোনেশন প্রক্রিয়া করা হচ্ছে"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "আপনার ডোনেশন এখনো প্রক্রিয়া করা হচ্ছে। এই কয়েক মিনিট সময় নিতে পারে."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "ডোনেশন বাতিল করা হয়েছে"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "আপনি ডোনেশন পাঠানো শুরু করার পর অনেক দিন হয়ে গেছে। অনুগ্রহ করে আবারো শুরু করুন।"
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "আরো যাচাইকরণ প্রয়োজন"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "ডোনেশন বাতিল করুন"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "আপনার সহযোগিতার জন্য ধন্যবাদ!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "আপনি Signal থেকে একটি ডোনার ব্যাজ অর্জন করেছেন! আপনার সমর্থন দেখাতে আপনার প্রোফাইলে এটি প্রদর্শন করুন।"
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "প্রোফাইলে প্রদর্শন করুন"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "আপনি আপনার মোবাইল ডিভাইসে সেটিংস → Signal-এ ডোনেট করুন → ব্যাজ-এ গিয়ে এটি সমন্বয় করতে পারবেন"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "সিগন্যালকে মসৃণভাবে চলমান রাখতে এই সংস্করণে অনেকগুলি ছোটখাট পরিবর্তন রয়েছে এবং বাগ সংশোধন করা হয়েছে।",
@@ -6851,6 +6902,9 @@
     "messageformat": "আমরা ইমোজি সার্চ বক্সে একটি বাগ সংশোধন করেছি।"
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "কিছু ছোটখাটো বাগ সংশোধন করা হয়েছে।"
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "কিছু কিছু ব্যবহারকারীর জন্য ডোনেশন ব্যাজ সঠিকভাবে প্রদর্শনকে বাধাগ্রস্ত করতো এমন একটি বাগ আমরা সংশোধন করেছি।"
   }
 }

@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Wideo jednorazowe"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ta wiadomość została usunięta."
   },
@@ -2307,7 +2310,7 @@
     "messageformat": "Wiadomość, której nadawcą jest {author}"
   },
   "icu:modal--donation--title": {
-    "messageformat": "Dziękujemy za Twoje wsparcie!"
+    "messageformat": "Dziękujemy Ci za wsparcie!"
   },
   "icu:modal--donation--description": {
     "messageformat": "Twoja darowizna na rzecz aplikacji Signal została wpłacona w imieniu wybranej osoby. {name} może się teraz pochwalić wsparciem w swoim profilu."
@@ -2772,22 +2775,22 @@
     "messageformat": "Nagraj wiadomość głosową"
   },
   "icu:Keyboard--default-message-action": {
-    "messageformat": "Zastosuj działanie domyślne do wybranej wiadomości"
+    "messageformat": "Zastosuj do zaznaczonej wiadomości działanie domyślne"
   },
   "icu:Keyboard--view-details-for-selected-message": {
-    "messageformat": "Wyświetl informacje o wybranej wiadomości"
+    "messageformat": "Wyświetl informacje o zaznaczonej wiadomości"
   },
   "icu:Keyboard--toggle-reply": {
-    "messageformat": "Odpowiedz na wybraną wiadomość"
+    "messageformat": "Odpowiedz na zaznaczoną wiadomość"
   },
   "icu:Keyboard--toggle-reaction-picker": {
-    "messageformat": "Zareaguj na wybraną wiadomość za pomocą emoji"
+    "messageformat": "Zareaguj na zaznaczoną wiadomość za pomocą emoji"
   },
   "icu:Keyboard--save-attachment": {
-    "messageformat": "Zapisz załącznik do wybranej wiadomości"
+    "messageformat": "Zapisz załącznik z zaznaczonej wiadomości"
   },
   "icu:Keyboard--delete-messages": {
-    "messageformat": "Usuń wybrane wiadomości"
+    "messageformat": "Usuń zaznaczone wiadomości"
   },
   "icu:Keyboard--forward-messages": {
     "messageformat": "Przekaż zaznaczone wiadomości"
@@ -3165,7 +3168,7 @@
     "messageformat": "To oficjalny i jedyny czat twórców aplikacji Signal"
   },
   "icu:ConversationHero--release-notes": {
-    "messageformat": "Bądź na bieżąco z newsami i aktualizacjami."
+    "messageformat": "Bądź na bieżąco z nowościami i aktualizacjami."
   },
   "icu:member-of-1-group": {
     "messageformat": "Należy do grupy {group}"
@@ -3523,6 +3526,15 @@
   },
   "icu:ErrorModal--description": {
     "messageformat": "Spróbuj ponownie lub skontaktuj się z pomocą techniczną."
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Wystąpił nieoczekiwany błąd"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Prześlij dziennik debugowania"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Odrzuć"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "OK"
@@ -3954,7 +3966,7 @@
     "messageformat": "Prośba o przyjęcie do grupy, której nadawcą jest {joinerName}, zostaje odrzucona."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} wysyła, a potem cofa prośbę o przyjęcie do grupy przez link} few {{joinerName} wysyła, a potem cofa {numberOfRequests,number} prośby o przyjęcie do grupy przez link} many {{joinerName} wysyła, a potem cofa {numberOfRequests,number} próśb o przyjęcie do grupy przez link} other {{joinerName} wysyła, a potem cofa {numberOfRequests,number} prośby o przyjęcie do grupy przez link}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Włączasz link do grupy. Zatwierdzanie nowych osób przez administratora nie jest wymagane."
@@ -4992,10 +5004,10 @@
     "messageformat": "Link do nazwy użytkownika wymaga zresetowania"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Otwórz ekran z linkiem do nazwy użytkownika"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Otwórz ekran z linkiem do nazwy użytkownika"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Udostępnij swoją nazwę użytkownika"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Na przykład emotikon :-) zamieni się w to emoji: <emojify>🙂</emojify>"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Pozostaw wyciszone czaty w archiwum"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Gdy w wyciszonym zarchiwizowanym czacie pojawi się nowa wiadomość, pozostanie on w archiwum."
   },
   "icu:Preferences--advanced": {
     "messageformat": "Zaawansowane"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "Moje wsparcie"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} jednorazowo"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Przetwarzanie darowizny…"
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "Wpłać {formattedCurrencyAmount}"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Potwierdzenia darowizn"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Wyświetl szczegóły potwierdzenia"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Najczęstsze pytania i odpowiedzi na temat darowizn"
+    "messageformat": "FAQ darczyńców"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Potwierdzenia darowizn na różnych urządzeniach nie są synchronizowane. Ponadto jeśli aplikacja Signal zostanie zainstalowana ponownie, wcześniejsze potwierdzenia darowizn nie będą dostępne."
@@ -6682,40 +6709,43 @@
     "messageformat": "Wystąpiły problemy? <contactSupportLink>Skontaktuj się z pomocą techniczną</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "Podaj inną kwotę"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "Karta kredytowa lub debetowa"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "Podaj dane karty kredytowej lub debetowej. Signal nie gromadzi ani nie przechowuje Twoich danych osobowych. <learnMoreLink>Dowiedz się więcej</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "Numer karty"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "Data ważności"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Wpłać {formattedCurrencyAmount} i wesprzyj Signal"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "Nieprawidłowy numer karty"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "Karta jest nieważna"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "Musisz podać rok"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "Nieprawidłowe dane"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "Za krótki kod"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "Zdobądź odznakę za wsparcie na 30 dni"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Minimalna kwota darowizny wynosi {formattedCurrencyAmount}"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Potwierdzenie darowizny"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Dziękujemy za wsparcie aplikacji Signal. Twoja darowizna wspomaga rozwój otwartoźródłowej technologii, która zapewnia prywatność, chroni wolność słowa i umożliwia bezpieczną komunikację milionom osób na całym świecie. Jeśli mieszkasz w Stanach Zjednoczonych, zachowaj to potwierdzenie, aby uwzględnić wpłatę w zeznaniu podatkowym. Signal Technology Foundation jest organizacją non profit zwolnioną z podatku w USA na podstawie zapisu 501c3 Internal Revenue Code (Kodeksu Podatkowego). Nasz federalny numer identyfikacji podatkowej to 82-4506840."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Jesteś offline. Aby przekazać darowiznę, połącz się z internetem."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Darowizna anulowana"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "Darowizna przekazana"
@@ -6754,16 +6787,19 @@
     "messageformat": "Twoja darowizna jest realizowana, ale wymaga dodatkowej weryfikacji."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "Twoja darowizna jest realizowana, ale wymaga jeszcze potwierdzenia."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Darowizna powiodła się, ale nie mogliśmy zaktualizować Twoich ustawień odznaki"
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "Wpłata darowizny przerwana"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "Twoja karta nie została obciążona. Czy chcesz spróbować jeszcze raz?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "Spróbuj ponownie"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "Metoda płatności została odrzucona"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "Twoja darowizna mogła nie zostać przetworzona. Aby to sprawdzić, kliknij opcję „Wesprzyj Signal darowizną”, a następnie „Potwierdzenia darowizn”."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Spróbuj ponownie lub wyślij dziennik debugowania do naszego zespołu pomocy technicznej – pomożemy Ci przekazać darowiznę. Dzienniki debugowania ułatwiają namierzenie i naprawę błędu. Nie zawierają danych umożliwiających identyfikację."
+  },
   "icu:Donations__Processing": {
     "messageformat": "Przetwarzanie darowizny…"
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "Przetwarzanie"
+    "messageformat": "Nadal przetwarzamy darowiznę"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "Twoja darowizna jest jeszcze przetwarzana. Może to zająć kilka minut."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Darowizna anulowana"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "Od rozpoczęcia wpłaty darowizny minęło zbyt dużo czasu. Spróbuj jeszcze raz od nowa."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "Wymagana dodatkowa weryfikacja"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "Anuluj darowiznę"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Dziękujemy Ci za wsparcie!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Zdobywasz odznakę darczyńcy Signal! Pochwal się nią na profilu i pokaż, że wspierasz apkę."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Pokaż w profilu"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Możesz to zmienić na swoim smartfonie, przechodząc do sekcji Ustawienia → Wesprzyj Signal darowizną → Odznaki"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ta wersja obejmuje wiele drobnych ulepszeń i poprawek błędów. Wszystko po to, aby aplikacja Signal działała płynnie.",
@@ -6851,6 +6902,9 @@
     "messageformat": "Naprawiliśmy błąd, który występował czasem po naciśnięciu klawisza Esc w polu wyszukiwania emoji. Teraz możesz znów skupić się na najważniejszym: znalezieniu idealnej emotki."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "W ramach tej aktualizacji usunęliśmy kilka mniejszych błędów – między innymi ten, przez który reakcje emoji czasem nie były prawidłowo grupowane."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "Naprawiliśmy błąd, przez który u niektórych osób odznaki za darowiznę nie wyświetlały się prawidłowo. Signal jest organizacją non profit działającą na podstawie zapisu 501c3. Dziękujemy za Twoje wsparcie!"
   }
 }

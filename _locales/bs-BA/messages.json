@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Videozapis za jednokratni prikaz"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ova je poruka izbrisana."
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "Pokušajte ponovo ili kontaktirajte podršku."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Došlo je do neočekivane greške"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Pošaljite zapis za ispravljanje grešaka"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Ne, hvala"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "Uredu"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "A request to join the group from {joinerName} was denied."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} zatražio i otkazao zahtjev za pridruživanje grupi putem linka} few {{joinerName} je zatražio i otkazao {numberOfRequests,number}) zahtjeva za pridruživanje grupi putem linka} many {{joinerName} je zatražio i otkazao {numberOfRequests,number}) zahtjeva za pridruživanje grupi putem linka} other {{joinerName} je zatražio i otkazao {numberOfRequests,number} zahtjeva za pridruživanje grupi putem linka}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Uključili ste link grupe s onemogućenim odobrenjem administratora."
@@ -4992,10 +5004,10 @@
     "messageformat": "Link korisničkog imena treba resetirati"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Otvaranje ekrana s linkom za korisničko ime"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Otvaranje ekrana s linkom za korisničko ime"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Podijelite korisničko ime"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Na primjer, :-) će se pretvoriti u <emojify>🙂</emojify>"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Chatove isključenog zvuka ostavi u arhivi"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Chatovi isključenog zvuka koji su arhivirani ostat će arhivirani kada stigne nova poruka."
   },
   "icu:Preferences--advanced": {
     "messageformat": "Napredno"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "Moja podrška"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} - jednokratno"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Obrada donacije..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "Donirajte {formattedCurrencyAmount}"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Potvrde"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Pogledajte detalje računa"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Česta pitanja o donacijama"
+    "messageformat": "Često postavljena pitanja donatora"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Računi se ne sinhronizuju na svim uređajima. Ako ste iznova instalirali Signal, priznanice za prethodne donacije neće biti dostupne."
@@ -6682,40 +6709,43 @@
     "messageformat": "Imate problema? <contactSupportLink>Kontaktirajte podršku</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "Unesite iznos"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "Kreditna ili debitna kartica"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "Unesite podatke o svojoj kreditnoj ili debitnoj kartici. Signal ne prikuplja niti pohranjuje vaše lične podatke. <learnMoreLink>Saznajte više</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "Broj kartice"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "Datum isteka"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Donirajte {formattedCurrencyAmount} Signalu"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "Nevažeći broj kartice"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "Kartica je istekla"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "Potrebno je navesti godinu"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "Nevažeće"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "Kôd je prekratak"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "Primite značku Signal Boost na 30 dana"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Minimalni iznos koji možete donirati je {formattedCurrencyAmount}"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Priznanica za donaciju"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Hvala što podržavate Signal! Vaš doprinos pomaže u ostvarivanju misije zaštite slobode izražavanja i omogućavanja sigurne globalne komunikacije za milione širom svijeta, putem tehnologije privatnosti otvorenog koda. Ako ste stanovnik Sjedinjenih Američkih Država, sačuvajte ovaj račun za svoju poreznu evidenciju. Fondacija Signal Technology je neprofitna organizacija oslobođena poreza u Sjedinjenim Američkim Državama prema članu 501c3 Zakona o unutrašnjim prihodima. Naš federalni poreski identifikacioni broj je 82-4506840."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Trenutno ste van mreže. Povežite se s internetom da biste dovršili donaciju."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Donacija je otkazana"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "Donacija je završena"
@@ -6754,16 +6787,19 @@
     "messageformat": "Imate donaciju u u toku koja zahtijeva dodatnu verifikaciju."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "Imate donaciju u toku za koju je potrebna potvrda."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Donacija je uspjela, ali nismo mogli ažurirati postavke vaše značke"
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "Donacija je prekinuta"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "Nije naplaćeno s vaše kartice. Želite li ponovo pokušati s donacijom?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "Pokušajte ponovo"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "Način plaćanja je odbijen"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "Vaša donacija možda nije obrađena. Kliknite na \"Doniraj Signalu\", a zatim na \"Potvrde o donaciji\" da provjerite svoje potvrde i potvrdite ih."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Pokušajte ponovo ili pošaljite zapisnik o otklanjanju grešaka službi za podršku kako biste dobili pomoć za dovršetak donacije. Evidencije o otklanjanju grešaka nam pomažu da utvrdimo i riješimo problem, te ne sadrže informacije za identifikaciju."
+  },
   "icu:Donations__Processing": {
     "messageformat": "Obrada donacije..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "Još uvijek obrađujem"
+    "messageformat": "Donacija se još uvijek obrađuje"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "Vaša donacija se još uvijek obrađuje. Ovo može potrajati nekoliko minuta."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Donacija je otkazana"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "Prošlo je previše vremena otkako ste započeli s donacijom. Počnite ispočetka."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "Potrebna je dodatna verifikacija"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "Otkaži donaciju"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Hvala Vam za Vašu podršku!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Zaradili ste značku donatora od Signala! Prikažite je na profilu da pokažete podršku."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Prikaži na profilu"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Ovo možete podesiti na svom mobilnom uređaju u Postavkama → Doniraj Signalu → Značke"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ova verzija sadrži brojna mala poboljšanja i ispravke grešaka kako bi Signal nesmetano funkcionirao.",
@@ -6851,6 +6902,9 @@
     "messageformat": "Ispravili smo grešku u okviru za pretraživanje emojija."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "Ispravljanja nekoliko manjih grešaka."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "Ispravili smo grešku koja je sprječavala ispravno prikazivanje znački za donacije kod nekih korisnika. Signal je neprofitna organizacija 501c3 i cijenimo vašu podršku!"
   }
 }

@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Vienreiz skatāms video"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ziņojums ir izdzēsts."
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "Mēģiniet vēlreiz vai sazinieties ar atbalstu."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Radās neparedzēta kļūda"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Iesniegt kļūdas labošanas ierakstu."
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nē, paldies"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "Labi"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "{joinerName} pieprasījums pievienoties šai grupai tika noraidīts."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, zero {{joinerName} pieprasīja un atcēla {numberOfRequests,number} pieprasījumus pievienoties, izmantojot grupas saiti} one {{joinerName} pieprasīja un atcēla pieprasījumu pievienoties, izmantojot grupas saiti} other {{joinerName} nosūtīja un atcēla {numberOfRequests,number} pieprasījumus pievienoties, izmantojot grupas saiti}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Jūs ieslēdzāt grupas saiti ar atspējotu administratora apstiprinājumu."
@@ -4992,10 +5004,10 @@
     "messageformat": "Lietotājvārda saite ir jāatiestata"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Atvērt lietotājvārda saites ekrānu"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "Atvērt lietotājvārda saites ekrānu"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Kopīgojiet savu lietotājvārdu"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Piemēram, :-) tiks pārvērsts par <emojify>🙂</emojify>"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Saglabāt apklusinātās sarunas arhivētas"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Arhivētas apklusinātās sarunas paliks arhivētas, kad tiks saņemta jauna ziņa."
   },
   "icu:Preferences--advanced": {
     "messageformat": "Papildu"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "Mans atbalsts"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} vienreizējs"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Notiek ziedojuma apstrāde..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "Ziedot {formattedCurrencyAmount}"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Kvītis"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Skatīt maksājuma informāciju"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Ziedojumu BUJ"
+    "messageformat": "Ziedotāju BUJ"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Kvītis netiek sinhronizētas starp ierīcēm. Ja pārinstalējāt Signal, kvītis no iepriekš veiktajiem ziedojumiem nebūs pieejamas."
@@ -6682,40 +6709,43 @@
     "messageformat": "Vai radušās problēmas? <contactSupportLink>Sazināties ar atbalstu</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "Ievadīt pielāgotu summu"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "Kredītkarte vai debetkarte"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "Ievadiet savu kredītkartes vai debetkartes informāciju. Signal neapkopo un neuzglabā jūsu personas informāciju. <learnMoreLink>Uzzināt vairāk</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "Kartes numurs"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "Derīguma termiņš"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Ziedot Signal {formattedCurrencyAmount}"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "Nederīgs kartes numurs"
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "Kartes derīguma termiņš ir beidzies"
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "Nepieciešams gads"
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "Nederīgs"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "Kods ir pārāk īss"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "Iegūstiet Signal Boost nozīmīti uz 30 dienām"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Minimālā ziedojuma summa ir {formattedCurrencyAmount}"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Ziedojuma kvīts"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Pateicamies, ka atbalstāt Signal. Jūsu atbalsts palīdz īstenot mūsu misiju: aizsargāt vārda brīvību un nodrošināt drošu saziņu miljoniem cilvēku visā pasaulē. Mēs to darām, izmantojot atvērtā pirmkoda privātuma tehnoloģijas. Ja jūs esat Amerikas Savienoto valstu iedzīvotājs, lūdzu, saglabājiet šo kvīti nodokļu uzskaitei. Signal Technology Foundation ir no nodokļu maksāšanas atbrīvota bezpeļnas organizācija Amerikas Savienotajās valstīs saskaņā ar Iekšējo ieņēmumu likuma 501c3 sadaļu. Mūsu federālais nodokļu ID ir 82-4506840."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Jūs esat bezsaistē. Lai pabeigtu ziedojumu, lūdzu, izveidojiet savienojumu ar internetu."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Ziedojums atcelts"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "Ziedojums pabeigts"
@@ -6754,16 +6787,19 @@
     "messageformat": "Jūsu ziedojuma apstrādei nepieciešama papildu verifikācija."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "Jums ir nepabeigts ziedojums, kuram nepieciešams apstiprinājums."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Ziedojums izdevās, taču mēs nevarējām atjaunināt jūsu nozīmītes iestatījumus"
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "Ziedojums pārtraukts"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "Maksājums no jūsu kartes netika iekasēts. Vai vēlaties mēģināt ziedot vēlreiz?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "Mēģiniet vēlreiz"
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "Maksājuma veids noraidīts"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "Jūsu ziedojums, iespējams, nav apstrādāts. Noklikšķiniet uz “Ziedot Signal” un tad uz “Ziedojumu kvītis”, lai pārbaudītu un apstiprinātu kvītis."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Mēģiniet vēlreiz vai iesniedziet atkļūdošanas žurnālu atbalsta dienestam, lai saņemtu palīdzību ar ziedojuma pabeigšanu. Atkļūdošanas žurnāli palīdz mums diagnosticēt un novērst problēmu, un tie nesatur identificējošu informāciju."
+  },
   "icu:Donations__Processing": {
     "messageformat": "Notiek ziedojuma apstrāde..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "Vēl apstrādā"
+    "messageformat": "Ziedojums joprojām tiek apstrādāts"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "Jūsu ziedojums joprojām tiek apstrādāts. Process var ilgt dažas minūtes."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "Ziedojums atcelts"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "Ir pagājis pārāk ilgs laiks, kopš uzsākāt ziedojumu. Lūdzu, sāciet vēlreiz."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "Nepieciešama papildu verifikācija"
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "Atcelt ziedojumu"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Paldies par jūsu atbalstu!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Jums pienākas Signal ziedotāja nozīmīte! Pievienojiet to profilam, lai parādītu savu atbalstu."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Rādīt profilā"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "To varat pielāgot mobilajā ierīcē sadaļā Iestatījumi → Ziedot Signal → Nozīmītes"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Šī versija ietver vairākus nelielus uzlabojumus un kļūdu labojumus, lai Signal darbotos bez problēmām.",
@@ -6851,6 +6902,9 @@
     "messageformat": "Pareizās emocijzīmes atrašana reizēm šķiet kā neizbēgama cīņa. Tagad no tās varēs izbēgt vieglāk, jo mēs izlabojām kļūdu, kas radās emocijzīmju meklēšanas lodziņā, nospiežot taustiņu Escape."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "Šis atjauninājums izlabo dažas nelielas kļūdas, tostarp kļūdu, kuras dēļ dažos gadījumos emocijzīmju reakcijas netika pareizi sagrupētas."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "Mēs novērsām kļūdu, kuras dēļ daļai lietotāju ziedojumu nozīmītes netika rādītas pareizi. Signal ir bezpeļņas organizācija, uz kuru attiecas 501. panta 1. punkta (c) apakšpunkts, un mēs novērtējam jūsu atbalstu!"
   }
 }

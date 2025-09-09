@@ -2237,6 +2237,9 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "한 번만 볼 수 있는 동영상"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "본 메세지는 삭제되었습니다."
   },
@@ -3524,6 +3527,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "다시 시도하거나 지원팀에 문의하세요."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "예기치 못한 오류 발생"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "디버그 로그 제출"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "아니요"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "확인"
   },
@@ -3954,7 +3966,7 @@
     "messageformat": "{joinerName} 님의 그룹 참가 요청이 거절되었습니다."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} requested and canceled their request to join via the group link} other {{joinerName} requested and canceled {numberOfRequests,number} requests to join via the group link}}"
+    "messageformat": "{numberOfRequests, plural, other {{joinerName} 님이 그룹 링크를 통한 참가를 {numberOfRequests,number}번 요청했다가 취소했습니다.}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "관리자 승인을 비활성화한 상태로 그룹 링크를 활성화하셨습니다."
@@ -4992,10 +5004,10 @@
     "messageformat": "사용자 이름 링크 초기화 필요"
   },
   "icu:ProfileEditor__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "사용자 이름 링크 열기 화면"
   },
   "icu:ProfileEditor__username-link__open": {
-    "messageformat": "Open username link screen"
+    "messageformat": "사용자 이름 링크 열기 화면"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "내 사용자 이름 공유"
@@ -5254,6 +5266,12 @@
   },
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "예를 들어 :-) 기호를 입력하면 <emojify>🙂</emojify> 이모지로 변환됨"
+  },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "알림을 끈 대화 보관 상태로 유지"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "알림을 끄고 보관한 대화는 새 메시지가 도착해도 보관 상태로 유지됩니다."
   },
   "icu:Preferences--advanced": {
     "messageformat": "고급"
@@ -6636,6 +6654,12 @@
   "icu:PreferencesDonations__my-support": {
     "messageformat": "내 지원"
   },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} 일회성 기부"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "기부를 처리하는 중..."
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
     "messageformat": "{formattedCurrencyAmount} 기부"
   },
@@ -6651,8 +6675,11 @@
   "icu:PreferencesDonations__receipts": {
     "messageformat": "영수증"
   },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "영수증 세부 정보 보기"
+  },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "기부 FAQ"
+    "messageformat": "기부자 FAQ"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "영수증은 여러 기기에서 동기화되지 않습니다. Signal을 다시 설치했다면 이전 기부 영수증은 사용할 수 없습니다."
@@ -6682,40 +6709,43 @@
     "messageformat": "문제가 있나요? <contactSupportLink>지원팀에 문의하세요</contactSupportLink>"
   },
   "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
-    "messageformat": "Enter Custom Amount"
+    "messageformat": "사용자 정의 금액 입력"
   },
   "icu:DonateFlow__credit-or-debit-card": {
-    "messageformat": "Credit or Debit Card"
+    "messageformat": "신용 또는 직불 카드"
   },
   "icu:DonateFlow__card-form-instructions": {
-    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "신용 카드 또는 체크 카드 세부 정보를 입력하세요. Signal은 개인 정보를 수집하거나 저장하지 않습니다. <learnMoreLink>자세히 알아보기</learnMoreLink>"
   },
   "icu:DonateFlow__card-form-card-number": {
-    "messageformat": "Card Number"
+    "messageformat": "카드 번호"
   },
   "icu:DonateFlow__card-form-expiration-date": {
-    "messageformat": "Expiration Date"
+    "messageformat": "만료일"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount} to Signal"
+    "messageformat": "Signal에 {formattedCurrencyAmount} 기부"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
-    "messageformat": "Invalid card number"
+    "messageformat": "잘못된 카드 번호입니다."
   },
   "icu:DonateFlow__card-form-error-expiration-expired": {
-    "messageformat": "Card has expired"
+    "messageformat": "만료된 카드입니다."
   },
   "icu:DonateFlow__card-form-error-year-missing": {
-    "messageformat": "Year required"
+    "messageformat": "연도를 입력하세요."
   },
   "icu:DonateFlow__card-form-error-invalid": {
-    "messageformat": "Invalid"
+    "messageformat": "유효하지 않음"
   },
   "icu:DonateFlow__card-form-error-cvc-too-short": {
-    "messageformat": "Code too short"
+    "messageformat": "코드가 너무 짧음"
   },
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
-    "messageformat": "Get the Signal Boost badge for 30 days"
+    "messageformat": "30일 동안 Signal 부스트 배지를 획득하세요."
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "기부할 수 있는 최소 금액은 {formattedCurrencyAmount}입니다."
   },
   "icu:DonationReceipt__title": {
     "messageformat": "기부 영수증"
@@ -6735,8 +6765,11 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Signal을 지지해 주셔서 감사합니다. 귀하의 기부는 오픈 소스 프라이버시 기술을 통해 표현의 자유를 지키고 안전한 글로벌 커뮤니케이션을 제공하겠다는 Signal의 사명을 실현하는 데 도움이 됩니다. 미국 거주자라면 세금 보고 시 사용할 수 있도록 이 영수증을 보관하세요. 내국세법조항 501c3조에 의거하여 세금 공제를 받을 수 있는 비영리 기관입니다. Signal 연방세 ID는 82-4506840입니다."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "오프라인 상태입니다. 기부를 완료하려면 인터넷에 연결하세요."
+  },
   "icu:Donations__Toast__Canceled": {
-    "messageformat": "Donation canceled"
+    "messageformat": "기부를 취소함"
   },
   "icu:Donations__Toast__Completed": {
     "messageformat": "기부를 완료함"
@@ -6754,16 +6787,19 @@
     "messageformat": "현재 진행 중인 기부에 추가 확인 절차가 필요합니다."
   },
   "icu:Donations__Toast__ConfirmationNeeded": {
-    "messageformat": "You have a donation in progress that requires confirmation."
+    "messageformat": "현재 진행 중인 기부금이 있으며, 확인이 필요합니다."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "기부에 성공했지만, 배지 설정을 업데이트하지 못했습니다."
   },
   "icu:Donations__DonationInterrupted": {
-    "messageformat": "Donation interrupted"
+    "messageformat": "기부가 중단됨"
   },
   "icu:Donations__DonationInterrupted__Description": {
-    "messageformat": "Your card was not charged. Do you want to retry the donation?"
+    "messageformat": "카드가 청구되지 않았습니다. 기부를 다시 시도하시겠습니까?"
   },
   "icu:Donations__DonationInterrupted__RetryButton": {
-    "messageformat": "Try again"
+    "messageformat": "다시 시도해 주세요."
   },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "결제 수단 거부됨"
@@ -6783,20 +6819,23 @@
   "icu:Donations__GenericError__Description": {
     "messageformat": "귀하의 기부금이 처리되지 않았을 수 있습니다. 'Signal에 기부'를 클릭한 후 '기부 영수증'을 클릭하여 영수증을 확인하세요."
   },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "다시 시도하거나 디버그 로그를 지원팀에 제출하여 기부를 완료하는 데 도움을 받으세요. 디버그 로그를 제출하면 문제를 진단하고 수정하는 데 도움이 됩니다. 디버그 로그에는 식별 정보가 포함되지 않습니다."
+  },
   "icu:Donations__Processing": {
     "messageformat": "기부를 처리하는 중..."
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "아직 처리 중"
+    "messageformat": "아직 기부를 처리하는 중"
   },
   "icu:Donations__StillProcessing__Description": {
     "messageformat": "기부를 아직 처리하는 중입니다. 몇 분 정도 소요됩니다."
   },
   "icu:Donations__TimedOut": {
-    "messageformat": "Donation canceled"
+    "messageformat": "기부를 취소함"
   },
   "icu:Donations__TimedOut__Description": {
-    "messageformat": "It has been too long since you started your donation. Please start over."
+    "messageformat": "기부 설정 시간이 초과되었습니다. 처음부터 다시 시작해 주세요."
   },
   "icu:Donations__3dsValidationNeeded": {
     "messageformat": "추가 확인이 필요합니다."
@@ -6815,6 +6854,18 @@
   },
   "icu:Donations__3dsValidationNeeded__CancelDonation": {
     "messageformat": "기부 취소"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "지지와 성원에 감사드립니다!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Signal에서 기부자 배지를 받았습니다! 프로필에 표시하여 Signal에 대한 지지를 보여주세요."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "프로필에 표시"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "모바일 장치의 설정 → Signal에 기부 → 배지에서 조정할 수 있습니다."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "이 버전에는 Signal의 원활한 실행을 위한 일부 기능 업데이트와 버그 수정이 다수 포함되어 있습니다.",
@@ -6851,6 +6902,9 @@
     "messageformat": "이모지 검색창의 버그를 수정했습니다."
   },
   "icu:WhatsNew__v7.66--0": {
-    "messageformat": "This update fixes a few small bugs, including one where emoji reactions weren't being grouped together correctly in some cases."
+    "messageformat": "몇 가지 사소한 버그를 수정했습니다."
+  },
+  "icu:WhatsNew__v7.67--0": {
+    "messageformat": "일부 사용자에게 기부 배지가 제대로 표시되지 않는 버그를 수정했습니다."
   }
 }

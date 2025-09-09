@@ -1100,6 +1100,7 @@ type WritableInterface = {
   saveAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
   saveAttachmentDownloadJobs: (jobs: Array<AttachmentDownloadJobType>) => void;
   resetAttachmentDownloadActive: () => void;
+  resetBackupAttachmentDownloadJobsRetryAfter: () => void;
   removeAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
   removeAttachmentDownloadJobsForMessage: (messageId: string) => void;
   removeAllBackupAttachmentDownloadJobs: () => void;
@@ -1211,6 +1212,8 @@ type WritableInterface = {
 
   processGroupCallRingCancellation(ringId: bigint): void;
   cleanExpiredGroupCallRingCancellations(): void;
+
+  _testOnlyRemoveMessageAttachments(timestamp: number): void;
 };
 
 // Adds a database argument

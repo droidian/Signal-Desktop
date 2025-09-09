@@ -4,7 +4,7 @@
 /* eslint-disable camelcase */
 
 // TODO(indutny): format queries
-import SQL from '@signalapp/sqlcipher';
+import SQL, { setLogger as setSqliteLogger } from '@signalapp/sqlcipher';
 import { randomBytes } from 'crypto';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'path';
@@ -599,6 +599,7 @@ export const DataWriter: ServerWritableInterface = {
   saveAttachmentDownloadJob,
   saveAttachmentDownloadJobs,
   resetAttachmentDownloadActive,
+  resetBackupAttachmentDownloadJobsRetryAfter,
   removeAttachmentDownloadJob,
   removeAttachmentDownloadJobsForMessage,
   removeAllBackupAttachmentDownloadJobs,
@@ -676,6 +677,8 @@ export const DataWriter: ServerWritableInterface = {
 
   disableFSync,
   enableFSyncAndCheckpoint,
+
+  _testOnlyRemoveMessageAttachments,
 
   // Server-only
 
@@ -840,6 +843,18 @@ function openAndSetUpSQLCipher(filePath: string, { key }: { key: string }) {
 let logger = sqlLogger;
 let databaseFilePath: string | undefined;
 let indexedDBPath: string | undefined;
+
+setSqliteLogger((code, message) => {
+  if (code === 'SQLITE_SCHEMA') {
+    // Ignore query recompilation due to schema changes
+    return;
+  }
+  if (code === 'SQLITE_NOTICE') {
+    logger.info(`sqlite(${code}): ${message}`);
+    return;
+  }
+  logger.warn(`sqlite(${code}): ${message}`);
+});
 
 export function initialize({
   configDir,
@@ -2680,6 +2695,17 @@ function saveMessageAttachment({
   ).run(values);
 }
 
+function _testOnlyRemoveMessageAttachments(
+  db: WritableDB,
+  timestamp: number
+): void {
+  const [query, params] = sql`
+    DELETE FROM message_attachments
+      WHERE sentAt = ${timestamp};`;
+
+  db.prepare(query).run(params);
+}
+
 function saveMessage(
   db: WritableDB,
   message: ReadonlyDeep<MessageType>,
@@ -2691,7 +2717,6 @@ function saveMessage(
     _testOnlyAvoidNormalizingAttachments?: boolean;
   }
 ): string {
-  // NB: `saveMessagesIndividually` relies on `saveMessage` being atomic
   const { alreadyInTransaction, forceSave, jobToInsert, ourAci } = options;
   if (!alreadyInTransaction) {
     return db.transaction(() => {
@@ -2861,6 +2886,10 @@ function saveMessage(
   } satisfies Omit<MessageTypeUnhydrated, 'json'>;
 
   if (id && !forceSave) {
+    if (normalizeAttachmentData) {
+      saveMessageAttachments(db, message);
+    }
+
     const result = db
       .prepare(
         // UPDATE queries that set the value of a primary key column can be very slow when
@@ -2879,15 +2908,11 @@ function saveMessage(
       return id;
     }
 
-    strictAssert(result.changes === 1, 'One row should have been changed');
-
-    if (normalizeAttachmentData) {
-      saveMessageAttachments(db, message);
-    }
-
     if (jobToInsert) {
       insertJob(db, jobToInsert);
     }
+
+    strictAssert(result.changes === 1, 'One row should have been changed');
 
     return id;
   }
@@ -2951,10 +2976,7 @@ function saveMessagesIndividually(
     const failedIndices: Array<number> = [];
     arrayOfMessages.forEach((message, index) => {
       try {
-        saveMessage(db, message, {
-          ...options,
-          alreadyInTransaction: true,
-        });
+        saveMessage(db, message, options);
       } catch (e) {
         logger.error(
           'saveMessagesIndividually: failed to save message',
@@ -5734,6 +5756,16 @@ function resetAttachmentDownloadActive(db: WritableDB): void {
   ).run();
 }
 
+function resetBackupAttachmentDownloadJobsRetryAfter(db: WritableDB): void {
+  db.prepare(
+    `
+    UPDATE attachment_downloads
+    SET retryAfter = NULL
+    WHERE originalSource = 'backup_import'
+    `
+  ).run();
+}
+
 function removeAttachmentDownloadJob(
   db: WritableDB,
   job: Pick<
@@ -6258,26 +6290,35 @@ function addStickerPackReference(
     );
   }
 
-  db.prepare(
-    `
-    INSERT OR REPLACE INTO sticker_references (
-      messageId,
-      packId,
-      stickerId,
-      isUnresolved
-    ) values (
-      $messageId,
-      $packId,
-      $stickerId,
-      $isUnresolved
-    )
-    `
-  ).run({
-    messageId,
-    packId,
-    stickerId,
-    isUnresolved: isUnresolved ? 1 : 0,
-  });
+  db.transaction(() => {
+    const [select, selectParams] = sql`
+      SELECT EXISTS (
+        SELECT 1 FROM sticker_packs WHERE id IS ${packId}
+      )
+    `;
+    const exists =
+      db.prepare(select, { pluck: true }).get<number>(selectParams) === 1;
+    if (!exists) {
+      logger.warn('addStickerPackReference: did not find referenced pack');
+      return;
+    }
+
+    const [insert, insertParams] = sql`
+      INSERT OR REPLACE INTO sticker_references (
+        messageId,
+        packId,
+        stickerId,
+        isUnresolved
+      ) values (
+        ${messageId},
+        ${packId},
+        ${stickerId},
+        ${isUnresolved ? 1 : 0}
+      )
+    `;
+
+    db.prepare(insert).run(insertParams);
+  })();
 }
 function deleteStickerPackReference(
   db: WritableDB,

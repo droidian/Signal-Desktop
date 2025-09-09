@@ -3,6 +3,7 @@
 
 import { assert } from 'chai';
 import { v4 as generateGuid } from 'uuid';
+import { omit } from 'lodash';
 
 import * as Bytes from '../Bytes';
 import type {
@@ -635,6 +636,80 @@ describe('normalizes attachment references', () => {
       contentType: APPLICATION_OCTET_STREAM,
       uploadTimestamp: undefined,
       incrementalMac: undefined,
+    });
+  });
+
+  it('is resilient when called from saveMessagesIndividually to incorrect data', async () => {
+    const attachment = {
+      ...composeAttachment(),
+      key: {},
+      randomKey: 'random',
+    } as unknown as AttachmentType;
+
+    const attachments = [attachment];
+    const message = composeMessage(Date.now(), {
+      attachments,
+    });
+
+    await DataWriter.saveMessages([message], {
+      forceSave: true,
+      ourAci: generateAci(),
+      postSaveUpdates: () => Promise.resolve(),
+      _testOnlyAvoidNormalizingAttachments: true,
+    });
+
+    await DataWriter.saveMessagesIndividually([message], {
+      ourAci: generateAci(),
+      postSaveUpdates: () => Promise.resolve(),
+    });
+
+    let messageFromDB = await DataReader.getMessageById(message.id);
+    assert(messageFromDB, 'message was saved');
+    assert.deepEqual(messageFromDB.attachments?.[0], attachment);
+
+    const attachmentWithoutKey = { ...attachment, key: undefined };
+    await DataWriter.saveMessagesIndividually(
+      [
+        {
+          ...message,
+          attachments: [attachmentWithoutKey],
+        },
+      ],
+      {
+        ourAci: generateAci(),
+        postSaveUpdates: () => Promise.resolve(),
+      }
+    );
+
+    messageFromDB = await DataReader.getMessageById(message.id);
+    assert(messageFromDB, 'message was saved');
+    assert.deepEqual(
+      messageFromDB.attachments?.[0],
+      omit(attachmentWithoutKey, 'randomKey')
+    );
+  });
+
+  it('adds a placeholder attachment when attachments had been deleted', async () => {
+    const message = composeMessage(Date.now(), {
+      attachments: [composeAttachment(), composeAttachment()],
+    });
+
+    await DataWriter.saveMessage(message, {
+      forceSave: true,
+      ourAci: generateAci(),
+      postSaveUpdates: () => Promise.resolve(),
+    });
+
+    await DataWriter._testOnlyRemoveMessageAttachments(message.timestamp);
+
+    const messageFromDB = await DataReader.getMessageById(message.id);
+    assert(messageFromDB, 'message was saved');
+    assert.deepEqual(messageFromDB.attachments?.[0], {
+      size: 0,
+      contentType: IMAGE_PNG,
+      width: 150,
+      height: 150,
+      error: true,
     });
   });
 });

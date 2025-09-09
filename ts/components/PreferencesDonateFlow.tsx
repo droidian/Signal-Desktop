@@ -17,9 +17,11 @@ import { Button, ButtonVariant } from './Button';
 import type {
   CardDetail,
   DonationErrorType,
+  DonationStateType,
   HumanDonationAmount,
 } from '../types/Donations';
 import {
+  donationStateSchema,
   ONE_TIME_DONATION_CONFIG_ID,
   type DonationWorkflow,
   type OneTimeDonationHumanAmounts,
@@ -63,6 +65,8 @@ import { I18n } from './I18n';
 import { strictAssert } from '../util/assert';
 import { DonationsOfflineTooltip } from './conversation/DonationsOfflineTooltip';
 import { DonateInputAmount } from './preferences/donations/DonateInputAmount';
+import { Tooltip, TooltipPlacement } from './Tooltip';
+import { offsetDistanceModifier } from '../util/popperUtil';
 
 const SUPPORT_URL = 'https://support.signal.org/hc/requests/new?desktop';
 
@@ -89,6 +93,16 @@ type PropsActionType = {
 };
 
 export type PropsType = PropsDataType & PropsActionType & PropsHousekeepingType;
+
+const isPaymentDetailFinalizedInWorkflow = (workflow: DonationWorkflow) => {
+  const finalizedStates: Array<DonationStateType> = [
+    donationStateSchema.Enum.INTENT_CONFIRMED,
+    donationStateSchema.Enum.INTENT_REDIRECT,
+    donationStateSchema.Enum.RECEIPT,
+    donationStateSchema.Enum.DONE,
+  ];
+  return finalizedStates.includes(workflow.type);
+};
 
 export function PreferencesDonateFlow({
   contentsRef,
@@ -120,6 +134,17 @@ export function PreferencesDonateFlow({
   const [cardFormValues, setCardFormValues] = useState<
     CardFormValues | undefined
   >();
+
+  const hasCardFormData = useMemo(() => {
+    if (!cardFormValues) {
+      return false;
+    }
+    return (
+      cardFormValues.cardNumber !== '' ||
+      cardFormValues.cardExpiration !== '' ||
+      cardFormValues.cardCvc !== ''
+    );
+  }, [cardFormValues]);
 
   // When changing currency, clear out the last selected amount
   const handleAmountPickerCurrencyChanged = useCallback((value: string) => {
@@ -164,16 +189,25 @@ export function PreferencesDonateFlow({
 
   const onTryClose = useCallback(() => {
     const onDiscard = () => {
-      clearWorkflow();
+      // Don't clear the workflow if we're processing the payment and
+      // payment information is finalized.
+      if (!workflow || !isPaymentDetailFinalizedInWorkflow(workflow)) {
+        clearWorkflow();
+      }
     };
-    const isConfirmationNeeded = Boolean(
-      step === 'paymentDetails' &&
-        !isCardFormDisabled &&
-        workflow?.type !== 'DONE'
-    );
+    const isConfirmationNeeded =
+      hasCardFormData &&
+      !isCardFormDisabled &&
+      (!workflow || !isPaymentDetailFinalizedInWorkflow(workflow));
 
     confirmDiscardIf(isConfirmationNeeded, onDiscard);
-  }, [clearWorkflow, confirmDiscardIf, isCardFormDisabled, step, workflow]);
+  }, [
+    clearWorkflow,
+    confirmDiscardIf,
+    hasCardFormData,
+    isCardFormDisabled,
+    workflow,
+  ]);
   tryClose.current = onTryClose;
 
   let innerContent: JSX.Element;
@@ -304,7 +338,6 @@ function AmountPicker({
       setCustomAmount('');
     } else {
       setPresetAmount(undefined);
-      setCustomAmount(initialAmount?.toString() ?? '');
     }
   }, [initialAmount, presetAmountOptions]);
 
@@ -316,6 +349,10 @@ function AmountPicker({
     const currencyAmounts = donationAmountsConfig[currency];
     return currencyAmounts.minimum;
   }, [donationAmountsConfig, currency]);
+
+  const formattedMinimumAmount = useMemo<string>(() => {
+    return toHumanCurrencyString({ amount: minimumAmount, currency });
+  }, [minimumAmount, currency]);
 
   const currencyOptionsForSelect = useMemo(() => {
     return validCurrencies.toSorted().map((currencyString: string) => {
@@ -369,6 +406,10 @@ function AmountPicker({
     [onChangeCurrency]
   );
 
+  const handleCustomAmountFocus = useCallback(() => {
+    setPresetAmount(undefined);
+  }, []);
+
   const handleCustomAmountChanged = useCallback((value: string) => {
     // Custom amount overrides any selected preset amount
     setPresetAmount(undefined);
@@ -406,6 +447,28 @@ function AmountPicker({
     </Button>
   );
 
+  let continueButtonWithTooltip: JSX.Element | undefined;
+  if (!isOnline) {
+    continueButtonWithTooltip = (
+      <DonationsOfflineTooltip i18n={i18n}>
+        {continueButton}
+      </DonationsOfflineTooltip>
+    );
+  } else if (error === 'amount-below-minimum') {
+    continueButtonWithTooltip = (
+      <Tooltip
+        className="InAnotherCallTooltip"
+        content={i18n('icu:DonateFlow__custom-amount-below-minimum-tooltip', {
+          formattedCurrencyAmount: formattedMinimumAmount,
+        })}
+        direction={TooltipPlacement.Top}
+        popperModifiers={[offsetDistanceModifier(20)]}
+      >
+        {continueButton}
+      </Tooltip>
+    );
+  }
+
   return (
     <div className="DonationAmountPicker">
       <Select
@@ -441,7 +504,7 @@ function AmountPicker({
           currency={currency}
           id="customAmount"
           onValueChange={handleCustomAmountChanged}
-          onFocus={() => setPresetAmount(undefined)}
+          onFocus={handleCustomAmountFocus}
           placeholder={i18n(
             'icu:DonateFlow__amount-picker-custom-amount-placeholder'
           )}
@@ -449,13 +512,7 @@ function AmountPicker({
         />
       </div>
       <div className="DonationAmountPicker__PrimaryButtonContainer">
-        {isOnline ? (
-          continueButton
-        ) : (
-          <DonationsOfflineTooltip i18n={i18n}>
-            {continueButton}
-          </DonationsOfflineTooltip>
-        )}
+        {continueButtonWithTooltip ?? continueButton}
       </div>
     </div>
   );

@@ -126,8 +126,8 @@ importers:
         specifier: 3.27.0
         version: 3.27.0(react@18.3.1)
       '@signalapp/libsignal-client':
-        specifier: 0.78.2
-        version: 0.78.2
+        specifier: 0.78.3
+        version: 0.78.3
       '@signalapp/minimask':
         specifier: 1.0.1
         version: 1.0.1
@@ -135,11 +135,11 @@ importers:
         specifier: 2.1.2
         version: 2.1.2
       '@signalapp/ringrtc':
-        specifier: 2.56.0
-        version: 2.56.0
+        specifier: 2.57.0
+        version: 2.57.0
       '@signalapp/sqlcipher':
-        specifier: 2.2.2
-        version: 2.2.2
+        specifier: 2.4.4
+        version: 2.4.4
       '@signalapp/windows-ucv':
         specifier: 1.0.1
         version: 1.0.1
@@ -439,8 +439,8 @@ importers:
         specifier: 0.1.61
         version: 0.1.61
       '@signalapp/mock-server':
-        specifier: 13.2.0
-        version: 13.2.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+        specifier: 13.3.0
+        version: 13.3.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@storybook/addon-a11y':
         specifier: 8.4.4
         version: 8.4.4(storybook@8.4.4(bufferutil@4.0.9)(prettier@3.3.3)(utf-8-validate@5.0.10))
@@ -652,8 +652,8 @@ importers:
         specifier: 4.3.7
         version: 4.3.7(supports-color@8.1.1)
       electron:
-        specifier: 37.2.6
-        version: 37.2.6
+        specifier: 37.3.1
+        version: 37.3.1
       electron-builder:
         specifier: 26.0.14
         version: 26.0.14(electron-builder-squirrel-windows@26.0.14)
@@ -3293,17 +3293,17 @@ packages:
   '@sideway/pinpoint@2.0.0':
     resolution: {integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==}
 
-  '@signalapp/libsignal-client@0.60.2':
-    resolution: {integrity: sha512-tU4kNP/yCwkFntb2ahXOSQJtzdy+YifAB2yv5hw0qyKSidRHLn6bYiz4Zo2tjxLDRoBLAUxCRsQramStiqNZdA==}
+  '@signalapp/libsignal-client@0.76.7':
+    resolution: {integrity: sha512-iGWTlFkko7IKlm96Iy91Wz5sIN089nj02ifOk6BWtLzeVi0kFaNj+jK26Sl1JRXy/VfXevcYtiOivOg43BPqpg==}
 
-  '@signalapp/libsignal-client@0.78.2':
-    resolution: {integrity: sha512-WpoygjlvB7jqwqwXKzRtYIbXNLuCHaeLBp0pZ3yqSTRNuRCo94Oqf/GRh9uV/Ljs2gSLqIzGcdyQ+Ikn61LZnA==}
+  '@signalapp/libsignal-client@0.78.3':
+    resolution: {integrity: sha512-svxZn9dnK49nx4J3pxlQYW34NUfDHQgdVPElQlOcoMzwgdFJBF5re7UBLeZOWdWvoNK3ZZOFF+/AYOk51r2QKw==}
 
   '@signalapp/minimask@1.0.1':
     resolution: {integrity: sha512-QAwo0joA60urTNbW9RIz6vLKQjy+jdVtH7cvY0wD9PVooD46MAjE40MLssp4xUJrph91n2XvtJ3pbEUDrmT2AA==}
 
-  '@signalapp/mock-server@13.2.0':
-    resolution: {integrity: sha512-f5uxzsIwPmkevX5ycCRWgqy/VCbvj/dUA8yGWlfO2hFc62UZ4FaOY0n5YFMOpQgp5eMO6TMgr1KqIR/uAxfkIg==}
+  '@signalapp/mock-server@13.3.0':
+    resolution: {integrity: sha512-qWLI+J0hptzKC3Xm9FWWqFMvJ+jpLLPRq+Y6gdbprfA/DMHcNK53T8A54onbEyqJHnxdPoyqxtH4wcsiS1HglQ==}
 
   '@signalapp/parchment-cjs@3.0.1':
     resolution: {integrity: sha512-hSBMQ1M7wE4GcC8ZeNtvpJF+DAJg3eIRRf1SiHS3I3Algav/sgJJNm6HIYm6muHuK7IJmuEjkL3ILSXgmu0RfQ==}
@@ -3312,11 +3312,12 @@ packages:
     resolution: {integrity: sha512-y2sgqdivlrG41J4Zvt/82xtH/PZjDlgItqlD2g/Cv3ZbjlR6cGhTNXbfNygCJB8nXj+C7I28pjt1Zm3k0pv2mg==}
     engines: {npm: '>=8.2.3'}
 
-  '@signalapp/ringrtc@2.56.0':
-    resolution: {integrity: sha512-6zjREIkJZXsLVo4sfQa7qqXtSIhOS41EWxardn8uNb7+zsjmPzAoPEAYZLzuzIBnRfIp2pc6pk/7gwtlqgbJhg==}
+  '@signalapp/ringrtc@2.57.0':
+    resolution: {integrity: sha512-qfw2YXaddpw5FoBbM8EXvztBCvnEsvvschV3AZitVjt+Vik0I/Y+EzTWmVKrTBrtTdOTjUQepY5sw/t6pH6NGA==}
+    hasBin: true
 
-  '@signalapp/sqlcipher@2.2.2':
-    resolution: {integrity: sha512-AboQsxVG/YjhflJnzBliNLo9bJXB4whh3jE34IDD7r1dbw7X71UU2NKmRQiFCnr+2MY68pjFZgau3lsPqL1efg==}
+  '@signalapp/sqlcipher@2.4.4':
+    resolution: {integrity: sha512-43zkxlPA3ZJE3+qtkEnkcttgiE8OQvR1yxJY5gl7u/KoL7DRwgiMr5F6qCjnMAsbiHWrJfG3YMq6TXfLfS/bVA==}
 
   '@signalapp/windows-ucv@1.0.1':
     resolution: {integrity: sha512-tArRaDzAFXQ6BcYseUtd9bp52/sb5C/zbCIoNkDH+FUoxnZRvX25Fv2HHbH7Xe2+bcdb4+DQmyoUeHMhTUxAmA==}
@@ -5636,8 +5637,8 @@ packages:
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
-  electron@37.2.6:
-    resolution: {integrity: sha512-Ns6xyxE+hIK5UlujtRlw7w4e2Ju/ImCWXf1Q/PoOhc0N3/6SN6YW7+ujCarsHbxWnolbW+1RlkHtdklUJpjbPA==}
+  electron@37.3.1:
+    resolution: {integrity: sha512-7DhktRLqhe6OJh/Bo75bTI0puUYEmIwSzMinocgO63mx3MVjtIn2tYMzLmAleNIlud2htkjpsMG2zT4PiTCloA==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -13933,13 +13934,13 @@ snapshots:
 
   '@sideway/pinpoint@2.0.0': {}
 
-  '@signalapp/libsignal-client@0.60.2':
+  '@signalapp/libsignal-client@0.76.7':
     dependencies:
       node-gyp-build: 4.8.4
       type-fest: 4.26.1
-      uuid: 8.3.2
+      uuid: 11.0.2
 
-  '@signalapp/libsignal-client@0.78.2':
+  '@signalapp/libsignal-client@0.78.3':
     dependencies:
       node-gyp-build: 4.8.4
       type-fest: 4.26.1
@@ -13947,10 +13948,10 @@ snapshots:
 
   '@signalapp/minimask@1.0.1': {}
 
-  '@signalapp/mock-server@13.2.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+  '@signalapp/mock-server@13.3.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@indutny/parallel-prettier': 3.0.0(prettier@3.3.3)
-      '@signalapp/libsignal-client': 0.60.2
+      '@signalapp/libsignal-client': 0.76.7
       '@tus/file-store': 1.5.1
       '@tus/server': 1.10.2
       debug: 4.3.7(supports-color@8.1.1)
@@ -13979,14 +13980,14 @@ snapshots:
       lodash: 4.17.21
       quill-delta: 5.1.0
 
-  '@signalapp/ringrtc@2.56.0':
+  '@signalapp/ringrtc@2.57.0':
     dependencies:
       https-proxy-agent: 7.0.6
       tar: 6.2.1
     transitivePeerDependencies:
       - supports-color
 
-  '@signalapp/sqlcipher@2.2.2':
+  '@signalapp/sqlcipher@2.4.4':
     dependencies:
       node-addon-api: 8.3.0
       node-gyp-build: 4.8.4
@@ -14901,7 +14902,7 @@ snapshots:
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 20.17.6
     optional: true
 
   '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.56.0)(typescript@5.6.3))(eslint@8.56.0)(typescript@5.6.3)':
@@ -16731,7 +16732,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@37.2.6:
+  electron@37.3.1:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.17.0
