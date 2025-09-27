@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import { createBatcher } from './batcher';
 import { createWaitBatcher } from './waitBatcher';
 import { DataWriter } from '../sql/Client';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { postSaveUpdates } from './cleanup';
 import { MessageModel } from '../models/messages';
 
-const updateMessageBatcher = createBatcher<ReadonlyMessageAttributesType>({
+const log = createLogger('messageBatcher');
+
+const updateMessageBatcher = createWaitBatcher<ReadonlyMessageAttributesType>({
   name: 'messageBatcher.updateMessageBatcher',
   wait: 75,
   maxSize: 50,
@@ -30,16 +31,13 @@ const updateMessageBatcher = createBatcher<ReadonlyMessageAttributesType>({
 
 let shouldBatch = true;
 
-export function queueUpdateMessage(
+export async function queueUpdateMessage(
   messageAttr: ReadonlyMessageAttributesType
-): void {
+): Promise<void> {
   if (shouldBatch) {
-    updateMessageBatcher.add(messageAttr);
+    await updateMessageBatcher.add(messageAttr);
   } else {
-    void DataWriter.saveMessage(messageAttr, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(messageAttr);
   }
 }
 

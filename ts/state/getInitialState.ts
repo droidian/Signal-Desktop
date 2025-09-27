@@ -8,11 +8,14 @@ import { getEmptyState as audioRecorderEmptyState } from './ducks/audioRecorder'
 import { getEmptyState as badgesEmptyState } from './ducks/badges';
 import { getEmptyState as callHistoryEmptyState } from './ducks/callHistory';
 import { getEmptyState as callingEmptyState } from './ducks/calling';
+import { getEmptyState as chatFoldersEmptyState } from './ducks/chatFolders';
 import { getEmptyState as composerEmptyState } from './ducks/composer';
 import { getEmptyState as conversationsEmptyState } from './ducks/conversations';
 import { getEmptyState as crashReportsEmptyState } from './ducks/crashReports';
+import { getEmptyState as donationsEmptyState } from './ducks/donations';
 import { getEmptyState as emojiEmptyState } from './ducks/emojis';
 import { getEmptyState as expirationEmptyState } from './ducks/expiration';
+import { getEmptyState as gifsEmptyState } from './ducks/gifs';
 import { getEmptyState as globalModalsEmptyState } from './ducks/globalModals';
 import { getEmptyState as inboxEmptyState } from './ducks/inbox';
 import { getEmptyState as installerEmptyState } from './ducks/installer';
@@ -22,6 +25,7 @@ import { getEmptyState as linkPreviewsEmptyState } from './ducks/linkPreviews';
 import { getEmptyState as mediaGalleryEmptyState } from './ducks/mediaGallery';
 import { getEmptyState as navEmptyState } from './ducks/nav';
 import { getEmptyState as networkEmptyState } from './ducks/network';
+import { getEmptyState as notificationProfilesEmptyState } from './ducks/notificationProfiles';
 import { getEmptyState as preferredReactionsEmptyState } from './ducks/preferredReactions';
 import { getEmptyState as safetyNumberEmptyState } from './ducks/safetyNumber';
 import { getEmptyState as searchEmptyState } from './ducks/search';
@@ -55,8 +59,12 @@ export function getInitialState(
     callLinks,
     callHistory: calls,
     callHistoryUnreadCount,
+    chatFolders,
+    donations,
+    gifs,
     mainWindowStats,
     menuOptions,
+    notificationProfiles,
     recentEmoji,
     stickers,
     stories,
@@ -81,8 +89,19 @@ export function getInitialState(
       ...callingEmptyState(),
       callLinks: makeLookup(callLinks, 'roomId'),
     },
+    chatFolders: {
+      ...chatFoldersEmptyState(),
+      currentChatFolders: chatFolders,
+    },
+    donations,
     emojis: recentEmoji,
+    gifs,
     items,
+    notificationProfiles: {
+      ...notificationProfilesEmptyState(),
+      override: items.notificationProfileOverride,
+      profiles: notificationProfiles,
+    },
     stickers,
     stories: {
       ...storiesEmptyState(),
@@ -100,7 +119,7 @@ export function getInitialState(
 }
 
 export function generateConversationsState(): ConversationsStateType {
-  const convoCollection = window.getConversations();
+  const convoCollection = window.ConversationController.getAll();
   const formattedConversations = convoCollection.map(conversation =>
     conversation.format()
   );
@@ -127,10 +146,13 @@ function getEmptyState(): StateType {
     badges: badgesEmptyState(),
     callHistory: callHistoryEmptyState(),
     calling: callingEmptyState(),
+    chatFolders: chatFoldersEmptyState(),
     composer: composerEmptyState(),
     conversations: generateConversationsState(),
     crashReports: crashReportsEmptyState(),
+    donations: donationsEmptyState(),
     emojis: emojiEmptyState(),
+    gifs: gifsEmptyState(),
     expiration: expirationEmptyState(),
     globalModals: globalModalsEmptyState(),
     inbox: inboxEmptyState(),
@@ -141,6 +163,7 @@ function getEmptyState(): StateType {
     mediaGallery: mediaGalleryEmptyState(),
     nav: navEmptyState(),
     network: networkEmptyState(),
+    notificationProfiles: notificationProfilesEmptyState(),
     preferredReactions: preferredReactionsEmptyState(),
     safetyNumber: safetyNumberEmptyState(),
     search: searchEmptyState(),

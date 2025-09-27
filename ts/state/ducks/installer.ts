@@ -17,7 +17,6 @@ import { type Loadable, LoadingState } from '../../util/loadable';
 import { isRecord } from '../../util/isRecord';
 import { strictAssert } from '../../util/assert';
 import * as Registration from '../../util/registration';
-import { isBackupEnabled } from '../../util/isBackupEnabled';
 import { missingCaseError } from '../../util/missingCaseError';
 import { HTTPError } from '../../textsecure/Errors';
 import {
@@ -27,9 +26,11 @@ import {
 } from '../../textsecure/Provisioner';
 import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
 import { useBoundActions } from '../../hooks/useBoundActions';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { backupsService } from '../../services/backups';
 import OS from '../../util/os/osMain';
+
+const log = createLogger('installer');
 
 export type BatonType = ReadonlyDeep<{ __installer_baton: never }>;
 
@@ -43,13 +44,6 @@ export type InstallerStateType = ReadonlyDeep<
   | {
       step: InstallScreenStep.QrCodeNotScanned;
       provisioningUrl: Loadable<string, InstallScreenQRCodeError>;
-      baton: BatonType;
-    }
-  | {
-      step: InstallScreenStep.ChoosingDeviceName;
-      deviceName: string;
-      backupFile?: File;
-      envelope: ProvisionEnvelopeType;
       baton: BatonType;
     }
   | {
@@ -83,7 +77,6 @@ export const START_INSTALLER = 'installer/START_INSTALLER';
 const SET_PROVISIONING_URL = 'installer/SET_PROVISIONING_URL';
 const SET_QR_CODE_ERROR = 'installer/SET_QR_CODE_ERROR';
 const SET_ERROR = 'installer/SET_ERROR';
-const QR_CODE_SCANNED = 'installer/QR_CODE_SCANNED';
 const RETRY_BACKUP_IMPORT = 'installer/RETRY_BACKUP_IMPORT';
 const SHOW_LINK_IN_PROGRESS = 'installer/SHOW_LINK_IN_PROGRESS';
 export const SHOW_BACKUP_IMPORT = 'installer/SHOW_BACKUP_IMPORT';
@@ -107,15 +100,6 @@ type SetQRCodeErrorActionType = ReadonlyDeep<{
 type SetErrorActionType = ReadonlyDeep<{
   type: typeof SET_ERROR;
   payload: InstallScreenError;
-}>;
-
-type QRCodeScannedActionType = ReadonlyDeep<{
-  type: typeof QR_CODE_SCANNED;
-  payload: {
-    deviceName: string;
-    baton: BatonType;
-    envelope: ProvisionEnvelopeType;
-  };
 }>;
 
 type RetryBackupImportActionType = ReadonlyDeep<{
@@ -148,7 +132,6 @@ export type InstallerActionType = ReadonlyDeep<
   | SetProvisioningUrlActionType
   | SetQRCodeErrorActionType
   | SetErrorActionType
-  | QRCodeScannedActionType
   | RetryBackupImportActionType
   | ShowLinkInProgressActionType
   | ShowBackupImportActionType
@@ -162,7 +145,6 @@ export const actions = {
   retryBackupImport,
   showBackupImport,
   handleMissingBackup,
-  showLinkInProgress,
 };
 
 export const useInstallerActions = (): BoundActionCreatorsMapObject<
@@ -195,10 +177,7 @@ function startInstaller(): ThunkAction<
     strictAssert(server, 'Expected a server');
 
     if (!provisioner) {
-      provisioner = new Provisioner({
-        server,
-        appVersion: window.getVersion(),
-      });
+      provisioner = new Provisioner({ server });
     }
 
     const cancel = provisioner.subscribe(event => {
@@ -226,7 +205,7 @@ function startInstaller(): ThunkAction<
         const { error } = event;
 
         log.error(
-          'installer: got an error while waiting for QR code',
+          'got an error while waiting for QR code',
           Errors.toLogFormat(error)
         );
 
@@ -249,7 +228,7 @@ function startInstaller(): ThunkAction<
         });
       } else if (event.kind === ProvisionEventKind.EnvelopeError) {
         log.error(
-          'installer: got an error while waiting for envelope',
+          'got an error while waiting for envelope',
           Errors.toLogFormat(event.error)
         );
 
@@ -265,43 +244,27 @@ function startInstaller(): ThunkAction<
         });
       } else if (event.kind === ProvisionEventKind.Envelope) {
         const { envelope } = event;
+        const defaultDeviceName = OS.getName() || 'Signal Desktop';
 
         if (event.isLinkAndSync) {
-          const deviceName = OS.getName() || 'Signal Desktop';
           dispatch(
             finishInstall({
               envelope,
-              deviceName,
+              deviceName: defaultDeviceName,
               isLinkAndSync: true,
             })
           );
         } else {
-          const deviceName =
-            window.textsecure.storage.user.getDeviceName() ||
-            window.getHostName() ||
-            '';
-
-          // Show screen to choose device name
-          dispatch({
-            type: QR_CODE_SCANNED,
-            payload: {
-              deviceName,
-              envelope,
-              baton,
-            },
-          });
-
-          // And feed it the CI data if present
           const { SignalCI } = window;
-          if (SignalCI != null) {
-            dispatch(
-              finishInstall({
-                envelope,
-                deviceName: SignalCI.deviceName,
-                isLinkAndSync: false,
-              })
-            );
-          }
+          const deviceName =
+            SignalCI != null ? SignalCI.deviceName : defaultDeviceName;
+          dispatch(
+            finishInstall({
+              envelope,
+              deviceName,
+              isLinkAndSync: false,
+            })
+          );
         }
       } else {
         throw missingCaseError(event);
@@ -342,14 +305,11 @@ function finishInstall({
 
     let envelope: ProvisionEnvelopeType;
     if (state.installer.step === InstallScreenStep.QrCodeNotScanned) {
-      strictAssert(isLinkAndSync, 'Can only skip device naming if link & sync');
       strictAssert(
         providedEnvelope != null,
         'finishInstall: missing required envelope'
       );
       envelope = providedEnvelope;
-    } else if (state.installer.step === InstallScreenStep.ChoosingDeviceName) {
-      ({ envelope } = state.installer);
     } else {
       throw new Error('Wrong step');
     }
@@ -362,7 +322,7 @@ function finishInstall({
     const accountManager = window.getAccountManager();
     strictAssert(accountManager, 'Expected an account manager');
 
-    if (isBackupEnabled() || isLinkAndSync) {
+    if (isLinkAndSync) {
       dispatch({ type: SHOW_BACKUP_IMPORT });
     } else {
       dispatch({ type: SHOW_LINK_IN_PROGRESS });
@@ -413,7 +373,7 @@ function finishInstall({
         await window.textsecure.storage.protocol.removeAllData();
       } catch (error) {
         log.error(
-          'installer/finishInstall: error clearing database',
+          'finishInstall: error clearing database',
           Errors.toLogFormat(error)
         );
       }
@@ -423,10 +383,6 @@ function finishInstall({
 
 function showBackupImport(): ShowBackupImportActionType {
   return { type: SHOW_BACKUP_IMPORT };
-}
-
-function showLinkInProgress(): ShowLinkInProgressActionType {
-  return { type: SHOW_LINK_IN_PROGRESS };
 }
 
 function handleMissingBackup(): ShowLinkInProgressActionType {
@@ -532,27 +488,10 @@ export function reducer(
     };
   }
 
-  if (action.type === QR_CODE_SCANNED) {
-    if (
-      state.step !== InstallScreenStep.QrCodeNotScanned ||
-      state.provisioningUrl.loadingState !== LoadingState.Loaded
-    ) {
-      log.warn('ducks/installer: not setting qr code scanned', state.step);
-      return state;
-    }
-
-    return {
-      step: InstallScreenStep.ChoosingDeviceName,
-      deviceName: action.payload.deviceName,
-      envelope: action.payload.envelope,
-      baton: action.payload.baton,
-    };
-  }
-
   if (action.type === SHOW_LINK_IN_PROGRESS) {
     if (
-      // Backups not supported
-      state.step !== InstallScreenStep.ChoosingDeviceName &&
+      // Classic linking
+      state.step !== InstallScreenStep.QrCodeNotScanned &&
       // No backup available
       state.step !== InstallScreenStep.BackupImport
     ) {

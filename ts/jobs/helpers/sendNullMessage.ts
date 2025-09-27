@@ -1,10 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { ContentHint } from '@signalapp/libsignal-client';
+
 import { handleMessageSend } from '../../util/handleMessageSend';
 import { getSendOptions } from '../../util/getSendOptions';
 import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { SignalService as Proto } from '../../protobuf';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
@@ -22,6 +23,7 @@ import {
   UnregisteredUserError,
 } from '../../textsecure/Errors';
 import MessageSender from '../../textsecure/SendMessage';
+import { sendToGroup } from '../../util/sendToGroup';
 
 async function clearResetsTracking(idForTracking: string | undefined) {
   if (!idForTracking) {
@@ -61,50 +63,86 @@ export async function sendNullMessage(
   );
 
   const sendOptions = await getSendOptions(conversation.attributes);
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-  const contentHint = ContentHint.RESENDABLE;
+  const contentHint = ContentHint.Resendable;
   const sendType = 'nullMessage';
-
-  if (!isDirectConversation(conversation.attributes)) {
-    log.info('Failing attempt to send null message to group');
-    return;
-  }
 
   // Note: we will send to blocked users, to those still in message request state, etc.
   //   Any needed blocking should still apply once the decryption error is fixed.
 
-  if (isConversationUnregistered(conversation.attributes)) {
-    await clearResetsTracking(idForTracking);
-    log.info(
-      `conversation ${conversation.idForLogging()} is unregistered; refusing to send null message`
-    );
-    return;
-  }
-
   try {
     const proto = MessageSender.getNullMessage();
-
-    await handleMessageSend(
-      messaging.sendIndividualProto({
-        contentHint,
-        serviceId: conversation.getSendTarget(),
-        options: sendOptions,
-        proto,
-        timestamp,
-        urgent: false,
-      }),
-      {
-        messageIds: [],
-        sendType,
+    if (isDirectConversation(conversation.attributes)) {
+      if (isConversationUnregistered(conversation.attributes)) {
+        await clearResetsTracking(idForTracking);
+        log.info(
+          `conversation ${conversation.idForLogging()} is unregistered; refusing to send null message`
+        );
+        return;
       }
-    );
+
+      await conversation.queueJob(
+        'conversationQueue/sendNullMessage/direct',
+        _abortSignal =>
+          handleMessageSend(
+            messaging.sendIndividualProto({
+              contentHint,
+              serviceId: conversation.getSendTarget(),
+              options: sendOptions,
+              proto,
+              timestamp,
+              urgent: false,
+            }),
+            {
+              messageIds: [],
+              sendType,
+            }
+          )
+      );
+    } else {
+      const groupV2Info = conversation.getGroupV2Info();
+      if (groupV2Info) {
+        groupV2Info.revision = 0;
+      }
+
+      await conversation.queueJob(
+        'conversationQueue/sendNullMessage/group',
+        abortSignal =>
+          sendToGroup({
+            abortSignal,
+            contentHint: ContentHint.Resendable,
+            groupSendOptions: {
+              attachments: [],
+              bodyRanges: [],
+              contact: [],
+              deletedForEveryoneTimestamp: undefined,
+              expireTimer: undefined,
+              groupV2: groupV2Info,
+              messageText: undefined,
+              preview: [],
+              profileKey: undefined,
+              quote: undefined,
+              sticker: undefined,
+              storyContext: undefined,
+              reaction: undefined,
+              targetTimestampForEdit: undefined,
+              timestamp,
+            },
+            messageId: undefined,
+            sendOptions,
+            sendTarget: conversation.toSenderKeyTarget(),
+            sendType,
+            story: false,
+            urgent: true,
+          })
+      );
+    }
   } catch (error: unknown) {
     if (
       error instanceof OutgoingIdentityKeyError ||
       error instanceof UnregisteredUserError
     ) {
       log.info(
-        'Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Cancelling job.'
+        'Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.'
       );
       return;
     }

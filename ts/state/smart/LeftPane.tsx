@@ -1,7 +1,6 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { get } from 'lodash';
 import React, { memo } from 'react';
 import { useSelector } from 'react-redux';
 import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild';
@@ -61,12 +60,14 @@ import {
   getBackupMediaDownloadProgress,
   getNavTabsCollapsed,
   getPreferredLeftPaneWidth,
+  getServerAlerts,
   getUsernameCorrupted,
   getUsernameLinkCorrupted,
 } from '../selectors/items';
 import {
   getChallengeStatus,
   hasNetworkDialog as getHasNetworkDialog,
+  getNetworkIsOnline,
 } from '../selectors/network';
 import {
   getFilterByUnread,
@@ -105,6 +106,7 @@ import {
   pauseBackupMediaDownload,
   resumeBackupMediaDownload,
 } from '../../util/backupMediaDownload';
+import { useNavActions } from '../ducks/nav';
 
 function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
@@ -124,7 +126,6 @@ function renderUpdateDialog(
 ): JSX.Element {
   return <SmartUpdateDialog {...props} />;
 }
-
 function renderCaptchaDialog({ onSkip }: { onSkip(): void }): JSX.Element {
   return <SmartCaptchaDialog onSkip={onSkip} />;
 }
@@ -175,14 +176,9 @@ const getModeSpecificProps = (
         };
       }
       if (getIsActivelySearching(state)) {
-        const primarySendsSms = Boolean(
-          get(state.items, ['primarySendsSms'], false)
-        );
-
         return {
           mode: LeftPaneMode.Search,
           isSearchingGlobally: getIsSearchingGlobally(state),
-          primarySendsSms,
           searchConversation: getSearchConversation(state),
           searchDisabled: state.network.challengeStatus !== 'idle',
           startSearchCounter: getStartSearchCounter(state),
@@ -303,6 +299,10 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const backupMediaDownloadProgress = useSelector(
     getBackupMediaDownloadProgress
   );
+  const isOnline = useSelector(getNetworkIsOnline);
+
+  const serverAlerts = useSelector(getServerAlerts);
+
   const {
     blockConversation,
     clearGroupCreationError,
@@ -348,8 +348,8 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const { savePreferredLeftPaneWidth, toggleNavTabsCollapse } =
     useItemsActions();
   const { setChallengeStatus } = useNetworkActions();
-  const { showUserNotFoundModal, toggleProfileEditor } =
-    useGlobalModalActions();
+  const { showUserNotFoundModal } = useGlobalModalActions();
+  const { changeLocation } = useNavActions();
 
   let hasExpiredDialog = false;
   let unsupportedOSDialogType: 'error' | 'warning' | undefined;
@@ -378,6 +378,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       blockConversation={blockConversation}
       cancelBackupMediaDownload={cancelBackupMediaDownload}
       challengeStatus={challengeStatus}
+      changeLocation={changeLocation}
       clearConversationSearch={clearConversationSearch}
       clearGroupCreationError={clearGroupCreationError}
       clearSearchQuery={clearSearchQuery}
@@ -400,6 +401,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       hasUpdateDialog={hasUpdateDialog}
       i18n={i18n}
       isMacOS={isMacOS}
+      isOnline={isOnline}
       isUpdateDownloaded={isUpdateDownloaded}
       lookupConversationWithoutServiceId={lookupConversationWithoutServiceId}
       modeSpecificProps={modeSpecificProps}
@@ -425,6 +427,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       savePreferredLeftPaneWidth={savePreferredLeftPaneWidth}
       searchInConversation={searchInConversation}
       selectedConversationId={selectedConversationId}
+      serverAlerts={serverAlerts}
       setChallengeStatus={setChallengeStatus}
       setComposeGroupAvatar={setComposeGroupAvatar}
       setComposeGroupExpireTimer={setComposeGroupExpireTimer}
@@ -447,7 +450,6 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       toggleComposeEditingAvatar={toggleComposeEditingAvatar}
       toggleConversationInChooseMembers={toggleConversationInChooseMembers}
       toggleNavTabsCollapse={toggleNavTabsCollapse}
-      toggleProfileEditor={toggleProfileEditor}
       unsupportedOSDialogType={unsupportedOSDialogType}
       updateSearchTerm={updateSearchTerm}
       usernameCorrupted={usernameCorrupted}

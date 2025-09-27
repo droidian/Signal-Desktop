@@ -5,22 +5,21 @@ import React, { useState } from 'react';
 import { action } from '@storybook/addon-actions';
 import { noop } from 'lodash';
 import type { Meta } from '@storybook/react';
-import enMessages from '../../_locales/en/messages.json';
 import type { PropsType } from './Lightbox';
 import { Lightbox } from './Lightbox';
 import type { MediaItemType } from '../types/MediaItem';
-import { setupI18n } from '../util/setupI18n';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
   VIDEO_MP4,
   VIDEO_QUICKTIME,
   stringToMIMEType,
+  type MIMEType,
 } from '../types/MIME';
 
-import { fakeAttachment } from '../test-both/helpers/fakeAttachment';
+import { fakeAttachment } from '../test-helpers/fakeAttachment';
 
-const i18n = setupI18n('en', enMessages);
+const { i18n } = window.SignalContext;
 
 export default {
   title: 'Components/Lightbox',
@@ -28,7 +27,11 @@ export default {
   args: {},
 } satisfies Meta<PropsType>;
 
-type OverridePropsMediaItemType = Partial<MediaItemType> & { caption?: string };
+type OverridePropsMediaItemType = Partial<MediaItemType> & {
+  caption?: string;
+  objectURL?: string;
+  contentType?: MIMEType;
+};
 
 function createMediaItem(
   overrideProps: OverridePropsMediaItemType
@@ -36,21 +39,19 @@ function createMediaItem(
   return {
     attachment: fakeAttachment({
       caption: overrideProps.caption || '',
-      contentType: IMAGE_JPEG,
+      contentType: overrideProps.contentType ?? IMAGE_JPEG,
       fileName: overrideProps.objectURL,
       url: overrideProps.objectURL,
     }),
-    contentType: IMAGE_JPEG,
     index: 0,
     message: {
-      attachments: [],
       conversationId: '1234',
+      type: 'incoming',
       id: 'image-msg',
       receivedAt: 0,
       receivedAtMs: Date.now(),
       sentAt: Date.now(),
     },
-    objectURL: '',
     ...overrideProps,
   };
 }
@@ -90,17 +91,15 @@ export function Multimedia(): JSX.Element {
           caption:
             'Still from The Lighthouse, starring Robert Pattinson and Willem Defoe.',
         }),
-        contentType: IMAGE_JPEG,
         index: 0,
         message: {
-          attachments: [],
           conversationId: '1234',
+          type: 'incoming',
           id: 'image-msg',
           receivedAt: 1,
           receivedAtMs: Date.now(),
           sentAt: Date.now(),
         },
-        objectURL: '/fixtures/tina-rolf-269345-unsplash.jpg',
       },
       {
         attachment: fakeAttachment({
@@ -108,28 +107,24 @@ export function Multimedia(): JSX.Element {
           fileName: 'pixabay-Soap-Bubble-7141.mp4',
           url: '/fixtures/pixabay-Soap-Bubble-7141.mp4',
         }),
-        contentType: VIDEO_MP4,
         index: 1,
         message: {
-          attachments: [],
           conversationId: '1234',
+          type: 'incoming',
           id: 'video-msg',
           receivedAt: 2,
           receivedAtMs: Date.now(),
           sentAt: Date.now(),
         },
-        objectURL: '/fixtures/pixabay-Soap-Bubble-7141.mp4',
       },
       createMediaItem({
         contentType: IMAGE_JPEG,
         index: 2,
-        thumbnailObjectUrl: '/fixtures/kitten-1-64-64.jpg',
         objectURL: '/fixtures/kitten-1-64-64.jpg',
       }),
       createMediaItem({
         contentType: IMAGE_JPEG,
         index: 3,
-        thumbnailObjectUrl: '/fixtures/kitten-2-64-64.jpg',
         objectURL: '/fixtures/kitten-2-64-64.jpg',
       }),
     ],
@@ -147,17 +142,15 @@ export function MissingMedia(): JSX.Element {
           fileName: 'tina-rolf-269345-unsplash.jpg',
           url: '/fixtures/tina-rolf-269345-unsplash.jpg',
         }),
-        contentType: IMAGE_JPEG,
         index: 0,
         message: {
-          attachments: [],
           conversationId: '1234',
+          type: 'incoming',
           id: 'image-msg',
           receivedAt: 3,
           receivedAtMs: Date.now(),
           sentAt: Date.now(),
         },
-        objectURL: undefined,
       },
     ],
   });

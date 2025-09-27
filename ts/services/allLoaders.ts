@@ -13,8 +13,13 @@ import {
   getDistributionListsForRedux,
   loadDistributionLists,
 } from './distributionListLoader';
+import { getDonationsForRedux, loadDonationReceipts } from './donationsLoader';
 import { getStoriesForRedux, loadStories } from './storyLoader';
 import { getUserDataForRedux, loadUserData } from './userLoader';
+import {
+  loadCachedProfiles as loadNotificationProfiles,
+  getCachedProfiles as getNotificationProfiles,
+} from './notificationProfilesService';
 
 // old-style loaders
 import {
@@ -28,13 +33,19 @@ import {
 
 import { type ReduxInitData } from '../state/initializeRedux';
 import { reinitializeRedux } from '../state/reinitializeRedux';
+import { getGifsStateForRedux, loadGifsState } from './gifsLoader';
+import { getChatFoldersForRedux, loadChatFolders } from './chatFoldersLoader';
 
 export async function loadAll(): Promise<void> {
   await Promise.all([
     loadBadges(),
     loadCallHistory(),
     loadCallLinks(),
+    loadChatFolders(),
     loadDistributionLists(),
+    loadDonationReceipts(),
+    loadGifsState(),
+    loadNotificationProfiles(),
     loadRecentEmojis(),
     loadStickers(),
     loadStories(),
@@ -55,8 +66,12 @@ export function getParametersForRedux(): ReduxInitData {
     callHistory: getCallsHistoryForRedux(),
     callHistoryUnreadCount: getCallsHistoryUnreadCountForRedux(),
     callLinks: getCallLinksForRedux(),
+    chatFolders: getChatFoldersForRedux(),
+    donations: getDonationsForRedux(),
+    gifs: getGifsStateForRedux(),
     mainWindowStats,
     menuOptions,
+    notificationProfiles: getNotificationProfiles(),
     recentEmoji: getEmojiReducerState(),
     stickers: getStickersReduxState(),
     stories: getStoriesForRedux(),

@@ -16,10 +16,13 @@ import type { ShowStickerPackPreviewActionType } from './globalModals';
 import type { ShowToastActionType } from './toast';
 import type { StateType as RootStateType } from '../reducer';
 
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { getMessageById } from '../../messages/getMessageById';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d';
-import { isGIF, isIncremental } from '../../types/Attachment';
+import {
+  getUndownloadedAttachmentSignature,
+  isIncremental,
+} from '../../types/Attachment';
 import {
   isImageTypeSupported,
   isVideoTypeSupported,
@@ -28,7 +31,7 @@ import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
 } from '../../util/getLocalAttachmentUrl';
-import { isTapToView } from '../selectors/message';
+import { isTapToView, getPropsForAttachment } from '../selectors/message';
 import { SHOW_TOAST } from './toast';
 import { ToastType } from '../../types/Toast';
 import {
@@ -41,10 +44,12 @@ import { showStickerPackPreview } from './globalModals';
 import { useBoundActions } from '../../hooks/useBoundActions';
 import { DataReader } from '../../sql/Client';
 import { deleteDownloadsJobQueue } from '../../jobs/deleteDownloadsJobQueue';
-import { AttachmentDownloadUrgency } from '../../jobs/AttachmentDownloadManager';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
+import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../../util/queueAttachmentDownloads';
 import { getMessageIdForLogging } from '../../util/idForLogging';
 import { markViewOnceMessageViewed } from '../../services/MessageUpdater';
+
+const log = createLogger('lightbox');
 
 // eslint-disable-next-line local-rules/type-alias-readonlydeep
 export type LightboxStateType =
@@ -189,31 +194,33 @@ function showLightboxForViewOnceMedia(
       );
     }
 
-    const { copyIntoTempDirectory, getAbsoluteAttachmentPath } =
+    const { copyAttachmentIntoTempDirectory, getAbsoluteAttachmentPath } =
       window.Signal.Migrations;
 
     const absolutePath = getAbsoluteAttachmentPath(firstAttachment.path);
-    const { path: tempPath } = await copyIntoTempDirectory(absolutePath);
+    const { path: tempPath } =
+      await copyAttachmentIntoTempDirectory(absolutePath);
     const tempAttachment = {
-      ...firstAttachment,
+      ...getPropsForAttachment(
+        firstAttachment,
+        'attachment',
+        message.attributes
+      ),
       path: tempPath,
     };
+    tempAttachment.url = getLocalAttachmentUrl(tempAttachment, {
+      disposition: AttachmentDisposition.Temporary,
+    });
 
     await markViewOnceMessageViewed(message);
-
-    const { contentType } = tempAttachment;
 
     const media = [
       {
         attachment: tempAttachment,
-        objectURL: getLocalAttachmentUrl(tempAttachment, {
-          disposition: AttachmentDisposition.Temporary,
-        }),
-        contentType,
         index: 0,
         message: {
-          attachments: message.get('attachments') || [],
           id: message.get('id'),
+          type: message.get('type'),
           conversationId: message.get('conversationId'),
           receivedAt: message.get('received_at'),
           receivedAtMs: Number(message.get('received_at_ms')),
@@ -283,19 +290,23 @@ function showLightbox(opts: {
     }
 
     if (isIncremental(attachment)) {
-      // Queue all attachments, but this target attachment should be IMMEDIATE
-      const updatedFields = await queueAttachmentDownloads(message.attributes, {
-        urgency: AttachmentDownloadUrgency.STANDARD,
-        attachmentDigestForImmediate: attachment.digest,
+      // Queue this target attachment with urgency IMMEDIATE
+      await queueAttachmentDownloadsAndMaybeSaveMessage(message, {
+        signaturesToQueue: new Set([
+          getUndownloadedAttachmentSignature(attachment),
+        ]),
+        isManualDownload: true,
+        urgency: AttachmentDownloadUrgency.IMMEDIATE,
       });
-      if (updatedFields) {
-        message.set(updatedFields);
-        await window.MessageCache.saveMessage(message.attributes);
-      }
+
+      // Queue all the remaining with standard urgency.
+      await queueAttachmentDownloadsAndMaybeSaveMessage(message, {
+        isManualDownload: true,
+        urgency: AttachmentDownloadUrgency.STANDARD,
+      });
     }
 
     const attachments = filterValidAttachments(message.attributes);
-    const loop = isGIF(attachments);
 
     const authorId =
       window.ConversationController.lookupOrCreate({
@@ -308,34 +319,25 @@ function showLightbox(opts: {
 
     const media = attachments
       .map((item, index) => ({
-        objectURL: item.path ? getLocalAttachmentUrl(item) : undefined,
-        incrementalObjectUrl:
-          isIncremental(item) && item.downloadPath
-            ? getLocalAttachmentUrl(item, {
-                disposition: AttachmentDisposition.Download,
-              })
-            : undefined,
         path: item.path,
-        contentType: item.contentType,
-        loop,
         index,
         message: {
-          attachments: message.get('attachments') || [],
           id: messageId,
+          type: message.get('type'),
           conversationId: authorId,
           receivedAt,
           receivedAtMs: Number(message.get('received_at_ms')),
           sentAt,
         },
-        attachment: item,
-        thumbnailObjectUrl:
-          item.thumbnail?.objectUrl || item.thumbnail?.path
-            ? getLocalAttachmentUrl(item.thumbnail)
-            : undefined,
+        attachment: getPropsForAttachment(
+          item,
+          'attachment',
+          message.attributes
+        ),
         size: item.size,
         totalDownloaded: item.totalDownloaded,
       }))
-      .filter(item => item.objectURL || item.incrementalObjectUrl);
+      .filter(item => item.attachment.url || item.attachment.incrementalUrl);
 
     if (!media.length) {
       log.error(

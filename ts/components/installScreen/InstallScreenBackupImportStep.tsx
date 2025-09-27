@@ -31,7 +31,6 @@ export type PropsType = Readonly<
     error?: InstallScreenBackupError;
     onCancel: () => void;
     onRetry: () => void;
-    onRestartLink: () => void;
 
     // Updater UI
     updates: UpdatesStateType;
@@ -60,7 +59,6 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
     error,
     onCancel,
     onRetry,
-    onRestartLink,
     updates,
     currentVersion,
     OS,
@@ -69,7 +67,6 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
   } = props;
 
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
-  const [isConfirmingSkip, setIsConfirmingSkip] = useState(false);
 
   const confirmCancel = useCallback(() => {
     setIsConfirmingCancel(true);
@@ -84,22 +81,9 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
     setIsConfirmingCancel(false);
   }, [onCancel]);
 
-  const confirmSkip = useCallback(() => {
-    setIsConfirmingSkip(true);
-  }, []);
-
-  const abortSkip = useCallback(() => {
-    setIsConfirmingSkip(false);
-  }, []);
-
-  const onSkipWrap = useCallback(() => {
-    onCancel();
-    setIsConfirmingSkip(false);
-  }, [onCancel]);
-
   const onRetryWrap = useCallback(() => {
     onRetry();
-    setIsConfirmingSkip(false);
+    setIsConfirmingCancel(false);
   }, [onRetry]);
 
   const learnMoreLink = (parts: Array<string | JSX.Element>) => (
@@ -109,7 +93,7 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
   );
 
   let errorElem: JSX.Element | undefined;
-  if (error == null) {
+  if (error == null || error === InstallScreenBackupError.Canceled) {
     // no-op
   } else if (error === InstallScreenBackupError.UnsupportedVersion) {
     errorElem = (
@@ -120,17 +104,19 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
         startUpdate={startUpdate}
         forceUpdate={forceUpdate}
         currentVersion={currentVersion}
-        onClose={confirmSkip}
+        onClose={confirmCancel}
         OS={OS}
       />
     );
   } else if (error === InstallScreenBackupError.Retriable) {
-    if (!isConfirmingSkip) {
+    if (!isConfirmingCancel) {
       errorElem = (
         <ConfirmationDialog
           dialogName="InstallScreenBackupImportStep.error"
           title={i18n('icu:BackupImportScreen__error__title')}
-          cancelText={i18n('icu:BackupImportScreen__skip')}
+          cancelText={i18n(
+            'icu:BackupImportScreen__cancel-confirmation__confirm'
+          )}
           actions={[
             {
               action: onRetryWrap,
@@ -139,7 +125,7 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
             },
           ]}
           i18n={i18n}
-          onClose={confirmSkip}
+          onClose={confirmCancel}
         >
           {i18n('icu:BackupImportScreen__error__body')}
         </ConfirmationDialog>
@@ -152,7 +138,7 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
         title={i18n('icu:BackupImportScreen__error__title')}
         actions={[
           {
-            action: onRestartLink,
+            action: onCancel,
             style: 'affirmative',
             text: i18n('icu:BackupImportScreen__error__confirm'),
           },
@@ -170,6 +156,24 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
     throw missingCaseError(error);
   }
 
+  const isCanceled = error === InstallScreenBackupError.Canceled;
+  let cancelButton: JSX.Element | undefined;
+  if (
+    !isCanceled &&
+    (backupStep === InstallScreenBackupStep.Download ||
+      backupStep === InstallScreenBackupStep.Process)
+  ) {
+    cancelButton = (
+      <button
+        className="InstallScreenBackupImportStep__cancel"
+        type="button"
+        onClick={confirmCancel}
+      >
+        {i18n('icu:BackupImportScreen__cancel')}
+      </button>
+    );
+  }
+
   return (
     <div className="InstallScreenBackupImportStep">
       <TitlebarDragArea />
@@ -178,10 +182,12 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
         <h3 className="InstallScreenBackupImportStep__title">
           {i18n('icu:BackupImportScreen__title')}
         </h3>
-        <ProgressBarAndDescription {...props} />
-        <div className="InstallScreenBackupImportStep__description">
-          {i18n('icu:BackupImportScreen__description')}
-        </div>
+        <ProgressBarAndDescription {...props} isCanceled={isCanceled} />
+        {!isCanceled && (
+          <div className="InstallScreenBackupImportStep__description">
+            {i18n('icu:BackupImportScreen__description')}
+          </div>
+        )}
       </div>
       <div className="InstallScreenBackupImportStep__footer">
         <div className="InstallScreenBackupImportStep__security">
@@ -195,15 +201,7 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
           </div>
         </div>
 
-        {backupStep === InstallScreenBackupStep.Download && (
-          <button
-            className="InstallScreenBackupImportStep__cancel"
-            type="button"
-            onClick={confirmCancel}
-          >
-            {i18n('icu:BackupImportScreen__cancel')}
-          </button>
-        )}
+        {cancelButton}
       </div>
 
       {isConfirmingCancel && (
@@ -229,25 +227,6 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
         </ConfirmationDialog>
       )}
 
-      {isConfirmingSkip && (
-        <ConfirmationDialog
-          dialogName="InstallScreenBackupImportStep.confirmSkip"
-          title={i18n('icu:BackupImportScreen__skip-confirmation__title')}
-          cancelText={i18n('icu:BackupImportScreen__skip-confirmation__cancel')}
-          actions={[
-            {
-              action: onSkipWrap,
-              style: 'affirmative',
-              text: i18n('icu:BackupImportScreen__skip'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={abortSkip}
-        >
-          {i18n('icu:BackupImportScreen__skip-confirmation__body')}
-        </ConfirmationDialog>
-      )}
-
       {errorElem}
     </div>
   );
@@ -256,6 +235,7 @@ export function InstallScreenBackupImportStep(props: PropsType): JSX.Element {
 type ProgressBarPropsType = Readonly<
   {
     i18n: LocalizerType;
+    isCanceled: boolean;
   } & (
     | {
         backupStep: InstallScreenBackupStep.WaitForBackup;
@@ -271,7 +251,22 @@ type ProgressBarPropsType = Readonly<
 >;
 
 function ProgressBarAndDescription(props: ProgressBarPropsType): JSX.Element {
-  const { backupStep, i18n } = props;
+  const { backupStep, i18n, isCanceled } = props;
+
+  if (isCanceled) {
+    return (
+      <>
+        <ProgressBar
+          fractionComplete={null}
+          isRTL={i18n.getLocaleDirection() === 'rtl'}
+        />
+        <div className="InstallScreenBackupImportStep__progressbar-hint">
+          {i18n('icu:BackupImportScreen__progressbar-hint--canceling')}
+        </div>
+      </>
+    );
+  }
+
   if (backupStep === InstallScreenBackupStep.WaitForBackup) {
     return (
       <>

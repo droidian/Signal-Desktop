@@ -9,3 +9,8 @@ export enum SocketStatus {
   CLOSING = 'CLOSING',
   CLOSED = 'CLOSED',
 }
+
+export type SocketInfo = {
+  status: SocketStatus;
+  lastConnectionTimestamp?: number;
+};

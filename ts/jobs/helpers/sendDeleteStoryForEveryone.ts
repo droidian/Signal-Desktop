@@ -1,16 +1,16 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { ContentHint } from '@signalapp/libsignal-client';
+
 import * as Errors from '../../types/errors';
 import { getSendOptions } from '../../util/getSendOptions';
 import { isDirectConversation, isMe } from '../../util/whatTypeOfConversation';
-import { SignalService as Proto } from '../../protobuf';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
 } from './handleMultipleSendErrors';
 import { ourProfileKeyService } from '../../services/ourProfileKey';
-import { DataWriter } from '../../sql/Client';
 
 import type { ConversationModel } from '../../models/conversations';
 import type {
@@ -29,7 +29,6 @@ import { SendMessageProtoError } from '../../textsecure/Errors';
 import { strictAssert } from '../../util/assert';
 import type { LoggerType } from '../../types/Logging';
 import { isStory } from '../../messages/helpers';
-import { postSaveUpdates } from '../../util/cleanup';
 
 export async function sendDeleteStoryForEveryone(
   ourConversation: ConversationModel,
@@ -70,8 +69,7 @@ export async function sendDeleteStoryForEveryone(
   strictAssert(isStory(message.attributes), 'Story message must be a story');
 
   const sendType = 'deleteForEveryone';
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-  const contentHint = ContentHint.RESENDABLE;
+  const contentHint = ContentHint.Resendable;
 
   const deletedForEveryoneSendStatus = message.get(
     'deletedForEveryoneSendStatus'
@@ -243,7 +241,7 @@ export async function sendDeleteStoryForEveryone(
     // Sync message for other devices
     await handleMessageSend(
       messaging.sendSyncMessage({
-        destination: undefined,
+        destinationE164: undefined,
         destinationServiceId,
         storyMessageRecipients: updatedStoryRecipients?.map(
           ({ destinationServiceId: legacyDestinationUuid, ...rest }) => {
@@ -280,10 +278,7 @@ async function updateMessageWithSuccessfulSends(
       deletedForEveryoneSendStatus: {},
       deletedForEveryoneFailed: undefined,
     });
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
 
     return;
   }
@@ -304,10 +299,7 @@ async function updateMessageWithSuccessfulSends(
     deletedForEveryoneSendStatus,
     deletedForEveryoneFailed: undefined,
   });
-  await DataWriter.saveMessage(message.attributes, {
-    ourAci: window.textsecure.storage.user.getCheckedAci(),
-    postSaveUpdates,
-  });
+  await window.MessageCache.saveMessage(message.attributes);
 }
 
 async function updateMessageWithFailure(
@@ -321,8 +313,5 @@ async function updateMessageWithFailure(
   );
 
   message.set({ deletedForEveryoneFailed: true });
-  await DataWriter.saveMessage(message.attributes, {
-    ourAci: window.textsecure.storage.user.getCheckedAci(),
-    postSaveUpdates,
-  });
+  await window.MessageCache.saveMessage(message.attributes);
 }

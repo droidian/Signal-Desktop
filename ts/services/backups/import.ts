@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
-import { ReceiptCredentialPresentation } from '@signalapp/libsignal-client/zkgroup';
+import {
+  BackupLevel,
+  ReceiptCredentialPresentation,
+} from '@signalapp/libsignal-client/zkgroup';
 import { v7 as generateUuid } from 'uuid';
 import pMap from 'p-map';
 import { Writable } from 'stream';
@@ -17,7 +20,7 @@ import {
   type StoryDistributionWithMembersType,
   type IdentityKeyType,
 } from '../../sql/Interface';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { GiftBadgeStates } from '../../components/conversation/Message';
 import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
 import type { AciString, ServiceIdString } from '../../types/ServiceId';
@@ -47,6 +50,7 @@ import type {
   CustomColorType,
   CustomColorDataType,
 } from '../../types/Colors';
+import { SEALED_SENDER } from '../../types/SealedSender';
 import type {
   ConversationAttributesType,
   CustomError,
@@ -81,7 +85,7 @@ import { ReadStatus } from '../../messages/MessageReadStatus';
 import { SendStatus } from '../../messages/MessageSendState';
 import type { SendStateByConversationId } from '../../messages/MessageSendState';
 import { SeenStatus } from '../../MessageSeenStatus';
-import { constantTimeEqual } from '../../Crypto';
+import { constantTimeEqual, deriveAccessKey } from '../../Crypto';
 import * as Bytes from '../../Bytes';
 import { BACKUP_VERSION, WALLPAPER_TO_BUBBLE_COLOR } from './constants';
 import { UnsupportedBackupVersion } from './errors';
@@ -97,7 +101,7 @@ import {
   convertBackupMessageAttachmentToAttachment,
   convertFilePointerToAttachment,
 } from './util/filePointers';
-import { filterAndClean } from '../../types/BodyRange';
+import { filterAndClean, trimMessageWhitespace } from '../../types/BodyRange';
 import { APPLICATION_OCTET_STREAM, stringToMIMEType } from '../../types/MIME';
 import { groupAvatarJobQueue } from '../../jobs/groupAvatarJobQueue';
 import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager';
@@ -117,13 +121,20 @@ import {
   fromAdminKeyBytes,
   toCallHistoryFromUnusedCallLink,
 } from '../../util/callLinks';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
+import {
+  getRoomIdFromRootKey,
+  fromEpochBytes,
+} from '../../util/callLinksRingrtc';
 import { loadAllAndReinitializeRedux } from '../allLoaders';
 import {
-  resetBackupMediaDownloadProgress,
   startBackupMediaDownload,
+  resetBackupMediaDownloadStats,
 } from '../../util/backupMediaDownload';
-import { getEnvironment, isTestEnvironment } from '../../environment';
+import {
+  getEnvironment,
+  isTestEnvironment,
+  isTestOrMockEnvironment,
+} from '../../environment';
 import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads';
 import { isAdhoc, isNightly } from '../../util/version';
 import { ToastType } from '../../types/Toast';
@@ -131,6 +142,16 @@ import { isConversationAccepted } from '../../util/isConversationAccepted';
 import { saveBackupsSubscriberData } from '../../util/backupSubscriptionData';
 import { postSaveUpdates } from '../../util/cleanup';
 import type { LinkPreviewType } from '../../types/message/LinkPreviews';
+import { MessageModel } from '../../models/messages';
+import {
+  DEFAULT_PROFILE_COLOR,
+  fromDayOfWeekArray,
+  type NotificationProfileType,
+} from '../../types/NotificationProfile';
+import { normalizeNotificationProfileId } from '../../types/NotificationProfile-node';
+import { updateBackupMediaDownloadProgress } from '../../util/updateBackupMediaDownloadProgress';
+
+const log = createLogger('import');
 
 const MAX_CONCURRENCY = 10;
 
@@ -236,19 +257,24 @@ export class BackupImportStream extends Writable {
   #releaseNotesChatId: Long | undefined;
   #pendingGroupAvatars = new Map<string, string>();
   #frameErrorCount: number = 0;
+  #backupTier: BackupLevel | undefined;
 
-  private constructor(private readonly backupType: BackupType) {
+  private constructor(
+    private readonly backupType: BackupType,
+    private readonly localBackupSnapshotDir: string | undefined
+  ) {
     super({ objectMode: true });
   }
 
   public static async create(
-    backupType = BackupType.Ciphertext
+    backupType = BackupType.Ciphertext,
+    localBackupSnapshotDir: string | undefined = undefined
   ): Promise<BackupImportStream> {
     await AttachmentDownloadManager.stop();
     await DataWriter.removeAllBackupAttachmentDownloadJobs();
-    await resetBackupMediaDownloadProgress();
+    await resetBackupMediaDownloadStats();
 
-    return new BackupImportStream(backupType);
+    return new BackupImportStream(backupType, localBackupSnapshotDir);
   }
 
   override async _write(
@@ -342,6 +368,7 @@ export class BackupImportStream extends Writable {
       }
 
       // Reset and reload conversations and storage again
+      window.ConversationController.setReadOnly(false);
       window.ConversationController.reset();
 
       await window.ConversationController.load();
@@ -399,9 +426,8 @@ export class BackupImportStream extends Writable {
           .map(([, id]) => id)
       );
 
-      await window.storage.put(
-        'backupMediaDownloadTotalBytes',
-        await DataReader.getSizeOfPendingBackupAttachmentDownloadJobs()
+      await updateBackupMediaDownloadProgress(
+        DataReader.getBackupAttachmentDownloadProgress
       );
 
       if (
@@ -463,8 +489,7 @@ export class BackupImportStream extends Writable {
           // Not yet supported
           return;
         } else if (recipient.self) {
-          strictAssert(this.#ourConversation != null, 'Missing account data');
-          convo = this.#ourConversation;
+          convo = this.#fromSelf(recipient.self);
         } else if (recipient.group) {
           convo = await this.#fromGroup(recipient.group);
         } else if (recipient.distributionList) {
@@ -478,8 +503,8 @@ export class BackupImportStream extends Writable {
           // Not a conversation
           return;
         } else {
-          log.warn(`${this.#logId}: unsupported recipient item`);
-          return;
+          log.warn(`${this.#logId}: unsupported recipient destination`);
+          throw new Error('Unsupported recipient destination');
         }
 
         if (convo !== this.#ourConversation) {
@@ -501,8 +526,17 @@ export class BackupImportStream extends Writable {
         await this.#fromStickerPack(frame.stickerPack);
       } else if (frame.adHocCall) {
         await this.#fromAdHocCall(frame.adHocCall);
+      } else if (frame.notificationProfile) {
+        await this.#fromNotificationProfile(frame.notificationProfile);
+      } else if (frame.chatFolder) {
+        log.warn(
+          `${this.#logId}: Received currently unsupported feature: chat folder. Dropping.`
+        );
       } else {
-        log.warn(`${this.#logId}: unsupported frame item ${frame.item}`);
+        log.warn(
+          `${this.#logId}: unknown unsupported frame item ${frame.item}`
+        );
+        throw new Error('Unknown unsupported frame type');
       }
     } catch (error) {
       this.#frameErrorCount += 1;
@@ -641,9 +675,13 @@ export class BackupImportStream extends Writable {
       if (hasAttachmentDownloads(attributes)) {
         const conversation = this.#conversations.get(attributes.conversationId);
         if (conversation && isConversationAccepted(conversation)) {
+          const model = new MessageModel(attributes);
           attachmentDownloadJobPromises.push(
-            queueAttachmentDownloads(attributes, {
-              source: AttachmentDownloadSource.BACKUP_IMPORT,
+            queueAttachmentDownloads(model, {
+              source: this.#isMediaEnabledBackup()
+                ? AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA
+                : AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA,
+              isManualDownload: false,
             })
           );
         }
@@ -669,10 +707,12 @@ export class BackupImportStream extends Writable {
     backupsSubscriberData,
     donationSubscriberData,
     accountSettings,
+    svrPin,
   }: Backups.IAccountData): Promise<void> {
     strictAssert(this.#ourConversation === undefined, 'Duplicate AccountData');
-    const me =
-      window.ConversationController.getOurConversationOrThrow().attributes;
+    const me = {
+      ...window.ConversationController.getOurConversationOrThrow().attributes,
+    };
     this.#ourConversation = me;
 
     const { storage } = window;
@@ -790,6 +830,20 @@ export class BackupImportStream extends Writable {
       'preferredReactionEmoji',
       accountSettings?.preferredReactionEmoji || []
     );
+    if (svrPin) {
+      await storage.put('svrPin', svrPin);
+    }
+
+    if (isTestOrMockEnvironment()) {
+      // Only relevant for tests
+      await storage.put(
+        'optimizeOnDeviceStorage',
+        accountSettings?.optimizeOnDeviceStorage === true
+      );
+    }
+
+    this.#backupTier = accountSettings?.backupTier?.toNumber();
+    await storage.put('backupTier', accountSettings?.backupTier?.toNumber());
 
     const { PhoneNumberSharingMode: BackupMode } = Backups.AccountData;
     switch (accountSettings?.phoneNumberSharingMode) {
@@ -864,6 +918,18 @@ export class BackupImportStream extends Writable {
     await this.#updateConversation(me);
   }
 
+  #fromSelf(self: Backups.ISelf): ConversationAttributesType {
+    strictAssert(this.#ourConversation != null, 'Missing account data');
+    const convo = this.#ourConversation;
+
+    if (self.avatarColor != null) {
+      convo.color = fromAvatarColor(self.avatarColor);
+      convo.colorFromPrimary = dropNull(self.avatarColor);
+    }
+
+    return convo;
+  }
+
   async #fromContact(
     contact: Backups.IContact
   ): Promise<ConversationAttributesType> {
@@ -907,15 +973,24 @@ export class BackupImportStream extends Writable {
       profileKey: contact.profileKey
         ? Bytes.toBase64(contact.profileKey)
         : undefined,
+      accessKey: contact.profileKey
+        ? Bytes.toBase64(deriveAccessKey(contact.profileKey))
+        : undefined,
+      sealedSender: SEALED_SENDER.UNKNOWN,
       profileSharing: contact.profileSharing === true,
       profileName: dropNull(contact.profileGivenName),
       profileFamilyName: dropNull(contact.profileFamilyName),
+      systemGivenName: dropNull(contact.systemGivenName),
+      systemFamilyName: dropNull(contact.systemFamilyName),
+      systemNickname: dropNull(contact.systemNickname),
       hideStory: contact.hideStory === true,
       username: dropNull(contact.username),
       expireTimerVersion: 1,
       nicknameGivenName: dropNull(contact.nickname?.given),
       nicknameFamilyName: dropNull(contact.nickname?.family),
       note: dropNull(contact.note),
+      color: fromAvatarColor(contact.avatarColor),
+      colorFromPrimary: dropNull(contact.avatarColor),
     };
 
     if (serviceId != null && Bytes.isNotEmpty(contact.identityKey)) {
@@ -937,11 +1012,12 @@ export class BackupImportStream extends Writable {
       );
       attrs.discoveredUnregisteredAt = timestamp || this.#now;
       attrs.firstUnregisteredAt = timestamp || undefined;
-    } else {
-      strictAssert(
-        contact.registered,
-        'contact is either registered or unregistered'
+    } else if (!contact.registered) {
+      log.error(
+        'contact is neither registered nor unregistered; treating as registered',
+        contact.registered
       );
+      this.#frameErrorCount += 1;
     }
 
     if (contact.blocked) {
@@ -1016,6 +1092,8 @@ export class BackupImportStream extends Writable {
             url: avatarUrl,
           }
         : undefined,
+      color: fromAvatarColor(group.avatarColor),
+      colorFromPrimary: dropNull(group.avatarColor),
 
       // Snapshot
       name: dropNull(title?.title)?.trim(),
@@ -1063,7 +1141,7 @@ export class BackupImportStream extends Writable {
           strictAssert(Bytes.isNotEmpty(userId), 'Empty gv2 member userId');
 
           const serviceId = fromServiceIdObject(
-            ServiceId.parseFromServiceIdBinary(Buffer.from(userId))
+            ServiceId.parseFromServiceIdBinary(userId)
           );
 
           return {
@@ -1096,7 +1174,7 @@ export class BackupImportStream extends Writable {
         // in the Contact frame
 
         const serviceId = fromServiceIdObject(
-          ServiceId.parseFromServiceIdBinary(Buffer.from(userId))
+          ServiceId.parseFromServiceIdBinary(userId)
         );
 
         return {
@@ -1113,6 +1191,9 @@ export class BackupImportStream extends Writable {
     };
     if (avatarUrl) {
       this.#pendingGroupAvatars.set(attrs.id, avatarUrl);
+    }
+    if (group.blocked) {
+      await window.storage.blocked.addBlockedGroup(groupId);
     }
 
     return attrs;
@@ -1221,6 +1302,7 @@ export class BackupImportStream extends Writable {
   ): Promise<void> {
     const {
       rootKey: rootKeyBytes,
+      epoch,
       adminKey,
       name,
       restrictions,
@@ -1235,6 +1317,7 @@ export class BackupImportStream extends Writable {
     const callLink: CallLinkType = {
       roomId: getRoomIdFromRootKey(rootKey),
       rootKey: rootKey.toString(),
+      epoch: epoch?.length ? fromEpochBytes(epoch) : null,
       adminKey: adminKey?.length ? fromAdminKeyBytes(adminKey) : null,
       name,
       restrictions: fromCallLinkRestrictionsProto(restrictions),
@@ -1441,7 +1524,7 @@ export class BackupImportStream extends Writable {
     } else if (item.viewOnceMessage) {
       attributes = {
         ...attributes,
-        ...(await this.#fromViewOnceMessage(item.viewOnceMessage)),
+        ...(await this.#fromViewOnceMessage(item)),
       };
     } else if (item.directStoryReplyMessage) {
       strictAssert(item.directionless == null, 'reply cannot be directionless');
@@ -1643,7 +1726,12 @@ export class BackupImportStream extends Writable {
         } else if (status.skipped) {
           sendStatus = SendStatus.Skipped;
         } else {
-          throw new Error(`Unknown sendStatus received: ${status}`);
+          log.error(
+            `${timestamp}: Unknown sendStatus received: ${status}, falling back to Pending`
+          );
+          // We fallback to pending for unknown send statuses
+          sendStatus = SendStatus.Pending;
+          this.#frameErrorCount += 1;
         }
 
         sendStateByConversationId[target.id] = {
@@ -1658,7 +1746,9 @@ export class BackupImportStream extends Writable {
       return {
         patch: {
           sendStateByConversationId,
-          received_at_ms: timestamp,
+          received_at_ms:
+            getCheckedTimestampOrUndefinedFromLong(outgoing.dateReceived) ??
+            timestamp,
           unidentifiedDeliveries: unidentifiedDeliveries.length
             ? unidentifiedDeliveries
             : undefined,
@@ -1785,14 +1875,31 @@ export class BackupImportStream extends Writable {
     data: Backups.IStandardMessage;
   }): Promise<Partial<MessageAttributesType>> {
     return {
-      body: data.text?.body || undefined,
-      bodyRanges: this.#fromBodyRanges(data.text),
+      // We don't want to trim if we'll be downloading a body attachment; we might
+      // drop bodyRanges which apply to the longer text we'll get in that download.
+      ...(data.longText
+        ? {
+            body: data.text?.body || undefined,
+            bodyRanges: this.#fromBodyRanges(data.text),
+          }
+        : trimMessageWhitespace({
+            body: data.text?.body || undefined,
+            bodyRanges: this.#fromBodyRanges(data.text),
+          })),
       bodyAttachment: data.longText
-        ? convertFilePointerToAttachment(data.longText)
+        ? convertFilePointerToAttachment(
+            data.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined,
       attachments: data.attachments?.length
         ? data.attachments
-            .map(convertBackupMessageAttachmentToAttachment)
+            .map(attachment =>
+              convertBackupMessageAttachmentToAttachment(
+                attachment,
+                this.#getFilePointerOptions()
+              )
+            )
             .filter(isNotNil)
         : undefined,
       preview: data.linkPreview?.length
@@ -1836,32 +1943,47 @@ export class BackupImportStream extends Writable {
           description: dropNull(preview.description),
           date: getCheckedTimestampOrUndefinedFromLong(preview.date),
           image: preview.image
-            ? convertFilePointerToAttachment(preview.image)
+            ? convertFilePointerToAttachment(
+                preview.image,
+                this.#getFilePointerOptions()
+              )
             : undefined,
         };
       })
       .filter(isNotNil);
   }
 
-  async #fromViewOnceMessage({
-    attachment,
-    reactions,
-  }: Backups.IViewOnceMessage): Promise<Partial<MessageAttributesType>> {
-    return {
-      ...(attachment
-        ? {
-            attachments: [
-              convertBackupMessageAttachmentToAttachment(attachment),
-            ].filter(isNotNil),
-          }
-        : {
-            attachments: undefined,
-            readStatus: ReadStatus.Viewed,
-            isErased: true,
-          }),
+  async #fromViewOnceMessage(
+    item: Backups.IChatItem
+  ): Promise<Partial<MessageAttributesType>> {
+    const { incoming, viewOnceMessage } = item;
+    strictAssert(viewOnceMessage, 'view once message must not be null');
+
+    const { attachment, reactions } = viewOnceMessage;
+    const result: Partial<MessageAttributesType> = {
+      attachments: attachment
+        ? [
+            convertBackupMessageAttachmentToAttachment(
+              attachment,
+              this.#getFilePointerOptions()
+            ),
+          ].filter(isNotNil)
+        : undefined,
       reactions: this.#fromReactions(reactions),
       isViewOnce: true,
     };
+
+    if (!result.attachments?.length) {
+      result.isErased = true;
+
+      // Only mark it viewed if the message is read. Non-link-and-sync backups do not
+      // roundtrip view-once attachments, even if unread.
+      if (incoming?.read) {
+        result.readStatus = ReadStatus.Viewed;
+      }
+    }
+
+    return result;
   }
 
   #fromDirectStoryReplyMessage(
@@ -1882,7 +2004,10 @@ export class BackupImportStream extends Writable {
       result.body = textReply.text?.body ?? undefined;
       result.bodyRanges = this.#fromBodyRanges(textReply.text);
       result.bodyAttachment = textReply.longText
-        ? convertFilePointerToAttachment(textReply.longText)
+        ? convertFilePointerToAttachment(
+            textReply.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined;
     } else if (emoji) {
       result.storyReaction = {
@@ -1890,6 +2015,10 @@ export class BackupImportStream extends Writable {
         targetAuthorAci: storyAuthorAci,
         targetTimestamp: 0, // stories are never imported
       };
+    } else {
+      throw new Error(
+        'Direct story reply message missing both textReply and emoji'
+      );
     }
 
     return result;
@@ -1908,7 +2037,10 @@ export class BackupImportStream extends Writable {
       body: textReply.text?.body ?? undefined,
       bodyRanges: this.#fromBodyRanges(textReply.text),
       bodyAttachment: textReply.longText
-        ? convertFilePointerToAttachment(textReply.longText)
+        ? convertFilePointerToAttachment(
+            textReply.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined,
     };
   }
@@ -2031,7 +2163,10 @@ export class BackupImportStream extends Writable {
               ? stringToMIMEType(contentType)
               : APPLICATION_OCTET_STREAM,
             thumbnail: thumbnail?.pointer
-              ? convertFilePointerToAttachment(thumbnail.pointer)
+              ? convertFilePointerToAttachment(
+                  thumbnail.pointer,
+                  this.#getFilePointerOptions()
+                )
               : undefined,
           };
         }) ?? [],
@@ -2053,9 +2188,7 @@ export class BackupImportStream extends Writable {
       bodyRanges.map(range => ({
         ...range,
         mentionAci: range.mentionAci
-          ? Aci.parseFromServiceIdBinary(
-              Buffer.from(range.mentionAci)
-            ).getServiceIdString()
+          ? Aci.parseFromServiceIdBinary(range.mentionAci).getServiceIdString()
           : undefined,
       }))
     );
@@ -2193,7 +2326,10 @@ export class BackupImportStream extends Writable {
               organization: organization || undefined,
               avatar: avatar
                 ? {
-                    avatar: convertFilePointerToAttachment(avatar),
+                    avatar: convertFilePointerToAttachment(
+                      avatar,
+                      this.#getFilePointerOptions()
+                    ),
                     isProfile: false,
                   }
                 : undefined,
@@ -2240,7 +2376,12 @@ export class BackupImportStream extends Writable {
             packId: Bytes.toHex(packId),
             packKey: Bytes.toBase64(packKey),
             stickerId,
-            data: data ? convertFilePointerToAttachment(data) : undefined,
+            data: data
+              ? convertFilePointerToAttachment(
+                  data,
+                  this.#getFilePointerOptions()
+                )
+              : undefined,
           },
           reactions: this.#fromReactions(chatItem.stickerMessage.reactions),
         },
@@ -2303,7 +2444,7 @@ export class BackupImportStream extends Writable {
       }
 
       const receipt = new ReceiptCredentialPresentation(
-        Buffer.from(giftBadge.receiptCredentialPresentation)
+        giftBadge.receiptCredentialPresentation
       );
 
       return {
@@ -2407,10 +2548,12 @@ export class BackupImportStream extends Writable {
 
     if (updateMessage.learnedProfileChange) {
       const { e164, username } = updateMessage.learnedProfileChange;
-      strictAssert(
-        e164 != null || username != null,
-        'learnedProfileChange must have an old name'
-      );
+      if (e164 == null && username == null) {
+        log.error(
+          `${options.timestamp}: learnedProfileChange had no previous e164 or username`
+        );
+        this.#frameErrorCount += 1;
+      }
       return {
         message: {
           type: 'title-transition-notification',
@@ -2780,7 +2923,7 @@ export class BackupImportStream extends Writable {
         details.push({
           type: 'pending-add-one',
           serviceId: fromServiceIdObject(
-            ServiceId.parseFromServiceIdBinary(Buffer.from(inviteeServiceId))
+            ServiceId.parseFromServiceIdBinary(inviteeServiceId)
           ),
         });
       }
@@ -3215,7 +3358,7 @@ export class BackupImportStream extends Writable {
       case Type.IDENTITY_UPDATE:
         return {
           type: 'keychange',
-          key_changed: isGroup(conversation) ? author?.id : undefined,
+          key_changed: isGroup(conversation) ? author?.serviceId : undefined,
         };
       case Type.IDENTITY_VERIFIED:
         strictAssert(author != null, 'IDENTITY_VERIFIED must have an author');
@@ -3359,6 +3502,65 @@ export class BackupImportStream extends Writable {
     }
   }
 
+  async #fromNotificationProfile(
+    incomingProfile: Backups.INotificationProfile
+  ) {
+    const {
+      id,
+      name,
+      emoji,
+      color,
+      createdAtMs,
+      allowAllCalls,
+      allowAllMentions,
+      allowedMembers,
+      scheduleEnabled,
+      scheduleStartTime,
+      scheduleEndTime,
+      scheduleDaysEnabled,
+    } = incomingProfile;
+    strictAssert(name, 'notification profile must have a valid name');
+    if (!id || !id.length) {
+      log.warn('Dropping notification profile; it was missing an id');
+      return;
+    }
+
+    const allowedMemberConversationIds: ReadonlyArray<string> | undefined =
+      allowedMembers
+        ?.map(recipientIdLong => {
+          const recipientId = recipientIdLong.toNumber();
+          const attributes = this.#recipientIdToConvo.get(recipientId);
+          if (!attributes) {
+            return undefined;
+          }
+
+          return attributes.id;
+        })
+        .filter(isNotNil);
+
+    const profile: NotificationProfileType = {
+      id: normalizeNotificationProfileId(Bytes.toHex(id), 'import', log),
+      name,
+      emoji: dropNull(emoji),
+      color: dropNull(color) ?? DEFAULT_PROFILE_COLOR,
+      createdAtMs: getCheckedTimestampOrUndefinedFromLong(createdAtMs) ?? 0,
+      allowAllCalls: Boolean(allowAllCalls),
+      allowAllMentions: Boolean(allowAllMentions),
+      allowedMembers: new Set(allowedMemberConversationIds ?? []),
+      scheduleEnabled: Boolean(scheduleEnabled),
+      scheduleStartTime: dropNull(scheduleStartTime),
+      scheduleEndTime: dropNull(scheduleEndTime),
+      scheduleDaysEnabled: fromDayOfWeekArray(scheduleDaysEnabled),
+      deletedAtTimestampMs: undefined,
+      storageNeedsSync: false,
+      storageID: undefined,
+      storageUnknownFields: undefined,
+      storageVersion: undefined,
+    };
+
+    await DataWriter.createNotificationProfile(profile);
+  }
+
   async #fromCustomChatColors(
     customChatColors:
       | ReadonlyArray<Backups.ChatStyle.ICustomChatColor>
@@ -3386,7 +3588,7 @@ export class BackupImportStream extends Writable {
         value = {
           start: rgbIntToDesktopHSL(color.solid),
         };
-      } else {
+      } else if (color.gradient) {
         strictAssert(color.gradient != null, 'Either solid or gradient');
         strictAssert(color.gradient.colors != null, 'Missing gradient colors');
 
@@ -3403,6 +3605,12 @@ export class BackupImportStream extends Writable {
           end: rgbIntToDesktopHSL(end),
           deg,
         };
+      } else {
+        log.error(
+          'CustomChatColor missing both solid and gradient fields, dropping'
+        );
+        this.#frameErrorCount += 1;
+        continue;
       }
 
       customColors.colors[uuid] = value;
@@ -3526,26 +3734,61 @@ export class BackupImportStream extends Writable {
           color = 'ultramarine';
           break;
       }
-    } else {
-      strictAssert(chatStyle.customColorId != null, 'Missing custom color id');
-
+    } else if (chatStyle.customColorId != null) {
       const entry = this.#customColorById.get(
         chatStyle.customColorId.toNumber()
       );
-      strictAssert(entry != null, 'Missing custom color');
 
-      color = 'custom';
-      customColorData = entry;
+      if (entry) {
+        color = 'custom';
+        customColorData = entry;
+      } else {
+        log.error('Chat style referenced missing custom color');
+        this.#frameErrorCount += 1;
+        autoBubbleColor = true;
+      }
+    } else {
+      log.error('ChatStyle has no recognized field');
+      this.#frameErrorCount += 1;
+      autoBubbleColor = true;
     }
 
+    // We only roundtrip wallpaper info in tests since it is not synced in storage service
+    const shouldImportWallpaper = isTestOrMockEnvironment();
+
     return {
-      wallpaperPhotoPointer,
-      wallpaperPreset,
       color,
       customColorData,
-      dimWallpaperInDarkMode,
-      autoBubbleColor,
+      ...(shouldImportWallpaper
+        ? {
+            autoBubbleColor,
+            wallpaperPhotoPointer,
+            wallpaperPreset,
+            dimWallpaperInDarkMode,
+          }
+        : {
+            autoBubbleColor: undefined,
+            wallpaperPhotoPointer: undefined,
+            wallpaperPreset: undefined,
+            dimWallpaperInDarkMode: undefined,
+          }),
     };
+  }
+
+  #getFilePointerOptions() {
+    if (this.localBackupSnapshotDir != null) {
+      return { localBackupSnapshotDir: this.localBackupSnapshotDir };
+    }
+
+    return {};
+  }
+
+  #isLocalBackup() {
+    return this.localBackupSnapshotDir != null;
+  }
+
+  #isMediaEnabledBackup() {
+    return this.#isLocalBackup() || this.#backupTier === BackupLevel.Paid;
   }
 }
 
@@ -3688,4 +3931,40 @@ function fromCallLinkRestrictionsProto(
   }
 
   return CallLinkRestrictions.Unknown;
+}
+
+function fromAvatarColor(
+  color: Backups.AvatarColor | null | undefined
+): string | undefined {
+  switch (color) {
+    case Backups.AvatarColor.A100:
+      return 'A100';
+    case Backups.AvatarColor.A110:
+      return 'A110';
+    case Backups.AvatarColor.A120:
+      return 'A120';
+    case Backups.AvatarColor.A130:
+      return 'A130';
+    case Backups.AvatarColor.A140:
+      return 'A140';
+    case Backups.AvatarColor.A150:
+      return 'A150';
+    case Backups.AvatarColor.A160:
+      return 'A160';
+    case Backups.AvatarColor.A170:
+      return 'A170';
+    case Backups.AvatarColor.A180:
+      return 'A180';
+    case Backups.AvatarColor.A190:
+      return 'A190';
+    case Backups.AvatarColor.A200:
+      return 'A200';
+    case Backups.AvatarColor.A210:
+      return 'A210';
+    case null:
+    case undefined:
+      return undefined;
+    default:
+      throw missingCaseError(color);
+  }
 }

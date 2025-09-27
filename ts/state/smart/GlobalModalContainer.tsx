@@ -11,7 +11,6 @@ import { SmartAddUserToAnotherGroupModal } from './AddUserToAnotherGroupModal';
 import { SmartContactModal } from './ContactModal';
 import { SmartEditHistoryMessagesModal } from './EditHistoryMessagesModal';
 import { SmartForwardMessagesModal } from './ForwardMessagesModal';
-import { SmartProfileEditorModal } from './ProfileEditorModal';
 import { SmartUsernameOnboardingModal } from './UsernameOnboardingModal';
 import { SmartSafetyNumberModal } from './SafetyNumberModal';
 import { SmartSendAnywayDialog } from './SendAnywayDialog';
@@ -30,6 +29,9 @@ import { SmartCallLinkEditModal } from './CallLinkEditModal';
 import { SmartCallLinkAddNameModal } from './CallLinkAddNameModal';
 import { SmartConfirmLeaveCallModal } from './ConfirmLeaveCallModal';
 import { SmartCallLinkPendingParticipantModal } from './CallLinkPendingParticipantModal';
+import { SmartProfileNameWarningModal } from './ProfileNameWarningModal';
+import { SmartDraftGifMessageSendModal } from './DraftGifMessageSendModal';
+import { DebugLogErrorModal } from '../../components/DebugLogErrorModal';
 
 function renderCallLinkAddNameModal(): JSX.Element {
   return <SmartCallLinkAddNameModal />;
@@ -55,8 +57,8 @@ function renderEditNicknameAndNoteModal(): JSX.Element {
   return <SmartEditNicknameAndNoteModal />;
 }
 
-function renderProfileEditor(): JSX.Element {
-  return <SmartProfileEditorModal />;
+function renderProfileNameWarningModal(): JSX.Element {
+  return <SmartProfileNameWarningModal />;
 }
 
 function renderUsernameOnboarding(): JSX.Element {
@@ -69,6 +71,10 @@ function renderContactModal(): JSX.Element {
 
 function renderDeleteMessagesModal(): JSX.Element {
   return <SmartDeleteMessagesModal />;
+}
+
+function renderDraftGifMessageSendModal(): JSX.Element {
+  return <SmartDraftGifMessageSendModal />;
 }
 
 function renderForwardMessagesModal(): JSX.Element {
@@ -110,19 +116,26 @@ export const SmartGlobalModalContainer = memo(
     const {
       aboutContactModalContactId,
       addUserToAnotherGroupModalContactId,
+      backfillFailureModalProps,
       callLinkAddNameModalRoomId,
       callLinkEditModalRoomId,
       callLinkPendingParticipantContactId,
       confirmLeaveCallModalState,
       contactModalState,
+      criticalIdlePrimaryDeviceModal,
+      debugLogErrorModalProps,
       deleteMessagesProps,
+      draftGifMessageSendModalProps,
       editHistoryMessages,
       editNicknameAndNoteModalProps,
       errorModalProps,
       forwardMessagesProps,
+      lowDiskSpaceBackupImportModal,
+      mediaPermissionsModalProps,
       messageRequestActionsConfirmationProps,
       notePreviewModalProps,
-      isProfileEditorVisible,
+      isProfileNameWarningModalVisible,
+      profileNameWarningModalConversationType,
       isShortcutGuideModalVisible,
       isSignalConnectionsVisible,
       isStoriesSettingsVisible,
@@ -131,13 +144,20 @@ export const SmartGlobalModalContainer = memo(
       safetyNumberChangedBlockingData,
       safetyNumberModalContactId,
       stickerPackPreviewId,
+      tapToViewNotAvailableModalProps,
       userNotFoundModalState,
     } = useSelector(getGlobalModalsState);
 
     const {
+      closeDebugLogErrorModal,
       closeErrorModal,
+      closeMediaPermissionsModal,
+      hideCriticalIdlePrimaryDeviceModal,
+      hideLowDiskSpaceBackupImportModal,
+      hideTapToViewNotAvailableModal,
       hideUserNotFoundModal,
       hideWhatsNewModal,
+      hideBackfillFailureModal,
       toggleSignalConnectionsModal,
     } = useGlobalModalActions();
 
@@ -187,11 +207,24 @@ export const SmartGlobalModalContainer = memo(
       [closeErrorModal, i18n]
     );
 
+    const renderDebugLogErrorModal = useCallback(
+      ({ description }: { description?: string }) => (
+        <DebugLogErrorModal
+          description={description}
+          i18n={i18n}
+          onClose={closeDebugLogErrorModal}
+          onSubmitDebugLog={() => window.IPC.showDebugLog()}
+        />
+      ),
+      [closeDebugLogErrorModal, i18n]
+    );
+
     return (
       <GlobalModalContainer
         addUserToAnotherGroupModalContactId={
           addUserToAnotherGroupModalContactId
         }
+        backfillFailureModalProps={backfillFailureModalProps}
         callLinkAddNameModalRoomId={callLinkAddNameModalRoomId}
         callLinkEditModalRoomId={callLinkEditModalRoomId}
         callLinkPendingParticipantContactId={
@@ -199,21 +232,32 @@ export const SmartGlobalModalContainer = memo(
         }
         confirmLeaveCallModalState={confirmLeaveCallModalState}
         contactModalState={contactModalState}
+        criticalIdlePrimaryDeviceModal={criticalIdlePrimaryDeviceModal}
+        debugLogErrorModalProps={debugLogErrorModalProps}
         editHistoryMessages={editHistoryMessages}
         editNicknameAndNoteModalProps={editNicknameAndNoteModalProps}
         errorModalProps={errorModalProps}
         deleteMessagesProps={deleteMessagesProps}
+        draftGifMessageSendModalProps={draftGifMessageSendModalProps}
         forwardMessagesProps={forwardMessagesProps}
+        hideCriticalIdlePrimaryDeviceModal={hideCriticalIdlePrimaryDeviceModal}
+        hideLowDiskSpaceBackupImportModal={hideLowDiskSpaceBackupImportModal}
+        lowDiskSpaceBackupImportModal={lowDiskSpaceBackupImportModal}
         messageRequestActionsConfirmationProps={
           messageRequestActionsConfirmationProps
         }
+        mediaPermissionsModalProps={mediaPermissionsModalProps}
+        closeMediaPermissionsModal={closeMediaPermissionsModal}
+        openSystemMediaPermissions={window.IPC.openSystemMediaPermissions}
         notePreviewModalProps={notePreviewModalProps}
         hasSafetyNumberChangeModal={hasSafetyNumberChangeModal}
+        hideBackfillFailureModal={hideBackfillFailureModal}
         hideUserNotFoundModal={hideUserNotFoundModal}
         hideWhatsNewModal={hideWhatsNewModal}
+        hideTapToViewNotAvailableModal={hideTapToViewNotAvailableModal}
         i18n={i18n}
         isAboutContactModalVisible={aboutContactModalContactId != null}
-        isProfileEditorVisible={isProfileEditorVisible}
+        isProfileNameWarningModalVisible={isProfileNameWarningModalVisible}
         isShortcutGuideModalVisible={isShortcutGuideModalVisible}
         isSignalConnectionsVisible={isSignalConnectionsVisible}
         isStoriesSettingsVisible={isStoriesSettingsVisible}
@@ -227,16 +271,18 @@ export const SmartGlobalModalContainer = memo(
         }
         renderConfirmLeaveCallModal={renderConfirmLeaveCallModal}
         renderContactModal={renderContactModal}
+        renderDebugLogErrorModal={renderDebugLogErrorModal}
         renderEditHistoryMessagesModal={renderEditHistoryMessagesModal}
         renderEditNicknameAndNoteModal={renderEditNicknameAndNoteModal}
         renderErrorModal={renderErrorModal}
         renderDeleteMessagesModal={renderDeleteMessagesModal}
+        renderDraftGifMessageSendModal={renderDraftGifMessageSendModal}
         renderForwardMessagesModal={renderForwardMessagesModal}
         renderMessageRequestActionsConfirmation={
           renderMessageRequestActionsConfirmation
         }
         renderNotePreviewModal={renderNotePreviewModal}
-        renderProfileEditor={renderProfileEditor}
+        renderProfileNameWarningModal={renderProfileNameWarningModal}
         renderUsernameOnboarding={renderUsernameOnboarding}
         renderSafetyNumber={renderSafetyNumber}
         renderSendAnywayDialog={renderSendAnywayDialog}
@@ -246,10 +292,14 @@ export const SmartGlobalModalContainer = memo(
         safetyNumberChangedBlockingData={safetyNumberChangedBlockingData}
         safetyNumberModalContactId={safetyNumberModalContactId}
         stickerPackPreviewId={stickerPackPreviewId}
+        tapToViewNotAvailableModalProps={tapToViewNotAvailableModalProps}
         theme={theme}
         toggleSignalConnectionsModal={toggleSignalConnectionsModal}
         userNotFoundModalState={userNotFoundModalState}
         usernameOnboardingState={usernameOnboardingState}
+        profileNameWarningModalConversationType={
+          profileNameWarningModalConversationType
+        }
       />
     );
   }

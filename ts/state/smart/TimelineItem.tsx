@@ -146,6 +146,7 @@ export const SmartTimelineItem = memo(function SmartTimelineItem(
   const {
     showContactModal,
     showEditHistoryModal,
+    showTapToViewNotAvailableModal,
     toggleMessageRequestActionsConfirmation,
     toggleDeleteMessagesModal,
     toggleEditNicknameAndNoteModal,
@@ -239,6 +240,7 @@ export const SmartTimelineItem = memo(function SmartTimelineItem(
       showLightboxForViewOnceMedia={showLightboxForViewOnceMedia}
       showMediaNoLongerAvailableToast={showMediaNoLongerAvailableToast}
       showSpoiler={showSpoiler}
+      showTapToViewNotAvailableModal={showTapToViewNotAvailableModal}
       startConversation={startConversation}
       toggleDeleteMessagesModal={toggleDeleteMessagesModal}
       toggleForwardMessagesModal={toggleForwardMessagesModal}

@@ -12,9 +12,11 @@ import type {
 } from '../../types/ServiceId';
 import { ServiceIdKind, isPniString } from '../../types/ServiceId';
 import { isAciString } from '../../util/isAciString';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 
 import Helpers from '../Helpers';
+
+const log = createLogger('User');
 
 export type SetCredentialsOptions = {
   aci: AciString;
@@ -56,7 +58,7 @@ export class User {
     ]);
 
     // Notify redux about phone number change
-    window.Whisper.events.trigger('userChanged', true);
+    window.Whisper.events.emit('userChanged', true);
   }
 
   public getNumber(): string | undefined {

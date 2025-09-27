@@ -47,6 +47,7 @@ function HeaderInfoTitle({
   type,
   i18n,
   isMe,
+  isSignalConversation,
   headerRef,
 }: {
   name: string | null;
@@ -54,8 +55,18 @@ function HeaderInfoTitle({
   type: ConversationTypeType;
   i18n: LocalizerType;
   isMe: boolean;
+  isSignalConversation: boolean;
   headerRef: React.RefObject<HTMLDivElement>;
 }) {
+  if (isSignalConversation) {
+    return (
+      <div className="module-ConversationHeader__header__info__title">
+        <UserText text={title} />
+        <span className="ContactModal__official-badge" />
+      </div>
+    );
+  }
+
   if (isMe) {
     return (
       <div className="module-ConversationHeader__header__info__title">
@@ -96,7 +107,6 @@ export type PropsDataType = {
   hasStories?: HasStories;
   hasActiveCall?: boolean;
   localDeleteWarningShown: boolean;
-  isDeleteSyncSendEnabled: boolean;
   isMissingMandatoryProfileSharing?: boolean;
   isSelectMode: boolean;
   isSignalConversation?: boolean;
@@ -155,7 +165,6 @@ export const ConversationHeader = memo(function ConversationHeader({
   hasPanelShowing,
   hasStories,
   i18n,
-  isDeleteSyncSendEnabled,
   isMissingMandatoryProfileSharing,
   isSelectMode,
   isSignalConversation,
@@ -234,7 +243,6 @@ export const ConversationHeader = memo(function ConversationHeader({
       {hasDeleteMessagesConfirmation && (
         <DeleteMessagesConfirmationDialog
           i18n={i18n}
-          isDeleteSyncSendEnabled={isDeleteSyncSendEnabled}
           localDeleteWarningShown={localDeleteWarningShown}
           onDestroyMessages={() => {
             setHasDeleteMessagesConfirmation(false);
@@ -294,6 +302,7 @@ export const ConversationHeader = memo(function ConversationHeader({
               theme={theme}
               onViewUserStories={onViewUserStories}
               onViewConversationDetails={onViewConversationDetails}
+              isSignalConversation={isSignalConversation ?? false}
             />
             {!isSmsOnlyOrUnregistered && !isSignalConversation && (
               <OutgoingCallButtons
@@ -415,6 +424,7 @@ function HeaderContent({
   i18n,
   sharedGroupNames,
   theme,
+  isSignalConversation,
   onViewUserStories,
   onViewConversationDetails,
 }: {
@@ -425,6 +435,7 @@ function HeaderContent({
   i18n: LocalizerType;
   sharedGroupNames: ReadonlyArray<string>;
   theme: ThemeType;
+  isSignalConversation: boolean;
   onViewUserStories: () => void;
   onViewConversationDetails: () => void;
 }) {
@@ -446,13 +457,17 @@ function HeaderContent({
   const avatar = (
     <span className="module-ConversationHeader__header__avatar">
       <Avatar
-        acceptedMessageRequest={conversation.acceptedMessageRequest}
+        avatarPlaceholderGradient={
+          conversation.gradientStart && conversation.gradientEnd
+            ? [conversation.gradientStart, conversation.gradientEnd]
+            : undefined
+        }
         avatarUrl={conversation.avatarUrl ?? undefined}
         badge={badge ?? undefined}
         color={conversation.color ?? undefined}
         conversationType={conversation.type}
+        hasAvatar={conversation.hasAvatar}
         i18n={i18n}
-        isMe={conversation.isMe}
         noteToSelf={conversation.isMe}
         onClick={hasStories ? onViewUserStories : onClick}
         phoneNumber={conversation.phoneNumber ?? undefined}
@@ -463,7 +478,6 @@ function HeaderContent({
         storyRing={conversation.isMe ? undefined : (hasStories ?? undefined)}
         theme={theme}
         title={conversation.title}
-        unblurredAvatarUrl={conversation.unblurredAvatarUrl ?? undefined}
       />
     </span>
   );
@@ -476,6 +490,7 @@ function HeaderContent({
         type={conversation.type}
         i18n={i18n}
         isMe={conversation.isMe}
+        isSignalConversation={isSignalConversation}
         headerRef={headerRef}
       />
       {(conversation.expireTimer != null || conversation.isVerified) && (
@@ -990,21 +1005,19 @@ function CannotLeaveGroupBecauseYouAreLastAdminAlert({
 }
 
 function DeleteMessagesConfirmationDialog({
-  isDeleteSyncSendEnabled,
   i18n,
   localDeleteWarningShown,
   onDestroyMessages,
   onClose,
   setLocalDeleteWarningShown,
 }: {
-  isDeleteSyncSendEnabled: boolean;
   i18n: LocalizerType;
   localDeleteWarningShown: boolean;
   onDestroyMessages: () => void;
   onClose: () => void;
   setLocalDeleteWarningShown: () => void;
 }) {
-  if (!localDeleteWarningShown && isDeleteSyncSendEnabled) {
+  if (!localDeleteWarningShown) {
     return (
       <LocalDeleteWarningModal
         i18n={i18n}
@@ -1013,13 +1026,9 @@ function DeleteMessagesConfirmationDialog({
     );
   }
 
-  const dialogBody = isDeleteSyncSendEnabled
-    ? i18n(
-        'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
-      )
-    : i18n(
-        'icu:ConversationHeader__DeleteConversationConfirmation__description'
-      );
+  const dialogBody = i18n(
+    'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
+  );
 
   return (
     <ConfirmationDialog

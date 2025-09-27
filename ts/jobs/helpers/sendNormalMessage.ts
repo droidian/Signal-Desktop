@@ -3,8 +3,8 @@
 
 import { isNumber } from 'lodash';
 import PQueue from 'p-queue';
+import { ContentHint } from '@signalapp/libsignal-client';
 
-import { DataWriter } from '../../sql/Client';
 import * as Errors from '../../types/errors';
 import { strictAssert } from '../../util/assert';
 import type { MessageModel } from '../../models/messages';
@@ -12,7 +12,6 @@ import { getMessageById } from '../../messages/getMessageById';
 import type { ConversationModel } from '../../models/conversations';
 import { isGroup, isGroupV2, isMe } from '../../util/whatTypeOfConversation';
 import { getSendOptions } from '../../util/getSendOptions';
-import { SignalService as Proto } from '../../protobuf';
 import { handleMessageSend } from '../../util/handleMessageSend';
 import { findAndFormatContact } from '../../util/findAndFormatContact';
 import { uploadAttachment } from '../../util/uploadAttachment';
@@ -39,6 +38,7 @@ import type {
   ConversationQueueJobBundle,
   NormalMessageSendJobData,
 } from '../conversationJobQueue';
+import type { QuotedMessageType } from '../../model-types.d';
 
 import { handleMultipleSendErrors } from './handleMultipleSendErrors';
 import { ourProfileKeyService } from '../../services/ourProfileKey';
@@ -55,13 +55,16 @@ import {
 } from '../../util/editHelpers';
 import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp';
 import { isSignalConversation } from '../../util/isSignalConversation';
-import { isBodyTooLong, trimBody } from '../../util/longAttachment';
+import {
+  isBodyTooLong,
+  MAX_BODY_ATTACHMENT_BYTE_LENGTH,
+  trimBody,
+} from '../../util/longAttachment';
 import {
   markFailed,
   saveErrorsOnMessage,
 } from '../../test-node/util/messageFailures';
 import { getMessageIdForLogging } from '../../util/idForLogging';
-import { postSaveUpdates } from '../../util/cleanup';
 import { send, sendSyncMessageOnly } from '../../messages/send';
 
 const MAX_CONCURRENT_ATTACHMENT_UPLOADS = 5;
@@ -299,7 +302,6 @@ export async function sendNormalMessage(
     } else {
       const conversationType = conversation.get('type');
       const sendOptions = await getSendOptions(conversation.attributes);
-      const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
       let innerPromise: Promise<CallbackResultType>;
       if (conversationType === Message.GROUP) {
@@ -321,7 +323,7 @@ export async function sendNormalMessage(
           abortSignal =>
             sendToGroup({
               abortSignal,
-              contentHint: ContentHint.RESENDABLE,
+              contentHint: ContentHint.Resendable,
               groupSendOptions: {
                 attachments,
                 bodyRanges,
@@ -389,7 +391,7 @@ export async function sendNormalMessage(
           attachments,
           bodyRanges,
           contact,
-          contentHint: ContentHint.RESENDABLE,
+          contentHint: ContentHint.Resendable,
           deletedForEveryoneTimestamp,
           expireTimer,
           expireTimerVersion: conversation.getExpireTimerVersion(),
@@ -442,14 +444,18 @@ export async function sendNormalMessage(
 
     await messageSendPromise;
 
-    const didFullySend =
-      !messageSendErrors.length ||
-      didSendToEveryone({
-        log,
-        message,
-        targetTimestamp: editedMessageTimestamp || messageTimestamp,
-      });
+    const didFullySend = didSendToEveryone({
+      isSendingInGroup: conversation.get('type') === 'group',
+      log,
+      message,
+      targetTimestamp: editedMessageTimestamp || messageTimestamp,
+    });
     if (!didFullySend) {
+      if (!messageSendErrors.length) {
+        log.warn(
+          'Did not send to everyone, but no errors returned - maybe all errors were UnregisteredUserErrors?'
+        );
+      }
       throw new Error('message did not fully send');
     }
   } catch (thrownError: unknown) {
@@ -527,7 +533,7 @@ function getMessageRecipients({
         const serviceId = recipient.getServiceId();
         if (!serviceId) {
           log.error(
-            `sendNormalMessage/getMessageRecipients: Untrusted conversation ${recipient.idForLogging()} missing serviceId.`
+            `getMessageRecipients: Untrusted conversation ${recipient.idForLogging()} missing serviceId.`
           );
           return;
         }
@@ -604,6 +610,15 @@ async function getMessageSendData({
     targetTimestamp,
   });
 
+  if (
+    maybeLongAttachment &&
+    maybeLongAttachment.size > MAX_BODY_ATTACHMENT_BYTE_LENGTH
+  ) {
+    throw new Error(
+      `Body attachment too long for send: ${maybeLongAttachment.size}`
+    );
+  }
+
   if (body && isBodyTooLong(body)) {
     body = trimBody(body);
   }
@@ -667,10 +682,7 @@ async function getMessageSendData({
   ]);
 
   // Save message after uploading attachments
-  await DataWriter.saveMessage(message.attributes, {
-    ourAci: window.textsecure.storage.user.getCheckedAci(),
-    postSaveUpdates,
-  });
+  await window.MessageCache.saveMessage(message.attributes);
 
   const storyReaction = message.get('storyReaction');
   const storySourceServiceId = storyMessage?.get('sourceServiceId');
@@ -845,10 +857,43 @@ async function uploadMessageQuote({
     prop: 'quote',
     targetTimestamp,
   });
-  const loadedQuote = await loadQuoteData(startingQuote);
+  let loadedQuote: QuotedMessageType | null;
 
-  if (!loadedQuote) {
-    return undefined;
+  // We are resilient to this because it's easy for quote thumbnails to be deleted out
+  // from under us, since the attachment is shared with the original message. Delete for
+  // Everyone on the original message, and the shared attachment will be deleted.
+  try {
+    loadedQuote = await loadQuoteData(startingQuote);
+    if (!loadedQuote) {
+      return undefined;
+    }
+  } catch (error) {
+    log.error(
+      'uplodateMessageQuote: Failed to load quote thumbnail',
+      Errors.toLogFormat(error)
+    );
+    if (!startingQuote) {
+      return undefined;
+    }
+
+    return {
+      isGiftBadge: startingQuote.isGiftBadge,
+      id: startingQuote.id ?? undefined,
+      authorAci: startingQuote.authorAci
+        ? normalizeAci(
+            startingQuote.authorAci,
+            'sendNormalMessage.quote.authorAci'
+          )
+        : undefined,
+      text: startingQuote.text,
+      bodyRanges: startingQuote.bodyRanges,
+      attachments: (startingQuote.attachments || []).map(attachment => {
+        return {
+          contentType: attachment.contentType,
+          fileName: attachment.fileName,
+        };
+      }),
+    };
   }
 
   const attachmentsAfterThumbnailUpload = await uploadQueue.addAll(
@@ -1176,10 +1221,12 @@ async function markMessageFailed({
 }
 
 function didSendToEveryone({
+  isSendingInGroup,
   log,
   message,
   targetTimestamp,
 }: {
+  isSendingInGroup: boolean;
   log: LoggerType;
   message: MessageModel;
   targetTimestamp: number;
@@ -1191,7 +1238,27 @@ function didSendToEveryone({
       prop: 'sendStateByConversationId',
       targetTimestamp,
     }) || {};
-  return Object.values(sendStateByConversationId).every(sendState =>
-    isSent(sendState.status)
+  const ourConversationId =
+    window.ConversationController.getOurConversationIdOrThrow();
+  const areWePrimaryDevice = window.ConversationController.areWePrimaryDevice();
+
+  return Object.entries(sendStateByConversationId).every(
+    ([conversationId, sendState]) => {
+      const conversation = window.ConversationController.get(conversationId);
+      if (isSendingInGroup) {
+        if (!conversation) {
+          return true;
+        }
+        if (conversation.isUnregistered()) {
+          return true;
+        }
+      }
+
+      if (conversationId === ourConversationId && areWePrimaryDevice) {
+        return true;
+      }
+
+      return isSent(sendState.status);
+    }
   );
 }

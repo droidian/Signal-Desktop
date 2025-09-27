@@ -34,18 +34,15 @@ import {
   isNotUpdatable,
   isStaging,
 } from '../util/version';
+import { isPathInside } from '../util/isPathInside';
 
 import * as packageJson from '../../package.json';
-import type { SettingsChannel } from '../main/settingsChannel';
-import { isPathInside } from '../util/isPathInside';
+
 import {
   getSignatureFileName,
   hexToBinary,
   verifySignature,
 } from './signature';
-
-import type { LoggerType } from '../types/Logging';
-import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential';
 import {
   download as downloadDifferentialData,
   getBlockMapFileName,
@@ -53,7 +50,16 @@ import {
   prepareDownload as prepareDifferentialDownload,
 } from './differential';
 import { getGotOptions } from './got';
-import { checkIntegrity, gracefulRename, gracefulRmRecursive } from './util';
+import {
+  checkIntegrity,
+  gracefulRename,
+  gracefulRmRecursive,
+  isTimeToUpdate,
+} from './util';
+
+import type { LoggerType } from '../types/Logging';
+import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential';
+import type { MainSQL } from '../sql/main';
 
 const POLL_INTERVAL = 30 * durations.MINUTE;
 
@@ -61,6 +67,11 @@ type JSONVendorSchema = {
   minOSVersion?: string;
   requireManualUpdate?: 'true' | 'false';
   requireUserConfirmation?: 'true' | 'false';
+
+  // If 'true' - the update will be autodownloaded as soon as it becomes
+  // available. Otherwise a delay up to 6h might be applied. See
+  // `isTimeToUpdate`.
+  noDelay?: 'true' | 'false';
 };
 
 type JSONUpdateSchema = {
@@ -99,10 +110,10 @@ type DownloadUpdateResultType = Readonly<{
 }>;
 
 export type UpdaterOptionsType = Readonly<{
-  settingsChannel: SettingsChannel;
-  logger: LoggerType;
-  getMainWindow: () => BrowserWindow | undefined;
   canRunSilently: () => boolean;
+  getMainWindow: () => BrowserWindow | undefined;
+  logger: LoggerType;
+  sql: MainSQL;
 }>;
 
 enum CheckType {
@@ -124,7 +135,7 @@ export abstract class Updater {
 
   protected readonly logger: LoggerType;
 
-  readonly #settingsChannel: SettingsChannel;
+  readonly #sql: MainSQL;
 
   protected readonly getMainWindow: () => BrowserWindow | undefined;
 
@@ -142,16 +153,20 @@ export abstract class Updater {
   #autoRetryAttempts = 0;
   #autoRetryAfter: number | undefined;
 
+  // Just a stable randomness that is used for determining the update time. The
+  // value does not have to be consistent across restarts.
+  #pollId = getGuid();
+
   constructor({
-    settingsChannel,
-    logger,
-    getMainWindow,
     canRunSilently,
+    getMainWindow,
+    logger,
+    sql,
   }: UpdaterOptionsType) {
-    this.#settingsChannel = settingsChannel;
-    this.logger = logger;
-    this.getMainWindow = getMainWindow;
     this.#canRunSilently = canRunSilently;
+    this.getMainWindow = getMainWindow;
+    this.logger = logger;
+    this.#sql = sql;
 
     this.#throttledSendDownloadingUpdate = throttle(
       (downloadedSize: number, downloadSize: number) => {
@@ -177,15 +192,15 @@ export abstract class Updater {
     return this.#checkForUpdatesMaybeInstall(CheckType.ForceDownload);
   }
 
-  // If the updater was about to restart the app but the user cancelled it, show dialog
+  // If the updater was about to restart the app but the user canceled it, show dialog
   // to let them retry the restart
-  public onRestartCancelled(): void {
+  public onRestartCanceled(): void {
     if (!this.#restarting) {
       return;
     }
 
     this.logger.info(
-      'updater/onRestartCancelled: restart was cancelled. forcing update to reset updater state'
+      'onRestartCanceled: restart was canceled. forcing update to reset updater state'
     );
     this.#restarting = false;
     markShouldNotQuit();
@@ -193,7 +208,7 @@ export abstract class Updater {
   }
 
   public async start(): Promise<void> {
-    this.logger.info('updater/start: starting checks...');
+    this.logger.info('start: starting checks...');
 
     this.#schedulePoll();
 
@@ -229,7 +244,7 @@ export abstract class Updater {
   ): void {
     if (this.#markedCannotUpdate) {
       this.logger.warn(
-        'updater/markCannotUpdate: already marked',
+        'markCannotUpdate: already marked',
         Errors.toLogFormat(error)
       );
       return;
@@ -237,7 +252,7 @@ export abstract class Updater {
     this.#markedCannotUpdate = true;
 
     this.logger.error(
-      'updater/markCannotUpdate: marking due to error: ' +
+      'markCannotUpdate: marking due to error: ' +
         `${Errors.toLogFormat(error)}, ` +
         `dialogType: ${dialogType}`
     );
@@ -246,7 +261,7 @@ export abstract class Updater {
     mainWindow?.webContents.send('show-update-dialog', dialogType);
 
     this.setUpdateListener(async () => {
-      this.logger.info('updater/markCannotUpdate: retrying after user action');
+      this.logger.info('markCannotUpdate: retrying after user action');
 
       this.#markedCannotUpdate = false;
       await this.#checkForUpdatesMaybeInstall(CheckType.Normal);
@@ -254,6 +269,9 @@ export abstract class Updater {
   }
 
   protected markRestarting(): void {
+    this.logger.info(
+      'markRestarting: preparing to restart application for update'
+    );
     this.#restarting = true;
     markShouldQuit();
   }
@@ -271,7 +289,7 @@ export abstract class Updater {
     );
     const timeoutMs = selectedPollTime - now;
 
-    this.logger.info(`updater/schedulePoll: polling in ${timeoutMs}ms`);
+    this.logger.info(`schedulePoll: polling in ${timeoutMs}ms`);
 
     setTimeout(() => {
       drop(this.#safePoll());
@@ -281,16 +299,14 @@ export abstract class Updater {
   async #safePoll(): Promise<void> {
     try {
       if (this.#autoRetryAfter != null && Date.now() < this.#autoRetryAfter) {
-        this.logger.info(
-          `updater/safePoll: not polling until ${this.#autoRetryAfter}`
-        );
+        this.logger.info(`safePoll: not polling until ${this.#autoRetryAfter}`);
         return;
       }
 
-      this.logger.info('updater/safePoll: polling now');
+      this.logger.info('safePoll: polling now');
       await this.#checkForUpdatesMaybeInstall(CheckType.Normal);
     } catch (error) {
-      this.logger.error(`updater/safePoll: ${Errors.toLogFormat(error)}`);
+      this.logger.error(`safePoll: ${Errors.toLogFormat(error)}`);
     } finally {
       this.#schedulePoll();
     }
@@ -578,6 +594,26 @@ export abstract class Updater {
       );
 
       return;
+    }
+
+    if (checkType === CheckType.Normal && vendor?.noDelay !== 'true') {
+      try {
+        const releasedAt = new Date(parsedYaml.releaseDate).getTime();
+
+        if (
+          !isTimeToUpdate({
+            logger: this.logger,
+            pollId: this.#pollId,
+            releasedAt,
+          })
+        ) {
+          return;
+        }
+      } catch (error) {
+        this.logger.warn(
+          `checkForUpdates: failed to compute delay for ${parsedYaml.releaseDate}`
+        );
+      }
     }
 
     this.logger.info(
@@ -887,9 +923,11 @@ export abstract class Updater {
 
   async #getAutoDownloadUpdateSetting(): Promise<boolean> {
     try {
-      return await this.#settingsChannel.getSettingFromMainWindow(
-        'autoDownloadUpdate'
+      const result = await this.#sql.sqlRead(
+        'getItemById',
+        'auto-download-update'
       );
+      return result?.value ?? true;
     } catch (error) {
       this.logger.warn(
         'getAutoDownloadUpdateSetting: Failed to fetch, returning false',

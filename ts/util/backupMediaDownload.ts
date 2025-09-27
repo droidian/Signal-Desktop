@@ -2,26 +2,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { AttachmentDownloadManager } from '../jobs/AttachmentDownloadManager';
+import { createLogger } from '../logging/log';
 import { DataWriter } from '../sql/Client';
-import { drop } from './drop';
+
+const log = createLogger('backupMediaDownload');
 
 export async function startBackupMediaDownload(): Promise<void> {
   await window.storage.put('backupMediaDownloadPaused', false);
-  await window.storage.put('backupMediaDownloadIdle', false);
 
   await AttachmentDownloadManager.start();
-  drop(
-    AttachmentDownloadManager.waitForIdle(async () => {
-      await window.storage.put('backupMediaDownloadIdle', true);
-    })
-  );
 }
 
 export async function pauseBackupMediaDownload(): Promise<void> {
+  log.info('Pausing media download');
   await window.storage.put('backupMediaDownloadPaused', true);
 }
 
 export async function resumeBackupMediaDownload(): Promise<void> {
+  log.info('Resuming media download');
+  // Reset the retry-afters so that all jobs will be immediately retried
+  await DataWriter.resetBackupAttachmentDownloadJobsRetryAfter();
   return startBackupMediaDownload();
 }
 
@@ -31,16 +31,18 @@ export async function resetBackupMediaDownloadItems(): Promise<void> {
     window.storage.remove('backupMediaDownloadCompletedBytes'),
     window.storage.remove('backupMediaDownloadBannerDismissed'),
     window.storage.remove('backupMediaDownloadPaused'),
-    window.storage.remove('backupMediaDownloadIdle'),
   ]);
 }
 
 export async function cancelBackupMediaDownload(): Promise<void> {
+  log.info('Canceling media download');
+  await dismissBackupMediaDownloadBanner();
   await DataWriter.removeAllBackupAttachmentDownloadJobs();
-  await resetBackupMediaDownloadItems();
+  await resetBackupMediaDownloadStats();
 }
 
-export async function resetBackupMediaDownloadProgress(): Promise<void> {
+export async function resetBackupMediaDownloadStats(): Promise<void> {
+  await DataWriter.resetBackupAttachmentDownloadStats();
   await resetBackupMediaDownloadItems();
 }
 

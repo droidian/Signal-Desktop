@@ -29,7 +29,7 @@ import {
   TARGETED_CONVERSATION_CHANGED,
   actions,
   cancelConversationVerification,
-  clearCancelledConversationVerification,
+  clearCanceledConversationVerification,
   getConversationCallMode,
   getEmptyState,
   reducer,
@@ -49,14 +49,14 @@ import {
   getDefaultConversation,
   getDefaultConversationWithServiceId,
   getDefaultGroup,
-} from '../../../test-both/helpers/getDefaultConversation';
+} from '../../../test-helpers/getDefaultConversation';
 import { getDefaultAvatars } from '../../../types/Avatar';
 import {
   defaultStartDirectConversationComposerState,
   defaultChooseGroupMembersComposerState,
   defaultSetGroupMetadataComposerState,
-} from '../../../test-both/helpers/defaultComposerStates';
-import { updateRemoteConfig } from '../../../test-both/helpers/RemoteConfigStub';
+} from '../../../test-helpers/defaultComposerStates';
+import { updateRemoteConfig } from '../../../test-helpers/RemoteConfigStub';
 import type { ShowSendAnywayDialogActionType } from '../../../state/ducks/globalModals';
 import { SHOW_SEND_ANYWAY_DIALOG } from '../../../state/ducks/globalModals';
 import type { StoryDistributionListsActionType } from '../../../state/ducks/storyDistributionLists';
@@ -130,7 +130,7 @@ describe('both/state/ducks/conversations', () => {
 
     sinonSandbox = sinon.createSandbox();
 
-    sinonSandbox.stub(window.Whisper.events, 'trigger');
+    sinonSandbox.stub(window.Whisper.events, 'emit');
 
     createGroupStub = sinon.stub();
   });
@@ -940,12 +940,12 @@ describe('both/state/ducks/conversations', () => {
         });
       });
 
-      it('stomps on VerificationCancelled state', () => {
+      it('stomps on VerificationCanceled state', () => {
         const state: ConversationsStateType = {
           ...getEmptyState(),
           verificationDataByConversation: {
             'convo A': {
-              type: ConversationVerificationState.VerificationCancelled,
+              type: ConversationVerificationState.VerificationCanceled,
               canceledAt: Date.now(),
             },
           },
@@ -1111,19 +1111,19 @@ describe('both/state/ducks/conversations', () => {
 
         assert.deepStrictEqual(actual.verificationDataByConversation, {
           'convo A': {
-            type: ConversationVerificationState.VerificationCancelled,
+            type: ConversationVerificationState.VerificationCanceled,
             canceledAt: now,
           },
         });
       });
 
-      it('updates timestamp for existing VerificationCancelled state', () => {
+      it('updates timestamp for existing VerificationCanceled state', () => {
         const now = Date.now();
         const state: ConversationsStateType = {
           ...getEmptyState(),
           verificationDataByConversation: {
             'convo A': {
-              type: ConversationVerificationState.VerificationCancelled,
+              type: ConversationVerificationState.VerificationCanceled,
               canceledAt: now - 1,
             },
           },
@@ -1133,19 +1133,19 @@ describe('both/state/ducks/conversations', () => {
 
         assert.deepStrictEqual(actual.verificationDataByConversation, {
           'convo A': {
-            type: ConversationVerificationState.VerificationCancelled,
+            type: ConversationVerificationState.VerificationCanceled,
             canceledAt: now,
           },
         });
       });
 
-      it('uses newest timestamp when updating existing VerificationCancelled state', () => {
+      it('uses newest timestamp when updating existing VerificationCanceled state', () => {
         const now = Date.now();
         const state: ConversationsStateType = {
           ...getEmptyState(),
           verificationDataByConversation: {
             'convo A': {
-              type: ConversationVerificationState.VerificationCancelled,
+              type: ConversationVerificationState.VerificationCanceled,
               canceledAt: now,
             },
           },
@@ -1155,7 +1155,7 @@ describe('both/state/ducks/conversations', () => {
 
         assert.deepStrictEqual(actual.verificationDataByConversation, {
           'convo A': {
-            type: ConversationVerificationState.VerificationCancelled,
+            type: ConversationVerificationState.VerificationCanceled,
             canceledAt: now,
           },
         });
@@ -1171,20 +1171,20 @@ describe('both/state/ducks/conversations', () => {
     });
 
     describe('CANCEL_CONVERSATION_PENDING_VERIFICATION', () => {
-      it('removes existing VerificationCancelled state', () => {
+      it('removes existing VerificationCanceled state', () => {
         const now = Date.now();
         const state: ConversationsStateType = {
           ...getEmptyState(),
           verificationDataByConversation: {
             'convo A': {
-              type: ConversationVerificationState.VerificationCancelled,
+              type: ConversationVerificationState.VerificationCanceled,
               canceledAt: now,
             },
           },
         };
         const actual = reducer(
           state,
-          clearCancelledConversationVerification('convo A')
+          clearCanceledConversationVerification('convo A')
         );
 
         assert.deepStrictEqual(actual.verificationDataByConversation, {});
@@ -1202,7 +1202,7 @@ describe('both/state/ducks/conversations', () => {
         };
         const actual = reducer(
           state,
-          clearCancelledConversationVerification('convo A')
+          clearCanceledConversationVerification('convo A')
         );
 
         assert.deepStrictEqual(actual, state);
@@ -1212,7 +1212,7 @@ describe('both/state/ducks/conversations', () => {
         const state: ConversationsStateType = getEmptyState();
         const actual = reducer(
           state,
-          clearCancelledConversationVerification('convo A')
+          clearCanceledConversationVerification('convo A')
         );
 
         assert.deepStrictEqual(actual, state);
@@ -1971,11 +1971,10 @@ describe('both/state/ducks/conversations', () => {
 
       beforeEach(async () => {
         await updateRemoteConfig([
-          { name: 'global.groupsv2.maxGroupSize', value: '22', enabled: true },
+          { name: 'global.groupsv2.maxGroupSize', value: '22' },
           {
             name: 'global.groupsv2.groupSizeHardLimit',
             value: '33',
-            enabled: true,
           },
         ]);
       });
@@ -2057,18 +2056,23 @@ describe('both/state/ducks/conversations', () => {
       it('defaults the maximum recommended size to 151', async () => {
         for (const value of [null, 'xyz']) {
           // eslint-disable-next-line no-await-in-loop
-          await updateRemoteConfig([
-            {
-              name: 'global.groupsv2.maxGroupSize',
-              value,
-              enabled: true,
-            },
-            {
-              name: 'global.groupsv2.groupSizeHardLimit',
-              value: '33',
-              enabled: true,
-            },
-          ]);
+          await updateRemoteConfig(
+            [
+              {
+                name: 'global.groupsv2.groupSizeHardLimit',
+                value: '33',
+              },
+            ].concat(
+              value
+                ? [
+                    {
+                      name: 'global.groupsv2.maxGroupSize',
+                      value,
+                    },
+                  ]
+                : []
+            )
+          );
 
           const state = {
             ...getEmptyState(),
@@ -2145,14 +2149,18 @@ describe('both/state/ducks/conversations', () => {
       it('defaults the maximum group size to 1001 if the recommended maximum is smaller', async () => {
         for (const value of [null, 'xyz']) {
           // eslint-disable-next-line no-await-in-loop
-          await updateRemoteConfig([
-            { name: 'global.groupsv2.maxGroupSize', value: '2', enabled: true },
-            {
-              name: 'global.groupsv2.groupSizeHardLimit',
-              value,
-              enabled: true,
-            },
-          ]);
+          await updateRemoteConfig(
+            [{ name: 'global.groupsv2.maxGroupSize', value: '2' }].concat(
+              value
+                ? [
+                    {
+                      name: 'global.groupsv2.groupSizeHardLimit',
+                      value,
+                    },
+                  ]
+                : []
+            )
+          );
 
           const state = {
             ...getEmptyState(),
@@ -2169,12 +2177,10 @@ describe('both/state/ducks/conversations', () => {
           {
             name: 'global.groupsv2.maxGroupSize',
             value: '1234',
-            enabled: true,
           },
           {
             name: 'global.groupsv2.groupSizeHardLimit',
             value: '2',
-            enabled: true,
           },
         ]);
 

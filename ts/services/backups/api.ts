@@ -11,18 +11,35 @@ import type {
   BackupMediaItemType,
   BackupMediaBatchResponseType,
   BackupListMediaResponseType,
+  TransferArchiveType,
+  SubscriptionResponseType,
 } from '../../textsecure/WebAPI';
 import type { BackupCredentials } from './credentials';
-import { BackupCredentialType } from '../../types/backups';
+import {
+  BackupCredentialType,
+  type BackupsSubscriptionType,
+  type SubscriptionCostType,
+} from '../../types/backups';
 import { uploadFile } from '../../util/uploadAttachment';
-import { ContinueWithoutSyncingError, RelinkRequestedError } from './errors';
-import { missingCaseError } from '../../util/missingCaseError';
+import { HTTPError } from '../../textsecure/Errors';
+import { createLogger } from '../../logging/log';
+import { toLogFormat } from '../../types/errors';
+
+const log = createLogger('api');
 
 export type DownloadOptionsType = Readonly<{
   downloadOffset: number;
   onProgress: (currentBytes: number, totalBytes: number) => void;
   abortSignal?: AbortSignal;
 }>;
+
+export type EphemeralDownloadOptionsType = Readonly<{
+  archive: Readonly<{
+    cdn: number;
+    key: string;
+  }>;
+}> &
+  DownloadOptionsType;
 
 export class BackupAPI {
   #cachedBackupInfo = new Map<
@@ -106,31 +123,53 @@ export class BackupAPI {
     });
   }
 
+  public async getBackupProtoInfo(): Promise<
+    | { backupExists: false }
+    | { backupExists: true; size: number; createdAt: Date }
+  > {
+    const { cdn, backupDir, backupName } = await this.#getCachedInfo(
+      BackupCredentialType.Messages
+    );
+    const { headers } = await this.credentials.getCDNReadCredentials(
+      cdn,
+      BackupCredentialType.Messages
+    );
+    try {
+      const { 'content-length': size, 'last-modified': createdAt } =
+        await this.#server.getBackupFileHeaders({
+          cdn,
+          backupDir,
+          backupName,
+          headers,
+        });
+      return { backupExists: true, size, createdAt };
+    } catch (error) {
+      if (error instanceof HTTPError && error.code === 401) {
+        this.credentials.onCdnCredentialError();
+      } else if (error instanceof HTTPError && error.code === 404) {
+        return { backupExists: false };
+      }
+      throw error;
+    }
+  }
+
+  public async getTransferArchive(
+    abortSignal: AbortSignal
+  ): Promise<TransferArchiveType> {
+    return this.#server.getTransferArchive({
+      abortSignal,
+    });
+  }
+
   public async downloadEphemeral({
+    archive,
     downloadOffset,
     onProgress,
     abortSignal,
-  }: DownloadOptionsType): Promise<Readable> {
-    const response = await this.#server.getTransferArchive({
-      abortSignal,
-    });
-
-    if ('error' in response) {
-      switch (response.error) {
-        case 'RELINK_REQUESTED':
-          throw new RelinkRequestedError();
-        case 'CONTINUE_WITHOUT_UPLOAD':
-          throw new ContinueWithoutSyncingError();
-        default:
-          throw missingCaseError(response.error);
-      }
-    }
-
-    const { cdn, key } = response;
-
+  }: EphemeralDownloadOptionsType): Promise<Readable> {
     return this.#server.getEphemeralBackupStream({
-      cdn,
-      key,
+      cdn: archive.cdn,
+      key: archive.key,
       downloadOffset,
       onProgress,
       abortSignal,
@@ -168,6 +207,63 @@ export class BackupAPI {
       cursor,
       limit,
     });
+  }
+
+  public async getSubscriptionInfo(): Promise<BackupsSubscriptionType> {
+    const subscriberId = window.storage.get('backupsSubscriberId');
+    if (!subscriberId) {
+      log.error('Backups.getSubscriptionInfo: missing subscriberId');
+      return { status: 'not-found' };
+    }
+
+    let subscriptionResponse: SubscriptionResponseType;
+    try {
+      subscriptionResponse = await this.#server.getSubscription(subscriberId);
+    } catch (e) {
+      log.warn(
+        'Backups.getSubscriptionInfo: error fetching subscription',
+        toLogFormat(e)
+      );
+      return { status: 'not-found' };
+    }
+
+    const { subscription } = subscriptionResponse;
+    if (!subscription) {
+      return { status: 'not-found' };
+    }
+
+    const { active, amount, currency, endOfCurrentPeriod, cancelAtPeriodEnd } =
+      subscription;
+
+    if (!active) {
+      return { status: 'expired' };
+    }
+
+    let cost: SubscriptionCostType | undefined;
+    if (amount && currency) {
+      cost = {
+        amount,
+        currencyCode: currency,
+      };
+    } else {
+      log.error(
+        'Backups.getSubscriptionInfo: invalid amount/currency returned for active subscription'
+      );
+    }
+
+    if (cancelAtPeriodEnd) {
+      return {
+        status: 'pending-cancellation',
+        cost,
+        expiryTimestamp: endOfCurrentPeriod?.getTime(),
+      };
+    }
+
+    return {
+      status: 'active',
+      cost,
+      renewalTimestamp: endOfCurrentPeriod?.getTime(),
+    };
   }
 
   public clearCache(): void {

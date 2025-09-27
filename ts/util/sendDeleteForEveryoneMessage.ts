@@ -3,10 +3,9 @@
 
 import type { ConversationAttributesType } from '../model-types.d';
 import type { ConversationQueueJobData } from '../jobs/conversationJobQueue';
-import { DataWriter } from '../sql/Client';
 import * as Errors from '../types/errors';
 import { DAY } from './durations';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
@@ -21,7 +20,8 @@ import { getRecipientConversationIds } from './getRecipientConversationIds';
 import { getRecipients } from './getRecipients';
 import { repeat, zipObject } from './iterables';
 import { isMe } from './whatTypeOfConversation';
-import { postSaveUpdates } from './cleanup';
+
+const log = createLogger('sendDeleteForEveryoneMessage');
 
 export async function sendDeleteForEveryoneMessage(
   conversationAttributes: ConversationAttributesType,
@@ -65,7 +65,7 @@ export async function sendDeleteForEveryoneMessage(
   );
 
   log.info(
-    `sendDeleteForEveryoneMessage: enqueuing DeleteForEveryone: ${idForLogging} ` +
+    `enqueuing DeleteForEveryone: ${idForLogging} ` +
       `in conversation ${conversationIdForLogging}`
   );
 
@@ -80,18 +80,16 @@ export async function sendDeleteForEveryoneMessage(
     };
     await conversationJobQueue.add(jobData, async jobToInsert => {
       log.info(
-        `sendDeleteForEveryoneMessage: Deleting message ${idForLogging} ` +
+        `Deleting message ${idForLogging} ` +
           `in conversation ${conversationIdForLogging} with job ${jobToInsert.id}`
       );
-      await DataWriter.saveMessage(message.attributes, {
+      await window.MessageCache.saveMessage(message.attributes, {
         jobToInsert,
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
-        postSaveUpdates,
       });
     });
   } catch (error) {
     log.error(
-      `sendDeleteForEveryoneMessage: Failed to queue delete for everyone for message ${idForLogging}`,
+      `Failed to queue delete for everyone for message ${idForLogging}`,
       Errors.toLogFormat(error)
     );
     throw error;

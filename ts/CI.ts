@@ -6,28 +6,35 @@ import { ipcRenderer } from 'electron';
 
 import type { IPCResponse as ChallengeResponseType } from './challenge';
 import type { MessageAttributesType } from './model-types.d';
-import * as log from './logging/log';
+import { createLogger } from './logging/log';
 import { explodePromise } from './util/explodePromise';
 import { AccessType, ipcInvoke } from './sql/channels';
 import { backupsService } from './services/backups';
+import { notificationService } from './services/notifications';
 import { AttachmentBackupManager } from './jobs/AttachmentBackupManager';
 import { migrateAllMessages } from './messages/migrateMessageData';
 import { SECOND } from './util/durations';
 import { isSignalRoute } from './util/signalRoutes';
 import { strictAssert } from './util/assert';
 import { MessageModel } from './models/messages';
+import type { SocketStatuses } from './textsecure/SocketManager';
+
+const log = createLogger('CI');
 
 type ResolveType = (data: unknown) => void;
 
 export type CIType = {
   deviceName: string;
   getConversationId: (address: string | null) => string | null;
+  createNotificationToken: (address: string) => string | undefined;
   getMessagesBySentAt(
     sentAt: number
   ): Promise<ReadonlyArray<MessageAttributesType>>;
   getPendingEventCount: (event: string) => number;
+  getSocketStatus: () => SocketStatuses;
   handleEvent: (event: string, data: unknown) => unknown;
   setProvisioningURL: (url: string) => unknown;
+  setPreloadCacheHit: (value: boolean) => unknown;
   solveChallenge: (response: ChallengeResponseType) => unknown;
   waitForEvent: (
     event: string,
@@ -38,17 +45,24 @@ export type CIType = {
   ) => unknown;
   openSignalRoute(url: string): Promise<void>;
   migrateAllMessages(): Promise<void>;
+  exportLocalBackup(backupsBaseDir: string): Promise<string>;
+  stageLocalBackupForImport(snapshotDir: string): Promise<void>;
   uploadBackup(): Promise<void>;
   unlink: () => void;
   print: (...args: ReadonlyArray<unknown>) => void;
   resetReleaseNotesFetcher(): void;
+  forceUnprocessed: boolean;
 };
 
 export type GetCIOptionsType = Readonly<{
   deviceName: string;
+  forceUnprocessed: boolean;
 }>;
 
-export function getCI({ deviceName }: GetCIOptionsType): CIType {
+export function getCI({
+  deviceName,
+  forceUnprocessed,
+}: GetCIOptionsType): CIType {
   const eventListeners = new Map<string, Array<ResolveType>>();
   const completedEvents = new Map<string, Array<unknown>>();
 
@@ -69,7 +83,7 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
       const pendingCompleted = completedEvents.get(event) || [];
       if (pendingCompleted.length) {
         const pending = pendingCompleted.shift();
-        log.info(`CI: resolving pending result for ${event}`, pending);
+        log.info(`resolving pending result for ${event}`, pending);
 
         if (pendingCompleted.length === 0) {
           completedEvents.delete(event);
@@ -79,7 +93,7 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
       }
     }
 
-    log.info(`CI: waiting for event ${event}`);
+    log.info(`waiting for event ${event}`);
     const { resolve, reject, promise } = explodePromise();
 
     const timer = setTimeout(() => {
@@ -109,6 +123,10 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
     handleEvent('provisioning-url', url);
   }
 
+  function setPreloadCacheHit(value: boolean): void {
+    handleEvent('preload-cache-hit', value);
+  }
+
   function handleEvent(event: string, data: unknown): void {
     const list = eventListeners.get(event) || [];
     const resolve = list.shift();
@@ -118,12 +136,12 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
         eventListeners.delete(event);
       }
 
-      log.info(`CI: got event ${event} with data`, data);
+      log.info(`got event ${event} with data`, data);
       resolve(data);
       return;
     }
 
-    log.info(`CI: postponing event ${event}`);
+    log.info(`postponing event ${event}`);
 
     let resultList = completedEvents.get(event);
     if (!resultList) {
@@ -152,6 +170,19 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
     return window.ConversationController.getConversationId(address);
   }
 
+  function createNotificationToken(address: string): string | undefined {
+    const id = window.ConversationController.getConversationId(address);
+    if (!id) {
+      return undefined;
+    }
+
+    return notificationService._createToken({
+      conversationId: id,
+      messageId: undefined,
+      storyId: undefined,
+    });
+  }
+
   async function openSignalRoute(url: string) {
     strictAssert(
       isSignalRoute(url),
@@ -166,6 +197,20 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
     document.body.removeChild(a);
   }
 
+  async function exportLocalBackup(backupsBaseDir: string): Promise<string> {
+    const { snapshotDir } =
+      await backupsService.exportLocalBackup(backupsBaseDir);
+    return snapshotDir;
+  }
+
+  async function stageLocalBackupForImport(snapshotDir: string): Promise<void> {
+    const { error } =
+      await backupsService.stageLocalBackupForImport(snapshotDir);
+    if (error) {
+      throw error;
+    }
+  }
+
   async function uploadBackup() {
     await backupsService.upload();
     await AttachmentBackupManager.waitForIdle();
@@ -175,11 +220,15 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
   }
 
   function unlink() {
-    window.Whisper.events.trigger('unlinkAndDisconnect');
+    window.Whisper.events.emit('unlinkAndDisconnect');
   }
 
   function print(...args: ReadonlyArray<unknown>) {
     handleEvent('print', format(...args));
+  }
+
+  function getSocketStatus() {
+    return window.getSocketStatus();
   }
 
   async function resetReleaseNotesFetcher() {
@@ -196,17 +245,23 @@ export function getCI({ deviceName }: GetCIOptionsType): CIType {
   return {
     deviceName,
     getConversationId,
+    createNotificationToken,
     getMessagesBySentAt,
+    getSocketStatus,
     handleEvent,
     setProvisioningURL,
+    setPreloadCacheHit,
     solveChallenge,
     waitForEvent,
     openSignalRoute,
     migrateAllMessages,
+    exportLocalBackup,
+    stageLocalBackupForImport,
     uploadBackup,
     unlink,
     getPendingEventCount,
     print,
     resetReleaseNotesFetcher,
+    forceUnprocessed,
   };
 }

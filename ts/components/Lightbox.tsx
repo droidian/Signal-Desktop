@@ -16,7 +16,7 @@ import type {
 import type { LocalizerType } from '../types/Util';
 import type { MediaItemType } from '../types/MediaItem';
 import * as GoogleChrome from '../util/GoogleChrome';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import * as Errors from '../types/errors';
 import { Avatar, AvatarSize } from './Avatar';
 import { IMAGE_PNG, isImage, isVideo } from '../types/MIME';
@@ -34,6 +34,9 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 import { formatFileSize } from '../util/formatFileSize';
 import { SECOND } from '../util/durations';
 import { Toast } from './Toast';
+import { isAbortError } from '../util/isAbortError';
+
+const log = createLogger('Lightbox');
 
 export type PropsType = {
   children?: ReactNode;
@@ -137,13 +140,10 @@ export function Lightbox({
   >();
 
   const currentItem = media[selectedIndex];
-  const {
-    attachment,
-    contentType,
-    loop = false,
-    objectURL,
-    incrementalObjectUrl,
-  } = currentItem || {};
+  const attachment = currentItem?.attachment;
+  const url = attachment?.url;
+  const incrementalUrl = attachment?.incrementalUrl;
+  const contentType = attachment?.contentType;
 
   const isAttachmentGIF = isGIF(attachment ? [attachment] : undefined);
   const isDownloading =
@@ -308,7 +308,9 @@ export function Lightbox({
     if (videoElement.paused) {
       onMediaPlaybackStart();
       void videoElement.play().catch(error => {
-        log.error('Lightbox: Failed to play video', Errors.toLogFormat(error));
+        if (!isAbortError(error)) {
+          log.error('Failed to play video', Errors.toLogFormat(error));
+        }
       });
     } else {
       videoElement.pause();
@@ -594,7 +596,7 @@ export function Lightbox({
       !isVideoTypeSupported && isVideo(contentType);
 
     if (isImageTypeSupported) {
-      if (objectURL) {
+      if (url) {
         content = (
           <div className="Lightbox__zoomable-container">
             <button
@@ -605,7 +607,7 @@ export function Lightbox({
               <img
                 alt={i18n('icu:lightboxImageAlt')}
                 className="Lightbox__object"
-                data-testid={attachment.fileName}
+                data-testid={attachment.cdnKey}
                 onContextMenu={(ev: React.MouseEvent<HTMLImageElement>) => {
                   // These are the only image types supported by Electron's NativeImage
                   if (
@@ -616,7 +618,7 @@ export function Lightbox({
                     ev.preventDefault();
                   }
                 }}
-                src={objectURL}
+                src={url}
                 ref={imageRef}
               />
             </button>
@@ -637,19 +639,19 @@ export function Lightbox({
         );
       }
     } else if (isVideoTypeSupported) {
-      const shouldLoop = loop || isAttachmentGIF || isViewOnce;
+      const shouldLoop = isAttachmentGIF || isViewOnce;
 
       content = (
         <video
           className="Lightbox__object Lightbox__object--video"
           controls={!shouldLoop}
-          key={objectURL || incrementalObjectUrl}
+          key={url || incrementalUrl}
           loop={shouldLoop}
           ref={setVideoElement}
           onMouseMove={onUserInteractionOnVideo}
           onMouseLeave={onMouseLeaveVideo}
         >
-          <source src={objectURL || incrementalObjectUrl} />
+          <source src={url || incrementalUrl} />
         </video>
       );
     } else if (isUnsupportedImageType || isUnsupportedVideoType) {
@@ -667,7 +669,7 @@ export function Lightbox({
         />
       );
     } else {
-      log.info('Lightbox: Unexpected content type', { contentType });
+      log.info('Unexpected content type', { contentType });
 
       content = (
         <button
@@ -775,10 +777,9 @@ export function Lightbox({
                       {attachment.totalDownloaded && attachment.size
                         ? i18n('icu:lightBoxDownloading', {
                             downloaded: formatFileSize(
-                              attachment.totalDownloaded,
-                              2
+                              attachment.totalDownloaded
                             ),
-                            total: formatFileSize(attachment.size, 2),
+                            total: formatFileSize(attachment.size),
                           })
                         : undefined}
                     </Toast>
@@ -830,7 +831,7 @@ export function Lightbox({
                             'Lightbox__thumbnail--selected':
                               index === selectedIndex,
                           })}
-                          key={item.thumbnailObjectUrl}
+                          key={item.attachment.thumbnail?.url}
                           type="button"
                           onClick={(
                             event: React.MouseEvent<
@@ -844,10 +845,10 @@ export function Lightbox({
                             onSelectAttachment(index);
                           }}
                         >
-                          {item.thumbnailObjectUrl ? (
+                          {item.attachment.thumbnail?.url ? (
                             <img
                               alt={i18n('icu:lightboxImageAlt')}
-                              src={item.thumbnailObjectUrl}
+                              src={item.attachment.thumbnail.url}
                             />
                           ) : (
                             <div className="Lightbox__thumbnail--unavailable" />
@@ -883,19 +884,18 @@ function LightboxHeader({
     <div className="Lightbox__header--container">
       <div className="Lightbox__header--avatar">
         <Avatar
-          acceptedMessageRequest={conversation.acceptedMessageRequest}
+          avatarPlaceholderGradient={conversation.avatarPlaceholderGradient}
           avatarUrl={conversation.avatarUrl}
           badge={undefined}
           color={conversation.color}
           conversationType={conversation.type}
+          hasAvatar={conversation.hasAvatar}
           i18n={i18n}
-          isMe={conversation.isMe}
           phoneNumber={conversation.e164}
           profileName={conversation.profileName}
           sharedGroupNames={conversation.sharedGroupNames}
           size={AvatarSize.THIRTY_TWO}
           title={conversation.title}
-          unblurredAvatarUrl={conversation.unblurredAvatarUrl}
         />
       </div>
       <div className="Lightbox__header--content">

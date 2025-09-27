@@ -59,8 +59,12 @@ export const SmartMessageDetail = memo(
       showSpoiler,
       startConversation,
     } = useConversationsActions();
-    const { showContactModal, showEditHistoryModal, toggleSafetyNumberModal } =
-      useGlobalModalActions();
+    const {
+      showContactModal,
+      showEditHistoryModal,
+      showTapToViewNotAvailableModal,
+      toggleSafetyNumberModal,
+    } = useGlobalModalActions();
     const { showLightbox, showLightboxForViewOnceMedia } = useLightboxActions();
     const { viewStory } = useStoriesActions();
 
@@ -118,6 +122,7 @@ export const SmartMessageDetail = memo(
         showLightboxForViewOnceMedia={showLightboxForViewOnceMedia}
         showMediaNoLongerAvailableToast={showMediaNoLongerAvailableToast}
         showSpoiler={showSpoiler}
+        showTapToViewNotAvailableModal={showTapToViewNotAvailableModal}
         startConversation={startConversation}
         theme={theme}
         toggleSafetyNumberModal={toggleSafetyNumberModal}

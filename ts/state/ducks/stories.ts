@@ -22,14 +22,18 @@ import type { SyncType } from '../../jobs/helpers/syncHelpers';
 import type { StoryDistributionIdString } from '../../types/StoryDistributionId';
 import type { ServiceIdString } from '../../types/ServiceId';
 import { isAciString } from '../../util/isAciString';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { TARGETED_CONVERSATION_CHANGED } from './conversations';
 import { SIGNAL_ACI } from '../../types/SignalConversation';
 import { DataReader, DataWriter } from '../../sql/Client';
 import { ReadStatus } from '../../messages/MessageReadStatus';
 import { SendStatus } from '../../messages/MessageSendState';
 import { SafetyNumberChangeSource } from '../../components/SafetyNumberChangeDialog';
-import { StoryViewDirectionType, StoryViewModeType } from '../../types/Stories';
+import {
+  areStoryViewReceiptsEnabled,
+  StoryViewDirectionType,
+  StoryViewModeType,
+} from '../../types/Stories';
 import { assertDev, strictAssert } from '../../util/assert';
 import { drop } from '../../util/drop';
 import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified';
@@ -51,6 +55,7 @@ import {
   getStories,
   getStoryDownloadableAttachment,
 } from '../selectors/stories';
+import { setStoriesDisabled as utilSetStoriesDisabled } from '../../util/stories';
 import { getStoryDataFromMessageAttributes } from '../../services/storyLoader';
 import { isGroup } from '../../util/whatTypeOfConversation';
 import { isNotNil } from '../../util/isNotNil';
@@ -69,7 +74,10 @@ import {
   conversationQueueJobEnum,
 } from '../../jobs/conversationJobQueue';
 import { ReceiptType } from '../../types/Receipt';
-import { cleanupMessages, postSaveUpdates } from '../../util/cleanup';
+import { cleanupMessages } from '../../util/cleanup';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
+
+const log = createLogger('stories');
 
 export type StoryDataType = ReadonlyDeep<
   {
@@ -421,12 +429,7 @@ function markStoryRead(
     const storyReadDate = Date.now();
 
     message.set(markViewed(message.attributes, storyReadDate));
-    drop(
-      DataWriter.saveMessage(message.attributes, {
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
-        postSaveUpdates,
-      })
-    );
+    drop(window.MessageCache.saveMessage(message.attributes));
 
     const conversationId = message.get('conversationId');
 
@@ -447,10 +450,7 @@ function markStoryRead(
       drop(viewSyncJobQueue.add({ viewSyncs }));
     }
 
-    if (
-      !isSignalOnboardingStory &&
-      window.Events.getStoryViewReceiptsEnabled()
-    ) {
+    if (!isSignalOnboardingStory && areStoryViewReceiptsEnabled()) {
       drop(
         conversationJobQueue.add({
           type: conversationQueueJobEnum.enum.Receipts,
@@ -534,10 +534,14 @@ function queueStoryDownload(
         payload: storyId,
       });
 
-      const updatedFields = await queueAttachmentDownloads(message.attributes);
-      if (updatedFields) {
-        message.set(updatedFields);
+      const wasUpdated = await queueAttachmentDownloads(message, {
+        isManualDownload: true,
+        urgency: AttachmentDownloadUrgency.IMMEDIATE,
+      });
+      if (wasUpdated) {
+        await window.MessageCache.saveMessage(message);
       }
+
       return;
     }
 
@@ -1005,7 +1009,7 @@ const viewStory: ViewStoryActionCreatorType = (
     );
 
     if (!story) {
-      log.warn('stories.viewStory: No story found', storyId);
+      log.warn('viewStory: No story found', storyId);
       dispatch({
         type: VIEW_STORY,
         payload: undefined,
@@ -1077,7 +1081,7 @@ const viewStory: ViewStoryActionCreatorType = (
       });
 
       if (currentDistributionListIndex < 0 || currentStoryIndex < 0) {
-        log.warn('stories.viewStory: No current story found for MyStories', {
+        log.warn('viewStory: No current story found for MyStories', {
           currentDistributionListIndex,
           currentStoryIndex,
           myStories: myStories.length,
@@ -1258,7 +1262,7 @@ const viewStory: ViewStoryActionCreatorType = (
     }
 
     if (conversationStoryIndex < 0) {
-      log.warn('stories.viewStory: No stories found for conversation', {
+      log.warn('viewStory: No stories found for conversation', {
         storiesLength: conversationStories.length,
       });
       dispatch({
@@ -1380,7 +1384,7 @@ function setStoriesDisabled(
   value: boolean
 ): ThunkAction<void, RootStateType, unknown, never> {
   return async () => {
-    await window.Events.setHasStoriesDisabled(value);
+    await utilSetStoriesDisabled(value);
   };
 }
 
@@ -1845,9 +1849,7 @@ export function reducer(
     const existing = state.addStoryData;
 
     if (!existing) {
-      log.warn(
-        'stories/reducer: Set story sending, but no existing addStoryData'
-      );
+      log.warn('reducer: Set story sending, but no existing addStoryData');
       return state;
     }
 

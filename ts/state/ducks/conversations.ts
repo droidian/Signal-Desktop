@@ -21,7 +21,7 @@ import { DataReader, DataWriter } from '../../sql/Client';
 import type { AttachmentType } from '../../types/Attachment';
 import type { StateType as RootStateType } from '../reducer';
 import * as groups from '../../groups';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { calling } from '../../services/calling';
 import { getOwn } from '../../util/getOwn';
 import { assertDev, strictAssert } from '../../util/assert';
@@ -29,19 +29,16 @@ import { drop } from '../../util/drop';
 import type { DurationInSeconds } from '../../util/durations';
 import * as universalExpireTimer from '../../util/universalExpireTimer';
 import * as Attachment from '../../types/Attachment';
+import type { LocalizerType } from '../../types/I18N';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
 import { isFileDangerous } from '../../util/isFileDangerous';
 import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl';
 import { instance as libphonenumberInstance } from '../../util/libphonenumberInstance';
 import type {
   ShowSendAnywayDialogActionType,
   ShowErrorModalActionType,
-  ToggleProfileEditorErrorActionType,
 } from './globalModals';
-import {
-  SHOW_SEND_ANYWAY_DIALOG,
-  SHOW_ERROR_MODAL,
-  TOGGLE_PROFILE_EDITOR_ERROR,
-} from './globalModals';
+import { SHOW_SEND_ANYWAY_DIALOG, SHOW_ERROR_MODAL } from './globalModals';
 import {
   MODIFY_LIST,
   DELETE_LIST,
@@ -63,7 +60,6 @@ import type {
   ConversationAttributesType,
   DraftEditMessageType,
   LastMessageStatus,
-  MessageAttributesType,
   ReadonlyMessageAttributesType,
 } from '../../model-types.d';
 import type {
@@ -96,6 +92,7 @@ import {
   getConversationSelector,
   getMe,
   getMessagesByConversation,
+  getPendingAvatarDownloadSelector,
 } from '../selectors/conversations';
 import { getIntl } from '../selectors/user';
 import type {
@@ -181,8 +178,9 @@ import {
   isWithinMaxEdits,
   MESSAGE_MAX_EDIT_COUNT,
 } from '../../util/canEditMessage';
-import type { ChangeNavTabActionType } from './nav';
-import { CHANGE_NAV_TAB, NavTab, actions as navActions } from './nav';
+import type { ChangeLocationAction } from './nav';
+import { CHANGE_LOCATION, changeLocation, actions as navActions } from './nav';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../../types/Nav';
 import { sortByMessageOrder } from '../../types/ForwardDraft';
 import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
 import {
@@ -191,18 +189,15 @@ import {
 } from '../../util/idForLogging';
 import { singleProtoJobQueue } from '../../jobs/singleProtoJobQueue';
 import MessageSender from '../../textsecure/SendMessage';
-import {
-  AttachmentDownloadManager,
-  AttachmentDownloadUrgency,
-} from '../../jobs/AttachmentDownloadManager';
+import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager';
 import type {
   DeleteForMeSyncEventData,
-  MessageToDelete,
+  AddressableMessage,
 } from '../../textsecure/messageReceiverEvents';
 import {
-  getConversationToDelete,
-  getMessageToDelete,
-} from '../../util/deleteForMe';
+  getConversationIdentifier,
+  getAddressableMessage,
+} from '../../util/syncIdentifiers';
 import { MAX_MESSAGE_COUNT } from '../../util/deleteForMe.types';
 import { markCallHistoryReadInConversation } from './callHistory';
 import type { CapabilitiesType } from '../../textsecure/WebAPI';
@@ -210,7 +205,7 @@ import { actions as searchActions } from './search';
 import type { SearchActionType } from './search';
 import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage';
 import { doubleCheckMissingQuoteReference as doDoubleCheckMissingQuoteReference } from '../../util/doubleCheckMissingQuoteReference';
-import { queueAttachmentDownloadsForMessage } from '../../util/queueAttachmentDownloads';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
 import { markAttachmentAsCorrupted as doMarkAttachmentAsCorrupted } from '../../messageModifiers/AttachmentDownloads';
 import {
   isSent,
@@ -218,8 +213,12 @@ import {
   sendStateReducer,
 } from '../../messages/MessageSendState';
 import { markFailed } from '../../test-node/util/messageFailures';
-import { cleanupMessages, postSaveUpdates } from '../../util/cleanup';
-import { MessageModel } from '../../models/messages';
+import { cleanupMessages } from '../../util/cleanup';
+import type { ConversationModel } from '../../models/conversations';
+import { MessageRequestResponseSource } from '../../types/MessageRequestResponseEvent';
+
+const log = createLogger('conversations');
+
 // State
 
 export type DBConversationType = ReadonlyDeep<{
@@ -302,8 +301,9 @@ export type ConversationType = ReadonlyDeep<
     avatarUrl?: string;
     rawAvatarPath?: string;
     avatarHash?: string;
+    avatarPlaceholderGradient?: Readonly<[string, string]>;
     profileAvatarUrl?: string;
-    unblurredAvatarUrl?: string;
+    hasAvatar?: boolean;
     areWeAdmin?: boolean;
     areWePending?: boolean;
     areWePendingApproval?: boolean;
@@ -364,6 +364,7 @@ export type ConversationType = ReadonlyDeep<
     title: string;
     titleNoDefault?: string;
     titleNoNickname?: string;
+    titleShortNoDefault?: string;
     searchableTitle?: string;
     unreadCount?: number;
     unreadMentionsCount?: number;
@@ -417,9 +418,12 @@ export type ConversationType = ReadonlyDeep<
   )
 >;
 export type ProfileDataType = ReadonlyDeep<
-  {
-    firstName: string;
-  } & Pick<ConversationType, 'aboutEmoji' | 'aboutText' | 'familyName'>
+  Partial<
+    Pick<
+      ConversationType,
+      'firstName' | 'badges' | 'aboutEmoji' | 'aboutText' | 'familyName'
+    >
+  >
 >;
 
 export type ConversationLookupType = ReadonlyDeep<{
@@ -503,7 +507,7 @@ export type ConversationVerificationData = ReadonlyDeep<
       >;
     }
   | {
-      type: ConversationVerificationState.VerificationCancelled;
+      type: ConversationVerificationState.VerificationCanceled;
       canceledAt: number;
     }
 >;
@@ -578,7 +582,12 @@ export type ConversationsStateType = ReadonlyDeep<{
   messagesLookup: MessageLookupType;
   messagesByConversation: MessagesByConversationType;
 
+  // Map of conversation IDs to a boolean indicating whether an avatar download
+  // was requested
+  pendingRequestedAvatarDownload: Record<string, boolean>;
+
   preloadData?: ConversationPreloadDataType;
+  hasProfileUpdateError?: boolean;
 }>;
 
 // Helpers
@@ -610,8 +619,7 @@ export const getConversationCallMode = (
 
 const CANCEL_CONVERSATION_PENDING_VERIFICATION =
   'conversations/CANCEL_CONVERSATION_PENDING_VERIFICATION';
-const CLEAR_CANCELLED_VERIFICATION =
-  'conversations/CLEAR_CANCELLED_VERIFICATION';
+const CLEAR_CANCELED_VERIFICATION = 'conversations/CLEAR_CANCELED_VERIFICATION';
 const CLEAR_CONVERSATIONS_PENDING_VERIFICATION =
   'conversations/CLEAR_CONVERSATIONS_PENDING_VERIFICATION';
 export const COLORS_CHANGED = 'conversations/COLORS_CHANGED';
@@ -640,6 +648,10 @@ export const SET_VOICE_NOTE_PLAYBACK_RATE =
   'conversations/SET_VOICE_NOTE_PLAYBACK_RATE';
 export const CONVERSATION_UNLOADED = 'CONVERSATION_UNLOADED';
 export const SHOW_SPOILER = 'conversations/SHOW_SPOILER';
+export const SET_PENDING_REQUESTED_AVATAR_DOWNLOAD =
+  'conversations/SET_PENDING_REQUESTED_AVATAR_DOWNLOAD';
+export const SET_PROFILE_UPDATE_ERROR =
+  'conversations/SET_PROFILE_UPDATE_ERROR';
 
 export type CancelVerificationDataByConversationActionType = ReadonlyDeep<{
   type: typeof CANCEL_CONVERSATION_PENDING_VERIFICATION;
@@ -656,8 +668,8 @@ type ClearInvitedServiceIdsForNewlyCreatedGroupActionType = ReadonlyDeep<{
 type ClearVerificationDataByConversationActionType = ReadonlyDeep<{
   type: typeof CLEAR_CONVERSATIONS_PENDING_VERIFICATION;
 }>;
-type ClearCancelledVerificationActionType = ReadonlyDeep<{
-  type: typeof CLEAR_CANCELLED_VERIFICATION;
+type ClearCanceledVerificationActionType = ReadonlyDeep<{
+  type: typeof CLEAR_CANCELED_VERIFICATION;
   payload: {
     conversationId: string;
   };
@@ -827,6 +839,20 @@ export type ShowSpoilerActionType = ReadonlyDeep<{
   payload: {
     id: string;
     data: Record<number, boolean>;
+  };
+}>;
+
+export type SetPendingRequestedAvatarDownloadActionType = ReadonlyDeep<{
+  type: typeof SET_PENDING_REQUESTED_AVATAR_DOWNLOAD;
+  payload: {
+    conversationId: string;
+    value: boolean;
+  };
+}>;
+export type SetProfileUpdateErrorActionType = ReadonlyDeep<{
+  type: typeof SET_PROFILE_UPDATE_ERROR;
+  payload: {
+    newErrorState: boolean;
   };
 }>;
 
@@ -1022,7 +1048,7 @@ export type ConsumePreloadDataActionType = ReadonlyDeep<{
 export type ConversationActionType =
   | AddPreloadDataActionType
   | CancelVerificationDataByConversationActionType
-  | ClearCancelledVerificationActionType
+  | ClearCanceledVerificationActionType
   | ClearGroupCreationErrorActionType
   | ClearInvitedServiceIdsForNewlyCreatedGroupActionType
   | ClearTargetedMessageActionType
@@ -1064,6 +1090,8 @@ export type ConversationActionType =
   | ReplaceAvatarsActionType
   | ReviewConversationNameCollisionActionType
   | ScrollToMessageActionType
+  | SetPendingRequestedAvatarDownloadActionType
+  | SetProfileUpdateErrorActionType
   | TargetedConversationChangedActionType
   | SetComposeGroupAvatarActionType
   | SetComposeGroupExpireTimerActionType
@@ -1106,7 +1134,7 @@ export const actions = {
   cancelAttachmentDownload,
   cancelConversationVerification,
   changeHasGroupLink,
-  clearCancelledConversationVerification,
+  clearCanceledConversationVerification,
   clearGroupCreationError,
   clearInvitedServiceIdsForNewlyCreatedGroup,
   clearTargetedMessage,
@@ -1139,7 +1167,6 @@ export const actions = {
   loadNewerMessages,
   loadNewestMessages,
   loadOlderMessages,
-  loadRecentMediaItems,
   markAttachmentAsCorrupted,
   markMessageRead,
   markOpenConversationRead,
@@ -1179,6 +1206,8 @@ export const actions = {
   saveAvatarToDisk,
   scrollToMessage,
   scrollToOldestUnreadMention,
+  setPendingRequestedAvatarDownload,
+  startAvatarDownload,
   showSpoiler,
   targetMessage,
   setAccessControlAddFromInviteLinkSetting,
@@ -1199,6 +1228,7 @@ export const actions = {
   setMuteExpiration,
   setPinned,
   setPreJoinConversation,
+  setProfileUpdateError,
   setVoiceNotePlaybackRate,
   showArchivedConversations,
   showAttachmentDownloadStillInProgressToast,
@@ -1220,7 +1250,6 @@ export const actions = {
   toggleHideStories,
   toggleSelectMessage,
   toggleSelectMode,
-  unblurAvatar,
   updateConversationModelSharedGroups,
   updateGroupAttributes,
   updateLastMessage,
@@ -1432,8 +1461,7 @@ function markMessageRead(
       throw new Error(`markMessageRead: failed to load message ${messageId}`);
     }
 
-    await conversation.markRead(message.get('received_at'), {
-      newestSentAt: message.get('sent_at'),
+    await conversation.markRead(message.attributes, {
       sendReadReceipts: true,
     });
 
@@ -1465,19 +1493,7 @@ function removeMember(
     payload: null,
   };
 }
-function unblurAvatar(conversationId: string): NoopActionType {
-  const conversation = window.ConversationController.get(conversationId);
-  if (!conversation) {
-    throw new Error('unblurAvatar: Conversation not found!');
-  }
 
-  conversation.unblurAvatar();
-
-  return {
-    type: 'NOOP',
-    payload: null,
-  };
-}
 function updateSharedGroups(conversationId: string): NoopActionType {
   const conversation = window.ConversationController.get(conversationId);
   if (!conversation) {
@@ -1525,12 +1541,10 @@ async function getAvatarsAndUpdateConversation(
   const nextAvatars = getNextAvatarsData(avatars, nextAvatarId);
   // We don't save buffers to the db, but we definitely want it in-memory so
   // we don't have to re-generate them.
-  //
-  // Mutating here because we don't want to trigger a model change
-  // because we're updating redux here manually ourselves. Au revoir Backbone!
-  conversation.attributes.avatars = nextAvatars.map(avatarData =>
-    omit(avatarData, ['buffer'])
-  );
+
+  conversation.set({
+    avatars: nextAvatars.map(avatarData => omit(avatarData, ['buffer'])),
+  });
   await DataWriter.updateConversation(conversation.attributes);
 
   return nextAvatars;
@@ -1780,7 +1794,7 @@ function deleteMessages({
     const messages = (
       await Promise.all(
         messageIds.map(
-          async (messageId): Promise<MessageToDelete | undefined> => {
+          async (messageId): Promise<AddressableMessage | undefined> => {
             const message = await getMessageById(messageId);
             if (!message) {
               throw new Error(`deleteMessages: Message ${messageId} missing!`);
@@ -1793,7 +1807,7 @@ function deleteMessages({
               );
             }
 
-            return getMessageToDelete(message.attributes);
+            return getAddressableMessage(message.attributes);
           }
         )
       )
@@ -1825,19 +1839,12 @@ function deleteMessages({
       dispatch(scrollToMessage(conversationId, nearbyMessageId));
     }
 
-    const ourConversation =
-      window.ConversationController.getOurConversationOrThrow();
-    const capable = Boolean(ourConversation.get('capabilities')?.deleteSync);
-
-    if (!capable) {
-      return;
-    }
     if (messages.length === 0) {
       return;
     }
 
     const chunks = chunk(messages, MAX_MESSAGE_COUNT);
-    const conversationToDelete = getConversationToDelete(
+    const conversationToDelete = getConversationIdentifier(
       conversation.attributes
     );
     const timestamp = Date.now();
@@ -1913,15 +1920,12 @@ function discardEditMessage(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, never> {
   return () => {
-    window.ConversationController.get(conversationId)?.set(
-      {
-        draftEditMessage: undefined,
-        draftBodyRanges: undefined,
-        draft: undefined,
-        quotedMessageId: undefined,
-      },
-      { unset: true }
-    );
+    window.ConversationController.get(conversationId)?.set({
+      draftEditMessage: undefined,
+      draftBodyRanges: undefined,
+      draft: undefined,
+      quotedMessageId: undefined,
+    });
   };
 }
 
@@ -2027,7 +2031,7 @@ function generateNewGroupLink(
 
 /**
  * Not an actual redux action creator, so it doesn't produce an action (or dispatch
- * itself) because updates are managed through the backbone model, which will trigger
+ * itself) because updates are managed through the model, which will trigger
  * necessary updates and refresh conversation_view.
  *
  * In practice, it's similar to an already-connected thunk action. Later on we will
@@ -2207,12 +2211,7 @@ function saveAvatarToDisk(
 function myProfileChanged(
   profileData: ProfileDataType,
   avatarUpdateOptions: AvatarUpdateOptionsType
-): ThunkAction<
-  void,
-  RootStateType,
-  unknown,
-  NoopActionType | ToggleProfileEditorErrorActionType
-> {
+): ThunkAction<void, RootStateType, unknown, SetProfileUpdateErrorActionType> {
   return async (dispatch, getState) => {
     const conversation = getMe(getState());
 
@@ -2225,16 +2224,34 @@ function myProfileChanged(
         avatarUpdateOptions
       );
 
-      // writeProfile above updates the backbone model which in turn updates
-      // redux through it's on:change event listener. Once we lose Backbone
-      // we'll need to manually sync these new changes.
+      // writeProfile above updates the model which in turn updates
+      // redux through it's on:change event listener.
+
+      // We just want to clear whatever error was there before:
       dispatch({
-        type: 'NOOP',
-        payload: null,
+        type: SET_PROFILE_UPDATE_ERROR,
+        payload: {
+          newErrorState: false,
+        },
       });
     } catch (err) {
       log.error('myProfileChanged', Errors.toLogFormat(err));
-      dispatch({ type: TOGGLE_PROFILE_EDITOR_ERROR });
+
+      // Make sure the user sees an error dialog
+      dispatch({
+        type: SET_PROFILE_UPDATE_ERROR,
+        payload: {
+          newErrorState: true,
+        },
+      });
+      // And take them to the profile editor to resolve it
+      changeLocation({
+        tab: NavTab.Settings,
+        details: {
+          page: SettingsPage.Profile,
+          state: ProfileEditorPage.None,
+        },
+      });
     }
   };
 }
@@ -2244,7 +2261,7 @@ function removeCustomColorOnConversations(
 ): ThunkAction<void, RootStateType, unknown, CustomColorRemovedActionType> {
   return async dispatch => {
     const conversationsToUpdate: Array<ConversationAttributesType> = [];
-    window.getConversations().forEach(conversation => {
+    window.ConversationController.getAll().forEach(conversation => {
       if (conversation.get('customColorId') === colorId) {
         conversation.set({
           conversationColor: undefined,
@@ -2278,7 +2295,7 @@ function resetAllChatColors(): ThunkAction<
     // Calling this with no args unsets all the colors in the db
     await DataWriter.updateAllConversationColors();
 
-    window.getConversations().forEach(conversation => {
+    window.ConversationController.getAll().forEach(conversation => {
       conversation.set({
         conversationColor: undefined,
         customColor: undefined,
@@ -2306,18 +2323,13 @@ function kickOffAttachmentDownload(
         `kickOffAttachmentDownload: Message ${options.messageId} missing!`
       );
     }
-    const didUpdateValues = await queueAttachmentDownloadsForMessage(
-      message,
-      AttachmentDownloadUrgency.IMMEDIATE
-    );
+    const didUpdateValues = await queueAttachmentDownloads(message, {
+      urgency: AttachmentDownloadUrgency.IMMEDIATE,
+      isManualDownload: true,
+    });
 
     if (didUpdateValues) {
-      drop(
-        DataWriter.saveMessage(message.attributes, {
-          ourAci: window.textsecure.storage.user.getCheckedAci(),
-          postSaveUpdates,
-        })
-      );
+      drop(window.MessageCache.saveMessage(message.attributes));
     }
 
     dispatch({
@@ -2347,11 +2359,7 @@ function cancelAttachmentDownload({
         })),
       });
 
-      const ourAci = window.textsecure.storage.user.getCheckedAci();
-      await DataWriter.saveMessage(message.attributes, {
-        ourAci,
-        postSaveUpdates,
-      });
+      await window.MessageCache.saveMessage(message.attributes);
     }
 
     // A click kicks off downloads for every attachment in a message, so cancel does too
@@ -2486,10 +2494,8 @@ function retryMessageSend(
           timestamp: message.attributes.timestamp,
         },
         async jobToInsert => {
-          await DataWriter.saveMessage(message.attributes, {
+          await window.MessageCache.saveMessage(message.attributes, {
             jobToInsert,
-            ourAci: window.textsecure.storage.user.getCheckedAci(),
-            postSaveUpdates,
           });
         }
       );
@@ -2502,10 +2508,8 @@ function retryMessageSend(
           revision: conversation.get('revision'),
         },
         async jobToInsert => {
-          await DataWriter.saveMessage(message.attributes, {
+          await window.MessageCache.saveMessage(message.attributes, {
             jobToInsert,
-            ourAci: window.textsecure.storage.user.getCheckedAci(),
-            postSaveUpdates,
           });
         }
       );
@@ -2706,7 +2710,10 @@ export function cancelConversationVerification(
         activeCall.conversationId === conversationId &&
         activeCall.callMode === CallMode.Direct
       ) {
-        calling.hangup(conversationId, 'canceled conversation verification');
+        calling.hangup({
+          conversationId,
+          reason: 'canceled conversation verification',
+        });
       }
       conversationJobQueue.resolveVerificationWaiter(conversationId);
     });
@@ -2762,11 +2769,11 @@ function verifyConversationsStoppingSend(): ThunkAction<
   };
 }
 
-export function clearCancelledConversationVerification(
+export function clearCanceledConversationVerification(
   conversationId: string
-): ClearCancelledVerificationActionType {
+): ClearCanceledVerificationActionType {
   return {
-    type: CLEAR_CANCELLED_VERIFICATION,
+    type: CLEAR_CANCELED_VERIFICATION,
     payload: {
       conversationId,
     },
@@ -3022,11 +3029,7 @@ function getProfilesForConversation(conversationId: string): NoopActionType {
     throw new Error('getProfilesForConversation: no conversation found');
   }
 
-  drop(
-    conversation.getProfiles().catch(() => {
-      /* nothing to do here; logging already happened */
-    })
-  );
+  drop(conversation.getProfiles());
 
   return {
     type: 'NOOP',
@@ -3050,11 +3053,7 @@ function conversationStoppedByMissingVerification(payload: {
     }
 
     // Intentionally not awaiting here
-    drop(
-      conversation.getProfiles().catch(() => {
-        /* nothing to do here; logging already happened */
-      })
-    );
+    drop(conversation.getProfiles());
   });
 
   return {
@@ -3070,7 +3069,7 @@ export function markOpenConversationRead(
     const state = getState();
     const { nav } = state;
 
-    if (nav.selectedNavTab !== NavTab.Chats) {
+    if (nav.selectedLocation.tab !== NavTab.Chats) {
       return;
     }
 
@@ -3308,6 +3307,16 @@ function setIsFetchingUUID(
     },
   };
 }
+function setProfileUpdateError(
+  newErrorState: boolean
+): SetProfileUpdateErrorActionType {
+  return {
+    type: SET_PROFILE_UPDATE_ERROR,
+    payload: {
+      newErrorState,
+    },
+  };
+}
 
 export type PushPanelForConversationActionType = ReadonlyDeep<
   (panel: PanelRequestType) => unknown
@@ -3486,7 +3495,7 @@ function approvePendingMembershipFromGroupV2(
       );
       await modifyGroupV2({
         conversation,
-        usingCredentialsFrom: [pendingMember],
+        usingCredentialsFrom: [],
         createGroupChange: async () => {
           // This user's pending state may have changed in the time between the user's
           //   button press and when we get here. It's especially important to check here
@@ -3592,20 +3601,20 @@ function revokePendingMembershipsFromGroupV2(
 }
 
 async function syncMessageRequestResponse(
-  conversationData: ConversationType,
+  conversation: ConversationModel,
   response: Proto.SyncMessage.MessageRequestResponse.Type,
   { shouldSave = true } = {}
 ): Promise<void> {
-  const conversation = window.ConversationController.get(conversationData.id);
-  if (!conversation) {
-    throw new Error(
-      `syncMessageRequestResponse: No conversation found for conversation ${conversationData.id}`
-    );
-  }
-
   // In GroupsV2, this may modify the server. We only want to continue if those
   //   server updates were successful.
-  await conversation.applyMessageRequestResponse(response, { shouldSave });
+  await conversation.applyMessageRequestResponse(
+    response,
+    {
+      source: MessageRequestResponseSource.LOCAL,
+      timestamp: Date.now(),
+    },
+    { shouldSave }
+  );
 
   const groupId = conversation.getGroupIdBuffer();
 
@@ -3616,11 +3625,18 @@ async function syncMessageRequestResponse(
     return;
   }
 
+  const threadAci = conversation.getAci();
+  if (!threadAci) {
+    log.warn(
+      'syncMessageRequestResponse: No ACI for target conversation, not sending'
+    );
+    return;
+  }
+
   try {
     await singleProtoJobQueue.add(
       MessageSender.getMessageRequestResponseSync({
-        threadE164: conversation.get('e164'),
-        threadAci: conversation.getAci(),
+        threadAci,
         groupId,
         type: response,
       })
@@ -3664,7 +3680,13 @@ function reportSpam(
     }
 
     const conversation = getConversationForReportSpam(conversationOrGroup);
-    if (conversation == null) {
+    const conversationModel = window.ConversationController.get(
+      conversation?.id
+    );
+    if (!conversation || !conversationModel) {
+      log.error(
+        `reportSpam: Conversation for report spam not found ${conversation?.id}. Doing nothing.`
+      );
       return;
     }
 
@@ -3677,7 +3699,10 @@ function reportSpam(
         idForLogging,
         task: async () => {
           await Promise.all([
-            syncMessageRequestResponse(conversation, messageRequestEnum.SPAM),
+            syncMessageRequestResponse(
+              conversationModel,
+              messageRequestEnum.SPAM
+            ),
             addReportSpamJob({
               conversation,
               getMessageServerGuidsForSpam:
@@ -3713,68 +3738,114 @@ function blockAndReportSpam(
 
     const conversationForSpam =
       getConversationForReportSpam(conversationOrGroup);
-
+    const conversationModel = window.ConversationController.get(
+      conversationForSpam?.id
+    );
+    if (!conversationForSpam || !conversationModel) {
+      log.error(
+        `reportSpam: Conversation for report spam not found ${conversationForSpam?.id}. Doing nothing.`
+      );
+      return;
+    }
     const messageRequestEnum = Proto.SyncMessage.MessageRequestResponse.Type;
     const idForLogging = getConversationIdForLogging(conversationOrGroup);
 
-    drop(
-      longRunningTaskWrapper({
-        name: 'blockAndReportSpam',
-        idForLogging,
-        task: async () => {
-          await Promise.all([
-            syncMessageRequestResponse(
-              conversationOrGroup,
-              messageRequestEnum.BLOCK_AND_SPAM
-            ),
-            conversationForSpam != null &&
-              addReportSpamJob({
-                conversation: conversationForSpam,
-                getMessageServerGuidsForSpam:
-                  DataReader.getMessageServerGuidsForSpam,
-                jobQueue: reportSpamJobQueue,
-              }),
-          ]);
+    if (conversationModel.getAci()) {
+      drop(
+        longRunningTaskWrapper({
+          name: 'blockAndReportSpam',
+          idForLogging,
+          task: async () => {
+            await Promise.all([
+              syncMessageRequestResponse(
+                conversationModel,
+                messageRequestEnum.BLOCK_AND_SPAM
+              ),
+              conversationForSpam != null &&
+                addReportSpamJob({
+                  conversation: conversationForSpam,
+                  getMessageServerGuidsForSpam:
+                    DataReader.getMessageServerGuidsForSpam,
+                  jobQueue: reportSpamJobQueue,
+                }),
+            ]);
 
-          dispatch({
-            type: SHOW_TOAST,
-            payload: {
-              toastType: ToastType.ReportedSpamAndBlocked,
-            },
-          });
-        },
-      })
-    );
+            dispatch({
+              type: SHOW_TOAST,
+              payload: {
+                toastType: ToastType.ReportedSpamAndBlocked,
+              },
+            });
+          },
+        })
+      );
+    } else {
+      try {
+        await singleProtoJobQueue.add(
+          MessageSender.getBlockSync(
+            window.textsecure.storage.blocked.getBlockedData()
+          )
+        );
+      } catch (error) {
+        log.error(
+          `blockConversation/${idForLogging}: Failed to queue block sync message`,
+          Errors.toLogFormat(error)
+        );
+      }
+    }
   };
 }
 
 function acceptConversation(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
-  return async (dispatch, getState) => {
-    const conversationSelector = getConversationSelector(getState());
-    const conversationOrGroup = conversationSelector(conversationId);
-    if (!conversationOrGroup) {
+  return async dispatch => {
+    const conversation = window.ConversationController.get(conversationId);
+    if (!conversation) {
       throw new Error(
         'acceptConversation: Expected a conversation to be found. Doing nothing'
       );
     }
 
     const messageRequestEnum = Proto.SyncMessage.MessageRequestResponse.Type;
-    const idForLogging = getConversationIdForLogging(conversationOrGroup);
+    const idForLogging = getConversationIdForLogging(conversation.attributes);
 
-    drop(
-      longRunningTaskWrapper({
-        name: 'acceptConversation',
-        idForLogging,
-        task: async () => {
-          await syncMessageRequestResponse(
-            conversationOrGroup,
-            messageRequestEnum.ACCEPT
-          );
+    if (conversation.getAci()) {
+      drop(
+        longRunningTaskWrapper({
+          name: 'acceptConversation',
+          idForLogging,
+          task: async () => {
+            await syncMessageRequestResponse(
+              conversation,
+              messageRequestEnum.ACCEPT
+            );
+          },
+        })
+      );
+    } else {
+      await conversation.applyMessageRequestResponse(
+        messageRequestEnum.ACCEPT,
+        {
+          source: MessageRequestResponseSource.LOCAL,
+          timestamp: Date.now(),
         },
-      })
-    );
+        { shouldSave: true }
+      );
+
+      try {
+        await singleProtoJobQueue.add(
+          MessageSender.getBlockSync(
+            window.textsecure.storage.blocked.getBlockedData()
+          )
+        );
+      } catch (error) {
+        log.error(
+          `acceptConversation/${idForLogging}: Failed to queue sync message`,
+          Errors.toLogFormat(error)
+        );
+      }
+    }
 
     dispatch({
       type: 'NOOP',
@@ -3807,10 +3878,8 @@ function removeConversation(conversationId: string): ShowToastActionType {
 function blockConversation(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
-  return (dispatch, getState) => {
-    const conversationSelector = getConversationSelector(getState());
-    const conversation = conversationSelector(conversationId);
-
+  return async dispatch => {
+    const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
       throw new Error(
         'blockConversation: Expected a conversation to be found. Doing nothing'
@@ -3818,20 +3887,46 @@ function blockConversation(
     }
 
     const messageRequestEnum = Proto.SyncMessage.MessageRequestResponse.Type;
-    const idForLogging = getConversationIdForLogging(conversation);
+    const idForLogging = getConversationIdForLogging(conversation.attributes);
 
-    drop(
-      longRunningTaskWrapper({
-        name: 'blockConversation',
-        idForLogging,
-        task: async () => {
-          await syncMessageRequestResponse(
-            conversation,
-            messageRequestEnum.BLOCK
-          );
+    if (conversation.getAci()) {
+      drop(
+        longRunningTaskWrapper({
+          name: 'blockConversation',
+          idForLogging,
+          task: async () => {
+            await syncMessageRequestResponse(
+              conversation,
+              messageRequestEnum.BLOCK
+            );
+          },
+        })
+      );
+    } else {
+      // In GroupsV2, this may modify the server. We only want to continue if those
+      //   server updates were successful.
+      await conversation.applyMessageRequestResponse(
+        messageRequestEnum.BLOCK,
+        {
+          source: MessageRequestResponseSource.LOCAL,
+          timestamp: Date.now(),
         },
-      })
-    );
+        { shouldSave: true }
+      );
+
+      try {
+        await singleProtoJobQueue.add(
+          MessageSender.getBlockSync(
+            window.textsecure.storage.blocked.getBlockedData()
+          )
+        );
+      } catch (error) {
+        log.error(
+          `blockConversation/${idForLogging}: Failed to queue block sync message`,
+          Errors.toLogFormat(error)
+        );
+      }
+    }
 
     dispatch({
       type: 'NOOP',
@@ -3843,9 +3938,8 @@ function blockConversation(
 function deleteConversation(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
-  return (dispatch, getState) => {
-    const conversationSelector = getConversationSelector(getState());
-    const conversation = conversationSelector(conversationId);
+  return async dispatch => {
+    const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
       throw new Error(
         'deleteConversation: Expected a conversation to be found. Doing nothing'
@@ -3853,20 +3947,24 @@ function deleteConversation(
     }
 
     const messageRequestEnum = Proto.SyncMessage.MessageRequestResponse.Type;
-    const idForLogging = getConversationIdForLogging(conversation);
+    const idForLogging = getConversationIdForLogging(conversation.attributes);
 
-    drop(
-      longRunningTaskWrapper({
-        name: 'deleteConversation',
-        idForLogging,
-        task: async () => {
-          await syncMessageRequestResponse(
-            conversation,
-            messageRequestEnum.DELETE
-          );
-        },
-      })
-    );
+    if (conversation.getAci()) {
+      drop(
+        longRunningTaskWrapper({
+          name: 'deleteConversation',
+          idForLogging,
+          task: async () => {
+            await syncMessageRequestResponse(
+              conversation,
+              messageRequestEnum.DELETE
+            );
+          },
+        })
+      );
+    } else {
+      await conversation.destroyMessages({ source: 'local-delete' });
+    }
 
     dispatch({
       type: 'NOOP',
@@ -3895,73 +3993,6 @@ function initiateMigrationToGroupV2(conversationId: string): NoopActionType {
   };
 }
 
-function loadRecentMediaItems(
-  conversationId: string,
-  limit: number
-): ThunkAction<void, RootStateType, unknown, SetRecentMediaItemsActionType> {
-  return async dispatch => {
-    const messages: Array<MessageAttributesType> =
-      await DataReader.getOlderMessagesByConversation({
-        conversationId,
-        limit,
-        requireVisualMediaAttachments: true,
-        storyId: undefined,
-        includeStoryReplies: false,
-      });
-
-    // Cache these messages in memory to ensure Lightbox can find them
-    messages.forEach(message => {
-      window.MessageCache.register(new MessageModel(message));
-    });
-
-    let index = 0;
-    const recentMediaItems = messages
-      .filter(message => message.attachments !== undefined)
-      .reduce(
-        (acc, message) => [
-          ...acc,
-          ...(message.attachments || []).map(
-            (attachment: AttachmentType): MediaItemType => {
-              const { thumbnail } = attachment;
-
-              const result = {
-                objectURL: attachment.path
-                  ? getLocalAttachmentUrl(attachment)
-                  : '',
-                thumbnailObjectUrl: thumbnail?.path
-                  ? getLocalAttachmentUrl(thumbnail)
-                  : '',
-                contentType: attachment.contentType,
-                index,
-                attachment,
-                message: {
-                  attachments: message.attachments || [],
-                  conversationId:
-                    window.ConversationController.get(message.sourceServiceId)
-                      ?.id || message.conversationId,
-                  id: message.id,
-                  receivedAt: message.received_at,
-                  receivedAtMs: Number(message.received_at_ms),
-                  sentAt: message.sent_at,
-                },
-              };
-
-              index += 1;
-
-              return result;
-            }
-          ),
-        ],
-        [] as Array<MediaItemType>
-      );
-
-    dispatch({
-      type: 'SET_RECENT_MEDIA_ITEMS',
-      payload: { id: conversationId, recentMediaItems },
-    });
-  };
-}
-
 export type SaveAttachmentActionCreatorType = ReadonlyDeep<
   (attachment: AttachmentType, timestamp?: number, index?: number) => unknown
 >;
@@ -3986,12 +4017,13 @@ function saveAttachment(
       return;
     }
 
-    const { readAttachmentData, saveAttachmentToDisk } =
+    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
       window.Signal.Migrations;
 
     const fullPath = await Attachment.save({
       attachment,
       index: index + 1,
+      getUnusedFilename,
       readAttachmentData,
       saveAttachmentToDisk,
       timestamp,
@@ -4011,11 +4043,17 @@ function saveAttachment(
   };
 }
 
-const showSaveMultiDialog = (): Promise<{
+const showSaveMultiDialog = (
+  i18n: LocalizerType
+): Promise<{
   canceled: boolean;
   dirPath?: string;
 }> => {
-  return ipcRenderer.invoke('show-save-multi-dialog');
+  return ipcRenderer.invoke('show-open-folder-dialog', {
+    useMainWindow: true,
+    title: i18n('icu:SaveMultiDialog__title'),
+    buttonLabel: i18n('icu:save'),
+  });
 };
 
 export type SaveAttachmentsActionCreatorType = ReadonlyDeep<
@@ -4030,7 +4068,7 @@ function saveAttachments(
   attachments: ReadonlyArray<AttachmentType>,
   timestamp = Date.now()
 ): ThunkAction<void, RootStateType, unknown, ShowToastActionType> {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     // check if any of the attachments could be dangerous
     for (const attachment of attachments) {
       const { fileName = '' } = attachment;
@@ -4047,48 +4085,63 @@ function saveAttachments(
       }
     }
 
-    const { canceled, dirPath } = await showSaveMultiDialog();
+    const { canceled, dirPath } = await showSaveMultiDialog(
+      getIntl(getState())
+    );
     if (canceled || !dirPath) {
       return;
     }
 
-    const { readAttachmentData, saveAttachmentToDisk } =
+    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
       window.Signal.Migrations;
 
     let fullPath;
     let index = 0;
-    for (const attachment of attachments) {
-      index += 1;
+    try {
+      for (const attachment of attachments) {
+        index += 1;
 
-      // eslint-disable-next-line no-await-in-loop
-      const result = await Attachment.save({
-        attachment,
-        index,
-        readAttachmentData,
-        saveAttachmentToDisk,
-        timestamp,
-        baseDir: dirPath,
-      });
+        // eslint-disable-next-line no-await-in-loop
+        const result = await Attachment.save({
+          attachment,
+          index,
+          getUnusedFilename,
+          readAttachmentData,
+          saveAttachmentToDisk,
+          timestamp,
+          baseDir: dirPath,
+        });
 
-      if (fullPath === undefined) {
-        fullPath = result;
+        if (fullPath === undefined) {
+          fullPath = result;
+        }
       }
-    }
 
-    if (fullPath == null) {
-      throw new Error('saveAttachments: Returned path to attachment is null!');
-    }
+      if (fullPath == null) {
+        throw new Error(
+          'saveAttachments: Returned path to attachment is null!'
+        );
+      }
 
-    dispatch({
-      type: SHOW_TOAST,
-      payload: {
-        toastType: ToastType.FileSaved,
-        parameters: {
-          countOfFiles: attachments.length,
-          fullPath,
+      dispatch({
+        type: SHOW_TOAST,
+        payload: {
+          toastType: ToastType.FileSaved,
+          parameters: {
+            countOfFiles: attachments.length,
+            fullPath,
+          },
         },
-      },
-    });
+      });
+    } catch (e) {
+      log.error('Error in saveAttachments():', Errors.toLogFormat(e));
+      dispatch({
+        type: SHOW_TOAST,
+        payload: {
+          toastType: ToastType.Error,
+        },
+      });
+    }
   };
 }
 
@@ -4590,13 +4643,13 @@ function showConversation({
   void,
   RootStateType,
   unknown,
-  TargetedConversationChangedActionType | ChangeNavTabActionType
+  TargetedConversationChangedActionType | ChangeLocationAction
 > {
   return (dispatch, getState) => {
     const { conversations, nav } = getState();
 
-    if (nav.selectedNavTab !== NavTab.Chats) {
-      dispatch(navActions.changeNavTab(NavTab.Chats));
+    if (nav.selectedLocation.tab !== NavTab.Chats) {
+      dispatch(navActions.changeLocation({ tab: NavTab.Chats }));
       const conversation = window.ConversationController.get(conversationId);
       conversation?.setMarkedUnread(false);
     }
@@ -4681,7 +4734,7 @@ function onConversationOpened(
         Promise.all([
           conversation.loadNewestMessages(undefined, undefined),
           conversation.updateLastMessage(),
-          conversation.updateUnread(),
+          conversation.throttledUpdateUnread(),
         ])
       );
     };
@@ -4746,14 +4799,17 @@ function onConversationClosed(
 ): ThunkAction<void, RootStateType, unknown, ConversationUnloadedActionType> {
   return async dispatch => {
     const conversation = window.ConversationController.get(conversationId);
+    // Conversation was removed due to the merge
     if (!conversation) {
-      throw new Error('onConversationClosed: Conversation not found');
+      log.warn(
+        `onConversationClosed: Conversation ${conversationId} not found`
+      );
     }
 
-    const logId = `onConversationClosed/${conversation.idForLogging()}`;
+    const logId = `onConversationClosed/${conversation?.idForLogging() ?? conversationId}`;
     log.info(`${logId}: unloading due to ${reason}`);
 
-    if (conversation.get('draftChanged')) {
+    if (conversation?.get('draftChanged')) {
       if (conversation.hasDraft()) {
         log.info(`${logId}: new draft info needs update`);
         const now = Date.now();
@@ -4811,6 +4867,73 @@ function doubleCheckMissingQuoteReference(messageId: string): NoopActionType {
   };
 }
 
+function setPendingRequestedAvatarDownload(
+  conversationId: string,
+  value: boolean
+): SetPendingRequestedAvatarDownloadActionType {
+  return {
+    type: SET_PENDING_REQUESTED_AVATAR_DOWNLOAD,
+    payload: {
+      conversationId,
+      value,
+    },
+  };
+}
+
+function startAvatarDownload(
+  conversationId: string
+): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  SetPendingRequestedAvatarDownloadActionType
+> {
+  return async (dispatch, getState) => {
+    const isAlreadyLoading =
+      getPendingAvatarDownloadSelector(getState())(conversationId);
+    if (isAlreadyLoading) {
+      return;
+    }
+    dispatch(setPendingRequestedAvatarDownload(conversationId, true));
+
+    try {
+      const conversation = window.ConversationController.get(conversationId);
+      if (!conversation) {
+        throw new Error('startAvatarDownload: Conversation not found');
+      }
+
+      if (!conversation.attributes.remoteAvatarUrl) {
+        throw new Error('startAvatarDownload: no avatar URL');
+      }
+
+      if (isGroup(conversation.attributes)) {
+        const updateAttrs = await groups.applyNewAvatar({
+          newAvatarUrl: conversation.attributes.remoteAvatarUrl,
+          attributes: conversation.attributes,
+          logId: 'startAvatarDownload',
+          forceDownload: true,
+        });
+        conversation.set(updateAttrs);
+      } else {
+        await conversation.setAndMaybeFetchProfileAvatar({
+          avatarUrl: conversation.attributes.remoteAvatarUrl,
+          decryptionKey: null,
+          forceFetch: true,
+        });
+      }
+
+      await DataWriter.updateConversation(conversation.attributes);
+    } catch (error) {
+      log.error(
+        'startAvatarDownload: Failed to download avatar',
+        Errors.toLogFormat(error)
+      );
+    } finally {
+      dispatch(setPendingRequestedAvatarDownload(conversationId, false));
+    }
+  };
+}
+
 // Reducer
 
 export function getEmptyState(): ConversationsStateType {
@@ -4830,6 +4953,7 @@ export function getEmptyState(): ConversationsStateType {
     selectedMessageIds: undefined,
     showArchived: false,
     hasContactSpoofingReview: false,
+    pendingRequestedAvatarDownload: {},
     targetedConversationPanels: {
       isAnimating: false,
       wasAnimated: false,
@@ -5027,7 +5151,7 @@ function getVerificationDataForConversation({
 
   if (
     !existing ||
-    existing.type === ConversationVerificationState.VerificationCancelled
+    existing.type === ConversationVerificationState.VerificationCanceled
   ) {
     return {
       [conversationId]: {
@@ -5315,7 +5439,7 @@ export function reducer(
   action: Readonly<
     | ConversationActionType
     | StoryDistributionListsActionType
-    | ChangeNavTabActionType
+    | ChangeLocationAction
   >
 ): ConversationsStateType {
   if (action.type === CLEAR_CONVERSATIONS_PENDING_VERIFICATION) {
@@ -5325,7 +5449,7 @@ export function reducer(
     };
   }
 
-  if (action.type === CLEAR_CANCELLED_VERIFICATION) {
+  if (action.type === CLEAR_CANCELED_VERIFICATION) {
     const { conversationId } = action.payload;
     const { verificationDataByConversation } = state;
 
@@ -5366,13 +5490,13 @@ export function reducer(
 
     for (const [conversationId, data] of entries) {
       if (
-        data.type === ConversationVerificationState.VerificationCancelled &&
+        data.type === ConversationVerificationState.VerificationCanceled &&
         data.canceledAt > canceledAt
       ) {
         newverificationDataByConversation[conversationId] = data;
       } else {
         newverificationDataByConversation[conversationId] = {
-          type: ConversationVerificationState.VerificationCancelled,
+          type: ConversationVerificationState.VerificationCanceled,
           canceledAt,
         };
       }
@@ -5500,6 +5624,15 @@ export function reducer(
     return {
       ...state,
       preJoinConversation: data,
+    };
+  }
+  if (action.type === SET_PROFILE_UPDATE_ERROR) {
+    const { payload } = action;
+    const { newErrorState } = payload;
+
+    return {
+      ...state,
+      hasProfileUpdateError: newErrorState,
     };
   }
   if (action.type === 'CONVERSATIONS_UPDATED') {
@@ -7145,8 +7278,8 @@ export function reducer(
   }
 
   if (
-    action.type === CHANGE_NAV_TAB &&
-    action.payload.selectedNavTab === NavTab.Chats
+    action.type === CHANGE_LOCATION &&
+    action.payload.selectedLocation.tab === NavTab.Chats
   ) {
     const { messagesByConversation, selectedConversationId } = state;
     if (selectedConversationId == null) {
@@ -7166,6 +7299,18 @@ export function reducer(
           ...existingConversation,
           isNearBottom: true,
         },
+      },
+    };
+  }
+
+  if (action.type === SET_PENDING_REQUESTED_AVATAR_DOWNLOAD) {
+    const { conversationId, value } = action.payload;
+
+    return {
+      ...state,
+      pendingRequestedAvatarDownload: {
+        ...state.pendingRequestedAvatarDownload,
+        [conversationId]: value,
       },
     };
   }

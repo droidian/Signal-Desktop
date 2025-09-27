@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { PowerSaveBlocker } from 'electron';
-import * as log from '../ts/logging/log';
+import { createLogger } from '../ts/logging/log';
+
+const log = createLogger('PreventDisplaySleepService');
 
 export class PreventDisplaySleepService {
   private blockerId: undefined | number;
 
   constructor(private powerSaveBlocker: PowerSaveBlocker) {}
+
+  isEnabled(): boolean {
+    return this.blockerId !== undefined;
+  }
 
   setEnabled(isEnabled: boolean): void {
     log.info(

@@ -1,8 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { Database } from '@signalapp/better-sqlite3';
+import type { Database, RowType } from '@signalapp/sqlcipher';
 import type { ReadonlyDeep } from 'type-fest';
+
+import { strictAssert } from '../util/assert';
+
 import type {
   ConversationAttributesType,
   MessageAttributesType,
@@ -37,13 +40,23 @@ import type {
   CallLinkType,
   DefunctCallLinkType,
 } from '../types/CallLink';
-import type { AttachmentDownloadJobType } from '../types/AttachmentDownload';
+import type {
+  AttachmentDownloadJobType,
+  AttachmentDownloadJobTypeType,
+} from '../types/AttachmentDownload';
 import type {
   GroupSendEndorsementsData,
   GroupSendMemberEndorsementRecord,
 } from '../types/GroupSendEndorsements';
 import type { SyncTaskType } from '../util/syncTasks';
 import type { AttachmentBackupJobType } from '../types/AttachmentBackup';
+import type { AttachmentType } from '../types/Attachment';
+import type { MediaItemMessageType } from '../types/MediaItem';
+import type { GifType } from '../components/fun/panels/FunPanelGifs';
+import type { NotificationProfileType } from '../types/NotificationProfile';
+import type { DonationReceipt } from '../types/Donations';
+import type { InsertOrUpdateCallLinkFromSyncResult } from './server/callLinks';
+import type { ChatFolderId, ChatFolder } from '../types/ChatFolder';
 
 export type ReadableDB = Database & { __readable_db: never };
 export type WritableDB = ReadableDB & { __writable_db: never };
@@ -123,10 +136,9 @@ export type MessageType = MessageAttributesType;
 // - Make sure the name matches the one in `MessageAttributeTypes`
 // - Update `hydrateMessage`
 //
-export const MESSAGE_COLUMNS = [
+const MESSAGE_PRIMARY_KEY_COLUMNS = ['id'] as const;
+export const MESSAGE_NON_PRIMARY_KEY_COLUMNS = [
   'json',
-
-  'id',
   'body',
   'conversationId',
   'expirationStartTimestamp',
@@ -153,6 +165,11 @@ export const MESSAGE_COLUMNS = [
   'serverTimestamp',
   'timestamp',
   'unidentifiedDeliveryReceived',
+] as const;
+
+export const MESSAGE_COLUMNS = [
+  ...MESSAGE_PRIMARY_KEY_COLUMNS,
+  ...MESSAGE_NON_PRIMARY_KEY_COLUMNS,
 ] as const;
 
 export type MessageTypeUnhydrated = {
@@ -215,7 +232,10 @@ export type StoredPreKeyType = PreKeyType & {
   privateKey: string;
   publicKey: string;
 };
-export type ServerSearchResultMessageType = MessageTypeUnhydrated & {
+export type ServerSearchResultMessageType = MessageType &
+  ServerMessageSearchResultType;
+
+export type ServerMessageSearchResultType = {
   // If the FTS matches text in message.body, snippet will be populated
   ftsSnippet: string | null;
 
@@ -235,6 +255,13 @@ export type SentProtoType = {
   timestamp: number;
   urgent: boolean;
   hasPniSignatureMessage: boolean;
+};
+export type SentProtoDBType = {
+  contentHint: number;
+  proto: Uint8Array;
+  timestamp: number;
+  urgent: number;
+  hasPniSignatureMessage: number;
 };
 export type SentProtoWithMessageIdsType = SentProtoType & {
   messageIds: Array<string>;
@@ -322,8 +349,8 @@ export const StickerPackStatuses = [
 export type StickerPackStatusType = (typeof StickerPackStatuses)[number];
 
 export type StorageServiceFieldsType = Readonly<{
-  storageID?: string;
-  storageVersion?: number;
+  storageID?: string | null;
+  storageVersion?: number | null;
   storageUnknownFields?: Uint8Array | null;
   storageNeedsSync: boolean;
 }>;
@@ -365,9 +392,21 @@ export type StickerPackType = InstalledStickerPackType &
     title: string;
   }>;
 
+export type StickerPackRefType = Readonly<{
+  packId: string;
+  messageId: string;
+  stickerId: number;
+  isUnresolved: boolean;
+}>;
+
 export type UnprocessedType = {
   id: string;
   timestamp: number;
+  /*
+   * A client generated date used for removing old envelopes from the table
+   * on startup.
+   */
+  receivedAtDate: number;
   receivedAtCounter: number;
   attempts: number;
   type: number;
@@ -511,9 +550,163 @@ export type GetRecentStoryRepliesOptionsType = {
 };
 
 export enum AttachmentDownloadSource {
-  BACKUP_IMPORT = 'backup_import',
+  // Imported when paid (media) backups were enabled, or from a local backup
+  BACKUP_IMPORT_WITH_MEDIA = 'backup_import',
+  // Imported when paid (media) backups were not enabled
+  BACKUP_IMPORT_NO_MEDIA = 'backup_import_no_media',
   STANDARD = 'standard',
+  BACKFILL = 'backfill',
 }
+
+export type MessageCountBySchemaVersionType = Array<{
+  schemaVersion: number;
+  count: number;
+}>;
+
+export type BackupAttachmentDownloadProgress = {
+  totalBytes: number;
+  completedBytes: number;
+};
+
+export type GetOlderMediaOptionsType = Readonly<{
+  conversationId: string;
+  limit: number;
+  messageId?: string;
+  receivedAt?: number;
+  sentAt?: number;
+}>;
+
+export type MediaItemDBType = Readonly<{
+  attachment: AttachmentType;
+  index: number;
+  message: MediaItemMessageType;
+}>;
+
+export const MESSAGE_ATTACHMENT_COLUMNS = [
+  'messageId',
+  'conversationId',
+  'messageType',
+  'receivedAt',
+  'receivedAtMs',
+  'sentAt',
+  'attachmentType',
+  'orderInMessage',
+  'editHistoryIndex',
+  'clientUuid',
+  'size',
+  'contentType',
+  'path',
+  'localKey',
+  'plaintextHash',
+  'caption',
+  'fileName',
+  'blurHash',
+  'height',
+  'width',
+  'digest',
+  'key',
+  'flags',
+  'downloadPath',
+  'transitCdnKey',
+  'transitCdnNumber',
+  'transitCdnUploadTimestamp',
+  'backupCdnNumber',
+  'incrementalMac',
+  'incrementalMacChunkSize',
+  'thumbnailPath',
+  'thumbnailSize',
+  'thumbnailContentType',
+  'thumbnailLocalKey',
+  'thumbnailVersion',
+  'screenshotPath',
+  'screenshotSize',
+  'screenshotContentType',
+  'screenshotLocalKey',
+  'screenshotVersion',
+  'backupThumbnailPath',
+  'backupThumbnailSize',
+  'backupThumbnailContentType',
+  'backupThumbnailLocalKey',
+  'backupThumbnailVersion',
+  'storyTextAttachmentJson',
+  'localBackupPath',
+  'isCorrupted',
+  'isViewOnce',
+  'backfillError',
+  'error',
+  'wasTooBig',
+  'copiedFromQuotedAttachment',
+  'version',
+  'pending',
+] as const satisfies Array<keyof MessageAttachmentDBType>;
+
+export type MessageAttachmentDBType = {
+  messageId: string;
+  attachmentType: AttachmentDownloadJobTypeType;
+  orderInMessage: number;
+  editHistoryIndex: number | null;
+  conversationId: string;
+  messageType: string;
+  receivedAt: number;
+  receivedAtMs: number | null;
+  sentAt: number;
+  clientUuid: string | null;
+  size: number;
+  contentType: string;
+  path: string | null;
+  plaintextHash: string | null;
+  downloadPath: string | null;
+  caption: string | null;
+  blurHash: string | null;
+  width: number | null;
+  height: number | null;
+  flags: number | null;
+  key: string | null;
+  digest: string | null;
+  fileName: string | null;
+  incrementalMac: string | null;
+  incrementalMacChunkSize: number | null;
+  localKey: string | null;
+  version: 1 | 2 | null;
+  transitCdnKey: string | null;
+  transitCdnNumber: number | null;
+  transitCdnUploadTimestamp: number | null;
+  backupCdnNumber: number | null;
+  thumbnailPath: string | null;
+  thumbnailSize: number | null;
+  thumbnailContentType: string | null;
+  thumbnailLocalKey: string | null;
+  thumbnailVersion: 1 | 2 | null;
+  screenshotPath: string | null;
+  screenshotSize: number | null;
+  screenshotContentType: string | null;
+  screenshotLocalKey: string | null;
+  screenshotVersion: 1 | 2 | null;
+  backupThumbnailPath: string | null;
+  backupThumbnailSize: number | null;
+  backupThumbnailContentType: string | null;
+  backupThumbnailLocalKey: string | null;
+  backupThumbnailVersion: 1 | 2 | null;
+  storyTextAttachmentJson: string | null;
+  localBackupPath: string | null;
+  isCorrupted: 1 | 0 | null;
+  isViewOnce: 1 | 0 | null;
+  backfillError: 1 | 0 | null;
+  error: 1 | 0 | null;
+  wasTooBig: 1 | 0 | null;
+  pending: 1 | 0 | null;
+  copiedFromQuotedAttachment: 1 | 0 | null;
+};
+
+// Test to make sure that MESSAGE_ATTACHMENT_COLUMNS &
+// MessageAttachmentDBReferenceType remain in sync!
+const testDBRefTypeMatchesColumnNames = true as unknown as [
+  keyof MessageAttachmentDBType,
+] satisfies [(typeof MESSAGE_ATTACHMENT_COLUMNS)[number]];
+strictAssert(
+  testDBRefTypeMatchesColumnNames,
+  'attachment_columns must match DB fields type'
+);
 
 type ReadableInterface = {
   close: () => void;
@@ -534,10 +727,6 @@ type ReadableInterface = {
 
   getAllConversations: () => Array<ConversationType>;
   getAllConversationIds: () => Array<string>;
-  getAllGroupsInvolvingServiceId: (
-    serviceId: ServiceIdString
-  ) => Array<ConversationType>;
-
   getGroupSendCombinedEndorsementExpiration: (groupId: string) => number | null;
   getGroupSendEndorsementsData: (
     groupId: string
@@ -601,6 +790,8 @@ type ReadableInterface = {
     maxTimestamp: number
   ) => Array<MessageType>;
   // getOlderMessagesByConversation is JSON on server, full message on Client
+  hasMedia: (conversationId: string) => boolean;
+  getOlderMedia: (options: GetOlderMediaOptionsType) => Array<MediaItemDBType>;
   getAllStories: (options: {
     conversationId?: string;
     sourceServiceId?: ServiceIdString;
@@ -664,14 +855,14 @@ type ReadableInterface = {
   ) => Array<MessageType>;
 
   getUnprocessedCount: () => number;
-  getUnprocessedById: (id: string) => UnprocessedType | undefined;
 
-  getAttachmentDownloadJob(
+  // Test-only
+  _getAttachmentDownloadJob(
     job: Pick<
       AttachmentDownloadJobType,
-      'messageId' | 'attachmentType' | 'digest'
+      'messageId' | 'attachmentType' | 'attachmentSignature'
     >
-  ): AttachmentDownloadJobType;
+  ): AttachmentDownloadJobType | undefined;
 
   getBackupCdnObjectMetadata: (
     mediaId: string
@@ -686,6 +877,7 @@ type ReadableInterface = {
   getRecentStickers: (options?: { limit?: number }) => Array<StickerType>;
 
   getRecentEmojis: (limit?: number) => Array<EmojiType>;
+  getRecentGifs: (limit: number) => ReadonlyArray<GifType>;
 
   getAllBadges(): Array<BadgeType>;
 
@@ -704,6 +896,17 @@ type ReadableInterface = {
   }): Array<StoryReadType>;
   countStoryReadsByConversation(conversationId: string): number;
 
+  getAllNotificationProfiles(): Array<NotificationProfileType>;
+  getNotificationProfileById(id: string): NotificationProfileType | undefined;
+
+  getAllDonationReceipts(): Array<DonationReceipt>;
+  getDonationReceiptById(id: string): DonationReceipt | undefined;
+
+  getAllChatFolders: () => ReadonlyArray<ChatFolder>;
+  getCurrentChatFolders: () => ReadonlyArray<ChatFolder>;
+  getChatFolder: (id: ChatFolderId) => ChatFolder | null;
+  getOldestDeletedChatFolder: () => ChatFolder | null;
+
   getMessagesNeedingUpgrade: (
     limit: number,
     options: { maxVersion: number }
@@ -717,7 +920,19 @@ type ReadableInterface = {
   getMaxMessageCounter(): number | undefined;
 
   getStatisticsForLogging(): Record<string, string>;
-  getSizeOfPendingBackupAttachmentDownloadJobs(): number;
+  getBackupAttachmentDownloadProgress(): BackupAttachmentDownloadProgress;
+  getAttachmentReferencesForMessages: (
+    messageIds: Array<string>
+  ) => Array<MessageAttachmentDBType>;
+
+  getMessageCountBySchemaVersion: () => MessageCountBySchemaVersionType;
+  getMessageSampleForSchemaVersion: (
+    version: number
+  ) => Array<MessageAttributesType>;
+
+  __dangerouslyRunAbitraryReadOnlySqlQuery: (
+    readOnlySqlQuery: string
+  ) => ReadonlyArray<RowType<object>>;
 };
 
 type WritableInterface = {
@@ -778,6 +993,8 @@ type WritableInterface = {
   createOrUpdateSession: (data: SessionType) => void;
   createOrUpdateSessions: (array: Array<SessionType>) => void;
   commitDecryptResult(options: {
+    kyberPreKeysToRemove: Array<PreKeyIdType>;
+    preKeysToRemove: Array<PreKeyIdType>;
     senderKeys: Array<SenderKeyType>;
     sessions: Array<SessionType>;
     unprocessed: Array<UnprocessedType>;
@@ -808,18 +1025,18 @@ type WritableInterface = {
   getUnreadByConversationAndMarkRead: (options: {
     conversationId: string;
     includeStoryReplies: boolean;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
     now?: number;
     readAt?: number;
     storyId?: string;
   }) => GetUnreadByConversationAndMarkReadResultType;
   getUnreadEditedMessagesAndMarkRead: (options: {
     conversationId: string;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
   }) => GetUnreadByConversationAndMarkReadResultType;
   getUnreadReactionsAndMarkRead: (options: {
     conversationId: string;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
     storyId?: string;
   }) => Array<ReactionResultType>;
   markReactionAsRead: (
@@ -840,6 +1057,7 @@ type WritableInterface = {
   ) => void;
   _removeAllReactions: () => void;
   _removeAllMessages: () => void;
+  _removeMessage: (id: string) => void;
   incrementMessagesMigrationAttempts: (
     messageIds: ReadonlyArray<string>
   ) => void;
@@ -855,11 +1073,18 @@ type WritableInterface = {
   markCallHistoryMissed(callIds: ReadonlyArray<string>): void;
   getRecentStaleRingsAndMarkOlderMissed(): ReadonlyArray<MaybeStaleCallHistory>;
   insertCallLink(callLink: CallLinkType): void;
+  insertOrUpdateCallLinkFromSync(
+    callLink: CallLinkType
+  ): InsertOrUpdateCallLinkFromSyncResult;
   updateCallLink(callLink: CallLinkType): void;
-  updateCallLinkAdminKeyByRoomId(roomId: string, adminKey: string): void;
   updateCallLinkState(
     roomId: string,
     callLinkState: CallLinkStateType
+  ): CallLinkType;
+  updateCallLinkStateAndEpoch(
+    roomId: string,
+    callLinkState: CallLinkStateType,
+    epoch: string | null
   ): CallLinkType;
   beginDeleteAllCallLinks(): boolean;
   beginDeleteCallLink(roomId: string): boolean;
@@ -883,8 +1108,15 @@ type WritableInterface = {
   ) => void;
 
   removeSyncTaskById: (id: string) => void;
+  removeSyncTasks: (ids: ReadonlyArray<string>) => void;
   saveSyncTasks: (tasks: Array<SyncTaskType>) => void;
-  dequeueOldestSyncTasks: (previousRowId: number | null) => {
+
+  incrementAllSyncTaskAttempts: () => void;
+  dequeueOldestSyncTasks: (options: {
+    previousRowId: number | null;
+    incrementAttempts?: boolean;
+    syncTaskTypes?: Array<SyncTaskType['type']>;
+  }) => {
     tasks: Array<SyncTaskType>;
     lastRowId: number | null;
   };
@@ -907,9 +1139,11 @@ type WritableInterface = {
   saveAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
   saveAttachmentDownloadJobs: (jobs: Array<AttachmentDownloadJobType>) => void;
   resetAttachmentDownloadActive: () => void;
+  resetBackupAttachmentDownloadJobsRetryAfter: () => void;
   removeAttachmentDownloadJob: (job: AttachmentDownloadJobType) => void;
   removeAttachmentDownloadJobsForMessage: (messageId: string) => void;
   removeAllBackupAttachmentDownloadJobs: () => void;
+  resetBackupAttachmentDownloadStats: () => void;
 
   getNextAttachmentBackupJobs: (options: {
     limit: number;
@@ -927,11 +1161,12 @@ type WritableInterface = {
 
   createOrUpdateStickerPack: (pack: StickerPackType) => void;
   createOrUpdateStickerPacks: (packs: ReadonlyArray<StickerPackType>) => void;
+  // Returns previous sticker pack status
   updateStickerPackStatus: (
     id: string,
     status: StickerPackStatusType,
     options?: { timestamp: number }
-  ) => void;
+  ) => StickerPackStatusType | null;
   updateStickerPackInfo: (info: StickerPackInfoType) => void;
   createOrUpdateSticker: (sticker: StickerType) => void;
   createOrUpdateStickers: (sticker: ReadonlyArray<StickerType>) => void;
@@ -940,22 +1175,28 @@ type WritableInterface = {
     stickerId: number,
     lastUsed: number
   ) => void;
-  addStickerPackReference: (messageId: string, packId: string) => void;
+  addStickerPackReference: (ref: StickerPackRefType) => void;
   deleteStickerPackReference: (
-    messageId: string,
-    packId: string
+    ref: Pick<StickerPackRefType, 'messageId' | 'packId'>
   ) => ReadonlyArray<string> | undefined;
   deleteStickerPack: (packId: string) => Array<string>;
+  getUnresolvedStickerPackReferences: (
+    packId: string
+  ) => Array<StickerPackRefType>;
   addUninstalledStickerPack: (pack: UninstalledStickerPackType) => void;
   addUninstalledStickerPacks: (
     pack: ReadonlyArray<UninstalledStickerPackType>
   ) => void;
-  removeUninstalledStickerPack: (packId: string) => void;
-  installStickerPack: (packId: string, timestamp: number) => void;
-  uninstallStickerPack: (packId: string, timestamp: number) => void;
+  // Returns `true` if sticker pack was previously uninstalled
+  installStickerPack: (packId: string, timestamp: number) => boolean;
+  // Returns `true` if sticker pack was not previously uninstalled
+  uninstallStickerPack: (packId: string, timestamp: number) => boolean;
   clearAllErrorStickerPackAttempts: () => void;
 
   updateEmojiUsage: (shortName: string, timeUsed?: number) => void;
+
+  addRecentGif: (gif: GifType, lastUsedAt: number, maxRecents: number) => void;
+  removeRecentGif: (gif: Pick<GifType, 'id'>) => void;
 
   updateOrCreateBadges(badges: ReadonlyArray<BadgeType>): void;
   badgeImageFileDownloaded(url: string, localPath: string): void;
@@ -984,6 +1225,32 @@ type WritableInterface = {
   _deleteAllStoryReads(): void;
   addNewStoryRead(read: StoryReadType): void;
 
+  _deleteAllNotificationProfiles(): void;
+  deleteNotificationProfileById(id: string): void;
+  markNotificationProfileDeleted(id: string): number | undefined;
+  createNotificationProfile(profile: NotificationProfileType): void;
+  updateNotificationProfile(profile: NotificationProfileType): void;
+
+  _deleteAllDonationReceipts(): void;
+  deleteDonationReceiptById(id: string): void;
+  createDonationReceipt(profile: DonationReceipt): void;
+
+  createChatFolder: (chatFolder: ChatFolder) => void;
+  updateChatFolder: (chatFolder: ChatFolder) => void;
+  updateChatFolderPositions: (chatFolders: ReadonlyArray<ChatFolder>) => void;
+  updateChatFolderDeletedAtTimestampMsFromSync: (
+    chatFolderId: ChatFolderId,
+    deletedAtTimestampMs: number
+  ) => void;
+  markChatFolderDeleted: (
+    chatFolderId: ChatFolderId,
+    deletedAtTimestampMs: number,
+    storageNeedsSync: boolean
+  ) => void;
+  deleteExpiredChatFolders: (
+    messageQueueTime: number
+  ) => ReadonlyArray<ChatFolderId>;
+
   removeAll: () => void;
   removeAllConfiguration: () => void;
   eraseStorageServiceState: () => void;
@@ -995,8 +1262,13 @@ type WritableInterface = {
   enableMessageInsertTriggersAndBackfill(): void;
   ensureMessageInsertTriggersAreEnabled(): void;
 
+  disableFSync(): void;
+  enableFSyncAndCheckpoint(): void;
+
   processGroupCallRingCancellation(ringId: bigint): void;
   cleanExpiredGroupCallRingCancellations(): void;
+
+  _testOnlyRemoveMessageAttachments(timestamp: number): void;
 };
 
 // Adds a database argument
@@ -1023,16 +1295,16 @@ export type ServerReadableDirectInterface = ReadableInterface & {
   getRecentStoryReplies(
     storyId: string,
     options?: GetRecentStoryRepliesOptionsType
-  ): Array<MessageTypeUnhydrated>;
+  ): Array<MessageType>;
   getOlderMessagesByConversation: (
     options: AdjacentMessagesByConversationOptionsType
-  ) => Array<MessageTypeUnhydrated>;
+  ) => Array<MessageType>;
   getNewerMessagesByConversation: (
     options: AdjacentMessagesByConversationOptionsType
-  ) => Array<MessageTypeUnhydrated>;
+  ) => Array<MessageType>;
   getConversationRangeCenteredOnMessage: (
     options: AdjacentMessagesByConversationOptionsType
-  ) => GetConversationRangeCenteredOnMessageResultType<MessageTypeUnhydrated>;
+  ) => GetConversationRangeCenteredOnMessageResultType<MessageType>;
 
   getIdentityKeyById: (
     id: IdentityKeyIdType
@@ -1092,7 +1364,11 @@ export type ServerWritableDirectInterface = WritableInterface & {
   ) => string;
   saveMessages: (
     arrayOfMessages: ReadonlyArray<ReadonlyDeep<MessageType>>,
-    options: { forceSave?: boolean; ourAci: AciString }
+    options: {
+      forceSave?: boolean;
+      ourAci: AciString;
+      _testOnlyAvoidNormalizingAttachments?: boolean;
+    }
   ) => Array<string>;
   saveMessagesIndividually: (
     arrayOfMessages: ReadonlyArray<ReadonlyDeep<MessageType>>,
@@ -1122,7 +1398,7 @@ export type ServerWritableDirectInterface = WritableInterface & {
     allStickers: ReadonlyArray<string>
   ) => Array<string>;
 
-  runCorruptionChecks: () => void;
+  runCorruptionChecks: () => boolean;
 };
 
 export type ServerWritableInterface =
@@ -1192,6 +1468,7 @@ export type ClientOnlyWritableInterface = ClientInterfaceWrap<{
       forceSave?: boolean;
       ourAci: AciString;
       postSaveUpdates: () => Promise<void>;
+      _testOnlyAvoidNormalizingAttachments?: boolean;
     }
   ) => string;
   saveMessages: (
@@ -1200,6 +1477,7 @@ export type ClientOnlyWritableInterface = ClientInterfaceWrap<{
       forceSave?: boolean;
       ourAci: AciString;
       postSaveUpdates: () => Promise<void>;
+      _testOnlyAvoidNormalizingAttachments?: boolean;
     }
   ) => Array<string>;
   saveMessagesIndividually: (
@@ -1262,7 +1540,7 @@ export type ClientOnlyWritableInterface = ClientInterfaceWrap<{
     }
   ) => void;
   removeOtherData: () => void;
-  cleanupOrphanedAttachments: () => void;
+  cleanupOrphanedAttachments: (options?: { _block: boolean }) => void;
   ensureFilePermissions: () => void;
 }>;
 

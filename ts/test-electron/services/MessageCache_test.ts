@@ -8,12 +8,18 @@ import { strictAssert } from '../../util/assert';
 
 import { MessageCache } from '../../services/MessageCache';
 import { generateAci } from '../../types/ServiceId';
+import { DataWriter } from '../../sql/Client';
 
 describe('MessageCache', () => {
   beforeEach(async () => {
     const ourAci = generateAci();
     await window.textsecure.storage.put('uuid_id', `${ourAci}.1`);
     await window.ConversationController.load();
+  });
+
+  afterEach(async () => {
+    await DataWriter.removeAll();
+    await window.storage.fetch();
   });
 
   describe('findBySentAt', () => {
@@ -80,8 +86,8 @@ describe('MessageCache', () => {
     });
   });
 
-  describe('register: syncing with backbone', () => {
-    it('backbone to redux', () => {
+  describe('register: syncing with models', () => {
+    it('model to redux', () => {
       const message1 = new MessageModel({
         conversationId: 'xyz',
         id: uuid(),
@@ -120,7 +126,7 @@ describe('MessageCache', () => {
       );
     });
 
-    it('redux to backbone (working with models)', () => {
+    it('redux to model (working with models)', () => {
       const message = new MessageModel({
         conversationId: 'xyz',
         id: uuid(),

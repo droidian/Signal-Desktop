@@ -11,7 +11,7 @@ import type {
 } from '../messages/MessageSendState';
 import type { StoryDistributionIdString } from '../types/StoryDistributionId';
 import type { ServiceIdString } from '../types/ServiceId';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { DataReader, DataWriter } from '../sql/Client';
 import { MY_STORY_ID, StorySendMode } from '../types/Stories';
 import { getStoriesBlocked } from './stories';
@@ -31,8 +31,9 @@ import { collect } from './iterables';
 import { DurationInSeconds } from './durations';
 import { sanitizeLinkPreview } from '../services/LinkPreview';
 import type { DraftBodyRanges } from '../types/BodyRange';
-import { postSaveUpdates } from './cleanup';
 import { MessageModel } from '../models/messages';
+
+const log = createLogger('sendStoryMessage');
 
 export async function sendStoryMessage(
   listIds: Array<string>,
@@ -240,7 +241,7 @@ export async function sendStoryMessage(
     group => group.getStorySendMode() !== StorySendMode.Always
   );
   for (const group of groupsToUpdate) {
-    group.set('storySendMode', StorySendMode.Always);
+    group.set({ storySendMode: StorySendMode.Always });
   }
   void DataWriter.updateConversations(
     groupsToUpdate.map(group => group.attributes)
@@ -315,10 +316,8 @@ export async function sendStoryMessage(
       void ourConversation.addSingleMessage(message, { isJustSent: true });
 
       log.info(`stories.sendStoryMessage: saving message ${message.timestamp}`);
-      return DataWriter.saveMessage(message, {
+      return window.MessageCache.saveMessage(message, {
         forceSave: true,
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
-        postSaveUpdates,
       });
     })
   );
@@ -368,11 +367,9 @@ export async function sendStoryMessage(
           log.info(
             `stories.sendStoryMessage: saving message ${messageAttributes.timestamp}`
           );
-          await DataWriter.saveMessage(messageAttributes, {
+          await window.MessageCache.saveMessage(messageAttributes, {
             forceSave: true,
             jobToInsert,
-            ourAci: window.textsecure.storage.user.getCheckedAci(),
-            postSaveUpdates,
           });
         }
       );

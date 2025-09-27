@@ -13,8 +13,14 @@ import { MessageModel } from '../models/messages';
 import { ReactionSource } from '../reactions/ReactionSource';
 import { DataReader, DataWriter } from '../sql/Client';
 import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { getAuthor, isIncoming, isOutgoing } from '../messages/helpers';
+import { createLogger } from '../logging/log';
+import {
+  getAuthor,
+  isIncoming,
+  isIncomingStory,
+  isOutgoing,
+  isOutgoingStory,
+} from '../messages/helpers';
 import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet';
 import { isDirectConversation, isMe } from '../util/whatTypeOfConversation';
 import {
@@ -28,7 +34,6 @@ import { strictAssert } from '../util/assert';
 import { repeat, zipObject } from '../util/iterables';
 import { getMessageIdForLogging } from '../util/idForLogging';
 import { hydrateStoryContext } from '../util/hydrateStoryContext';
-import { shouldReplyNotifyUser } from '../util/shouldReplyNotifyUser';
 import { drop } from '../util/drop';
 import * as reactionUtil from '../reactions/util';
 import { isNewReactionReplacingPrevious } from '../reactions/util';
@@ -39,7 +44,9 @@ import {
   conversationJobQueue,
   conversationQueueJobEnum,
 } from '../jobs/conversationJobQueue';
-import { postSaveUpdates } from '../util/cleanup';
+import { maybeNotify } from '../messages/maybeNotify';
+
+const log = createLogger('Reactions');
 
 export type ReactionAttributesType = {
   emoji: string;
@@ -68,6 +75,7 @@ function remove(reaction: ReactionAttributesType): void {
 export function findReactionsForMessage(
   message: ReadonlyMessageAttributesType
 ): Array<ReactionAttributesType> {
+  const ourAci = window.textsecure.storage.user.getCheckedAci();
   const matchingReactions = Array.from(reactionCache.values()).filter(
     reaction => {
       return isMessageAMatchForReaction({
@@ -75,6 +83,7 @@ export function findReactionsForMessage(
         targetTimestamp: reaction.targetTimestamp,
         targetAuthorAci: reaction.targetAuthorAci,
         reactionSenderConversationId: reaction.fromId,
+        ourAci,
       });
     }
   );
@@ -95,6 +104,7 @@ async function findMessageForReaction({
   logId: string;
 }): Promise<MessageAttributesType | undefined> {
   const messages = await DataReader.getMessagesBySentAt(targetTimestamp);
+  const ourAci = window.textsecure.storage.user.getCheckedAci();
 
   const matchingMessages = messages.filter(message =>
     isMessageAMatchForReaction({
@@ -102,6 +112,7 @@ async function findMessageForReaction({
       targetTimestamp,
       targetAuthorAci,
       reactionSenderConversationId,
+      ourAci,
     })
   );
 
@@ -120,16 +131,18 @@ async function findMessageForReaction({
   return matchingMessages[0];
 }
 
-function isMessageAMatchForReaction({
+export function isMessageAMatchForReaction({
   message,
   targetTimestamp,
   targetAuthorAci,
   reactionSenderConversationId,
+  ourAci,
 }: {
   message: ReadonlyMessageAttributesType;
   targetTimestamp: number;
   targetAuthorAci: string;
   reactionSenderConversationId: string;
+  ourAci: AciString;
 }): boolean {
   if (!getMessageSentTimestampSet(message).has(targetTimestamp)) {
     return false;
@@ -159,7 +172,7 @@ function isMessageAMatchForReaction({
     return true;
   }
 
-  if (message.type === 'outgoing') {
+  if (isOutgoing(message) || isOutgoingStory(message, ourAci)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
       message,
@@ -173,13 +186,20 @@ function isMessageAMatchForReaction({
       return false;
     }
 
+    if (isStory(message)) {
+      return (
+        isSent(sendState.status) && Boolean(sendState.isAllowedToReplyToStory)
+      );
+    }
+
     return isSent(sendState.status);
   }
 
-  if (message.type === 'incoming') {
+  if (isIncoming(message) || isIncomingStory(message, ourAci)) {
     const messageConversation = window.ConversationController.get(
       message.conversationId
     );
+
     if (!messageConversation) {
       return false;
     }
@@ -191,7 +211,8 @@ function isMessageAMatchForReaction({
     );
   }
 
-  return true;
+  // Only incoming, outgoing, and story messages can be reacted to
+  return false;
 }
 
 export async function onReaction(
@@ -389,13 +410,11 @@ export async function handleReaction(
         shouldSave: false,
       });
       // Note: generatedMessage comes with an id, so we have to force this save
-      await DataWriter.saveMessage(generatedMessage.attributes, {
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
+      await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,
-        postSaveUpdates,
       });
 
-      log.info('Reactions.onReaction adding reaction to story', {
+      log.info('onReaction adding reaction to story', {
         reactionMessageId: getMessageIdForLogging(generatedMessage.attributes),
         storyId: getMessageIdForLogging(storyMessage),
         targetTimestamp: reaction.targetTimestamp,
@@ -414,18 +433,12 @@ export async function handleReaction(
       }
 
       if (isFromSomeoneElse) {
-        log.info(
-          'handleReaction: notifying for story reaction to ' +
-            `${getMessageIdForLogging(storyMessage)} from someone else`
+        drop(
+          maybeNotify({
+            message: generatedMessage.attributes,
+            conversation: targetConversation,
+          })
         );
-        if (
-          await shouldReplyNotifyUser(
-            generatedMessage.attributes,
-            targetConversation
-          )
-        ) {
-          drop(targetConversation.notify(generatedMessage.attributes));
-        }
       }
     }
   } else {
@@ -498,7 +511,13 @@ export async function handleReaction(
         message.set({ reactions });
 
         if (isOutgoing(message.attributes) && isFromSomeoneElse) {
-          void conversation.notify(message.attributes, reaction);
+          drop(
+            maybeNotify({
+              targetMessage: message.attributes,
+              conversation,
+              reaction,
+            })
+          );
         }
       }
     }
@@ -555,10 +574,8 @@ export async function handleReaction(
       await hydrateStoryContext(generatedMessage.id, message.attributes, {
         shouldSave: false,
       });
-      await DataWriter.saveMessage(generatedMessage.attributes, {
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
+      await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,
-        postSaveUpdates,
       });
 
       window.MessageCache.register(generatedMessage);
@@ -586,20 +603,15 @@ export async function handleReaction(
             jobToInsert.id
           }`
         );
-        await DataWriter.saveMessage(message.attributes, {
+        await window.MessageCache.saveMessage(message.attributes, {
           jobToInsert,
-          ourAci: window.textsecure.storage.user.getCheckedAci(),
-          postSaveUpdates,
         });
       });
     } else {
       await conversationJobQueue.add(jobData);
     }
   } else if (shouldPersist && !isStory(message.attributes)) {
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
     window.reduxActions.conversations.markOpenConversationRead(conversation.id);
   }
 }

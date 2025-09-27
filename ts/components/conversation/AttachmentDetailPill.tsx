@@ -5,11 +5,10 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { formatFileSize } from '../../util/formatFileSize';
-import { ProgressCircle } from '../ProgressCircle';
+import { SpinnerV2 } from '../SpinnerV2';
 
 import type { AttachmentForUIType } from '../../types/Attachment';
 import type { LocalizerType } from '../../types/I18N';
-import { Spinner } from '../Spinner';
 import { isKeyboardActivation } from '../../hooks/useKeyboardShortcuts';
 
 export type PropsType = {
@@ -126,21 +125,24 @@ export function AttachmentDetailPill({
       );
       text = (
         <div className="AttachmentDetailPill__text-wrapper">
-          {formatFileSize(totalSize, 2)}
+          {formatFileSize(totalSize)}
         </div>
       );
-    } else if (totalDownloadedSize > 0) {
-      const downloadFraction = totalDownloadedSize / totalSize;
+    } else {
+      const isDownloading = totalDownloadedSize > 0;
 
       ariaLabel = i18n('icu:cancelDownload');
       onClick = cancelDownloadClick;
       onKeyDown = cancelDownloadKeyDown;
       control = (
         <div className="AttachmentDetailPill__spinner-wrapper">
-          <ProgressCircle
-            fractionComplete={downloadFraction}
-            width={24}
+          <SpinnerV2
+            min={0}
+            max={totalSize}
+            value={isDownloading ? totalDownloadedSize : 'indeterminate'}
+            size={24}
             strokeWidth={2}
+            marginRatio={1}
           />
           <div className="AttachmentDetailPill__stop-icon" />
         </div>
@@ -148,24 +150,9 @@ export function AttachmentDetailPill({
       text = (
         <div className="AttachmentDetailPill__text-wrapper">
           {totalDownloadedSize > 0 && areAnyPending
-            ? `${formatFileSize(totalDownloadedSize, 2)} / `
+            ? `${formatFileSize(totalDownloadedSize)} / `
             : undefined}
-          {formatFileSize(totalSize, 2)}
-        </div>
-      );
-    } else {
-      ariaLabel = i18n('icu:cancelDownload');
-      onClick = cancelDownloadClick;
-      onKeyDown = cancelDownloadKeyDown;
-      control = (
-        <div className="AttachmentDetailPill__spinner-wrapper">
-          <Spinner svgSize="small" size="24px" />
-          <div className="AttachmentDetailPill__stop-icon" />
-        </div>
-      );
-      text = (
-        <div className="AttachmentDetailPill__text-wrapper">
-          {formatFileSize(totalSize, 2)}
+          {formatFileSize(totalSize)}
         </div>
       );
     }
@@ -191,9 +178,9 @@ export function AttachmentDetailPill({
     <div className="AttachmentDetailPill">
       <div className="AttachmentDetailPill__text-wrapper">
         {totalDownloadedSize > 0 && areAnyPending
-          ? `${formatFileSize(totalDownloadedSize, 2)} / `
+          ? `${formatFileSize(totalDownloadedSize)} / `
           : undefined}
-        {formatFileSize(totalSize, 2)}
+        {formatFileSize(totalSize)}
         {isGif ? ' · GIF' : undefined}
       </div>
     </div>

@@ -5,17 +5,15 @@ import type { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import enMessages from '../../_locales/en/messages.json';
 import { ToastManager } from './ToastManager';
 import type { AnyToast } from '../types/Toast';
 import { ToastType } from '../types/Toast';
 import type { AnyActionableMegaphone } from '../types/Megaphone';
 import { MegaphoneType } from '../types/Megaphone';
-import { setupI18n } from '../util/setupI18n';
 import { missingCaseError } from '../util/missingCaseError';
 import type { PropsType } from './ToastManager';
 
-const i18n = setupI18n('en', enMessages);
+const { i18n } = window.SignalContext;
 
 function getToast(toastType: ToastType): AnyToast {
   switch (toastType) {
@@ -27,6 +25,13 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.AlreadyGroupMember };
     case ToastType.AlreadyRequestedToJoin:
       return { toastType: ToastType.AlreadyRequestedToJoin };
+    case ToastType.AttachmentDownloadFailed:
+      return {
+        toastType: ToastType.AttachmentDownloadFailed,
+        parameters: {
+          messageId: 'fake-message-id',
+        },
+      };
     case ToastType.AttachmentDownloadStillInProgress:
       return {
         toastType: ToastType.AttachmentDownloadStillInProgress,
@@ -73,6 +78,8 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.ConversationUnarchived:
       return { toastType: ToastType.ConversationUnarchived };
+    case ToastType.CopiedBackupKey:
+      return { toastType: ToastType.CopiedBackupKey };
     case ToastType.CopiedCallLink:
       return { toastType: ToastType.CopiedCallLink };
     case ToastType.CopiedUsername:
@@ -93,6 +100,22 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.DeleteForEveryoneFailed:
       return { toastType: ToastType.DeleteForEveryoneFailed };
+    case ToastType.DonationCanceled:
+      return { toastType: ToastType.DonationCanceled };
+    case ToastType.DonationCanceledWithView:
+      return { toastType: ToastType.DonationCanceledWithView };
+    case ToastType.DonationCompleted:
+      return { toastType: ToastType.DonationCompleted };
+    case ToastType.DonationConfirmationNeeded:
+      return { toastType: ToastType.DonationConfirmationNeeded };
+    case ToastType.DonationError:
+      return { toastType: ToastType.DonationError };
+    case ToastType.DonationProcessing:
+      return { toastType: ToastType.DonationProcessing };
+    case ToastType.DonationVerificationFailed:
+      return { toastType: ToastType.DonationVerificationFailed };
+    case ToastType.DonationVerificationNeeded:
+      return { toastType: ToastType.DonationVerificationNeeded };
     case ToastType.Error:
       return { toastType: ToastType.Error };
     case ToastType.Expired:
@@ -121,6 +144,8 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.GroupLinkCopied };
     case ToastType.InvalidConversation:
       return { toastType: ToastType.InvalidConversation };
+    case ToastType.InvalidStorageServiceHeaders:
+      return { toastType: ToastType.InvalidStorageServiceHeaders };
     case ToastType.LeftGroup:
       return { toastType: ToastType.LeftGroup };
     case ToastType.LinkCopied:
@@ -141,10 +166,19 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.PinnedConversationsFull };
     case ToastType.ReactionFailed:
       return { toastType: ToastType.ReactionFailed };
+    case ToastType.ReceiptSaved:
+      return {
+        toastType: ToastType.ReceiptSaved,
+        parameters: { fullPath: '/image.png' },
+      };
+    case ToastType.ReceiptSaveFailed:
+      return { toastType: ToastType.ReceiptSaveFailed };
     case ToastType.ReportedSpam:
       return { toastType: ToastType.ReportedSpam };
     case ToastType.ReportedSpamAndBlocked:
       return { toastType: ToastType.ReportedSpamAndBlocked };
+    case ToastType.SQLError:
+      return { toastType: ToastType.SQLError };
     case ToastType.StickerPackInstallFailed:
       return { toastType: ToastType.StickerPackInstallFailed };
     case ToastType.StoryMuted:
@@ -172,6 +206,8 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.TooManyMessagesToForward };
     case ToastType.UnableToLoadAttachment:
       return { toastType: ToastType.UnableToLoadAttachment };
+    case ToastType.UnableToDownloadFromBackupTier:
+      return { toastType: ToastType.UnableToDownloadFromBackupTier };
     case ToastType.UnsupportedMultiAttachment:
       return { toastType: ToastType.UnsupportedMultiAttachment };
     case ToastType.UnsupportedOS:
@@ -234,6 +270,7 @@ export default {
     },
   },
   args: {
+    changeLocation: action('changeLocation'),
     hideToast: action('hideToast'),
     openFileInFolder: action('openFileInFolder'),
     onShowDebugLog: action('onShowDebugLog'),

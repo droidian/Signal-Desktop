@@ -13,7 +13,7 @@ import {
 import Long from 'long';
 import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup';
 import { LRUCache } from 'lru-cache';
-import * as log from './logging/log';
+import { createLogger } from './logging/log';
 import {
   getCheckedGroupCredentialsForToday,
   maybeFetchNewCredentials,
@@ -104,6 +104,13 @@ import { getProfile } from './util/getProfile';
 import { generateMessageId } from './util/generateMessageId';
 import { postSaveUpdates } from './util/cleanup';
 import { MessageModel } from './models/messages';
+import { areWePending } from './util/groupMembershipUtils';
+import {
+  isConversationAccepted,
+  isTrustedContact,
+} from './util/isConversationAccepted';
+
+const log = createLogger('groups');
 
 type AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 
@@ -1652,7 +1659,7 @@ export async function modifyGroupV2({
         // Fetch credentials only once
         refreshedCredentials = true;
       } else if (error.code === 409) {
-        log.error(
+        log.warn(
           `modifyGroupV2/${logId}: Conflict while updating. Timed out; not retrying.`
         );
         // We don't wait here because we're breaking out of the loop immediately.
@@ -3225,31 +3232,60 @@ async function updateGroup(
       item => item.serviceId === ourAci || item.serviceId === ourPni
     )?.addedByUserId || newAttributes.addedBy;
 
-  if (justAdded && addedBy) {
+  if (justAdded) {
     const adder = window.ConversationController.get(addedBy);
+
+    // Wait for empty queue to make it more likely the group update succeeds
+    const waitThenLeave = async (reason: string) => {
+      log.warn(
+        `waitThenLeave/${logId}/${reason}: Waiting for empty event queue.`
+      );
+      await window.waitForEmptyEventQueue();
+      log.warn(
+        `waitThenLeave/${logId}/${reason}: Empty event queue, starting group leave.`
+      );
+
+      // We're guaranteed to fail if we're not up to date in the group, which we won't be
+      // if we're dropping updates. So we prepare for failure.
+      try {
+        await conversation.leaveGroupV2();
+        log.warn(`waitThenLeave/${logId}/${reason}: Leave complete.`);
+      } catch (error) {
+        log.error(
+          `waitThenLeave/${logId}/${reason}: Failed to leave group.`,
+          Errors.toLogFormat(error)
+        );
+      }
+    };
 
     if (adder && adder.isBlocked()) {
       log.warn(
         `updateGroup/${logId}: Added to group by blocked user ${adder.idForLogging()}. Scheduling group leave.`
       );
 
-      // Wait for empty queue to make it more likely the group update succeeds
-      const waitThenLeave = async () => {
-        log.warn(`waitThenLeave/${logId}: Waiting for empty event queue.`);
-        await window.waitForEmptyEventQueue();
-        log.warn(
-          `waitThenLeave/${logId}: Empty event queue, starting group leave.`
-        );
-
-        await conversation.leaveGroupV2();
-        log.warn(`waitThenLeave/${logId}: Leave complete.`);
-      };
-
       // Cannot await here, would infinitely block queue
-      drop(waitThenLeave());
+      drop(waitThenLeave('added by blocked user'));
 
       // Return early to discard group changes resulting from the blocked user's action.
       return;
+    }
+    if (conversation.isBlocked()) {
+      log.warn(
+        `updateGroup/${logId}: We were added to a group we blocked. Scheduling group leave.`
+      );
+
+      // Cannot await here, would infinitely block queue
+      drop(waitThenLeave('group is blocked'));
+
+      // Return early to discard group changes resulting from unwanted group add
+      return;
+    }
+
+    if (adder && isTrustedContact(adder?.attributes)) {
+      conversation.enableProfileSharing({
+        reason: 'addedToGroupByTrustedContact',
+        viaStorageServiceSync: false,
+      });
     }
   }
 
@@ -3278,7 +3314,11 @@ async function updateGroup(
   });
 
   if (idChanged) {
-    conversation.trigger('idUpdated', conversation, 'groupId', previousId);
+    window.ConversationController.idUpdated(
+      conversation,
+      'groupId',
+      previousId
+    );
   }
 
   // Save these most recent updates to conversation
@@ -3313,7 +3353,10 @@ export function _mergeGroupChangeMessages(
   let isApprovalPending: boolean;
   if (secondDetail.type === 'admin-approval-add-one') {
     isApprovalPending = true;
-  } else if (secondDetail.type === 'admin-approval-remove-one') {
+  } else if (
+    secondDetail.type === 'admin-approval-remove-one' &&
+    (secondChange.from == null || secondChange.from === secondDetail.aci)
+  ) {
     isApprovalPending = false;
   } else {
     return undefined;
@@ -3437,10 +3480,7 @@ async function appendChangeMessages(
     strictAssert(first !== undefined, 'First message must be there');
 
     log.info(`appendChangeMessages/${logId}: updating ${first.id}`);
-    await DataWriter.saveMessage(first, {
-      ourAci,
-      postSaveUpdates,
-
+    await window.MessageCache.saveMessage(first, {
       // We don't use forceSave here because this is an update of existing
       // message.
     });
@@ -3486,7 +3526,7 @@ async function appendChangeMessages(
   // We updated the message, but didn't add new ones - refresh left pane
   if (!newMessages && mergedMessages.length > 0) {
     await conversation.updateLastMessage();
-    void conversation.updateUnread();
+    conversation.throttledUpdateUnread();
   }
 }
 
@@ -3770,11 +3810,11 @@ async function updateGroupViaPreJoinInfo({
 
   newAttributes = {
     ...newAttributes,
-    ...(await applyNewAvatar(
-      dropNull(preJoinInfo.avatar),
-      newAttributes,
-      logId
-    )),
+    ...(await applyNewAvatar({
+      newAvatarUrl: dropNull(preJoinInfo.avatar),
+      attributes: newAttributes,
+      logId,
+    })),
   };
 
   return {
@@ -5419,7 +5459,11 @@ async function applyGroupChange({
     const { avatar } = actions.modifyAvatar;
     result = {
       ...result,
-      ...(await applyNewAvatar(dropNull(avatar), result, logId)),
+      ...(await applyNewAvatar({
+        newAvatarUrl: dropNull(avatar),
+        attributes: result,
+        logId,
+      })),
     };
   }
 
@@ -5699,13 +5743,23 @@ export async function decryptGroupAvatar(
 
 // Overwriting result.avatar as part of functionality
 export async function applyNewAvatar(
-  newAvatarUrl: string | undefined,
-  attributes: Readonly<
-    Pick<ConversationAttributesType, 'avatar' | 'secretParams'>
-  >,
-  logId: string
-): Promise<Pick<ConversationAttributesType, 'avatar'>> {
-  const result: Pick<ConversationAttributesType, 'avatar'> = {};
+  options:
+    | {
+        newAvatarUrl?: string | undefined;
+        attributes: Pick<ConversationAttributesType, 'avatar' | 'secretParams'>;
+        logId: string;
+        forceDownload: true;
+      }
+    | {
+        newAvatarUrl?: string | undefined;
+        attributes: ConversationAttributesType;
+        logId: string;
+        forceDownload?: false | undefined;
+      }
+): Promise<Pick<ConversationAttributesType, 'avatar' | 'remoteAvatarUrl'>> {
+  const { newAvatarUrl, attributes, logId, forceDownload } = options;
+  const result: Pick<ConversationAttributesType, 'avatar' | 'remoteAvatarUrl'> =
+    {};
   try {
     // Avatar has been dropped
     if (!newAvatarUrl && attributes.avatar) {
@@ -5717,19 +5771,34 @@ export async function applyNewAvatar(
       result.avatar = undefined;
     }
 
+    const avatarUrlToUse =
+      newAvatarUrl ||
+      ('remoteAvatarUrl' in attributes
+        ? attributes.remoteAvatarUrl
+        : undefined);
+
     // Group has avatar; has it changed?
     if (
-      newAvatarUrl &&
-      (!attributes.avatar?.path || attributes.avatar.url !== newAvatarUrl)
+      avatarUrlToUse &&
+      (!attributes.avatar?.path || attributes.avatar.url !== avatarUrlToUse)
     ) {
       if (!attributes.secretParams) {
         throw new Error('applyNewAvatar: group was missing secretParams!');
       }
 
-      const data = await decryptGroupAvatar(
-        newAvatarUrl,
+      if (
+        !forceDownload &&
+        (areWePending(attributes) || !isConversationAccepted(attributes))
+      ) {
+        result.remoteAvatarUrl = avatarUrlToUse;
+        return result;
+      }
+
+      const data: Uint8Array = await decryptGroupAvatar(
+        avatarUrlToUse,
         attributes.secretParams
       );
+
       const hash = computeHash(data);
 
       if (attributes.avatar?.hash === hash) {
@@ -5738,7 +5807,7 @@ export async function applyNewAvatar(
         );
         result.avatar = {
           ...attributes.avatar,
-          url: newAvatarUrl,
+          url: avatarUrlToUse,
         };
         return result;
       }
@@ -5748,10 +5817,9 @@ export async function applyNewAvatar(
           attributes.avatar.path
         );
       }
-
       const local = await window.Signal.Migrations.writeNewAttachmentData(data);
       result.avatar = {
-        url: newAvatarUrl,
+        url: avatarUrlToUse,
         ...local,
         hash,
       };
@@ -5845,12 +5913,6 @@ async function applyGroupState({
   } else {
     result.name = undefined;
   }
-
-  // avatar
-  result = {
-    ...result,
-    ...(await applyNewAvatar(dropNull(groupState.avatar), result, logId)),
-  };
 
   // disappearingMessagesTimer
   // Note: during decryption, disappearingMessageTimer becomes a GroupAttributeBlob
@@ -6074,6 +6136,16 @@ async function applyGroupState({
 
     return member;
   });
+
+  // avatar
+  result = {
+    ...result,
+    ...(await applyNewAvatar({
+      newAvatarUrl: dropNull(groupState.avatar),
+      attributes: result,
+      logId,
+    })),
+  };
 
   if (result.left) {
     result.addedBy = undefined;

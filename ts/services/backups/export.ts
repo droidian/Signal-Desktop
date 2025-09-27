@@ -4,6 +4,7 @@
 import Long from 'long';
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
 import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
+import { dirname } from 'path';
 import pMap from 'p-map';
 import pTimeout from 'p-timeout';
 import { Readable } from 'stream';
@@ -21,13 +22,14 @@ import type {
   PageMessagesCursorType,
   IdentityKeyType,
 } from '../../sql/Interface';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import { GiftBadgeStates } from '../../components/conversation/Message';
 import { type CustomColorType } from '../../types/Colors';
 import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
 import { getStickerPacksForBackup } from '../../types/Stickers';
 import {
   isPniString,
+  isServiceIdString,
   type AciString,
   type ServiceIdString,
 } from '../../types/ServiceId';
@@ -38,7 +40,6 @@ import type {
   ConversationAttributesType,
   MessageAttributesType,
   QuotedAttachmentType,
-  QuotedMessageType,
 } from '../../model-types.d';
 import { drop } from '../../util/drop';
 import { isNotNil } from '../../util/isNotNil';
@@ -118,19 +119,22 @@ import {
   numberToAddressType,
   numberToPhoneType,
 } from '../../types/EmbeddedContact';
+import { toLogFormat } from '../../types/errors';
 import {
   type AttachmentType,
   isGIF,
   isDownloaded,
+  hasRequiredInformationForBackup,
 } from '../../types/Attachment';
-import {
-  getFilePointerForAttachment,
-  maybeGetBackupJobForAttachmentAndFilePointer,
-} from './util/filePointers';
+import { getFilePointerForAttachment } from './util/filePointers';
 import { getBackupMediaRootKey } from './crypto';
-import type { CoreAttachmentBackupJobType } from '../../types/AttachmentBackup';
+import type {
+  CoreAttachmentBackupJobType,
+  PartialAttachmentLocalBackupJobType,
+} from '../../types/AttachmentBackup';
 import { AttachmentBackupManager } from '../../jobs/AttachmentBackupManager';
-import { getBackupCdnInfo } from './util/mediaId';
+import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager';
+import { getBackupCdnInfo, getMediaNameForAttachment } from './util/mediaId';
 import { calculateExpirationTimestamp } from '../../util/expirationTimer';
 import { ReadStatus } from '../../messages/MessageReadStatus';
 import { CallLinkRestrictions } from '../../types/CallLink';
@@ -138,15 +142,31 @@ import {
   isCallHistoryForUnusedCallLink,
   toAdminKeyBytes,
 } from '../../util/callLinks';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
+import {
+  getRoomIdFromRootKey,
+  toEpochBytes,
+} from '../../util/callLinksRingrtc';
 import { SeenStatus } from '../../MessageSeenStatus';
 import { migrateAllMessages } from '../../messages/migrateMessageData';
-import { trimBody } from '../../util/longAttachment';
+import { isBodyTooLong, trimBody } from '../../util/longAttachment';
 import { generateBackupsSubscriberData } from '../../util/backupSubscriptionData';
-import { getEnvironment, isTestEnvironment } from '../../environment';
+import {
+  getEnvironment,
+  isTestEnvironment,
+  isTestOrMockEnvironment,
+} from '../../environment';
 import { calculateLightness } from '../../util/getHSL';
+import { isSignalServiceId } from '../../util/isSignalConversation';
+import { isValidE164 } from '../../util/isValidE164';
+import { toDayOfWeekArray } from '../../types/NotificationProfile';
+import { getLinkPreviewSetting } from '../../types/LinkPreview';
+import { getTypingIndicatorSetting } from '../../types/Util';
+import { KIBIBYTE } from '../../types/AttachmentSize';
 
-const MAX_CONCURRENCY = 10;
+const log = createLogger('export');
+
+// Temporarily limited to preserve the received_at order
+const MAX_CONCURRENCY = 1;
 
 // We want a very generous timeout to make sure that we always resume write
 // access to the database.
@@ -154,6 +174,8 @@ const FLUSH_TIMEOUT = 30 * MINUTE;
 
 // Threshold for reporting slow flushes
 const REPORTING_THRESHOLD = SECOND;
+
+const BACKUP_LONG_ATTACHMENT_TEXT_LIMIT = 128 * KIBIBYTE;
 
 type GetRecipientIdOptionsType =
   | Readonly<{
@@ -176,6 +198,7 @@ type ToChatItemOptionsType = Readonly<{
   aboutMe: AboutMe;
   callHistoryByCallId: Record<string, CallHistoryDetails>;
   backupLevel: BackupLevel;
+  isLocalBackup: boolean;
 }>;
 
 type NonBubbleOptionsType = Pick<
@@ -204,6 +227,19 @@ type NonBubbleResultType = Readonly<
     }
 >;
 
+export type StatsType = {
+  adHocCalls: number;
+  callLinks: number;
+  conversations: number;
+  chats: number;
+  distributionLists: number;
+  messages: number;
+  notificationProfiles: number;
+  skippedMessages: number;
+  stickerPacks: number;
+  fixedDirectMessages: number;
+};
+
 export class BackupExportStream extends Readable {
   // Shared between all methods for consistency.
   #now = Date.now();
@@ -213,19 +249,23 @@ export class BackupExportStream extends Readable {
   readonly #serviceIdToRecipientId = new Map<string, number>();
   readonly #e164ToRecipientId = new Map<string, number>();
   readonly #roomIdToRecipientId = new Map<string, number>();
-  readonly #stats = {
+  readonly #mediaNamesToFilePointers = new Map<string, Backups.FilePointer>();
+  readonly #stats: StatsType = {
     adHocCalls: 0,
     callLinks: 0,
     conversations: 0,
     chats: 0,
     distributionLists: 0,
     messages: 0,
+    notificationProfiles: 0,
     skippedMessages: 0,
     stickerPacks: 0,
     fixedDirectMessages: 0,
   };
   #ourConversation?: ConversationAttributesType;
-  #attachmentBackupJobs: Array<CoreAttachmentBackupJobType> = [];
+  #attachmentBackupJobs: Array<
+    CoreAttachmentBackupJobType | PartialAttachmentLocalBackupJobType
+  > = [];
   #buffers = new Array<Uint8Array>();
   #nextRecipientId = 1;
   #flushResolve: (() => void) | undefined;
@@ -238,39 +278,91 @@ export class BackupExportStream extends Readable {
     super();
   }
 
-  public run(backupLevel: BackupLevel): void {
+  public run(
+    backupLevel: BackupLevel,
+    localBackupSnapshotDir: string | undefined = undefined
+  ): void {
+    const localBackupsBaseDir = localBackupSnapshotDir
+      ? dirname(localBackupSnapshotDir)
+      : undefined;
+    const isLocalBackup = localBackupsBaseDir != null;
     drop(
       (async () => {
         log.info('BackupExportStream: starting...');
         drop(AttachmentBackupManager.stop());
+        drop(AttachmentLocalBackupManager.stop());
         log.info('BackupExportStream: message migration starting...');
         await migrateAllMessages();
 
         await pauseWriteAccess();
         try {
-          await this.#unsafeRun(backupLevel);
+          await this.#unsafeRun(backupLevel, isLocalBackup);
         } catch (error) {
           this.emit('error', error);
         } finally {
           await resumeWriteAccess();
 
-          // TODO (DESKTOP-7344): Clear & add backup jobs in a single transaction
-          await DataWriter.clearAllAttachmentBackupJobs();
-          if (this.backupType !== BackupType.TestOnlyPlaintext) {
-            await Promise.all(
-              this.#attachmentBackupJobs.map(job =>
-                AttachmentBackupManager.addJobAndMaybeThumbnailJob(job)
-              )
+          if (isLocalBackup) {
+            log.info(
+              `BackupExportStream: Adding ${this.#attachmentBackupJobs.length} jobs for AttachmentLocalBackupManager`
             );
-            drop(AttachmentBackupManager.start());
+            AttachmentLocalBackupManager.clearAllJobs();
+            await Promise.all(
+              this.#attachmentBackupJobs.map(job => {
+                if (job.type !== 'local') {
+                  log.error(
+                    "BackupExportStream: Can't enqueue remote backup jobs during local backup, skipping"
+                  );
+                  return Promise.resolve();
+                }
+
+                return AttachmentLocalBackupManager.addJob({
+                  ...job,
+                  backupsBaseDir: localBackupsBaseDir,
+                });
+              })
+            );
+            drop(AttachmentLocalBackupManager.start());
+          } else {
+            // TODO (DESKTOP-7344): Clear & add backup jobs in a single transaction
+            await DataWriter.clearAllAttachmentBackupJobs();
+            if (this.backupType !== BackupType.TestOnlyPlaintext) {
+              await Promise.all(
+                this.#attachmentBackupJobs.map(job => {
+                  if (job.type === 'local') {
+                    log.error(
+                      "BackupExportStream: Can't enqueue local backup jobs during remote backup, skipping"
+                    );
+                    return Promise.resolve();
+                  }
+
+                  return AttachmentBackupManager.addJobAndMaybeThumbnailJob(
+                    job
+                  );
+                })
+              );
+              drop(AttachmentBackupManager.start());
+            }
           }
+
           log.info('BackupExportStream: finished');
         }
       })()
     );
   }
 
-  async #unsafeRun(backupLevel: BackupLevel): Promise<void> {
+  public getMediaNamesIterator(): MapIterator<string> {
+    return this.#mediaNamesToFilePointers.keys();
+  }
+
+  public getStats(): Readonly<StatsType> {
+    return this.#stats;
+  }
+
+  async #unsafeRun(
+    backupLevel: BackupLevel,
+    isLocalBackup: boolean
+  ): Promise<void> {
     this.#ourConversation =
       window.ConversationController.getOurConversationOrThrow().attributes;
     this.push(
@@ -295,12 +387,9 @@ export class BackupExportStream extends Readable {
       })
     );
 
+    const skippedConversationIds = new Set<string>();
     for (const { attributes } of window.ConversationController.getAll()) {
-      const recipientId = this.#getRecipientId({
-        id: attributes.id,
-        serviceId: attributes.serviceId,
-        e164: attributes.e164,
-      });
+      const recipientId = this.#getRecipientId(attributes);
 
       const recipient = this.#toRecipient(
         recipientId,
@@ -308,6 +397,7 @@ export class BackupExportStream extends Readable {
         identityKeysById
       );
       if (recipient === undefined) {
+        skippedConversationIds.add(attributes.id);
         // Can't be backed up.
         continue;
       }
@@ -383,6 +473,7 @@ export class BackupExportStream extends Readable {
     for (const link of callLinks) {
       const {
         rootKey: rootKeyString,
+        epoch,
         adminKey,
         name,
         restrictions,
@@ -405,6 +496,7 @@ export class BackupExportStream extends Readable {
           id: Long.fromNumber(id),
           callLink: {
             rootKey: rootKey.bytes,
+            epoch: epoch ? toEpochBytes(epoch) : null,
             adminKey: adminKey ? toAdminKeyBytes(adminKey) : null,
             name,
             restrictions: toCallLinkRestrictionsProto(restrictions),
@@ -441,6 +533,10 @@ export class BackupExportStream extends Readable {
     for (const { attributes } of window.ConversationController.getAll()) {
       if (isGroupV1(attributes)) {
         log.warn('backups: skipping gv1 conversation');
+        continue;
+      }
+
+      if (skippedConversationIds.has(attributes.id)) {
         continue;
       }
 
@@ -513,7 +609,13 @@ export class BackupExportStream extends Readable {
     const allCallHistoryItems = await DataReader.getAllCallHistory();
 
     for (const item of allCallHistoryItems) {
-      const { callId, type, peerId: roomId, status, timestamp } = item;
+      const {
+        callId: callIdStr,
+        type,
+        peerId: roomId,
+        status,
+        timestamp,
+      } = item;
 
       if (type !== CallType.Adhoc || isCallHistoryForUnusedCallLink(item)) {
         continue;
@@ -527,9 +629,24 @@ export class BackupExportStream extends Readable {
         continue;
       }
 
+      if (status === AdhocCallStatus.Deleted) {
+        continue;
+      }
+
+      let callId: Long;
+      try {
+        callId = Long.fromString(callIdStr);
+      } catch (error) {
+        log.warn(
+          'backups: Dropping ad-hoc call; invalid callId',
+          toLogFormat(error)
+        );
+        continue;
+      }
+
       this.#pushFrame({
         adHocCall: {
-          callId: Long.fromString(callId),
+          callId,
           recipientId: Long.fromNumber(recipientId),
           state: toAdHocCallStateProto(status),
           callTimestamp: Long.fromNumber(timestamp),
@@ -539,6 +656,60 @@ export class BackupExportStream extends Readable {
       // eslint-disable-next-line no-await-in-loop
       await this.#flush();
       this.#stats.adHocCalls += 1;
+    }
+
+    const allNotificationProfiles =
+      await DataReader.getAllNotificationProfiles();
+
+    for (const profile of allNotificationProfiles) {
+      const {
+        id,
+        name,
+        emoji,
+        color,
+        createdAtMs,
+        allowAllCalls,
+        allowAllMentions,
+        allowedMembers,
+        scheduleEnabled,
+        scheduleStartTime,
+        scheduleEndTime,
+        scheduleDaysEnabled,
+      } = profile;
+
+      const allowedRecipients = Array.from(allowedMembers)
+        .map(conversationId => {
+          const conversation =
+            window.ConversationController.get(conversationId);
+          if (!conversation) {
+            return undefined;
+          }
+
+          const { attributes } = conversation;
+          return this.#getRecipientId(attributes);
+        })
+        .filter(isNotNil);
+
+      this.#pushFrame({
+        notificationProfile: {
+          id: Bytes.fromHex(id),
+          name,
+          emoji,
+          color,
+          createdAtMs: getSafeLongFromTimestamp(createdAtMs),
+          allowAllCalls,
+          allowAllMentions,
+          allowedMembers: allowedRecipients,
+          scheduleEnabled,
+          scheduleStartTime,
+          scheduleEndTime,
+          scheduleDaysEnabled: toDayOfWeekArray(scheduleDaysEnabled),
+        },
+      });
+
+      // eslint-disable-next-line no-await-in-loop
+      await this.#flush();
+      this.#stats.notificationProfiles += 1;
     }
 
     let cursor: PageMessagesCursorType | undefined;
@@ -562,34 +733,35 @@ export class BackupExportStream extends Readable {
           await DataReader.pageMessages(cursor);
 
         // eslint-disable-next-line no-await-in-loop
-        const items = await pMap(
+        await pMap(
           messages,
-          message =>
-            this.#toChatItem(message, {
+          async message => {
+            const chatItem = await this.#toChatItem(message, {
               aboutMe,
               callHistoryByCallId,
               backupLevel,
-            }),
+              isLocalBackup,
+            });
+
+            if (chatItem === undefined) {
+              this.#stats.skippedMessages += 1;
+              // Can't be backed up.
+              return;
+            }
+
+            this.#pushFrame({
+              chatItem,
+            });
+
+            this.#stats.messages += 1;
+          },
           { concurrency: MAX_CONCURRENCY }
         );
 
-        for (const chatItem of items) {
-          if (chatItem === undefined) {
-            this.#stats.skippedMessages += 1;
-            // Can't be backed up.
-            continue;
-          }
-
-          this.#pushFrame({
-            chatItem,
-          });
-
-          // eslint-disable-next-line no-await-in-loop
-          await this.#flush();
-          this.#stats.messages += 1;
-        }
-
         cursor = newCursor;
+
+        // eslint-disable-next-line no-await-in-loop
+        await this.#flush();
       }
     } finally {
       if (cursor !== undefined) {
@@ -680,8 +852,10 @@ export class BackupExportStream extends Readable {
     const usernameLink = storage.get('usernameLink');
 
     const subscriberId = storage.get('subscriberId');
+    const currencyCode = storage.get('subscriberCurrencyCode');
 
     const backupsSubscriberData = generateBackupsSubscriberData();
+    const backupTier = storage.get('backupTier');
 
     return {
       profileKey: storage.get('profileKey'),
@@ -698,21 +872,23 @@ export class BackupExportStream extends Readable {
       familyName: me.get('profileFamilyName'),
       avatarUrlPath: storage.get('avatarUrl'),
       backupsSubscriberData,
-      donationSubscriberData: Bytes.isNotEmpty(subscriberId)
-        ? {
-            subscriberId,
-            currencyCode: storage.get('subscriberCurrencyCode'),
-            manuallyCancelled: storage.get(
-              'donorSubscriptionManuallyCancelled',
-              false
-            ),
-          }
-        : null,
+      donationSubscriberData:
+        Bytes.isNotEmpty(subscriberId) && currencyCode
+          ? {
+              subscriberId,
+              currencyCode,
+              manuallyCancelled: storage.get(
+                'donorSubscriptionManuallyCancelled',
+                false
+              ),
+            }
+          : null,
+      svrPin: storage.get('svrPin'),
       accountSettings: {
         readReceipts: storage.get('read-receipt-setting'),
         sealedSenderIndicators: storage.get('sealedSenderIndicators'),
-        typingIndicators: window.Events.getTypingIndicatorSetting(),
-        linkPreviews: window.Events.getLinkPreviewSetting(),
+        typingIndicators: getTypingIndicatorSetting(),
+        linkPreviews: getLinkPreviewSetting(),
         notDiscoverableByPhoneNumber:
           parsePhoneNumberDiscoverability(
             storage.get('phoneNumberDiscoverability')
@@ -737,6 +913,11 @@ export class BackupExportStream extends Readable {
         // it builds `customColorIdByUuid`
         customChatColors: this.#toCustomChatColors(),
         defaultChatStyle: this.#toDefaultChatStyle(),
+        backupTier: backupTier != null ? Long.fromNumber(backupTier) : null,
+        // Test only values
+        ...(isTestOrMockEnvironment()
+          ? { optimizeOnDeviceStorage: storage.get('optimizeOnDeviceStorage') }
+          : {}),
       },
     };
   }
@@ -796,6 +977,7 @@ export class BackupExportStream extends Readable {
         recipient: this.#toRecipient(result, {
           type: 'private',
           serviceId,
+          pni: isPniString(serviceId) ? serviceId : undefined,
           e164,
         }),
       });
@@ -824,8 +1006,31 @@ export class BackupExportStream extends Readable {
     };
 
     if (isMe(convo)) {
-      res.self = {};
+      res.self = {
+        avatarColor: toAvatarColor(convo.color),
+      };
     } else if (isDirectConversation(convo)) {
+      // Skip story onboarding conversation and other internal conversations.
+      if (
+        convo.serviceId != null &&
+        (isSignalServiceId(convo.serviceId) ||
+          !isServiceIdString(convo.serviceId))
+      ) {
+        log.warn(
+          'backups: skipping conversation with invalid serviceId',
+          convo.serviceId
+        );
+        return undefined;
+      }
+
+      if (convo.e164 != null && !isValidE164(convo.e164, true)) {
+        log.warn(
+          'backups: skipping conversation with invalid e164',
+          convo.serviceId
+        );
+        return undefined;
+      }
+
       let visibility: Backups.Contact.Visibility;
       if (convo.removalStage == null) {
         visibility = Backups.Contact.Visibility.VISIBLE;
@@ -844,16 +1049,26 @@ export class BackupExportStream extends Readable {
 
       const { nicknameGivenName, nicknameFamilyName, note } = convo;
 
+      const maybePni = convo.pni ?? convo.serviceId;
+
+      const aci = isAciString(convo.serviceId)
+        ? Aci.parseFromServiceIdString(convo.serviceId).getRawUuidBytes()
+        : null;
+      const pni = isPniString(maybePni)
+        ? Pni.parseFromServiceIdString(maybePni).getRawUuidBytes()
+        : null;
+      const e164 = convo.e164 ? Long.fromString(convo.e164) : null;
+
+      strictAssert(
+        aci != null || pni != null || e164 != null,
+        'Contact has no identifier'
+      );
+
       res.contact = {
-        aci:
-          convo.serviceId && convo.serviceId !== convo.pni
-            ? Aci.parseFromServiceIdString(convo.serviceId).getRawUuidBytes()
-            : null,
-        pni: convo.pni
-          ? Pni.parseFromServiceIdString(convo.pni).getRawUuidBytes()
-          : null,
+        aci,
+        pni,
+        e164,
         username: convo.username,
-        e164: convo.e164 ? Long.fromString(convo.e164) : null,
         blocked: convo.serviceId
           ? window.storage.blocked.isServiceIdBlocked(convo.serviceId)
           : null,
@@ -875,8 +1090,12 @@ export class BackupExportStream extends Readable {
         profileSharing: convo.profileSharing,
         profileGivenName: convo.profileName,
         profileFamilyName: convo.profileFamilyName,
+        systemFamilyName: convo.systemFamilyName,
+        systemGivenName: convo.systemGivenName,
+        systemNickname: convo.systemNickname,
         hideStory: convo.hideStory === true,
         identityKey: identityKey?.publicKey || null,
+        avatarColor: toAvatarColor(convo.color),
 
         // Integer values match so we can use it as is
         identityState: identityKey?.verified ?? 0,
@@ -910,6 +1129,10 @@ export class BackupExportStream extends Readable {
         whitelisted: convo.profileSharing,
         hideStory: convo.hideStory === true,
         storySendMode,
+        blocked: convo.groupId
+          ? window.storage.blocked.isGroupBlocked(convo.groupId)
+          : false,
+        avatarColor: toAvatarColor(convo.color),
         snapshot: {
           title: {
             title: convo.name?.trim() ?? '',
@@ -978,7 +1201,12 @@ export class BackupExportStream extends Readable {
 
   async #toChatItem(
     message: MessageAttributesType,
-    { aboutMe, callHistoryByCallId, backupLevel }: ToChatItemOptionsType
+    {
+      aboutMe,
+      callHistoryByCallId,
+      backupLevel,
+      isLocalBackup,
+    }: ToChatItemOptionsType
   ): Promise<Backups.IChatItem | undefined> {
     const conversation = window.ConversationController.get(
       message.conversationId
@@ -1002,7 +1230,7 @@ export class BackupExportStream extends Readable {
     if (
       conversation &&
       isGroupV2(conversation.attributes) &&
-      message.storyReplyContext
+      (message.storyReplyContext || message.storyReaction)
     ) {
       // We drop group story replies
       return undefined;
@@ -1012,6 +1240,13 @@ export class BackupExportStream extends Readable {
     if (expirationTimestamp != null && expirationTimestamp <= this.#now + DAY) {
       // Message expires too soon
       return undefined;
+    }
+
+    if (message.expireTimer) {
+      if (DurationInSeconds.toMillis(message.expireTimer) <= DAY) {
+        // Message has an expire timer that's too short for export
+        return undefined;
+      }
     }
 
     let authorId: Long | undefined;
@@ -1062,16 +1297,17 @@ export class BackupExportStream extends Readable {
 
     let expireStartDate: Long | undefined;
     let expiresInMs: Long | undefined;
-    if (
-      message.expireTimer != null &&
-      message.expirationStartTimestamp != null
-    ) {
-      expireStartDate = getSafeLongFromTimestamp(
-        message.expirationStartTimestamp
-      );
+
+    if (message.expireTimer != null) {
       expiresInMs = Long.fromNumber(
         DurationInSeconds.toMillis(message.expireTimer)
       );
+
+      if (message.expirationStartTimestamp != null) {
+        expireStartDate = getSafeLongFromTimestamp(
+          message.expirationStartTimestamp
+        );
+      }
     }
 
     const result: Backups.IChatItem = {
@@ -1130,6 +1366,7 @@ export class BackupExportStream extends Readable {
       result.viewOnceMessage = await this.#toViewOnceMessage({
         message,
         backupLevel,
+        isLocalBackup,
       });
     } else if (message.deletedForEveryone) {
       result.remoteDeletedMessage = {};
@@ -1191,6 +1428,7 @@ export class BackupExportStream extends Readable {
           ? await this.#processAttachment({
               attachment: contactDetails.avatar.avatar,
               backupLevel,
+              isLocalBackup,
               messageReceivedAt: message.received_at,
             })
           : undefined,
@@ -1212,6 +1450,7 @@ export class BackupExportStream extends Readable {
         ? await this.#processAttachment({
             attachment: sticker.data,
             backupLevel,
+            isLocalBackup,
             messageReceivedAt: message.received_at,
           })
         : undefined;
@@ -1255,23 +1494,27 @@ export class BackupExportStream extends Readable {
       result.directStoryReplyMessage = await this.#toDirectStoryReplyMessage({
         message,
         backupLevel,
+        isLocalBackup,
       });
 
       result.revisions = await this.#toChatItemRevisions(
         result,
         message,
-        backupLevel
+        backupLevel,
+        isLocalBackup
       );
     } else {
       result.standardMessage = await this.#toStandardMessage({
         message,
         backupLevel,
+        isLocalBackup,
       });
 
       result.revisions = await this.#toChatItemRevisions(
         result,
         message,
-        backupLevel
+        backupLevel,
+        isLocalBackup
       );
     }
 
@@ -1422,7 +1665,7 @@ export class BackupExportStream extends Readable {
 
       individualCall.type = toIndividualCallTypeProto(type);
       individualCall.direction = toIndividualCallDirectionProto(direction);
-      individualCall.state = toIndividualCallStateProto(status);
+      individualCall.state = toIndividualCallStateProto(status, direction);
       individualCall.startedCallTimestamp = Long.fromNumber(timestamp);
       individualCall.read = message.seenStatus === SeenStatus.Seen;
 
@@ -1441,13 +1684,15 @@ export class BackupExportStream extends Readable {
         message.conversationId
       );
 
+      const source = message.expirationTimerUpdate?.source;
+      const sourceServiceId = message.expirationTimerUpdate?.sourceServiceId;
+
       if (conversation && isGroup(conversation.attributes)) {
         const groupChatUpdate = new Backups.GroupChangeChatUpdate();
 
         const timerUpdate = new Backups.GroupExpirationTimerUpdate();
         timerUpdate.expiresInMs = Long.fromNumber(expiresInMs);
 
-        const sourceServiceId = message.expirationTimerUpdate?.sourceServiceId;
         if (sourceServiceId && Aci.parseFromServiceIdString(sourceServiceId)) {
           timerUpdate.updaterAci = uuidToBytes(sourceServiceId);
         }
@@ -1463,13 +1708,17 @@ export class BackupExportStream extends Readable {
         return { kind: NonBubbleResultKind.Directionless, patch };
       }
 
-      const source =
-        message.expirationTimerUpdate?.sourceServiceId ||
-        message.expirationTimerUpdate?.source;
-      if (source && !authorId) {
-        patch.authorId = this.#getOrPushPrivateRecipient({
-          id: source,
-        });
+      if (!authorId) {
+        if (sourceServiceId) {
+          patch.authorId = this.#getOrPushPrivateRecipient({
+            id: source,
+            serviceId: sourceServiceId,
+          });
+        } else if (source) {
+          patch.authorId = this.#getOrPushPrivateRecipient({
+            id: source,
+          });
+        }
       }
 
       const expirationTimerChange = new Backups.ExpirationTimerChatUpdate();
@@ -1482,6 +1731,8 @@ export class BackupExportStream extends Readable {
 
     if (isGroupV2Change(message)) {
       updateMessage.groupChange = await this.toGroupV2Update(message, options);
+      strictAssert(this.#ourConversation?.id, 'our conversation must exist');
+      patch.authorId = this.#getOrPushPrivateRecipient(this.#ourConversation);
 
       return { kind: NonBubbleResultKind.Directionless, patch };
     }
@@ -1491,10 +1742,14 @@ export class BackupExportStream extends Readable {
       simpleUpdate.type = Backups.SimpleChatUpdate.Type.IDENTITY_UPDATE;
 
       if (message.key_changed) {
+        const target = window.ConversationController.get(message.key_changed);
+        if (!target) {
+          throw new Error(
+            'toChatItemUpdate/keyCahnge: key_changed conversation not found!'
+          );
+        }
         // This will override authorId on the original chatItem
-        patch.authorId = this.#getOrPushPrivateRecipient({
-          id: message.key_changed,
-        });
+        patch.authorId = this.#getOrPushPrivateRecipient(target.attributes);
       }
 
       updateMessage.simpleUpdate = simpleUpdate;
@@ -1504,15 +1759,22 @@ export class BackupExportStream extends Readable {
 
     if (isProfileChange(message)) {
       const profileChange = new Backups.ProfileChangeChatUpdate();
-      if (!message.profileChange) {
+      if (!message.profileChange?.newName || !message.profileChange?.oldName) {
         return { kind: NonBubbleResultKind.Drop };
       }
 
       if (message.changedId) {
-        // This will override authorId on the original chatItem
-        patch.authorId = this.#getOrPushPrivateRecipient({
-          id: message.changedId,
-        });
+        const changedConvo = window.ConversationController.get(
+          message.changedId
+        );
+        if (changedConvo) {
+          // This will override authorId on the original chatItem
+          patch.authorId = this.#getOrPushPrivateRecipient(changedConvo);
+        } else {
+          log.warn(
+            `${logId}: failed to resolve changedId ${message.changedId}`
+          );
+        }
       }
 
       const { newName, oldName } = message.profileChange;
@@ -1630,6 +1892,14 @@ export class BackupExportStream extends Readable {
         return { kind: NonBubbleResultKind.Drop };
       }
       threadMerge.previousE164 = Long.fromString(e164);
+
+      // Conversation merges generated on Desktop side never has
+      // `sourceServiceId` and thus are attributed to our conversation.
+      // However, we need to include proper `authorId` for compatibility with
+      // other clients.
+      patch.authorId = this.#getOrPushPrivateRecipient({
+        id: message.conversationId,
+      });
 
       updateMessage.threadMerge = threadMerge;
 
@@ -2160,14 +2430,15 @@ export class BackupExportStream extends Readable {
   }
 
   async #toQuote({
-    quote,
+    message,
     backupLevel,
-    messageReceivedAt,
+    isLocalBackup,
   }: {
-    quote?: QuotedMessageType;
+    message: Pick<MessageAttributesType, 'quote' | 'received_at' | 'body'>;
     backupLevel: BackupLevel;
-    messageReceivedAt: number;
+    isLocalBackup: boolean;
   }): Promise<Backups.IQuote | null> {
+    const { quote } = message;
     if (!quote) {
       return null;
     }
@@ -2195,6 +2466,10 @@ export class BackupExportStream extends Readable {
       quoteType = Backups.Quote.Type.VIEW_ONCE;
     } else {
       quoteType = Backups.Quote.Type.NORMAL;
+      if (quote.text == null && quote.attachments.length === 0) {
+        log.warn('backups: normal quote has no text or attachments');
+        return null;
+      }
     }
 
     return {
@@ -2224,7 +2499,8 @@ export class BackupExportStream extends Readable {
                 ? await this.#processMessageAttachment({
                     attachment: attachment.thumbnail,
                     backupLevel,
-                    messageReceivedAt,
+                    message,
+                    isLocalBackup,
                   })
                 : undefined,
             };
@@ -2252,11 +2528,17 @@ export class BackupExportStream extends Readable {
   }
 
   #getMessageAttachmentFlag(
+    message: Pick<MessageAttributesType, 'body'>,
     attachment: AttachmentType
   ): Backups.MessageAttachment.Flag {
     const flag = SignalService.AttachmentPointer.Flags.VOICE_MESSAGE;
     // eslint-disable-next-line no-bitwise
     if (((attachment.flags || 0) & flag) === flag) {
+      // Legacy data support for iOS
+      if (message.body) {
+        return Backups.MessageAttachment.Flag.NONE;
+      }
+
       return Backups.MessageAttachment.Flag.VOICE_MESSAGE;
     }
     if (isGIF([attachment])) {
@@ -2276,22 +2558,25 @@ export class BackupExportStream extends Readable {
   async #processMessageAttachment({
     attachment,
     backupLevel,
-    messageReceivedAt,
+    message,
+    isLocalBackup,
   }: {
     attachment: AttachmentType;
     backupLevel: BackupLevel;
-    messageReceivedAt: number;
+    message: Pick<MessageAttributesType, 'quote' | 'received_at' | 'body'>;
+    isLocalBackup: boolean;
   }): Promise<Backups.MessageAttachment> {
     const { clientUuid } = attachment;
     const filePointer = await this.#processAttachment({
       attachment,
       backupLevel,
-      messageReceivedAt,
+      messageReceivedAt: message.received_at,
+      isLocalBackup,
     });
 
     return new Backups.MessageAttachment({
       pointer: filePointer,
-      flag: this.#getMessageAttachmentFlag(attachment),
+      flag: this.#getMessageAttachmentFlag(message, attachment),
       wasDownloaded: isDownloaded(attachment),
       clientUuid: clientUuid ? uuidToBytes(clientUuid) : undefined,
     });
@@ -2300,36 +2585,42 @@ export class BackupExportStream extends Readable {
   async #processAttachment({
     attachment,
     backupLevel,
+    isLocalBackup,
     messageReceivedAt,
   }: {
     attachment: AttachmentType;
     backupLevel: BackupLevel;
+    isLocalBackup: boolean;
     messageReceivedAt: number;
   }): Promise<Backups.FilePointer> {
-    const { filePointer, updatedAttachment } =
-      await getFilePointerForAttachment({
-        attachment,
-        backupLevel,
-        getBackupCdnInfo,
-      });
+    const { filePointer, backupJob } = await getFilePointerForAttachment({
+      attachment,
+      isLocalBackup,
+      backupLevel,
+      messageReceivedAt,
+      getBackupCdnInfo,
+    });
 
-    if (updatedAttachment) {
-      // TODO (DESKTOP-6688): ensure that we update the message/attachment in DB with the
-      // new keys so that we don't try to re-upload it again on the next export
-    }
+    if (hasRequiredInformationForBackup(attachment)) {
+      const mediaName = getMediaNameForAttachment(attachment);
 
-    // We don't download attachments during integration tests and thus have no
-    // "iv" for an attachment and can't create a job
-    if (this.backupType !== BackupType.TestOnlyPlaintext) {
-      const backupJob = await maybeGetBackupJobForAttachmentAndFilePointer({
-        attachment: updatedAttachment ?? attachment,
-        filePointer,
-        getBackupCdnInfo,
-        messageReceivedAt,
-      });
+      // Re-use existing locatorInfo and backup job if we've already seen this file
+      const existingFilePointer = this.#mediaNamesToFilePointers.get(mediaName);
 
-      if (backupJob) {
-        this.#attachmentBackupJobs.push(backupJob);
+      if (existingFilePointer?.locatorInfo) {
+        filePointer.locatorInfo = existingFilePointer.locatorInfo;
+        // Also copy over incrementalMac, since that depends on the encryption key
+        filePointer.incrementalMac = existingFilePointer.incrementalMac;
+        filePointer.incrementalMacChunkSize =
+          existingFilePointer.incrementalMacChunkSize;
+      } else {
+        if (filePointer.locatorInfo) {
+          this.#mediaNamesToFilePointers.set(mediaName, filePointer);
+        }
+
+        if (backupJob) {
+          this.#attachmentBackupJobs.push(backupJob);
+        }
       }
     }
 
@@ -2390,9 +2681,15 @@ export class BackupExportStream extends Readable {
       sendStateByConversationId = {},
       unidentifiedDeliveries = [],
       errors = [],
+      received_at_ms: receivedAtMs,
+      editMessageReceivedAtMs,
     }: Pick<
       MessageAttributesType,
-      'sendStateByConversationId' | 'unidentifiedDeliveries' | 'errors'
+      | 'sendStateByConversationId'
+      | 'unidentifiedDeliveries'
+      | 'errors'
+      | 'received_at_ms'
+      | 'editMessageReceivedAtMs'
     >,
     { conversationId }: { conversationId: string }
   ): Backups.ChatItem.IOutgoingMessageDetails {
@@ -2491,14 +2788,19 @@ export class BackupExportStream extends Readable {
 
       sendStatuses.push(sendStatus);
     }
+
+    const dateReceived = editMessageReceivedAtMs || receivedAtMs;
     return {
       sendStatus: sendStatuses,
+      dateReceived:
+        dateReceived != null ? getSafeLongFromTimestamp(dateReceived) : null,
     };
   }
 
   async #toStandardMessage({
     message,
     backupLevel,
+    isLocalBackup,
   }: {
     message: Pick<
       MessageAttributesType,
@@ -2510,14 +2812,23 @@ export class BackupExportStream extends Readable {
       | 'preview'
       | 'reactions'
       | 'received_at'
+      | 'timestamp'
     >;
     backupLevel: BackupLevel;
+    isLocalBackup: boolean;
   }): Promise<Backups.IStandardMessage> {
+    if (
+      message.body &&
+      isBodyTooLong(message.body, BACKUP_LONG_ATTACHMENT_TEXT_LIMIT)
+    ) {
+      log.warn(`${message.timestamp}: Message body is too long; will truncate`);
+    }
+
     return {
       quote: await this.#toQuote({
-        quote: message.quote,
+        message,
         backupLevel,
-        messageReceivedAt: message.received_at,
+        isLocalBackup,
       }),
       attachments: message.attachments?.length
         ? await Promise.all(
@@ -2525,22 +2836,29 @@ export class BackupExportStream extends Readable {
               return this.#processMessageAttachment({
                 attachment,
                 backupLevel,
-                messageReceivedAt: message.received_at,
+                message,
+                isLocalBackup,
               });
             })
           )
         : undefined,
-      longText: message.bodyAttachment
-        ? await this.#processAttachment({
-            attachment: message.bodyAttachment,
-            backupLevel,
-            messageReceivedAt: message.received_at,
-          })
-        : undefined,
+      longText:
+        // We only include the bodyAttachment if it's not downloaded; otherwise all text
+        // is inlined
+        message.bodyAttachment && !isDownloaded(message.bodyAttachment)
+          ? await this.#processAttachment({
+              attachment: message.bodyAttachment,
+              backupLevel,
+              isLocalBackup,
+              messageReceivedAt: message.received_at,
+            })
+          : undefined,
       text:
         message.body != null
           ? {
-              body: message.body ? trimBody(message.body) : undefined,
+              body: message.body
+                ? trimBody(message.body, BACKUP_LONG_ATTACHMENT_TEXT_LIMIT)
+                : undefined,
               bodyRanges: message.bodyRanges?.map(range =>
                 this.#toBodyRange(range)
               ),
@@ -2558,6 +2876,7 @@ export class BackupExportStream extends Readable {
                   ? await this.#processAttachment({
                       attachment: preview.image,
                       backupLevel,
+                      isLocalBackup,
                       messageReceivedAt: message.received_at,
                     })
                   : undefined,
@@ -2572,6 +2891,7 @@ export class BackupExportStream extends Readable {
   async #toDirectStoryReplyMessage({
     message,
     backupLevel,
+    isLocalBackup,
   }: {
     message: Pick<
       MessageAttributesType,
@@ -2579,11 +2899,11 @@ export class BackupExportStream extends Readable {
       | 'bodyAttachment'
       | 'bodyRanges'
       | 'storyReaction'
-      | 'storyReplyContext'
       | 'received_at'
       | 'reactions'
     >;
     backupLevel: BackupLevel;
+    isLocalBackup: boolean;
   }): Promise<Backups.IDirectStoryReplyMessage> {
     const result = new Backups.DirectStoryReplyMessage({
       reactions: this.#getMessageReactions(message),
@@ -2597,6 +2917,7 @@ export class BackupExportStream extends Readable {
           ? await this.#processAttachment({
               attachment: message.bodyAttachment,
               backupLevel,
+              isLocalBackup,
               messageReceivedAt: message.received_at,
             })
           : undefined,
@@ -2617,22 +2938,28 @@ export class BackupExportStream extends Readable {
   async #toViewOnceMessage({
     message,
     backupLevel,
+    isLocalBackup,
   }: {
     message: Pick<
       MessageAttributesType,
       'attachments' | 'received_at' | 'reactions'
     >;
     backupLevel: BackupLevel;
+    isLocalBackup: boolean;
   }): Promise<Backups.IViewOnceMessage> {
     const attachment = message.attachments?.at(0);
+    // Integration tests use the 'link-and-sync' version of export, which will include
+    // view-once attachments
+    const shouldIncludeAttachments = isTestOrMockEnvironment();
     return {
       attachment:
-        attachment == null
+        !shouldIncludeAttachments || attachment == null
           ? null
           : await this.#processMessageAttachment({
               attachment,
               backupLevel,
-              messageReceivedAt: message.received_at,
+              message,
+              isLocalBackup,
             }),
       reactions: this.#getMessageReactions(message),
     };
@@ -2641,7 +2968,8 @@ export class BackupExportStream extends Readable {
   async #toChatItemRevisions(
     parent: Backups.IChatItem,
     message: MessageAttributesType,
-    backupLevel: BackupLevel
+    backupLevel: BackupLevel,
+    isLocalBackup: boolean
   ): Promise<Array<Backups.IChatItem> | undefined> {
     const { editHistory } = message;
     if (editHistory == null) {
@@ -2680,11 +3008,13 @@ export class BackupExportStream extends Readable {
               await this.#toDirectStoryReplyMessage({
                 message: history,
                 backupLevel,
+                isLocalBackup,
               });
           } else {
             result.standardMessage = await this.#toStandardMessage({
               message: history,
               backupLevel,
+              isLocalBackup,
             });
           }
           return result;
@@ -2994,7 +3324,8 @@ function toIndividualCallTypeProto(
 }
 
 function toIndividualCallStateProto(
-  status: CallStatus
+  status: CallStatus,
+  direction: CallDirection
 ): Backups.IndividualCall.State {
   const values = Backups.IndividualCall.State;
 
@@ -3009,6 +3340,15 @@ function toIndividualCallStateProto(
   }
   if (status === DirectCallStatus.MissedNotificationProfile) {
     return values.MISSED_NOTIFICATION_PROFILE;
+  }
+
+  if (status === DirectCallStatus.Pending) {
+    if (direction === CallDirection.Incoming) {
+      return values.MISSED;
+    }
+    if (direction === CallDirection.Outgoing) {
+      return values.NOT_ACCEPTED;
+    }
   }
 
   if (status === DirectCallStatus.Deleted) {
@@ -3049,4 +3389,37 @@ function toCallLinkRestrictionsProto(
   }
 
   return values.UNKNOWN;
+}
+
+function toAvatarColor(
+  color: string | undefined
+): Backups.AvatarColor | undefined {
+  switch (color) {
+    case 'A100':
+      return Backups.AvatarColor.A100;
+    case 'A110':
+      return Backups.AvatarColor.A110;
+    case 'A120':
+      return Backups.AvatarColor.A120;
+    case 'A130':
+      return Backups.AvatarColor.A130;
+    case 'A140':
+      return Backups.AvatarColor.A140;
+    case 'A150':
+      return Backups.AvatarColor.A150;
+    case 'A160':
+      return Backups.AvatarColor.A160;
+    case 'A170':
+      return Backups.AvatarColor.A170;
+    case 'A180':
+      return Backups.AvatarColor.A180;
+    case 'A190':
+      return Backups.AvatarColor.A190;
+    case 'A200':
+      return Backups.AvatarColor.A200;
+    case 'A210':
+      return Backups.AvatarColor.A210;
+    default:
+      return undefined;
+  }
 }

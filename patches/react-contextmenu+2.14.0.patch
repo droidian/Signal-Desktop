@@ -1,7 +1,7 @@
-diff --git a/node_modules/react-contextmenu/modules/ContextMenu.js b/node_modules/react-contextmenu/modules/ContextMenu.js
-index 2f88213..4cf584a 100644
---- a/node_modules/react-contextmenu/modules/ContextMenu.js
-+++ b/node_modules/react-contextmenu/modules/ContextMenu.js
+diff --git a/modules/ContextMenu.js b/modules/ContextMenu.js
+index 2f8821393f15a1ce85132385688f08cd6e390bf4..41e47ea740636f81bdd484a7093d0ea3169eb9d5 100644
+--- a/modules/ContextMenu.js
++++ b/modules/ContextMenu.js
 @@ -81,6 +81,11 @@ var ContextMenu = function (_AbstractMenu) {
                  x = _e$detail$position.x,
                  y = _e$detail$position.y;
@@ -35,13 +35,15 @@ index 2f88213..4cf584a 100644
                      });
                  });
              } else {
-@@ -248,6 +259,14 @@ var ContextMenu = function (_AbstractMenu) {
+@@ -248,6 +259,16 @@ var ContextMenu = function (_AbstractMenu) {
                      if (!_this2.menu) return;
                      _this2.menu.style.opacity = 0;
                      _this2.menu.style.pointerEvents = 'none';
 +
 +                    // Return to the previous focus state when dismissing the menu, unless the
 +                    // menu option focused another element. This is important for keyboard mode.
++                    if (_this2.props.avoidFocusRestoreOnBlur) return;
++
 +                    var isFocusWithinMenu = _this2.menu.contains(document.activeElement);
 +                    if (isFocusWithinMenu && _this2.previousFocus && _this2.previousFocus.focus) {
 +                        _this2.previousFocus.focus();
@@ -50,10 +52,10 @@ index 2f88213..4cf584a 100644
                  });
              }
          }
-diff --git a/node_modules/react-contextmenu/modules/SubMenu.js b/node_modules/react-contextmenu/modules/SubMenu.js
-index ad1dc70..c919be8 100644
---- a/node_modules/react-contextmenu/modules/SubMenu.js
-+++ b/node_modules/react-contextmenu/modules/SubMenu.js
+diff --git a/modules/SubMenu.js b/modules/SubMenu.js
+index ad1dc7043c13cbc30f1659d5b82696ed974c996a..c919be8d12329dd5bcf77d3660b85edb83714bb8 100644
+--- a/modules/SubMenu.js
++++ b/modules/SubMenu.js
 @@ -129,6 +129,7 @@ var SubMenu = function (_AbstractMenu) {
  
              if (_this.props.disabled || _this.state.visible) return;
@@ -139,3 +141,46 @@ index ad1dc70..c919be8 100644
                  this.subMenu.classList.remove(_helpers.cssClasses.menuVisible);
              }
          }
+diff --git a/src/index.d.ts b/src/index.d.ts
+index 753ce9081490fd90b4354e6e73937dc85957689c..e8a8b0815a7ca61ef9bc488299cda08e181267bc 100644
+--- a/src/index.d.ts
++++ b/src/index.d.ts
+@@ -14,6 +14,8 @@ declare module "react-contextmenu" {
+         preventHideOnResize?: boolean,
+         preventHideOnScroll?: boolean,
+         style?: React.CSSProperties,
++        avoidFocusRestoreOnBlur?: boolean;
++        children?: React.ReactNode;
+     }
+ 
+     export interface ContextMenuTriggerProps {
+@@ -25,6 +27,7 @@ declare module "react-contextmenu" {
+         renderTag?: React.ElementType,
+         mouseButton?: number,
+         disableIfShiftIsPressed?: boolean,
++        children?: React.ReactNode,
+     }
+ 
+     export interface MenuItemProps {
+@@ -35,6 +38,7 @@ declare module "react-contextmenu" {
+         divider?: boolean,
+         preventClose?: boolean,
+         onClick?: {(event: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>, data: Object, target: HTMLElement): void} | Function,
++        children?: React.ReactNode,
+     }
+ 
+     export interface SubMenuProps {
+@@ -45,11 +49,13 @@ declare module "react-contextmenu" {
+         rtl?: boolean,
+         preventCloseOnClick?: boolean,
+         onClick?: {(event: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>, data: Object, target: HTMLElement): void} | Function,
++        children?: React.ReactNode,
+     }
+ 
+     export interface ConnectMenuProps {
+         id: string;
+         trigger: any;
++        children?: React.ReactNode;
+     }
+ 
+     export const ContextMenu: React.ComponentClass<ContextMenuProps>;

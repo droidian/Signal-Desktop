@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isNumber } from 'lodash';
+import { ContentHint } from '@signalapp/libsignal-client';
 
 import { handleMessageSend } from '../../util/handleMessageSend';
 import { getSendOptions } from '../../util/getSendOptions';
@@ -79,13 +80,13 @@ export async function sendProfileKey(
   }
 
   if (!data?.isOneTimeSend && !conversation.get('profileSharing')) {
-    log.info('No longer sharing profile. Cancelling job.');
+    log.info('No longer sharing profile. Canceling job.');
     return;
   }
 
   const profileKey = await ourProfileKeyService.get();
   if (!profileKey) {
-    log.info('Unable to fetch profile. Cancelling job.');
+    log.info('Unable to fetch profile. Canceling job.');
     return;
   }
 
@@ -95,8 +96,7 @@ export async function sendProfileKey(
 
   const { revision } = data;
   const sendOptions = await getSendOptions(conversation.attributes);
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-  const contentHint = ContentHint.RESENDABLE;
+  const contentHint = ContentHint.Resendable;
   const sendType = 'profileKeyUpdate';
 
   let sendPromise: Promise<CallbackResultType>;

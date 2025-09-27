@@ -8,11 +8,14 @@ import { actions as audioRecorder } from './ducks/audioRecorder';
 import { actions as badges } from './ducks/badges';
 import { actions as callHistory } from './ducks/callHistory';
 import { actions as calling } from './ducks/calling';
+import { actions as chatFolders } from './ducks/chatFolders';
 import { actions as composer } from './ducks/composer';
 import { actions as conversations } from './ducks/conversations';
 import { actions as crashReports } from './ducks/crashReports';
+import { actions as donations } from './ducks/donations';
 import { actions as emojis } from './ducks/emojis';
 import { actions as expiration } from './ducks/expiration';
+import { actions as gifs } from './ducks/gifs';
 import { actions as globalModals } from './ducks/globalModals';
 import { actions as inbox } from './ducks/inbox';
 import { actions as installer } from './ducks/installer';
@@ -20,7 +23,9 @@ import { actions as items } from './ducks/items';
 import { actions as lightbox } from './ducks/lightbox';
 import { actions as linkPreviews } from './ducks/linkPreviews';
 import { actions as mediaGallery } from './ducks/mediaGallery';
+import { actions as nav } from './ducks/nav';
 import { actions as network } from './ducks/network';
+import { actions as notificationProfiles } from './ducks/notificationProfiles';
 import { actions as safetyNumber } from './ducks/safetyNumber';
 import { actions as search } from './ducks/search';
 import { actions as stickers } from './ducks/stickers';
@@ -40,11 +45,14 @@ export const actionCreators: ReduxActions = {
   badges,
   callHistory,
   calling,
+  chatFolders,
   composer,
   conversations,
   crashReports,
+  donations,
   emojis,
   expiration,
+  gifs,
   globalModals,
   inbox,
   installer,
@@ -52,7 +60,9 @@ export const actionCreators: ReduxActions = {
   lightbox,
   linkPreviews,
   mediaGallery,
+  nav,
   network,
+  notificationProfiles,
   safetyNumber,
   search,
   stickers,

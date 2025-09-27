@@ -9,8 +9,7 @@ import * as Errors from '../types/errors';
 import type { StoryMessageRecipientsType } from '../types/Stories';
 import type { StoryDistributionIdString } from '../types/StoryDistributionId';
 import type { ServiceIdString } from '../types/ServiceId';
-import * as log from '../logging/log';
-import { DataWriter } from '../sql/Client';
+import { createLogger } from '../logging/log';
 import { DAY } from './durations';
 import { StoryRecipientUpdateEvent } from '../textsecure/messageReceiverEvents';
 import {
@@ -24,7 +23,8 @@ import { getMessageById } from '../messages/getMessageById';
 import { strictAssert } from './assert';
 import { repeat, zipObject } from './iterables';
 import { isOlderThan } from './timestamp';
-import { postSaveUpdates } from './cleanup';
+
+const log = createLogger('deleteStoryForEveryone');
 
 export async function deleteStoryForEveryone(
   stories: ReadonlyArray<StoryDataType>,
@@ -192,10 +192,8 @@ export async function deleteStoryForEveryone(
     await conversationJobQueue.add(jobData, async jobToInsert => {
       log.info(`${logId}: Deleting message with job ${jobToInsert.id}`);
 
-      await DataWriter.saveMessage(message.attributes, {
+      await window.MessageCache.saveMessage(message.attributes, {
         jobToInsert,
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
-        postSaveUpdates,
       });
     });
   } catch (error) {

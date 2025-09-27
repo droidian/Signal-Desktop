@@ -29,8 +29,6 @@ import { AddGroupMembersModal } from './AddGroupMembersModal';
 import { ConversationDetailsActions } from './ConversationDetailsActions';
 import { ConversationDetailsHeader } from './ConversationDetailsHeader';
 import { ConversationDetailsIcon, IconType } from './ConversationDetailsIcon';
-import type { Props as ConversationDetailsMediaListPropsType } from './ConversationDetailsMediaList';
-import { ConversationDetailsMediaList } from './ConversationDetailsMediaList';
 import type { GroupV2Membership } from './ConversationDetailsMembershipList';
 import { ConversationDetailsMembershipList } from './ConversationDetailsMembershipList';
 import type {
@@ -40,6 +38,7 @@ import type {
 import { EditConversationAttributesModal } from './EditConversationAttributesModal';
 import { RequestState } from './util';
 import { getCustomColorStyle } from '../../../util/getCustomColorStyle';
+import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser';
 import { ConfirmationDialog } from '../../ConfirmationDialog';
 import { ConversationNotificationsModal } from './ConversationNotificationsModal';
 import type {
@@ -52,7 +51,7 @@ import { isConversationMuted } from '../../../util/isConversationMuted';
 import { ConversationDetailsGroups } from './ConversationDetailsGroups';
 import { PanelType } from '../../../types/Panels';
 import { type CallHistoryGroup } from '../../../types/CallDisposition';
-import { NavTab } from '../../../state/ducks/nav';
+import { NavTab } from '../../../types/Nav';
 import { ContextMenu } from '../../ContextMenu';
 import { canHaveNicknameAndNote } from '../../../util/nicknames';
 import { CallHistoryGroupPanelSection } from './CallHistoryGroupPanelSection';
@@ -60,9 +59,11 @@ import {
   InAnotherCallTooltip,
   getTooltipContent,
 } from '../InAnotherCallTooltip';
+import { BadgeSustainerInstructionsDialog } from '../../BadgeSustainerInstructionsDialog';
 
 enum ModalState {
   AddingGroupMembers,
+  BecomeSustainer,
   ConfirmDeleteNicknameAndNote,
   EditingGroupDescription,
   EditingGroupTitle,
@@ -79,18 +80,22 @@ export type StateProps = {
   canAddNewMembers: boolean;
   conversation?: ConversationType;
   hasGroupLink: boolean;
+  hasMedia: boolean;
   getPreferredBadge: PreferredBadgeSelectorType;
   hasActiveCall: boolean;
   i18n: LocalizerType;
   isAdmin: boolean;
   isGroup: boolean;
+  isSignalConversation: boolean;
   groupsInCommon: ReadonlyArray<ConversationType>;
   maxGroupSize: number;
   maxRecommendedGroupSize: number;
   memberships: ReadonlyArray<GroupV2Membership>;
   pendingApprovalMemberships: ReadonlyArray<GroupV2RequestingMembership>;
+  pendingAvatarDownload?: boolean;
   pendingMemberships: ReadonlyArray<GroupV2PendingMembership>;
   selectedNavTab: NavTab;
+  startAvatarDownload: () => void;
   theme: ThemeType;
   userAvatarData: ReadonlyArray<AvatarDataType>;
   renderChooseGroupMembersModal: (
@@ -116,7 +121,6 @@ type ActionProps = {
   deleteAvatarFromDisk: DeleteAvatarFromDiskActionType;
   getProfilesForConversation: (id: string) => unknown;
   leaveGroup: (conversationId: string) => void;
-  loadRecentMediaItems: (id: string, limit: number) => void;
   onDeleteNicknameAndNote: () => void;
   onOpenEditNicknameAndNoteModal: () => void;
   onOutgoingAudioCallInConversation: (conversationId: string) => unknown;
@@ -144,7 +148,7 @@ type ActionProps = {
       onFailure?: () => unknown;
     }
   ) => unknown;
-} & Pick<ConversationDetailsMediaListPropsType, 'showLightbox'>;
+};
 
 export type Props = StateProps & ActionProps;
 
@@ -174,6 +178,7 @@ export function ConversationDetails({
   conversation,
   deleteAvatarFromDisk,
   hasGroupLink,
+  hasMedia,
   getPreferredBadge,
   getProfilesForConversation,
   groupsInCommon,
@@ -181,8 +186,8 @@ export function ConversationDetails({
   i18n,
   isAdmin,
   isGroup,
+  isSignalConversation,
   leaveGroup,
-  loadRecentMediaItems,
   memberships,
   maxGroupSize,
   maxRecommendedGroupSize,
@@ -191,6 +196,7 @@ export function ConversationDetails({
   onOutgoingAudioCallInConversation,
   onOutgoingVideoCallInConversation,
   pendingApprovalMemberships,
+  pendingAvatarDownload,
   pendingMemberships,
   pushPanelForConversation,
   renderChooseGroupMembersModal,
@@ -203,7 +209,7 @@ export function ConversationDetails({
   setMuteExpiration,
   showContactModal,
   showConversation,
-  showLightbox,
+  startAvatarDownload,
   theme,
   toggleAboutContactModal,
   toggleSafetyNumberModal,
@@ -242,6 +248,11 @@ export function ConversationDetails({
   switch (modalState) {
     case ModalState.NothingOpen:
       modalNode = undefined;
+      break;
+    case ModalState.BecomeSustainer:
+      modalNode = (
+        <BadgeSustainerInstructionsDialog i18n={i18n} onClose={onCloseModal} />
+      );
       break;
     case ModalState.EditingGroupDescription:
     case ModalState.EditingGroupTitle:
@@ -397,7 +408,10 @@ export function ConversationDetails({
         i18n={i18n}
         isMe={conversation.isMe}
         isGroup={isGroup}
+        isSignalConversation={isSignalConversation}
         membersCount={conversation.membersCount ?? null}
+        pendingAvatarDownload={pendingAvatarDownload ?? false}
+        startAvatarDownload={startAvatarDownload}
         startEditing={(isGroupTitle: boolean) => {
           setModalState(
             isGroupTitle
@@ -424,7 +438,7 @@ export function ConversationDetails({
             {i18n('icu:ConversationDetails__HeaderButton--Message')}
           </Button>
         )}
-        {!conversation.isMe && (
+        {!conversation.isMe && !isSignalConversation && (
           <>
             <ConversationDetailsCallButton
               hasActiveCall={hasActiveCall}
@@ -470,6 +484,70 @@ export function ConversationDetails({
         )}
       </div>
 
+      {isSignalConversation && (
+        <>
+          <PanelSection>
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationHero--signal-official-chat')}
+                  icon={IconType.official}
+                />
+              }
+              label={i18n('icu:ConversationHero--signal-official-chat')}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationHero--release-notes')}
+                  icon={IconType.bell}
+                />
+              }
+              label={i18n('icu:ConversationHero--release-notes')}
+            />
+          </PanelSection>
+
+          <PanelSection title={i18n('icu:ConversationDetails--help-section')}>
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--support-center')}
+                  icon={IconType.help}
+                />
+              }
+              label={i18n('icu:ConversationDetails--support-center')}
+              onClick={() => {
+                openLinkInWebBrowser('https://support.signal.org');
+              }}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:contactUs')}
+                  icon={IconType.invite}
+                />
+              }
+              label={i18n('icu:contactUs')}
+              onClick={() => {
+                openLinkInWebBrowser(
+                  'https://support.signal.org/hc/requests/new?desktop'
+                );
+              }}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:BadgeDialog__become-a-sustainer-button')}
+                  icon={IconType.heart}
+                />
+              }
+              label={i18n('icu:BadgeDialog__become-a-sustainer-button')}
+              onClick={() => setModalState(ModalState.BecomeSustainer)}
+            />
+          </PanelSection>
+        </>
+      )}
+
       {callHistoryGroup && (
         <CallHistoryGroupPanelSection
           callHistoryGroup={callHistoryGroup}
@@ -477,152 +555,173 @@ export function ConversationDetails({
         />
       )}
 
-      <PanelSection>
-        {!isGroup || canEditGroupInfo ? (
-          <PanelRow
-            icon={
-              <ConversationDetailsIcon
-                ariaLabel={i18n(
-                  'icu:ConversationDetails--disappearing-messages-label'
-                )}
-                icon={IconType.timer}
-              />
-            }
-            info={
-              isGroup
-                ? i18n(
-                    'icu:ConversationDetails--disappearing-messages-info--group'
-                  )
-                : i18n(
-                    'icu:ConversationDetails--disappearing-messages-info--direct'
-                  )
-            }
-            label={i18n('icu:ConversationDetails--disappearing-messages-label')}
-            right={
-              <DisappearingTimerSelect
-                i18n={i18n}
-                value={conversation.expireTimer || DurationInSeconds.ZERO}
-                onChange={value =>
-                  setDisappearingMessages(conversation.id, value)
-                }
-              />
-            }
-          />
-        ) : null}
-        {canHaveNicknameAndNote(conversation) && (
-          <PanelRow
-            icon={
-              <ConversationDetailsIcon
-                ariaLabel={i18n('icu:ConversationDetails--nickname-label')}
-                icon={IconType.edit}
-              />
-            }
-            label={i18n('icu:ConversationDetails--nickname-label')}
-            onClick={onOpenEditNicknameAndNoteModal}
-            actions={
-              (conversation.nicknameGivenName ||
-                conversation.nicknameFamilyName ||
-                conversation.note) && (
-                <ContextMenu
+      {!isSignalConversation && (
+        <PanelSection>
+          {!isGroup || canEditGroupInfo ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n(
+                    'icu:ConversationDetails--disappearing-messages-label'
+                  )}
+                  icon={IconType.timer}
+                />
+              }
+              info={
+                isGroup
+                  ? i18n(
+                      'icu:ConversationDetails--disappearing-messages-info--group'
+                    )
+                  : i18n(
+                      'icu:ConversationDetails--disappearing-messages-info--direct'
+                    )
+              }
+              label={i18n(
+                'icu:ConversationDetails--disappearing-messages-label'
+              )}
+              right={
+                <DisappearingTimerSelect
                   i18n={i18n}
-                  portalToRoot
-                  popperOptions={{
-                    placement: 'bottom',
-                    strategy: 'absolute',
-                  }}
-                  menuOptions={[
-                    {
-                      icon: 'ConversationDetails--nickname-actions--delete',
-                      label: i18n(
-                        'icu:ConversationDetails--nickname-actions--delete'
-                      ),
-                      onClick: () => {
-                        setModalState(ModalState.ConfirmDeleteNicknameAndNote);
+                  value={conversation.expireTimer || DurationInSeconds.ZERO}
+                  onChange={value =>
+                    setDisappearingMessages(conversation.id, value)
+                  }
+                />
+              }
+            />
+          ) : null}
+          {canHaveNicknameAndNote(conversation) && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--nickname-label')}
+                  icon={IconType.edit}
+                />
+              }
+              label={i18n('icu:ConversationDetails--nickname-label')}
+              onClick={onOpenEditNicknameAndNoteModal}
+              actions={
+                (conversation.nicknameGivenName ||
+                  conversation.nicknameFamilyName ||
+                  conversation.note) && (
+                  <ContextMenu
+                    i18n={i18n}
+                    portalToRoot
+                    popperOptions={{
+                      placement: 'bottom',
+                      strategy: 'absolute',
+                    }}
+                    menuOptions={[
+                      {
+                        icon: 'ConversationDetails--nickname-actions--delete',
+                        label: i18n(
+                          'icu:ConversationDetails--nickname-actions--delete'
+                        ),
+                        onClick: () => {
+                          setModalState(
+                            ModalState.ConfirmDeleteNicknameAndNote
+                          );
+                        },
                       },
-                    },
-                  ]}
-                >
-                  {({ onClick }) => {
-                    return (
-                      <button
-                        type="button"
-                        className="ConversationDetails--nickname-actions"
-                        onClick={onClick}
-                      >
-                        <span className="ConversationDetails--nickname-actions-label">
-                          {i18n('icu:ConversationDetails--nickname-actions')}
-                        </span>
-                      </button>
-                    );
+                    ]}
+                  >
+                    {({ onClick }) => {
+                      return (
+                        <button
+                          type="button"
+                          className="ConversationDetails--nickname-actions"
+                          onClick={onClick}
+                        >
+                          <span className="ConversationDetails--nickname-actions-label">
+                            {i18n('icu:ConversationDetails--nickname-actions')}
+                          </span>
+                        </button>
+                      );
+                    }}
+                  </ContextMenu>
+                )
+              }
+            />
+          )}
+          {selectedNavTab === NavTab.Chats && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:showChatColorEditor')}
+                  icon={IconType.color}
+                />
+              }
+              label={i18n('icu:showChatColorEditor')}
+              onClick={() => {
+                pushPanelForConversation({
+                  type: PanelType.ChatColorEditor,
+                });
+              }}
+              right={
+                <div
+                  className={`ConversationDetails__chat-color ConversationDetails__chat-color--${conversation.conversationColor}`}
+                  style={{
+                    ...getCustomColorStyle(conversation.customColor),
                   }}
-                </ContextMenu>
-              )
-            }
-          />
-        )}
-        {selectedNavTab === NavTab.Chats && (
-          <PanelRow
-            icon={
-              <ConversationDetailsIcon
-                ariaLabel={i18n('icu:showChatColorEditor')}
-                icon={IconType.color}
-              />
-            }
-            label={i18n('icu:showChatColorEditor')}
-            onClick={() => {
-              pushPanelForConversation({
-                type: PanelType.ChatColorEditor,
-              });
-            }}
-            right={
-              <div
-                className={`ConversationDetails__chat-color ConversationDetails__chat-color--${conversation.conversationColor}`}
-                style={{
-                  ...getCustomColorStyle(conversation.customColor),
-                }}
-              />
-            }
-          />
-        )}
-        {isGroup && (
-          <PanelRow
-            icon={
-              <ConversationDetailsIcon
-                ariaLabel={i18n('icu:ConversationDetails--notifications')}
-                icon={IconType.notifications}
-              />
-            }
-            label={i18n('icu:ConversationDetails--notifications')}
-            onClick={() =>
-              pushPanelForConversation({
-                type: PanelType.NotificationSettings,
-              })
-            }
-            right={
-              conversation.muteExpiresAt
-                ? getMutedUntilText(conversation.muteExpiresAt, i18n)
-                : undefined
-            }
-          />
-        )}
-        {!isGroup && !conversation.isMe && (
-          <PanelRow
-            onClick={() => toggleSafetyNumberModal(conversation.id)}
-            icon={
-              <ConversationDetailsIcon
-                ariaLabel={i18n('icu:ConversationDetails__viewSafetyNumber')}
-                icon={IconType.verify}
-              />
-            }
-            label={
-              <div className="ConversationDetails__safety-number">
-                {i18n('icu:ConversationDetails__viewSafetyNumber')}
-              </div>
-            }
-          />
-        )}
-      </PanelSection>
-
+                />
+              }
+            />
+          )}
+          {isGroup && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--notifications')}
+                  icon={IconType.notifications}
+                />
+              }
+              label={i18n('icu:ConversationDetails--notifications')}
+              onClick={() =>
+                pushPanelForConversation({
+                  type: PanelType.NotificationSettings,
+                })
+              }
+              right={
+                conversation.muteExpiresAt
+                  ? getMutedUntilText(conversation.muteExpiresAt, i18n)
+                  : undefined
+              }
+            />
+          )}
+          {hasMedia && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetailsMediaList--title')}
+                  icon={IconType.media}
+                />
+              }
+              label={i18n('icu:ConversationDetailsMediaList--title')}
+              onClick={() => {
+                pushPanelForConversation({
+                  type: PanelType.AllMedia,
+                });
+              }}
+            />
+          )}
+          {!isGroup && !conversation.isMe && (
+            <PanelRow
+              onClick={() => toggleSafetyNumberModal(conversation.id)}
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails__viewSafetyNumber')}
+                  icon={IconType.verify}
+                />
+              }
+              label={
+                <div className="ConversationDetails__safety-number">
+                  {i18n('icu:ConversationDetails__viewSafetyNumber')}
+                </div>
+              }
+            />
+          )}
+        </PanelSection>
+      )}
       {isGroup && (
         <ConversationDetailsMembershipList
           canAddNewMembers={canAddNewMembers}
@@ -693,19 +792,7 @@ export function ConversationDetails({
         </PanelSection>
       )}
 
-      <ConversationDetailsMediaList
-        conversation={conversation}
-        i18n={i18n}
-        loadRecentMediaItems={loadRecentMediaItems}
-        showAllMedia={() =>
-          pushPanelForConversation({
-            type: PanelType.AllMedia,
-          })
-        }
-        showLightbox={showLightbox}
-      />
-
-      {!isGroup && !conversation.isMe && (
+      {!isGroup && !conversation.isMe && !isSignalConversation && (
         <ConversationDetailsGroups
           contactId={conversation.id}
           i18n={i18n}

@@ -1,12 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { PlaintextContent } from '@signalapp/libsignal-client';
+import { ContentHint, PlaintextContent } from '@signalapp/libsignal-client';
 
 import { handleMessageSend } from '../../util/handleMessageSend';
 import { getSendOptions } from '../../util/getSendOptions';
 import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { SignalService as Proto } from '../../protobuf';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
@@ -27,6 +26,7 @@ import { strictAssert } from '../../util/assert';
 import type { DecryptionErrorEventData } from '../../textsecure/messageReceiverEvents';
 import type { LoggerType } from '../../types/Logging';
 import { startAutomaticSessionReset } from '../../util/handleRetry';
+import * as Bytes from '../../Bytes';
 
 function failoverToLocalReset(
   logger: LoggerType,
@@ -75,12 +75,12 @@ export async function sendResendRequest(
   );
 
   if (!isDirectConversation(conversation.attributes)) {
-    log.error('conversation is not direct, cancelling job.');
+    log.error('conversation is not direct, canceling job.');
     return;
   }
 
   if (isConversationUnregistered(conversation.attributes)) {
-    log.error('conversation is unregistered, cancelling job.');
+    log.error('conversation is unregistered, canceling job.');
     failoverToLocalReset(log, data);
     return;
   }
@@ -89,15 +89,14 @@ export async function sendResendRequest(
   //   Any needed blocking should still apply once the decryption error is fixed.
 
   if (conversation.getAci() !== senderAci) {
-    log.error('conversation was missing a aci, cancelling job.');
+    log.error('conversation was missing a aci, canceling job.');
     failoverToLocalReset(log, data);
     return;
   }
 
   const plaintext = PlaintextContent.deserialize(
-    Buffer.from(plaintextBase64, 'base64')
+    Bytes.fromBase64(plaintextBase64)
   );
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
   // We run this job on the queue for the individual sender we want the resend from, but
   //   the original message might have been sent in a group - and that's where we'll put
@@ -112,7 +111,7 @@ export async function sendResendRequest(
         timestamp,
         recipients: [senderAci],
         proto: plaintext,
-        contentHint: ContentHint.DEFAULT,
+        contentHint: ContentHint.Default,
         groupId,
         options,
         urgent: false,
@@ -123,7 +122,7 @@ export async function sendResendRequest(
     // Now that we've successfully sent, represent this to the user. Three options:
 
     // 1. We believe that it could be successfully re-sent, so we'll add a placeholder.
-    if (contentHint === ContentHint.RESENDABLE) {
+    if (contentHint === ContentHint.Resendable) {
       const { retryPlaceholders } = window.Signal.Services;
       strictAssert(retryPlaceholders, 'sendResendRequest: adding placeholder');
 
@@ -147,7 +146,7 @@ export async function sendResendRequest(
 
     // 2. This message cannot be resent. We'll show no error and trust the other side to
     //   reset their session.
-    if (contentHint === ContentHint.IMPLICIT) {
+    if (contentHint === ContentHint.Implicit) {
       log.info('contentHint is IMPLICIT, adding no timeline item.');
       return;
     }
@@ -170,7 +169,7 @@ export async function sendResendRequest(
       error instanceof UnregisteredUserError
     ) {
       log.info(
-        'Group send failures were all OutgoingIdentityKeyError or UnregisteredUserError. Cancelling job.'
+        'Group send failures were all OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.'
       );
 
       return;

@@ -10,14 +10,13 @@ import {
   parseContactsV2,
   type ContactDetailsWithAvatar,
 } from '../textsecure/ContactsParser';
-import { normalizeAci } from '../util/normalizeAci';
 import * as Conversation from '../types/Conversation';
 import * as Errors from '../types/errors';
 import type { ValidateConversationType } from '../model-types.d';
 import type { ConversationModel } from '../models/conversations';
 import { validateConversation } from '../util/validateConversation';
 import { isDirectConversation, isMe } from '../util/whatTypeOfConversation';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { dropNull } from '../util/dropNull';
 import type { ProcessedAttachment } from '../textsecure/Types';
 import { downloadAttachment } from '../textsecure/downloadAttachment';
@@ -25,16 +24,20 @@ import { strictAssert } from '../util/assert';
 import type { ReencryptedAttachmentV2 } from '../AttachmentCrypto';
 import { SECOND } from '../util/durations';
 import { AttachmentVariant } from '../types/Attachment';
+import { MediaTier } from '../types/AttachmentDownload';
+import { waitForOnline } from '../util/waitForOnline';
+
+const log = createLogger('contactSync');
 
 // When true - we are running the very first storage and contact sync after
 // linking.
 let isInitialSync = false;
 
-export function setIsInitialSync(newValue: boolean): void {
-  log.info(`setIsInitialSync(${newValue})`);
+export function setIsInitialContactSync(newValue: boolean): void {
+  log.info(`setIsInitialContactSync(${newValue})`);
   isInitialSync = newValue;
 }
-export function getIsInitialSync(): boolean {
+export function getIsInitialContactSync(): boolean {
   return isInitialSync;
 }
 
@@ -94,7 +97,7 @@ async function updateConversationFromContactSync(
     );
   }
 
-  window.Whisper.events.trigger('incrementProgress');
+  window.Whisper.events.emit('incrementProgress');
 }
 
 const queue = new PQueue({ concurrency: 1 });
@@ -108,13 +111,14 @@ async function downloadAndParseContactAttachment(
     const abortController = new AbortController();
     downloaded = await downloadAttachment(
       window.textsecure.server,
-      contactAttachment,
+      { attachment: contactAttachment, mediaTier: MediaTier.STANDARD },
       {
         variant: AttachmentVariant.Default,
         onSizeUpdate: noop,
         disableRetries: true,
         timeout: 90 * SECOND,
         abortSignal: abortController.signal,
+        logId: 'downloadContactAttachment',
       }
     );
 
@@ -140,7 +144,33 @@ async function doContactSync({
     `receivedAt=${receivedAtCounter}, isFullSync=${isFullSync})`;
 
   log.info(`${logId}: downloading contact attachment`);
-  const contacts = await downloadAndParseContactAttachment(contactAttachment);
+  let contacts: ReadonlyArray<ContactDetailsWithAvatar> | undefined;
+  let attempts = 0;
+  const ATTEMPT_LIMIT = 3;
+  while (contacts === undefined) {
+    attempts += 1;
+    try {
+      if (!window.textsecure.server?.isOnline()) {
+        log.info(`${logId}: We are not online; waiting until we are online`);
+        // eslint-disable-next-line no-await-in-loop
+        await waitForOnline();
+        log.info(`${logId}: We are back online; starting up again`);
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      contacts = await downloadAndParseContactAttachment(contactAttachment);
+    } catch (error) {
+      if (attempts >= ATTEMPT_LIMIT) {
+        throw error;
+      }
+
+      log.warn(
+        `${logId}: Failed to download attachment, attempt ${attempts}`,
+        Errors.toLogFormat(error)
+      );
+      // continue
+    }
+  }
 
   log.info(`${logId}: got ${contacts.length} contacts`);
   const updatedConversations = new Set<ConversationModel>();
@@ -149,22 +179,22 @@ async function doContactSync({
   for (const details of contacts) {
     const partialConversation: ValidateConversationType = {
       e164: details.number,
-      serviceId: normalizeAci(details.aci, 'doContactSync'),
+      serviceId: details.aci,
       type: 'private',
     };
 
-    const validationError = validateConversation(partialConversation);
-    if (validationError) {
+    const validationErrorString = validateConversation(partialConversation);
+    if (validationErrorString) {
       log.error(
         `${logId}: Invalid contact received`,
-        Errors.toLogFormat(validationError)
+        Errors.toLogFormat(validationErrorString)
       );
       continue;
     }
 
     const { conversation } = window.ConversationController.maybeMergeContacts({
       e164: details.number,
-      aci: normalizeAci(details.aci, 'contactSync.aci'),
+      aci: details.aci,
       reason: logId,
     });
 
@@ -232,7 +262,10 @@ async function doContactSync({
   await Promise.all(promises);
 
   await window.storage.put('synced_at', Date.now());
-  window.Whisper.events.trigger('contactSync:complete');
+  window.Whisper.events.emit('contactSync:complete');
+  if (isInitialSync) {
+    isInitialSync = false;
+  }
   window.SignalCI?.handleEvent('contactSync', isFullSync);
 
   log.info(`${logId}: done`);

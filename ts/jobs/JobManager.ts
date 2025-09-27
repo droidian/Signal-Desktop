@@ -8,7 +8,7 @@ import {
 } from '../util/explodePromise';
 import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
 import { drop } from '../util/drop';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import { missingCaseError } from '../util/missingCaseError';
 import {
   type ExponentialBackoffOptionsType,
@@ -16,6 +16,8 @@ import {
 } from '../util/exponentialBackoff';
 import * as Errors from '../types/errors';
 import { sleep } from '../util/sleep';
+
+const log = createLogger('JobManager');
 
 export type JobManagerJobType = {
   active: boolean;
@@ -64,10 +66,8 @@ export type JobManagerParamsType<
 
 const DEFAULT_TICK_INTERVAL = MINUTE;
 export type JobManagerJobResultType<CoreJobType> =
-  | {
-      status: 'retry';
-    }
-  | { status: 'finished'; newJob?: CoreJobType }
+  | { status: 'retry'; updatedJob?: CoreJobType & JobManagerJobType }
+  | { status: 'finished' }
   | { status: 'rate-limited'; pauseDurationMs: number };
 
 export type ActiveJobData<CoreJobType> = {
@@ -118,11 +118,11 @@ export abstract class JobManager<CoreJobType> {
   }
 
   async waitForIdle(): Promise<void> {
-    if (this.#activeJobs.size === 0) {
-      return;
-    }
-
-    await new Promise<void>(resolve => this.#idleCallbacks.push(resolve));
+    const idledPromise = new Promise<void>(resolve =>
+      this.#idleCallbacks.push(resolve)
+    );
+    this.#tick();
+    return idledPromise;
   }
 
   #tick(): void {
@@ -190,11 +190,6 @@ export abstract class JobManager<CoreJobType> {
       if (runningJob) {
         log.info(`${logId}: already running; resetting attempts`);
         runningJob.attempts = 0;
-
-        await this.params.saveJob({
-          ...runningJob,
-          attempts: 0,
-        });
 
         return { isAlreadyRunning: true };
       }
@@ -290,6 +285,7 @@ export abstract class JobManager<CoreJobType> {
       return;
     }
 
+    const isFirstAttempt = job.attempts === 0;
     const isLastAttempt =
       job.attempts + 1 >=
       (this.params.getRetryConfig(job).maxAttempts ?? Infinity);
@@ -306,7 +302,9 @@ export abstract class JobManager<CoreJobType> {
       this.#handleJobStartPromises(job);
       jobRunResult = await runJobPromise;
       const { status } = jobRunResult;
-      log.info(`${logId}: job completed with status: ${status}`);
+      log.info(
+        `${logId}: job completed with status: ${status}${status === 'retry' && jobRunResult.updatedJob ? ' with updated job' : ''}`
+      );
 
       switch (status) {
         case 'finished':
@@ -316,7 +314,13 @@ export abstract class JobManager<CoreJobType> {
           if (isLastAttempt) {
             throw new Error('Cannot retry on last attempt');
           }
-          await this.#retryJobLater(job);
+          // If we get an updated job, retry it without delay only if it's the first
+          // attempt (to avoid loops)
+          if (isFirstAttempt && jobRunResult.updatedJob) {
+            await this.#retryJobWithoutDelay(jobRunResult.updatedJob);
+          } else {
+            await this.#retryJobLater(jobRunResult.updatedJob ?? job);
+          }
           return;
         case 'rate-limited':
           log.info(
@@ -337,16 +341,19 @@ export abstract class JobManager<CoreJobType> {
       }
     } finally {
       this.#removeRunningJob(job);
-      if (jobRunResult?.status === 'finished') {
-        if (jobRunResult.newJob) {
-          log.info(
-            `${logId}: adding new job as a result of this one completing`
-          );
-          await this.addJob(jobRunResult.newJob);
-        }
-      }
       drop(this.maybeStartJobs());
     }
+  }
+
+  async #retryJobWithoutDelay(job: CoreJobType & JobManagerJobType) {
+    const now = Date.now();
+    await this.params.saveJob({
+      ...job,
+      active: false,
+      attempts: job.attempts + 1,
+      retryAfter: now,
+      lastAttemptTimestamp: now,
+    });
   }
 
   async #retryJobLater(job: CoreJobType & JobManagerJobType) {
@@ -417,7 +424,7 @@ export abstract class JobManager<CoreJobType> {
         abortController.abort();
 
         // First tell those waiting for the job that it's not happening
-        const rejectionError = new Error('Cancelled at JobManager.cancelJobs');
+        const rejectionError = new Error('Canceled at JobManager.cancelJobs');
         const idWithAttempts = this.#getJobIdIncludingAttempts(job);
         this.#jobCompletePromises.get(idWithAttempts)?.reject(rejectionError);
         this.#jobCompletePromises.delete(idWithAttempts);
@@ -441,7 +448,7 @@ export abstract class JobManager<CoreJobType> {
       })
     );
 
-    log.warn(`${logId}: Successfully cancelled ${jobs.length} jobs`);
+    log.warn(`${logId}: Successfully canceled ${jobs.length} jobs`);
   }
 
   #addRunningJob(

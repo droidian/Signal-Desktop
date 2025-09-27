@@ -1,6 +1,8 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { ContentHint } from '@signalapp/libsignal-client';
+
 import { getSendOptions } from '../../util/getSendOptions';
 import { isDirectConversation, isMe } from '../../util/whatTypeOfConversation';
 import { SignalService as Proto } from '../../protobuf';
@@ -40,7 +42,7 @@ export async function sendDirectExpirationTimerUpdate(
 
   if (!isDirectConversation(conversation.attributes)) {
     log.error(
-      `Conversation ${conversation.idForLogging()} is not a 1:1 conversation; cancelling expiration timer job.`
+      `Conversation ${conversation.idForLogging()} is not a 1:1 conversation; canceling expiration timer job.`
     );
     return;
   }
@@ -70,8 +72,7 @@ export async function sendDirectExpirationTimerUpdate(
     profileKey = await ourProfileKeyService.get();
   }
 
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-  const contentHint = ContentHint.RESENDABLE;
+  const contentHint = ContentHint.Resendable;
 
   const sendType = 'expirationTimerUpdate';
   const flags = Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE;
@@ -91,7 +92,7 @@ export async function sendDirectExpirationTimerUpdate(
 
   if (!proto.dataMessage) {
     log.error(
-      "ContentMessage proto didn't have a data message; cancelling job."
+      "ContentMessage proto didn't have a data message; canceling job."
     );
     return;
   }
@@ -105,7 +106,7 @@ export async function sendDirectExpirationTimerUpdate(
           encodedDataMessage: Proto.DataMessage.encode(
             proto.dataMessage
           ).finish(),
-          destination: conversation.get('e164'),
+          destinationE164: conversation.get('e164'),
           destinationServiceId: conversation.getServiceId(),
           expirationStartTimestamp: null,
           options: sendOptions,

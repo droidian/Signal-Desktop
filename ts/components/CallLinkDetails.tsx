@@ -67,6 +67,7 @@ export function CallLinkDetails({
 
   const webUrl = linkCallRoute.toWebUrl({
     key: callLink.rootKey,
+    epoch: callLink.epoch,
   });
   const joinButton = (
     <Button
@@ -107,8 +108,6 @@ export function CallLinkDetails({
           color={getColorForCallLink(callLink.rootKey)}
           conversationType="callLink"
           size={AvatarSize.SIXTY_FOUR}
-          acceptedMessageRequest
-          isMe={false}
           sharedGroupNames={[]}
           title={callLink.name ?? i18n('icu:calling__call-link-default-title')}
         />
@@ -277,8 +276,6 @@ function renderMissingCallLink({
           badge={undefined}
           conversationType="callLink"
           size={AvatarSize.SIXTY_FOUR}
-          acceptedMessageRequest
-          isMe={false}
           sharedGroupNames={[]}
           title={i18n('icu:calling__call-link-default-title')}
         />

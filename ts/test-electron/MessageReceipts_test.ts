@@ -17,7 +17,6 @@ import {
   messageReceiptTypeSchema,
 } from '../messageModifiers/MessageReceipts';
 import { ReadStatus } from '../messages/MessageReadStatus';
-import { postSaveUpdates } from '../util/cleanup';
 
 describe('MessageReceipts', () => {
   let ourAci: AciString;
@@ -27,6 +26,11 @@ describe('MessageReceipts', () => {
     await window.textsecure.storage.put('uuid_id', `${ourAci}.1`);
     await window.textsecure.storage.put('read-receipt-setting', true);
     await window.ConversationController.load();
+  });
+
+  afterEach(async () => {
+    await DataWriter.removeAll();
+    await window.storage.fetch();
   });
 
   function generateReceipt(
@@ -79,10 +83,8 @@ describe('MessageReceipts', () => {
       },
     };
 
-    await DataWriter.saveMessage(messageAttributes, {
+    await window.MessageCache.saveMessage(messageAttributes, {
       forceSave: true,
-      ourAci,
-      postSaveUpdates,
     });
 
     await Promise.all([
@@ -157,10 +159,8 @@ describe('MessageReceipts', () => {
       ],
     };
 
-    await DataWriter.saveMessage(messageAttributes, {
+    await window.MessageCache.saveMessage(messageAttributes, {
       forceSave: true,
-      ourAci,
-      postSaveUpdates,
     });
     await DataWriter.saveEditedMessage(messageAttributes, ourAci, {
       conversationId: messageAttributes.conversationId,

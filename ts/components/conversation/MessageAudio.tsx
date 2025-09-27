@@ -8,14 +8,14 @@ import { noop } from 'lodash';
 import { animated, useSpring } from '@react-spring/web';
 
 import type { LocalizerType } from '../../types/Util';
-import type { AttachmentType } from '../../types/Attachment';
+import type { AttachmentForUIType } from '../../types/Attachment';
 import type { PushPanelForConversationActionType } from '../../state/ducks/conversations';
 import { isDownloaded } from '../../types/Attachment';
 import type { DirectionType, MessageStatusType } from './Message';
 
 import type { ComputePeaksResult } from '../VoiceNotesPlaybackContext';
 import { MessageMetadata } from './MessageMetadata';
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log';
 import type { ActiveAudioPlayerStateType } from '../../state/ducks/audioPlayer';
 import { PlaybackRateButton } from '../PlaybackRateButton';
 import { PlaybackButton } from '../PlaybackButton';
@@ -23,6 +23,9 @@ import { WaveformScrubber } from './WaveformScrubber';
 import { useComputePeaks } from '../../hooks/useComputePeaks';
 import { durationToPlaybackText } from '../../util/durationToPlaybackText';
 import { shouldNeverBeCalled } from '../../util/shouldNeverBeCalled';
+import { formatFileSize } from '../../util/formatFileSize';
+
+const log = createLogger('MessageAudio');
 
 export type OwnProps = Readonly<{
   active:
@@ -33,7 +36,7 @@ export type OwnProps = Readonly<{
     | undefined;
   buttonRef: RefObject<HTMLButtonElement>;
   i18n: LocalizerType;
-  attachment: AttachmentType;
+  attachment: AttachmentForUIType;
   collapseMetadata: boolean;
   withContentAbove: boolean;
   withContentBelow: boolean;
@@ -47,6 +50,7 @@ export type OwnProps = Readonly<{
   status?: MessageStatusType;
   textPending?: boolean;
   timestamp: number;
+  cancelAttachmentDownload(): void;
   kickOffAttachmentDownload(): void;
   onCorrupted(): void;
   computePeaks(url: string, barCount: number): Promise<ComputePeaksResult>;
@@ -154,6 +158,7 @@ export function MessageAudio(props: Props): JSX.Element {
     textPending,
     timestamp,
 
+    cancelAttachmentDownload,
     kickOffAttachmentDownload,
     onCorrupted,
     setPlaybackRate,
@@ -275,13 +280,24 @@ export function MessageAudio(props: Props): JSX.Element {
   );
 
   let button: React.ReactElement;
-  if (state === State.Pending || state === State.Computing) {
+  if (state === State.Computing) {
     // Not really a button, but who cares?
     button = (
       <PlaybackButton
         variant="message"
-        mod="pending"
+        mod="computing"
         onClick={noop}
+        label={i18n('icu:MessageAudio--pending')}
+        context={direction}
+      />
+    );
+  } else if (state === State.Pending) {
+    button = (
+      <PlaybackButton
+        variant="message"
+        mod="downloading"
+        attachment={attachment}
+        onClick={cancelAttachmentDownload}
         label={i18n('icu:MessageAudio--pending')}
         context={direction}
       />
@@ -291,7 +307,7 @@ export function MessageAudio(props: Props): JSX.Element {
       <PlaybackButton
         ref={buttonRef}
         variant="message"
-        mod="download"
+        mod="not-downloaded"
         label={i18n('icu:MessageAudio--download')}
         onClick={kickOffAttachmentDownload}
         context={direction}
@@ -316,6 +332,10 @@ export function MessageAudio(props: Props): JSX.Element {
   }
 
   const countDown = Math.max(0, duration - (active?.currentTime ?? 0));
+  const fileSizeOrDuration =
+    state === State.NotDownloaded || state === State.Pending || duration < 1
+      ? formatFileSize(attachment.size)
+      : durationToPlaybackText(countDown);
 
   const metadata = (
     <div className={`${CSS_BASE}__metadata`}>
@@ -326,7 +346,7 @@ export function MessageAudio(props: Props): JSX.Element {
           `${CSS_BASE}__countdown--${played ? 'played' : 'unplayed'}`
         )}
       >
-        {durationToPlaybackText(countDown)}
+        {fileSizeOrDuration}
       </div>
 
       <div className={`${CSS_BASE}__controls`}>
@@ -360,7 +380,6 @@ export function MessageAudio(props: Props): JSX.Element {
           id={id}
           isShowingImage={false}
           isSticker={false}
-          isTapToViewExpired={false}
           pushPanelForConversation={pushPanelForConversation}
           retryMessageSend={shouldNeverBeCalled}
           status={status}

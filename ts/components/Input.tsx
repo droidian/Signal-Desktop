@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ClipboardEvent, ReactNode } from 'react';
+import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import React, {
   forwardRef,
   useCallback,
@@ -34,8 +34,10 @@ export type PropsType = {
   moduleClassName?: string;
   onChange: (value: string) => unknown;
   onBlur?: () => unknown;
+  onFocus?: () => unknown;
   onEnter?: () => unknown;
   placeholder: string;
+  readOnly?: boolean;
   value?: string;
   whenToShowRemainingCount?: number;
   whenToWarnRemainingCount?: number;
@@ -80,8 +82,10 @@ export const Input = forwardRef<
     moduleClassName,
     onChange,
     onBlur,
+    onFocus,
     onEnter,
     placeholder,
+    readOnly,
     value = '',
     whenToShowRemainingCount = Infinity,
     whenToWarnRemainingCount = Infinity,
@@ -114,7 +118,7 @@ export const Input = forwardRef<
   }, [expandable]);
 
   const handleKeyDown = useCallback(
-    event => {
+    (event: KeyboardEvent) => {
       if (onEnter && event.key === 'Enter') {
         onEnter();
       }
@@ -220,9 +224,11 @@ export const Input = forwardRef<
     spellCheck: !disableSpellcheck,
     onChange: handleChange,
     onBlur,
+    onFocus,
     onKeyDown: handleKeyDown,
     onPaste: handlePaste,
     placeholder,
+    readOnly,
     ref: refMerger<HTMLInputElement | HTMLTextAreaElement | null>(
       ref,
       innerRef

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isNumber } from 'lodash';
+import { ContentHint } from '@signalapp/libsignal-client';
 
 import * as Errors from '../../types/errors';
 import { strictAssert } from '../../util/assert';
@@ -10,7 +11,6 @@ import type { CallbackResultType } from '../../textsecure/Types.d';
 import { MessageModel } from '../../models/messages';
 import type { MessageReactionType } from '../../model-types.d';
 import type { ConversationModel } from '../../models/conversations';
-import { DataWriter } from '../../sql/Client';
 
 import * as reactionUtil from '../../reactions/util';
 import { isSent, SendStatus } from '../../messages/MessageSendState';
@@ -22,7 +22,6 @@ import {
   isGroupV2,
 } from '../../util/whatTypeOfConversation';
 import { getSendOptions } from '../../util/getSendOptions';
-import { SignalService as Proto } from '../../protobuf';
 import { handleMessageSend } from '../../util/handleMessageSend';
 import { ourProfileKeyService } from '../../services/ourProfileKey';
 import { canReact, isStory } from '../../state/selectors/message';
@@ -42,7 +41,6 @@ import { isConversationUnregistered } from '../../util/isConversationUnregistere
 import type { LoggerType } from '../../types/Logging';
 import { sendToGroup } from '../../util/sendToGroup';
 import { hydrateStoryContext } from '../../util/hydrateStoryContext';
-import { postSaveUpdates } from '../../util/cleanup';
 import { send, sendSyncMessageOnly } from '../../messages/send';
 
 export async function sendReaction(
@@ -90,10 +88,7 @@ export async function sendReaction(
   if (!canReact(message.attributes, ourConversationId, findAndFormatContact)) {
     log.info(`could not react to ${messageId}. Removing this pending reaction`);
     markReactionFailed(message, pendingReaction);
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci,
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
     return;
   }
 
@@ -102,10 +97,7 @@ export async function sendReaction(
       `reacting to message ${messageId} ran out of time. Giving up on sending it`
     );
     markReactionFailed(message, pendingReaction);
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci,
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
     return;
   }
 
@@ -219,7 +211,6 @@ export async function sendReaction(
       successfulConversationIds.add(ourConversationId);
     } else {
       const sendOptions = await getSendOptions(conversation.attributes);
-      const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
       let promise: Promise<CallbackResultType>;
       if (isDirectConversation(conversation.attributes)) {
@@ -258,7 +249,7 @@ export async function sendReaction(
           timestamp: pendingReaction.timestamp,
           expireTimer,
           expireTimerVersion: conversation.getExpireTimerVersion(),
-          contentHint: ContentHint.RESENDABLE,
+          contentHint: ContentHint.Resendable,
           groupId: undefined,
           profileKey,
           options: sendOptions,
@@ -284,7 +275,7 @@ export async function sendReaction(
 
             return sendToGroup({
               abortSignal,
-              contentHint: ContentHint.RESENDABLE,
+              contentHint: ContentHint.Resendable,
               groupSendOptions: {
                 groupV2: groupV2Info,
                 reaction: reactionForSend,
@@ -347,10 +338,8 @@ export async function sendReaction(
         await hydrateStoryContext(reactionMessage.id, message.attributes, {
           shouldSave: false,
         });
-        await DataWriter.saveMessage(reactionMessage.attributes, {
-          ourAci,
+        await window.MessageCache.saveMessage(reactionMessage.attributes, {
           forceSave: true,
-          postSaveUpdates,
         });
 
         window.MessageCache.register(reactionMessage);
@@ -382,10 +371,7 @@ export async function sendReaction(
       toThrow: originalError || thrownError,
     });
   } finally {
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci,
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
   }
 }
 
@@ -439,7 +425,7 @@ function getRecipients(
       const serviceId = recipient.getServiceId();
       if (!serviceId) {
         log.error(
-          `sendReaction/getRecipients: Untrusted conversation ${recipient.idForLogging()} missing serviceId.`
+          `getRecipients: Untrusted conversation ${recipient.idForLogging()} missing serviceId.`
         );
         continue;
       }

@@ -4,18 +4,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { setupI18n } from '../../util/setupI18n';
 import { sleep } from '../../util/sleep';
 import {
   InstallScreenBackupStep,
   InstallScreenBackupError,
 } from '../../types/InstallScreen';
 import { DialogType } from '../../types/Dialogs';
-import enMessages from '../../../_locales/en/messages.json';
 import type { PropsType } from './InstallScreenBackupImportStep';
 import { InstallScreenBackupImportStep } from './InstallScreenBackupImportStep';
 
-const i18n = setupI18n('en', enMessages);
+const { i18n } = window.SignalContext;
 
 const DEFAULT_UPDATES = {
   dialogType: DialogType.None,
@@ -107,7 +105,6 @@ export function FullFlow(): JSX.Element {
       currentBytes={currentBytes}
       totalBytes={totalBytes}
       backupStep={backupStep}
-      onRestartLink={action('onRestartLink')}
     />
   );
 }
@@ -145,6 +142,14 @@ FatalError.args = {
   currentBytes: 500 * 1024,
   totalBytes: 1024 * 1024,
   error: InstallScreenBackupError.Fatal,
+};
+
+export const Canceled = Template.bind({});
+Canceled.args = {
+  backupStep: InstallScreenBackupStep.Process,
+  currentBytes: 500 * 1024,
+  totalBytes: 1024 * 1024,
+  error: InstallScreenBackupError.Canceled,
 };
 
 export const UnsupportedVersion = Template.bind({});

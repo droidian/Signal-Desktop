@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { CallLinkRootKey } from '@signalapp/ringrtc';
+import * as Bytes from '../../Bytes';
 import type {
   CallLinkRecord,
   CallLinkStateType,
@@ -19,9 +20,9 @@ import {
   callLinkFromRecord,
   defunctCallLinkToRecord,
   defunctCallLinkFromRecord,
+  toEpochBytes,
 } from '../../util/callLinksRingrtc';
 import type { ReadableDB, WritableDB } from '../Interface';
-import { prepare } from '../Server';
 import { sql } from '../util';
 import { strictAssert } from '../../util/assert';
 import { CallStatusValue, DirectCallStatus } from '../../types/CallDisposition';
@@ -33,7 +34,13 @@ export function callLinkExists(db: ReadableDB, roomId: string): boolean {
     FROM callLinks
     WHERE roomId = ${roomId};
   `;
-  return db.prepare(query).pluck(true).get(params) === 1;
+  return (
+    db
+      .prepare(query, {
+        pluck: true,
+      })
+      .get(params) === 1
+  );
 }
 
 export function getCallLinkByRoomId(
@@ -53,12 +60,9 @@ export function getCallLinkRecordByRoomId(
   db: ReadableDB,
   roomId: string
 ): CallLinkRecord | undefined {
-  const row = prepare(db, 'SELECT * FROM callLinks WHERE roomId = $roomId').get(
-    {
-      roomId,
-    }
-  );
-
+  const row = db.prepare('SELECT * FROM callLinks WHERE roomId = $roomId').get({
+    roomId,
+  });
   if (!row) {
     return undefined;
   }
@@ -83,12 +87,12 @@ function _insertCallLink(db: WritableDB, callLink: CallLinkType): void {
   assertRoomIdMatchesRootKey(roomId, rootKey);
 
   const data = callLinkToRecord(callLink);
-  prepare(
-    db,
+  db.prepare(
     `
     INSERT INTO callLinks (
       roomId,
       rootKey,
+      epoch,
       adminKey,
       name,
       restrictions,
@@ -101,6 +105,7 @@ function _insertCallLink(db: WritableDB, callLink: CallLinkType): void {
     ) VALUES (
       $roomId,
       $rootKey,
+      $epoch,
       $adminKey,
       $name,
       $restrictions,
@@ -119,6 +124,44 @@ export function insertCallLink(db: WritableDB, callLink: CallLinkType): void {
   _insertCallLink(db, callLink);
 }
 
+export type InsertOrUpdateCallLinkFromSyncResult = Readonly<{
+  callLink: CallLinkType;
+  inserted: boolean;
+  updated: boolean;
+}>;
+
+export function insertOrUpdateCallLinkFromSync(
+  db: WritableDB,
+  callLink: CallLinkType
+): InsertOrUpdateCallLinkFromSyncResult {
+  const { roomId, epoch, adminKey } = callLink;
+  return db.transaction(() => {
+    const existingCallLink = getCallLinkByRoomId(db, roomId);
+    if (existingCallLink) {
+      if (
+        (adminKey && adminKey !== existingCallLink.adminKey) ||
+        epoch !== existingCallLink.epoch
+      ) {
+        updateCallLinkEpochAndAdminKeyByRoomId(db, roomId, epoch, adminKey);
+        return {
+          callLink: { ...existingCallLink, adminKey, epoch },
+          inserted: false,
+          updated: true,
+        };
+      }
+
+      return {
+        callLink: existingCallLink,
+        inserted: false,
+        updated: false,
+      };
+    }
+
+    insertCallLink(db, callLink);
+    return { callLink, inserted: true, updated: false };
+  })();
+}
+
 export function updateCallLink(db: WritableDB, callLink: CallLinkType): void {
   const { roomId, rootKey } = callLink;
   assertRoomIdMatchesRootKey(roomId, rootKey);
@@ -129,6 +172,7 @@ export function updateCallLink(db: WritableDB, callLink: CallLinkType): void {
     `
     UPDATE callLinks
     SET
+      epoch = $epoch,
       adminKey = $adminKey,
       name = $name,
       restrictions = $restrictions,
@@ -168,26 +212,65 @@ export function updateCallLinkState(
   return callLinkFromRecord(parseUnknown(callLinkRecordSchema, row));
 }
 
-export function updateCallLinkAdminKeyByRoomId(
+export function updateCallLinkStateAndEpoch(
   db: WritableDB,
   roomId: string,
-  adminKey: string
-): void {
-  const adminKeyBytes = toAdminKeyBytes(adminKey);
-  prepare(
-    db,
-    `
+  callLinkState: CallLinkStateType,
+  epoch: string | null
+): CallLinkType {
+  const { name, restrictions, expiration, revoked } = callLinkState;
+  const restrictionsValue = parseStrict(
+    callLinkRestrictionsSchema,
+    restrictions
+  );
+  const epochBytes = epoch ? toEpochBytes(epoch) : null;
+  const [query, params] = sql`
     UPDATE callLinks
-    SET adminKey = $adminKeyBytes
-    WHERE roomId = $roomId;
-    `
-  ).run({ roomId, adminKeyBytes });
+    SET
+      name = ${name},
+      epoch = ${epochBytes},
+      restrictions = ${restrictionsValue},
+      expiration = ${expiration},
+      revoked = ${revoked ? 1 : 0}
+    WHERE roomId = ${roomId}
+    RETURNING *;
+  `;
+  const row: unknown = db.prepare(query).get(params);
+  strictAssert(row, 'Expected row to be returned');
+  return callLinkFromRecord(parseUnknown(callLinkRecordSchema, row));
+}
+
+export function updateCallLinkEpochAndAdminKeyByRoomId(
+  db: WritableDB,
+  roomId: string,
+  epoch: string | null,
+  adminKey: string | null
+): void {
+  const epochBytes = epoch ? toEpochBytes(epoch) : null;
+  if (adminKey) {
+    const adminKeyBytes = toAdminKeyBytes(adminKey);
+    db.prepare(
+      `
+      UPDATE callLinks
+      SET adminKey = $adminKeyBytes, epoch = $epochBytes
+      WHERE roomId = $roomId;
+      `
+    ).run({ roomId, epochBytes, adminKeyBytes });
+  } else {
+    db.prepare(
+      `
+      UPDATE callLinks
+      SET epoch = $epochBytes
+      WHERE roomId = $roomId;
+      `
+    ).run({ roomId, epochBytes });
+  }
 }
 
 function assertRoomIdMatchesRootKey(roomId: string, rootKey: string): void {
-  const derivedRoomId = CallLinkRootKey.parse(rootKey)
-    .deriveRoomId()
-    .toString('hex');
+  const derivedRoomId = Bytes.toHex(
+    CallLinkRootKey.parse(rootKey).deriveRoomId()
+  );
   strictAssert(
     roomId === derivedRoomId,
     'passed roomId must match roomId derived from root key'
@@ -360,7 +443,11 @@ export function getAllMarkedDeletedCallLinkRoomIds(
   const [query] = sql`
     SELECT roomId FROM callLinks WHERE deleted = 1;
   `;
-  return db.prepare(query).pluck().all();
+  return db
+    .prepare(query, {
+      pluck: true,
+    })
+    .all();
 }
 
 // TODO: Run this after uploading storage records, maybe periodically on startup
@@ -387,7 +474,13 @@ export function defunctCallLinkExists(db: ReadableDB, roomId: string): boolean {
     FROM defunctCallLinks
     WHERE roomId = ${roomId};
   `;
-  return db.prepare(query).pluck(true).get(params) === 1;
+  return (
+    db
+      .prepare(query, {
+        pluck: true,
+      })
+      .get(params) === 1
+  );
 }
 
 export function getAllDefunctCallLinksWithAdminKey(
@@ -414,12 +507,12 @@ export function insertDefunctCallLink(
   assertRoomIdMatchesRootKey(roomId, rootKey);
 
   const data = defunctCallLinkToRecord(defunctCallLink);
-  prepare(
-    db,
+  db.prepare(
     `
     INSERT INTO defunctCallLinks (
       roomId,
       rootKey,
+      epoch,
       adminKey,
       storageID,
       storageVersion,
@@ -428,6 +521,7 @@ export function insertDefunctCallLink(
     ) VALUES (
       $roomId,
       $rootKey,
+      $epoch,
       $adminKey,
       $storageID,
       $storageVersion,

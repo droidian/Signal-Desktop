@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import omit from 'lodash/omit';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import type { AttachmentType } from '../types/Attachment';
 import type { MessageAttributesType } from '../model-types.d';
 import { getAttachmentsForMessage } from '../state/selectors/message';
@@ -14,8 +14,8 @@ import { isOlderThan } from './timestamp';
 import { DAY } from './durations';
 import { getMessageById } from '../messages/getMessageById';
 import { MessageModel } from '../models/messages';
-import { DataWriter } from '../sql/Client';
-import { postSaveUpdates } from './cleanup';
+
+const log = createLogger('hydrateStoryContext');
 
 export async function hydrateStoryContext(
   messageId: string,
@@ -30,7 +30,7 @@ export async function hydrateStoryContext(
 ): Promise<Partial<MessageAttributesType> | undefined> {
   const message = await getMessageById(messageId);
   if (!message) {
-    log.warn(`hydrateStoryContext: Message ${messageId} not found`);
+    log.warn(`Message ${messageId} not found`);
     return undefined;
   }
 
@@ -82,11 +82,7 @@ export async function hydrateStoryContext(
     };
     message.set(newMessageAttributes);
     if (shouldSave) {
-      const ourAci = window.textsecure.storage.user.getCheckedAci();
-      await DataWriter.saveMessage(message.attributes, {
-        ourAci,
-        postSaveUpdates,
-      });
+      await window.MessageCache.saveMessage(message.attributes);
     }
 
     return newMessageAttributes;
@@ -109,11 +105,7 @@ export async function hydrateStoryContext(
   };
   message.set(newMessageAttributes);
   if (shouldSave) {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci,
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
   }
 
   return newMessageAttributes;

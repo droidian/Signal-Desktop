@@ -10,8 +10,7 @@ import { getOwn } from '../util/getOwn';
 import { isGroup } from '../util/whatTypeOfConversation';
 import { handleMessageSend } from '../util/handleMessageSend';
 import { getSendOptions } from '../util/getSendOptions';
-import * as log from '../logging/log';
-import { DataWriter } from '../sql/Client';
+import { createLogger } from '../logging/log';
 import {
   getPropForTimestamp,
   getChangesForPropAtTimestamp,
@@ -21,7 +20,6 @@ import {
   notifyStorySendFailed,
   saveErrorsOnMessage,
 } from '../test-node/util/messageFailures';
-import { postSaveUpdates } from '../util/cleanup';
 import { isCustomError } from './helpers';
 import { SendActionType, isSent, sendStateReducer } from './MessageSendState';
 
@@ -30,6 +28,8 @@ import type { CallbackResultType } from '../textsecure/Types.d';
 import type { MessageModel } from '../models/messages';
 import type { ServiceIdString } from '../types/ServiceId';
 import type { SendStateByConversationId } from './MessageSendState';
+
+const log = createLogger('send');
 
 /* eslint-disable more/no-then */
 
@@ -77,10 +77,7 @@ export async function send(
   }
 
   if (!message.doNotSave) {
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
   }
 
   const sendStateByConversationId = {
@@ -191,11 +188,7 @@ export async function send(
     switch (error.name) {
       case 'OutgoingIdentityKeyError': {
         if (conversation) {
-          promises.push(
-            conversation.getProfiles().catch(() => {
-              /* nothing to do here; logging already happened */
-            })
-          );
+          promises.push(conversation.getProfiles());
         }
         break;
       }
@@ -290,7 +283,8 @@ export async function sendSyncMessageOnly(
   try {
     message.set({
       // This is the same as a normal send()
-      expirationStartTimestamp: Date.now(),
+      expirationStartTimestamp:
+        message.get('expirationStartTimestamp') ?? Date.now(),
       errors: [],
     });
     const result = await sendSyncMessage(message, targetTimestamp);
@@ -317,10 +311,7 @@ export async function sendSyncMessageOnly(
     }
     throw error;
   } finally {
-    await DataWriter.saveMessage(message.attributes, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      postSaveUpdates,
-    });
+    await window.MessageCache.saveMessage(message.attributes);
 
     if (updateLeftPane) {
       updateLeftPane();
@@ -416,7 +407,7 @@ export async function sendSyncMessage(
       messaging.sendSyncMessage({
         ...encodedContent,
         timestamp: targetTimestamp,
-        destination: conv.get('e164'),
+        destinationE164: conv.get('e164'),
         destinationServiceId: conv.getServiceId(),
         expirationStartTimestamp:
           message.get('expirationStartTimestamp') || null,
@@ -476,10 +467,7 @@ export async function sendSyncMessage(
         return result;
       }
 
-      await DataWriter.saveMessage(message.attributes, {
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
-        postSaveUpdates,
-      });
+      await window.MessageCache.saveMessage(message.attributes);
       return result;
     });
   };

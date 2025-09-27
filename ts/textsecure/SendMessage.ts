@@ -10,7 +10,7 @@ import PQueue from 'p-queue';
 import pMap from 'p-map';
 import type { PlaintextContent } from '@signalapp/libsignal-client';
 import {
-  Pni,
+  ContentHint,
   ProtocolAddress,
   SenderKeyDistributionMessage,
 } from '@signalapp/libsignal-client';
@@ -33,12 +33,12 @@ import {
   serviceIdSchema,
   isPniString,
 } from '../types/ServiceId';
+import { toAciObject, toPniObject, toServiceIdObject } from '../util/ServiceId';
 import type {
   ChallengeType,
   GetGroupLogOptionsType,
   GroupCredentialsType,
   GroupLogResponseType,
-  ProxiedRequestOptionsType,
   WebAPIType,
 } from './WebAPI';
 import createTaskWithTimeout from './TaskWithTimeout';
@@ -72,7 +72,7 @@ import type { SendTypesType } from '../util/handleMessageSend';
 import { shouldSaveProto, sendTypesEnum } from '../util/handleMessageSend';
 import type { DurationInSeconds } from '../util/durations';
 import { SignalService as Proto } from '../protobuf';
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log';
 import type { EmbeddedContactWithUploadedAvatar } from '../types/EmbeddedContact';
 import {
   numberToPhoneType,
@@ -82,12 +82,12 @@ import {
 import { missingCaseError } from '../util/missingCaseError';
 import { drop } from '../util/drop';
 import type {
-  ConversationToDelete,
+  ConversationIdentifier,
   DeleteForMeSyncEventData,
   DeleteMessageSyncTarget,
-  MessageToDelete,
+  AddressableMessage,
 } from './messageReceiverEvents';
-import { getConversationFromTarget } from '../util/deleteForMe';
+import { getConversationFromTarget } from '../util/syncIdentifiers';
 import type { CallDetails, CallHistoryDetails } from '../types/CallDisposition';
 import {
   AdhocCallStatus,
@@ -101,7 +101,10 @@ import {
   getProtoForCallHistory,
 } from '../util/callDisposition';
 import { MAX_MESSAGE_COUNT } from '../util/deleteForMe.types';
+import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled';
 import type { GroupSendToken } from '../types/GroupSendEndorsements';
+
+const log = createLogger('SendMessage');
 
 export type SendIdentifierData =
   | {
@@ -414,7 +417,12 @@ class Message {
       proto.reaction.emoji = this.reaction.emoji || null;
       proto.reaction.remove = this.reaction.remove || false;
       proto.reaction.targetAuthorAci = this.reaction.targetAuthorAci || null;
-      proto.reaction.targetTimestamp =
+      if (isProtoBinaryEncodingEnabled()) {
+        proto.reaction.targetAuthorAciBinary = this.reaction.targetAuthorAci
+          ? toAciObject(this.reaction.targetAuthorAci).getRawUuidBytes()
+          : null;
+      }
+      proto.reaction.targetSentTimestamp =
         this.reaction.targetTimestamp === undefined
           ? null
           : Long.fromNumber(this.reaction.targetTimestamp);
@@ -422,7 +430,7 @@ class Message {
 
     if (Array.isArray(this.preview)) {
       proto.preview = this.preview.map(preview => {
-        const item = new Proto.DataMessage.Preview();
+        const item = new Proto.Preview();
         item.title = preview.title;
         item.url = preview.url;
         item.description = preview.description || null;
@@ -504,7 +512,8 @@ class Message {
     }
 
     if (this.quote) {
-      const { BodyRange: ProtoBodyRange, Quote } = Proto.DataMessage;
+      const ProtoBodyRange = Proto.BodyRange;
+      const { Quote } = Proto.DataMessage;
 
       proto.quote = new Quote();
       const { quote } = proto;
@@ -518,6 +527,11 @@ class Message {
       quote.id =
         this.quote.id === undefined ? null : Long.fromNumber(this.quote.id);
       quote.authorAci = this.quote.authorAci || null;
+      if (isProtoBinaryEncodingEnabled()) {
+        quote.authorAciBinary = this.quote.authorAci
+          ? toAciObject(this.quote.authorAci).getRawUuidBytes()
+          : null;
+      }
       quote.text = this.quote.text || null;
       quote.attachments = this.quote.attachments.slice() || [];
       const bodyRanges = this.quote.bodyRanges || [];
@@ -527,6 +541,11 @@ class Message {
         bodyRange.length = range.length;
         if (BodyRange.isMention(range)) {
           bodyRange.mentionAci = range.mentionAci;
+          if (isProtoBinaryEncodingEnabled()) {
+            bodyRange.mentionAciBinary = toAciObject(
+              range.mentionAci
+            ).getRawUuidBytes();
+          }
         } else if (BodyRange.isFormatting(range)) {
           bodyRange.style = range.style;
         } else {
@@ -597,6 +616,11 @@ class Message {
       const storyContext = new StoryContext();
       if (this.storyContext.authorAci) {
         storyContext.authorAci = this.storyContext.authorAci;
+        if (isProtoBinaryEncodingEnabled()) {
+          storyContext.authorAciBinary = toAciObject(
+            this.storyContext.authorAci
+          ).getRawUuidBytes();
+        }
       }
       storyContext.sentTimestamp = Long.fromNumber(this.storyContext.timestamp);
 
@@ -635,9 +659,7 @@ function addPniSignatureMessageToProto({
 
   // eslint-disable-next-line no-param-reassign
   proto.pniSignatureMessage = {
-    pni: Pni.parseFromServiceIdString(
-      pniSignatureMessage.pni
-    ).getRawUuidBytes(),
+    pni: toPniObject(pniSignatureMessage.pni).getRawUuidBytes(),
     signature: pniSignatureMessage.signature,
   };
 }
@@ -1256,7 +1278,7 @@ export default class MessageSender {
     encodedDataMessage,
     encodedEditMessage,
     timestamp,
-    destination,
+    destinationE164,
     destinationServiceId,
     expirationStartTimestamp,
     conversationIdsSentTo = [],
@@ -1270,7 +1292,7 @@ export default class MessageSender {
     encodedDataMessage?: Uint8Array;
     encodedEditMessage?: Uint8Array;
     timestamp: number;
-    destination: string | undefined;
+    destinationE164: string | undefined;
     destinationServiceId: ServiceIdString | undefined;
     expirationStartTimestamp: number | null;
     conversationIdsSentTo?: Iterable<string>;
@@ -1293,11 +1315,15 @@ export default class MessageSender {
       const dataMessage = Proto.DataMessage.decode(encodedDataMessage);
       sentMessage.message = dataMessage;
     }
-    if (destination) {
-      sentMessage.destination = destination;
+    if (destinationE164) {
+      sentMessage.destinationE164 = destinationE164;
     }
     if (destinationServiceId) {
       sentMessage.destinationServiceId = destinationServiceId;
+      if (isProtoBinaryEncodingEnabled()) {
+        sentMessage.destinationServiceIdBinary =
+          toServiceIdObject(destinationServiceId).getServiceIdBinary();
+      }
     }
     if (expirationStartTimestamp) {
       sentMessage.expirationStartTimestamp = Long.fromNumber(
@@ -1325,13 +1351,13 @@ export default class MessageSender {
             new Proto.SyncMessage.Sent.UnidentifiedDeliveryStatus();
           const conv = window.ConversationController.get(conversationId);
           if (conv) {
-            const e164 = conv.get('e164');
-            if (e164) {
-              status.destination = e164;
-            }
             const serviceId = conv.getServiceId();
             if (serviceId) {
               status.destinationServiceId = serviceId;
+              if (isProtoBinaryEncodingEnabled()) {
+                status.destinationServiceIdBinary =
+                  toServiceIdObject(serviceId).getServiceIdBinary();
+              }
             }
             if (isPniString(serviceId)) {
               const pniIdentityKey =
@@ -1356,13 +1382,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp,
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent,
     });
@@ -1378,10 +1402,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1402,10 +1424,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1426,10 +1446,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1451,10 +1469,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1476,10 +1492,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1501,10 +1515,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1599,16 +1611,41 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
         Proto.Content.encode(contentMessage).finish()
       ),
       type: 'deleteForMeSync',
+      urgent: false,
+    };
+  }
+
+  static getAttachmentBackfillSyncMessage(
+    targetConversation: ConversationIdentifier,
+    targetMessage: AddressableMessage
+  ): SingleProtoJobData {
+    const myAci = window.textsecure.storage.user.getCheckedAci();
+
+    const syncMessage = this.createSyncMessage();
+    syncMessage.attachmentBackfillRequest = {
+      targetMessage: toAddressableMessage(targetMessage),
+      targetConversation: toConversationIdentifier(targetConversation),
+    };
+
+    const contentMessage = new Proto.Content();
+    contentMessage.syncMessage = syncMessage;
+
+    return {
+      contentHint: ContentHint.Resendable,
+      serviceId: myAci,
+      isSyncMessage: true,
+      protoBase64: Bytes.toBase64(
+        Proto.Content.encode(contentMessage).finish()
+      ),
+      type: 'attachmentBackfillRequestSync',
       urgent: false,
     };
   }
@@ -1630,10 +1667,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1668,10 +1703,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1705,13 +1738,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: true,
     });
@@ -1738,13 +1769,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
@@ -1763,7 +1792,7 @@ export default class MessageSender {
         `syncViewOnceOpen: ${viewOnceOpens.length} opens provided. Can only handle one.`
       );
     }
-    const { senderE164, senderAci, timestamp } = viewOnceOpens[0];
+    const { senderAci, timestamp } = viewOnceOpens[0];
 
     if (!senderAci) {
       throw new Error('syncViewOnceOpen: Missing senderAci');
@@ -1774,31 +1803,67 @@ export default class MessageSender {
     const syncMessage = MessageSender.createSyncMessage();
 
     const viewOnceOpen = new Proto.SyncMessage.ViewOnceOpen();
-    if (senderE164 !== undefined) {
-      viewOnceOpen.sender = senderE164;
+    if (isProtoBinaryEncodingEnabled()) {
+      viewOnceOpen.senderAciBinary = toAciObject(senderAci).getRawUuidBytes();
+    } else {
+      viewOnceOpen.senderAci = senderAci;
     }
-    viewOnceOpen.senderAci = senderAci;
     viewOnceOpen.timestamp = Long.fromNumber(timestamp);
     syncMessage.viewOnceOpen = viewOnceOpen;
 
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
   }
 
+  static getBlockSync(
+    options: Readonly<{
+      e164s: Array<string>;
+      acis: Array<AciString>;
+      groupIds: Array<Uint8Array>;
+    }>
+  ): SingleProtoJobData {
+    const myAci = window.textsecure.storage.user.getCheckedAci();
+
+    const syncMessage = MessageSender.createSyncMessage();
+
+    const blocked = new Proto.SyncMessage.Blocked();
+    blocked.numbers = options.e164s;
+    if (isProtoBinaryEncodingEnabled()) {
+      blocked.acisBinary = options.acis.map(aci =>
+        toAciObject(aci).getRawUuidBytes()
+      );
+    } else {
+      blocked.acis = options.acis;
+    }
+    blocked.groupIds = options.groupIds;
+    syncMessage.blocked = blocked;
+
+    const contentMessage = new Proto.Content();
+    contentMessage.syncMessage = syncMessage;
+
+    return {
+      contentHint: ContentHint.Resendable,
+      serviceId: myAci,
+      isSyncMessage: true,
+      protoBase64: Bytes.toBase64(
+        Proto.Content.encode(contentMessage).finish()
+      ),
+      type: 'blockSync',
+      urgent: false,
+    };
+  }
+
   static getMessageRequestResponseSync(
     options: Readonly<{
-      threadE164?: string;
       threadAci?: AciString;
       groupId?: Uint8Array;
       type: number;
@@ -1809,11 +1874,14 @@ export default class MessageSender {
     const syncMessage = MessageSender.createSyncMessage();
 
     const response = new Proto.SyncMessage.MessageRequestResponse();
-    if (options.threadE164 !== undefined) {
-      response.threadE164 = options.threadE164;
-    }
     if (options.threadAci !== undefined) {
-      response.threadAci = options.threadAci;
+      if (isProtoBinaryEncodingEnabled()) {
+        response.threadAciBinary = toAciObject(
+          options.threadAci
+        ).getRawUuidBytes();
+      } else {
+        response.threadAci = options.threadAci;
+      }
     }
     if (options.groupId) {
       response.groupId = options.groupId;
@@ -1824,10 +1892,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1865,10 +1931,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1895,11 +1959,13 @@ export default class MessageSender {
 
     const verified = new Proto.Verified();
     verified.state = state;
-    if (destinationE164) {
-      verified.destination = destinationE164;
-    }
     if (destinationAci) {
-      verified.destinationAci = destinationAci;
+      if (isProtoBinaryEncodingEnabled()) {
+        verified.destinationAciBinary =
+          toAciObject(destinationAci).getRawUuidBytes();
+      } else {
+        verified.destinationAci = destinationAci;
+      }
     }
     verified.identityKey = identityKey;
     verified.nullMessage = padding;
@@ -1910,10 +1976,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1928,7 +1992,7 @@ export default class MessageSender {
 
   async sendCallingMessage(
     serviceId: ServiceIdString,
-    callingMessage: Readonly<Proto.ICallingMessage>,
+    callingMessage: Readonly<Proto.ICallMessage>,
     timestamp: number,
     urgent: boolean,
     options?: Readonly<SendOptionsType>
@@ -1936,7 +2000,7 @@ export default class MessageSender {
     const recipients = [serviceId];
 
     const contentMessage = new Proto.Content();
-    contentMessage.callingMessage = callingMessage;
+    contentMessage.callMessage = callingMessage;
 
     const conversation = window.ConversationController.get(serviceId);
 
@@ -1946,13 +2010,11 @@ export default class MessageSender {
       reason: `sendCallingMessage(${timestamp})`,
     });
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendMessageProtoAndWait({
       timestamp,
       recipients,
       proto: contentMessage,
-      contentHint: ContentHint.DEFAULT,
+      contentHint: ContentHint.Default,
       groupId: undefined,
       options,
       urgent,
@@ -2035,13 +2097,11 @@ export default class MessageSender {
       });
     }
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: senderAci,
       proto: contentMessage,
       timestamp,
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
@@ -2077,7 +2137,7 @@ export default class MessageSender {
   }: Readonly<{
     contentHint: number;
     messageId?: string;
-    proto: Buffer;
+    proto: Uint8Array;
     sendType: SendTypesType;
     timestamp: number;
     urgent: boolean;
@@ -2290,7 +2350,6 @@ export default class MessageSender {
     options?: Readonly<SendOptionsType>
   ): Promise<CallbackResultType> {
     const timestamp = Date.now();
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
     const contentMessage = await this.getSenderKeyDistributionMessage(
       distributionId,
       {
@@ -2302,8 +2361,8 @@ export default class MessageSender {
     const sendLogCallback =
       serviceIds.length > 1
         ? this.makeSendLogCallback({
-            contentHint: contentHint ?? ContentHint.IMPLICIT,
-            proto: Buffer.from(Proto.Content.encode(contentMessage).finish()),
+            contentHint: contentHint ?? ContentHint.Implicit,
+            proto: Proto.Content.encode(contentMessage).finish(),
             sendType: 'senderKeyDistributionMessage',
             timestamp,
             urgent,
@@ -2312,7 +2371,7 @@ export default class MessageSender {
         : undefined;
 
     return this.sendGroupProto({
-      contentHint: contentHint ?? ContentHint.IMPLICIT,
+      contentHint: contentHint ?? ContentHint.Implicit,
       groupId,
       options,
       proto: contentMessage,
@@ -2406,13 +2465,6 @@ export default class MessageSender {
     return this.server.fetchLinkPreviewImage(href, abortSignal);
   }
 
-  async makeProxiedRequest(
-    url: string,
-    options?: Readonly<ProxiedRequestOptionsType>
-  ): Promise<ReturnType<WebAPIType['makeProxiedRequest']>> {
-    return this.server.makeProxiedRequest(url, options);
-  }
-
   async getStorageCredentials(): Promise<StorageServiceCredentials> {
     return this.server.getStorageCredentials();
   }
@@ -2452,16 +2504,28 @@ export default class MessageSender {
 
 // Helpers
 
-function toAddressableMessage(message: MessageToDelete) {
-  const targetMessage = new Proto.SyncMessage.DeleteForMe.AddressableMessage();
+function toAddressableMessage(message: AddressableMessage) {
+  const targetMessage = new Proto.AddressableMessage();
   targetMessage.sentTimestamp = Long.fromNumber(message.sentAt);
 
   if (message.type === 'aci') {
-    targetMessage.authorServiceId = message.authorAci;
+    if (isProtoBinaryEncodingEnabled()) {
+      targetMessage.authorServiceIdBinary = toAciObject(
+        message.authorAci
+      ).getServiceIdBinary();
+    } else {
+      targetMessage.authorServiceId = message.authorAci;
+    }
   } else if (message.type === 'e164') {
     targetMessage.authorE164 = message.authorE164;
   } else if (message.type === 'pni') {
-    targetMessage.authorServiceId = message.authorPni;
+    if (isProtoBinaryEncodingEnabled()) {
+      targetMessage.authorServiceIdBinary = toPniObject(
+        message.authorPni
+      ).getServiceIdBinary();
+    } else {
+      targetMessage.authorServiceId = message.authorPni;
+    }
   } else {
     throw missingCaseError(message);
   }
@@ -2469,14 +2533,25 @@ function toAddressableMessage(message: MessageToDelete) {
   return targetMessage;
 }
 
-function toConversationIdentifier(conversation: ConversationToDelete) {
-  const targetConversation =
-    new Proto.SyncMessage.DeleteForMe.ConversationIdentifier();
+function toConversationIdentifier(conversation: ConversationIdentifier) {
+  const targetConversation = new Proto.ConversationIdentifier();
 
   if (conversation.type === 'aci') {
-    targetConversation.threadServiceId = conversation.aci;
+    if (isProtoBinaryEncodingEnabled()) {
+      targetConversation.threadServiceIdBinary = toAciObject(
+        conversation.aci
+      ).getServiceIdBinary();
+    } else {
+      targetConversation.threadServiceId = conversation.aci;
+    }
   } else if (conversation.type === 'pni') {
-    targetConversation.threadServiceId = conversation.pni;
+    if (isProtoBinaryEncodingEnabled()) {
+      targetConversation.threadServiceIdBinary = toPniObject(
+        conversation.pni
+      ).getServiceIdBinary();
+    } else {
+      targetConversation.threadServiceId = conversation.pni;
+    }
   } else if (conversation.type === 'group') {
     targetConversation.threadGroupId = Bytes.fromBase64(conversation.groupId);
   } else if (conversation.type === 'e164') {

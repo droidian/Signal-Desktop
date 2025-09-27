@@ -38,6 +38,7 @@ describe('signalRoutes', () => {
 
   const foo = 'FoO.bAr-BaZ_123/456';
   const fooNoSlash = 'FoO.bAr-BaZ_123';
+  const bar = '.bAr';
 
   it('nonsense', () => {
     const check = createCheck({
@@ -157,13 +158,25 @@ describe('signalRoutes', () => {
   it('linkCall', () => {
     const result: ParsedSignalRoute = {
       key: 'linkCall',
-      args: { key: foo },
+      args: { key: foo, epoch: null },
     };
     const check = createCheck();
     check(`https://signal.link/call/#key=${foo}`, result);
     check(`https://signal.link/call#key=${foo}`, result);
     check(`sgnl://signal.link/call/#key=${foo}`, result);
     check(`sgnl://signal.link/call#key=${foo}`, result);
+  });
+
+  it('linkCallWithEpoch', () => {
+    const result: ParsedSignalRoute = {
+      key: 'linkCall',
+      args: { key: foo, epoch: bar },
+    };
+    const check = createCheck();
+    check(`https://signal.link/call/#key=${foo}&epoch=${bar}`, result);
+    check(`https://signal.link/call#key=${foo}&epoch=${bar}`, result);
+    check(`sgnl://signal.link/call/#key=${foo}&epoch=${bar}`, result);
+    check(`sgnl://signal.link/call#key=${foo}&epoch=${bar}`, result);
   });
 
   it('artAddStickers', () => {
@@ -186,37 +199,23 @@ describe('signalRoutes', () => {
 
   it('showConversation', () => {
     const check = createCheck({ isRoute: true, hasWebUrl: false });
-    const args1 = `conversationId=${foo}`;
-    const args2 = `conversationId=${foo}&messageId=${foo}`;
-    const args3 = `conversationId=${foo}&messageId=${foo}&storyId=${foo}`;
+    const args1 = `token=${foo}`;
     const result1: ParsedSignalRoute = {
       key: 'showConversation',
-      args: { conversationId: foo, messageId: null, storyId: null },
-    };
-    const result2: ParsedSignalRoute = {
-      key: 'showConversation',
-      args: { conversationId: foo, messageId: foo, storyId: null },
-    };
-    const result3: ParsedSignalRoute = {
-      key: 'showConversation',
-      args: { conversationId: foo, messageId: foo, storyId: foo },
+      args: { token: foo },
     };
     check(`sgnl://show-conversation/?${args1}`, result1);
     check(`sgnl://show-conversation?${args1}`, result1);
-    check(`sgnl://show-conversation/?${args2}`, result2);
-    check(`sgnl://show-conversation?${args2}`, result2);
-    check(`sgnl://show-conversation/?${args3}`, result3);
-    check(`sgnl://show-conversation?${args3}`, result3);
   });
 
   it('startCallLobby', () => {
     const result: ParsedSignalRoute = {
       key: 'startCallLobby',
-      args: { conversationId: foo },
+      args: { token: foo },
     };
     const check = createCheck({ isRoute: true, hasWebUrl: false });
-    check(`sgnl://start-call-lobby/?conversationId=${foo}`, result);
-    check(`sgnl://start-call-lobby?conversationId=${foo}`, result);
+    check(`sgnl://start-call-lobby/?token=${foo}`, result);
+    check(`sgnl://start-call-lobby?token=${foo}`, result);
   });
 
   it('showWindow', () => {

@@ -4,7 +4,7 @@
 import { assert } from 'chai';
 
 import { type WritableDB } from '../../sql/Interface';
-import { SignalService as Proto } from '../../protobuf';
+import { Migrations as Proto } from '../../protobuf';
 import { generateAci } from '../../types/ServiceId';
 import { createDB, updateToVersion, insertData, getTableData } from './helpers';
 
@@ -59,7 +59,7 @@ describe('SQL/updateToSchemaVersion1280', () => {
           Proto.Envelope.encode({
             destinationServiceId: THEIR_ACI,
             content: Buffer.from('encrypted1'),
-            reportingToken: Buffer.from('token'),
+            reportSpamToken: Buffer.from('token'),
           }).finish()
         ).toString('base64'),
         serverTimestamp: 6,

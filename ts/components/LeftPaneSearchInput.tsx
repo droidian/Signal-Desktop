@@ -147,10 +147,8 @@ export function LeftPaneSearchInput({
           changeValue(event.currentTarget.value);
         }}
         onClear={() => {
-          if (searchTerm) {
+          if (searchTerm || searchConversation) {
             clearSearchQuery();
-            inputRef.current?.focus();
-          } else if (searchConversation) {
             endConversationSearch();
             inputRef.current?.focus();
           } else {
@@ -174,18 +172,19 @@ export function LeftPaneSearchInput({
             }}
           >
             <Avatar
-              acceptedMessageRequest={searchConversation.acceptedMessageRequest}
+              avatarPlaceholderGradient={
+                searchConversation.avatarPlaceholderGradient
+              }
               avatarUrl={searchConversation.avatarUrl}
               badge={undefined}
               color={searchConversation.color}
               conversationType={searchConversation.type}
+              hasAvatar={searchConversation.hasAvatar}
               i18n={i18n}
-              isMe={searchConversation.isMe}
               noteToSelf={searchConversation.isMe}
               sharedGroupNames={searchConversation.sharedGroupNames}
               size={AvatarSize.TWENTY}
               title={searchConversation.title}
-              unblurredAvatarUrl={searchConversation.unblurredAvatarUrl}
             />
             <button
               aria-label={i18n('icu:clearSearch')}
