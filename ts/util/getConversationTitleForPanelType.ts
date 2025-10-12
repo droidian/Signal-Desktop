@@ -1,9 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { LocalizerType } from '../types/Util';
-import * as log from '../logging/log';
-import { PanelType } from '../types/Panels';
+import type { LocalizerType } from '../types/Util.js';
+import { createLogger } from '../logging/log.js';
+import { PanelType } from '../types/Panels.js';
+
+const log = createLogger('getConversationTitleForPanelType');
 
 export function getConversationTitleForPanelType(
   i18n: LocalizerType,
@@ -57,9 +59,7 @@ export function getConversationTitleForPanelType(
   }
 
   const unknownType: never = panelType;
-  log.warn(
-    `getConversationTitleForPanelType: Got unexpected type ${unknownType}`
-  );
+  log.warn(`Got unexpected type ${unknownType}`);
 
   return undefined;
 }

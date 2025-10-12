@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { IntlShape } from 'react-intl';
-import type { AciString } from './ServiceId';
-import type { LocaleDirection } from '../../app/locale';
+import type { AciString } from './ServiceId.js';
+import type { LocaleDirection } from '../../app/locale.js';
 import type {
   ICUJSXMessageParamsByKeyType,
   ICUStringMessageParamsByKeyType,
-} from '../../build/ICUMessageParams.d';
+} from '../../build/ICUMessageParams.d.ts';
 
-import type { HourCyclePreference, LocaleMessagesType } from './I18N';
+import type { HourCyclePreference, LocaleMessagesType } from './I18N.js';
 
 export type StoryContextType = {
   authorAci?: AciString;
@@ -112,3 +112,16 @@ export type JSONWithUnknownFields<Value> =
 
 export type WithRequiredProperties<T, P extends keyof T> = Omit<T, P> &
   Required<Pick<T, P>>;
+
+export type WithOptionalProperties<T, P extends keyof T> = Omit<T, P> &
+  Partial<Pick<T, P>>;
+
+export function getTypingIndicatorSetting(): boolean {
+  return window.storage.get('typingIndicators', false);
+}
+export function getReadReceiptSetting(): boolean {
+  return window.storage.get('read-receipt-setting', false);
+}
+export function getSealedSenderIndicatorSetting(): boolean {
+  return window.storage.get('sealedSenderIndicators', false);
+}

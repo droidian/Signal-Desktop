@@ -1,16 +1,18 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { SafetyNumberChangeSource } from '../components/SafetyNumberChangeDialog';
-import * as log from '../logging/log';
-import { explodePromise } from './explodePromise';
+import type { SafetyNumberChangeSource } from '../components/SafetyNumberChangeDialog.js';
+import { createLogger } from '../logging/log.js';
+import { explodePromise } from './explodePromise.js';
 import type {
   RecipientsByConversation,
   RecipientEntry,
-} from '../state/ducks/stories';
-import { isNotNil } from './isNotNil';
-import type { ServiceIdString } from '../types/ServiceId';
-import { waitForAll } from './waitForAll';
+} from '../state/ducks/stories.js';
+import { isNotNil } from './isNotNil.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { waitForAll } from './waitForAll.js';
+
+const log = createLogger('blockSendUntilConversationsAreVerified');
 
 export async function blockSendUntilConversationsAreVerified(
   byConversationId: RecipientsByConversation,
@@ -32,9 +34,7 @@ export async function blockSendUntilConversationsAreVerified(
 
   const untrustedServiceIds = getAllServiceIds(untrustedByConversation);
   if (untrustedServiceIds.size) {
-    log.info(
-      `blockSendUntilConversationsAreVerified: Blocking send; ${untrustedServiceIds.size} untrusted uuids`
-    );
+    log.info(`Blocking send; ${untrustedServiceIds.size} untrusted uuids`);
 
     const explodedPromise = explodePromise<boolean>();
     window.reduxActions.globalModals.showBlockingSafetyNumberChangeDialog(
@@ -64,7 +64,7 @@ function isServiceIdTrusted(
   const conversation = window.ConversationController.get(serviceId);
   if (!conversation) {
     log.warn(
-      `blockSendUntilConversationsAreVerified/isServiceIdTrusted: No conversation for send target ${serviceId}`
+      `isServiceIdTrusted: No conversation for send target ${serviceId}`
     );
     return true;
   }

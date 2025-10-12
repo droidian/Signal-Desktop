@@ -2,23 +2,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { PanelType } from '../../types/Panels';
-import { ConversationHero } from '../../components/conversation/ConversationHero';
-import { getPreferredBadgeSelector } from '../selectors/badges';
-import { getIntl, getTheme } from '../selectors/user';
-import { getHasStoriesSelector } from '../selectors/stories2';
-import { isSignalConversation } from '../../util/isSignalConversation';
+import { PanelType } from '../../types/Panels.js';
+import { ConversationHero } from '../../components/conversation/ConversationHero.js';
+import { getPreferredBadgeSelector } from '../selectors/badges.js';
+import { getIntl, getTheme } from '../selectors/user.js';
+import { getHasStoriesSelector } from '../selectors/stories2.js';
+import { isSignalConversation } from '../../util/isSignalConversation.js';
 import {
+  getConversationByServiceIdSelector,
   getConversationSelector,
   getPendingAvatarDownloadSelector,
-} from '../selectors/conversations';
+} from '../selectors/conversations.js';
 import {
   type ConversationType,
   useConversationsActions,
-} from '../ducks/conversations';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { useStoriesActions } from '../ducks/stories';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
+} from '../ducks/conversations.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { useStoriesActions } from '../ducks/stories.js';
+import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.js';
+import { getGroupMemberships } from '../../util/getGroupMemberships.js';
 
 type SmartHeroRowProps = Readonly<{
   id: string;
@@ -49,11 +51,20 @@ export const SmartHeroRow = memo(function SmartHeroRow({
   const getPreferredBadge = useSelector(getPreferredBadgeSelector);
   const hasStoriesSelector = useSelector(getHasStoriesSelector);
   const conversationSelector = useSelector(getConversationSelector);
+  const conversationByServiceIdSelector = useSelector(
+    getConversationByServiceIdSelector
+  );
   const isPendingAvatarDownload = useSelector(getPendingAvatarDownloadSelector);
   const conversation = conversationSelector(id);
   if (conversation == null) {
     throw new Error(`Did not find conversation ${id} in state!`);
   }
+  const groupMemberships = getGroupMemberships(
+    conversation,
+    conversationByServiceIdSelector
+  );
+  const { memberships, pendingMemberships, pendingApprovalMemberships } =
+    groupMemberships;
   const badge = getPreferredBadge(conversation.badges);
   const hasStories = hasStoriesSelector(id);
   const isSignalConversationValue = isSignalConversation(conversation);
@@ -89,6 +100,9 @@ export const SmartHeroRow = memo(function SmartHeroRow({
   const isDirectConvoAndHasNickname =
     type === 'direct' && Boolean(nicknameGivenName || nicknameFamilyName);
 
+  const invitesCount =
+    pendingMemberships.length + pendingApprovalMemberships.length;
+
   return (
     <ConversationHero
       avatarPlaceholderGradient={avatarPlaceholderGradient}
@@ -106,8 +120,10 @@ export const SmartHeroRow = memo(function SmartHeroRow({
       id={id}
       isDirectConvoAndHasNickname={isDirectConvoAndHasNickname}
       isMe={isMe}
+      invitesCount={invitesCount}
       isSignalConversation={isSignalConversationValue}
       membersCount={membersCount}
+      memberships={memberships}
       openConversationDetails={openConversationDetails}
       pendingAvatarDownload={isPendingAvatarDownload(id)}
       phoneNumber={phoneNumber}

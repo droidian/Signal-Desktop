@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React from 'react';
-import type { LocalizerType } from '../types/I18N';
-import type { NavTabPanelProps } from './NavTabs';
-import { WhatsNewLink } from './WhatsNewLink';
-import type { UnreadStats } from '../util/countUnreadStats';
+import type { LocalizerType } from '../types/I18N.js';
+import type { NavTabPanelProps } from './NavTabs.js';
+import { WhatsNewLink } from './WhatsNewLink.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
+import type { SmartConversationViewProps } from '../state/smart/ConversationView.js';
 
 export type ChatsTabProps = Readonly<{
   otherTabsUnreadStats: UnreadStats;
@@ -15,7 +16,7 @@ export type ChatsTabProps = Readonly<{
   hasFailedStorySends: boolean;
   navTabsCollapsed: boolean;
   onToggleNavTabsCollapse: (navTabsCollapsed: boolean) => void;
-  renderConversationView: () => JSX.Element;
+  renderConversationView: (props: SmartConversationViewProps) => JSX.Element;
   renderLeftPane: (props: NavTabPanelProps) => JSX.Element;
   renderMiniPlayer: (options: { shouldFlow: boolean }) => JSX.Element;
   selectedConversationId: string | undefined;
@@ -51,10 +52,12 @@ export function ChatsTab({
         <div id="toast" />
         {selectedConversationId ? (
           <div
+            // Use `key` to force the tree to fully re-mount
+            key={selectedConversationId}
             className="Inbox__conversation"
             id={`conversation-${selectedConversationId}`}
           >
-            {renderConversationView()}
+            {renderConversationView({ selectedConversationId })}
           </div>
         ) : (
           <div className="Inbox__no-conversation-open">

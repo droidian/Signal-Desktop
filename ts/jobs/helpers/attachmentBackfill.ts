@@ -1,48 +1,51 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentBackfillResponseSyncEvent } from '../../textsecure/messageReceiverEvents';
-import MessageSender from '../../textsecure/SendMessage';
-import * as log from '../../logging/log';
-import type { ReadonlyMessageAttributesType } from '../../model-types.d';
+import type { AttachmentBackfillResponseSyncEvent } from '../../textsecure/messageReceiverEvents.js';
+import MessageSender from '../../textsecure/SendMessage.js';
+import { createLogger } from '../../logging/log.js';
+import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
 import {
   type AttachmentType,
   isDownloading,
   isDownloaded,
   isDownloadable,
-} from '../../types/Attachment';
+  getUndownloadedAttachmentSignature,
+} from '../../types/Attachment.js';
 import {
-  type AttachmentDownloadJobTypeType,
+  type MessageAttachmentType,
   AttachmentDownloadUrgency,
-} from '../../types/AttachmentDownload';
-import { AttachmentDownloadSource } from '../../sql/Interface';
-import { APPLICATION_OCTET_STREAM } from '../../types/MIME';
+} from '../../types/AttachmentDownload.js';
+import { AttachmentDownloadSource } from '../../sql/Interface.js';
+import { APPLICATION_OCTET_STREAM } from '../../types/MIME.js';
 import {
   getConversationIdentifier,
   getAddressableMessage,
   getConversationFromTarget,
   getMessageQueryFromTarget,
   findMatchingMessage,
-} from '../../util/syncIdentifiers';
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { missingCaseError } from '../../util/missingCaseError';
-import { isStagingServer } from '../../util/isStagingServer';
+} from '../../util/syncIdentifiers.js';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { isStagingServer } from '../../util/isStagingServer.js';
 import {
   ensureBodyAttachmentsAreSeparated,
-  queueAttachmentDownloadsForMessage,
-} from '../../util/queueAttachmentDownloads';
-import { SECOND } from '../../util/durations';
-import { showDownloadFailedToast } from '../../util/showDownloadFailedToast';
-import { markAttachmentAsPermanentlyErrored } from '../../util/attachments/markAttachmentAsPermanentlyErrored';
-import { singleProtoJobQueue } from '../singleProtoJobQueue';
-import { MessageModel } from '../../models/messages';
-import { getMessageById } from '../../messages/getMessageById';
-import { addAttachmentToMessage } from '../../messageModifiers/AttachmentDownloads';
-import { SignalService as Proto } from '../../protobuf';
-import * as RemoteConfig from '../../RemoteConfig';
-import { isTestOrMockEnvironment } from '../../environment';
-import { BackfillFailureKind } from '../../components/BackfillFailureModal';
+  queueAttachmentDownloads,
+} from '../../util/queueAttachmentDownloads.js';
+import { SECOND } from '../../util/durations/index.js';
+import { showDownloadFailedToast } from '../../util/showDownloadFailedToast.js';
+import { markAttachmentAsPermanentlyErrored } from '../../util/attachments/markAttachmentAsPermanentlyErrored.js';
+import { singleProtoJobQueue } from '../singleProtoJobQueue.js';
+import { MessageModel } from '../../models/messages.js';
+import { getMessageById } from '../../messages/getMessageById.js';
+import { addAttachmentToMessage } from '../../messageModifiers/AttachmentDownloads.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
+import * as RemoteConfig from '../../RemoteConfig.js';
+import { isTestOrMockEnvironment } from '../../environment.js';
+import { BackfillFailureKind } from '../../components/BackfillFailureModal.js';
+
+const log = createLogger('attachmentBackfill');
 
 const REQUEST_TIMEOUT = isTestOrMockEnvironment() ? 5 * SECOND : 10 * SECOND;
 
@@ -172,8 +175,7 @@ export class AttachmentBackfill {
     // If `true` - show a toast at the end of the process
     let showToast = false;
 
-    // If `true` - queue downloads at the end of the process
-    let shouldDownload = false;
+    const attachmentSignaturesToDownload = new Set<string>();
 
     // Track number of pending attachments to decide when the request is
     // fully processed by the phone.
@@ -211,7 +213,9 @@ export class AttachmentBackfill {
         // other device's backfill request. Update the CDN info without queueing
         // a download.
         if (isDownloading(updatedSticker.data)) {
-          shouldDownload = true;
+          attachmentSignaturesToDownload.add(
+            getUndownloadedAttachmentSignature(updatedSticker.data)
+          );
         }
         updatedSticker = {
           ...updatedSticker,
@@ -259,7 +263,9 @@ export class AttachmentBackfill {
       } else {
         // See sticker handling code above for the reasoning
         if (isDownloading(updatedBodyAttachment)) {
-          shouldDownload = true;
+          attachmentSignaturesToDownload.add(
+            getUndownloadedAttachmentSignature(updatedBodyAttachment)
+          );
         }
         updatedBodyAttachment = response.longText.attachment;
         changeCount += 1;
@@ -296,7 +302,9 @@ export class AttachmentBackfill {
 
       // See sticker handling code above for the reasoning
       if (isDownloading(existing)) {
-        shouldDownload = true;
+        attachmentSignaturesToDownload.add(
+          getUndownloadedAttachmentSignature(existing)
+        );
       }
       updatedAttachments[index] = entry.attachment;
     }
@@ -324,17 +332,18 @@ export class AttachmentBackfill {
       editHistory: message.get('editHistory')?.map(edit => ({
         ...edit,
         attachments: updatedAttachments,
-        bodyAttachment: updatedBodyAttachment,
       })),
     });
 
     // It is fine to await below this line
-
-    if (shouldDownload) {
-      log.info(`${logId}: queueing downloads`);
-      await queueAttachmentDownloadsForMessage(message, {
+    if (attachmentSignaturesToDownload.size) {
+      log.info(
+        `${logId}: queueing ${attachmentSignaturesToDownload.size} download(s)`
+      );
+      await queueAttachmentDownloads(message, {
         source: AttachmentDownloadSource.BACKFILL,
         urgency: AttachmentDownloadUrgency.IMMEDIATE,
+        signaturesToQueue: attachmentSignaturesToDownload,
         isManualDownload: true,
       });
     }
@@ -344,7 +353,7 @@ export class AttachmentBackfill {
   }
 
   public static isEnabledForJob(
-    jobType: AttachmentDownloadJobTypeType,
+    jobType: MessageAttachmentType,
     message: Pick<ReadonlyMessageAttributesType, 'type'>
   ): boolean {
     if (message.type === 'story') {
@@ -447,7 +456,7 @@ export class AttachmentBackfill {
 
 export function isPermanentlyUndownloadable(
   attachment: AttachmentType,
-  disposition: AttachmentDownloadJobTypeType,
+  disposition: MessageAttachmentType,
   message: Pick<ReadonlyMessageAttributesType, 'type'>
 ): boolean {
   // Attachment is downloadable or user have not failed to download it yet

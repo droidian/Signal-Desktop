@@ -1,21 +1,27 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ReactNode } from 'react';
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import type { Placement } from 'react-aria';
 import { DialogTrigger } from 'react-aria-components';
-import { FunPickerTabKey } from './constants';
-import { FunPopover } from './base/FunPopover';
-import { FunPickerTab, FunTabList, FunTabPanel, FunTabs } from './base/FunTabs';
-import type { FunEmojiSelection } from './panels/FunPanelEmojis';
-import { FunPanelEmojis } from './panels/FunPanelEmojis';
-import type { FunGifSelection } from './panels/FunPanelGifs';
-import { FunPanelGifs } from './panels/FunPanelGifs';
-import type { FunStickerSelection } from './panels/FunPanelStickers';
-import { FunPanelStickers } from './panels/FunPanelStickers';
-import { useFunContext } from './FunProvider';
-import type { ThemeType } from '../../types/Util';
-import { FunErrorBoundary } from './base/FunErrorBoundary';
+import { createKeybindingsHandler } from 'tinykeys';
+import { FunPickerTabKey } from './constants.js';
+import { FunPopover } from './base/FunPopover.js';
+import {
+  FunPickerTab,
+  FunTabList,
+  FunTabPanel,
+  FunTabs,
+} from './base/FunTabs.js';
+import type { FunEmojiSelection } from './panels/FunPanelEmojis.js';
+import { FunPanelEmojis } from './panels/FunPanelEmojis.js';
+import type { FunGifSelection } from './panels/FunPanelGifs.js';
+import { FunPanelGifs } from './panels/FunPanelGifs.js';
+import type { FunStickerSelection } from './panels/FunPanelStickers.js';
+import { FunPanelStickers } from './panels/FunPanelStickers.js';
+import { useFunContext } from './FunProvider.js';
+import type { ThemeType } from '../../types/Util.js';
+import { FunErrorBoundary } from './base/FunErrorBoundary.js';
 
 /**
  * FunPicker
@@ -38,7 +44,7 @@ export const FunPicker = memo(function FunPicker(
 ): JSX.Element {
   const { onOpenChange } = props;
   const fun = useFunContext();
-  const { i18n, onOpenChange: onFunOpenChange } = fun;
+  const { i18n, onOpenChange: onFunOpenChange, onChangeTab } = fun;
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -51,6 +57,27 @@ export const FunPicker = memo(function FunPicker(
   const handleClose = useCallback(() => {
     handleOpenChange(false);
   }, [handleOpenChange]);
+
+  useEffect(() => {
+    const onKeyDown = createKeybindingsHandler({
+      '$mod+Shift+J': () => {
+        onChangeTab(FunPickerTabKey.Emoji);
+        handleOpenChange(true);
+      },
+      '$mod+Shift+O': () => {
+        onChangeTab(FunPickerTabKey.Stickers);
+        handleOpenChange(true);
+      },
+      '$mod+Shift+G': () => {
+        onChangeTab(FunPickerTabKey.Gifs);
+        handleOpenChange(true);
+      },
+    });
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [handleOpenChange, onChangeTab]);
 
   return (
     <DialogTrigger isOpen={props.open} onOpenChange={handleOpenChange}>

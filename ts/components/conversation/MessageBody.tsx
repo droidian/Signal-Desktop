@@ -3,17 +3,17 @@
 
 import type { KeyboardEvent } from 'react';
 import React from 'react';
-import type { AttachmentType } from '../../types/Attachment';
-import { canBeDownloaded, isDownloaded } from '../../types/Attachment';
-import type { ShowConversationType } from '../../state/ducks/conversations';
-import type { HydratedBodyRangesType } from '../../types/BodyRange';
-import type { LocalizerType } from '../../types/Util';
-import { MessageTextRenderer } from './MessageTextRenderer';
-import type { RenderLocation } from './MessageTextRenderer';
-import { UserText } from '../UserText';
-import { shouldLinkifyMessage } from '../../types/LinkPreview';
-import { FunJumboEmojiSize } from '../fun/FunEmoji';
-import { getEmojifyData } from '../fun/data/emojis';
+import type { AttachmentType } from '../../types/Attachment.js';
+import { canBeDownloaded, isDownloaded } from '../../types/Attachment.js';
+import type { ShowConversationType } from '../../state/ducks/conversations.js';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.js';
+import type { LocalizerType } from '../../types/Util.js';
+import { MessageTextRenderer } from './MessageTextRenderer.js';
+import type { RenderLocation } from './MessageTextRenderer.js';
+import { UserText } from '../UserText.js';
+import { shouldLinkifyMessage } from '../../types/LinkPreview.js';
+import { FunJumboEmojiSize } from '../fun/FunEmoji.js';
+import { getEmojifyData } from '../fun/data/emojis.js';
 
 function getSizeClass(str: string): FunJumboEmojiSize | null {
   const emojifyData = getEmojifyData(str);
@@ -60,6 +60,7 @@ export type Props = {
     AttachmentType,
     'pending' | 'digest' | 'key' | 'wasTooBig' | 'path'
   >;
+  originalText: string;
 };
 
 /**
@@ -84,8 +85,10 @@ export function MessageBody({
   showConversation,
   text,
   textAttachment,
+  originalText,
 }: Props): JSX.Element {
-  const shouldDisableLinks = disableLinks || !shouldLinkifyMessage(text);
+  const shouldDisableLinks =
+    disableLinks || !shouldLinkifyMessage(originalText);
   const textWithSuffix =
     textAttachment?.pending || onIncreaseTextLength || textAttachment?.wasTooBig
       ? `${text}...`
@@ -177,6 +180,7 @@ export function MessageBody({
         i18n={i18n}
         isSpoilerExpanded={isSpoilerExpanded}
         messageText={textWithSuffix}
+        originalMessageText={originalText}
         onMentionTrigger={conversationId =>
           showConversation?.({ conversationId })
         }

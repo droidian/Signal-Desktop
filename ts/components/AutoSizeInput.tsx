@@ -1,11 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 
-import { getClassNamesFor } from '../util/getClassNamesFor';
+import { getClassNamesFor } from '../util/getClassNamesFor.js';
 
 export type PropsType = Readonly<{
   disableSpellcheck?: boolean;
@@ -35,14 +36,14 @@ export function AutoSizeInput({
   const getClassName = getClassNamesFor('AutoSizeInput', moduleClassName);
 
   const handleChange = useCallback(
-    e => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
     },
     [onChange]
   );
 
   const handleKeyDown = useCallback(
-    event => {
+    (event: KeyboardEvent) => {
       if (onEnter && event.key === 'Enter') {
         onEnter();
       }

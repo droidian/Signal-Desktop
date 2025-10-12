@@ -3,41 +3,42 @@
 
 import React, { useCallback, useMemo, memo } from 'react';
 import { useSelector } from 'react-redux';
-import { CompositionArea } from '../../components/CompositionArea';
-import { useContactNameData } from '../../components/conversation/ContactName';
+import { CompositionArea } from '../../components/CompositionArea.js';
+import { useContactNameData } from '../../components/conversation/ContactName.js';
 import type {
   DraftBodyRanges,
   HydratedBodyRangesType,
-} from '../../types/BodyRange';
-import { hydrateRanges } from '../../types/BodyRange';
-import { strictAssert } from '../../util/assert';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
-import { imageToBlurHash } from '../../util/imageToBlurHash';
-import { isConversationSMSOnly } from '../../util/isConversationSMSOnly';
-import { isSignalConversation } from '../../util/isSignalConversation';
+} from '../../types/BodyRange.js';
+import { hydrateRanges } from '../../types/BodyRange.js';
+import { strictAssert } from '../../util/assert.js';
+import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.js';
+import { imageToBlurHash } from '../../util/imageToBlurHash.js';
+import { isConversationSMSOnly } from '../../util/isConversationSMSOnly.js';
+import { isSignalConversation } from '../../util/isSignalConversation.js';
 import {
   getErrorDialogAudioRecorderType,
   getRecordingState,
-} from '../selectors/audioRecorder';
-import { getPreferredBadgeSelector } from '../selectors/badges';
-import { getComposerStateForConversationIdSelector } from '../selectors/composer';
+} from '../selectors/audioRecorder.js';
+import { getPreferredBadgeSelector } from '../selectors/badges.js';
+import { getComposerStateForConversationIdSelector } from '../selectors/composer.js';
 import {
   getConversationSelector,
   getGroupAdminsSelector,
   getHasPanelOpen,
   getLastEditableMessageId,
+  getMessages,
   getSelectedMessageIds,
   isMissingRequiredProfileSharing,
-} from '../selectors/conversations';
-import { selectRecentEmojis } from '../selectors/emojis';
+} from '../selectors/conversations.js';
+import { selectRecentEmojis } from '../selectors/emojis.js';
 import {
   getDefaultConversationColor,
   getEmojiSkinToneDefault,
   getShowStickerPickerHint,
   getShowStickersIntroduction,
   getTextFormattingEnabled,
-} from '../selectors/items';
-import { getPropsForQuote } from '../selectors/message';
+} from '../selectors/items.js';
+import { canForward, getPropsForQuote } from '../selectors/message.js';
 import {
   getBlessedStickerPacks,
   getInstalledStickerPacks,
@@ -45,30 +46,30 @@ import {
   getReceivedStickerPacks,
   getRecentStickers,
   getRecentlyInstalledStickerPack,
-} from '../selectors/stickers';
+} from '../selectors/stickers.js';
 import {
   getIntl,
   getPlatform,
   getTheme,
   getUserConversationId,
-} from '../selectors/user';
-import type { SmartCompositionRecordingProps } from './CompositionRecording';
-import { SmartCompositionRecording } from './CompositionRecording';
-import type { SmartCompositionRecordingDraftProps } from './CompositionRecordingDraft';
-import { SmartCompositionRecordingDraft } from './CompositionRecordingDraft';
-import { useItemsActions } from '../ducks/items';
-import { useComposerActions } from '../ducks/composer';
-import { useConversationsActions } from '../ducks/conversations';
-import { useAudioRecorderActions } from '../ducks/audioRecorder';
-import { useEmojisActions } from '../ducks/emojis';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { useStickersActions } from '../ducks/stickers';
-import { useToastActions } from '../ducks/toast';
-import { isShowingAnyModal } from '../selectors/globalModals';
-import { isConversationEverUnregistered } from '../../util/isConversationUnregistered';
-import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { isConversationMuted } from '../../util/isConversationMuted';
-import type { EmojiSkinTone } from '../../components/fun/data/emojis';
+} from '../selectors/user.js';
+import type { SmartCompositionRecordingProps } from './CompositionRecording.js';
+import { SmartCompositionRecording } from './CompositionRecording.js';
+import type { SmartCompositionRecordingDraftProps } from './CompositionRecordingDraft.js';
+import { SmartCompositionRecordingDraft } from './CompositionRecordingDraft.js';
+import { useItemsActions } from '../ducks/items.js';
+import { useComposerActions } from '../ducks/composer.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { useAudioRecorderActions } from '../ducks/audioRecorder.js';
+import { useEmojisActions } from '../ducks/emojis.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { useStickersActions } from '../ducks/stickers.js';
+import { useToastActions } from '../ducks/toast.js';
+import { isShowingAnyModal } from '../selectors/globalModals.js';
+import { isConversationEverUnregistered } from '../../util/isConversationUnregistered.js';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.js';
+import { isConversationMuted } from '../../util/isConversationMuted.js';
+import type { EmojiSkinTone } from '../../components/fun/data/emojis.js';
 
 function renderSmartCompositionRecording(
   recProps: SmartCompositionRecordingProps
@@ -96,6 +97,7 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
   const recentEmojis = useSelector(selectRecentEmojis);
   const selectedMessageIds = useSelector(getSelectedMessageIds);
+  const messageLookup = useSelector(getMessages);
   const isFormattingEnabled = useSelector(getTextFormattingEnabled);
   const lastEditableMessageId = useSelector(getLastEditableMessageId);
   const receivedPacks = useSelector(getReceivedStickerPacks);
@@ -125,13 +127,25 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   const {
     attachments: draftAttachments,
     focusCounter,
-    isDisabled,
+    disabledCounter,
     linkPreviewLoading,
     linkPreviewResult,
     messageCompositionId,
     sendCounter,
     shouldSendHighQualityAttachments,
   } = composerState;
+
+  const isDisabled = disabledCounter > 0;
+
+  const areSelectedMessagesForwardable = useMemo(() => {
+    return selectedMessageIds?.every(messageId => {
+      const message = messageLookup[messageId];
+      if (!message) {
+        return false;
+      }
+      return canForward(message);
+    });
+  }, [messageLookup, selectedMessageIds]);
 
   const isActive = useMemo(() => {
     return !hasGlobalModalOpen && !hasPanelOpen;
@@ -365,6 +379,7 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       sortedGroupMembers={conversation.sortedGroupMembers ?? null}
       // Select Mode
       selectedMessageIds={selectedMessageIds}
+      areSelectedMessagesForwardable={areSelectedMessagesForwardable}
       toggleSelectMode={toggleSelectMode}
       toggleForwardMessagesModal={toggleForwardMessagesModal}
       // DraftGifMessageSendModal

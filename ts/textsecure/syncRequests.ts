@@ -1,10 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as log from '../logging/log';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import MessageSender from './SendMessage';
-import { toLogFormat } from '../types/errors';
+import { createLogger } from '../logging/log.js';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.js';
+import MessageSender from './SendMessage.js';
+import { toLogFormat } from '../types/errors.js';
+
+const log = createLogger('syncRequests');
 
 export async function sendSyncRequests(): Promise<void> {
   log.info('sendSyncRequests: sending sync requests');

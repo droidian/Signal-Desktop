@@ -3,23 +3,28 @@
 
 import { PassThrough } from 'node:stream';
 import { stat } from 'node:fs/promises';
-import { join, relative, normalize } from 'path';
+import { join, relative, normalize } from 'node:path';
 import pMap from 'p-map';
 import fastGlob from 'fast-glob';
 import fse from 'fs-extra';
-import { map, isString } from 'lodash';
+import lodash from 'lodash';
 import normalizePath from 'normalize-path';
-import { isPathInside } from '../ts/util/isPathInside';
-import { DAY } from '../ts/util/durations';
-import { isOlderThan } from '../ts/util/timestamp';
-import { isNotNil } from '../ts/util/isNotNil';
+import { isPathInside } from '../ts/util/isPathInside.js';
+import { DAY } from '../ts/util/durations/index.js';
+import { isOlderThan } from '../ts/util/timestamp.js';
+import { isNotNil } from '../ts/util/isNotNil.js';
 import {
   generateKeys,
   decryptAttachmentV2ToSink,
   encryptAttachmentV2ToDisk,
-} from '../ts/AttachmentCrypto';
-import type { LocalAttachmentV2Type } from '../ts/types/Attachment';
-import * as Errors from '../ts/types/errors';
+} from '../ts/AttachmentCrypto.js';
+import type { LocalAttachmentV2Type } from '../ts/types/Attachment.js';
+import * as Errors from '../ts/types/errors.js';
+import { createLogger } from '../ts/logging/log.js';
+
+const { map, isString } = lodash;
+
+const log = createLogger('attachments');
 
 const PATH = 'attachments.noindex';
 const AVATAR_PATH = 'avatars.noindex';
@@ -155,7 +160,7 @@ export const deleteStaleDownloads = async (
         if (error.code === 'ENOENT') {
           return;
         }
-        console.error(
+        log.error(
           'deleteStaleDownloads: failed to get file stats',
           Errors.toLogFormat(error)
         );
@@ -169,7 +174,7 @@ export const deleteStaleDownloads = async (
   if (stale.length === 0) {
     return;
   }
-  console.log(`deleteStaleDownloads: found ${stale.length}`);
+  log.info(`deleteStaleDownloads: found ${stale.length}`);
   await deleteAllDownloads({ userDataPath, downloads: stale });
 };
 
@@ -184,7 +189,7 @@ export const deleteAll = async ({
 
   await pMap(attachments, deleteFromDisk, { concurrency: FS_CONCURRENCY });
 
-  console.log(`deleteAll: deleted ${attachments.length} files`);
+  log.info(`deleteAll: deleted ${attachments.length} files`);
 };
 
 export const deleteAllDownloads = async ({
@@ -198,7 +203,7 @@ export const deleteAllDownloads = async ({
 
   await pMap(downloads, deleteFromDisk, { concurrency: FS_CONCURRENCY });
 
-  console.log(`deleteAllDownloads: deleted ${downloads.length} files`);
+  log.info(`deleteAllDownloads: deleted ${downloads.length} files`);
 };
 
 export const deleteAllStickers = async ({
@@ -212,7 +217,7 @@ export const deleteAllStickers = async ({
 
   await pMap(stickers, deleteFromDisk, { concurrency: FS_CONCURRENCY });
 
-  console.log(`deleteAllStickers: deleted ${stickers.length} files`);
+  log.info(`deleteAllStickers: deleted ${stickers.length} files`);
 };
 
 export const deleteAllBadges = async ({
@@ -233,7 +238,7 @@ export const deleteAllBadges = async ({
     }
   }
 
-  console.log(`deleteAllBadges: deleted ${filesDeleted} files`);
+  log.info(`deleteAllBadges: deleted ${filesDeleted} files`);
 };
 
 export const deleteAllDraftAttachments = async ({
@@ -247,7 +252,7 @@ export const deleteAllDraftAttachments = async ({
 
   await pMap(attachments, deleteFromDisk, { concurrency: FS_CONCURRENCY });
 
-  console.log(`deleteAllDraftAttachments: deleted ${attachments.length} files`);
+  log.info(`deleteAllDraftAttachments: deleted ${attachments.length} files`);
 };
 
 export const readAndDecryptDataFromDisk = async ({

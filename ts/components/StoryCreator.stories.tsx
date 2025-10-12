@@ -5,15 +5,15 @@ import type { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './StoryCreator';
-import { StoryCreator } from './StoryCreator';
-import { fakeAttachment } from '../test-both/helpers/fakeAttachment';
+import type { PropsType } from './StoryCreator.js';
+import { StoryCreator } from './StoryCreator.js';
+import { fakeAttachment } from '../test-helpers/fakeAttachment.js';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-both/helpers/getDefaultConversation';
-import { getFakeDistributionListsWithMembers } from '../test-both/helpers/getFakeDistributionLists';
-import { EmojiSkinTone } from './fun/data/emojis';
+} from '../test-helpers/getDefaultConversation.js';
+import { getFakeDistributionListsWithMembers } from '../test-helpers/getFakeDistributionLists.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
 
 const { i18n } = window.SignalContext;
 

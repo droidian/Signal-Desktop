@@ -1,20 +1,25 @@
 // Copyright 2015 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import os from 'os';
-import { debounce } from 'lodash';
-import EventEmitter from 'events';
+import os from 'node:os';
+import lodash from 'lodash';
+import EventEmitter from 'node:events';
 import { v4 as getGuid } from 'uuid';
 
-import { Sound, SoundType } from '../util/Sound';
-import { shouldHideExpiringMessageBody } from '../types/Settings';
-import OS from '../util/os/osMain';
-import * as log from '../logging/log';
-import { makeEnumParser } from '../util/enum';
-import { missingCaseError } from '../util/missingCaseError';
-import type { StorageInterface } from '../types/Storage.d';
-import type { LocalizerType } from '../types/Util';
-import { drop } from '../util/drop';
+import { Sound, SoundType } from '../util/Sound.js';
+import { shouldHideExpiringMessageBody } from '../types/Settings.js';
+import OS from '../util/os/osMain.js';
+import { createLogger } from '../logging/log.js';
+import { makeEnumParser } from '../util/enum.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { toLogFormat } from '../types/errors.js';
+import type { StorageInterface } from '../types/Storage.d.ts';
+import type { LocalizerType } from '../types/Util.js';
+import { drop } from '../util/drop.js';
+
+const { debounce } = lodash;
+
+const log = createLogger('notifications');
 
 type NotificationDataType = Readonly<{
   conversationId: string;
@@ -411,7 +416,7 @@ class NotificationService extends EventEmitter {
         notificationMessage = i18n('icu:newMessage');
         break;
       default:
-        log.error(missingCaseError(userSetting));
+        log.error(toLogFormat(missingCaseError(userSetting)));
         notificationTitle = FALLBACK_NOTIFICATION_TITLE;
         notificationMessage = i18n('icu:newMessage');
         break;

@@ -1,18 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { v4 as generateUuid } from 'uuid';
-import * as Bytes from '../Bytes';
-import type { CallLinkConversationType, CallLinkType } from '../types/CallLink';
-import { CallLinkRestrictions } from '../types/CallLink';
-import type { LocalizerType } from '../types/Util';
-import { getColorForCallLink } from './getColorForCallLink';
+import * as Bytes from '../Bytes.js';
+import type {
+  CallLinkConversationType,
+  CallLinkType,
+} from '../types/CallLink.js';
+import { CallLinkRestrictions } from '../types/CallLink.js';
+import type { LocalizerType } from '../types/Util.js';
+import { getColorForCallLink } from './getColorForCallLink.js';
 import {
   AdhocCallStatus,
   CallDirection,
   CallType,
   type CallHistoryDetails,
   CallMode,
-} from '../types/CallDisposition';
+} from '../types/CallDisposition.js';
 
 export const CALL_LINK_DEFAULT_STATE: Pick<
   CallLinkType,
@@ -35,6 +38,24 @@ export function getKeyFromCallLink(callLink: string): string {
   const hashParams = new URLSearchParams(hash);
 
   return hashParams.get('key') || '';
+}
+
+export function getKeyAndEpochFromCallLink(callLink: string): {
+  key: string;
+  epoch: string;
+} {
+  const url = new URL(callLink);
+  if (url == null) {
+    throw new Error('Failed to parse call link URL');
+  }
+
+  const hash = url.hash.slice(1);
+  const hashParams = new URLSearchParams(hash);
+
+  return {
+    key: hashParams.get('key') || '',
+    epoch: hashParams.get('epoch') || '',
+  };
 }
 
 export function callLinkToConversation(
@@ -69,8 +90,8 @@ export function getPlaceholderCallLinkConversation(
   };
 }
 
-export function toAdminKeyBytes(adminKey: string): Buffer {
-  return Buffer.from(adminKey, 'base64');
+export function toAdminKeyBytes(adminKey: string): Uint8Array {
+  return Bytes.fromBase64(adminKey);
 }
 
 export function fromAdminKeyBytes(adminKey: Uint8Array): string {

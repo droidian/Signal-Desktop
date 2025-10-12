@@ -9,13 +9,13 @@ import type {
   ReactNode,
   RefObject,
 } from 'react';
-import React from 'react';
+import React, { forwardRef, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 import getDirection from 'direction';
-import { drop, groupBy, orderBy, take, unescape } from 'lodash';
+import lodash from 'lodash';
 import { Manager, Popper, Reference } from 'react-popper';
-import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow';
+import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow.js';
 import type { ReadonlyDeep } from 'type-fest';
 import type {
   ConversationType,
@@ -25,39 +25,41 @@ import type {
   SaveAttachmentActionCreatorType,
   SaveAttachmentsActionCreatorType,
   ShowConversationType,
-} from '../../state/ducks/conversations';
-import type { ViewStoryActionCreatorType } from '../../state/ducks/stories';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { Avatar, AvatarSize } from '../Avatar';
-import { AvatarSpacer } from '../AvatarSpacer';
-import { MessageBodyReadMore } from './MessageBodyReadMore';
-import { MessageMetadata } from './MessageMetadata';
-import { MessageTextMetadataSpacer } from './MessageTextMetadataSpacer';
-import { ImageGrid } from './ImageGrid';
-import { GIF } from './GIF';
-import { CurveType, Image } from './Image';
-import { ContactName } from './ContactName';
-import type { QuotedAttachmentForUIType } from './Quote';
-import { Quote } from './Quote';
-import { EmbeddedContact } from './EmbeddedContact';
-import type { OwnProps as ReactionViewerProps } from './ReactionViewer';
-import { ReactionViewer } from './ReactionViewer';
-import { LinkPreviewDate } from './LinkPreviewDate';
-import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews';
-import { shouldUseFullSizeLinkPreviewImage } from '../../linkPreviews/shouldUseFullSizeLinkPreviewImage';
-import type { WidthBreakpoint } from '../_util';
-import { OutgoingGiftBadgeModal } from '../OutgoingGiftBadgeModal';
-import * as log from '../../logging/log';
-import { StoryViewModeType } from '../../types/Stories';
+} from '../../state/ducks/conversations.js';
+import type { ViewStoryActionCreatorType } from '../../state/ducks/stories.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { Avatar, AvatarSize } from '../Avatar.js';
+import { AvatarSpacer } from '../AvatarSpacer.js';
+import { MessageBodyReadMore } from './MessageBodyReadMore.js';
+import { MessageMetadata } from './MessageMetadata.js';
+import { MessageTextMetadataSpacer } from './MessageTextMetadataSpacer.js';
+import { ImageGrid } from './ImageGrid.js';
+import { GIF } from './GIF.js';
+import { CurveType, Image } from './Image.js';
+import { ContactName } from './ContactName.js';
+import type { QuotedAttachmentForUIType } from './Quote.js';
+import { Quote } from './Quote.js';
+import { EmbeddedContact } from './EmbeddedContact.js';
+import type {
+  OwnProps as ReactionViewerProps,
+  Reaction,
+} from './ReactionViewer.js';
+import { ReactionViewer } from './ReactionViewer.js';
+import { LinkPreviewDate } from './LinkPreviewDate.js';
+import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.js';
+import { shouldUseFullSizeLinkPreviewImage } from '../../linkPreviews/shouldUseFullSizeLinkPreviewImage.js';
+import type { WidthBreakpoint } from '../_util.js';
+import { OutgoingGiftBadgeModal } from '../OutgoingGiftBadgeModal.js';
+import { createLogger } from '../../logging/log.js';
+import { StoryViewModeType } from '../../types/Stories.js';
 import type {
   AttachmentForUIType,
   AttachmentType,
-} from '../../types/Attachment';
+} from '../../types/Attachment.js';
 import {
   canDisplayImage,
-  getExtensionForDisplay,
   getGridDimensions,
-  getImageDimensions,
+  getImageDimensionsForTimeline,
   hasImage,
   hasVideoScreenshot,
   isAudio,
@@ -68,47 +70,48 @@ import {
   isImageAttachment,
   isPlayed,
   isVideo,
-} from '../../types/Attachment';
-import type { EmbeddedContactForUIType } from '../../types/EmbeddedContact';
+} from '../../types/Attachment.js';
+import type { EmbeddedContactForUIType } from '../../types/EmbeddedContact.js';
 
-import { getIncrement } from '../../util/timer';
-import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary';
-import { missingCaseError } from '../../util/missingCaseError';
-import type { HydratedBodyRangesType } from '../../types/BodyRange';
-import type { LocalizerType, ThemeType } from '../../types/Util';
+import { getIncrement } from '../../util/timer.js';
+import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
 
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.js';
 import type {
   ContactNameColorType,
   ConversationColorType,
   CustomColorType,
-} from '../../types/Colors';
-import { createRefMerger } from '../../util/refMerger';
-import { emojiToData } from '../emoji/lib';
-import { getCustomColorStyle } from '../../util/getCustomColorStyle';
-import type { ServiceIdString } from '../../types/ServiceId';
-import { DAY, HOUR, MINUTE, SECOND } from '../../util/durations';
-import { BadgeImageTheme } from '../../badges/BadgeImageTheme';
-import { getBadgeImageFileLocalPath } from '../../badges/getBadgeImageFileLocalPath';
-import { handleOutsideClick } from '../../util/handleOutsideClick';
-import { isPaymentNotificationEvent } from '../../types/Payment';
-import type { AnyPaymentEvent } from '../../types/Payment';
-import { getPaymentEventDescription } from '../../messages/helpers';
-import { PanelType } from '../../types/Panels';
-import { openLinkInWebBrowser } from '../../util/openLinkInWebBrowser';
-import { RenderLocation } from './MessageTextRenderer';
-import { UserText } from '../UserText';
-import { getColorForCallLink } from '../../util/getColorForCallLink';
-import { getKeyFromCallLink } from '../../util/callLinks';
-import { InAnotherCallTooltip } from './InAnotherCallTooltip';
-import { formatFileSize } from '../../util/formatFileSize';
-import { AttachmentNotAvailableModalType } from '../AttachmentNotAvailableModal';
-import { assertDev, strictAssert } from '../../util/assert';
-import { AttachmentStatusIcon } from './AttachmentStatusIcon';
-import { isFileDangerous } from '../../util/isFileDangerous';
-import { TapToViewNotAvailableType } from '../TapToViewNotAvailableModal';
-import type { DataPropsType as TapToViewNotAvailablePropsType } from '../TapToViewNotAvailableModal';
-import { FunStaticEmoji } from '../fun/FunEmoji';
+} from '../../types/Colors.js';
+import { createRefMerger } from '../../util/refMerger.js';
+import { getCustomColorStyle } from '../../util/getCustomColorStyle.js';
+import type { ServiceIdString } from '../../types/ServiceId.js';
+import { DAY, HOUR, MINUTE, SECOND } from '../../util/durations/index.js';
+import { BadgeImageTheme } from '../../badges/BadgeImageTheme.js';
+import { getBadgeImageFileLocalPath } from '../../badges/getBadgeImageFileLocalPath.js';
+import { handleOutsideClick } from '../../util/handleOutsideClick.js';
+import { isPaymentNotificationEvent } from '../../types/Payment.js';
+import type { AnyPaymentEvent } from '../../types/Payment.js';
+import { getPaymentEventDescription } from '../../messages/helpers.js';
+import { PanelType } from '../../types/Panels.js';
+import { isPollReceiveEnabled } from '../../types/Polls.js';
+import type { PollWithResolvedVotersType } from '../../state/selectors/message.js';
+import { PollMessageContents } from './poll-message/PollMessageContents.js';
+import { openLinkInWebBrowser } from '../../util/openLinkInWebBrowser.js';
+import { RenderLocation } from './MessageTextRenderer.js';
+import { UserText } from '../UserText.js';
+import { getColorForCallLink } from '../../util/getColorForCallLink.js';
+import { getKeyFromCallLink } from '../../util/callLinks.js';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip.js';
+import { formatFileSize } from '../../util/formatFileSize.js';
+import { assertDev, strictAssert } from '../../util/assert.js';
+import { AttachmentStatusIcon } from './AttachmentStatusIcon.js';
+import { TapToViewNotAvailableType } from '../TapToViewNotAvailableModal.js';
+import type { DataPropsType as TapToViewNotAvailablePropsType } from '../TapToViewNotAvailableModal.js';
+import { FileThumbnail } from '../FileThumbnail.js';
+import { FunStaticEmoji } from '../fun/FunEmoji.js';
 import {
   type EmojifyData,
   getEmojifyData,
@@ -117,7 +120,12 @@ import {
   getEmojiVariantByKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
-} from '../fun/data/emojis';
+} from '../fun/data/emojis.js';
+import { useGroupedAndOrderedReactions } from '../../util/groupAndOrderReactions.js';
+
+const { drop, take, unescape } = lodash;
+
+const log = createLogger('Message');
 
 const GUESS_METADATA_WIDTH_TIMESTAMP_SIZE = 16;
 const GUESS_METADATA_WIDTH_EXPIRE_TIMER_SIZE = 18;
@@ -298,6 +306,7 @@ export type PropsData = {
   attachments?: ReadonlyArray<AttachmentForUIType>;
   giftBadge?: GiftBadgeType;
   payment?: AnyPaymentEvent;
+  poll?: PollWithResolvedVotersType;
   quote?: {
     conversationColor: ConversationColorType;
     conversationTitle: string;
@@ -408,9 +417,6 @@ export type PropsActions = {
 
   showEditHistoryModal?: (id: string) => unknown;
   showAttachmentDownloadStillInProgressToast: (count: number) => unknown;
-  showAttachmentNotAvailableModal: (
-    modalType: AttachmentNotAvailableModalType
-  ) => void;
   showExpiredIncomingTapToViewToast: () => unknown;
   showExpiredOutgoingTapToViewToast: () => unknown;
   showMediaNoLongerAvailableToast: () => unknown;
@@ -444,6 +450,191 @@ type State = {
   hasDeleteForEveryoneTimerExpired: boolean;
 };
 
+// Function component for reactions that can use hooks
+type MessageReactionsProps = {
+  reactions: Array<Reaction>;
+  getPreferredBadge: PreferredBadgeSelectorType;
+  i18n: LocalizerType;
+  theme: ThemeType;
+  outgoing: boolean;
+  toggleReactionViewer: (onlyRemove?: boolean) => void;
+  reactionViewerRoot: HTMLDivElement | null;
+  popperPreventOverflowModifier: () => Partial<PreventOverflowModifier>;
+};
+
+const MessageReactions = forwardRef(function MessageReactions(
+  {
+    reactions,
+    getPreferredBadge,
+    i18n,
+    theme,
+    outgoing,
+    toggleReactionViewer,
+    reactionViewerRoot,
+    popperPreventOverflowModifier,
+  }: MessageReactionsProps,
+  parentRef
+): JSX.Element {
+  const ordered = useGroupedAndOrderedReactions(reactions, 'parentKey');
+
+  const reactionsContainerRefMerger = useRef(createRefMerger());
+
+  // Take the first three groups for rendering
+  const toRender = take(ordered, 3).map(res => {
+    const isMe = res.some(re => Boolean(re.from.isMe));
+    const count = res.length;
+    const { emoji } = res[0];
+
+    let label: string;
+    if (isMe) {
+      label = i18n('icu:Message__reaction-emoji-label--you', { emoji });
+    } else if (count === 1) {
+      label = i18n('icu:Message__reaction-emoji-label--single', {
+        title: res[0].from.title,
+        emoji,
+      });
+    } else {
+      label = i18n('icu:Message__reaction-emoji-label--many', {
+        count,
+        emoji,
+      });
+    }
+
+    return {
+      count,
+      emoji,
+      isMe,
+      label,
+    };
+  });
+  const someNotRendered = ordered.length > 3;
+  // We only drop two here because the third emoji would be replaced by the
+  // more button
+  const maybeNotRendered = drop(ordered, 2);
+  const maybeNotRenderedTotal = maybeNotRendered.reduce(
+    (sum, res) => sum + res.length,
+    0
+  );
+  const notRenderedIsMe =
+    someNotRendered &&
+    maybeNotRendered.some(res => res.some(re => Boolean(re.from.isMe)));
+
+  const popperPlacement = outgoing ? 'bottom-end' : 'bottom-start';
+
+  return (
+    <Manager>
+      <Reference>
+        {({ ref: popperRef }) => (
+          <div
+            ref={reactionsContainerRefMerger.current(parentRef, popperRef)}
+            className={classNames(
+              'module-message__reactions',
+              outgoing
+                ? 'module-message__reactions--outgoing'
+                : 'module-message__reactions--incoming'
+            )}
+            onDoubleClick={ev => {
+              ev.stopPropagation();
+            }}
+          >
+            {toRender.map((re, i) => {
+              const isLast = i === toRender.length - 1;
+              const isMore = isLast && someNotRendered;
+              const isMoreWithMe = isMore && notRenderedIsMe;
+
+              return (
+                <button
+                  aria-label={re.label}
+                  type="button"
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={`${re.emoji}-${i}`}
+                  className={classNames(
+                    'module-message__reactions__reaction',
+                    re.count > 1
+                      ? 'module-message__reactions__reaction--with-count'
+                      : null,
+                    outgoing
+                      ? 'module-message__reactions__reaction--outgoing'
+                      : 'module-message__reactions__reaction--incoming',
+                    isMoreWithMe || (re.isMe && !isMoreWithMe)
+                      ? 'module-message__reactions__reaction--is-me'
+                      : null
+                  )}
+                  onClick={e => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleReactionViewer(false);
+                  }}
+                  onKeyDown={e => {
+                    // Prevent enter key from opening stickers/attachments
+                    if (e.key === 'Enter') {
+                      e.stopPropagation();
+                    }
+                  }}
+                >
+                  {isMore ? (
+                    <span
+                      className={classNames(
+                        'module-message__reactions__reaction__count',
+                        'module-message__reactions__reaction__count--no-emoji',
+                        isMoreWithMe
+                          ? 'module-message__reactions__reaction__count--is-me'
+                          : null
+                      )}
+                    >
+                      +{maybeNotRenderedTotal}
+                    </span>
+                  ) : (
+                    <>
+                      <ReactionEmoji emojiVariantValue={re.emoji} />
+                      {re.count > 1 ? (
+                        <span
+                          className={classNames(
+                            'module-message__reactions__reaction__count',
+                            re.isMe
+                              ? 'module-message__reactions__reaction__count--is-me'
+                              : null
+                          )}
+                        >
+                          {re.count}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </Reference>
+      {reactionViewerRoot &&
+        createPortal(
+          <Popper
+            placement={popperPlacement}
+            strategy="fixed"
+            modifiers={[popperPreventOverflowModifier()]}
+          >
+            {({ ref, style }) => (
+              <ReactionViewer
+                ref={ref}
+                style={{
+                  ...style,
+                  zIndex: 2,
+                }}
+                getPreferredBadge={getPreferredBadge}
+                reactions={reactions}
+                i18n={i18n}
+                onClose={toggleReactionViewer}
+                theme={theme}
+              />
+            )}
+          </Popper>,
+          reactionViewerRoot
+        )}
+    </Manager>
+  );
+});
+
 export class Message extends React.PureComponent<Props, State> {
   public focusRef: React.RefObject<HTMLDivElement> = React.createRef();
 
@@ -457,8 +648,6 @@ export class Message extends React.PureComponent<Props, State> {
   };
 
   #metadataRef: React.RefObject<HTMLDivElement> = React.createRef();
-
-  public reactionsContainerRefMerger = createRefMerger();
 
   public expirationCheckInterval: NodeJS.Timeout | undefined;
 
@@ -531,9 +720,7 @@ export class Message extends React.PureComponent<Props, State> {
 
   public handleImageError = (): void => {
     const { id } = this.props;
-    log.info(
-      `Message ${id}: Image failed to load; failing over to placeholder`
-    );
+    log.info(`${id}: Image failed to load; failing over to placeholder`);
     this.setState({
       imageBroken: true,
     });
@@ -626,7 +813,7 @@ export class Message extends React.PureComponent<Props, State> {
         delta,
       });
       log.info(
-        `Message.tsx: Rendered 'send complete' for message ${timestamp}; took ${delta}ms`
+        `tsx: Rendered 'send complete' for message ${timestamp}; took ${delta}ms`
       );
     }
   }
@@ -921,9 +1108,7 @@ export class Message extends React.PureComponent<Props, State> {
         isInline = false;
         break;
       default:
-        log.error(missingCaseError(metadataPlacement));
-        isInline = false;
-        break;
+        throw missingCaseError(metadataPlacement);
     }
 
     const {
@@ -1140,6 +1325,7 @@ export class Message extends React.PureComponent<Props, State> {
         );
       }
     }
+
     const isAttachmentAudio = isAudio(attachments);
 
     if (isAttachmentNotAvailable && (isAttachmentAudio || isSticker)) {
@@ -1187,39 +1373,8 @@ export class Message extends React.PureComponent<Props, State> {
     const { fileName, size, contentType } = firstAttachment;
     const isIncoming = direction === 'incoming';
 
-    const renderAttachmentDownloaded = () => {
-      const extension = getExtensionForDisplay({ contentType, fileName });
-      const isDangerous = isFileDangerous(fileName || '');
-      const moreChar = extension && extension.length > 3;
-      const extensionForDisplay =
-        extension && extension.length > 4
-          ? `${extension.slice(0, 3)}…`
-          : extension;
-
-      return (
-        <>
-          <div className="module-message__simple-attachment__icon">
-            {extension ? (
-              <div
-                className={classNames(
-                  'module-message__simple-attachment__icon__extension',
-                  moreChar
-                    ? 'module-message__simple-attachment__icon__extension--more-char'
-                    : undefined
-                )}
-              >
-                {extensionForDisplay}
-              </div>
-            ) : null}
-          </div>
-          {isDangerous ? (
-            <div className="module-message__simple-attachment__icon-dangerous-container {">
-              <div className="module-message__simple-attachment__icon-dangerous" />
-            </div>
-          ) : null}
-        </>
-      );
-    };
+    const willShowMetadata =
+      expirationLength || expirationTimestamp || !shouldHideMetadata;
 
     // Note: this has to be interactive for the case where text comes along with the
     // attachment. But we don't want the user to tab here unless that text exists.
@@ -1262,10 +1417,10 @@ export class Message extends React.PureComponent<Props, State> {
         <AttachmentStatusIcon
           key={id}
           attachment={firstAttachment}
-          isAttachmentNotAvailable={isAttachmentNotAvailable}
           isIncoming={isIncoming}
-          renderAttachmentDownloaded={renderAttachmentDownloaded}
-        />
+        >
+          <FileThumbnail contentType={contentType} fileName={fileName} />
+        </AttachmentStatusIcon>
         <div className="module-message__simple-attachment__text">
           <div
             className={classNames(
@@ -1298,7 +1453,7 @@ export class Message extends React.PureComponent<Props, State> {
                 {formatFileSize(size)}
               </div>
             )}
-            {text || shouldHideMetadata ? undefined : (
+            {text || !willShowMetadata ? undefined : (
               <div className="module-message__simple-attachment__metadata-container">
                 <MessageMetadata
                   deletedForEveryone={false}
@@ -1342,7 +1497,6 @@ export class Message extends React.PureComponent<Props, State> {
       isTapToViewError,
       isTapToViewExpired,
       readStatus,
-      showAttachmentNotAvailableModal,
       showTapToViewNotAvailableModal,
       text,
       quote,
@@ -1355,16 +1509,13 @@ export class Message extends React.PureComponent<Props, State> {
 
     let attachmentType: string;
     let info: string;
-    let attachmentModalType: AttachmentNotAvailableModalType | undefined;
     let tapToViewModalType: TapToViewNotAvailableType | undefined;
     if (isAttachmentAudio) {
       attachmentType = 'audio';
       info = i18n('icu:attachmentNotAvailable__voice');
-      attachmentModalType = AttachmentNotAvailableModalType.VoiceMessage;
     } else if (isSticker) {
       attachmentType = 'sticker';
       info = i18n('icu:attachmentNotAvailable__sticker');
-      attachmentModalType = AttachmentNotAvailableModalType.Sticker;
     } else if (isTapToView && !isViewed && isTapToViewExpired) {
       attachmentType = 'tap-to-view';
       info = i18n('icu:attachmentNotAvailable__tapToView');
@@ -1405,56 +1556,38 @@ export class Message extends React.PureComponent<Props, State> {
           <div className="module-message__undownloadable-attachment-info">
             {info}
           </div>
-          <div className="module-message__undownloadable-attachment-learn-more-container">
-            <button
-              className="module-message__undownloadable-attachment-learn-more"
-              onClick={e => {
-                e.stopPropagation();
-                e.preventDefault();
-                if (attachmentModalType) {
-                  showAttachmentNotAvailableModal(attachmentModalType);
-                } else if (tapToViewModalType) {
+          {tapToViewModalType ? (
+            <div className="module-message__undownloadable-attachment-learn-more-container">
+              <button
+                className="module-message__undownloadable-attachment-learn-more"
+                onClick={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
                   showTapToViewNotAvailableModal({
                     type: tapToViewModalType,
                     parameters: {
                       name: author.firstName || author.title,
                     },
                   });
-                } else {
-                  throw new Error(
-                    'renderSimpleAttachmentNotAvailable: No type set!'
-                  );
-                }
-              }}
-              type="button"
-            >
-              {i18n('icu:attachmentNoLongerAvailable__learnMore')}
-            </button>
-          </div>
+                }}
+                type="button"
+              >
+                {i18n('icu:attachmentNoLongerAvailable__learnMore')}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     );
   }
 
   public renderUndownloadableTextAttachment(): JSX.Element | null {
-    const { i18n, textAttachment, showAttachmentNotAvailableModal } =
-      this.props;
+    const { i18n, textAttachment } = this.props;
     if (!textAttachment || !textAttachment.isPermanentlyUndownloadable) {
       return null;
     }
     return (
-      <button
-        type="button"
-        className="module-message__simple-attachment module-message__undownloadable-attachment-text"
-        tabIndex={-1}
-        onClick={event => {
-          event.stopPropagation();
-          event.preventDefault();
-          showAttachmentNotAvailableModal(
-            AttachmentNotAvailableModalType.LongText
-          );
-        }}
-      >
+      <div className="module-message__simple-attachment module-message__undownloadable-attachment-text">
         <div className="module-message__undownloadable-attachment-text__icon-container">
           <div className="module-message__undownloadable-attachment__icon module-message__undownloadable-attachment__icon--file" />
         </div>
@@ -1462,13 +1595,8 @@ export class Message extends React.PureComponent<Props, State> {
           <div className="module-message__undownloadable-attachment-info">
             {i18n('icu:attachmentNotAvailable__longMessage')}
           </div>
-          <div className="module-message__undownloadable-attachment-learn-more-container">
-            <div className="module-message__undownloadable-attachment-learn-more">
-              {i18n('icu:attachmentNoLongerAvailable__learnMore')}
-            </div>
-          </div>
         </div>
-      </button>
+      </div>
     );
   }
 
@@ -1952,6 +2080,20 @@ export class Message extends React.PureComponent<Props, State> {
     );
   }
 
+  public renderPoll(): JSX.Element | null {
+    const { poll, direction, i18n } = this.props;
+    if (!poll || !isPollReceiveEnabled()) {
+      return null;
+    }
+    return (
+      <PollMessageContents poll={poll} direction={direction} i18n={i18n} />
+    );
+  }
+
+  #doubleCheckMissingQuoteReference = () => {
+    return this.props.doubleCheckMissingQuoteReference(this.props.id);
+  };
+
   public renderQuote(): JSX.Element | null {
     const {
       conversationColor,
@@ -1960,9 +2102,7 @@ export class Message extends React.PureComponent<Props, State> {
       customColor,
       direction,
       disableScroll,
-      doubleCheckMissingQuoteReference,
       i18n,
-      id,
       quote,
       scrollToQuotedMessage,
     } = this.props;
@@ -2002,8 +2142,8 @@ export class Message extends React.PureComponent<Props, State> {
         isGiftBadge={isGiftBadge}
         referencedMessageNotFound={referencedMessageNotFound}
         isFromMe={quote.isFromMe}
-        doubleCheckMissingQuoteReference={() =>
-          doubleCheckMissingQuoteReference(id)
+        doubleCheckMissingQuoteReference={
+          this.#doubleCheckMissingQuoteReference
         }
       />
     );
@@ -2432,7 +2572,7 @@ export class Message extends React.PureComponent<Props, State> {
       firstLinkPreview.image &&
       shouldUseFullSizeLinkPreviewImage(firstLinkPreview)
     ) {
-      const dimensions = getImageDimensions(firstLinkPreview.image);
+      const dimensions = getImageDimensionsForTimeline(firstLinkPreview.image);
       if (dimensions) {
         return dimensions.width;
       }
@@ -2721,19 +2861,23 @@ export class Message extends React.PureComponent<Props, State> {
             : null
         )}
       >
-        <AttachmentStatusIcon
-          key={id}
-          attachment={firstAttachment}
-          isAttachmentNotAvailable={isExpired}
-          isIncoming={isIncoming}
-          renderAttachmentDownloaded={() => this.renderTapToViewIcon()}
-        />
+        {isExpired || firstAttachment == null ? (
+          this.renderTapToViewIcon()
+        ) : (
+          <AttachmentStatusIcon
+            key={id}
+            attachment={firstAttachment}
+            isIncoming={isIncoming}
+          >
+            {this.renderTapToViewIcon()}
+          </AttachmentStatusIcon>
+        )}
         {content}
       </div>
     );
   }
 
-  #popperPreventOverflowModifier(): Partial<PreventOverflowModifier> {
+  #popperPreventOverflowModifier = (): Partial<PreventOverflowModifier> => {
     const { containerElementRef } = this.props;
     return {
       name: 'preventOverflow',
@@ -2748,7 +2892,7 @@ export class Message extends React.PureComponent<Props, State> {
         },
       },
     };
-  }
+  };
 
   public toggleReactionViewer = (onlyRemove = false): void => {
     this.setState(oldState => {
@@ -2796,185 +2940,22 @@ export class Message extends React.PureComponent<Props, State> {
       return null;
     }
 
-    const reactionsWithEmojiData = reactions.map(reaction => ({
-      ...reaction,
-      ...emojiToData(reaction.emoji),
-    }));
-
-    // Group by emoji and order each group by timestamp descending
-    const groupedAndSortedReactions = Object.values(
-      groupBy(reactionsWithEmojiData, 'short_name')
-    ).map(groupedReactions =>
-      orderBy(
-        groupedReactions,
-        [reaction => reaction.from.isMe, 'timestamp'],
-        ['desc', 'desc']
-      )
-    );
-    // Order groups by length and subsequently by most recent reaction
-    const ordered = orderBy(
-      groupedAndSortedReactions,
-      ['length', ([{ timestamp }]) => timestamp],
-      ['desc', 'desc']
-    );
-    // Take the first three groups for rendering
-    const toRender = take(ordered, 3).map(res => {
-      const isMe = res.some(re => Boolean(re.from.isMe));
-      const count = res.length;
-      const { emoji } = res[0];
-
-      let label: string;
-      if (isMe) {
-        label = i18n('icu:Message__reaction-emoji-label--you', { emoji });
-      } else if (count === 1) {
-        label = i18n('icu:Message__reaction-emoji-label--single', {
-          title: res[0].from.title,
-          emoji,
-        });
-      } else {
-        label = i18n('icu:Message__reaction-emoji-label--many', {
-          count,
-          emoji,
-        });
-      }
-
-      return {
-        count,
-        emoji,
-        isMe,
-        label,
-      };
-    });
-    const someNotRendered = ordered.length > 3;
-    // We only drop two here because the third emoji would be replaced by the
-    // more button
-    const maybeNotRendered = drop(ordered, 2);
-    const maybeNotRenderedTotal = maybeNotRendered.reduce(
-      (sum, res) => sum + res.length,
-      0
-    );
-    const notRenderedIsMe =
-      someNotRendered &&
-      maybeNotRendered.some(res => res.some(re => Boolean(re.from.isMe)));
-
     const { reactionViewerRoot } = this.state;
 
-    const popperPlacement = outgoing ? 'bottom-end' : 'bottom-start';
-
     return (
-      <Manager>
-        <Reference>
-          {({ ref: popperRef }) => (
-            <div
-              ref={this.reactionsContainerRefMerger(
-                this.reactionsContainerRef,
-                popperRef
-              )}
-              className={classNames(
-                'module-message__reactions',
-                outgoing
-                  ? 'module-message__reactions--outgoing'
-                  : 'module-message__reactions--incoming'
-              )}
-              onDoubleClick={ev => {
-                ev.stopPropagation();
-              }}
-            >
-              {toRender.map((re, i) => {
-                const isLast = i === toRender.length - 1;
-                const isMore = isLast && someNotRendered;
-                const isMoreWithMe = isMore && notRenderedIsMe;
-
-                return (
-                  <button
-                    aria-label={re.label}
-                    type="button"
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={`${re.emoji}-${i}`}
-                    className={classNames(
-                      'module-message__reactions__reaction',
-                      re.count > 1
-                        ? 'module-message__reactions__reaction--with-count'
-                        : null,
-                      outgoing
-                        ? 'module-message__reactions__reaction--outgoing'
-                        : 'module-message__reactions__reaction--incoming',
-                      isMoreWithMe || (re.isMe && !isMoreWithMe)
-                        ? 'module-message__reactions__reaction--is-me'
-                        : null
-                    )}
-                    onClick={e => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      this.toggleReactionViewer(false);
-                    }}
-                    onKeyDown={e => {
-                      // Prevent enter key from opening stickers/attachments
-                      if (e.key === 'Enter') {
-                        e.stopPropagation();
-                      }
-                    }}
-                  >
-                    {isMore ? (
-                      <span
-                        className={classNames(
-                          'module-message__reactions__reaction__count',
-                          'module-message__reactions__reaction__count--no-emoji',
-                          isMoreWithMe
-                            ? 'module-message__reactions__reaction__count--is-me'
-                            : null
-                        )}
-                      >
-                        +{maybeNotRenderedTotal}
-                      </span>
-                    ) : (
-                      <>
-                        <ReactionEmoji emojiVariantValue={re.emoji} />
-                        {re.count > 1 ? (
-                          <span
-                            className={classNames(
-                              'module-message__reactions__reaction__count',
-                              re.isMe
-                                ? 'module-message__reactions__reaction__count--is-me'
-                                : null
-                            )}
-                          >
-                            {re.count}
-                          </span>
-                        ) : null}
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Reference>
-        {reactionViewerRoot &&
-          createPortal(
-            <Popper
-              placement={popperPlacement}
-              strategy="fixed"
-              modifiers={[this.#popperPreventOverflowModifier()]}
-            >
-              {({ ref, style }) => (
-                <ReactionViewer
-                  ref={ref}
-                  style={{
-                    ...style,
-                    zIndex: 2,
-                  }}
-                  getPreferredBadge={getPreferredBadge}
-                  reactions={reactions}
-                  i18n={i18n}
-                  onClose={this.toggleReactionViewer}
-                  theme={theme}
-                />
-              )}
-            </Popper>,
-            reactionViewerRoot
-          )}
-      </Manager>
+      <MessageReactions
+        reactions={reactions}
+        getPreferredBadge={getPreferredBadge}
+        i18n={i18n}
+        theme={theme}
+        outgoing={outgoing}
+        toggleReactionViewer={() => {
+          this.toggleReactionViewer();
+        }}
+        reactionViewerRoot={reactionViewerRoot}
+        popperPreventOverflowModifier={this.#popperPreventOverflowModifier}
+        ref={this.reactionsContainerRef}
+      />
     );
   }
 
@@ -3011,6 +2992,7 @@ export class Message extends React.PureComponent<Props, State> {
         {this.renderPreview()}
         {this.renderAttachmentTooBig()}
         {this.renderPayment()}
+        {this.renderPoll()}
         {this.renderEmbeddedContact()}
         {this.renderText()}
         {this.renderUndownloadableTextAttachment()}
@@ -3029,7 +3011,6 @@ export class Message extends React.PureComponent<Props, State> {
       direction,
       giftBadge,
       id,
-      isSticker,
       isTapToView,
       isTapToViewError,
       isTapToViewExpired,
@@ -3037,12 +3018,10 @@ export class Message extends React.PureComponent<Props, State> {
       openGiftBadge,
       pushPanelForConversation,
       readStatus,
-      showAttachmentNotAvailableModal,
       showExpiredIncomingTapToViewToast,
       showExpiredOutgoingTapToViewToast,
       showLightbox,
       showLightboxForViewOnceMedia,
-      showMediaNoLongerAvailableToast,
       startConversation,
     } = this.props;
     const { imageBroken } = this.state;
@@ -3087,24 +3066,6 @@ export class Message extends React.PureComponent<Props, State> {
     }
 
     if (attachments?.[0]?.isPermanentlyUndownloadable) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      // This needs to be the first check because canDisplayImage is true for stickers
-      if (isSticker) {
-        showAttachmentNotAvailableModal(
-          AttachmentNotAvailableModalType.Sticker
-        );
-      } else if (canDisplayImage(attachments)) {
-        showMediaNoLongerAvailableToast();
-      } else if (isAudio(attachments)) {
-        showAttachmentNotAvailableModal(
-          AttachmentNotAvailableModalType.VoiceMessage
-        );
-      } else {
-        showAttachmentNotAvailableModal(AttachmentNotAvailableModalType.File);
-      }
-
       return;
     }
 
@@ -3186,7 +3147,6 @@ export class Message extends React.PureComponent<Props, State> {
       timestamp,
       kickOffAttachmentDownload,
       attachmentDroppedDueToSize,
-      showAttachmentNotAvailableModal,
       cancelAttachmentDownload,
     } = this.props;
 
@@ -3204,8 +3164,10 @@ export class Message extends React.PureComponent<Props, State> {
       !attachmentDroppedDueToSize;
 
     if (isAttachmentNotAvailable) {
-      showAttachmentNotAvailableModal(AttachmentNotAvailableModalType.File);
-    } else if (firstAttachment.pending) {
+      return;
+    }
+
+    if (firstAttachment.pending) {
       cancelAttachmentDownload({
         messageId: id,
       });
@@ -3242,8 +3204,8 @@ export class Message extends React.PureComponent<Props, State> {
   ) {
     return (
       attachments?.length &&
-      (!isImage(attachments) || imageBroken) &&
-      (!isVideo(attachments) || imageBroken) &&
+      (!isImage(attachments) || !canDisplayImage(attachments) || imageBroken) &&
+      (!isVideo(attachments) || !canDisplayImage(attachments) || imageBroken) &&
       !isAudio(attachments)
     );
   }
@@ -3283,7 +3245,9 @@ export class Message extends React.PureComponent<Props, State> {
       (text || (!isVideo(attachments) && !isImage(attachments)));
     const isClickable =
       isTapToView ||
-      (this.isGenericAttachment(attachments, imageBroken) && !text) ||
+      (this.isGenericAttachment(attachments, imageBroken) &&
+        !text &&
+        !attachments?.[0]?.isPermanentlyUndownloadable) ||
       contact;
 
     const containerClassnames = classNames(

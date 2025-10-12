@@ -6,12 +6,14 @@ import { LRUCache } from 'lru-cache';
 import type {
   AddressableAttachmentType,
   LocalAttachmentV2Type,
-} from '../types/Attachment';
-import * as log from '../logging/log';
-import { DataWriter } from '../sql/Client';
-import { AttachmentDisposition } from './getLocalAttachmentUrl';
-import { drop } from './drop';
-import { MINUTE } from './durations';
+} from '../types/Attachment.js';
+import { createLogger } from '../logging/log.js';
+import { DataWriter } from '../sql/Client.js';
+import { AttachmentDisposition } from './getLocalAttachmentUrl.js';
+import { drop } from './drop.js';
+import { MINUTE } from './durations/index.js';
+
+const log = createLogger('encryptLegacyAttachment');
 
 let setCheck = false;
 let orphanedCount = 0;
@@ -82,7 +84,7 @@ async function doEncrypt<T extends Partial<AddressableAttachmentType>>(
 
   // Remove fully migrated attachments without references on next startup.
   if (orphanedCount > MAX_ORPHANED_COUNT) {
-    log.error('encryptLegacyAttachment: too many orphaned, cleanup now');
+    log.error('too many orphaned, cleanup now');
     if (cleanupTimeout !== undefined) {
       clearTimeout(cleanupTimeout);
       cleanupTimeout = undefined;
@@ -91,7 +93,7 @@ async function doEncrypt<T extends Partial<AddressableAttachmentType>>(
   } else if (!setCheck) {
     setCheck = true;
     await window.storage.put('needOrphanedAttachmentCheck', true);
-    log.error('encryptLegacyAttachment: scheduling orphaned cleanup');
+    log.error('scheduling orphaned cleanup');
     cleanupTimeout = setTimeout(cleanup, 15 * MINUTE);
   }
 
@@ -99,7 +101,7 @@ async function doEncrypt<T extends Partial<AddressableAttachmentType>>(
 }
 
 function cleanup(): void {
-  log.error('encryptLegacyAttachment: running orphaned cleanup');
+  log.error('running orphaned cleanup');
 
   cleanupTimeout = undefined;
   setCheck = false;

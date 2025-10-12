@@ -3,15 +3,17 @@
 
 import * as React from 'react';
 
-import { Button, ButtonSize, ButtonVariant } from '../Button';
-import { SystemMessage } from './SystemMessage';
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { ConversationType } from '../../state/ducks/conversations';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges';
-import { I18n } from '../I18n';
-import { ContactName } from './ContactName';
-import { GroupV1MigrationDialog } from '../GroupV1MigrationDialog';
-import * as log from '../../logging/log';
+import { Button, ButtonSize, ButtonVariant } from '../Button.js';
+import { SystemMessage } from './SystemMessage.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.js';
+import { I18n } from '../I18n.js';
+import { ContactName } from './ContactName.js';
+import { GroupV1MigrationDialog } from '../GroupV1MigrationDialog.js';
+import { createLogger } from '../../logging/log.js';
+
+const log = createLogger('GroupV1Migration');
 
 export type PropsDataType = {
   areWeInvited: boolean;
@@ -101,7 +103,7 @@ export function GroupV1Migration(props: PropsType): React.ReactElement {
           i18n={i18n}
           invitedMembers={invitedMembers}
           invitedMemberCount={invitedMemberCount}
-          onMigrate={() => log.warn('GroupV1Migration: Modal called migrate()')}
+          onMigrate={() => log.warn('Modal called migrate()')}
           onClose={dismissDialog}
           theme={theme}
         />

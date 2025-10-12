@@ -12,17 +12,22 @@
 // are not immediately retried, however, until `.onOnline()` is called from
 // when we are actually online.
 
-import { assertDev } from './util/assert';
-import { isOlderThan } from './util/timestamp';
-import { clearTimeoutIfNecessary } from './util/clearTimeoutIfNecessary';
-import { missingCaseError } from './util/missingCaseError';
-import type { StorageInterface } from './types/Storage.d';
-import * as Errors from './types/errors';
-import { HTTPError, type SendMessageChallengeData } from './textsecure/Errors';
-import * as log from './logging/log';
-import { drop } from './util/drop';
-import { findRetryAfterTimeFromError } from './jobs/helpers/findRetryAfterTimeFromError';
-import { MINUTE } from './util/durations';
+import { assertDev } from './util/assert.js';
+import { isOlderThan } from './util/timestamp.js';
+import { clearTimeoutIfNecessary } from './util/clearTimeoutIfNecessary.js';
+import { missingCaseError } from './util/missingCaseError.js';
+import type { StorageInterface } from './types/Storage.d.ts';
+import * as Errors from './types/errors.js';
+import {
+  HTTPError,
+  type SendMessageChallengeData,
+} from './textsecure/Errors.js';
+import { createLogger } from './logging/log.js';
+import { drop } from './util/drop.js';
+import { findRetryAfterTimeFromError } from './jobs/helpers/findRetryAfterTimeFromError.js';
+import { MINUTE } from './util/durations/index.js';
+
+const log = createLogger('challenge');
 
 export type ChallengeResponse = Readonly<{
   captcha: string;
@@ -150,14 +155,14 @@ export class ChallengeHandler {
     const challenges: ReadonlyArray<RegisteredChallengeType> =
       this.options.storage.get(STORAGE_KEY) || [];
 
-    log.info(`challenge: loading ${challenges.length} challenges`);
+    log.info(`loading ${challenges.length} challenges`);
 
     await Promise.all(
       challenges.map(async challenge => {
         const expireAfter = this.options.expireAfter || DEFAULT_EXPIRE_AFTER;
         if (isOlderThan(challenge.createdAt, expireAfter)) {
           log.info(
-            `challenge: expired challenge for conversation ${challenge.conversationId}`
+            `expired challenge for conversation ${challenge.conversationId}`
           );
           return;
         }
@@ -177,7 +182,7 @@ export class ChallengeHandler {
   public async onOffline(): Promise<void> {
     this.#isOnline = false;
 
-    log.info('challenge: offline');
+    log.info('offline');
   }
 
   public async onOnline(): Promise<void> {
@@ -186,7 +191,7 @@ export class ChallengeHandler {
     const pending = Array.from(this.#pendingStarts.values());
     this.#pendingStarts.clear();
 
-    log.info(`challenge: online, starting ${pending.length} queues`);
+    log.info(`online, starting ${pending.length} queues`);
 
     // Start queues for challenges that matured while we were offline
     await this.#startAllQueues();
@@ -321,9 +326,7 @@ export class ChallengeHandler {
     conversationId: string,
     source: string
   ): Promise<void> {
-    log.info(
-      `challenge: unregistered conversation ${conversationId} via ${source}`
-    );
+    log.info(`unregistered conversation ${conversationId} via ${source}`);
     this.#registeredConversations.delete(conversationId);
     this.#pendingStarts.delete(conversationId);
 
@@ -374,7 +377,7 @@ export class ChallengeHandler {
   }: {
     force?: boolean;
   } = {}): void {
-    log.info(`challenge: startAllQueues force=${force}`);
+    log.info(`startAllQueues force=${force}`);
 
     Array.from(this.#registeredConversations.values())
       .filter(challenge => force || shouldStartQueue(challenge))

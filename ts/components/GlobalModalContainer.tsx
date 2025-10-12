@@ -11,28 +11,28 @@ import type {
   MessageRequestActionsConfirmationPropsType,
   SafetyNumberChangedBlockingDataType,
   UserNotFoundModalStateType,
-} from '../state/ducks/globalModals';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import { UsernameOnboardingState } from '../types/globalModals';
-import { missingCaseError } from '../util/missingCaseError';
+} from '../state/ducks/globalModals.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import { UsernameOnboardingState } from '../types/globalModals.js';
+import { missingCaseError } from '../util/missingCaseError.js';
 
-import { ButtonVariant } from './Button';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import { SignalConnectionsModal } from './SignalConnectionsModal';
-import { WhatsNewModal } from './WhatsNewModal';
-import { MediaPermissionsModal } from './MediaPermissionsModal';
-import type { StartCallData } from './ConfirmLeaveCallModal';
-import type { AttachmentNotAvailableModalType } from './AttachmentNotAvailableModal';
+import { ButtonVariant } from './Button.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import { SignalConnectionsModal } from './SignalConnectionsModal.js';
+import { WhatsNewModal } from './WhatsNewModal.js';
+import { MediaPermissionsModal } from './MediaPermissionsModal.js';
+import type { StartCallData } from './ConfirmLeaveCallModal.js';
 import {
   TapToViewNotAvailableModal,
   type DataPropsType as TapToViewNotAvailablePropsType,
-} from './TapToViewNotAvailableModal';
+} from './TapToViewNotAvailableModal.js';
 import {
   BackfillFailureModal,
   type DataPropsType as BackfillFailureModalPropsType,
-} from './BackfillFailureModal';
-import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal';
-import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal';
+} from './BackfillFailureModal.js';
+import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal.js';
+import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal.js';
+import { LowDiskSpaceBackupImportModal } from './LowDiskSpaceBackupImportModal.js';
 
 // NOTE: All types should be required for this component so that the smart
 // component gives you type errors when adding/removing props.
@@ -42,9 +42,6 @@ export type PropsType = {
   // AddUserToAnotherGroupModal
   addUserToAnotherGroupModalContactId: string | undefined;
   renderAddUserToAnotherGroup: () => JSX.Element;
-  // AttachmentNotAvailableModal
-  attachmentNotAvailableModalType: AttachmentNotAvailableModalType | undefined;
-  renderAttachmentNotAvailableModal: () => JSX.Element;
   // CallLinkAddNameModal
   callLinkAddNameModalRoomId: string | null;
   renderCallLinkAddNameModal: () => JSX.Element;
@@ -79,6 +76,13 @@ export type PropsType = {
     description?: string;
     title?: string | null;
   }) => JSX.Element;
+  // DebugLogErrorModal
+  debugLogErrorModalProps:
+    | {
+        description?: string;
+      }
+    | undefined;
+  renderDebugLogErrorModal: (opts: { description?: string }) => JSX.Element;
   // DeleteMessageModal
   deleteMessagesProps: DeleteMessagesPropsType | undefined;
   renderDeleteMessagesModal: () => JSX.Element;
@@ -103,9 +107,6 @@ export type PropsType = {
   // NotePreviewModal
   notePreviewModalProps: { conversationId: string } | null;
   renderNotePreviewModal: () => JSX.Element;
-  // ProfileEditor
-  isProfileEditorVisible: boolean;
-  renderProfileEditor: () => JSX.Element;
   // SafetyNumberModal
   safetyNumberModalContactId: string | undefined;
   renderSafetyNumber: () => JSX.Element;
@@ -151,13 +152,13 @@ export type PropsType = {
   // CriticalIdlePrimaryDeviceModal,
   criticalIdlePrimaryDeviceModal: boolean;
   hideCriticalIdlePrimaryDeviceModal: () => void;
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal: { bytesNeeded: number } | null;
+  hideLowDiskSpaceBackupImportModal: () => void;
 };
 
 export function GlobalModalContainer({
   i18n,
-  // AttachmentNotAvailableModal
-  attachmentNotAvailableModalType,
-  renderAttachmentNotAvailableModal,
   // AddUserToAnotherGroupModal
   addUserToAnotherGroupModalContactId,
   renderAddUserToAnotherGroup,
@@ -185,6 +186,9 @@ export function GlobalModalContainer({
   // ErrorModal
   errorModalProps,
   renderErrorModal,
+  // DebugLogErrorModal
+  debugLogErrorModalProps,
+  renderDebugLogErrorModal,
   // DeleteMessageModal
   deleteMessagesProps,
   renderDeleteMessagesModal,
@@ -204,9 +208,6 @@ export function GlobalModalContainer({
   // NotePreviewModal
   notePreviewModalProps,
   renderNotePreviewModal,
-  // ProfileEditor
-  isProfileEditorVisible,
-  renderProfileEditor,
   // SafetyNumberModal
   safetyNumberModalContactId,
   renderSafetyNumber,
@@ -250,6 +251,9 @@ export function GlobalModalContainer({
   // CriticalIdlePrimaryDeviceModal
   criticalIdlePrimaryDeviceModal,
   hideCriticalIdlePrimaryDeviceModal,
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal,
+  hideLowDiskSpaceBackupImportModal,
 }: PropsType): JSX.Element | null {
   // We want the following dialogs to show in this order:
   // 1. Errors
@@ -260,6 +264,11 @@ export function GlobalModalContainer({
   // Errors
   if (errorModalProps) {
     return renderErrorModal(errorModalProps);
+  }
+
+  // Errors where we want them to submit a debug log
+  if (debugLogErrorModalProps) {
+    return renderDebugLogErrorModal(debugLogErrorModalProps);
   }
 
   // Safety Number
@@ -324,10 +333,6 @@ export function GlobalModalContainer({
 
   if (notePreviewModalProps) {
     return renderNotePreviewModal();
-  }
-
-  if (isProfileEditorVisible) {
-    return renderProfileEditor();
   }
 
   if (isProfileNameWarningModalVisible) {
@@ -408,10 +413,6 @@ export function GlobalModalContainer({
     );
   }
 
-  if (attachmentNotAvailableModalType) {
-    return renderAttachmentNotAvailableModal();
-  }
-
   if (tapToViewNotAvailableModalProps) {
     return (
       <TapToViewNotAvailableModal
@@ -437,6 +438,16 @@ export function GlobalModalContainer({
       <CriticalIdlePrimaryDeviceModal
         i18n={i18n}
         onClose={hideCriticalIdlePrimaryDeviceModal}
+      />
+    );
+  }
+
+  if (lowDiskSpaceBackupImportModal) {
+    return (
+      <LowDiskSpaceBackupImportModal
+        bytesNeeded={lowDiskSpaceBackupImportModal.bytesNeeded}
+        i18n={i18n}
+        onClose={hideLowDiskSpaceBackupImportModal}
       />
     );
   }

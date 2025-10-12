@@ -5,9 +5,9 @@ import createDebug from 'debug';
 import Long from 'long';
 import { StorageState } from '@signalapp/mock-server';
 
-import type { App } from '../playwright';
-import * as durations from '../../util/durations';
-import { Bootstrap } from '../bootstrap';
+import type { App } from '../playwright.js';
+import * as durations from '../../util/durations/index.js';
+import { Bootstrap } from '../bootstrap.js';
 
 export const debug = createDebug('mock:test:sendSync');
 
@@ -68,7 +68,7 @@ describe('sendSync', function (this: Mocha.Suite) {
           timestamp: Long.fromNumber(timestamp),
           message: originalDataMessage,
           unidentifiedStatus: members.map(member => ({
-            destinationServiceId: member.device.aci,
+            destinationServiceIdBinary: member.device.aciBinary,
             destination: member.device.number,
           })),
         },

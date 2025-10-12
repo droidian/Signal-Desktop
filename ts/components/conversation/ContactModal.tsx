@@ -7,30 +7,32 @@ import type { ReactNode } from 'react';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../state/ducks/conversations';
-import type { BadgeType } from '../../badges/types';
-import type { HasStories } from '../../types/Stories';
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { ViewUserStoriesActionCreatorType } from '../../state/ducks/stories';
-import { StoryViewModeType } from '../../types/Stories';
-import * as log from '../../logging/log';
-import { Avatar, AvatarBlur, AvatarSize } from '../Avatar';
-import { AvatarLightbox } from '../AvatarLightbox';
-import { BadgeDialog } from '../BadgeDialog';
-import { ConfirmationDialog } from '../ConfirmationDialog';
-import { Modal } from '../Modal';
-import { RemoveGroupMemberConfirmationDialog } from './RemoveGroupMemberConfirmationDialog';
-import { missingCaseError } from '../../util/missingCaseError';
-import { UserText } from '../UserText';
-import { Button, ButtonIconType, ButtonVariant } from '../Button';
-import { isInSystemContacts } from '../../util/isInSystemContacts';
-import { InContactsIcon } from '../InContactsIcon';
-import { canHaveNicknameAndNote } from '../../util/nicknames';
-import { getThemeByThemeType } from '../../util/theme';
+} from '../../state/ducks/conversations.js';
+import type { BadgeType } from '../../badges/types.js';
+import type { HasStories } from '../../types/Stories.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { ViewUserStoriesActionCreatorType } from '../../state/ducks/stories.js';
+import { StoryViewModeType } from '../../types/Stories.js';
+import { createLogger } from '../../logging/log.js';
+import { Avatar, AvatarBlur, AvatarSize } from '../Avatar.js';
+import { AvatarLightbox } from '../AvatarLightbox.js';
+import { BadgeDialog } from '../BadgeDialog.js';
+import { ConfirmationDialog } from '../ConfirmationDialog.js';
+import { Modal } from '../Modal.js';
+import { RemoveGroupMemberConfirmationDialog } from './RemoveGroupMemberConfirmationDialog.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { UserText } from '../UserText.js';
+import { Button, ButtonIconType, ButtonVariant } from '../Button.js';
+import { isInSystemContacts } from '../../util/isInSystemContacts.js';
+import { InContactsIcon } from '../InContactsIcon.js';
+import { canHaveNicknameAndNote } from '../../util/nicknames.js';
+import { getThemeByThemeType } from '../../util/theme.js';
 import {
   InAnotherCallTooltip,
   getTooltipContent,
-} from './InAnotherCallTooltip';
+} from './InAnotherCallTooltip.js';
+
+const log = createLogger('ContactModal');
 
 export type PropsDataType = {
   areWeASubscriber: boolean;
@@ -216,7 +218,7 @@ export function ContactModal({
       break;
     case SubModalState.ToggleAdmin:
       if (!conversation?.id) {
-        log.warn('ContactModal: ToggleAdmin state - missing conversationId');
+        log.warn('ToggleAdmin state - missing conversationId');
         modalNode = undefined;
         break;
       }
@@ -247,9 +249,7 @@ export function ContactModal({
       break;
     case SubModalState.MemberRemove:
       if (!contact || !conversation?.id) {
-        log.warn(
-          'ContactModal: MemberRemove state - missing contact or conversationId'
-        );
+        log.warn('MemberRemove state - missing contact or conversationId');
         modalNode = undefined;
         break;
       }
@@ -291,7 +291,7 @@ export function ContactModal({
       break;
     default: {
       const state: never = subModalState;
-      log.warn(`ContactModal: unexpected ${state}!`);
+      log.warn(`unexpected ${state}!`);
       modalNode = undefined;
       break;
     }

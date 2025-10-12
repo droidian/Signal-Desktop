@@ -1,23 +1,26 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { debounce } from 'lodash';
-import { DataReader } from '../sql/Client';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import { getMessageQueueTime } from '../util/getMessageQueueTime';
-import * as Errors from '../types/errors';
-import { strictAssert } from '../util/assert';
-import { toBoundedDate } from '../util/timestamp';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { eraseMessageContents } from '../util/cleanup';
-import { drop } from '../util/drop';
-import { MessageModel } from '../models/messages';
+import lodash from 'lodash';
+import { DataReader } from '../sql/Client.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import { getMessageQueueTime } from '../util/getMessageQueueTime.js';
+import * as Errors from '../types/errors.js';
+import { strictAssert } from '../util/assert.js';
+import { toBoundedDate } from '../util/timestamp.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import { eraseMessageContents } from '../util/cleanup.js';
+import { drop } from '../util/drop.js';
+import { MessageModel } from '../models/messages.js';
+import { createLogger } from '../logging/log.js';
+
+const { debounce } = lodash;
+
+const log = createLogger('tapToViewMessagesDeletionService');
 
 async function eraseTapToViewMessages() {
   try {
-    window.SignalContext.log.info(
-      'eraseTapToViewMessages: Loading messages...'
-    );
+    log.info('eraseTapToViewMessages: Loading messages...');
     const maxTimestamp = Date.now() - getMessageQueueTime();
     const messages =
       await DataReader.getTapToViewMessagesNeedingErase(maxTimestamp);
@@ -32,7 +35,7 @@ async function eraseTapToViewMessages() {
 
         const message = window.MessageCache.register(new MessageModel(fromDB));
 
-        window.SignalContext.log.info(
+        log.info(
           'eraseTapToViewMessages: erasing message contents',
           getMessageIdForLogging(message.attributes)
         );
@@ -44,13 +47,13 @@ async function eraseTapToViewMessages() {
       })
     );
   } catch (error) {
-    window.SignalContext.log.error(
+    log.error(
       'eraseTapToViewMessages: Error erasing messages',
       Errors.toLogFormat(error)
     );
   }
 
-  window.SignalContext.log.info('eraseTapToViewMessages: complete');
+  log.info('eraseTapToViewMessages: complete');
 }
 
 class TapToViewMessagesDeletionService {
@@ -64,11 +67,11 @@ class TapToViewMessagesDeletionService {
 
   pause(): void {
     if (this.#isPaused) {
-      window.SignalContext.log.warn('checkTapToViewMessages: already paused');
+      log.warn('checkTapToViewMessages: already paused');
       return;
     }
 
-    window.SignalContext.log.info('checkTapToViewMessages: pause');
+    log.info('checkTapToViewMessages: pause');
 
     this.#isPaused = true;
     clearTimeoutIfNecessary(this.#timeout);
@@ -77,11 +80,11 @@ class TapToViewMessagesDeletionService {
 
   resume(): void {
     if (!this.#isPaused) {
-      window.SignalContext.log.warn('checkTapToViewMessages: not paused');
+      log.warn('checkTapToViewMessages: not paused');
       return;
     }
 
-    window.SignalContext.log.info('checkTapToViewMessages: resuming');
+    log.info('checkTapToViewMessages: resuming');
     this.#isPaused = false;
 
     this.#debouncedUpdate.cancel();
@@ -90,7 +93,7 @@ class TapToViewMessagesDeletionService {
 
   async #checkTapToViewMessages() {
     if (!this.#shouldRun()) {
-      window.SignalContext.log.info('checkTapToViewMessages: not running');
+      log.info('checkTapToViewMessages: not running');
       return;
     }
 
@@ -102,7 +105,7 @@ class TapToViewMessagesDeletionService {
 
     const nextCheck =
       receivedAtMsForOldestTapToViewMessage + getMessageQueueTime();
-    window.SignalContext.log.info(
+    log.info(
       'checkTapToViewMessages: next check at',
       toBoundedDate(nextCheck).toISOString()
     );
@@ -122,7 +125,7 @@ class TapToViewMessagesDeletionService {
     clearTimeoutIfNecessary(this.#timeout);
     this.#timeout = setTimeout(async () => {
       if (!this.#shouldRun()) {
-        window.SignalContext.log.info('checkTapToViewMessages: not running');
+        log.info('checkTapToViewMessages: not running');
         return;
       }
 

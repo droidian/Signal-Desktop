@@ -4,22 +4,22 @@
 import createDebug from 'debug';
 import { assert } from 'chai';
 import { expect } from 'playwright/test';
-import { readFile } from 'node:fs/promises';
 import { type PrimaryDevice, StorageState } from '@signalapp/mock-server';
-import * as path from 'path';
-import type { App } from '../playwright';
-import { Bootstrap } from '../bootstrap';
+import * as path from 'node:path';
+import { readFile } from 'node:fs/promises';
+
+import type { App } from '../playwright.js';
+import { Bootstrap } from '../bootstrap.js';
 import {
   getMessageInTimelineByTimestamp,
   getTimelineMessageWithText,
   sendMessageWithAttachments,
   sendTextMessage,
-} from '../helpers';
-import * as durations from '../../util/durations';
-import { strictAssert } from '../../util/assert';
-import { toBase64 } from '../../Bytes';
-import type { AttachmentWithNewReencryptionInfoType } from '../../types/Attachment';
-import { IMAGE_JPEG } from '../../types/MIME';
+} from '../helpers.js';
+import * as durations from '../../util/durations/index.js';
+import { strictAssert } from '../../util/assert.js';
+import { VIDEO_MP4 } from '../../types/MIME.js';
+import { toBase64 } from '../../Bytes.js';
 
 export const debug = createDebug('mock:test:attachments');
 
@@ -30,6 +30,14 @@ const CAT_PATH = path.join(
   '..',
   'fixtures',
   'cat-screenshot.png'
+);
+const VIDEO_PATH = path.join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'ghost-kitty.mp4'
 );
 
 describe('attachments', function (this: Mocha.Suite) {
@@ -97,11 +105,6 @@ describe('attachments', function (this: Mocha.Suite) {
     )[0];
     strictAssert(sentMessage, 'message exists in DB');
     const sentAttachment = sentMessage.attachments?.[0];
-    assert.isTrue(sentAttachment?.isReencryptableToSameDigest);
-    assert.isUndefined(
-      (sentAttachment as unknown as AttachmentWithNewReencryptionInfoType)
-        .reencryptionInfo
-    );
 
     // For this test, just send back the same attachment that was uploaded to test a
     // round-trip
@@ -126,71 +129,87 @@ describe('attachments', function (this: Mocha.Suite) {
     )[0];
     strictAssert(incomingMessage, 'message exists in DB');
     const incomingAttachment = incomingMessage.attachments?.[0];
-    assert.isTrue(incomingAttachment?.isReencryptableToSameDigest);
-    assert.isUndefined(
-      (incomingAttachment as unknown as AttachmentWithNewReencryptionInfoType)
-        .reencryptionInfo
-    );
+
     assert.strictEqual(incomingAttachment?.key, sentAttachment?.key);
     assert.strictEqual(incomingAttachment?.digest, sentAttachment?.digest);
   });
 
-  it('receiving attachments with non-zero padding will cause new re-encryption info to be generated', async () => {
+  it('can download videos with incrementalMac and is resilient to bad incrementalMacs', async () => {
+    const { desktop } = bootstrap;
     const page = await app.getWindow();
 
     await page.getByTestId(pinned.device.aci).click();
 
-    const plaintextCat = await readFile(CAT_PATH);
-    const attachment = await bootstrap.storeAttachmentOnCDN(
-      // add non-zero byte to the end of the data; this will be considered padding
-      // when received since we will include the size of the un-appended data when
-      // sending
-      Buffer.concat([plaintextCat, Buffer.from([1])]),
-      IMAGE_JPEG
+    const plaintextVideo = await readFile(VIDEO_PATH);
+    const videoPointer1 = await bootstrap.encryptAndStoreAttachmentOnCDN(
+      plaintextVideo,
+      VIDEO_MP4
+    );
+    const videoPointer2 = await bootstrap.encryptAndStoreAttachmentOnCDN(
+      plaintextVideo,
+      VIDEO_MP4
     );
 
-    const incomingTimestamp = Date.now();
+    const incrementalTimestamp = Date.now();
+    const badIncrementalTimestamp = incrementalTimestamp + 1;
+
     await sendTextMessage({
       from: pinned,
-      to: bootstrap.desktop,
-      desktop: bootstrap.desktop,
-      text: 'Wait, that is MY cat! But now with weird padding!',
+      to: desktop,
+      desktop,
+      text: 'video with good incrementalMac',
+      attachments: [videoPointer1],
+      timestamp: incrementalTimestamp,
+    });
+    await sendTextMessage({
+      from: pinned,
+      to: desktop,
+      desktop,
+      text: 'video with bad incrementalMac',
       attachments: [
-        {
-          ...attachment,
-          size: plaintextCat.byteLength,
-        },
+        { ...videoPointer2, chunkSize: (videoPointer2.chunkSize ?? 42) + 1 },
       ],
-      timestamp: incomingTimestamp,
+      timestamp: badIncrementalTimestamp,
     });
 
     await expect(
-      getMessageInTimelineByTimestamp(page, incomingTimestamp).locator(
+      getMessageInTimelineByTimestamp(page, incrementalTimestamp).locator(
+        'img.module-image__image'
+      )
+    ).toBeVisible();
+    await expect(
+      getMessageInTimelineByTimestamp(page, badIncrementalTimestamp).locator(
         'img.module-image__image'
       )
     ).toBeVisible();
 
-    const incomingMessage = (
-      await app.getMessagesBySentAt(incomingTimestamp)
-    )[0];
-    strictAssert(incomingMessage, 'message exists in DB');
-    const incomingAttachment = incomingMessage.attachments?.[0];
+    // goodIncrementalMac preserved
+    {
+      const messageInDB = (
+        await app.getMessagesBySentAt(incrementalTimestamp)
+      )[0];
+      strictAssert(messageInDB, 'message exists in DB');
+      const attachmentInDB = messageInDB.attachments?.[0];
+      strictAssert(videoPointer1.incrementalMac, 'must exist');
+      strictAssert(videoPointer1.chunkSize, 'must exist');
+      assert.strictEqual(
+        attachmentInDB?.incrementalMac,
+        toBase64(videoPointer1.incrementalMac)
+      );
+      assert.strictEqual(attachmentInDB?.chunkSize, videoPointer1.chunkSize);
+    }
 
-    assert.isFalse(incomingAttachment?.isReencryptableToSameDigest);
-    assert.exists(incomingAttachment?.reencryptionInfo);
-    assert.exists(incomingAttachment?.reencryptionInfo.digest);
-
-    assert.strictEqual(
-      incomingAttachment?.key,
-      toBase64(attachment.key ?? new Uint8Array(0))
-    );
-    assert.strictEqual(
-      incomingAttachment?.digest,
-      toBase64(attachment.digest ?? new Uint8Array(0))
-    );
-    assert.notEqual(
-      incomingAttachment?.digest,
-      incomingAttachment.reencryptionInfo.digest
-    );
+    // badIncrementalMac removed
+    {
+      const messageInDB = (
+        await app.getMessagesBySentAt(badIncrementalTimestamp)
+      )[0];
+      strictAssert(messageInDB, 'message exists in DB');
+      const attachmentInDB = messageInDB.attachments?.[0];
+      strictAssert(videoPointer2.incrementalMac, 'must exist');
+      strictAssert(videoPointer2.chunkSize, 'must exist');
+      assert.strictEqual(attachmentInDB?.incrementalMac, undefined);
+      assert.strictEqual(attachmentInDB?.chunkSize, undefined);
+    }
   });
 });

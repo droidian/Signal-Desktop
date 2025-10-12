@@ -1,66 +1,63 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isFunction, isObject, identity } from 'lodash';
+import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
-import * as Contact from './EmbeddedContact';
+import * as Contact from './EmbeddedContact.js';
 import type {
   AddressableAttachmentType,
   AttachmentType,
   AttachmentWithHydratedData,
   LocalAttachmentV2Type,
-  LocallySavedAttachment,
-  ReencryptableAttachment,
-} from './Attachment';
+} from './Attachment.js';
 import {
   captureDimensionsAndScreenshot,
-  getAttachmentIdForLogging,
-  isAttachmentLocallySaved,
   removeSchemaVersion,
   replaceUnicodeOrderOverrides,
   replaceUnicodeV2,
-} from './Attachment';
-import * as Errors from './errors';
-import * as SchemaVersion from './SchemaVersion';
-import { initializeAttachmentMetadata } from './message/initializeAttachmentMetadata';
+  shouldGenerateThumbnailForAttachmentType,
+} from './Attachment.js';
+import type { MakeVideoScreenshotResultType } from './VisualAttachment.js';
+import * as Errors from './errors.js';
+import * as SchemaVersion from './SchemaVersion.js';
 
-import { LONG_MESSAGE } from './MIME';
-import type * as MIME from './MIME';
-import type { LoggerType } from './Logging';
+import { LONG_MESSAGE } from './MIME.js';
+import type * as MIME from './MIME.js';
+import type { LoggerType } from './Logging.js';
 import type {
   EmbeddedContactType,
   EmbeddedContactWithHydratedAvatar,
-} from './EmbeddedContact';
+} from './EmbeddedContact.js';
 
 import type {
   MessageAttributesType,
   QuotedAttachmentType,
   QuotedMessageType,
-} from '../model-types.d';
+} from '../model-types.d.ts';
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from './message/LinkPreviews';
-import type { StickerType, StickerWithHydratedData } from './Stickers';
-import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem';
+} from './message/LinkPreviews.js';
+import type { StickerType, StickerWithHydratedData } from './Stickers.js';
+import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.js';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from '../util/getLocalAttachmentUrl';
-import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment';
-import { deepClone } from '../util/deepClone';
-import * as Bytes from '../Bytes';
-import { isBodyTooLong } from '../util/longAttachment';
+} from '../util/getLocalAttachmentUrl.js';
+import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment.js';
+import { deepClone } from '../util/deepClone.js';
+import * as Bytes from '../Bytes.js';
+import { isBodyTooLong } from '../util/longAttachment.js';
+import type { MessageAttachmentType } from './AttachmentDownload.js';
+
+const { isFunction, isObject, identity } = lodash;
 
 export const GROUP = 'group';
 export const PRIVATE = 'private';
 
 export type ContextType = {
   doesAttachmentExist: (relativePath: string) => Promise<boolean>;
-  ensureAttachmentIsReencryptable: (
-    attachment: LocallySavedAttachment
-  ) => Promise<ReencryptableAttachment>;
   getImageDimensions: (params: {
     objectUrl: string;
     logger: LoggerType;
@@ -84,7 +81,7 @@ export type ContextType = {
     objectUrl: string;
     contentType: MIME.MIMEType;
     logger: LoggerType;
-  }) => Promise<Blob>;
+  }) => Promise<MakeVideoScreenshotResultType>;
   maxVersion?: number;
   revokeObjectUrl: (objectUrl: string) => void;
   readAttachmentData: (
@@ -139,7 +136,9 @@ export type ContextType = {
 // Version 13:
 //   - Attachments: write bodyAttachment to disk
 // Version 14
-//   - All attachments: ensure they are reencryptable to a known digest
+//   - DEPRECATED: All attachments: ensure they are reencryptable to a known digest
+// Version 15
+//   - A noop migration to cause attachments to be normalized when the message is saved
 
 const INITIAL_SCHEMA_VERSION = 0;
 
@@ -488,17 +487,21 @@ const toVersion6 = _withSchemaVersion({
   schemaVersion: 6,
   upgrade: _mapContact(Contact.parseAndWriteAvatar(migrateDataToFileSystem)),
 });
-// IMPORTANT: We’ve updated our definition of `initializeAttachmentMetadata`, so
-// we need to run it again on existing items that have previously been incorrectly
-// classified:
+// NOOP: hasFileAttachments, etc. is now computed at message save time
 const toVersion7 = _withSchemaVersion({
   schemaVersion: 7,
-  upgrade: initializeAttachmentMetadata,
+  upgrade: noopUpgrade,
 });
 
 const toVersion8 = _withSchemaVersion({
   schemaVersion: 8,
-  upgrade: _mapAttachments(captureDimensionsAndScreenshot),
+  upgrade: _mapAttachments((attachment, context) =>
+    captureDimensionsAndScreenshot(
+      attachment,
+      { generateThumbnail: true },
+      context
+    )
+  ),
 });
 
 const toVersion9 = _withSchemaVersion({
@@ -655,40 +658,22 @@ const toVersion12 = _withSchemaVersion({
     return result;
   },
 });
+
 const toVersion13 = _withSchemaVersion({
   schemaVersion: 13,
   upgrade: migrateBodyAttachmentToDisk,
 });
 
+// NOOP: Used to call ensureAttachmentIsReencryptable
 const toVersion14 = _withSchemaVersion({
   schemaVersion: 14,
-  upgrade: _mapAllAttachments(
-    async (
-      attachment,
-      { logger, ensureAttachmentIsReencryptable, doesAttachmentExist }
-    ) => {
-      if (!isAttachmentLocallySaved(attachment)) {
-        return attachment;
-      }
+  upgrade: noopUpgrade,
+});
 
-      if (!(await doesAttachmentExist(attachment.path))) {
-        // Attachments may be missing, e.g. for quote thumbnails that reference messages
-        // which have been deleted
-        logger.info(
-          `Message2.toVersion14(id=${getAttachmentIdForLogging(attachment)}: File does not exist`
-        );
-        return attachment;
-      }
-
-      if (!attachment.digest) {
-        // Messages that are being upgraded prior to being sent may not have encrypted the
-        // attachment yet
-        return attachment;
-      }
-
-      return ensureAttachmentIsReencryptable(attachment);
-    }
-  ),
+// NOOP: used to trigger saves into the new message_attachments table
+const toVersion15 = _withSchemaVersion({
+  schemaVersion: 15,
+  upgrade: noopUpgrade,
 });
 
 const VERSIONS = [
@@ -707,6 +692,7 @@ const VERSIONS = [
   toVersion12,
   toVersion13,
   toVersion14,
+  toVersion15,
 ];
 
 export const CURRENT_SCHEMA_VERSION = VERSIONS.length - 1;
@@ -721,7 +707,6 @@ export const upgradeSchema = async (
     readAttachmentData,
     writeNewAttachmentData,
     doesAttachmentExist,
-    ensureAttachmentIsReencryptable,
     getRegionCode,
     makeObjectUrl,
     revokeObjectUrl,
@@ -761,7 +746,6 @@ export const upgradeSchema = async (
         makeObjectUrl,
         revokeObjectUrl,
         doesAttachmentExist,
-        ensureAttachmentIsReencryptable,
         getImageDimensions,
         makeImageThumbnail,
         makeVideoScreenshot,
@@ -792,8 +776,8 @@ export const upgradeSchema = async (
 //   downloaded out of band.
 export const processNewAttachment = async (
   attachment: AttachmentType,
+  attachmentType: MessageAttachmentType,
   {
-    ensureAttachmentIsReencryptable,
     writeNewAttachmentData,
     makeObjectUrl,
     revokeObjectUrl,
@@ -811,7 +795,6 @@ export const processNewAttachment = async (
     | 'makeVideoScreenshot'
     | 'logger'
     | 'deleteOnDisk'
-    | 'ensureAttachmentIsReencryptable'
   >
 ): Promise<AttachmentType> => {
   if (!isFunction(writeNewAttachmentData)) {
@@ -836,15 +819,12 @@ export const processNewAttachment = async (
     throw new TypeError('context.logger is required');
   }
 
-  let upgradedAttachment = attachment;
-
-  if (isAttachmentLocallySaved(upgradedAttachment)) {
-    upgradedAttachment =
-      await ensureAttachmentIsReencryptable(upgradedAttachment);
-  }
-
   const finalAttachment = await captureDimensionsAndScreenshot(
-    upgradedAttachment,
+    attachment,
+    {
+      generateThumbnail:
+        shouldGenerateThumbnailForAttachmentType(attachmentType),
+    },
     {
       writeNewAttachmentData,
       makeObjectUrl,

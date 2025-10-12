@@ -2,32 +2,34 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import path from 'path';
-import { tmpdir } from 'os';
-import { omit, sortBy } from 'lodash';
-import { createReadStream } from 'fs';
-import { mkdtemp, rm } from 'fs/promises';
+import path from 'node:path';
+import { tmpdir } from 'node:os';
+import lodash from 'lodash';
+import { createReadStream } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import * as sinon from 'sinon';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { AccountEntropyPool } from '@signalapp/libsignal-client/dist/AccountKeys';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import { AccountEntropyPool } from '@signalapp/libsignal-client/dist/AccountKeys.js';
 
 import type {
   EditHistoryType,
   MessageAttributesType,
   MessageReactionType,
-} from '../../model-types';
+} from '../../model-types.js';
 import type {
   SendStateByConversationId,
   SendState,
-} from '../../messages/MessageSendState';
+} from '../../messages/MessageSendState.js';
 
-import { backupsService } from '../../services/backups';
-import { isUnsupportedMessage } from '../../state/selectors/message';
-import { generateAci, generatePni } from '../../types/ServiceId';
-import { DataReader, DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { postSaveUpdates } from '../../util/cleanup';
+import { backupsService } from '../../services/backups/index.js';
+import { isUnsupportedMessage } from '../../state/selectors/message.js';
+import { generateAci, generatePni } from '../../types/ServiceId.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import * as Bytes from '../../Bytes.js';
+import { postSaveUpdates } from '../../util/cleanup.js';
+
+const { omit, sortBy } = lodash;
 
 export const OUR_ACI = generateAci();
 export const OUR_PNI = generatePni();
@@ -65,7 +67,6 @@ function sortAndNormalize(
       changedId,
       conversationId,
       editHistory,
-      key_changed: keyChanged,
       reactions,
       sendStateByConversationId,
       verifiedChanged,
@@ -111,9 +112,6 @@ function sortAndNormalize(
     return JSON.parse(
       JSON.stringify({
         // Defaults
-        hasAttachments: false,
-        hasFileAttachments: false,
-        hasVisualMediaAttachments: false,
         isErased: false,
         isViewOnce: false,
         mentionsMe: false,
@@ -132,7 +130,6 @@ function sortAndNormalize(
           };
         }),
         changedId: mapConvoId(changedId),
-        key_changed: mapConvoId(keyChanged),
         verifiedChanged: mapConvoId(verifiedChanged),
         sendStateByConverationId: mapSendState(sendStateByConversationId),
         editHistory: editHistory?.map(history => {
@@ -280,11 +277,4 @@ export async function setupBasics(): Promise<void> {
     systemGivenName: 'ME',
     profileKey: Bytes.toBase64(PROFILE_KEY),
   });
-
-  window.Events = {
-    ...window.Events,
-    getTypingIndicatorSetting: () =>
-      window.storage.get('typingIndicators', false),
-    getLinkPreviewSetting: () => window.storage.get('linkPreviews', false),
-  };
 }

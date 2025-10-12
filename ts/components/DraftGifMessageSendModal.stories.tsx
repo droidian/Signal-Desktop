@@ -6,14 +6,15 @@ import { action } from '@storybook/addon-actions';
 import {
   DraftGifMessageSendModal,
   type DraftGifMessageSendModalProps,
-} from './DraftGifMessageSendModal';
-import { ThemeType } from '../types/Util';
-import { CompositionTextArea } from './CompositionTextArea';
-import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea';
-import { EmojiSkinTone } from './fun/data/emojis';
-import { LoadingState } from '../util/loadable';
-import { VIDEO_MP4 } from '../types/MIME';
-import { drop } from '../util/drop';
+} from './DraftGifMessageSendModal.js';
+import { ThemeType } from '../types/Util.js';
+import { CompositionTextArea } from './CompositionTextArea.js';
+import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
+import { LoadingState } from '../util/loadable.js';
+import { VIDEO_MP4 } from '../types/MIME.js';
+import { drop } from '../util/drop.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.js';
 
 const { i18n } = window.SignalContext;
 
@@ -38,6 +39,7 @@ function RenderCompositionTextArea(props: SmartCompositionTextAreaProps) {
       ourConversationId="me"
       platform="darwin"
       emojiSkinToneDefault={EmojiSkinTone.None}
+      conversationSelector={() => getDefaultConversation()}
     />
   );
 }

@@ -4,9 +4,11 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 
-import type { LocalizerType } from '../../types/Util';
-import * as Errors from '../../types/errors';
-import * as log from '../../logging/log';
+import type { LocalizerType } from '../../types/Util.js';
+import * as Errors from '../../types/errors.js';
+import { createLogger } from '../../logging/log.js';
+
+const log = createLogger('ErrorBoundary');
 
 export type Props = {
   i18n: LocalizerType;
@@ -29,10 +31,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
   }
 
   public static getDerivedStateFromError(error: Error): State {
-    log.error(
-      'ErrorBoundary: captured rendering error',
-      Errors.toLogFormat(error)
-    );
+    log.error('captured rendering error', Errors.toLogFormat(error));
     return { error };
   }
 

@@ -3,14 +3,14 @@
 
 import { ipcRenderer } from 'electron';
 
-import { strictAssert } from './assert';
-import * as Errors from '../types/errors';
-import type { UnwrapPromise } from '../types/Util';
+import { strictAssert } from './assert.js';
+import * as Errors from '../types/errors.js';
+import type { UnwrapPromise } from '../types/Util.js';
 import type {
-  IPCEventsValuesType,
   IPCEventsCallbacksType,
-} from './createIPCEvents';
-import type { SystemTraySetting } from '../types/SystemTraySetting';
+  IPCEventsValuesType,
+} from './createIPCEvents.js';
+import type { SystemTraySetting } from '../types/SystemTraySetting.js';
 
 type SettingOptionsType = {
   getter?: boolean;
@@ -25,10 +25,11 @@ export type SettingType<Value> = Readonly<{
 export type ThemeType = 'light' | 'dark' | 'system';
 
 export type EphemeralSettings = {
+  localeOverride: string | null;
   spellCheck: boolean;
+  contentProtection: boolean;
   systemTraySetting: SystemTraySetting;
   themeSetting: ThemeType;
-  localeOverride: string | null;
 };
 
 export type SettingsValuesType = IPCEventsValuesType & EphemeralSettings;

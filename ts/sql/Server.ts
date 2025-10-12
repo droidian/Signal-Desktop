@@ -4,61 +4,52 @@
 /* eslint-disable camelcase */
 
 // TODO(indutny): format queries
-import SQL from '@signalapp/sqlcipher';
-import { randomBytes } from 'crypto';
+import type { RowType } from '@signalapp/sqlcipher';
+import SQL, { setLogger as setSqliteLogger } from '@signalapp/sqlcipher';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'path';
+import { join } from 'node:path';
 import type { ReadonlyDeep } from 'type-fest';
 import { z } from 'zod';
 
 import type { Dictionary } from 'lodash';
-import {
-  forEach,
-  fromPairs,
-  groupBy,
-  isBoolean,
-  isNil,
-  isNumber,
-  isString,
-  last,
-  map,
-  mapValues,
-  noop,
-  omit,
-  partition,
-  pick,
-} from 'lodash';
+import lodash from 'lodash';
 
-import { parseBadgeCategory } from '../badges/BadgeCategory';
+import { parseBadgeCategory } from '../badges/BadgeCategory.js';
 import {
   parseBadgeImageTheme,
   type BadgeImageTheme,
-} from '../badges/BadgeImageTheme';
-import type { BadgeImageType, BadgeType } from '../badges/types';
-import type { StoredJob } from '../jobs/types';
-import { formatCountForLogging } from '../logging/formatCountForLogging';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import type { GroupV2MemberType } from '../model-types.d';
-import type { ConversationColorType, CustomColorType } from '../types/Colors';
-import type { LoggerType } from '../types/Logging';
-import type { ReactionType } from '../types/Reactions';
-import { ReactionReadStatus } from '../types/Reactions';
-import type { AciString, ServiceIdString } from '../types/ServiceId';
-import { isServiceIdString } from '../types/ServiceId';
-import { STORAGE_UI_KEYS } from '../types/StorageUIKeys';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId';
-import * as Errors from '../types/errors';
-import { assertDev, strictAssert } from '../util/assert';
-import { combineNames } from '../util/combineNames';
-import { consoleLogger } from '../util/consoleLogger';
-import { dropNull } from '../util/dropNull';
-import * as durations from '../util/durations';
-import { generateMessageId } from '../util/generateMessageId';
-import { isNormalNumber } from '../util/isNormalNumber';
-import { isNotNil } from '../util/isNotNil';
-import { parseIntOrThrow } from '../util/parseIntOrThrow';
-import { updateSchema } from './migrations';
-import type { JSONRows } from './util';
+} from '../badges/BadgeImageTheme.js';
+import type { BadgeImageType, BadgeType } from '../badges/types.js';
+import type { StoredJob } from '../jobs/types.js';
+import { formatCountForLogging } from '../logging/formatCountForLogging.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import type {
+  GroupV2MemberType,
+  MessageAttributesType,
+} from '../model-types.d.ts';
+import type { ReactionType } from '../types/Reactions.js';
+import { ReactionReadStatus } from '../types/Reactions.js';
+import type { AciString, ServiceIdString } from '../types/ServiceId.js';
+import { isServiceIdString } from '../types/ServiceId.js';
+import { STORAGE_UI_KEYS } from '../types/StorageUIKeys.js';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.js';
+import * as Errors from '../types/errors.js';
+import { assertDev, strictAssert } from '../util/assert.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { combineNames } from '../util/combineNames.js';
+import { consoleLogger } from '../util/consoleLogger.js';
+import {
+  dropNull,
+  shallowConvertUndefinedToNull,
+  type ShallowNullToUndefined,
+  type ShallowUndefinedToNull,
+} from '../util/dropNull.js';
+import { isNormalNumber } from '../util/isNormalNumber.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { parseIntOrThrow } from '../util/parseIntOrThrow.js';
+import { updateSchema } from './migrations/index.js';
+import type { JSONRows } from './util.js';
 import {
   batchMultiVarQuery,
   bulkAdd,
@@ -78,25 +69,33 @@ import {
   sqlFragment,
   sqlJoin,
   QueryFragment,
-} from './util';
-import { hydrateMessage } from './hydration';
+  convertOptionalBooleanToInteger,
+} from './util.js';
+import {
+  hydrateMessage,
+  hydrateMessages,
+  convertAttachmentDBFieldsToAttachmentType,
+  getAttachmentReferencesForMessages,
+  ROOT_MESSAGE_ATTACHMENT_EDIT_HISTORY_INDEX,
+} from './hydration.js';
 
-import { SeenStatus } from '../MessageSeenStatus';
+import { SeenStatus } from '../MessageSeenStatus.js';
 import {
   attachmentBackupJobSchema,
   type AttachmentBackupJobType,
-} from '../types/AttachmentBackup';
+} from '../types/AttachmentBackup.js';
 import {
   attachmentDownloadJobSchema,
+  type MessageAttachmentType,
   type AttachmentDownloadJobType,
-} from '../types/AttachmentDownload';
+} from '../types/AttachmentDownload.js';
 import type {
   CallHistoryDetails,
   CallHistoryFilter,
   CallHistoryGroup,
   CallHistoryPagination,
   CallLogEventTarget,
-} from '../types/CallDisposition';
+} from '../types/CallDisposition.js';
 import {
   CallDirection,
   CallHistoryFilterStatus,
@@ -107,16 +106,21 @@ import {
   GroupCallStatus,
   callHistoryDetailsSchema,
   callHistoryGroupSchema,
-} from '../types/CallDisposition';
-import { redactGenericText } from '../util/privacy';
-import { parseStrict, parseUnknown, safeParseUnknown } from '../util/schemas';
+} from '../types/CallDisposition.js';
+import { redactGenericText } from '../util/privacy.js';
+import {
+  parseLoose,
+  parseStrict,
+  parseUnknown,
+  safeParseUnknown,
+} from '../util/schemas.js';
 import {
   SNIPPET_LEFT_PLACEHOLDER,
   SNIPPET_RIGHT_PLACEHOLDER,
   SNIPPET_TRUNCATION_PLACEHOLDER,
-} from '../util/search';
-import type { SyncTaskType } from '../util/syncTasks';
-import { MAX_SYNC_TASK_ATTEMPTS } from '../util/syncTasks.types';
+} from '../util/search.js';
+import type { SyncTaskType } from '../util/syncTasks.js';
+import { MAX_SYNC_TASK_ATTEMPTS } from '../util/syncTasks.types.js';
 import type {
   AdjacentMessagesByConversationOptionsType,
   BackupCdnMediaObjectType,
@@ -131,15 +135,17 @@ import type {
   GetConversationRangeCenteredOnMessageResultType,
   GetKnownMessageAttachmentsResultType,
   GetNearbyMessageFromDeletedSetOptionsType,
+  GetOlderMediaOptionsType,
   GetRecentStoryRepliesOptionsType,
   GetUnreadByConversationAndMarkReadResultType,
   IdentityKeyIdType,
   ItemKeyType,
+  KyberPreKeyTripleType,
+  MediaItemDBType,
   MessageAttachmentsCursorType,
   MessageCursorType,
   MessageMetricsType,
   MessageType,
-  MessageTypeUnhydrated,
   PageMessagesCursorType,
   PageMessagesResultType,
   PreKeyIdType,
@@ -178,8 +184,18 @@ import type {
   UninstalledStickerPackType,
   UnprocessedType,
   WritableDB,
-} from './Interface';
-import { AttachmentDownloadSource, MESSAGE_COLUMNS } from './Interface';
+  MessageAttachmentDBType,
+  MessageTypeUnhydrated,
+  ServerMessageSearchResultType,
+  MessageCountBySchemaVersionType,
+  BackupAttachmentDownloadProgress,
+} from './Interface.js';
+import {
+  AttachmentDownloadSource,
+  MESSAGE_COLUMNS,
+  MESSAGE_ATTACHMENT_COLUMNS,
+  MESSAGE_NON_PRIMARY_KEY_COLUMNS,
+} from './Interface.js';
 import {
   _removeAllCallLinks,
   beginDeleteAllCallLinks,
@@ -199,19 +215,71 @@ import {
   getCallLinkRecordByRoomId,
   insertCallLink,
   insertDefunctCallLink,
+  insertOrUpdateCallLinkFromSync,
   updateCallLink,
-  updateCallLinkAdminKeyByRoomId,
   updateCallLinkState,
+  updateCallLinkStateAndEpoch,
   updateDefunctCallLink,
-} from './server/callLinks';
+} from './server/callLinks.js';
+import {
+  _deleteAllDonationReceipts,
+  createDonationReceipt,
+  deleteDonationReceiptById,
+  getAllDonationReceipts,
+  getDonationReceiptById,
+} from './server/donationReceipts.js';
 import {
   deleteAllEndorsementsForGroup,
   getGroupSendCombinedEndorsementExpiration,
   getGroupSendEndorsementsData,
   getGroupSendMemberEndorsement,
   replaceAllEndorsementsForGroup,
-} from './server/groupSendEndorsements';
-import type { GifType } from '../components/fun/panels/FunPanelGifs';
+} from './server/groupSendEndorsements.js';
+import {
+  getAllChatFolders,
+  getCurrentChatFolders,
+  getChatFolder,
+  createChatFolder,
+  updateChatFolder,
+  markChatFolderDeleted,
+  getOldestDeletedChatFolder,
+  updateChatFolderPositions,
+  updateChatFolderDeletedAtTimestampMsFromSync,
+  deleteExpiredChatFolders,
+} from './server/chatFolders.js';
+import { INITIAL_EXPIRE_TIMER_VERSION } from '../util/expirationTimer.js';
+import type { GifType } from '../components/fun/panels/FunPanelGifs.js';
+import type { NotificationProfileType } from '../types/NotificationProfile.js';
+import * as durations from '../util/durations/index.js';
+import {
+  isFile,
+  isVisualMedia,
+  type AttachmentType,
+} from '../types/Attachment.js';
+import { generateMessageId } from '../util/generateMessageId.js';
+import type {
+  ConversationColorType,
+  CustomColorType,
+} from '../types/Colors.js';
+import { sqlLogger } from './sqlLogger.js';
+import { permissiveMessageAttachmentSchema } from './server/messageAttachments.js';
+
+const {
+  forEach,
+  fromPairs,
+  groupBy,
+  isBoolean,
+  isNil,
+  isNumber,
+  isString,
+  last,
+  map,
+  mapValues,
+  noop,
+  omit,
+  partition,
+  pick,
+} = lodash;
 
 type ConversationRow = Readonly<{
   json: string;
@@ -265,22 +333,37 @@ type StickerPackRow = InstalledStickerPackRow &
     stickers: string;
     title: string;
   }>;
-type AttachmentDownloadJobRow = Readonly<{
-  messageId: string;
-  attachmentType: string;
-  digest: string;
-  receivedAt: number;
-  sentAt: number;
-  contentType: string;
-  size: number;
-  active: number;
-  attempts: number;
-  retryAfter: number;
-  lastAttemptTimestamp: number;
+
+const ATTACHMENT_DOWNLOADS_COLUMNS: ReadonlyArray<
+  | keyof Omit<AttachmentDownloadJobType, 'attachment' | 'isManualDownload'>
+  | 'attachmentJson'
+> = [
+  'messageId',
+  'attachmentType',
+  'attachmentSignature',
+  'receivedAt',
+  'sentAt',
+  'contentType',
+  'size',
+  'active',
+  'attempts',
+  'retryAfter',
+  'lastAttemptTimestamp',
+  'attachmentJson',
+  'ciphertextSize',
+  'originalSource',
+  'source',
+] as const;
+
+type AttachmentDownloadJobRow = Omit<
+  ShallowUndefinedToNull<AttachmentDownloadJobType>,
+  // TODO: DESKTOP-8995
+  'attachment' | 'contentType' | 'active' | 'isManualDownload'
+> & {
   attachmentJson: string;
-  ciphertextSize: number;
-  source: string;
-}>;
+  contentType: string;
+  active: 0 | 1;
+};
 
 // Because we can't force this module to conform to an interface, we narrow our exports
 //   to this one default export, which does conform to the interface.
@@ -313,12 +396,13 @@ export const DataReader: ServerReadableInterface = {
 
   getAllSessions,
 
+  getAllKyberTriples,
+
   getConversationCount,
   getConversationById,
 
   getAllConversations,
   getAllConversationIds,
-  getAllGroupsInvolvingServiceId,
 
   getGroupSendCombinedEndorsementExpiration,
   getGroupSendEndorsementsData,
@@ -361,6 +445,20 @@ export const DataReader: ServerReadableInterface = {
   getCallHistoryGroupsCount,
   getCallHistoryGroups,
   hasGroupCallHistoryMessage,
+
+  hasMedia,
+  getOlderMedia,
+
+  getAllNotificationProfiles,
+  getNotificationProfileById,
+
+  getAllDonationReceipts,
+  getDonationReceiptById,
+
+  getAllChatFolders,
+  getCurrentChatFolders,
+  getChatFolder,
+  getOldestDeletedChatFolder,
 
   callLinkExists,
   defunctCallLinkExists,
@@ -406,7 +504,10 @@ export const DataReader: ServerReadableInterface = {
   getStatisticsForLogging,
 
   getBackupCdnObjectMetadata,
-  getSizeOfPendingBackupAttachmentDownloadJobs,
+  getBackupAttachmentDownloadProgress,
+  getAttachmentReferencesForMessages,
+  getMessageCountBySchemaVersion,
+  getMessageSampleForSchemaVersion,
 
   // Server-only
   getKnownMessageAttachments,
@@ -415,6 +516,8 @@ export const DataReader: ServerReadableInterface = {
   finishPageMessages,
   getKnownDownloads,
   getKnownConversationAttachments,
+
+  __dangerouslyRunAbitraryReadOnlySqlQuery,
 };
 
 export const DataWriter: ServerWritableInterface = {
@@ -492,6 +595,7 @@ export const DataWriter: ServerWritableInterface = {
   removeReactionFromConversation,
   _removeAllReactions,
   _removeAllMessages,
+  _removeMessage: removeMessage,
   getUnreadEditedMessagesAndMarkRead,
   clearCallHistory,
   _removeAllCallHistory,
@@ -503,9 +607,10 @@ export const DataWriter: ServerWritableInterface = {
   saveCallHistory,
   markCallHistoryMissed,
   insertCallLink,
+  insertOrUpdateCallLinkFromSync,
   updateCallLink,
-  updateCallLinkAdminKeyByRoomId,
   updateCallLinkState,
+  updateCallLinkStateAndEpoch,
   beginDeleteAllCallLinks,
   beginDeleteCallLink,
   deleteCallHistoryByRoomId,
@@ -535,9 +640,11 @@ export const DataWriter: ServerWritableInterface = {
   saveAttachmentDownloadJob,
   saveAttachmentDownloadJobs,
   resetAttachmentDownloadActive,
+  resetBackupAttachmentDownloadJobsRetryAfter,
   removeAttachmentDownloadJob,
   removeAttachmentDownloadJobsForMessage,
   removeAllBackupAttachmentDownloadJobs,
+  resetBackupAttachmentDownloadStats,
 
   getNextAttachmentBackupJobs,
   saveAttachmentBackupJob,
@@ -585,6 +692,23 @@ export const DataWriter: ServerWritableInterface = {
   _deleteAllStoryReads,
   addNewStoryRead,
 
+  _deleteAllNotificationProfiles,
+  createNotificationProfile,
+  deleteNotificationProfileById,
+  markNotificationProfileDeleted,
+  updateNotificationProfile,
+
+  _deleteAllDonationReceipts,
+  deleteDonationReceiptById,
+  createDonationReceipt,
+
+  createChatFolder,
+  updateChatFolder,
+  markChatFolderDeleted,
+  deleteExpiredChatFolders,
+  updateChatFolderPositions,
+  updateChatFolderDeletedAtTimestampMsFromSync,
+
   removeAll,
   removeAllConfiguration,
   eraseStorageServiceState,
@@ -601,6 +725,8 @@ export const DataWriter: ServerWritableInterface = {
 
   disableFSync,
   enableFSyncAndCheckpoint,
+
+  _testOnlyRemoveMessageAttachments,
 
   // Server-only
 
@@ -762,21 +888,31 @@ function openAndSetUpSQLCipher(filePath: string, { key }: { key: string }) {
   return db;
 }
 
-let logger = consoleLogger;
+let logger = sqlLogger;
 let databaseFilePath: string | undefined;
 let indexedDBPath: string | undefined;
+
+setSqliteLogger((code, message) => {
+  if (code === 'SQLITE_SCHEMA') {
+    // Ignore query recompilation due to schema changes
+    return;
+  }
+  if (code === 'SQLITE_NOTICE') {
+    logger.info(`sqlite(${code}): ${message}`);
+    return;
+  }
+  logger.warn(`sqlite(${code}): ${message}`);
+});
 
 export function initialize({
   configDir,
   key,
   isPrimary,
-  logger: suppliedLogger,
 }: {
   appVersion: string;
   configDir: string;
   key: string;
   isPrimary: boolean;
-  logger: LoggerType;
 }): WritableDB {
   if (!isString(configDir)) {
     throw new Error('initialize: configDir is required!');
@@ -784,8 +920,6 @@ export function initialize({
   if (!isString(key)) {
     throw new Error('initialize: key is required!');
   }
-
-  logger = suppliedLogger;
 
   indexedDBPath = join(configDir, 'IndexedDB');
 
@@ -941,6 +1075,33 @@ function removeKyberPreKeysByServiceId(
   db.prepare('DELETE FROM kyberPreKeys WHERE ourServiceId IS $serviceId;').run({
     serviceId,
   });
+}
+function markKyberTripleSeenOrFail(
+  db: WritableDB,
+  { id, signedPreKeyId, baseKey }: KyberPreKeyTripleType
+): void {
+  // Notes that `kyberPreKey_triples` has
+  // - Unique constraint on id, signedPreKeyId, baseKey so that we can't insert
+  //   two identical rows
+  // - `ON DELETE CASCADE` trigger linked to `kyberPreKeys` table so that we
+  //   cleanup the triples whenever we remove the key
+  const [query, parameters] = sql`
+    INSERT OR FAIL INTO kyberPreKey_triples
+      (id, signedPreKeyId, baseKey)
+    VALUES
+      (${id}, ${signedPreKeyId}, ${baseKey});
+  `;
+
+  try {
+    db.prepare(query).run(parameters);
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      throw new Error(`Duplicate kyber triple ${id}:${signedPreKeyId}`);
+    }
+
+    // Unexpected error
+    throw error;
+  }
 }
 function removeAllKyberPreKeys(db: WritableDB): number {
   return removeAllFromTable(db, KYBER_PRE_KEYS_TABLE);
@@ -1531,16 +1692,48 @@ function createOrUpdateSessions(
 function commitDecryptResult(
   db: WritableDB,
   {
+    kyberPreKeysToRemove,
+    preKeysToRemove,
     senderKeys,
     sessions,
     unprocessed,
+    kyberTriples,
   }: {
+    kyberPreKeysToRemove: Array<PreKeyIdType>;
+    preKeysToRemove: Array<PreKeyIdType>;
     senderKeys: Array<SenderKeyType>;
     sessions: Array<SessionType>;
     unprocessed: Array<UnprocessedType>;
+    kyberTriples: Array<KyberPreKeyTripleType>;
   }
 ): void {
   db.transaction(() => {
+    if (kyberPreKeysToRemove.length > 0) {
+      const kyberPreKeyChanges = removeKyberPreKeyById(
+        db,
+        kyberPreKeysToRemove
+      );
+      if (kyberPreKeyChanges === kyberPreKeysToRemove.length) {
+        logger.info(
+          `commitDecryptResult: Removed ${kyberPreKeyChanges} kyberPreKeys`
+        );
+      } else {
+        logger.error(
+          `commitDecryptResult: Changed ${kyberPreKeyChanges} keys, but had ${kyberPreKeysToRemove.length} kyberPreKeys to remove`
+        );
+      }
+    }
+    if (preKeysToRemove.length > 0) {
+      const preKeyChanges = removePreKeyById(db, preKeysToRemove);
+      if (preKeyChanges === preKeysToRemove.length) {
+        logger.info(`commitDecryptResult: Removed ${preKeyChanges} preKeys`);
+      } else {
+        logger.error(
+          `commitDecryptResult: Changed ${preKeyChanges} keys, but had ${preKeysToRemove.length} preKeys to remove`
+        );
+      }
+    }
+
     for (const item of senderKeys) {
       createOrUpdateSenderKey(db, item);
     }
@@ -1551,6 +1744,10 @@ function commitDecryptResult(
 
     for (const item of unprocessed) {
       saveUnprocessed(db, item);
+    }
+
+    for (const item of kyberTriples) {
+      markKyberTripleSeenOrFail(db, item);
     }
   })();
 }
@@ -1589,6 +1786,9 @@ function removeAllSessions(db: WritableDB): number {
 }
 function getAllSessions(db: ReadableDB): Array<SessionType> {
   return db.prepare('SELECT * FROM sessions').all();
+}
+function getAllKyberTriples(db: ReadableDB): Array<KyberPreKeyTripleType> {
+  return db.prepare('SELECT * FROM kyberPreKey_triples').all();
 }
 // Conversations
 
@@ -1663,7 +1863,9 @@ function saveConversation(db: WritableDB, data: ConversationType): void {
     `
   ).run({
     id,
-    json: objectToJSON(omit(data, ['profileLastFetchedAt'])),
+    json: objectToJSON(
+      omit(data, ['profileLastFetchedAt', 'expireTimerVersion'])
+    ),
 
     e164: e164 || null,
     serviceId: serviceId || null,
@@ -1799,14 +2001,20 @@ function getConversationById(
   id: string
 ): ConversationType | undefined {
   const row = db
-    .prepare('SELECT json FROM conversations WHERE id = $id;')
-    .get<{ json: string }>({ id });
+    .prepare(
+      `
+      SELECT json, profileLastFetchedAt, expireTimerVersion
+      FROM conversations
+      WHERE id = $id
+      `
+    )
+    .get<ConversationRow>({ id });
 
   if (!row) {
     return undefined;
   }
 
-  return jsonToObject(row.json);
+  return rowToConversation(row);
 }
 
 function getAllConversations(db: ReadableDB): Array<ConversationType> {
@@ -1833,27 +2041,6 @@ function getAllConversationIds(db: ReadableDB): Array<string> {
     .all();
 
   return rows.map(row => row.id);
-}
-
-function getAllGroupsInvolvingServiceId(
-  db: ReadableDB,
-  serviceId: ServiceIdString
-): Array<ConversationType> {
-  const rows: ConversationRows = db
-    .prepare(
-      `
-      SELECT json, profileLastFetchedAt, expireTimerVersion
-      FROM conversations WHERE
-        type = 'group' AND
-        members LIKE $serviceId
-      ORDER BY id ASC;
-      `
-    )
-    .all({
-      serviceId: `%${serviceId}%`,
-    });
-
-  return rows.map(row => rowToConversation(row));
 }
 
 function searchMessages(
@@ -1977,11 +2164,13 @@ function searchMessages(
       LIMIT ${limit}
     `;
 
-    let result: Array<ServerSearchResultMessageType>;
+    let queryResult: Array<
+      ServerMessageSearchResultType & MessageTypeUnhydrated
+    >;
 
     if (!contactServiceIdsMatchingQuery?.length) {
       const [sqlQuery, params] = sql`${ftsFragment};`;
-      result = writable.prepare(sqlQuery).all(params);
+      queryResult = writable.prepare(sqlQuery).all(params);
     } else {
       const coalescedColumns = MESSAGE_COLUMNS_FRAGMENTS.map(
         name => sqlFragment`
@@ -2028,7 +2217,7 @@ function searchMessages(
         ORDER BY received_at DESC, sent_at DESC
         LIMIT ${limit};
         `;
-      result = writable.prepare(sqlQuery).all(params);
+      queryResult = writable.prepare(sqlQuery).all(params);
     }
 
     writable.exec(
@@ -2037,7 +2226,16 @@ function searchMessages(
       DROP TABLE tmp_filtered_results;
       `
     );
-    return result;
+    const hydrated = hydrateMessages(db, queryResult);
+    return queryResult.map((row, idx) => {
+      return {
+        ...hydrated[idx],
+        ftsSnippet: row.ftsSnippet,
+        mentionAci: row.mentionAci,
+        mentionStart: row.mentionStart,
+        mentionLength: row.mentionLength,
+      };
+    });
   })();
 }
 
@@ -2110,7 +2308,8 @@ export function getMostRecentAddressableMessages(
   conversationId: string,
   limit = 5
 ): Array<MessageType> {
-  const [query, parameters] = sql`
+  return db.transaction(() => {
+    const [query, parameters] = sql`
     SELECT
       ${sqlJoin(MESSAGE_COLUMNS_FRAGMENTS)}
     FROM messages
@@ -2122,9 +2321,10 @@ export function getMostRecentAddressableMessages(
     LIMIT ${limit};
   `;
 
-  const rows = db.prepare(query).all<MessageTypeUnhydrated>(parameters);
+    const rows = db.prepare(query).all<MessageTypeUnhydrated>(parameters);
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 export function getMostRecentAddressableNondisappearingMessages(
@@ -2132,7 +2332,8 @@ export function getMostRecentAddressableNondisappearingMessages(
   conversationId: string,
   limit = 5
 ): Array<MessageType> {
-  const [query, parameters] = sql`
+  return db.transaction(() => {
+    const [query, parameters] = sql`
     SELECT
       ${sqlJoin(MESSAGE_COLUMNS_FRAGMENTS)}
     FROM messages
@@ -2145,9 +2346,10 @@ export function getMostRecentAddressableNondisappearingMessages(
     LIMIT ${limit};
   `;
 
-  const rows = db.prepare(query).all<MessageTypeUnhydrated>(parameters);
+    const rows = db.prepare(query).all<MessageTypeUnhydrated>(parameters);
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 export function removeSyncTaskById(db: WritableDB, id: string): void {
@@ -2323,22 +2525,355 @@ export function dequeueOldestSyncTasks(
   })();
 }
 
-export function saveMessage(
+function saveMessageAttachmentsForRootOrEditedVersion(
   db: WritableDB,
-  data: ReadonlyDeep<MessageType>,
+  message: {
+    id: string;
+    conversationId: string;
+    sent_at: number;
+  } & Pick<
+    MessageType,
+    | 'attachments'
+    | 'bodyAttachment'
+    | 'contact'
+    | 'preview'
+    | 'quote'
+    | 'type'
+    | 'sticker'
+    | 'isViewOnce'
+    | 'received_at'
+    | 'received_at_ms'
+  >,
+  { editHistoryIndex }: { editHistoryIndex: number | null }
+) {
+  const {
+    id: messageId,
+    type: messageType,
+    conversationId,
+    sent_at: sentAt,
+    received_at: receivedAt,
+    received_at_ms: receivedAtMs,
+    isViewOnce,
+  } = message;
+
+  const mainAttachments = message.attachments;
+  if (mainAttachments) {
+    for (let i = 0; i < mainAttachments.length; i += 1) {
+      const attachment = mainAttachments[i];
+      saveMessageAttachment({
+        db,
+        messageId,
+        messageType,
+        conversationId,
+        sentAt,
+        receivedAt,
+        receivedAtMs,
+        attachmentType: 'attachment',
+        attachment,
+        orderInMessage: i,
+        editHistoryIndex,
+        isViewOnce,
+      });
+    }
+  }
+
+  const { bodyAttachment } = message;
+  if (bodyAttachment) {
+    saveMessageAttachment({
+      db,
+      messageId,
+      messageType,
+      conversationId,
+      sentAt,
+      receivedAt,
+      receivedAtMs,
+      attachmentType: 'long-message',
+      attachment: bodyAttachment,
+      orderInMessage: 0,
+      editHistoryIndex,
+      isViewOnce,
+    });
+  }
+
+  const previewAttachments = message.preview?.map(preview => preview.image);
+  if (previewAttachments) {
+    for (let i = 0; i < previewAttachments.length; i += 1) {
+      const attachment = previewAttachments[i];
+      if (!attachment) {
+        continue;
+      }
+      saveMessageAttachment({
+        db,
+        messageId,
+        messageType,
+        conversationId,
+        sentAt,
+        receivedAt,
+        receivedAtMs,
+        attachmentType: 'preview',
+        attachment,
+        orderInMessage: i,
+        editHistoryIndex,
+        isViewOnce,
+      });
+    }
+  }
+
+  const quoteAttachments = message.quote?.attachments;
+  if (quoteAttachments) {
+    for (let i = 0; i < quoteAttachments.length; i += 1) {
+      const attachment = quoteAttachments[i];
+      if (!attachment?.thumbnail) {
+        continue;
+      }
+      saveMessageAttachment({
+        db,
+        messageId,
+        messageType,
+        conversationId,
+        sentAt,
+        receivedAt,
+        receivedAtMs,
+        attachmentType: 'quote',
+        attachment: attachment.thumbnail,
+        orderInMessage: i,
+        editHistoryIndex,
+        isViewOnce,
+      });
+    }
+  }
+
+  const contactAttachments = message.contact?.map(
+    contact => contact.avatar?.avatar
+  );
+  if (contactAttachments) {
+    for (let i = 0; i < contactAttachments.length; i += 1) {
+      const attachment = contactAttachments[i];
+      if (!attachment) {
+        continue;
+      }
+      saveMessageAttachment({
+        db,
+        messageId,
+        messageType,
+        conversationId,
+        sentAt,
+        receivedAt,
+        receivedAtMs,
+        attachmentType: 'contact',
+        attachment,
+        orderInMessage: i,
+        editHistoryIndex,
+        isViewOnce,
+      });
+    }
+  }
+
+  const stickerAttachment = message.sticker?.data;
+  if (stickerAttachment) {
+    saveMessageAttachment({
+      db,
+      messageId,
+      messageType,
+      conversationId,
+      sentAt,
+      receivedAt,
+      receivedAtMs,
+      attachmentType: 'sticker',
+      attachment: stickerAttachment,
+      orderInMessage: 0,
+      editHistoryIndex,
+      isViewOnce,
+    });
+  }
+}
+function saveMessageAttachments(
+  db: WritableDB,
+  message: ReadonlyDeep<MessageType>
+) {
+  const messageId = message.id;
+  const [deleteQuery, deleteParams] = sql`
+    DELETE FROM message_attachments
+    WHERE messageId = ${messageId};
+  `;
+  db.prepare(deleteQuery).run(deleteParams);
+
+  saveMessageAttachmentsForRootOrEditedVersion(db, message, {
+    editHistoryIndex: null,
+  });
+
+  message.editHistory?.forEach((editHistory, idx) => {
+    saveMessageAttachmentsForRootOrEditedVersion(
+      db,
+      {
+        id: message.id,
+        type: message.type,
+        conversationId: message.conversationId,
+        sent_at: editHistory.timestamp,
+        isViewOnce: message.isViewOnce,
+        ...editHistory,
+      },
+      { editHistoryIndex: idx }
+    );
+  });
+}
+
+function saveMessageAttachment({
+  db,
+  messageId,
+  messageType,
+  conversationId,
+  sentAt,
+  receivedAt,
+  receivedAtMs,
+  attachmentType,
+  attachment,
+  orderInMessage,
+  editHistoryIndex,
+  isViewOnce,
+}: {
+  db: WritableDB;
+  messageId: string;
+  messageType: string;
+  conversationId: string;
+  sentAt: number;
+  receivedAt: number;
+  receivedAtMs: number | undefined;
+  attachmentType: MessageAttachmentType;
+  attachment: AttachmentType;
+  orderInMessage: number;
+  editHistoryIndex: number | null;
+  isViewOnce: boolean | undefined;
+}) {
+  const unparsedValues: ShallowNullToUndefined<MessageAttachmentDBType> = {
+    messageId,
+    messageType,
+    editHistoryIndex:
+      editHistoryIndex ?? ROOT_MESSAGE_ATTACHMENT_EDIT_HISTORY_INDEX,
+    attachmentType,
+    orderInMessage,
+    conversationId,
+    sentAt,
+    receivedAt,
+    receivedAtMs,
+    clientUuid: attachment.clientUuid,
+    size: attachment.size,
+    duration: attachment.duration,
+    contentType: attachment.contentType,
+    path: attachment.path,
+    localKey: attachment.localKey,
+    plaintextHash: attachment.plaintextHash,
+    caption: attachment.caption,
+    blurHash: attachment.blurHash,
+    height: attachment.height,
+    width: attachment.width,
+    digest: attachment.digest,
+    key: attachment.key,
+    fileName: attachment.fileName,
+    downloadPath: attachment.downloadPath,
+    transitCdnKey: attachment.cdnKey ?? attachment.cdnId,
+    transitCdnNumber: attachment.cdnNumber,
+    transitCdnUploadTimestamp: attachment.uploadTimestamp,
+    backupCdnNumber: attachment.backupCdnNumber,
+    incrementalMac: attachment.incrementalMac,
+    incrementalMacChunkSize: attachment.chunkSize,
+    thumbnailPath: attachment.thumbnail?.path,
+    thumbnailSize: attachment.thumbnail?.size,
+    thumbnailContentType: attachment.thumbnail?.contentType,
+    thumbnailLocalKey: attachment.thumbnail?.localKey,
+    thumbnailVersion: attachment.thumbnail?.version,
+    screenshotPath: attachment.screenshot?.path,
+    screenshotSize: attachment.screenshot?.size,
+    screenshotContentType: attachment.screenshot?.contentType,
+    screenshotLocalKey: attachment.screenshot?.localKey,
+    screenshotVersion: attachment.screenshot?.version,
+    backupThumbnailPath: attachment.thumbnailFromBackup?.path,
+    backupThumbnailSize: attachment.thumbnailFromBackup?.size,
+    backupThumbnailContentType: attachment.thumbnailFromBackup?.contentType,
+    backupThumbnailLocalKey: attachment.thumbnailFromBackup?.localKey,
+    backupThumbnailVersion: attachment.thumbnailFromBackup?.version,
+    storyTextAttachmentJson: attachment.textAttachment
+      ? objectToJSON(attachment.textAttachment)
+      : undefined,
+    localBackupPath: attachment.localBackupPath,
+    flags: attachment.flags,
+    error: convertOptionalBooleanToInteger(attachment.error),
+    wasTooBig: convertOptionalBooleanToInteger(attachment.wasTooBig),
+    backfillError: convertOptionalBooleanToInteger(attachment.backfillError),
+    isCorrupted: convertOptionalBooleanToInteger(attachment.isCorrupted),
+    isViewOnce: convertOptionalBooleanToInteger(isViewOnce),
+    copiedFromQuotedAttachment:
+      'copied' in attachment
+        ? convertOptionalBooleanToInteger(attachment.copied)
+        : undefined,
+    version: attachment.version,
+    pending: convertOptionalBooleanToInteger(attachment.pending),
+  };
+
+  try {
+    const values: MessageAttachmentDBType =
+      shallowConvertUndefinedToNull(unparsedValues);
+
+    db.prepare(
+      `
+        INSERT OR REPLACE INTO message_attachments
+          (${MESSAGE_ATTACHMENT_COLUMNS.join(', ')})
+        VALUES
+          (${MESSAGE_ATTACHMENT_COLUMNS.map(name => `$${name}`).join(', ')});
+      `
+    ).run(values);
+  } catch (e) {
+    // Attachments used to be stored in JSON and may not have the types we expect. If we
+    // fail to save one, we parse/transform through a permissive zod schema (i.e. one that
+    // will convert invalid values to null when possible)
+    logger.error(
+      'Failed to save to message_attachments',
+      Errors.toLogFormat(e)
+    );
+    const values: MessageAttachmentDBType = parseLoose(
+      permissiveMessageAttachmentSchema,
+      unparsedValues
+    );
+
+    db.prepare(
+      `
+        INSERT OR REPLACE INTO message_attachments
+          (${MESSAGE_ATTACHMENT_COLUMNS.join(', ')})
+        VALUES
+          (${MESSAGE_ATTACHMENT_COLUMNS.map(name => `$${name}`).join(', ')});
+      `
+    ).run(values);
+
+    logger.info('Recovered from invalid message_attachment save');
+  }
+}
+
+function _testOnlyRemoveMessageAttachments(
+  db: WritableDB,
+  timestamp: number
+): void {
+  const [query, params] = sql`
+    DELETE FROM message_attachments
+      WHERE sentAt = ${timestamp};`;
+
+  db.prepare(query).run(params);
+}
+
+function saveMessage(
+  db: WritableDB,
+  message: ReadonlyDeep<MessageType>,
   options: {
     alreadyInTransaction?: boolean;
     forceSave?: boolean;
     jobToInsert?: StoredJob;
     ourAci: AciString;
+    _testOnlyAvoidNormalizingAttachments?: boolean;
   }
 ): string {
-  // NB: `saveMessagesIndividually` relies on `saveMessage` being atomic
   const { alreadyInTransaction, forceSave, jobToInsert, ourAci } = options;
-
   if (!alreadyInTransaction) {
     return db.transaction(() => {
-      return saveMessage(db, data, {
+      return saveMessage(db, message, {
         ...options,
         alreadyInTransaction: true,
       });
@@ -2348,9 +2883,6 @@ export function saveMessage(
   const {
     body,
     conversationId,
-    hasAttachments,
-    hasFileAttachments,
-    hasVisualMediaAttachments,
     id,
     isErased,
     isViewOnce,
@@ -2374,10 +2906,10 @@ export function saveMessage(
     unidentifiedDeliveryReceived,
 
     ...json
-  } = data;
+  } = message;
 
   // Extracted separately since we store this field in JSON
-  const { attachments, groupV2Change } = data;
+  const { attachments, groupV2Change } = message;
 
   let seenStatus = originalSeenStatus;
 
@@ -2400,23 +2932,91 @@ export function saveMessage(
     );
 
     // eslint-disable-next-line no-param-reassign
-    data = {
-      ...data,
+    message = {
+      ...message,
       seenStatus: SeenStatus.Unseen,
     };
     seenStatus = SeenStatus.Unseen;
   }
 
+  const dataToSaveAsJSON = { ...json };
+
+  const hasRequiredFields = conversationId != null && sent_at != null;
+  if (!hasRequiredFields) {
+    logger.error(
+      'saveMessage: saving message without conversationId or sent_at!',
+      { conversationId, sent_at }
+    );
+  }
+
+  const normalizeAttachmentData =
+    hasRequiredFields && options._testOnlyAvoidNormalizingAttachments !== true;
+
+  if (normalizeAttachmentData) {
+    // Remove attachments from json data
+    delete dataToSaveAsJSON.attachments;
+    delete dataToSaveAsJSON.bodyAttachment;
+    delete dataToSaveAsJSON.preview;
+    delete dataToSaveAsJSON.quote;
+    delete dataToSaveAsJSON.contact;
+    delete dataToSaveAsJSON.sticker;
+    delete dataToSaveAsJSON.editHistory;
+
+    dataToSaveAsJSON.preview = message.preview?.map(preview =>
+      omit(preview, 'image')
+    );
+    dataToSaveAsJSON.quote = message.quote
+      ? {
+          ...message.quote,
+          attachments: message.quote.attachments.map(quoteAttachment =>
+            omit(quoteAttachment, 'thumbnail')
+          ),
+        }
+      : undefined;
+    dataToSaveAsJSON.contact = message.contact?.map(contact => ({
+      ...contact,
+      avatar: omit(contact.avatar, 'avatar'),
+    }));
+    dataToSaveAsJSON.sticker = message.sticker
+      ? omit(message.sticker, 'data')
+      : undefined;
+
+    dataToSaveAsJSON.editHistory = message.editHistory?.map(editHistory => {
+      const editHistoryWithoutAttachments = { ...editHistory };
+      delete editHistoryWithoutAttachments.attachments;
+      delete editHistoryWithoutAttachments.bodyAttachment;
+      editHistoryWithoutAttachments.quote = editHistory.quote
+        ? {
+            ...editHistory.quote,
+            attachments: editHistory.quote.attachments.map(quoteAttachment =>
+              omit(quoteAttachment, 'thumbnail')
+            ),
+          }
+        : undefined;
+      editHistoryWithoutAttachments.preview = editHistory.preview?.map(
+        preview => omit(preview, 'image')
+      );
+
+      return editHistoryWithoutAttachments;
+    });
+  }
+
+  const downloadedAttachments = message.attachments?.filter(
+    attachment => attachment.path != null
+  );
+
   const payloadWithoutJson = {
     id,
-
     body: body || null,
     conversationId,
     expirationStartTimestamp: expirationStartTimestamp || null,
     expireTimer: expireTimer || null,
-    hasAttachments: hasAttachments ? 1 : 0,
-    hasFileAttachments: hasFileAttachments ? 1 : 0,
-    hasVisualMediaAttachments: hasVisualMediaAttachments ? 1 : 0,
+    // TODO (DESKTOP-8711)
+    hasAttachments: (downloadedAttachments?.length ?? 0) > 0 ? 1 : 0,
+    hasFileAttachments: downloadedAttachments?.some(isFile) ? 1 : 0,
+    hasVisualMediaAttachments: downloadedAttachments?.some(isVisualMedia)
+      ? 1
+      : 0,
     isChangeCreatedByUs: groupV2Change?.from === ourAci ? 1 : 0,
     isErased: isErased ? 1 : 0,
     isViewOnce: isViewOnce ? 1 : 0,
@@ -2439,22 +3039,38 @@ export function saveMessage(
   } satisfies Omit<MessageTypeUnhydrated, 'json'>;
 
   if (id && !forceSave) {
-    db.prepare(
+    const result = db
+      .prepare(
+        // UPDATE queries that set the value of a primary key column can be very slow when
+        // that key is referenced via a foreign key constraint, so we are careful to
+        // exclude it here.
+        `
+        UPDATE messages SET
+          ${MESSAGE_NON_PRIMARY_KEY_COLUMNS.map(name => `${name} = $${name}`).join(', ')}
+        WHERE id = $id;
       `
-      UPDATE messages SET
-        ${MESSAGE_COLUMNS.map(name => `${name} = $${name}`).join(', ')}
-      WHERE id = $id;
-      `
-    ).run({ ...payloadWithoutJson, json: objectToJSON(json) });
+      )
+      .run({ ...payloadWithoutJson, json: objectToJSON(dataToSaveAsJSON) });
+
+    if (result.changes === 0) {
+      // Message has been deleted from DB
+      return id;
+    }
+
+    if (normalizeAttachmentData) {
+      saveMessageAttachments(db, message);
+    }
 
     if (jobToInsert) {
       insertJob(db, jobToInsert);
     }
 
+    strictAssert(result.changes === 1, 'One row should have been changed');
+
     return id;
   }
 
-  const createdId = id || generateMessageId(data.received_at).id;
+  const createdId = id || generateMessageId(message.received_at).id;
 
   db.prepare(
     `
@@ -2467,8 +3083,12 @@ export function saveMessage(
   ).run({
     ...payloadWithoutJson,
     id: createdId,
-    json: objectToJSON(json),
+    json: objectToJSON(dataToSaveAsJSON),
   });
+
+  if (normalizeAttachmentData) {
+    saveMessageAttachments(db, message);
+  }
 
   if (jobToInsert) {
     insertJob(db, jobToInsert);
@@ -2480,7 +3100,11 @@ export function saveMessage(
 function saveMessages(
   db: WritableDB,
   arrayOfMessages: ReadonlyArray<ReadonlyDeep<MessageType>>,
-  options: { forceSave?: boolean; ourAci: AciString }
+  options: {
+    forceSave?: boolean;
+    ourAci: AciString;
+    _testOnlyAvoidNormalizingAttachments?: boolean;
+  }
 ): Array<string> {
   return db.transaction(() => {
     const result = new Array<string>();
@@ -2505,10 +3129,7 @@ function saveMessagesIndividually(
     const failedIndices: Array<number> = [];
     arrayOfMessages.forEach((message, index) => {
       try {
-        saveMessage(db, message, {
-          ...options,
-          alreadyInTransaction: true,
-        });
+        saveMessage(db, message, options);
       } catch (e) {
         logger.error(
           'saveMessagesIndividually: failed to save message',
@@ -2549,60 +3170,70 @@ export function getMessageById(
   db: ReadableDB,
   id: string
 ): MessageType | undefined {
-  const row = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const row = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}
       FROM messages
       WHERE id = $id;
     `
-    )
-    .get<MessageTypeUnhydrated>({
-      id,
-    });
+      )
+      .get<MessageTypeUnhydrated>({
+        id,
+      });
 
-  if (!row) {
-    return undefined;
-  }
+    if (!row) {
+      return undefined;
+    }
 
-  return hydrateMessage(row);
+    return hydrateMessage(db, row);
+  })();
 }
 
 function getMessagesById(
   db: ReadableDB,
   messageIds: ReadonlyArray<string>
 ): Array<MessageType> {
-  return batchMultiVarQuery(
-    db,
-    messageIds,
-    (batch: ReadonlyArray<string>, persistent: boolean): Array<MessageType> => {
-      const query = db.prepare(
-        `
+  return db.transaction(() =>
+    batchMultiVarQuery(
+      db,
+      messageIds,
+      (
+        batch: ReadonlyArray<string>,
+        persistent: boolean
+      ): Array<MessageType> => {
+        const query = db.prepare(
+          `
           SELECT ${MESSAGE_COLUMNS.join(', ')}
           FROM messages
           WHERE id IN (
             ${Array(batch.length).fill('?').join(',')}
           );`,
-        { persistent }
-      );
-      const rows: Array<MessageTypeUnhydrated> = query.all(batch);
-      return rows.map(row => hydrateMessage(row));
-    }
-  );
+          { persistent }
+        );
+        const rows: Array<MessageTypeUnhydrated> = query.all(batch);
+        return hydrateMessages(db, rows);
+      }
+    )
+  )();
 }
 
 function _getAllMessages(db: ReadableDB): Array<MessageType> {
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}
       FROM messages ORDER BY id ASC
     `
-    )
-    .all();
+      )
+      .all();
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
+
 function _removeAllMessages(db: WritableDB): void {
   db.exec(`
     DELETE FROM messages;
@@ -2632,37 +3263,39 @@ function getMessageBySender(
     sent_at: number;
   }
 ): MessageType | undefined {
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
     SELECT ${MESSAGE_COLUMNS.join(', ')} FROM messages WHERE
       (source = $source OR sourceServiceId = $sourceServiceId) AND
       sourceDevice = $sourceDevice AND
       sent_at = $sent_at
     LIMIT 2;
     `
-    )
-    .all({
-      source: source || null,
-      sourceServiceId: sourceServiceId || null,
-      sourceDevice: sourceDevice || null,
-      sent_at,
-    });
+      )
+      .all({
+        source: source || null,
+        sourceServiceId: sourceServiceId || null,
+        sourceDevice: sourceDevice || null,
+        sent_at,
+      });
 
-  if (rows.length > 1) {
-    logger.warn('getMessageBySender: More than one message found for', {
-      sent_at,
-      source,
-      sourceServiceId,
-      sourceDevice,
-    });
-  }
+    if (rows.length > 1) {
+      logger.warn('getMessageBySender: More than one message found for', {
+        sent_at,
+        source,
+        sourceServiceId,
+        sourceDevice,
+      });
+    }
 
-  if (rows.length < 1) {
-    return undefined;
-  }
+    if (rows.length < 1) {
+      return undefined;
+    }
 
-  return hydrateMessage(rows[0]);
+    return hydrateMessage(db, rows[0]);
+  })();
 }
 
 export function _storyIdPredicate(
@@ -2686,14 +3319,14 @@ function getUnreadByConversationAndMarkRead(
   {
     conversationId,
     includeStoryReplies,
-    newestUnreadAt,
+    readMessageReceivedAt,
     storyId,
     readAt,
     now = Date.now(),
   }: {
     conversationId: string;
     includeStoryReplies: boolean;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
     storyId?: string;
     readAt?: number;
     now?: number;
@@ -2720,7 +3353,7 @@ function getUnreadByConversationAndMarkRead(
           expirationStartTimestamp > ${expirationStartTimestamp}
         ) AND
         expireTimer > 0 AND
-        received_at <= ${newestUnreadAt};
+        received_at <= ${readMessageReceivedAt};
     `;
 
     db.prepare(updateExpirationQuery).run(updateExpirationParams);
@@ -2734,7 +3367,7 @@ function getUnreadByConversationAndMarkRead(
           seenStatus = ${SeenStatus.Unseen} AND
           isStory = 0 AND
           (${_storyIdPredicate(storyId, includeStoryReplies)}) AND
-          received_at <= ${newestUnreadAt}
+          received_at <= ${readMessageReceivedAt}
         ORDER BY received_at DESC, sent_at DESC;
     `;
 
@@ -2758,18 +3391,16 @@ function getUnreadByConversationAndMarkRead(
           seenStatus = ${SeenStatus.Unseen} AND
           isStory = 0 AND
           (${_storyIdPredicate(storyId, includeStoryReplies)}) AND
-          received_at <= ${newestUnreadAt};
+          received_at <= ${readMessageReceivedAt};
     `;
 
     db.prepare(updateStatusQuery).run(updateStatusParams);
-
-    return rows.map(row => {
-      const json = hydrateMessage(row);
+    return hydrateMessages(db, rows).map(msg => {
       return {
-        originalReadStatus: json.readStatus,
+        originalReadStatus: msg.readStatus,
         readStatus: ReadStatus.Read,
         seenStatus: SeenStatus.Seen,
-        ...pick(json, [
+        ...pick(msg, [
           'expirationStartTimestamp',
           'id',
           'sent_at',
@@ -2786,11 +3417,11 @@ function getUnreadReactionsAndMarkRead(
   db: WritableDB,
   {
     conversationId,
-    newestUnreadAt,
+    readMessageReceivedAt,
     storyId,
   }: {
     conversationId: string;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
     storyId?: string;
   }
 ): Array<ReactionResultType> {
@@ -2805,14 +3436,14 @@ function getUnreadReactionsAndMarkRead(
         WHERE
           reactions.conversationId IS $conversationId AND
           reactions.unread > 0 AND
-          messages.received_at <= $newestUnreadAt AND
+          messages.received_at <= $readMessageReceivedAt AND
           messages.storyId IS $storyId
         ORDER BY messageReceivedAt DESC;
       `
       )
       .all({
         conversationId,
-        newestUnreadAt,
+        readMessageReceivedAt,
         storyId: storyId || null,
       });
 
@@ -2990,7 +3621,7 @@ function getRecentStoryReplies(
     receivedAt = Number.MAX_VALUE,
     sentAt = Number.MAX_VALUE,
   }: GetRecentStoryRepliesOptionsType = {}
-): Array<MessageTypeUnhydrated> {
+): Array<MessageType> {
   const timeFilters = {
     first: sqlFragment`received_at = ${receivedAt} AND sent_at < ${sentAt}`,
     second: sqlFragment`received_at < ${receivedAt}`,
@@ -3018,7 +3649,10 @@ function getRecentStoryReplies(
 
   const [query, params] = sql`${template} LIMIT ${limit}`;
 
-  return db.prepare(query).all(params);
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db.prepare(query).all(params);
+    return hydrateMessages(db, rows);
+  })();
 }
 
 function getAdjacentMessagesByConversation(
@@ -3035,7 +3669,7 @@ function getAdjacentMessagesByConversation(
     requireFileAttachments,
     storyId,
   }: AdjacentMessagesByConversationOptionsType
-): Array<MessageTypeUnhydrated> {
+): Array<MessageType> {
   let timeFilters: { first: QueryFragment; second: QueryFragment };
   let timeOrder: QueryFragment;
 
@@ -3070,12 +3704,12 @@ function getAdjacentMessagesByConversation(
       }
       ${
         requireVisualMediaAttachments
-          ? sqlFragment`hasVisualMediaAttachments IS 1 AND`
+          ? sqlFragment`hasVisualMediaAttachments IS 1 AND isViewOnce IS 0 AND`
           : sqlFragment``
       }
       ${
         requireFileAttachments
-          ? sqlFragment`hasFileAttachments IS 1 AND`
+          ? sqlFragment`hasFileAttachments IS 1 AND isViewOnce IS 0 AND`
           : sqlFragment``
       }
       isStory IS 0 AND
@@ -3086,61 +3720,28 @@ function getAdjacentMessagesByConversation(
       ORDER BY received_at ${timeOrder}, sent_at ${timeOrder}
   `;
 
-  let template = sqlFragment`
+  const [query, params] = sql`
     SELECT first.* FROM (${createQuery(timeFilters.first)}) as first
     UNION ALL
     SELECT second.* FROM (${createQuery(timeFilters.second)}) as second
+    LIMIT ${limit}
   `;
 
-  // See `filterValidAttachments` in ts/state/ducks/lightbox.ts
-  if (requireVisualMediaAttachments) {
-    template = sqlFragment`
-      SELECT messages.*
-      FROM (${template}) as messages
-      WHERE
-        (
-          SELECT COUNT(*)
-          FROM json_each(messages.json ->> 'attachments') AS attachment
-          WHERE
-            attachment.value ->> 'thumbnail' IS NOT NULL AND
-            attachment.value ->> 'pending' IS NOT 1 AND
-            attachment.value ->> 'error' IS NULL
-        ) > 0
-      LIMIT ${limit};
-    `;
-  } else if (requireFileAttachments) {
-    template = sqlFragment`
-      SELECT messages.*
-      FROM (${template}) as messages
-      WHERE
-        (
-          SELECT COUNT(*)
-          FROM json_each(messages.json ->> 'attachments') AS attachment
-          WHERE
-            attachment.value ->> 'pending' IS NOT 1 AND
-            attachment.value ->> 'error' IS NULL
-        ) > 0
-      LIMIT ${limit};
-    `;
-  } else {
-    template = sqlFragment`${template} LIMIT ${limit}`;
-  }
+  return db.transaction(() => {
+    const results = db.prepare(query).all<MessageTypeUnhydrated>(params);
 
-  const [query, params] = sql`${template}`;
+    if (direction === AdjacentDirection.Older) {
+      results.reverse();
+    }
 
-  const results = db.prepare(query).all<MessageTypeUnhydrated>(params);
-
-  if (direction === AdjacentDirection.Older) {
-    results.reverse();
-  }
-
-  return results;
+    return hydrateMessages(db, results);
+  })();
 }
 
 function getOlderMessagesByConversation(
   db: ReadableDB,
   options: AdjacentMessagesByConversationOptionsType
-): Array<MessageTypeUnhydrated> {
+): Array<MessageType> {
   return getAdjacentMessagesByConversation(
     db,
     AdjacentDirection.Older,
@@ -3158,7 +3759,8 @@ function getAllStories(
     sourceServiceId?: ServiceIdString;
   }
 ): GetAllStoriesResultType {
-  const [storiesQuery, storiesParams] = sql`
+  return db.transaction(() => {
+    const [storiesQuery, storiesParams] = sql`
     SELECT ${sqlJoin(MESSAGE_COLUMNS_FRAGMENTS)}
     FROM messages
     WHERE
@@ -3169,20 +3771,20 @@ function getAllStories(
         sourceServiceId IS ${sourceServiceId ?? null})
     ORDER BY received_at ASC, sent_at ASC;
   `;
-  const rows = db
-    .prepare(storiesQuery)
-    .all<MessageTypeUnhydrated>(storiesParams);
+    const rows = db
+      .prepare(storiesQuery)
+      .all<MessageTypeUnhydrated>(storiesParams);
 
-  const [repliesQuery, repliesParams] = sql`
+    const [repliesQuery, repliesParams] = sql`
     SELECT DISTINCT storyId
     FROM messages
     WHERE storyId IS NOT NULL
   `;
-  const replies = db
-    .prepare(repliesQuery, { pluck: true })
-    .all<string>(repliesParams);
+    const replies = db
+      .prepare(repliesQuery, { pluck: true })
+      .all<string>(repliesParams);
 
-  const [repliesFromSelfQuery, repliesFromSelfParams] = sql`
+    const [repliesFromSelfQuery, repliesFromSelfParams] = sql`
     SELECT DISTINCT storyId
     FROM messages
     WHERE (
@@ -3190,26 +3792,27 @@ function getAllStories(
       type IS 'outgoing'
     )
   `;
-  const repliesFromSelf = db
-    .prepare(repliesFromSelfQuery, {
-      pluck: true,
-    })
-    .all<string>(repliesFromSelfParams);
+    const repliesFromSelf = db
+      .prepare(repliesFromSelfQuery, {
+        pluck: true,
+      })
+      .all<string>(repliesFromSelfParams);
 
-  const repliesLookup = new Set(replies);
-  const repliesFromSelfLookup = new Set(repliesFromSelf);
+    const repliesLookup = new Set(replies);
+    const repliesFromSelfLookup = new Set(repliesFromSelf);
 
-  return rows.map(row => ({
-    ...hydrateMessage(row),
-    hasReplies: Boolean(repliesLookup.has(row.id)),
-    hasRepliesFromSelf: Boolean(repliesFromSelfLookup.has(row.id)),
-  }));
+    return hydrateMessages(db, rows).map(msg => ({
+      ...msg,
+      hasReplies: Boolean(repliesLookup.has(msg.id)),
+      hasRepliesFromSelf: Boolean(repliesFromSelfLookup.has(msg.id)),
+    }));
+  })();
 }
 
 function getNewerMessagesByConversation(
   db: ReadableDB,
   options: AdjacentMessagesByConversationOptionsType
-): Array<MessageTypeUnhydrated> {
+): Array<MessageType> {
   return getAdjacentMessagesByConversation(
     db,
     AdjacentDirection.Newer,
@@ -3384,9 +3987,10 @@ function getLastConversationActivity(
     includeStoryReplies: boolean;
   }
 ): MessageType | undefined {
-  const row = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const row = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')} FROM messages
       INDEXED BY messages_activity
       WHERE
@@ -3398,16 +4002,17 @@ function getLastConversationActivity(
       ORDER BY received_at DESC, sent_at DESC
       LIMIT 1;
       `
-    )
-    .get<MessageTypeUnhydrated>({
-      conversationId,
-    });
+      )
+      .get<MessageTypeUnhydrated>({
+        conversationId,
+      });
 
-  if (!row) {
-    return undefined;
-  }
+    if (!row) {
+      return undefined;
+    }
 
-  return hydrateMessage(row);
+    return hydrateMessage(db, row);
+  })();
 }
 function getLastConversationPreview(
   db: ReadableDB,
@@ -3423,9 +4028,10 @@ function getLastConversationPreview(
     ? 'messages_preview'
     : 'messages_preview_without_story';
 
-  const row: MessageTypeUnhydrated | undefined = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const row: MessageTypeUnhydrated | undefined = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}, expiresAt FROM (
         SELECT ${MESSAGE_COLUMNS.join(', ')}, expiresAt FROM messages
         INDEXED BY ${index}
@@ -3439,13 +4045,14 @@ function getLastConversationPreview(
       WHERE likely(expiresAt > $now)
       LIMIT 1
     `
-    )
-    .get({
-      conversationId,
-      now: Date.now(),
-    });
+      )
+      .get({
+        conversationId,
+        now: Date.now(),
+      });
 
-  return row ? hydrateMessage(row) : undefined;
+    return row ? hydrateMessage(db, row) : undefined;
+  })();
 }
 
 function getConversationMessageStats(
@@ -3481,24 +4088,26 @@ function getLastConversationMessage(
     conversationId: string;
   }
 ): MessageType | undefined {
-  const row = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const row = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')} FROM messages WHERE
         conversationId = $conversationId
       ORDER BY received_at DESC, sent_at DESC
       LIMIT 1;
       `
-    )
-    .get<MessageTypeUnhydrated>({
-      conversationId,
-    });
+      )
+      .get<MessageTypeUnhydrated>({
+        conversationId,
+      });
 
-  if (!row) {
-    return undefined;
-  }
+    if (!row) {
+      return undefined;
+    }
 
-  return hydrateMessage(row);
+    return hydrateMessage(db, row);
+  })();
 }
 
 function getOldestUnseenMessageForConversation(
@@ -3674,7 +4283,7 @@ function getMessageMetricsForConversation(
 function getConversationRangeCenteredOnMessage(
   db: ReadableDB,
   options: AdjacentMessagesByConversationOptionsType
-): GetConversationRangeCenteredOnMessageResultType<MessageTypeUnhydrated> {
+): GetConversationRangeCenteredOnMessageResultType<MessageType> {
   return db.transaction(() => {
     return {
       older: getAdjacentMessagesByConversation(
@@ -3833,18 +4442,20 @@ function getCallHistoryMessageByCallId(
     callId: string;
   }
 ): MessageType | undefined {
-  const [query, params] = sql`
+  return db.transaction(() => {
+    const [query, params] = sql`
     SELECT ${sqlJoin(MESSAGE_COLUMNS_FRAGMENTS)}
     FROM messages
     WHERE conversationId = ${options.conversationId}
       AND type = 'call-history'
       AND callId = ${options.callId}
   `;
-  const row = db.prepare(query).get<MessageTypeUnhydrated>(params);
-  if (row == null) {
-    return;
-  }
-  return hydrateMessage(row);
+    const row = db.prepare(query).get<MessageTypeUnhydrated>(params);
+    if (row == null) {
+      return;
+    }
+    return hydrateMessage(db, row);
+  })();
 }
 
 function getCallHistory(
@@ -4496,6 +5107,112 @@ function hasGroupCallHistoryMessage(
   return exists === 1;
 }
 
+function hasMedia(db: ReadableDB, conversationId: string): boolean {
+  const [query, params] = sql`
+    SELECT EXISTS(
+      SELECT 1 FROM message_attachments
+      INDEXED BY message_attachments_getOlderMedia
+      WHERE
+        conversationId IS ${conversationId} AND
+        editHistoryIndex IS -1 AND
+        attachmentType IS 'attachment' AND
+        messageType IN ('incoming', 'outgoing') AND
+        isViewOnce IS NOT 1 AND
+        contentType IS NOT NULL AND
+        contentType IS NOT '' AND
+        contentType IS NOT 'text/x-signal-plain' AND
+        contentType NOT LIKE 'audio/%'
+    );
+  `;
+  const exists = db.prepare(query, { pluck: true }).get<number>(params);
+
+  return exists === 1;
+}
+
+function getOlderMedia(
+  db: ReadableDB,
+  {
+    conversationId,
+    limit,
+    messageId,
+    receivedAt: maxReceivedAt = Number.MAX_VALUE,
+    sentAt: maxSentAt = Number.MAX_VALUE,
+    type,
+  }: GetOlderMediaOptionsType
+): Array<MediaItemDBType> {
+  const timeFilters = {
+    first: sqlFragment`receivedAt = ${maxReceivedAt} AND sentAt < ${maxSentAt}`,
+    second: sqlFragment`receivedAt < ${maxReceivedAt}`,
+  };
+
+  let contentFilter: QueryFragment;
+  if (type === 'media') {
+    // see 'isVisualMedia' in ts/types/Attachment.ts
+    contentFilter = sqlFragment`
+      contentType LIKE 'image/%' OR
+      contentType LIKE 'video/%'
+    `;
+  } else if (type === 'files') {
+    // see 'isFile' in ts/types/Attachment.ts
+    contentFilter = sqlFragment`
+      contentType IS NOT NULL AND
+      contentType IS NOT '' AND
+      contentType IS NOT 'text/x-signal-plain' AND
+      contentType NOT LIKE 'audio/%' AND
+      contentType NOT LIKE 'image/%' AND
+      contentType NOT LIKE 'video/%'
+    `;
+  } else {
+    throw missingCaseError(type);
+  }
+
+  const createQuery = (timeFilter: QueryFragment): QueryFragment => sqlFragment`
+    SELECT
+      *
+    FROM message_attachments
+    INDEXED BY message_attachments_getOlderMedia
+    WHERE
+      conversationId IS ${conversationId} AND
+      editHistoryIndex IS -1 AND
+      attachmentType IS 'attachment' AND
+      (
+        ${timeFilter}
+      ) AND
+      (${contentFilter}) AND
+      isViewOnce IS NOT 1 AND
+      messageType IN ('incoming', 'outgoing') AND
+      (${messageId ?? null} IS NULL OR messageId IS NOT ${messageId ?? null})
+      ORDER BY receivedAt DESC, sentAt DESC
+      LIMIT ${limit}
+  `;
+
+  const [query, params] = sql`
+    SELECT first.* FROM (${createQuery(timeFilters.first)}) as first
+    UNION ALL
+    SELECT second.* FROM (${createQuery(timeFilters.second)}) as second
+  `;
+
+  const results: Array<MessageAttachmentDBType> = db.prepare(query).all(params);
+
+  return results.map(attachment => {
+    const { orderInMessage, messageType, sentAt, receivedAt, receivedAtMs } =
+      attachment;
+
+    return {
+      message: {
+        id: attachment.messageId,
+        type: messageType as 'incoming' | 'outgoing',
+        conversationId,
+        receivedAt,
+        receivedAtMs: receivedAtMs ?? undefined,
+        sentAt,
+      },
+      index: orderInMessage,
+      attachment: convertAttachmentDBFieldsToAttachmentType(attachment),
+    };
+  });
+}
+
 function _markCallHistoryMissed(
   db: WritableDB,
   callIds: ReadonlyArray<string>
@@ -4647,15 +5364,16 @@ function getMessagesBySentAt(
   db: ReadableDB,
   sentAt: number
 ): Array<MessageType> {
-  // Make sure to preserve order of columns
-  const editedColumns = MESSAGE_COLUMNS_FRAGMENTS.map(name => {
-    if (name.fragment === 'received_at' || name.fragment === 'sent_at') {
-      return name;
-    }
-    return sqlFragment`messages.${name}`;
-  });
+  return db.transaction(() => {
+    // Make sure to preserve order of columns
+    const editedColumns = MESSAGE_COLUMNS_FRAGMENTS.map(name => {
+      if (name.fragment === 'received_at' || name.fragment === 'sent_at') {
+        return name;
+      }
+      return sqlFragment`messages.${name}`;
+    });
 
-  const [query, params] = sql`
+    const [query, params] = sql`
       SELECT ${sqlJoin(editedColumns)}
       FROM edited_messages
       INNER JOIN messages ON
@@ -4668,35 +5386,39 @@ function getMessagesBySentAt(
       ORDER BY messages.received_at DESC, messages.sent_at DESC;
     `;
 
-  const rows = db.prepare(query).all<MessageTypeUnhydrated>(params);
+    const rows = db.prepare(query).all<MessageTypeUnhydrated>(params);
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 function getExpiredMessages(db: ReadableDB): Array<MessageType> {
-  const now = Date.now();
+  return db.transaction(() => {
+    const now = Date.now();
 
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}, expiresAt
       FROM messages
       WHERE
         expiresAt <= $now
       ORDER BY expiresAt ASC;
       `
-    )
-    .all({ now });
+      )
+      .all({ now });
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 function getMessagesUnexpectedlyMissingExpirationStartTimestamp(
   db: ReadableDB
 ): Array<MessageType> {
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')} FROM messages
       INDEXED BY messages_unexpectedly_missing_expiration_start_timestamp
       WHERE
@@ -4711,10 +5433,11 @@ function getMessagesUnexpectedlyMissingExpirationStartTimestamp(
           ))
         );
       `
-    )
-    .all();
+      )
+      .all();
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 function getSoonestMessageExpiry(db: ReadableDB): undefined | number {
@@ -4741,9 +5464,10 @@ function getSoonestMessageExpiry(db: ReadableDB): undefined | number {
 function getNextTapToViewMessageTimestampToAgeOut(
   db: ReadableDB
 ): undefined | number {
-  const row = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const row = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')} FROM messages
       WHERE
         -- we want this query to use the messages_view_once index rather than received_at
@@ -4752,24 +5476,26 @@ function getNextTapToViewMessageTimestampToAgeOut(
       ORDER BY received_at ASC, sent_at ASC
       LIMIT 1;
       `
-    )
-    .get<MessageTypeUnhydrated>();
+      )
+      .get<MessageTypeUnhydrated>();
 
-  if (!row) {
-    return undefined;
-  }
-  const data = hydrateMessage(row);
-  const result = data.received_at_ms;
-  return isNormalNumber(result) ? result : undefined;
+    if (!row) {
+      return undefined;
+    }
+    const data = hydrateMessage(db, row);
+    const result = data.received_at_ms;
+    return isNormalNumber(result) ? result : undefined;
+  })();
 }
 
 function getTapToViewMessagesNeedingErase(
   db: ReadableDB,
   maxTimestamp: number
 ): Array<MessageType> {
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}
       FROM messages
       WHERE
@@ -4779,12 +5505,13 @@ function getTapToViewMessagesNeedingErase(
           IFNULL(received_at_ms, 0) <= $maxTimestamp
         )
       `
-    )
-    .all({
-      maxTimestamp,
-    });
+      )
+      .all({
+        maxTimestamp,
+      });
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 const MAX_UNPROCESSED_ATTEMPTS = 10;
@@ -5029,7 +5756,7 @@ function _getAttachmentDownloadJob(
   db: ReadableDB,
   job: Pick<
     AttachmentDownloadJobType,
-    'messageId' | 'attachmentType' | 'digest'
+    'messageId' | 'attachmentType' | 'attachmentSignature'
   >
 ): AttachmentDownloadJobType | undefined {
   const [query, params] = sql`
@@ -5039,7 +5766,7 @@ function _getAttachmentDownloadJob(
     AND
       attachmentType = ${job.attachmentType}
     AND
-      digest = ${job.digest};
+      attachmentSignature = ${job.attachmentSignature};
   `;
 
   const row = db.prepare(query).get<AttachmentDownloadJobRow>(params);
@@ -5058,20 +5785,35 @@ function _getAttachmentDownloadJob(
 function removeAllBackupAttachmentDownloadJobs(db: WritableDB): void {
   const [query, params] = sql`
     DELETE FROM attachment_downloads
-    WHERE source = ${AttachmentDownloadSource.BACKUP_IMPORT};`;
+    WHERE 
+      source = ${AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA} 
+    OR 
+      source = ${AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA};`;
   db.prepare(query).run(params);
 }
 
-function getSizeOfPendingBackupAttachmentDownloadJobs(db: ReadableDB): number {
+function resetBackupAttachmentDownloadStats(db: WritableDB): void {
   const [query, params] = sql`
-    SELECT SUM(ciphertextSize) FROM attachment_downloads
-    WHERE source = ${AttachmentDownloadSource.BACKUP_IMPORT};`;
+    INSERT OR REPLACE INTO attachment_downloads_backup_stats
+      (id, totalBytes, completedBytes)
+    VALUES
+      (0,0,0);
+  `;
+  db.prepare(query).run(params);
+}
+
+function getBackupAttachmentDownloadProgress(
+  db: ReadableDB
+): BackupAttachmentDownloadProgress {
+  const [query, params] = sql`
+    SELECT totalBytes, completedBytes FROM attachment_downloads_backup_stats
+    WHERE id = 0;
+  `;
   return (
-    db
-      .prepare(query, {
-        pluck: true,
-      })
-      .get<number>(params) ?? 0
+    db.prepare(query).get<BackupAttachmentDownloadProgress>(params) ?? {
+      totalBytes: 0,
+      completedBytes: 0,
+    }
   );
 }
 
@@ -5182,51 +5924,88 @@ function saveAttachmentDownloadJobs(
   db: WritableDB,
   jobs: Array<AttachmentDownloadJobType>
 ): void {
+  const errors: Array<Error> = [];
   db.transaction(() => {
     for (const job of jobs) {
-      saveAttachmentDownloadJob(db, job);
+      try {
+        saveAttachmentDownloadJob(db, job);
+      } catch (e) {
+        errors.push(e);
+      }
     }
   })();
+
+  if (errors.length === 0) {
+    return;
+  }
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  throw new AggregateError(
+    errors,
+    `Multiple errors while saving attachment download jobs:\n ${errors.map(e => e.message).join('\n')}`
+  );
 }
 
 function saveAttachmentDownloadJob(
   db: WritableDB,
   job: AttachmentDownloadJobType
 ): void {
-  const [query, params] = sql`
-    INSERT OR REPLACE INTO attachment_downloads (
-      messageId,
-      attachmentType,
-      digest,
-      receivedAt,
-      sentAt,
-      contentType,
-      size,
-      active,
-      attempts,
-      retryAfter,
-      lastAttemptTimestamp,
-      attachmentJson,
-      ciphertextSize,
-      source
-    ) VALUES (
-      ${job.messageId},
-      ${job.attachmentType},
-      ${job.digest},
-      ${job.receivedAt},
-      ${job.sentAt},
-      ${job.contentType},
-      ${job.size},
-      ${job.active ? 1 : 0},
-      ${job.attempts},
-      ${job.retryAfter},
-      ${job.lastAttemptTimestamp},
-      ${objectToJSON(job.attachment)},
-      ${job.ciphertextSize},
-      ${job.source}
-    );
-  `;
-  db.prepare(query).run(params);
+  return db.transaction(() => {
+    const [messageExistsQuery, messageExistsParams] = sql`
+      SELECT EXISTS(
+        SELECT 1 FROM messages
+        WHERE messages.id = ${job.messageId}
+      );
+    `;
+
+    const messageExists = db
+      .prepare(messageExistsQuery, {
+        pluck: true,
+      })
+      .get<number>(messageExistsParams);
+
+    if (messageExists !== 1) {
+      logger.warn('saveAttachmentDownloadJob: message does not exist, bailing');
+      return;
+    }
+    const jobToInsert: AttachmentDownloadJobRow = {
+      messageId: job.messageId,
+      attachmentType: job.attachmentType,
+      attachmentSignature: job.attachmentSignature,
+      receivedAt: job.receivedAt,
+      sentAt: job.sentAt,
+      contentType: job.contentType,
+      size: job.size,
+      active: job.active ? 1 : 0,
+      attempts: job.attempts,
+      retryAfter: job.retryAfter,
+      lastAttemptTimestamp: job.lastAttemptTimestamp,
+      attachmentJson: objectToJSON(job.attachment),
+      ciphertextSize: job.ciphertextSize,
+      originalSource: job.originalSource,
+      source: job.source,
+    } as const satisfies Record<
+      (typeof ATTACHMENT_DOWNLOADS_COLUMNS)[number],
+      unknown
+    >;
+
+    db.prepare(
+      `
+      INSERT INTO attachment_downloads
+        (${ATTACHMENT_DOWNLOADS_COLUMNS.join(', ')})
+      VALUES
+        (${ATTACHMENT_DOWNLOADS_COLUMNS.map(name => `$${name}`).join(', ')})
+      ON CONFLICT DO UPDATE SET
+          -- preserve originalSource
+          ${ATTACHMENT_DOWNLOADS_COLUMNS.filter(
+            name => name !== 'originalSource'
+          )
+            .map(name => `${name} = $${name}`)
+            .join(', ')}
+    `
+    ).run(jobToInsert);
+  })();
 }
 
 function resetAttachmentDownloadActive(db: WritableDB): void {
@@ -5239,9 +6018,22 @@ function resetAttachmentDownloadActive(db: WritableDB): void {
   ).run();
 }
 
+function resetBackupAttachmentDownloadJobsRetryAfter(db: WritableDB): void {
+  db.prepare(
+    `
+    UPDATE attachment_downloads
+    SET retryAfter = NULL
+    WHERE originalSource = 'backup_import'
+    `
+  ).run();
+}
+
 function removeAttachmentDownloadJob(
   db: WritableDB,
-  job: Pick<AttachmentDownloadJobRow, 'messageId' | 'attachmentType' | 'digest'>
+  job: Pick<
+    AttachmentDownloadJobRow,
+    'messageId' | 'attachmentType' | 'attachmentSignature'
+  >
 ): void {
   const [query, params] = sql`
     DELETE FROM attachment_downloads
@@ -5250,7 +6042,7 @@ function removeAttachmentDownloadJob(
     AND
       attachmentType = ${job.attachmentType}
     AND
-      digest = ${job.digest};
+      attachmentSignature = ${job.attachmentSignature};
   `;
 
   db.prepare(query).run(params);
@@ -5405,8 +6197,10 @@ function getBackupCdnObjectMetadata(
   db: ReadableDB,
   mediaId: string
 ): BackupCdnMediaObjectType | undefined {
-  const [query, params] =
-    sql`SELECT * from backup_cdn_object_metadata WHERE mediaId = ${mediaId}`;
+  const [query, params] = sql`
+    SELECT * FROM backup_cdn_object_metadata
+    WHERE mediaId = ${mediaId}
+  `;
 
   return db.prepare(query).get(params);
 }
@@ -5758,26 +6552,35 @@ function addStickerPackReference(
     );
   }
 
-  db.prepare(
-    `
-    INSERT OR REPLACE INTO sticker_references (
-      messageId,
-      packId,
-      stickerId,
-      isUnresolved
-    ) values (
-      $messageId,
-      $packId,
-      $stickerId,
-      $isUnresolved
-    )
-    `
-  ).run({
-    messageId,
-    packId,
-    stickerId,
-    isUnresolved: isUnresolved ? 1 : 0,
-  });
+  db.transaction(() => {
+    const [select, selectParams] = sql`
+      SELECT EXISTS (
+        SELECT 1 FROM sticker_packs WHERE id IS ${packId}
+      )
+    `;
+    const exists =
+      db.prepare(select, { pluck: true }).get<number>(selectParams) === 1;
+    if (!exists) {
+      logger.warn('addStickerPackReference: did not find referenced pack');
+      return;
+    }
+
+    const [insert, insertParams] = sql`
+      INSERT OR REPLACE INTO sticker_references (
+        messageId,
+        packId,
+        stickerId,
+        isUnresolved
+      ) values (
+        ${messageId},
+        ${packId},
+        ${stickerId},
+        ${isUnresolved ? 1 : 0}
+      )
+    `;
+
+    db.prepare(insert).run(insertParams);
+  })();
 }
 function deleteStickerPackReference(
   db: WritableDB,
@@ -6850,6 +7653,224 @@ function countStoryReadsByConversation(
   );
 }
 
+type NotificationProfileForDatabase = Readonly<
+  {
+    emoji: string | null;
+    allowAllCalls: 0 | 1;
+    allowAllMentions: 0 | 1;
+    scheduleEnabled: 0 | 1;
+    allowedMembersJson: string | null;
+    scheduleStartTime: number | null;
+    scheduleEndTime: number | null;
+    scheduleDaysEnabledJson: string | null;
+    deletedAtTimestampMs: number | null;
+    storageID: string | null;
+    storageVersion: number | null;
+    storageNeedsSync: 0 | 1;
+  } & Omit<
+    NotificationProfileType,
+    | 'emoji'
+    | 'allowAllCalls'
+    | 'allowAllMentions'
+    | 'scheduleEnabled'
+    | 'allowedMembers'
+    | 'scheduleStartTime'
+    | 'scheduleEndTime'
+    | 'scheduleDaysEnabled'
+    | 'deletedAtTimestampMs'
+    | 'storageID'
+    | 'storageVersion'
+    | 'storageNeedsSync'
+  >
+>;
+
+function hydrateNotificationProfile(
+  profile: NotificationProfileForDatabase
+): NotificationProfileType {
+  return {
+    ...omit(profile, ['allowedMembersJson', 'scheduleDaysEnabledJson']),
+    emoji: profile.emoji || undefined,
+    allowAllCalls: Boolean(profile.allowAllCalls),
+    allowAllMentions: Boolean(profile.allowAllMentions),
+    scheduleEnabled: Boolean(profile.scheduleEnabled),
+    allowedMembers: profile.allowedMembersJson
+      ? new Set(JSON.parse(profile.allowedMembersJson))
+      : new Set(),
+    scheduleStartTime: profile.scheduleStartTime || undefined,
+    scheduleEndTime: profile.scheduleEndTime || undefined,
+    scheduleDaysEnabled: profile.scheduleDaysEnabledJson
+      ? JSON.parse(profile.scheduleDaysEnabledJson)
+      : undefined,
+    deletedAtTimestampMs: profile.deletedAtTimestampMs || undefined,
+    storageID: profile.storageID || undefined,
+    storageVersion: profile.storageVersion || undefined,
+    storageNeedsSync: Boolean(profile.storageNeedsSync),
+    storageUnknownFields: profile.storageUnknownFields || undefined,
+  };
+}
+function freezeNotificationProfile(
+  profile: NotificationProfileType
+): NotificationProfileForDatabase {
+  return {
+    ...omit(profile, ['allowedMembers', 'scheduleDaysEnabled']),
+    emoji: profile.emoji || null,
+    allowAllCalls: profile.allowAllCalls ? 1 : 0,
+    allowAllMentions: profile.allowAllMentions ? 1 : 0,
+    scheduleEnabled: profile.scheduleEnabled ? 1 : 0,
+    allowedMembersJson: profile.allowedMembers
+      ? JSON.stringify(Array.from(profile.allowedMembers))
+      : null,
+    scheduleStartTime: profile.scheduleStartTime || null,
+    scheduleEndTime: profile.scheduleEndTime || null,
+    scheduleDaysEnabledJson: profile.scheduleDaysEnabled
+      ? JSON.stringify(profile.scheduleDaysEnabled)
+      : null,
+    deletedAtTimestampMs: profile.deletedAtTimestampMs || null,
+    storageID: profile.storageID || null,
+    storageVersion: profile.storageVersion || null,
+    storageNeedsSync: profile.storageNeedsSync ? 1 : 0,
+    storageUnknownFields: profile.storageUnknownFields || null,
+  };
+}
+
+function getAllNotificationProfiles(
+  db: ReadableDB
+): Array<NotificationProfileType> {
+  const notificationProfiles = db
+    .prepare('SELECT * FROM notificationProfiles ORDER BY createdAtMs DESC;')
+    .all<NotificationProfileForDatabase>();
+
+  return notificationProfiles.map(hydrateNotificationProfile);
+}
+function getNotificationProfileById(
+  db: ReadableDB,
+  id: string
+): NotificationProfileType | undefined {
+  const [query, parameters] =
+    sql`SELECT * FROM notificationProfiles WHERE id = ${id}`;
+  const fromDatabase = db
+    .prepare(query)
+    .get<NotificationProfileForDatabase>(parameters);
+
+  if (fromDatabase) {
+    return hydrateNotificationProfile(fromDatabase);
+  }
+
+  return undefined;
+}
+function _deleteAllNotificationProfiles(db: WritableDB): void {
+  db.prepare('DELETE FROM notificationProfiles;').run();
+}
+function deleteNotificationProfileById(db: WritableDB, id: string): void {
+  const [query, parameters] =
+    sql`DELETE FROM notificationProfiles WHERE id = ${id}`;
+  db.prepare(query).run(parameters);
+}
+function markNotificationProfileDeleted(
+  db: WritableDB,
+  id: string
+): number | undefined {
+  const now = new Date().getTime();
+
+  const [query, parameters] = sql`
+      UPDATE notificationProfiles
+      SET deletedAtTimestampMs = ${now}
+      WHERE
+        id = ${id} AND
+        deletedAtTimestampMs IS NULL
+      RETURNING deletedAtTimestampMs`;
+
+  const record = db
+    .prepare(query)
+    .get<{ deletedAtTimestampMs: number }>(parameters);
+
+  return record?.deletedAtTimestampMs;
+}
+function createNotificationProfile(
+  db: WritableDB,
+  profile: NotificationProfileType
+): void {
+  strictAssert(profile.name, 'Notification profile does not have a valid name');
+
+  const forDatabase = freezeNotificationProfile(profile);
+
+  db.prepare(
+    `
+      INSERT INTO notificationProfiles(
+        id,
+        name,
+        emoji,
+        color,
+        createdAtMs,
+        allowAllCalls,
+        allowAllMentions,
+        allowedMembersJson,
+        scheduleEnabled,
+        scheduleStartTime,
+        scheduleEndTime,
+        scheduleDaysEnabledJson,
+        deletedAtTimestampMs,
+        storageID,
+        storageVersion,
+        storageUnknownFields,
+        storageNeedsSync
+      ) VALUES (
+        $id,
+        $name,
+        $emoji,
+        $color,
+        $createdAtMs,
+        $allowAllCalls,
+        $allowAllMentions,
+        $allowedMembersJson,
+        $scheduleEnabled,
+        $scheduleStartTime,
+        $scheduleEndTime,
+        $scheduleDaysEnabledJson,
+        $deletedAtTimestampMs,
+        $storageID,
+        $storageVersion,
+        $storageUnknownFields,
+        $storageNeedsSync
+      );
+      `
+  ).run(forDatabase);
+}
+function updateNotificationProfile(
+  db: WritableDB,
+  profile: NotificationProfileType
+): void {
+  strictAssert(profile.name, 'Notification profile does not have a valid name');
+
+  db.transaction(() => {
+    const forDatabase = freezeNotificationProfile(profile);
+
+    db.prepare(
+      `
+      UPDATE notificationProfiles SET
+        name = $name,
+        emoji = $emoji,
+        color = $color,
+        createdAtMs = $createdAtMs,
+        allowAllCalls = $allowAllCalls,
+        allowAllMentions = $allowAllMentions,
+        allowedMembersJson = $allowedMembersJson,
+        scheduleEnabled = $scheduleEnabled,
+        scheduleStartTime = $scheduleStartTime,
+        scheduleEndTime = $scheduleEndTime,
+        scheduleDaysEnabledJson = $scheduleDaysEnabledJson,
+        deletedAtTimestampMs = $deletedAtTimestampMs,
+        storageID = $storageID,
+        storageVersion = $storageVersion,
+        storageUnknownFields = $storageUnknownFields,
+        storageNeedsSync = $storageNeedsSync
+      WHERE
+        id = $id;
+      `
+    ).run(forDatabase);
+  })();
+}
+
 // All data in database
 function removeAll(db: WritableDB): void {
   db.transaction(() => {
@@ -6859,13 +7880,16 @@ function removeAll(db: WritableDB): void {
 
       DELETE FROM attachment_downloads;
       DELETE FROM attachment_backup_jobs;
+      DELETE FROM attachment_downloads_backup_stats;
       DELETE FROM backup_cdn_object_metadata;
       DELETE FROM badgeImageFiles;
       DELETE FROM badges;
       DELETE FROM callLinks;
       DELETE FROM callsHistory;
+      DELETE FROM chatFolders;
       DELETE FROM conversations;
       DELETE FROM defunctCallLinks;
+      DELETE FROM donationReceipts;
       DELETE FROM emojis;
       DELETE FROM groupCallRingCancellations;
       DELETE FROM groupSendCombinedEndorsement;
@@ -6874,10 +7898,13 @@ function removeAll(db: WritableDB): void {
       DELETE FROM items;
       DELETE FROM jobs;
       DELETE FROM kyberPreKeys;
+      DELETE FROM message_attachments;
       DELETE FROM messages_fts;
       DELETE FROM messages;
+      DELETE FROM notificationProfiles;
       DELETE FROM preKeys;
       DELETE FROM reactions;
+      DELETE FROM recentGifs;
       DELETE FROM senderKeys;
       DELETE FROM sendLogMessageIds;
       DELETE FROM sendLogPayloads;
@@ -6896,6 +7923,7 @@ function removeAll(db: WritableDB): void {
 
       INSERT INTO messages_fts(messages_fts) VALUES('optimize');
 
+
       --- Re-create the messages delete trigger
       --- See migration 45
       CREATE TRIGGER messages_on_delete AFTER DELETE ON messages BEGIN
@@ -6911,6 +7939,8 @@ function removeAll(db: WritableDB): void {
         DELETE FROM storyReads WHERE storyId = old.storyId;
       END;
     `);
+
+    resetBackupAttachmentDownloadStats(db);
   })();
 }
 
@@ -6920,6 +7950,7 @@ function removeAllConfiguration(db: WritableDB): void {
     db.exec(
       `
       DELETE FROM attachment_backup_jobs;
+      DELETE FROM attachment_downloads;
       DELETE FROM backup_cdn_object_metadata;
       DELETE FROM groupSendCombinedEndorsement;
       DELETE FROM groupSendMemberEndorsement;
@@ -6952,19 +7983,25 @@ function removeAllConfiguration(db: WritableDB): void {
 
     db.exec(
       `
+        UPDATE storyDistributions SET senderKeyInfoJson = NULL;
+      `
+    );
+
+    /** Update conversations */
+    const [updateConversationsQuery, updateConversationsParams] = sql`
       UPDATE conversations
       SET
+        expireTimerVersion = ${INITIAL_EXPIRE_TIMER_VERSION},
         json = json_remove(
           json,
           '$.senderKeyInfo',
           '$.storageID',
           '$.needsStorageServiceSync',
-          '$.storageUnknownFields'
+          '$.storageUnknownFields',
+          '$.expireTimerVersion'
         );
-
-      UPDATE storyDistributions SET senderKeyInfoJson = NULL;
-      `
-    );
+    `;
+    db.prepare(updateConversationsQuery).run(updateConversationsParams);
   })();
 }
 
@@ -7005,6 +8042,14 @@ function eraseStorageServiceState(db: WritableDB): void {
       storageVersion = null,
       storageUnknownFields = null,
       storageNeedsSync = 0;
+
+    -- Chat Folders
+    UPDATE chatFolders
+    SET
+      storageID = null,
+      storageVersion = null,
+      storageUnknownFields = null,
+      storageNeedsSync = 0;
   `);
 }
 
@@ -7015,9 +8060,10 @@ function getMessagesNeedingUpgrade(
   limit: number,
   { maxVersion }: { maxVersion: number }
 ): Array<MessageType> {
-  const rows: Array<MessageTypeUnhydrated> = db
-    .prepare(
-      `
+  return db.transaction(() => {
+    const rows: Array<MessageTypeUnhydrated> = db
+      .prepare(
+        `
       SELECT ${MESSAGE_COLUMNS.join(', ')}
       FROM messages
       WHERE
@@ -7028,14 +8074,15 @@ function getMessagesNeedingUpgrade(
         ) < $maxAttempts
       LIMIT $limit;
       `
-    )
-    .all({
-      maxVersion,
-      maxAttempts: MAX_MESSAGE_MIGRATION_ATTEMPTS,
-      limit,
-    });
+      )
+      .all({
+        maxVersion,
+        maxAttempts: MAX_MESSAGE_MIGRATION_ATTEMPTS,
+        limit,
+      });
 
-  return rows.map(row => hydrateMessage(row));
+    return hydrateMessages(db, rows);
+  })();
 }
 
 // Exported for tests
@@ -7341,7 +8388,7 @@ function pageMessages(
           { persistent }
         );
         const rows: Array<MessageTypeUnhydrated> = query.all(batch);
-        return rows.map(row => hydrateMessage(row));
+        return hydrateMessages(db, rows);
       }
     );
 
@@ -7606,10 +8653,10 @@ function wasGroupCallRingPreviouslyCanceled(
           bigint: true,
         }
       )
-      .get<number>({
+      .get<bigint>({
         ringId,
         ringsOlderThanThisAreIgnored: Date.now() - MAX_GROUP_CALL_RING_AGE,
-      }) === 1
+      }) === 1n
   );
 }
 
@@ -7760,10 +8807,10 @@ function getUnreadEditedMessagesAndMarkRead(
   db: WritableDB,
   {
     conversationId,
-    newestUnreadAt,
+    readMessageReceivedAt,
   }: {
     conversationId: string;
-    newestUnreadAt: number;
+    readMessageReceivedAt: number;
   }
 ): GetUnreadByConversationAndMarkReadResultType {
   return db.transaction(() => {
@@ -7782,7 +8829,7 @@ function getUnreadEditedMessagesAndMarkRead(
       WHERE
         edited_messages.readStatus = ${ReadStatus.Unread} AND
         edited_messages.conversationId = ${conversationId} AND
-        received_at <= ${newestUnreadAt}
+        received_at <= ${readMessageReceivedAt}
       ORDER BY messages.received_at DESC, messages.sent_at DESC;
     `;
 
@@ -7806,13 +8853,12 @@ function getUnreadEditedMessagesAndMarkRead(
       db.prepare(updateStatusQuery).run(updateStatusParams);
     }
 
-    return rows.map(row => {
-      const json = hydrateMessage(row);
+    return hydrateMessages(db, rows).map(msg => {
       return {
-        originalReadStatus: row.readStatus ?? undefined,
+        originalReadStatus: msg.readStatus ?? undefined,
         readStatus: ReadStatus.Read,
         seenStatus: SeenStatus.Seen,
-        ...pick(json, [
+        ...pick(msg, [
           'conversationId',
           'expirationStartTimestamp',
           'id',
@@ -7825,6 +8871,37 @@ function getUnreadEditedMessagesAndMarkRead(
         ]),
       } satisfies MessageType & { originalReadStatus: ReadStatus | undefined };
     });
+  })();
+}
+
+function getMessageCountBySchemaVersion(
+  db: ReadableDB
+): MessageCountBySchemaVersionType {
+  const [query, params] = sql`
+    SELECT schemaVersion, COUNT(1) as count from messages
+    GROUP BY schemaVersion;
+  `;
+  const rows = db
+    .prepare(query)
+    .all<{ schemaVersion: number; count: number }>(params);
+
+  return rows.sort((a, b) => a.schemaVersion - b.schemaVersion);
+}
+
+function getMessageSampleForSchemaVersion(
+  db: ReadableDB,
+  version: number
+): Array<MessageAttributesType> {
+  return db.transaction(() => {
+    const [query, params] = sql`
+      SELECT * from messages
+      WHERE schemaVersion = ${version}
+      ORDER BY RANDOM()
+      LIMIT 2;
+    `;
+    const rows = db.prepare(query).all<MessageTypeUnhydrated>(params);
+
+    return hydrateMessages(db, rows);
   })();
 }
 
@@ -7920,4 +8997,18 @@ function ensureMessageInsertTriggersAreEnabled(db: WritableDB): void {
       enableMessageInsertTriggersAndBackfill(db);
     }
   })();
+}
+
+function __dangerouslyRunAbitraryReadOnlySqlQuery(
+  db: ReadableDB,
+  readOnlySqlQuery: string
+): ReadonlyArray<RowType<object>> {
+  let results: ReadonlyArray<RowType<object>>;
+  try {
+    db.pragma('query_only = on');
+    results = db.prepare(readOnlySqlQuery).all();
+  } finally {
+    db.pragma('query_only = off');
+  }
+  return results;
 }

@@ -3,9 +3,9 @@
 
 import semver from 'semver';
 
-import type { OSType } from '../util/os/shared';
-import { SystemTraySetting } from './SystemTraySetting';
-import { isNotUpdatable, isProduction } from '../util/version';
+import type { OSType } from '../util/os/shared.js';
+import { SystemTraySetting } from './SystemTraySetting.js';
+import { isNotUpdatable, isProduction } from '../util/version.js';
 
 const MIN_WINDOWS_VERSION = '8.0.0';
 
@@ -32,6 +32,12 @@ export const isDrawAttentionSupported = (OS: OSType): boolean => !OS.isMacOS();
  */
 export const isSystemTraySupported = (OS: OSType): boolean =>
   OS.isWindows() || OS.isLinux();
+
+export const isContentProtectionSupported = (OS: OSType): boolean =>
+  OS.isWindows();
+
+export const isContentProtectionNeeded = (OS: OSType): boolean =>
+  OS.isWindows();
 
 export const getDefaultSystemTraySetting = (
   OS: OSType,
@@ -70,3 +76,9 @@ export const shouldHideExpiringMessageBody = (
   OS: OSType,
   release: string
 ): boolean => OS.isWindows() || (OS.isMacOS() && semver.lt(release, '21.1.0'));
+
+// Windows 11 and forward
+export const isContentProtectionEnabledByDefault = (
+  OS: OSType,
+  release: string
+): boolean => OS.isWindows() && semver.gte(release, '10.0.22000');

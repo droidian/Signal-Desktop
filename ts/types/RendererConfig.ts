@@ -3,10 +3,10 @@
 
 import { z } from 'zod';
 
-import { Environment } from '../environment';
-import { themeSettingSchema } from './StorageUIKeys';
-import { HourCyclePreferenceSchema } from './I18N';
-import { DNSFallbackSchema } from './DNSFallback';
+import { Environment } from '../environment.js';
+import { themeSettingSchema } from './StorageUIKeys.js';
+import { HourCyclePreferenceSchema } from './I18N.js';
+import { DNSFallbackSchema } from './DNSFallback.js';
 
 const environmentSchema = z.nativeEnum(Environment);
 
@@ -43,6 +43,7 @@ export const rendererConfigSchema = z.object({
   ciForceUnprocessed: z.boolean(),
   devTools: z.boolean(),
   disableIPv6: z.boolean(),
+  disableScreenSecurity: z.boolean(),
   dnsFallback: DNSFallbackSchema,
   environment: environmentSchema,
   isMockTestEnvironment: z.boolean(),
@@ -63,12 +64,13 @@ export const rendererConfigSchema = z.object({
   reducedMotionSetting: z.boolean(),
   registrationChallengeUrl: configRequiredStringSchema,
   serverPublicParams: configRequiredStringSchema,
-  serverTrustRoot: configRequiredStringSchema,
+  serverTrustRoots: z.array(configRequiredStringSchema),
   genericServerPublicParams: configRequiredStringSchema,
   backupServerPublicParams: configRequiredStringSchema,
   serverUrl: configRequiredStringSchema,
   sfuUrl: configRequiredStringSchema,
   storageUrl: configRequiredStringSchema,
+  stripePublishableKey: configRequiredStringSchema,
   theme: themeSettingSchema,
   updatesUrl: configRequiredStringSchema,
   resourcesUrl: configRequiredStringSchema,

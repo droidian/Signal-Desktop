@@ -4,11 +4,11 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './MessageBody';
-import { MessageBody } from './MessageBody';
-import { BodyRange } from '../../types/BodyRange';
-import { generateAci } from '../../types/ServiceId';
-import { RenderLocation } from './MessageTextRenderer';
+import type { Props } from './MessageBody.js';
+import { MessageBody } from './MessageBody.js';
+import { BodyRange } from '../../types/BodyRange.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { RenderLocation } from './MessageTextRenderer.js';
 
 const SERVICE_ID_1 = generateAci();
 const SERVICE_ID_2 = generateAci();
@@ -40,6 +40,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   showConversation:
     overrideProps.showConversation || action('showConversation'),
   text: overrideProps.text || '',
+  originalText: overrideProps.originalText || overrideProps.text || '',
   textAttachment: overrideProps.textAttachment || {
     pending: false,
   },
@@ -521,6 +522,18 @@ export function ZalgoText(): JSX.Element {
       },
     ],
     text,
+  });
+
+  return <MessageBody {...props} />;
+}
+
+export function LinkOverReadMoreBoundary(): JSX.Element {
+  const text = 'https://hello.me';
+  const originalText = 'https://hello.me123';
+
+  const props = createProps({
+    text,
+    originalText,
   });
 
   return <MessageBody {...props} />;

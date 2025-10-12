@@ -7,17 +7,17 @@ import type { PrimaryDevice } from '@signalapp/mock-server';
 import { usernames } from '@signalapp/libsignal-client';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { MY_STORY_ID } from '../../types/Stories';
-import { Bootstrap } from '../bootstrap';
-import type { App } from '../bootstrap';
+import * as durations from '../../util/durations/index.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { Bootstrap } from '../bootstrap.js';
+import type { App } from '../bootstrap.js';
 import {
   bufferToUuid,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers';
-import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes';
+} from '../helpers.js';
+import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.js';
 
 export const debug = createDebug('mock:test:username');
 
@@ -52,7 +52,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     state = state.addContact(usernameContact, {
       username: USERNAME,
-      serviceE164: undefined,
+      e164: undefined,
     });
 
     // Put contact into left pane
@@ -67,7 +67,6 @@ describe('pnp/username', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
-          recipientServiceIds: [],
         },
       },
     });
@@ -146,10 +145,16 @@ describe('pnp/username', function (this: Mocha.Suite) {
           'only one record must be removed'
         );
 
-        assert.strictEqual(added[0].contact?.aci, usernameContact.device.aci);
+        assert.deepEqual(
+          added[0].contact?.aciBinary,
+          usernameContact.device.aciRawUuid
+        );
         assert.strictEqual(added[0].contact?.username, '');
 
-        assert.strictEqual(removed[0].contact?.aci, usernameContact.device.aci);
+        assert.deepEqual(
+          removed[0].contact?.aciBinary,
+          usernameContact.device.aciRawUuid
+        );
         assert.strictEqual(removed[0].contact?.username, USERNAME);
       }
 
@@ -185,8 +190,8 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     const window = await app.getWindow();
 
-    debug('opening avatar context menu');
-    await window.getByRole('button', { name: 'Profile' }).click();
+    debug('opening settings tab context menu');
+    await window.locator('[data-key="Settings"]').click();
 
     debug('opening username editor');
     const profileEditor = window.locator('.ProfileEditor');
@@ -198,7 +203,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('waiting for generated discriminator');
     const discriminator = profileEditor.locator(
-      '.EditUsernameModalBody__discriminator__input[value]'
+      '.UsernameEditor__discriminator__input[value]'
     );
     await discriminator.waitFor();
 

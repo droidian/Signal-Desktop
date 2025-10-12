@@ -1,29 +1,22 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
+import type { ConversationAttributesType } from '../model-types.d.ts';
 import type {
   SendIdentifierData,
   SendMetadataType,
   SendOptionsType,
-} from '../textsecure/SendMessage';
-import * as Bytes from '../Bytes';
-import { getRandomBytes, getZeroes } from '../Crypto';
-import { getConversationMembers } from './getConversationMembers';
-import { isDirectConversation, isMe } from './whatTypeOfConversation';
-import { senderCertificateService } from '../services/senderCertificate';
-import { shouldSharePhoneNumberWith } from './phoneNumberSharingMode';
-import type { SerializedCertificateType } from '../textsecure/OutgoingMessage';
-import { SenderCertificateMode } from '../textsecure/OutgoingMessage';
-import { isNotNil } from './isNotNil';
-import { maybeCreateGroupSendEndorsementState } from './groupSendEndorsements';
-
-const SEALED_SENDER = {
-  UNKNOWN: 0,
-  ENABLED: 1,
-  DISABLED: 2,
-  UNRESTRICTED: 3,
-};
+} from '../textsecure/SendMessage.js';
+import { getConversationMembers } from './getConversationMembers.js';
+import { isDirectConversation, isMe } from './whatTypeOfConversation.js';
+import { senderCertificateService } from '../services/senderCertificate.js';
+import { shouldSharePhoneNumberWith } from './phoneNumberSharingMode.js';
+import type { SerializedCertificateType } from '../textsecure/OutgoingMessage.js';
+import { SenderCertificateMode } from '../textsecure/OutgoingMessage.js';
+import { ZERO_ACCESS_KEY, SEALED_SENDER } from '../types/SealedSender.js';
+import { isNotNil } from './isNotNil.js';
+import { maybeCreateGroupSendEndorsementState } from './groupSendEndorsements.js';
+import { missingCaseError } from './missingCaseError.js';
 
 export async function getSendOptionsForRecipients(
   recipients: ReadonlyArray<string>,
@@ -94,61 +87,69 @@ export async function getSendOptions(
     };
   }
 
-  const { accessKey, sealedSender } = conversationAttrs;
+  const { accessKey } = conversationAttrs;
   const { e164, serviceId } = conversationAttrs;
+
+  let sealedSender = conversationAttrs.sealedSender as
+    | SEALED_SENDER
+    | undefined;
 
   const senderCertificate =
     await getSenderCertificateForDirectConversation(conversationAttrs);
 
   let identifierData: SendIdentifierData | null = null;
-  // If we've never fetched user's profile, we default to what we have
-  if (sealedSender === SEALED_SENDER.UNKNOWN || story) {
-    identifierData = {
-      accessKey:
-        accessKey ||
-        (story
-          ? Bytes.toBase64(getZeroes(16))
-          : Bytes.toBase64(getRandomBytes(16))),
-      senderCertificate,
-      groupSendToken: null,
-    };
+  if (story) {
+    // Always send story using zero access key
+    sealedSender = SEALED_SENDER.UNRESTRICTED;
   }
 
-  if (sealedSender === SEALED_SENDER.DISABLED) {
-    if (serviceId != null && groupId != null) {
-      const { state: groupSendEndorsementState, didRefreshGroupState } =
-        await maybeCreateGroupSendEndorsementState(
-          groupId,
-          alreadyRefreshedGroupState
-        );
+  switch (sealedSender) {
+    case SEALED_SENDER.DISABLED:
+      // Try to get GSE token
+      if (serviceId != null && groupId != null) {
+        const { state: groupSendEndorsementState, didRefreshGroupState } =
+          await maybeCreateGroupSendEndorsementState(
+            groupId,
+            alreadyRefreshedGroupState
+          );
 
-      if (
-        groupSendEndorsementState != null &&
-        groupSendEndorsementState.hasMember(serviceId)
-      ) {
-        const token = groupSendEndorsementState.buildToken(
-          new Set([serviceId])
-        );
-        if (token != null) {
-          identifierData = {
-            accessKey: null,
-            senderCertificate,
-            groupSendToken: token,
-          };
+        if (
+          groupSendEndorsementState != null &&
+          groupSendEndorsementState.hasMember(serviceId)
+        ) {
+          const token = groupSendEndorsementState.buildToken(
+            new Set([serviceId])
+          );
+          if (token != null) {
+            identifierData = {
+              accessKey: null,
+              senderCertificate,
+              groupSendToken: token,
+            };
+          }
+        } else if (didRefreshGroupState && !alreadyRefreshedGroupState) {
+          return getSendOptions(conversationAttrs, options, true);
         }
-      } else if (didRefreshGroupState && !alreadyRefreshedGroupState) {
-        return getSendOptions(conversationAttrs, options, true);
       }
-    }
-  } else {
-    identifierData = {
-      accessKey:
-        accessKey && sealedSender === SEALED_SENDER.ENABLED
-          ? accessKey
-          : Bytes.toBase64(getRandomBytes(16)),
-      senderCertificate,
-      groupSendToken: null,
-    };
+      break;
+    case SEALED_SENDER.UNRESTRICTED:
+      identifierData = {
+        accessKey: ZERO_ACCESS_KEY,
+        senderCertificate,
+        groupSendToken: null,
+      };
+      break;
+    case SEALED_SENDER.ENABLED:
+    case SEALED_SENDER.UNKNOWN:
+    case undefined:
+      identifierData = {
+        accessKey: accessKey || ZERO_ACCESS_KEY,
+        senderCertificate,
+        groupSendToken: null,
+      };
+      break;
+    default:
+      throw missingCaseError(sealedSender);
   }
 
   let sendMetadata: SendMetadataType = {};

@@ -1,11 +1,14 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { join } from 'path';
-import { readFile } from 'fs/promises';
-import { DNSFallbackSchema } from '../ts/types/DNSFallback';
-import type { DNSFallbackType } from '../ts/types/DNSFallback';
-import { parseUnknown } from '../ts/util/schemas';
+import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { DNSFallbackSchema } from '../ts/types/DNSFallback.js';
+import type { DNSFallbackType } from '../ts/types/DNSFallback.js';
+import { parseUnknown } from '../ts/util/schemas.js';
+import { createLogger } from '../ts/logging/log.js';
+
+const log = createLogger('dns-fallback');
 
 let cached: DNSFallbackType | undefined;
 
@@ -19,7 +22,7 @@ export async function getDNSFallback(): Promise<DNSFallbackType> {
   try {
     str = await readFile(configPath, 'utf8');
   } catch (error) {
-    console.error(
+    log.error(
       'Warning: build/dns-fallback.json not build, run `npm run build:dns-fallback`'
     );
     cached = [];

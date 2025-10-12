@@ -1,16 +1,20 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import Fuse from 'fuse.js';
-import { sortBy } from 'lodash';
+import lodash from 'lodash';
 import { useMemo } from 'react';
-import type { EmojiParentKey } from './data/emojis';
+import type { EmojiParentKey } from './data/emojis.js';
 import {
   getEmojiParentByKey,
   getEmojiParentKeyByValue,
   isEmojiParentValue,
-} from './data/emojis';
-import type { LocaleEmojiListType } from '../../types/emoji';
-import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider';
+  isEmojiParentValueDeprecated,
+  normalizeShortNameCompletionQuery,
+} from './data/emojis.js';
+import type { LocaleEmojiListType } from '../../types/emoji.js';
+import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider.js';
+
+const { sortBy } = lodash;
 
 export type FunEmojiSearchIndexEntry = Readonly<{
   key: EmojiParentKey;
@@ -23,15 +27,22 @@ export type FunEmojiSearchIndexEntry = Readonly<{
 
 export type FunEmojiSearchIndex = ReadonlyArray<FunEmojiSearchIndexEntry>;
 
+export type FunEmojiSearchResult = Readonly<{
+  parentKey: EmojiParentKey;
+}>;
+
 export type FunEmojiSearch = (
   query: string,
   limit?: number
-) => ReadonlyArray<EmojiParentKey>;
+) => ReadonlyArray<FunEmojiSearchResult>;
 
 export function createFunEmojiSearchIndex(
-  localeEmojiList: LocaleEmojiListType
+  localeEmojiList: LocaleEmojiListType,
+  defaultSearchIndex: ReadonlyArray<FunEmojiSearchIndexEntry> = []
 ): FunEmojiSearchIndex {
   const results: Array<FunEmojiSearchIndexEntry> = [];
+
+  const localizedKeys = new Set<string>();
 
   for (const localeEmoji of localeEmojiList) {
     if (!isEmojiParentValue(localeEmoji.emoji)) {
@@ -39,16 +50,30 @@ export function createFunEmojiSearchIndex(
       continue;
     }
 
+    if (isEmojiParentValueDeprecated(localeEmoji.emoji)) {
+      // Skipping deprecated emoji
+      continue;
+    }
+
     const parentKey = getEmojiParentKeyByValue(localeEmoji.emoji);
     const emoji = getEmojiParentByKey(parentKey);
+    localizedKeys.add(parentKey);
     results.push({
       key: parentKey,
       rank: localeEmoji.rank,
-      shortName: localeEmoji.shortName,
-      shortNames: localeEmoji.tags,
+      shortName: normalizeShortNameCompletionQuery(localeEmoji.shortName),
+      shortNames: localeEmoji.tags.map(tag => {
+        return normalizeShortNameCompletionQuery(tag);
+      }),
       emoticon: emoji.emoticonDefault,
       emoticons: emoji.emoticons,
     });
+  }
+
+  for (const defaultEntry of defaultSearchIndex) {
+    if (!localizedKeys.has(defaultEntry.key)) {
+      results.push(defaultEntry);
+    }
   }
 
   return results;
@@ -67,6 +92,7 @@ const FuseFuzzyOptions: Fuse.IFuseOptions<FunEmojiSearchIndexEntry> = {
   minMatchCharLength: 1,
   keys: FuseKeys,
   includeScore: true,
+  includeMatches: true,
 };
 
 const FuseExactOptions: Fuse.IFuseOptions<FunEmojiSearchIndexEntry> = {
@@ -75,49 +101,48 @@ const FuseExactOptions: Fuse.IFuseOptions<FunEmojiSearchIndexEntry> = {
   minMatchCharLength: 1,
   keys: FuseKeys,
   includeScore: true,
+  includeMatches: true,
 };
 
-function createFunEmojiSearch(
+/** @internal exported for tests */
+export function _createFunEmojiSearch(
   emojiSearchIndex: FunEmojiSearchIndex
 ): FunEmojiSearch {
   const fuseIndex = Fuse.createIndex(FuseKeys, emojiSearchIndex);
   const fuseFuzzy = new Fuse(emojiSearchIndex, FuseFuzzyOptions, fuseIndex);
   const fuseExact = new Fuse(emojiSearchIndex, FuseExactOptions, fuseIndex);
 
-  return function emojiSearch(query, limit = 200) {
+  return function emojiSearch(rawQuery, limit = 200) {
+    const query = normalizeShortNameCompletionQuery(rawQuery);
+
     // Prefer exact matches at 2 characters
     const fuse = query.length < 2 ? fuseExact : fuseFuzzy;
 
-    const rawResults = fuse.search(query.substring(0, 32), {
-      limit: limit * 2,
-    });
+    const rawResults = fuse.search(query.substring(0, 32));
 
-    const rankedResults = rawResults.map(result => {
+    // Note: lodash's sortBy() only calls each iteratee once
+    const sortedResults = sortBy(rawResults, result => {
       const rank = result.item.rank ?? 1e9;
 
+      const localizedQueryMatch =
+        result.item.shortNames.at(0) ?? result.item.shortName;
+
       // Exact prefix matches in [0,1] range
-      if (result.item.shortName.startsWith(query)) {
-        return {
-          score: result.item.shortName.length / query.length,
-          item: result.item,
-        };
+      if (localizedQueryMatch.startsWith(query)) {
+        // Note: localizedQueryMatch will always be <= in length to the query
+        const matchRatio = query.length / localizedQueryMatch.length; // 1-0
+        return 1 - matchRatio;
       }
 
+      const queryScore = result.score ?? 0; // 0-1
+      const rankScore = rank / emojiSearchIndex.length; // 0-1
+
       // Other matches in [1,], ordered by score and rank
-      return {
-        score: 1 + (result.score ?? 0) + rank / emojiSearchIndex.length,
-        item: result.item,
-      };
+      return 1 + queryScore + rankScore;
     });
 
-    const sortedResults = sortBy(rankedResults, result => {
-      return result.score;
-    });
-
-    const truncatedResults = sortedResults.slice(0, limit);
-
-    return truncatedResults.map(result => {
-      return result.item.key;
+    return sortedResults.slice(0, limit).map(result => {
+      return { parentKey: result.item.key };
     });
   };
 }
@@ -125,7 +150,7 @@ function createFunEmojiSearch(
 export function useFunEmojiSearch(): FunEmojiSearch {
   const { emojiSearchIndex } = useFunEmojiLocalization();
   const emojiSearch = useMemo(() => {
-    return createFunEmojiSearch(emojiSearchIndex);
+    return _createFunEmojiSearch(emojiSearchIndex);
   }, [emojiSearchIndex]);
   return emojiSearch;
 }

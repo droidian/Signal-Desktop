@@ -8,35 +8,51 @@ import {
   BackupAuthCredentialResponse,
   type BackupLevel,
   GenericServerPublicParams,
-} from '@signalapp/libsignal-client/zkgroup';
-import { type BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys';
+} from '@signalapp/libsignal-client/zkgroup.js';
+import { type BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys.js';
+import lodashFp from 'lodash/fp.js';
 
-import * as log from '../../logging/log';
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { isMoreRecentThan, toDayMillis } from '../../util/timestamp';
-import { DAY, DurationInSeconds, HOUR } from '../../util/durations';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../../util/BackOff';
-import { missingCaseError } from '../../util/missingCaseError';
+import * as Bytes from '../../Bytes.js';
+import { createLogger } from '../../logging/log.js';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { isMoreRecentThan, toDayMillis } from '../../util/timestamp.js';
+import {
+  DAY,
+  DurationInSeconds,
+  HOUR,
+  MINUTE,
+} from '../../util/durations/index.js';
+import { BackOff, FIBONACCI_TIMEOUTS } from '../../util/BackOff.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
 import {
   type BackupCdnReadCredentialType,
   type BackupCredentialWrapperType,
   type BackupPresentationHeadersType,
   type BackupSignedPresentationType,
   BackupCredentialType,
-} from '../../types/backups';
-import { toLogFormat } from '../../types/errors';
-import { HTTPError } from '../../textsecure/Errors';
+} from '../../types/backups.js';
+import { toLogFormat } from '../../types/errors.js';
+import { HTTPError } from '../../textsecure/Errors.js';
 import type {
   GetBackupCredentialsResponseType,
   GetBackupCDNCredentialsResponseType,
-} from '../../textsecure/WebAPI';
+} from '../../textsecure/WebAPI.js';
 import {
   getBackupKey,
   getBackupMediaRootKey,
   getBackupSignatureKey,
   getBackupMediaSignatureKey,
-} from './crypto';
+} from './crypto.js';
+import { isTestOrMockEnvironment } from '../../environment.js';
+import {
+  areRemoteBackupsTurnedOn,
+  canAttemptRemoteBackupDownload,
+} from '../../util/isBackupEnabled.js';
+
+const { throttle } = lodashFp;
+
+const log = createLogger('Backup.Credentials');
 
 const FETCH_INTERVAL = 3 * DAY;
 
@@ -46,9 +62,21 @@ const BACKUP_CDN_READ_CREDENTIALS_VALID_DURATION = 12 * HOUR;
 export class BackupCredentials {
   #activeFetch: Promise<ReadonlyArray<BackupCredentialWrapperType>> | undefined;
 
-  #cachedCdnReadCredentials: Record<number, BackupCdnReadCredentialType> = {};
+  #cachedCdnReadCredentials: Record<
+    BackupCredentialType,
+    Record<number, BackupCdnReadCredentialType>
+  > = {
+    [BackupCredentialType.Media]: {},
+    [BackupCredentialType.Messages]: {},
+  };
 
   readonly #fetchBackoff = new BackOff(FIBONACCI_TIMEOUTS);
+
+  // Throttle credential clearing to avoid loops
+  public readonly onCdnCredentialError = throttle(5 * MINUTE, () => {
+    log.warn('onCdnCredentialError: clearing cache');
+    this.#clearCdnReadCredentials();
+  });
 
   public start(): void {
     this.#scheduleFetch();
@@ -79,7 +107,7 @@ export class BackupCredentials {
     });
 
     if (result === undefined) {
-      log.info(`BackupCredentials: cache miss for ${now}`);
+      log.info(`cache miss for ${now}`);
       credentials = await this.#fetch();
       result = credentials.find(({ type, redemptionTimeMs }) => {
         return type === credentialType && redemptionTimeMs === now;
@@ -90,20 +118,18 @@ export class BackupCredentials {
       );
     }
 
-    const cred = new BackupAuthCredential(
-      Buffer.from(result.credential, 'base64')
-    );
+    const cred = new BackupAuthCredential(Bytes.fromBase64(result.credential));
 
     const serverPublicParams = new GenericServerPublicParams(
-      Buffer.from(window.getBackupServerPublicParams(), 'base64')
+      Bytes.fromBase64(window.getBackupServerPublicParams())
     );
 
     const presentation = cred.present(serverPublicParams).serialize();
     const signature = signatureKey.sign(presentation);
 
     const headers = {
-      'X-Signal-ZK-Auth': presentation.toString('base64'),
-      'X-Signal-ZK-Auth-Signature': signature.toString('base64'),
+      'X-Signal-ZK-Auth': Bytes.toBase64(presentation),
+      'X-Signal-ZK-Auth-Signature': Bytes.toBase64(signature),
     };
 
     const info = { headers, level: result.level };
@@ -111,7 +137,7 @@ export class BackupCredentials {
       return info;
     }
 
-    log.warn(`BackupCredentials: uploading signature key (${storageKey})`);
+    log.warn(`uploading signature key (${storageKey})`);
 
     const { server } = window.textsecure;
     strictAssert(server, 'server not available');
@@ -134,7 +160,7 @@ export class BackupCredentials {
   }
 
   public async getCDNReadCredentials(
-    cdn: number,
+    cdnNumber: number,
     credentialType: BackupCredentialType
   ): Promise<GetBackupCDNCredentialsResponseType> {
     const { server } = window.textsecure;
@@ -142,16 +168,19 @@ export class BackupCredentials {
 
     // Backup CDN read credentials are short-lived; we'll just cache them in memory so
     // that they get invalidated for any reason, we'll fetch new ones on app restart
-    const cachedCredentialsForThisCdn = this.#cachedCdnReadCredentials[cdn];
+    const cachedCredentialsForThisCredentialType =
+      this.#cachedCdnReadCredentials[credentialType];
+
+    const cachedCredentials = cachedCredentialsForThisCredentialType[cdnNumber];
 
     if (
-      cachedCredentialsForThisCdn &&
+      cachedCredentials &&
       isMoreRecentThan(
-        cachedCredentialsForThisCdn.retrievedAtMs,
+        cachedCredentials.retrievedAtMs,
         BACKUP_CDN_READ_CREDENTIALS_VALID_DURATION
       )
     ) {
-      return cachedCredentialsForThisCdn.credentials;
+      return cachedCredentials.credentials;
     }
 
     const headers = await this.getHeadersForToday(credentialType);
@@ -159,12 +188,12 @@ export class BackupCredentials {
     const retrievedAtMs = Date.now();
     const newCredentials = await server.getBackupCDNCredentials({
       headers,
-      cdn,
+      cdnNumber,
     });
 
-    this.#cachedCdnReadCredentials[cdn] = {
+    cachedCredentialsForThisCredentialType[cdnNumber] = {
       credentials: newCredentials,
-      cdnNumber: cdn,
+      cdnNumber,
       retrievedAtMs,
     };
 
@@ -179,13 +208,13 @@ export class BackupCredentials {
     const nextFetchAt = lastFetchAt + FETCH_INTERVAL;
     const delay = Math.max(0, nextFetchAt - Date.now());
 
-    log.info(`BackupCredentials: scheduling fetch in ${delay}ms`);
+    log.info(`scheduling fetch in ${delay}ms`);
     setTimeout(() => drop(this.#runPeriodicFetch()), delay);
   }
 
   async #runPeriodicFetch(): Promise<void> {
     try {
-      log.info('BackupCredentials: run periodic fetch');
+      log.info('running periodic fetch');
       await this.#fetch();
 
       const now = Date.now();
@@ -196,7 +225,7 @@ export class BackupCredentials {
     } catch (error) {
       const delay = this.#fetchBackoff.getAndIncrement();
       log.error(
-        'BackupCredentials: periodic fetch failed with ' +
+        'periodic fetch failed with ' +
           `error: ${toLogFormat(error)}, retrying in ${delay}ms`
       );
       setTimeout(() => this.#scheduleFetch(), delay);
@@ -219,7 +248,16 @@ export class BackupCredentials {
   }
 
   async #doFetch(): Promise<ReadonlyArray<BackupCredentialWrapperType>> {
-    log.info('BackupCredentials: fetching');
+    const canInteractWithBackupService =
+      areRemoteBackupsTurnedOn() || canAttemptRemoteBackupDownload();
+
+    if (!canInteractWithBackupService) {
+      throw new Error(
+        'Cannot fetch credentials; remote backups are not active'
+      );
+    }
+
+    log.info('fetching');
 
     const now = Date.now();
     const startDayInMs = toDayMillis(now);
@@ -238,41 +276,43 @@ export class BackupCredentials {
         endDayInMs,
       });
     } catch (error) {
-      if (!(error instanceof HTTPError)) {
+      // A 404 indicates the backupId has not been set; only primary devices can set the
+      // backupId
+      if (
+        (isTestOrMockEnvironment() ||
+          window.ConversationController.areWePrimaryDevice()) &&
+        error instanceof HTTPError &&
+        error.code === 404
+      ) {
+        // Backup id is missing
+        const messagesRequest = messagesCtx.getRequest();
+        const mediaRequest = mediaCtx.getRequest();
+
+        // Set it
+        await server.setBackupId({
+          messagesBackupAuthCredentialRequest: messagesRequest.serialize(),
+          mediaBackupAuthCredentialRequest: mediaRequest.serialize(),
+        });
+
+        // And try again!
+        response = await server.getBackupCredentials({
+          startDayInMs,
+          endDayInMs,
+        });
+      } else {
         throw error;
       }
-
-      if (error.code !== 404) {
-        throw error;
-      }
-
-      // Backup id is missing
-      const messagesRequest = messagesCtx.getRequest();
-      const mediaRequest = mediaCtx.getRequest();
-
-      // Set it
-      await server.setBackupId({
-        messagesBackupAuthCredentialRequest: messagesRequest.serialize(),
-        mediaBackupAuthCredentialRequest: mediaRequest.serialize(),
-      });
-
-      // And try again!
-      response = await server.getBackupCredentials({
-        startDayInMs,
-        endDayInMs,
-      });
     }
 
     const { messages: messageCredentials, media: mediaCredentials } =
       response.credentials;
 
     log.info(
-      'BackupCredentials: got ' +
-        `${messageCredentials.length}/${mediaCredentials.length}`
+      `got ${messageCredentials.length}/${mediaCredentials.length} message/media credentials`
     );
 
     const serverPublicParams = new GenericServerPublicParams(
-      Buffer.from(window.getBackupServerPublicParams(), 'base64')
+      Bytes.fromBase64(window.getBackupServerPublicParams())
     );
 
     const result = new Array<BackupCredentialWrapperType>();
@@ -298,7 +338,7 @@ export class BackupCredentials {
       credential: buf,
       redemptionTime,
     } of allCredentials) {
-      const credentialRes = new BackupAuthCredentialResponse(Buffer.from(buf));
+      const credentialRes = new BackupAuthCredentialResponse(buf);
 
       const redemptionTimeMs = DurationInSeconds.toMillis(redemptionTime);
       strictAssert(
@@ -324,7 +364,7 @@ export class BackupCredentials {
 
       result.push({
         type,
-        credential: credential.serialize().toString('base64'),
+        credential: Bytes.toBase64(credential.serialize()),
         level: credential.getBackupLevel(),
         redemptionTimeMs,
       });
@@ -351,7 +391,7 @@ export class BackupCredentials {
 
     const startMs = result[0].redemptionTimeMs;
     const endMs = result[result.length - 1].redemptionTimeMs;
-    log.info(`BackupCredentials: saved [${startMs}, ${endMs}]`);
+    log.info(`saved [${startMs}, ${endMs}]`);
 
     strictAssert(result.length === 14, 'Expected one week of credentials');
 
@@ -393,7 +433,15 @@ export class BackupCredentials {
 
   // Called when backup tier changes or when userChanged event
   public async clearCache(): Promise<void> {
-    this.#cachedCdnReadCredentials = {};
+    log.info('Clearing cache');
+    this.#clearCdnReadCredentials();
     await this.#updateCache([]);
+  }
+
+  #clearCdnReadCredentials(): void {
+    this.#cachedCdnReadCredentials = {
+      [BackupCredentialType.Media]: {},
+      [BackupCredentialType.Messages]: {},
+    };
   }
 }

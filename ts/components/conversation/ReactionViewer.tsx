@@ -2,26 +2,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as React from 'react';
-import { groupBy, mapValues, orderBy } from 'lodash';
+import lodash from 'lodash';
 import classNames from 'classnames';
-import { ContactName } from './ContactName';
-import type { Props as AvatarProps } from '../Avatar';
-import { Avatar } from '../Avatar';
-import { useRestoreFocus } from '../../hooks/useRestoreFocus';
-import type { ConversationType } from '../../state/ducks/conversations';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges';
-import type { EmojiData } from '../emoji/lib';
-import { emojiToData } from '../emoji/lib';
-import { useEscapeHandling } from '../../hooks/useEscapeHandling';
-import type { ThemeType } from '../../types/Util';
+import { ContactName } from './ContactName.js';
+import type { Props as AvatarProps } from '../Avatar.js';
+import { Avatar } from '../Avatar.js';
+import { useRestoreFocus } from '../../hooks/useRestoreFocus.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.js';
+import type { EmojiData } from '../emoji/lib.js';
+import { emojiToData } from '../emoji/lib.js';
+import { useEscapeHandling } from '../../hooks/useEscapeHandling.js';
+import type { ThemeType } from '../../types/Util.js';
 import {
   getEmojiVariantByKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
-} from '../fun/data/emojis';
-import { strictAssert } from '../../util/assert';
-import { FunStaticEmoji } from '../fun/FunEmoji';
-import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer';
+} from '../fun/data/emojis.js';
+import { strictAssert } from '../../util/assert.js';
+import { FunStaticEmoji } from '../fun/FunEmoji.js';
+import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer.js';
+
+const { groupBy, mapValues, orderBy } = lodash;
 
 export type Reaction = {
   emoji: string;
@@ -86,7 +88,7 @@ function ReactionViewerEmoji(props: {
   return (
     <FunStaticEmoji
       role="img"
-      aria-label={emojiLocalizer(emojiVariantKey)}
+      aria-label={emojiLocalizer.getLocaleShortName(emojiVariantKey)}
       size={18}
       emoji={emojiVariant}
     />
@@ -152,14 +154,17 @@ export const ReactionViewer = React.forwardRef<HTMLDivElement, Props>(
           },
           ...Object.entries(groupedAndSortedReactions)
             .filter(([key]) => key !== 'all')
-            .map(([, [{ short_name: id, emoji }, ...otherReactions]]) => {
+            .map(([, groupedReactions]) => {
+              // Find the local user's reaction first, then fall back to most recent
+              const localUserReaction = groupedReactions.find(r => r.from.isMe);
+              const firstReaction = localUserReaction || groupedReactions[0];
               return {
-                id,
-                index: DEFAULT_EMOJI_ORDER.includes(id)
-                  ? DEFAULT_EMOJI_ORDER.indexOf(id)
+                id: firstReaction.short_name,
+                index: DEFAULT_EMOJI_ORDER.includes(firstReaction.short_name)
+                  ? DEFAULT_EMOJI_ORDER.indexOf(firstReaction.short_name)
                   : Infinity,
-                emoji,
-                count: otherReactions.length + 1,
+                emoji: firstReaction.emoji,
+                count: groupedReactions.length,
               };
             }),
         ].sort((a, b) => a.index - b.index),

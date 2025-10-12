@@ -1,13 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CallEventSyncEvent } from '../textsecure/messageReceiverEvents';
-import * as log from '../logging/log';
+import type { CallEventSyncEvent } from '../textsecure/messageReceiverEvents.js';
+import { createLogger } from '../logging/log.js';
 import {
   peerIdToLog,
   updateCallHistoryFromRemoteEvent,
-} from './callDisposition';
-import { CallMode } from '../types/CallDisposition';
+} from './callDisposition.js';
+import { CallMode } from '../types/CallDisposition.js';
+
+const log = createLogger('onCallEventSync');
 
 export async function onCallEventSync(
   syncEvent: CallEventSyncEvent
@@ -24,9 +26,7 @@ export async function onCallEventSync(
 
     if (!conversation) {
       const peerIdLog = peerIdToLog(peerId, callEventDetails.mode);
-      log.warn(
-        `onCallEventSync: No conversation found for conversationId ${peerIdLog}`
-      );
+      log.warn(`No conversation found for conversationId ${peerIdLog}`);
       return;
     }
   }

@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { app, crashReporter, ipcMain as ipc } from 'electron';
-import { realpath, readdir, readFile, unlink, stat } from 'fs-extra';
-import { basename, join } from 'path';
-import { toJSONString as dumpToJSONString } from '@signalapp/libsignal-client/dist/Minidump';
+import fsExtra from 'fs-extra';
+import { basename, join } from 'node:path';
+import { toJSONString as dumpToJSONString } from '@signalapp/libsignal-client/dist/Minidump.js';
 import z from 'zod';
 
-import type { LoggerType } from '../ts/types/Logging';
-import * as Errors from '../ts/types/errors';
-import { isProduction } from '../ts/util/version';
-import { isNotNil } from '../ts/util/isNotNil';
-import OS from '../ts/util/os/osMain';
-import { parseUnknown } from '../ts/util/schemas';
+import type { LoggerType } from '../ts/types/Logging.js';
+import * as Errors from '../ts/types/errors.js';
+import { isProduction } from '../ts/util/version.js';
+import { isNotNil } from '../ts/util/isNotNil.js';
+import OS from '../ts/util/os/osMain.js';
+import { parseUnknown } from '../ts/util/schemas.js';
+
+const { realpath, readdir, readFile, unlink, stat } = fsExtra;
 
 // See https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md
 const dumpString = z.string().or(z.null()).optional();
@@ -99,14 +101,14 @@ async function eraseDumps(
 }
 
 export function setup(
-  getLogger: () => LoggerType,
+  logger: LoggerType,
   showDebugLogWindow: () => Promise<void>,
   forceEnable = false
 ): void {
   const isEnabled = !isProduction(app.getVersion()) || forceEnable;
 
   if (isEnabled) {
-    getLogger().info(`crashReporter: ${forceEnable ? 'force ' : ''}enabled`);
+    logger.info(`crashReporter: ${forceEnable ? 'force ' : ''}enabled`);
     crashReporter.start({ uploadToServer: false });
   }
 
@@ -127,7 +129,7 @@ export function setup(
               return fullPath;
             }
           } catch (error) {
-            getLogger().error(
+            logger.error(
               `crashReports: failed to read crash report ${fullPath} due to error`,
               Errors.toLogFormat(error)
             );
@@ -136,7 +138,7 @@ export function setup(
           try {
             await unlink(fullPath);
           } catch (error) {
-            getLogger().error(
+            logger.error(
               `crashReports: failed to unlink crash report ${fullPath}`,
               Errors.toLogFormat(error)
             );
@@ -147,9 +149,7 @@ export function setup(
     ).filter(isNotNil);
 
     if (filteredDumps.length !== 0) {
-      getLogger().warn(
-        `crashReports: ${filteredDumps.length} pending dumps found`
-      );
+      logger.warn(`crashReports: ${filteredDumps.length} pending dumps found`);
     }
     return filteredDumps.length;
   });
@@ -164,7 +164,6 @@ export function setup(
       return;
     }
 
-    const logger = getLogger();
     logger.warn(`crashReports: logging ${pendingDumps.length} dumps`);
 
     await Promise.all(
@@ -225,6 +224,6 @@ export function setup(
 
     const pendingDumps = await getPendingDumps();
 
-    await eraseDumps(getLogger(), pendingDumps);
+    await eraseDumps(logger, pendingDumps);
   });
 }

@@ -4,11 +4,11 @@
 import React, { useMemo } from 'react';
 import classNames from 'classnames';
 
-import { Emojify } from './Emojify';
-import type { ContactNameColorType } from '../../types/Colors';
-import { getClassNamesFor } from '../../util/getClassNamesFor';
-import type { ConversationType } from '../../state/ducks/conversations';
-import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation';
+import { Emojify } from './Emojify.js';
+import type { ContactNameColorType } from '../../types/Colors.js';
+import { getClassNamesFor } from '../../util/getClassNamesFor.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation.js';
 
 export type ContactNameData = {
   contactNameColor?: ContactNameColorType;
@@ -43,6 +43,7 @@ export type PropsType = ContactNameData & {
   module?: string;
   preferFirstName?: boolean;
   onClick?: VoidFunction;
+  largeVerifiedBadge?: boolean;
 };
 
 export function ContactName({
@@ -54,6 +55,7 @@ export function ContactName({
   preferFirstName,
   title,
   onClick,
+  largeVerifiedBadge,
 }: PropsType): JSX.Element {
   const getClassName = getClassNamesFor('module-contact-name', module);
 
@@ -75,7 +77,13 @@ export function ContactName({
     >
       <Emojify text={text} />
       {(isSignalConversation || isMe) && (
-        <span className="ContactModal__official-badge" />
+        <span
+          className={
+            largeVerifiedBadge
+              ? 'ContactModal__official-badge__large'
+              : 'ContactModal__official-badge'
+          }
+        />
       )}
     </WrappingElement>
   );

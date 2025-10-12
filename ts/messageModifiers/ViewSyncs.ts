@@ -3,20 +3,23 @@
 
 import { z } from 'zod';
 
-import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { GiftBadgeStates } from '../components/conversation/Message';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp';
-import { isIncoming } from '../state/selectors/message';
-import { markViewed } from '../services/MessageUpdater';
-import { notificationService } from '../services/notifications';
-import { queueUpdateMessage } from '../util/messageBatcher';
-import { isAciString } from '../util/isAciString';
-import { DataReader, DataWriter } from '../sql/Client';
-import { MessageModel } from '../models/messages';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { GiftBadgeStates } from '../components/conversation/Message.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.js';
+import { isIncoming } from '../state/selectors/message.js';
+import { markViewed } from '../services/MessageUpdater.js';
+import { notificationService } from '../services/notifications.js';
+import { queueUpdateMessage } from '../util/messageBatcher.js';
+import { isAciString } from '../util/isAciString.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { MessageModel } from '../models/messages.js';
+import { drop } from '../util/drop.js';
+
+const log = createLogger('ViewSyncs');
 
 export const viewSyncTaskSchema = z.object({
   type: z.literal('ViewSync').readonly(),
@@ -134,7 +137,7 @@ export async function onSync(sync: ViewSyncAttributesType): Promise<void> {
     }
 
     if (didChangeMessage) {
-      queueUpdateMessage(message.attributes);
+      drop(queueUpdateMessage(message.attributes));
     }
 
     await remove(sync);

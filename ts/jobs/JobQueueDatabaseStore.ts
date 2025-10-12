@@ -1,13 +1,17 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { noop } from 'lodash';
-import { AsyncQueue } from '../util/AsyncQueue';
-import { concat, wrapPromise } from '../util/asyncIterables';
-import type { JobQueueStore, StoredJob } from './types';
-import { formatJobForInsert } from './formatJobForInsert';
-import { DataReader, DataWriter } from '../sql/Client';
-import * as log from '../logging/log';
+import lodash from 'lodash';
+import { AsyncQueue } from '../util/AsyncQueue.js';
+import { concat, wrapPromise } from '../util/asyncIterables.js';
+import type { JobQueueStore, StoredJob } from './types.js';
+import { formatJobForInsert } from './formatJobForInsert.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+
+const { noop } = lodash;
+
+const log = createLogger('JobQueueDatabaseStore');
 
 type Database = {
   getJobsInQueue(queueType: string): Promise<Array<StoredJob>>;
@@ -26,18 +30,14 @@ export class JobQueueDatabaseStore implements JobQueueStore {
     job: Readonly<StoredJob>,
     { shouldPersist = true }: Readonly<{ shouldPersist?: boolean }> = {}
   ): Promise<void> {
-    log.info(
-      `JobQueueDatabaseStore adding job ${job.id} to queue ${JSON.stringify(
-        job.queueType
-      )}`
-    );
+    log.info(`adding job ${job.id} to queue ${JSON.stringify(job.queueType)}`);
 
     const initialFetchPromise = this.#initialFetchPromises.get(job.queueType);
     if (initialFetchPromise) {
       await initialFetchPromise;
     } else {
       log.warn(
-        `JobQueueDatabaseStore: added job for queue "${job.queueType}" but streaming has not yet started (shouldPersist=${shouldPersist})`
+        `added job for queue "${job.queueType}" but streaming has not yet started (shouldPersist=${shouldPersist})`
       );
     }
 
@@ -80,11 +80,7 @@ export class JobQueueDatabaseStore implements JobQueueStore {
   }
 
   async #fetchJobsAtStart(queueType: string): Promise<Array<StoredJob>> {
-    log.info(
-      `JobQueueDatabaseStore fetching existing jobs for queue ${JSON.stringify(
-        queueType
-      )}`
-    );
+    log.info(`fetching existing jobs for queue ${JSON.stringify(queueType)}`);
 
     // This is initialized to `noop` because TypeScript doesn't know that `Promise` calls
     //   its callback synchronously, making sure `onFinished` is defined.
@@ -96,7 +92,7 @@ export class JobQueueDatabaseStore implements JobQueueStore {
 
     const result = await this.db.getJobsInQueue(queueType);
     log.info(
-      `JobQueueDatabaseStore finished fetching existing ${
+      `finished fetching existing ${
         result.length
       } jobs for queue ${JSON.stringify(queueType)}`
     );

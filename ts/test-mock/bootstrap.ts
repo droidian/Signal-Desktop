@@ -1,11 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import assert from 'assert';
-import fs from 'fs/promises';
-import crypto from 'crypto';
-import path, { join } from 'path';
-import os from 'os';
+import assert from 'node:assert';
+import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
+import path, { join } from 'node:path';
+import os from 'node:os';
 import { PassThrough } from 'node:stream';
 import createDebug from 'debug';
 import pTimeout from 'p-timeout';
@@ -21,19 +21,20 @@ import {
   ServiceIdKind,
   loadCertificates,
 } from '@signalapp/mock-server';
-import { MAX_READ_KEYS as MAX_STORAGE_READ_KEYS } from '../services/storageConstants';
-import { SECOND, MINUTE, WEEK, MONTH } from '../util/durations';
-import { drop } from '../util/drop';
-import { regress } from '../util/benchmark/stats';
-import type { RendererConfigType } from '../types/RendererConfig';
-import type { MIMEType } from '../types/MIME';
-import { App } from './playwright';
-import { CONTACT_COUNT } from './benchmarks/fixtures';
-import { strictAssert } from '../util/assert';
+import { MAX_READ_KEYS as MAX_STORAGE_READ_KEYS } from '../services/storageConstants.js';
+import { SECOND, MINUTE, WEEK, MONTH } from '../util/durations/index.js';
+import { drop } from '../util/drop.js';
+import { regress } from '../util/benchmark/stats.js';
+import type { RendererConfigType } from '../types/RendererConfig.js';
+import type { MIMEType } from '../types/MIME.js';
+import { App } from './playwright.js';
+import { CONTACT_COUNT } from './benchmarks/fixtures.js';
+import { strictAssert } from '../util/assert.js';
 import {
   encryptAttachmentV2,
   generateAttachmentKeys,
-} from '../AttachmentCrypto';
+} from '../AttachmentCrypto.js';
+import { isVideoTypeSupported } from '../util/GoogleChrome.js';
 
 export { App };
 
@@ -117,6 +118,9 @@ export type BootstrapOptions = Readonly<{
   contactPreKeyCount?: number;
 
   useLegacyStorageEncryption?: boolean;
+
+  // Optional. specify a server to use instead of creating and initializing one.
+  server?: Server;
 }>;
 
 export type EphemeralBackupType = Readonly<
@@ -132,6 +136,7 @@ export type EphemeralBackupType = Readonly<
 export type LinkOptionsType = Readonly<{
   extraConfig?: Partial<RendererConfigType>;
   ephemeralBackup?: EphemeralBackupType;
+  localBackup?: string;
 }>;
 
 type BootstrapInternalOptions = BootstrapOptions &
@@ -171,10 +176,9 @@ function sanitizePathComponent(component: string): string {
 }
 
 const DEFAULT_REMOTE_CONFIG = [
-  ['desktop.backup.credentialFetch', { enabled: true }],
   ['desktop.internalUser', { enabled: true }],
-  ['desktop.releaseNotes', { enabled: true }],
   ['desktop.senderKey.retry', { enabled: true }],
+  ['global.backups.mediaTierFallbackCdnNumber', { enabled: true, value: '3' }],
   ['global.groupsv2.groupSizeHardLimit', { enabled: true, value: '64' }],
   ['global.groupsv2.maxGroupSize', { enabled: true, value: '32' }],
 ] as const;
@@ -206,7 +210,7 @@ const DEFAULT_REMOTE_CONFIG = [
 //
 export class Bootstrap {
   public readonly server: Server;
-  public readonly cdn3Path: string;
+  public readonly cdn3Path?: string;
 
   readonly #options: BootstrapInternalOptions;
   #privContacts?: ReadonlyArray<PrimaryDevice>;
@@ -217,19 +221,22 @@ export class Bootstrap {
   #storagePath?: string;
   #timestamp: number = Date.now() - WEEK;
   #lastApp?: App;
+  #screenshotId = 0;
   readonly #randomId = crypto.randomBytes(8).toString('hex');
 
   constructor(options: BootstrapOptions = {}) {
-    this.cdn3Path = path.join(
-      os.tmpdir(),
-      `mock-signal-cdn3-${this.#randomId}`
-    );
-    this.server = new Server({
-      // Limit number of storage read keys for easier testing
-      maxStorageReadKeys: MAX_STORAGE_READ_KEYS,
-      cdn3Path: this.cdn3Path,
-      updates2Path: path.join(__dirname, 'updates-data'),
-    });
+    this.cdn3Path =
+      options.server === undefined
+        ? path.join(os.tmpdir(), `mock-signal-cdn3-${this.#randomId}`)
+        : undefined;
+    this.server =
+      options.server ??
+      new Server({
+        // Limit number of storage read keys for easier testing
+        maxStorageReadKeys: MAX_STORAGE_READ_KEYS,
+        cdn3Path: this.cdn3Path,
+        updates2Path: path.join(__dirname, 'updates-data'),
+      });
 
     this.#options = {
       linkedDevices: 5,
@@ -253,10 +260,14 @@ export class Bootstrap {
   public async init(): Promise<void> {
     debug('initializing');
 
-    await this.server.listen(0);
+    if (this.#options.server === undefined) {
+      await this.server.listen(0);
 
-    const { port } = this.server.address();
-    debug('started server on port=%d', port);
+      const { port } = this.server.address();
+      debug('started server on port=%d', port);
+    } else {
+      debug('existing server listening on port = ', this.server.address().port);
+    }
 
     const totalContactCount =
       this.#options.contactCount +
@@ -366,7 +377,9 @@ export class Bootstrap {
         ...[this.#storagePath, this.cdn3Path].map(tmpPath =>
           tmpPath ? fs.rm(tmpPath, { recursive: true }) : Promise.resolve()
         ),
-        this.server.close(),
+        this.#options.server === undefined
+          ? this.server.close()
+          : Promise.resolve(),
         this.#lastApp?.close(),
       ]),
       new Promise(resolve => setTimeout(resolve, CLOSE_TIMEOUT).unref()),
@@ -376,6 +389,7 @@ export class Bootstrap {
   public async link({
     extraConfig,
     ephemeralBackup,
+    localBackup,
   }: LinkOptionsType = {}): Promise<App> {
     debug('linking');
 
@@ -383,23 +397,34 @@ export class Bootstrap {
 
     const window = await app.getWindow();
 
-    debug('looking for QR code or relink button');
-    const qrCode = window.locator(
-      '.module-InstallScreenQrCodeNotScannedStep__qr-code__code'
-    );
-    const relinkButton = window.locator('.LeftPaneDialog__icon--relink');
-    await qrCode.or(relinkButton).waitFor();
-    if (await relinkButton.isVisible()) {
-      debug('unlinked, clicking left pane button');
-      await relinkButton.click();
-      await qrCode.waitFor();
+    if (localBackup != null) {
+      await app.stageLocalBackupForImport(localBackup);
     }
+
+    let gotProvisionURL = false;
+
+    drop(
+      (async () => {
+        try {
+          const relinkButton = window.locator('.LeftPaneDialog__icon--relink');
+          await relinkButton.waitFor();
+          if (gotProvisionURL) {
+            return;
+          }
+          await relinkButton.click();
+        } catch {
+          // Ignore, provision will fail if QR code was never generated
+        }
+      })()
+    );
 
     debug('waiting for provision');
     const provision = await this.server.waitForProvision();
 
     debug('waiting for provision URL');
     const provisionURL = await app.waitForProvisionURL();
+
+    gotProvisionURL = true;
 
     debug('completing provision');
     this.#privDesktop = await provision.complete({
@@ -521,6 +546,45 @@ export class Bootstrap {
     }
   }
 
+  public async screenshot(
+    app: App | undefined = this.#lastApp,
+    testName?: string
+  ): Promise<void> {
+    if (!app) {
+      return;
+    }
+
+    const outDir = await this.#getArtifactsDir(testName);
+    if (outDir == null) {
+      return;
+    }
+
+    const window = await app.getWindow();
+    const screenshot = await window.screenshot();
+
+    const id = this.#screenshotId;
+    this.#screenshotId += 1;
+
+    await fs.writeFile(path.join(outDir, `screenshot-${id}.png`), screenshot);
+  }
+
+  public async screenshotWindow(
+    window: Page,
+    testName?: string
+  ): Promise<void> {
+    const outDir = await this.#getArtifactsDir(testName);
+    if (outDir == null) {
+      return;
+    }
+
+    const screenshot = await window.screenshot();
+
+    const id = this.#screenshotId;
+    this.#screenshotId += 1;
+
+    await fs.writeFile(path.join(outDir, `screenshot-${id}.png`), screenshot);
+  }
+
   public async saveLogs(
     app: App | undefined = this.#lastApp,
     testName?: string
@@ -542,11 +606,7 @@ export class Bootstrap {
         ?.context()
         .tracing.stop({ path: path.join(outDir, 'trace.zip') });
     }
-    if (app) {
-      const window = await app.getWindow();
-      const screenshot = await window.screenshot();
-      await fs.writeFile(path.join(outDir, 'screenshot.png'), screenshot);
-    }
+    await this.screenshot(app, testName);
   }
 
   public async createScreenshotComparator(
@@ -558,8 +618,9 @@ export class Bootstrap {
     test?: Mocha.Runnable
   ): Promise<(app: App) => Promise<void>> {
     const snapshots = new Array<{ name: string; data: Buffer }>();
-
+    const viewportSize = { width: 1000, height: 2000 } as const;
     const window = await app.getWindow();
+    await window.setViewportSize(viewportSize);
     await callback(window, async (name: string) => {
       debug('creating screenshot');
       snapshots.push({
@@ -578,7 +639,7 @@ export class Bootstrap {
         const before = snapshots.shift();
         assert(before != null, 'No previous snapshot');
         assert.strictEqual(before.name, name, 'Wrong snapshot order');
-
+        await anotherWindow.setViewportSize(viewportSize);
         const after = await anotherWindow.screenshot();
 
         const beforePng = PNG.sync.read(before.data);
@@ -630,7 +691,7 @@ export class Bootstrap {
     return join(this.#storagePath, 'attachments.noindex', relativePath);
   }
 
-  public async storeAttachmentOnCDN(
+  public async encryptAndStoreAttachmentOnCDN(
     data: Buffer,
     contentType: MIMEType
   ): Promise<Proto.IAttachmentPointer> {
@@ -640,13 +701,13 @@ export class Bootstrap {
 
     const passthrough = new PassThrough();
 
-    const [{ digest }] = await Promise.all([
+    const [{ digest, chunkSize, incrementalMac }] = await Promise.all([
       encryptAttachmentV2({
         keys,
         plaintext: {
           data,
         },
-        needIncrementalMac: false,
+        needIncrementalMac: isVideoTypeSupported(contentType),
         sink: passthrough,
       }),
       this.server.storeAttachmentOnCdn(cdnNumber, cdnKey, passthrough),
@@ -659,6 +720,8 @@ export class Bootstrap {
       cdnNumber,
       key: keys,
       digest,
+      chunkSize,
+      incrementalMac,
     };
   }
 

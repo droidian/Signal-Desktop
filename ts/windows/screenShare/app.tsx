@@ -1,14 +1,16 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
-import { CallingScreenSharingController } from '../../components/CallingScreenSharingController';
-import { i18n } from '../sandboxedInit';
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { parseEnvironment, setEnvironment } from '../../environment';
+import { CallingScreenSharingController } from '../../components/CallingScreenSharingController.js';
+import { i18n } from '../sandboxedInit.js';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { parseEnvironment, setEnvironment } from '../../environment.js';
+import { FunDefaultEnglishEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider.js';
+import { AxoProvider } from '../../axo/AxoProvider.js';
 
 const { ScreenShareWindowProps } = window.Signal;
 
@@ -27,18 +29,25 @@ function render() {
   // Pacify typescript
   strictAssert(ScreenShareWindowProps, 'window values not provided');
 
-  ReactDOM.render(
-    <div className="App dark-theme">
-      <CallingScreenSharingController
-        i18n={i18n}
-        onCloseController={onCloseController}
-        onStopSharing={ScreenShareWindowProps.onStopSharing}
-        status={ScreenShareWindowProps.getStatus()}
-        presentedSourceName={ScreenShareWindowProps.presentedSourceName}
-      />
-    </div>,
+  const app = document.getElementById('app');
+  strictAssert(app != null, 'No #app');
 
-    document.getElementById('app')
+  createRoot(app).render(
+    <StrictMode>
+      <AxoProvider dir={i18n.getLocaleDirection()}>
+        <FunDefaultEnglishEmojiLocalizationProvider>
+          <div className="App dark-theme">
+            <CallingScreenSharingController
+              i18n={i18n}
+              onCloseController={onCloseController}
+              onStopSharing={ScreenShareWindowProps.onStopSharing}
+              status={ScreenShareWindowProps.getStatus()}
+              presentedSourceName={ScreenShareWindowProps.presentedSourceName}
+            />
+          </div>
+        </FunDefaultEnglishEmojiLocalizationProvider>
+      </AxoProvider>
+    </StrictMode>
   );
 }
 render();

@@ -1,20 +1,24 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { omit } from 'lodash';
+import lodash from 'lodash';
 
-import * as log from '../logging/log';
-import type { QuotedMessageType } from '../model-types';
-import { SignalService } from '../protobuf';
-import { isGiftBadge, isTapToView } from '../state/selectors/message';
-import type { ProcessedQuote } from '../textsecure/Types';
-import { IMAGE_JPEG } from '../types/MIME';
-import { strictAssert } from '../util/assert';
-import { getQuoteBodyText } from '../util/getQuoteBodyText';
-import { isQuoteAMatch, messageHasPaymentEvent } from './helpers';
-import * as Errors from '../types/errors';
-import { isDownloadable } from '../types/Attachment';
-import type { MessageModel } from '../models/messages';
+import { createLogger } from '../logging/log.js';
+import type { QuotedMessageType } from '../model-types.js';
+import { SignalService } from '../protobuf/index.js';
+import { isGiftBadge, isTapToView } from '../state/selectors/message.js';
+import type { ProcessedQuote } from '../textsecure/Types.js';
+import { IMAGE_JPEG } from '../types/MIME.js';
+import { strictAssert } from '../util/assert.js';
+import { getQuoteBodyText } from '../util/getQuoteBodyText.js';
+import { isQuoteAMatch, messageHasPaymentEvent } from './helpers.js';
+import * as Errors from '../types/errors.js';
+import type { MessageModel } from '../models/messages.js';
+import { isDownloadable } from '../types/Attachment.js';
+
+const { omit } = lodash;
+
+const log = createLogger('copyQuote');
 
 export type MinimalMessageCache = Readonly<{
   findBySentAt(
@@ -77,7 +81,7 @@ export const copyQuoteContentFromOriginal = async (
   { messageCache = window.MessageCache }: CopyQuoteOptionsType = {}
 ): Promise<void> => {
   const { attachments } = quote;
-  const firstAttachment = attachments ? attachments[0] : undefined;
+  const quoteAttachment = attachments ? attachments[0] : undefined;
 
   if (messageHasPaymentEvent(message.attributes)) {
     // eslint-disable-next-line no-param-reassign
@@ -125,7 +129,7 @@ export const copyQuoteContentFromOriginal = async (
   // eslint-disable-next-line no-param-reassign
   quote.bodyRanges = message.attributes.bodyRanges;
 
-  if (!firstAttachment || !firstAttachment.contentType) {
+  if (!quoteAttachment || !quoteAttachment.contentType) {
     return;
   }
 
@@ -150,17 +154,17 @@ export const copyQuoteContentFromOriginal = async (
 
   if (queryAttachments.length > 0) {
     const queryFirst = queryAttachments[0];
-    const { thumbnail } = queryFirst;
+    const { thumbnail: quotedThumbnail } = queryFirst;
 
-    if (thumbnail && thumbnail.path) {
-      firstAttachment.thumbnail = {
-        ...thumbnail,
+    if (quotedThumbnail && quotedThumbnail.path) {
+      quoteAttachment.thumbnail = {
+        ...quotedThumbnail,
         copied: true,
       };
-    } else if (!firstAttachment.thumbnail || !isDownloadable(queryFirst)) {
-      firstAttachment.contentType = queryFirst.contentType;
-      firstAttachment.fileName = queryFirst.fileName;
-      firstAttachment.thumbnail = undefined;
+    } else if (!quoteAttachment.thumbnail || !isDownloadable(queryFirst)) {
+      quoteAttachment.contentType = queryFirst.contentType;
+      quoteAttachment.fileName = queryFirst.fileName;
+      quoteAttachment.thumbnail = undefined;
     } else {
       // there is a thumbnail, but the original message attachment has not been
       // downloaded yet, so we leave the quote attachment as is for now
@@ -168,19 +172,17 @@ export const copyQuoteContentFromOriginal = async (
   }
 
   if (queryPreview.length > 0) {
-    const queryFirst = queryPreview[0];
-    const { image } = queryFirst;
-
-    if (image && image.path) {
-      firstAttachment.thumbnail = {
-        ...image,
+    const { image: quotedPreviewImage } = queryPreview[0];
+    if (quotedPreviewImage && quotedPreviewImage.path) {
+      quoteAttachment.thumbnail = {
+        ...quotedPreviewImage,
         copied: true,
       };
     }
   }
 
   if (sticker && sticker.data && sticker.data.path) {
-    firstAttachment.thumbnail = {
+    quoteAttachment.thumbnail = {
       ...sticker.data,
       copied: true,
     };

@@ -1,11 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { HTTPError } from './Errors';
+import type { HTTPError } from './Errors.js';
 
 export async function handleStatusCode(status: number): Promise<void> {
   if (status === 499) {
-    window.Whisper.events.trigger('httpResponse499');
+    window.Whisper.events.emit('httpResponse499');
   }
 }
 

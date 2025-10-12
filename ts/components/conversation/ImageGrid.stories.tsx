@@ -4,8 +4,8 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './ImageGrid';
-import { ImageGrid } from './ImageGrid';
+import type { Props } from './ImageGrid.js';
+import { ImageGrid } from './ImageGrid.js';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -13,11 +13,18 @@ import {
   IMAGE_WEBP,
   VIDEO_MP4,
   stringToMIMEType,
-} from '../../types/MIME';
-import { pngUrl, squareStickerUrl } from '../../storybook/Fixtures';
-import { fakeAttachment } from '../../test-both/helpers/fakeAttachment';
+} from '../../types/MIME.js';
+import { pngUrl, squareStickerUrl } from '../../storybook/Fixtures.js';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.js';
+import { strictAssert } from '../../util/assert.js';
+import { isDownloadable } from '../../types/Attachment.js';
 
 const { i18n } = window.SignalContext;
+
+const MOCK_KEY =
+  '+R9hNIYmxBakQ3jMe/sdIXkDKQewidDcgLp2Q74Y1gyxU/hPA2Kyz8oHtc40Gtd3' +
+  'Bp8hPOIS4/V5W/XkIl/bIg==';
+const MOCK_DIGEST = 'HvbPFfuq1WNQEbSBVI310b2WKJGtI5/Ih1kdOBJC7vU=';
 
 export default {
   title: 'Components/Conversation/ImageGrid',
@@ -911,6 +918,7 @@ export function MixedContentTypes(args: Props): JSX.Element {
           screenshot: {
             height: 112,
             width: 112,
+            size: 128000,
             url: '/fixtures/kitten-4-112-112.jpg',
             contentType: IMAGE_JPEG,
             path: 'originalpath',
@@ -1039,4 +1047,38 @@ export function ContentAboveAndBelow(args: Props): JSX.Element {
 
 export function BottomOverlay(args: Props): JSX.Element {
   return <ImageGrid {...args} bottomOverlay />;
+}
+
+export function DownloadPill(args: Props): JSX.Element {
+  const attachment1 = fakeAttachment({
+    contentType: IMAGE_JPEG,
+    fileName: 'tina-rolf-269345-unsplash.jpg',
+    height: 1680,
+    width: 3000,
+    path: undefined,
+    blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+    key: MOCK_KEY,
+    digest: MOCK_DIGEST,
+    cdnKey: 'mock-cdn-key',
+    cdnNumber: 4000,
+  });
+
+  const attachment2 = fakeAttachment({
+    contentType: IMAGE_JPEG,
+    fileName: 'tina-rolf-269345-unsplash.jpg',
+    height: 1680,
+    width: 3000,
+    path: undefined,
+    blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+    key: MOCK_KEY,
+    digest: MOCK_DIGEST,
+    cdnKey: 'mock-cdn-key',
+    cdnNumber: 4000,
+  });
+
+  // Pill only shows if the attachments are downloadable
+  strictAssert(isDownloadable(attachment1), 'attachment1 must be downloadable');
+  strictAssert(isDownloadable(attachment2), 'attachment2 must be downloadable');
+
+  return <ImageGrid {...args} attachments={[attachment1, attachment2]} />;
 }

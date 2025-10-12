@@ -1,44 +1,54 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { maxBy } from 'lodash';
+import lodash from 'lodash';
 
-import type { AciString } from '../types/ServiceId';
+import type { AciString } from '../types/ServiceId.js';
 import type {
   MessageAttributesType,
   MessageReactionType,
   ReadonlyMessageAttributesType,
-} from '../model-types.d';
-import { MessageModel } from '../models/messages';
-import { ReactionSource } from '../reactions/ReactionSource';
-import { DataReader, DataWriter } from '../sql/Client';
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { getAuthor, isIncoming, isOutgoing } from '../messages/helpers';
-import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet';
-import { isDirectConversation, isMe } from '../util/whatTypeOfConversation';
+} from '../model-types.d.ts';
+import { MessageModel } from '../models/messages.js';
+import { ReactionSource } from '../reactions/ReactionSource.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import {
+  getAuthor,
+  isIncoming,
+  isIncomingStory,
+  isOutgoing,
+  isOutgoingStory,
+} from '../messages/helpers.js';
+import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet.js';
+import { isDirectConversation, isMe } from '../util/whatTypeOfConversation.js';
 import {
   getMessagePropStatus,
   hasErrors,
   isStory,
-} from '../state/selectors/message';
-import { getPropForTimestamp } from '../util/editHelpers';
-import { isSent } from '../messages/MessageSendState';
-import { strictAssert } from '../util/assert';
-import { repeat, zipObject } from '../util/iterables';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { hydrateStoryContext } from '../util/hydrateStoryContext';
-import { shouldReplyNotifyUser } from '../util/shouldReplyNotifyUser';
-import { drop } from '../util/drop';
-import * as reactionUtil from '../reactions/util';
-import { isNewReactionReplacingPrevious } from '../reactions/util';
-import { notificationService } from '../services/notifications';
-import { ReactionReadStatus } from '../types/Reactions';
-import type { ConversationQueueJobData } from '../jobs/conversationJobQueue';
+} from '../state/selectors/message.js';
+import { getPropForTimestamp } from '../util/editHelpers.js';
+import { isSent } from '../messages/MessageSendState.js';
+import { strictAssert } from '../util/assert.js';
+import { repeat, zipObject } from '../util/iterables.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import { hydrateStoryContext } from '../util/hydrateStoryContext.js';
+import { drop } from '../util/drop.js';
+import * as reactionUtil from '../reactions/util.js';
+import { isNewReactionReplacingPrevious } from '../reactions/util.js';
+import { notificationService } from '../services/notifications.js';
+import { ReactionReadStatus } from '../types/Reactions.js';
+import type { ConversationQueueJobData } from '../jobs/conversationJobQueue.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
+} from '../jobs/conversationJobQueue.js';
+import { maybeNotify } from '../messages/maybeNotify.js';
+
+const { maxBy } = lodash;
+
+const log = createLogger('Reactions');
 
 export type ReactionAttributesType = {
   emoji: string;
@@ -67,6 +77,7 @@ function remove(reaction: ReactionAttributesType): void {
 export function findReactionsForMessage(
   message: ReadonlyMessageAttributesType
 ): Array<ReactionAttributesType> {
+  const ourAci = window.textsecure.storage.user.getCheckedAci();
   const matchingReactions = Array.from(reactionCache.values()).filter(
     reaction => {
       return isMessageAMatchForReaction({
@@ -74,6 +85,7 @@ export function findReactionsForMessage(
         targetTimestamp: reaction.targetTimestamp,
         targetAuthorAci: reaction.targetAuthorAci,
         reactionSenderConversationId: reaction.fromId,
+        ourAci,
       });
     }
   );
@@ -94,6 +106,7 @@ async function findMessageForReaction({
   logId: string;
 }): Promise<MessageAttributesType | undefined> {
   const messages = await DataReader.getMessagesBySentAt(targetTimestamp);
+  const ourAci = window.textsecure.storage.user.getCheckedAci();
 
   const matchingMessages = messages.filter(message =>
     isMessageAMatchForReaction({
@@ -101,6 +114,7 @@ async function findMessageForReaction({
       targetTimestamp,
       targetAuthorAci,
       reactionSenderConversationId,
+      ourAci,
     })
   );
 
@@ -119,16 +133,18 @@ async function findMessageForReaction({
   return matchingMessages[0];
 }
 
-function isMessageAMatchForReaction({
+export function isMessageAMatchForReaction({
   message,
   targetTimestamp,
   targetAuthorAci,
   reactionSenderConversationId,
+  ourAci,
 }: {
   message: ReadonlyMessageAttributesType;
   targetTimestamp: number;
   targetAuthorAci: string;
   reactionSenderConversationId: string;
+  ourAci: AciString;
 }): boolean {
   if (!getMessageSentTimestampSet(message).has(targetTimestamp)) {
     return false;
@@ -158,7 +174,7 @@ function isMessageAMatchForReaction({
     return true;
   }
 
-  if (message.type === 'outgoing') {
+  if (isOutgoing(message) || isOutgoingStory(message, ourAci)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
       message,
@@ -172,13 +188,20 @@ function isMessageAMatchForReaction({
       return false;
     }
 
+    if (isStory(message)) {
+      return (
+        isSent(sendState.status) && Boolean(sendState.isAllowedToReplyToStory)
+      );
+    }
+
     return isSent(sendState.status);
   }
 
-  if (message.type === 'incoming') {
+  if (isIncoming(message) || isIncomingStory(message, ourAci)) {
     const messageConversation = window.ConversationController.get(
       message.conversationId
     );
+
     if (!messageConversation) {
       return false;
     }
@@ -190,7 +213,8 @@ function isMessageAMatchForReaction({
     );
   }
 
-  return true;
+  // Only incoming, outgoing, and story messages can be reacted to
+  return false;
 }
 
 export async function onReaction(
@@ -392,7 +416,7 @@ export async function handleReaction(
         forceSave: true,
       });
 
-      log.info('Reactions.onReaction adding reaction to story', {
+      log.info('onReaction adding reaction to story', {
         reactionMessageId: getMessageIdForLogging(generatedMessage.attributes),
         storyId: getMessageIdForLogging(storyMessage),
         targetTimestamp: reaction.targetTimestamp,
@@ -411,18 +435,12 @@ export async function handleReaction(
       }
 
       if (isFromSomeoneElse) {
-        log.info(
-          'handleReaction: notifying for story reaction to ' +
-            `${getMessageIdForLogging(storyMessage)} from someone else`
+        drop(
+          maybeNotify({
+            message: generatedMessage.attributes,
+            conversation: targetConversation,
+          })
         );
-        if (
-          await shouldReplyNotifyUser(
-            generatedMessage.attributes,
-            targetConversation
-          )
-        ) {
-          drop(targetConversation.notify(generatedMessage.attributes));
-        }
       }
     }
   } else {
@@ -495,7 +513,13 @@ export async function handleReaction(
         message.set({ reactions });
 
         if (isOutgoing(message.attributes) && isFromSomeoneElse) {
-          void conversation.notify(message.attributes, reaction);
+          drop(
+            maybeNotify({
+              targetMessage: message.attributes,
+              conversation,
+              reaction,
+            })
+          );
         }
       }
     }

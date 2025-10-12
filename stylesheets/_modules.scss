@@ -647,11 +647,6 @@ $message-padding-horizontal: 12px;
   cursor: pointer;
 }
 
-.module-message__undownloadable-attachment--no-text
-  + .module-message__metadata {
-  margin-block-start: -25px;
-}
-
 .module-message__sticker-container {
   // To ensure that images are centered if they aren't full width of bubble
   text-align: center;
@@ -709,42 +704,6 @@ $message-padding-horizontal: 12px;
 
 .module-message__simple-attachment--with-content-above {
   padding-top: 4px;
-}
-
-.module-message__simple-attachment__icon {
-  background: url('../images/generic-file.svg') no-repeat center;
-  height: 40px;
-  width: 30px;
-  margin-inline-start: 3px;
-  margin-inline-end: 3px;
-
-  // So we can center the extension text inside this icon
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.module-message__simple-attachment__icon-dangerous-container {
-  position: absolute;
-
-  top: -1px;
-  inset-inline-end: -4px;
-
-  height: 16px;
-  width: 16px;
-
-  border-radius: 50%;
-  background-color: variables.$color-white;
-}
-
-.module-message__simple-attachment__icon-dangerous {
-  height: 16px;
-  width: 16px;
-
-  @include mixins.color-svg(
-    '../images/icons/v2/error-solid-24.svg',
-    variables.$color-accent-red
-  );
 }
 
 .module-message__simple-attachment__icon__extension {
@@ -932,19 +891,18 @@ $message-padding-horizontal: 12px;
   @include mixins.button-reset;
   & {
     @include mixins.font-body-1;
-    @include mixins.light-theme {
-      border-block-start-color: variables.$color-black-alpha-10;
-    }
-    @include mixins.dark-theme {
-      border-block-start-color: variables.$color-white-alpha-10;
-    }
-
     width: calc(100% + 24px);
     margin-block-start: 9px;
     margin-inline: -12px;
     padding-block-start: 9px;
     padding-inline: 12px;
     border-block-start: 0.5px solid;
+    @include mixins.light-theme {
+      border-block-start-color: variables.$color-black-alpha-10;
+    }
+    @include mixins.dark-theme {
+      border-block-start-color: variables.$color-white-alpha-10;
+    }
   }
 }
 
@@ -2521,6 +2479,7 @@ button.ConversationDetails__action-button {
   display: flex;
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
 }
 
@@ -2538,159 +2497,11 @@ button.ConversationDetails__action-button {
 }
 
 .module-media-gallery__sections {
+  min-width: 0;
+
   display: flex;
   flex-grow: 1;
   flex-direction: column;
-}
-
-// Module: Attachment Section
-
-.module-attachment-section {
-  width: 100%;
-}
-
-.module-attachment-section__header {
-  @include mixins.font-body-1-bold;
-}
-
-.module-attachment-section__items {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
-}
-
-// Module: Document List Item
-
-.module-document-list-item {
-  width: 100%;
-  height: 72px;
-}
-
-.module-document-list-item--with-separator {
-  @include mixins.light-theme {
-    border-bottom: 1px solid variables.$color-gray-02;
-  }
-  @include mixins.dark-theme {
-    border-bottom: 1px solid variables.$color-gray-75;
-  }
-}
-
-.module-document-list-item__content {
-  @include mixins.button-reset;
-  & {
-    width: 100%;
-    height: 100%;
-
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
-
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-    }
-  }
-}
-
-.module-document-list-item__icon {
-  flex-shrink: 0;
-
-  width: 48px;
-  height: 48px;
-  @include mixins.color-svg(
-    '../images/generic-file.svg',
-    variables.$color-gray-45
-  );
-}
-
-.module-document-list-item__metadata {
-  display: inline-flex;
-  flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 0;
-  margin-inline: 8px;
-}
-
-.module-document-list-item__file-size {
-  display: inline-block;
-  margin-top: 8px;
-  @include mixins.font-body-2;
-}
-
-.module-document-list-item__date {
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-// Module: Media Grid Item
-
-.module-media-grid-item {
-  @include mixins.button-reset;
-  & {
-    height: 94px;
-    width: 94px;
-    background-color: variables.$color-gray-05;
-    margin-inline-end: 4px;
-    margin-bottom: 4px;
-    position: relative;
-  }
-
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-    }
-  }
-}
-
-.module-media-grid-item__image {
-  height: 94px;
-  width: 100%;
-  object-fit: cover;
-}
-
-.module-media-grid-item__icon {
-  position: absolute;
-  top: 15px;
-  bottom: 15px;
-  inset-inline: 15px;
-}
-
-.module-media-grid-item__icon-image {
-  @include mixins.color-svg('../images/image.svg', variables.$color-gray-45);
-}
-
-.module-media-grid-item__image-container {
-  position: relative;
-}
-
-.module-media-grid-item__circle-overlay {
-  @include mixins.position-absolute-center;
-  width: 42px;
-  height: 42px;
-  background-color: variables.$color-white;
-  border-radius: 21px;
-}
-
-.module-media-grid-item__play-overlay {
-  @include mixins.position-absolute-center;
-  height: 24px;
-  width: 24px;
-  @include mixins.color-svg(
-    '../images/icons/v3/play/play-fill.svg',
-    variables.$color-ultramarine
-  );
-}
-
-.module-media-grid-item__icon-video {
-  @include mixins.color-svg('../images/movie.svg', variables.$color-gray-45);
-}
-
-.module-media-grid-item__icon-generic {
-  @include mixins.color-svg('../images/file.svg', variables.$color-gray-45);
 }
 
 /* Module: Empty State*/
@@ -2829,13 +2640,6 @@ button.ConversationDetails__action-button {
 
 .module-image__progress-circle-wrapper {
   @include mixins.position-absolute-center;
-
-  .ProgressCircle .ProgressCircle__background {
-    stroke: variables.$color-white-alpha-20;
-  }
-  .ProgressCircle .ProgressCircle__fill {
-    stroke: variables.$color-white;
-  }
 }
 
 .module-image__spinner-container {
@@ -2991,7 +2795,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/play/play-fill.svg',
-    variables.$color-white
+    var(--color-label-primary-on-color)
   );
 }
 .module-image__stop-icon {
@@ -3002,7 +2806,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/stop/stop-fill.svg',
-    variables.$color-white
+    var(--color-label-primary-on-color)
   );
 }
 .module-image__download-icon {
@@ -3012,7 +2816,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/arrow/arrow-down.svg',
-    variables.$color-white
+    var(--color-label-primary-on-color)
   );
 }
 .module-image__undownloadable-icon {
@@ -3022,7 +2826,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/photo/photo-slash-compact.svg',
-    variables.$color-white
+    var(--color-label-primary-on-color)
   );
 }
 
@@ -3087,6 +2891,7 @@ button.module-image__border-overlay:focus {
   & {
     background-color: variables.$color-black-alpha-80;
     color: variables.$color-white;
+    backdrop-filter: blur(10px);
 
     height: 44px;
     border-radius: 44px;
@@ -3345,11 +3150,17 @@ button.module-image__border-overlay:focus {
 // Module: Staged Generic Attachment
 
 .module-staged-generic-attachment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
   height: 120px;
   width: 120px;
-  display: inline-block;
   position: relative;
   border-radius: 4px;
+  padding: 7px;
   vertical-align: middle;
   white-space: nowrap;
 
@@ -3365,6 +3176,10 @@ button.module-image__border-overlay:focus {
 }
 
 .module-staged-generic-attachment__close-button {
+  position: absolute;
+  inset-inline-end: 5px;
+  top: 0;
+
   @include mixins.staged-attachment-close-button;
 
   & {
@@ -3383,49 +3198,13 @@ button.module-image__border-overlay:focus {
   }
 }
 
-.module-staged-generic-attachment__icon {
-  margin-top: 30px;
-
-  background: url('../images/generic-file.svg') no-repeat center;
-  height: 44px;
-  width: 56px;
-  margin-inline: 32px;
-  margin-bottom: -4px;
-
-  // So we can center the extension text inside this icon
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.module-staged-generic-attachment__icon__extension {
-  font-size: 10px;
-  line-height: 13px;
-  letter-spacing: 0.1px;
-  text-transform: uppercase;
-
-  // Along with flow layout in parent item, centers text
-  text-align: center;
-  width: 25px;
-  margin-inline: auto;
-
-  // We don't have much room for text here, cut it off without ellipse
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: clip;
-
-  color: variables.$color-gray-90;
-}
-
 .module-staged-generic-attachment__filename {
   @include mixins.font-caption;
 
-  margin: 7px;
-  margin-top: 5px;
+  max-width: 100%;
   text-align: center;
 
   overflow: hidden;
-  height: 2.4em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -3728,10 +3507,15 @@ button.module-image__border-overlay:focus {
   & {
     @include mixins.light-theme() {
       background: variables.$color-white;
+      ::-webkit-scrollbar-thumb {
+        border-color: variables.$color-white;
+      }
     }
-
-    @include mixins.dark-theme() {
+    @include mixins.dark-theme {
       background: variables.$color-gray-75;
+      ::-webkit-scrollbar-thumb {
+        border-color: variables.$color-gray-75;
+      }
     }
   }
 
@@ -3893,6 +3677,13 @@ button.module-image__border-overlay:focus {
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
+
+    &--darken {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(variables.$color-gray-60, 0.6);
+    }
 
     &--blur {
       background-repeat: no-repeat;
@@ -4636,13 +4427,16 @@ button.module-image__border-overlay:focus {
     0px 0px 8px rgba(0, 0, 0, 0.05),
     0px 8px 20px rgba(0, 0, 0, 0.3);
   cursor: grab;
-  // This is just a starting height; the component will figure out what height it should
-  // be, given the aspect ratio of the provided video, pinning the width.
-  // These both should be kept in sync with the height/width in CallingPip.tsx
+  // This size is just a starting place; the component will figure out what it should
+  // be. When resizing for incoming portrait video, the width will be kept constant. The
+  // width only changes with window size.
+  // These both should be kept in sync with the _normal_ height/width in CallingPip.tsx
   height: 286px;
   width: 160px;
+
   position: fixed;
   z-index: variables.$z-index-calling-pip;
+  overflow: hidden;
 
   & .module-ongoing-call__group-call-remote-participant {
     border-radius: 0;
@@ -4676,6 +4470,8 @@ button.module-image__border-overlay:focus {
       position: absolute;
       top: 8px;
       inset-inline-start: 8px;
+      // These are the normal widths; the size will change based on whether the window
+      // is large, like the overall pip.
       height: 54px;
       width: 80px;
 
@@ -4717,7 +4513,7 @@ button.module-image__border-overlay:focus {
     position: absolute;
     bottom: 66px;
     inset-inline-start: 8px;
-    transition: bottom 0.3s variables.$ease-out-local-preview 0.3s;
+    transition: bottom 0.5s variables.$ease-out-local-preview;
 
     &--no-controls {
       bottom: 8px;
@@ -4760,17 +4556,14 @@ button.module-image__border-overlay:focus {
 
   &__actions {
     position: absolute;
-    bottom: 4px;
+    // It starts offscreen then animates in/out as it fades in/outs
+    bottom: -60px;
     inset-inline-start: 4px;
     inset-inline-end: 4px;
     padding: 12px;
     height: 56px;
     opacity: 0;
-    transition: opacity 1s ease-in-out;
-
-    &--visible {
-      opacity: 1;
-    }
+    transition: all 0.5s variables.$ease-out-local-preview;
 
     display: flex;
     align-items: center;
@@ -4780,13 +4573,25 @@ button.module-image__border-overlay:focus {
     justify-content: space-around;
     background-color: variables.$color-gray-78;
 
+    &--visible {
+      opacity: 1;
+      bottom: 4px;
+    }
+
+    &__spacer {
+      flex-grow: 1;
+      flex-shrink: 1;
+    }
     &__button {
       flex-shrink: 0;
       flex-grow: 0;
     }
     &__middle-button {
-      flex-grow: 1;
+      // icon width, and 15px of border on each side
+      width: 62px;
       text-align: center;
+      flex-shrink: 0;
+      flex-grow: 0;
     }
 
     .CallingButton__icon {
@@ -4801,7 +4606,7 @@ button.module-image__border-overlay:focus {
     inset-inline-end: 16px;
 
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 0.5s variables.$ease-out-local-preview;
 
     &--visible {
       opacity: 1;
@@ -5072,7 +4877,8 @@ button.module-calling-participants-list__contact {
   $normal-row-height: 72px;
 
   @include mixins.NavTabs__Scroller;
-  padding-inline: 10px;
+  padding-inline-start: 10px;
+  padding-inline-end: 1px; /* leaving room for scrollbar */
 
   // list tiles in choose-group-members and compose extend to the edge
   .module-left-pane--mode-choose-group-members &,
@@ -5263,18 +5069,30 @@ button.module-calling-participants-list__contact {
         }
       }
 
-      &:hover:not(:disabled, &--disabled, &--is-selected),
-      &:focus:not(:disabled, &--disabled, &--is-selected) {
-        @include mixins.light-theme {
-          background-color: variables.$color-gray-05;
-          #{$unread-indicator} {
-            border-color: variables.$color-gray-05;
-          }
+      &:hover:not(:disabled, &--disabled, &--is-selected) {
+        background-color: light-dark(
+          variables.$color-gray-05,
+          variables.$color-gray-75
+        );
+        #{$unread-indicator} {
+          border-color: light-dark(
+            variables.$color-gray-05,
+            variables.$color-gray-75
+          );
         }
-        @include mixins.dark-theme {
-          background-color: variables.$color-gray-75;
+      }
+
+      @include mixins.keyboard-mode {
+        &:focus:not(:disabled, &--disabled, &--is-selected) {
+          background-color: light-dark(
+            variables.$color-gray-05,
+            variables.$color-gray-75
+          );
           #{$unread-indicator} {
-            border-color: variables.$color-gray-75;
+            border-color: light-dark(
+              variables.$color-gray-05,
+              variables.$color-gray-75
+            );
           }
         }
       }
@@ -5771,6 +5589,48 @@ button.module-calling-participants-list__contact {
   }
 }
 
+.module-conversation-list__empty-results {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 48px;
+  padding-inline: 12px;
+}
+
+.module-conversation-list__generic-checkbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: light-dark(
+    variables.$color-black-alpha-06,
+    variables.$color-white-alpha-12
+  );
+
+  &::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+  }
+
+  &--contact::before {
+    @include mixins.color-svg(
+      '../images/icons/v3/person/person.svg',
+      light-dark(variables.$color-black, variables.$color-gray-05)
+    );
+  }
+
+  &--group::before {
+    @include mixins.color-svg(
+      '../images/icons/v3/group/group.svg',
+      light-dark(variables.$color-black, variables.$color-gray-05)
+    );
+  }
+}
+
 // Module: Left Pane
 
 .module-left-pane {
@@ -5924,10 +5784,6 @@ button.module-calling-participants-list__contact {
 
       &__label {
         margin-inline-end: 12px;
-      }
-
-      .module-disappearing-timer-select {
-        width: 144px;
       }
     }
   }

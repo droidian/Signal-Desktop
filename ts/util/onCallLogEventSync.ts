@@ -1,14 +1,16 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CallLogEventSyncEvent } from '../textsecure/messageReceiverEvents';
-import * as log from '../logging/log';
-import { DataWriter } from '../sql/Client';
-import type { CallLogEventTarget } from '../types/CallDisposition';
-import { CallLogEvent } from '../types/CallDisposition';
-import { missingCaseError } from './missingCaseError';
-import { strictAssert } from './assert';
-import { updateDeletedMessages } from './callDisposition';
+import type { CallLogEventSyncEvent } from '../textsecure/messageReceiverEvents.js';
+import { createLogger } from '../logging/log.js';
+import { DataWriter } from '../sql/Client.js';
+import type { CallLogEventTarget } from '../types/CallDisposition.js';
+import { CallLogEvent } from '../types/CallDisposition.js';
+import { missingCaseError } from './missingCaseError.js';
+import { strictAssert } from './assert.js';
+import { updateDeletedMessages } from './callDisposition.js';
+
+const log = createLogger('onCallLogEventSync');
 
 export async function onCallLogEventSync(
   syncEvent: CallLogEventSyncEvent
@@ -25,11 +27,11 @@ export async function onCallLogEventSync(
   };
 
   log.info(
-    `onCallLogEventSync: Processing event (Event: ${type}, CallId: ${callId}, Timestamp: ${timestamp})`
+    `Processing event (Event: ${type}, CallId: ${callId}, Timestamp: ${timestamp})`
   );
 
   if (type === CallLogEvent.Clear) {
-    log.info('onCallLogEventSync: Clearing call history');
+    log.info('Clearing call history');
     try {
       const messageIds = await DataWriter.clearCallHistory(target);
       updateDeletedMessages(messageIds);
@@ -39,26 +41,22 @@ export async function onCallLogEventSync(
     }
     confirm();
   } else if (type === CallLogEvent.MarkedAsRead) {
-    log.info('onCallLogEventSync: Marking call history read');
+    log.info('Marking call history read');
     try {
       const count = await DataWriter.markAllCallHistoryRead(target);
-      log.info(
-        `onCallLogEventSync: Marked ${count} call history messages read`
-      );
+      log.info(`Marked ${count} call history messages read`);
     } finally {
       window.reduxActions.callHistory.updateCallHistoryUnreadCount();
     }
     confirm();
   } else if (type === CallLogEvent.MarkedAsReadInConversation) {
-    log.info('onCallLogEventSync: Marking call history read in conversation');
+    log.info('Marking call history read in conversation');
     try {
       strictAssert(peerIdAsConversationId, 'Missing peerIdAsConversationId');
       strictAssert(peerIdAsRoomId, 'Missing peerIdAsRoomId');
       const count =
         await DataWriter.markAllCallHistoryReadInConversation(target);
-      log.info(
-        `onCallLogEventSync: Marked ${count} call history messages read`
-      );
+      log.info(`Marked ${count} call history messages read`);
     } finally {
       window.reduxActions.callHistory.updateCallHistoryUnreadCount();
     }

@@ -1,39 +1,37 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { clone, has } from 'lodash';
+import lodash from 'lodash';
 import { contextBridge } from 'electron';
 
-import * as log from '../../logging/log';
+import { createLogger } from '../../logging/log.js';
 
-import '../context';
+import '../context.js';
 
 // Connect websocket early
-import '../../textsecure/preconnect';
+import '../../textsecure/preconnect.js';
 
-import './phase0-devtools';
-import './phase1-ipc';
-import '../preload';
-import './phase2-dependencies';
-import './phase3-post-signal';
-import './phase4-test';
-import '../../backbone/reliable_trigger';
+import './phase0-devtools.js';
+import './phase1-ipc.js';
+import '../preload.js';
+import './phase2-dependencies.js';
+import './phase3-post-signal.js';
+import './phase4-test.js';
 
 import type {
   CdsLookupOptionsType,
   GetIceServersResultType,
-} from '../../textsecure/WebAPI';
-import type { FeatureFlagType } from '../../window.d';
-import type { StorageAccessType } from '../../types/Storage.d';
-import { start as startConversationController } from '../../ConversationController';
-import { initMessageCleanup } from '../../services/messageStateCleanup';
-import { Environment, getEnvironment } from '../../environment';
-import { isProduction } from '../../util/version';
-import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen';
-import {
-  removeUseRingrtcAdm,
-  setUseRingrtcAdm,
-} from '../../util/ringrtc/ringrtcAdm';
+} from '../../textsecure/WebAPI.js';
+import type { FeatureFlagType } from '../../window.d.ts';
+import type { StorageAccessType } from '../../types/Storage.d.ts';
+import { initMessageCleanup } from '../../services/messageStateCleanup.js';
+import { Environment, getEnvironment } from '../../environment.js';
+import { isProduction } from '../../util/version.js';
+import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen.js';
+
+const { has } = lodash;
+
+const log = createLogger('start');
 
 window.addEventListener('contextmenu', e => {
   const node = e.target as Element | null;
@@ -54,9 +52,7 @@ if (window.SignalContext.config.proxyUrl) {
   log.info('Using provided proxy url');
 }
 
-window.Whisper.events = clone(window.Backbone.Events);
 initMessageCleanup();
-startConversationController();
 
 if (
   !isProduction(window.SignalContext.getVersion()) ||
@@ -96,10 +92,6 @@ if (
       name: K,
       value: StorageAccessType[K]
     ) => window.storage.put(name, value),
-    removeUseRingrtcAdm: async () => {
-      await removeUseRingrtcAdm();
-      log.info('Restart to make ADM change take effect!');
-    },
     setFlag: (name: keyof FeatureFlagType, value: boolean) => {
       if (!has(window.Flags, name)) {
         return;
@@ -108,10 +100,6 @@ if (
     },
     setSfuUrl: (url: string) => {
       window.Signal.Services.calling._sfuUrl = url;
-    },
-    setUseRingrtcAdm: async (value: boolean) => {
-      await setUseRingrtcAdm(value);
-      log.info('Restart to make ADM change take effect!');
     },
     setIceServerOverride: (
       override: GetIceServersResultType | string | undefined
@@ -142,6 +130,14 @@ if (getEnvironment() === Environment.Test) {
   contextBridge.exposeInMainWorld('RETRY_DELAY', window.RETRY_DELAY);
   contextBridge.exposeInMainWorld('assert', window.assert);
   contextBridge.exposeInMainWorld('testUtilities', window.testUtilities);
+}
+
+// See ts/logging/log.ts
+if (getEnvironment() !== Environment.PackagedApp) {
+  const debug = (...args: Array<string>) => {
+    localStorage.setItem('debug', args.join(','));
+  };
+  contextBridge.exposeInMainWorld('debug', debug);
 }
 
 if (window.SignalContext.config.ciMode === 'full') {

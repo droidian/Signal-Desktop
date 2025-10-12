@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import moment from 'moment';
-import { compact, groupBy, sortBy } from 'lodash';
+import lodash from 'lodash';
+import type { MediaItemType } from '../../../types/MediaItem.js';
+import { missingCaseError } from '../../../util/missingCaseError.js';
 
-import * as log from '../../../logging/log';
-import type { MediaItemType } from '../../../types/MediaItem';
-
-import { missingCaseError } from '../../../util/missingCaseError';
+const { compact, groupBy, sortBy } = lodash;
 
 type StaticSectionType = 'today' | 'yesterday' | 'thisWeek' | 'thisMonth';
 type YearMonthSectionType = 'yearMonth';
@@ -83,8 +82,7 @@ const toSection = (
         mediaItems,
       };
     default:
-      log.error(missingCaseError(firstMediaItemWithSection));
-      return undefined;
+      throw missingCaseError(firstMediaItemWithSection);
   }
 };
 

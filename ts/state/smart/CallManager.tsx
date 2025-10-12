@@ -1,28 +1,22 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { memoize } from 'lodash';
+import lodash from 'lodash';
 import React, { memo } from 'react';
 import { useSelector } from 'react-redux';
 import type {
   DirectIncomingCall,
   GroupIncomingCall,
-} from '../../components/CallManager';
-import { CallManager } from '../../components/CallManager';
-import { isConversationTooBigToRing as getIsConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing';
-import * as log from '../../logging/log';
-import { calling as callingService } from '../../services/calling';
-import {
-  FALLBACK_NOTIFICATION_TITLE,
-  NotificationSetting,
-  NotificationType,
-  notificationService,
-} from '../../services/notifications';
+} from '../../components/CallManager.js';
+import { CallManager } from '../../components/CallManager.js';
+import { isConversationTooBigToRing as getIsConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.js';
+import { createLogger } from '../../logging/log.js';
+import { calling as callingService } from '../../services/calling.js';
 import {
   bounceAppIconStart,
   bounceAppIconStop,
-} from '../../shims/bounceAppIcon';
-import type { CallLinkType } from '../../types/CallLink';
+} from '../../shims/bounceAppIcon.js';
+import type { CallLinkType } from '../../types/CallLink.js';
 import type {
   ActiveCallBaseType,
   ActiveCallType,
@@ -31,33 +25,37 @@ import type {
   CallingConversationType,
   ConversationsByDemuxIdType,
   GroupCallRemoteParticipantType,
-} from '../../types/Calling';
-import { CallState } from '../../types/Calling';
-import { CallMode } from '../../types/CallDisposition';
-import type { AciString } from '../../types/ServiceId';
-import { strictAssert } from '../../util/assert';
-import { callLinkToConversation } from '../../util/callLinks';
-import { callingTones } from '../../util/callingTones';
-import { missingCaseError } from '../../util/missingCaseError';
-import { useAudioPlayerActions } from '../ducks/audioPlayer';
-import { getActiveCall, useCallingActions } from '../ducks/calling';
-import type { ConversationType } from '../ducks/conversations';
-import type { StateType } from '../reducer';
-import { getHasInitialLoadCompleted } from '../selectors/app';
+} from '../../types/Calling.js';
+import { CallState } from '../../types/Calling.js';
+import { CallMode } from '../../types/CallDisposition.js';
+import type { AciString } from '../../types/ServiceId.js';
+import { callLinkToConversation } from '../../util/callLinks.js';
+import { callingTones } from '../../util/callingTones.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { useAudioPlayerActions } from '../ducks/audioPlayer.js';
+import { getActiveCall, useCallingActions } from '../ducks/calling.js';
+import type { ConversationType } from '../ducks/conversations.js';
+import type { StateType } from '../reducer.js';
+import { getHasInitialLoadCompleted } from '../selectors/app.js';
 import {
   getActiveCallState,
   getAvailableCameras,
   getCallLinkSelector,
   getRingingCall,
-} from '../selectors/calling';
-import { getConversationSelector, getMe } from '../selectors/conversations';
-import { getIntl, getUserACI } from '../selectors/user';
-import { SmartCallingDeviceSelection } from './CallingDeviceSelection';
-import { renderEmojiPicker } from './renderEmojiPicker';
-import { renderReactionPicker } from './renderReactionPicker';
-import { isSharingPhoneNumberWithEverybody as getIsSharingPhoneNumberWithEverybody } from '../../util/phoneNumberSharingMode';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { isLonelyGroup } from '../ducks/callingHelpers';
+} from '../selectors/calling.js';
+import { getConversationSelector, getMe } from '../selectors/conversations.js';
+import { getIntl, getUserACI } from '../selectors/user.js';
+import { SmartCallingDeviceSelection } from './CallingDeviceSelection.js';
+import { renderEmojiPicker } from './renderEmojiPicker.js';
+import { renderReactionPicker } from './renderReactionPicker.js';
+import { isSharingPhoneNumberWithEverybody as getIsSharingPhoneNumberWithEverybody } from '../../util/phoneNumberSharingMode.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { isLonelyGroup } from '../ducks/callingHelpers.js';
+import { getActiveProfile } from '../selectors/notificationProfiles.js';
+
+const { memoize } = lodash;
+
+const log = createLogger('CallManager');
 
 function renderDeviceSelection(): JSX.Element {
   return <SmartCallingDeviceSelection />;
@@ -66,55 +64,7 @@ function renderDeviceSelection(): JSX.Element {
 const getGroupCallVideoFrameSource =
   callingService.getGroupCallVideoFrameSource.bind(callingService);
 
-async function notifyForCall(
-  conversationId: string,
-  title: string,
-  isVideoCall: boolean
-): Promise<void> {
-  const shouldNotify =
-    !window.SignalContext.activeWindowService.isActive() &&
-    window.Events.getCallSystemNotification();
-  if (!shouldNotify) {
-    return;
-  }
-
-  let notificationTitle: string;
-
-  const notificationSetting = notificationService.getNotificationSetting();
-  switch (notificationSetting) {
-    case NotificationSetting.Off:
-    case NotificationSetting.NoNameOrMessage:
-      notificationTitle = FALLBACK_NOTIFICATION_TITLE;
-      break;
-    case NotificationSetting.NameOnly:
-    case NotificationSetting.NameAndMessage:
-      notificationTitle = title;
-      break;
-    default:
-      log.error(missingCaseError(notificationSetting));
-      notificationTitle = FALLBACK_NOTIFICATION_TITLE;
-      break;
-  }
-
-  const conversation = window.ConversationController.get(conversationId);
-  strictAssert(conversation, 'notifyForCall: conversation not found');
-
-  const { url, absolutePath } = await conversation.getAvatarOrIdenticon();
-
-  notificationService.notify({
-    conversationId,
-    title: notificationTitle,
-    iconPath: absolutePath,
-    iconUrl: url,
-    message: isVideoCall
-      ? window.i18n('icu:incomingVideoCall')
-      : window.i18n('icu:incomingAudioCall'),
-    sentAt: 0,
-    // The ringtone plays so we don't need sound for the notification
-    silent: true,
-    type: NotificationType.IncomingCall,
-  });
-}
+const notifyForCall = callingService.notifyForCall.bind(callingService);
 
 function setLocalPreviewContainer(container: HTMLDivElement | null): void {
   callingService.setLocalPreviewContainer(container);
@@ -338,6 +288,8 @@ const mapStateToActiveCallProp = (
         remoteParticipants,
         remoteAudioLevels: call.remoteAudioLevels || new Map<number, number>(),
         suggestLowerHand: Boolean(activeCallState.suggestLowerHand),
+        mutedBy: activeCallState.mutedBy,
+        observedRemoteMute: activeCallState.observedRemoteMute,
       } satisfies ActiveGroupCallType;
     }
     default:
@@ -437,6 +389,7 @@ export const SmartCallManager = memo(function SmartCallManager() {
   const availableCameras = useSelector(getAvailableCameras);
   const hasInitialLoadCompleted = useSelector(getHasInitialLoadCompleted);
   const me = useSelector(getMe);
+  const activeNotificationProfile = useSelector(getActiveProfile);
 
   const {
     approveUser,
@@ -460,6 +413,7 @@ export const SmartCallManager = memo(function SmartCallManager() {
     setGroupCallVideoRequest,
     setIsCallActive,
     setLocalAudio,
+    setLocalAudioRemoteMuted,
     setLocalVideo,
     setOutgoingRing,
     setRendererCanvas,
@@ -482,6 +436,7 @@ export const SmartCallManager = memo(function SmartCallManager() {
     <CallManager
       acceptCall={acceptCall}
       activeCall={activeCall}
+      activeNotificationProfile={activeNotificationProfile}
       approveUser={approveUser}
       availableCameras={availableCameras}
       batchUserAction={batchUserAction}
@@ -519,6 +474,7 @@ export const SmartCallManager = memo(function SmartCallManager() {
       setGroupCallVideoRequest={setGroupCallVideoRequest}
       setIsCallActive={setIsCallActive}
       setLocalAudio={setLocalAudio}
+      setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
       setLocalPreviewContainer={setLocalPreviewContainer}
       setLocalVideo={setLocalVideo}
       setOutgoingRing={setOutgoingRing}

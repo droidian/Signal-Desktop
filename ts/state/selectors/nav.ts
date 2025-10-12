@@ -2,19 +2,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { createSelector } from 'reselect';
-import type { StateType } from '../reducer';
-import { NavTab, type NavStateType } from '../ducks/nav';
-import { getAllConversationsUnreadStats } from './conversations';
-import { getStoriesNotificationCount } from './stories';
-import type { UnreadStats } from '../../util/countUnreadStats';
-import { getCallHistoryUnreadCount } from './callHistory';
+import { getAllConversationsUnreadStats } from './conversations.js';
+import { getStoriesNotificationCount } from './stories.js';
+import { getCallHistoryUnreadCount } from './callHistory.js';
+import { NavTab } from '../../types/Nav.js';
+
+import type { StateType } from '../reducer.js';
+import type { NavStateType } from '../ducks/nav.js';
+import type { UnreadStats } from '../../util/countUnreadStats.js';
 
 function getNav(state: StateType): NavStateType {
   return state.nav;
 }
 
 export const getSelectedNavTab = createSelector(getNav, nav => {
-  return nav.selectedNavTab;
+  return nav.selectedLocation.tab;
+});
+
+export const getSelectedLocation = createSelector(getNav, nav => {
+  return nav.selectedLocation;
 });
 
 export const getOtherTabsUnreadStats = createSelector(

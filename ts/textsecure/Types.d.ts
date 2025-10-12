@@ -1,15 +1,21 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { SignalService as Proto } from '../protobuf';
-import type { IncomingWebSocketRequest } from './WebsocketResources';
-import type { ServiceIdString, AciString, PniString } from '../types/ServiceId';
-import type { AttachmentType, TextAttachmentType } from '../types/Attachment';
-import type { GiftBadgeStates } from '../components/conversation/Message';
-import type { MIMEType } from '../types/MIME';
-import type { DurationInSeconds } from '../util/durations';
-import type { AnyPaymentEvent } from '../types/Payment';
-import type { RawBodyRange } from '../types/BodyRange';
+import type * as client from '@signalapp/libsignal-client';
+
+import type { SignalService as Proto } from '../protobuf/index.js';
+import type { IncomingWebSocketRequest } from './WebsocketResources.js';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from '../types/ServiceId.js';
+import type { TextAttachmentType } from '../types/Attachment.js';
+import type { GiftBadgeStates } from '../components/conversation/Message.js';
+import type { MIMEType } from '../types/MIME.js';
+import type { DurationInSeconds } from '../util/durations/index.js';
+import type { AnyPaymentEvent } from '../types/Payment.js';
+import type { RawBodyRange } from '../types/BodyRange.js';
 
 export {
   IdentityKeyType,
@@ -24,7 +30,7 @@ export {
   SignedPreKeyIdType,
   SignedPreKeyType,
   UnprocessedType,
-} from '../sql/Interface';
+} from '../sql/Interface.ts';
 
 export type StorageServiceCallOptionsType = {
   credentials?: StorageServiceCredentials;
@@ -62,10 +68,7 @@ export type CompatPreKeyType = {
 
 // How we work with these types thereafter
 
-export type KeyPairType = {
-  privKey: Uint8Array;
-  pubKey: Uint8Array;
-};
+export type KeyPairType = client.IdentityKeyPair;
 
 export type OuterSignedPrekeyType = {
   confirmed: boolean;
@@ -118,7 +121,7 @@ export type ProcessedAttachment = {
   blurHash?: string;
   cdnNumber?: number;
   textAttachment?: Omit<TextAttachmentType, 'preview'>;
-  backupLocator?: AttachmentType['backupLocator'];
+  uploadTimestamp?: number;
   downloadPath?: string;
   incrementalMac?: string;
   chunkSize?: number;
@@ -182,6 +185,23 @@ export type ProcessedReaction = {
   targetTimestamp?: number;
 };
 
+export type ProcessedPollCreate = {
+  question?: string;
+  options?: Array<string>;
+  allowMultiple?: boolean;
+};
+
+export type ProcessedPollVote = {
+  targetAuthorAci?: AciString;
+  targetTimestamp?: number;
+  optionIndexes?: Array<number>;
+  voteCount?: number;
+};
+
+export type ProcessedPollTerminate = {
+  targetTimestamp?: number;
+};
+
 export type ProcessedDelete = {
   targetSentTimestamp?: number;
 };
@@ -190,14 +210,17 @@ export type ProcessedBodyRange = RawBodyRange;
 
 export type ProcessedGroupCallUpdate = Proto.DataMessage.IGroupCallUpdate;
 
-export type ProcessedStoryContext = Proto.DataMessage.IStoryContext;
-
 export type ProcessedGiftBadge = {
   expiration: number;
   id: string | undefined;
   level: number;
   receiptCredentialPresentation: string;
   state: GiftBadgeStates;
+};
+
+export type ProcessedStoryContext = {
+  authorAci: AciString | undefined;
+  sentTimestamp: number;
 };
 
 export type ProcessedDataMessage = {
@@ -220,6 +243,9 @@ export type ProcessedDataMessage = {
   isStory?: boolean;
   isViewOnce: boolean;
   reaction?: ProcessedReaction;
+  pollCreate?: ProcessedPollCreate;
+  pollVote?: ProcessedPollVote;
+  pollTerminate?: ProcessedPollTerminate;
   delete?: ProcessedDelete;
   bodyRanges?: ReadonlyArray<ProcessedBodyRange>;
   groupCallUpdate?: ProcessedGroupCallUpdate;
@@ -289,6 +315,7 @@ export type CallbackResultType = {
 
 export type IRequestHandler = {
   handleRequest(request: IncomingWebSocketRequest): void;
+  handleDisconnect(): void;
 };
 
 export type PniKeyMaterialType = Readonly<{

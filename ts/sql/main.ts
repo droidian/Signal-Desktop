@@ -1,20 +1,20 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { join } from 'path';
-import { Worker } from 'worker_threads';
-import { format } from 'util';
+import { join } from 'node:path';
+import { Worker } from 'node:worker_threads';
+import { format } from 'node:util';
 import { app } from 'electron';
 
-import { strictAssert } from '../util/assert';
-import { explodePromise } from '../util/explodePromise';
-import type { LoggerType } from '../types/Logging';
-import * as Errors from '../types/errors';
-import { SqliteErrorKind } from './errors';
+import { strictAssert } from '../util/assert.js';
+import { explodePromise } from '../util/explodePromise.js';
+import type { LoggerType } from '../types/Logging.js';
+import * as Errors from '../types/errors.js';
+import { SqliteErrorKind } from './errors.js';
 import type {
   ServerReadableDirectInterface,
   ServerWritableDirectInterface,
-} from './Interface';
+} from './Interface.js';
 
 const MIN_TRACE_DURATION = 40;
 
@@ -83,7 +83,8 @@ export type WrappedWorkerResponse =
     }>
   | WrappedWorkerLogEntry;
 
-type PromisePair<T> = {
+type ResponseEntry<T> = {
+  errorId: string;
   resolve: (response: T) => void;
   reject: (error: Error) => void;
 };
@@ -91,6 +92,7 @@ type PromisePair<T> = {
 type KnownErrorResolverType = Readonly<{
   kind: SqliteErrorKind;
   resolve: (err: Error) => void;
+  once?: boolean;
 }>;
 
 type CreateWorkerResultType = Readonly<{
@@ -129,7 +131,7 @@ export class MainSQL {
   #logger?: LoggerType;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  #onResponse = new Map<number, PromisePair<any>>();
+  #onResponse = new Map<number, ResponseEntry<any>>();
 
   #shouldTimeQueries = false;
   #shouldTrackQueryStats = false;
@@ -209,14 +211,29 @@ export class MainSQL {
 
   public whenCorrupted(): Promise<Error> {
     const { promise, resolve } = explodePromise<Error>();
-    this.#errorResolvers.push({ kind: SqliteErrorKind.Corrupted, resolve });
+    this.#errorResolvers.push({
+      kind: SqliteErrorKind.Corrupted,
+      resolve,
+      once: true,
+    });
     return promise;
   }
 
   public whenReadonly(): Promise<Error> {
     const { promise, resolve } = explodePromise<Error>();
-    this.#errorResolvers.push({ kind: SqliteErrorKind.Readonly, resolve });
+    this.#errorResolvers.push({
+      kind: SqliteErrorKind.Readonly,
+      resolve,
+      once: true,
+    });
     return promise;
+  }
+
+  public onUnknownSqlError(callback: (error: Error) => void): void {
+    this.#errorResolvers.push({
+      kind: SqliteErrorKind.Unknown,
+      resolve: callback,
+    });
   }
 
   public async close(): Promise<void> {
@@ -323,7 +340,9 @@ export class MainSQL {
     entry: PoolEntry,
     request: WorkerRequest
   ): Promise<Response> {
+    let errorId: string = request.type;
     if (request.type === 'sqlCall:read' || request.type === 'sqlCall:write') {
+      errorId = `${request.type}(${request.method})`;
       if (this.#onReady) {
         await this.#onReady;
       }
@@ -338,7 +357,11 @@ export class MainSQL {
     this.#seq = (this.#seq + 1) >>> 0;
 
     const { promise: result, resolve, reject } = explodePromise<Response>();
-    this.#onResponse.set(seq, { resolve, reject });
+    this.#onResponse.set(seq, {
+      errorId,
+      resolve,
+      reject,
+    });
 
     const wrappedRequest: WrappedWorkerRequest = {
       seq,
@@ -368,15 +391,13 @@ export class MainSQL {
   }
 
   #onError(errorKind: SqliteErrorKind, error: Error): void {
-    if (errorKind === SqliteErrorKind.Unknown) {
-      return;
-    }
-
     const resolvers = new Array<(error: Error) => void>();
     this.#errorResolvers = this.#errorResolvers.filter(entry => {
       if (entry.kind === errorKind) {
         resolvers.push(entry.resolve);
-        return false;
+        if (entry.once) {
+          return false;
+        }
       }
       return true;
     });
@@ -467,21 +488,21 @@ export class MainSQL {
 
       const { seq, error, errorKind, response } = wrappedResponse;
 
-      const pair = this.#onResponse.get(seq);
+      const entry = this.#onResponse.get(seq);
       this.#onResponse.delete(seq);
-      if (!pair) {
+      if (!entry) {
         throw new Error(`Unexpected worker response with seq: ${seq}`);
       }
 
       if (error) {
-        const errorObj = new Error(error.message);
-        errorObj.stack = error.stack;
+        const errorObj = new Error(`${entry.errorId}: ${error.message}`);
+        errorObj.stack = `${entry.errorId}: ${error.stack}`;
         errorObj.name = error.name;
         this.#onError(errorKind ?? SqliteErrorKind.Unknown, errorObj);
 
-        pair.reject(errorObj);
+        entry.reject(errorObj);
       } else {
-        pair.resolve(response);
+        entry.resolve(response);
       }
     });
 

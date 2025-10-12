@@ -3,15 +3,17 @@
 
 import { assert } from 'chai';
 
-import * as Attachment from '../../types/Attachment';
-import * as MIME from '../../types/MIME';
-import { SignalService } from '../../protobuf';
-import * as Bytes from '../../Bytes';
-import * as logger from '../../logging/log';
+import * as Attachment from '../../types/Attachment.js';
+import * as MIME from '../../types/MIME.js';
+import { SignalService } from '../../protobuf/index.js';
+import * as Bytes from '../../Bytes.js';
+import { createLogger } from '../../logging/log.js';
 
-import { fakeAttachment } from '../../test-both/helpers/fakeAttachment';
-import { DAY } from '../../util/durations';
-import { migrateDataToFileSystem } from '../../util/attachments/migrateDataToFilesystem';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.js';
+import { DAY } from '../../util/durations/index.js';
+import { migrateDataToFileSystem } from '../../util/attachments/migrateDataToFilesystem.js';
+
+const logger = createLogger('Attachment_test');
 
 const FAKE_LOCAL_ATTACHMENT: Attachment.LocalAttachmentV2Type = {
   version: 2,
@@ -120,7 +122,7 @@ describe('Attachment', () => {
           timestamp,
           index: 2,
         });
-        const expected = 'signal-1970-01-02-000000_002.mov';
+        const expected = 'funny-cat.mov';
         assert.strictEqual(actual, expected);
       });
 

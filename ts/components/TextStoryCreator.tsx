@@ -2,40 +2,42 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import { usePopper } from 'react-popper';
 import { FocusScope } from 'react-aria';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews';
-import { ThemeType, type LocalizerType } from '../types/Util';
-import type { Props as EmojiButtonPropsType } from './emoji/EmojiButton';
-import type { TextAttachmentType } from '../types/Attachment';
-import { Button, ButtonVariant } from './Button';
-import { ContextMenu } from './ContextMenu';
-import { EmojiButton } from './emoji/EmojiButton';
-import { LinkPreviewSourceType, findLinks } from '../types/LinkPreview';
-import type { MaybeGrabLinkPreviewOptionsType } from '../types/LinkPreview';
-import { Input } from './Input';
-import { Slider } from './Slider';
-import { StoryLinkPreview } from './StoryLinkPreview';
-import { TextAttachment } from './TextAttachment';
-import { Theme, themeClassName } from '../util/theme';
-import { getRGBA, getRGBANumber } from '../mediaEditor/util/color';
+import type { EmojiPickDataType } from './emoji/EmojiPicker.js';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.js';
+import { ThemeType, type LocalizerType } from '../types/Util.js';
+import type { Props as EmojiButtonPropsType } from './emoji/EmojiButton.js';
+import type { TextAttachmentType } from '../types/Attachment.js';
+import { Button, ButtonVariant } from './Button.js';
+import { ContextMenu } from './ContextMenu.js';
+import { EmojiButton } from './emoji/EmojiButton.js';
+import { LinkPreviewSourceType, findLinks } from '../types/LinkPreview.js';
+import type { MaybeGrabLinkPreviewOptionsType } from '../types/LinkPreview.js';
+import { Input } from './Input.js';
+import { Slider } from './Slider.js';
+import { StoryLinkPreview } from './StoryLinkPreview.js';
+import { TextAttachment } from './TextAttachment.js';
+import { Theme, themeClassName } from '../util/theme.js';
+import { getRGBA, getRGBANumber } from '../mediaEditor/util/color.js';
 import {
   COLOR_BLACK_INT,
   COLOR_WHITE_INT,
   getBackgroundColor,
-} from '../util/getStoryBackground';
-import { convertShortName } from './emoji/lib';
-import { objectMap } from '../util/objectMap';
-import { handleOutsideClick } from '../util/handleOutsideClick';
-import { ConfirmDiscardDialog } from './ConfirmDiscardDialog';
-import { Spinner } from './Spinner';
-import { FunEmojiPicker } from './fun/FunEmojiPicker';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import { getEmojiVariantByKey } from './fun/data/emojis';
-import { FunEmojiPickerButton } from './fun/FunButton';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
+} from '../util/getStoryBackground.js';
+import { convertShortName } from './emoji/lib.js';
+import { objectMap } from '../util/objectMap.js';
+import { handleOutsideClick } from '../util/handleOutsideClick.js';
+import { Spinner } from './Spinner.js';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import { getEmojiVariantByKey } from './fun/data/emojis.js';
+import { FunEmojiPickerButton } from './fun/FunButton.js';
+import { isFunPickerEnabled } from './fun/isFunPickerEnabled.js';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.js';
+
+const { noop } = lodash;
 
 export type PropsType = {
   debouncedMaybeGrabLinkPreview: (
@@ -148,11 +150,16 @@ export function TextStoryCreator({
   recentEmojis,
   emojiSkinToneDefault,
 }: PropsType): JSX.Element {
-  const [showConfirmDiscardModal, setShowConfirmDiscardModal] = useState(false);
-
+  const tryClose = useRef<() => void | undefined>();
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'TextStoryCreator',
+    tryClose,
+  });
   const onTryClose = useCallback(() => {
-    setShowConfirmDiscardModal(true);
-  }, [setShowConfirmDiscardModal]);
+    confirmDiscardIf(true, onClose);
+  }, [confirmDiscardIf, onClose]);
+  tryClose.current = onTryClose;
 
   const [isEditingText, setIsEditingText] = useState(false);
   const [selectedBackground, setSelectedBackground] =
@@ -290,8 +297,6 @@ export function TextStoryCreator({
     isEditingText,
     isLinkPreviewInputShowing,
     colorPickerPopperButtonRef,
-    showConfirmDiscardModal,
-    setShowConfirmDiscardModal,
     onTryClose,
   ]);
 
@@ -538,30 +543,27 @@ export function TextStoryCreator({
                     data-popper-arrow
                     className="StoryCreator__popper__arrow"
                   />
-                  {objectMap<BackgroundStyleType>(
-                    BackgroundStyle,
-                    (bg, backgroundValue) => (
-                      <button
-                        aria-label={i18n('icu:StoryCreator__story-bg')}
-                        className={classNames({
-                          StoryCreator__bg: true,
-                          'StoryCreator__bg--selected':
-                            selectedBackground === backgroundValue,
-                        })}
-                        key={String(bg)}
-                        onClick={() => {
-                          setSelectedBackground(backgroundValue);
-                          setIsColorPickerShowing(false);
-                        }}
-                        type="button"
-                        style={{
-                          background: getBackgroundColor(
-                            getBackground(backgroundValue)
-                          ),
-                        }}
-                      />
-                    )
-                  )}
+                  {objectMap(BackgroundStyle, (bg, backgroundValue) => (
+                    <button
+                      aria-label={i18n('icu:StoryCreator__story-bg')}
+                      className={classNames({
+                        StoryCreator__bg: true,
+                        'StoryCreator__bg--selected':
+                          selectedBackground === backgroundValue,
+                      })}
+                      key={String(bg)}
+                      onClick={() => {
+                        setSelectedBackground(backgroundValue);
+                        setIsColorPickerShowing(false);
+                      }}
+                      type="button"
+                      style={{
+                        background: getBackgroundColor(
+                          getBackground(backgroundValue)
+                        ),
+                      }}
+                    />
+                  ))}
                 </div>
               )}
               <button
@@ -656,13 +658,7 @@ export function TextStoryCreator({
             </Button>
           </div>
         </div>
-        {showConfirmDiscardModal && (
-          <ConfirmDiscardDialog
-            i18n={i18n}
-            onClose={() => setShowConfirmDiscardModal(false)}
-            onDiscard={onClose}
-          />
-        )}
+        {confirmDiscardModal}
       </div>
     </FocusScope>
   );

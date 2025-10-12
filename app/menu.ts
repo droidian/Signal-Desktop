@@ -1,14 +1,16 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isString } from 'lodash';
+import lodash from 'lodash';
 
-import type { LocalizerType } from '../ts/types/I18N';
+import type { LocalizerType } from '../ts/types/I18N.js';
 import type {
   MenuListType,
   MenuOptionsType,
   MenuActionsType,
-} from '../ts/types/menu';
+} from '../ts/types/menu.js';
+
+const { isString } = lodash;
 
 export type CreateTemplateOptionsType = MenuOptionsType & MenuActionsType;
 
@@ -32,6 +34,7 @@ export const createTemplate = (
     platform,
     setupAsNewDevice,
     setupAsStandalone,
+    stageLocalBackupForImport,
     forceUpdate,
     showAbout,
     showDebugLog,
@@ -225,6 +228,13 @@ export const createTemplate = (
 
     if (Array.isArray(fileMenu.submenu)) {
       // These are in reverse order, since we're prepending them one at a time
+      if (options.isNightly) {
+        fileMenu.submenu.unshift({
+          label: i18n('icu:menuStageLocalBackupForImport'),
+          click: stageLocalBackupForImport,
+        });
+      }
+
       if (options.development) {
         fileMenu.submenu.unshift({
           label: i18n('icu:menuSetupAsStandalone'),

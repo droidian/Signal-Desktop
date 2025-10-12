@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { LoggerType } from '../../types/Logging';
-import { waitForOnline } from '../../util/waitForOnline';
-import { exponentialBackoffSleepTime } from '../../util/exponentialBackoff';
-import { isDone as isDeviceLinked } from '../../util/registration';
-import { sleeper } from '../../util/sleeper';
+import type { LoggerType } from '../../types/Logging.js';
+import { waitForOnline } from '../../util/waitForOnline.js';
+import { exponentialBackoffSleepTime } from '../../util/exponentialBackoff.js';
+import { isDone as isDeviceLinked } from '../../util/registration.js';
+import { sleeper } from '../../util/sleeper.js';
 
 export async function commonShouldJobContinue({
   attempt,
@@ -24,7 +24,9 @@ export async function commonShouldJobContinue({
   }
 
   try {
-    await waitForOnline({ timeout: timeRemaining });
+    if (isDeviceLinked()) {
+      await waitForOnline({ timeout: timeRemaining });
+    }
   } catch (err: unknown) {
     log.info("didn't come online in time, giving up");
     return false;

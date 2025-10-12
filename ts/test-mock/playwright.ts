@@ -3,18 +3,18 @@
 
 import type { ElectronApplication, Page } from 'playwright';
 import { _electron as electron } from 'playwright';
-import { EventEmitter, once } from 'events';
+import { EventEmitter, once } from 'node:events';
 import pTimeout from 'p-timeout';
 
 import type {
   IPCRequest as ChallengeRequestType,
   IPCResponse as ChallengeResponseType,
-} from '../challenge';
-import type { ReceiptType } from '../types/Receipt';
-import { SECOND } from '../util/durations';
-import { drop } from '../util/drop';
-import type { MessageAttributesType } from '../model-types';
-import type { SocketStatuses } from '../textsecure/SocketManager';
+} from '../challenge.js';
+import type { ReceiptType } from '../types/Receipt.js';
+import { SECOND } from '../util/durations/index.js';
+import { drop } from '../util/drop.js';
+import type { MessageAttributesType } from '../model-types.js';
+import type { SocketStatuses } from '../textsecure/SocketManager.js';
 
 export type AppLoadedInfoType = Readonly<{
   loadTime: number;
@@ -83,6 +83,7 @@ export class App extends EventEmitter {
               snapshots: true,
             });
           }
+          await page?.emulateMedia({ reducedMotion: 'reduce' });
           await page?.waitForLoadState('load');
         })(),
         20 * SECOND
@@ -207,9 +208,28 @@ export class App extends EventEmitter {
     return window.evaluate(`window.SignalCI.getMessagesBySentAt(${timestamp})`);
   }
 
+  public async exportLocalBackup(backupsBaseDir: string): Promise<string> {
+    const window = await this.getWindow();
+    return window.evaluate(
+      `window.SignalCI.exportLocalBackup('${backupsBaseDir}')`
+    );
+  }
+
+  public async stageLocalBackupForImport(snapshotDir: string): Promise<void> {
+    const window = await this.getWindow();
+    return window.evaluate(
+      `window.SignalCI.stageLocalBackupForImport('${snapshotDir}')`
+    );
+  }
+
   public async uploadBackup(): Promise<void> {
     const window = await this.getWindow();
     await window.evaluate('window.SignalCI.uploadBackup()');
+  }
+
+  public async enableMedia(): Promise<void> {
+    const window = await this.getWindow();
+    await window.evaluate('window.SignalCI.setMediaPermissions()');
   }
 
   public async migrateAllMessages(): Promise<void> {

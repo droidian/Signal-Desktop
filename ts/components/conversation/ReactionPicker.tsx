@@ -3,21 +3,21 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { Button } from 'react-aria-components';
-import { convertShortName } from '../emoji/lib';
-import type { Props as EmojiPickerProps } from '../emoji/EmojiPicker';
-import { useDelayedRestoreFocus } from '../../hooks/useRestoreFocus';
-import type { LocalizerType, ThemeType } from '../../types/Util';
+import { convertShortName } from '../emoji/lib.js';
+import type { Props as EmojiPickerProps } from '../emoji/EmojiPicker.js';
+import { useDelayedRestoreFocus } from '../../hooks/useRestoreFocus.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
 import {
   ReactionPickerPicker,
   ReactionPickerPickerEmojiButton,
   ReactionPickerPickerMoreButton,
   ReactionPickerPickerStyle,
-} from '../ReactionPickerPicker';
-import type { EmojiSkinTone } from '../fun/data/emojis';
-import { getEmojiVariantByKey } from '../fun/data/emojis';
-import { FunEmojiPicker } from '../fun/FunEmojiPicker';
-import type { FunEmojiSelection } from '../fun/panels/FunPanelEmojis';
-import { isFunPickerEnabled } from '../fun/isFunPickerEnabled';
+} from '../ReactionPickerPicker.js';
+import type { EmojiSkinTone, EmojiVariantKey } from '../fun/data/emojis.js';
+import { getEmojiVariantByKey } from '../fun/data/emojis.js';
+import { FunEmojiPicker } from '../fun/FunEmojiPicker.js';
+import type { FunEmojiSelection } from '../fun/panels/FunPanelEmojis.js';
+import { isFunPickerEnabled } from '../fun/isFunPickerEnabled.js';
 
 export type RenderEmojiPickerProps = Pick<Props, 'onClose' | 'style'> &
   Pick<
@@ -37,6 +37,7 @@ export type OwnProps = {
   preferredReactionEmoji: ReadonlyArray<string>;
   renderEmojiPicker: (props: RenderEmojiPickerProps) => React.ReactElement;
   theme?: ThemeType;
+  messageEmojis?: ReadonlyArray<EmojiVariantKey>;
 };
 
 export type Props = OwnProps & Pick<React.HTMLProps<HTMLDivElement>, 'style'>;
@@ -54,6 +55,7 @@ export const ReactionPicker = React.forwardRef<HTMLDivElement, Props>(
       selected,
       style,
       theme,
+      messageEmojis,
     },
     ref
   ) {
@@ -156,6 +158,7 @@ export const ReactionPicker = React.forwardRef<HTMLDivElement, Props>(
                 theme={theme}
                 showCustomizePreferredReactionsButton
                 closeOnSelect
+                messageEmojis={messageEmojis}
               >
                 <Button
                   aria-label={i18n('icu:Reactions--more')}

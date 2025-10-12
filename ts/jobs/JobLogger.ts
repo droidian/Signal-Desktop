@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { LoggerType } from '../types/Logging';
-import type { ParsedJob } from './types';
+import type { LoggerType } from '../types/Logging.js';
+import type { ParsedJob } from './types.js';
 
 export class JobLogger implements LoggerType {
   #id: string;
@@ -40,6 +40,10 @@ export class JobLogger implements LoggerType {
 
   trace(...args: ReadonlyArray<unknown>): void {
     this.logger.trace(this.#prefix(), ...args);
+  }
+
+  child(): LoggerType {
+    throw new Error('Not supported');
   }
 
   #prefix(): string {

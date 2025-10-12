@@ -1,16 +1,16 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { join, normalize, extname, dirname, basename } from 'path';
-import { pathToFileURL } from 'url';
-import * as os from 'os';
-import { chmod, realpath, writeFile } from 'fs-extra';
-import { randomBytes } from 'crypto';
+import { join, normalize, extname, dirname, basename } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import * as os from 'node:os';
+import fsExtra from 'fs-extra';
+import { randomBytes } from 'node:crypto';
 import { createParser } from 'dashdash';
 
 import fastGlob from 'fast-glob';
 import PQueue from 'p-queue';
-import { get, pick, isNumber, isBoolean, some, debounce, noop } from 'lodash';
+import lodash from 'lodash';
 import {
   app,
   BrowserWindow,
@@ -32,98 +32,109 @@ import {
 import type { MenuItemConstructorOptions, Settings } from 'electron';
 import { z } from 'zod';
 
-import packageJson from '../package.json';
-import * as GlobalErrors from './global_errors';
-import { setup as setupCrashReports } from './crashReports';
-import { setup as setupSpellChecker } from './spell_check';
-import { getDNSFallback } from './dns-fallback';
-import { redactAll, addSensitivePath } from '../ts/util/privacy';
-import { createSupportUrl } from '../ts/util/createSupportUrl';
-import { missingCaseError } from '../ts/util/missingCaseError';
-import { strictAssert } from '../ts/util/assert';
-import { drop } from '../ts/util/drop';
-import { createBufferedConsoleLogger } from '../ts/util/consoleLogger';
-import type { ThemeSettingType } from '../ts/types/StorageUIKeys';
-import { ThemeType } from '../ts/types/Util';
-import * as Errors from '../ts/types/errors';
-import { resolveCanonicalLocales } from '../ts/util/resolveCanonicalLocales';
-import * as debugLog from '../ts/logging/debuglogs';
-import * as uploadDebugLog from '../ts/logging/uploadDebugLog';
-import { explodePromise } from '../ts/util/explodePromise';
+import {
+  version as packageVersion,
+  productName,
+} from '../ts/util/packageJson.js';
+import * as GlobalErrors from './global_errors.js';
+import { setup as setupCrashReports } from './crashReports.js';
+import { setup as setupSpellChecker } from './spell_check.js';
+import { getDNSFallback } from './dns-fallback.js';
+import { redactAll, addSensitivePath } from '../ts/util/privacy.js';
+import { createSupportUrl } from '../ts/util/createSupportUrl.js';
+import { missingCaseError } from '../ts/util/missingCaseError.js';
+import { strictAssert } from '../ts/util/assert.js';
+import { drop } from '../ts/util/drop.js';
+import type { ThemeSettingType } from '../ts/types/StorageUIKeys.js';
+import { ThemeType } from '../ts/types/Util.js';
+import * as Errors from '../ts/types/errors.js';
+import { resolveCanonicalLocales } from '../ts/util/resolveCanonicalLocales.js';
+import { createLogger } from '../ts/logging/log.js';
+import * as debugLog from '../ts/logging/debuglogs.js';
+import * as uploadDebugLog from '../ts/logging/uploadDebugLog.js';
+import { explodePromise } from '../ts/util/explodePromise.js';
 
-import './startup_config';
+import './startup_config.js';
 
-import type { RendererConfigType } from '../ts/types/RendererConfig';
+import type { RendererConfigType } from '../ts/types/RendererConfig.js';
 import {
   directoryConfigSchema,
   rendererConfigSchema,
-} from '../ts/types/RendererConfig';
-import config from './config';
+} from '../ts/types/RendererConfig.js';
+import config from './config.js';
 import {
   Environment,
   getEnvironment,
   isTestEnvironment,
-} from '../ts/environment';
+} from '../ts/environment.js';
 
 // Very important to put before the single instance check, since it is based on the
 //   userData directory. (see requestSingleInstanceLock below)
-import * as userConfig from './user_config';
+import * as userConfig from './user_config.js';
 
 // We generally want to pull in our own modules after this point, after the user
 //   data directory has been set.
-import * as attachments from './attachments';
-import * as attachmentChannel from './attachment_channel';
-import * as bounce from '../ts/services/bounce';
-import * as updater from '../ts/updater/index';
-import { updateDefaultSession } from './updateDefaultSession';
-import { PreventDisplaySleepService } from './PreventDisplaySleepService';
-import { SystemTrayService, focusAndForceToTop } from './SystemTrayService';
-import { SystemTraySettingCache } from './SystemTraySettingCache';
-import { OptionalResourceService } from './OptionalResourceService';
-import { EmojiService } from './EmojiService';
+import * as attachments from './attachments.js';
+import * as attachmentChannel from './attachment_channel.js';
+import * as bounce from '../ts/services/bounce.js';
+import * as updater from '../ts/updater/index.js';
+import { updateDefaultSession } from './updateDefaultSession.js';
+import { PreventDisplaySleepService } from './PreventDisplaySleepService.js';
+import { SystemTrayService, focusAndForceToTop } from './SystemTrayService.js';
+import { SystemTraySettingCache } from './SystemTraySettingCache.js';
+import { OptionalResourceService } from './OptionalResourceService.js';
+import { EmojiService } from './EmojiService.js';
 import {
   SystemTraySetting,
   shouldMinimizeToSystemTray,
   parseSystemTraySetting,
-} from '../ts/types/SystemTraySetting';
+} from '../ts/types/SystemTraySetting.js';
 import {
   getDefaultSystemTraySetting,
   isSystemTraySupported,
-} from '../ts/types/Settings';
-import * as ephemeralConfig from './ephemeral_config';
-import * as logging from '../ts/logging/main_process_logging';
-import { MainSQL } from '../ts/sql/main';
-import * as sqlChannels from './sql_channel';
-import * as windowState from './window_state';
-import type { CreateTemplateOptionsType } from './menu';
-import { createTemplate } from './menu';
-import { installFileHandler, installWebHandler } from './protocol_filter';
-import OS from '../ts/util/os/osMain';
-import { isProduction } from '../ts/util/version';
-import { clearTimeoutIfNecessary } from '../ts/util/clearTimeoutIfNecessary';
-import { toggleMaximizedBrowserWindow } from '../ts/util/toggleMaximizedBrowserWindow';
-import { ChallengeMainHandler } from '../ts/main/challengeMain';
-import { NativeThemeNotifier } from '../ts/main/NativeThemeNotifier';
-import { PowerChannel } from '../ts/main/powerChannel';
-import { SettingsChannel } from '../ts/main/settingsChannel';
-import { maybeParseUrl, setUrlSearchParams } from '../ts/util/url';
-import { getHeicConverter } from '../ts/workers/heicConverterMain';
+  isContentProtectionEnabledByDefault,
+} from '../ts/types/Settings.js';
+import * as ephemeralConfig from './ephemeral_config.js';
+import * as mainProcessLogging from '../ts/logging/main_process_logging.js';
+import { MainSQL } from '../ts/sql/main.js';
+import * as sqlChannels from './sql_channel.js';
+import * as windowState from './window_state.js';
+import type { CreateTemplateOptionsType } from './menu.js';
+import { createTemplate } from './menu.js';
+import { installFileHandler, installWebHandler } from './protocol_filter.js';
+import OS from '../ts/util/os/osMain.js';
+import { isNightly, isProduction } from '../ts/util/version.js';
+import { clearTimeoutIfNecessary } from '../ts/util/clearTimeoutIfNecessary.js';
+import { toggleMaximizedBrowserWindow } from '../ts/util/toggleMaximizedBrowserWindow.js';
+import { ChallengeMainHandler } from '../ts/main/challengeMain.js';
+import { NativeThemeNotifier } from '../ts/main/NativeThemeNotifier.js';
+import { PowerChannel } from '../ts/main/powerChannel.js';
+import { SettingsChannel } from '../ts/main/settingsChannel.js';
+import { maybeParseUrl, setUrlSearchParams } from '../ts/util/url.js';
+import { getHeicConverter } from '../ts/workers/heicConverterMain.js';
 
-import type { LocaleDirection, LocaleType } from './locale';
-import { load as loadLocale } from './locale';
+import type { LocaleDirection, LocaleType } from './locale.js';
+import { load as loadLocale } from './locale.js';
 
-import type { LoggerType } from '../ts/types/Logging';
-import { HourCyclePreference } from '../ts/types/I18N';
-import { ScreenShareStatus } from '../ts/types/Calling';
-import type { ParsedSignalRoute } from '../ts/util/signalRoutes';
-import { parseSignalRoute } from '../ts/util/signalRoutes';
-import * as dns from '../ts/util/dns';
-import { ZoomFactorService } from '../ts/services/ZoomFactorService';
-import { SafeStorageBackendChangeError } from '../ts/types/SafeStorageBackendChangeError';
-import { LINUX_PASSWORD_STORE_FLAGS } from '../ts/util/linuxPasswordStoreFlags';
-import { getOwn } from '../ts/util/getOwn';
-import { safeParseLoose, safeParseUnknown } from '../ts/util/schemas';
-import { getAppErrorIcon } from '../ts/util/getAppErrorIcon';
+import { HourCyclePreference } from '../ts/types/I18N.js';
+import { ScreenShareStatus } from '../ts/types/Calling.js';
+import type { ParsedSignalRoute } from '../ts/util/signalRoutes.js';
+import { parseSignalRoute } from '../ts/util/signalRoutes.js';
+import * as dns from '../ts/util/dns.js';
+import { ZoomFactorService } from '../ts/services/ZoomFactorService.js';
+import { SafeStorageBackendChangeError } from '../ts/types/SafeStorageBackendChangeError.js';
+import { SafeStorageDecryptionError } from '../ts/types/SafeStorageDecryptionError.js';
+import { LINUX_PASSWORD_STORE_FLAGS } from '../ts/util/linuxPasswordStoreFlags.js';
+import { getOwn } from '../ts/util/getOwn.js';
+import { safeParseLoose, safeParseUnknown } from '../ts/util/schemas.js';
+import { getAppErrorIcon } from '../ts/util/getAppErrorIcon.js';
+import { promptOSAuth } from '../ts/util/os/promptOSAuthMain.js';
+
+const { chmod, realpath, writeFile } = fsExtra;
+const { get, pick, isNumber, isBoolean, some, debounce, noop } = lodash;
+
+const log = createLogger('app/main');
+const updaterLog = log.child('updater');
 
 const animationSettings = systemPreferences.getAnimationSettings();
 
@@ -141,12 +152,7 @@ let mainWindow: BrowserWindow | undefined;
 let mainWindowCreated = false;
 let loadingWindow: BrowserWindow | undefined;
 
-// Create a buffered logger to hold our log lines until we fully initialize
-// the logger in `app.on('ready')`
-const consoleLogger = createBufferedConsoleLogger();
-
 // These will be set after app fires the 'ready' event
-let logger: LoggerType | undefined;
 let preferredSystemLocales: Array<string> | undefined;
 let localeOverride: string | null | undefined;
 
@@ -175,7 +181,11 @@ const preventDisplaySleepService = new PreventDisplaySleepService(
   powerSaveBlocker
 );
 
-const challengeHandler = new ChallengeMainHandler();
+const challengeHandler = new ChallengeMainHandler(
+  config.has('hardcodedCaptchaForLocalTestingOnly')
+    ? config.get<string>('hardcodedCaptchaForLocalTestingOnly')
+    : undefined
+);
 
 const nativeThemeNotifier = new NativeThemeNotifier();
 nativeThemeNotifier.initialize();
@@ -202,37 +212,30 @@ const defaultWebPrefs = {
     getEnvironment() !== Environment.PackagedApp ||
     !isProduction(app.getVersion()),
   spellcheck: false,
-  // https://chromium.googlesource.com/chromium/src/+/main/third_party/blink/renderer/platform/runtime_enabled_features.json5
-  enableBlinkFeatures: [
-    'CSSPseudoDir', // status=experimental, needed for RTL (ex: :dir(rtl))
-    'CSSLogical', // status=experimental, needed for RTL (ex: margin-inline-start)
-  ].join(','),
   enablePreferredSizeMode: true,
 };
-
-const DISABLE_GPU =
-  OS.isLinux() && !process.argv.some(arg => arg === '--enable-gpu');
 
 const DISABLE_IPV6 = process.argv.some(arg => arg === '--disable-ipv6');
 const FORCE_ENABLE_CRASH_REPORTS = process.argv.some(
   arg => arg === '--enable-crash-reports'
 );
 
+const DISABLE_SCREEN_SECURITY = process.argv.some(
+  arg => arg === '--disable-screen-security'
+);
+
 const CLI_LANG = cliOptions.lang as string | undefined;
 
-setupCrashReports(getLogger, showDebugLogWindow, FORCE_ENABLE_CRASH_REPORTS);
+setupCrashReports(log, showDebugLogWindow, FORCE_ENABLE_CRASH_REPORTS);
 
 let sendDummyKeystroke: undefined | (() => void);
 if (OS.isWindows()) {
   try {
     // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-    const windowsNotifications = require('./WindowsNotifications');
+    const windowsNotifications = require('./WindowsNotifications.js');
     sendDummyKeystroke = windowsNotifications.sendDummyKeystroke;
   } catch (error) {
-    getLogger().error(
-      'Failed to initialize Windows Notifications:',
-      error.stack
-    );
+    log.error('Failed to initialize Windows Notifications:', error.stack);
   }
 }
 
@@ -253,10 +256,10 @@ function showWindow() {
 }
 
 if (!process.mas) {
-  console.log('making app single instance');
+  log.info('making app single instance');
   const gotLock = app.requestSingleInstanceLock();
   if (!gotLock) {
-    console.log('quitting; we are the second instance');
+    log.info('quitting; we are the second instance');
     app.exit();
   } else {
     app.on('second-instance', (_e: Electron.Event, argv: Array<string>) => {
@@ -271,12 +274,6 @@ if (!process.mas) {
         }
 
         showWindow();
-      }
-      if (!logger) {
-        console.log(
-          'second-instance: logger not initialized; skipping further checks'
-        );
-        return;
       }
 
       const route = maybeGetIncomingSignalRoute(argv);
@@ -314,14 +311,14 @@ const heicConverter = getHeicConverter();
 async function getSpellCheckSetting(): Promise<boolean> {
   const value = ephemeralConfig.get('spell-check');
   if (typeof value === 'boolean') {
-    getLogger().info('got fast spellcheck setting', value);
+    log.info('got fast spellcheck setting', value);
     return value;
   }
 
   // Default to `true` if setting doesn't exist yet
   ephemeralConfig.set('spell-check', true);
 
-  getLogger().info('initializing spellcheck setting', true);
+  log.info('initializing spellcheck setting', true);
 
   return true;
 }
@@ -335,7 +332,7 @@ async function getThemeSetting({
 }: GetThemeSettingOptionsType = {}): Promise<ThemeSettingType> {
   const value = ephemeralConfig.get('theme-setting');
   if (value !== undefined) {
-    getLogger().info('got fast theme-setting value', value);
+    log.info('got fast theme-setting value', value);
   } else if (ephemeralOnly) {
     return 'system';
   }
@@ -348,7 +345,7 @@ async function getThemeSetting({
 
   if (value !== validatedResult) {
     ephemeralConfig.set('theme-setting', validatedResult);
-    getLogger().info('saving theme-setting value', validatedResult);
+    log.info('saving theme-setting value', validatedResult);
   }
 
   return validatedResult;
@@ -389,14 +386,14 @@ async function getLocaleOverrideSetting(): Promise<string | null> {
   const value = ephemeralConfig.get('localeOverride');
   // eslint-disable-next-line eqeqeq -- Checking for null explicitly
   if (typeof value === 'string' || value === null) {
-    getLogger().info('got fast localeOverride setting', value);
+    log.info('got fast localeOverride setting', value);
     return value;
   }
 
   // Default to `null` if setting doesn't exist yet
   ephemeralConfig.set('localeOverride', null);
 
-  getLogger().info('initializing localeOverride setting', null);
+  log.info('initializing localeOverride setting', null);
 
   return null;
 }
@@ -451,15 +448,6 @@ if (windowFromUserConfig) {
 }
 
 let menuOptions: CreateTemplateOptionsType | undefined;
-
-function getLogger(): LoggerType {
-  if (!logger) {
-    console.warn('getLogger: Logger not yet initialized!');
-    return consoleLogger;
-  }
-
-  return logger;
-}
 
 function getPreferredSystemLocales(): Array<string> {
   if (!preferredSystemLocales) {
@@ -540,7 +528,7 @@ async function handleUrl(rawTarget: string) {
     try {
       await shell.openExternal(rawTarget);
     } catch (error) {
-      getLogger().error(`Failed to open url: ${Errors.toLogFormat(error)}`);
+      log.error(`Failed to open url: ${Errors.toLogFormat(error)}`);
     }
   }
 }
@@ -558,7 +546,7 @@ async function handleCommonWindowEvents(window: BrowserWindow) {
   window.webContents.on(
     'preload-error',
     (_event: Electron.Event, preloadPath: string, error: Error) => {
-      getLogger().error(`Preload error in ${preloadPath}: `, error.message);
+      log.error(`Preload error in ${preloadPath}: `, error.message);
     }
   );
 
@@ -575,6 +563,18 @@ async function handleCommonWindowEvents(window: BrowserWindow) {
   // This is a fallback in case we drop an event for some reason.
   const focusInterval = setInterval(setWindowFocus, 10000);
   window.on('closed', () => clearInterval(focusInterval));
+
+  const contentProtection = ephemeralConfig.get('contentProtection');
+  // Apply content protection by default on Windows, unless explicitly disabled
+  // by user in settings.
+  if (
+    !DISABLE_SCREEN_SECURITY &&
+    (contentProtection ?? isContentProtectionEnabledByDefault(OS, os.release()))
+  ) {
+    window.once('ready-to-show', async () => {
+      window.setContentProtection(true);
+    });
+  }
 
   await zoomFactorService.syncWindow(window);
 
@@ -659,7 +659,7 @@ async function safeLoadURL(window: BrowserWindow, url: string): Promise<void> {
       (wasDestroyed || windowState.readyForShutdown()) &&
       error?.code === 'ERR_FAILED'
     ) {
-      getLogger().warn(
+      log.warn(
         'safeLoadURL: ignoring ERR_FAILED because we are shutting down',
         error
       );
@@ -690,6 +690,21 @@ async function createWindow() {
     ? Math.min(windowConfig.height, maxHeight)
     : DEFAULT_HEIGHT;
 
+  const [systemTraySetting, backgroundColor, spellcheck] = await Promise.all([
+    systemTraySettingCache.get(),
+    isTestEnvironment(getEnvironment())
+      ? '#ffffff' // Tests should always be rendered on a white background
+      : getBackgroundColor({ signalColors: true }),
+    getSpellCheckSetting(),
+  ]);
+
+  const startInTray =
+    isTestEnvironment(getEnvironment()) ||
+    systemTraySetting === SystemTraySetting.MinimizeToAndStartInSystemTray;
+
+  const shouldShowWindow =
+    !app.getLoginItemSettings().wasOpenedAsHidden && !startInTray;
+
   const windowOptions: Electron.BrowserWindowConstructorOptions = {
     show: false,
     width,
@@ -698,9 +713,7 @@ async function createWindow() {
     minHeight: MIN_HEIGHT,
     autoHideMenuBar: false,
     titleBarStyle: mainTitleBarStyle,
-    backgroundColor: isTestEnvironment(getEnvironment())
-      ? '#ffffff' // Tests should always be rendered on a white background
-      : await getBackgroundColor({ signalColors: true }),
+    backgroundColor,
     webPreferences: {
       ...defaultWebPrefs,
       nodeIntegration: false,
@@ -713,9 +726,7 @@ async function createWindow() {
           ? '../preload.wrapper.js'
           : '../ts/windows/main/preload.js'
       ),
-      spellcheck: await getSpellCheckSetting(),
-      backgroundThrottling: true,
-      disableBlinkFeatures: 'Accelerated2dCanvas,AcceleratedSmallCanvases',
+      spellcheck,
     },
     icon: windowIcon,
     ...pick(windowConfig, ['autoHideMenuBar', 'x', 'y']),
@@ -731,25 +742,20 @@ async function createWindow() {
     delete windowOptions.autoHideMenuBar;
   }
 
-  const startInTray =
-    isTestEnvironment(getEnvironment()) ||
-    (await systemTraySettingCache.get()) ===
-      SystemTraySetting.MinimizeToAndStartInSystemTray;
-
   const haveFullWindowsBounds =
     isNumber(windowOptions.x) &&
     isNumber(windowOptions.y) &&
     isNumber(windowOptions.width) &&
     isNumber(windowOptions.height);
   if (haveFullWindowsBounds) {
-    getLogger().info(
+    log.info(
       `visibleOnAnyScreen(window): x=${windowOptions.x}, y=${windowOptions.y}, ` +
         `width=${windowOptions.width}, height=${windowOptions.height}`
     );
 
     const visibleOnAnyScreen = some(screen.getAllDisplays(), display => {
       const displayBounds = get(display, 'bounds');
-      getLogger().info(
+      log.info(
         `visibleOnAnyScreen(display #${display.id}): ` +
           `x=${displayBounds.x}, y=${displayBounds.y}, ` +
           `width=${displayBounds.width}, height=${displayBounds.height}`
@@ -758,16 +764,13 @@ async function createWindow() {
       return isVisible(windowOptions as BoundsType, displayBounds);
     });
     if (!visibleOnAnyScreen) {
-      getLogger().info('visibleOnAnyScreen: Location reset needed');
+      log.info('visibleOnAnyScreen: Location reset needed');
       delete windowOptions.x;
       delete windowOptions.y;
     }
   }
 
-  getLogger().info(
-    'Initializing BrowserWindow config:',
-    JSON.stringify(windowOptions)
-  );
+  log.info('Initializing BrowserWindow config:', windowOptions);
 
   // Create the browser window.
   mainWindow = new BrowserWindow(windowOptions);
@@ -781,7 +784,7 @@ async function createWindow() {
     getPreferredSystemLocales(),
     getLocaleOverride(),
     getResolvedMessagesLocale().i18n,
-    getLogger()
+    log
   );
   if (!startInTray && windowConfig && windowConfig.maximized) {
     mainWindow.maximize();
@@ -798,10 +801,7 @@ async function createWindow() {
       return;
     }
 
-    getLogger().info(
-      'Updating BrowserWindow config: %s',
-      JSON.stringify(windowConfig)
-    );
+    log.info('Updating BrowserWindow config:', windowConfig);
     ephemeralConfig.set('window', windowConfig);
   }
   const debouncedSaveStats = debounce(saveWindowStats, 500);
@@ -862,11 +862,11 @@ async function createWindow() {
   //   Electron before the app quits.
   mainWindow.on('close', async e => {
     if (!mainWindow) {
-      getLogger().info('close event: no main window');
+      log.info('close event: no main window');
       return;
     }
 
-    getLogger().info('close event', {
+    log.info('close event', {
       readyForShutdown: windowState.readyForShutdown(),
       shouldQuit: windowState.shouldQuit(),
     });
@@ -890,13 +890,13 @@ async function createWindow() {
     try {
       shouldClose = await maybeRequestCloseConfirmation();
     } catch (error) {
-      getLogger().warn(
+      log.warn(
         'Error while requesting close confirmation.',
         Errors.toLogFormat(error)
       );
     }
     if (!shouldClose) {
-      updater.onRestartCancelled();
+      updater.onRestartCanceled();
       return;
     }
 
@@ -931,12 +931,12 @@ async function createWindow() {
       if (usingTrayIcon) {
         const shownTrayNotice = ephemeralConfig.get('shown-tray-notice');
         if (shownTrayNotice) {
-          getLogger().info('close: not showing tray notice');
+          log.info('close: not showing tray notice');
           return;
         }
 
         ephemeralConfig.set('shown-tray-notice', true);
-        getLogger().info('close: showing tray notice');
+        log.info('close: showing tray notice');
 
         const n = new Notification({
           title: getResolvedMessagesLocale().i18n(
@@ -968,7 +968,7 @@ async function createWindow() {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    getLogger().info('main window closed event');
+    log.info('main window closed event');
     mainWindow = undefined;
     if (settingsChannel) {
       settingsChannel.setMainWindow(mainWindow);
@@ -979,13 +979,13 @@ async function createWindow() {
   });
 
   mainWindow.on('enter-full-screen', () => {
-    getLogger().info('mainWindow enter-full-screen event');
+    log.info('mainWindow enter-full-screen event');
     if (mainWindow) {
       mainWindow.webContents.send('full-screen-change', true);
     }
   });
   mainWindow.on('leave-full-screen', () => {
-    getLogger().info('mainWindow leave-full-screen event');
+    log.info('mainWindow leave-full-screen event');
     if (mainWindow) {
       mainWindow.webContents.send('full-screen-change', false);
     }
@@ -993,13 +993,18 @@ async function createWindow() {
 
   mainWindow.on('show', () => {
     if (mainWindow) {
+      mainWindow.webContents.send('activate');
       mainWindow.webContents.send('set-media-playback-disabled', false);
     }
   });
 
-  mainWindow.once('ready-to-show', async () => {
-    getLogger().info('main window is ready-to-show');
+  mainWindow.webContents.on('devtools-reload-page', () => {
+    mainWindow?.webContents.on('dom-ready', () => {
+      mainWindow?.webContents.send('activate');
+    });
+  });
 
+  const maybeShowMainWindow = async () => {
     // Ignore sql errors and show the window anyway
     await sqlInitPromise;
 
@@ -1009,14 +1014,23 @@ async function createWindow() {
 
     mainWindow.webContents.send('ci:event', 'db-initialized', {});
 
-    const shouldShowWindow =
-      !app.getLoginItemSettings().wasOpenedAsHidden && !startInTray;
-
     if (shouldShowWindow) {
-      getLogger().info('showing main window');
+      log.info('showing main window');
       mainWindow.show();
     }
-  });
+  };
+
+  if (OS.isLinux() && OS.isWaylandEnabled()) {
+    mainWindow.webContents.once('did-finish-load', async () => {
+      log.info('main window webContents did-finish-load');
+      drop(maybeShowMainWindow());
+    });
+  } else {
+    mainWindow.once('ready-to-show', async () => {
+      log.info('main window is ready-to-show');
+      drop(maybeShowMainWindow());
+    });
+  }
 
   await safeLoadURL(
     mainWindow,
@@ -1029,20 +1043,20 @@ async function createWindow() {
 // Renderer asks if we are done with the database
 ipc.handle('database-ready', async () => {
   if (!sqlInitPromise) {
-    getLogger().error('database-ready requested, but sqlInitPromise is falsey');
+    log.error('database-ready requested, but sqlInitPromise is falsey');
     return;
   }
 
   const { error } = await sqlInitPromise;
   if (error) {
-    getLogger().error(
+    log.error(
       'database-ready requested, but got sql error',
       Errors.toLogFormat(error)
     );
     return;
   }
 
-  getLogger().info('sending `database-ready`');
+  log.info('sending `database-ready`');
 });
 
 ipc.handle(
@@ -1106,26 +1120,18 @@ ipc.on('title-bar-double-click', () => {
 
 ipc.on('set-is-call-active', (_event, isCallActive) => {
   preventDisplaySleepService.setEnabled(isCallActive);
-
-  if (!mainWindow) {
-    return;
-  }
-
-  let backgroundThrottling: boolean;
-  if (isCallActive) {
-    getLogger().info('Background throttling disabled because a call is active');
-    backgroundThrottling = false;
-  } else {
-    getLogger().info('Background throttling enabled because no call is active');
-    backgroundThrottling = true;
-  }
-
-  mainWindow.webContents.setBackgroundThrottling(backgroundThrottling);
 });
 
 ipc.on('convert-image', async (event, uuid, data) => {
   const { error, response } = await heicConverter(uuid, data);
   event.reply(`convert-image:${uuid}`, { error, response });
+});
+
+ipc.on('prompt-os-auth', async (event, { reason, localeString }) => {
+  log.info(`Prompt for OS auth reason=${reason}`);
+  const result = await promptOSAuth({ reason, localeString });
+  log.info(`Prompt for OS auth result=${result}`);
+  event.reply(`prompt-os-auth:${reason}`, result);
 });
 
 let isReadyForUpdates = false;
@@ -1154,19 +1160,19 @@ async function readyForUpdates() {
       'SettingsChannel must be initialized'
     );
     await updater.start({
-      settingsChannel,
-      logger: getLogger(),
-      getMainWindow,
       canRunSilently: () => {
         return (
           systemTrayService?.isVisible() === true &&
           mainWindow?.isVisible() !== true &&
-          mainWindow?.webContents?.getBackgroundThrottling() !== false
+          !preventDisplaySleepService.isEnabled()
         );
       },
+      getMainWindow,
+      logger: updaterLog,
+      sql,
     });
   } catch (error) {
-    getLogger().error(
+    updaterLog.error(
       'Error starting update checks:',
       Errors.toLogFormat(error)
     );
@@ -1175,10 +1181,10 @@ async function readyForUpdates() {
 
 async function forceUpdate() {
   try {
-    getLogger().info('starting force update');
+    updaterLog.info('starting force update');
     await updater.force();
   } catch (error) {
-    getLogger().error('Error during force update:', Errors.toLogFormat(error));
+    updaterLog.error('Error during force update:', Errors.toLogFormat(error));
   }
 }
 
@@ -1237,6 +1243,12 @@ function setupAsNewDevice() {
 function setupAsStandalone() {
   if (mainWindow) {
     mainWindow.webContents.send('set-up-as-standalone');
+  }
+}
+
+function stageLocalBackupForImport() {
+  if (mainWindow) {
+    mainWindow.webContents.send('stage-local-backup-for-import');
   }
 }
 
@@ -1405,57 +1417,6 @@ async function showAbout() {
   );
 }
 
-let settingsWindow: BrowserWindow | undefined;
-async function showSettingsWindow() {
-  if (settingsWindow) {
-    settingsWindow.show();
-    return;
-  }
-
-  const options = {
-    width: 700,
-    height: 700,
-    frame: true,
-    resizable: false,
-    title: getResolvedMessagesLocale().i18n('icu:signalDesktopPreferences'),
-    titleBarStyle: mainTitleBarStyle,
-    autoHideMenuBar: true,
-    backgroundColor: await getBackgroundColor(),
-    show: false,
-    webPreferences: {
-      ...defaultWebPrefs,
-      nodeIntegration: false,
-      nodeIntegrationInWorker: false,
-      sandbox: true,
-      contextIsolation: true,
-      preload: join(__dirname, '../bundles/settings/preload.js'),
-      nativeWindowOpen: true,
-    },
-  };
-
-  settingsWindow = new BrowserWindow(options);
-
-  await handleCommonWindowEvents(settingsWindow);
-
-  settingsWindow.on('closed', () => {
-    settingsWindow = undefined;
-  });
-
-  ipc.once('settings-done-rendering', () => {
-    if (!settingsWindow) {
-      getLogger().warn('settings-done-rendering: no settingsWindow available!');
-      return;
-    }
-
-    settingsWindow.show();
-  });
-
-  await safeLoadURL(
-    settingsWindow,
-    await prepareFileUrl([__dirname, '../settings.html'])
-  );
-}
-
 async function getIsLinked() {
   try {
     const number = await sql.sqlRead('getItemById', 'number_id');
@@ -1617,33 +1578,31 @@ const runSQLCorruptionHandler = async () => {
   // This is a glorified event handler. Normally, this promise never resolves,
   // but if there is a corruption error triggered by any query that we run
   // against the database - the promise will resolve and we will call
-  // `onDatabaseError`.
+  // `onDatabaseInitializationError`.
   const error = await sql.whenCorrupted();
 
-  getLogger().error(
+  log.error(
     'Detected sql corruption in main process. ' +
       `Restarting the application immediately. Error: ${error.message}`
   );
 
-  await onDatabaseError(error);
+  await onDatabaseInitializationError(error);
 };
 
 const runSQLReadonlyHandler = async () => {
   // This is a glorified event handler. Normally, this promise never resolves,
   // but if there is a corruption error triggered by any query that we run
   // against the database - the promise will resolve and we will call
-  // `onDatabaseError`.
+  // `onDatabaseInitializationError`.
   const error = await sql.whenReadonly();
 
-  getLogger().error(
-    `Detected readonly sql database in main process: ${error.message}`
-  );
+  log.error(`Detected readonly sql database in main process: ${error.message}`);
 
   throw error;
 };
 
 function generateSQLKey(): string {
-  getLogger().info(
+  log.info(
     'key/initialize: Generating new encryption key, since we did not find it on disk'
   );
   // https://www.zetetic.net/sqlcipher/sqlcipher-api/#key
@@ -1688,31 +1647,40 @@ function getSQLKey(): string {
       throw new Error("Can't decrypt database key");
     }
 
-    getLogger().info('getSQLKey: decrypting key');
+    log.info('getSQLKey: decrypting key');
     const encrypted = Buffer.from(modernKeyValue, 'hex');
     key = safeStorage.decryptString(encrypted);
 
-    if (legacyKeyValue != null) {
-      getLogger().info('getSQLKey: removing legacy key');
-      userConfig.set('key', undefined);
+    if (typeof legacyKeyValue === 'string') {
+      if (key === legacyKeyValue) {
+        // Confirmed roundtrip encryption, we can remove the legacy key
+        log.info('getSQLKey: removing legacy key');
+        userConfig.set('key', undefined);
+      } else {
+        log.warn('getSQLKey: decrypted modern key mismatch with legacy key');
+        const nextStep = handleSafeStorageDecryptionError();
+        if (nextStep === 'quit') {
+          throw new SafeStorageDecryptionError();
+        }
+
+        key = legacyKeyValue;
+      }
     }
 
     if (isLinux && previousBackend == null) {
-      getLogger().info(
-        `getSQLKey: saving safeStorageBackend: ${safeStorageBackend}`
-      );
+      log.info(`getSQLKey: saving safeStorageBackend: ${safeStorageBackend}`);
       userConfig.set('safeStorageBackend', safeStorageBackend);
     }
   } else if (typeof legacyKeyValue === 'string') {
     key = legacyKeyValue;
     update = isEncryptionAvailable;
     if (update) {
-      getLogger().info('getSQLKey: migrating key');
+      log.info('getSQLKey: migrating key');
     } else {
-      getLogger().info('getSQLKey: using legacy key');
+      log.info('getSQLKey: using legacy key');
     }
   } else {
-    getLogger().warn("getSQLKey: got key from config, but it wasn't a string");
+    log.warn("getSQLKey: got key from config, but it wasn't a string");
     key = generateSQLKey();
     update = true;
   }
@@ -1722,23 +1690,64 @@ function getSQLKey(): string {
   }
 
   if (isEncryptionAvailable) {
-    getLogger().info('getSQLKey: updating encrypted key in the config');
+    log.info('getSQLKey: updating encrypted key in the config');
     const encrypted = safeStorage.encryptString(key).toString('hex');
     userConfig.set('encryptedKey', encrypted);
-    userConfig.set('key', undefined);
+
+    if (OS.isFlatpak()) {
+      log.info(
+        'getSQLKey: updating plaintext key in the config, will confirm decryption on next start'
+      );
+      userConfig.set('key', key);
+    } else {
+      userConfig.set('key', undefined);
+    }
 
     if (isLinux && safeStorageBackend) {
-      getLogger().info(
-        `getSQLKey: saving safeStorageBackend: ${safeStorageBackend}`
-      );
+      log.info(`getSQLKey: saving safeStorageBackend: ${safeStorageBackend}`);
       userConfig.set('safeStorageBackend', safeStorageBackend);
     }
   } else {
-    getLogger().info('getSQLKey: updating plaintext key in the config');
+    log.info('getSQLKey: updating plaintext key in the config');
     userConfig.set('key', key);
   }
 
   return key;
+}
+
+// In Flatpak, safeStorage encryption may appear to work on the first run but on
+// subsequent starts the decrypted value may be incorrect.
+function handleSafeStorageDecryptionError(): 'continue' | 'quit' {
+  const previousError = userConfig.get('safeStorageDecryptionError');
+  if (typeof previousError === 'string') {
+    return 'continue';
+  }
+
+  const { i18n } = getResolvedMessagesLocale();
+  const message = i18n('icu:systemEncryptionError');
+  const detail = i18n(
+    'icu:systemEncryptionError__linuxSafeStorageDecryptionError'
+  );
+  const buttons = [
+    i18n('icu:copyErrorAndQuit'),
+    i18n('icu:systemEncryptionError__continueWithPlaintextKey'),
+  ];
+  const copyErrorAndQuitIndex = 0;
+  const resultIndex = dialog.showMessageBoxSync({
+    buttons,
+    defaultId: copyErrorAndQuitIndex,
+    cancelId: copyErrorAndQuitIndex,
+    message,
+    detail,
+    icon: getAppErrorIcon(),
+    noLink: true,
+  });
+  if (resultIndex === copyErrorAndQuitIndex) {
+    return 'quit';
+  }
+
+  userConfig.set('safeStorageDecryptionError', 'true');
+  return 'continue';
 }
 
 async function initializeSQL(
@@ -1756,7 +1765,7 @@ async function initializeSQL(
         appVersion: app.getVersion(),
         configDir: userDataPath,
         key: 'abcd',
-        logger: getLogger(),
+        logger: log,
       });
     } catch {
       // Do nothing, we fail right below anyway.
@@ -1780,7 +1789,7 @@ async function initializeSQL(
       appVersion: app.getVersion(),
       configDir: userDataPath,
       key,
-      logger: getLogger(),
+      logger: log,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -1801,10 +1810,19 @@ async function initializeSQL(
   drop(runSQLCorruptionHandler());
   drop(runSQLReadonlyHandler());
 
+  sql.onUnknownSqlError(onUnknownSqlError);
+
   return { ok: true, error: undefined };
 }
 
-const onDatabaseError = async (error: Error) => {
+function onUnknownSqlError(error: Error) {
+  log.error('Unknown SQL Error:', Errors.toLogFormat(error));
+  if (mainWindow) {
+    mainWindow.webContents.send('sql-error');
+  }
+}
+
+const onDatabaseInitializationError = async (error: Error) => {
   // Prevent window from re-opening
   ready = false;
 
@@ -1855,6 +1873,12 @@ const onDatabaseError = async (error: Error) => {
     buttons.push(i18n('icu:copyErrorAndQuit'));
     copyErrorAndQuitButtonIndex = 0;
     defaultButtonId = copyErrorAndQuitButtonIndex;
+  } else if (error instanceof SafeStorageDecryptionError) {
+    log.error(
+      'onDatabaseInitializationError: SafeStorageDecryptionError, user chose to quit'
+    );
+    app.exit(1);
+    return;
   } else {
     // Otherwise, this is some other kind of DB error, most likely broken safeStorage key.
     // Let's give them the option to delete and show them the support guide.
@@ -1907,11 +1931,11 @@ const onDatabaseError = async (error: Error) => {
     });
 
     if (confirmationButtonIndex === confirmDeleteAllDataButtonIndex) {
-      getLogger().error('onDatabaseError: Deleting all data');
+      log.error('onDatabaseInitializationError: Deleting all data');
       await sql.removeDB();
       userConfig.remove();
-      getLogger().error(
-        'onDatabaseError: Requesting immediate restart after quit'
+      log.error(
+        'onDatabaseInitializationError: Requesting immediate restart after quit'
       );
       app.relaunch();
     }
@@ -1923,7 +1947,7 @@ const onDatabaseError = async (error: Error) => {
     );
   }
 
-  getLogger().error('onDatabaseError: Quitting application');
+  log.error('onDatabaseInitializationError: Quitting application');
   app.exit(1);
 };
 
@@ -1980,10 +2004,9 @@ const featuresToDisable = `HardwareMediaKeyHandling,${app.commandLine.getSwitchV
 )}`;
 app.commandLine.appendSwitch('disable-features', featuresToDisable);
 
-// <canvas/> rendering is often utterly broken on Linux when using GPU
-// acceleration.
-if (DISABLE_GPU) {
-  app.disableHardwareAcceleration();
+if (OS.isLinux()) {
+  // https://github.com/electron/electron/issues/46538#issuecomment-2808806722
+  app.commandLine.appendSwitch('gtk-version', '3');
 }
 
 // This has to run before the 'ready' event.
@@ -2014,7 +2037,7 @@ app.on('ready', async () => {
     realpath(app.getAppPath()),
   ]);
 
-  updateDefaultSession(session.defaultSession, getLogger);
+  updateDefaultSession(session.defaultSession, log);
 
   if (getEnvironment() !== Environment.Test) {
     installFileHandler({
@@ -2032,10 +2055,7 @@ app.on('ready', async () => {
     session: session.defaultSession,
   });
 
-  logger = await logging.initialize(getMainWindow);
-
-  // Write buffered information into newly created logger.
-  consoleLogger.writeBufferInto(logger);
+  await mainProcessLogging.initialize(getMainWindow);
 
   const resourceService = OptionalResourceService.create(
     join(userDataPath, 'optionalResources')
@@ -2050,19 +2070,15 @@ app.on('ready', async () => {
     localeOverride = await getLocaleOverrideSetting();
 
     const hourCyclePreference = getHourCyclePreference();
-    logger.info(`app.ready: hour cycle preference: ${hourCyclePreference}`);
+    log.info(`app.ready: hour cycle preference: ${hourCyclePreference}`);
 
-    logger.info(
-      `app.ready: preferred system locales: ${preferredSystemLocales.join(
-        ', '
-      )}`
-    );
+    log.info('app.ready: preferred system locales:', preferredSystemLocales);
     resolvedTranslationsLocale = loadLocale({
       preferredSystemLocales,
       localeOverride,
       localeDirectionTestingOverride,
       hourCyclePreference,
-      logger: getLogger(),
+      logger: log,
     });
   }
 
@@ -2077,13 +2093,13 @@ app.on('ready', async () => {
     (await systemTraySettingCache.get()) === SystemTraySetting.Uninitialized
   ) {
     const newValue = getDefaultSystemTraySetting(OS, app.getVersion());
-    getLogger().info(`app.ready: setting system-tray-setting to ${newValue}`);
+    log.info(`app.ready: setting system-tray-setting to ${newValue}`);
     systemTraySettingCache.set(newValue);
 
     ephemeralConfig.set('system-tray-setting', newValue);
 
     if (OS.isWindows()) {
-      getLogger().info('app.ready: enabling open at login');
+      log.info('app.ready: enabling open at login');
       app.setLoginItemSettings({
         ...(await getDefaultLoginItemSettings()),
         openAtLogin: true,
@@ -2110,7 +2126,7 @@ app.on('ready', async () => {
     }
 
     // Default login item settings might have changed, so update the object.
-    getLogger().info('refresh-auto-launch: new value', openAtLogin);
+    log.info('refresh-auto-launch: new value', openAtLogin);
     app.setLoginItemSettings({
       ...(await getDefaultLoginItemSettings()),
       openAtLogin,
@@ -2121,6 +2137,7 @@ app.on('ready', async () => {
     'ephemeral-setting-changed',
     sendPreferencesChangedEventToWindows
   );
+  settingsChannel.on('ephemeral-setting-changed', onEphemeralSettingChanged);
 
   // We use this event only a single time to log the startup time of the app
   // from when it's first ready until the loading screen disappears.
@@ -2134,7 +2151,7 @@ app.on('ready', async () => {
     const messageTime = loadTime - preloadTime - connectTime;
     const messagesPerSec = (processedCount * 1000) / messageTime;
 
-    const innerLogger = getLogger();
+    const innerLogger = log;
     innerLogger.info('App loaded - time:', loadTime);
     innerLogger.info('SQL init - time:', sqlInitTime);
     innerLogger.info('Preload Compile - time:', preloadCompileTime);
@@ -2168,8 +2185,8 @@ app.on('ready', async () => {
     });
   }
 
-  logger.info('app ready');
-  logger.info(`starting version ${packageJson.version}`);
+  log.info('app ready');
+  log.info(`starting version ${packageVersion}`);
 
   // This logging helps us debug user reports about broken devices.
   {
@@ -2181,7 +2198,7 @@ app.on('ready', async () => {
     } else {
       getMediaAccessStatus = noop;
     }
-    logger.info(
+    log.info(
       'media access status',
       getMediaAccessStatus('microphone'),
       getMediaAccessStatus('camera'),
@@ -2212,7 +2229,7 @@ app.on('ready', async () => {
         return;
       }
 
-      getLogger().info(
+      log.info(
         'sql.initialize is taking more than three seconds; showing loading dialog'
       );
 
@@ -2254,16 +2271,13 @@ app.on('ready', async () => {
   try {
     await attachments.clearTempPath(userDataPath);
   } catch (err) {
-    logger.error(
-      'main/ready: Error deleting temp dir:',
-      Errors.toLogFormat(err)
-    );
+    log.error('main/ready: Error deleting temp dir:', Errors.toLogFormat(err));
   }
 
   try {
     await attachments.deleteStaleDownloads(userDataPath);
   } catch (err) {
-    logger.error(
+    log.error(
       'main/ready: Error deleting stale downloads:',
       Errors.toLogFormat(err)
     );
@@ -2285,19 +2299,19 @@ app.on('ready', async () => {
     },
   });
 
+  appStartInitialSpellcheckSetting = await getSpellCheckSetting();
+
   // Run window preloading in parallel with database initialization.
   await createWindow();
 
   const { error: sqlError } = await sqlInitPromise;
   if (sqlError) {
-    getLogger().error('sql.initialize was unsuccessful; returning early');
+    log.error('sql.initialize was unsuccessful; returning early');
 
-    await onDatabaseError(sqlError);
+    await onDatabaseInitializationError(sqlError);
 
     return;
   }
-
-  appStartInitialSpellcheckSetting = await getSpellCheckSetting();
 
   try {
     const IDB_KEY = 'indexeddb-delete-needed';
@@ -2307,7 +2321,7 @@ app.on('ready', async () => {
       await sql.sqlWrite('removeItemById', IDB_KEY);
     }
   } catch (err) {
-    getLogger().error(
+    log.error(
       '(ready event handler) error deleting IndexedDB:',
       Errors.toLogFormat(err)
     );
@@ -2335,12 +2349,14 @@ app.on('ready', async () => {
 
 function setupMenu(options?: Partial<CreateTemplateOptionsType>) {
   const { platform } = process;
+  const version = app.getVersion();
   menuOptions = {
     // options
     development,
     devTools: defaultWebPrefs.devTools,
     includeSetup: false,
-    isProduction: isProduction(app.getVersion()),
+    isNightly: isNightly(version),
+    isProduction: isProduction(version),
     platform,
 
     // actions
@@ -2353,11 +2369,20 @@ function setupMenu(options?: Partial<CreateTemplateOptionsType>) {
     openSupportPage,
     setupAsNewDevice,
     setupAsStandalone,
+    stageLocalBackupForImport,
     showAbout,
     showDebugLog: showDebugLogWindow,
     showCallingDevTools: showCallingDevToolsWindow,
     showKeyboardShortcuts,
-    showSettings: showSettingsWindow,
+    showSettings: () => {
+      if (!settingsChannel) {
+        log.warn(
+          'showSettings: No settings channel; cannot open settings tab.'
+        );
+        return;
+      }
+      settingsChannel.openSettingsTab();
+    },
     showWindow,
     zoomIn,
     zoomOut,
@@ -2377,6 +2402,7 @@ function setupMenu(options?: Partial<CreateTemplateOptionsType>) {
     development: menuOptions.development,
     devTools: menuOptions.devTools,
     includeSetup: menuOptions.includeSetup,
+    isNightly: menuOptions.isNightly,
     isProduction: menuOptions.isProduction,
     platform: menuOptions.platform,
   });
@@ -2387,7 +2413,7 @@ async function maybeRequestCloseConfirmation(): Promise<boolean> {
     return true;
   }
 
-  getLogger().info(
+  log.info(
     'maybeRequestCloseConfirmation: Checking to see if close confirmation is needed'
   );
   const request = new Promise<boolean>(resolveFn => {
@@ -2399,14 +2425,14 @@ async function maybeRequestCloseConfirmation(): Promise<boolean> {
     }
 
     ipc.once('received-close-confirmation', (_event, result) => {
-      getLogger().info('maybeRequestCloseConfirmation: Response received');
+      log.info('maybeRequestCloseConfirmation: Response received');
 
       clearTimeoutIfNecessary(timeout);
       resolveFn(result);
     });
 
     ipc.once('requested-close-confirmation', () => {
-      getLogger().info(
+      log.info(
         'maybeRequestCloseConfirmation: Confirmation dialog shown, waiting for user.'
       );
       clearTimeoutIfNecessary(timeout);
@@ -2417,7 +2443,7 @@ async function maybeRequestCloseConfirmation(): Promise<boolean> {
     // Wait a short time then proceed. Normally the dialog should be
     // shown right away.
     timeout = setTimeout(() => {
-      getLogger().error(
+      log.error(
         'maybeRequestCloseConfirmation: Response never received; continuing with close.'
       );
       resolveFn(true);
@@ -2427,7 +2453,7 @@ async function maybeRequestCloseConfirmation(): Promise<boolean> {
   try {
     return await request;
   } catch (error) {
-    getLogger().error(
+    log.error(
       'maybeRequestCloseConfirmation error:',
       Errors.toLogFormat(error)
     );
@@ -2440,7 +2466,7 @@ async function requestShutdown() {
     return;
   }
 
-  getLogger().info('requestShutdown: Requesting close of mainWindow...');
+  log.info('requestShutdown: Requesting close of mainWindow...');
   const request = new Promise<void>(resolveFn => {
     let timeout: NodeJS.Timeout | undefined;
 
@@ -2450,13 +2476,10 @@ async function requestShutdown() {
     }
 
     ipc.once('now-ready-for-shutdown', (_event, error) => {
-      getLogger().info('requestShutdown: Response received');
+      log.info('requestShutdown: Response received');
 
       if (error) {
-        getLogger().error(
-          'requestShutdown: got error, still shutting down.',
-          error
-        );
+        log.error('requestShutdown: got error, still shutting down.', error);
       }
       clearTimeoutIfNecessary(timeout);
 
@@ -2471,7 +2494,7 @@ async function requestShutdown() {
     // Note: two minutes is also our timeout for SQL tasks in data.js in the browser.
     timeout = setTimeout(
       () => {
-        getLogger().error(
+        log.error(
           'requestShutdown: Response never received; forcing shutdown.'
         );
         resolveFn();
@@ -2483,7 +2506,7 @@ async function requestShutdown() {
   try {
     await request;
   } catch (error) {
-    getLogger().error('requestShutdown error:', Errors.toLogFormat(error));
+    log.error('requestShutdown error:', Errors.toLogFormat(error));
   }
 }
 
@@ -2506,7 +2529,7 @@ function getWindowDebugInfo() {
 }
 
 app.on('before-quit', e => {
-  getLogger().info('before-quit event', {
+  log.info('before-quit event', {
     readyForShutdown: windowState.readyForShutdown(),
     shouldQuit: windowState.shouldQuit(),
     hasEventBeenPrevented: e.defaultPrevented,
@@ -2518,14 +2541,14 @@ app.on('before-quit', e => {
 });
 
 app.on('will-quit', e => {
-  getLogger().info('will-quit event', {
+  log.info('will-quit event', {
     hasEventBeenPrevented: e.defaultPrevented,
     ...getWindowDebugInfo(),
   });
 });
 
 app.on('quit', e => {
-  getLogger().info('quit event', {
+  log.info('quit event', {
     hasEventBeenPrevented: e.defaultPrevented,
     ...getWindowDebugInfo(),
   });
@@ -2533,7 +2556,7 @@ app.on('quit', e => {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  getLogger().info('main process handling window-all-closed');
+  log.info('main process handling window-all-closed');
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   const shouldAutoClose = !OS.isMacOS() || isTestEnvironment(getEnvironment());
@@ -2612,7 +2635,7 @@ ipc.on('draw-attention', () => {
 });
 
 ipc.on('restart', () => {
-  getLogger().info('Relaunching application');
+  log.info('Relaunching application');
   app.relaunch();
   app.quit();
 });
@@ -2704,10 +2727,7 @@ ipc.handle(
     try {
       await showPermissionsPopupWindow(forCalling, forCamera);
     } catch (error) {
-      getLogger().error(
-        'show-permissions-popup error:',
-        Errors.toLogFormat(error)
-      );
+      log.error('show-permissions-popup error:', Errors.toLogFormat(error));
     }
   }
 );
@@ -2724,17 +2744,6 @@ function removeDarkOverlay() {
     mainWindow.webContents.send('remove-dark-overlay');
   }
 }
-
-ipc.on('show-settings', showSettingsWindow);
-
-ipc.on('delete-all-data', () => {
-  if (settingsWindow) {
-    settingsWindow.close();
-  }
-  if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send('delete-all-data');
-  }
-});
 
 ipc.on('get-config', async event => {
   const theme = await getResolvedThemeSetting();
@@ -2753,7 +2762,7 @@ ipc.on('get-config', async event => {
   }
 
   const parsed = safeParseLoose(rendererConfigSchema, {
-    name: packageJson.productName,
+    name: productName,
     availableLocales: getResolvedMessagesLocale().availableLocales,
     resolvedTranslationsLocale: getResolvedMessagesLocale().name,
     resolvedTranslationsLocaleDirection: getResolvedMessagesLocale().direction,
@@ -2783,6 +2792,7 @@ ipc.on('get-config', async event => {
     // Should be already computed and cached at this point
     dnsFallback: await getDNSFallback(),
     disableIPv6: DISABLE_IPV6,
+    disableScreenSecurity: DISABLE_SCREEN_SECURITY,
     nodeVersion: process.versions.node,
     hostname: os.hostname(),
     osRelease: os.release(),
@@ -2791,10 +2801,11 @@ ipc.on('get-config', async event => {
     proxyUrl: process.env.HTTPS_PROXY || process.env.https_proxy || undefined,
     contentProxyUrl: config.get<string>('contentProxyUrl'),
     sfuUrl: config.get('sfuUrl'),
-    reducedMotionSetting: DISABLE_GPU || animationSettings.prefersReducedMotion,
+    reducedMotionSetting: animationSettings.prefersReducedMotion,
     registrationChallengeUrl: config.get<string>('registrationChallengeUrl'),
     serverPublicParams: config.get<string>('serverPublicParams'),
-    serverTrustRoot: config.get<string>('serverTrustRoot'),
+    serverTrustRoots: config.get<Array<string>>('serverTrustRoots'),
+    stripePublishableKey: config.get<string>('stripePublishableKey'),
     genericServerPublicParams: config.get<string>('genericServerPublicParams'),
     backupServerPublicParams: config.get<string>('backupServerPublicParams'),
     theme,
@@ -2872,7 +2883,7 @@ ipc.handle('DebugLogs.upload', async (_event, content: string) => {
   return uploadDebugLog.upload({
     content,
     appVersion: app.getVersion(),
-    logger: getLogger(),
+    logger: log,
   });
 });
 
@@ -2891,6 +2902,20 @@ const sendPreferencesChangedEventToWindows = () => {
 };
 ipc.on('preferences-changed', sendPreferencesChangedEventToWindows);
 
+const onEphemeralSettingChanged = (name: string) => {
+  if (name !== 'contentProtection') {
+    return;
+  }
+
+  const contentProtection = ephemeralConfig.get('contentProtection');
+
+  for (const window of activeWindows) {
+    if (typeof contentProtection === 'boolean') {
+      window.setContentProtection(contentProtection);
+    }
+  }
+};
+
 function maybeGetIncomingSignalRoute(argv: Array<string>) {
   for (const arg of argv) {
     const route = parseSignalRoute(arg);
@@ -2902,8 +2927,6 @@ function maybeGetIncomingSignalRoute(argv: Array<string>) {
 }
 
 function handleSignalRoute(route: ParsedSignalRoute) {
-  const log = getLogger();
-
   if (mainWindow == null || !mainWindow.webContents) {
     log.error('handleSignalRoute: mainWindow is null or missing webContents');
     return;
@@ -2942,6 +2965,7 @@ function handleSignalRoute(route: ParsedSignalRoute) {
   } else if (route.key === 'linkCall') {
     mainWindow.webContents.send('start-call-link', {
       key: route.args.key,
+      epoch: route.args.epoch,
     });
   } else if (route.key === 'showWindow') {
     mainWindow.webContents.send('show-window');
@@ -2951,6 +2975,9 @@ function handleSignalRoute(route: ParsedSignalRoute) {
     challengeHandler.handleCaptcha(route.args.captchaId);
     // Show window after handling captcha
     showWindow();
+  } else if (route.key === 'donationValidationComplete') {
+    log.info('donationValidationComplete route handled');
+    mainWindow.webContents.send('donation-validation-complete', route.args);
   } else {
     log.info('handleSignalRoute: Unknown signal route:', route.key);
     mainWindow.webContents.send('unknown-sgnl-link');
@@ -2973,7 +3000,7 @@ ipc.handle('ensure-file-permissions', () => ensureFilePermissions());
  * @param {string[]} [onlyFiles] - Only ensure permissions on these given files
  */
 async function ensureFilePermissions(onlyFiles?: Array<string>) {
-  getLogger().info('Begin ensuring permissions');
+  log.info('Begin ensuring permissions');
 
   const start = Date.now();
   const userDataPath = await realpath(app.getPath('userData'));
@@ -2988,7 +3015,7 @@ async function ensureFilePermissions(onlyFiles?: Array<string>) {
         ignore: ['**/Singleton*'],
       });
 
-  getLogger().info(`Ensuring file permissions for ${files.length} files`);
+  log.info(`Ensuring file permissions for ${files.length} files`);
 
   // Touch each file in a queue
   const q = new PQueue({ concurrency: 5, timeout: 1000 * 60 * 2 });
@@ -2999,10 +3026,7 @@ async function ensureFilePermissions(onlyFiles?: Array<string>) {
         try {
           await chmod(normalize(f), isDir ? 0o700 : 0o600);
         } catch (error) {
-          getLogger().error(
-            'ensureFilePermissions: Error from chmod',
-            error.message
-          );
+          log.error('ensureFilePermissions: Error from chmod', error.message);
         }
       })
     )
@@ -3010,7 +3034,7 @@ async function ensureFilePermissions(onlyFiles?: Array<string>) {
 
   await q.onEmpty();
 
-  getLogger().info(`Finish ensuring permissions in ${Date.now() - start}ms`);
+  log.info(`Finish ensuring permissions in ${Date.now() - start}ms`);
 }
 
 ipc.handle('get-media-access-status', async (_event, value) => {
@@ -3053,7 +3077,7 @@ ipc.handle('get-auto-launch', async () => {
 
 ipc.handle('set-auto-launch', async (_event, value) => {
   const openAtLogin = Boolean(value);
-  getLogger().info('set-auto-launch: new value', openAtLogin);
+  log.info('set-auto-launch: new value', openAtLogin);
   app.setLoginItemSettings({
     ...(await getDefaultLoginItemSettings()),
     openAtLogin,
@@ -3070,7 +3094,7 @@ ipc.on('show-item-in-folder', (_event, folder) => {
 
 ipc.handle('show-save-dialog', async (_event, { defaultPath }) => {
   if (!mainWindow) {
-    getLogger().warn('show-save-dialog: no main window');
+    log.warn('show-save-dialog: no main window');
 
     return { canceled: true };
   }
@@ -3091,6 +3115,9 @@ ipc.handle('show-save-dialog', async (_event, { defaultPath }) => {
 
   // On Windows, if you change the path from the default, the extension is
   // removed. We want to make sure the extension is always there.
+  if (extname(selectedFilePath) !== '') {
+    return { canceled: false, filePath: selectedFilePath };
+  }
   const defaultExt = extname(defaultPath);
   const finalDirname = dirname(selectedFilePath);
   const finalBasename = basename(selectedFilePath, defaultExt);
@@ -3099,31 +3126,60 @@ ipc.handle('show-save-dialog', async (_event, { defaultPath }) => {
   return { canceled: false, filePath: finalFilePath };
 });
 
-ipc.handle('show-save-multi-dialog', async _event => {
-  if (!mainWindow) {
-    getLogger().warn('show-save-multi-dialog: no main window');
-
-    return { canceled: true };
-  }
-  const { canceled, filePaths: selectedDirPaths } = await dialog.showOpenDialog(
-    mainWindow,
+ipc.handle(
+  'show-open-folder-dialog',
+  async (
+    _event,
     {
-      defaultPath: app.getPath('downloads'),
-      properties: ['openDirectory', 'createDirectory'],
+      useMainWindow,
+      buttonLabel,
+      title,
+    }: {
+      useMainWindow: boolean;
+      buttonLabel?: string;
+      title?: string;
+    } = { useMainWindow: false }
+  ) => {
+    let canceled: boolean;
+    let selectedDirPaths: ReadonlyArray<string>;
+
+    if (useMainWindow) {
+      if (!mainWindow) {
+        log.warn('show-open-folder-dialog: no main window');
+        return { canceled: true };
+      }
+
+      ({ canceled, filePaths: selectedDirPaths } = await dialog.showOpenDialog(
+        mainWindow,
+        {
+          defaultPath: app.getPath('downloads'),
+          properties: ['openDirectory', 'createDirectory'],
+          buttonLabel,
+          title,
+        }
+      ));
+    } else {
+      ({ canceled, filePaths: selectedDirPaths } = await dialog.showOpenDialog({
+        defaultPath: app.getPath('downloads'),
+        properties: ['openDirectory', 'createDirectory'],
+        buttonLabel,
+        title,
+      }));
     }
-  );
-  if (canceled || selectedDirPaths.length === 0) {
-    return { canceled: true };
+
+    if (canceled || selectedDirPaths.length === 0) {
+      return { canceled: true };
+    }
+
+    if (selectedDirPaths.length > 1) {
+      log.warn('show-open-folder-dialog: multiple directories selected');
+
+      return { canceled: true };
+    }
+
+    return { canceled: false, dirPath: selectedDirPaths[0] };
   }
-
-  if (selectedDirPaths.length > 1) {
-    getLogger().warn('show-save-multi-dialog: multiple directories selected');
-
-    return { canceled: true };
-  }
-
-  return { canceled: false, dirPath: selectedDirPaths[0] };
-});
+);
 
 ipc.handle('executeMenuRole', async ({ sender }, untypedRole) => {
   const role = untypedRole as MenuItemConstructorOptions['role'];
@@ -3194,6 +3250,7 @@ ipc.handle('getMenuOptions', async () => {
     development: menuOptions?.development ?? false,
     devTools: menuOptions?.devTools ?? false,
     includeSetup: menuOptions?.includeSetup ?? false,
+    isNightly: menuOptions?.isNightly ?? false,
     isProduction: menuOptions?.isProduction ?? true,
     platform: menuOptions?.platform ?? 'unknown',
   };

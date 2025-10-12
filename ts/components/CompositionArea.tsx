@@ -7,86 +7,86 @@ import type { ReadonlyDeep } from 'type-fest';
 import type {
   DraftBodyRanges,
   HydratedBodyRangesType,
-} from '../types/BodyRange';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import type { ErrorDialogAudioRecorderType } from '../types/AudioRecorder';
-import { RecordingState } from '../types/AudioRecorder';
-import type { imageToBlurHash } from '../util/imageToBlurHash';
-import { dropNull } from '../util/dropNull';
-import { Spinner } from './Spinner';
+} from '../types/BodyRange.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import type { ErrorDialogAudioRecorderType } from '../types/AudioRecorder.js';
+import { RecordingState } from '../types/AudioRecorder.js';
+import type { imageToBlurHash } from '../util/imageToBlurHash.js';
+import { dropNull } from '../util/dropNull.js';
+import { Spinner } from './Spinner.js';
 import type {
   Props as EmojiButtonProps,
   EmojiButtonAPI,
-} from './emoji/EmojiButton';
-import { EmojiButton } from './emoji/EmojiButton';
-import type { Props as StickerButtonProps } from './stickers/StickerButton';
-import { StickerButton } from './stickers/StickerButton';
+} from './emoji/EmojiButton.js';
+import { EmojiButton } from './emoji/EmojiButton.js';
+import type { Props as StickerButtonProps } from './stickers/StickerButton.js';
+import { StickerButton } from './stickers/StickerButton.js';
 import type {
   InputApi,
   Props as CompositionInputProps,
-} from './CompositionInput';
-import { CompositionInput } from './CompositionInput';
-import type { Props as MessageRequestActionsProps } from './conversation/MessageRequestActions';
-import { MessageRequestActions } from './conversation/MessageRequestActions';
-import type { PropsType as GroupV1DisabledActionsPropsType } from './conversation/GroupV1DisabledActions';
-import { GroupV1DisabledActions } from './conversation/GroupV1DisabledActions';
-import type { PropsType as GroupV2PendingApprovalActionsPropsType } from './conversation/GroupV2PendingApprovalActions';
-import { GroupV2PendingApprovalActions } from './conversation/GroupV2PendingApprovalActions';
-import { AnnouncementsOnlyGroupBanner } from './AnnouncementsOnlyGroupBanner';
-import { AttachmentList } from './conversation/AttachmentList';
+} from './CompositionInput.js';
+import { CompositionInput } from './CompositionInput.js';
+import type { Props as MessageRequestActionsProps } from './conversation/MessageRequestActions.js';
+import { MessageRequestActions } from './conversation/MessageRequestActions.js';
+import type { PropsType as GroupV1DisabledActionsPropsType } from './conversation/GroupV1DisabledActions.js';
+import { GroupV1DisabledActions } from './conversation/GroupV1DisabledActions.js';
+import type { PropsType as GroupV2PendingApprovalActionsPropsType } from './conversation/GroupV2PendingApprovalActions.js';
+import { GroupV2PendingApprovalActions } from './conversation/GroupV2PendingApprovalActions.js';
+import { AnnouncementsOnlyGroupBanner } from './AnnouncementsOnlyGroupBanner.js';
+import { AttachmentList } from './conversation/AttachmentList.js';
 import type {
   AttachmentDraftType,
   InMemoryAttachmentDraftType,
-} from '../types/Attachment';
-import { isImageAttachment, isVoiceMessage } from '../types/Attachment';
-import type { AciString } from '../types/ServiceId';
-import { AudioCapture } from './conversation/AudioCapture';
-import { CompositionUpload } from './CompositionUpload';
+} from '../types/Attachment.js';
+import { isImageAttachment, isVoiceMessage } from '../types/Attachment.js';
+import type { AciString } from '../types/ServiceId.js';
+import { AudioCapture } from './conversation/AudioCapture.js';
+import { CompositionUpload } from './CompositionUpload.js';
 import type {
   ConversationRemovalStage,
   ConversationType,
   PushPanelForConversationActionType,
   ShowConversationType,
-} from '../state/ducks/conversations';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews';
-import { isSameLinkPreview } from '../types/message/LinkPreviews';
+} from '../state/ducks/conversations.js';
+import type { EmojiPickDataType } from './emoji/EmojiPicker.js';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.js';
+import { isSameLinkPreview } from '../types/message/LinkPreviews.js';
 
-import { MandatoryProfileSharingActions } from './conversation/MandatoryProfileSharingActions';
-import { MediaQualitySelector } from './MediaQualitySelector';
-import type { Props as QuoteProps } from './conversation/Quote';
-import { Quote } from './conversation/Quote';
-import { countStickers } from './stickers/lib';
+import { MandatoryProfileSharingActions } from './conversation/MandatoryProfileSharingActions.js';
+import { MediaQualitySelector } from './MediaQualitySelector.js';
+import type { Props as QuoteProps } from './conversation/Quote.js';
+import { Quote } from './conversation/Quote.js';
+import { countStickers } from './stickers/lib.js';
 import {
   useAttachFileShortcut,
   useEditLastMessageSent,
   useKeyboardShortcutsConditionally,
-} from '../hooks/useKeyboardShortcuts';
-import { MediaEditor } from './MediaEditor';
-import { isImageTypeSupported } from '../util/GoogleChrome';
-import * as KeyboardLayout from '../services/keyboardLayout';
-import { usePrevious } from '../hooks/usePrevious';
-import { PanelType } from '../types/Panels';
-import type { SmartCompositionRecordingDraftProps } from '../state/smart/CompositionRecordingDraft';
-import { useEscapeHandling } from '../hooks/useEscapeHandling';
-import type { SmartCompositionRecordingProps } from '../state/smart/CompositionRecording';
-import SelectModeActions from './conversation/SelectModeActions';
-import type { ShowToastAction } from '../state/ducks/toast';
-import type { DraftEditMessageType } from '../model-types.d';
-import type { ForwardMessagesPayload } from '../state/ducks/globalModals';
-import { ForwardMessagesModalType } from './ForwardMessagesModal';
-import { SignalConversationMuteToggle } from './conversation/SignalConversationMuteToggle';
-import { FunPicker } from './fun/FunPicker';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import type { FunStickerSelection } from './fun/panels/FunPanelStickers';
-import type { FunGifSelection } from './fun/panels/FunPanelGifs';
-import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal';
-import { strictAssert } from '../util/assert';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import type { EmojiSkinTone } from './fun/data/emojis';
-import type { StickerPackType, StickerType } from '../state/ducks/stickers';
-import { FunPickerButton } from './fun/FunButton';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
+} from '../hooks/useKeyboardShortcuts.js';
+import { MediaEditor } from './MediaEditor.js';
+import { isImageTypeSupported } from '../util/GoogleChrome.js';
+import * as KeyboardLayout from '../services/keyboardLayout.js';
+import { usePrevious } from '../hooks/usePrevious.js';
+import { PanelType } from '../types/Panels.js';
+import type { SmartCompositionRecordingDraftProps } from '../state/smart/CompositionRecordingDraft.js';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.js';
+import type { SmartCompositionRecordingProps } from '../state/smart/CompositionRecording.js';
+import SelectModeActions from './conversation/SelectModeActions.js';
+import type { ShowToastAction } from '../state/ducks/toast.js';
+import type { DraftEditMessageType } from '../model-types.d.ts';
+import type { ForwardMessagesPayload } from '../state/ducks/globalModals.js';
+import { ForwardMessagesModalType } from './ForwardMessagesModal.js';
+import { SignalConversationMuteToggle } from './conversation/SignalConversationMuteToggle.js';
+import { FunPicker } from './fun/FunPicker.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import type { FunStickerSelection } from './fun/panels/FunPanelStickers.js';
+import type { FunGifSelection } from './fun/panels/FunPanelGifs.js';
+import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal.js';
+import { strictAssert } from '../util/assert.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import type { EmojiSkinTone } from './fun/data/emojis.js';
+import type { StickerPackType, StickerType } from '../state/ducks/stickers.js';
+import { FunPickerButton } from './fun/FunButton.js';
+import { isFunPickerEnabled } from './fun/isFunPickerEnabled.js';
 
 export type OwnProps = Readonly<{
   acceptedMessageRequest: boolean | null;
@@ -180,7 +180,10 @@ export type OwnProps = Readonly<{
   quotedMessageAuthorAci: AciString | null;
   quotedMessageSentAt: number | null;
 
-  removeAttachment: (conversationId: string, filePath: string) => unknown;
+  removeAttachment: (
+    conversationId: string,
+    attachment: AttachmentDraftType
+  ) => unknown;
   scrollToMessage: (conversationId: string, messageId: string) => unknown;
   setComposerFocus: (conversationId: string) => unknown;
   setMessageToEdit(conversationId: string, messageId: string): unknown;
@@ -199,6 +202,7 @@ export type OwnProps = Readonly<{
     props: SmartCompositionRecordingDraftProps
   ) => JSX.Element | null;
   selectedMessageIds: ReadonlyArray<string> | undefined;
+  areSelectedMessagesForwardable: boolean | undefined;
   toggleSelectMode: (on: boolean) => void;
   toggleForwardMessagesModal: (
     payload: ForwardMessagesPayload,
@@ -367,6 +371,7 @@ export const CompositionArea = memo(function CompositionArea({
   renderSmartCompositionRecordingDraft,
   // Selected messages
   selectedMessageIds,
+  areSelectedMessagesForwardable,
   toggleSelectMode,
   toggleForwardMessagesModal,
   // DraftGifMessageSendModal
@@ -391,7 +396,7 @@ export const CompositionArea = memo(function CompositionArea({
   const draftEditMessageBody = draftEditMessage?.body;
   const editedMessageId = draftEditMessage?.targetMessageId;
 
-  const canSend =
+  let canSend =
     // Text or link preview edited
     dirty ||
     // Quote of edited message changed
@@ -403,6 +408,11 @@ export const CompositionArea = memo(function CompositionArea({
       !isSameLinkPreview(linkPreviewResult, draftEditMessage?.preview)) ||
     // Not edit message, but has attachments
     (draftEditMessage == null && draftAttachments.length !== 0);
+
+  // Draft attachments should finish loading
+  if (draftAttachments.some(attachment => attachment.pending)) {
+    canSend = false;
+  }
 
   const handleSubmit = useCallback(
     (
@@ -906,6 +916,7 @@ export const CompositionArea = memo(function CompositionArea({
       <SelectModeActions
         i18n={i18n}
         selectedMessageIds={selectedMessageIds}
+        areSelectedMessagesForwardable={areSelectedMessagesForwardable === true}
         onExitSelectMode={() => {
           toggleSelectMode(false);
         }}
@@ -1075,6 +1086,7 @@ export const CompositionArea = memo(function CompositionArea({
             imageSrc={attachmentToEdit.url}
             imageToBlurHash={imageToBlurHash}
             installedPacks={installedPacks}
+            isCreatingStory={false}
             isFormattingEnabled={isFormattingEnabled}
             isSending={false}
             onClose={() => setAttachmentToEdit(undefined)}
@@ -1163,9 +1175,7 @@ export const CompositionArea = memo(function CompositionArea({
               onClickAttachment={maybeEditAttachment}
               onClose={() => onClearAttachments(conversationId)}
               onCloseAttachment={attachment => {
-                if (attachment.path) {
-                  removeAttachment(conversationId, attachment.path);
-                }
+                removeAttachment(conversationId, attachment);
               }}
             />
           </div>

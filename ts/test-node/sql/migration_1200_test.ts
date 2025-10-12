@@ -3,14 +3,17 @@
 
 import { assert } from 'chai';
 
-import { AttachmentDownloadSource, type WritableDB } from '../../sql/Interface';
-import { objectToJSON, sql } from '../../sql/util';
-import { createDB, updateToVersion, explain } from './helpers';
-import type { AttachmentDownloadJobType } from '../../types/AttachmentDownload';
-import { IMAGE_JPEG } from '../../types/MIME';
+import {
+  AttachmentDownloadSource,
+  type WritableDB,
+} from '../../sql/Interface.js';
+import { objectToJSON, sql } from '../../sql/util.js';
+import { createDB, updateToVersion, explain } from './helpers.js';
+import { IMAGE_JPEG } from '../../types/MIME.js';
+import type { _AttachmentDownloadJobTypeV1040 } from '../../sql/migrations/1040-undownloaded-backed-up-media.js';
 
 type UnflattenedAttachmentDownloadJobType = Omit<
-  AttachmentDownloadJobType,
+  _AttachmentDownloadJobTypeV1040,
   'digest' | 'contentType' | 'size' | 'ciphertextSize'
 >;
 
@@ -105,7 +108,7 @@ describe('SQL/updateToSchemaVersion1200', () => {
           source:
             i < NUM_STANDARD_JOBS
               ? AttachmentDownloadSource.STANDARD
-              : AttachmentDownloadSource.BACKUP_IMPORT,
+              : AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
         });
       }
     })();

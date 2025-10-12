@@ -1,9 +1,9 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { BackupCredentialType } from '@signalapp/libsignal-client/dist/zkgroup';
-import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI';
+import type { BackupLevel } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
+import { BackupCredentialType } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
+import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI.js';
 
 export { BackupCredentialType };
 
@@ -36,14 +36,20 @@ export type SubscriptionCostType = {
 };
 
 export type BackupStatusType = {
-  createdAt?: number;
+  createdTimestamp?: number;
   protoSize?: number;
-  mediaSize?: number;
+};
+
+export type BackupMediaDownloadStatusType = {
+  totalBytes: number;
+  completedBytes: number;
+  isPaused: boolean;
+  isIdle: boolean;
 };
 
 export type BackupsSubscriptionType =
   | {
-      status: 'not-found' | 'expired';
+      status: 'off' | 'not-found' | 'expired';
     }
   | {
       status: 'free';
@@ -52,12 +58,18 @@ export type BackupsSubscriptionType =
   | (
       | {
           status: 'active';
-          renewalDate?: Date;
+          renewalTimestamp?: number;
           cost?: SubscriptionCostType;
         }
       | {
           status: 'pending-cancellation';
-          expiryDate?: Date;
+          expiryTimestamp?: number;
           cost?: SubscriptionCostType;
         }
     );
+
+export type LocalBackupMetadataVerificationType = {
+  snapshotDir: string;
+  backupId: Uint8Array;
+  metadataKey: Uint8Array;
+};

@@ -41,6 +41,9 @@
   "icu:Preferences__sent-media-quality__description": {
     "messageformat": "உயர்தரத்தை அனுப்புகிறது ஊடகம் அதிக தரவைப் பயன்படுத்தும்."
   },
+  "icu:Preferences__DonateTitle": {
+    "messageformat": "Signal-க்கு நன்கொடை அளி"
+  },
   "icu:sentMediaQualityStandard": {
     "messageformat": "தரநிலை"
   },
@@ -68,6 +71,9 @@
   "icu:unknownContact": {
     "messageformat": "தெரியாத தொடர்பு"
   },
+  "icu:unknownContactShort": {
+    "messageformat": "முன் தெரிந்திராத"
+  },
   "icu:unknownGroup": {
     "messageformat": "தெரியாத குழு"
   },
@@ -79,9 +85,6 @@
   },
   "icu:databaseError": {
     "messageformat": "தரவுத் தளம் பிழை"
-  },
-  "icu:databaseError__detail": {
-    "messageformat": "ஒரு தரவுத்தளப் பிழை ஏற்பட்டது. நீங்கள் பிழையை நகலெடுத்து, சிக்கலைச் சரிசெய்ய சிக்னல் ஆதரவைத் தொடர்புகொள்ளலாம். நீங்கள் உடனடியாக சிக்னலைப் பயன்படுத்த வேண்டுமென்றால், உங்கள் தரவை நீக்கிவிட்டு மீண்டும் தொடங்கவும்.\n\nஇங்கு செல்வதன் மூலம் ஆதரவைத் தொடர்புகொள்ளவும்: {link}"
   },
   "icu:deleteAndRestart": {
     "messageformat": "தரவை நீக்கி மீண்டும் தொடங்கவும்"
@@ -100,6 +103,15 @@
   },
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "OS குறியாக்க கீரிங் பின்தளம் {previousBackend} -இலிருந்து {currentBackend}-க்கு மாறியதால் தரவுத்தளக் குறியாக்க விசையை அணுக முடியவில்லை. உதாரணமாக GNOME மற்றும் KDE -க்கு இடையில் டெஸ்க்டாப் சூழல் மாறினால் இது நிகழலாம்.\n\nமுந்தைய டெஸ்க்டாப் சூழலுக்கு மாறவும் அல்லது சிக்னலைக் கட்டளை வரி கொடி --password-store=\"{previousBackendFlag}\" என அமைத்து இயக்க முயற்சிக்கவும்"
+  },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
   },
   "icu:mainMenuFile": {
     "messageformat": "&கோப்பு"
@@ -203,6 +215,9 @@
   "icu:menuSetupAsStandalone": {
     "messageformat": "முழுமையான பயன்முறை சாதனமாக அமைக்கவும்"
   },
+  "icu:menuStageLocalBackupForImport": {
+    "messageformat": "Stage Local Backup for Import…"
+  },
   "icu:messageContextMenuButton": {
     "messageformat": "மேலும் செயல்கள்"
   },
@@ -298,9 +313,6 @@
   },
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "அமைப்புகள்"
-  },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Signal லைப் புதுப்பிக்கவும்"
   },
   "icu:NavTabs__ItemLabel--Profile": {
     "messageformat": "விவரம்"
@@ -590,11 +602,20 @@
   "icu:Toast--FailedToSendWithEndorsements": {
     "messageformat": "Failed to send message with endorsements"
   },
+  "icu:Toast--SQLError": {
+    "messageformat": "தரவுதளப்பிழை: உங்கள் பதிவுகளைப் பகிருங்கள்."
+  },
   "icu:Toast--InvalidStorageServiceHeaders": {
     "messageformat": "சேமிப்பகச் சேவையிலிருந்து தவறான பதில் கிடைத்தது. உங்கள் பதிவுகளைப் பகிருங்கள்."
   },
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "ரசீது சேமிக்கப்பட்டது"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "ரசீதைச் சேமிப்பதில் பிழை. மீண்டும் முயலுங்கள்."
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "கோப்புகளுடன் புகைப்படங்களையும் வீடியோக்களையும் தேர்ந்தெடுக்க முடியாது."
@@ -655,9 +676,6 @@
   },
   "icu:joinTheBeta": {
     "messageformat": "Signal சோதனையில் சேரவும்"
-  },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Signal Desktop விருப்பத்தேர்வுகள்"
   },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "ஸ்டிக்கர் பேக் கிரியேட்டர்"
@@ -1022,14 +1040,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "தகவல்"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "வாக்கெடுப்பு · ஒன்றைத் தேர்ந்தெடுக்கவும்"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "வாக்கெடுப்பு · ஒன்று அல்லது அதற்கு மேற்பட்டவற்றைத் தேர்ந்தெடுங்கள்"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "வாக்கெடுப்பு · இறுதி முடிவுகள்"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "வாக்குகளைக் காண்க"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "நீங்கள் வாக்களித்துள்ளீர்கள்"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "வாக்கெடுப்பு விவரங்கள்"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "கேள்வி"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number}வாக்கு} other {{count,number}வாக்குகள்}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "வாக்குகள் இல்லை"
+  },
   "icu:deleteConversation": {
     "messageformat": "நீக்கு"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "சாட்டை நீக்க வேண்டுமா?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "இந்த சாட்டில் உள்ள அனைத்து மெசேஜ்களும் இந்த டிவைஸிலிருந்து நீக்கப்படும்."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "இந்தச் சாட்டில் உள்ள அனைத்து மெசேஜ்களும் உங்கள் எல்லா சாதனங்களிலிருந்தும் அழிக்கப்படும்."
@@ -1262,6 +1304,9 @@
   "icu:Install__support-link": {
     "messageformat": "உங்களுக்கு உதவி வேண்டுமா?"
   },
+  "icu:Preferences--header": {
+    "messageformat": "அமைப்புகள்"
+  },
   "icu:Preferences--phone-number": {
     "messageformat": "தொலைபேசி எண்"
   },
@@ -1273,6 +1318,174 @@
   },
   "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
     "messageformat": "ஈமோஜி ஸ்கின் டோன்"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "சாட் கோப்புறைகள்"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "சாட் கோப்புறையைச் சேர்"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "உங்கள் சாட்ஸைக் கோப்புறைகளாக ஒழுங்கமைத்து, உங்கள் சாட் பட்டியலில் அவற்றுக்கிடையே விரைவாக மாறவும்."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "கோப்புறையைத் திருத்து"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "நீக்கு"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "கோப்புறையை அழிக்கவா?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "“{chatFolderTitle}” கோப்புறையை அழிக்க விரும்புகிறீர்களா?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "நீக்கு"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "ரத்துசெய்"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "சாட் கோப்புறைகள்"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "உங்கள் சாட்களைக் கோப்புறைகளாக ஒழுங்கமைத்து, உங்கள் சாட் பட்டியலில் உள்ளவற்றுக்கிடையே விரைவாக மாறுங்கள்"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "கோப்புறைகள்"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "அனைத்து சாட்ஸ்"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "கோப்புறையை உருவாக்கு"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "பரிந்துரைக்கப்பட்ட கோப்புறைகள்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "சேர்க்கவும்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
+    "messageformat": "{chatFolderTitle} கோப்புறை சேர்க்கப்பட்டது"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "படிக்காதவை"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "அனைத்து சாட்ஸில் இருந்தும் படிக்கப்பட்டாத மெசேஜ்கள்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "1:1 சாட்ஸ்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "நேரடி சாட்ஸிலிருந்து மெசேஜ்கள் மட்டும்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "குழுக்கள்"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "குழு சாட்ஸிலிருந்து மெசேஜ்கள் மட்டும்"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "கோப்புறையை உருவாக்கு"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "கோப்புறையின் பெயர்"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "கோப்புறை பெயர் (தேவையானது)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "சாட்ஸ் உள்ளடங்கும்"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "இந்தக் கோப்புறையில் தோன்ற வேண்டிய சாட்களைத் தேர்ந்தெடுங்கள்"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1 சாட்ஸ்"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "குழு உரையாடல்கள்"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "சாட்ஸைச் சேர்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "சாட்ஸ் உள்ளடங்கும்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "விலக்கப்பட்ட சாட்கள்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "தேடு"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "சாட் வகைகள்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "1:1 சாட்ஸ்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "குழுக்கள்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "சமீபத்திய சாட்ஸ்"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "முடிந்தது"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "விதிவிலக்குகள்"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "இந்தக் கோப்புறையில் தோன்றக் கூடாத சாட்களைத் தேர்ந்தெடுங்கள்"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "சாட்ஸை விலக்கு"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "படிக்கப்படாத சாட்ஸை மட்டும் காட்டு"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "கோப்புறையில் படிக்கப்படாத மெசேஜ்களைக் கொண்ட சாட்ஸ் மட்டும் தோன்றும்."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "மியூட் செய்யப்பட்ட சாட்ஸைச் சேர்க்கவும்"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "கோப்புறையை அழி"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "இந்த சாட் கோப்புறையை அழிக்க வேண்டுமா?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "இந்தக் கோப்புறை உங்கள் சாட் பட்டியலிலிருந்து அகற்றப்படும்."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "நீக்கு"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "ரத்துசெய்"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "மாற்றங்களைச் சேமிப்பதா?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "இந்த சாட் கோப்புறையில், நீங்கள் மேற்கொண்ட மாற்றங்களைச் சேமிக்க விரும்புகிறீர்களா?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "சேமி"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "புறந்தள்ளு"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "சேமி"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "ரத்துசெய்"
   },
   "icu:initialSync": {
     "messageformat": "தொடர்புகள் மற்றும் குழுக்களை ஒத்திசைத்தல்"
@@ -1670,9 +1883,6 @@
   "icu:notificationSenderInGroup": {
     "messageformat": "{sender} in {group}"
   },
-  "icu:notificationReaction": {
-    "messageformat": "{sender} உங்கள் செய்திக்கு {emoji} என்று எதிர்வினையாற்றினார்"
-  },
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} {emoji} என்று எதிர்வினையாற்றினார்: {message}"
   },
@@ -1829,12 +2039,6 @@
   "icu:ConversationDetails--support-center": {
     "messageformat": "ஆதரவு மையம்"
   },
-  "icu:ConversationDetails--contact-us": {
-    "messageformat": "எங்களை தொடர்பு கொள்ள"
-  },
-  "icu:ConversationDetails--donate": {
-    "messageformat": "Signal-க்கு நன்கொடை அளி"
-  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "பாதுகாப்பு எண்ணைக் காட்டு"
   },
@@ -1897,6 +2101,9 @@
   },
   "icu:Toast--download-failed": {
     "messageformat": "பதிவிறக்க முடியவில்லை"
+  },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "காப்புப்பிரதியிலிருந்து இணைப்பைப் பதிவிறக்க முடியவில்லை"
   },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "நீங்கள் இந்த மெசேஜை அனுப்பியதிலிருந்து 24 மணிநேரத்திற்குள் மட்டுமே திருத்தங்களைச் செய்ய முடியும்."
@@ -2071,6 +2278,9 @@
   },
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "பார்வைக்கு ஒரு முறை மட்டுமே காணொளி"
+  },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
   },
   "icu:message--deletedForEveryone": {
     "messageformat": "இந்த மெசேஜ் நீக்கப்பட்டது."
@@ -2324,14 +2534,23 @@
   "icu:FunPanelEmojis__SearchResults__EmptyHeading": {
     "messageformat": "ஈமோஜிகள் எதுவும் கிடைக்கவில்லை"
   },
+  "icu:FunPanelEmojis__SkinTonePicker__SelectSkinToneForSelectedEmoji": {
+    "messageformat": "{emojiName}க்கான ஸ்கின் டோனைத் தேர்ந்தெடுக்கவும்"
+  },
   "icu:FunPanelEmojis__ChangeSkinToneButtonLabel": {
     "messageformat": "ஸ்கின் டோன் விருப்பத்தை மாற்றுக"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__LongPressAccessibilityDescription": {
+    "messageformat": "ஸ்கின் டோனைத் தேர்ந்தெடுக்க நீண்ட நேரம் அழுத்தவும்"
   },
   "icu:FunPanelEmojis__SkinTonePicker__ChooseDefaultLabel": {
     "messageformat": "உங்களின் இயல்புநிலை ஸ்கின்டோனை தேர்வுசெய்க"
   },
   "icu:FunPanelEmojis__SectionTitle--SearchResults": {
     "messageformat": "தேடல் முடிவுகள்"
+  },
+  "icu:FunPanelEmojis__SectionTitle--ThisMessage": {
+    "messageformat": "இந்த செய்தி"
   },
   "icu:FunPanelEmojis__SectionTitle--Recents": {
     "messageformat": "சமீபத்தில் பயன்படுத்தப்பட்டது"
@@ -2361,7 +2580,7 @@
     "messageformat": "கொடிகள்"
   },
   "icu:FunPanelEmojis__CustomizeReactionsButtonLabel": {
-    "messageformat": "Customize reactions"
+    "messageformat": "எதிர்வினைகளை தனிப்பயனாக்கவும்"
   },
   "icu:FunPanelStickers__SearchLabel": {
     "messageformat": "தேடல் ஒட்டிகள்"
@@ -2382,7 +2601,7 @@
     "messageformat": "சமீபத்தில் பயன்படுத்தப்பட்டது"
   },
   "icu:FunPanelStickers__SectionTitle--Featured": {
-    "messageformat": "Featured"
+    "messageformat": "இடம்பெற்றது"
   },
   "icu:FunPanelStickers__SearchResults__EmptyHeading": {
     "messageformat": "ஸ்டிக்கர்கள் எதுவும் கிடைக்கவில்லை"
@@ -2590,6 +2809,9 @@
   },
   "icu:Keyboard--open-sticker-chooser": {
     "messageformat": "ஓட்டி தேர்வி திறக்கவும்"
+  },
+  "icu:Keyboard--open-gif-chooser": {
+    "messageformat": "GIF தேர்வியைத் திறக்கவும்"
   },
   "icu:Keyboard--begin-recording-voice-note": {
     "messageformat": "குரல் குறிப்பைப் பதிவுசெய்யத் தொடங்குங்கள்"
@@ -2945,6 +3167,36 @@
   "icu:ConversationHero--members": {
     "messageformat": "{count, plural, one {1 உறுப்பினர்} other {{count,number} உறுப்பினர்கள்}}"
   },
+  "icu:ConversationHero--member-list-and-invited": {
+    "messageformat": "{invitesCount, plural, one {{memberList} (+{invitesCount,number} அழைக்கப்பட்டார்)} other {{memberList} (+{invitesCount,number} அழைக்கப்பட்டார்கள்)}}"
+  },
+  "icu:ConversationHero--group-members-zero": {
+    "messageformat": "பிற குழு உறுப்பினர்கள்"
+  },
+  "icu:ConversationHero--group-members-only-you": {
+    "messageformat": "இப்போது வரை பிற குழு உறுப்பினர்கள் இல்லை"
+  },
+  "icu:ConversationHero--group-members-one": {
+    "messageformat": "{member}"
+  },
+  "icu:ConversationHero--group-members-one-and-you": {
+    "messageformat": "{member} மற்றும் நீங்கள்"
+  },
+  "icu:ConversationHero--group-members-two": {
+    "messageformat": "{member1}மற்றும்{member2}"
+  },
+  "icu:ConversationHero--group-members-two-and-you": {
+    "messageformat": "{member1},{member2}, மற்றும் நீங்கள்"
+  },
+  "icu:ConversationHero--group-members-three": {
+    "messageformat": "{member1},{member2}, மற்றும் {member3}"
+  },
+  "icu:ConversationHero--group-members-other": {
+    "messageformat": "{remainingCount, plural, one {{member1},{member2},{member3}, மற்றும் <clickable>{remainingCount,number} பிற நபர்</clickable>} other {{member1}, {member2}, {member3}, மற்றும் <clickable>{remainingCount,number} பிற நபர்கள்</clickable>}}"
+  },
+  "icu:ConversationHero--group-members-other-and-you": {
+    "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3}, மற்றும் <clickable>{remainingCount,number} பிற நபர்</clickable>} other {{member1}, {member2}, {member3}, மற்றும் <clickable>{remainingCount,number} பிற நபர்கள்</clickable>}}"
+  },
   "icu:ConversationHero--review-carefully": {
     "messageformat": "கவனமாக மதிப்பாய்வு செய்க"
   },
@@ -3096,16 +3348,28 @@
     "messageformat": "விலகு"
   },
   "icu:CallControls__JoinLeaveButton--hangup-1-1-tooltip": {
-    "messageformat": "End call"
+    "messageformat": "அழைப்பை முடி"
   },
   "icu:CallControls__JoinLeaveButton--hangup-group-tooltip": {
-    "messageformat": "Leave call"
+    "messageformat": "அழைப்பிலிருந்து வெளியேறு"
   },
   "icu:CallControls__MutedToast--muted": {
     "messageformat": "மைக் ஆஃப்"
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "மைக் ஆன்"
+  },
+  "icu:CallControls__MutedBySomeoneToast": {
+    "messageformat": "{otherName} உங்களை ஒலியடக்கியுள்ளார்."
+  },
+  "icu:CallControls__SomeoneMutedSomeoneToast": {
+    "messageformat": "{name} என்பவர் {otherName}ஐ ஒலியடக்கியுள்ளார்."
+  },
+  "icu:CallControls__YouMutedSomeoneToast": {
+    "messageformat": "நீங்கள் {otherName}ஐ ஒலியடக்கியுள்ளீர்கள்."
+  },
+  "icu:CallControls__YouMutedYourselfToast": {
+    "messageformat": "நீங்கள் மற்றொரு சாதனத்தில் இருந்து உங்களை ஒலியடக்கியுள்ளீர்கள்."
   },
   "icu:CallControls__LowerHandSuggestionToast": {
     "messageformat": "உங்கள் கையைத் தாழ்த்துகிறீர்களா?"
@@ -3199,9 +3463,6 @@
   },
   "icu:calling__view_mode--updated": {
     "messageformat": "வ்யூ புதுப்பிக்கப்பட்டது"
-  },
-  "icu:calling__hangup": {
-    "messageformat": "அழைப்பை விடுங்கள்"
   },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "பகிர் உங்கள் திரை"
@@ -3308,6 +3569,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "தயவு செய்து மீண்டும் முயற்சிக்கவும் அல்லது தொடர்பு கொள்ளவும் ஆதரவு."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "எதிர்பாராத பிழை ஏற்பட்டது"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "பிழைத்திருத்த பதிவைச் சமர்ப்பிக்கவும்"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "தேவையில்லை,நன்றி"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "சரி"
   },
@@ -3357,7 +3627,7 @@
     "messageformat": "முடியாது சேர குழு"
   },
   "icu:GroupV2--join--link-forbidden": {
-    "messageformat": "ஒரு நிர்வாகி உங்களை நீக்கியதால், குழு இணைப்பு வாயிலாக இந்தக் குழுவில் உங்களால் சேர முடியாது."
+    "messageformat": "ஒரு நிர்வாகி உங்களை நீக்கியதால், குழு இணைப்பு வாயிலாக இந்தக் குழுவில் உங்களால் இணைய முடியாது. குழுவில் மீண்டும் இணைய ஒரு நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்."
   },
   "icu:GroupV2--join--prompt-with-approval": {
     "messageformat": "இந்த குழுவில் சேருவதற்கு முன்பு இந்த குழுவின் நிர்வாகி உங்கள் கோரிக்கையை அங்கீகரிக்க வேண்டும். நீங்கள் சேரக் கோரும்போது, உங்கள் பெயர் மற்றும் புகைப்படம் அதன் உறுப்பினர்களுடன் பகிரப்படும்."
@@ -3738,7 +4008,7 @@
     "messageformat": "குழுவில் சேர ஒரு கோரிக்கை {joinerName} மறுக்கப்பட்டது."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் சேருவதற்கான கோரிக்கையை ரத்து செய்துள்ளார்} other {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் சேருவதற்கான {numberOfRequests,number} கோரிக்கைகளை ரத்து செய்துள்ளார்}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் இணைவதற்கான கோரிக்கையை ரத்து செய்துள்ளார்} other {{joinerName} கோரிக்கை விடுத்து குழு இணைப்பு மூலம் இணைவதற்கான {numberOfRequests,number} கோரிக்கைகளை ரத்து செய்துள்ளார்}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "நீங்கள் இயக்கியுள்ளீர்கள் குழு இணைப்பு உடன் நிர்வாக ஒப்புதல் முடக்கப்பட்டது."
@@ -3917,6 +4187,12 @@
   "icu:BadgeSustainerInstructions__instructions__3": {
     "messageformat": "\"சிக்னலுக்கு நன்கொடை அளி\" என்பதைத் தட்டி சப்ஸ்கிரைப் செய்யவும்"
   },
+  "icu:ProfileMovedModal__title": {
+    "messageformat": "உங்கள் சுயவிவரம் இடமாற்றப்பட்டது"
+  },
+  "icu:ProfileMovedModal__description": {
+    "messageformat": "உங்கள் சுயவிவரத்தைப் பார்க்கவும் திருத்தவும், அமைப்புகள் தாவலைத் திறந்திடுங்கள்."
+  },
   "icu:BackupImportScreen__title": {
     "messageformat": "மெசேஜ்களை ஒத்திசைக்கிறது"
   },
@@ -3966,10 +4242,10 @@
     "messageformat": "மீண்டும் முயற்சி செய்"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "மீடியாவை மீட்டமைக்கிறது"
+    "messageformat": "ஊடகத்தை ஒத்திசைக்கிறது"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "மீட்டமைப்பு இடைநிறுத்தப்பட்டது"
+    "messageformat": "ஒத்திசைப்பது இடைநிறுத்தப்பட்டது"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "{totalSize} இல் {currentSize} மீட்டெடுக்கப்பட்டது"
@@ -3977,14 +4253,20 @@
   "icu:BackupMediaDownloadProgress__description-idle": {
     "messageformat": "மீடியா பின்னணியில் தொடர்ந்து பதிவிறக்கம் செய்யப்படும்"
   },
+  "icu:BackupMediaDownloadProgress__title-offline": {
+    "messageformat": "மீடியாவை மீட்டமைப்பது இடைநிறுத்தப்பட்டது"
+  },
+  "icu:BackupMediaDownloadProgress__description-offline": {
+    "messageformat": "இணைய இணைப்பிற்காகக் காத்திருக்கிறது..."
+  },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "பரிமாற்றத்தை இடைநிறுத்துக"
+    "messageformat": "நிறுத்து"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "பரிமாற்றத்தைத் தொடர்க"
+    "messageformat": "தொடர்க"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "பரிமாற்றத்தை ரத்துசெய்க"
+    "messageformat": "ஒத்திசைவை ரத்துசெய்க"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "அதிக விருப்பத்தேர்வுகள்"
@@ -3996,22 +4278,46 @@
     "messageformat": "{totalSize} இன் {currentSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "மீடியா பரிமாற்றத்தை ரத்து செய்யவதா?"
+    "messageformat": "ஊடக ஒத்திசைவை ரத்துசெய்யவா?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "உங்கள் மெசேஜ்களும் மீடியாவும் முழுமையாக மீட்டடைமைக்கப்படவில்லை. ரத்துசெய்க என்பதை நீங்கள் தேர்ந்தெடுத்தால், நீங்கள் மீண்டும் அமைப்புகளில் இருந்து பரிமாற்றம் செய்யலாம்."
+    "messageformat": "உங்கள் ஊடகங்கள் ஒத்திசைவை முடிக்கவில்லை. நீங்கள் ரத்துசெய்வதைத் தேர்வுசெய்தால், இந்தச் சாதனத்தை மீண்டும் இணைப்பதன் மூலம் மீண்டும் ஒத்திசைக்கலாம். <learnMoreLink>மேலும் அறிக</learnMoreLink>."
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "பரிமாற்றத்தைத் தொடர்க"
+    "messageformat": "ஒத்திசைவைத் தொடர்க"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "பரிமாற்றத்தை ரத்துசெய்க"
+    "messageformat": "ஒத்திசைவை ரத்துசெய்க"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "ஒத்திசைப்பது இடைநிறுத்தப்பட்டது"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "ஒத்திசைவைத் தொடர, “{resumeButtonText}” ஐக் கிளிக் செய்யவும்"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "தொடர்க"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "நிறுத்து"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "ஊடகத்தை ஒத்திசைக்கிறது"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{totalSize} இல் {currentSize}({fractionComplete,number,percent})..."
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
-    "messageformat": "Account action required"
+    "messageformat": "கணக்கிற்கு நடவடிக்கை தேவை"
   },
   "icu:CriticalIdlePrimaryDeviceModal__description": {
-    "messageformat": "You must open Signal on your phone to continue using this account. If you do not open Signal on your phone, your account will be deleted soon. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "இந்தக் கணக்கைத் தொடர்ந்து பயன்படுத்த உங்கள் ஃபோனில் சிக்னலைத் திறக்க வேண்டும். உங்கள் ஃபோனில் நீங்கள் சிக்னலைத் திறக்கவில்லை எனில், உங்கள் கணக்கு விரைவில் அழிக்கப்படும். <learnMoreLink>மேலும் அறிக</learnMoreLink>"
+  },
+  "icu:LowDiskSpaceBackupImportModal__title": {
+    "messageformat": "மீடியாவை மீட்டமைக்க முடியவில்லை"
+  },
+  "icu:LowDiskSpaceBackupImportModal__description": {
+    "messageformat": "உங்கள் டிவைஸில் போதுமான இடம் இல்லை. உங்கள் மீடியாவை மீட்டமைக்க {diskSpaceAmount} இடத்தைக் காலியக்கவும்."
   },
   "icu:CompositionArea--expand": {
     "messageformat": "விரிவாக்கு"
@@ -4033,9 +4339,6 @@
   },
   "icu:CompositionArea__edit-action--send": {
     "messageformat": "திருத்தப்பட்ட மெசேஜை அனுப்பும்"
-  },
-  "icu:CompositionArea__FunButtonLabel": {
-    "messageformat": "எமோஜி, ஸ்டிக்கர், அல்லது GIFஐச் சேர்க்கவும்"
   },
   "icu:CompositionArea__ConfirmGifSelection__Title": {
     "messageformat": "இணைப்பை மாற்ற வேண்டுமா?"
@@ -4181,11 +4484,8 @@
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} உறுப்பினர்} other {{number,number} உறுப்பினர்கள்}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "பகிரப்பட்ட மீடியா"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "அனைத்தையும் பார்"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "ஊடகம் மற்றும் கோப்புகள்"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} உறுப்பினர்} other {{number,number} உறுப்பினர்கள்}}"
@@ -4263,7 +4563,7 @@
     "messageformat": "வழியாக புதிய உறுப்பினர்களை அனுமதிக்க நிர்வாகி தேவை குழு இணைப்பு"
   },
   "icu:GroupLinkManagement__CopyGroupLinkButtonLabel": {
-    "messageformat": "Copy signal.group link to clipboard"
+    "messageformat": "சிக்னல்.குழு இணைப்பை கிளிப்போர்டுக்கு நகலெடு"
   },
   "icu:PendingInvites--tab-requests": {
     "messageformat": "கோரிக்கைகளை ({count,number})"
@@ -4471,12 +4771,6 @@
   },
   "icu:MessageRequestWarning__safety-tips": {
     "messageformat": "பாதுகாப்பு உதவிக்குறிப்புகள்"
-  },
-  "icu:MessageRequestWarning__dialog__details": {
-    "messageformat": "உங்களிடம் உள்ளது இல்லை குழுக்கள்இந்த நபருடன் பொதுவானது. தேவையற்ற செய்திகளைத் தவிர்ப்பதற்கு ஏற்றுக்கொள்வதற்கு முன் கோரிக்கைகளை கவனமாக மதிப்பாய்வு செய்யவும்.\n "
-  },
-  "icu:MessageRequestWarning__dialog__learn-even-more": {
-    "messageformat": "பற்றி செய்தி கோரிக்கைகள்"
   },
   "icu:ContactSpoofing__same-name--link": {
     "messageformat": "கோரிக்கைகளை கவனமாக மதிப்பாய்வு செய்க. அதே பெயருடன் மற்றொரு தொடர்பை Signal கண்டறிந்தது. <reviewRequestLink>மதிப்பாய்வு கோரிக்கை</reviewRequestLink>"
@@ -4748,6 +5042,12 @@
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "பயனர் பெயர் இணைப்பை மீட்டமைக்க வேண்டும்"
   },
+  "icu:ProfileEditor__open": {
+    "messageformat": "பயனர் பெயர் இணைப்புத் திரையைத் திறத்தல்"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "பயனர் பெயர் இணைப்புத் திரையைத் திறத்தல்"
+  },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "உங்கள் பயனர் பெயரைப் பகிரவும்"
   },
@@ -4880,6 +5180,9 @@
   "icu:ProfileEditorModal--error": {
     "messageformat": "உங்கள் சுயவிவரத்தை புதுப்பிக்க முடியவில்லை. தயவு செய்து மீண்டும் முயற்சி செய்."
   },
+  "icu:ProfileEditorModal--sharing": {
+    "messageformat": "பகிர்தல்"
+  },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "ஒரு நிர்வாகிக்கு செய்தி அனுப்புங்கள்"
   },
@@ -4912,6 +5215,9 @@
   },
   "icu:Preferences__button--general": {
     "messageformat": "பொது"
+  },
+  "icu:Preferences__button--donate": {
+    "messageformat": "Signal-க்கு நன்கொடை அளி"
   },
   "icu:Preferences__button--appearance": {
     "messageformat": "தோற்றம்"
@@ -4950,7 +5256,34 @@
     "messageformat": "வாய்ஸ் மெசேஜ்கள் மற்றும் ஸ்டிக்கர்கள் எப்போதும் தானாகவே பதிவிறக்கப்படுகின்றன."
   },
   "icu:Preferences__button--backups": {
-    "messageformat": "Backups"
+    "messageformat": "காப்புப் பிரதிகள்"
+  },
+  "icu:Preferences__button--internal": {
+    "messageformat": "உள்ளகம்"
+  },
+  "icu:Preferences__button--manage": {
+    "messageformat": "நிர்வகி"
+  },
+  "icu:Preferences__button--choose-folder": {
+    "messageformat": "கோப்புறையைத் தேர்வுசெய்க"
+  },
+  "icu:Preferences__button--set-up": {
+    "messageformat": "அமைக்கவும்"
+  },
+  "icu:Preferences__internal__local-backups": {
+    "messageformat": "உள்ளகக் காப்புப்பிரதிகள்"
+  },
+  "icu:Preferences__internal__export-local-backup": {
+    "messageformat": "ஏற்றுமதி செய்க…"
+  },
+  "icu:Preferences__internal__export-local-backup--description": {
+    "messageformat": "உள்ளகக் குறியாக்கம் செய்யப்பட்ட காப்புப்பிரதியை ஒரு கோப்புறையில் ஏற்றுமதி செய்து சரிபார்க்கவும்"
+  },
+  "icu:Preferences__internal__validate-backup--description": {
+    "messageformat": "குறியாக்கப்பட்ட காப்புப்பிரதியை நினைவகத்திற்கு ஏற்றுமதி செய்து, அதில் சரிபார்ப்புத் தொகுப்பை இயக்குங்கள்"
+  },
+  "icu:Preferences__internal__validate-backup": {
+    "messageformat": "சரிபார்த்திடுக"
   },
   "icu:Preferences--lastSynced": {
     "messageformat": "கடைசியாக இறக்குமதி {date} {time} இல்"
@@ -4973,6 +5306,12 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "எடுத்துக்காட்டாக, :-) ஆனது <emojify>🙂</emojify> ஆக மாற்றப்படும்"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "ஒலியடக்கிய சாட்களைக் காப்பகப்படுத்துக"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "புதிய மெசேஜ் வரும்போது ஒலியடக்கிய காப்பகப்படுத்தப்பட்ட சாட்கள் காப்பகப்படுத்தப்பட்டதாகவே இருக்கும்."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "மேம்படுத்தபட்ட"
   },
@@ -4982,50 +5321,134 @@
   "icu:Preferences--blocked": {
     "messageformat": "தடைசெய்யப்பட்டது"
   },
+  "icu:Preferences--signal-backups": {
+    "messageformat": "சிக்னலின் பாதுகாப்பான காப்புப் பிரதிகள்"
+  },
+  "icu:Preferences--signal-backups-off-description": {
+    "messageformat": "சிக்னலின் பாதுகாப்பான எண்ட்-டூ-எண்ட் குறியாக்கம் செய்யப்பட்ட சேமிப்பகச் சேவையுடன் தானியங்கி காப்புப்பிரதிகள். உங்கள் ஃபோனில் தொடங்குங்கள். <learnMoreLink>மேலும் அறிக.</learnMoreLink>"
+  },
+  "icu:Preferences--backup-section-description": {
+    "messageformat": "உங்கள் செய்தி வரலாற்றைக் காப்புப் பிரதி எடுக்கவும், எனவே நீங்கள் புதிய தொலைபேசியைப் பெறும்போது அல்லது சிக்னலை மீண்டும் நிறுவும்போது தரவை இழக்க மாட்டீர்கள்."
+  },
   "icu:Preferences--backup-details__header": {
-    "messageformat": "Backup details"
+    "messageformat": "காப்புப்பிரதி விவரங்கள்"
   },
   "icu:Preferences--backup-media-plan__description": {
-    "messageformat": "Text + all media backup"
+    "messageformat": "உரை + அனைத்து ஊடகக் காப்புப்பிரதி"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Your subscription was not found. Renew to continue using Signal Backups."
+    "messageformat": "உங்கள் சந்தா கிடைக்கப்பெறவில்லை. சிக்னலின் பாதுகாப்பான காப்புப் பிரதிகளைத் தொடர்ந்து உபயோகிக்கப் புதுப்பியுங்கள்."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/மாதம்"
   },
   "icu:Preferences--backup-messages-plan__description": {
-    "messageformat": "{mediaDayCount, plural, one {Text + {mediaDayCount,number} day media backup} other {Text + {mediaDayCount,number} days media backup}}"
+    "messageformat": "{mediaDayCount, plural, one {உரை + {mediaDayCount,number} நாள் ஊடகக் காப்புப்பிரதி} other {உரை + {mediaDayCount,number} நாட்கள் ஊடகக் காப்புப்பிரதி}}"
   },
   "icu:Preferences--backup-messages-plan__cost-description": {
-    "messageformat": "Your backup plan is free"
+    "messageformat": "உங்கக் காப்புப்பிரதி திட்டம் இலவசமாக உள்ளது"
   },
   "icu:Preferences--backup-plan__renewal-date": {
-    "messageformat": "Renews {date}"
+    "messageformat": "{date} அன்று புதுப்பிக்கப்படும்"
   },
   "icu:Preferences--backup-plan__expiry-date": {
-    "messageformat": "Expires {date}"
+    "messageformat": "{date} ஆம் தேதி காலாவதியாகிறது"
   },
   "icu:Preferences--backup-plan__canceled": {
-    "messageformat": "Subscription canceled"
+    "messageformat": "சந்தா ரத்துசெய்யப்பட்டது"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "You can manage or cancel your Signal Backups subscription on your phone."
+    "messageformat": "உங்கள் பேசியில் உங்களின் பாதுகாப்பு காப்புப்பிரதி சந்தாவை நிர்வகிக்கலாம் அல்லது ரத்துசெய்யலாம்."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "You can manage or upgrade Signal Backups on your phone."
-  },
-  "icu:Preferences--backup-plan__not-found": {
-    "messageformat": "Your subscription was not found. Renew to continue using Signal Backups."
+    "messageformat": "உங்கள் பேசியில் பாதுகாப்புக் காப்புப்பிரதியை நிர்வகிக்கலாம் அல்லது தரமேற்றலாம்."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "You can manage or renew your Signal Backups subscription on your phone."
+    "messageformat": "உங்கள் பேசியில் உங்களின் பாதுகாப்புக் காப்புப்பிரதி சந்தாவை நிர்வகிக்கலாம் அல்லது புதுப்பிக்கலாம்."
   },
   "icu:Preferences--backup-created-at__label": {
-    "messageformat": "Last backup"
+    "messageformat": "கடைசி காப்புப்பிரதி"
   },
   "icu:Preferences--backup-created-by-phone": {
-    "messageformat": "Your phone"
+    "messageformat": "உங்கள் ஃபோன்"
   },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Backup size"
+  "icu:Preferences__local-backups": {
+    "messageformat": "டெஸ்க்டாப் காப்புப்பிரதிகள்"
+  },
+  "icu:Preferences__local-backups-section__description": {
+    "messageformat": "காப்புப்பிரதிகள் ஒரு குறியீட்டுடன் குறியாக்கம் செய்யப்பட்டு உங்கள் கணினியில் சேமிக்கப்படும்."
+  },
+  "icu:Preferences--local-backups-off-description": {
+    "messageformat": "உங்கள் பேசியில் மீட்டெடுக்கக்கூடிய எண்டு-டு-எண்டு குறியாக்கப்பட்ட காப்புப்பிரதியை உருவாக்குங்கள். "
+  },
+  "icu:Preferences--local-backups-restore-info": {
+    "messageformat": "காப்புப்பிரதியை மீட்டமைக்க, சிக்னலின் புதிய பிரதியை நிறுவவும். செயலியைத் திறந்து, காப்புப்பிரதியை மீட்டமை என்பதைத் தட்டி, பின்னர் காப்புப்பிரதி கோப்புறையைக் கண்டறியவும். <learnMoreLink>மேலும் அறிக.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-setup-folder": {
+    "messageformat": "கோப்புறையைத் தேர்வு செய்க"
+  },
+  "icu:Preferences--local-backups-setup-folder-description": {
+    "messageformat": "உங்கள் கணினியின் சேமிப்பகத்தில், உங்களின் எண்டு-டு-எண்டு குறியாக்கம் செய்யப்பட்ட காப்புப்பிரதி சேமிக்கப்பட வேண்டிய ஒரு கோப்புறையைத் தேர்வுசெய்யுங்கள்."
+  },
+  "icu:Preferences--local-backups-setup-next": {
+    "messageformat": "அடுத்தது"
+  },
+  "icu:Preferences--local-backups-view-backup-key-done": {
+    "messageformat": "முடிந்தது"
+  },
+  "icu:Preferences--local-backups-backup-key-text-box": {
+    "messageformat": "காப்புப்பிரதி குறியீட்டின் உரை பெட்டி"
+  },
+  "icu:Preferences--local-backups-enter-backup-key": {
+    "messageformat": "குறியீட்டை உள்ளிடுங்கள்"
+  },
+  "icu:Preferences--local-backups-record-backup-key": {
+    "messageformat": "உங்கள் காப்புபிரதி குறியீட்டைப் பதிவு செய்யவும்"
+  },
+  "icu:Preferences--local-backups-record-backup-key-description": {
+    "messageformat": "உங்கள் கணக்கு மற்றும் தரவை மீட்டெடுக்க இந்தக் குறியீடு தேவை. இந்தக் குறியீட்டைப் பாதுகாப்பான இடத்தில் சேமித்து வைக்கவும். நீங்கள் அதை இழந்துவிட்டால், உங்கள் கணக்கை மீட்டெடுக்க முடியாது. <learnMoreLink>மேலும் அறிக.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-backup-key": {
+    "messageformat": "உங்கள் காப்புப்பிரதி குறியீட்டை உறுதிபடுத்துக"
+  },
+  "icu:Preferences--local-backups-confirm-backup-key-description": {
+    "messageformat": "நீங்கள் தற்போது பதிவுசெய்த உங்கள் காப்புப்பிரதி குறியீட்டை உள்ளிடவும்"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-title": {
+    "messageformat": "உங்கள் குறியீட்டைப் பாதுகாப்பாக வைத்திருக்கவும்"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-body": {
+    "messageformat": "நீங்கள் குறியீட்டைப் இழந்தால், உங்கள் காப்புப்பிரதியை மீட்டெடுக்க சிக்னலால் உங்களுக்கு உதவ முடியாது. அதை பாதுகாப்பாகவும் பத்திரமாகவும் ஏதாவது ஒரு இடத்தில் சேமித்து வைக்கவும், மற்றவர்களுடன் பகிர்ந்து கொள்ள வேண்டாம்."
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-continue": {
+    "messageformat": "தொடர்க"
+  },
+  "icu:Preferences--local-backups-see-backup-key-again": {
+    "messageformat": "குறியீட்டைப் மீண்டும் காண்க"
+  },
+  "icu:Preferences__local-backups-folder": {
+    "messageformat": "மறுபிரதி கோப்புறை"
+  },
+  "icu:Preferences__local-backups-folder__change": {
+    "messageformat": "மாற்றுக"
+  },
+  "icu:Preferences__local-backups-copy-key": {
+    "messageformat": "கிளிப்போர்டுக்கு நகலெடுக்கவும்"
+  },
+  "icu:Preferences__local-backups-copied-key": {
+    "messageformat": "காப்புப்பிரதி குறியீடு நகலெடுக்கப்பட்டது"
+  },
+  "icu:Preferences__view-key": {
+    "messageformat": "குறியீட்டைக் காண்க"
+  },
+  "icu:Preferences__backup-key": {
+    "messageformat": "காப்புப்பிரதி குறியீடு"
+  },
+  "icu:Preferences__backup-key-description": {
+    "messageformat": "உங்கள் காப்புப்பிரதி குறியீடு என்பது உங்கள் காப்புப்பிரதியை மீட்டெடுக்கப் பயன்படுத்தப்படும் 64 இலக்கக் குறியீடு ஆகும்"
+  },
+  "icu:Preferences__backup-other-ways": {
+    "messageformat": "காப்புப்பிரதி எடுப்பதற்கான மற்ற வழிகள்"
   },
   "icu:Preferences--blocked-count": {
     "messageformat": "{num, plural, one {{num,number} தொடர்பு} other {{num,number} தொடர்புகள்}}"
@@ -5143,6 +5566,24 @@
   },
   "icu:Preferences__LanguageModal__Restart__Button": {
     "messageformat": "ரீஸ்டார்ட்"
+  },
+  "icu:Preferences__Privacy__Application": {
+    "messageformat": "செயலி"
+  },
+  "icu:Preferences__content-protection--label": {
+    "messageformat": "திரை பாதுகாப்பு"
+  },
+  "icu:Preferences__content-protection--description": {
+    "messageformat": "கூடுதல் தனியுரிமைக்காக இந்தக் கணினியில் சிக்னலின் ஸ்கிரீன் ஷாட்களைத் தடுக்கவும்."
+  },
+  "icu:Preferences__content-protection__modal--title": {
+    "messageformat": "திரைப் பாதுகாப்பை முடக்கவா?"
+  },
+  "icu:Preferences__content-protection__modal--body": {
+    "messageformat": "முடக்கப்பட்டால், இது மைக்ரோசாப்ட் வின்டோசில் சிக்னலின் ஸ்கிரீன் ஷாட்களை எடுக்க அனுமதிக்கும் மேலும் தனிப்பட்டதாக இல்லாத அம்சங்களுக்கு அவற்றைப் பயன்படுத்தலாம்."
+  },
+  "icu:Preferences__content-protection__modal--disable": {
+    "messageformat": "முடக்கு"
   },
   "icu:DialogUpdate--version-available": {
     "messageformat": "பதிப்புக்குப் புதுப்பிக்கவும் {version} கிடைக்கிறது"
@@ -5916,9 +6357,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "மீட்டமைக்க"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "முடிந்தது"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "பயனர் பெயர் இணைப்பு நிறம், {index,number} / {total,number}"
   },
@@ -6240,8 +6678,263 @@
   "icu:ProfileNameWarningModal__list--item3--group": {
     "messageformat": "உங்களுக்குத் தெரியாத நபர்களுடன் தனிப்பட்ட தகவல்களைப் பகிராதீர்கள்"
   },
+  "icu:SaveMultiDialog__title": {
+    "messageformat": "இணைப்புகளை சேமித்தல்"
+  },
   "icu:WhatsNew__modal-title": {
     "messageformat": "புதிதாக என்ன உள்ளது"
+  },
+  "icu:PreferencesDonations__title": {
+    "messageformat": "லாபத்தை விட தனியுரிமை"
+  },
+  "icu:PreferencesDonations__description": {
+    "messageformat": "தனிப்பட்ட மெசேஜிங், உங்களால் நிதியளிக்கப்பட்டது. விளம்பரம் இல்லை, கண்காணிப்பு இல்லை, சமரசம் இல்லை. சிக்னலை ஆதரிக்க இப்போதே நன்கொடை அளித்திடுங்கள். <readMoreLink>மேலும் அறிக</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "நன்கொடை அளி"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "My Support"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount}ஒரு-முறை"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "நன்கொடையைச் செயலாக்குகிறது..."
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "{formattedCurrencyAmount} நன்கொடையளி"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "உங்கள் மொபைல் சாதனத்தில் பேட்ஜ்கள் மற்றும் மாதாந்திர நன்கொடைகளை நீங்கள் நிர்வகிக்க முடியும்."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "உங்கள் தகவல் தனிப்பட்டது"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>நீங்கள் நன்கொடை அளிக்கும்போது உங்கள் தனிப்பட்ட தகவல்களைச் சிக்னல் சேகரிக்கவோ அல்லது சேமிக்கவோ செய்யாது.</paragraph><paragraph>உங்கள் நன்கொடைகளைப் பெற எங்கள் கட்டணச் செயலியாக நாங்கள் ஸ்ட்ரைபை பயன்படுத்துகிறோம். நீங்கள் அவற்றில் வழங்கும் எந்தவொரு தகவலையும் நாங்கள் அணுகவோ, சேமிக்கவோ அல்லது பத்திரப்படுத்தவோ மாட்டோம்.</paragraph><paragraph>சிக்னலால் உங்கள் நன்கொடையை சிக்னல் கணக்கில் இணைக்க முடியாது.</paragraph><paragraph>உங்கள் ஆதரவுக்கு நன்றி!</paragraph>"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "சரி"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "ரசீதுகள்"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "ரசீது விவரங்களைக் காண்க"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "நன்கொடையாளர் அதிகம் கேட்கப்படும் கேள்விகள்"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "ரசீதுகள் சாதனங்கள் முழுவதும் ஒத்திசைக்கப்படவில்லை. நீங்கள் சிக்னலை மீண்டும் நிறுவியிருந்தால், முந்தைய நன்கொடைகளின் ரசீதுகள் கிடைக்காது."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "ரசீதுகள் இல்லை"
+  },
+  "icu:PreferencesDonations__ReceiptModal--title": {
+    "messageformat": "விவரங்கள்"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "ரசீதைப் பதிவிறக்குக"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Type"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "செலுத்திய தேதி"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "ஒரு முறைக்கான நன்கொடையை அளித்திடுங்கள்"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "டெஸ்க்டாப்பில் ஒரு முறைக்கான நன்கொடைகள் மட்டுமே கிடைக்கப்பெறுகின்றன. உங்கள் மொபைலில் இருந்து மாதாந்திர நன்கொடைகளை வழங்கலாம்."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "சிக்கல்களை எதிர்கொள்கிறீர்களா? <contactSupportLink>ஆதரவைத் தொடர்பு கொள்க</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "விருப்பத் தொகையை உள்ளிடவும்"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "கிரெடிட் அல்லது டெபிட் கார்டு"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "உங்கள் கிரெடிட் அல்லது டெபிட் கார்டு விவரங்களை உள்ளிடுங்கள். சிக்னல் உங்கள் தனிப்பட்ட தகவல்களைச் சேகரிக்கவோ சேமிக்கவோ செய்யாது. <learnMoreLink>மேலும் அறிக</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "கார்டு எண்"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "காலாவதித் தேதி"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/YY"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Signalக்கு {formattedCurrencyAmount} நன்கொடை அளிக்கவும்"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "கார்டு எண் தவறாக உள்ளது"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "கார்டு காலாவதியானது"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "ஆண்டைக் குறிப்பிடவும்"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "தவறானது"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "குறியீடு மிகவும் குறுகியது"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "30 நாட்களுக்கு சிக்னல் பூஸ்ட் பேட்ஜைப் பெறுங்கள்"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "குறைந்தபட்ச நன்கொடை {formattedCurrencyAmount} ஆகும்"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "நீங்கள் குறைந்தபட்ச நன்கொடையாக {formattedCurrencyAmount} வழங்கலாம்"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "அதிகபட்ச நன்கொடை {formattedCurrencyAmount} ஆகும்"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "இந்தப் பக்கத்தை விட்டு வெளியேறுவது உங்கள் கிரெடிட் கார்டு தகவலை அகற்றிவிடும். தொடர விரும்புகிறீர்களா?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "தகவலை அகற்றுக"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "தொடர்க"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "நன்கொடை ரசீது"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "தொகை"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Type"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "செலுத்திய தேதி"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "ஒரு முறை"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "சிக்னலை ஆதரித்ததற்கு நன்றி. திறந்த மூல தனியுரிமை தொழில்நுட்பத்தின் மூலம், சுதந்திரமான வெளிப்பாட்டைப் பாதுகாப்பதற்கும் உலகெங்கிலும் உள்ள மில்லியன் கணக்கானவர்களுக்குப் பாதுகாப்பான உலகளாவிய தகவல்தொடர்புக்கு உதவுவதற்கும் உங்கள் பங்களிப்பு உதவுகிறது. நீங்கள் அமெரிக்காவில் வசிப்பவராக இருந்தால், உங்கள் வரிப் பதிவுகளுக்காக இந்த ரசீதைத் தக்கவைத்துக் கொள்ளுங்கள். சிக்னல் தொழில்நுட்ப அறக்கட்டளை என்பது உள்நாட்டு வருவாய்க் குறியீட்டின் 501c3 பிரிவின் கீழ் அமெரிக்காவில் உள்ள வரிவிலக்கு பெற்ற லாப நோக்கமற்ற அமைப்பாகும். எங்களின் ஃபெடரல் வரி ID 82-4506840 ஆகும்."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். நன்கொடையை நிறைவு செய்ய தயவுசெய்து இணையத்துடன் இணைக்கவும்."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "நன்கொடை ரத்து செய்யப்பட்டது"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "நன்கொடை நிறைவடைந்தது"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "நன்கொடையை செயலாக்குவதில் பிழை"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "நன்கொடையைச் செயலாக்குகிறது"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "சரிபார்க்க முடியவில்லை"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "கூடுதல் சரிபார்ப்பு தேவைப்படும் செயலாக்கத்தில் உள்ள நன்கொடை உங்களிடம் உள்ளது."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "உறுதிப்படுத்தல் தேவைப்படும் ஒரு நன்கொடை செயல்நிலையில் உள்ளது."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "நன்கொடை வெற்றிகரமாக வழங்கப்பட்டது, ஆனால் உங்கள் பேட்ஜ் அமைப்புகளைப் புதுப்பிக்க முடியவில்லை"
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "நன்கொடை வெற்றிகரமாக வழங்கப்பட்டது, ஆனால் உங்கள் பேட்ஜ் அமைப்புகளைப் புதுப்பிக்க முடியவில்லை"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "உங்கள் மொபைல் சாதனத்தில் உள்ள பேட்ஜ் அமைப்புகளைப் புதுப்பிக்க, அமைப்புகள் → சிக்னலுக்கு நன்கொடை அளித்திடுக → பேட்ஜ்கள் என்பதன் கீழ் செய்யலாம்."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "நன்கொடை குறுக்கிட்டது"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "உங்கள் கார்டில் கட்டணம் வசூலிக்கப்படவில்லை. நன்கொடை அளிக்க மீண்டும் முயல விரும்புகிறீர்களா?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "மீண்டும் முயற்சிக்கவும்"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "பேமெண்ட் முறை நிராகரிக்கப்பட்டது"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "மற்றொரு பேமெண்ட் முறையை முயலவும் அல்லது மேலும் தகவலுக்கு உங்கள் வங்கியைத் தொடர்பு கொள்ளவும்."
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "சரிபார்க்க முடியவில்லை"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "கூடுதல் சரிபார்ப்பு நடவடிக்கை தோல்வியடைந்தது. மீண்டும் முயலுங்கள்."
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "உங்கள் நன்கொடையில் பிழை ஏற்பட்டுள்ளது"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "உங்கள் நன்கொடை செயலாக்கப்படாமல் இருக்கலாம். உங்கள் ரசீதுகளைச் சரிபார்த்து உறுதிப்படுத்த “சிக்னலுக்கு நன்கொடை அளித்திடுக” என்பதைக் கிளிக் செய்து, “நன்கொடைக்கான ரசீதுகள்” என்பதைக் கிளிக் செய்க."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "உங்கள் நன்கொடையை நிறைவு செய்வதற்கு உதவ மீண்டும் முயலுங்கள் அல்லது பிழைத்திருத்தப் பதிவை சமர்ப்பியுங்கள். பிழைத்திருத்தப் பதிவுகள் சிக்கலைக் கண்டறிந்து சரிசெய்ய உதவுகின்றன, மேலும் அடையாளம் காணும் தகவலைக் கொண்டிருக்கவில்லை."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "நன்கொடையைச் செயலாக்குகிறது..."
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "நன்கொடை இன்னும் செயலாக்கப்பட்டுக் கொண்டுள்ளது"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "உங்கள் நன்கொடை இன்னும் செயல்படுத்தப்படுகிறது. இதற்குச் சில நிமிடங்கள் எடுக்கலாம்."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "நன்கொடை ரத்து செய்யப்பட்டது"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "நீங்கள் நன்கொடை அளிக்கத் தொடங்கி மிக நீண்ட காலமாகிவிட்டது. மீண்டும் தொடங்குங்கள்."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "கூடுதல் சரிபார்ப்பு தேவை"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "சரிபார்ப்பிற்காக காத்திருக்கிறது"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "உங்கள் கிரெடிட் கார்டு வழங்குநருக்கு வலை உலாவியில் கூடுதல் சரிபார்ப்பு நடவடிக்கை தேவைப்படுகிறது."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "உலாவியைத் திறந்திடுக"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "ப்ரௌசரை மீண்டும் திறந்திடுக"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "நன்கொடையை ரத்து செய்க"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "உங்கள் ஆதரவுக்கு நன்றி!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Signal இல் இருந்து நன்கொடையாளர் பேட்ஜைப் பெற்றுள்ளீர்கள்! உங்கள் ஆதரவைக் காட்ட உங்கள் ப்ரொஃபைலில் அதைக் காண்பிக்கவும்."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "சுயவிவரத்தில் காண்பிக்கவும்"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "இதனை உங்கள் மொபைல் சாதனத்தில் அமைப்புகள் → சிக்னலுக்கு நன்கொடை அளித்திடுக → பேட்ஜ்கள் என்பதன் கீழ் மாற்றியமைக்கலாம்."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "இந்த பதிப்பில் சிக்னலை சீராக இயங்க வைக்க பல சிறிய மாற்றங்கள் மற்றும் பிழை திருத்தங்கள் உள்ளன.",
@@ -6271,22 +6964,10 @@
     "messageformat": "சிறு மாற்றங்கள், பிழை திருத்தங்கள் மற்றும் செயல்திறன் மேம்பாடுகள். சிக்னலைப் பயன்படுத்தியதற்கு நன்றி!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.47--0": {
-    "messageformat": "அழைப்பின் போது, உங்களை மேலும் நுண்ணிய விவரங்களுடன் பார்க்க, இப்போது உங்கள் லோக்கல் வீடியோ முன்னோட்டத்தை விரிவுபடுத்தலாம்."
+  "icu:WhatsNew__7.73": {
+    "messageformat": "இந்தப் புதுப்பிப்பானது பேட்டரி ஆயுளை மேம்படுத்த உதவும் புதிய செயல்திறன் உகந்ததாக்கல்களை அறிமுகப்படுத்துகிறது."
   },
-  "icu:WhatsNew__v7.48--0": {
-    "messageformat": "சிக்னல் குழு அழைப்பின் போது நீங்கள் பேசத் தொடங்கிய பிறகு உயர்த்திய கையை விரைவாக இறக்குவதற்காக எளியவழியைச் சேர்த்துள்ளோம். கையை விரைவாக இறக்குவதற்கான அம்சத்தை இதில் சேர்த்துள்ளோம்."
-  },
-  "icu:WhatsNew__v7.49--0": {
-    "messageformat": "நீங்கள் சிக்னல் ஆண்ட்ராய்டில் ஒரு புதிய டெஸ்க்டாப்பை இணைத்து, உங்கள் செய்தி வரலாற்றை மாற்றத் தேர்வுசெய்தால், இப்போது உங்கள் முதன்மை சாதனத்திலிருந்தும் பழைய இணைப்புகளைத் தேர்ந்தெடுத்து மாற்றலாம். காலத்தில் பின்னோக்கிச் சென்று பதிவிறக்க ஐகானைக் கிளிக் செய்வதன் மூலம் கடந்த காலத்தை நிகழ்காலத்திற்குக் கொண்டு வாருங்கள். உங்கள் முதன்மை சாதனத்திலிருந்தும் பழைய இணைப்புகளையும் இடமாற்றத் தேர்ந்தெடுக்கலாம்."
-  },
-  "icu:WhatsNew__v7.50--0": {
-    "messageformat": "நீங்கள் சிக்னல் ஆண்ட்ராய்டில் ஒரு புதிய டெஸ்க்டாப்பை இணைத்து, உங்கள் செய்தி வரலாற்றை மாற்றத் தேர்வுசெய்தால், இப்போது உங்கள் முதன்மை சாதனத்திலிருந்தும் பழைய இணைப்புகளைத் தேர்ந்தெடுத்து மாற்றலாம். காலத்தில் பின்னோக்கிச் சென்று பதிவிறக்க ஐகானைக் கிளிக் செய்வதன் மூலம் கடந்த காலத்தை நிகழ்காலத்திற்குக் கொண்டு வாருங்கள். உங்கள் முதன்மை சாதனத்திலிருந்தும் பழைய இணைப்புகளையும் இடமாற்றத் தேர்ந்தெடுக்கலாம்."
-  },
-  "icu:WhatsNew__v7.51--0": {
-    "messageformat": "Fire, the wheel, and electricity were all great developments, but they were merely necessary steps along the path that created the conditions for animated GIF search to exist. Now you can experience the pinnacle of human technological advancement in Signal Desktop with a brand-new selection interface that makes it easy to quickly find an emoji, sticker, or animated GIF that's perfect for the moment."
-  },
-  "icu:WhatsNew__v7.51--1": {
-    "messageformat": "We also resized the picture-in-picture window and added convenient new shortcuts to mute/unmute your microphone or turn the camera on/off while a call is minimized."
+  "icu:WhatsNew__7.74": {
+    "messageformat": "சிக்னல் டெஸ்க்டாப் இப்போது இந்தப் புதிய பின்வரும் ஏழு எமோஜிகளை ஆதரிக்கிறது: {leaflessTreeEmoji}"
   }
 }

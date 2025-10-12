@@ -26,6 +26,7 @@ js/components.js
 js/util_worker.js
 libtextsecure/components.js
 stylesheets/*.css
+!stylesheets/tailwind-config.css
 !stylesheets/webrtc_internals.css
 /storybook-static/
 preload.bundle.*
@@ -35,6 +36,7 @@ ts/sql/mainWorker.bundle.js.LICENSE.txt
 build/ICUMessageParams.d.ts
 
 # React / TypeScript
+build/**/*.js
 app/*.js
 ts/**/*.js
 ts/protobuf/*.d.ts

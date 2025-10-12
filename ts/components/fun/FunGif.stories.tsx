@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useId } from 'react';
 import type { Meta } from '@storybook/react';
-import { useId, VisuallyHidden } from 'react-aria';
-import { FunGif, FunGifPreview } from './FunGif';
-import { LoadingState } from '../../util/loadable';
+import { VisuallyHidden } from 'react-aria';
+import { FunGif, FunGifPreview } from './FunGif.js';
+import { LoadingState } from '../../util/loadable.js';
 
 export default {
   title: 'Components/Fun/FunGif',

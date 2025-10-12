@@ -4,13 +4,24 @@
 import type { IpcMainEvent } from 'electron';
 import { ipcMain as ipc } from 'electron';
 
-import * as log from '../logging/log';
-import type { IPCRequest, IPCResponse, ChallengeResponse } from '../challenge';
+import { createLogger } from '../logging/log.js';
+import type {
+  IPCRequest,
+  IPCResponse,
+  ChallengeResponse,
+} from '../challenge.js';
+import { getEnvironment, Environment } from '../environment.js';
+
+const log = createLogger('challengeMain');
 
 export class ChallengeMainHandler {
   #handlers: Array<(response: ChallengeResponse) => void> = [];
+  #hardcodedResult?: ChallengeResponse;
 
-  constructor() {
+  constructor(hardcodedResult?: string) {
+    if (hardcodedResult && getEnvironment() === Environment.Development) {
+      this.#hardcodedResult = { captcha: hardcodedResult };
+    }
     this.#initialize();
   }
 
@@ -21,7 +32,7 @@ export class ChallengeMainHandler {
     this.#handlers = [];
 
     log.info(
-      'challengeMain.handleCaptcha: sending captcha response to ' +
+      'handleCaptcha: sending captcha response to ' +
         `${handlers.length} handlers`
     );
     for (const resolve of handlers) {
@@ -35,9 +46,11 @@ export class ChallengeMainHandler {
 
     const start = Date.now();
 
-    const data = await new Promise<ChallengeResponse>(resolve => {
-      this.#handlers.push(resolve);
-    });
+    const data =
+      this.#hardcodedResult ||
+      (await new Promise<ChallengeResponse>(resolve => {
+        this.#handlers.push(resolve);
+      }));
 
     const duration = Date.now() - start;
     log.info(`${logId}: got response after ${duration}ms`);

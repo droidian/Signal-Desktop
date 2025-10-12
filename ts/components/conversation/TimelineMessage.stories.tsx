@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as React from 'react';
-import { isBoolean, noop } from 'lodash';
+import lodash from 'lodash';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta, StoryFn } from '@storybook/react';
 
-import { SignalService } from '../../protobuf';
-import { ConversationColors } from '../../types/Colors';
-import { EmojiPicker } from '../emoji/EmojiPicker';
-import type { AudioAttachmentProps } from './Message';
-import type { Props } from './TimelineMessage';
-import { TimelineMessage } from './TimelineMessage';
-import { GiftBadgeStates, TextDirection } from './Message';
+import { SignalService } from '../../protobuf/index.js';
+import { ConversationColors } from '../../types/Colors.js';
+import { EmojiPicker } from '../emoji/EmojiPicker.js';
+import type { AudioAttachmentProps } from './Message.js';
+import type { Props } from './TimelineMessage.js';
+import { TimelineMessage } from './TimelineMessage.js';
+import { GiftBadgeStates, TextDirection } from './Message.js';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -23,26 +23,29 @@ import {
   LONG_MESSAGE,
   stringToMIMEType,
   IMAGE_GIF,
-} from '../../types/MIME';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { MessageAudio } from './MessageAudio';
-import { computePeaks } from '../VoiceNotesPlaybackContext';
-import { pngUrl } from '../../storybook/Fixtures';
-import { getDefaultConversation } from '../../test-both/helpers/getDefaultConversation';
-import { WidthBreakpoint } from '../_util';
-import { DAY, HOUR, MINUTE, SECOND } from '../../util/durations';
-import { ContactFormType } from '../../types/EmbeddedContact';
-import { generateAci } from '../../types/ServiceId';
+  VIDEO_QUICKTIME,
+} from '../../types/MIME.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { MessageAudio } from './MessageAudio.js';
+import { computePeaks } from '../VoiceNotesPlaybackContext.js';
+import { pngUrl } from '../../storybook/Fixtures.js';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.js';
+import { WidthBreakpoint } from '../_util.js';
+import { DAY, HOUR, MINUTE, SECOND } from '../../util/durations/index.js';
+import { ContactFormType } from '../../types/EmbeddedContact.js';
+import { generateAci } from '../../types/ServiceId.js';
 
 import {
   fakeAttachment,
   fakeThumbnail,
-} from '../../test-both/helpers/fakeAttachment';
-import { getFakeBadge } from '../../test-both/helpers/getFakeBadge';
-import { ThemeType } from '../../types/Util';
-import { BadgeCategory } from '../../badges/BadgeCategory';
-import { PaymentEventKind } from '../../types/Payment';
-import { EmojiSkinTone } from '../fun/data/emojis';
+} from '../../test-helpers/fakeAttachment.js';
+import { getFakeBadge } from '../../test-helpers/getFakeBadge.js';
+import { ThemeType } from '../../types/Util.js';
+import { BadgeCategory } from '../../badges/BadgeCategory.js';
+import { PaymentEventKind } from '../../types/Payment.js';
+import { EmojiSkinTone } from '../fun/data/emojis.js';
+
+const { isBoolean, noop } = lodash;
 
 const { i18n } = window.SignalContext;
 
@@ -255,6 +258,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   canReply: true,
   canDownload: true,
   canDeleteForEveryone: overrideProps.canDeleteForEveryone || false,
+  canForward: true,
   canRetry: overrideProps.canRetry || false,
   canRetryDeleteForEveryone: overrideProps.canRetryDeleteForEveryone || false,
   checkForAccount: action('checkForAccount'),
@@ -266,7 +270,6 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   conversationId: overrideProps.conversationId ?? '',
   conversationType: overrideProps.conversationType || 'direct',
   contact: overrideProps.contact,
-  deletedForEveryone: overrideProps.deletedForEveryone,
   // disableMenu: overrideProps.disableMenu,
   disableScroll: overrideProps.disableScroll,
   direction: overrideProps.direction || 'incoming',
@@ -346,7 +349,6 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   showAttachmentDownloadStillInProgressToast: action(
     'showAttachmentDownloadStillInProgressToast'
   ),
-  showAttachmentNotAvailableModal: action('showAttachmentNotAvailableModal'),
   showExpiredIncomingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
@@ -371,6 +373,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   theme: ThemeType.light,
   timestamp: overrideProps.timestamp ?? Date.now(),
   viewStory: action('viewStory'),
+  poll: overrideProps.poll,
 });
 
 const renderMany = (propsArray: ReadonlyArray<Props>) => (
@@ -796,11 +799,13 @@ export function Deleted(): JSX.Element {
   const propsSent = createProps({
     conversationType: 'direct',
     deletedForEveryone: true,
+    canForward: false,
     status: 'sent',
   });
   const propsSending = createProps({
     conversationType: 'direct',
     deletedForEveryone: true,
+    canForward: false,
     status: 'sending',
   });
 
@@ -817,6 +822,7 @@ DeletedWithExpireTimer.args = {
   timestamp: Date.now() - 60 * 1000,
   conversationType: 'group',
   deletedForEveryone: true,
+  canForward: false,
   expirationLength: 5 * 60 * 1000,
   expirationTimestamp: Date.now() + 3 * 60 * 1000,
   status: 'sent',
@@ -1387,6 +1393,226 @@ export function Image(): JSX.Element {
   );
 }
 
+export function BrokenImage(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: IMAGE_JPEG,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'the-sax.png',
+        contentType: IMAGE_PNG,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenImageWithExpirationTimer(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: IMAGE_JPEG,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.jpg',
+        fileName: 'the-sax.png',
+        contentType: IMAGE_PNG,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function Video(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 3000,
+          height: 1680,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        width: 128,
+        height: 128,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 800,
+          height: 1200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 240,
+        width: 320,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenVideo(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 7680,
+          height: 3200,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 7680,
+          height: 3200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
+export function BrokenVideoWithExpirationTimer(): JSX.Element {
+  const darkImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+          size: 100000,
+          width: 7680,
+          height: 3200,
+          contentType: IMAGE_JPEG,
+        },
+        fileName: 'tina-rolf-269345-unsplash.jpg',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+  const lightImageProps = createProps({
+    attachments: [
+      fakeAttachment({
+        url: 'nonexistent.mp4',
+        screenshot: {
+          url: pngUrl,
+          width: 7680,
+          height: 3200,
+          size: 100000,
+          contentType: IMAGE_PNG,
+        },
+        fileName: 'the-sax.png',
+        contentType: VIDEO_MP4,
+        height: 3200,
+        width: 7680,
+      }),
+    ],
+    expirationLength: 30 * 1000,
+    expirationTimestamp: Date.now() + 30 * 1000,
+    status: 'sent',
+  });
+
+  return (
+    <>
+      {renderBothDirections(darkImageProps)}
+      {renderBothDirections(lightImageProps)}
+    </>
+  );
+}
+
 export const MultipleImages2 = Template.bind({});
 MultipleImages2.args = {
   attachments: [
@@ -1772,6 +1998,196 @@ AudioWithPendingAttachment.args = {
   status: 'sent',
 };
 
+// Poll Messages
+
+function createMockPollWithVotes(
+  question: string,
+  options: Array<string>,
+  allowMultiple: boolean,
+  votes?: Array<{
+    fromId: string;
+    optionIndexes: Array<number>;
+  }>,
+  terminatedAt?: number
+) {
+  const resolvedVotes =
+    votes?.map((vote, idx) => {
+      const name = vote.fromId === 'me' ? 'You' : vote.fromId;
+
+      return {
+        optionIndexes: vote.optionIndexes,
+        timestamp: Date.now() - (idx + 1) * 1000,
+        isMe: vote.fromId === 'me',
+        from: {
+          acceptedMessageRequest: true,
+          avatarUrl: undefined,
+          badges: [],
+          color: ConversationColors[idx % ConversationColors.length],
+          id: vote.fromId,
+          isMe: vote.fromId === 'me',
+          name,
+          phoneNumber: undefined,
+          profileName: undefined,
+          sharedGroupNames: [],
+          title: name,
+        },
+      };
+    }) || [];
+
+  const votesByOption = new Map();
+  let totalNumVotes = 0;
+
+  resolvedVotes.forEach(vote => {
+    vote.optionIndexes.forEach(index => {
+      if (!votesByOption.has(index)) {
+        votesByOption.set(index, []);
+      }
+      votesByOption.get(index).push(vote);
+      totalNumVotes += 1;
+    });
+  });
+
+  return {
+    question,
+    options,
+    allowMultiple,
+    votesByOption,
+    totalNumVotes,
+    terminatedAt,
+    votes: votes?.map(v => ({
+      fromConversationId: v.fromId,
+      optionIndexes: v.optionIndexes,
+      voteCount: 1,
+      timestamp: Date.now(),
+    })),
+  };
+}
+
+export const Poll = Template.bind({});
+Poll.args = {
+  conversationType: 'group',
+  poll: {
+    question: 'What should we have for lunch?',
+    options: ['Pizza 🍕', 'Sushi 🍱', 'Tacos 🌮', 'Salad 🥗'],
+    allowMultiple: false,
+    votesByOption: new Map(),
+    totalNumVotes: 0,
+  },
+  status: 'sent',
+};
+
+export const PollMultipleChoice = Template.bind({});
+PollMultipleChoice.args = {
+  conversationType: 'group',
+  poll: {
+    question: 'Which features would you like to see in the next update?',
+    options: ['Dark mode', 'Video calls', 'File sharing', 'Reactions', 'Polls'],
+    allowMultiple: true,
+    votesByOption: new Map(),
+    totalNumVotes: 0,
+  },
+  status: 'sent',
+};
+
+export const PollWithVotes = Template.bind({});
+PollWithVotes.args = {
+  conversationType: 'group',
+  poll: createMockPollWithVotes(
+    'Best day for the team meeting?',
+    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    false,
+    [
+      { fromId: 'alice', optionIndexes: [0] },
+      { fromId: 'user1', optionIndexes: [0] },
+      { fromId: 'user2', optionIndexes: [0] },
+      { fromId: 'bob', optionIndexes: [1] },
+      { fromId: 'user3', optionIndexes: [1] },
+      { fromId: 'charlie', optionIndexes: [2] },
+      { fromId: 'user4', optionIndexes: [2] },
+      { fromId: 'user5', optionIndexes: [2] },
+      { fromId: 'user6', optionIndexes: [2] },
+      { fromId: 'user7', optionIndexes: [2] },
+      { fromId: 'me', optionIndexes: [3] },
+    ]
+  ),
+  status: 'read',
+};
+
+export const PollTerminated = Template.bind({});
+PollTerminated.args = {
+  conversationType: 'group',
+  poll: createMockPollWithVotes(
+    'Quick poll: Coffee or tea?',
+    ['Coffee ☕', 'Tea 🍵'],
+    false,
+    [
+      { fromId: 'alice', optionIndexes: [0] },
+      { fromId: 'user1', optionIndexes: [0] },
+      { fromId: 'user2', optionIndexes: [0] },
+      { fromId: 'user3', optionIndexes: [0] },
+      { fromId: 'user4', optionIndexes: [0] },
+      { fromId: 'user5', optionIndexes: [0] },
+      { fromId: 'me', optionIndexes: [0] },
+      { fromId: 'bob', optionIndexes: [1] },
+      { fromId: 'user6', optionIndexes: [1] },
+      { fromId: 'user7', optionIndexes: [1] },
+      { fromId: 'user8', optionIndexes: [1] },
+    ],
+    Date.now() - 60000
+  ),
+  status: 'read',
+};
+
+export const PollLongText = Template.bind({});
+PollLongText.args = {
+  conversationType: 'group',
+  poll: createMockPollWithVotes(
+    'Given the current situation with remote work becoming more prevalent, what would be your preferred working arrangement for the future once everything stabilizes?',
+    [
+      'Fully remote with no requirement to come to office except for special team events or emergencies', // 96 chars
+      'Hybrid model with 2-3 days in office for collaboration and team meetings', // 72 chars
+      'Mostly office-based with occasional work from home days when really needed for personal appointments', // 100 chars (max!)
+      'Traditional full-time office presence with standard 9-5 schedule', // 64 chars
+      'Flexible arrangement based on project needs and deadlines', // 57 chars
+    ],
+    false,
+    [
+      { fromId: 'alice', optionIndexes: [0] },
+      { fromId: 'bob', optionIndexes: [1] },
+      { fromId: 'charlie', optionIndexes: [1] },
+      { fromId: 'me', optionIndexes: [2] },
+      { fromId: 'dana', optionIndexes: [2] },
+      { fromId: 'eve', optionIndexes: [3] },
+    ]
+  ),
+  status: 'sent',
+};
+
+export const PollMultipleChoiceWithVotes = Template.bind({});
+PollMultipleChoiceWithVotes.args = {
+  conversationType: 'group',
+  poll: createMockPollWithVotes(
+    'Which toppings do you want on the pizza?',
+    [
+      'Pepperoni',
+      'Mushrooms',
+      'Sausage',
+      'Bell Peppers',
+      'Olives',
+      'Extra Cheese',
+    ],
+    true,
+    [
+      { fromId: 'alice', optionIndexes: [0, 2, 5] }, // Pepperoni, Sausage, Extra Cheese
+      { fromId: 'bob', optionIndexes: [1, 3, 4] }, // Mushrooms, Bell Peppers, Olives
+      { fromId: 'charlie', optionIndexes: [0, 1] }, // Pepperoni, Mushrooms
+      { fromId: 'me', optionIndexes: [0, 3, 5] }, // Pepperoni, Bell Peppers, Extra Cheese
+      { fromId: 'dana', optionIndexes: [2, 4, 5] }, // Sausage, Olives, Extra Cheese
+    ]
+  ),
+  status: 'read',
+};
+
 export const OtherFileType = Template.bind({});
 OtherFileType.args = {
   attachments: [
@@ -1782,6 +2198,21 @@ OtherFileType.args = {
       size: 10200000,
     }),
   ],
+  status: 'sent',
+};
+
+export const OtherFileTypeWithExpirationTimer = Template.bind({});
+OtherFileTypeWithExpirationTimer.args = {
+  attachments: [
+    fakeAttachment({
+      contentType: stringToMIMEType('text/plain'),
+      fileName: 'things.zip',
+      url: 'things.zip',
+      size: 10200000,
+    }),
+  ],
+  expirationLength: 30 * 1000,
+  expirationTimestamp: Date.now() + 30 * 1000,
   status: 'sent',
 };
 
@@ -2265,6 +2696,7 @@ const fullContact = {
 export const EmbeddedContactFullContact = Template.bind({});
 EmbeddedContactFullContact.args = {
   contact: fullContact,
+  canForward: false,
 };
 
 export const EmbeddedContactAvatarUndownloaded = Template.bind({});
@@ -2279,6 +2711,7 @@ EmbeddedContactAvatarUndownloaded.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarDownloading = Template.bind({});
 EmbeddedContactAvatarDownloading.args = {
@@ -2295,6 +2728,7 @@ EmbeddedContactAvatarDownloading.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarTransientError = Template.bind({});
 EmbeddedContactAvatarTransientError.args = {
@@ -2302,7 +2736,6 @@ EmbeddedContactAvatarTransientError.args = {
     ...fullContact,
     avatar: {
       avatar: fakeAttachment({
-        iv: 'something',
         key: 'something',
         digest: 'something',
         cdnKey: 'something',
@@ -2316,6 +2749,7 @@ EmbeddedContactAvatarTransientError.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 export const EmbeddedContactAvatarPermanentError = Template.bind({});
 EmbeddedContactAvatarPermanentError.args = {
@@ -2335,6 +2769,7 @@ EmbeddedContactAvatarPermanentError.args = {
       isProfile: true,
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactWithSendMessage = Template.bind({});
@@ -2345,6 +2780,7 @@ EmbeddedContactWithSendMessage.args = {
     serviceId: generateAci(),
   },
   direction: 'incoming',
+  canForward: false,
 };
 
 export const EmbeddedContactOnlyEmail = Template.bind({});
@@ -2352,6 +2788,7 @@ EmbeddedContactOnlyEmail.args = {
   contact: {
     email: fullContact.email,
   },
+  canForward: false,
 };
 
 export const EmbeddedContactGivenName = Template.bind({});
@@ -2361,6 +2798,7 @@ EmbeddedContactGivenName.args = {
       givenName: 'Jerry',
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactOrganization = Template.bind({});
@@ -2368,6 +2806,7 @@ EmbeddedContactOrganization.args = {
   contact: {
     organization: 'Company 5',
   },
+  canForward: false,
 };
 
 export const EmbeddedContactGivenFamilyName = Template.bind({});
@@ -2378,6 +2817,7 @@ EmbeddedContactGivenFamilyName.args = {
       familyName: 'FamilyName',
     },
   },
+  canForward: false,
 };
 
 export const EmbeddedContactFamilyName = Template.bind({});
@@ -2387,6 +2827,7 @@ EmbeddedContactFamilyName.args = {
       familyName: 'FamilyName',
     },
   },
+  canForward: false,
 };
 
 export const GiftBadgeUnopened = Template.bind({});
@@ -2397,6 +2838,7 @@ GiftBadgeUnopened.args = {
     level: 3,
     state: GiftBadgeStates.Unopened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeFailed = Template.bind({});
@@ -2404,6 +2846,7 @@ GiftBadgeFailed.args = {
   giftBadge: {
     state: GiftBadgeStates.Failed,
   },
+  canForward: false,
 };
 
 const getPreferredBadge = () => ({
@@ -2430,6 +2873,7 @@ GiftBadgeRedeemed30Days.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeRedeemed24Hours = Template.bind({});
@@ -2441,6 +2885,7 @@ GiftBadgeRedeemed24Hours.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeOpened60Minutes = Template.bind({});
@@ -2452,6 +2897,7 @@ GiftBadgeOpened60Minutes.args = {
     level: 3,
     state: GiftBadgeStates.Opened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeRedeemed1Minute = Template.bind({});
@@ -2463,6 +2909,7 @@ GiftBadgeRedeemed1Minute.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const GiftBadgeOpenedExpired = Template.bind({});
@@ -2474,6 +2921,7 @@ GiftBadgeOpenedExpired.args = {
     level: 3,
     state: GiftBadgeStates.Opened,
   },
+  canForward: false,
 };
 
 export const GiftBadgeMissingBadge = Template.bind({});
@@ -2485,12 +2933,14 @@ GiftBadgeMissingBadge.args = {
     level: 3,
     state: GiftBadgeStates.Redeemed,
   },
+  canForward: false,
 };
 
 export const PaymentNotification = Template.bind({});
 PaymentNotification.args = {
   canReply: false,
   canReact: false,
+  canForward: false,
   payment: {
     kind: PaymentEventKind.Notification,
     note: 'Hello there',
@@ -2552,6 +3002,24 @@ export function PermanentlyUndownloadableAttachments(): JSX.Element {
     ],
     status: 'sent',
   });
+  const undisplayableVideo = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: VIDEO_QUICKTIME,
+        fileName: 'bird.mov',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+        error: true,
+        isPermanentlyUndownloadable: true,
+      }),
+    ],
+    status: 'sent',
+  });
+
   const multipleImagesProps = createProps({
     attachments: [
       fakeAttachment({
@@ -2565,6 +3033,32 @@ export function PermanentlyUndownloadableAttachments(): JSX.Element {
         id: undefined,
         error: true,
         isPermanentlyUndownloadable: true,
+      }),
+      fakeAttachment({
+        contentType: IMAGE_JPEG,
+        fileName: 'bird.jpg',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        width: 296,
+        height: 394,
+        path: undefined,
+        key: undefined,
+        id: undefined,
+        error: true,
+        isPermanentlyUndownloadable: true,
+      }),
+    ],
+    status: 'sent',
+  });
+  const multipleImagesSomeUndownloadableProps = createProps({
+    attachments: [
+      fakeAttachment({
+        contentType: IMAGE_JPEG,
+        fileName: 'bird.jpg',
+        blurHash: 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
+        url: '/fixtures/tina-rolf-269345-unsplash.jpg',
+        width: 296,
+        height: 394,
+        isPermanentlyUndownloadable: false,
       }),
       fakeAttachment({
         contentType: IMAGE_JPEG,
@@ -2690,9 +3184,11 @@ export function PermanentlyUndownloadableAttachments(): JSX.Element {
   return (
     <>
       <TimelineMessage {...imageProps} shouldCollapseAbove />
+      <TimelineMessage {...undisplayableVideo} />
       <TimelineMessage {...gifProps} />
       <TimelineMessage {...videoProps} />
       <TimelineMessage {...multipleImagesProps} />
+      <TimelineMessage {...multipleImagesSomeUndownloadableProps} />
       <TimelineMessage {...stickerProps} />
       <TimelineMessage {...textFileProps} />
       <TimelineMessage {...textFileWithCaptionProps} />

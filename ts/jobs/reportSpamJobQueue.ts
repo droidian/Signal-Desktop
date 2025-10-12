@@ -2,22 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as z from 'zod';
-import * as durations from '../util/durations';
-import { strictAssert } from '../util/assert';
-import { waitForOnline } from '../util/waitForOnline';
-import { isDone as isDeviceLinked } from '../util/registration';
-import type { LoggerType } from '../types/Logging';
-import { aciSchema } from '../types/ServiceId';
-import { map } from '../util/iterables';
+import * as durations from '../util/durations/index.js';
+import { strictAssert } from '../util/assert.js';
+import { waitForOnline } from '../util/waitForOnline.js';
+import { isDone as isDeviceLinked } from '../util/registration.js';
+import type { LoggerType } from '../types/Logging.js';
+import { aciSchema } from '../types/ServiceId.js';
+import { map } from '../util/iterables.js';
 
-import type { JOB_STATUS } from './JobQueue';
-import { JobQueue } from './JobQueue';
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore';
-import { parseIntWithFallback } from '../util/parseIntWithFallback';
-import type { WebAPIType } from '../textsecure/WebAPI';
-import { HTTPError } from '../textsecure/Errors';
-import { sleeper } from '../util/sleeper';
-import { parseUnknown } from '../util/schemas';
+import type { JOB_STATUS } from './JobQueue.js';
+import { JobQueue } from './JobQueue.js';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.js';
+import { parseIntWithFallback } from '../util/parseIntWithFallback.js';
+import type { WebAPIType } from '../textsecure/WebAPI.js';
+import { HTTPError } from '../textsecure/Errors.js';
+import { sleeper } from '../util/sleeper.js';
+import { parseUnknown } from '../util/schemas.js';
 
 const RETRY_WAIT_TIME = durations.MINUTE;
 const RETRYABLE_4XX_FAILURE_STATUSES = new Set([
@@ -59,7 +59,7 @@ export class ReportSpamJobQueue extends JobQueue<ReportSpamJobData> {
     });
 
     if (!isDeviceLinked()) {
-      log.info("reportSpamJobQueue: skipping this job because we're unlinked");
+      log.info("skipping this job because we're unlinked");
       return undefined;
     }
 
@@ -89,15 +89,13 @@ export class ReportSpamJobQueue extends JobQueue<ReportSpamJobData> {
       }
 
       if (code === 508) {
-        log.info(
-          'reportSpamJobQueue: server responded with 508. Giving up on this job'
-        );
+        log.info('server responded with 508. Giving up on this job');
         return undefined;
       }
 
       if (isRetriable4xxStatus(code) || is5xxStatus(code)) {
         log.info(
-          `reportSpamJobQueue: server responded with ${code} status code. Sleeping before our next attempt`
+          `server responded with ${code} status code. Sleeping before our next attempt`
         );
         await sleeper.sleep(
           RETRY_WAIT_TIME,
@@ -108,7 +106,7 @@ export class ReportSpamJobQueue extends JobQueue<ReportSpamJobData> {
 
       if (is4xxStatus(code)) {
         log.error(
-          `reportSpamJobQueue: server responded with ${code} status code. Giving up on this job`
+          `server responded with ${code} status code. Giving up on this job`
         );
         return undefined;
       }

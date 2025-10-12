@@ -4,17 +4,19 @@
 import React from 'react';
 import { animated, useSpring } from '@react-spring/web';
 
-import { Avatar, AvatarSize } from './Avatar';
-import { ContactName } from './conversation/ContactName';
-import type { ConversationsByDemuxIdType } from '../types/Calling';
-import type { ServiceIdString } from '../types/ServiceId';
-import type { LocalizerType } from '../types/Util';
-import type { ConversationType } from '../state/ducks/conversations';
-import { ModalHost } from './ModalHost';
-import { drop } from '../util/drop';
-import * as log from '../logging/log';
-import { usePrevious } from '../hooks/usePrevious';
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import { Avatar, AvatarSize } from './Avatar.js';
+import { ContactName } from './conversation/ContactName.js';
+import type { ConversationsByDemuxIdType } from '../types/Calling.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import type { LocalizerType } from '../types/Util.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { ModalHost } from './ModalHost.js';
+import { drop } from '../util/drop.js';
+import { createLogger } from '../logging/log.js';
+import { usePrevious } from '../hooks/usePrevious.js';
+import { useReducedMotion } from '../hooks/useReducedMotion.js';
+
+const log = createLogger('CallingRaisedHandsList');
 
 export type PropsType = {
   readonly i18n: LocalizerType;
@@ -45,10 +47,9 @@ export function CallingRaisedHandsList({
     raisedHands.forEach(demuxId => {
       const conversation = conversationsByDemuxId.get(demuxId);
       if (!conversation) {
-        log.warn(
-          'CallingRaisedHandsList: Failed to get conversationsByDemuxId for demuxId',
-          { demuxId }
-        );
+        log.warn('Failed to get conversationsByDemuxId for demuxId', {
+          demuxId,
+        });
         return;
       }
 

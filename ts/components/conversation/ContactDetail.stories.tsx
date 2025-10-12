@@ -4,11 +4,11 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './ContactDetail';
-import { ContactDetail } from './ContactDetail';
-import { AddressType, ContactFormType } from '../../types/EmbeddedContact';
-import { IMAGE_GIF } from '../../types/MIME';
-import { fakeAttachment } from '../../test-both/helpers/fakeAttachment';
+import type { Props } from './ContactDetail.js';
+import { ContactDetail } from './ContactDetail.js';
+import { AddressType, ContactFormType } from '../../types/EmbeddedContact.js';
+import { IMAGE_GIF } from '../../types/MIME.js';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.js';
 
 const { i18n } = window.SignalContext;
 
@@ -191,7 +191,6 @@ export function FullyFilledOutTransientError(): JSX.Element {
       avatar: {
         avatar: fakeAttachment({
           error: true,
-          iv: 'something',
           key: 'something',
           digest: 'something',
           cdnKey: 'something',

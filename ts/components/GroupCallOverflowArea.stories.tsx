@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React from 'react';
-import { memoize, times } from 'lodash';
+import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupCallOverflowArea';
-import { GroupCallOverflowArea } from './GroupCallOverflowArea';
-import { getDefaultConversationWithServiceId } from '../test-both/helpers/getDefaultConversation';
-import { fakeGetGroupCallVideoFrameSource } from '../test-both/helpers/fakeGetGroupCallVideoFrameSource';
-import { FRAME_BUFFER_SIZE } from '../calling/constants';
-import { generateAci } from '../types/ServiceId';
-import type { CallingImageDataCache } from './CallManager';
-import { MINUTE } from '../util/durations';
+import type { PropsType } from './GroupCallOverflowArea.js';
+import { GroupCallOverflowArea } from './GroupCallOverflowArea.js';
+import { getDefaultConversationWithServiceId } from '../test-helpers/getDefaultConversation.js';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.js';
+import { FRAME_BUFFER_SIZE } from '../calling/constants.js';
+import { generateAci } from '../types/ServiceId.js';
+import type { CallingImageDataCache } from './CallManager.js';
+import { MINUTE } from '../util/durations/index.js';
+
+const { memoize, times } = lodash;
 
 const MAX_PARTICIPANTS = 32;
 
@@ -41,7 +43,7 @@ export default {
 } satisfies Meta<PropsType>;
 
 const defaultProps = {
-  getFrameBuffer: memoize(() => Buffer.alloc(FRAME_BUFFER_SIZE)),
+  getFrameBuffer: memoize(() => new Uint8Array(FRAME_BUFFER_SIZE)),
   getCallingImageDataCache: memoize(() => new Map()),
   getGroupCallVideoFrameSource: fakeGetGroupCallVideoFrameSource,
   imageDataCache: React.createRef<CallingImageDataCache>(),

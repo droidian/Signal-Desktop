@@ -9,24 +9,27 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import type { LocaleEmojiListType } from '../../types/emoji';
-import * as log from '../../logging/log';
-import * as Errors from '../../types/errors';
-import { drop } from '../../util/drop';
+import type { LocaleEmojiListType } from '../../types/emoji.js';
+import { createLogger } from '../../logging/log.js';
+import * as Errors from '../../types/errors.js';
+import { drop } from '../../util/drop.js';
 import {
   getEmojiDefaultEnglishLocalizerIndex,
   getEmojiDefaultEnglishSearchIndex,
-} from './data/emojis';
+} from './data/emojis.js';
 import {
   createFunEmojiLocalizerIndex,
   type FunEmojiLocalizerIndex,
-} from './useFunEmojiLocalizer';
+} from './useFunEmojiLocalizer.js';
 import {
   createFunEmojiSearchIndex,
   type FunEmojiSearchIndex,
-} from './useFunEmojiSearch';
-import type { LocalizerType } from '../../types/I18N';
-import { strictAssert } from '../../util/assert';
+} from './useFunEmojiSearch.js';
+import type { LocalizerType } from '../../types/I18N.js';
+import { strictAssert } from '../../util/assert.js';
+import { isTestOrMockEnvironment } from '../../environment.js';
+
+const log = createLogger('FunEmojiLocalizationProvider');
 
 export type FunEmojiLocalizationContextType = Readonly<{
   emojiSearchIndex: FunEmojiSearchIndex;
@@ -70,6 +73,26 @@ export const FunEmojiLocalizationProvider = memo(
   }
 );
 
+export type FunEmptyEmojiLocalizationProviderProps = Readonly<{
+  children: ReactNode;
+}>;
+
+export function FunDefaultEnglishEmojiLocalizationProvider(
+  props: FunEmptyEmojiLocalizationProviderProps
+): JSX.Element {
+  const context = useMemo(() => {
+    return {
+      emojiSearchIndex: getEmojiDefaultEnglishSearchIndex(),
+      emojiLocalizerIndex: getEmojiDefaultEnglishLocalizerIndex(),
+    };
+  }, []);
+  return (
+    <FunEmojiLocalizationContext.Provider value={context}>
+      {props.children}
+    </FunEmojiLocalizationContext.Provider>
+  );
+}
+
 function useLocaleEmojiList(i18n: LocalizerType): LocaleEmojiListType | null {
   const locale = useMemo(() => i18n.getLocale(), [i18n]);
 
@@ -79,6 +102,9 @@ function useLocaleEmojiList(i18n: LocalizerType): LocaleEmojiListType | null {
   useEffect(() => {
     let canceled = false;
     async function run(): Promise<void> {
+      if (isTestOrMockEnvironment()) {
+        return;
+      }
       try {
         const list = await window.SignalContext.getLocalizedEmojiList(locale);
         if (!canceled) {
@@ -104,9 +130,10 @@ function useFunEmojiSearchIndex(
   localeEmojiList: LocaleEmojiListType | null
 ): FunEmojiSearchIndex {
   const funEmojiSearchIndex = useMemo(() => {
+    const defaultSearchIndex = getEmojiDefaultEnglishSearchIndex();
     return localeEmojiList != null
-      ? createFunEmojiSearchIndex(localeEmojiList)
-      : getEmojiDefaultEnglishSearchIndex();
+      ? createFunEmojiSearchIndex(localeEmojiList, defaultSearchIndex)
+      : defaultSearchIndex;
   }, [localeEmojiList]);
   return funEmojiSearchIndex;
 }
@@ -115,9 +142,10 @@ function useFunEmojiLocalizerIndex(
   localeEmojiList: LocaleEmojiListType | null
 ): FunEmojiLocalizerIndex {
   const funEmojiLocalizerIndex = useMemo(() => {
+    const defaultSearchIndex = getEmojiDefaultEnglishLocalizerIndex();
     return localeEmojiList != null
-      ? createFunEmojiLocalizerIndex(localeEmojiList)
-      : getEmojiDefaultEnglishLocalizerIndex();
+      ? createFunEmojiLocalizerIndex(localeEmojiList, defaultSearchIndex)
+      : defaultSearchIndex;
   }, [localeEmojiList]);
   return funEmojiLocalizerIndex;
 }

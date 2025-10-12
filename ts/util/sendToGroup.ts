@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { differenceWith, omit } from 'lodash';
+import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
 
 import {
+  ContentHint,
   ErrorCode,
   LibSignalErrorBase,
   groupEncrypt,
@@ -13,27 +14,27 @@ import {
   SenderCertificate,
   UnidentifiedSenderMessageContent,
 } from '@signalapp/libsignal-client';
-import * as Bytes from '../Bytes';
-import { senderCertificateService } from '../services/senderCertificate';
-import type { SendLogCallbackType } from '../textsecure/OutgoingMessage';
+import { senderCertificateService } from '../services/senderCertificate.js';
+import type { SendLogCallbackType } from '../textsecure/OutgoingMessage.js';
 import {
   padMessage,
   SenderCertificateMode,
-} from '../textsecure/OutgoingMessage';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import * as Errors from '../types/errors';
-import { DataWriter } from '../sql/Client';
-import { getValue } from '../RemoteConfig';
-import type { ServiceIdString } from '../types/ServiceId';
-import { ServiceIdKind } from '../types/ServiceId';
-import { isRecord } from './isRecord';
+} from '../textsecure/OutgoingMessage.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import * as Errors from '../types/errors.js';
+import { DataWriter } from '../sql/Client.js';
+import { getValue } from '../RemoteConfig.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { ServiceIdKind } from '../types/ServiceId.js';
+import * as Bytes from '../Bytes.js';
+import { isRecord } from './isRecord.js';
 
-import { isOlderThan } from './timestamp';
+import { isOlderThan } from './timestamp.js';
 import type {
   GroupSendOptionsType,
   SendOptionsType,
-} from '../textsecure/SendMessage';
+} from '../textsecure/SendMessage.js';
 import {
   ConnectTimeoutError,
   IncorrectSenderKeyAuthError,
@@ -41,39 +42,43 @@ import {
   SendMessageProtoError,
   UnknownRecipientError,
   UnregisteredUserError,
-} from '../textsecure/Errors';
-import type { HTTPError } from '../textsecure/Errors';
-import { IdentityKeys, SenderKeys, Sessions } from '../LibSignalStores';
-import type { ConversationModel } from '../models/conversations';
-import type { DeviceType, CallbackResultType } from '../textsecure/Types.d';
-import { getKeysForServiceId } from '../textsecure/getKeysForServiceId';
+  HTTPError,
+} from '../textsecure/Errors.js';
+import { IdentityKeys, SenderKeys, Sessions } from '../LibSignalStores.js';
+import type { ConversationModel } from '../models/conversations.js';
+import type { DeviceType, CallbackResultType } from '../textsecure/Types.d.ts';
+import { getKeysForServiceId } from '../textsecure/getKeysForServiceId.js';
 import type {
   ConversationAttributesType,
   SenderKeyInfoType,
-} from '../model-types.d';
-import type { SendTypesType } from './handleMessageSend';
-import { handleMessageSend, shouldSaveProto } from './handleMessageSend';
-import { SEALED_SENDER } from '../types/SealedSender';
-import { parseIntOrThrow } from './parseIntOrThrow';
+} from '../model-types.d.ts';
+import type { SendTypesType } from './handleMessageSend.js';
+import { handleMessageSend, shouldSaveProto } from './handleMessageSend.js';
+import { SEALED_SENDER, ZERO_ACCESS_KEY } from '../types/SealedSender.js';
+import { parseIntOrThrow } from './parseIntOrThrow.js';
 import {
   multiRecipient200ResponseSchema,
   multiRecipient409ResponseSchema,
   multiRecipient410ResponseSchema,
-} from '../textsecure/WebAPI';
-import { SignalService as Proto } from '../protobuf';
+} from '../textsecure/WebAPI.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 
-import { strictAssert } from './assert';
-import * as log from '../logging/log';
-import { GLOBAL_ZONE } from '../SignalProtocolStore';
-import { waitForAll } from './waitForAll';
-import type { GroupSendEndorsementState } from './groupSendEndorsements';
+import { strictAssert } from './assert.js';
+import { createLogger } from '../logging/log.js';
+import { GLOBAL_ZONE } from '../SignalProtocolStore.js';
+import { waitForAll } from './waitForAll.js';
+import type { GroupSendEndorsementState } from './groupSendEndorsements.js';
 import {
   maybeCreateGroupSendEndorsementState,
   onFailedToSendWithEndorsements,
-} from './groupSendEndorsements';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
-import { isAciString } from './isAciString';
-import { safeParseStrict, safeParseUnknown } from './schemas';
+} from './groupSendEndorsements.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { isAciString } from './isAciString.js';
+import { safeParseStrict, safeParseUnknown } from './schemas.js';
+
+const { differenceWith, omit } = lodash;
+
+const log = createLogger('sendToGroup');
 
 const UNKNOWN_RECIPIENT = 404;
 const INCORRECT_AUTH_KEY = 401;
@@ -87,7 +92,6 @@ const DAY = 24 * HOUR;
 const MAX_RECURSION = 10;
 
 const ACCESS_KEY_LENGTH = 16;
-const ZERO_ACCESS_KEY = Bytes.toBase64(new Uint8Array(ACCESS_KEY_LENGTH));
 
 // Public API:
 
@@ -197,9 +201,7 @@ export async function sendContentMessageToGroup(
 
   const accountManager = window.getAccountManager();
   if (accountManager.areKeysOutOfDate(ServiceIdKind.ACI)) {
-    log.warn(
-      `sendToGroup/${logId}: Keys are out of date; updating before send`
-    );
+    log.warn(`${logId}: Keys are out of date; updating before send`);
     await accountManager.maybeUpdateKeys(ServiceIdKind.ACI);
     if (accountManager.areKeysOutOfDate(ServiceIdKind.ACI)) {
       throw new Error('Keys still out of date after update');
@@ -228,7 +230,7 @@ export async function sendContentMessageToGroup(
       }
 
       log.error(
-        `sendToGroup/${logId}: Sender Key send failed, logging, proceeding to normal send`,
+        `${logId}: Sender Key send failed, logging, proceeding to normal send`,
         Errors.toLogFormat(error)
       );
     }
@@ -237,7 +239,7 @@ export async function sendContentMessageToGroup(
   const sendLogCallback = window.textsecure.messaging.makeSendLogCallback({
     contentHint,
     messageId,
-    proto: Buffer.from(Proto.Content.encode(contentMessage).finish()),
+    proto: Proto.Content.encode(contentMessage).finish(),
     sendType,
     timestamp,
     urgent,
@@ -294,7 +296,6 @@ export async function sendToGroupViaSenderKey(
     timestamp,
     urgent,
   } = options;
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
   const logId = `sendToGroupViaSenderKey/${sendTarget.idForLogging()}`;
   log.info(
@@ -313,9 +314,9 @@ export async function sendToGroupViaSenderKey(
   }
 
   if (
-    contentHint !== ContentHint.DEFAULT &&
-    contentHint !== ContentHint.RESENDABLE &&
-    contentHint !== ContentHint.IMPLICIT
+    contentHint !== ContentHint.Default &&
+    contentHint !== ContentHint.Resendable &&
+    contentHint !== ContentHint.Implicit
   ) {
     throw new Error(`${logId}: Invalid contentHint ${contentHint}`);
   }
@@ -585,7 +586,7 @@ export async function sendToGroupViaSenderKey(
       sendLogId = await DataWriter.insertSentProto(
         {
           contentHint,
-          proto: Buffer.from(Proto.Content.encode(contentMessage).finish()),
+          proto: Proto.Content.encode(contentMessage).finish(),
           timestamp,
           urgent,
           hasPniSignatureMessage: false,
@@ -640,7 +641,10 @@ export async function sendToGroupViaSenderKey(
     }
 
     if (groupSendEndorsementState != null) {
-      onFailedToSendWithEndorsements(error);
+      // Ignore server errors
+      if (!(error instanceof HTTPError && error.code === 500)) {
+        onFailedToSendWithEndorsements(error);
+      }
     }
 
     log.error(
@@ -666,7 +670,7 @@ export async function sendToGroupViaSenderKey(
 
       contentHint,
       timestamp,
-      contentProto: Buffer.from(Proto.Content.encode(contentMessage).finish()),
+      contentProto: Proto.Content.encode(contentMessage).finish(),
       recipients: senderKeyRecipientsWithDevices,
       urgent,
     };
@@ -1099,7 +1103,7 @@ function getXorOfAccessKeys(
       'Cannot be endorsement in getXorOfAccessKeys'
     );
 
-    const accessKeyBuffer = Buffer.from(accessKey, 'base64');
+    const accessKeyBuffer = Bytes.fromBase64(accessKey);
     if (accessKeyBuffer.length !== ACCESS_KEY_LENGTH) {
       throw new Error(
         `getXorOfAccessKeys: Access key for ${uuid} had length ${accessKeyBuffer.length}`
@@ -1127,7 +1131,7 @@ async function encryptForSenderKey({
   devices: Array<DeviceType>;
   distributionId: string;
   groupId?: string;
-}): Promise<Buffer> {
+}): Promise<Uint8Array> {
   const ourAci = window.textsecure.storage.user.getCheckedAci();
   const ourDeviceId = window.textsecure.storage.user.getDeviceId();
   if (!ourDeviceId) {
@@ -1145,7 +1149,7 @@ async function encryptForSenderKey({
     ourServiceId: ourAci,
     zone: GLOBAL_ZONE,
   });
-  const message = Buffer.from(padMessage(contentMessage));
+  const message = padMessage(contentMessage);
 
   const ciphertextMessage =
     await window.textsecure.storage.protocol.enqueueSenderKeyJob(
@@ -1153,7 +1157,7 @@ async function encryptForSenderKey({
       () => groupEncrypt(sender, distributionId, senderKeyStore, message)
     );
 
-  const groupIdBuffer = groupId ? Buffer.from(groupId, 'base64') : null;
+  const groupIdBuffer = groupId ? Bytes.fromBase64(groupId) : null;
   const senderCertificateObject = await senderCertificateService.get(
     SenderCertificateMode.WithoutE164
   );
@@ -1162,7 +1166,7 @@ async function encryptForSenderKey({
   }
 
   const senderCertificate = SenderCertificate.deserialize(
-    Buffer.from(senderCertificateObject.serialized)
+    senderCertificateObject.serialized
   );
   const content = UnidentifiedSenderMessageContent.new(
     ciphertextMessage,
@@ -1428,7 +1432,10 @@ async function fetchKeysForServiceId(
       return;
     }
     if (useGroupSendEndorsement) {
-      onFailedToSendWithEndorsements(error as Error);
+      // Ignore untrusted identity key errors
+      if (!(error instanceof OutgoingIdentityKeyError)) {
+        onFailedToSendWithEndorsements(error as Error);
+      }
     }
     log.error(
       `${logId}: Error fetching ${devices || 'all'} devices`,

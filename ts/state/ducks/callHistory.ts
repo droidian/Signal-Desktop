@@ -3,40 +3,43 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
-import { debounce, omit } from 'lodash';
-import type { StateType as RootStateType } from '../reducer';
+import lodash from 'lodash';
+import type { StateType as RootStateType } from '../reducer.js';
 import {
   clearCallHistoryDataAndSync,
   markAllCallHistoryReadAndSync,
-} from '../../util/callDisposition';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import { useBoundActions } from '../../hooks/useBoundActions';
-import type { ToastActionType } from './toast';
-import { showToast } from './toast';
-import { DataReader, DataWriter } from '../../sql/Client';
-import { ToastType } from '../../types/Toast';
+} from '../../util/callDisposition.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
+import type { ToastActionType } from './toast.js';
+import { showToast } from './toast.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { ToastType } from '../../types/Toast.js';
 import {
   ClearCallHistoryResult,
   type CallHistoryDetails,
-} from '../../types/CallDisposition';
-import * as log from '../../logging/log';
-import * as Errors from '../../types/errors';
-import { drop } from '../../util/drop';
+} from '../../types/CallDisposition.js';
+import { createLogger } from '../../logging/log.js';
+import * as Errors from '../../types/errors.js';
 import {
   getCallHistoryLatestCall,
   getCallHistorySelector,
-} from '../selectors/callHistory';
+} from '../selectors/callHistory.js';
 import {
   getCallsHistoryForRedux,
   getCallsHistoryUnreadCountForRedux,
   loadCallHistory,
-} from '../../services/callHistoryLoader';
-import { makeLookup } from '../../util/makeLookup';
-import { missingCaseError } from '../../util/missingCaseError';
-import { getIntl } from '../selectors/user';
-import { ButtonVariant } from '../../components/Button';
-import type { ShowErrorModalActionType } from './globalModals';
-import { SHOW_ERROR_MODAL } from './globalModals';
+} from '../../services/callHistoryLoader.js';
+import { makeLookup } from '../../util/makeLookup.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { getIntl } from '../selectors/user.js';
+import { ButtonVariant } from '../../components/Button.js';
+import type { ShowErrorModalActionType } from './globalModals.js';
+import { SHOW_ERROR_MODAL } from './globalModals.js';
+
+const { debounce, omit } = lodash;
+
+const log = createLogger('callHistory');
 
 export type CallHistoryState = ReadonlyDeep<{
   // This informs the app that underlying call history data has changed.
@@ -129,7 +132,9 @@ function markCallHistoryRead(
   return async dispatch => {
     try {
       await DataWriter.markCallHistoryRead(callId);
-      drop(window.ConversationController.get(conversationId)?.updateUnread());
+      window.ConversationController.get(
+        conversationId
+      )?.throttledUpdateUnread();
     } catch (error) {
       log.error(
         'markCallHistoryRead: Error marking call history read',

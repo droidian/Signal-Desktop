@@ -3,22 +3,24 @@
 
 import { z } from 'zod';
 
-import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { StartupQueue } from '../util/StartupQueue';
-import { drop } from '../util/drop';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp';
-import { isIncoming } from '../state/selectors/message';
-import { isMessageUnread } from '../util/isMessageUnread';
-import { notificationService } from '../services/notifications';
-import { queueUpdateMessage } from '../util/messageBatcher';
-import { strictAssert } from '../util/assert';
-import { isAciString } from '../util/isAciString';
-import { DataReader, DataWriter } from '../sql/Client';
-import { markRead } from '../services/MessageUpdater';
-import { MessageModel } from '../models/messages';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { StartupQueue } from '../util/StartupQueue.js';
+import { drop } from '../util/drop.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.js';
+import { isIncoming } from '../state/selectors/message.js';
+import { isMessageUnread } from '../util/isMessageUnread.js';
+import { notificationService } from '../services/notifications.js';
+import { queueUpdateMessage } from '../util/messageBatcher.js';
+import { strictAssert } from '../util/assert.js';
+import { isAciString } from '../util/isAciString.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { markRead } from '../services/MessageUpdater.js';
+import { MessageModel } from '../models/messages.js';
+
+const log = createLogger('ReadSyncs');
 
 const { removeSyncTaskById } = DataWriter;
 
@@ -150,7 +152,6 @@ export async function onSync(sync: ReadSyncAttributesType): Promise<void> {
 
     const message = window.MessageCache.register(new MessageModel(found));
     const readAt = Math.min(readSync.readAt, Date.now());
-    const newestSentAt = readSync.timestamp;
 
     // If message is unread, we mark it read. Otherwise, we update the expiration
     //   timer to the time specified by the read sync if it's earlier than
@@ -166,9 +167,7 @@ export async function onSync(sync: ReadSyncAttributesType): Promise<void> {
         // onReadMessage may result in messages older than this one being
         //   marked read. We want those messages to have the same expire timer
         //   start time as this one, so we pass the readAt value through.
-        drop(
-          conversation.onReadMessage(message.attributes, readAt, newestSentAt)
-        );
+        drop(conversation.onReadMessage(message.attributes, readAt));
       };
 
       // only available during initialization
@@ -201,7 +200,7 @@ export async function onSync(sync: ReadSyncAttributesType): Promise<void> {
       message.set({ expirationStartTimestamp });
     }
 
-    queueUpdateMessage(message.attributes);
+    drop(queueUpdateMessage(message.attributes));
 
     await remove(sync);
   } catch (error) {

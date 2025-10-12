@@ -3,18 +3,18 @@
 
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations';
-import type { Bootstrap, App } from '../bootstrap';
+import * as durations from '../../util/durations/index.js';
+import type { Bootstrap, App } from '../bootstrap.js';
 import {
   artAddStickersRoute,
   showConversationRoute,
-} from '../../util/signalRoutes';
+} from '../../util/signalRoutes.js';
 import {
   initStorage,
   STICKER_PACKS,
   storeStickerPacks,
-} from '../storage/fixtures';
-import { strictAssert } from '../../util/assert';
+} from '../storage/fixtures.js';
+import { strictAssert } from '../../util/assert.js';
 
 describe('routing', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -57,7 +57,7 @@ describe('routing', function (this: Mocha.Suite) {
     await page.locator('#LeftPane').waitFor();
     const token = await page.evaluate(
       serviceId => window.SignalCI?.createNotificationToken(serviceId),
-      friend.toContact().aci
+      friend.device.aci
     );
     strictAssert(typeof token === 'string', 'token must be returned');
     const conversationUrl = showConversationRoute.toAppUrl({

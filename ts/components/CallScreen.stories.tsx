@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as React from 'react';
-import { sample, shuffle, times } from 'lodash';
+import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
@@ -10,29 +10,33 @@ import type {
   ActiveCallReactionsType,
   ActiveGroupCallType,
   GroupCallRemoteParticipantType,
-} from '../types/Calling';
+  ObservedRemoteMuteType,
+} from '../types/Calling.js';
 import {
   CallViewMode,
   CallState,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../types/Calling';
-import { CallMode } from '../types/CallDisposition';
-import { generateAci } from '../types/ServiceId';
-import type { ConversationType } from '../state/ducks/conversations';
-import { AvatarColors } from '../types/Colors';
-import type { PropsType } from './CallScreen';
-import { CallScreen as UnwrappedCallScreen } from './CallScreen';
-import { DEFAULT_PREFERRED_REACTION_EMOJI } from '../reactions/constants';
-import { missingCaseError } from '../util/missingCaseError';
+} from '../types/Calling.js';
+import { CallMode } from '../types/CallDisposition.js';
+import { generateAci } from '../types/ServiceId.js';
+import type { AciString } from '../types/ServiceId.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { AvatarColors } from '../types/Colors.js';
+import type { PropsType } from './CallScreen.js';
+import { CallScreen as UnwrappedCallScreen } from './CallScreen.js';
+import { DEFAULT_PREFERRED_REACTION_EMOJI } from '../reactions/constants.js';
+import { missingCaseError } from '../util/missingCaseError.js';
 import {
   getDefaultConversation,
   getDefaultConversationWithServiceId,
-} from '../test-both/helpers/getDefaultConversation';
-import { fakeGetGroupCallVideoFrameSource } from '../test-both/helpers/fakeGetGroupCallVideoFrameSource';
-import { CallingToastProvider, useCallingToasts } from './CallingToast';
-import type { CallingImageDataCache } from './CallManager';
-import { MINUTE } from '../util/durations';
+} from '../test-helpers/getDefaultConversation.js';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.js';
+import { CallingToastProvider, useCallingToasts } from './CallingToast.js';
+import type { CallingImageDataCache } from './CallManager.js';
+import { MINUTE } from '../util/durations/index.js';
+
+const { sample, shuffle, times } = lodash;
 
 const MAX_PARTICIPANTS = 75;
 const LOCAL_DEMUX_ID = 1;
@@ -47,6 +51,7 @@ const conversation = getDefaultConversation({
   name: 'Rick Sanchez',
   phoneNumber: '3051234567',
   profileName: 'Rick Sanchez',
+  isMe: true,
 });
 
 type OverridePropsBase = {
@@ -56,6 +61,8 @@ type OverridePropsBase = {
   viewMode?: CallViewMode;
   outgoingRing?: boolean;
   reactions?: ActiveCallReactionsType;
+  myAci?: AciString;
+  showNeedsScreenRecordingPermissionsWarning?: boolean;
 };
 
 type DirectCallOverrideProps = OverridePropsBase & {
@@ -80,6 +87,9 @@ type GroupCallOverrideProps = OverridePropsBase & {
   selfViewExpanded?: boolean;
   suggestLowerHand?: boolean;
   outgoingRing?: boolean;
+  localMutedBy?: number;
+  observedRemoteMute?: ObservedRemoteMuteType;
+  forceIndex0IsMe?: boolean;
 };
 
 const createActiveDirectCallProp = (
@@ -112,10 +122,16 @@ const getConversationsByDemuxId = (overrideProps: GroupCallOverrideProps) => {
   const conversationsByDemuxId = new Map<number, ConversationType>(
     overrideProps.remoteParticipants?.map((participant, index) => [
       participant.demuxId,
-      getDefaultConversationWithServiceId({
-        isBlocked: index === 10 || index === MAX_PARTICIPANTS - 1,
-        title: `Participant ${index + 1}`,
-      }),
+      getDefaultConversationWithServiceId(
+        {
+          isBlocked: index === 10 || index === MAX_PARTICIPANTS - 1,
+          title: `Participant ${index + 1}`,
+          isMe: index === 0 && (overrideProps.forceIndex0IsMe ?? false),
+        },
+        index === 0 && (overrideProps.forceIndex0IsMe ?? false)
+          ? conversation.serviceId
+          : undefined
+      ),
     ])
   );
   conversationsByDemuxId.set(LOCAL_DEMUX_ID, conversation);
@@ -164,6 +180,8 @@ const createActiveGroupCallProp = (overrideProps: GroupCallOverrideProps) => ({
   ),
   reactions: overrideProps.reactions || [],
   suggestLowerHand: overrideProps.suggestLowerHand ?? false,
+  mutedBy: overrideProps.localMutedBy ?? undefined,
+  observedRemoteMute: overrideProps.observedRemoteMute ?? undefined,
 });
 
 const createActiveCallProp = (
@@ -181,6 +199,8 @@ const createActiveCallProp = (
     settingsDialogOpen: false,
     selfViewExpanded: overrideProps.selfViewExpanded ?? false,
     showParticipantsList: false,
+    showNeedsScreenRecordingPermissionsWarning:
+      overrideProps.showNeedsScreenRecordingPermissionsWarning ?? false,
   };
 
   switch (overrideProps.callMode) {
@@ -221,7 +241,7 @@ const createProps = (
     name: 'Morty Smith',
     profileName: 'Morty Smith',
     title: 'Morty Smith',
-    serviceId: generateAci(),
+    serviceId: overrideProps.myAci ?? generateAci(),
   }),
   openSystemPreferencesAction: action('open-system-preferences-action'),
   renderEmojiPicker: () => <>EmojiPicker</>,
@@ -231,6 +251,7 @@ const createProps = (
   sendGroupCallReaction: action('send-group-call-reaction'),
   setGroupCallVideoRequest: action('set-group-call-video-request'),
   setLocalAudio: action('set-local-audio'),
+  setLocalAudioRemoteMuted: action('set-local-audio-remote-muted'),
   setLocalPreviewContainer: action('set-local-preview-container'),
   setLocalVideo: action('set-local-video'),
   setRendererCanvas: action('set-renderer-canvas'),
@@ -993,6 +1014,145 @@ export function CallLinkUnknownContactMissingMediaKeys(): JSX.Element {
             hasRemoteVideo: false,
             mediaKeysReceived: index !== 1,
           })),
+      })}
+    />
+  );
+}
+
+export function RemoteMuteYouRemoteMutedByOther(): JSX.Element {
+  // Should show you're muted by another
+  const [props, setProps] = React.useState(() =>
+    createProps({ callMode: CallMode.Group })
+  );
+  React.useEffect(() => {
+    setProps(
+      createProps({
+        callMode: CallMode.Group,
+        hasLocalAudio: false,
+        remoteParticipants: allRemoteParticipants,
+        localMutedBy: 3,
+      })
+    );
+  }, []);
+  return <CallScreen {...props} />;
+}
+
+export function RemoteMuteYouRemoteMutedBySelf(): JSX.Element {
+  // Should show you're muted by yourself
+  const [props, setProps] = React.useState(() =>
+    createProps({ callMode: CallMode.Group })
+  );
+  const myAci = conversation.serviceId as AciString;
+  React.useEffect(() => {
+    setProps(
+      createProps({
+        callMode: CallMode.Group,
+        remoteParticipants: [
+          {
+            aci: myAci,
+            demuxId: 0,
+            hasRemoteAudio: true,
+            hasRemoteVideo: true,
+            isHandRaised: false,
+            mediaKeysReceived: true,
+            presenting: false,
+            sharingScreen: false,
+            videoAspectRatio: 1.3,
+            ...getDefaultConversation({
+              isBlocked: false,
+              title: 'Note To Self',
+              serviceId: myAci,
+              isMe: true,
+            }),
+          },
+        ],
+        localMutedBy: 0,
+        myAci,
+        forceIndex0IsMe: true,
+      })
+    );
+  }, [myAci]);
+  return <CallScreen {...props} />;
+}
+
+export function RemoteMuteObserveMuteYouSent(): JSX.Element {
+  // Should show you muted someone else
+  const [props, setProps] = React.useState(() =>
+    createProps({ callMode: CallMode.Group })
+  );
+  React.useEffect(() => {
+    setProps(
+      createProps({
+        callMode: CallMode.Group,
+        remoteParticipants: allRemoteParticipants,
+        observedRemoteMute: { source: LOCAL_DEMUX_ID, target: 0 },
+      })
+    );
+  }, []);
+  return <CallScreen {...props} />;
+}
+
+export function RemoteMuteObserveMuteOtherSent(): JSX.Element {
+  // Should show someone else muted a third person
+  const [props, setProps] = React.useState(() =>
+    createProps({ callMode: CallMode.Group })
+  );
+  React.useEffect(() => {
+    setProps(
+      createProps({
+        callMode: CallMode.Group,
+        remoteParticipants: allRemoteParticipants,
+        observedRemoteMute: { source: 3, target: 4 },
+      })
+    );
+  }, []);
+  return <CallScreen {...props} />;
+}
+
+export function RemoteMuteObserveIgnoreSelfMute(): JSX.Element {
+  // Should show nothing because the ACIs match
+  const [props, setProps] = React.useState(() =>
+    createProps({ callMode: CallMode.Group })
+  );
+  const myAci = conversation.serviceId as AciString;
+  React.useEffect(() => {
+    setProps(
+      createProps({
+        callMode: CallMode.Group,
+        remoteParticipants: [
+          {
+            aci: myAci,
+            demuxId: 0,
+            hasRemoteAudio: true,
+            hasRemoteVideo: true,
+            isHandRaised: false,
+            mediaKeysReceived: true,
+            presenting: false,
+            sharingScreen: false,
+            videoAspectRatio: 1.3,
+            ...getDefaultConversation({
+              isBlocked: false,
+              title: 'Note To Self',
+              serviceId: myAci,
+              isMe: true,
+            }),
+          },
+        ],
+        observedRemoteMute: { source: LOCAL_DEMUX_ID, target: 0 },
+        myAci,
+        forceIndex0IsMe: true,
+      })
+    );
+  }, [myAci]);
+  return <CallScreen {...props} />;
+}
+
+export function ShowNeedsScreenRecordingPermissionsWarning(): JSX.Element {
+  return (
+    <CallScreen
+      {...createProps({
+        callMode: CallMode.Direct,
+        showNeedsScreenRecordingPermissionsWarning: true,
       })}
     />
   );

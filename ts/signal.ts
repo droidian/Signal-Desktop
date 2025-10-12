@@ -5,55 +5,60 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 
-import * as Crypto from './Crypto';
-import * as Curve from './Curve';
-import { start as conversationControllerStart } from './ConversationController';
-import * as Groups from './groups';
-import OS from './util/os/osMain';
-import { isProduction } from './util/version';
-import * as RemoteConfig from './RemoteConfig';
-import { DataReader, DataWriter } from './sql/Client';
+import * as Crypto from './Crypto.js';
+import * as Curve from './Curve.js';
+import * as Groups from './groups.js';
+import OS from './util/os/osMain.js';
+import { isProduction } from './util/version.js';
+import * as RemoteConfig from './RemoteConfig.js';
+import { DataReader, DataWriter } from './sql/Client.js';
 
 // Components
-import { ConfirmationDialog } from './components/ConfirmationDialog';
+import { ConfirmationDialog } from './components/ConfirmationDialog.js';
 
 // State
-import { createApp } from './state/roots/createApp';
-import { createSafetyNumberViewer } from './state/roots/createSafetyNumberViewer';
+import { createApp } from './state/roots/createApp.js';
+import { createSafetyNumberViewer } from './state/roots/createSafetyNumberViewer.js';
 
 // Types
-import * as TypesAttachment from './types/Attachment';
-import * as VisualAttachment from './types/VisualAttachment';
-import * as MessageType from './types/Message2';
-import { Address } from './types/Address';
-import { QualifiedAddress } from './types/QualifiedAddress';
+import * as TypesAttachment from './types/Attachment.js';
+import * as VisualAttachment from './types/VisualAttachment.js';
+import * as MessageType from './types/Message2.js';
+import { Address } from './types/Address.js';
+import { QualifiedAddress } from './types/QualifiedAddress.js';
 
 // Processes / Services
-import { initializeGroupCredentialFetcher } from './services/groupCredentialFetcher';
-import { initializeNetworkObserver } from './services/networkObserver';
-import { initializeUpdateListener } from './services/updateListener';
-import { calling } from './services/calling';
-import * as storage from './services/storage';
-import { backupsService } from './services/backups';
+import { initializeGroupCredentialFetcher } from './services/groupCredentialFetcher.js';
+import { initializeNetworkObserver } from './services/networkObserver.js';
+import { initializeUpdateListener } from './services/updateListener.js';
+import { calling } from './services/calling.js';
+import * as storage from './services/storage.js';
+import { backupsService } from './services/backups/index.js';
+import * as donations from './services/donations.js';
 
-import type { LoggerType } from './types/Logging';
+import type { LoggerType } from './types/Logging.js';
 import type {
   AttachmentType,
   AttachmentWithHydratedData,
   AddressableAttachmentType,
   LocalAttachmentV2Type,
-} from './types/Attachment';
-import type { MessageAttributesType, QuotedMessageType } from './model-types.d';
-import type { SignalCoreType } from './window.d';
+} from './types/Attachment.js';
+import type {
+  MessageAttributesType,
+  QuotedMessageType,
+} from './model-types.d.ts';
+import type { SignalCoreType } from './window.d.ts';
 import type {
   EmbeddedContactType,
   EmbeddedContactWithHydratedAvatar,
-} from './types/EmbeddedContact';
+} from './types/EmbeddedContact.js';
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from './types/message/LinkPreviews';
-import type { StickerType, StickerWithHydratedData } from './types/Stickers';
+} from './types/message/LinkPreviews.js';
+import type { StickerType, StickerWithHydratedData } from './types/Stickers.js';
+import { beforeNavigateService } from './services/BeforeNavigate.js';
+import type { MessageAttachmentType } from './types/AttachmentDownload.js';
 
 type EncryptedReader = (
   attachment: Partial<AddressableAttachmentType>
@@ -63,10 +68,10 @@ type EncryptedWriter = (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
 
 type MigrationsModuleType = {
   attachmentsPath: string;
-  copyIntoAttachmentsDirectory: (
+  copyStickerIntoAttachmentsDirectory: (
     path: string
   ) => Promise<{ path: string; size: number }>;
-  copyIntoTempDirectory: (
+  copyAttachmentIntoTempDirectory: (
     path: string
   ) => Promise<{ path: string; size: number }>;
   deleteAttachmentData: (path: string) => Promise<void>;
@@ -79,9 +84,6 @@ type MigrationsModuleType = {
   deleteSticker: (path: string) => Promise<void>;
   deleteTempFile: (path: string) => Promise<void>;
   doesAttachmentExist: (path: string) => Promise<boolean>;
-  ensureAttachmentIsReencryptable: (
-    attachment: TypesAttachment.LocallySavedAttachment
-  ) => Promise<TypesAttachment.ReencryptableAttachment>;
   getAbsoluteAttachmentPath: (path: string) => string;
   getAbsoluteAvatarPath: (src: string) => string;
   getAbsoluteBadgeImageFilePath: (path: string) => string;
@@ -89,6 +91,10 @@ type MigrationsModuleType = {
   getAbsoluteDraftPath: (path: string) => string;
   getAbsoluteStickerPath: (path: string) => string;
   getAbsoluteTempPath: (path: string) => string;
+  getUnusedFilename: (options: {
+    filename: string;
+    baseDir?: string;
+  }) => string;
   loadAttachmentData: (
     attachment: Partial<AttachmentType>
   ) => Promise<AttachmentWithHydratedData>;
@@ -117,7 +123,10 @@ type MigrationsModuleType = {
     name: string;
     baseDir?: string;
   }) => Promise<null | { fullPath: string; name: string }>;
-  processNewAttachment: (attachment: AttachmentType) => Promise<AttachmentType>;
+  processNewAttachment: (
+    attachment: AttachmentType,
+    attachmentType: MessageAttachmentType
+  ) => Promise<AttachmentType>;
   processNewSticker: (stickerData: Uint8Array) => Promise<
     LocalAttachmentV2Type & {
       width: number;
@@ -165,7 +174,6 @@ export function initializeMigrations({
     createPlaintextReader,
     createWriterForNew,
     createDoesExist,
-    ensureAttachmentIsReencryptable,
     getAvatarsPath,
     getDraftPath,
     getDownloadsPath,
@@ -173,6 +181,7 @@ export function initializeMigrations({
     getStickersPath,
     getBadgesPath,
     getTempPath,
+    getUnusedFilename,
     readAndDecryptDataFromDisk,
     saveAttachmentToDisk,
   } = Attachments;
@@ -239,8 +248,6 @@ export function initializeMigrations({
   const getAbsoluteAttachmentPath = createAbsolutePathGetter(attachmentsPath);
   const deleteOnDisk = Attachments.createDeleter(attachmentsPath);
   const writeNewAttachmentData = createEncryptedWriterForNew(attachmentsPath);
-  const copyIntoAttachmentsDirectory =
-    Attachments.copyIntoAttachmentsDirectory(attachmentsPath);
   const doesAttachmentExist = createDoesExist(attachmentsPath);
 
   const stickersPath = getStickersPath(userDataPath);
@@ -248,6 +255,11 @@ export function initializeMigrations({
   const writeNewStickerData = createEncryptedWriterForNew(stickersPath);
   const deleteSticker = Attachments.createDeleter(stickersPath);
   const readStickerData = createEncryptedReader(stickersPath);
+  const copyStickerIntoAttachmentsDirectory =
+    Attachments.copyIntoAttachmentsDirectory({
+      sourceDir: stickersPath,
+      targetDir: attachmentsPath,
+    });
 
   const badgesPath = getBadgesPath(userDataPath);
   const getAbsoluteBadgeImageFilePath = createAbsolutePathGetter(badgesPath);
@@ -259,8 +271,11 @@ export function initializeMigrations({
   const writeNewPlaintextTempData = createWriterForNew(tempPath);
   const deleteTempFile = Attachments.createDeleter(tempPath);
   const readTempData = createEncryptedReader(tempPath);
-  const copyIntoTempDirectory =
-    Attachments.copyIntoAttachmentsDirectory(tempPath);
+  const copyAttachmentIntoTempDirectory =
+    Attachments.copyIntoAttachmentsDirectory({
+      sourceDir: attachmentsPath,
+      targetDir: tempPath,
+    });
 
   const draftPath = getDraftPath(userDataPath);
   const getAbsoluteDraftPath = createAbsolutePathGetter(draftPath);
@@ -280,8 +295,8 @@ export function initializeMigrations({
 
   return {
     attachmentsPath,
-    copyIntoAttachmentsDirectory,
-    copyIntoTempDirectory,
+    copyStickerIntoAttachmentsDirectory,
+    copyAttachmentIntoTempDirectory,
     deleteAttachmentData: deleteOnDisk,
     deleteAvatar,
     deleteDownloadData: deleteDownloadOnDisk,
@@ -296,7 +311,6 @@ export function initializeMigrations({
     deleteSticker,
     deleteTempFile,
     doesAttachmentExist,
-    ensureAttachmentIsReencryptable,
     getAbsoluteAttachmentPath,
     getAbsoluteAvatarPath,
     getAbsoluteBadgeImageFilePath,
@@ -304,6 +318,7 @@ export function initializeMigrations({
     getAbsoluteDraftPath,
     getAbsoluteStickerPath,
     getAbsoluteTempPath,
+    getUnusedFilename,
     loadAttachmentData,
     loadContactData,
     loadMessage: MessageType.createAttachmentLoader(loadAttachmentData),
@@ -316,10 +331,12 @@ export function initializeMigrations({
     readStickerData,
     readTempData,
     saveAttachmentToDisk,
-    processNewAttachment: (attachment: AttachmentType) =>
-      MessageType.processNewAttachment(attachment, {
+    processNewAttachment: (
+      attachment: AttachmentType,
+      attachmentType: MessageAttachmentType
+    ) =>
+      MessageType.processNewAttachment(attachment, attachmentType, {
         writeNewAttachmentData,
-        ensureAttachmentIsReencryptable,
         makeObjectUrl,
         revokeObjectUrl,
         getImageDimensions,
@@ -349,7 +366,6 @@ export function initializeMigrations({
       return MessageType.upgradeSchema(message, {
         deleteOnDisk,
         doesAttachmentExist,
-        ensureAttachmentIsReencryptable,
         getImageDimensions,
         getRegionCode,
         makeImageThumbnail,
@@ -390,9 +406,10 @@ type AttachmentsModuleType = {
     root: string
   ) => (relativePath: string) => Promise<Uint8Array>;
 
-  copyIntoAttachmentsDirectory: (
-    root: string
-  ) => (sourcePath: string) => Promise<{ path: string; size: number }>;
+  copyIntoAttachmentsDirectory: (options: {
+    sourceDir: string;
+    targetDir: string;
+  }) => (sourcePath: string) => Promise<{ path: string; size: number }>;
 
   createWriterForNew: (
     root: string,
@@ -404,6 +421,10 @@ type AttachmentsModuleType = {
   ) => (relativePath: string) => string;
 
   createDoesExist: (root: string) => (relativePath: string) => Promise<boolean>;
+  getUnusedFilename: (options: {
+    filename: string;
+    baseDir?: string;
+  }) => string;
   saveAttachmentToDisk: ({
     data,
     name,
@@ -414,9 +435,6 @@ type AttachmentsModuleType = {
     dirName?: string;
   }) => Promise<null | { fullPath: string; name: string }>;
 
-  ensureAttachmentIsReencryptable: (
-    attachment: TypesAttachment.LocallySavedAttachment
-  ) => Promise<TypesAttachment.ReencryptableAttachment>;
   readAndDecryptDataFromDisk: (options: {
     absolutePath: string;
     keysBase64: string;
@@ -457,10 +475,12 @@ export const setup = (options: {
 
   const Services = {
     backups: backupsService,
+    beforeNavigate: beforeNavigateService,
     calling,
     initializeGroupCredentialFetcher,
     initializeNetworkObserver,
     initializeUpdateListener,
+    donations,
 
     // Testing
     storage,
@@ -482,8 +502,6 @@ export const setup = (options: {
     Components,
     Crypto,
     Curve,
-    // Note: used in test/index.html, and not type-checked!
-    conversationControllerStart,
     Groups,
     Migrations,
     OS,

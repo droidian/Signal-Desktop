@@ -2,27 +2,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { Proto } from '@signalapp/mock-server';
+import { Aci } from '@signalapp/libsignal-client';
 import { assert } from 'chai';
 import createDebug from 'debug';
 import Long from 'long';
 import type { Page } from 'playwright';
 
-import type { App } from '../playwright';
-import * as durations from '../../util/durations';
-import { Bootstrap } from '../bootstrap';
-import { RECEIPT_BATCHER_WAIT_MS, ReceiptType } from '../../types/Receipt';
-import { SendStatus } from '../../messages/MessageSendState';
-import { drop } from '../../util/drop';
-import { strictAssert } from '../../util/assert';
-import { generateAci } from '../../types/ServiceId';
-import { IMAGE_GIF } from '../../types/MIME';
-import { typeIntoInput, waitForEnabledComposer } from '../helpers';
-import type { MessageAttributesType } from '../../model-types';
-import { sleep } from '../../util/sleep';
+import type { App } from '../playwright.js';
+import * as durations from '../../util/durations/index.js';
+import { Bootstrap } from '../bootstrap.js';
+import { RECEIPT_BATCHER_WAIT_MS, ReceiptType } from '../../types/Receipt.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import { drop } from '../../util/drop.js';
+import { strictAssert } from '../../util/assert.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { IMAGE_GIF } from '../../types/MIME.js';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.js';
+import type { MessageAttributesType } from '../../model-types.js';
+import { sleep } from '../../util/sleep.js';
 
 export const debug = createDebug('mock:test:edit');
 
 const ACI_1 = generateAci();
+const ACI_1_BINARY = Aci.parseFromServiceIdString(ACI_1).getRawUuidBytes();
 const UNPROCESSED_ATTACHMENT: Proto.IAttachmentPointer = {
   cdnId: Long.fromNumber(123),
   key: new Uint8Array([1, 2, 3]),
@@ -57,7 +59,7 @@ function createMessageWithQuote(body: string): Proto.IDataMessage {
     body,
     quote: {
       id: Long.fromNumber(1),
-      authorAci: ACI_1,
+      authorAciBinary: ACI_1_BINARY,
       text: 'text',
       attachments: [
         {
@@ -516,7 +518,6 @@ describe('editing', function (this: Mocha.Suite) {
       const { contacts, desktop } = bootstrap;
 
       const [friend] = contacts;
-      const contact = friend.toContact();
 
       const page = await app.getWindow();
 
@@ -567,7 +568,7 @@ describe('editing', function (this: Mocha.Suite) {
       debug("getting friend's conversationId");
       const conversationId = await page.evaluate(
         serviceId => window.SignalCI?.getConversationId(serviceId),
-        contact.aci
+        friend.device.aci
       );
       debug(`got friend's conversationId: ${conversationId}`);
       strictAssert(conversationId, 'conversationId exists');

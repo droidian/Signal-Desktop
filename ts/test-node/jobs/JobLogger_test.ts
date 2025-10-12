@@ -3,7 +3,7 @@
 
 import * as sinon from 'sinon';
 
-import { JobLogger } from '../../jobs/JobLogger';
+import { JobLogger } from '../../jobs/JobLogger.js';
 
 describe('JobLogger', () => {
   const LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
@@ -15,6 +15,8 @@ describe('JobLogger', () => {
     info: sinon.fake(),
     debug: sinon.fake(),
     trace: sinon.fake(),
+
+    child: () => createFakeLogger(),
   });
 
   LEVELS.forEach(level => {

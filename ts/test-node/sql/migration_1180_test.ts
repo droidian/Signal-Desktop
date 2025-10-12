@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import { omit } from 'lodash';
-import type { WritableDB } from '../../sql/Interface';
-import { createDB, updateToVersion, explain } from './helpers';
-import type { AttachmentDownloadJobType } from '../../types/AttachmentDownload';
-import { jsonToObject, objectToJSON, sql } from '../../sql/util';
-import { IMAGE_BMP } from '../../types/MIME';
+import lodash from 'lodash';
+import type { WritableDB } from '../../sql/Interface.js';
+import { createDB, updateToVersion, explain } from './helpers.js';
+import { jsonToObject, objectToJSON, sql } from '../../sql/util.js';
+import { IMAGE_BMP } from '../../types/MIME.js';
+import type { _AttachmentDownloadJobTypeV1040 } from '../../sql/migrations/1040-undownloaded-backed-up-media.js';
+
+const { omit } = lodash;
 
 function insertOldJob(
   db: WritableDB,
-  job: Omit<AttachmentDownloadJobType, 'source' | 'ciphertextSize'>,
+  job: Omit<_AttachmentDownloadJobTypeV1040, 'source' | 'ciphertextSize'>,
   addMessageFirst: boolean = true
 ): void {
   if (addMessageFirst) {
@@ -86,7 +88,10 @@ describe('SQL/updateToSchemaVersion1180', () => {
   });
 
   it('adds source column with default standard to any existing jobs', async () => {
-    const job: Omit<AttachmentDownloadJobType, 'source' | 'ciphertextSize'> = {
+    const job: Omit<
+      _AttachmentDownloadJobTypeV1040,
+      'source' | 'ciphertextSize'
+    > = {
       messageId: '123',
       digest: 'digest',
       attachmentType: 'attachment',

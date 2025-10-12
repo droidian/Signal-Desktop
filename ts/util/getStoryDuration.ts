@@ -1,18 +1,20 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from '../types/Attachment';
+import type { AttachmentType } from '../types/Attachment.js';
 import {
   hasFailed,
   hasNotResolved,
   isDownloaded,
   isGIF,
   isVideo,
-} from '../types/Attachment';
-import { count } from './grapheme';
-import { SECOND } from './durations';
-import * as log from '../logging/log';
-import * as Errors from '../types/errors';
+} from '../types/Attachment.js';
+import { count } from './grapheme.js';
+import { SECOND } from './durations/index.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+
+const log = createLogger('getStoryDuration');
 
 const DEFAULT_DURATION = 5 * SECOND;
 const MAX_VIDEO_DURATION = 30 * SECOND;
@@ -66,10 +68,7 @@ export async function getStoryDuration(
         videoEl.src = url;
       });
     } catch (error) {
-      log.error(
-        'getStoryDuration: Failed to load video duration',
-        Errors.toLogFormat(error)
-      );
+      log.error('Failed to load video duration', Errors.toLogFormat(error));
       return DEFAULT_DURATION;
     } finally {
       // Stop loading video

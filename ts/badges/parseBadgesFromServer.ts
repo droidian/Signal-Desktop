@@ -2,18 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as z from 'zod';
-import { isEmpty } from 'lodash';
-import { isRecord } from '../util/isRecord';
-import { isNormalNumber } from '../util/isNormalNumber';
-import * as log from '../logging/log';
-import type { BadgeType, BadgeImageType } from './types';
-import { parseBadgeCategory } from './BadgeCategory';
-import { BadgeImageTheme, parseBadgeImageTheme } from './BadgeImageTheme';
-import { safeParseUnknown } from '../util/schemas';
+import lodash from 'lodash';
+import { isRecord } from '../util/isRecord.js';
+import { isNormalNumber } from '../util/isNormalNumber.js';
+import { createLogger } from '../logging/log.js';
+import type { BadgeType, BadgeImageType } from './types.js';
+import { parseBadgeCategory } from './BadgeCategory.js';
+import { BadgeImageTheme, parseBadgeImageTheme } from './BadgeImageTheme.js';
+import { safeParseUnknown } from '../util/schemas.js';
+
+const { isEmpty } = lodash;
+
+const log = createLogger('parseBadgesFromServer');
 
 const MAX_BADGES = 1000;
 
-const badgeFromServerSchema = z.object({
+export const badgeFromServerSchema = z.object({
   category: z.string(),
   description: z.string(),
   id: z.string(),
@@ -25,7 +29,7 @@ const badgeFromServerSchema = z.object({
 });
 
 // GET /v1/subscription/configuration
-const boostBadgesFromServerSchema = z.object({
+export const boostBadgesFromServerSchema = z.object({
   levels: z.record(
     z
       .object({

@@ -5,7 +5,7 @@
 /* eslint-disable more/no-then */
 /* eslint-disable no-param-reassign */
 
-import { reject } from 'lodash';
+import lodash from 'lodash';
 
 import { z } from 'zod';
 import type {
@@ -23,8 +23,8 @@ import {
   UnidentifiedSenderMessageContent,
 } from '@signalapp/libsignal-client';
 
-import type { WebAPIType, MessageType } from './WebAPI';
-import type { SendMetadataType, SendOptionsType } from './SendMessage';
+import type { WebAPIType, MessageType } from './WebAPI.js';
+import type { SendMetadataType, SendOptionsType } from './SendMessage.js';
 import {
   OutgoingIdentityKeyError,
   OutgoingMessageError,
@@ -32,18 +32,23 @@ import {
   SendMessageChallengeError,
   UnregisteredUserError,
   HTTPError,
-} from './Errors';
-import type { CallbackResultType, CustomError } from './Types.d';
-import { Address } from '../types/Address';
-import * as Errors from '../types/errors';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import type { ServiceIdString } from '../types/ServiceId';
-import { Sessions, IdentityKeys } from '../LibSignalStores';
-import { getKeysForServiceId } from './getKeysForServiceId';
-import { SignalService as Proto } from '../protobuf';
-import * as log from '../logging/log';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
-import { isSignalServiceId } from '../util/isSignalConversation';
+} from './Errors.js';
+import type { CallbackResultType, CustomError } from './Types.d.ts';
+import { Address } from '../types/Address.js';
+import * as Errors from '../types/errors.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { Sessions, IdentityKeys } from '../LibSignalStores.js';
+import { getKeysForServiceId } from './getKeysForServiceId.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { isSignalServiceId } from '../util/isSignalConversation.js';
+import * as Bytes from '../Bytes.js';
+
+const { reject } = lodash;
+
+const log = createLogger('OutgoingMessage');
 
 export const enum SenderCertificateMode {
   WithE164,
@@ -70,10 +75,10 @@ type OutgoingMessageOptionsType = SendOptionsType & {
 
 function ciphertextMessageTypeToEnvelopeType(type: number) {
   if (type === CiphertextMessageType.PreKey) {
-    return Proto.Envelope.Type.PREKEY_BUNDLE;
+    return Proto.Envelope.Type.PREKEY_MESSAGE;
   }
   if (type === CiphertextMessageType.Whisper) {
-    return Proto.Envelope.Type.CIPHERTEXT;
+    return Proto.Envelope.Type.DOUBLE_RATCHET;
   }
   if (type === CiphertextMessageType.Plaintext) {
     return Proto.Envelope.Type.PLAINTEXT_CONTENT;
@@ -83,15 +88,19 @@ function ciphertextMessageTypeToEnvelopeType(type: number) {
   );
 }
 
+const PADDING_BLOCK = 80;
+
 function getPaddedMessageLength(messageLength: number): number {
   const messageLengthWithTerminator = messageLength + 1;
-  let messagePartCount = Math.floor(messageLengthWithTerminator / 160);
+  let messagePartCount = Math.floor(
+    messageLengthWithTerminator / PADDING_BLOCK
+  );
 
-  if (messageLengthWithTerminator % 160 !== 0) {
+  if (messageLengthWithTerminator % PADDING_BLOCK !== 0) {
     messagePartCount += 1;
   }
 
-  return messagePartCount * 160;
+  return messagePartCount * PADDING_BLOCK;
 }
 
 export function padMessage(messageBuffer: Uint8Array): Uint8Array {
@@ -386,7 +395,7 @@ export default class OutgoingMessage {
 
     if (message instanceof Proto.Content) {
       return signalEncrypt(
-        Buffer.from(this.getPlaintext()),
+        this.getPlaintext(),
         protocolAddress,
         sessionStore,
         identityKeyStore
@@ -410,7 +419,7 @@ export default class OutgoingMessage {
 
     if (accessKey && !senderCertificate) {
       log.warn(
-        'OutgoingMessage.doSendMessage: accessKey was provided, but senderCertificate was not'
+        'doSendMessage: accessKey was provided, but senderCertificate was not'
       );
     }
 
@@ -445,7 +454,6 @@ export default class OutgoingMessage {
 
         return window.textsecure.storage.protocol.enqueueSessionJob<MessageType>(
           address,
-          `doSendMessage(${address.toString()}, ${this.timestamp})`,
           async () => {
             const protocolAddress = ProtocolAddress.new(
               serviceId,
@@ -471,10 +479,10 @@ export default class OutgoingMessage {
               });
 
               const certificate = SenderCertificate.deserialize(
-                Buffer.from(senderCertificate.serialized)
+                senderCertificate.serialized
               );
               const groupIdBuffer = this.groupId
-                ? Buffer.from(this.groupId, 'base64')
+                ? Bytes.fromBase64(this.groupId)
                 : null;
 
               const content = UnidentifiedSenderMessageContent.new(
@@ -494,7 +502,7 @@ export default class OutgoingMessage {
                 type: Proto.Envelope.Type.UNIDENTIFIED_SENDER,
                 destinationDeviceId,
                 destinationRegistrationId,
-                content: buffer.toString('base64'),
+                content: Bytes.toBase64(buffer),
               };
             }
 
@@ -507,7 +515,7 @@ export default class OutgoingMessage {
               ciphertextMessage.type()
             );
 
-            const content = ciphertextMessage.serialize().toString('base64');
+            const content = Bytes.toBase64(ciphertextMessage.serialize());
 
             return {
               type,
@@ -538,7 +546,7 @@ export default class OutgoingMessage {
                 });
               } else if (this.successfulServiceIds.length > 1) {
                 log.warn(
-                  `OutgoingMessage.doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
+                  `doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
                 );
               }
             },
@@ -548,7 +556,7 @@ export default class OutgoingMessage {
                 (error.code === 401 || error.code === 403)
               ) {
                 log.warn(
-                  `OutgoingMessage.doSendMessage: Failing over to unsealed send for serviceId ${serviceId}`
+                  `doSendMessage: Failing over to unsealed send for serviceId ${serviceId}`
                 );
                 if (this.failoverServiceIds.indexOf(serviceId) === -1) {
                   this.failoverServiceIds.push(serviceId);
@@ -580,7 +588,7 @@ export default class OutgoingMessage {
               });
             } else if (this.successfulServiceIds.length > 1) {
               log.warn(
-                `OutgoingMessage.doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
+                `doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
               );
             }
           }
@@ -641,7 +649,7 @@ export default class OutgoingMessage {
         ) {
           newError = new OutgoingIdentityKeyError(serviceId, error);
           log.error(
-            'Got "key changed" error from encrypt - no identityKey for application layer',
+            'UntrustedIdentityKeyError from decrypt!',
             serviceId,
             deviceIds
           );

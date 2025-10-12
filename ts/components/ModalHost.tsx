@@ -6,17 +6,21 @@ import { createPortal } from 'react-dom';
 import type { SpringValues } from '@react-spring/web';
 import { animated } from '@react-spring/web';
 import classNames from 'classnames';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import { FocusScope } from 'react-aria';
-import type { ModalConfigType } from '../hooks/useAnimated';
-import type { Theme } from '../util/theme';
-import { assertDev } from '../util/assert';
-import { getClassNamesFor } from '../util/getClassNamesFor';
-import { themeClassName } from '../util/theme';
-import { useEscapeHandling } from '../hooks/useEscapeHandling';
-import { usePrevious } from '../hooks/usePrevious';
-import { handleOutsideClick } from '../util/handleOutsideClick';
-import * as log from '../logging/log';
+import type { ModalConfigType } from '../hooks/useAnimated.js';
+import type { Theme } from '../util/theme.js';
+import { assertDev } from '../util/assert.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.js';
+import { themeClassName } from '../util/theme.js';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.js';
+import { usePrevious } from '../hooks/usePrevious.js';
+import { handleOutsideClick } from '../util/handleOutsideClick.js';
+import { createLogger } from '../logging/log.js';
+
+const { noop } = lodash;
+
+const log = createLogger('ModalHost');
 
 export const ModalContainerContext = React.createContext<HTMLElement | null>(
   null
@@ -53,7 +57,7 @@ export const ModalHost = React.memo(function ModalHostInner({
 
   if (previousModalName !== modalName) {
     log.error(
-      `ModalHost detected conflict between ${previousModalName} ` +
+      `detected conflict between ${previousModalName} ` +
         `and ${modalName}. Consider using "key" attributes on both modals.`
     );
     assertDev(false, 'Modal conflict');
@@ -66,6 +70,12 @@ export const ModalHost = React.memo(function ModalHostInner({
     }
     return handleOutsideClick(
       node => {
+        // In strange event propagation situations we can get the actual document.body
+        // node here. We don't want to handle those events.
+        if (node === document.body) {
+          return false;
+        }
+
         // ignore clicks that originate in the calling/pip
         // when we're not handling a component in the calling/pip
         if (

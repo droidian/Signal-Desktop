@@ -2,28 +2,37 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import { createReadStream, unlinkSync, writeFileSync } from 'fs';
+import { createReadStream, unlinkSync, writeFileSync } from 'node:fs';
 import { v4 as generateGuid } from 'uuid';
-import { join } from 'path';
-import { pipeline } from 'stream/promises';
-import { Transform } from 'stream';
+import { join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Transform } from 'node:stream';
 
-import protobuf from '../protobuf/wrap';
-import * as log from '../logging/log';
-import * as Bytes from '../Bytes';
-import * as Errors from '../types/errors';
-import { APPLICATION_OCTET_STREAM } from '../types/MIME';
-import { SignalService as Proto } from '../protobuf';
+import protobuf from '../protobuf/wrap.js';
+import { createLogger } from '../logging/log.js';
+import * as Bytes from '../Bytes.js';
+import * as Errors from '../types/errors.js';
+import { APPLICATION_OCTET_STREAM } from '../types/MIME.js';
+import { type AciString, generateAci } from '../types/ServiceId.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 import {
   ParseContactsTransform,
   parseContactsV2,
-} from '../textsecure/ContactsParser';
-import type { ContactDetailsWithAvatar } from '../textsecure/ContactsParser';
-import { createTempDir, deleteTempDir } from '../updater/common';
-import { strictAssert } from '../util/assert';
-import { generateKeys, encryptAttachmentV2ToDisk } from '../AttachmentCrypto';
+} from '../textsecure/ContactsParser.js';
+import type { ContactDetailsWithAvatar } from '../textsecure/ContactsParser.js';
+import { createTempDir, deleteTempDir } from '../updater/common.js';
+import { strictAssert } from '../util/assert.js';
+import { toAciObject } from '../util/ServiceId.js';
+import {
+  generateKeys,
+  encryptAttachmentV2ToDisk,
+} from '../AttachmentCrypto.js';
+
+const log = createLogger('ContactsParser_test');
 
 const { Writer } = protobuf;
+
+const DEFAULT_ACI = generateAci();
 
 describe('ContactsParser', () => {
   let tempDir: string;
@@ -121,35 +130,6 @@ describe('ContactsParser', () => {
         }
       }
     });
-
-    it('parses an array buffer of contacts where contacts are dropped due to missing ACI', async () => {
-      let absolutePath: string | undefined;
-
-      try {
-        const avatarBuffer = generateAvatar();
-        const bytes = Bytes.concatenate([
-          generatePrefixedContact(avatarBuffer, 'invalid'),
-          avatarBuffer,
-          generatePrefixedContact(undefined, 'invalid'),
-          getTestBuffer(),
-        ]);
-
-        const fileName = generateGuid();
-        absolutePath = join(tempDir, fileName);
-        writeFileSync(absolutePath, bytes);
-
-        const contacts = await parseContactsWithSmallChunkSize({
-          absolutePath,
-        });
-        assert.strictEqual(contacts.length, 3);
-
-        await Promise.all(contacts.map(contact => verifyContact(contact)));
-      } finally {
-        if (absolutePath) {
-          unlinkSync(absolutePath);
-        }
-      }
-    });
   });
 });
 
@@ -214,12 +194,12 @@ function getTestBuffer(): Uint8Array {
 
 function generatePrefixedContact(
   avatarBuffer: Uint8Array | undefined,
-  aci = '7198E1BD-1293-452A-A098-F982FF201902'
+  aci: AciString | null = DEFAULT_ACI
 ) {
   const contactInfoBuffer = Proto.ContactDetails.encode({
     name: 'Zero Cool',
     number: '+10000000000',
-    aci,
+    aciBinary: aci == null ? null : toAciObject(aci).getRawUuidBytes(),
     avatar: avatarBuffer
       ? { contentType: 'image/jpeg', length: avatarBuffer.length }
       : undefined,
@@ -237,7 +217,7 @@ async function verifyContact(
 ): Promise<void> {
   assert.strictEqual(contact.name, 'Zero Cool');
   assert.strictEqual(contact.number, '+10000000000');
-  assert.strictEqual(contact.aci, '7198e1bd-1293-452a-a098-f982ff201902');
+  assert.strictEqual(contact.aci, DEFAULT_ACI);
 
   if (avatarIsMissing) {
     return;

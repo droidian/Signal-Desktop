@@ -3,19 +3,22 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 
-import * as log from '../logging/log';
-import type { ConversationModel } from '../models/conversations';
+import { createLogger } from '../logging/log.js';
+import type { ConversationModel } from '../models/conversations.js';
 import type {
   CustomError,
   ReadonlyMessageAttributesType,
   QuotedAttachmentType,
   QuotedMessageType,
-} from '../model-types.d';
-import type { ServiceIdString } from '../types/ServiceId';
-import { PaymentEventKind } from '../types/Payment';
-import type { AnyPaymentEvent } from '../types/Payment';
-import type { LocalizerType } from '../types/Util';
-import { missingCaseError } from '../util/missingCaseError';
+} from '../model-types.d.ts';
+import type { AciString, ServiceIdString } from '../types/ServiceId.js';
+import { PaymentEventKind } from '../types/Payment.js';
+import type { AnyPaymentEvent } from '../types/Payment.js';
+import type { LocalizerType } from '../types/Util.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { isDownloaded } from '../types/Attachment.js';
+
+const log = createLogger('helpers');
 
 export function isIncoming(
   message: Pick<ReadonlyMessageAttributesType, 'type'>
@@ -33,6 +36,27 @@ export function isStory(
   message: Pick<ReadonlyMessageAttributesType, 'type'>
 ): boolean {
   return message.type === 'story';
+}
+
+function isFromUs(
+  message: Pick<ReadonlyMessageAttributesType, 'sourceServiceId'>,
+  ourAci: AciString
+) {
+  return message.sourceServiceId === ourAci;
+}
+
+export function isOutgoingStory(
+  message: Pick<ReadonlyMessageAttributesType, 'type' | 'sourceServiceId'>,
+  ourAci: AciString
+): boolean {
+  return isStory(message) && isFromUs(message, ourAci);
+}
+
+export function isIncomingStory(
+  message: Pick<ReadonlyMessageAttributesType, 'type' | 'sourceServiceId'>,
+  ourAci: AciString
+): boolean {
+  return isStory(message) && !isFromUs(message, ourAci);
 }
 
 export type MessageAttributesWithPaymentEvent = ReadonlyMessageAttributesType &
@@ -149,13 +173,13 @@ export const shouldTryToCopyFromQuotedMessage = ({
     return true;
   }
 
-  // Otherwise, try again in case we have not yet copied over the thumbnail from the
-  // original attachment (maybe it had not been downloaded when we first checked)
+  // If there's no thumbnail, no need to try to copy anything
   if (!quoteAttachment?.thumbnail) {
     return false;
   }
 
-  if (quoteAttachment.thumbnail.copied === true) {
+  // If we already have this file, no need to copy anything
+  if (isDownloaded(quoteAttachment.thumbnail)) {
     return false;
   }
 

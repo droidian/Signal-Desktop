@@ -4,24 +4,28 @@
 import type { ReactElement, ReactNode } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import { animated } from '@react-spring/web';
 
 import { v4 as uuid } from 'uuid';
-import type { LocalizerType } from '../types/Util';
-import { ModalHost } from './ModalHost';
-import type { Theme } from '../util/theme';
-import { assertDev } from '../util/assert';
-import { getClassNamesFor } from '../util/getClassNamesFor';
-import { useAnimated } from '../hooks/useAnimated';
-import { useHasWrapped } from '../hooks/useHasWrapped';
-import * as log from '../logging/log';
+import type { LocalizerType } from '../types/Util.js';
+import { ModalHost } from './ModalHost.js';
+import type { Theme } from '../util/theme.js';
+import { assertDev } from '../util/assert.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.js';
+import { useAnimated } from '../hooks/useAnimated.js';
+import { useHasWrapped } from '../hooks/useHasWrapped.js';
+import { createLogger } from '../logging/log.js';
 import {
   isScrollOverflowVertical,
   isScrollAtTop,
   isScrollAtBottom,
   useScrollObserver,
-} from '../hooks/useSizeObserver';
+} from '../hooks/useSizeObserver.js';
+
+const { noop } = lodash;
+
+const log = createLogger('Modal');
 
 type PropsType = {
   children: ReactNode;
@@ -98,7 +102,7 @@ export function Modal({
     }
 
     const timer = setTimeout(() => {
-      log.error(`Modal ${modalName} is closed, but still visible`);
+      log.error(`${modalName} is closed, but still visible`);
       assertDev(false, `Invisible modal ${modalName}`);
     }, 0);
     return () => {

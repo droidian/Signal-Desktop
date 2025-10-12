@@ -2,40 +2,50 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useEffect } from 'react';
-import { clamp, isNumber, maxBy } from 'lodash';
+import lodash from 'lodash';
 import type { VideoFrameSource } from '@signalapp/ringrtc';
-import { Avatar, AvatarSize } from './Avatar';
-import { CallBackgroundBlur } from './CallBackgroundBlur';
-import { DirectCallRemoteParticipant } from './DirectCallRemoteParticipant';
-import { GroupCallRemoteParticipant } from './GroupCallRemoteParticipant';
-import type { LocalizerType } from '../types/Util';
+import { Avatar, AvatarSize } from './Avatar.js';
+import { CallBackgroundBlur } from './CallBackgroundBlur.js';
+import { DirectCallRemoteParticipant } from './DirectCallRemoteParticipant.js';
+import { GroupCallRemoteParticipant } from './GroupCallRemoteParticipant.js';
+import type { LocalizerType } from '../types/Util.js';
 import {
   GroupCallJoinState,
   type ActiveCallType,
   type GroupCallRemoteParticipantType,
   type GroupCallVideoRequest,
-} from '../types/Calling';
-import { CallMode } from '../types/CallDisposition';
-import { AvatarColors } from '../types/Colors';
-import type { SetRendererCanvasType } from '../state/ducks/calling';
-import { useGetCallingFrameBuffer } from '../calling/useGetCallingFrameBuffer';
-import { MAX_FRAME_HEIGHT } from '../calling/constants';
-import { usePageVisibility } from '../hooks/usePageVisibility';
-import { missingCaseError } from '../util/missingCaseError';
-import { nonRenderedRemoteParticipant } from '../util/ringrtc/nonRenderedRemoteParticipant';
-import { isReconnecting } from '../util/callingIsReconnecting';
-import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall';
-import { assertDev } from '../util/assert';
-import type { CallingImageDataCache } from './CallManager';
-import { PIP_MAXIMUM_HEIGHT, PIP_MINIMUM_HEIGHT } from './CallingPip';
+} from '../types/Calling.js';
+import { CallMode } from '../types/CallDisposition.js';
+import { AvatarColors } from '../types/Colors.js';
+import type { SetRendererCanvasType } from '../state/ducks/calling.js';
+import { useGetCallingFrameBuffer } from '../calling/useGetCallingFrameBuffer.js';
+import { MAX_FRAME_HEIGHT } from '../calling/constants.js';
+import { usePageVisibility } from '../hooks/usePageVisibility.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { nonRenderedRemoteParticipant } from '../util/ringrtc/nonRenderedRemoteParticipant.js';
+import { isReconnecting } from '../util/callingIsReconnecting.js';
+import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.js';
+import { assertDev } from '../util/assert.js';
+import type { CallingImageDataCache } from './CallManager.js';
+import {
+  PIP_MAXIMUM_HEIGHT_MULTIPLIER,
+  PIP_MINIMUM_HEIGHT_MULTIPLIER,
+  PIP_WIDTH_NORMAL,
+} from './CallingPip.js';
+
+const { clamp, isNumber, maxBy } = lodash;
 
 function BlurredBackground({
   activeCall,
   activeGroupCallSpeaker,
+  avatarSize,
+  darken,
   i18n,
 }: {
   activeCall: ActiveCallType;
   activeGroupCallSpeaker?: undefined | GroupCallRemoteParticipantType;
+  avatarSize: AvatarSize;
+  darken?: boolean;
   i18n: LocalizerType;
 }): JSX.Element {
   const {
@@ -51,7 +61,7 @@ function BlurredBackground({
     activeGroupCallSpeaker?.avatarUrl ?? activeCall.conversation.avatarUrl;
 
   return (
-    <CallBackgroundBlur avatarUrl={avatarUrl}>
+    <CallBackgroundBlur avatarUrl={avatarUrl} darken={darken}>
       <div className="module-calling-pip__video--avatar">
         <Avatar
           avatarPlaceholderGradient={avatarPlaceholderGradient}
@@ -64,7 +74,7 @@ function BlurredBackground({
           phoneNumber={phoneNumber}
           profileName={profileName}
           title={title}
-          size={AvatarSize.FORTY_EIGHT}
+          size={avatarSize}
           sharedGroupNames={sharedGroupNames}
         />
       </div>
@@ -129,16 +139,14 @@ export function CallingPipRemoteVideo({
         return;
       }
 
-      const newHeight = clamp(
-        Math.floor(width * (1 / videoAspectRatio)),
-        1,
-        MAX_FRAME_HEIGHT
-      );
+      const ratio = 1 / videoAspectRatio;
+      const newHeight = clamp(Math.floor(width * ratio), 1, MAX_FRAME_HEIGHT);
+
       // Update only for portrait video that fits, otherwise leave things as they are
       if (
         newHeight !== height &&
-        newHeight >= PIP_MINIMUM_HEIGHT &&
-        newHeight <= PIP_MAXIMUM_HEIGHT
+        ratio >= PIP_MINIMUM_HEIGHT_MULTIPLIER &&
+        ratio <= PIP_MAXIMUM_HEIGHT_MULTIPLIER
       ) {
         updateHeight(newHeight);
       }
@@ -179,13 +187,20 @@ export function CallingPipRemoteVideo({
     width,
   ]);
 
+  const avatarSize =
+    width > PIP_WIDTH_NORMAL ? AvatarSize.NINETY_SIX : AvatarSize.SIXTY_FOUR;
+
   switch (activeCall.callMode) {
     case CallMode.Direct: {
       const { hasRemoteVideo } = activeCall.remoteParticipants[0];
       if (!hasRemoteVideo) {
         return (
           <div className="module-calling-pip__video--remote">
-            <BlurredBackground activeCall={activeCall} i18n={i18n} />
+            <BlurredBackground
+              activeCall={activeCall}
+              avatarSize={avatarSize}
+              i18n={i18n}
+            />
           </div>
         );
       }
@@ -196,7 +211,12 @@ export function CallingPipRemoteVideo({
       // TODO: DESKTOP-8537 - when black bars go away, we need to make some CSS changes
       return (
         <div className="module-calling-pip__video--remote">
-          <BlurredBackground activeCall={activeCall} i18n={i18n} />
+          <BlurredBackground
+            activeCall={activeCall}
+            avatarSize={avatarSize}
+            darken
+            i18n={i18n}
+          />
           <DirectCallRemoteParticipant
             conversation={conversation}
             hasRemoteVideo={hasRemoteVideo}
@@ -212,7 +232,11 @@ export function CallingPipRemoteVideo({
       if (!activeGroupCallSpeaker) {
         return (
           <div className="module-calling-pip__video--remote">
-            <BlurredBackground activeCall={activeCall} i18n={i18n} />
+            <BlurredBackground
+              activeCall={activeCall}
+              avatarSize={avatarSize}
+              i18n={i18n}
+            />
           </div>
         );
       }
@@ -221,6 +245,8 @@ export function CallingPipRemoteVideo({
           <BlurredBackground
             activeCall={activeCall}
             activeGroupCallSpeaker={activeGroupCallSpeaker}
+            avatarSize={avatarSize}
+            darken={activeGroupCallSpeaker.hasRemoteVideo}
             i18n={i18n}
           />
           <GroupCallRemoteParticipant

@@ -23,6 +23,7 @@ export enum ToastType {
   ConversationMarkedUnread = 'ConversationMarkedUnread',
   ConversationRemoved = 'ConversationRemoved',
   ConversationUnarchived = 'ConversationUnarchived',
+  CopiedBackupKey = 'CopiedBackupKey',
   CopiedCallLink = 'CopiedCallLink',
   CopiedUsername = 'CopiedUsername',
   CopiedUsernameLink = 'CopiedUsernameLink',
@@ -30,6 +31,14 @@ export enum ToastType {
   DecryptionError = 'DecryptionError',
   DebugLogError = 'DebugLogError',
   DeleteForEveryoneFailed = 'DeleteForEveryoneFailed',
+  DonationCanceled = 'DonationCanceled',
+  DonationCanceledWithView = 'DonationCanceledWithView',
+  DonationCompleted = 'DonationCompleted',
+  DonationConfirmationNeeded = 'DonationConfirmationNeeded',
+  DonationError = 'DonationError',
+  DonationProcessing = 'DonationProcessing',
+  DonationVerificationNeeded = 'DonationVerificationNeeded',
+  DonationVerificationFailed = 'DonationVerificationFailed',
   Error = 'Error',
   Expired = 'Expired',
   FailedToDeleteUsername = 'FailedToDeleteUsername',
@@ -45,6 +54,7 @@ export enum ToastType {
   LeftGroup = 'LeftGroup',
   LinkCopied = 'LinkCopied',
   LoadingFullLogs = 'LoadingFullLogs',
+  _InternalMainProcessLoggingError = '_InternalMainProcessLoggingError',
   MaxAttachments = 'MaxAttachments',
   MediaNoLongerAvailable = 'MediaNoLongerAvailable',
   MessageBodyTooLong = 'MessageBodyTooLong',
@@ -52,8 +62,11 @@ export enum ToastType {
   OriginalMessageNotFound = 'OriginalMessageNotFound',
   PinnedConversationsFull = 'PinnedConversationsFull',
   ReactionFailed = 'ReactionFailed',
+  ReceiptSaved = 'ReceiptSaved',
+  ReceiptSaveFailed = 'ReceiptSaveFailed',
   ReportedSpam = 'ReportedSpam',
   ReportedSpamAndBlocked = 'ReportedSpamAndBlocked',
+  SQLError = 'SQLError',
   StickerPackInstallFailed = 'StickerPackInstallFailed',
   StoryMuted = 'StoryMuted',
   StoryReact = 'StoryReact',
@@ -66,6 +79,7 @@ export enum ToastType {
   TooManyMessagesToForward = 'TooManyMessagesToForward',
   TransportError = 'TransportError',
   UnableToLoadAttachment = 'UnableToLoadAttachment',
+  UnableToDownloadFromBackupTier = 'UnableToDownloadFromBackupTier',
   UnsupportedMultiAttachment = 'UnsupportedMultiAttachment',
   UnsupportedOS = 'UnsupportedOS',
   UserAddedToGroup = 'UserAddedToGroup',
@@ -109,12 +123,21 @@ export type AnyToast =
   | { toastType: ToastType.ConversationMarkedUnread }
   | { toastType: ToastType.ConversationRemoved; parameters: { title: string } }
   | { toastType: ToastType.ConversationUnarchived }
+  | { toastType: ToastType.CopiedBackupKey }
   | { toastType: ToastType.CopiedCallLink }
   | { toastType: ToastType.CopiedUsername }
   | { toastType: ToastType.CopiedUsernameLink }
   | { toastType: ToastType.DangerousFileType }
   | { toastType: ToastType.DebugLogError }
   | { toastType: ToastType.DeleteForEveryoneFailed }
+  | { toastType: ToastType.DonationCanceled }
+  | { toastType: ToastType.DonationCanceledWithView }
+  | { toastType: ToastType.DonationCompleted }
+  | { toastType: ToastType.DonationConfirmationNeeded }
+  | { toastType: ToastType.DonationError }
+  | { toastType: ToastType.DonationProcessing }
+  | { toastType: ToastType.DonationVerificationFailed }
+  | { toastType: ToastType.DonationVerificationNeeded }
   | { toastType: ToastType.Error }
   | { toastType: ToastType.Expired }
   | { toastType: ToastType.FailedToDeleteUsername }
@@ -143,6 +166,10 @@ export type AnyToast =
   | { toastType: ToastType.LeftGroup }
   | { toastType: ToastType.LinkCopied }
   | { toastType: ToastType.LoadingFullLogs }
+  | {
+      toastType: ToastType._InternalMainProcessLoggingError;
+      parameters: { count: number; logLines: Array<string> };
+    }
   | { toastType: ToastType.MaxAttachments }
   | { toastType: ToastType.MediaNoLongerAvailable }
   | { toastType: ToastType.MessageBodyTooLong }
@@ -150,9 +177,15 @@ export type AnyToast =
   | { toastType: ToastType.OriginalMessageNotFound }
   | { toastType: ToastType.PinnedConversationsFull }
   | { toastType: ToastType.ReactionFailed }
+  | {
+      toastType: ToastType.ReceiptSaved;
+      parameters: { fullPath: string };
+    }
+  | { toastType: ToastType.ReceiptSaveFailed }
   | { toastType: ToastType.ReportedSpam }
   | { toastType: ToastType.ReportedSpamAndBlocked }
   | { toastType: ToastType.StickerPackInstallFailed }
+  | { toastType: ToastType.SQLError }
   | { toastType: ToastType.StoryMuted }
   | { toastType: ToastType.StoryReact }
   | { toastType: ToastType.StoryReply }
@@ -166,6 +199,7 @@ export type AnyToast =
     }
   | { toastType: ToastType.TooManyMessagesToForward }
   | { toastType: ToastType.TransportError }
+  | { toastType: ToastType.UnableToDownloadFromBackupTier }
   | { toastType: ToastType.UnableToLoadAttachment }
   | { toastType: ToastType.UnsupportedMultiAttachment }
   | { toastType: ToastType.UnsupportedOS }

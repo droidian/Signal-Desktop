@@ -5,38 +5,41 @@ import type { ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import type { ListRowRenderer } from 'react-virtualized';
 import classNames from 'classnames';
-import { get, pick } from 'lodash';
+import lodash from 'lodash';
 
-import { missingCaseError } from '../util/missingCaseError';
-import { assertDev } from '../util/assert';
-import type { ParsedE164Type } from '../util/libphonenumberInstance';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import { ScrollBehavior } from '../types/Util';
-import { getNavSidebarWidthBreakpoint } from './_util';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId';
-import type { ShowConversationType } from '../state/ducks/conversations';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { assertDev } from '../util/assert.js';
+import type { ParsedE164Type } from '../util/libphonenumberInstance.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import { ScrollBehavior } from '../types/Util.js';
+import { getNavSidebarWidthBreakpoint } from './_util.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId.js';
+import type { ShowConversationType } from '../state/ducks/conversations.js';
 
-import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem';
-import type { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox';
-import type { ContactListItemConversationType as ContactListItemPropsType } from './conversationList/ContactListItem';
-import type { GroupListItemConversationType } from './conversationList/GroupListItem';
-import { ConversationListItem } from './conversationList/ConversationListItem';
-import { ContactListItem } from './conversationList/ContactListItem';
-import { ContactCheckbox as ContactCheckboxComponent } from './conversationList/ContactCheckbox';
-import { PhoneNumberCheckbox as PhoneNumberCheckboxComponent } from './conversationList/PhoneNumberCheckbox';
-import { UsernameCheckbox as UsernameCheckboxComponent } from './conversationList/UsernameCheckbox';
+import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.js';
+import type { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.js';
+import type { ContactListItemConversationType as ContactListItemPropsType } from './conversationList/ContactListItem.js';
+import type { GroupListItemConversationType } from './conversationList/GroupListItem.js';
+import { ConversationListItem } from './conversationList/ConversationListItem.js';
+import { ContactListItem } from './conversationList/ContactListItem.js';
+import { ContactCheckbox as ContactCheckboxComponent } from './conversationList/ContactCheckbox.js';
+import { PhoneNumberCheckbox as PhoneNumberCheckboxComponent } from './conversationList/PhoneNumberCheckbox.js';
+import { UsernameCheckbox as UsernameCheckboxComponent } from './conversationList/UsernameCheckbox.js';
 import {
   ComposeStepButton,
   Icon as ComposeStepButtonIcon,
-} from './conversationList/ComposeStepButton';
-import { StartNewConversation as StartNewConversationComponent } from './conversationList/StartNewConversation';
-import { SearchResultsLoadingFakeHeader as SearchResultsLoadingFakeHeaderComponent } from './conversationList/SearchResultsLoadingFakeHeader';
-import { SearchResultsLoadingFakeRow as SearchResultsLoadingFakeRowComponent } from './conversationList/SearchResultsLoadingFakeRow';
-import { UsernameSearchResultListItem } from './conversationList/UsernameSearchResultListItem';
-import { GroupListItem } from './conversationList/GroupListItem';
-import { ListView } from './ListView';
-import { Button, ButtonVariant } from './Button';
+} from './conversationList/ComposeStepButton.js';
+import { StartNewConversation as StartNewConversationComponent } from './conversationList/StartNewConversation.js';
+import { SearchResultsLoadingFakeHeader as SearchResultsLoadingFakeHeaderComponent } from './conversationList/SearchResultsLoadingFakeHeader.js';
+import { SearchResultsLoadingFakeRow as SearchResultsLoadingFakeRowComponent } from './conversationList/SearchResultsLoadingFakeRow.js';
+import { UsernameSearchResultListItem } from './conversationList/UsernameSearchResultListItem.js';
+import { GroupListItem } from './conversationList/GroupListItem.js';
+import { ListView } from './ListView.js';
+import { Button, ButtonVariant } from './Button.js';
+import { ListTile } from './ListTile.js';
+
+const { get, pick } = lodash;
 
 export enum RowType {
   ArchiveButton = 'ArchiveButton',
@@ -46,6 +49,7 @@ export enum RowType {
   ContactCheckbox = 'ContactCheckbox',
   PhoneNumberCheckbox = 'PhoneNumberCheckbox',
   UsernameCheckbox = 'UsernameCheckbox',
+  GenericCheckbox = 'GenericCheckbox',
   Conversation = 'Conversation',
   CreateNewGroup = 'CreateNewGroup',
   FindByUsername = 'FindByUsername',
@@ -58,6 +62,7 @@ export enum RowType {
   SelectSingleGroup = 'SelectSingleGroup',
   StartNewConversation = 'StartNewConversation',
   UsernameSearchResult = 'UsernameSearchResult',
+  EmptyResults = 'EmptyResults',
 }
 
 type ArchiveButtonRowType = {
@@ -98,6 +103,19 @@ type UsernameCheckboxRowType = {
   username: string;
   isChecked: boolean;
   isFetching: boolean;
+};
+
+export enum GenericCheckboxRowIcon {
+  Contact = 'contact',
+  Group = 'group',
+}
+
+type GenericCheckboxRowType = {
+  type: RowType.GenericCheckbox;
+  icon: GenericCheckboxRowIcon;
+  label: string;
+  isChecked: boolean;
+  onClick: () => void;
 };
 
 type ConversationRowType = {
@@ -160,6 +178,11 @@ type UsernameRowType = {
   isFetchingUsername: boolean;
 };
 
+type EmptyResultsRowType = {
+  type: RowType.EmptyResults;
+  message: string;
+};
+
 export type Row =
   | ArchiveButtonRowType
   | BlankRowType
@@ -168,6 +191,7 @@ export type Row =
   | ClearFilterButtonRowType
   | PhoneNumberCheckboxRowType
   | UsernameCheckboxRowType
+  | GenericCheckboxRowType
   | ConversationRowType
   | CreateNewGroupRowType
   | FindByUsername
@@ -178,7 +202,8 @@ export type Row =
   | SearchResultsLoadingFakeRowType
   | StartNewConversationRowType
   | SelectSingleGroupRowType
-  | UsernameRowType;
+  | UsernameRowType
+  | EmptyResultsRowType;
 
 export type PropsType = {
   dimensions?: {
@@ -222,6 +247,7 @@ export type PropsType = {
 const NORMAL_ROW_HEIGHT = 76;
 const SELECT_ROW_HEIGHT = 52;
 const HEADER_ROW_HEIGHT = 40;
+const EMPTY_RESULTS_ROW_HEIGHT = 48 + 20 + 48;
 
 export function ConversationList({
   dimensions,
@@ -260,33 +286,49 @@ export function ConversationList({
         assertDev(false, `Expected a row at index ${index}`);
         return NORMAL_ROW_HEIGHT;
       }
-      switch (row.type) {
+      const { type } = row;
+      switch (type) {
         case RowType.Header:
         case RowType.SearchResultsLoadingFakeHeader:
           return HEADER_ROW_HEIGHT;
         case RowType.SelectSingleGroup:
         case RowType.ContactCheckbox:
+        case RowType.GenericCheckbox:
         case RowType.Contact:
         case RowType.CreateNewGroup:
         case RowType.FindByUsername:
         case RowType.FindByPhoneNumber:
           return SELECT_ROW_HEIGHT;
-        default:
+        case RowType.ArchiveButton:
+        case RowType.Blank:
+        case RowType.ClearFilterButton:
+        case RowType.PhoneNumberCheckbox:
+        case RowType.UsernameCheckbox:
+        case RowType.Conversation:
+        case RowType.MessageSearchResult:
+        case RowType.SearchResultsLoadingFakeRow:
+        case RowType.StartNewConversation:
+        case RowType.UsernameSearchResult:
           return NORMAL_ROW_HEIGHT;
+        case RowType.EmptyResults:
+          return EMPTY_RESULTS_ROW_HEIGHT;
+        default:
+          throw missingCaseError(type);
       }
     },
     [getRow]
   );
 
   const renderRow: ListRowRenderer = useCallback(
-    ({ key, index, style }) => {
+    ({ key: providedKey, index, style }) => {
       const row = getRow(index);
       if (!row) {
         assertDev(false, `Expected a row at index ${index}`);
-        return <div key={key} style={style} />;
+        return <div key={providedKey} style={style} />;
       }
 
       let result: ReactNode;
+      let key: string;
       switch (row.type) {
         case RowType.ArchiveButton:
           result = (
@@ -305,9 +347,11 @@ export function ConversationList({
               </span>
             </button>
           );
+          key = 'archive';
           break;
         case RowType.Blank:
           result = undefined;
+          key = `blank:${providedKey}`;
           break;
         case RowType.Contact: {
           const { isClickable = true, hasContextMenu = false } = row;
@@ -329,6 +373,7 @@ export function ConversationList({
               onRemove={isClickable ? removeConversation : undefined}
             />
           );
+          key = `contact:${row.contact.id}`;
           break;
         }
         case RowType.ContactCheckbox:
@@ -343,6 +388,7 @@ export function ConversationList({
               theme={theme}
             />
           );
+          key = `contact-checkbox:${row.contact.id}`;
           break;
         case RowType.ClearFilterButton:
           result = (
@@ -361,6 +407,7 @@ export function ConversationList({
               </Button>
             </div>
           );
+          key = 'clear-filter';
           break;
         case RowType.PhoneNumberCheckbox:
           result = (
@@ -380,6 +427,7 @@ export function ConversationList({
               theme={theme}
             />
           );
+          key = `phone-number-checkbox:${row.phoneNumber.e164}`;
           break;
         case RowType.UsernameCheckbox:
           result = (
@@ -399,6 +447,23 @@ export function ConversationList({
               theme={theme}
             />
           );
+          key = `username-checkbox:${row.username}`;
+          break;
+        case RowType.GenericCheckbox:
+          result = (
+            <ListTile.checkbox
+              leading={
+                <i
+                  className={`module-conversation-list__generic-checkbox-icon module-conversation-list__generic-checkbox-icon--${row.icon}`}
+                />
+              }
+              title={row.label}
+              isChecked={row.isChecked}
+              onClick={row.onClick}
+              clickable
+            />
+          );
+          key = `generic-checkbox:${providedKey}`;
           break;
         case RowType.Conversation: {
           const itemProps = pick(row.conversation, [
@@ -432,6 +497,7 @@ export function ConversationList({
             'serviceId',
           ]);
           const { badges, title, unreadCount, lastMessage } = itemProps;
+          key = `conversation:${itemProps.id}`;
           result = (
             <ConversationListItem
               {...itemProps}
@@ -460,6 +526,7 @@ export function ConversationList({
               onClick={showChooseGroupMembers}
             />
           );
+          key = 'create-new-group';
           break;
         case RowType.FindByUsername:
           result = (
@@ -469,6 +536,7 @@ export function ConversationList({
               onClick={showFindByUsername}
             />
           );
+          key = 'find-by-username';
           break;
         case RowType.FindByPhoneNumber:
           result = (
@@ -478,6 +546,7 @@ export function ConversationList({
               onClick={showFindByPhoneNumber}
             />
           );
+          key = 'find-by-phonenumber';
           break;
         case RowType.Header: {
           const headerText = row.getHeaderText(i18n);
@@ -489,16 +558,20 @@ export function ConversationList({
               {headerText}
             </div>
           );
+          key = `header:${providedKey}`;
           break;
         }
         case RowType.MessageSearchResult:
           result = <>{renderMessageSearchResult?.(row.messageId)}</>;
+          key = `message-search-result:${row.messageId}`;
           break;
         case RowType.SearchResultsLoadingFakeHeader:
           result = <SearchResultsLoadingFakeHeaderComponent />;
+          key = `loading-header:${providedKey}`;
           break;
         case RowType.SearchResultsLoadingFakeRow:
           result = <SearchResultsLoadingFakeRowComponent />;
+          key = `loading-row:${providedKey}`;
           break;
         case RowType.SelectSingleGroup:
           result = (
@@ -508,6 +581,7 @@ export function ConversationList({
               onSelectGroup={onSelectConversation}
             />
           );
+          key = `select-single-group:${row.group.id}`;
           break;
         case RowType.StartNewConversation:
           result = (
@@ -523,6 +597,7 @@ export function ConversationList({
               showConversation={showConversation}
             />
           );
+          key = `start-new-conversation:${row.phoneNumber}`;
           break;
         case RowType.UsernameSearchResult:
           result = (
@@ -538,6 +613,15 @@ export function ConversationList({
               showConversation={showConversation}
             />
           );
+          key = `username-search-result:${row.username}`;
+          break;
+        case RowType.EmptyResults:
+          result = (
+            <div className="module-conversation-list__empty-results">
+              {row.message}
+            </div>
+          );
+          key = 'empty-results';
           break;
         default:
           throw missingCaseError(row);

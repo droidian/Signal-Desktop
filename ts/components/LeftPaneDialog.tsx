@@ -4,11 +4,22 @@
 import type { ReactChild, ReactNode } from 'react';
 import React from 'react';
 import classNames from 'classnames';
-import { Tooltip, TooltipPlacement } from './Tooltip';
-import { WidthBreakpoint } from './_util';
+import { Tooltip, TooltipPlacement } from './Tooltip.js';
+import { WidthBreakpoint } from './_util.js';
 
 const BASE_CLASS_NAME = 'LeftPaneDialog';
 const TOOLTIP_CLASS_NAME = `${BASE_CLASS_NAME}__tooltip`;
+export type DismissOptions =
+  | {
+      onClose?: undefined;
+      closeLabel?: undefined;
+      hasXButton?: false;
+    }
+  | {
+      onClose: () => void;
+      closeLabel: string;
+      hasXButton: true;
+    };
 
 export type PropsType = {
   type?: 'warning' | 'error' | 'info';
@@ -30,18 +41,7 @@ export type PropsType = {
       hasAction: boolean;
     }
 ) &
-  (
-    | {
-        onClose?: undefined;
-        closeLabel?: undefined;
-        hasXButton?: false;
-      }
-    | {
-        onClose: () => void;
-        closeLabel: string;
-        hasXButton: true;
-      }
-  );
+  DismissOptions;
 
 export function LeftPaneDialog({
   icon = 'warning',

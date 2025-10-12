@@ -4,32 +4,33 @@
 import type {
   ReadonlyMessageAttributesType,
   MessageAttributesType,
-} from '../model-types.d';
-import type { SignalService as Proto } from '../protobuf';
-import type { AciString } from '../types/ServiceId';
-import { DataReader } from '../sql/Client';
-import * as log from '../logging/log';
-import { normalizeAci } from './normalizeAci';
-import { getAuthorId } from '../messages/helpers';
-import { getTimestampFromLong } from './timestampLongUtils';
+} from '../model-types.d.ts';
+import { type AciString } from '../types/ServiceId.js';
+import type { ProcessedStoryContext } from '../textsecure/Types.d.ts';
+import { DataReader } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+import { getAuthorId } from '../messages/helpers.js';
+
+const log = createLogger('findStoryMessage');
 
 export async function findStoryMessages(
   conversationId: string,
-  storyContext?: Proto.DataMessage.IStoryContext
+  storyContext?: ProcessedStoryContext
 ): Promise<Array<MessageAttributesType>> {
   if (!storyContext) {
     return [];
   }
 
-  const { authorAci: rawAuthorAci, sentTimestamp } = storyContext;
+  const { authorAci, sentTimestamp: sentAt } = storyContext;
 
-  if (!rawAuthorAci || !sentTimestamp) {
+  if (!sentAt) {
     return [];
   }
 
-  const authorAci = normalizeAci(rawAuthorAci, 'findStoryMessage');
+  if (authorAci == null) {
+    return [];
+  }
 
-  const sentAt = getTimestampFromLong(sentTimestamp);
   const ourConversationId =
     window.ConversationController.getOurConversationIdOrThrow();
 

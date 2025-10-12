@@ -1,24 +1,29 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { first, last, sortBy } from 'lodash';
+import lodash from 'lodash';
 import {
   AuthCredentialWithPniResponse,
   CallLinkAuthCredentialResponse,
   GenericServerPublicParams,
-} from '@signalapp/libsignal-client/zkgroup';
+} from '@signalapp/libsignal-client/zkgroup.js';
 
-import { getClientZkAuthOperations } from '../util/zkgroup';
+import { getClientZkAuthOperations } from '../util/zkgroup.js';
 
-import type { GroupCredentialType } from '../textsecure/WebAPI';
-import { strictAssert } from '../util/assert';
-import * as durations from '../util/durations';
-import { BackOff } from '../util/BackOff';
-import { sleep } from '../util/sleep';
-import { toDayMillis } from '../util/timestamp';
-import { toTaggedPni } from '../types/ServiceId';
-import { toPniObject, toAciObject } from '../util/ServiceId';
-import * as log from '../logging/log';
+import type { GroupCredentialType } from '../textsecure/WebAPI.js';
+import { strictAssert } from '../util/assert.js';
+import * as durations from '../util/durations/index.js';
+import { BackOff } from '../util/BackOff.js';
+import { sleep } from '../util/sleep.js';
+import { toDayMillis } from '../util/timestamp.js';
+import { toTaggedPni } from '../types/ServiceId.js';
+import { toPniObject, toAciObject } from '../util/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import * as Bytes from '../Bytes.js';
+
+const { first, last, sortBy } = lodash;
+
+const log = createLogger('groupCredentialFetcher');
 
 export const GROUP_CREDENTIALS_KEY = 'groupCredentials';
 
@@ -219,11 +224,9 @@ export async function maybeFetchNewCredentials(): Promise<void> {
         toAciObject(aci),
         toPniObject(pni),
         item.redemptionTime,
-        new AuthCredentialWithPniResponse(
-          Buffer.from(item.credential, 'base64')
-        )
+        new AuthCredentialWithPniResponse(Bytes.fromBase64(item.credential))
       );
-    const credential = authCredential.serialize().toString('base64');
+    const credential = Bytes.toBase64(authCredential.serialize());
 
     return {
       redemptionTime: item.redemptionTime * durations.SECOND,
@@ -235,21 +238,21 @@ export async function maybeFetchNewCredentials(): Promise<void> {
     sortCredentials(rawCredentials).map(formatCredential);
   const genericServerPublicParamsBase64 = window.getGenericServerPublicParams();
   const genericServerPublicParams = new GenericServerPublicParams(
-    Buffer.from(genericServerPublicParamsBase64, 'base64')
+    Bytes.fromBase64(genericServerPublicParamsBase64)
   );
 
   function formatCallingCredential(
     item: GroupCredentialType
   ): GroupCredentialType {
     const response = new CallLinkAuthCredentialResponse(
-      Buffer.from(item.credential, 'base64')
+      Bytes.fromBase64(item.credential)
     );
     const authCredential = response.receive(
       toAciObject(aci),
       item.redemptionTime,
       genericServerPublicParams
     );
-    const credential = authCredential.serialize().toString('base64');
+    const credential = Bytes.toBase64(authCredential.serialize());
 
     return {
       redemptionTime: item.redemptionTime * durations.SECOND,

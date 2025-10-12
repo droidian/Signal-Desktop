@@ -1,24 +1,27 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import Backbone from 'backbone';
-import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import googleLibphonenumber from 'google-libphonenumber';
 import * as moment from 'moment';
 // @ts-expect-error -- no types
-import 'moment/min/locales.min';
+import 'moment/min/locales.min.js';
 
-import { textsecure } from '../../textsecure';
-import * as Attachments from '../attachments';
-import { setup } from '../../signal';
-import { addSensitivePath } from '../../util/privacy';
-import * as dns from '../../util/dns';
-import * as log from '../../logging/log';
-import { SignalContext } from '../context';
+import { textsecure } from '../../textsecure/index.js';
+import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging.js';
+import { setup } from '../../signal.js';
+import { addSensitivePath } from '../../util/privacy.js';
+import * as dns from '../../util/dns.js';
+import { createLogger } from '../../logging/log.js';
+import { SignalContext } from '../context.js';
+import * as Attachments from './attachments.js';
+
+const { PhoneNumberUtil, PhoneNumberFormat } = googleLibphonenumber;
+
+const log = createLogger('phase2-dependencies');
+
+initializeLogging();
 
 window.nodeSetImmediate = setImmediate;
-window.Backbone = Backbone;
 window.textsecure = textsecure;
 
 const { config } = window.SignalContext;
@@ -28,7 +31,6 @@ window.WebAPI = window.textsecure.WebAPI.initialize({
   storageUrl: config.storageUrl,
   updatesUrl: config.updatesUrl,
   resourcesUrl: config.resourcesUrl,
-  directoryConfig: config.directoryConfig,
   cdnUrlObject: {
     0: config.cdnUrl0,
     2: config.cdnUrl2,
@@ -39,13 +41,11 @@ window.WebAPI = window.textsecure.WebAPI.initialize({
   proxyUrl: config.proxyUrl,
   version: config.version,
   disableIPv6: config.disableIPv6,
+  stripePublishableKey: config.stripePublishableKey,
 });
 
 window.libphonenumberInstance = PhoneNumberUtil.getInstance();
 window.libphonenumberFormat = PhoneNumberFormat;
-
-window.React = React;
-window.ReactDOM = ReactDOM;
 
 const { resolvedTranslationsLocale, preferredSystemLocales, localeOverride } =
   config;

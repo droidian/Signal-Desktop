@@ -1,22 +1,24 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as log from '../logging/log';
+import { createLogger } from '../logging/log.js';
 
-import { explodePromise } from '../util/explodePromise';
+import { explodePromise } from '../util/explodePromise.js';
 
-import { saveNewMessageBatcher } from '../util/messageBatcher';
-import { handleAttachmentDownloadsForNewMessage } from '../util/queueAttachmentDownloads';
+import { saveNewMessageBatcher } from '../util/messageBatcher.js';
+import { handleAttachmentDownloadsForNewMessage } from '../util/queueAttachmentDownloads.js';
 import {
   modifyTargetMessage,
   ModifyTargetMessageResult,
-} from '../util/modifyTargetMessage';
-import { shouldReplyNotifyUser } from '../util/shouldReplyNotifyUser';
-import { isStory } from './helpers';
-import { drop } from '../util/drop';
+} from '../util/modifyTargetMessage.js';
+import { isStory } from './helpers.js';
+import { drop } from '../util/drop.js';
 
-import type { ConversationModel } from '../models/conversations';
-import type { MessageModel } from '../models/messages';
+import type { ConversationModel } from '../models/conversations.js';
+import type { MessageModel } from '../models/messages.js';
+import { maybeNotify } from './maybeNotify.js';
+
+const log = createLogger('saveAndNotify');
 
 export async function saveAndNotify(
   message: MessageModel,
@@ -48,22 +50,18 @@ export async function saveAndNotify(
 
     drop(conversation.onNewMessage(message));
 
-    if (await shouldReplyNotifyUser(message.attributes, conversation)) {
-      await conversation.notify(message.attributes);
-    }
+    drop(maybeNotify({ message: message.attributes, conversation }));
 
     // Increment the sent message count if this is an outgoing message
     if (message.get('type') === 'outgoing') {
       conversation.incrementSentMessageCount();
     }
 
-    window.Whisper.events.trigger('incrementProgress');
+    window.Whisper.events.emit('incrementProgress');
     confirm();
 
     if (!isStory(message.attributes)) {
-      drop(
-        conversation.queueJob('updateUnread', () => conversation.updateUnread())
-      );
+      conversation.throttledUpdateUnread();
     }
   } finally {
     resolve();

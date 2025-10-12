@@ -1,26 +1,27 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import { createReadStream } from 'fs';
+import Long from 'long';
+import { createReadStream } from 'node:fs';
 import type {
   AttachmentWithHydratedData,
   UploadedAttachmentType,
-} from '../types/Attachment';
-import { MIMETypeToString, supportsIncrementalMac } from '../types/MIME';
-import { getRandomBytes } from '../Crypto';
-import { strictAssert } from './assert';
-import { backupsService } from '../services/backups';
-import { tusUpload } from './uploads/tusProtocol';
-import { defaultFileReader } from './uploads/uploads';
-import type { AttachmentUploadFormResponseType } from '../textsecure/WebAPI';
+} from '../types/Attachment.js';
+import { MIMETypeToString, supportsIncrementalMac } from '../types/MIME.js';
+import { getRandomBytes } from '../Crypto.js';
+import { strictAssert } from './assert.js';
+import { backupsService } from '../services/backups/index.js';
+import { tusUpload } from './uploads/tusProtocol.js';
+import { defaultFileReader } from './uploads/uploads.js';
+import type { AttachmentUploadFormResponseType } from '../textsecure/WebAPI.js';
 import {
   type EncryptedAttachmentV2,
   encryptAttachmentV2ToDisk,
   safeUnlink,
   type PlaintextSourceType,
-  type HardcodedIVForEncryptionType,
-} from '../AttachmentCrypto';
-import { missingCaseError } from './missingCaseError';
-import { uuidToBytes } from './uuidToBytes';
+} from '../AttachmentCrypto.js';
+import { missingCaseError } from './missingCaseError.js';
+import { uuidToBytes } from './uuidToBytes.js';
+import { isVisualMedia } from '../types/Attachment.js';
 
 const CDNS_SUPPORTING_TUS = new Set([3]);
 
@@ -33,6 +34,7 @@ export async function uploadAttachment(
   const keys = getRandomBytes(64);
   const needIncrementalMac = supportsIncrementalMac(attachment.contentType);
 
+  const uploadTimestamp = Date.now();
   const { cdnKey, cdnNumber, encrypted } = await encryptAndUploadAttachment({
     keys,
     needIncrementalMac,
@@ -40,8 +42,10 @@ export async function uploadAttachment(
     uploadType: 'standard',
   });
 
-  const { blurHash, caption, clientUuid, fileName, flags, height, width } =
-    attachment;
+  const { blurHash, caption, clientUuid, flags, height, width } = attachment;
+
+  // Strip filename for visual media (images and videos) to prevent metadata leakage
+  const fileName = isVisualMedia(attachment) ? undefined : attachment.fileName;
 
   return {
     cdnKey,
@@ -54,6 +58,7 @@ export async function uploadAttachment(
     plaintextHash: encrypted.plaintextHash,
     incrementalMac: encrypted.incrementalMac,
     chunkSize: encrypted.chunkSize,
+    uploadTimestamp: Long.fromNumber(uploadTimestamp),
 
     contentType: MIMETypeToString(attachment.contentType),
     fileName,
@@ -67,13 +72,11 @@ export async function uploadAttachment(
 }
 
 export async function encryptAndUploadAttachment({
-  dangerousIv,
   keys,
   needIncrementalMac,
   plaintext,
   uploadType,
 }: {
-  dangerousIv?: HardcodedIVForEncryptionType;
   keys: Uint8Array;
   needIncrementalMac: boolean;
   plaintext: PlaintextSourceType;
@@ -102,7 +105,6 @@ export async function encryptAndUploadAttachment({
     }
 
     const encrypted = await encryptAttachmentV2ToDisk({
-      dangerousIv,
       getAbsoluteAttachmentPath:
         window.Signal.Migrations.getAbsoluteAttachmentPath,
       keys,

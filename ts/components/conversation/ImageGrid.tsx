@@ -7,22 +7,22 @@ import classNames from 'classnames';
 import type {
   AttachmentForUIType,
   AttachmentType,
-} from '../../types/Attachment';
+} from '../../types/Attachment.js';
 import {
   areAllAttachmentsVisual,
   getAlt,
-  getImageDimensions,
+  getImageDimensionsForTimeline,
   getThumbnailUrl,
   getUrl,
   isDownloadable,
   isIncremental,
   isVideoAttachment,
-} from '../../types/Attachment';
+} from '../../types/Attachment.js';
 
-import { Image, CurveType } from './Image';
+import { Image, CurveType } from './Image.js';
 
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import { AttachmentDetailPill } from './AttachmentDetailPill';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import { AttachmentDetailPill } from './AttachmentDetailPill.js';
 
 export type DirectionType = 'incoming' | 'outgoing';
 
@@ -158,7 +158,7 @@ export function ImageGrid({
   );
 
   const showAttachmentOrNoLongerAvailableToast = React.useCallback(
-    attachmentIndex =>
+    (attachmentIndex: number) =>
       attachments[attachmentIndex].isPermanentlyUndownloadable
         ? showMediaNoLongerAvailableToast
         : showVisualAttachment,
@@ -189,7 +189,7 @@ export function ImageGrid({
   });
 
   if (attachments.length === 1 || !areAllAttachmentsVisual(attachments)) {
-    const { height, width } = getImageDimensions(
+    const { height, width } = getImageDimensionsForTimeline(
       attachments[0],
       isSticker ? stickerSize : undefined
     );

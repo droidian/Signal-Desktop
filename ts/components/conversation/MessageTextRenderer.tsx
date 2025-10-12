@@ -5,27 +5,29 @@ import React from 'react';
 import type { ReactElement } from 'react';
 import classNames from 'classnames';
 import emojiRegex from 'emoji-regex';
-import { sortBy } from 'lodash';
+import lodash from 'lodash';
 
-import { linkify, SUPPORTED_PROTOCOLS } from './Linkify';
+import { linkify, SUPPORTED_PROTOCOLS } from './Linkify.js';
 import type {
   BodyRangesForDisplayType,
   DisplayNode,
   HydratedBodyRangeMention,
   RangeNode,
-} from '../../types/BodyRange';
+} from '../../types/BodyRange.js';
 import {
   BodyRange,
   insertRange,
   collapseRangeTree,
   groupContiguousSpoilers,
-} from '../../types/BodyRange';
-import { AtMention } from './AtMention';
-import { isLinkSneaky } from '../../types/LinkPreview';
-import { Emojify } from './Emojify';
-import { AddNewLines } from './AddNewLines';
-import type { LocalizerType } from '../../types/Util';
-import type { FunJumboEmojiSize } from '../fun/FunEmoji';
+} from '../../types/BodyRange.js';
+import { AtMention } from './AtMention.js';
+import { isLinkSneaky } from '../../types/LinkPreview.js';
+import { Emojify } from './Emojify.js';
+import { AddNewLines } from './AddNewLines.js';
+import type { LocalizerType } from '../../types/Util.js';
+import type { FunJumboEmojiSize } from '../fun/FunEmoji.js';
+
+const { sortBy } = lodash;
 
 const EMOJI_REGEXP = emojiRegex();
 export enum RenderLocation {
@@ -45,6 +47,7 @@ type Props = {
   i18n: LocalizerType;
   isSpoilerExpanded: Record<number, boolean>;
   messageText: string;
+  originalMessageText: string;
   onExpandSpoiler?: (data: Record<number, boolean>) => void;
   onMentionTrigger: (conversationId: string) => void;
   renderLocation: RenderLocation;
@@ -64,9 +67,12 @@ export function MessageTextRenderer({
   onMentionTrigger,
   renderLocation,
   textLength,
+  originalMessageText,
 }: Props): JSX.Element {
   const finalNodes = React.useMemo(() => {
-    const links = disableLinks ? [] : extractLinks(messageText);
+    const links = disableLinks
+      ? []
+      : extractLinks(messageText, originalMessageText);
 
     // We need mentions to come last; they can't have children for proper rendering
     const sortedRanges = sortBy(bodyRanges, range =>
@@ -104,7 +110,7 @@ export function MessageTextRenderer({
 
     // Group all contigusous spoilers to create one parent spoiler element in the DOM
     return groupContiguousSpoilers(nodes);
-  }, [bodyRanges, disableLinks, messageText, textLength]);
+  }, [bodyRanges, disableLinks, messageText, originalMessageText, textLength]);
 
   return (
     <>
@@ -268,7 +274,13 @@ function renderNode({
     !isLinkSneaky(node.url)
   ) {
     return (
-      <a key={key} className={formattingClasses} href={node.url}>
+      <a
+        key={key}
+        className={formattingClasses}
+        href={node.url}
+        target="_blank"
+        rel="noreferrer"
+      >
         {content}
       </a>
     );
@@ -424,19 +436,34 @@ function renderText({
 }
 
 export function extractLinks(
-  messageText: string
+  messageText: string,
+  // Full, untruncated message text
+  originalMessageText: string
 ): ReadonlyArray<BodyRange<{ url: string }>> {
   // to support emojis immediately before links
   // we replace emojis with a space for each byte
   const matches = linkify.match(
-    messageText.replace(EMOJI_REGEXP, s => ' '.repeat(s.length))
+    originalMessageText.replace(EMOJI_REGEXP, s => ' '.repeat(s.length))
   );
 
   if (matches == null) {
     return [];
   }
 
-  return matches.map(match => {
+  // Only return matches present in the `messageText`
+  const currentMatches = matches.filter(({ index, lastIndex, url }) => {
+    if (index >= messageText.length) {
+      return false;
+    }
+
+    if (lastIndex > messageText.length) {
+      return false;
+    }
+
+    return messageText.slice(index, lastIndex) === url;
+  });
+
+  return currentMatches.map(match => {
     return {
       start: match.index,
       length: match.lastIndex - match.index,

@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /* eslint-disable max-classes-per-file */
 
-import { isNumber, last } from 'lodash';
-import type { ReadableDB, WritableDB } from './Interface';
-import type { LoggerType } from '../types/Logging';
+import lodash from 'lodash';
+
+import type { ReadableDB, WritableDB } from './Interface.js';
+import type { LoggerType } from '../types/Logging.js';
+
+const { isNumber, last } = lodash;
 
 export type JSONRow = Readonly<{ json: string }>;
 export type JSONRows = Array<JSONRow>;
@@ -417,4 +420,28 @@ export class TableIterator<ObjectType extends { id: string }> {
       complete = messages.length < this.pageSize;
     }
   }
+}
+
+export function convertOptionalIntegerToBoolean(
+  optionalInteger?: number
+): boolean | undefined {
+  if (optionalInteger === 1) {
+    return true;
+  }
+  if (optionalInteger === 0) {
+    return false;
+  }
+  return undefined;
+}
+
+export function convertOptionalBooleanToInteger(
+  optionalBoolean?: boolean
+): 1 | 0 | undefined {
+  if (optionalBoolean === true) {
+    return 1;
+  }
+  if (optionalBoolean === false) {
+    return 0;
+  }
+  return undefined;
 }

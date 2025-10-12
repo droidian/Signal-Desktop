@@ -3,16 +3,18 @@
 
 import { v4 as generateUuid } from 'uuid';
 
-import type { AttachmentType } from '../types/Attachment';
-import { MessageModel } from '../models/messages';
-import * as log from '../logging/log';
-import { IMAGE_JPEG } from '../types/MIME';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SeenStatus } from '../MessageSeenStatus';
-import { findAndDeleteOnboardingStoryIfExists } from './findAndDeleteOnboardingStoryIfExists';
-import { saveNewMessageBatcher } from './messageBatcher';
-import { strictAssert } from './assert';
-import { incrementMessageCounter } from './incrementMessageCounter';
+import type { AttachmentType } from '../types/Attachment.js';
+import { MessageModel } from '../models/messages.js';
+import { createLogger } from '../logging/log.js';
+import { IMAGE_JPEG } from '../types/MIME.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import { findAndDeleteOnboardingStoryIfExists } from './findAndDeleteOnboardingStoryIfExists.js';
+import { saveNewMessageBatcher } from './messageBatcher.js';
+import { strictAssert } from './assert.js';
+import { incrementMessageCounter } from './incrementMessageCounter.js';
+
+const log = createLogger('downloadOnboardingStory');
 
 // First, this function is meant to be run after a storage service sync
 
@@ -41,7 +43,7 @@ export async function downloadOnboardingStory(): Promise<void> {
   );
 
   if (existingOnboardingStoryMessageIds) {
-    log.info('downloadOnboardingStory: has existingOnboardingStoryMessageIds');
+    log.info('has existingOnboardingStoryMessageIds');
     return;
   }
 
@@ -49,7 +51,7 @@ export async function downloadOnboardingStory(): Promise<void> {
 
   const manifest = await server.getOnboardingStoryManifest();
 
-  log.info('downloadOnboardingStory: got manifest version:', manifest.version);
+  log.info('got manifest version:', manifest.version);
 
   const imageFilenames =
     userLocale in manifest.languages
@@ -61,7 +63,7 @@ export async function downloadOnboardingStory(): Promise<void> {
     imageFilenames
   );
 
-  log.info('downloadOnboardingStory: downloaded stories:', imageBuffers.length);
+  log.info('downloaded stories:', imageBuffers.length);
 
   const attachments: Array<AttachmentType> = await Promise.all(
     imageBuffers.map(async data => {
@@ -71,11 +73,14 @@ export async function downloadOnboardingStory(): Promise<void> {
         ...local,
       };
 
-      return window.Signal.Migrations.processNewAttachment(attachment);
+      return window.Signal.Migrations.processNewAttachment(
+        attachment,
+        'attachment'
+      );
     })
   );
 
-  log.info('downloadOnboardingStory: getting signal conversation');
+  log.info('getting signal conversation');
   const signalConversation =
     await window.ConversationController.getOrCreateSignalConversation();
 
@@ -112,5 +117,5 @@ export async function downloadOnboardingStory(): Promise<void> {
     storyMessages.map(message => message.id)
   );
 
-  log.info('downloadOnboardingStory: done');
+  log.info('done');
 }

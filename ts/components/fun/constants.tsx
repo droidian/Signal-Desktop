@@ -1,8 +1,8 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { EmojiPickerCategory } from './data/emojis';
-import type { StickerPackType } from '../../state/ducks/stickers';
+import { EmojiPickerCategory } from './data/emojis.js';
+import type { StickerPackType } from '../../state/ducks/stickers.js';
 
 export enum FunPickerTabKey {
   Emoji = 'Emoji',
@@ -19,6 +19,10 @@ export enum FunGifsCategory {
   Excited = 'Excited',
   Sad = 'Sad',
   Angry = 'Angry',
+}
+
+export enum FunEmojisBase {
+  ThisMessage = 'ThisMessage',
 }
 
 export enum FunSectionCommon {
@@ -48,7 +52,10 @@ export function toFunStickersPackSection(
   return `StickerPack:${pack.id}` as FunStickersPackSection;
 }
 
-export type FunEmojisSection = FunSectionCommon | EmojiPickerCategory;
+export type FunEmojisSection =
+  | FunSectionCommon
+  | EmojiPickerCategory
+  | FunEmojisBase;
 export type FunStickersSection =
   | FunSectionCommon
   | FunStickersSectionBase
@@ -56,8 +63,9 @@ export type FunStickersSection =
 export type FunGifsSection = FunSectionCommon | FunGifsCategory;
 
 export const FunEmojisSectionOrder: ReadonlyArray<
-  FunSectionCommon.Recents | EmojiPickerCategory
+  FunSectionCommon.Recents | FunEmojisBase.ThisMessage | EmojiPickerCategory
 > = [
+  FunEmojisBase.ThisMessage,
   FunSectionCommon.Recents,
   EmojiPickerCategory.SmileysAndPeople,
   EmojiPickerCategory.AnimalsAndNature,

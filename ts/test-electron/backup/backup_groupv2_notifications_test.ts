@@ -3,27 +3,26 @@
 
 import { v4 as generateGuid } from 'uuid';
 
-import { DataWriter } from '../../sql/Client';
-import { SignalService as Proto } from '../../protobuf';
+import { DataWriter } from '../../sql/Client.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
 
-import { generateAci, generatePni } from '../../types/ServiceId';
-import type { ServiceIdString } from '../../types/ServiceId';
-import type { MessageAttributesType } from '../../model-types';
-import type { GroupV2ChangeType } from '../../groups';
-import { getRandomBytes } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { strictAssert } from '../../util/assert';
-import { DurationInSeconds } from '../../util/durations';
+import { generateAci, generatePni } from '../../types/ServiceId.js';
+import type { MessageAttributesType } from '../../model-types.js';
+import type { GroupV2ChangeType } from '../../groups.js';
+import { getRandomBytes } from '../../Crypto.js';
+import * as Bytes from '../../Bytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { DurationInSeconds } from '../../util/durations/index.js';
 import {
   OUR_ACI,
   OUR_PNI,
   setupBasics,
   asymmetricRoundtripHarness,
   symmetricRoundtripHarness,
-} from './helpers';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders';
+} from './helpers.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.js';
 
 // Note: this should be kept up to date with GroupV2Change.stories.tsx, to
 //   maintain the comprehensive set of GroupV2 notifications we need to handle
@@ -48,10 +47,8 @@ function createMessage(
   change: GroupV2ChangeType,
   {
     disableIncrement = false,
-    sourceServiceId = change.from || OUR_ACI,
   }: {
     disableIncrement?: boolean;
-    sourceServiceId?: ServiceIdString;
   } = {
     disableIncrement: false,
   }
@@ -72,11 +69,7 @@ function createMessage(
     readStatus: ReadStatus.Read,
     seenStatus: SeenStatus.Seen,
     type: 'group-v2-change',
-    sourceServiceId,
-    source:
-      sourceServiceId === CONTACT_A || sourceServiceId === CONTACT_A_PNI
-        ? CONTACT_A_E164
-        : undefined,
+    sourceServiceId: OUR_ACI,
   };
 }
 
@@ -723,19 +716,16 @@ describe('backup/groupv2/notifications', () => {
     });
 
     it('MemberAddFromInvited items', async () => {
-      const firstBefore = createMessage(
-        {
-          from: OUR_PNI,
-          details: [
-            {
-              type: 'member-add-from-invite',
-              aci: OUR_ACI,
-              inviter: CONTACT_B,
-            },
-          ],
-        },
-        { sourceServiceId: OUR_ACI }
-      );
+      const firstBefore = createMessage({
+        from: OUR_PNI,
+        details: [
+          {
+            type: 'member-add-from-invite',
+            aci: OUR_ACI,
+            inviter: CONTACT_B,
+          },
+        ],
+      });
       const firstAfter = createMessage(
         {
           from: OUR_ACI,
@@ -750,18 +740,15 @@ describe('backup/groupv2/notifications', () => {
         { disableIncrement: true }
       );
 
-      const secondBefore = createMessage(
-        {
-          from: OUR_PNI,
-          details: [
-            {
-              type: 'member-add-from-invite',
-              aci: OUR_ACI,
-            },
-          ],
-        },
-        { sourceServiceId: OUR_ACI }
-      );
+      const secondBefore = createMessage({
+        from: OUR_PNI,
+        details: [
+          {
+            type: 'member-add-from-invite',
+            aci: OUR_ACI,
+          },
+        ],
+      });
       const secondAfter = createMessage(
         {
           from: OUR_ACI,
@@ -775,18 +762,15 @@ describe('backup/groupv2/notifications', () => {
         { disableIncrement: true }
       );
 
-      const thirdBefore = createMessage(
-        {
-          from: CONTACT_A_PNI,
-          details: [
-            {
-              type: 'member-add-from-invite',
-              aci: CONTACT_A,
-            },
-          ],
-        },
-        { sourceServiceId: CONTACT_A }
-      );
+      const thirdBefore = createMessage({
+        from: CONTACT_A_PNI,
+        details: [
+          {
+            type: 'member-add-from-invite',
+            aci: CONTACT_A,
+          },
+        ],
+      });
       const thirdAfter = createMessage(
         {
           from: CONTACT_A,
@@ -800,19 +784,16 @@ describe('backup/groupv2/notifications', () => {
         { disableIncrement: true }
       );
 
-      const fourthBefore = createMessage(
-        {
-          from: CONTACT_A_PNI,
-          details: [
-            {
-              type: 'member-add-from-invite',
-              aci: CONTACT_A,
-              pni: CONTACT_A_PNI,
-            },
-          ],
-        },
-        { sourceServiceId: CONTACT_A }
-      );
+      const fourthBefore = createMessage({
+        from: CONTACT_A_PNI,
+        details: [
+          {
+            type: 'member-add-from-invite',
+            aci: CONTACT_A,
+            pni: CONTACT_A_PNI,
+          },
+        ],
+      });
       const fourthAfter = createMessage(
         {
           from: CONTACT_A,
@@ -869,17 +850,14 @@ describe('backup/groupv2/notifications', () => {
 
     it('MemberAddFromLink items asymmetric', async () => {
       const before: Array<MessageAttributesType> = [
-        createMessage(
-          {
-            details: [
-              {
-                type: 'member-add-from-link',
-                aci: CONTACT_A,
-              },
-            ],
-          },
-          { sourceServiceId: CONTACT_A }
-        ),
+        createMessage({
+          details: [
+            {
+              type: 'member-add-from-link',
+              aci: CONTACT_A,
+            },
+          ],
+        }),
       ];
       const after: Array<MessageAttributesType> = [
         createMessage(

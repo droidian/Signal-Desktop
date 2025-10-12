@@ -4,6 +4,7 @@
 import React, {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -12,63 +13,69 @@ import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 import { fabric } from 'fabric';
 import { useSelector } from 'react-redux';
-import { get, has, noop } from 'lodash';
+import lodash from 'lodash';
 import type {
   EmojiPickDataType,
   Props as EmojiPickerProps,
-} from './emoji/EmojiPicker';
-import type { DraftBodyRanges } from '../types/BodyRange';
-import type { ImageStateType } from '../mediaEditor/ImageStateType';
+} from './emoji/EmojiPicker.js';
+import type { DraftBodyRanges } from '../types/BodyRange.js';
+import type { ImageStateType } from '../mediaEditor/ImageStateType.js';
 import type {
   InputApi,
   Props as CompositionInputProps,
-} from './CompositionInput';
-import type { LocalizerType } from '../types/Util';
-import type { MIMEType } from '../types/MIME';
-import type { Props as StickerButtonProps } from './stickers/StickerButton';
-import type { imageToBlurHash } from '../util/imageToBlurHash';
-
-import { MediaEditorFabricAnalogTimeSticker } from '../mediaEditor/MediaEditorFabricAnalogTimeSticker';
-import { MediaEditorFabricCropRect } from '../mediaEditor/MediaEditorFabricCropRect';
-import { MediaEditorFabricDigitalTimeSticker } from '../mediaEditor/MediaEditorFabricDigitalTimeSticker';
-import { MediaEditorFabricIText } from '../mediaEditor/MediaEditorFabricIText';
-import { MediaEditorFabricPencilBrush } from '../mediaEditor/MediaEditorFabricPencilBrush';
-import { MediaEditorFabricSticker } from '../mediaEditor/MediaEditorFabricSticker';
-import { fabricEffectListener } from '../mediaEditor/fabricEffectListener';
-import { getRGBA, getHSL } from '../mediaEditor/util/color';
+} from './CompositionInput.js';
+import type { LocalizerType } from '../types/Util.js';
+import type { MIMEType } from '../types/MIME.js';
+import type { Props as StickerButtonProps } from './stickers/StickerButton.js';
+import type { imageToBlurHash } from '../util/imageToBlurHash.js';
+import { MediaEditorFabricAnalogTimeSticker } from '../mediaEditor/MediaEditorFabricAnalogTimeSticker.js';
+import { MediaEditorFabricCropRect } from '../mediaEditor/MediaEditorFabricCropRect.js';
+import { MediaEditorFabricDigitalTimeSticker } from '../mediaEditor/MediaEditorFabricDigitalTimeSticker.js';
+import { MediaEditorFabricIText } from '../mediaEditor/MediaEditorFabricIText.js';
+import { MediaEditorFabricPencilBrush } from '../mediaEditor/MediaEditorFabricPencilBrush.js';
+import { MediaEditorFabricSticker } from '../mediaEditor/MediaEditorFabricSticker.js';
+import { fabricEffectListener } from '../mediaEditor/fabricEffectListener.js';
+import { getRGBA, getHSL } from '../mediaEditor/util/color.js';
 import {
   getTextStyleAttributes,
   TextStyle,
-} from '../mediaEditor/util/getTextStyleAttributes';
-import * as log from '../logging/log';
-import { Button, ButtonVariant } from './Button';
-import { CompositionInput } from './CompositionInput';
-import { ContextMenu } from './ContextMenu';
-import { EmojiButton } from './emoji/EmojiButton';
-import { IMAGE_PNG } from '../types/MIME';
-import { SizeObserver } from '../hooks/useSizeObserver';
-import { Slider } from './Slider';
-import { Spinner } from './Spinner';
-import { StickerButton } from './stickers/StickerButton';
-import { Theme } from '../util/theme';
-import { ThemeType } from '../types/Util';
-import { arrow } from '../util/keyboard';
-import { canvasToBytes } from '../util/canvasToBytes';
-import { loadImage } from '../util/loadImage';
-import { getConversationSelector } from '../state/selectors/conversations';
-import { hydrateRanges } from '../types/BodyRange';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
-import { useFabricHistory } from '../mediaEditor/useFabricHistory';
-import { usePortal } from '../hooks/usePortal';
-import { useUniqueId } from '../hooks/useUniqueId';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
-import { FunEmojiPicker } from './fun/FunEmojiPicker';
-import { FunEmojiPickerButton, FunStickerPickerButton } from './fun/FunButton';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import { FunStickerPicker } from './fun/FunStickerPicker';
-import type { FunStickerSelection } from './fun/panels/FunPanelStickers';
-import { drop } from '../util/drop';
-import type { FunTimeStickerStyle } from './fun/constants';
+} from '../mediaEditor/util/getTextStyleAttributes.js';
+import { createLogger } from '../logging/log.js';
+import { Button, ButtonVariant } from './Button.js';
+import { CompositionInput } from './CompositionInput.js';
+import { ContextMenu } from './ContextMenu.js';
+import { EmojiButton } from './emoji/EmojiButton.js';
+import { IMAGE_PNG } from '../types/MIME.js';
+import { SizeObserver } from '../hooks/useSizeObserver.js';
+import { Slider } from './Slider.js';
+import { Spinner } from './Spinner.js';
+import { StickerButton } from './stickers/StickerButton.js';
+import { Theme } from '../util/theme.js';
+import { ThemeType } from '../types/Util.js';
+import { arrow } from '../util/keyboard.js';
+import { canvasToBytes } from '../util/canvasToBytes.js';
+import { loadImage } from '../util/loadImage.js';
+import { getConversationSelector } from '../state/selectors/conversations.js';
+import { hydrateRanges } from '../types/BodyRange.js';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.js';
+import { useFabricHistory } from '../mediaEditor/useFabricHistory.js';
+import { usePortal } from '../hooks/usePortal.js';
+import { isFunPickerEnabled } from './fun/isFunPickerEnabled.js';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.js';
+import {
+  FunEmojiPickerButton,
+  FunStickerPickerButton,
+} from './fun/FunButton.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import { FunStickerPicker } from './fun/FunStickerPicker.js';
+import type { FunStickerSelection } from './fun/panels/FunPanelStickers.js';
+import { drop } from '../util/drop.js';
+import type { FunTimeStickerStyle } from './fun/constants.js';
+import * as Errors from '../types/errors.js';
+
+const { get, has, noop } = lodash;
+
+const log = createLogger('MediaEditor');
 
 export type MediaEditorResultType = Readonly<{
   data: Uint8Array;
@@ -79,6 +86,7 @@ export type MediaEditorResultType = Readonly<{
 }>;
 
 export type PropsType = {
+  isCreatingStory: boolean;
   doneButtonLabel?: string;
   i18n: LocalizerType;
   imageSrc: string;
@@ -153,6 +161,7 @@ export function MediaEditor({
   doneButtonLabel,
   i18n,
   imageSrc,
+  isCreatingStory,
   isSending,
   onClose,
   onDone,
@@ -195,7 +204,7 @@ export function MediaEditor({
 
   const inputApiRef = useRef<InputApi | undefined>();
 
-  const canvasId = useUniqueId();
+  const canvasId = useId();
 
   const [imageState, setImageState] =
     useState<ImageStateType>(INITIAL_IMAGE_STATE);
@@ -237,7 +246,7 @@ export function MediaEditor({
   );
 
   const handlePickSticker = useCallback(
-    (_packId, _stickerId, src: string) => {
+    (_packId: string, _stickerId: number, src: string) => {
       async function run() {
         if (!fabricCanvas) {
           return;
@@ -357,9 +366,20 @@ export function MediaEditor({
       setImageState(newImageState);
       takeSnapshot('initial state', newImageState, canvas);
     };
-    img.onerror = () => {
+    img.onerror = (
+      event: Event | string,
+      source?: string,
+      line?: number,
+      column?: number,
+      error?: Error
+    ) => {
       // This is a bad experience, but it should be impossible.
-      log.error('<MediaEditor>: image failed to load. Closing');
+      log.error(
+        '<MediaEditor>: image failed to load. Closing',
+        event,
+        Errors.toLocation(source, line, column),
+        Errors.toLogFormat(error)
+      );
       onClose();
     };
     img.src = imageSrc;
@@ -371,11 +391,17 @@ export function MediaEditor({
 
   const [editMode, setEditMode] = useState<EditMode | undefined>();
 
-  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard(i18n);
+  const tryClose = useRef<() => void | undefined>();
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'MediaEditor',
+    tryClose,
+  });
 
   const onTryClose = useCallback(() => {
-    confirmDiscardIf(canUndo, onClose);
-  }, [confirmDiscardIf, canUndo, onClose]);
+    confirmDiscardIf(canUndo || isCreatingStory, onClose);
+  }, [confirmDiscardIf, canUndo, isCreatingStory, onClose]);
+  tryClose.current = onTryClose;
 
   // Keyboard support
   useEffect(() => {

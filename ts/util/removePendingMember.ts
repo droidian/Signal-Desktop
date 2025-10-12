@@ -1,13 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import type { SignalService as Proto } from '../protobuf';
-import type { ServiceIdString } from '../types/ServiceId';
-import * as log from '../logging/log';
-import { getConversationIdForLogging } from './idForLogging';
-import { isMemberPending } from './groupMembershipUtils';
-import { isNotNil } from './isNotNil';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import type { SignalService as Proto } from '../protobuf/index.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import { getConversationIdForLogging } from './idForLogging.js';
+import { isMemberPending } from './groupMembershipUtils.js';
+import { isNotNil } from './isNotNil.js';
+
+const log = createLogger('removePendingMember');
 
 export async function removePendingMember(
   conversationAttributes: ConversationAttributesType,
@@ -22,7 +24,7 @@ export async function removePendingMember(
       //   in conflict/retry cases.
       if (!isMemberPending(conversationAttributes, uuid)) {
         log.warn(
-          `removePendingMember/${idLog}: ${uuid} is not a pending member of group. Returning early.`
+          `${idLog}: ${uuid} is not a pending member of group. Returning early.`
         );
         return undefined;
       }

@@ -1,18 +1,18 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import {
   createReadStream,
   readFile as readFileCallback,
   writeFile as writeFileCallback,
-} from 'fs';
-import { pipeline } from 'stream/promises';
-import { basename, dirname, join, resolve as resolvePath } from 'path';
+} from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import { basename, dirname, join, resolve as resolvePath } from 'node:path';
 
 import pify from 'pify';
 
-import { sign, verify } from './curve';
+import { sign, verify } from './curve.js';
 
 const readFile = pify(readFileCallback);
 const writeFile = pify(writeFileCallback);
@@ -21,7 +21,7 @@ export async function generateSignature(
   updatePackagePath: string,
   version: string,
   privateKeyPath: string
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   const privateKey = await loadHexFromPath(privateKeyPath);
   const message = await generateMessage(updatePackagePath, version);
 
@@ -31,8 +31,8 @@ export async function generateSignature(
 export async function verifySignature(
   updatePackagePath: string,
   version: string,
-  signature: Buffer,
-  publicKey: Buffer
+  signature: Uint8Array,
+  publicKey: Uint8Array
 ): Promise<boolean> {
   const message = await generateMessage(updatePackagePath, version);
 
@@ -44,7 +44,7 @@ export async function verifySignature(
 async function generateMessage(
   updatePackagePath: string,
   version: string
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   const hash = await _getFileHash(updatePackagePath);
   const messageString = `${Buffer.from(hash).toString('hex')}-${version}`;
 
@@ -55,7 +55,7 @@ export async function writeSignature(
   updatePackagePath: string,
   version: string,
   privateKeyPath: string
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   const signaturePath = getSignaturePath(updatePackagePath);
   const signature = await generateSignature(
     updatePackagePath,
@@ -90,7 +90,7 @@ export function hexToBinary(target: string): Buffer {
   return Buffer.from(target, 'hex');
 }
 
-export function binaryToHex(data: Buffer): string {
+export function binaryToHex(data: Uint8Array): string {
   return Buffer.from(data).toString('hex');
 }
 
@@ -102,7 +102,7 @@ export async function loadHexFromPath(target: string): Promise<Buffer> {
 
 export async function writeHexToPath(
   target: string,
-  data: Buffer
+  data: Uint8Array
 ): Promise<void> {
   await writeFile(target, binaryToHex(data));
 }

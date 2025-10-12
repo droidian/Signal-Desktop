@@ -1,20 +1,20 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { render, unmountComponentAtNode } from 'react-dom';
+import { createRoot, type Root } from 'react-dom/client';
 
-import type { ConversationAttributesType } from '../model-types.d';
-import type { ConversationModel } from '../models/conversations';
-import type { PreJoinConversationType } from '../state/ducks/conversations';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import type { ConversationModel } from '../models/conversations.js';
+import type { PreJoinConversationType } from '../state/ducks/conversations.js';
 
-import { DataWriter } from '../sql/Client';
-import * as Bytes from '../Bytes';
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { HTTPError } from '../textsecure/Errors';
-import { SignalService as Proto } from '../protobuf';
-import type { ContactAvatarType } from '../types/Avatar';
-import { ToastType } from '../types/Toast';
+import { DataWriter } from '../sql/Client.js';
+import * as Bytes from '../Bytes.js';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { HTTPError } from '../textsecure/Errors.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import type { ContactAvatarType } from '../types/Avatar.js';
+import { ToastType } from '../types/Toast.js';
 import {
   applyNewAvatar,
   decryptGroupDescription,
@@ -24,17 +24,19 @@ import {
   idForLogging,
   LINK_VERSION_ERROR,
   parseGroupLink,
-} from '../groups';
-import { createGroupV2JoinModal } from '../state/roots/createGroupV2JoinModal';
-import { explodePromise } from '../util/explodePromise';
-import { isAccessControlEnabled } from './util';
-import { isGroupV1 } from '../util/whatTypeOfConversation';
-import { longRunningTaskWrapper } from '../util/longRunningTaskWrapper';
-import { sleep } from '../util/sleep';
-import { dropNull } from '../util/dropNull';
-import { getLocalAttachmentUrl } from '../util/getLocalAttachmentUrl';
-import { type Loadable, LoadingState } from '../util/loadable';
-import { missingCaseError } from '../util/missingCaseError';
+} from '../groups.js';
+import { createGroupV2JoinModal } from '../state/roots/createGroupV2JoinModal.js';
+import { explodePromise } from '../util/explodePromise.js';
+import { isAccessControlEnabled } from './util.js';
+import { isGroupV1 } from '../util/whatTypeOfConversation.js';
+import { longRunningTaskWrapper } from '../util/longRunningTaskWrapper.js';
+import { sleep } from '../util/sleep.js';
+import { dropNull } from '../util/dropNull.js';
+import { getLocalAttachmentUrl } from '../util/getLocalAttachmentUrl.js';
+import { type Loadable, LoadingState } from '../util/loadable.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+
+const log = createLogger('joinViaLink');
 
 export async function joinViaLink(value: string): Promise<void> {
   let inviteLinkPassword: string;
@@ -43,7 +45,7 @@ export async function joinViaLink(value: string): Promise<void> {
     ({ inviteLinkPassword, masterKey } = parseGroupLink(value));
   } catch (error: unknown) {
     const errorString = Errors.toLogFormat(error);
-    log.error(`joinViaLink: Failed to parse group link ${errorString}`);
+    log.error(`Failed to parse group link ${errorString}`);
 
     if (error instanceof Error && error.name === LINK_VERSION_ERROR) {
       window.reduxActions.globalModals.showErrorModal({
@@ -71,9 +73,7 @@ export async function joinViaLink(value: string): Promise<void> {
   const ourAci = window.textsecure.storage.user.getCheckedAci();
 
   if (existingConversation && existingConversation.hasMember(ourAci)) {
-    log.warn(
-      `joinViaLink/${logId}: Already a member of group, opening conversation`
-    );
+    log.warn(`${logId}: Already a member of group, opening conversation`);
     window.reduxActions.conversations.showConversation({
       conversationId: existingConversation.id,
     });
@@ -96,9 +96,7 @@ export async function joinViaLink(value: string): Promise<void> {
     });
   } catch (error: unknown) {
     const errorString = Errors.toLogFormat(error);
-    log.error(
-      `joinViaLink/${logId}: Failed to fetch group info - ${errorString}`
-    );
+    log.error(`${logId}: Failed to fetch group info - ${errorString}`);
 
     if (
       error instanceof HTTPError &&
@@ -124,7 +122,7 @@ export async function joinViaLink(value: string): Promise<void> {
 
   if (!isAccessControlEnabled(dropNull(result.addFromInviteLink))) {
     log.error(
-      `joinViaLink/${logId}: addFromInviteLink value of ${result.addFromInviteLink} is invalid`
+      `${logId}: addFromInviteLink value of ${result.addFromInviteLink} is invalid`
     );
     window.reduxActions.globalModals.showErrorModal({
       description: window.i18n('icu:GroupV2--join--link-revoked'),
@@ -158,9 +156,7 @@ export async function joinViaLink(value: string): Promise<void> {
     existingConversation &&
     existingConversation.isMemberAwaitingApproval(ourAci)
   ) {
-    log.warn(
-      `joinViaLink/${logId}: Already awaiting approval, opening conversation`
-    );
+    log.warn(`${logId}: Already awaiting approval, opening conversation`);
     const timestamp = existingConversation.get('timestamp') || Date.now();
     // eslint-disable-next-line camelcase
     const active_at = existingConversation.get('active_at') || Date.now();
@@ -214,9 +210,9 @@ export async function joinViaLink(value: string): Promise<void> {
 
   const closeDialog = async () => {
     try {
-      if (groupV2InfoNode) {
-        unmountComponentAtNode(groupV2InfoNode);
-        groupV2InfoNode = undefined;
+      if (groupV2InfoRoot) {
+        groupV2InfoRoot.unmount();
+        groupV2InfoRoot = undefined;
       }
 
       window.reduxActions.conversations.setPreJoinConversation(undefined);
@@ -237,9 +233,9 @@ export async function joinViaLink(value: string): Promise<void> {
 
   const join = async () => {
     try {
-      if (groupV2InfoNode) {
-        unmountComponentAtNode(groupV2InfoNode);
-        groupV2InfoNode = undefined;
+      if (groupV2InfoRoot) {
+        groupV2InfoRoot.unmount();
+        groupV2InfoRoot = undefined;
       }
 
       window.reduxActions.conversations.setPreJoinConversation(undefined);
@@ -266,7 +262,7 @@ export async function joinViaLink(value: string): Promise<void> {
                 targetConversation.isMemberAwaitingApproval(ourAci)))
           ) {
             log.warn(
-              `joinViaLink/${logId}: User is part of group on second check, opening conversation`
+              `${logId}: User is part of group on second check, opening conversation`
             );
             window.reduxActions.conversations.showConversation({
               conversationId: targetConversation.id,
@@ -388,14 +384,14 @@ export async function joinViaLink(value: string): Promise<void> {
     getPreJoinConversation()
   );
 
-  log.info(`joinViaLink/${logId}: Showing modal`);
+  log.info(`${logId}: Showing modal`);
 
-  let groupV2InfoNode: HTMLDivElement | undefined =
-    document.createElement('div');
+  const groupV2InfoNode = document.createElement('div');
+  let groupV2InfoRoot: Root | undefined;
 
-  render(
-    createGroupV2JoinModal(window.reduxStore, { join, onClose: closeDialog }),
-    groupV2InfoNode
+  groupV2InfoRoot = createRoot(groupV2InfoNode);
+  groupV2InfoRoot.render(
+    createGroupV2JoinModal(window.reduxStore, { join, onClose: closeDialog })
   );
 
   // We declare a new function here so we can await but not block
@@ -430,7 +426,7 @@ export async function joinViaLink(value: string): Promise<void> {
         };
 
         // Dialog has been dismissed; we'll delete the unneeeded avatar
-        if (!groupV2InfoNode) {
+        if (!groupV2InfoRoot) {
           await window.Signal.Migrations.deleteAttachmentData(
             attributes.avatar.path
           );

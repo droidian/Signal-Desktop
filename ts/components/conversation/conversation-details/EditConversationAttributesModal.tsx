@@ -2,24 +2,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { FormEventHandler } from 'react';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
-import type { LocalizerType } from '../../../types/Util';
-import { Modal } from '../../Modal';
-import { AvatarEditor } from '../../AvatarEditor';
-import { AvatarPreview } from '../../AvatarPreview';
-import { Button, ButtonVariant } from '../../Button';
-import { Spinner } from '../../Spinner';
-import { GroupDescriptionInput } from '../../GroupDescriptionInput';
-import { GroupTitleInput } from '../../GroupTitleInput';
-import { RequestState } from './util';
+import type { LocalizerType } from '../../../types/Util.js';
+import { Modal } from '../../Modal.js';
+import { AvatarEditor } from '../../AvatarEditor.js';
+import { AvatarPreview } from '../../AvatarPreview.js';
+import { Button, ButtonVariant } from '../../Button.js';
+import { Spinner } from '../../Spinner.js';
+import { GroupDescriptionInput } from '../../GroupDescriptionInput.js';
+import { GroupTitleInput } from '../../GroupTitleInput.js';
+import { RequestState } from './util.js';
 import type {
   AvatarDataType,
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../../../types/Avatar';
-import type { AvatarColorType } from '../../../types/Colors';
+} from '../../../types/Avatar.js';
+import type { AvatarColorType } from '../../../types/Colors.js';
+import { useConfirmDiscard } from '../../../hooks/useConfirmDiscard.js';
 
 type PropsType = {
   avatarColor?: AvatarColorType;
@@ -79,6 +80,13 @@ export function EditConversationAttributesModal({
   const trimmedTitle = rawTitle.trim();
   const trimmedDescription = rawGroupDescription.trim();
 
+  const tryClose = useRef<() => void | undefined>();
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'EditConversationAttributesModal',
+    tryClose,
+  });
+
   const focusRef = (el: null | HTMLElement) => {
     if (el) {
       el.focus();
@@ -102,6 +110,26 @@ export function EditConversationAttributesModal({
       hasAvatarChanged ||
       hasGroupDescriptionChanged) &&
     trimmedTitle.length > 0;
+
+  const onTryClose = useCallback(() => {
+    confirmDiscardIf(
+      isRequestActive ||
+        hasAvatarChanged ||
+        hasChangedExternally ||
+        hasGroupDescriptionChanged ||
+        hasTitleChanged,
+      onClose
+    );
+  }, [
+    confirmDiscardIf,
+    isRequestActive,
+    hasAvatarChanged,
+    hasChangedExternally,
+    hasGroupDescriptionChanged,
+    hasTitleChanged,
+    onClose,
+  ]);
+  tryClose.current = onTryClose;
 
   const onSubmit: FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
@@ -167,6 +195,7 @@ export function EditConversationAttributesModal({
           onClick={() => {
             setEditingAvatar(true);
           }}
+          showUploadButton
           style={{
             height: 96,
             width: 96,
@@ -228,12 +257,16 @@ export function EditConversationAttributesModal({
     </>
   );
 
+  if (confirmDiscardModal) {
+    return confirmDiscardModal;
+  }
+
   return (
     <Modal
       modalName="EditConversationAttributesModal"
       hasXButton
       i18n={i18n}
-      onClose={onClose}
+      onClose={onTryClose}
       title={i18n('icu:updateGroupAttributes__title')}
       modalFooter={modalFooter}
     >

@@ -2,19 +2,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { z } from 'zod';
-import { isBoolean, isNumber } from 'lodash';
-import type { CallbackResultType } from '../textsecure/Types.d';
-import { DataWriter } from '../sql/Client';
-import * as log from '../logging/log';
+import lodash from 'lodash';
+import type { CallbackResultType } from '../textsecure/Types.d.ts';
+import { DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
 import {
   OutgoingMessageError,
   SendMessageNetworkError,
   SendMessageProtoError,
   UnregisteredUserError,
-} from '../textsecure/Errors';
-import { SEALED_SENDER } from '../types/SealedSender';
-import type { ServiceIdString } from '../types/ServiceId';
-import { drop } from './drop';
+} from '../textsecure/Errors.js';
+import { SEALED_SENDER } from '../types/SealedSender.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { drop } from './drop.js';
+
+const { isBoolean, isNumber } = lodash;
+
+const log = createLogger('handleMessageSend');
 
 const { insertSentProto, updateConversation } = DataWriter;
 
@@ -112,15 +116,15 @@ function processError(error: unknown): void {
     if (error.code === 401 || error.code === 403) {
       if (conversation.get('sealedSender') !== SEALED_SENDER.DISABLED) {
         log.warn(
-          `handleMessageSend: Got 401/403 for ${conversation.idForLogging()}, setting sealedSender = DISABLED`
+          `Got 401/403 for ${conversation.idForLogging()}, setting sealedSender = DISABLED`
         );
-        conversation.set('sealedSender', SEALED_SENDER.DISABLED);
+        conversation.set({ sealedSender: SEALED_SENDER.DISABLED });
         drop(updateConversation(conversation.attributes));
       }
     }
     if (error.code === 404) {
       log.warn(
-        `handleMessageSend: Got 404 for ${conversation.idForLogging()}, marking unregistered.`
+        `Got 404 for ${conversation.idForLogging()}, marking unregistered.`
       );
       conversation.setUnregistered();
     }
@@ -131,7 +135,7 @@ function processError(error: unknown): void {
       'private'
     );
     log.warn(
-      `handleMessageSend: Got 404 for ${conversation.idForLogging()}, marking unregistered.`
+      `Got 404 for ${conversation.idForLogging()}, marking unregistered.`
     );
     conversation.setUnregistered();
   }
@@ -248,16 +252,14 @@ async function maybeSaveToSendLog(
 
   if (!isNumber(contentHint) || !contentProto || !recipients || !timestamp) {
     log.warn(
-      `handleMessageSend: Missing necessary information to save to log for ${sendType} message ${timestamp}`
+      `Missing necessary information to save to log for ${sendType} message ${timestamp}`
     );
     return;
   }
 
   const identifiers = Object.keys(recipients);
   if (identifiers.length === 0) {
-    log.warn(
-      `handleMessageSend: ${sendType} message ${timestamp} had no recipients`
-    );
+    log.warn(`${sendType} message ${timestamp} had no recipients`);
     return;
   }
 
@@ -269,7 +271,7 @@ async function maybeSaveToSendLog(
   await insertSentProto(
     {
       timestamp,
-      proto: Buffer.from(contentProto),
+      proto: contentProto,
       contentHint,
       urgent: isBoolean(urgent) ? urgent : true,
       hasPniSignatureMessage: Boolean(hasPniSignatureMessage),

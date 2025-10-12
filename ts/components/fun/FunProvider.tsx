@@ -5,29 +5,22 @@ import React, {
   memo,
   useCallback,
   useContext,
-  useMemo,
   useState,
 } from 'react';
-import { strictAssert } from '../../util/assert';
-import type { LocalizerType } from '../../types/I18N';
-import type { StickerPackType, StickerType } from '../../state/ducks/stickers';
-import type { EmojiSkinTone } from './data/emojis';
-import { EmojiPickerCategory, type EmojiParentKey } from './data/emojis';
-import type { FunGifSelection, GifType } from './panels/FunPanelGifs';
-import type { FunGifsSection, FunStickersSection } from './constants';
-import {
-  type FunEmojisSection,
-  FunGifsCategory,
-  FunPickerTabKey,
-  FunSectionCommon,
-  FunStickersSectionBase,
-  toFunStickersPackSection,
-} from './constants';
-import type { fetchGifsFeatured, fetchGifsSearch } from './data/gifs';
-import type { tenorDownload } from './data/tenor';
-import type { FunEmojiSelection } from './panels/FunPanelEmojis';
-import type { FunStickerSelection } from './panels/FunPanelStickers';
-import { FunEmojiLocalizationProvider } from './FunEmojiLocalizationProvider';
+import { strictAssert } from '../../util/assert.js';
+import type { LocalizerType } from '../../types/I18N.js';
+import type {
+  StickerPackType,
+  StickerType,
+} from '../../state/ducks/stickers.js';
+import type { EmojiSkinTone, EmojiParentKey } from './data/emojis.js';
+import type { FunGifSelection, GifType } from './panels/FunPanelGifs.js';
+import { FunPickerTabKey } from './constants.js';
+import type { fetchGifsFeatured, fetchGifsSearch } from './data/gifs.js';
+import type { tenorDownload } from './data/tenor.js';
+import type { FunEmojiSelection } from './panels/FunPanelEmojis.js';
+import type { FunStickerSelection } from './panels/FunPanelStickers.js';
+import { FunEmojiLocalizationProvider } from './FunEmojiLocalizationProvider.js';
 
 export type FunContextSmartProps = Readonly<{
   i18n: LocalizerType;
@@ -66,18 +59,10 @@ export type FunContextProps = FunContextSmartProps &
     onChangeTab: (key: FunPickerTabKey) => unknown;
 
     // Search
-    searchInput: string;
-    onSearchInputChange: (nextSearchInput: string) => void;
+    storedSearchInput: string;
+    onStoredSearchInputChange: (nextSearchInput: string) => void;
     shouldAutoFocus: boolean;
     onChangeShouldAutoFocus: (shouldAutoFocus: boolean) => void;
-
-    // Current Section
-    selectedEmojisSection: FunEmojisSection;
-    selectedStickersSection: FunStickersSection;
-    selectedGifsSection: FunGifsSection;
-    onChangeSelectedEmojisSection: (section: FunEmojisSection) => void;
-    onChangeSelectedStickersSection: (section: FunStickersSection) => void;
-    onChangeSelectedSelectGifsSection: (section: FunGifsSection) => void;
   }>;
 
 export const FunContext = createContext<FunContextProps | null>(null);
@@ -114,11 +99,13 @@ export const FunProvider = memo(function FunProvider(
   }, []);
 
   // Search Input
-  const [searchInput, setSearchInput] = useState<string>('');
-  const searchQuery = useMemo(() => searchInput.trim(), [searchInput]);
-  const handleSearchInputChange = useCallback((newSearchInput: string) => {
-    setSearchInput(newSearchInput);
-  }, []);
+  const [storedSearchInput, setStoredSearchInput] = useState<string>('');
+  const handleStoredSearchInputChange = useCallback(
+    (newSearchInput: string) => {
+      setStoredSearchInput(newSearchInput);
+    },
+    []
+  );
 
   const [shouldAutoFocus, setShouldAutoFocus] = useState(true);
   const handleChangeShouldAutofocus = useCallback(
@@ -128,85 +115,13 @@ export const FunProvider = memo(function FunProvider(
     []
   );
 
-  const defaultEmojiSection = useMemo((): FunEmojisSection => {
-    if (props.recentEmojis.length) {
-      return FunSectionCommon.Recents;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) {
+      return;
     }
-    return EmojiPickerCategory.SmileysAndPeople;
-  }, [props.recentEmojis]);
-
-  const defaultStickerSection = useMemo((): FunStickersSection => {
-    if (props.recentStickers.length > 0) {
-      return FunSectionCommon.Recents;
-    }
-    const firstInstalledStickerPack = props.installedStickerPacks.at(0);
-    if (firstInstalledStickerPack != null) {
-      return toFunStickersPackSection(firstInstalledStickerPack);
-    }
-    return FunStickersSectionBase.StickersSetup;
-  }, [props.recentStickers, props.installedStickerPacks]);
-
-  const defaultGifsSection = useMemo((): FunGifsSection => {
-    return FunGifsCategory.Trending;
+    setStoredSearchInput('');
+    setShouldAutoFocus(true);
   }, []);
-
-  // Selected Sections
-  const [selectedEmojisSection, setSelectedEmojisSection] = useState(
-    (): FunEmojisSection => {
-      if (searchQuery !== '') {
-        return FunSectionCommon.SearchResults;
-      }
-      return defaultEmojiSection;
-    }
-  );
-  const [selectedStickersSection, setSelectedStickersSection] = useState(
-    (): FunStickersSection => {
-      if (searchQuery !== '') {
-        return FunSectionCommon.SearchResults;
-      }
-      return defaultStickerSection;
-    }
-  );
-  const [selectedGifsSection, setSelectedGifsSection] = useState(
-    (): FunGifsSection => {
-      if (searchQuery !== '') {
-        return FunSectionCommon.SearchResults;
-      }
-      return defaultGifsSection;
-    }
-  );
-  const handleChangeSelectedEmojisSection = useCallback(
-    (section: FunEmojisSection) => {
-      setSelectedEmojisSection(section);
-    },
-    []
-  );
-  const handleChangeSelectedStickersSection = useCallback(
-    (section: FunStickersSection) => {
-      setSelectedStickersSection(section);
-    },
-    []
-  );
-  const handleChangeSelectedGifsSection = useCallback(
-    (section: FunGifsSection) => {
-      setSelectedGifsSection(section);
-    },
-    []
-  );
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (open) {
-        return;
-      }
-      setSearchInput('');
-      setSelectedEmojisSection(defaultEmojiSection);
-      setSelectedStickersSection(defaultStickerSection);
-      setSelectedGifsSection(defaultGifsSection);
-      setShouldAutoFocus(true);
-    },
-    [defaultEmojiSection, defaultStickerSection, defaultGifsSection]
-  );
 
   return (
     <FunEmojiLocalizationProvider i18n={props.i18n}>
@@ -218,17 +133,10 @@ export const FunProvider = memo(function FunProvider(
         tab={tab}
         onChangeTab={handleChangeTab}
         // Search Input
-        searchInput={searchInput}
-        onSearchInputChange={handleSearchInputChange}
+        storedSearchInput={storedSearchInput}
+        onStoredSearchInputChange={handleStoredSearchInputChange}
         shouldAutoFocus={shouldAutoFocus}
         onChangeShouldAutoFocus={handleChangeShouldAutofocus}
-        // Current Sections
-        selectedEmojisSection={selectedEmojisSection}
-        selectedStickersSection={selectedStickersSection}
-        selectedGifsSection={selectedGifsSection}
-        onChangeSelectedEmojisSection={handleChangeSelectedEmojisSection}
-        onChangeSelectedStickersSection={handleChangeSelectedStickersSection}
-        onChangeSelectedSelectGifsSection={handleChangeSelectedGifsSection}
         // Recents
         recentEmojis={props.recentEmojis}
         recentStickers={props.recentStickers}

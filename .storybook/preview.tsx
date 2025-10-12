@@ -3,31 +3,32 @@
 
 import '../ts/window.d.ts';
 
-import React from 'react';
+import React, { StrictMode } from 'react';
 
-import 'sanitize.css';
 import '../stylesheets/manifest.scss';
+import '../stylesheets/tailwind-config.css';
 
 import * as styles from './styles.scss';
 import messages from '../_locales/en/messages.json';
-import { StorybookThemeContext } from './StorybookThemeContext';
-import { ThemeType } from '../ts/types/Util';
-import { setupI18n } from '../ts/util/setupI18n';
-import { HourCyclePreference } from '../ts/types/I18N';
+import { StorybookThemeContext } from './StorybookThemeContext.js';
+import { ThemeType } from '../ts/types/Util.js';
+import { setupI18n } from '../ts/util/setupI18n.js';
+import { HourCyclePreference } from '../ts/types/I18N.js';
 import { Provider } from 'react-redux';
 import { Store, combineReducers, createStore } from 'redux';
 import { Globals } from '@react-spring/web';
-import { StateType } from '../ts/state/reducer';
+import { AxoProvider } from '../ts/axo/AxoProvider.js';
+import { StateType } from '../ts/state/reducer.js';
 import {
   ScrollerLockContext,
   createScrollerLock,
-} from '../ts/hooks/useScrollLock';
-import { Environment, setEnvironment } from '../ts/environment.ts';
-import { parseUnknown } from '../ts/util/schemas.ts';
-import { LocaleEmojiListSchema } from '../ts/types/emoji.ts';
-import { FunProvider } from '../ts/components/fun/FunProvider.tsx';
-import { EmojiSkinTone } from '../ts/components/fun/data/emojis.ts';
-import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.tsx';
+} from '../ts/hooks/useScrollLock.js';
+import { Environment, setEnvironment } from '../ts/environment.js';
+import { parseUnknown } from '../ts/util/schemas.js';
+import { LocaleEmojiListSchema } from '../ts/types/emoji.js';
+import { FunProvider } from '../ts/components/fun/FunProvider.js';
+import { EmojiSkinTone } from '../ts/components/fun/data/emojis.js';
+import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.js';
 
 setEnvironment(Environment.Development, true);
 
@@ -137,6 +138,8 @@ window.SignalContext = {
     return result;
   },
 
+  getVersion: () => '7.61.0',
+
   // For test-runner
   _skipAnimation: () => {
     Globals.assign({
@@ -152,6 +155,25 @@ window.ConversationController = window.ConversationController || {};
 window.ConversationController.isSignalConversationId = () => false;
 window.ConversationController.onConvoMessageMount = noop;
 window.reduxStore = mockStore;
+window.Signal = {
+  Services: {
+    beforeNavigate: {
+      registerCallback: () => undefined,
+      unregisterCallback: () => undefined,
+      shouldCancelNavigation: () => {
+        throw new Error('Not implemented');
+      },
+    },
+  },
+};
+
+function withStrictMode(Story, context) {
+  return (
+    <StrictMode>
+      <Story {...context} />
+    </StrictMode>
+  );
+}
 
 const withGlobalTypesProvider = (Story, context) => {
   const theme =
@@ -233,7 +255,17 @@ function withFunProvider(Story, context) {
   );
 }
 
+function withAxoProvider(Story, context) {
+  return (
+    <AxoProvider dir={context.globals.direction ?? 'ltr'}>
+      <Story {...context} />
+    </AxoProvider>
+  );
+}
+
 export const decorators = [
+  withStrictMode,
+  withAxoProvider,
   withGlobalTypesProvider,
   withMockStoreProvider,
   withScrollLockProvider,

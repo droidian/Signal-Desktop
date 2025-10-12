@@ -1,16 +1,16 @@
-// Copyright 2022 Signal Messenger, LLC
+// Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createHash } from 'crypto';
-import { createReadStream } from 'fs';
-import { rename, rm } from 'fs/promises';
-import { pipeline } from 'stream/promises';
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { rename, rm } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 
-import type { LoggerType } from '../types/Logging';
-import * as Errors from '../types/errors';
-import * as durations from '../util/durations';
-import { sleep } from '../util/sleep';
-import { isOlderThan } from '../util/timestamp';
+import type { LoggerType } from '../types/Logging.js';
+import * as Errors from '../types/errors.js';
+import { SECOND, MINUTE, HOUR } from '../util/durations/index.js';
+import { sleep } from '../util/sleep.js';
+import { isOlderThan } from '../util/timestamp.js';
 
 export type CheckIntegrityResultType = Readonly<
   | {
@@ -55,8 +55,8 @@ async function doGracefulFSOperation<Args extends ReadonlyArray<unknown>>({
   logger,
   startedAt,
   retryCount,
-  retryAfter = 5 * durations.SECOND,
-  timeout = 5 * durations.MINUTE,
+  retryAfter = 5 * SECOND,
+  timeout = 5 * MINUTE,
 }: {
   name: string;
   operation: (...args: Args) => Promise<void>;
@@ -137,4 +137,49 @@ export async function gracefulRmRecursive(
     startedAt: Date.now(),
     retryCount: 0,
   });
+}
+
+const MAX_UPDATE_DELAY = 6 * HOUR;
+
+export function isTimeToUpdate({
+  logger,
+  pollId,
+  releasedAt,
+  now = Date.now(),
+  maxDelay = MAX_UPDATE_DELAY,
+}: {
+  logger: LoggerType;
+  pollId: string;
+  releasedAt: number;
+  now?: number;
+  maxDelay?: number;
+}): boolean {
+  // Check that the release date is a proper number
+  if (!Number.isFinite(releasedAt) || Number.isNaN(releasedAt)) {
+    logger.warn('isTimeToUpdate: invalid releasedAt');
+    return true;
+  }
+
+  // Check that the release date is not too far in the future
+  if (releasedAt - HOUR > now) {
+    logger.warn('isTimeToUpdate: releasedAt too far in the future');
+    return true;
+  }
+
+  const digest = createHash('sha512')
+    .update(pollId)
+    .update(Buffer.alloc(1))
+    .update(new Date(releasedAt).toJSON())
+    .digest();
+
+  const delay = maxDelay * (digest.readUInt32LE(0) / 0xffffffff);
+  const updateAt = releasedAt + delay;
+
+  if (now >= updateAt) {
+    return true;
+  }
+
+  const remaining = Math.round((updateAt - now) / MINUTE);
+  logger.info(`isTimeToUpdate: updating in ${remaining} minutes`);
+  return false;
 }

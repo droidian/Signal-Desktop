@@ -3,29 +3,30 @@
 
 import { v4 as generateGuid } from 'uuid';
 
-import { SendStatus } from '../../messages/MessageSendState';
-import type { ConversationModel } from '../../models/conversations';
-import { GiftBadgeStates } from '../../components/conversation/Message';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import type { ConversationModel } from '../../models/conversations.js';
+import { GiftBadgeStates } from '../../components/conversation/Message.js';
 
-import { DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { generateAci } from '../../types/ServiceId';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { ID_V1_LENGTH } from '../../groups';
-import { DurationInSeconds, WEEK } from '../../util/durations';
+import { DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import * as Bytes from '../../Bytes.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { ID_V1_LENGTH } from '../../groups.js';
+import { DurationInSeconds, WEEK } from '../../util/durations/index.js';
 import {
   setupBasics,
   asymmetricRoundtripHarness,
   symmetricRoundtripHarness,
   OUR_ACI,
-} from './helpers';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders';
-import { strictAssert } from '../../util/assert';
-import type { MessageAttributesType } from '../../model-types';
-import { TEXT_ATTACHMENT } from '../../types/MIME';
-import { MY_STORY_ID } from '../../types/Stories';
+} from './helpers.js';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.js';
+import { strictAssert } from '../../util/assert.js';
+import type { MessageAttributesType } from '../../model-types.js';
+import { IMAGE_PNG, TEXT_ATTACHMENT } from '../../types/MIME.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { generateAttachmentKeys } from '../../AttachmentCrypto.js';
 
 const CONTACT_A = generateAci();
 const CONTACT_B = generateAci();
@@ -131,7 +132,7 @@ describe('backup/bubble messages', () => {
         type: 'outgoing',
         readStatus: ReadStatus.Read,
         received_at: 3,
-        received_at_ms: 3,
+        received_at_ms: 43,
         seenStatus: SeenStatus.Seen,
         sent_at: 3,
         sourceServiceId: OUR_ACI,
@@ -143,14 +144,14 @@ describe('backup/bubble messages', () => {
         unidentifiedDeliveries: [CONTACT_A],
         timestamp: 3,
         editMessageTimestamp: 5,
-        editMessageReceivedAtMs: 5,
+        editMessageReceivedAtMs: 45,
         body: 'd',
         editHistory: [
           {
             body: 'd',
             timestamp: 5,
             received_at: 5,
-            received_at_ms: 5,
+            received_at_ms: 45,
             sendStateByConversationId: {
               [contactA.id]: {
                 status: SendStatus.Delivered,
@@ -161,7 +162,7 @@ describe('backup/bubble messages', () => {
             body: 'c',
             timestamp: 4,
             received_at: 4,
-            received_at_ms: 4,
+            received_at_ms: 44,
             sendStateByConversationId: {
               [contactA.id]: {
                 status: SendStatus.Viewed,
@@ -172,7 +173,7 @@ describe('backup/bubble messages', () => {
             body: 'b',
             timestamp: 3,
             received_at: 3,
-            received_at_ms: 3,
+            received_at_ms: 43,
             sendStateByConversationId: {
               [contactA.id]: {
                 status: SendStatus.Viewed,
@@ -467,7 +468,7 @@ describe('backup/bubble messages', () => {
         id: generateGuid(),
         type: 'outgoing',
         received_at: 3,
-        received_at_ms: 3,
+        received_at_ms: 4,
         sent_at: 3,
         sourceServiceId: OUR_ACI,
         sendStateByConversationId: {
@@ -1105,6 +1106,81 @@ describe('backup/bubble messages', () => {
       };
 
       await asymmetricRoundtripHarness([incomingReply, outgoingReply], []);
+    });
+  });
+
+  describe('view-once', () => {
+    it('roundtrips incoming viewed view-once message', async () => {
+      await symmetricRoundtripHarness([
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          isErased: true,
+          isViewOnce: true,
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: CONTACT_A,
+          readStatus: ReadStatus.Viewed,
+          seenStatus: SeenStatus.Seen,
+          unidentifiedDeliveryReceived: false,
+          timestamp: 3,
+        },
+      ]);
+    });
+    it('roundtrips incoming unviewed view-once message', async () => {
+      await symmetricRoundtripHarness([
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          isViewOnce: true,
+          attachments: [
+            {
+              size: 128,
+              contentType: IMAGE_PNG,
+              cdnKey: 'cdnKey',
+              cdnNumber: 2,
+              uploadTimestamp: 2001,
+              key: Bytes.toBase64(generateAttachmentKeys()),
+              digest: Bytes.toBase64(getRandomBytes(32)),
+              caption: 'shhhh',
+            },
+          ],
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: CONTACT_A,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: false,
+          timestamp: 3,
+        },
+      ]);
+    });
+    it('roundtrips outgoing view-once message', async () => {
+      await symmetricRoundtripHarness([
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'outgoing',
+          isViewOnce: true,
+          isErased: true,
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: OUR_ACI,
+          seenStatus: SeenStatus.Seen,
+          sendStateByConversationId: {
+            [contactA.id]: {
+              status: SendStatus.Delivered,
+            },
+          },
+          unidentifiedDeliveries: [CONTACT_A],
+          timestamp: 3,
+        },
+      ]);
     });
   });
 });

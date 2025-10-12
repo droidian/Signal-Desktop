@@ -1,26 +1,28 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { EventEmitter } from 'events';
-import { Readable } from 'stream';
-import { noop } from 'lodash';
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
+import lodash from 'lodash';
 import type { connection as WebSocket } from 'websocket';
 import Long from 'long';
 
-import type { LoggerType } from '../../types/Logging';
-import { strictAssert } from '../../util/assert';
-import { isUntaggedPniString, toTaggedPni } from '../../types/ServiceId';
-import { isAciString } from '../../util/isAciString';
-import * as Bytes from '../../Bytes';
-import { UUID_BYTE_SIZE } from '../../types/Crypto';
-import { uuidToBytes, bytesToUuid } from '../../util/uuidToBytes';
-import { SignalService as Proto } from '../../protobuf';
+import type { LoggerType } from '../../types/Logging.js';
+import { strictAssert } from '../../util/assert.js';
+import { isUntaggedPniString, toTaggedPni } from '../../types/ServiceId.js';
+import { isAciString } from '../../util/isAciString.js';
+import * as Bytes from '../../Bytes.js';
+import { UUID_BYTE_SIZE } from '../../types/Crypto.js';
+import { uuidToBytes, bytesToUuid } from '../../util/uuidToBytes.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
 import type {
   CDSRequestOptionsType,
   CDSResponseEntryType,
   CDSResponseType,
-} from './Types.d';
-import { RateLimitedError } from './RateLimitedError';
+} from './Types.d.ts';
+import { RateLimitedError } from './RateLimitedError.js';
+
+const { noop } = lodash;
 
 export type CDSSocketBaseOptionsType = Readonly<{
   logger: LoggerType;
@@ -47,7 +49,7 @@ export abstract class CDSSocketBase<
 
   protected readonly logger: LoggerType;
 
-  protected readonly socketIterator: AsyncIterator<Buffer>;
+  protected readonly socketIterator: AsyncIterator<Uint8Array>;
 
   constructor(protected readonly options: Options) {
     super();
@@ -87,18 +89,18 @@ export abstract class CDSSocketBase<
     );
 
     const request = Proto.CDSClientRequest.encode({
-      newE164s: Buffer.concat(
+      newE164s: Bytes.concatenate(
         e164s.map(e164 => {
           // Long.fromString handles numbers with or without a leading '+'
           return new Uint8Array(Long.fromString(e164).toBytesBE());
         })
       ),
-      aciUakPairs: Buffer.concat(aciUakPairs),
+      aciUakPairs: Bytes.concatenate(aciUakPairs),
       returnAcisWithoutUaks,
     }).finish();
 
     log.info(`CDSSocket.request(): sending version=${version} request`);
-    await this.sendRequest(version, Buffer.from(request));
+    await this.sendRequest(version, request);
 
     const resultMap: Map<string, CDSResponseEntryType> = new Map();
 
@@ -129,9 +131,14 @@ export abstract class CDSSocketBase<
 
   public abstract handshake(): Promise<void>;
 
-  protected abstract sendRequest(version: number, data: Buffer): Promise<void>;
+  protected abstract sendRequest(
+    version: number,
+    data: Uint8Array
+  ): Promise<void>;
 
-  protected abstract decryptResponse(ciphertext: Buffer): Promise<Buffer>;
+  protected abstract decryptResponse(
+    ciphertext: Uint8Array
+  ): Promise<Uint8Array>;
 
   // EventEmitter types
 
@@ -161,7 +168,7 @@ export abstract class CDSSocketBase<
   // Private
   //
 
-  #iterateSocket(): AsyncIterator<Buffer> {
+  #iterateSocket(): AsyncIterator<Uint8Array> {
     const stream = new Readable({ read: noop, objectMode: true });
 
     this.socket.on('message', ({ type, binaryData }) => {
@@ -211,7 +218,7 @@ function decodeSingleResponse(
     i < response.e164PniAciTriples.length;
     i += TRIPLE_BYTE_SIZE
   ) {
-    const tripleBytes = response.e164PniAciTriples.slice(
+    const tripleBytes = response.e164PniAciTriples.subarray(
       i,
       i + TRIPLE_BYTE_SIZE
     );
@@ -221,13 +228,13 @@ function decodeSingleResponse(
     );
 
     let offset = 0;
-    const e164Bytes = tripleBytes.slice(offset, offset + E164_BYTE_SIZE);
+    const e164Bytes = tripleBytes.subarray(offset, offset + E164_BYTE_SIZE);
     offset += E164_BYTE_SIZE;
 
-    const pniBytes = tripleBytes.slice(offset, offset + UUID_BYTE_SIZE);
+    const pniBytes = tripleBytes.subarray(offset, offset + UUID_BYTE_SIZE);
     offset += UUID_BYTE_SIZE;
 
-    const aciBytes = tripleBytes.slice(offset, offset + UUID_BYTE_SIZE);
+    const aciBytes = tripleBytes.subarray(offset, offset + UUID_BYTE_SIZE);
     offset += UUID_BYTE_SIZE;
 
     const e164Long = Long.fromBytesBE(Array.from(e164Bytes));

@@ -1,13 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { Buffer } from 'buffer';
-import type { Decipher } from 'crypto';
-import crypto from 'crypto';
+import { Buffer } from 'node:buffer';
+import type { Decipher } from 'node:crypto';
+import crypto from 'node:crypto';
 
-import { strictAssert } from '../util/assert';
-import type { HashType } from '../types/Crypto';
-import { CipherType } from '../types/Crypto';
+import { strictAssert } from '../util/assert.js';
+import type { HashType } from '../types/Crypto.js';
+import { CipherType } from '../types/Crypto.js';
 
 const AUTH_TAG_SIZE = 16;
 
@@ -95,8 +95,8 @@ export class Crypto {
         throw new Error('Invalid GCM ciphertext');
       }
 
-      const tag = input.slice(input.length - AUTH_TAG_SIZE);
-      input = input.slice(0, input.length - AUTH_TAG_SIZE);
+      const tag = input.subarray(input.length - AUTH_TAG_SIZE);
+      input = input.subarray(0, input.length - AUTH_TAG_SIZE);
 
       gcm.setAuthTag(tag);
 

@@ -2,32 +2,36 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { clamp, chunk, maxBy, flatten, noop } from 'lodash';
+import lodash from 'lodash';
 import type { VideoFrameSource } from '@signalapp/ringrtc';
-import { GroupCallRemoteParticipant } from './GroupCallRemoteParticipant';
+import { GroupCallRemoteParticipant } from './GroupCallRemoteParticipant.js';
 import {
   GroupCallOverflowArea,
   OVERFLOW_PARTICIPANT_WIDTH,
-} from './GroupCallOverflowArea';
+} from './GroupCallOverflowArea.js';
 import type {
   GroupCallRemoteParticipantType,
   GroupCallVideoRequest,
-} from '../types/Calling';
-import { CallViewMode } from '../types/Calling';
-import { useGetCallingFrameBuffer } from '../calling/useGetCallingFrameBuffer';
-import type { LocalizerType } from '../types/Util';
-import { usePageVisibility } from '../hooks/usePageVisibility';
-import { useDevicePixelRatio } from '../hooks/useDevicePixelRatio';
-import { nonRenderedRemoteParticipant } from '../util/ringrtc/nonRenderedRemoteParticipant';
-import { missingCaseError } from '../util/missingCaseError';
-import { SECOND } from '../util/durations';
-import { filter, join } from '../util/iterables';
-import * as setUtil from '../util/setUtil';
-import * as log from '../logging/log';
-import { MAX_FRAME_HEIGHT, MAX_FRAME_WIDTH } from '../calling/constants';
-import { SizeObserver } from '../hooks/useSizeObserver';
-import { strictAssert } from '../util/assert';
-import type { CallingImageDataCache } from './CallManager';
+} from '../types/Calling.js';
+import { CallViewMode } from '../types/Calling.js';
+import { useGetCallingFrameBuffer } from '../calling/useGetCallingFrameBuffer.js';
+import type { LocalizerType } from '../types/Util.js';
+import { usePageVisibility } from '../hooks/usePageVisibility.js';
+import { useDevicePixelRatio } from '../hooks/useDevicePixelRatio.js';
+import { nonRenderedRemoteParticipant } from '../util/ringrtc/nonRenderedRemoteParticipant.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { SECOND } from '../util/durations/index.js';
+import { filter, join } from '../util/iterables.js';
+import * as setUtil from '../util/setUtil.js';
+import { createLogger } from '../logging/log.js';
+import { MAX_FRAME_HEIGHT, MAX_FRAME_WIDTH } from '../calling/constants.js';
+import { SizeObserver } from '../hooks/useSizeObserver.js';
+import { strictAssert } from '../util/assert.js';
+import type { CallingImageDataCache } from './CallManager.js';
+
+const { clamp, chunk, maxBy, flatten, noop } = lodash;
+
+const log = createLogger('GroupCallRemoteParticipants');
 
 const SMALL_TILES_MIN_HEIGHT = 80;
 const LARGE_TILES_MIN_HEIGHT = 200;
@@ -449,9 +453,7 @@ export function GroupCallRemoteParticipants({
         videoRequest = remoteParticipants.map(nonRenderedRemoteParticipant);
         break;
       default:
-        log.error(missingCaseError(videoRequestMode));
-        videoRequest = remoteParticipants.map(nonRenderedRemoteParticipant);
-        break;
+        throw missingCaseError(videoRequestMode);
     }
     setGroupCallVideoRequest(
       videoRequest,
@@ -773,7 +775,7 @@ function getGridParticipantsByPage({
 
       if (!nextPage) {
         log.warn(
-          `GroupCallRemoteParticipants: failed after ${attemptNumber} attempts to layout
+          `failed after ${attemptNumber} attempts to layout
           the page; pageIndex: ${pages.length}, \
           # fit in priority order: ${nextPageInPriorityOrder.numParticipants}, \
           # fit in sorted order:  ${nextPageInSortedOrder.numParticipants}`

@@ -3,13 +3,12 @@
 
 import { createSelector } from 'reselect';
 import { useSelector } from 'react-redux';
-
-import type { StateType } from '../reducer';
-import { isShortName } from '../../components/emoji/lib';
+import type { StateType } from '../reducer.js';
+import { isEmojiEnglishShortName } from '../../components/fun/data/emojis.js';
 
 export const selectRecentEmojis = createSelector(
   ({ emojis }: StateType) => emojis.recents,
-  recents => recents.filter(isShortName)
+  recents => recents.filter(isEmojiEnglishShortName)
 );
 
 export const useRecentEmojis = (): Array<string> =>

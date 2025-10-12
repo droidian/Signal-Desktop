@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import { pick } from 'lodash';
+import lodash from 'lodash';
 
-import { isOverHourIntoPast, cleanupSessionResets } from '../background';
+import { isOverHourIntoPast, cleanupSessionResets } from '../background.js';
+import { DataWriter } from '../sql/Client.js';
+
+const { pick } = lodash;
 
 describe('#isOverHourIntoPast', () => {
   it('returns false for now', () => {
@@ -21,6 +24,11 @@ describe('#isOverHourIntoPast', () => {
 });
 
 describe('#cleanupSessionResets', () => {
+  after(async () => {
+    await DataWriter.removeAll();
+    await window.storage.fetch();
+  });
+
   it('leaves empty object alone', async () => {
     await window.storage.put('sessionResets', {});
     await cleanupSessionResets();

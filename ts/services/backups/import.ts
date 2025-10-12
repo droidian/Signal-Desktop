@@ -2,51 +2,55 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
-import { ReceiptCredentialPresentation } from '@signalapp/libsignal-client/zkgroup';
+import {
+  BackupLevel,
+  ReceiptCredentialPresentation,
+} from '@signalapp/libsignal-client/zkgroup.js';
 import { v7 as generateUuid } from 'uuid';
 import pMap from 'p-map';
-import { Writable } from 'stream';
-import { isNumber } from 'lodash';
+import { Writable } from 'node:stream';
+import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
 import type Long from 'long';
 
-import { Backups, SignalService } from '../../protobuf';
-import { DataReader, DataWriter } from '../../sql/Client';
+import { Backups, SignalService } from '../../protobuf/index.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
 import {
   AttachmentDownloadSource,
   type StoryDistributionWithMembersType,
   type IdentityKeyType,
-} from '../../sql/Interface';
-import * as log from '../../logging/log';
-import { GiftBadgeStates } from '../../components/conversation/Message';
-import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
-import type { AciString, ServiceIdString } from '../../types/ServiceId';
-import * as LinkPreview from '../../types/LinkPreview';
+} from '../../sql/Interface.js';
+import { createLogger } from '../../logging/log.js';
+import { GiftBadgeStates } from '../../components/conversation/Message.js';
+import { StorySendMode, MY_STORY_ID } from '../../types/Stories.js';
+import type { AciString, ServiceIdString } from '../../types/ServiceId.js';
+import * as LinkPreview from '../../types/LinkPreview.js';
 import {
   fromAciObject,
   fromPniObject,
   fromServiceIdObject,
-} from '../../types/ServiceId';
-import { isStoryDistributionId } from '../../types/StoryDistributionId';
-import * as Errors from '../../types/errors';
-import { PaymentEventKind } from '../../types/Payment';
-import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
+} from '../../types/ServiceId.js';
+import { isStoryDistributionId } from '../../types/StoryDistributionId.js';
+import * as Errors from '../../types/errors.js';
+import { PaymentEventKind } from '../../types/Payment.js';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.js';
 import {
   ContactFormType,
   AddressType as ContactAddressType,
-} from '../../types/EmbeddedContact';
+} from '../../types/EmbeddedContact.js';
 import {
   STICKERPACK_ID_BYTE_LEN,
   STICKERPACK_KEY_BYTE_LEN,
   createPacksFromBackup,
   type StickerPackPointerType,
-} from '../../types/Stickers';
+} from '../../types/Stickers.js';
 import type {
   ConversationColorType,
   CustomColorsItemType,
   CustomColorType,
   CustomColorDataType,
-} from '../../types/Colors';
+} from '../../types/Colors.js';
+import { SEALED_SENDER } from '../../types/SealedSender.js';
 import type {
   ConversationAttributesType,
   CustomError,
@@ -54,53 +58,59 @@ import type {
   MessageReactionType,
   EditHistoryType,
   QuotedMessageType,
-} from '../../model-types.d';
-import { assertDev, strictAssert } from '../../util/assert';
+} from '../../model-types.d.ts';
+import { assertDev, strictAssert } from '../../util/assert.js';
 import {
   getCheckedTimestampFromLong,
   getCheckedTimestampOrUndefinedFromLong,
   getTimestampOrUndefinedFromLong,
-} from '../../util/timestampLongUtils';
-import { MAX_SAFE_DATE } from '../../util/timestamp';
-import { DAY, DurationInSeconds, SECOND } from '../../util/durations';
-import { calculateExpirationTimestamp } from '../../util/expirationTimer';
-import { dropNull } from '../../util/dropNull';
+} from '../../util/timestampLongUtils.js';
+import { MAX_SAFE_DATE } from '../../util/timestamp.js';
+import { DurationInSeconds, SECOND } from '../../util/durations/index.js';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.js';
+import { dropNull } from '../../util/dropNull.js';
 import {
   deriveGroupID,
   deriveGroupSecretParams,
   deriveGroupPublicParams,
-} from '../../util/zkgroup';
-import { incrementMessageCounter } from '../../util/incrementMessageCounter';
-import { generateMessageId } from '../../util/generateMessageId';
-import { isAciString } from '../../util/isAciString';
-import { PhoneNumberDiscoverability } from '../../util/phoneNumberDiscoverability';
-import { PhoneNumberSharingMode } from '../../util/phoneNumberSharingMode';
-import { bytesToUuid } from '../../util/uuidToBytes';
-import { missingCaseError } from '../../util/missingCaseError';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SendStatus } from '../../messages/MessageSendState';
-import type { SendStateByConversationId } from '../../messages/MessageSendState';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { constantTimeEqual } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { BACKUP_VERSION, WALLPAPER_TO_BUBBLE_COLOR } from './constants';
-import { UnsupportedBackupVersion } from './errors';
-import type { AboutMe, LocalChatStyle } from './types';
-import { BackupType } from './types';
-import { getBackupMediaRootKey } from './crypto';
-import type { GroupV2ChangeDetailType } from '../../groups';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
-import { isNotNil } from '../../util/isNotNil';
-import { isGroup } from '../../util/whatTypeOfConversation';
-import { rgbIntToHSL } from '../../util/rgbToHSL';
+} from '../../util/zkgroup.js';
+import { incrementMessageCounter } from '../../util/incrementMessageCounter.js';
+import { generateMessageId } from '../../util/generateMessageId.js';
+import { isAciString } from '../../util/isAciString.js';
+import { PhoneNumberDiscoverability } from '../../util/phoneNumberDiscoverability.js';
+import { PhoneNumberSharingMode } from '../../util/phoneNumberSharingMode.js';
+import { bytesToUuid } from '../../util/uuidToBytes.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import type { SendStateByConversationId } from '../../messages/MessageSendState.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { constantTimeEqual, deriveAccessKey } from '../../Crypto.js';
+import * as Bytes from '../../Bytes.js';
+import { BACKUP_VERSION, WALLPAPER_TO_BUBBLE_COLOR } from './constants.js';
+import { UnsupportedBackupVersion } from './errors.js';
+import type { AboutMe, LocalChatStyle } from './types.js';
+import { BackupType } from './types.js';
+import { getBackupMediaRootKey } from './crypto.js';
+import type { GroupV2ChangeDetailType } from '../../groups.js';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { isGroup } from '../../util/whatTypeOfConversation.js';
+import { rgbIntToHSL } from '../../util/rgbToHSL.js';
 import {
   convertBackupMessageAttachmentToAttachment,
   convertFilePointerToAttachment,
-} from './util/filePointers';
-import { filterAndClean, trimMessageWhitespace } from '../../types/BodyRange';
-import { APPLICATION_OCTET_STREAM, stringToMIMEType } from '../../types/MIME';
-import { groupAvatarJobQueue } from '../../jobs/groupAvatarJobQueue';
-import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager';
+} from './util/filePointers.js';
+import {
+  filterAndClean,
+  trimMessageWhitespace,
+} from '../../types/BodyRange.js';
+import {
+  APPLICATION_OCTET_STREAM,
+  stringToMIMEType,
+} from '../../types/MIME.js';
+import { groupAvatarJobQueue } from '../../jobs/groupAvatarJobQueue.js';
+import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager.js';
 import {
   AdhocCallStatus,
   CallDirection,
@@ -108,30 +118,48 @@ import {
   CallType,
   DirectCallStatus,
   GroupCallStatus,
-} from '../../types/CallDisposition';
-import type { CallHistoryDetails } from '../../types/CallDisposition';
-import { CallLinkRestrictions, isCallLinkAdmin } from '../../types/CallLink';
-import type { CallLinkType } from '../../types/CallLink';
-import type { RawBodyRange } from '../../types/BodyRange';
+} from '../../types/CallDisposition.js';
+import type { CallHistoryDetails } from '../../types/CallDisposition.js';
+import { CallLinkRestrictions, isCallLinkAdmin } from '../../types/CallLink.js';
+import type { CallLinkType } from '../../types/CallLink.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
 import {
   fromAdminKeyBytes,
   toCallHistoryFromUnusedCallLink,
-} from '../../util/callLinks';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
-import { loadAllAndReinitializeRedux } from '../allLoaders';
+} from '../../util/callLinks.js';
 import {
-  resetBackupMediaDownloadProgress,
+  getRoomIdFromRootKey,
+  fromEpochBytes,
+} from '../../util/callLinksRingrtc.js';
+import { loadAllAndReinitializeRedux } from '../allLoaders.js';
+import {
   startBackupMediaDownload,
-} from '../../util/backupMediaDownload';
-import { getEnvironment, isTestEnvironment } from '../../environment';
-import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads';
-import { isAdhoc, isNightly } from '../../util/version';
-import { ToastType } from '../../types/Toast';
-import { isConversationAccepted } from '../../util/isConversationAccepted';
-import { saveBackupsSubscriberData } from '../../util/backupSubscriptionData';
-import { postSaveUpdates } from '../../util/cleanup';
-import type { LinkPreviewType } from '../../types/message/LinkPreviews';
-import { MessageModel } from '../../models/messages';
+  resetBackupMediaDownloadStats,
+} from '../../util/backupMediaDownload.js';
+import {
+  getEnvironment,
+  isTestEnvironment,
+  isTestOrMockEnvironment,
+} from '../../environment.js';
+import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads.js';
+import { isAdhoc, isNightly } from '../../util/version.js';
+import { ToastType } from '../../types/Toast.js';
+import { isConversationAccepted } from '../../util/isConversationAccepted.js';
+import { saveBackupsSubscriberData } from '../../util/backupSubscriptionData.js';
+import { postSaveUpdates } from '../../util/cleanup.js';
+import type { LinkPreviewType } from '../../types/message/LinkPreviews.js';
+import { MessageModel } from '../../models/messages.js';
+import {
+  DEFAULT_PROFILE_COLOR,
+  fromDayOfWeekArray,
+  type NotificationProfileType,
+} from '../../types/NotificationProfile.js';
+import { normalizeNotificationProfileId } from '../../types/NotificationProfile-node.js';
+import { updateBackupMediaDownloadProgress } from '../../util/updateBackupMediaDownloadProgress.js';
+
+const { isNumber } = lodash;
+
+const log = createLogger('import');
 
 const MAX_CONCURRENCY = 10;
 
@@ -237,19 +265,24 @@ export class BackupImportStream extends Writable {
   #releaseNotesChatId: Long | undefined;
   #pendingGroupAvatars = new Map<string, string>();
   #frameErrorCount: number = 0;
+  #backupTier: BackupLevel | undefined;
 
-  private constructor(private readonly backupType: BackupType) {
+  private constructor(
+    private readonly backupType: BackupType,
+    private readonly localBackupSnapshotDir: string | undefined
+  ) {
     super({ objectMode: true });
   }
 
   public static async create(
-    backupType = BackupType.Ciphertext
+    backupType = BackupType.Ciphertext,
+    localBackupSnapshotDir: string | undefined = undefined
   ): Promise<BackupImportStream> {
     await AttachmentDownloadManager.stop();
     await DataWriter.removeAllBackupAttachmentDownloadJobs();
-    await resetBackupMediaDownloadProgress();
+    await resetBackupMediaDownloadStats();
 
-    return new BackupImportStream(backupType);
+    return new BackupImportStream(backupType, localBackupSnapshotDir);
   }
 
   override async _write(
@@ -401,9 +434,8 @@ export class BackupImportStream extends Writable {
           .map(([, id]) => id)
       );
 
-      await window.storage.put(
-        'backupMediaDownloadTotalBytes',
-        await DataReader.getSizeOfPendingBackupAttachmentDownloadJobs()
+      await updateBackupMediaDownloadProgress(
+        DataReader.getBackupAttachmentDownloadProgress
       );
 
       if (
@@ -503,9 +535,7 @@ export class BackupImportStream extends Writable {
       } else if (frame.adHocCall) {
         await this.#fromAdHocCall(frame.adHocCall);
       } else if (frame.notificationProfile) {
-        log.warn(
-          `${this.#logId}: Received currently unsupported feature: notification profile. Dropping.`
-        );
+        await this.#fromNotificationProfile(frame.notificationProfile);
       } else if (frame.chatFolder) {
         log.warn(
           `${this.#logId}: Received currently unsupported feature: chat folder. Dropping.`
@@ -656,7 +686,9 @@ export class BackupImportStream extends Writable {
           const model = new MessageModel(attributes);
           attachmentDownloadJobPromises.push(
             queueAttachmentDownloads(model, {
-              source: AttachmentDownloadSource.BACKUP_IMPORT,
+              source: this.#isMediaEnabledBackup()
+                ? AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA
+                : AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA,
               isManualDownload: false,
             })
           );
@@ -686,8 +718,9 @@ export class BackupImportStream extends Writable {
     svrPin,
   }: Backups.IAccountData): Promise<void> {
     strictAssert(this.#ourConversation === undefined, 'Duplicate AccountData');
-    const me =
-      window.ConversationController.getOurConversationOrThrow().attributes;
+    const me = {
+      ...window.ConversationController.getOurConversationOrThrow().attributes,
+    };
     this.#ourConversation = me;
 
     const { storage } = window;
@@ -808,6 +841,17 @@ export class BackupImportStream extends Writable {
     if (svrPin) {
       await storage.put('svrPin', svrPin);
     }
+
+    if (isTestOrMockEnvironment()) {
+      // Only relevant for tests
+      await storage.put(
+        'optimizeOnDeviceStorage',
+        accountSettings?.optimizeOnDeviceStorage === true
+      );
+    }
+
+    this.#backupTier = accountSettings?.backupTier?.toNumber();
+    await storage.put('backupTier', accountSettings?.backupTier?.toNumber());
 
     const { PhoneNumberSharingMode: BackupMode } = Backups.AccountData;
     switch (accountSettings?.phoneNumberSharingMode) {
@@ -937,6 +981,10 @@ export class BackupImportStream extends Writable {
       profileKey: contact.profileKey
         ? Bytes.toBase64(contact.profileKey)
         : undefined,
+      accessKey: contact.profileKey
+        ? Bytes.toBase64(deriveAccessKey(contact.profileKey))
+        : undefined,
+      sealedSender: SEALED_SENDER.UNKNOWN,
       profileSharing: contact.profileSharing === true,
       profileName: dropNull(contact.profileGivenName),
       profileFamilyName: dropNull(contact.profileFamilyName),
@@ -974,8 +1022,8 @@ export class BackupImportStream extends Writable {
       attrs.firstUnregisteredAt = timestamp || undefined;
     } else if (!contact.registered) {
       log.error(
-        contact.registered,
-        'contact is neither registered nor unregistered; treating as registered'
+        'contact is neither registered nor unregistered; treating as registered',
+        contact.registered
       );
       this.#frameErrorCount += 1;
     }
@@ -1101,7 +1149,7 @@ export class BackupImportStream extends Writable {
           strictAssert(Bytes.isNotEmpty(userId), 'Empty gv2 member userId');
 
           const serviceId = fromServiceIdObject(
-            ServiceId.parseFromServiceIdBinary(Buffer.from(userId))
+            ServiceId.parseFromServiceIdBinary(userId)
           );
 
           return {
@@ -1134,7 +1182,7 @@ export class BackupImportStream extends Writable {
         // in the Contact frame
 
         const serviceId = fromServiceIdObject(
-          ServiceId.parseFromServiceIdBinary(Buffer.from(userId))
+          ServiceId.parseFromServiceIdBinary(userId)
         );
 
         return {
@@ -1262,6 +1310,7 @@ export class BackupImportStream extends Writable {
   ): Promise<void> {
     const {
       rootKey: rootKeyBytes,
+      epoch,
       adminKey,
       name,
       restrictions,
@@ -1276,6 +1325,7 @@ export class BackupImportStream extends Writable {
     const callLink: CallLinkType = {
       roomId: getRoomIdFromRootKey(rootKey),
       rootKey: rootKey.toString(),
+      epoch: epoch?.length ? fromEpochBytes(epoch) : null,
       adminKey: adminKey?.length ? fromAdminKeyBytes(adminKey) : null,
       name,
       restrictions: fromCallLinkRestrictionsProto(restrictions),
@@ -1444,13 +1494,6 @@ export class BackupImportStream extends Writable {
       return;
     }
 
-    if (expireTimer) {
-      if (DurationInSeconds.toMillis(expireTimer) <= DAY) {
-        // Message has an expire timer that's too short for import
-        return;
-      }
-    }
-
     let attributes: MessageAttributesType = {
       ...generateMessageId(incrementMessageCounter()),
       conversationId: chatConvo.id,
@@ -1489,7 +1532,7 @@ export class BackupImportStream extends Writable {
     } else if (item.viewOnceMessage) {
       attributes = {
         ...attributes,
-        ...(await this.#fromViewOnceMessage(item.viewOnceMessage)),
+        ...(await this.#fromViewOnceMessage(item)),
       };
     } else if (item.directStoryReplyMessage) {
       strictAssert(item.directionless == null, 'reply cannot be directionless');
@@ -1711,7 +1754,9 @@ export class BackupImportStream extends Writable {
       return {
         patch: {
           sendStateByConversationId,
-          received_at_ms: timestamp,
+          received_at_ms:
+            getCheckedTimestampOrUndefinedFromLong(outgoing.dateReceived) ??
+            timestamp,
           unidentifiedDeliveries: unidentifiedDeliveries.length
             ? unidentifiedDeliveries
             : undefined,
@@ -1850,11 +1895,19 @@ export class BackupImportStream extends Writable {
             bodyRanges: this.#fromBodyRanges(data.text),
           })),
       bodyAttachment: data.longText
-        ? convertFilePointerToAttachment(data.longText)
+        ? convertFilePointerToAttachment(
+            data.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined,
       attachments: data.attachments?.length
         ? data.attachments
-            .map(convertBackupMessageAttachmentToAttachment)
+            .map(attachment =>
+              convertBackupMessageAttachmentToAttachment(
+                attachment,
+                this.#getFilePointerOptions()
+              )
+            )
             .filter(isNotNil)
         : undefined,
       preview: data.linkPreview?.length
@@ -1898,32 +1951,47 @@ export class BackupImportStream extends Writable {
           description: dropNull(preview.description),
           date: getCheckedTimestampOrUndefinedFromLong(preview.date),
           image: preview.image
-            ? convertFilePointerToAttachment(preview.image)
+            ? convertFilePointerToAttachment(
+                preview.image,
+                this.#getFilePointerOptions()
+              )
             : undefined,
         };
       })
       .filter(isNotNil);
   }
 
-  async #fromViewOnceMessage({
-    attachment,
-    reactions,
-  }: Backups.IViewOnceMessage): Promise<Partial<MessageAttributesType>> {
-    return {
-      ...(attachment
-        ? {
-            attachments: [
-              convertBackupMessageAttachmentToAttachment(attachment),
-            ].filter(isNotNil),
-          }
-        : {
-            attachments: undefined,
-            readStatus: ReadStatus.Viewed,
-            isErased: true,
-          }),
+  async #fromViewOnceMessage(
+    item: Backups.IChatItem
+  ): Promise<Partial<MessageAttributesType>> {
+    const { incoming, viewOnceMessage } = item;
+    strictAssert(viewOnceMessage, 'view once message must not be null');
+
+    const { attachment, reactions } = viewOnceMessage;
+    const result: Partial<MessageAttributesType> = {
+      attachments: attachment
+        ? [
+            convertBackupMessageAttachmentToAttachment(
+              attachment,
+              this.#getFilePointerOptions()
+            ),
+          ].filter(isNotNil)
+        : undefined,
       reactions: this.#fromReactions(reactions),
       isViewOnce: true,
     };
+
+    if (!result.attachments?.length) {
+      result.isErased = true;
+
+      // Only mark it viewed if the message is read. Non-link-and-sync backups do not
+      // roundtrip view-once attachments, even if unread.
+      if (incoming?.read) {
+        result.readStatus = ReadStatus.Viewed;
+      }
+    }
+
+    return result;
   }
 
   #fromDirectStoryReplyMessage(
@@ -1944,7 +2012,10 @@ export class BackupImportStream extends Writable {
       result.body = textReply.text?.body ?? undefined;
       result.bodyRanges = this.#fromBodyRanges(textReply.text);
       result.bodyAttachment = textReply.longText
-        ? convertFilePointerToAttachment(textReply.longText)
+        ? convertFilePointerToAttachment(
+            textReply.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined;
     } else if (emoji) {
       result.storyReaction = {
@@ -1974,7 +2045,10 @@ export class BackupImportStream extends Writable {
       body: textReply.text?.body ?? undefined,
       bodyRanges: this.#fromBodyRanges(textReply.text),
       bodyAttachment: textReply.longText
-        ? convertFilePointerToAttachment(textReply.longText)
+        ? convertFilePointerToAttachment(
+            textReply.longText,
+            this.#getFilePointerOptions()
+          )
         : undefined,
     };
   }
@@ -2097,7 +2171,10 @@ export class BackupImportStream extends Writable {
               ? stringToMIMEType(contentType)
               : APPLICATION_OCTET_STREAM,
             thumbnail: thumbnail?.pointer
-              ? convertFilePointerToAttachment(thumbnail.pointer)
+              ? convertFilePointerToAttachment(
+                  thumbnail.pointer,
+                  this.#getFilePointerOptions()
+                )
               : undefined,
           };
         }) ?? [],
@@ -2119,9 +2196,7 @@ export class BackupImportStream extends Writable {
       bodyRanges.map(range => ({
         ...range,
         mentionAci: range.mentionAci
-          ? Aci.parseFromServiceIdBinary(
-              Buffer.from(range.mentionAci)
-            ).getServiceIdString()
+          ? Aci.parseFromServiceIdBinary(range.mentionAci).getServiceIdString()
           : undefined,
       }))
     );
@@ -2259,7 +2334,10 @@ export class BackupImportStream extends Writable {
               organization: organization || undefined,
               avatar: avatar
                 ? {
-                    avatar: convertFilePointerToAttachment(avatar),
+                    avatar: convertFilePointerToAttachment(
+                      avatar,
+                      this.#getFilePointerOptions()
+                    ),
                     isProfile: false,
                   }
                 : undefined,
@@ -2306,7 +2384,12 @@ export class BackupImportStream extends Writable {
             packId: Bytes.toHex(packId),
             packKey: Bytes.toBase64(packKey),
             stickerId,
-            data: data ? convertFilePointerToAttachment(data) : undefined,
+            data: data
+              ? convertFilePointerToAttachment(
+                  data,
+                  this.#getFilePointerOptions()
+                )
+              : undefined,
           },
           reactions: this.#fromReactions(chatItem.stickerMessage.reactions),
         },
@@ -2369,7 +2452,7 @@ export class BackupImportStream extends Writable {
       }
 
       const receipt = new ReceiptCredentialPresentation(
-        Buffer.from(giftBadge.receiptCredentialPresentation)
+        giftBadge.receiptCredentialPresentation
       );
 
       return {
@@ -2848,7 +2931,7 @@ export class BackupImportStream extends Writable {
         details.push({
           type: 'pending-add-one',
           serviceId: fromServiceIdObject(
-            ServiceId.parseFromServiceIdBinary(Buffer.from(inviteeServiceId))
+            ServiceId.parseFromServiceIdBinary(inviteeServiceId)
           ),
         });
       }
@@ -2888,12 +2971,9 @@ export class BackupImportStream extends Writable {
       }
       if (update.groupInvitationDeclinedUpdate) {
         const { inviterAci, inviteeAci } = update.groupInvitationDeclinedUpdate;
-        if (!inviteeAci || Bytes.isEmpty(inviteeAci)) {
-          throw new Error(
-            `${logId}: groupInvitationDeclinedUpdate had missing inviteeAci!`
-          );
-        }
-        from = fromAciObject(Aci.fromUuidBytes(inviteeAci));
+        from = Bytes.isNotEmpty(inviteeAci)
+          ? fromAciObject(Aci.fromUuidBytes(inviteeAci))
+          : undefined;
         details.push({
           type: 'pending-remove-one',
           inviter: Bytes.isNotEmpty(inviterAci)
@@ -3283,7 +3363,7 @@ export class BackupImportStream extends Writable {
       case Type.IDENTITY_UPDATE:
         return {
           type: 'keychange',
-          key_changed: isGroup(conversation) ? author?.id : undefined,
+          key_changed: isGroup(conversation) ? author?.serviceId : undefined,
         };
       case Type.IDENTITY_VERIFIED:
         strictAssert(author != null, 'IDENTITY_VERIFIED must have an author');
@@ -3425,6 +3505,65 @@ export class BackupImportStream extends Writable {
     if (isCallLinkAdmin(callLink)) {
       this.#adminCallLinksToHasCall.set(callLink, true);
     }
+  }
+
+  async #fromNotificationProfile(
+    incomingProfile: Backups.INotificationProfile
+  ) {
+    const {
+      id,
+      name,
+      emoji,
+      color,
+      createdAtMs,
+      allowAllCalls,
+      allowAllMentions,
+      allowedMembers,
+      scheduleEnabled,
+      scheduleStartTime,
+      scheduleEndTime,
+      scheduleDaysEnabled,
+    } = incomingProfile;
+    strictAssert(name, 'notification profile must have a valid name');
+    if (!id || !id.length) {
+      log.warn('Dropping notification profile; it was missing an id');
+      return;
+    }
+
+    const allowedMemberConversationIds: ReadonlyArray<string> | undefined =
+      allowedMembers
+        ?.map(recipientIdLong => {
+          const recipientId = recipientIdLong.toNumber();
+          const attributes = this.#recipientIdToConvo.get(recipientId);
+          if (!attributes) {
+            return undefined;
+          }
+
+          return attributes.id;
+        })
+        .filter(isNotNil);
+
+    const profile: NotificationProfileType = {
+      id: normalizeNotificationProfileId(Bytes.toHex(id), 'import', log),
+      name,
+      emoji: dropNull(emoji),
+      color: dropNull(color) ?? DEFAULT_PROFILE_COLOR,
+      createdAtMs: getCheckedTimestampOrUndefinedFromLong(createdAtMs) ?? 0,
+      allowAllCalls: Boolean(allowAllCalls),
+      allowAllMentions: Boolean(allowAllMentions),
+      allowedMembers: new Set(allowedMemberConversationIds ?? []),
+      scheduleEnabled: Boolean(scheduleEnabled),
+      scheduleStartTime: dropNull(scheduleStartTime),
+      scheduleEndTime: dropNull(scheduleEndTime),
+      scheduleDaysEnabled: fromDayOfWeekArray(scheduleDaysEnabled),
+      deletedAtTimestampMs: undefined,
+      storageNeedsSync: false,
+      storageID: undefined,
+      storageUnknownFields: undefined,
+      storageVersion: undefined,
+    };
+
+    await DataWriter.createNotificationProfile(profile);
   }
 
   async #fromCustomChatColors(
@@ -3619,14 +3758,42 @@ export class BackupImportStream extends Writable {
       autoBubbleColor = true;
     }
 
+    // We only roundtrip wallpaper info in tests since it is not synced in storage service
+    const shouldImportWallpaper = isTestOrMockEnvironment();
+
     return {
-      wallpaperPhotoPointer,
-      wallpaperPreset,
       color,
       customColorData,
-      dimWallpaperInDarkMode,
-      autoBubbleColor,
+      ...(shouldImportWallpaper
+        ? {
+            autoBubbleColor,
+            wallpaperPhotoPointer,
+            wallpaperPreset,
+            dimWallpaperInDarkMode,
+          }
+        : {
+            autoBubbleColor: undefined,
+            wallpaperPhotoPointer: undefined,
+            wallpaperPreset: undefined,
+            dimWallpaperInDarkMode: undefined,
+          }),
     };
+  }
+
+  #getFilePointerOptions() {
+    if (this.localBackupSnapshotDir != null) {
+      return { localBackupSnapshotDir: this.localBackupSnapshotDir };
+    }
+
+    return {};
+  }
+
+  #isLocalBackup() {
+    return this.localBackupSnapshotDir != null;
+  }
+
+  #isMediaEnabledBackup() {
+    return this.#isLocalBackup() || this.#backupTier === BackupLevel.Paid;
   }
 }
 

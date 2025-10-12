@@ -4,36 +4,36 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './LeftPane';
-import { LeftPane } from './LeftPane';
-import { CaptchaDialog } from './CaptchaDialog';
-import { CrashReportDialog } from './CrashReportDialog';
-import { ToastManager } from './ToastManager';
-import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus';
-import { DialogExpiredBuild } from './DialogExpiredBuild';
-import { DialogNetworkStatus } from './DialogNetworkStatus';
-import { DialogRelink } from './DialogRelink';
-import type { PropsType as DialogUpdatePropsType } from './DialogUpdate';
-import { DialogUpdate } from './DialogUpdate';
-import { UnsupportedOSDialog } from './UnsupportedOSDialog';
-import type { ConversationType } from '../state/ducks/conversations';
-import { MessageSearchResult } from './conversationList/MessageSearchResult';
-import { DurationInSeconds, DAY } from '../util/durations';
-import { LeftPaneMode } from '../types/leftPane';
-import { ThemeType } from '../types/Util';
+import type { PropsType } from './LeftPane.js';
+import { LeftPane } from './LeftPane.js';
+import { CaptchaDialog } from './CaptchaDialog.js';
+import { CrashReportDialog } from './CrashReportDialog.js';
+import { ToastManager } from './ToastManager.js';
+import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus.js';
+import { DialogExpiredBuild } from './DialogExpiredBuild.js';
+import { DialogNetworkStatus } from './DialogNetworkStatus.js';
+import { DialogRelink } from './DialogRelink.js';
+import type { PropsType as DialogUpdatePropsType } from './DialogUpdate.js';
+import { DialogUpdate } from './DialogUpdate.js';
+import { UnsupportedOSDialog } from './UnsupportedOSDialog.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.js';
+import { DurationInSeconds, DAY } from '../util/durations/index.js';
+import { LeftPaneMode } from '../types/leftPane.js';
+import { ThemeType } from '../types/Util.js';
 import {
   getDefaultConversation,
   getDefaultGroupListItem,
-} from '../test-both/helpers/getDefaultConversation';
-import { DialogType } from '../types/Dialogs';
-import { SocketStatus } from '../types/SocketStatus';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext';
+} from '../test-helpers/getDefaultConversation.js';
+import { DialogType } from '../types/Dialogs.js';
+import { SocketStatus } from '../types/SocketStatus.js';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.js';
 import {
   makeFakeLookupConversationWithoutServiceId,
   useUuidFetchState,
-} from '../test-both/helpers/fakeLookupConversationWithoutServiceId';
-import type { GroupListItemConversationType } from './conversationList/GroupListItem';
-import { ServerAlert } from '../util/handleServerAlerts';
+} from '../test-helpers/fakeLookupConversationWithoutServiceId.js';
+import type { GroupListItemConversationType } from './conversationList/GroupListItem.js';
+import { ServerAlert } from '../util/handleServerAlerts.js';
 
 const { i18n } = window.SignalContext;
 
@@ -81,6 +81,7 @@ const defaultGroups: Array<GroupListItemConversationType> = [
 ];
 
 const backupMediaDownloadProgress = {
+  isBackupMediaEnabled: true,
   downloadedBytes: 1024,
   totalBytes: 4098,
   downloadBannerDismissed: false,
@@ -146,12 +147,14 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
       markedUnread: false,
     },
     backupMediaDownloadProgress: {
+      isBackupMediaEnabled: true,
       downloadBannerDismissed: false,
       isIdle: false,
       isPaused: false,
       totalBytes: 0,
       downloadedBytes: 0,
     },
+    changeLocation: action('changeLocation'),
     clearConversationSearch: action('clearConversationSearch'),
     clearGroupCreationError: action('clearGroupCreationError'),
     clearSearchQuery: action('clearSearchQuery'),
@@ -281,15 +284,14 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     ),
     renderToastManager: ({ containerWidthBreakpoint }) => (
       <ToastManager
+        changeLocation={action('changeLocation')}
         OS="unused"
         hideToast={action('hideToast')}
         i18n={i18n}
         onShowDebugLog={action('onShowDebugLog')}
         onUndoArchive={action('onUndoArchive')}
         openFileInFolder={action('openFileInFolder')}
-        showAttachmentNotAvailableModal={action(
-          'showAttachmentNotAvailableModal'
-        )}
+        setDidResumeDonation={action('setDidResumeDonation')}
         toast={undefined}
         megaphone={undefined}
         containerWidthBreakpoint={containerWidthBreakpoint}
@@ -320,7 +322,6 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
       'toggleConversationInChooseMembers'
     ),
     toggleNavTabsCollapse: action('toggleNavTabsCollapse'),
-    toggleProfileEditor: action('toggleProfileEditor'),
     updateFilterByUnread: action('updateFilterByUnread'),
     updateSearchTerm: action('updateSearchTerm'),
 

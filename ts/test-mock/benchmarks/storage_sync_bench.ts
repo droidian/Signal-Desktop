@@ -5,7 +5,7 @@
 import type { PrimaryDevice } from '@signalapp/mock-server';
 import { StorageState } from '@signalapp/mock-server';
 
-import { Bootstrap } from './fixtures';
+import { Bootstrap } from './fixtures.js';
 
 const CONTACT_COUNT = 1000;
 
@@ -49,9 +49,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
 
   const leftPane = window.locator('#LeftPane');
 
-  const item = leftPane.locator(
-    `[data-testid="${lastContact?.toContact().aci}"]`
-  );
+  const item = leftPane.locator(`[data-testid="${lastContact?.device.aci}"]`);
   await item.waitFor();
 
   const duration = Date.now() - start;

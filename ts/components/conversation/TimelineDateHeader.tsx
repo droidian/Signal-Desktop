@@ -4,10 +4,10 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
-import * as durations from '../../util/durations';
-import type { LocalizerType } from '../../types/Util';
-import { formatDate } from '../../util/timestamp';
-import { Time } from '../Time';
+import * as durations from '../../util/durations/index.js';
+import type { LocalizerType } from '../../types/Util.js';
+import { formatDate } from '../../util/timestamp.js';
+import { Time } from '../Time.js';
 
 export function TimelineDateHeader({
   floating = false,
@@ -32,6 +32,7 @@ export function TimelineDateHeader({
     <div
       className={classNames(
         'TimelineDateHeader',
+        // eslint-disable-next-line local-rules/enforce-tw
         `TimelineDateHeader--${floating ? 'floating' : 'inline'}`
       )}
     >

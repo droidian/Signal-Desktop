@@ -2,28 +2,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useCallback, useEffect } from 'react';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import type { VideoFrameSource } from '@signalapp/ringrtc';
-import { CallNeedPermissionScreen } from './CallNeedPermissionScreen';
-import { CallScreen } from './CallScreen';
-import { CallingLobby } from './CallingLobby';
-import { CallingParticipantsList } from './CallingParticipantsList';
-import { CallingSelectPresentingSourcesModal } from './CallingSelectPresentingSourcesModal';
-import { CallingPip } from './CallingPip';
-import { IncomingCallBar } from './IncomingCallBar';
+import { CallNeedPermissionScreen } from './CallNeedPermissionScreen.js';
+import { CallScreen } from './CallScreen.js';
+import { CallingLobby } from './CallingLobby.js';
+import { CallingParticipantsList } from './CallingParticipantsList.js';
+import { CallingSelectPresentingSourcesModal } from './CallingSelectPresentingSourcesModal.js';
+import { CallingPip } from './CallingPip.js';
+import { IncomingCallBar } from './IncomingCallBar.js';
 import type {
   ActiveCallType,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallVideoRequest,
-} from '../types/Calling';
+} from '../types/Calling.js';
 import {
   CallEndedReason,
   CallState,
   GroupCallJoinState,
-} from '../types/Calling';
-import { CallMode } from '../types/CallDisposition';
-import type { ConversationType } from '../state/ducks/conversations';
+} from '../types/Calling.js';
+import { CallMode } from '../types/CallDisposition.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
 import type {
   AcceptCallType,
   BatchUserActionPayloadType,
@@ -36,23 +36,34 @@ import type {
   SendGroupCallReactionType,
   SetGroupCallVideoRequestType,
   SetLocalAudioType,
+  SetMutedByType,
   SetLocalVideoType,
   SetRendererCanvasType,
   StartCallType,
-} from '../state/ducks/calling';
-import { CallLinkRestrictions } from '../types/CallLink';
-import type { CallLinkType } from '../types/CallLink';
-import type { LocalizerType } from '../types/Util';
-import { missingCaseError } from '../util/missingCaseError';
-import { CallingToastProvider } from './CallingToast';
-import type { SmartReactionPicker } from '../state/smart/ReactionPicker';
-import type { Props as ReactionPickerProps } from './conversation/ReactionPicker';
-import * as log from '../logging/log';
-import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall';
-import { CallingAdhocCallInfo } from './CallingAdhocCallInfo';
-import { callLinkRootKeyToUrl } from '../util/callLinkRootKeyToUrl';
-import { usePrevious } from '../hooks/usePrevious';
-import { copyCallLink } from '../util/copyLinksWithToast';
+} from '../state/ducks/calling.js';
+import { CallLinkRestrictions } from '../types/CallLink.js';
+import type { CallLinkType } from '../types/CallLink.js';
+import type { LocalizerType } from '../types/Util.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { CallingToastProvider } from './CallingToast.js';
+import type { SmartReactionPicker } from '../state/smart/ReactionPicker.js';
+import type { Props as ReactionPickerProps } from './conversation/ReactionPicker.js';
+import { createLogger } from '../logging/log.js';
+import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.js';
+import { CallingAdhocCallInfo } from './CallingAdhocCallInfo.js';
+import { callLinkRootKeyToUrl } from '../util/callLinkRootKeyToUrl.js';
+import { usePrevious } from '../hooks/usePrevious.js';
+import { copyCallLink } from '../util/copyLinksWithToast.js';
+import {
+  redactNotificationProfileId,
+  shouldNotify,
+} from '../types/NotificationProfile.js';
+import type { NotificationProfileType } from '../types/NotificationProfile.js';
+import { strictAssert } from '../util/assert.js';
+
+const { noop } = lodash;
+
+const log = createLogger('CallManager');
 
 const GROUP_CALL_RING_DURATION = 60 * 1000;
 
@@ -78,6 +89,7 @@ export type CallingImageDataCache = Map<number, ImageData>;
 
 export type PropsType = {
   activeCall?: ActiveCallType;
+  activeNotificationProfile: NotificationProfileType | undefined;
   availableCameras: Array<MediaDeviceInfo>;
   callLink: CallLinkType | undefined;
   cancelCall: (_: CancelCallType) => void;
@@ -124,6 +136,7 @@ export type PropsType = {
   setIsCallActive: (_: boolean) => void;
   setLocalAudio: SetLocalAudioType;
   setLocalVideo: SetLocalVideoType;
+  setLocalAudioRemoteMuted: SetMutedByType;
   setLocalPreviewContainer: (container: HTMLDivElement | null) => void;
   setOutgoingRing: (_: boolean) => void;
   setRendererCanvas: (_: SetRendererCanvasType) => void;
@@ -148,6 +161,7 @@ type ActiveCallManagerPropsType = {
 } & Omit<
   PropsType,
   | 'acceptCall'
+  | 'activeNotificationProfile'
   | 'bounceAppIconStart'
   | 'bounceAppIconStop'
   | 'declineCall'
@@ -188,6 +202,7 @@ function ActiveCallManager({
   sendGroupCallReaction,
   setGroupCallVideoRequest,
   setLocalAudio,
+  setLocalAudioRemoteMuted,
   setLocalPreviewContainer,
   setLocalVideo,
   setRendererCanvas,
@@ -280,11 +295,7 @@ function ActiveCallManager({
   }, [callLink]);
 
   const handleShareCallLinkViaSignal = useCallback(() => {
-    if (!callLink) {
-      log.error('Missing call link');
-      return;
-    }
-
+    strictAssert(callLink != null, 'Missing call link');
     showShareCallLinkViaSignal(callLink, i18n);
   }, [callLink, i18n, showShareCallLinkViaSignal]);
 
@@ -475,6 +486,7 @@ function ActiveCallManager({
         setLocalPreviewContainer={setLocalPreviewContainer}
         setRendererCanvas={setRendererCanvas}
         setLocalAudio={setLocalAudio}
+        setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
         setLocalVideo={setLocalVideo}
         stickyControls={showParticipantsList}
         switchToPresentationView={switchToPresentationView}
@@ -532,6 +544,7 @@ function ActiveCallManager({
 export function CallManager({
   acceptCall,
   activeCall,
+  activeNotificationProfile,
   approveUser,
   availableCameras,
   batchUserAction,
@@ -567,6 +580,7 @@ export function CallManager({
   setGroupCallVideoRequest,
   setIsCallActive,
   setLocalAudio,
+  setLocalAudioRemoteMuted,
   setLocalPreviewContainer,
   setLocalVideo,
   setOutgoingRing,
@@ -593,18 +607,41 @@ export function CallManager({
   const ringingCallId = ringingCall?.conversation.id;
   useEffect(() => {
     if (hasInitialLoadCompleted && ringingCallId) {
-      log.info('CallManager: Playing ringtone');
+      if (
+        !shouldNotify({
+          activeProfile: activeNotificationProfile,
+          conversationId: ringingCallId,
+          isCall: true,
+          isMention: false,
+        })
+      ) {
+        const redactedId = redactNotificationProfileId(
+          activeNotificationProfile?.id ?? ''
+        );
+        log.info(
+          `Would play ringtone, but notification profile ${redactedId} prevented it`
+        );
+        return;
+      }
+
+      log.info('Playing ringtone');
       playRingtone();
 
       return () => {
-        log.info('CallManager: Stopping ringtone');
+        log.info('Stopping ringtone');
         stopRingtone();
       };
     }
 
     stopRingtone();
     return noop;
-  }, [hasInitialLoadCompleted, playRingtone, ringingCallId, stopRingtone]);
+  }, [
+    activeNotificationProfile,
+    hasInitialLoadCompleted,
+    playRingtone,
+    ringingCallId,
+    stopRingtone,
+  ]);
 
   const mightBeRingingOutgoingGroupCall =
     isGroupOrAdhocActiveCall(activeCall) &&
@@ -659,6 +696,7 @@ export function CallManager({
           sendGroupCallReaction={sendGroupCallReaction}
           setGroupCallVideoRequest={setGroupCallVideoRequest}
           setLocalAudio={setLocalAudio}
+          setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
           setLocalPreviewContainer={setLocalPreviewContainer}
           setLocalVideo={setLocalVideo}
           setOutgoingRing={setOutgoingRing}
@@ -685,6 +723,23 @@ export function CallManager({
 
   // In the future, we may want to show the incoming call bar when a call is active.
   if (ringingCall) {
+    if (
+      !shouldNotify({
+        isCall: true,
+        isMention: false,
+        conversationId: ringingCall.conversation.id,
+        activeProfile: activeNotificationProfile,
+      })
+    ) {
+      const redactedId = redactNotificationProfileId(
+        activeNotificationProfile?.id ?? ''
+      );
+      log.info(
+        `Would show incoming call bar, but notification profile ${redactedId} prevented it`
+      );
+      return null;
+    }
+
     return (
       <IncomingCallBar
         acceptCall={acceptCall}

@@ -30,38 +30,41 @@ import type { connection as WebSocket, IMessage } from 'websocket';
 import Long from 'long';
 import pTimeout from 'p-timeout';
 import { Response } from 'node-fetch';
-import net from 'net';
+import net from 'node:net';
 import { z } from 'zod';
 
 import type { LibSignalError, Net } from '@signalapp/libsignal-client';
+import { ErrorCode } from '@signalapp/libsignal-client';
 import { Buffer } from 'node:buffer';
 import type {
   ChatServerMessageAck,
   ChatServiceListener,
   ConnectionEventsListener,
-} from '@signalapp/libsignal-client/dist/net/Chat';
-import type { EventHandler } from './EventTarget';
-import EventTarget from './EventTarget';
+} from '@signalapp/libsignal-client/dist/net/Chat.js';
+import type { EventHandler } from './EventTarget.js';
+import EventTarget from './EventTarget.js';
 
-import * as durations from '../util/durations';
-import { dropNull } from '../util/dropNull';
-import { drop } from '../util/drop';
-import { isOlderThan } from '../util/timestamp';
-import { strictAssert } from '../util/assert';
-import * as Errors from '../types/errors';
-import { SignalService as Proto } from '../protobuf';
-import * as log from '../logging/log';
-import * as Timers from '../Timers';
-import type { IResource } from './WebSocket';
+import * as durations from '../util/durations/index.js';
+import { dropNull } from '../util/dropNull.js';
+import { drop } from '../util/drop.js';
+import { isOlderThan } from '../util/timestamp.js';
+import { strictAssert } from '../util/assert.js';
+import * as Errors from '../types/errors.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import * as Timers from '../Timers.js';
+import type { IResource } from './WebSocket.js';
 
-import { AbortableProcess } from '../util/AbortableProcess';
-import type { WebAPICredentials } from './Types';
-import { NORMAL_DISCONNECT_CODE } from './SocketManager';
-import { parseUnknown } from '../util/schemas';
+import { AbortableProcess } from '../util/AbortableProcess.js';
+import type { WebAPICredentials } from './Types.js';
+import { NORMAL_DISCONNECT_CODE } from './SocketManager.js';
+import { parseUnknown } from '../util/schemas.js';
 import {
   parseServerAlertsFromHeader,
   type ServerAlert,
-} from '../util/handleServerAlerts';
+} from '../util/handleServerAlerts.js';
+
+const log = createLogger('WebsocketResources');
 
 const THIRTY_SECONDS = 30 * durations.SECOND;
 
@@ -265,18 +268,10 @@ export type SendRequestResult = Readonly<{
   headers: ReadonlyArray<string>;
 }>;
 
-export enum TransportOption {
-  // Only original transport is used
-  Original = 'original',
-  // Only libsignal transport is used
-  Libsignal = 'libsignal',
-}
-
 export type WebSocketResourceOptions = {
   name: string;
   handleRequest?: (request: IncomingWebSocketRequest) => void;
   keepalive?: KeepAliveOptionsType;
-  transportOption?: TransportOption;
 };
 
 export class CloseEvent extends Event {
@@ -312,10 +307,12 @@ const UNEXPECTED_DISCONNECT_CODE = 3001;
 export function connectUnauthenticatedLibsignal({
   libsignalNet,
   name,
+  userLanguages,
   keepalive,
 }: {
   libsignalNet: Net.Net;
   name: string;
+  userLanguages: ReadonlyArray<string>;
   keepalive: KeepAliveOptionsType;
 }): AbortableProcess<LibsignalWebSocketResource> {
   const logId = `LibsignalWebSocketResource(${name})`;
@@ -335,6 +332,7 @@ export function connectUnauthenticatedLibsignal({
     abortSignal =>
       libsignalNet.connectUnauthenticatedChat(listener, {
         abortSignal,
+        languages: [...userLanguages],
       }),
     listener,
     logId,
@@ -348,6 +346,7 @@ export function connectAuthenticatedLibsignal({
   credentials,
   handler,
   receiveStories,
+  userLanguages,
   keepalive,
   onReceivedAlerts,
 }: {
@@ -357,13 +356,14 @@ export function connectAuthenticatedLibsignal({
   handler: (request: IncomingWebSocketRequest) => void;
   onReceivedAlerts: (alerts: Array<ServerAlert>) => void;
   receiveStories: boolean;
+  userLanguages: ReadonlyArray<string>;
   keepalive: KeepAliveOptionsType;
 }): AbortableProcess<LibsignalWebSocketResource> {
   const logId = `LibsignalWebSocketResource(${name})`;
   const listener: LibsignalWebSocketResourceHolder & ChatServiceListener = {
     resource: undefined,
     onIncomingMessage(
-      envelope: Buffer,
+      envelope: Uint8Array,
       timestamp: number,
       ack: ChatServerMessageAck
     ): void {
@@ -408,7 +408,7 @@ export function connectAuthenticatedLibsignal({
         credentials.password,
         receiveStories,
         listener,
-        { abortSignal }
+        { abortSignal, languages: [...userLanguages] }
       ),
     listener,
     logId,
@@ -443,6 +443,10 @@ function connectLibsignal(
         logId,
         keepalive
       );
+      if (abortController.signal.aborted) {
+        resource.close(3000, 'aborted');
+        throw new Error('Aborted');
+      }
       // eslint-disable-next-line no-param-reassign
       resourceHolder.resource = resource;
       return resource;
@@ -454,7 +458,16 @@ function connectLibsignal(
   };
   return new AbortableProcess<LibsignalWebSocketResource>(
     `${logId}.connect`,
-    abortController,
+    {
+      abort() {
+        if (resourceHolder.resource != null) {
+          log.warn(`${logId}: closing socket`);
+          resourceHolder.resource.close(3000, 'aborted');
+        } else {
+          abortController.abort();
+        }
+      },
+    },
     connectAsync()
   );
 }
@@ -537,10 +550,21 @@ export class LibsignalWebSocketResource
     }
     log.warn(`${this.logId}: connection closed`);
 
-    const event = cause
-      ? new CloseEvent(UNEXPECTED_DISCONNECT_CODE, cause.message)
-      : // The cause was an intentional disconnect. Report normal closure.
-        new CloseEvent(NORMAL_DISCONNECT_CODE, 'normal');
+    // This is a workaround to map libsignal error codes to close codes that
+    // SocketManager's existing clients expect.
+    // TODO: When we can refactor the SocketManager API, we should come up
+    // with a better solution that is not dependent on the raw close codes.
+    let event: CloseEvent;
+    if (cause == null) {
+      event = new CloseEvent(NORMAL_DISCONNECT_CODE, 'normal');
+    } else if (cause.code === ErrorCode.ConnectedElsewhere) {
+      event = new CloseEvent(4409, cause.message);
+    } else if (cause.code === ErrorCode.ConnectionInvalidated) {
+      event = new CloseEvent(4401, cause.message);
+    } else {
+      event = new CloseEvent(UNEXPECTED_DISCONNECT_CODE, cause.message);
+    }
+
     this.#closedReasonCode = event.code;
     this.dispatchEvent(event);
   }

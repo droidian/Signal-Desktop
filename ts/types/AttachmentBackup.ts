@@ -4,8 +4,8 @@ import { z } from 'zod';
 import {
   type JobManagerJobType,
   jobManagerJobSchema,
-} from '../jobs/JobManager';
-import { type MIMEType, MIMETypeSchema } from './MIME';
+} from '../jobs/JobManager.js';
+import { type MIMEType, MIMETypeSchema } from './MIME.js';
 
 export type CoreAttachmentBackupJobType =
   | StandardAttachmentBackupJobType
@@ -19,8 +19,6 @@ export type StandardAttachmentBackupJobType = {
     path: string | null;
     contentType: MIMEType;
     keys: string;
-    digest: string;
-    iv: string;
     transitCdnInfo?: {
       cdnKey: string;
       cdnNumber: number;
@@ -45,6 +43,25 @@ export type ThumbnailAttachmentBackupJobType = {
   };
 };
 
+export type CoreAttachmentLocalBackupJobType = {
+  type: 'local';
+  mediaName: string;
+  data: {
+    path: string | null;
+    size: number;
+    localKey: string;
+  };
+  backupsBaseDir: string;
+};
+
+export type PartialAttachmentLocalBackupJobType = Omit<
+  CoreAttachmentLocalBackupJobType,
+  'backupsBaseDir'
+>;
+
+export type AttachmentLocalBackupJobType = CoreAttachmentLocalBackupJobType &
+  JobManagerJobType;
+
 const standardBackupJobDataSchema = z.object({
   type: z.literal('standard'),
   mediaName: z.string(),
@@ -53,8 +70,6 @@ const standardBackupJobDataSchema = z.object({
     size: z.number(),
     contentType: MIMETypeSchema,
     keys: z.string(),
-    iv: z.string(),
-    digest: z.string(),
     transitCdnInfo: z
       .object({
         cdnKey: z.string(),

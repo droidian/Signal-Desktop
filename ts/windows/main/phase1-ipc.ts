@@ -1,26 +1,45 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import EventEmitter from 'node:events';
 import { ipcRenderer as ipc } from 'electron';
 import * as semver from 'semver';
-import { mapValues } from 'lodash';
+import lodash, { throttle } from 'lodash';
+import PQueue from 'p-queue';
 
-import type { IPCType } from '../../window.d';
-import { parseIntWithFallback } from '../../util/parseIntWithFallback';
-import { getSignalConnections } from '../../util/getSignalConnections';
-import { ThemeType } from '../../types/Util';
-import { Environment } from '../../environment';
-import { SignalContext } from '../context';
-import * as log from '../../logging/log';
-import { formatCountForLogging } from '../../logging/formatCountForLogging';
-import * as Errors from '../../types/errors';
+import type { IPCType } from '../../window.d.ts';
+import { parseIntWithFallback } from '../../util/parseIntWithFallback.js';
+import { getSignalConnections } from '../../util/getSignalConnections.js';
+import { ThemeType } from '../../types/Util.js';
+import { Environment } from '../../environment.js';
+import { SignalContext } from '../context.js';
+import { createLogger } from '../../logging/log.js';
+import { formatCountForLogging } from '../../logging/formatCountForLogging.js';
+import * as Errors from '../../types/errors.js';
 
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { DataReader } from '../../sql/Client';
-import type { WindowsNotificationData } from '../../services/notifications';
-import { AggregatedStats } from '../../textsecure/WebsocketResources';
-import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { explodePromise } from '../../util/explodePromise.js';
+import { DataReader } from '../../sql/Client.js';
+import type { WindowsNotificationData } from '../../services/notifications.js';
+import { AggregatedStats } from '../../textsecure/WebsocketResources.js';
+import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager.js';
+import { isProduction } from '../../util/version.js';
+import { ToastType } from '../../types/Toast.js';
+import { ConversationController } from '../../ConversationController.js';
+import { createBatcher } from '../../util/batcher.js';
+import { ReceiptType } from '../../types/Receipt.js';
+import type { Receipt } from '../../types/Receipt.js';
+import { MINUTE } from '../../util/durations/index.js';
+import {
+  conversationJobQueue,
+  conversationQueueJobEnum,
+} from '../../jobs/conversationJobQueue.js';
+import { isEnabled } from '../../RemoteConfig.js';
+
+const { groupBy, mapValues } = lodash;
+
+const log = createLogger('phase1-ipc');
 
 // It is important to call this as early as possible
 window.i18n = SignalContext.i18n;
@@ -42,6 +61,32 @@ window.Flags = Flags;
 
 window.RETRY_DELAY = false;
 
+window.Whisper = {
+  events: new EventEmitter(),
+  deliveryReceiptQueue: new PQueue({
+    concurrency: 1,
+    timeout: MINUTE * 30,
+  }),
+  deliveryReceiptBatcher: createBatcher<Receipt>({
+    name: 'Whisper.deliveryReceiptBatcher',
+    wait: 500,
+    maxSize: 100,
+    processBatch: async deliveryReceipts => {
+      const groups = groupBy(deliveryReceipts, 'conversationId');
+      await Promise.all(
+        Object.keys(groups).map(async conversationId => {
+          await conversationJobQueue.add({
+            type: conversationQueueJobEnum.enum.Receipts,
+            conversationId,
+            receiptsType: ReceiptType.Delivery,
+            receipts: groups[conversationId],
+          });
+        })
+      );
+    },
+  }),
+};
+window.ConversationController = new ConversationController();
 window.platform = process.platform;
 window.getTitle = () => title;
 window.getAppInstance = () => config.appInstance;
@@ -49,7 +94,7 @@ window.getVersion = () => config.version;
 window.getBuildCreation = () => parseIntWithFallback(config.buildCreation, 0);
 window.getBuildExpiration = () => config.buildExpiration;
 window.getHostName = () => config.hostname;
-window.getServerTrustRoot = () => config.serverTrustRoot;
+window.getServerTrustRoots = () => config.serverTrustRoots;
 window.getServerPublicParams = () => config.serverPublicParams;
 window.getGenericServerPublicParams = () => config.genericServerPublicParams;
 window.getBackupServerPublicParams = () => config.backupServerPublicParams;
@@ -122,6 +167,10 @@ const IPC: IPCType = {
   },
   showPermissionsPopup: (forCalling, forCamera) =>
     ipc.invoke('show-permissions-popup', forCalling, forCamera),
+  setMediaPermissions: (value: boolean) =>
+    ipc.invoke('settings:set:mediaPermissions', value),
+  setMediaCameraPermissions: (value: boolean) =>
+    ipc.invoke('settings:set:mediaCameraPermissions', value),
   showSettings: () => ipc.send('show-settings'),
   showWindow: () => {
     log.info('show window');
@@ -144,6 +193,7 @@ const IPC: IPCType = {
     ipc.send('title-bar-double-click');
   },
   updateTrayIcon: unreadCount => ipc.send('update-tray-icon', unreadCount),
+  whenWindowVisible,
 };
 
 window.IPC = IPC;
@@ -261,28 +311,36 @@ ipc.on('additional-log-data-request', async event => {
   });
 });
 
+ipc.on('open-settings-tab', () => {
+  window.Whisper.events.emit('openSettingsTab');
+});
+
 ipc.on('set-up-as-new-device', () => {
-  window.Whisper.events.trigger('setupAsNewDevice');
+  window.Whisper.events.emit('setupAsNewDevice');
 });
 
 ipc.on('set-up-as-standalone', () => {
-  window.Whisper.events.trigger('setupAsStandalone');
+  window.Whisper.events.emit('setupAsStandalone');
+});
+
+ipc.on('stage-local-backup-for-import', () => {
+  window.Whisper.events.emit('stageLocalBackupForImport');
 });
 
 ipc.on('challenge:response', (_event, response) => {
-  window.Whisper.events.trigger('challengeResponse', response);
+  window.Whisper.events.emit('challengeResponse', response);
 });
 
 ipc.on('power-channel:suspend', () => {
-  window.Whisper.events.trigger('powerMonitorSuspend');
+  window.Whisper.events.emit('powerMonitorSuspend');
 });
 
 ipc.on('power-channel:resume', () => {
-  window.Whisper.events.trigger('powerMonitorResume');
+  window.Whisper.events.emit('powerMonitorResume');
 });
 
 ipc.on('power-channel:lock-screen', () => {
-  window.Whisper.events.trigger('powerMonitorLockScreen');
+  window.Whisper.events.emit('powerMonitorLockScreen');
 });
 
 ipc.on(
@@ -310,7 +368,7 @@ ipc.on('window:set-menu-options', (_event, options) => {
   if (!window.Whisper.events) {
     return;
   }
-  window.Whisper.events.trigger('setMenuOptions', options);
+  window.Whisper.events.emit('setMenuOptions', options);
 });
 
 window.sendChallengeRequest = request => ipc.send('challenge:request', request);
@@ -327,19 +385,6 @@ ipc.on('remove-dark-overlay', () => {
   window.Events.removeDarkOverlay();
 });
 
-ipc.on('delete-all-data', async () => {
-  const { deleteAllData } = window.Events;
-  if (!deleteAllData) {
-    return;
-  }
-
-  try {
-    await deleteAllData();
-  } catch (error) {
-    log.error('delete-all-data: error', Errors.toLogFormat(error));
-  }
-});
-
 ipc.on('show-sticker-pack', (_event, info) => {
   window.Events.showStickerPack?.(info.packId, info.packKey);
 });
@@ -354,9 +399,10 @@ ipc.on('start-call-lobby', (_event, info) => {
   window.Events.startCallingLobbyViaToken(info.token);
 });
 
-ipc.on('start-call-link', (_event, { key }) => {
+ipc.on('start-call-link', (_event, { key, epoch }) => {
   window.reduxActions?.calling?.startCallLinkLobby({
     rootKey: key,
+    epoch,
   });
 });
 
@@ -366,6 +412,10 @@ ipc.on('show-window', () => {
 
 ipc.on('cancel-presenting', () => {
   window.reduxActions?.calling?.cancelPresenting();
+});
+
+ipc.on('donation-validation-complete', (_event, { token }) => {
+  drop(window.Signal.Services.donations.finish3dsValidation(token));
 });
 
 ipc.on('show-conversation-via-token', (_event, token: string) => {
@@ -436,6 +486,70 @@ ipc.on('show-release-notes', () => {
   }
 });
 
+ipc.on('sql-error', () => {
+  if (!window.reduxActions) {
+    return;
+  }
+
+  if (isProduction(window.getVersion())) {
+    return;
+  }
+
+  window.reduxActions.toast.showToast({
+    toastType: ToastType.SQLError,
+  });
+});
+
+let untoastedMainProcessErrorLogCount = 0;
+let untoastedMainProcessErrorLogs: Array<string> = [];
+const MAX_MAIN_PROCESS_ERROR_LOGS_TO_CACHE = 5;
+
+ipc.on('logging-error', (_event, logLine) => {
+  if (isProduction(window.getVersion())) {
+    return;
+  }
+
+  if (!isEnabled('desktop.loggingErrorToasts')) {
+    return;
+  }
+
+  untoastedMainProcessErrorLogCount += 1;
+  const numCached = untoastedMainProcessErrorLogs.unshift(logLine);
+  if (numCached > MAX_MAIN_PROCESS_ERROR_LOGS_TO_CACHE) {
+    untoastedMainProcessErrorLogs.pop();
+  }
+
+  throttledHandleMainProcessErrors();
+});
+
+const throttledHandleMainProcessErrors = throttle(
+  _handleMainProcessErrors,
+  5000
+);
+
+function _handleMainProcessErrors() {
+  if (!window.reduxActions) {
+    // Try again in a bit!
+    throttledHandleMainProcessErrors();
+    return;
+  }
+
+  if (untoastedMainProcessErrorLogs.length === 0) {
+    return;
+  }
+
+  window.reduxActions.toast.showToast({
+    toastType: ToastType._InternalMainProcessLoggingError,
+    parameters: {
+      count: untoastedMainProcessErrorLogCount,
+      logLines: untoastedMainProcessErrorLogs,
+    },
+  });
+
+  untoastedMainProcessErrorLogCount = 0;
+  untoastedMainProcessErrorLogs = [];
+}
+
 ipc.on(
   'art-creator:uploadStickerPack',
   async (
@@ -450,3 +564,14 @@ ipc.on(
     event.sender.send('art-creator:uploadStickerPack:done', packId);
   }
 );
+
+const { promise: windowVisible, resolve: resolveWindowVisible } =
+  explodePromise<void>();
+
+ipc.on('activate', () => {
+  resolveWindowVisible();
+});
+
+async function whenWindowVisible(): Promise<void> {
+  await windowVisible;
+}

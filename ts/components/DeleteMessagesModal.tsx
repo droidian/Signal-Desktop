@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React from 'react';
-import type { ActionSpec } from './ConfirmationDialog';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import type { LocalizerType } from '../types/Util';
-import type { ShowToastAction } from '../state/ducks/toast';
-import { ToastType } from '../types/Toast';
+import type { ActionSpec } from './ConfirmationDialog.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import type { LocalizerType } from '../types/Util.js';
+import type { ShowToastAction } from '../state/ducks/toast.js';
+import { ToastType } from '../types/Toast.js';
 
 export type DeleteMessagesModalProps = Readonly<{
   isMe: boolean;
-  isDeleteSyncSendEnabled: boolean;
   canDeleteForEveryone: boolean;
   i18n: LocalizerType;
   messageCount: number;
@@ -24,7 +23,6 @@ const MAX_DELETE_FOR_EVERYONE = 30;
 
 export default function DeleteMessagesModal({
   isMe,
-  isDeleteSyncSendEnabled,
   canDeleteForEveryone,
   i18n,
   messageCount,
@@ -35,7 +33,7 @@ export default function DeleteMessagesModal({
 }: DeleteMessagesModalProps): JSX.Element {
   const actions: Array<ActionSpec> = [];
 
-  const syncNoteToSelfDelete = isMe && isDeleteSyncSendEnabled;
+  const syncNoteToSelfDelete = isMe;
 
   let deleteForMeText = i18n('icu:DeleteMessagesModal--deleteForMe');
   if (syncNoteToSelfDelete) {

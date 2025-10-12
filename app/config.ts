@@ -1,7 +1,7 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { join, basename } from 'path';
+import { join, basename } from 'node:path';
 import { app } from 'electron';
 
 import type { IConfig } from 'config';
@@ -11,7 +11,10 @@ import {
   getEnvironment,
   setEnvironment,
   parseEnvironment,
-} from '../ts/environment';
+} from '../ts/environment.js';
+import { createLogger } from '../ts/logging/log.js';
+
+const log = createLogger('config');
 
 // In production mode, NODE_ENV cannot be customized by the user
 if (app.isPackaged) {
@@ -51,7 +54,7 @@ const config: IConfig = require('config');
 
 if (getEnvironment() !== Environment.PackagedApp) {
   config.util.getConfigSources().forEach(source => {
-    console.log(`config: Using config source ${basename(source.name)}`);
+    log.info(`Using config source ${basename(source.name)}`);
   });
 }
 

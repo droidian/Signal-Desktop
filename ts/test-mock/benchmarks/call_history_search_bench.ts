@@ -5,13 +5,15 @@ import type { PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, StorageState } from '@signalapp/mock-server';
 
 import Long from 'long';
-import { sample } from 'lodash';
+import lodash from 'lodash';
 import { expect } from 'playwright/test';
-import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures';
-import { stats } from '../../util/benchmark/stats';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { strictAssert } from '../../util/assert';
-import { typeIntoInput } from '../helpers';
+import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures.js';
+import { stats } from '../../util/benchmark/stats.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { typeIntoInput } from '../helpers.js';
+
+const { sample } = lodash;
 
 const CALL_HISTORY_COUNT = 1000;
 
@@ -140,12 +142,18 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
   const CallsTabDetailsTitle = CallsTabDetails.locator(
     '.ConversationDetailsHeader__title'
   );
+  const AnyCallListAvatar = CallsTabSidebar.locator(
+    '.CallsList__ItemAvatar'
+  ).first();
 
   debug('waiting for unread badge to hit correct value', unreadCount);
   await CallsNavTabUnread.getByText(`${unreadCount} unread`).waitFor();
 
   debug('opening calls tab');
   await CallsNavTab.click();
+
+  await CreateCallLink.waitFor();
+  await AnyCallListAvatar.waitFor();
 
   async function measure(runId: number): Promise<number> {
     // setup
@@ -182,6 +190,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
     await NewCallDetailsTitle.waitFor();
     await SearchBar.clear();
     await CreateCallLink.waitFor();
+    await AnyCallListAvatar.waitFor();
 
     // measure
     const end = Date.now();

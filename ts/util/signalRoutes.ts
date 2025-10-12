@@ -1,14 +1,19 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import 'urlpattern-polyfill';
+// This file gets imported into renderer that does not have access to Node.js
+// builtins, use an `npm` package.
 // We need to use the Node.js version of `URL` because chromium's `URL` doesn't
 // support custom protocols correctly.
+// eslint-disable-next-line import/enforce-node-protocol-usage
 import { URL as NodeURL } from 'url';
 import { z } from 'zod';
-import { strictAssert } from './assert';
-import * as log from '../logging/log';
-import * as Errors from '../types/errors';
-import { parsePartial, parseUnknown, safeParseUnknown } from './schemas';
+import { strictAssert } from './assert.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { parsePartial, parseUnknown, safeParseUnknown } from './schemas.js';
+
+const log = createLogger('signalRoutes');
 
 function toUrl(input: URL | string): URL | null {
   if (input instanceof URL) {
@@ -51,6 +56,7 @@ type AllHostnamePatterns =
   | 'start-call-lobby'
   | 'show-window'
   | 'cancel-presenting'
+  | 'donation-validation-complete'
   | ':captchaId(.+)'
   | '';
 
@@ -201,6 +207,7 @@ function _route<Key extends string, Args extends object>(
 }
 
 const paramSchema = z.string().min(1);
+const paramEpoch = z.nullable(z.string().min(1));
 
 /**
  * signal.me by phone number
@@ -384,19 +391,25 @@ export const linkCallRoute = _route('linkCall', {
   ],
   schema: z.object({
     key: paramSchema, // ConsonantBase16
+    epoch: paramEpoch, // ConsonantBase16
   }),
   parse(result) {
     const params = new URLSearchParams(result.hash.groups.params);
     return {
       key: params.get('key'),
+      epoch: params.get('epoch'),
     };
   },
   toWebUrl(args) {
-    const params = new URLSearchParams({ key: args.key });
+    const params = new URLSearchParams(
+      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
+    );
     return new URL(`https://signal.link/call/#${params.toString()}`);
   },
   toAppUrl(args) {
-    const params = new URLSearchParams({ key: args.key });
+    const params = new URLSearchParams(
+      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
+    );
     return new URL(`sgnl://signal.link/call/#${params.toString()}`);
   },
 });
@@ -542,6 +555,42 @@ export const cancelPresentingRoute = _route('cancelPresenting', {
 });
 
 /**
+ * Resume donation workflow after completing 3ds validation
+ * @example
+ * ```ts
+ * donationValidationCompleteRoute.toAppUrl({
+ *   token: "123",
+ * })
+ * // URL { "sgnl://donation-validation-complete?token=123" }
+ * ```
+ */
+export const donationValidationCompleteRoute = _route(
+  'donationValidationComplete',
+  {
+    patterns: [
+      _pattern('sgnl:', 'donation-validation-complete', '{/}?', {
+        search: ':params',
+      }),
+    ],
+    schema: z.object({
+      token: paramSchema,
+    }),
+    parse(result) {
+      const params = new URLSearchParams(result.search.groups.params);
+      return {
+        token: params.get('token'),
+      };
+    },
+    toAppUrl(args) {
+      const params = new URLSearchParams({ token: args.token });
+      return new URL(
+        `sgnl://donation-validation-complete?${params.toString()}`
+      );
+    },
+  }
+);
+
+/**
  * Should include all routes for matching purposes.
  * @internal
  */
@@ -557,6 +606,7 @@ const _allSignalRoutes = [
   startCallLobbyRoute,
   showWindowRoute,
   cancelPresentingRoute,
+  donationValidationCompleteRoute,
 ] as const;
 
 strictAssert(

@@ -1,37 +1,42 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Aci } from '@signalapp/libsignal-client';
-import { throttle } from 'lodash';
+import lodash from 'lodash';
+import {
+  groupSendEndorsementsDataSchema,
+  toGroupSendToken,
+} from '../types/GroupSendEndorsements.js';
 import type {
   GroupSendCombinedEndorsementRecord,
   GroupSendMemberEndorsementRecord,
   GroupSendToken,
-} from '../types/GroupSendEndorsements';
-import {
-  groupSendEndorsementsDataSchema,
-  toGroupSendToken,
-  type GroupSendEndorsementsData,
-} from '../types/GroupSendEndorsements';
-import { devDebugger, strictAssert } from './assert';
+  GroupSendEndorsementsData,
+} from '../types/GroupSendEndorsements.js';
+import { devDebugger, strictAssert } from './assert.js';
 import {
   GroupSecretParams,
   GroupSendEndorsement,
   GroupSendEndorsementsResponse,
   ServerPublicParams,
-} from './zkgroup';
-import type { ServiceIdString } from '../types/ServiceId';
-import { fromAciObject } from '../types/ServiceId';
-import * as log from '../logging/log';
-import type { GroupV2MemberType } from '../model-types';
-import { DurationInSeconds, MINUTE } from './durations';
-import { ToastType } from '../types/Toast';
-import * as Errors from '../types/errors';
-import { isTestOrMockEnvironment } from '../environment';
-import { isNightly } from './version';
-import { parseStrict } from './schemas';
-import { DataReader } from '../sql/Client';
-import { maybeUpdateGroup } from '../groups';
-import { isGroupV2 } from './whatTypeOfConversation';
+} from './zkgroup.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { fromAciObject } from '../types/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import type { GroupV2MemberType } from '../model-types.js';
+import { DurationInSeconds, MINUTE } from './durations/index.js';
+import { ToastType } from '../types/Toast.js';
+import * as Errors from '../types/errors.js';
+import { isTestOrMockEnvironment } from '../environment.js';
+import { isNightly } from './version.js';
+import { parseStrict } from './schemas.js';
+import { DataReader } from '../sql/Client.js';
+import { maybeUpdateGroup } from '../groups.js';
+import * as Bytes from '../Bytes.js';
+import { isGroupV2 } from './whatTypeOfConversation.js';
+
+const { throttle } = lodash;
+
+const log = createLogger('groupSendEndorsements');
 
 export function decodeGroupSendEndorsementResponse({
   groupId,
@@ -57,7 +62,7 @@ export function decodeGroupSendEndorsementResponse({
   );
 
   const response = new GroupSendEndorsementsResponse(
-    Buffer.from(groupSendEndorsementResponse)
+    groupSendEndorsementResponse
   );
 
   const expiration = response.getExpiration().getTime() / 1000;
@@ -67,11 +72,11 @@ export function decodeGroupSendEndorsementResponse({
   );
 
   const groupSecretParams = new GroupSecretParams(
-    Buffer.from(groupSecretParamsBase64, 'base64')
+    Bytes.fromBase64(groupSecretParamsBase64)
   );
 
   const serverPublicParams = new ServerPublicParams(
-    Buffer.from(window.getServerPublicParams(), 'base64')
+    Bytes.fromBase64(window.getServerPublicParams())
   );
 
   const groupMembers = groupMembersV2.map(member => {
@@ -191,7 +196,7 @@ export class GroupSendEndorsementState {
   #toEndorsement(contents: Uint8Array): GroupSendEndorsement {
     let endorsement = this.#endorsementCache.get(contents);
     if (endorsement == null) {
-      endorsement = new GroupSendEndorsement(Buffer.from(contents));
+      endorsement = new GroupSendEndorsement(contents);
       this.#endorsementCache.set(contents, endorsement);
     }
     return endorsement;
@@ -199,7 +204,7 @@ export class GroupSendEndorsementState {
 
   #toToken(endorsement: GroupSendEndorsement): GroupSendToken {
     const groupSecretParams = new GroupSecretParams(
-      Buffer.from(this.#groupSecretParamsBase64, 'base64')
+      Bytes.fromBase64(this.#groupSecretParamsBase64)
     );
 
     const expiration = this.getExpiration();

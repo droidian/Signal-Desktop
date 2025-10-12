@@ -1,26 +1,28 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as log from '../logging/log';
-import * as Errors from '../types/errors';
-import { drop } from '../util/drop';
-import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { drop } from '../util/drop.js';
+import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet.js';
 
-import type { MessageAttributesType } from '../model-types';
+import type { MessageAttributesType } from '../model-types.js';
 import type {
   ConversationIdentifier,
   AddressableMessage,
-} from '../textsecure/messageReceiverEvents';
+} from '../textsecure/messageReceiverEvents.js';
 import {
   deleteAttachmentFromMessage,
   deleteMessage,
-} from '../util/deleteForMe';
+} from '../util/deleteForMe.js';
 import {
   doesMessageMatch,
   getConversationFromTarget,
   getMessageQueryFromTarget,
-} from '../util/syncIdentifiers';
-import { DataWriter } from '../sql/Client';
+} from '../util/syncIdentifiers.js';
+import { DataWriter } from '../sql/Client.js';
+
+const log = createLogger('DeletesForMe');
 
 const { removeSyncTaskById } = DataWriter;
 
@@ -102,7 +104,7 @@ export async function onDelete(item: DeleteForMeAttributesType): Promise<void> {
 
         let result: boolean;
         if (item.deleteAttachmentData) {
-          // This will find the message, then work with a backbone model to mirror what
+          // This will find the message, then work with a model to mirror what
           //   modifyTargetMessage does.
           result = await deleteAttachmentFromMessage(
             conversation.id,
@@ -127,7 +129,7 @@ export async function onDelete(item: DeleteForMeAttributesType): Promise<void> {
     );
   } catch (error) {
     log.error(
-      `DeletesForMe.onDelete(task=${item.syncTaskId},envelopeId=${item.envelopeId}): Error`,
+      `onDelete(task=${item.syncTaskId},envelopeId=${item.envelopeId}): Error`,
       Errors.toLogFormat(error)
     );
     await remove(item);

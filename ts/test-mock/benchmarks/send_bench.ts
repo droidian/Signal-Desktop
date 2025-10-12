@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /* eslint-disable no-await-in-loop, no-console */
 
-import assert from 'assert';
+import assert from 'node:assert';
 
 import { ReceiptType } from '@signalapp/mock-server';
 
-import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures';
-import { stats } from '../../util/benchmark/stats';
-import { typeIntoInput, waitForEnabledComposer } from '../helpers';
+import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures.js';
+import { stats } from '../../util/benchmark/stats.js';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.js';
 
 const CONVERSATION_SIZE = 500; // messages
 
@@ -68,7 +68,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
   {
     const leftPane = window.locator('#LeftPane');
     const item = leftPane.locator(
-      `[data-testid="${first.toContact().aci}"] >> text=${LAST_MESSAGE}`
+      `[data-testid="${first.device.aci}"] >> text=${LAST_MESSAGE}`
     );
     await item.click();
   }

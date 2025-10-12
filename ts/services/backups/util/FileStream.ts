@@ -3,7 +3,7 @@
 
 import { type FileHandle, open } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
-import { InputStream } from '@signalapp/libsignal-client/dist/io';
+import { InputStream } from '@signalapp/libsignal-client/dist/io.js';
 
 export class FileStream extends InputStream {
   #file: FileHandle | undefined;
@@ -32,7 +32,7 @@ export class FileStream extends InputStream {
       this.#position
     );
     this.#position += bytesRead;
-    return this.#buffer.slice(0, bytesRead);
+    return this.#buffer.subarray(0, bytesRead);
   }
 
   async skip(amount: number): Promise<void> {

@@ -1,11 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import type { Placement } from 'react-aria';
 import { Dialog, Popover } from 'react-aria-components';
 import classNames from 'classnames';
-import { ThemeType } from '../../../types/Util';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { ThemeType } from '../../../types/Util.js';
 
 export type FunPopoverProps = Readonly<{
   placement?: Placement;
@@ -16,8 +17,14 @@ export type FunPopoverProps = Readonly<{
 export function FunPopover(props: FunPopoverProps): JSX.Element {
   const shouldCloseOnInteractOutside = useCallback(
     (element: Element): boolean => {
-      // Don't close when quill steals focus
-      const match = element.closest('.module-composition-input__input');
+      const match = element.closest(
+        [
+          // Don't close when quill steals focus
+          '.module-composition-input__input',
+          // Don't close when clicking tooltip
+          '.FunTooltip',
+        ].join(', ')
+      );
       if (match != null) {
         return false;
       }
@@ -26,17 +33,27 @@ export function FunPopover(props: FunPopoverProps): JSX.Element {
     []
   );
 
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    event.stopPropagation();
+  }, []);
+
   return (
-    <Popover
-      data-fun-overlay
-      className={classNames('FunPopover', {
-        'light-theme': props.theme === ThemeType.light,
-        'dark-theme': props.theme === ThemeType.dark,
-      })}
-      placement={props.placement}
-      shouldCloseOnInteractOutside={shouldCloseOnInteractOutside}
-    >
-      <Dialog className="FunPopover__Dialog">{props.children}</Dialog>
-    </Popover>
+    <Tooltip.Provider>
+      {/* Prevents keyboard events from bubbling up outside of the popover */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      <div onKeyDown={handleKeyDown}>
+        <Popover
+          data-fun-overlay
+          className={classNames('FunPopover', {
+            'light-theme': props.theme === ThemeType.light,
+            'dark-theme': props.theme === ThemeType.dark,
+          })}
+          placement={props.placement}
+          shouldCloseOnInteractOutside={shouldCloseOnInteractOutside}
+        >
+          <Dialog className="FunPopover__Dialog">{props.children}</Dialog>
+        </Popover>
+      </div>
+    </Tooltip.Provider>
   );
 }

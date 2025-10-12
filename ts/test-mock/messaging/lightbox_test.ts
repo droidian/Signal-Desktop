@@ -4,18 +4,18 @@
 import createDebug from 'debug';
 import { expect } from 'playwright/test';
 import { type PrimaryDevice, StorageState } from '@signalapp/mock-server';
-import * as path from 'path';
-import type { App } from '../playwright';
-import { Bootstrap } from '../bootstrap';
+import * as path from 'node:path';
+import type { App } from '../playwright.js';
+import { Bootstrap } from '../bootstrap.js';
 import {
   getMessageInTimelineByTimestamp,
   getTimelineMessageWithText,
   sendMessageWithAttachments,
   sendTextMessage,
-} from '../helpers';
-import * as durations from '../../util/durations';
-import { strictAssert } from '../../util/assert';
-import type { SignalService } from '../../protobuf';
+} from '../helpers.js';
+import * as durations from '../../util/durations/index.js';
+import { strictAssert } from '../../util/assert.js';
+import type { SignalService } from '../../protobuf/index.js';
 
 const debug = createDebug('mock:test:lightbox');
 
@@ -78,7 +78,7 @@ describe('lightbox', function (this: Mocha.Suite) {
       });
       debug('wait for message to appear in timeline');
       const Message = getMessageInTimelineByTimestamp(page, timestamp);
-      const MessageImageLoaded = Message.locator('img.module-image__image');
+      const MessageImageLoaded = Message.locator('.module-image--loaded');
 
       await Message.waitFor();
 
@@ -134,9 +134,11 @@ describe('lightbox', function (this: Mocha.Suite) {
     async function expectLightboxImage(
       attachment: SignalService.IAttachmentPointer
     ) {
-      strictAssert(attachment.fileName, 'Must have filename');
-      const Object = LightboxContent.getByTestId(attachment.fileName);
-      debug(`Waiting for ${attachment.fileName}`);
+      debug('attachment cdnKey is', typeof attachment.cdnKey);
+      strictAssert(attachment.cdnKey, 'Must have cdnKey');
+      strictAssert(attachment.cdnKey.length > 0, 'Must have valid cdnKey');
+      const Object = LightboxContent.getByTestId(attachment.cdnKey);
+      debug(`Waiting for attachment with cdnKey ${attachment.cdnKey}`);
       await expect(Object).toBeVisible();
     }
 

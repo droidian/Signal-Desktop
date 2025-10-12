@@ -3,9 +3,13 @@
 
 import humanizeDuration from 'humanize-duration';
 import type { Unit } from 'humanize-duration';
-import { isNumber } from 'lodash';
-import type { LocalizerType } from '../types/Util';
-import { SECOND, DurationInSeconds } from './durations';
+import lodash from 'lodash';
+import type { LocalizerType } from '../types/Util.js';
+import { SECOND, DurationInSeconds } from './durations/index.js';
+
+const { isNumber } = lodash;
+
+export const INITIAL_EXPIRE_TIMER_VERSION = 1;
 
 const SECONDS_PER_WEEK = 604800;
 export const DEFAULT_DURATIONS_IN_SECONDS: ReadonlyArray<DurationInSeconds> = [

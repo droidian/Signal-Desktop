@@ -8,17 +8,17 @@ import type { Meta } from '@storybook/react';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../../test-both/helpers/getDefaultConversation';
-import { getRandomColor } from '../../test-both/helpers/getRandomColor';
-import { DurationInSeconds } from '../../util/durations';
-import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext';
-import type { PropsType } from './ConversationHeader';
+} from '../../test-helpers/getDefaultConversation.js';
+import { getRandomColor } from '../../test-helpers/getRandomColor.js';
+import { DurationInSeconds } from '../../util/durations/index.js';
+import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.js';
+import type { PropsType } from './ConversationHeader.js';
 import {
   ConversationHeader,
   OutgoingCallButtonStyle,
-} from './ConversationHeader';
-import { gifUrl } from '../../storybook/Fixtures';
-import { ThemeType } from '../../types/Util';
+} from './ConversationHeader.js';
+import { gifUrl } from '../../storybook/Fixtures.js';
+import { ThemeType } from '../../types/Util.js';
 
 export default {
   title: 'Components/Conversation/ConversationHeader',
@@ -46,7 +46,6 @@ const commonProps: PropsType = {
   i18n,
 
   localDeleteWarningShown: true,
-  isDeleteSyncSendEnabled: true,
   setLocalDeleteWarningShown: action('setLocalDeleteWarningShown'),
 
   onConversationAccept: action('onConversationAccept'),
@@ -407,20 +406,6 @@ export function NeedsDeleteConfirmation(): JSX.Element {
   const props = {
     ...commonProps,
     localDeleteWarningShown,
-    setLocalDeleteWarningShown: () => setLocalDeleteWarningShown(true),
-  };
-  const theme = useContext(StorybookThemeContext);
-
-  return <ConversationHeader {...props} theme={theme} />;
-}
-
-export function NeedsDeleteConfirmationButNotEnabled(): JSX.Element {
-  const [localDeleteWarningShown, setLocalDeleteWarningShown] =
-    React.useState(false);
-  const props = {
-    ...commonProps,
-    localDeleteWarningShown,
-    isDeleteSyncSendEnabled: false,
     setLocalDeleteWarningShown: () => setLocalDeleteWarningShown(true),
   };
   const theme = useContext(StorybookThemeContext);

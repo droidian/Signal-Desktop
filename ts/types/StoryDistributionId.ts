@@ -3,9 +3,11 @@
 
 import { v4 as generateUuid } from 'uuid';
 
-import { isValidUuid } from '../util/isValidUuid';
-import * as log from '../logging/log';
-import type { LoggerType } from './Logging';
+import { isValidUuid } from '../util/isValidUuid.js';
+import { createLogger } from '../logging/log.js';
+import type { LoggerType } from './Logging.js';
+
+const log = createLogger('StoryDistributionId');
 
 export type StoryDistributionIdString = string & {
   __story_distribution_id: never;

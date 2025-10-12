@@ -1,10 +1,9 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { DurationInSeconds } from '../util/durations';
-import type { AttachmentType } from './Attachment';
-import type { EmbeddedContactType } from './EmbeddedContact';
-import type { IndexableBoolean, IndexablePresence } from './IndexedDB';
+import type { DurationInSeconds } from '../util/durations/index.js';
+import type { AttachmentType } from './Attachment.js';
+import type { EmbeddedContactType } from './EmbeddedContact.js';
 
 export function getMentionsRegex(): RegExp {
   return /\uFFFC/g;
@@ -34,7 +33,6 @@ export type IncomingMessage = Readonly<
     source?: string;
     sourceDevice?: number;
   } & SharedMessageProperties &
-    MessageSchemaVersion5 &
     MessageSchemaVersion6 &
     ExpirationTimerUpdate
 >;
@@ -56,7 +54,6 @@ export type OutgoingMessage = Readonly<
     isViewOnce?: number;
     synced: boolean;
   } & SharedMessageProperties &
-    MessageSchemaVersion5 &
     ExpirationTimerUpdate
 >;
 
@@ -64,7 +61,6 @@ export type VerifiedChangeMessage = Readonly<
   {
     type: 'verified-change';
   } & SharedMessageProperties &
-    MessageSchemaVersion5 &
     ExpirationTimerUpdate
 >;
 
@@ -72,7 +68,6 @@ export type ProfileChangeNotificationMessage = Readonly<
   {
     type: 'profile-change';
   } & SharedMessageProperties &
-    MessageSchemaVersion5 &
     ExpirationTimerUpdate
 >;
 
@@ -89,14 +84,6 @@ export type ExpirationTimerUpdate = Partial<
       fromSync: boolean;
       source: string; // PhoneNumber
     }>;
-  }>
->;
-
-export type MessageSchemaVersion5 = Partial<
-  Readonly<{
-    hasAttachments: IndexableBoolean;
-    hasVisualMediaAttachments: IndexablePresence;
-    hasFileAttachments: IndexablePresence;
   }>
 >;
 

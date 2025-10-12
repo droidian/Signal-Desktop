@@ -1,24 +1,26 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from '../types/Attachment';
+import type { AttachmentType } from '../types/Attachment.js';
 import type {
   MessageAttributesType,
   QuotedAttachmentType,
-} from '../model-types.d';
-import type { LinkPreviewType } from '../types/message/LinkPreviews';
-import type { StickerType } from '../types/Stickers';
-import { IMAGE_JPEG, IMAGE_GIF } from '../types/MIME';
-import { getAuthor } from '../messages/helpers';
-import { getQuoteBodyText } from './getQuoteBodyText';
-import { isGIF } from '../types/Attachment';
-import { isGiftBadge, isTapToView } from '../state/selectors/message';
-import * as log from '../logging/log';
-import { map, take, collect } from './iterables';
-import { strictAssert } from './assert';
-import { getMessageSentTimestamp } from './getMessageSentTimestamp';
-import { getLocalAttachmentUrl } from './getLocalAttachmentUrl';
-import type { QuotedMessageForComposerType } from '../state/ducks/composer';
+} from '../model-types.d.ts';
+import type { LinkPreviewType } from '../types/message/LinkPreviews.js';
+import type { StickerType } from '../types/Stickers.js';
+import { IMAGE_JPEG, IMAGE_GIF } from '../types/MIME.js';
+import { getAuthor } from '../messages/helpers.js';
+import { getQuoteBodyText } from './getQuoteBodyText.js';
+import { isGIF } from '../types/Attachment.js';
+import { isGiftBadge, isTapToView } from '../state/selectors/message.js';
+import { createLogger } from '../logging/log.js';
+import { map, take, collect } from './iterables.js';
+import { strictAssert } from './assert.js';
+import { getMessageSentTimestamp } from './getMessageSentTimestamp.js';
+import { getLocalAttachmentUrl } from './getLocalAttachmentUrl.js';
+import type { QuotedMessageForComposerType } from '../state/ducks/composer.js';
+
+const log = createLogger('makeQuote');
 
 export async function makeQuote(
   quotedMessage: MessageAttributesType
@@ -84,7 +86,7 @@ export async function getQuoteAttachment(
             thumbnail && thumbnail.path
               ? {
                   ...(await loadAttachmentData(thumbnail)),
-                  objectUrl: getLocalAttachmentUrl(thumbnail),
+                  url: getLocalAttachmentUrl(thumbnail),
                 }
               : undefined,
         };
@@ -123,7 +125,7 @@ export async function getQuoteAttachment(
         thumbnail: path
           ? {
               ...(await loadAttachmentData(sticker.data)),
-              objectUrl: getLocalAttachmentUrl(sticker.data),
+              url: getLocalAttachmentUrl(sticker.data),
             }
           : undefined,
       },

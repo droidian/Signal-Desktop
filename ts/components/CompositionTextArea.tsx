@@ -2,24 +2,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useRef, useCallback, useState } from 'react';
-import type { LocalizerType } from '../types/I18N';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import type { InputApi } from './CompositionInput';
-import { CompositionInput } from './CompositionInput';
-import { EmojiButton } from './emoji/EmojiButton';
-import type {
-  DraftBodyRanges,
-  HydratedBodyRangesType,
-} from '../types/BodyRange';
-import type { ThemeType } from '../types/Util';
-import type { Props as EmojiButtonProps } from './emoji/EmojiButton';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import * as grapheme from '../util/grapheme';
-import { FunEmojiPicker } from './fun/FunEmojiPicker';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import type { EmojiSkinTone } from './fun/data/emojis';
-import { FunEmojiPickerButton } from './fun/FunButton';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
+import type { LocalizerType } from '../types/I18N.js';
+import type { EmojiPickDataType } from './emoji/EmojiPicker.js';
+import type { InputApi } from './CompositionInput.js';
+import { CompositionInput } from './CompositionInput.js';
+import { EmojiButton } from './emoji/EmojiButton.js';
+import {
+  hydrateRanges,
+  type DraftBodyRanges,
+  type HydratedBodyRangesType,
+} from '../types/BodyRange.js';
+import type { ThemeType } from '../types/Util.js';
+import type { Props as EmojiButtonProps } from './emoji/EmojiButton.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import * as grapheme from '../util/grapheme.js';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import type { EmojiSkinTone } from './fun/data/emojis.js';
+import { FunEmojiPickerButton } from './fun/FunButton.js';
+import { isFunPickerEnabled } from './fun/isFunPickerEnabled.js';
+import type { GetConversationByIdType } from '../state/selectors/conversations.js';
 
 export type CompositionTextAreaProps = {
   bodyRanges: HydratedBodyRangesType | null;
@@ -48,6 +50,7 @@ export type CompositionTextAreaProps = {
   getPreferredBadge: PreferredBadgeSelectorType;
   draftText: string;
   theme: ThemeType;
+  conversationSelector: GetConversationByIdType;
 } & Pick<EmojiButtonProps, 'recentEmojis' | 'emojiSkinToneDefault'>;
 
 /**
@@ -78,6 +81,7 @@ export function CompositionTextArea({
   emojiSkinToneDefault,
   theme,
   whenToShowRemainingCount = Infinity,
+  conversationSelector,
 }: CompositionTextAreaProps): JSX.Element {
   const inputApiRef = useRef<InputApi | undefined>();
   const [characterCount, setCharacterCount] = useState(
@@ -128,6 +132,10 @@ export function CompositionTextArea({
       bodyRanges: updatedBodyRanges,
       caretLocation,
       messageText: newValue,
+    }: {
+      bodyRanges: DraftBodyRanges;
+      caretLocation?: number | undefined;
+      messageText: string;
     }) => {
       const inputEl = inputApiRef.current;
       if (!inputEl) {
@@ -139,6 +147,9 @@ export function CompositionTextArea({
         maxLength
       );
 
+      const hydratedBodyRanges =
+        hydrateRanges(updatedBodyRanges, conversationSelector) ?? [];
+
       if (maxLength !== undefined) {
         // if we had to truncate
         if (newValueSized.length < newValue.length) {
@@ -149,13 +160,13 @@ export function CompositionTextArea({
           // was modifying text in the middle of the editor
           // a better solution would be to prevent the change to begin with, but
           // quill makes this VERY difficult
-          inputEl.setContents(newValueSized, updatedBodyRanges, true);
+          inputEl.setContents(newValueSized, hydratedBodyRanges, true);
         }
       }
       setCharacterCount(newCharacterCount);
-      onChange(newValue, updatedBodyRanges, caretLocation);
+      onChange(newValue, hydratedBodyRanges, caretLocation);
     },
-    [maxLength, onChange]
+    [maxLength, onChange, conversationSelector]
   );
 
   return (

@@ -1,25 +1,27 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import type { ConversationQueueJobData } from '../jobs/conversationJobQueue';
-import * as Errors from '../types/errors';
-import { DAY } from './durations';
-import * as log from '../logging/log';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import type { ConversationQueueJobData } from '../jobs/conversationJobQueue.js';
+import * as Errors from '../types/errors.js';
+import { DAY } from './durations/index.js';
+import { createLogger } from '../logging/log.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
-import { deleteForEveryone } from './deleteForEveryone';
+} from '../jobs/conversationJobQueue.js';
+import { deleteForEveryone } from './deleteForEveryone.js';
 import {
   getConversationIdForLogging,
   getMessageIdForLogging,
-} from './idForLogging';
-import { getMessageById } from '../messages/getMessageById';
-import { getRecipientConversationIds } from './getRecipientConversationIds';
-import { getRecipients } from './getRecipients';
-import { repeat, zipObject } from './iterables';
-import { isMe } from './whatTypeOfConversation';
+} from './idForLogging.js';
+import { getMessageById } from '../messages/getMessageById.js';
+import { getRecipientConversationIds } from './getRecipientConversationIds.js';
+import { getRecipients } from './getRecipients.js';
+import { repeat, zipObject } from './iterables.js';
+import { isMe } from './whatTypeOfConversation.js';
+
+const log = createLogger('sendDeleteForEveryoneMessage');
 
 export async function sendDeleteForEveryoneMessage(
   conversationAttributes: ConversationAttributesType,
@@ -63,7 +65,7 @@ export async function sendDeleteForEveryoneMessage(
   );
 
   log.info(
-    `sendDeleteForEveryoneMessage: enqueuing DeleteForEveryone: ${idForLogging} ` +
+    `enqueuing DeleteForEveryone: ${idForLogging} ` +
       `in conversation ${conversationIdForLogging}`
   );
 
@@ -78,7 +80,7 @@ export async function sendDeleteForEveryoneMessage(
     };
     await conversationJobQueue.add(jobData, async jobToInsert => {
       log.info(
-        `sendDeleteForEveryoneMessage: Deleting message ${idForLogging} ` +
+        `Deleting message ${idForLogging} ` +
           `in conversation ${conversationIdForLogging} with job ${jobToInsert.id}`
       );
       await window.MessageCache.saveMessage(message.attributes, {
@@ -87,7 +89,7 @@ export async function sendDeleteForEveryoneMessage(
     });
   } catch (error) {
     log.error(
-      `sendDeleteForEveryoneMessage: Failed to queue delete for everyone for message ${idForLogging}`,
+      `Failed to queue delete for everyone for message ${idForLogging}`,
       Errors.toLogFormat(error)
     );
     throw error;

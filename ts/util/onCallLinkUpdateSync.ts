@@ -2,23 +2,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { CallLinkRootKey } from '@signalapp/ringrtc';
-import type { CallLinkUpdateSyncEvent } from '../textsecure/messageReceiverEvents';
-import * as log from '../logging/log';
-import * as Errors from '../types/errors';
-import { fromAdminKeyBytes } from './callLinks';
-import { getRoomIdFromRootKey } from './callLinksRingrtc';
-import { strictAssert } from './assert';
-import { CallLinkUpdateSyncType } from '../types/CallLink';
-import { DataWriter } from '../sql/Client';
+import type { CallLinkUpdateSyncEvent } from '../textsecure/messageReceiverEvents.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { fromAdminKeyBytes } from './callLinks.js';
+import { fromEpochBytes, getRoomIdFromRootKey } from './callLinksRingrtc.js';
+import { strictAssert } from './assert.js';
+import { CallLinkUpdateSyncType } from '../types/CallLink.js';
+import { DataWriter } from '../sql/Client.js';
+
+const log = createLogger('onCallLinkUpdateSync');
 
 export async function onCallLinkUpdateSync(
   syncEvent: CallLinkUpdateSyncEvent
 ): Promise<void> {
   const { callLinkUpdate, confirm } = syncEvent;
-  const { type, rootKey, adminKey } = callLinkUpdate;
+  const { type, rootKey, epoch, adminKey } = callLinkUpdate;
 
   if (!rootKey) {
-    log.warn('onCallLinkUpdateSync: Missing rootKey, invalid sync message');
+    log.warn('Missing rootKey, invalid sync message');
     return;
   }
 
@@ -32,7 +34,7 @@ export async function onCallLinkUpdateSync(
       'onCallLinkUpdateSync: roomId is required in sync message'
     );
   } catch (err) {
-    log.error('onCallLinkUpdateSync: Could not parse root key');
+    log.error('Could not parse root key');
     return;
   }
 
@@ -42,9 +44,11 @@ export async function onCallLinkUpdateSync(
   try {
     if (type === CallLinkUpdateSyncType.Update) {
       const rootKeyString = callLinkRootKey.toString();
+      const epochString = epoch ? fromEpochBytes(epoch) : null;
       const adminKeyString = adminKey ? fromAdminKeyBytes(adminKey) : null;
       window.reduxActions.calling.handleCallLinkUpdate({
         rootKey: rootKeyString,
+        epoch: epochString,
         adminKey: adminKeyString,
       });
     } else if (type === CallLinkUpdateSyncType.Delete) {

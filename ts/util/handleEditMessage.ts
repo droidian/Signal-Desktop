@@ -1,47 +1,37 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from '../types/Attachment';
-import type { EditAttributesType } from '../messageModifiers/Edits';
+import type { AttachmentType } from '../types/Attachment.js';
+import type { EditAttributesType } from '../messageModifiers/Edits.js';
 import type {
   EditHistoryType,
   MessageAttributesType,
-  QuotedAttachmentType,
   QuotedMessageType,
-} from '../model-types.d';
-import type { LinkPreviewType } from '../types/message/LinkPreviews';
-import * as Edits from '../messageModifiers/Edits';
-import * as log from '../logging/log';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { DataWriter } from '../sql/Client';
-import { drop } from './drop';
-import { getAttachmentSignature, isVoiceMessage } from '../types/Attachment';
-import { isAciString } from './isAciString';
-import { getMessageIdForLogging } from './idForLogging';
-import { hasErrors } from '../state/selectors/message';
-import { isIncoming, isOutgoing } from '../messages/helpers';
-import { isDirectConversation } from './whatTypeOfConversation';
-import { isTooOldToModifyMessage } from './isTooOldToModifyMessage';
-import { queueAttachmentDownloads } from './queueAttachmentDownloads';
-import { modifyTargetMessage } from './modifyTargetMessage';
-import { isMessageNoteToSelf } from './isMessageNoteToSelf';
-import { MessageModel } from '../models/messages';
+} from '../model-types.d.ts';
+import * as Edits from '../messageModifiers/Edits.js';
+import { createLogger } from '../logging/log.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { DataWriter } from '../sql/Client.js';
+import { drop } from './drop.js';
+import {
+  cacheAttachmentBySignature,
+  getCachedAttachmentBySignature,
+  isVoiceMessage,
+} from '../types/Attachment.js';
+import { isAciString } from './isAciString.js';
+import { getMessageIdForLogging } from './idForLogging.js';
+import { hasErrors } from '../state/selectors/message.js';
+import { isIncoming, isOutgoing } from '../messages/helpers.js';
+import { isDirectConversation } from './whatTypeOfConversation.js';
+import { isTooOldToModifyMessage } from './isTooOldToModifyMessage.js';
+import { queueAttachmentDownloads } from './queueAttachmentDownloads.js';
+import { modifyTargetMessage } from './modifyTargetMessage.js';
+import { isMessageNoteToSelf } from './isMessageNoteToSelf.js';
+import { MessageModel } from '../models/messages.js';
+
+const log = createLogger('handleEditMessage');
 
 const RECURSION_LIMIT = 15;
-
-function getAttachmentSignatureSafe(
-  attachment: AttachmentType
-): string | undefined {
-  try {
-    return getAttachmentSignature(attachment);
-  } catch {
-    log.warn(
-      'handleEditMessage: attachment was missing digest',
-      attachment.blurHash
-    );
-    return undefined;
-  }
-}
 
 export async function handleEditMessage(
   mainMessage: MessageAttributesType,
@@ -144,43 +134,34 @@ export async function handleEditMessage(
   // Copies over the attachments from the main message if they're the same
   // and they have already been downloaded.
   const attachmentSignatures: Map<string, AttachmentType> = new Map();
-  const previewSignatures: Map<string, LinkPreviewType> = new Map();
-  const quoteSignatures: Map<string, QuotedAttachmentType> = new Map();
+  const previewSignatures: Map<string, AttachmentType> = new Map();
+  const quoteSignatures: Map<string, AttachmentType> = new Map();
 
   mainMessage.attachments?.forEach(attachment => {
-    const signature = getAttachmentSignatureSafe(attachment);
-    if (signature) {
-      attachmentSignatures.set(signature, attachment);
-    }
+    cacheAttachmentBySignature(attachmentSignatures, attachment);
   });
   mainMessage.preview?.forEach(preview => {
     if (!preview.image) {
       return;
     }
-    const signature = getAttachmentSignatureSafe(preview.image);
-    if (signature) {
-      previewSignatures.set(signature, preview);
-    }
+    cacheAttachmentBySignature(previewSignatures, preview.image);
   });
   if (mainMessage.quote) {
     for (const attachment of mainMessage.quote.attachments) {
       if (!attachment.thumbnail) {
         continue;
       }
-      const signature = getAttachmentSignatureSafe(attachment.thumbnail);
-      if (signature) {
-        quoteSignatures.set(signature, attachment);
-      }
+      cacheAttachmentBySignature(quoteSignatures, attachment.thumbnail);
     }
   }
 
   let newAttachments = 0;
   const nextEditedMessageAttachments =
     upgradedEditedMessageData.attachments?.map(attachment => {
-      const signature = getAttachmentSignatureSafe(attachment);
-      const existingAttachment = signature
-        ? attachmentSignatures.get(signature)
-        : undefined;
+      const existingAttachment = getCachedAttachmentBySignature(
+        attachmentSignatures,
+        attachment
+      );
 
       if (existingAttachment) {
         return existingAttachment;
@@ -197,12 +178,13 @@ export async function handleEditMessage(
         return preview;
       }
 
-      const signature = getAttachmentSignatureSafe(preview.image);
-      const existingPreview = signature
-        ? previewSignatures.get(signature)
-        : undefined;
-      if (existingPreview) {
-        return existingPreview;
+      const existingPreviewImage = getCachedAttachmentBySignature(
+        previewSignatures,
+        preview.image
+      );
+
+      if (existingPreviewImage) {
+        return { ...preview, image: existingPreviewImage };
       }
       newPreviews += 1;
       return preview;
@@ -229,10 +211,12 @@ export async function handleEditMessage(
         if (!attachment.thumbnail) {
           return attachment;
         }
-        const signature = getAttachmentSignatureSafe(attachment.thumbnail);
-        const existingQuoteAttachment = signature
-          ? quoteSignatures.get(signature)
-          : undefined;
+
+        const existingQuoteAttachment = getCachedAttachmentBySignature(
+          quoteSignatures,
+          attachment.thumbnail
+        );
+
         if (existingQuoteAttachment) {
           return {
             ...attachment,

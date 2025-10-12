@@ -1,20 +1,24 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isEqual } from 'lodash';
-import { DataReader } from '../sql/Client';
-import type { StoryRecipientUpdateEvent } from '../textsecure/messageReceiverEvents';
-import { normalizeServiceId } from '../types/ServiceId';
-import { normalizeStoryDistributionId } from '../types/StoryDistributionId';
-import * as log from '../logging/log';
-import { SendStatus } from '../messages/MessageSendState';
-import { getConversationIdForLogging } from './idForLogging';
-import { isStory } from '../state/selectors/message';
-import { queueUpdateMessage } from './messageBatcher';
-import { isMe } from './whatTypeOfConversation';
-import { drop } from './drop';
-import { handleDeleteForEveryone } from './deleteForEveryone';
-import { MessageModel } from '../models/messages';
+import lodash from 'lodash';
+import { DataReader } from '../sql/Client.js';
+import type { StoryRecipientUpdateEvent } from '../textsecure/messageReceiverEvents.js';
+import { normalizeStoryDistributionId } from '../types/StoryDistributionId.js';
+import { createLogger } from '../logging/log.js';
+import { SendStatus } from '../messages/MessageSendState.js';
+import { getConversationIdForLogging } from './idForLogging.js';
+import { isStory } from '../state/selectors/message.js';
+import { queueUpdateMessage } from './messageBatcher.js';
+import { isMe } from './whatTypeOfConversation.js';
+import { drop } from './drop.js';
+import { fromServiceIdBinaryOrString } from './ServiceId.js';
+import { handleDeleteForEveryone } from './deleteForEveryone.js';
+import { MessageModel } from '../models/messages.js';
+
+const { isEqual } = lodash;
+
+const log = createLogger('onStoryRecipientUpdate');
 
 export async function onStoryRecipientUpdate(
   event: StoryRecipientUpdateEvent
@@ -59,15 +63,22 @@ export async function onStoryRecipientUpdate(
         Set<string>
       >();
       data.storyMessageRecipients.forEach(item => {
-        const { destinationServiceId: recipientServiceId } = item;
+        const {
+          destinationServiceId: rawDestinationServiceId,
+          destinationServiceIdBinary,
+        } = item;
 
-        if (!recipientServiceId) {
+        const recipientServiceId = fromServiceIdBinaryOrString(
+          destinationServiceIdBinary,
+          rawDestinationServiceId,
+          `${logId}.recipientServiceId`
+        );
+
+        if (recipientServiceId == null) {
           return;
         }
 
-        const convo = window.ConversationController.get(
-          normalizeServiceId(recipientServiceId, `${logId}.recipientServiceId`)
-        );
+        const convo = window.ConversationController.get(recipientServiceId);
 
         if (!convo || !item.distributionListIds) {
           return;
@@ -198,14 +209,14 @@ export async function onStoryRecipientUpdate(
           message.set({
             sendStateByConversationId: nextSendStateByConversationId,
           });
-          queueUpdateMessage(message.attributes);
+          drop(queueUpdateMessage(message.attributes));
         }
 
         return true;
       });
 
       if (handledMessages.length) {
-        window.Whisper.events.trigger('incrementProgress');
+        window.Whisper.events.emit('incrementProgress');
         confirm();
       }
     })

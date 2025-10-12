@@ -3,14 +3,16 @@
 import type { CSSProperties, ForwardedRef } from 'react';
 import React, { forwardRef, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@react-spring/web';
-import { SpinnerV2 } from '../SpinnerV2';
-import { strictAssert } from '../../util/assert';
-import type { Loadable } from '../../util/loadable';
-import { LoadingState } from '../../util/loadable';
-import { useIntent } from './base/FunImage';
-import * as log from '../../logging/log';
-import * as Errors from '../../types/errors';
-import { isAbortError } from '../../util/isAbortError';
+import { SpinnerV2 } from '../SpinnerV2.js';
+import { strictAssert } from '../../util/assert.js';
+import type { Loadable } from '../../util/loadable.js';
+import { LoadingState } from '../../util/loadable.js';
+import { useIntent } from './base/FunImage.js';
+import { createLogger } from '../../logging/log.js';
+import * as Errors from '../../types/errors.js';
+import { isAbortError } from '../../util/isAbortError.js';
+
+const log = createLogger('FunGif');
 
 export type FunGifProps = Readonly<{
   src: string;
@@ -66,7 +68,7 @@ function FunGifReducedMotion(props: FunGifProps) {
       video.play().catch(error => {
         // ignore errors where `play()` was interrupted by `pause()`
         if (!isAbortError(error)) {
-          log.error('FunGif: Playback error', Errors.toLogFormat(error));
+          log.error('Playback error', Errors.toLogFormat(error));
         }
       });
     } else {
@@ -152,13 +154,7 @@ export function FunGifPreview(props: FunGifPreviewProps): JSX.Element {
         }
       />
       <div className="FunGifPreview__Backdrop" role="status">
-        {spinner && !hasError && (
-          <SpinnerV2
-            className="FunGifPreview__Spinner"
-            size={36}
-            strokeWidth={4}
-          />
-        )}
+        {spinner && !hasError && <SpinnerV2 size={36} strokeWidth={2} />}
         {hasError && <div className="FunGifPreview__ErrorIcon" />}
       </div>
       {props.src != null && (

@@ -1,14 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import { render, unmountComponentAtNode } from 'react-dom';
+import React, { StrictMode } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { ProgressModal } from '../components/ProgressModal';
-import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary';
-import { sleep } from './sleep';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { ProgressModal } from '../components/ProgressModal.js';
+import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary.js';
+import { sleep } from './sleep.js';
+import { FunDefaultEnglishEmojiLocalizationProvider } from '../components/fun/FunEmojiLocalizationProvider.js';
+import { AxoProvider } from '../axo/AxoProvider.js';
+
+const log = createLogger('longRunningTaskWrapper');
 
 export async function longRunningTaskWrapper<T>({
   name,
@@ -25,53 +29,59 @@ export async function longRunningTaskWrapper<T>({
   const ONE_SECOND = 1000;
   const TWO_SECONDS = 2000;
 
-  let progressNode: HTMLDivElement | undefined;
+  let progressRoot: Root | undefined;
   let spinnerStart;
   let progressTimeout: NodeJS.Timeout | undefined = setTimeout(() => {
-    progressNode = document.createElement('div');
+    const progressNode = document.createElement('div');
 
-    log.info(`longRunningTaskWrapper/${idLog}: Creating spinner`);
-    render(<ProgressModal i18n={window.i18n} />, progressNode);
+    log.info(`${idLog}: Creating spinner`);
+    progressRoot = createRoot(progressNode);
+    progressRoot.render(
+      <StrictMode>
+        <AxoProvider dir={window.i18n.getLocaleDirection()}>
+          <FunDefaultEnglishEmojiLocalizationProvider>
+            <ProgressModal i18n={window.i18n} />
+          </FunDefaultEnglishEmojiLocalizationProvider>
+        </AxoProvider>
+      </StrictMode>
+    );
     spinnerStart = Date.now();
   }, TWO_SECONDS);
 
   // Note: any task we put here needs to have its own safety valve; this function will
   //   show a spinner until it's done
   try {
-    log.info(`longRunningTaskWrapper/${idLog}: Starting task`);
+    log.info(`${idLog}: Starting task`);
     const result = await task();
-    log.info(`longRunningTaskWrapper/${idLog}: Task completed successfully`);
+    log.info(`${idLog}: Task completed successfully`);
 
     clearTimeoutIfNecessary(progressTimeout);
     progressTimeout = undefined;
-    if (progressNode) {
+    if (progressRoot) {
       const now = Date.now();
       if (spinnerStart && now - spinnerStart < ONE_SECOND) {
         log.info(
-          `longRunningTaskWrapper/${idLog}: Spinner shown for less than second, showing for another second`
+          `${idLog}: Spinner shown for less than second, showing for another second`
         );
         await sleep(ONE_SECOND);
       }
-      unmountComponentAtNode(progressNode);
-      progressNode = undefined;
+      progressRoot.unmount();
+      progressRoot = undefined;
     }
 
     return result;
   } catch (error) {
-    log.error(
-      `longRunningTaskWrapper/${idLog}: Error!`,
-      Errors.toLogFormat(error)
-    );
+    log.error(`${idLog}: Error!`, Errors.toLogFormat(error));
 
     clearTimeoutIfNecessary(progressTimeout);
     progressTimeout = undefined;
-    if (progressNode) {
-      unmountComponentAtNode(progressNode);
-      progressNode = undefined;
+    if (progressRoot) {
+      progressRoot.unmount();
+      progressRoot = undefined;
     }
 
     if (!suppressErrorDialog) {
-      log.info(`longRunningTaskWrapper/${idLog}: Showing error dialog`);
+      log.info(`${idLog}: Showing error dialog`);
       window.reduxActions.globalModals.showErrorModal({});
     }
 

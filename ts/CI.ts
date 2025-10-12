@@ -4,20 +4,22 @@
 import { format } from 'node:util';
 import { ipcRenderer } from 'electron';
 
-import type { IPCResponse as ChallengeResponseType } from './challenge';
-import type { MessageAttributesType } from './model-types.d';
-import * as log from './logging/log';
-import { explodePromise } from './util/explodePromise';
-import { AccessType, ipcInvoke } from './sql/channels';
-import { backupsService } from './services/backups';
-import { notificationService } from './services/notifications';
-import { AttachmentBackupManager } from './jobs/AttachmentBackupManager';
-import { migrateAllMessages } from './messages/migrateMessageData';
-import { SECOND } from './util/durations';
-import { isSignalRoute } from './util/signalRoutes';
-import { strictAssert } from './util/assert';
-import { MessageModel } from './models/messages';
-import type { SocketStatuses } from './textsecure/SocketManager';
+import type { IPCResponse as ChallengeResponseType } from './challenge.js';
+import type { MessageAttributesType } from './model-types.d.ts';
+import { createLogger } from './logging/log.js';
+import { explodePromise } from './util/explodePromise.js';
+import { AccessType, ipcInvoke } from './sql/channels.js';
+import { backupsService } from './services/backups/index.js';
+import { notificationService } from './services/notifications.js';
+import { AttachmentBackupManager } from './jobs/AttachmentBackupManager.js';
+import { migrateAllMessages } from './messages/migrateMessageData.js';
+import { SECOND } from './util/durations/index.js';
+import { isSignalRoute } from './util/signalRoutes.js';
+import { strictAssert } from './util/assert.js';
+import { MessageModel } from './models/messages.js';
+import type { SocketStatuses } from './textsecure/SocketManager.js';
+
+const log = createLogger('CI');
 
 type ResolveType = (data: unknown) => void;
 
@@ -43,11 +45,14 @@ export type CIType = {
   ) => unknown;
   openSignalRoute(url: string): Promise<void>;
   migrateAllMessages(): Promise<void>;
+  exportLocalBackup(backupsBaseDir: string): Promise<string>;
+  stageLocalBackupForImport(snapshotDir: string): Promise<void>;
   uploadBackup(): Promise<void>;
   unlink: () => void;
   print: (...args: ReadonlyArray<unknown>) => void;
   resetReleaseNotesFetcher(): void;
   forceUnprocessed: boolean;
+  setMediaPermissions(): Promise<void>;
 };
 
 export type GetCIOptionsType = Readonly<{
@@ -79,7 +84,7 @@ export function getCI({
       const pendingCompleted = completedEvents.get(event) || [];
       if (pendingCompleted.length) {
         const pending = pendingCompleted.shift();
-        log.info(`CI: resolving pending result for ${event}`, pending);
+        log.info(`resolving pending result for ${event}`, pending);
 
         if (pendingCompleted.length === 0) {
           completedEvents.delete(event);
@@ -89,7 +94,7 @@ export function getCI({
       }
     }
 
-    log.info(`CI: waiting for event ${event}`);
+    log.info(`waiting for event ${event}`);
     const { resolve, reject, promise } = explodePromise();
 
     const timer = setTimeout(() => {
@@ -132,12 +137,12 @@ export function getCI({
         eventListeners.delete(event);
       }
 
-      log.info(`CI: got event ${event} with data`, data);
+      log.info(`got event ${event} with data`, data);
       resolve(data);
       return;
     }
 
-    log.info(`CI: postponing event ${event}`);
+    log.info(`postponing event ${event}`);
 
     let resultList = completedEvents.get(event);
     if (!resultList) {
@@ -193,6 +198,20 @@ export function getCI({
     document.body.removeChild(a);
   }
 
+  async function exportLocalBackup(backupsBaseDir: string): Promise<string> {
+    const { snapshotDir } =
+      await backupsService.exportLocalBackup(backupsBaseDir);
+    return snapshotDir;
+  }
+
+  async function stageLocalBackupForImport(snapshotDir: string): Promise<void> {
+    const { error } =
+      await backupsService.stageLocalBackupForImport(snapshotDir);
+    if (error) {
+      throw error;
+    }
+  }
+
   async function uploadBackup() {
     await backupsService.upload();
     await AttachmentBackupManager.waitForIdle();
@@ -202,7 +221,7 @@ export function getCI({
   }
 
   function unlink() {
-    window.Whisper.events.trigger('unlinkAndDisconnect');
+    window.Whisper.events.emit('unlinkAndDisconnect');
   }
 
   function print(...args: ReadonlyArray<unknown>) {
@@ -224,6 +243,10 @@ export function getCI({
     ]);
   }
 
+  async function setMediaPermissions() {
+    await window.IPC.setMediaPermissions(true);
+  }
+
   return {
     deviceName,
     getConversationId,
@@ -237,11 +260,14 @@ export function getCI({
     waitForEvent,
     openSignalRoute,
     migrateAllMessages,
+    exportLocalBackup,
+    stageLocalBackupForImport,
     uploadBackup,
     unlink,
     getPendingEventCount,
     print,
     resetReleaseNotesFetcher,
     forceUnprocessed,
+    setMediaPermissions,
   };
 }

@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ReactNode, ErrorInfo } from 'react';
 import React, { Component, useCallback } from 'react';
-import * as log from '../../../logging/log';
-import * as Errors from '../../../types/errors';
-import { ToastType } from '../../../types/Toast';
+import { createLogger } from '../../../logging/log.js';
+import * as Errors from '../../../types/errors.js';
+import { ToastType } from '../../../types/Toast.js';
+import { isProduction } from '../../../util/version.js';
+
+const log = createLogger('FunErrorBoundary');
 
 type ErrorBoundaryProps = Readonly<{
   onError: (error: unknown, info: ErrorInfo) => void;
@@ -53,7 +56,9 @@ export function FunErrorBoundary(props: FunErrorBoundaryProps): JSX.Element {
       info.componentStack
     );
 
-    window.reduxActions?.toast.showToast({ toastType: ToastType.Error });
+    if (!isProduction(window.getVersion())) {
+      window.reduxActions?.toast.showToast({ toastType: ToastType.Error });
+    }
   }, []);
 
   return (

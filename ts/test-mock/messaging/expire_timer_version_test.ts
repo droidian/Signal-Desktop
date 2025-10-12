@@ -10,16 +10,16 @@ import {
 import createDebug from 'debug';
 import Long from 'long';
 
-import * as durations from '../../util/durations';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { MY_STORY_ID } from '../../types/Stories';
-import { Bootstrap } from '../bootstrap';
-import type { App } from '../bootstrap';
+import * as durations from '../../util/durations/index.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { Bootstrap } from '../bootstrap.js';
+import type { App } from '../bootstrap.js';
 import {
   expectSystemMessages,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers';
+} from '../helpers.js';
 
 export const debug = createDebug('mock:test:messaging');
 
@@ -54,7 +54,7 @@ describe('messaging/expireTimerVersion', function (this: Mocha.Suite) {
     state = state.addContact(stranger, {
       identityState: Proto.ContactRecord.IdentityState.DEFAULT,
       whitelisted: true,
-      serviceE164: undefined,
+      e164: undefined,
       profileKey: stranger.profileKey.serialize(),
     });
 
@@ -70,7 +70,6 @@ describe('messaging/expireTimerVersion', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
-          recipientServiceIds: [],
         },
       },
     });
@@ -180,11 +179,11 @@ describe('messaging/expireTimerVersion', function (this: Mocha.Suite) {
       const sendSync = async () => {
         debug('Send a sync message');
         const timestamp = bootstrap.getTimestamp();
-        const destinationServiceId = stranger.device.aci;
+        const destinationServiceIdBinary = stranger.device.aciBinary;
         const content = {
           syncMessage: {
             sent: {
-              destinationServiceId,
+              destinationServiceIdBinary,
               timestamp: Long.fromNumber(timestamp),
               message: {
                 body: 'request',
@@ -194,7 +193,7 @@ describe('messaging/expireTimerVersion', function (this: Mocha.Suite) {
               },
               unidentifiedStatus: [
                 {
-                  destinationServiceId,
+                  destinationServiceIdBinary,
                 },
               ],
             },

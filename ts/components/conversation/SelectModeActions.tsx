@@ -3,15 +3,16 @@
 
 import classNames from 'classnames';
 import React from 'react';
-import type { ShowToastAction } from '../../state/ducks/toast';
-import { ToastType } from '../../types/Toast';
-import type { LocalizerType } from '../../types/Util';
+import type { ShowToastAction } from '../../state/ducks/toast.js';
+import { ToastType } from '../../types/Toast.js';
+import type { LocalizerType } from '../../types/Util.js';
 
 // Keep this in sync with iOS and Android
 const MAX_FORWARD_COUNT = 30;
 
 type SelectModeActionsProps = Readonly<{
   selectedMessageIds: ReadonlyArray<string>;
+  areSelectedMessagesForwardable: boolean;
   onExitSelectMode: () => void;
   onDeleteMessages: () => void;
   onForwardMessages: () => void;
@@ -21,6 +22,7 @@ type SelectModeActionsProps = Readonly<{
 
 export default function SelectModeActions({
   selectedMessageIds,
+  areSelectedMessagesForwardable,
   onExitSelectMode,
   onDeleteMessages,
   onForwardMessages,
@@ -31,7 +33,10 @@ export default function SelectModeActions({
   const tooManyMessagesToForward =
     selectedMessageIds.length > MAX_FORWARD_COUNT;
 
-  const canForward = hasSelectedMessages && !tooManyMessagesToForward;
+  const canForward =
+    hasSelectedMessages &&
+    areSelectedMessagesForwardable &&
+    !tooManyMessagesToForward;
   const canDelete = hasSelectedMessages;
 
   return (

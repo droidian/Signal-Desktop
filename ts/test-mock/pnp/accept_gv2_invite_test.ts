@@ -6,14 +6,14 @@ import type { Group, PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, ServiceIdKind, StorageState } from '@signalapp/mock-server';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations';
+import * as durations from '../../util/durations/index.js';
 import {
   parseAndFormatPhoneNumber,
   PhoneNumberFormat,
-} from '../../util/libphonenumberInstance';
-import { Bootstrap } from '../bootstrap';
-import type { App } from '../bootstrap';
-import { acceptConversation, expectSystemMessages } from '../helpers';
+} from '../../util/libphonenumberInstance.js';
+import { Bootstrap } from '../bootstrap.js';
+import type { App } from '../bootstrap.js';
+import { acceptConversation, expectSystemMessages } from '../helpers.js';
 
 export const debug = createDebug('mock:test:gv2');
 
@@ -55,7 +55,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
         whitelisted: true,
         profileKey: undefined,
 
-        serviceE164: unknownPniContact.device.number,
+        e164: unknownPniContact.device.number,
       },
       ServiceIdKind.PNI
     );
@@ -155,7 +155,11 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
     await window
       .locator('.ConversationDetails-panel-section__title >> "4 members"')
       .waitFor();
-    await window.getByText(unknownContact.profileName).waitFor();
+
+    await window
+      .locator('.conversation-details-panel')
+      .getByText(unknownContact.profileName)
+      .waitFor();
 
     debug('Leave the group through settings');
 

@@ -6,13 +6,15 @@
 import { assert } from 'chai';
 import Long from 'long';
 
-import MessageReceiver from '../textsecure/MessageReceiver';
-import { IncomingWebSocketRequestLegacy } from '../textsecure/WebsocketResources';
-import type { DecryptionErrorEvent } from '../textsecure/messageReceiverEvents';
-import { generateAci } from '../types/ServiceId';
-import type { AciString } from '../types/ServiceId';
-import { SignalService as Proto } from '../protobuf';
-import * as Crypto from '../Crypto';
+import MessageReceiver from '../textsecure/MessageReceiver.js';
+import { IncomingWebSocketRequestLegacy } from '../textsecure/WebsocketResources.js';
+import type { DecryptionErrorEvent } from '../textsecure/messageReceiverEvents.js';
+import { generateAci } from '../types/ServiceId.js';
+import type { AciString } from '../types/ServiceId.js';
+import { toAciObject } from '../util/ServiceId.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import * as Crypto from '../Crypto.js';
+import { toBase64 } from '../Bytes.js';
 
 describe('MessageReceiver', () => {
   const someAci = generateAci();
@@ -37,16 +39,19 @@ describe('MessageReceiver', () => {
 
   describe('connecting', () => {
     it('generates decryption-error event when it cannot decrypt', async () => {
+      const fakeTrustRootPublicKey = Crypto.getRandomBytes(33);
+      fakeTrustRootPublicKey.set([5], 0); // first byte is the key type (5)
+
       const messageReceiver = new MessageReceiver({
         storage: window.storage,
-        serverTrustRoot: 'AAAAAAAA',
+        serverTrustRoots: [toBase64(fakeTrustRootPublicKey)],
       });
 
       const body = Proto.Envelope.encode({
-        type: Proto.Envelope.Type.CIPHERTEXT,
-        sourceServiceId: someAci,
-        sourceDevice: deviceId,
-        timestamp: Long.fromNumber(Date.now()),
+        type: Proto.Envelope.Type.DOUBLE_RATCHET,
+        sourceServiceIdBinary: toAciObject(someAci).getRawUuidBytes(),
+        sourceDeviceId: deviceId,
+        clientTimestamp: Long.fromNumber(Date.now()),
         content: Crypto.getRandomBytes(200),
       }).finish();
 

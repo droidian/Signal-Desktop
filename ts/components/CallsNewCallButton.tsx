@@ -3,27 +3,29 @@
 
 import type { ChangeEvent } from 'react';
 import React, { useCallback, useMemo, useState } from 'react';
-import { partition } from 'lodash';
+import lodash from 'lodash';
 import type { ListRowProps } from 'react-virtualized';
 import { List } from 'react-virtualized';
 import classNames from 'classnames';
-import type { ConversationType } from '../state/ducks/conversations';
-import type { LocalizerType } from '../types/I18N';
-import { SearchInput } from './SearchInput';
-import { filterAndSortConversations } from '../util/filterAndSortConversations';
-import { NavSidebarSearchHeader } from './NavSidebar';
-import { ListTile } from './ListTile';
-import { strictAssert } from '../util/assert';
-import { UserText } from './UserText';
-import { Avatar, AvatarSize } from './Avatar';
-import { I18n } from './I18n';
-import { SizeObserver } from '../hooks/useSizeObserver';
-import { CallType } from '../types/CallDisposition';
-import type { CallsTabSelectedView } from './CallsTab';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import type { LocalizerType } from '../types/I18N.js';
+import { SearchInput } from './SearchInput.js';
+import { filterAndSortConversations } from '../util/filterAndSortConversations.js';
+import { NavSidebarSearchHeader } from './NavSidebar.js';
+import { ListTile } from './ListTile.js';
+import { strictAssert } from '../util/assert.js';
+import { UserText } from './UserText.js';
+import { Avatar, AvatarSize } from './Avatar.js';
+import { I18n } from './I18n.js';
+import { SizeObserver } from '../hooks/useSizeObserver.js';
+import { CallType } from '../types/CallDisposition.js';
+import type { CallsTabSelectedView } from './CallsTab.js';
 import {
   InAnotherCallTooltip,
   getTooltipContent,
-} from './conversation/InAnotherCallTooltip';
+} from './conversation/InAnotherCallTooltip.js';
+
+const { partition } = lodash;
 
 type CallsNewCallProps = Readonly<{
   hasActiveCall: boolean;
@@ -151,7 +153,7 @@ export function CallsNewCall({
     if (directConversations.length > 0) {
       result.push({
         kind: 'header',
-        title: 'Contacts',
+        title: i18n('icu:contactsHeader'),
       });
       result = result.concat(
         directConversations.map(conversation => {
@@ -165,7 +167,7 @@ export function CallsNewCall({
     if (groupConversations.length > 0) {
       result.push({
         kind: 'header',
-        title: 'Groups',
+        title: i18n('icu:groupsHeader'),
       });
       result = result.concat(
         groupConversations.map((conversation): Row => {
@@ -177,17 +179,17 @@ export function CallsNewCall({
       );
     }
     return result;
-  }, [directConversations, groupConversations]);
+  }, [directConversations, groupConversations, i18n]);
 
   const isRowLoaded = useCallback(
-    ({ index }) => {
+    ({ index }: { index: number }) => {
       return rows.at(index) != null;
     },
     [rows]
   );
 
   const rowHeight = useCallback(
-    ({ index }) => {
+    ({ index }: { index: number }) => {
       if (rows.at(index)?.kind === 'conversation') {
         return ListTile.heightCompact;
       }

@@ -234,7 +234,7 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         repository: 'signalapp/Signal-Message-Backup-Tests'
-        ref: 'a743fbf8e3adc2f1a700577dd8a470beff60db3f'
+        ref: '279370b21fd089956a581c3b027489594135998a'
         path: 'backup-integration-tests'
 
     - run: xvfb-run --auto-servernum pnpm run test-electron
@@ -257,7 +257,7 @@ jobs:
 
   windows:
     needs: lint
-    runs-on: windows-2019
+    runs-on: windows-latest-8-cores
     timeout-minutes: 30
 
     steps:
@@ -273,18 +273,10 @@ jobs:
         node-version-file: '.nvmrc'
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
-    - name: Cache .electron-gyp
-      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
-      with:
-        path: ${{ env.SCCACHE_PATH }}\.electron-gyp
-        key: electron-gyp-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-
-    - run: pnpm install -g node-gyp@10.0.1
 
     - name: Install Desktop node_modules
       run: pnpm install
       env:
-        CHILD_CONCURRENCY: 1
         NPM_CONFIG_LOGLEVEL: verbose
 
     - run: pnpm run generate
@@ -321,6 +313,7 @@ jobs:
     - run: pnpm run test-electron
       env:
         ARTIFACTS_DIR: artifacts/windows
+        WORKER_COUNT: 4
       timeout-minutes: 5
     - run: pnpm run test-release
       env:
@@ -370,7 +363,13 @@ jobs:
 
   mock-tests:
     needs: lint
-    runs-on: ubuntu-22.04-8-cores
+
+    continue-on-error: true
+    strategy:
+      matrix:
+        workerIndex: [0, 1, 2, 3]
+
+    runs-on: ubuntu-latest-8-cores
     if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
     timeout-minutes: 30
 
@@ -398,7 +397,7 @@ jobs:
         key: electron-gyp-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
     - name: Install xvfb and libpulse0
-      run: sudo apt-get install xvfb libpulse0 || (sudo apt-get update && sudo apt-get install xvfb libpulse0)
+      run: sudo apt-get install -y xvfb libpulse0 || (sudo apt-get update && sudo apt-get install -y xvfb libpulse0)
 
     # - name: Setup sccache
     #   uses: mozilla-actions/sccache-action@054db53350805f83040bf3e6e9b8cf5a139aa7c9 # v0.0.7
@@ -409,7 +408,10 @@ jobs:
     #     key: sccache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'patches/**') }}
 
     - name: Install Desktop node_modules
-      run: pnpm install
+      run: |
+        pnpm install
+        sudo chown root node_modules/.pnpm/electron@*/node_modules/electron/dist/chrome-sandbox
+        sudo chmod 4755 node_modules/.pnpm/electron@*/node_modules/electron/dist/chrome-sandbox
       env:
         # CC: sccache gcc
         # CXX: sccache g++
@@ -429,15 +431,69 @@ jobs:
       run: |
         set -o pipefail
         xvfb-run --auto-servernum pnpm run test-mock
+      timeout-minutes: 15
+      env:
+        NODE_ENV: production
+        DEBUG: mock:test:*
+        ARTIFACTS_DIR: artifacts/mock
+        WORKER_INDEX: ${{ matrix.workerIndex }}
+        WORKER_COUNT: 4
+
+    - name: Run docker mock server tests
+      if: ${{ matrix.workerIndex == 0 }}
+      run: |
+        set -o pipefail
+        sudo apt-get install -y pipewire pipewire-pulse wireplumber psmisc pulseaudio-utils
+        systemctl --user start pipewire.service
+        systemctl --user start pipewire-pulse.service
+        xvfb-run --auto-servernum pnpm run test-mock-docker
       timeout-minutes: 10
       env:
         NODE_ENV: production
         DEBUG: mock:test:*
-        ARTIFACTS_DIR: artifacts/startup
+        ARTIFACTS_DIR: artifacts/mock-docker
 
     - name: Upload mock server test logs on failure
       if: failure()
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
       with:
-        name: logs
+        name: logs-${{ matrix.workerIndex }}
         path: artifacts
+
+  check-min-os-version:
+    needs: lint
+
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [ubuntu-22.04-8-cores, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+    - run: uname -a
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+    - name: Setup pnpm
+      uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
+    - name: Setup node.js
+      uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+    - name: Cache .electron-gyp
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+      with:
+        path: ~/.electron-gyp
+        key: electron-gyp-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - name: Install Desktop node_modules
+      run: pnpm install
+      env:
+        NPM_CONFIG_LOGLEVEL: verbose
+
+    - run: pnpm generate:phase-0
+    - name: Run OS version check
+      run: |
+        node ts/scripts/check-min-os-version.js

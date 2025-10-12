@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /* eslint-disable no-await-in-loop, no-console */
 
-import assert from 'assert';
+import assert from 'node:assert';
 import type { PrimaryDevice } from '@signalapp/mock-server';
 
-import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures';
-import { stats } from '../../util/benchmark/stats';
-import { sleep } from '../../util/sleep';
+import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures.js';
+import { stats } from '../../util/benchmark/stats.js';
+import { sleep } from '../../util/sleep.js';
 
 const CONVERSATION_SIZE = 1000; // messages
 const DELAY = 50; // milliseconds
@@ -62,9 +62,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
 
     const openConvo = async (contact: PrimaryDevice): Promise<void> => {
       debug('opening conversation', contact.profileName);
-      const item = leftPane.locator(
-        `[data-testid="${contact.toContact().aci}"]`
-      );
+      const item = leftPane.locator(`[data-testid="${contact.device.aci}"]`);
 
       await item.click();
     };

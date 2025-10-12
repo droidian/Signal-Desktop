@@ -2,52 +2,63 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import classNames from 'classnames';
-import { noop } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import lodash from 'lodash';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Ref } from 'react';
 import { ContextMenuTrigger } from 'react-contextmenu';
 import { createPortal } from 'react-dom';
 import { Manager, Popper, Reference } from 'react-popper';
-import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow';
-import { isDownloaded } from '../../types/Attachment';
-import type { LocalizerType } from '../../types/I18N';
-import { handleOutsideClick } from '../../util/handleOutsideClick';
-import { offsetDistanceModifier } from '../../util/popperUtil';
-import { StopPropagation } from '../StopPropagation';
-import { WidthBreakpoint } from '../_util';
-import { Message } from './Message';
-import type { SmartReactionPicker } from '../../state/smart/ReactionPicker';
+import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow.js';
+import { isDownloaded } from '../../types/Attachment.js';
+import type { LocalizerType } from '../../types/I18N.js';
+import { handleOutsideClick } from '../../util/handleOutsideClick.js';
+import { offsetDistanceModifier } from '../../util/popperUtil.js';
+import { StopPropagation } from '../StopPropagation.js';
+import { WidthBreakpoint } from '../_util.js';
+import { Message } from './Message.js';
+import type { SmartReactionPicker } from '../../state/smart/ReactionPicker.js';
 import type {
   Props as MessageProps,
   PropsActions as MessagePropsActions,
   PropsData as MessagePropsData,
   PropsHousekeeping,
-} from './Message';
-import type { PushPanelForConversationActionType } from '../../state/ducks/conversations';
-import { doesMessageBodyOverflow } from './MessageBodyReadMore';
-import type { Props as ReactionPickerProps } from './ReactionPicker';
+} from './Message.js';
+import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.js';
+import { doesMessageBodyOverflow } from './MessageBodyReadMore.js';
+import type { Props as ReactionPickerProps } from './ReactionPicker.js';
 import {
   useKeyboardShortcutsConditionally,
   useOpenContextMenu,
   useToggleReactionPicker,
-} from '../../hooks/useKeyboardShortcuts';
-import { PanelType } from '../../types/Panels';
+} from '../../hooks/useKeyboardShortcuts.js';
+import { PanelType } from '../../types/Panels.js';
 import type {
   DeleteMessagesPropsType,
   ForwardMessagesPayload,
-} from '../../state/ducks/globalModals';
-import { useScrollerLock } from '../../hooks/useScrollLock';
+} from '../../state/ducks/globalModals.js';
+import { useScrollerLock } from '../../hooks/useScrollLock.js';
 import {
   type ContextMenuTriggerType,
   MessageContextMenu,
   useHandleMessageContextMenu,
-} from './MessageContextMenu';
-import { ForwardMessagesModalType } from '../ForwardMessagesModal';
+} from './MessageContextMenu.js';
+import { ForwardMessagesModalType } from '../ForwardMessagesModal.js';
+import { useGroupedAndOrderedReactions } from '../../util/groupAndOrderReactions.js';
+import { isNotNil } from '../../util/isNotNil.js';
+
+const { noop } = lodash;
 
 export type PropsData = {
   canDownload: boolean;
   canCopy: boolean;
   canEditMessage: boolean;
+  canForward: boolean;
   canRetry: boolean;
   canRetryDeleteForEveryone: boolean;
   canReact: boolean;
@@ -96,6 +107,7 @@ export function TimelineMessage(props: Props): JSX.Element {
     canDownload,
     canCopy,
     canEditMessage,
+    canForward,
     canReact,
     canReply,
     canRetry,
@@ -103,15 +115,11 @@ export function TimelineMessage(props: Props): JSX.Element {
     containerElementRef,
     containerWidthBreakpoint,
     conversationId,
-    deletedForEveryone,
     direction,
-    giftBadge,
     i18n,
     id,
     isTargeted,
-    isTapToView,
     kickOffAttachmentDownload,
-    payment,
     copyMessageText,
     pushPanelForConversation,
     reactToMessage,
@@ -255,8 +263,6 @@ export function TimelineMessage(props: Props): JSX.Element {
   );
 
   const handleContextMenu = useHandleMessageContextMenu(menuTriggerRef);
-  const canForward =
-    !isTapToView && !deletedForEveryone && !giftBadge && !payment;
 
   const shouldShowAdditional =
     doesMessageBodyOverflow(text || '') || !isWindowWidthNotNarrow;
@@ -287,6 +293,19 @@ export function TimelineMessage(props: Props): JSX.Element {
     openContextMenuKeyboard,
     toggleReactionPickerKeyboard
   );
+
+  const groupedReactions = useGroupedAndOrderedReactions(
+    props.reactions,
+    'variantKey'
+  );
+
+  const messageEmojis = useMemo(() => {
+    return groupedReactions
+      .map(groupedReaction => {
+        return groupedReaction?.[0]?.variantKey;
+      })
+      .filter(isNotNil);
+  }, [groupedReactions]);
 
   const renderMenu = useCallback(() => {
     return (
@@ -325,6 +344,7 @@ export function TimelineMessage(props: Props): JSX.Element {
                     });
                   },
                   renderEmojiPicker,
+                  messageEmojis,
                 })
               }
             </Popper>,
@@ -352,6 +372,7 @@ export function TimelineMessage(props: Props): JSX.Element {
     renderEmojiPicker,
     toggleReactionPicker,
     id,
+    messageEmojis,
   ]);
 
   return (

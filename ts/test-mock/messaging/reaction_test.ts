@@ -7,17 +7,17 @@ import { type Page } from 'playwright';
 import { expect } from 'playwright/test';
 import { assert } from 'chai';
 
-import type { App } from '../playwright';
-import { Bootstrap } from '../bootstrap';
-import { MINUTE } from '../../util/durations';
-import { strictAssert } from '../../util/assert';
+import type { App } from '../playwright.js';
+import { Bootstrap } from '../bootstrap.js';
+import { MINUTE } from '../../util/durations/index.js';
+import { strictAssert } from '../../util/assert.js';
 import {
   clickOnConversation,
   getMessageInTimelineByTimestamp,
   sendTextMessage,
   sendReaction,
   createGroup,
-} from '../helpers';
+} from '../helpers.js';
 
 export const debug = createDebug('mock:test:reactions');
 
@@ -351,5 +351,92 @@ describe('reactions', function (this: Mocha.Suite) {
     await expectMessageToHaveReactions(window, bobGroupTimestamp, {
       '👋': [charlie.profileName],
     });
+  });
+
+  it("should display the local user's thumbs-up skin tone in a group reaction viewer overlay header", async () => {
+    this.timeout(30_000);
+
+    const { contacts, phone, desktop } = bootstrap;
+    const [alice, bob] = contacts;
+
+    // Create a group that includes both Alice and Bob
+    const groupForSending = {
+      group: await createGroup(phone, [alice, bob], 'ThumbsToneGroup'),
+      members: [alice, bob],
+    };
+
+    const window = await app.getWindow();
+    const leftPane = window.locator('#LeftPane');
+
+    const ts = Date.now();
+
+    // Send a message from the local user into the group
+    await sendTextMessage({
+      from: phone,
+      to: groupForSending,
+      text: 'group skin-tone test',
+      timestamp: ts,
+      desktop,
+    });
+
+    // Local user reacts with 👍🏽 (medium skin tone)
+    await sendReaction({
+      from: phone,
+      to: desktop,
+      emoji: '👍🏽',
+      targetAuthor: phone,
+      targetMessageTimestamp: ts,
+      desktop,
+    });
+
+    // Bob reacts with 👍🏿 (to make him the "most recent")
+    await sendReaction({
+      from: bob,
+      to: desktop,
+      emoji: '👍🏿',
+      targetAuthor: phone,
+      targetMessageTimestamp: ts,
+      desktop,
+    });
+
+    // Open the group conversation
+    await leftPane.getByText('ThumbsToneGroup').click();
+
+    // Click the reaction button on that message
+    const msg = await getMessageInTimelineByTimestamp(window, ts);
+    await msg.locator('.module-message__reactions').click();
+
+    // Grab the header emoji in the overlay (next to the total count)
+    const headerEmoji = window.locator(
+      '.module-reaction-viewer__header .FunStaticEmoji'
+    );
+
+    // The header emoji should still show the local "👍🏽"
+    await expect(headerEmoji).toHaveAttribute('data-emoji-value', '👍🏽');
+
+    // Get all reaction rows; Bob's should be first (most recent), then "You"
+    const reactionRows = await window
+      .locator('.module-reaction-viewer__body__row')
+      .all();
+
+    // First row: Bob's 👍🏿
+    const firstReaction = reactionRows[0];
+    await expect(
+      firstReaction.locator('.module-reaction-viewer__body__row__name')
+    ).toHaveText(bob.profileName);
+    await expect(firstReaction.locator('.FunStaticEmoji')).toHaveAttribute(
+      'data-emoji-value',
+      '👍🏿'
+    );
+
+    // Second row: local user's 👍🏽
+    const secondReaction = reactionRows[1];
+    await expect(
+      secondReaction.locator('.module-reaction-viewer__body__row__name')
+    ).toHaveText('You');
+    await expect(secondReaction.locator('.FunStaticEmoji')).toHaveAttribute(
+      'data-emoji-value',
+      '👍🏽'
+    );
   });
 });

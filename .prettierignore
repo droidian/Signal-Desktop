@@ -2,6 +2,7 @@
 # supports `.gitignore`: https://github.com/prettier/prettier/issues/2294
 
 # Generated files
+build/**/*.js
 app/**/*.js
 config/local-*.json
 config/local.json
@@ -17,6 +18,7 @@ ts/**/*.js
 ts/protobuf/*.d.ts
 ts/protobuf/*.js
 stylesheets/manifest.css
+stylesheets/tailwind.css
 ts/util/lint/exceptions.json
 storybook-static
 build/locale-display-names.json

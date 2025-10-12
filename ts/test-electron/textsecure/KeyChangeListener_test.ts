@@ -3,16 +3,16 @@
 
 import { assert } from 'chai';
 
-import { DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import { Address } from '../../types/Address';
-import { generateAci } from '../../types/ServiceId';
-import { explodePromise } from '../../util/explodePromise';
-import { SignalProtocolStore } from '../../SignalProtocolStore';
-import type { ConversationModel } from '../../models/conversations';
-import * as KeyChangeListener from '../../textsecure/KeyChangeListener';
-import * as Bytes from '../../Bytes';
-import { cleanupMessages } from '../../util/cleanup';
+import { DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import { Address } from '../../types/Address.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { explodePromise } from '../../util/explodePromise.js';
+import { SignalProtocolStore } from '../../SignalProtocolStore.js';
+import type { ConversationModel } from '../../models/conversations.js';
+import * as KeyChangeListener from '../../textsecure/KeyChangeListener.js';
+import * as Bytes from '../../Bytes.js';
+import { cleanupMessages } from '../../util/cleanup.js';
 
 describe('KeyChangeListener', () => {
   let oldNumberId: string | undefined;
@@ -95,13 +95,17 @@ describe('KeyChangeListener', () => {
     let groupConvo: ConversationModel;
 
     beforeEach(async () => {
+      await window.ConversationController.getOrCreateAndWait(
+        ourServiceId,
+        'private'
+      );
       groupConvo = await window.ConversationController.getOrCreateAndWait(
         Bytes.toBinary(
           new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5])
         ),
         'group',
         {
-          members: [ourServiceIdWithKeyChange],
+          members: [ourServiceIdWithKeyChange, ourServiceId],
         }
       );
     });

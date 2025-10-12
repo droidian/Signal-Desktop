@@ -3,14 +3,16 @@
 
 import pMap from 'p-map';
 
-import * as log from '../logging/log';
-import { DataReader, DataWriter } from '../sql/Client';
-import type { ConversationAttributesType } from '../model-types.d';
-import { encryptLegacyAttachment } from './encryptLegacyAttachment';
-import { AttachmentDisposition } from './getLocalAttachmentUrl';
-import { isNotNil } from './isNotNil';
-import { isSignalConversation } from './isSignalConversation';
-import { getConversationIdForLogging } from './idForLogging';
+import { createLogger } from '../logging/log.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { encryptLegacyAttachment } from './encryptLegacyAttachment.js';
+import { AttachmentDisposition } from './getLocalAttachmentUrl.js';
+import { isNotNil } from './isNotNil.js';
+import { isSignalConversation } from './isSignalConversation.js';
+import { getConversationIdForLogging } from './idForLogging.js';
+
+const log = createLogger('encryptConversationAttachments');
 
 const CONCURRENCY = 32;
 
@@ -18,7 +20,7 @@ type CleanupType = Array<() => Promise<void>>;
 
 export async function encryptConversationAttachments(): Promise<void> {
   const all = await DataReader.getAllConversations();
-  log.info(`encryptConversationAttachments: checking ${all.length}`);
+  log.info(`checking ${all.length}`);
 
   const updated = (
     await pMap(
@@ -27,7 +29,7 @@ export async function encryptConversationAttachments(): Promise<void> {
         try {
           return await encryptOne(convo);
         } catch (error) {
-          log.error('encryptConversationAttachments: processing failed', error);
+          log.error('processing failed', error);
           return undefined;
         }
       },
@@ -36,21 +38,21 @@ export async function encryptConversationAttachments(): Promise<void> {
   ).filter(isNotNil);
 
   if (updated.length !== 0) {
-    log.info(`encryptConversationAttachments: updating ${updated.length}`);
+    log.info(`updating ${updated.length}`);
     await DataWriter.updateConversations(
       updated.map(({ attributes }) => attributes)
     );
 
     const cleanup = updated.map(entry => entry.cleanup).flat();
 
-    log.info(`encryptConversationAttachments: cleaning up ${cleanup.length}`);
+    log.info(`cleaning up ${cleanup.length}`);
     await pMap(
       cleanup,
       async fn => {
         try {
           await fn();
         } catch (error) {
-          log.error('encryptConversationAttachments: cleanup failed', error);
+          log.error('cleanup failed', error);
         }
       },
       { concurrency: CONCURRENCY }

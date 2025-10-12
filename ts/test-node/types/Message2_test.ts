@@ -4,19 +4,19 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import * as Message from '../../types/Message2';
-import { SignalService } from '../../protobuf';
-import * as Bytes from '../../Bytes';
-import * as MIME from '../../types/MIME';
+import * as Message from '../../types/Message2.js';
+import { SignalService } from '../../protobuf/index.js';
+import * as Bytes from '../../Bytes.js';
+import * as MIME from '../../types/MIME.js';
 
-import type { EmbeddedContactType } from '../../types/EmbeddedContact';
-import type { MessageAttributesType } from '../../model-types.d';
+import type { EmbeddedContactType } from '../../types/EmbeddedContact.js';
+import type { MessageAttributesType } from '../../model-types.d.ts';
 import type {
   AddressableAttachmentType,
   AttachmentType,
   LocalAttachmentV2Type,
-} from '../../types/Attachment';
-import type { LoggerType } from '../../types/Logging';
+} from '../../types/Attachment.js';
+import type { LoggerType } from '../../types/Logging.js';
 
 const FAKE_LOCAL_ATTACHMENT: LocalAttachmentV2Type = {
   version: 2,
@@ -34,6 +34,7 @@ describe('Message', () => {
     info: () => null,
     debug: () => null,
     trace: () => null,
+    child: () => logger,
   };
 
   function getDefaultMessage(
@@ -62,9 +63,6 @@ describe('Message', () => {
         height: 20,
       }),
       doesAttachmentExist: async () => true,
-      // @ts-expect-error ensureAttachmentIsReencryptable has type guards that we don't
-      // implement here
-      ensureAttachmentIsReencryptable: async attachment => attachment,
       getRegionCode: () => 'region-code',
       logger,
       makeImageThumbnail: async (_params: {
@@ -81,7 +79,7 @@ describe('Message', () => {
         objectUrl: string;
         contentType: MIME.MIMEType;
         logger: LoggerType;
-      }) => new Blob(),
+      }) => ({ blob: new Blob(), duration: undefined }),
       revokeObjectUrl: (_objectUrl: string) => undefined,
       readAttachmentData: async (
         attachment: Partial<AddressableAttachmentType>
@@ -197,9 +195,6 @@ describe('Message', () => {
             fileName: 'test\uFFFDfig.exe',
           },
         ],
-        hasAttachments: 1,
-        hasVisualMediaAttachments: undefined,
-        hasFileAttachments: undefined,
         schemaVersion: Message.CURRENT_SCHEMA_VERSION,
       });
 
@@ -826,31 +821,6 @@ describe('Message', () => {
         getDefaultContext()
       );
       assert.deepEqual(result, message);
-    });
-  });
-
-  describe('toVersion14: ensureAttachmentsAreReencryptable', () => {
-    it('migrates message if the file does not exist', async () => {
-      const message = getDefaultMessage({
-        schemaVersion: 13,
-        schemaMigrationAttempts: 0,
-        attachments: [
-          {
-            size: 128,
-            contentType: MIME.IMAGE_BMP,
-            path: 'no/file/here.png',
-            iv: 'iv',
-            digest: 'digest',
-            key: 'key',
-          },
-        ],
-      });
-      const result = await Message.upgradeSchema(message, {
-        ...getDefaultContext(),
-        doesAttachmentExist: async () => false,
-      });
-
-      assert.deepEqual({ ...message, schemaVersion: 14 }, result);
     });
   });
 });

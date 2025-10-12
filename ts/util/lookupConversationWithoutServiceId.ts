@@ -3,15 +3,17 @@
 
 import { usernames, LibSignalErrorBase } from '@signalapp/libsignal-client';
 
-import type { UserNotFoundModalStateType } from '../state/ducks/globalModals';
-import * as log from '../logging/log';
-import type { AciString } from '../types/ServiceId';
-import * as Errors from '../types/errors';
-import { ToastType } from '../types/Toast';
-import { HTTPError } from '../textsecure/Errors';
-import { strictAssert } from './assert';
-import type { UUIDFetchStateKeyType } from './uuidFetchState';
-import { getServiceIdsForE164s } from './getServiceIdsForE164s';
+import type { UserNotFoundModalStateType } from '../state/ducks/globalModals.js';
+import { createLogger } from '../logging/log.js';
+import type { AciString } from '../types/ServiceId.js';
+import * as Errors from '../types/errors.js';
+import { ToastType } from '../types/Toast.js';
+import { HTTPError } from '../textsecure/Errors.js';
+import { strictAssert } from './assert.js';
+import type { UUIDFetchStateKeyType } from './uuidFetchState.js';
+import { getServiceIdsForE164s } from './getServiceIdsForE164s.js';
+
+const log = createLogger('lookupConversationWithoutServiceId');
 
 export type LookupConversationWithoutServiceIdActionsType = Readonly<{
   lookupConversationWithoutServiceId: typeof lookupConversationWithoutServiceId;
@@ -141,7 +143,7 @@ export async function lookupConversationWithoutServiceId(
 export async function checkForUsername(
   username: string
 ): Promise<FoundUsernameType | undefined> {
-  let hash: Buffer;
+  let hash: Uint8Array;
   let fixedUsername = username;
   if (fixedUsername.startsWith('@')) {
     fixedUsername = fixedUsername.slice(1);

@@ -5,13 +5,16 @@ import type { BrowserWindow } from 'electron';
 import { Menu, clipboard, nativeImage } from 'electron';
 import * as LocaleMatcher from '@formatjs/intl-localematcher';
 
-import { maybeParseUrl } from '../ts/util/url';
+import { maybeParseUrl } from '../ts/util/url.js';
 
-import type { MenuListType } from '../ts/types/menu';
-import type { LocalizerType } from '../ts/types/Util';
-import { strictAssert } from '../ts/util/assert';
-import type { LoggerType } from '../ts/types/Logging';
-import { handleAttachmentRequest } from './attachment_channel';
+import type { MenuListType } from '../ts/types/menu.js';
+import type { LocalizerType } from '../ts/types/Util.js';
+import { strictAssert } from '../ts/util/assert.js';
+import type { LoggerType } from '../ts/types/Logging.js';
+import { createLogger } from '../ts/logging/log.js';
+import { handleAttachmentRequest } from './attachment_channel.js';
+
+const log = createLogger('spell_check');
 
 export const FAKE_DEFAULT_LOCALE = 'und'; // 'und' is the BCP 47 subtag for "undetermined"
 
@@ -84,12 +87,9 @@ export const setup = (
 
   const availableLocales = session.availableSpellCheckerLanguages;
   const languages = getLanguages(combinedLocales, availableLocales, 'en');
-  console.log('spellcheck: user locales:', combinedLocales);
-  console.log(
-    'spellcheck: available spellchecker languages:',
-    availableLocales
-  );
-  console.log('spellcheck: setting languages to:', languages);
+  log.info('spellcheck: user locales:', combinedLocales);
+  log.info('spellcheck: available spellchecker languages:', availableLocales);
+  log.info('spellcheck: setting languages to:', languages);
   session.setSpellCheckerLanguages(languages);
 
   browserWindow.webContents.on('context-menu', (_event, params) => {
@@ -220,6 +220,7 @@ export const setup = (
       const menu = Menu.buildFromTemplate(template);
       menu.popup({
         window: browserWindow,
+        frame: params.frame ?? undefined,
       });
     }
   });

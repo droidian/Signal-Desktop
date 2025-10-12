@@ -3,10 +3,10 @@
 
 import config from 'config';
 import { app } from 'electron';
-import type { Updater, UpdaterOptionsType } from './common';
-import { MacOSUpdater } from './macos';
-import { WindowsUpdater } from './windows';
-import { initLinux } from './linux';
+import type { Updater, UpdaterOptionsType } from './common.js';
+import { MacOSUpdater } from './macos.js';
+import { WindowsUpdater } from './windows.js';
+import { initLinux } from './linux.js';
 
 let initialized = false;
 
@@ -56,9 +56,9 @@ export async function force(): Promise<void> {
   }
 }
 
-export function onRestartCancelled(): void {
+export function onRestartCanceled(): void {
   if (updater) {
-    updater.onRestartCancelled();
+    updater.onRestartCanceled();
   }
 }
 

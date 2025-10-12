@@ -1,20 +1,20 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { z } from 'zod';
-import { MIMETypeSchema, type MIMEType } from './MIME';
-import type { AttachmentType } from './Attachment';
+import { MIMETypeSchema, type MIMEType } from './MIME.js';
+import type { AttachmentType } from './Attachment.js';
 import {
   type JobManagerJobType,
   jobManagerJobSchema,
-} from '../jobs/JobManager';
-import { AttachmentDownloadSource } from '../sql/Interface';
+} from '../jobs/JobManager.js';
+import { AttachmentDownloadSource } from '../sql/Interface.js';
 
 export enum MediaTier {
   STANDARD = 'standard',
   BACKUP = 'backup',
 }
 
-export const attachmentDownloadTypeSchema = z.enum([
+export const messageAttachmentTypeSchema = z.enum([
   'long-message',
   'attachment',
   'preview',
@@ -23,18 +23,17 @@ export const attachmentDownloadTypeSchema = z.enum([
   'sticker',
 ]);
 
-export type AttachmentDownloadJobTypeType = z.infer<
-  typeof attachmentDownloadTypeSchema
->;
+export type MessageAttachmentType = z.infer<typeof messageAttachmentTypeSchema>;
 
 export type CoreAttachmentDownloadJobType = {
   attachment: AttachmentType;
-  attachmentType: AttachmentDownloadJobTypeType;
+  attachmentType: MessageAttachmentType;
   ciphertextSize: number;
   contentType: MIMEType;
-  digest: string;
+  attachmentSignature: string;
   isManualDownload?: boolean;
   messageId: string;
+  originalSource: AttachmentDownloadSource;
   receivedAt: number;
   sentAt: number;
   size: number;
@@ -48,13 +47,14 @@ export const coreAttachmentDownloadJobSchema = z.object({
   attachment: z
     .object({ size: z.number(), contentType: MIMETypeSchema })
     .passthrough(),
-  attachmentType: attachmentDownloadTypeSchema,
+  attachmentType: messageAttachmentTypeSchema,
   ciphertextSize: z.number(),
   contentType: MIMETypeSchema,
-  digest: z.string(),
+  attachmentSignature: z.string(),
   isManualDownload: z.boolean().optional(),
   messageId: z.string(),
   messageIdForLogging: z.string().optional(),
+  originalSource: z.nativeEnum(AttachmentDownloadSource),
   receivedAt: z.number(),
   sentAt: z.number(),
   size: z.number(),

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { MINUTE } from './durations';
-import { Sound, SoundType } from './Sound';
+import { MINUTE } from './durations/index.js';
+import { Sound, SoundType } from './Sound.js';
 
 const ringtoneEventQueue = new PQueue({
   concurrency: 1,
@@ -11,11 +11,15 @@ const ringtoneEventQueue = new PQueue({
   throwOnTimeout: true,
 });
 
+function getCallRingtoneNotificationSetting(): boolean {
+  return window.storage.get('call-ringtone-notification', true);
+}
+
 class CallingTones {
   #ringtone?: Sound;
 
   async handRaised() {
-    const canPlayTone = window.Events.getCallRingtoneNotification();
+    const canPlayTone = getCallRingtoneNotificationSetting();
     if (!canPlayTone) {
       return;
     }
@@ -28,7 +32,7 @@ class CallingTones {
   }
 
   async playEndCall(): Promise<void> {
-    const canPlayTone = window.Events.getCallRingtoneNotification();
+    const canPlayTone = getCallRingtoneNotificationSetting();
     if (!canPlayTone) {
       return;
     }
@@ -46,7 +50,7 @@ class CallingTones {
         this.#ringtone = undefined;
       }
 
-      const canPlayTone = window.Events.getCallRingtoneNotification();
+      const canPlayTone = getCallRingtoneNotificationSetting();
       if (!canPlayTone) {
         return;
       }
@@ -70,7 +74,7 @@ class CallingTones {
   }
 
   async someonePresenting() {
-    const canPlayTone = window.Events.getCallRingtoneNotification();
+    const canPlayTone = getCallRingtoneNotificationSetting();
     if (!canPlayTone) {
       return;
     }

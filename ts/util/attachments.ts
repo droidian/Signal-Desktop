@@ -3,17 +3,19 @@
 
 import { blobToArrayBuffer } from 'blob-util';
 
-import * as log from '../logging/log';
-import { scaleImageToLevel } from './scaleImageToLevel';
-import { dropNull } from './dropNull';
-import { getLocalAttachmentUrl } from './getLocalAttachmentUrl';
+import { createLogger } from '../logging/log.js';
+import { scaleImageToLevel } from './scaleImageToLevel.js';
+import { dropNull } from './dropNull.js';
+import { getLocalAttachmentUrl } from './getLocalAttachmentUrl.js';
 import type {
   AttachmentType,
   UploadedAttachmentType,
-} from '../types/Attachment';
-import { canBeTranscoded } from '../types/Attachment';
-import * as Errors from '../types/errors';
-import * as Bytes from '../Bytes';
+} from '../types/Attachment.js';
+import { canBeTranscoded } from '../types/Attachment.js';
+import * as Errors from '../types/errors.js';
+import * as Bytes from '../Bytes.js';
+
+const log = createLogger('attachments');
 
 // All outgoing images go through handleImageAttachment before being sent and thus have
 // already been scaled to high-quality level, stripped of exif data, and saved. This
@@ -88,6 +90,7 @@ export type CdnFieldsType = Pick<
   | 'iv'
   | 'key'
   | 'plaintextHash'
+  | 'uploadTimestamp'
 >;
 
 export function copyCdnFields(
@@ -105,9 +108,8 @@ export function copyCdnFields(
       ? Bytes.toBase64(uploaded.incrementalMac)
       : undefined,
     chunkSize: dropNull(uploaded.chunkSize),
-    isReencryptableToSameDigest: uploaded.isReencryptableToSameDigest,
-    iv: Bytes.toBase64(uploaded.iv),
     key: Bytes.toBase64(uploaded.key),
     plaintextHash: uploaded.plaintextHash,
+    uploadTimestamp: uploaded.uploadTimestamp?.toNumber(),
   };
 }

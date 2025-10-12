@@ -3,55 +3,38 @@
 
 import type { Database, RunResult } from '@signalapp/sqlcipher';
 
-import type { LoggerType } from '../../types/Logging';
-import type { QueryFragment } from '../util';
-import type { PniString } from '../../types/ServiceId';
+import type { LoggerType } from '../../types/Logging.js';
+import type { QueryFragment } from '../util.js';
+import type { PniString } from '../../types/ServiceId.js';
 
-import { sql, sqlFragment } from '../util';
-import { normalizePni } from '../../types/ServiceId';
-import * as Errors from '../../types/errors';
+import { sql, sqlFragment } from '../util.js';
+import { normalizePni } from '../../types/ServiceId.js';
+import * as Errors from '../../types/errors.js';
 
-export const version = 920;
-
-export function updateToSchemaVersion920(
-  currentVersion: number,
+export default function updateToSchemaVersion920(
   db: Database,
   logger: LoggerType
-): void {
-  if (currentVersion >= 920) {
-    return;
-  }
-
-  db.transaction(() => {
-    cleanKeys(
-      db,
-      logger,
-      'updateToSchemaVersion920/kyberPreKeys',
-      sqlFragment`kyberPreKeys`,
-      sqlFragment`createdAt`,
-      sqlFragment`ourServiceId`
-    );
-    cleanKeys(
-      db,
-      logger,
-      'updateToSchemaVersion920/signedPreKeys',
-      sqlFragment`signedPreKeys`,
-      sqlFragment`created_at`,
-      sqlFragment`ourServiceId`
-    );
-
-    logger.info('updateToSchemaVersion920: Done with deletions');
-
-    db.pragma('user_version = 920');
-  })();
-
-  logger.info(
-    'updateToSchemaVersion920: user_version set to 920. Starting vacuum...'
+): 'vacuum' {
+  cleanKeys(
+    db,
+    logger,
+    'kyberPreKeys',
+    sqlFragment`kyberPreKeys`,
+    sqlFragment`createdAt`,
+    sqlFragment`ourServiceId`
   );
-  db.exec('VACUUM;');
-  logger.info('updateToSchemaVersion920: Vacuum complete.');
+  cleanKeys(
+    db,
+    logger,
+    'signedPreKeys',
+    sqlFragment`signedPreKeys`,
+    sqlFragment`created_at`,
+    sqlFragment`ourServiceId`
+  );
 
-  logger.info('updateToSchemaVersion920: success!');
+  logger.info('Done with deletions, starting vacuum...');
+
+  return 'vacuum';
 }
 
 export function cleanKeys(

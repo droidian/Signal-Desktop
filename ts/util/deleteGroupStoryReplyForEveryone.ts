@@ -1,10 +1,12 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { DAY } from './durations';
-import { sendDeleteForEveryoneMessage } from './sendDeleteForEveryoneMessage';
-import { getMessageById } from '../messages/getMessageById';
-import * as log from '../logging/log';
+import { DAY } from './durations/index.js';
+import { sendDeleteForEveryoneMessage } from './sendDeleteForEveryoneMessage.js';
+import { getMessageById } from '../messages/getMessageById.js';
+import { createLogger } from '../logging/log.js';
+
+const log = createLogger('deleteGroupStoryReplyForEveryone');
 
 export async function deleteGroupStoryReplyForEveryone(
   replyMessageId: string
@@ -26,9 +28,7 @@ export async function deleteGroupStoryReplyForEveryone(
 
   if (!group) {
     log.warn(
-      `deleteGroupStoryReplyForEveryone: No conversation model found for: ${messageModel.get(
-        'conversationId'
-      )}`
+      `No conversation model found for: ${messageModel.get('conversationId')}`
     );
     return;
   }

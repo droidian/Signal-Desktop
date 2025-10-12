@@ -1,19 +1,21 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { MessageAttributesType } from '../model-types.d';
-import * as Errors from '../types/errors';
-import * as log from '../logging/log';
-import { DataReader } from '../sql/Client';
-import { drop } from '../util/drop';
-import { getAuthorId } from '../messages/helpers';
-import { handleEditMessage } from '../util/handleEditMessage';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp';
+import type { MessageAttributesType } from '../model-types.d.ts';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { DataReader } from '../sql/Client.js';
+import { drop } from '../util/drop.js';
+import { getAuthorId } from '../messages/helpers.js';
+import { handleEditMessage } from '../util/handleEditMessage.js';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.js';
 import {
   isAttachmentDownloadQueueEmpty,
   registerQueueEmptyCallback,
-} from '../util/attachmentDownloadQueue';
-import { MessageModel } from '../models/messages';
+} from '../util/attachmentDownloadQueue.js';
+import { MessageModel } from '../models/messages.js';
+
+const log = createLogger('Edits');
 
 export type EditAttributesType = {
   conversationId: string;
@@ -48,7 +50,7 @@ export function forMessage(
 
   if (!isAttachmentDownloadQueueEmpty()) {
     log.info(
-      'Edits.forMessage attachmentDownloadQueue not empty, not processing edits'
+      'forMessage attachmentDownloadQueue not empty, not processing edits'
     );
     registerQueueEmptyCallback(flushEdits);
     return [];
@@ -71,7 +73,7 @@ export function forMessage(
     });
 
     log.info(
-      `Edits.forMessage(${messageAttributes.sent_at}): ` +
+      `forMessage(${messageAttributes.sent_at}): ` +
         `Found early edits for message ${editsLogIds.join(', ')}`
     );
     return result;
@@ -81,7 +83,7 @@ export function forMessage(
 }
 
 export async function flushEdits(): Promise<void> {
-  log.info('Edits.flushEdits running');
+  log.info('flushEdits running');
   return drop(
     Promise.all(Array.from(edits.values()).map(edit => onEdit(edit)))
   );
