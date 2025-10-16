@@ -3,20 +3,20 @@
 
 import React, { useMemo } from 'react';
 
-import { CurveType, Image } from './Image';
-import { StagedGenericAttachment } from './StagedGenericAttachment';
-import { StagedPlaceholderAttachment } from './StagedPlaceholderAttachment';
-import type { LocalizerType } from '../../types/Util';
+import { CurveType, Image } from './Image.js';
+import { StagedGenericAttachment } from './StagedGenericAttachment.js';
+import { StagedPlaceholderAttachment } from './StagedPlaceholderAttachment.js';
+import type { LocalizerType } from '../../types/Util.js';
 import type {
   AttachmentForUIType,
   AttachmentDraftType,
-} from '../../types/Attachment';
+} from '../../types/Attachment.js';
 import {
   areAllAttachmentsVisual,
   canDisplayImage,
   isImageAttachment,
   isVideoAttachment,
-} from '../../types/Attachment';
+} from '../../util/Attachment.js';
 
 export type Props<T extends AttachmentForUIType | AttachmentDraftType> =
   Readonly<{
@@ -99,7 +99,12 @@ export function AttachmentList<
           const url = getUrl(attachment);
           const forUI = attachmentsForUI[index];
 
-          const key = url || attachment.path || attachment.fileName || index;
+          const key =
+            attachment.clientUuid ||
+            url ||
+            attachment.path ||
+            attachment.fileName ||
+            index;
 
           const isImage = isImageAttachment(attachment);
           const isVideo = isVideoAttachment(attachment);

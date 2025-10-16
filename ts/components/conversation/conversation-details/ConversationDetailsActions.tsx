@@ -5,13 +5,16 @@ import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import classNames from 'classnames';
 
-import type { LocalizerType } from '../../../types/Util';
-import { ConfirmationDialog } from '../../ConfirmationDialog';
-import { Tooltip, TooltipPlacement } from '../../Tooltip';
+import type { LocalizerType } from '../../../types/Util.js';
+import { ConfirmationDialog } from '../../ConfirmationDialog.js';
+import { Tooltip, TooltipPlacement } from '../../Tooltip.js';
 
-import { PanelRow } from './PanelRow';
-import { PanelSection } from './PanelSection';
-import { ConversationDetailsIcon, IconType } from './ConversationDetailsIcon';
+import { PanelRow } from './PanelRow.js';
+import { PanelSection } from './PanelSection.js';
+import {
+  ConversationDetailsIcon,
+  IconType,
+} from './ConversationDetailsIcon.js';
 
 export type Props = {
   acceptConversation: (id: string) => void;
@@ -234,7 +237,7 @@ export function ConversationDetailsActions({
             }
           )}
         >
-          {i18n('icu:ConversationDetailsActions--unblock-group-modal-content')}
+          {i18n('icu:ConversationDetailsActions--unblock-group-modal-body')}
         </ConfirmationDialog>
       )}
 

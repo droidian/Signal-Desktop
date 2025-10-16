@@ -2,29 +2,32 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 
-import { DataWriter } from '../sql/Client';
-import type { ContactSyncEvent } from '../textsecure/messageReceiverEvents';
+import { DataWriter } from '../sql/Client.js';
+import type { ContactSyncEvent } from '../textsecure/messageReceiverEvents.js';
 import {
   parseContactsV2,
   type ContactDetailsWithAvatar,
-} from '../textsecure/ContactsParser';
-import * as Conversation from '../types/Conversation';
-import * as Errors from '../types/errors';
-import type { ValidateConversationType } from '../model-types.d';
-import type { ConversationModel } from '../models/conversations';
-import { validateConversation } from '../util/validateConversation';
-import { isDirectConversation, isMe } from '../util/whatTypeOfConversation';
-import { createLogger } from '../logging/log';
-import { dropNull } from '../util/dropNull';
-import type { ProcessedAttachment } from '../textsecure/Types';
-import { downloadAttachment } from '../textsecure/downloadAttachment';
-import { strictAssert } from '../util/assert';
-import type { ReencryptedAttachmentV2 } from '../AttachmentCrypto';
-import { SECOND } from '../util/durations';
-import { AttachmentVariant } from '../types/Attachment';
-import { MediaTier } from '../types/AttachmentDownload';
+} from '../textsecure/ContactsParser.js';
+import * as Conversation from '../types/Conversation.js';
+import * as Errors from '../types/errors.js';
+import type { ValidateConversationType } from '../model-types.d.ts';
+import type { ConversationModel } from '../models/conversations.js';
+import { validateConversation } from '../util/validateConversation.js';
+import { isDirectConversation, isMe } from '../util/whatTypeOfConversation.js';
+import { createLogger } from '../logging/log.js';
+import { dropNull } from '../util/dropNull.js';
+import type { ProcessedAttachment } from '../textsecure/Types.js';
+import { downloadAttachment } from '../textsecure/downloadAttachment.js';
+import { strictAssert } from '../util/assert.js';
+import type { ReencryptedAttachmentV2 } from '../AttachmentCrypto.js';
+import { SECOND } from '../util/durations/index.js';
+import { AttachmentVariant } from '../types/Attachment.js';
+import { MediaTier } from '../types/AttachmentDownload.js';
+import { waitForOnline } from '../util/waitForOnline.js';
+
+const { noop } = lodash;
 
 const log = createLogger('contactSync');
 
@@ -96,7 +99,7 @@ async function updateConversationFromContactSync(
     );
   }
 
-  window.Whisper.events.trigger('incrementProgress');
+  window.Whisper.events.emit('incrementProgress');
 }
 
 const queue = new PQueue({ concurrency: 1 });
@@ -117,6 +120,7 @@ async function downloadAndParseContactAttachment(
         disableRetries: true,
         timeout: 90 * SECOND,
         abortSignal: abortController.signal,
+        logId: 'downloadContactAttachment',
       }
     );
 
@@ -142,7 +146,33 @@ async function doContactSync({
     `receivedAt=${receivedAtCounter}, isFullSync=${isFullSync})`;
 
   log.info(`${logId}: downloading contact attachment`);
-  const contacts = await downloadAndParseContactAttachment(contactAttachment);
+  let contacts: ReadonlyArray<ContactDetailsWithAvatar> | undefined;
+  let attempts = 0;
+  const ATTEMPT_LIMIT = 3;
+  while (contacts === undefined) {
+    attempts += 1;
+    try {
+      if (!window.textsecure.server?.isOnline()) {
+        log.info(`${logId}: We are not online; waiting until we are online`);
+        // eslint-disable-next-line no-await-in-loop
+        await waitForOnline();
+        log.info(`${logId}: We are back online; starting up again`);
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      contacts = await downloadAndParseContactAttachment(contactAttachment);
+    } catch (error) {
+      if (attempts >= ATTEMPT_LIMIT) {
+        throw error;
+      }
+
+      log.warn(
+        `${logId}: Failed to download attachment, attempt ${attempts}`,
+        Errors.toLogFormat(error)
+      );
+      // continue
+    }
+  }
 
   log.info(`${logId}: got ${contacts.length} contacts`);
   const updatedConversations = new Set<ConversationModel>();
@@ -155,11 +185,11 @@ async function doContactSync({
       type: 'private',
     };
 
-    const validationError = validateConversation(partialConversation);
-    if (validationError) {
+    const validationErrorString = validateConversation(partialConversation);
+    if (validationErrorString) {
       log.error(
         `${logId}: Invalid contact received`,
-        Errors.toLogFormat(validationError)
+        Errors.toLogFormat(validationErrorString)
       );
       continue;
     }
@@ -234,7 +264,7 @@ async function doContactSync({
   await Promise.all(promises);
 
   await window.storage.put('synced_at', Date.now());
-  window.Whisper.events.trigger('contactSync:complete');
+  window.Whisper.events.emit('contactSync:complete');
   if (isInitialSync) {
     isInitialSync = false;
   }

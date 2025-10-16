@@ -1,18 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import { createBatcher } from './batcher';
-import { createWaitBatcher } from './waitBatcher';
-import { DataWriter } from '../sql/Client';
-import { createLogger } from '../logging/log';
-import { postSaveUpdates } from './cleanup';
-import { MessageModel } from '../models/messages';
-import { drop } from './drop';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import { createWaitBatcher } from './waitBatcher.js';
+import { DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+import { postSaveUpdates } from './cleanup.js';
+import { MessageModel } from '../models/messages.js';
 
 const log = createLogger('messageBatcher');
 
-const updateMessageBatcher = createBatcher<ReadonlyMessageAttributesType>({
+const updateMessageBatcher = createWaitBatcher<ReadonlyMessageAttributesType>({
   name: 'messageBatcher.updateMessageBatcher',
   wait: 75,
   maxSize: 50,
@@ -33,13 +31,13 @@ const updateMessageBatcher = createBatcher<ReadonlyMessageAttributesType>({
 
 let shouldBatch = true;
 
-export function queueUpdateMessage(
+export async function queueUpdateMessage(
   messageAttr: ReadonlyMessageAttributesType
-): void {
+): Promise<void> {
   if (shouldBatch) {
-    updateMessageBatcher.add(messageAttr);
+    await updateMessageBatcher.add(messageAttr);
   } else {
-    drop(window.MessageCache.saveMessage(messageAttr));
+    await window.MessageCache.saveMessage(messageAttr);
   }
 }
 

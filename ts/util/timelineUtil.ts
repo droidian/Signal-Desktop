@@ -1,16 +1,21 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber } from 'lodash';
-import { createLogger } from '../logging/log';
-import type { PropsType as TimelinePropsType } from '../components/conversation/Timeline';
-import type { TimelineItemType } from '../components/conversation/TimelineItem';
-import { WidthBreakpoint } from '../components/_util';
-import { toLogFormat } from '../types/errors';
-import { MINUTE } from './durations';
-import { missingCaseError } from './missingCaseError';
-import { isSameDay } from './timestamp';
-import type { LastMessageStatus } from '../model-types.d';
+import lodash from 'lodash';
+import { createLogger } from '../logging/log.js';
+// eslint-disable-next-line import/no-restricted-paths
+import type { PropsType as TimelinePropsType } from '../components/conversation/Timeline.js';
+// eslint-disable-next-line import/no-restricted-paths
+import type { TimelineItemType } from '../components/conversation/TimelineItem.js';
+// eslint-disable-next-line import/no-restricted-paths
+import { WidthBreakpoint } from '../components/_util.js';
+import { toLogFormat } from '../types/errors.js';
+import { MINUTE } from './durations/index.js';
+import { missingCaseError } from './missingCaseError.js';
+import { isSameDay } from './timestamp.js';
+import type { LastMessageStatus } from '../model-types.d.ts';
+
+const { isNumber } = lodash;
 
 const log = createLogger('timelineUtil');
 

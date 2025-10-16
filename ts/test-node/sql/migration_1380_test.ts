@@ -4,16 +4,16 @@
 import { assert } from 'chai';
 import { v1 as getGuid } from 'uuid';
 
-import { sql } from '../../sql/util';
+import { sql } from '../../sql/util.js';
 import {
   updateToVersion,
   createDB,
   explain,
   insertData,
   getTableData,
-} from './helpers';
+} from './helpers.js';
 
-import type { WritableDB } from '../../sql/Interface';
+import type { WritableDB } from '../../sql/Interface.js';
 
 describe('SQL/updateToSchemaVersion1380', () => {
   let db: WritableDB;
@@ -65,7 +65,5 @@ describe('SQL/updateToSchemaVersion1380', () => {
     const details = explain(db, template);
     assert.include(details, 'USING INDEX donationReceipts_byTimestamp');
     assert.notInclude(details, 'TEMP B-TREE');
-    // TODO: are we actually okay with a SCAN?
-    // assert.notInclude(details, 'SCAN');
   });
 });

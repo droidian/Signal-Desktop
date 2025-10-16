@@ -4,31 +4,32 @@
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
 
-import type { StateType as RootStateType } from '../reducer';
+import type { StateType as RootStateType } from '../reducer.js';
 import {
   type InstallScreenBackupError,
   InstallScreenBackupStep,
   InstallScreenStep,
   InstallScreenError,
   InstallScreenQRCodeError,
-} from '../../types/InstallScreen';
-import * as Errors from '../../types/errors';
-import { type Loadable, LoadingState } from '../../util/loadable';
-import { isRecord } from '../../util/isRecord';
-import { strictAssert } from '../../util/assert';
-import * as Registration from '../../util/registration';
-import { missingCaseError } from '../../util/missingCaseError';
-import { HTTPError } from '../../textsecure/Errors';
+} from '../../types/InstallScreen.js';
+import * as Errors from '../../types/errors.js';
+import { type Loadable, LoadingState } from '../../util/loadable.js';
+import { isRecord } from '../../util/isRecord.js';
+import { strictAssert } from '../../util/assert.js';
+import * as Registration from '../../util/registration.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { HTTPError } from '../../types/HTTPError.js';
 import {
   Provisioner,
   EventKind as ProvisionEventKind,
   type EnvelopeType as ProvisionEnvelopeType,
-} from '../../textsecure/Provisioner';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import { useBoundActions } from '../../hooks/useBoundActions';
-import { createLogger } from '../../logging/log';
-import { backupsService } from '../../services/backups';
-import OS from '../../util/os/osMain';
+} from '../../textsecure/Provisioner.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
+import { createLogger } from '../../logging/log.js';
+import { backupsService } from '../../services/backups/index.js';
+import OS from '../../util/os/osMain.js';
+import { signalProtocolStore } from '../../SignalProtocolStore.js';
 
 const log = createLogger('installer');
 
@@ -370,7 +371,7 @@ function finishInstall({
     const shouldRetainData = Registration.everDone();
     if (!shouldRetainData) {
       try {
-        await window.textsecure.storage.protocol.removeAllData();
+        await signalProtocolStore.removeAllData();
       } catch (error) {
         log.error(
           'finishInstall: error clearing database',

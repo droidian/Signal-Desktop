@@ -2,27 +2,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
-import { omit } from 'lodash';
+import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 import {
+  CallLinkEpoch,
   CallLinkRootKey,
   GroupCallEndReason,
   type Reaction as CallReaction,
 } from '@signalapp/ringrtc';
-import { getOwn } from '../../util/getOwn';
-import * as Errors from '../../types/errors';
-import { getIntl, getPlatform } from '../selectors/user';
-import { isConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing';
-import { missingCaseError } from '../../util/missingCaseError';
-import { drop } from '../../util/drop';
+import { getOwn } from '../../util/getOwn.js';
+import * as Errors from '../../types/errors.js';
+import { getIntl, getPlatform } from '../selectors/user.js';
+import { isConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { drop } from '../../util/drop.js';
 import {
   DesktopCapturer,
   isNativeMacScreenShareSupported,
   type DesktopCapturerBaton,
-} from '../../util/desktopCapturer';
-import { calling } from '../../services/calling';
-import { truncateAudioLevel } from '../../calling/truncateAudioLevel';
-import type { StateType as RootStateType } from '../reducer';
+} from '../../util/desktopCapturer.js';
+import { calling } from '../../services/calling.js';
+import { truncateAudioLevel } from '../../calling/truncateAudioLevel.js';
+import type { StateType as RootStateType } from '../reducer.js';
 import type {
   ActiveCallReaction,
   ActiveCallReactionsType,
@@ -32,13 +33,13 @@ import type {
   ObservedRemoteMuteType,
   PresentedSource,
   PresentableSource,
-} from '../../types/Calling';
+} from '../../types/Calling.js';
 import {
   isCallLinkAdmin,
   type CallLinkRestrictions,
   type CallLinkStateType,
   type CallLinkType,
-} from '../../types/CallLink';
+} from '../../types/CallLink.js';
 import {
   CALLING_REACTIONS_LIFETIME,
   MAX_CALLING_REACTIONS,
@@ -48,66 +49,71 @@ import {
   CallState,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../../types/Calling';
-import { CallMode } from '../../types/CallDisposition';
-import { callingTones } from '../../util/callingTones';
-import { requestCameraPermissions } from '../../util/callingPermissions';
+} from '../../types/Calling.js';
+import { CallMode } from '../../types/CallDisposition.js';
+import { callingTones } from '../../util/callingTones.js';
+import { requestCameraPermissions } from '../../util/callingPermissions.js';
 import {
   CALL_LINK_DEFAULT_STATE,
   toAdminKeyBytes,
   toCallHistoryFromUnusedCallLink,
-} from '../../util/callLinks';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
-import { sendCallLinkUpdateSync } from '../../util/sendCallLinkUpdateSync';
-import { sleep } from '../../util/sleep';
-import { LatestQueue } from '../../util/LatestQueue';
-import type { AciString, ServiceIdString } from '../../types/ServiceId';
+} from '../../util/callLinks.js';
+import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.js';
+import { sendCallLinkUpdateSync } from '../../util/sendCallLinkUpdateSync.js';
+import { sleep } from '../../util/sleep.js';
+import { LatestQueue } from '../../util/LatestQueue.js';
+import type { AciString, ServiceIdString } from '../../types/ServiceId.js';
 import type {
   ConversationsUpdatedActionType,
   ConversationRemovedActionType,
-} from './conversations';
-import { getConversationCallMode, updateLastMessage } from './conversations';
-import { createLogger } from '../../logging/log';
-import { strictAssert } from '../../util/assert';
-import { waitForOnline } from '../../util/waitForOnline';
-import * as mapUtil from '../../util/mapUtil';
-import { isCallSafe } from '../../util/isCallSafe';
-import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { SHOW_TOAST } from './toast';
-import { ToastType } from '../../types/Toast';
-import type { ShowToastActionType } from './toast';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import { useBoundActions } from '../../hooks/useBoundActions';
+} from './conversations.js';
+import { getConversationCallMode, updateLastMessage } from './conversations.js';
+import { createLogger } from '../../logging/log.js';
+import { strictAssert } from '../../util/assert.js';
+import { waitForOnline } from '../../util/waitForOnline.js';
+import * as mapUtil from '../../util/mapUtil.js';
+import { isCallSafe } from '../../util/isCallSafe.js';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.js';
+import { SHOW_TOAST } from './toast.js';
+import { ToastType } from '../../types/Toast.js';
+import type { ShowToastActionType } from './toast.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
 import {
   isAnybodyElseInGroupCall,
   isAnybodyInGroupCall,
   MAX_CALL_PARTICIPANTS_FOR_DEFAULT_MUTE,
-} from './callingHelpers';
-import { SafetyNumberChangeSource } from '../../components/SafetyNumberChangeDialog';
+} from './callingHelpers.js';
+import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.js';
 import {
   isGroupOrAdhocCallMode,
   isGroupOrAdhocCallState,
-} from '../../util/isGroupOrAdhocCall';
+} from '../../util/isGroupOrAdhocCall.js';
 import type {
   ShowErrorModalActionType,
   ToggleConfirmLeaveCallModalActionType,
-} from './globalModals';
-import { SHOW_ERROR_MODAL, toggleConfirmLeaveCallModal } from './globalModals';
-import { ButtonVariant } from '../../components/Button';
-import { getConversationIdForLogging } from '../../util/idForLogging';
-import { DataReader, DataWriter } from '../../sql/Client';
-import { isAciString } from '../../util/isAciString';
-import type { CallHistoryAdd } from './callHistory';
-import { addCallHistory, reloadCallHistory } from './callHistory';
-import { saveDraftRecordingIfNeeded } from './composer';
-import type { StartCallData } from '../../components/ConfirmLeaveCallModal';
+} from './globalModals.js';
+import {
+  SHOW_ERROR_MODAL,
+  toggleConfirmLeaveCallModal,
+} from './globalModals.js';
+import { ButtonVariant } from '../../components/Button.js';
+import { getConversationIdForLogging } from '../../util/idForLogging.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { isAciString } from '../../util/isAciString.js';
+import type { CallHistoryAdd } from './callHistory.js';
+import { addCallHistory, reloadCallHistory } from './callHistory.js';
+import { saveDraftRecordingIfNeeded } from './composer.js';
+import type { StartCallData } from '../../components/ConfirmLeaveCallModal.js';
 import {
   getCallLinksByRoomId,
   getPresentingSource,
-} from '../selectors/calling';
-import { storageServiceUploadJob } from '../../services/storage';
-import { CallLinkFinalizeDeleteManager } from '../../jobs/CallLinkFinalizeDeleteManager';
-import { callLinkRefreshJobQueue } from '../../jobs/callLinkRefreshJobQueue';
+} from '../selectors/calling.js';
+import { storageServiceUploadJob } from '../../services/storage.js';
+import { CallLinkFinalizeDeleteManager } from '../../jobs/CallLinkFinalizeDeleteManager.js';
+import { callLinkRefreshJobQueue } from '../../jobs/callLinkRefreshJobQueue.js';
+
+const { omit } = lodash;
 
 const log = createLogger('calling');
 
@@ -290,6 +296,7 @@ type HangUpActionPayloadType = ReadonlyDeep<{
 
 export type HandleCallLinkUpdateType = ReadonlyDeep<{
   rootKey: string;
+  epoch: string | null;
   adminKey: string | null;
 }>;
 
@@ -399,6 +406,7 @@ export type StartCallingLobbyType = ReadonlyDeep<{
 
 export type StartCallLinkLobbyType = ReadonlyDeep<{
   rootKey: string;
+  epoch: string | null;
 }>;
 
 export type StartCallLinkLobbyByRoomIdType = ReadonlyDeep<{
@@ -447,6 +455,7 @@ type StartCallLinkLobbyPayloadType = {
   remoteParticipants: Array<GroupCallParticipantInfoType>;
   callLinkState: CallLinkStateType;
   callLinkRoomId: string;
+  callLinkEpoch: string | null;
   callLinkRootKey: string;
 };
 
@@ -573,11 +582,14 @@ const doGroupCallPeek = ({
         peekInfo = await calling.peekGroupCall(conversationId);
       } else {
         // For adhoc calls, conversationId is actually a roomId.
-        const rootKey: string | undefined = getOwn(
-          state.calling.callLinks,
-          conversationId
-        )?.rootKey;
-        peekInfo = await calling.peekCallLinkCall(conversationId, rootKey);
+        const callLink = getOwn(state.calling.callLinks, conversationId);
+        const rootKey = callLink?.rootKey;
+        const epoch = callLink?.epoch ?? undefined;
+        peekInfo = await calling.peekCallLinkCall(
+          conversationId,
+          rootKey,
+          epoch
+        );
       }
     } catch (err) {
       log.error('Group call peeking failed', Errors.toLogFormat(err));
@@ -1594,7 +1606,7 @@ function handleCallLinkUpdate(
   HandleCallLinkUpdateActionType | CallHistoryAdd
 > {
   return async dispatch => {
-    const { rootKey, adminKey } = payload;
+    const { rootKey, epoch, adminKey } = payload;
     const callLinkRootKey = CallLinkRootKey.parse(rootKey);
     const roomId = getRoomIdFromRootKey(callLinkRootKey);
     const logId = `handleCallLinkUpdate(${roomId})`;
@@ -1604,30 +1616,29 @@ function handleCallLinkUpdate(
       storageNeedsSync: false,
       roomId,
       rootKey,
+      epoch,
       adminKey,
     };
 
     const result = await DataWriter.insertOrUpdateCallLinkFromSync(callLink);
+    const { inserted, updated, callLink: resultCallLink } = result;
 
-    if (result.inserted) {
-      log.info(`${logId}: Saved new call link`);
-    } else if (result.updated) {
-      log.info(`${logId}: Updated existing call link with new adminKey`);
-    } else {
-      // This case happens when concurrently processing a batch of call link sync messages
-      // for the same roomId.
-      log.info(
-        `${logId}: Discarding call link update because we are already up to date`
-      );
-      return;
+    // Sync messages only include rootKey and adminKey. We will update a record here
+    // if another device tells us of the adminKey. If other info has changed,
+    // we need to fetch the call link from the server with callLinkRefreshJobQueue.
+    if (inserted || updated) {
+      if (inserted) {
+        log.info(`${logId}: Saved new call link`);
+      } else {
+        log.info(`${logId}: Updated existing call link with new adminKey`);
+      }
+      dispatch({
+        type: HANDLE_CALL_LINK_UPDATE,
+        payload: { callLink: resultCallLink },
+      });
     }
 
-    dispatch({
-      type: HANDLE_CALL_LINK_UPDATE,
-      payload: { callLink: result.callLink },
-    });
-
-    const isPlaceholderCallHistoryNeeded = result.inserted && adminKey != null;
+    const isPlaceholderCallHistoryNeeded = inserted && adminKey != null;
     if (isPlaceholderCallHistoryNeeded) {
       const callHistory = toCallHistoryFromUnusedCallLink(callLink);
       await DataWriter.saveCallHistory(callHistory);
@@ -1639,6 +1650,7 @@ function handleCallLinkUpdate(
     drop(
       callLinkRefreshJobQueue.add({
         rootKey,
+        epoch,
         source: 'handleCallLinkUpdate',
       })
     );
@@ -2364,31 +2376,33 @@ function startCallLinkLobbyByRoomId({
   return async (dispatch, getState) => {
     const state = getState();
     const callLink = getOwn(state.calling.callLinks, roomId);
-
     strictAssert(
       callLink,
       `startCallLinkLobbyByRoomId(${roomId}): call link not found`
     );
 
-    const { rootKey } = callLink;
-    await _startCallLinkLobby({ rootKey, dispatch, getState });
+    const { rootKey, epoch } = callLink;
+    await _startCallLinkLobby({ rootKey, epoch, dispatch, getState });
   };
 }
 
 function startCallLinkLobby({
   rootKey,
+  epoch,
 }: StartCallLinkLobbyType): StartCallLinkLobbyThunkActionType {
   return async (dispatch, getState) => {
-    await _startCallLinkLobby({ rootKey, dispatch, getState });
+    await _startCallLinkLobby({ rootKey, epoch, dispatch, getState });
   };
 }
 
 const _startCallLinkLobby = async ({
   rootKey,
+  epoch,
   dispatch,
   getState,
 }: {
   rootKey: string;
+  epoch: string | null;
   dispatch: ThunkDispatch<
     RootStateType,
     unknown,
@@ -2402,6 +2416,7 @@ const _startCallLinkLobby = async ({
   getState: () => RootStateType;
 }) => {
   const callLinkRootKey = CallLinkRootKey.parse(rootKey);
+  const callLinkEpoch = epoch ? CallLinkEpoch.parse(epoch) : undefined;
   const roomId = getRoomIdFromRootKey(callLinkRootKey);
   const state = getState();
 
@@ -2429,6 +2444,7 @@ const _startCallLinkLobby = async ({
       toggleConfirmLeaveCallModal({
         type: 'adhoc-rootKey',
         rootKey,
+        epoch,
       })
     );
     return;
@@ -2444,7 +2460,7 @@ const _startCallLinkLobby = async ({
     });
 
     let callLinkState: CallLinkStateType | null = null;
-    callLinkState = await calling.readCallLink(callLinkRootKey);
+    callLinkState = await calling.readCallLink(callLinkRootKey, callLinkEpoch);
 
     if (callLinkState == null) {
       const i18n = getIntl(getState());
@@ -2476,15 +2492,29 @@ const _startCallLinkLobby = async ({
       return;
     }
 
-    const callLinkExists = await DataReader.callLinkExists(roomId);
-    if (callLinkExists) {
-      await DataWriter.updateCallLinkState(roomId, callLinkState);
+    const callLink = await DataReader.getCallLinkByRoomId(roomId);
+    if (callLink) {
+      await DataWriter.updateCallLinkStateAndEpoch(
+        roomId,
+        callLinkState,
+        epoch
+      );
       log.info(`${logId}: Updated existing call link`);
+      if (epoch !== callLink.epoch) {
+        drop(
+          sendCallLinkUpdateSync({
+            rootKey,
+            epoch,
+            adminKey: callLink.adminKey,
+          })
+        );
+      }
     } else {
       const { name, restrictions, expiration, revoked } = callLinkState;
       await DataWriter.insertCallLink({
         roomId,
         rootKey,
+        epoch: epoch ?? null,
         adminKey: null,
         name,
         restrictions,
@@ -2506,6 +2536,7 @@ const _startCallLinkLobby = async ({
 
     const callLobbyData = await calling.startCallLinkLobby({
       callLinkRootKey,
+      callLinkEpoch,
       adminPasskey,
       hasLocalAudio:
         groupCallDeviceCount < MAX_CALL_PARTICIPANTS_FOR_DEFAULT_MUTE,
@@ -2521,6 +2552,7 @@ const _startCallLinkLobby = async ({
         callLinkState,
         callLinkRoomId: roomId,
         callLinkRootKey: rootKey,
+        callLinkEpoch: epoch,
         conversationId: roomId,
         isConversationTooBigToRing: false,
       },
@@ -2567,8 +2599,8 @@ function leaveCurrentCallAndStartCallingLobby(
       const { roomId } = data;
       startCallLinkLobbyByRoomId({ roomId })(dispatch, getState, undefined);
     } else if (type === 'adhoc-rootKey') {
-      const { rootKey } = data;
-      startCallLinkLobby({ rootKey })(dispatch, getState, undefined);
+      const { rootKey, epoch } = data;
+      startCallLinkLobby({ rootKey, epoch })(dispatch, getState, undefined);
     } else {
       throw missingCaseError(type);
     }
@@ -2759,6 +2791,7 @@ function startCall(
         await calling.joinCallLinkCall({
           roomId: conversationId,
           rootKey: callLink.rootKey,
+          epoch: callLink.epoch ?? undefined,
           adminKey: callLink.adminKey ?? undefined,
           hasLocalAudio,
           hasLocalVideo,
@@ -3170,6 +3203,9 @@ export function reducer(
                 rootKey:
                   callLinks[conversationId]?.rootKey ??
                   action.payload.callLinkRootKey,
+                epoch:
+                  callLinks[conversationId]?.epoch ??
+                  action.payload.callLinkEpoch,
                 adminKey: callLinks[conversationId]?.adminKey,
                 storageNeedsSync: false,
               },

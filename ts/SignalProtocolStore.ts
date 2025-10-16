@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { omit } from 'lodash';
+import lodash from 'lodash';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 import {
   Direction,
@@ -19,15 +19,15 @@ import {
   SignedPreKeyRecord,
 } from '@signalapp/libsignal-client';
 
-import { DataReader, DataWriter } from './sql/Client';
-import type { ItemType } from './sql/Interface';
-import * as Bytes from './Bytes';
-import { constantTimeEqual, sha256 } from './Crypto';
-import { assertDev, strictAssert } from './util/assert';
-import { isNotNil } from './util/isNotNil';
-import { drop } from './util/drop';
-import { Zone } from './util/Zone';
-import { isMoreRecentThan } from './util/timestamp';
+import { DataReader, DataWriter } from './sql/Client.js';
+import type { ItemType, KyberPreKeyTripleType } from './sql/Interface.js';
+import * as Bytes from './Bytes.js';
+import { constantTimeEqual, sha256 } from './Crypto.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { isNotNil } from './util/isNotNil.js';
+import { drop } from './util/drop.js';
+import { Zone } from './util/Zone.js';
+import { isMoreRecentThan } from './util/timestamp.js';
 import type {
   DeviceType,
   IdentityKeyType,
@@ -48,22 +48,28 @@ import type {
   SignedPreKeyType,
   UnprocessedType,
   CompatPreKeyType,
-} from './textsecure/Types.d';
-import type { ServiceIdString, PniString, AciString } from './types/ServiceId';
-import { isServiceIdString, ServiceIdKind } from './types/ServiceId';
-import type { Address } from './types/Address';
-import type { QualifiedAddressStringType } from './types/QualifiedAddress';
-import { QualifiedAddress } from './types/QualifiedAddress';
-import { createLogger } from './logging/log';
-import * as Errors from './types/errors';
-import { MINUTE } from './util/durations';
-import { conversationJobQueue } from './jobs/conversationJobQueue';
+} from './textsecure/Types.d.ts';
+import type {
+  ServiceIdString,
+  PniString,
+  AciString,
+} from './types/ServiceId.js';
+import { isServiceIdString, ServiceIdKind } from './types/ServiceId.js';
+import type { Address } from './types/Address.js';
+import type { QualifiedAddressStringType } from './types/QualifiedAddress.js';
+import { QualifiedAddress } from './types/QualifiedAddress.js';
+import { createLogger } from './logging/log.js';
+import * as Errors from './types/errors.js';
+import { MINUTE } from './util/durations/index.js';
+import { conversationJobQueue } from './jobs/conversationJobQueue.js';
 import {
   KYBER_KEY_ID_KEY,
   SIGNED_PRE_KEY_ID_KEY,
-} from './textsecure/AccountManager';
-import { formatGroups, groupWhile } from './util/groupWhile';
-import { parseUnknown } from './util/schemas';
+} from './textsecure/AccountManager.js';
+import { formatGroups, groupWhile } from './util/groupWhile.js';
+import { parseUnknown } from './util/schemas.js';
+
+const { omit } = lodash;
 
 const log = createLogger('SignalProtocolStore');
 
@@ -207,6 +213,19 @@ export function hydrateSignedPreKey(
   );
 }
 
+// Format: keyId:signedPreKeyId:baseKey
+type KyberTripleCacheKeyPrefixType = `${KyberPreKeyTripleType['id']}:`;
+type KyberTripleCacheKeyType =
+  `${KyberTripleCacheKeyPrefixType}${KyberPreKeyTripleType['signedPreKeyId']}:${string}`;
+
+function getKyberTripleCacheKey({
+  id,
+  signedPreKeyId,
+  baseKey,
+}: KyberPreKeyTripleType): KyberTripleCacheKeyType {
+  return `${id}:${signedPreKeyId}:${Bytes.toHex(baseKey)}`;
+}
+
 type SessionCacheEntry = CacheEntryType<SessionType, SessionRecord>;
 type SenderKeyCacheEntry = CacheEntryType<SenderKeyType, SenderKeyRecord>;
 
@@ -248,6 +267,8 @@ export class SignalProtocolStore extends EventEmitter {
     CacheEntryType<SignedPreKeyType, SignedPreKeyRecord>
   >;
 
+  readonly #kyberTriples = new Set<KyberTripleCacheKeyType>();
+
   senderKeyQueues = new Map<QualifiedAddressStringType, PQueue>();
 
   sessionQueues = new Map<SessionIdType, PQueue>();
@@ -256,9 +277,15 @@ export class SignalProtocolStore extends EventEmitter {
   #currentZone?: Zone;
   #currentZoneDepth = 0;
   readonly #zoneQueue: Array<ZoneQueueEntryType> = [];
+  #pendingKyberPreKeysToRemove = new Set<PreKeyIdType>();
+  #pendingPreKeysToRemove = new Set<PreKeyIdType>();
   #pendingSessions = new Map<SessionIdType, SessionCacheEntry>();
   #pendingSenderKeys = new Map<SenderKeyIdType, SenderKeyCacheEntry>();
   #pendingUnprocessed = new Map<string, UnprocessedType>();
+  #pendingKyberTriples = new Map<
+    KyberTripleCacheKeyType,
+    KyberPreKeyTripleType
+  >();
 
   async hydrateCaches(): Promise<void> {
     await Promise.all([
@@ -300,6 +327,15 @@ export class SignalProtocolStore extends EventEmitter {
             'Invalid registration id serviceId'
           );
           this.#ourRegistrationIds.set(serviceId, map.value[serviceId]);
+        }
+      })(),
+      (async () => {
+        this.#kyberTriples.clear();
+
+        const triples = await DataReader.getAllKyberTriples();
+
+        for (const t of triples) {
+          this.#kyberTriples.add(getKyberTripleCacheKey(t));
         }
       })(),
       _fillCaches<string, IdentityKeyType, PublicKey>(
@@ -393,6 +429,12 @@ export class SignalProtocolStore extends EventEmitter {
     keyId: number
   ): Promise<KyberPreKeyRecord | undefined> {
     const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
+
+    if (this.#pendingKyberPreKeysToRemove.has(id)) {
+      log.error('Not returning kyberPreKey pending removal', id);
+      return undefined;
+    }
+
     const entry = this.#_getKyberPreKeyEntry(id, 'loadKyberPreKey');
 
     return entry?.item;
@@ -489,7 +531,12 @@ export class SignalProtocolStore extends EventEmitter {
 
   async maybeRemoveKyberPreKey(
     ourServiceId: ServiceIdString,
-    keyId: number
+    {
+      keyId,
+      signedPreKeyId,
+      baseKey,
+    }: { keyId: number; signedPreKeyId: number; baseKey: PublicKey },
+    { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
   ): Promise<void> {
     const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
     const entry = this.#_getKyberPreKeyEntry(id, 'maybeRemoveKyberPreKey');
@@ -497,40 +544,69 @@ export class SignalProtocolStore extends EventEmitter {
     if (!entry) {
       return;
     }
-    if (entry.fromDB.isLastResort) {
-      log.info(
-        `maybeRemoveKyberPreKey: Not removing kyber prekey ${id}; it's a last resort key`
-      );
+    if (!entry.fromDB.isLastResort) {
+      await this.removeKyberPreKeys(ourServiceId, [keyId], { zone });
       return;
     }
 
-    await this.removeKyberPreKeys(ourServiceId, [keyId]);
+    log.info(
+      `maybeRemoveKyberPreKey: Not removing kyber prekey ${id}; it's a last resort key`
+    );
+
+    await this.withZone(zone, 'maybeRemoveKyberPreKey', async () => {
+      const triple: KyberPreKeyTripleType = {
+        id: `${ourServiceId}:${keyId}`,
+        signedPreKeyId,
+        baseKey: baseKey.serialize(),
+      };
+
+      const cacheKey = getKyberTripleCacheKey(triple);
+
+      // Note: we don't have to check for `#pendingKyberPreKeysToRemove` since
+      // it makes the key in question inaccessible to begin with.
+      if (
+        this.#kyberTriples.has(cacheKey) ||
+        this.#pendingKyberTriples.has(cacheKey)
+      ) {
+        throw new Error(`Duplicate kyber triple ${keyId}:${signedPreKeyId}`);
+      }
+
+      this.#pendingKyberTriples.set(cacheKey, triple);
+
+      if (!zone.supportsPendingKyberPreKeysToRemove()) {
+        await this.#commitZoneChanges('removeKyberPreKeys');
+      }
+    });
   }
 
   async removeKyberPreKeys(
     ourServiceId: ServiceIdString,
-    keyIds: Array<number>
+    keyIds: Array<number>,
+    { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
   ): Promise<void> {
-    const kyberPreKeyCache = this.kyberPreKeys;
-    if (!kyberPreKeyCache) {
-      throw new Error('removeKyberPreKeys: this.kyberPreKeys not yet cached!');
-    }
+    await this.withZone(zone, 'removeKyberPreKeys', async () => {
+      const kyberPreKeyCache = this.kyberPreKeys;
+      if (!kyberPreKeyCache) {
+        throw new Error(
+          'removeKyberPreKeys: this.kyberPreKeys not yet cached!'
+        );
+      }
 
-    const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
+      const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
 
-    log.info('removeKyberPreKeys: Removing kyber prekeys:', formatKeys(keyIds));
-    const changes = await DataWriter.removeKyberPreKeyById(ids);
-    log.info(`removeKyberPreKeys: Removed ${changes} kyber prekeys`);
-    ids.forEach(id => {
-      kyberPreKeyCache.delete(id);
-    });
-
-    if (kyberPreKeyCache.size < LOW_KEYS_THRESHOLD) {
-      this.#emitLowKeys(
-        ourServiceId,
-        `removeKyberPreKeys@${kyberPreKeyCache.size}`
+      log.info(
+        `removeKyberPreKeys(${zone.name}): Will remove kyberPreKeys:`,
+        formatKeys(keyIds)
       );
-    }
+
+      ids.forEach(id => {
+        this.#pendingKyberPreKeysToRemove.add(id);
+      });
+
+      if (!zone.supportsPendingKyberPreKeysToRemove()) {
+        await this.#commitZoneChanges('removeKyberPreKeys');
+      }
+    });
   }
 
   async clearKyberPreKeyStore(): Promise<void> {
@@ -552,6 +628,11 @@ export class SignalProtocolStore extends EventEmitter {
     }
 
     const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
+    if (this.#pendingPreKeysToRemove.has(id)) {
+      log.error('Not returning prekey pending removal', id);
+      return undefined;
+    }
+
     const entry = this.preKeys.get(id);
     if (!entry) {
       log.error('Failed to fetch prekey:', id);
@@ -630,26 +711,30 @@ export class SignalProtocolStore extends EventEmitter {
 
   async removePreKeys(
     ourServiceId: ServiceIdString,
-    keyIds: Array<number>
+    keyIds: Array<number>,
+    { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
   ): Promise<void> {
-    const preKeyCache = this.preKeys;
-    if (!preKeyCache) {
-      throw new Error('removePreKeys: this.preKeys not yet cached!');
-    }
+    await this.withZone(zone, 'removePreKeys', async () => {
+      const preKeyCache = this.preKeys;
+      if (!preKeyCache) {
+        throw new Error('removePreKeys: this.preKeys not yet cached!');
+      }
 
-    const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
+      const ids = keyIds.map(keyId => this.#_getKeyId(ourServiceId, keyId));
 
-    log.info('removePreKeys: Removing prekeys:', formatKeys(keyIds));
+      log.info(
+        `removePreKeys(${zone.name}): Will remove preKeys:`,
+        formatKeys(keyIds)
+      );
 
-    const changes = await DataWriter.removePreKeyById(ids);
-    log.info(`removePreKeys: Removed ${changes} prekeys`);
-    ids.forEach(id => {
-      preKeyCache.delete(id);
+      ids.forEach(id => {
+        this.#pendingPreKeysToRemove.add(id);
+      });
+
+      if (!zone.supportsPendingPreKeysToRemove()) {
+        await this.#commitZoneChanges('removePreKeys');
+      }
     });
-
-    if (preKeyCache.size < LOW_KEYS_THRESHOLD) {
-      this.#emitLowKeys(ourServiceId, `removePreKeys@${preKeyCache.size}`);
-    }
   }
 
   async clearPreKeyStore(): Promise<void> {
@@ -1123,32 +1208,46 @@ export class SignalProtocolStore extends EventEmitter {
   }
 
   async #commitZoneChanges(name: string): Promise<void> {
-    const pendingUnprocessed = this.#pendingUnprocessed;
+    const pendingKyberPreKeysToRemove = this.#pendingKyberPreKeysToRemove;
+    const pendingPreKeysToRemove = this.#pendingPreKeysToRemove;
     const pendingSenderKeys = this.#pendingSenderKeys;
     const pendingSessions = this.#pendingSessions;
+    const pendingUnprocessed = this.#pendingUnprocessed;
+    const pendingKyberTriples = this.#pendingKyberTriples;
 
     if (
+      pendingKyberPreKeysToRemove.size === 0 &&
+      pendingPreKeysToRemove.size === 0 &&
       pendingSenderKeys.size === 0 &&
       pendingSessions.size === 0 &&
-      pendingUnprocessed.size === 0
+      pendingUnprocessed.size === 0 &&
+      pendingKyberTriples.size === 0
     ) {
       return;
     }
 
     log.info(
       `commitZoneChanges(${name}): ` +
-        `pending sender keys ${pendingSenderKeys.size}, ` +
+        `pending kyberPreKeysToRemove ${pendingPreKeysToRemove.size}, ` +
+        `pending preKeysToRemove ${pendingKyberPreKeysToRemove.size}, ` +
+        `pending senderKeys ${pendingSenderKeys.size}, ` +
         `pending sessions ${pendingSessions.size}, ` +
-        `pending unprocessed ${pendingUnprocessed.size}`
+        `pending unprocessed ${pendingUnprocessed.size}, ` +
+        `pending kyberTriples ${pendingKyberTriples.size}`
     );
 
+    this.#pendingKyberPreKeysToRemove = new Set();
+    this.#pendingPreKeysToRemove = new Set();
     this.#pendingSenderKeys = new Map();
     this.#pendingSessions = new Map();
     this.#pendingUnprocessed = new Map();
+    this.#pendingKyberTriples = new Map();
 
     // Commit both sender keys, sessions and unprocessed in the same database transaction
     //   to unroll both on error.
     await DataWriter.commitDecryptResult({
+      kyberPreKeysToRemove: Array.from(pendingKyberPreKeysToRemove.values()),
+      preKeysToRemove: Array.from(pendingPreKeysToRemove.values()),
       senderKeys: Array.from(pendingSenderKeys.values()).map(
         ({ fromDB }) => fromDB
       ),
@@ -1156,18 +1255,43 @@ export class SignalProtocolStore extends EventEmitter {
         ({ fromDB }) => fromDB
       ),
       unprocessed: Array.from(pendingUnprocessed.values()),
+      kyberTriples: Array.from(pendingKyberTriples.values()),
     });
 
     // Apply changes to in-memory storage after successful DB write.
 
-    const { sessions } = this;
+    for (const cacheKey of pendingKyberTriples.keys()) {
+      this.#kyberTriples.add(cacheKey);
+    }
+
+    const { kyberPreKeys } = this;
     assertDev(
-      sessions !== undefined,
-      "Can't commit unhydrated session storage"
+      kyberPreKeys !== undefined,
+      "Can't commit unhydrated kyberPreKeys storage"
     );
-    pendingSessions.forEach((value, key) => {
-      sessions.set(key, value);
+    pendingKyberPreKeysToRemove.forEach((value: PreKeyIdType) => {
+      kyberPreKeys.delete(value);
+
+      // Remove all cached kyber triples for this key.
+      const prefix: KyberTripleCacheKeyPrefixType = `${value}:`;
+      for (const key of this.#kyberTriples.keys()) {
+        if (key.startsWith(prefix)) {
+          this.#kyberTriples.delete(key);
+        }
+      }
     });
+    if (kyberPreKeys.size < LOW_KEYS_THRESHOLD) {
+      this.#emitLowKeys(`removeKyberPreKeys@${kyberPreKeys.size}`);
+    }
+
+    const { preKeys } = this;
+    assertDev(preKeys !== undefined, "Can't commit unhydrated preKeys storage");
+    pendingPreKeysToRemove.forEach(value => {
+      preKeys.delete(value);
+    });
+    if (preKeys.size < LOW_KEYS_THRESHOLD) {
+      this.#emitLowKeys(`removePreKeys@${preKeys.size}`);
+    }
 
     const { senderKeys } = this;
     assertDev(
@@ -1177,16 +1301,29 @@ export class SignalProtocolStore extends EventEmitter {
     pendingSenderKeys.forEach((value, key) => {
       senderKeys.set(key, value);
     });
+
+    const { sessions } = this;
+    assertDev(
+      sessions !== undefined,
+      "Can't commit unhydrated session storage"
+    );
+    pendingSessions.forEach((value, key) => {
+      sessions.set(key, value);
+    });
   }
 
   async #revertZoneChanges(name: string, error: Error): Promise<void> {
     log.info(
       `revertZoneChanges(${name}): ` +
-        `pending sender keys size ${this.#pendingSenderKeys.size}, ` +
+        `pending kyberPreKeysToRemove size ${this.#pendingKyberPreKeysToRemove.size}, ` +
+        `pending preKeysToRemove size ${this.#pendingPreKeysToRemove.size}, ` +
+        `pending senderKeys size ${this.#pendingSenderKeys.size}, ` +
         `pending sessions size ${this.#pendingSessions.size}, ` +
         `pending unprocessed size ${this.#pendingUnprocessed.size}`,
       Errors.toLogFormat(error)
     );
+    this.#pendingKyberPreKeysToRemove.clear();
+    this.#pendingPreKeysToRemove.clear();
     this.#pendingSenderKeys.clear();
     this.#pendingSessions.clear();
     this.#pendingUnprocessed.clear();
@@ -2249,7 +2386,7 @@ export class SignalProtocolStore extends EventEmitter {
     serviceId: ServiceIdString,
     verifiedStatus: number,
     publicKey: Uint8Array
-  ): Promise<boolean> {
+  ): Promise<{ shouldAddVerifiedChangedMessage: boolean }> {
     strictAssert(
       validateVerifiedStatus(verifiedStatus),
       `Invalid verified status: ${verifiedStatus}`
@@ -2299,23 +2436,27 @@ export class SignalProtocolStore extends EventEmitter {
           }
         }
 
+        // We only want to show a notification if the key is the same as before
+        if (hadEntry && !keyMatches) {
+          return { shouldAddVerifiedChangedMessage: false };
+        }
+
         // See: https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/database/RecipientDatabase.kt#L921-L936
         if (
           verifiedStatus === VerifiedStatus.VERIFIED &&
           (!hadEntry || identityRecord?.verified !== VerifiedStatus.VERIFIED)
         ) {
-          // Needs a notification.
-          return true;
+          return { shouldAddVerifiedChangedMessage: true };
         }
         if (
           verifiedStatus !== VerifiedStatus.VERIFIED &&
           hadEntry &&
           identityRecord?.verified === VerifiedStatus.VERIFIED
         ) {
-          // Needs a notification.
-          return true;
+          return { shouldAddVerifiedChangedMessage: true };
         }
-        return false;
+
+        return { shouldAddVerifiedChangedMessage: false };
       }
     );
   }
@@ -2564,11 +2705,13 @@ export class SignalProtocolStore extends EventEmitter {
 
   async removeAllConfiguration(): Promise<void> {
     // Conversations. These properties are not present in redux.
-    window.getConversations().forEach(conversation => {
-      conversation.unset('storageID');
-      conversation.unset('needsStorageServiceSync');
-      conversation.unset('storageUnknownFields');
-      conversation.unset('senderKeyInfo');
+    window.ConversationController.getAll().forEach(conversation => {
+      conversation.set({
+        storageID: undefined,
+        needsStorageServiceSync: undefined,
+        storageUnknownFields: undefined,
+        senderKeyInfo: undefined,
+      });
     });
 
     await DataWriter.removeAllConfiguration();
@@ -2649,11 +2792,11 @@ export class SignalProtocolStore extends EventEmitter {
     return Array.from(union.values());
   }
 
-  #emitLowKeys(ourServiceId: ServiceIdString, source: string) {
+  #emitLowKeys(source: string) {
     const logId = `SignalProtocolStore.emitLowKeys/${source}:`;
     try {
       log.info(`${logId}: Emitting event`);
-      this.emit('lowKeys', ourServiceId);
+      this.emit('lowKeys');
     } catch (error) {
       log.error(`${logId}: Error thrown from emit`, Errors.toLogFormat(error));
     }
@@ -2663,10 +2806,7 @@ export class SignalProtocolStore extends EventEmitter {
   // EventEmitter types
   //
 
-  public override on(
-    name: 'lowKeys',
-    handler: (ourServiceId: ServiceIdString) => unknown
-  ): this;
+  public override on(name: 'lowKeys', handler: () => unknown): this;
 
   public override on(
     name: 'keychange',
@@ -2683,7 +2823,7 @@ export class SignalProtocolStore extends EventEmitter {
     return super.on(eventName, listener);
   }
 
-  public override emit(name: 'lowKeys', ourServiceid: ServiceIdString): boolean;
+  public override emit(name: 'lowKeys'): boolean;
 
   public override emit(
     name: 'keychange',
@@ -2702,8 +2842,4 @@ export class SignalProtocolStore extends EventEmitter {
   }
 }
 
-export function getSignalProtocolStore(): SignalProtocolStore {
-  return new SignalProtocolStore();
-}
-
-window.SignalProtocolStore = SignalProtocolStore;
+export const signalProtocolStore = new SignalProtocolStore();

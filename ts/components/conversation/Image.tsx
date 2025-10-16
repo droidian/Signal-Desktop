@@ -4,19 +4,17 @@
 import type { CSSProperties } from 'react';
 import React, { useCallback } from 'react';
 import classNames from 'classnames';
-import { Blurhash } from 'react-blurhash';
 
-import { Spinner } from '../Spinner';
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { AttachmentForUIType } from '../../types/Attachment';
+import { ImageOrBlurhash } from '../ImageOrBlurhash.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { AttachmentForUIType } from '../../types/Attachment.js';
 import {
   defaultBlurHash,
   isIncremental,
   isReadyToView,
-} from '../../types/Attachment';
-import { ProgressCircle } from '../ProgressCircle';
-import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler';
-import { roundFractionForProgressBar } from '../../util/numbers';
+} from '../../util/Attachment.js';
+import { SpinnerV2 } from '../SpinnerV2.js';
+import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler.js';
 
 export enum CurveType {
   None = 0,
@@ -169,21 +167,17 @@ export function Image({
     showMediaNoLongerAvailableToast
   );
 
-  const imageOrBlurHash = url ? (
-    <img
+  const imageOrBlurHash = (
+    <ImageOrBlurhash
       onError={onError}
       className="module-image__image"
       alt={alt}
       height={height}
       width={width}
+      intrinsicWidth={attachment.width}
+      intrinsicHeight={attachment.height}
       src={url}
-    />
-  ) : (
-    <Blurhash
-      hash={resolvedBlurHash}
-      width={width}
-      height={height}
-      style={{ display: 'block' }}
+      blurHash={noBackground && url ? undefined : resolvedBlurHash}
     />
   );
 
@@ -236,6 +230,7 @@ export function Image({
       className={classNames(
         'module-image',
         className,
+        attachment.url ? 'module-image--loaded' : null,
         !noBackground ? 'module-image--with-background' : null,
         cropWidth || cropHeight ? 'module-image--cropped' : null
       )}
@@ -337,41 +332,15 @@ export function getSpinner({
   i18n: LocalizerType;
   tabIndex: number | undefined;
 }): JSX.Element | undefined {
-  const downloadFraction =
-    attachment.pending &&
-    !isIncremental(attachment) &&
-    attachment.size &&
-    attachment.totalDownloaded
-      ? roundFractionForProgressBar(
-          attachment.totalDownloaded / attachment.size
-        )
-      : undefined;
-
-  if (downloadFraction) {
-    return (
-      <button
-        type="button"
-        className="module-image__overlay-circle"
-        aria-label={i18n('icu:cancelDownload')}
-        onClick={cancelDownloadClick}
-        onKeyDown={cancelDownloadKeyDown}
-        tabIndex={tabIndex}
-      >
-        <div className="module-image__stop-icon" />
-        <div className="module-image__progress-circle-wrapper">
-          <ProgressCircle
-            fractionComplete={downloadFraction}
-            width={44}
-            strokeWidth={2}
-          />
-        </div>
-      </button>
-    );
-  }
-
   if (!attachment.pending) {
     return undefined;
   }
+
+  const spinnerValue =
+    (!isIncremental(attachment) &&
+      attachment.size &&
+      attachment.totalDownloaded) ||
+    undefined;
 
   return (
     <button
@@ -382,13 +351,16 @@ export function getSpinner({
       onKeyDown={cancelDownloadKeyDown}
       tabIndex={tabIndex}
     >
-      <div className="module-image__spinner-container">
-        <Spinner
-          moduleClassName="module-image-spinner"
-          svgSize="normal"
-          size="44px"
+      <div className="module-image__stop-icon" />
+      <div className="module-image__progress-circle-wrapper">
+        <SpinnerV2
+          min={0}
+          max={attachment.size}
+          value={spinnerValue}
+          size={44}
+          strokeWidth={2}
+          marginRatio={1}
         />
-        <div className="module-image__stop-icon" />
       </div>
     </button>
   );

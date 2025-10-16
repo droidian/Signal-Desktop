@@ -5,25 +5,25 @@
 import type { PublicKey } from '@signalapp/libsignal-client';
 import { z } from 'zod';
 
-import type { SignalService as Proto } from '../protobuf';
+import type { SignalService as Proto } from '../protobuf/index.js';
 import {
   type ServiceIdString,
   type AciString,
   isPniString,
-} from '../types/ServiceId';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId';
+} from '../types/ServiceId.js';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.js';
 import type {
   ProcessedEnvelope,
   ProcessedDataMessage,
   ProcessedSent,
   ProcessedAttachment,
-} from './Types.d';
+} from './Types.d.ts';
 import type {
   CallEventDetails,
   CallLogEventDetails,
-} from '../types/CallDisposition';
-import type { CallLinkUpdateSyncType } from '../types/CallLink';
-import { isAciString } from '../util/isAciString';
+} from '../types/CallDisposition.js';
+import type { CallLinkUpdateSyncType } from '../types/CallLink.js';
+import { isAciString } from '../util/isAciString.js';
 
 export class EmptyEvent extends Event {
   constructor() {
@@ -325,6 +325,9 @@ export type MessageRequestResponseOptions = {
   messageRequestResponseType: Proto.SyncMessage.IMessageRequestResponse['type'];
   groupId?: string;
   groupV2Id?: string;
+  receivedAtCounter: number;
+  receivedAtMs: number;
+  sentAt: number;
 };
 
 export class MessageRequestResponseEvent extends ConfirmableEvent {
@@ -338,6 +341,12 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
 
   public readonly envelopeId?: string;
 
+  public readonly receivedAtMs: number;
+
+  public readonly receivedAtCounter: number;
+
+  public readonly sentAt: number;
+
   constructor(
     {
       envelopeId,
@@ -345,6 +354,9 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
       messageRequestResponseType,
       groupId,
       groupV2Id,
+      receivedAtMs,
+      receivedAtCounter,
+      sentAt,
     }: MessageRequestResponseOptions,
     confirm: ConfirmCallback
   ) {
@@ -355,6 +367,9 @@ export class MessageRequestResponseEvent extends ConfirmableEvent {
     this.messageRequestResponseType = messageRequestResponseType;
     this.groupId = groupId;
     this.groupV2Id = groupV2Id;
+    this.receivedAtMs = receivedAtMs;
+    this.receivedAtCounter = receivedAtCounter;
+    this.sentAt = sentAt;
   }
 }
 
@@ -460,6 +475,7 @@ export class CallEventSyncEvent extends ConfirmableEvent {
 export type CallLinkUpdateSyncEventData = Readonly<{
   type: CallLinkUpdateSyncType;
   rootKey: Uint8Array | undefined;
+  epoch: Uint8Array | undefined;
   adminKey: Uint8Array | undefined;
 }>;
 

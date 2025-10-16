@@ -4,30 +4,35 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { EmojiCompletion } from '../../../quill/emoji/completion';
+import { EmojiCompletion } from '../../../quill/emoji/completion.js';
 import type {
   EmojiCompletionOptions,
   InsertEmojiOptionsType,
-} from '../../../quill/emoji/completion';
+} from '../../../quill/emoji/completion.js';
 import {
+  EMOJI_VARIANT_KEY_CONSTANTS,
   EmojiSkinTone,
-  emojiVariantConstant,
   getEmojiParentKeyByVariantKey,
-} from '../../../components/fun/data/emojis';
+  getEmojiVariantByKey,
+} from '../../../components/fun/data/emojis.js';
 import {
   _createFunEmojiSearch,
   createFunEmojiSearchIndex,
-} from '../../../components/fun/useFunEmojiSearch';
+} from '../../../components/fun/useFunEmojiSearch.js';
 import {
   _createFunEmojiLocalizer,
   createFunEmojiLocalizerIndex,
-} from '../../../components/fun/useFunEmojiLocalizer';
-import type { LocaleEmojiListType } from '../../../types/emoji';
+} from '../../../components/fun/useFunEmojiLocalizer.js';
+import type { LocaleEmojiListType } from '../../../types/emoji.js';
 
 const EMOJI_VARIANTS = {
-  SMILE: emojiVariantConstant('\u{1F604}'),
-  SMILE_CAT: emojiVariantConstant('\u{1F638}'),
-  FRIEND_SHRIMP: emojiVariantConstant('\u{1F364}'),
+  SMILE: getEmojiVariantByKey(
+    EMOJI_VARIANT_KEY_CONSTANTS.GRINNING_FACE_WITH_SMILING_EYES
+  ),
+  SMILE_CAT: getEmojiVariantByKey(
+    EMOJI_VARIANT_KEY_CONSTANTS.GRINNING_CAT_WITH_SMILING_EYES
+  ),
+  FRIEND_SHRIMP: getEmojiVariantByKey(EMOJI_VARIANT_KEY_CONSTANTS.FRIED_SHRIMP),
 } as const;
 
 const PARENT_KEYS = {
@@ -82,7 +87,7 @@ describe('emojiCompletion', () => {
     const emojiLocalizer = _createFunEmojiLocalizer(localizerIndex);
 
     const options: EmojiCompletionOptions = {
-      onPickEmoji: sinon.stub(),
+      onSelectEmoji: sinon.stub(),
       setEmojiPickerElement: sinon.stub(),
       emojiSkinToneDefault: EmojiSkinTone.None,
       emojiSearch,
@@ -247,9 +252,9 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ shortName, index, range }] = insertEmojiStub.args[0];
+          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
 
-          assert.equal(shortName, 'smile');
+          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
           assert.equal(index, 0);
           assert.equal(range, 7);
         });
@@ -276,9 +281,9 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ shortName, index, range }] = insertEmojiStub.args[0];
+          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
 
-          assert.equal(shortName, 'smile');
+          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
           assert.equal(index, 7);
           assert.equal(range, 7);
         });
@@ -336,9 +341,9 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ shortName, index, range }] = insertEmojiStub.args[0];
+          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
 
-          assert.equal(shortName, 'smile');
+          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
           assert.equal(index, 0);
           assert.equal(range, validEmoji.length);
         });
@@ -385,9 +390,9 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ shortName, index, range }] = insertEmojiStub.args[0];
+          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
 
-          assert.equal(shortName, 'smile');
+          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
           assert.equal(index, 0);
           assert.equal(range, 6);
         });
@@ -430,10 +435,10 @@ describe('emojiCompletion', () => {
       });
 
       it('inserts the currently selected emoji at the current cursor position', () => {
-        const [{ shortName, index: insertIndex, range }] =
+        const [{ emojiParentKey, index: insertIndex, range }] =
           insertEmojiStub.args[0];
 
-        assert.equal(shortName, 'smile_cat');
+        assert.equal(emojiParentKey, PARENT_KEYS.SMILE_CAT);
         assert.equal(insertIndex, 0);
         assert.equal(range, text.length);
       });

@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import Long from 'long';
-import type { Backups, SignalService } from '../protobuf';
-import * as Bytes from '../Bytes';
-import { drop } from './drop';
+import type { Backups, SignalService } from '../protobuf/index.js';
+import * as Bytes from '../Bytes.js';
+import { backupsService } from '../services/backups/index.js';
+import { drop } from './drop.js';
+import { createLogger } from '../logging/log.js';
+import { resetBackupMediaDownloadStats } from './backupMediaDownload.js';
+
+const log = createLogger('BackupSubscriptionData');
 
 // These two proto messages (Backups.AccountData.IIAPSubscriberData &&
 // SignalService.AccountRecord.IIAPSubscriberData) should remain in sync. If they drift,
@@ -19,7 +24,7 @@ export async function saveBackupsSubscriberData(
   const previousSubscriberId = window.storage.get('backupsSubscriberId');
 
   if (previousSubscriberId !== backupsSubscriberData?.subscriberId) {
-    drop(window.Signal.Services.backups.refreshBackupAndSubscriptionStatus());
+    drop(backupsService.refreshBackupAndSubscriptionStatus());
   }
 
   if (backupsSubscriberData == null) {
@@ -60,7 +65,9 @@ export async function saveBackupTier(
   const previousBackupTier = window.storage.get('backupTier');
   await window.storage.put('backupTier', backupTier);
   if (backupTier !== previousBackupTier) {
-    drop(window.Signal.Services.backups.refreshBackupAndSubscriptionStatus());
+    log.info('backup tier has changed', { previousBackupTier, backupTier });
+    await resetBackupMediaDownloadStats();
+    drop(backupsService.resetCachedData());
   }
 }
 

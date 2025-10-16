@@ -1,43 +1,44 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { existsSync } from 'node:fs';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
 
 import {
   APPLICATION_OCTET_STREAM,
   stringToMIMEType,
-} from '../../../types/MIME';
-import { createLogger } from '../../../logging/log';
+} from '../../../types/MIME.js';
+import { createLogger } from '../../../logging/log.js';
+import type { AttachmentType } from '../../../types/Attachment.js';
 import {
-  type AttachmentType,
   hasRequiredInformationForBackup,
   hasRequiredInformationToDownloadFromTransitTier,
-} from '../../../types/Attachment';
-import { Backups, SignalService } from '../../../protobuf';
-import * as Bytes from '../../../Bytes';
+} from '../../../util/Attachment.js';
+import { Backups, SignalService } from '../../../protobuf/index.js';
+import * as Bytes from '../../../Bytes.js';
 import {
   getSafeLongFromTimestamp,
   getTimestampFromLong,
-} from '../../../util/timestampLongUtils';
-import { strictAssert } from '../../../util/assert';
+} from '../../../util/timestampLongUtils.js';
+import { strictAssert } from '../../../util/assert.js';
 import type {
   CoreAttachmentBackupJobType,
   PartialAttachmentLocalBackupJobType,
-} from '../../../types/AttachmentBackup';
+} from '../../../types/AttachmentBackup.js';
 import {
   type GetBackupCdnInfoType,
   getMediaIdFromMediaName,
   getMediaName,
-} from './mediaId';
-import { missingCaseError } from '../../../util/missingCaseError';
-import { bytesToUuid } from '../../../util/uuidToBytes';
-import { createName } from '../../../util/attachmentPath';
-import { generateAttachmentKeys } from '../../../AttachmentCrypto';
-import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup';
+} from './mediaId.js';
+import { missingCaseError } from '../../../util/missingCaseError.js';
+import { bytesToUuid } from '../../../util/uuidToBytes.js';
+import { createName } from '../../../util/attachmentPath.js';
+import { generateAttachmentKeys } from '../../../AttachmentCrypto.js';
+import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup.js';
 import {
   isValidAttachmentKey,
   isValidPlaintextHash,
-} from '../../../types/Crypto';
+} from '../../../types/Crypto.js';
+import { isTestOrMockEnvironment } from '../../../environment.js';
 
 const log = createLogger('filePointers');
 
@@ -84,201 +85,87 @@ export function convertFilePointerToAttachment(
     commonProps.chunkSize = incrementalMacChunkSize;
   }
 
-  if (locatorInfo) {
-    const {
-      key,
-      localKey,
-      legacyDigest,
-      legacyMediaName,
-      plaintextHash,
-      encryptedDigest,
-      size,
-      transitCdnKey,
-      transitCdnNumber,
-      transitTierUploadTimestamp,
-      mediaTierCdnNumber,
-    } = locatorInfo;
-
-    if (!Bytes.isNotEmpty(key)) {
-      return {
-        ...commonProps,
-        error: true,
-        size: 0,
-        downloadPath: undefined,
-      };
-    }
-
-    const digest = Bytes.isNotEmpty(encryptedDigest)
-      ? encryptedDigest
-      : legacyDigest;
-
-    let mediaName: string | undefined;
-    if (Bytes.isNotEmpty(plaintextHash) && Bytes.isNotEmpty(key)) {
-      mediaName =
-        getMediaName({
-          key,
-          plaintextHash,
-        }) ?? undefined;
-    } else if (legacyMediaName) {
-      mediaName = legacyMediaName;
-    }
-
-    let localBackupPath: string | undefined;
-    if (Bytes.isNotEmpty(localKey)) {
-      const { localBackupSnapshotDir } = options;
-
-      strictAssert(
-        localBackupSnapshotDir,
-        'localBackupSnapshotDir is required for filePointer.localLocator'
-      );
-
-      if (mediaName) {
-        localBackupPath = getAttachmentLocalBackupPathFromSnapshotDir(
-          mediaName,
-          localBackupSnapshotDir
-        );
-      } else {
-        log.error(
-          'convertFilePointerToAttachment: localKey but no plaintextHash'
-        );
-      }
-    }
-
+  if (!locatorInfo) {
     return {
       ...commonProps,
-      key: Bytes.toBase64(key),
-      digest: Bytes.isNotEmpty(digest) ? Bytes.toBase64(digest) : undefined,
-      size: size ?? 0,
-      cdnKey: transitCdnKey ?? undefined,
-      cdnNumber: transitCdnNumber ?? undefined,
-      uploadTimestamp: transitTierUploadTimestamp
-        ? getTimestampFromLong(transitTierUploadTimestamp)
-        : undefined,
-      plaintextHash: Bytes.isNotEmpty(plaintextHash)
-        ? Bytes.toHex(plaintextHash)
-        : undefined,
-      localBackupPath,
-      // TODO: DESKTOP-8883
-      localKey: Bytes.isNotEmpty(localKey)
-        ? Bytes.toBase64(localKey)
-        : undefined,
-      ...(mediaName && mediaTierCdnNumber != null
-        ? {
-            backupCdnNumber: mediaTierCdnNumber,
-          }
-        : {}),
-    };
-  }
-
-  return {
-    ...commonProps,
-    ...getAttachmentLocatorInfoFromLegacyLocators(filePointer, options),
-  };
-}
-
-function getAttachmentLocatorInfoFromLegacyLocators(
-  filePointer: Backups.FilePointer,
-  options: Partial<ConvertFilePointerToAttachmentOptions>
-) {
-  const {
-    attachmentLocator,
-    backupLocator,
-    localLocator,
-    invalidAttachmentLocator,
-  } = filePointer;
-
-  if (invalidAttachmentLocator) {
-    return {
       error: true,
       downloadPath: undefined,
     };
   }
 
-  if (attachmentLocator) {
-    const { cdnKey, cdnNumber, key, digest, uploadTimestamp, size } =
-      attachmentLocator;
+  const {
+    key,
+    localKey,
+    plaintextHash,
+    encryptedDigest,
+    size,
+    transitCdnKey,
+    transitCdnNumber,
+    transitTierUploadTimestamp,
+    mediaTierCdnNumber,
+  } = locatorInfo;
+
+  if (!Bytes.isNotEmpty(key)) {
     return {
-      size: size ?? 0,
-      cdnKey: cdnKey ?? undefined,
-      cdnNumber: cdnNumber ?? undefined,
-      key: key?.length ? Bytes.toBase64(key) : undefined,
-      digest: digest?.length ? Bytes.toBase64(digest) : undefined,
-      uploadTimestamp: uploadTimestamp
-        ? getTimestampFromLong(uploadTimestamp)
-        : undefined,
+      ...commonProps,
+      error: true,
+      downloadPath: undefined,
     };
   }
 
-  // These are legacy locators so the mediaName would not be correct
-  if (backupLocator) {
-    const {
-      mediaName,
-      cdnNumber,
-      key,
-      digest,
-      size,
-      transitCdnKey,
-      transitCdnNumber,
-    } = backupLocator;
-
-    return {
-      cdnKey: transitCdnKey ?? undefined,
-      cdnNumber: transitCdnNumber ?? undefined,
-      key: key?.length ? Bytes.toBase64(key) : undefined,
-      digest: digest?.length ? Bytes.toBase64(digest) : undefined,
-      size: size ?? 0,
-      ...(mediaName && cdnNumber != null
-        ? {
-            backupCdnNumber: cdnNumber,
-          }
-        : {}),
-    };
+  let mediaName: string | undefined;
+  if (Bytes.isNotEmpty(plaintextHash) && Bytes.isNotEmpty(key)) {
+    mediaName =
+      getMediaName({
+        key,
+        plaintextHash,
+      }) ?? undefined;
   }
 
-  if (localLocator) {
-    const {
-      mediaName,
-      localKey,
-      remoteKey: key,
-      remoteDigest: digest,
-      size,
-      transitCdnKey,
-      transitCdnNumber,
-    } = localLocator;
-
+  let localBackupPath: string | undefined;
+  if (Bytes.isNotEmpty(localKey)) {
     const { localBackupSnapshotDir } = options;
+
     strictAssert(
       localBackupSnapshotDir,
       'localBackupSnapshotDir is required for filePointer.localLocator'
     );
 
-    if (mediaName == null) {
-      log.error(
-        'convertFilePointerToAttachment: filePointer.localLocator missing mediaName!'
+    if (mediaName) {
+      localBackupPath = getAttachmentLocalBackupPathFromSnapshotDir(
+        mediaName,
+        localBackupSnapshotDir
       );
-      return {
-        error: true,
-        downloadPath: undefined,
-      };
+    } else {
+      log.error(
+        'convertFilePointerToAttachment: localKey but no plaintextHash'
+      );
     }
-    const localBackupPath = getAttachmentLocalBackupPathFromSnapshotDir(
-      mediaName,
-      localBackupSnapshotDir
-    );
-
-    return {
-      cdnKey: transitCdnKey ?? undefined,
-      cdnNumber: transitCdnNumber ?? undefined,
-      key: key?.length ? Bytes.toBase64(key) : undefined,
-      digest: digest?.length ? Bytes.toBase64(digest) : undefined,
-      size: size ?? 0,
-      localBackupPath,
-      localKey: localKey?.length ? Bytes.toBase64(localKey) : undefined,
-    };
   }
+
   return {
-    error: true,
-    downloadPath: undefined,
+    ...commonProps,
+    key: Bytes.toBase64(key),
+    digest: Bytes.isNotEmpty(encryptedDigest)
+      ? Bytes.toBase64(encryptedDigest)
+      : undefined,
+    size: size ?? 0,
+    cdnKey: transitCdnKey ?? undefined,
+    cdnNumber: transitCdnNumber ?? undefined,
+    uploadTimestamp: transitTierUploadTimestamp
+      ? getTimestampFromLong(transitTierUploadTimestamp)
+      : undefined,
+    plaintextHash: Bytes.isNotEmpty(plaintextHash)
+      ? Bytes.toHex(plaintextHash)
+      : undefined,
+    localBackupPath,
+    // TODO: DESKTOP-8883
+    localKey: Bytes.isNotEmpty(localKey) ? Bytes.toBase64(localKey) : undefined,
+    ...(mediaName && mediaTierCdnNumber != null
+      ? {
+          backupCdnNumber: mediaTierCdnNumber,
+        }
+      : {}),
   };
 }
 
@@ -341,18 +228,17 @@ export async function getFilePointerForAttachment({
     height: attachment.height,
     caption: attachment.caption,
     blurHash: attachment.blurHash,
-
-    // Resilience to invalid data in the database from internal testing
-    ...(typeof attachment.incrementalMac === 'string' && attachment.chunkSize
-      ? {
-          incrementalMac: Bytes.fromBase64(attachment.incrementalMac),
-          incrementalMacChunkSize: attachment.chunkSize,
-        }
-      : {
-          incrementalMac: undefined,
-          incrementalMacChunkSize: undefined,
-        }),
   });
+
+  // TODO: DESKTOP-9112
+  if (isTestOrMockEnvironment()) {
+    // Check for string type for resilience to invalid data in the database from internal
+    // testing
+    if (typeof attachment.incrementalMac === 'string' && attachment.chunkSize) {
+      filePointer.incrementalMac = Bytes.fromBase64(attachment.incrementalMac);
+      filePointer.incrementalMacChunkSize = attachment.chunkSize;
+    }
+  }
 
   const locatorInfo = getLocatorInfoForAttachment({
     attachment,

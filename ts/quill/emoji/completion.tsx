@@ -2,36 +2,37 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { Delta } from '@signalapp/quill-cjs';
-import Emitter from '@signalapp/quill-cjs/core/emitter';
+import Emitter from '@signalapp/quill-cjs/core/emitter.js';
 import React from 'react';
-import _, { isNumber } from 'lodash';
+import lodash from 'lodash';
 import type Quill from '@signalapp/quill-cjs';
 import { Popper } from 'react-popper';
 import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 import type { VirtualElement } from '@popperjs/core';
-import { convertShortName } from '../../components/emoji/lib';
-import type { EmojiPickDataType } from '../../components/emoji/EmojiPicker';
-import { getBlotTextPartitions, matchBlotTextPartitions } from '../util';
-import { handleOutsideClick } from '../../util/handleOutsideClick';
-import { createLogger } from '../../logging/log';
-import { FunStaticEmoji } from '../../components/fun/FunEmoji';
+import { getBlotTextPartitions, matchBlotTextPartitions } from '../util.js';
+import { handleOutsideClick } from '../../util/handleOutsideClick.js';
+import { createLogger } from '../../logging/log.js';
+import { FunStaticEmoji } from '../../components/fun/FunEmoji.js';
+import type { EmojiParentKey } from '../../components/fun/data/emojis.js';
 import {
   EmojiSkinTone,
-  getEmojiParentByKey,
   getEmojiVariantByParentKeyAndSkinTone,
   normalizeShortNameCompletionDisplay,
-} from '../../components/fun/data/emojis';
+} from '../../components/fun/data/emojis.js';
 import type {
   FunEmojiSearchResult,
   FunEmojiSearch,
-} from '../../components/fun/useFunEmojiSearch';
-import { type FunEmojiLocalizer } from '../../components/fun/useFunEmojiLocalizer';
+} from '../../components/fun/useFunEmojiSearch.js';
+import { type FunEmojiLocalizer } from '../../components/fun/useFunEmojiLocalizer.js';
+import type { FunEmojiSelection } from '../../components/fun/panels/FunPanelEmojis.js';
+
+const { isNumber, debounce } = lodash;
 
 const log = createLogger('completion');
 
 export type EmojiCompletionOptions = {
-  onPickEmoji: (emoji: EmojiPickDataType) => void;
+  onSelectEmoji: (emojiSelection: FunEmojiSelection) => void;
   setEmojiPickerElement: (element: JSX.Element | null) => void;
   emojiSkinToneDefault: EmojiSkinTone | null;
   emojiSearch: FunEmojiSearch;
@@ -39,7 +40,7 @@ export type EmojiCompletionOptions = {
 };
 
 export type InsertEmojiOptionsType = Readonly<{
-  shortName: string;
+  emojiParentKey: EmojiParentKey;
   index: number;
   range: number;
   withTrailingSpace?: boolean;
@@ -103,7 +104,7 @@ export class EmojiCompletion {
       () => this.onTextChange(true)
     );
 
-    const debouncedOnTextChange = _.debounce(() => this.onTextChange(), 100);
+    const debouncedOnTextChange = debounce(() => this.onTextChange(), 100);
 
     this.quill.on(Emitter.events.TEXT_CHANGE, (_now, _before, source) => {
       if (source === 'user') {
@@ -171,10 +172,9 @@ export class EmojiCompletion {
           this.options.emojiLocalizer.getParentKeyForText(leftTokenText);
         if (parentKey != null) {
           const numberOfColons = isSelfClosing ? 2 : 1;
-          const emoji = getEmojiParentByKey(parentKey);
 
           this.insertEmoji({
-            shortName: emoji.englishShortNameDefault,
+            emojiParentKey: parentKey,
             index: range.index - leftTokenText.length - numberOfColons,
             range: leftTokenText.length + numberOfColons,
             justPressedColon,
@@ -192,9 +192,8 @@ export class EmojiCompletion {
           this.options.emojiLocalizer.getParentKeyForText(tokenText);
 
         if (parentKey != null) {
-          const emoji = getEmojiParentByKey(parentKey);
           this.insertEmoji({
-            shortName: emoji.englishShortNameDefault,
+            emojiParentKey: parentKey,
             index: range.index - leftTokenText.length - 1,
             range: tokenText.length + 2,
             justPressedColon,
@@ -250,10 +249,9 @@ export class EmojiCompletion {
     }
 
     const [, tokenText] = tokenTextMatch;
-    const parent = getEmojiParentByKey(result.parentKey);
 
     this.insertEmoji({
-      shortName: parent.englishShortNameDefault,
+      emojiParentKey: result.parentKey,
       index: range.index - tokenText.length - 1,
       range: tokenText.length + 1,
       withTrailingSpace: true,
@@ -261,15 +259,16 @@ export class EmojiCompletion {
   }
 
   insertEmoji({
-    shortName,
+    emojiParentKey,
     index,
     range,
     withTrailingSpace = false,
     justPressedColon = false,
   }: InsertEmojiOptionsType): void {
-    const emoji = convertShortName(
-      shortName,
-      this.options.emojiSkinToneDefault ?? EmojiSkinTone.None
+    const skinTone = this.options.emojiSkinToneDefault ?? EmojiSkinTone.None;
+    const emojiVariant = getEmojiVariantByParentKeyAndSkinTone(
+      emojiParentKey,
+      skinTone
     );
 
     let source = this.quill.getText(index, range);
@@ -281,7 +280,7 @@ export class EmojiCompletion {
       .retain(index)
       .delete(range)
       .insert({
-        emoji: { value: emoji, source },
+        emoji: { value: emojiVariant.value, source },
       });
 
     if (withTrailingSpace) {
@@ -294,9 +293,8 @@ export class EmojiCompletion {
       this.quill.setSelection(index + 1, 0, 'user');
     }
 
-    this.options.onPickEmoji({
-      shortName,
-      skinTone: this.options.emojiSkinToneDefault ?? EmojiSkinTone.None,
+    this.options.onSelectEmoji({
+      variantKey: emojiVariant.key,
     });
 
     this.reset();

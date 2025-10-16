@@ -1,40 +1,43 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber, pick } from 'lodash';
+import lodash from 'lodash';
 
-import type { ConversationAttributesType } from '../model-types.d';
-import { DataWriter } from '../sql/Client';
-import { hasErrors } from '../state/selectors/message';
-import { readSyncJobQueue } from '../jobs/readSyncJobQueue';
-import { notificationService } from '../services/notifications';
-import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion';
-import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService';
-import { isGroup, isDirectConversation } from './whatTypeOfConversation';
-import { createLogger } from '../logging/log';
-import { getConversationIdForLogging } from './idForLogging';
-import { drop } from './drop';
-import { isNotNil } from './isNotNil';
-import { assertDev } from './assert';
-import { isConversationAccepted } from './isConversationAccepted';
-import { ReadStatus } from '../messages/MessageReadStatus';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { DataWriter } from '../sql/Client.js';
+import { hasErrors } from '../state/selectors/message.js';
+import { readSyncJobQueue } from '../jobs/readSyncJobQueue.js';
+import { notificationService } from '../services/notifications.js';
+import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.js';
+import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.js';
+import { isGroup, isDirectConversation } from './whatTypeOfConversation.js';
+import { createLogger } from '../logging/log.js';
+import { getConversationIdForLogging } from './idForLogging.js';
+import { drop } from './drop.js';
+import { isNotNil } from './isNotNil.js';
+import { assertDev } from './assert.js';
+import { isConversationAccepted } from './isConversationAccepted.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
-import { ReceiptType } from '../types/Receipt';
-import type { AciString } from '../types/ServiceId';
-import { isAciString } from './isAciString';
+} from '../jobs/conversationJobQueue.js';
+import { ReceiptType } from '../types/Receipt.js';
+import type { AciString } from '../types/ServiceId.js';
+import { isAciString } from './isAciString.js';
+import type { MessageModel } from '../models/messages.js';
+import { postSaveUpdates } from './cleanup.js';
+
+const { isNumber, pick } = lodash;
 
 const log = createLogger('markConversationRead');
 
 export async function markConversationRead(
   conversationAttrs: ConversationAttributesType,
-  newestUnreadAt: number,
+  readMessage: { received_at: number; sent_at: number },
   options: {
     readAt?: number;
     sendReadReceipts: boolean;
-    newestSentAt?: number;
   } = {
     sendReadReceipts: true,
   }
@@ -45,26 +48,28 @@ export async function markConversationRead(
     await Promise.all([
       DataWriter.getUnreadByConversationAndMarkRead({
         conversationId,
-        newestUnreadAt,
+        readMessageReceivedAt: readMessage.received_at,
         readAt: options.readAt,
         includeStoryReplies: !isGroup(conversationAttrs),
       }),
       DataWriter.getUnreadEditedMessagesAndMarkRead({
         conversationId,
-        newestUnreadAt,
+        readMessageReceivedAt: readMessage.received_at,
       }),
       DataWriter.getUnreadReactionsAndMarkRead({
         conversationId,
-        newestUnreadAt,
+        readMessageReceivedAt: readMessage.received_at,
       }),
     ]);
 
   const convoId = getConversationIdForLogging(conversationAttrs);
-  const logId = `markConversationRead(${convoId})`;
+  const logId = `(${convoId})`;
 
   log.info(logId, {
-    newestSentAt: options.newestSentAt,
-    newestUnreadAt,
+    markingReadBefore: {
+      sentAt: readMessage.sent_at,
+      receivedAt: readMessage.received_at,
+    },
     unreadMessages: unreadMessages.length,
     unreadReactions: unreadReactions.length,
   });
@@ -103,6 +108,7 @@ export async function markConversationRead(
 
   const allUnreadMessages = [...unreadMessages, ...unreadEditedMessages];
 
+  const updatedMessages: Array<MessageModel> = [];
   const allReadMessagesSync = allUnreadMessages
     .map(messageSyncData => {
       const message = window.MessageCache.getById(messageSyncData.id);
@@ -116,6 +122,7 @@ export async function markConversationRead(
             'expirationStartTimestamp'
           )
         );
+        updatedMessages.push(message);
       }
 
       const {
@@ -159,6 +166,18 @@ export async function markConversationRead(
     })
     .filter(isNotNil);
 
+  // We need to save any messages that are in memory, since their read status could have
+  // been overwritten in the DB by a message save from a stale (unread) in-memory model
+  if (updatedMessages.length) {
+    await DataWriter.saveMessages(
+      updatedMessages.map(msg => msg.attributes),
+      {
+        ourAci: window.textsecure.storage.user.getCheckedAci(),
+        postSaveUpdates,
+      }
+    );
+  }
+
   // Some messages we're marking read are local notifications with no sender or were just
   //   unseen and not unread.
   // Also, if a message has errors, we don't want to send anything out about it:
@@ -183,11 +202,11 @@ export async function markConversationRead(
   }> = [...unreadMessagesSyncData, ...unreadReactionSyncData.values()];
 
   if (readSyncs.length && options.sendReadReceipts) {
-    log.info(`Sending ${readSyncs.length} read syncs`);
+    log.info(logId, `Sending ${readSyncs.length} read syncs`);
     // Because syncReadMessages sends to our other devices, and sendReadReceipts goes
     //   to a contact, we need accessKeys for both.
     if (window.ConversationController.areWePrimaryDevice()) {
-      log.warn('We are primary device; not sending read syncs');
+      log.warn(logId, 'We are primary device; not sending read syncs');
     } else {
       drop(readSyncJobQueue.add({ readSyncs }));
     }

@@ -14,55 +14,61 @@ import React, {
 } from 'react';
 import { VisuallyHidden } from 'react-aria';
 import { LRUCache } from 'lru-cache';
-import { FunItemButton } from '../base/FunItem';
+import { FunItemButton } from '../base/FunItem.js';
 import {
   FunPanel,
   FunPanelBody,
   FunPanelFooter,
   FunPanelHeader,
-} from '../base/FunPanel';
-import { FunScroller } from '../base/FunScroller';
-import { FunSearch } from '../base/FunSearch';
+} from '../base/FunPanel.js';
+import { FunScroller } from '../base/FunScroller.js';
+import { FunSearch } from '../base/FunSearch.js';
 import {
   FunSubNav,
   FunSubNavIcon,
   FunSubNavListBox,
   FunSubNavListBoxItem,
-} from '../base/FunSubNav';
-import { FunWaterfallContainer, FunWaterfallItem } from '../base/FunWaterfall';
-import type { FunGifsSection } from '../constants';
-import { FunGifsCategory, FunSectionCommon } from '../constants';
-import { FunKeyboard } from '../keyboard/FunKeyboard';
-import type { WaterfallKeyboardState } from '../keyboard/WaterfallKeyboardDelegate';
-import { WaterfallKeyboardDelegate } from '../keyboard/WaterfallKeyboardDelegate';
-import { useInfiniteQuery } from '../data/infinite';
-import { missingCaseError } from '../../../util/missingCaseError';
-import { strictAssert } from '../../../util/assert';
-import type { GifsPaginated } from '../data/gifs';
-import { drop } from '../../../util/drop';
-import { useFunContext } from '../FunProvider';
+} from '../base/FunSubNav.js';
+import {
+  FunWaterfallContainer,
+  FunWaterfallItem,
+} from '../base/FunWaterfall.js';
+import type { FunGifsSection } from '../constants.js';
+import { FunGifsCategory, FunSectionCommon } from '../constants.js';
+import { FunKeyboard } from '../keyboard/FunKeyboard.js';
+import type { WaterfallKeyboardState } from '../keyboard/WaterfallKeyboardDelegate.js';
+import { WaterfallKeyboardDelegate } from '../keyboard/WaterfallKeyboardDelegate.js';
+import { useInfiniteQuery } from '../data/infinite.js';
+import { missingCaseError } from '../../../util/missingCaseError.js';
+import { strictAssert } from '../../../util/assert.js';
+import type { GifsPaginated } from '../data/gifs.js';
+import { drop } from '../../../util/drop.js';
+import { useFunContext } from '../FunProvider.js';
 import {
   FunResults,
   FunResultsButton,
   FunResultsFigure,
   FunResultsHeader,
   FunResultsSpinner,
-} from '../base/FunResults';
-import { FunStaticEmoji } from '../FunEmoji';
-import { emojiVariantConstant } from '../data/emojis';
+} from '../base/FunResults.js';
+import { FunStaticEmoji } from '../FunEmoji.js';
 import {
   FunLightboxPortal,
   FunLightboxBackdrop,
   FunLightboxDialog,
   FunLightboxProvider,
   useFunLightboxKey,
-} from '../base/FunLightbox';
-import type { tenorDownload } from '../data/tenor';
-import { FunGif } from '../FunGif';
-import type { LocalizerType } from '../../../types/I18N';
-import { isAbortError } from '../../../util/isAbortError';
-import { createLogger } from '../../../logging/log';
-import * as Errors from '../../../types/errors';
+} from '../base/FunLightbox.js';
+import type { tenorDownload } from '../data/tenor.js';
+import { FunGif } from '../FunGif.js';
+import type { LocalizerType } from '../../../types/I18N.js';
+import { isAbortError } from '../../../util/isAbortError.js';
+import { createLogger } from '../../../logging/log.js';
+import * as Errors from '../../../types/errors.js';
+import {
+  EMOJI_VARIANT_KEY_CONSTANTS,
+  getEmojiVariantByKey,
+} from '../data/emojis.js';
 
 const log = createLogger('FunPanelGifs');
 
@@ -84,6 +90,19 @@ function readGifMediaFromCache(gifMedia: GifMediaType): Blob | null {
 function saveGifMediaToCache(gifMedia: GifMediaType, blob: Blob): void {
   FunGifBlobCache.set(gifMedia.url, blob);
   FunGifBlobLiveCache.set(gifMedia, blob);
+}
+
+function getSelectedSection(
+  hasSearchQuery: boolean,
+  hasRecentGifs: boolean
+): FunGifsSection {
+  if (hasSearchQuery) {
+    return FunSectionCommon.SearchResults;
+  }
+  if (hasRecentGifs) {
+    return FunSectionCommon.Recents;
+  }
+  return FunGifsCategory.Trending;
 }
 
 const GIF_WATERFALL_COLUMNS = 2;
@@ -129,10 +148,8 @@ export function FunPanelGifs({
   const fun = useFunContext();
   const {
     i18n,
-    searchInput,
-    onSearchInputChange,
-    selectedGifsSection,
-    onChangeSelectedSelectGifsSection,
+    storedSearchInput,
+    onStoredSearchInputChange,
     recentGifs,
     fetchGifsFeatured,
     fetchGifsSearch,
@@ -142,39 +159,33 @@ export function FunPanelGifs({
 
   const scrollerRef = useRef<HTMLDivElement>(null);
 
+  const [searchInput, setSearchInput] = useState(storedSearchInput);
   const searchQuery = useMemo(() => searchInput.trim(), [searchInput]);
+
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
 
-  const handleSearchInputChange = useCallback(
-    (nextSearchInput: string) => {
-      if (nextSearchInput.trim() !== '') {
-        onChangeSelectedSelectGifsSection(FunSectionCommon.SearchResults);
-      } else if (recentGifs.length > 0) {
-        onChangeSelectedSelectGifsSection(FunSectionCommon.Recents);
-      } else {
-        onChangeSelectedSelectGifsSection(FunGifsCategory.Trending);
-      }
-      onSearchInputChange(nextSearchInput);
-    },
-    [onSearchInputChange, recentGifs, onChangeSelectedSelectGifsSection]
-  );
+  const [selectedSection, setSelectedSection] = useState(() => {
+    const hasSearchQuery = searchQuery !== '';
+    const hasRecentGifs = recentGifs.length > 0;
+    return getSelectedSection(hasSearchQuery, hasRecentGifs);
+  });
 
   const [debouncedQuery, setDebouncedQuery] = useState<GifsQuery>({
-    selectedSection: selectedGifsSection,
+    selectedSection,
     searchQuery,
   });
 
   useEffect(() => {
     if (
       debouncedQuery.searchQuery === searchQuery &&
-      debouncedQuery.selectedSection === selectedGifsSection
+      debouncedQuery.selectedSection === selectedSection
     ) {
       // don't update twice
       return;
     }
 
     const query: GifsQuery = {
-      selectedSection: selectedGifsSection,
+      selectedSection,
       searchQuery,
     };
     // Set immediately if not a search
@@ -189,7 +200,7 @@ export function FunPanelGifs({
     return () => {
       clearTimeout(timeout);
     };
-  }, [debouncedQuery, searchQuery, selectedGifsSection]);
+  }, [debouncedQuery, searchQuery, selectedSection]);
 
   const loader = useCallback(
     async (
@@ -344,12 +355,21 @@ export function FunPanelGifs({
     return new WaterfallKeyboardDelegate(virtualizer);
   }, [virtualizer]);
 
-  const handleSelectSection = useCallback(
-    (key: string) => {
-      onChangeSelectedSelectGifsSection(key as FunGifsCategory);
+  const handleSearchInputChange = useCallback(
+    (nextSearchInput: string) => {
+      const hasSearchQuery = nextSearchInput.trim() !== '';
+      const hasRecentGifs = recentGifs.length > 0;
+      setSelectedSection(getSelectedSection(hasSearchQuery, hasRecentGifs));
+      setSearchInput(nextSearchInput);
+      onStoredSearchInputChange(nextSearchInput);
     },
-    [onChangeSelectedSelectGifsSection]
+    [onStoredSearchInputChange, recentGifs]
   );
+
+  const handleSelectSection = useCallback((key: string) => {
+    setSearchInput('');
+    setSelectedSection(key as FunGifsCategory);
+  }, []);
 
   const handleKeyboardStateChange = useCallback(
     (state: WaterfallKeyboardState) => {
@@ -491,7 +511,9 @@ export function FunPanelGifs({
                   <FunStaticEmoji
                     size={16}
                     role="presentation"
-                    emoji={emojiVariantConstant('\u{1F641}')}
+                    emoji={getEmojiVariantByKey(
+                      EMOJI_VARIANT_KEY_CONSTANTS.SLIGHTLY_FROWNING_FACE
+                    )}
                   />
                 </FunResultsHeader>
               )}

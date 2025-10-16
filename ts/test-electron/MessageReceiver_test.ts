@@ -6,15 +6,16 @@
 import { assert } from 'chai';
 import Long from 'long';
 
-import MessageReceiver from '../textsecure/MessageReceiver';
-import { IncomingWebSocketRequestLegacy } from '../textsecure/WebsocketResources';
-import type { DecryptionErrorEvent } from '../textsecure/messageReceiverEvents';
-import { generateAci } from '../types/ServiceId';
-import type { AciString } from '../types/ServiceId';
-import { toAciObject } from '../util/ServiceId';
-import { SignalService as Proto } from '../protobuf';
-import * as Crypto from '../Crypto';
-import { toBase64 } from '../Bytes';
+import MessageReceiver from '../textsecure/MessageReceiver.js';
+import { IncomingWebSocketRequestLegacy } from '../textsecure/WebsocketResources.js';
+import type { DecryptionErrorEvent } from '../textsecure/messageReceiverEvents.js';
+import { generateAci } from '../types/ServiceId.js';
+import type { AciString } from '../types/ServiceId.js';
+import { toAciObject } from '../util/ServiceId.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import * as Crypto from '../Crypto.js';
+import { toBase64 } from '../Bytes.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
 
 describe('MessageReceiver', () => {
   const someAci = generateAci();
@@ -27,14 +28,14 @@ describe('MessageReceiver', () => {
     oldAci = window.storage.user.getAci();
     oldDeviceId = window.storage.user.getDeviceId();
     await window.storage.user.setAciAndDeviceId(generateAci(), 2);
-    await window.storage.protocol.hydrateCaches();
+    await signalProtocolStore.hydrateCaches();
   });
 
   afterEach(async () => {
     if (oldAci !== undefined && oldDeviceId !== undefined) {
       await window.storage.user.setAciAndDeviceId(oldAci, oldDeviceId);
     }
-    await window.storage.protocol.removeAllUnprocessed();
+    await signalProtocolStore.removeAllUnprocessed();
   });
 
   describe('connecting', () => {
@@ -44,7 +45,7 @@ describe('MessageReceiver', () => {
 
       const messageReceiver = new MessageReceiver({
         storage: window.storage,
-        serverTrustRoot: toBase64(fakeTrustRootPublicKey),
+        serverTrustRoots: [toBase64(fakeTrustRootPublicKey)],
       });
 
       const body = Proto.Envelope.encode({

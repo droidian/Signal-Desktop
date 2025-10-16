@@ -155,6 +155,18 @@
     "messageformat": "Unable to access the database encryption key because the OS encryption keyring backend has changed from {previousBackend} to {currentBackend}. This can occur if the desktop environment changes, for example between GNOME and KDE.\n\nPlease switch to the previous desktop environment or try to run signal with the command line flag --password-store=\"{previousBackendFlag}\"",
     "description": "On Linux, text in a popup shown if the app cannot start because the system's keyring encryption backend has changed. We suggest a command line flag they can use to recover the app. Example values: previousBackend=gnome_libsecret, currentBackend=kwallet5, previousBackendFlag: gnome-libsecret"
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error",
+    "description": "On Linux, title in a popup shown when the app detects that the system keyring encryption does not work correctly."
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it.",
+    "description": "On Linux, text in a popup shown when the app detects that the system keyring encryption does not work correctly."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key",
+    "description": "On Linux, button in a popup shown when the app detects that the system keyring encryption does not work correctly."
+  },
   "icu:mainMenuFile": {
     "messageformat": "&File",
     "description": "The label that is used for the File menu in the program main menu. The '&' indicates that the following letter will be used as the keyboard 'shortcut letter' for accessing the menu with the Alt-<letter> combination."
@@ -379,6 +391,38 @@
     "messageformat": "Enter a username followed by a dot and its set of numbers.",
     "description": "Description displayed under search input in left pane when looking up someone by username"
   },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "All",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item Label > All chats (needs to fit in very small space)"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "All chats",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item Label > All chats"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount, number}+",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Badge Count > When over the max count (Example: 1000 or more would be 999+)"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Mark all read",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Right-Click Context Menu > Mark all unread chats in chat folder as read"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Mute notifications",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Right-Click Context Menu > Mute Notifications"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Unmute all",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Right-Click Context Menu > Mute Notifications > Sub-Menu > Unmute all"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Unmute all",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Right-Click Context Menu > Unmute all chats in chat folder"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Edit folder",
+    "description": "Left Pane > Inbox > Chat List > Chat Folders > Item > Right-Click Context Menu > Open settings for current chat folder"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Country code",
     "description": "Placeholder displayed as default value of country code select element"
@@ -423,10 +467,6 @@
     "messageformat": "Settings",
     "description": "Nav Tabs > Settings Button > Label & Accessibility Text"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Update Signal",
-    "description": "(Deleted 2025/05/28) Nav Tabs > Settings Button > Label & Accessibility Text"
-  },
   "icu:NavTabs__ItemLabel--Profile": {
     "messageformat": "Profile",
     "description": "Nav Tabs > Profile Button > Accessibility Text"
@@ -450,6 +490,10 @@
   "icu:markUnread": {
     "messageformat": "Mark as unread",
     "description": "Shown in menu for conversation, and marks conversation as unread"
+  },
+  "icu:markRead": {
+    "messageformat": "Mark read",
+    "description": "Shown in menu for conversation, and marks conversation read"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Select messages",
@@ -820,6 +864,14 @@
     "messageformat": "Failed to process some frames during backup import. Please share your logs.",
     "description": "[Only shown to internal users] An error popup when we failed to process some parts of a backup import."
   },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Receipt saved",
+    "description": "Toast message shown when a donation receipt has been successfully saved to disk"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Error saving receipt. Please try again.",
+    "description": "Toast message shown when a donation receipt fails to save to disk"
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "You can't select photos and videos along with files.",
     "description": "An error popup when the user has attempted to add an attachment"
@@ -898,10 +950,6 @@
   "icu:joinTheBeta": {
     "messageformat": "Join the Beta",
     "description": "Item under the Help menu, takes you to an article describing how to install the beta release of Signal Desktop"
-  },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Signal Desktop Preferences",
-    "description": "(Deleted 2025/05/28) Title of the window that pops up with Signal Desktop preferences in it"
   },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Sticker pack creator",
@@ -1374,6 +1422,42 @@
     "messageformat": "Info",
     "description": "Shown on the drop-down menu for an individual message, takes you to message detail screen"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Poll · Select one",
+    "description": "Status text for single-choice poll where user can select one option"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Poll · Select one or more",
+    "description": "Status text for multiple-choice poll where user can select multiple options"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Poll · Final results",
+    "description": "Status text for terminated poll showing final results"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "View votes",
+    "description": "Button text to view poll votes details"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "You voted",
+    "description": "Accessibility label for checkmark indicating user voted for this poll option"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Poll details",
+    "description": "Modal title for viewing poll votes and who voted on which option"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Question",
+    "description": "Label for the poll question in the votes modal"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} vote} other {{count,number} votes}}",
+    "description": "Vote count display header for a specific poll option"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "No votes",
+    "description": "Message shown when poll has no votes"
+  },
   "icu:deleteConversation": {
     "messageformat": "Delete",
     "description": "Menu item for deleting a conversation (including messages), title case."
@@ -1381,10 +1465,6 @@
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Delete chat?",
     "description": "Conversation Header > Delete Action > Delete Messages Confirmation Modal > Title. Previously known as icu:ConversationHeader__DeleteMessagesConfirmation__title"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "All messages in this chat will be deleted from this device.",
-    "description": "Description for confirmation modal to delete a conversation"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "All messages in this chat will be deleted from all your devices.",
@@ -1568,43 +1648,43 @@
   },
   "icu:AttachmentNotAvailableModal__title--file": {
     "messageformat": "File not available",
-    "description": "Title for info dialog for messages with old file attachments which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Title for info dialog for messages with old file attachments which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__title--long-text": {
     "messageformat": "Complete message not available",
-    "description": "Title for info dialog for long messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Title for info dialog for long messages which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__title--media": {
     "messageformat": "Media not available",
-    "description": "Title for info dialog for messages with old visual media which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Title for info dialog for messages with old visual media which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__title--sticker": {
     "messageformat": "Sticker not available",
-    "description": "Title for info dialog for old sticker messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Title for info dialog for old sticker messages which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__title--voice-message": {
     "messageformat": "Voice message not available",
-    "description": "Title for info dialog for messages with old voice messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Title for info dialog for messages with old voice messages which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__body--file": {
     "messageformat": "This file was not transferred from your phone when this device was linked. Media and files older than 45 days at the time of device linking can not be synced.",
-    "description": "Body text for info dialog for messages with old file attachments which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Body text for info dialog for messages with old file attachments which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__body--long-text": {
     "messageformat": "The complete text in this message was not transferred from your phone when this device was linked. Long text messages older than 45 days at the time of device linking can not be synced.",
-    "description": "Body text for info dialog for long messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Body text for info dialog for long messages which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__body--media": {
     "messageformat": "This media was not transferred from your phone when this device was linked. Media older than 45 days at the time of device linking can not be synced.",
-    "description": "Body text for info dialog for messages with old visual media which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Body text for info dialog for messages with old visual media which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__body--sticker": {
     "messageformat": "This sticker was not transferred from your phone when this device was linked. Media and files older than 45 days at the time of device linking can not be synced.",
-    "description": "Body text for info dialog for old sticker messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Body text for info dialog for old sticker messages which are no longer available for download."
   },
   "icu:AttachmentNotAvailableModal__body--voice-message": {
     "messageformat": "This voice message was not transferred from your phone when this device was linked. Media and files older than 45 days at the time of device linking can not be synced.",
-    "description": "Body text for info dialog for messages with old voice messages which are no longer available for download."
+    "description": "(Deleted 2025/09/10) Body text for info dialog for messages with old voice messages which are no longer available for download."
   },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "This view once media is no longer available to download. Ask {name} to send it again.",
@@ -1825,6 +1905,14 @@
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
     "messageformat": "Choose chats that you want to appear in this folder",
     "description": "Preferences > Edit Chat Folder Page > Included Chats Section > Help"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1 chats",
+    "description": "Preferences > Edit Chat Folder Page > Included Chats Section > Direct Chats"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Group chats",
+    "description": "Preferences > Edit Chat Folder Page > Included Chats Section > Group Chats"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
     "messageformat": "Add chats",
@@ -2744,6 +2832,10 @@
     "messageformat": "Download failed",
     "description": "Shown if user's manual request to download attachment fails"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Download of attachment from backup failed",
+    "description": "Shown for internal users for debugging backup attachments."
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Edits can only be applied within 24 hours from the time you sent this message.",
     "description": "Error message when you try to send an edit after message becomes too old"
@@ -2968,6 +3060,10 @@
     "messageformat": "View-once Video",
     "description": "Shown in notifications and in the left pane when a message is a view once video. Also shown when quoting a view once video."
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF",
+    "description": "Shown when quoting a GIF."
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "This message was deleted.",
     "description": "Shown in a message's bubble when the message has been deleted for everyone."
@@ -3114,71 +3210,71 @@
   },
   "icu:stickers--StickerManager--Introduction--Image": {
     "messageformat": "Introducing Stickers: Bandit the Cat",
-    "description": "Alt text on a tooltip image when the user upgrades to a version of Signal supporting stickers."
+    "description": "(Deleted 2025/10/08) Alt text on a tooltip image when the user upgrades to a version of Signal supporting stickers."
   },
   "icu:stickers--StickerManager--Introduction--Title": {
     "messageformat": "Introducing Stickers",
-    "description": "Shown as the title on a tooltip when the user upgrades to a version of Signal supporting stickers."
+    "description": "(Deleted 2025/10/08) Shown as the title on a tooltip when the user upgrades to a version of Signal supporting stickers."
   },
   "icu:stickers--StickerManager--Introduction--Body": {
     "messageformat": "Why use words when you can use stickers?",
-    "description": "Shown as the body on a tooltip when the user upgrades to a version of Signal supporting stickers."
+    "description": "(Deleted 2025/10/08) Shown as the body on a tooltip when the user upgrades to a version of Signal supporting stickers."
   },
   "icu:stickers--StickerPicker--Open": {
     "messageformat": "Open the sticker picker",
-    "description": "Label for the open button for the sticker picker"
+    "description": "(Deleted 2025/10/08) Label for the open button for the sticker picker"
   },
   "icu:stickers--StickerPicker--AddPack": {
     "messageformat": "Add a sticker pack",
-    "description": "Label for the add pack button in the sticker picker"
+    "description": "(Deleted 2025/10/08) Label for the add pack button in the sticker picker"
   },
   "icu:stickers--StickerPicker--NextPage": {
     "messageformat": "Next Page",
-    "description": "Label for the next page button in the sticker picker"
+    "description": "(Deleted 2025/10/08) Label for the next page button in the sticker picker"
   },
   "icu:stickers--StickerPicker--PrevPage": {
     "messageformat": "Previous Page",
-    "description": "Label for the previous page button in the sticker picker"
+    "description": "(Deleted 2025/10/08) Label for the previous page button in the sticker picker"
   },
   "icu:stickers--StickerPicker--Recents": {
     "messageformat": "Recent Sticker",
-    "description": "Label for the recent stickers button in the sticker picker"
+    "description": "(Deleted 2025/10/08) Label for the recent stickers button in the sticker picker"
   },
   "icu:stickers--StickerPicker--DownloadError": {
     "messageformat": "Some stickers could not be downloaded.",
-    "description": "Shown in the sticker picker when one or more stickers could not be downloaded."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker when one or more stickers could not be downloaded."
   },
   "icu:stickers--StickerPicker--DownloadPending": {
     "messageformat": "Installing sticker pack...",
-    "description": "Shown in the sticker picker when one or more stickers are still downloading."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker when one or more stickers are still downloading."
   },
   "icu:stickers--StickerPicker--Empty": {
     "messageformat": "No stickers found",
-    "description": "Shown in the sticker picker when there are no stickers to show."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker when there are no stickers to show."
   },
   "icu:stickers--StickerPicker--Hint": {
     "messageformat": "New sticker packs from your messages are available to install",
-    "description": "Shown in the sticker picker the first time you have received new packs you can install."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker the first time you have received new packs you can install."
   },
   "icu:stickers--StickerPicker--NoPacks": {
     "messageformat": "No sticker packs found",
-    "description": "Shown in the sticker picker when there are no installed sticker packs."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker when there are no installed sticker packs."
   },
   "icu:stickers--StickerPicker--NoRecents": {
     "messageformat": "Recently used stickers will appear here.",
-    "description": "Shown in the sticker picker when there are no recent stickers to show."
+    "description": "(Deleted 2025/10/08) Shown in the sticker picker when there are no recent stickers to show."
   },
   "icu:stickers__StickerPicker__recent": {
     "messageformat": "Recents",
-    "description": "Title for all of the recent stickers"
+    "description": "(Deleted 2025/10/08) Title for all of the recent stickers"
   },
   "icu:stickers__StickerPicker__featured": {
     "messageformat": "Featured",
-    "description": "Title for featured stickers"
+    "description": "(Deleted 2025/10/08) Title for featured stickers"
   },
   "icu:stickers__StickerPicker__analog-time": {
     "messageformat": "Analog time",
-    "description": "aria-label for the analog time sticker"
+    "description": "(Deleted 2025/10/08) aria-label for the analog time sticker"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Sticker Pack",
@@ -3190,55 +3286,55 @@
   },
   "icu:EmojiPicker--empty": {
     "messageformat": "No emoji found",
-    "description": "Shown in the emoji picker when a search yields 0 results."
+    "description": "(Deleted 2025/10/08) Shown in the emoji picker when a search yields 0 results."
   },
   "icu:EmojiPicker--search-close": {
     "messageformat": "Close emoji search",
-    "description": "Button title to cancel the emoji search."
+    "description": "(Deleted 2025/10/08) Button title to cancel the emoji search."
   },
   "icu:EmojiPicker--search-placeholder": {
     "messageformat": "Search Emoji",
-    "description": "Shown as a placeholder inside the emoji picker search field."
+    "description": "(Deleted 2025/10/08) Shown as a placeholder inside the emoji picker search field."
   },
   "icu:EmojiPicker--skin-tone": {
     "messageformat": "Skin tone {tone}",
-    "description": "Shown as a tooltip over the emoji tone buttons."
+    "description": "(Deleted 2025/10/08) Shown as a tooltip over the emoji tone buttons."
   },
   "icu:EmojiPicker__button--recents": {
     "messageformat": "Recents",
-    "description": "Label for recents emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for recents emoji picker button"
   },
   "icu:EmojiPicker__button--emoji": {
     "messageformat": "Emoji",
-    "description": "Label for emoji emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for emoji emoji picker button"
   },
   "icu:EmojiPicker__button--animal": {
     "messageformat": "Animal",
-    "description": "Label for animal emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for animal emoji picker button"
   },
   "icu:EmojiPicker__button--food": {
     "messageformat": "Food",
-    "description": "Label for food emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for food emoji picker button"
   },
   "icu:EmojiPicker__button--activity": {
     "messageformat": "Activity",
-    "description": "Label for activity emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for activity emoji picker button"
   },
   "icu:EmojiPicker__button--travel": {
     "messageformat": "Travel",
-    "description": "Label for travel emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for travel emoji picker button"
   },
   "icu:EmojiPicker__button--object": {
     "messageformat": "Object",
-    "description": "Label for object emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for object emoji picker button"
   },
   "icu:EmojiPicker__button--symbol": {
     "messageformat": "Symbol",
-    "description": "Label for symbol emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for symbol emoji picker button"
   },
   "icu:EmojiPicker__button--flag": {
     "messageformat": "Flag",
-    "description": "Label for flag emoji picker button"
+    "description": "(Deleted 2025/10/08) Label for flag emoji picker button"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Emoji",
@@ -3383,6 +3479,10 @@
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Recently Used",
     "description": "FunPicker > Stickers Panel > Sub Nav > Category Label > Recents"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Add a sticker pack",
+    "description": "FunPicker > Stickers Panel > Sub Nav > Button > Add a sticker pack (accessibility label, opens sticker manager)"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Search Results",
@@ -4670,7 +4770,7 @@
   },
   "icu:EmojiButton__label": {
     "messageformat": "Emoji",
-    "description": "Label for emoji button"
+    "description": "(Deleted 2025/10/08) Label for emoji button"
   },
   "icu:ErrorModal--title": {
     "messageformat": "Something went wrong!",
@@ -4679,6 +4779,18 @@
   "icu:ErrorModal--description": {
     "messageformat": "Please try again or contact support.",
     "description": "Description text in popup dialog when user-initiated task has gone wrong"
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "An unexpected error occurred",
+    "description": "Title of the dialog shown when an unexpected user interface or coding bug occurs. The dialog's description text requests the user to submit debug logs."
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Submit debug log",
+    "description": "Primary button text in the dialog shown when an unexpected user interface or coding bug occurs. Clicking the button will open the Debug Log submission dialog."
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "No thanks",
+    "description": "Secondary button text in the dialog shown when an unexpected user interface or coding bug occurs. Clicking the button will dismiss the error dialog."
   },
   "icu:Confirmation--confirm": {
     "messageformat": "Okay",
@@ -5253,7 +5365,7 @@
     "description": "Shown in timeline or conversation preview when v2 group changes"
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{joinerName} requested and cancelled {numberOfRequests, plural, one {their request} other {# requests}} to join via the group link",
+    "messageformat": "{joinerName} requested and canceled {numberOfRequests, plural, one {their request} other {# requests}} to join via the group link",
     "description": "Shown in timeline or conversation preview when v2 group changes"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
@@ -5565,11 +5677,11 @@
     "description": "Text of the retry button of the error modal in the backup import screen"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "Restoring media",
+    "messageformat": "Syncing media",
     "description": "Label next to a progress bar showing active media (attachment) download progress after restoring from backup"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "Restore paused",
+    "messageformat": "Syncing paused",
     "description": "Label indicating media (attachment) download progress has been paused (due to user interaction)"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
@@ -5589,15 +5701,15 @@
     "description": "Description text when attachment download in progress but offline"
   },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "Pause transfer",
+    "messageformat": "Pause",
     "description": "Text for button to pause media (attachment) download after backup impor"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "Resume transfer",
+    "messageformat": "Resume",
     "description": "Text for button to resume media (attachment) download after backup import"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "Cancel transfer",
+    "messageformat": "Cancel syncing",
     "description": "Text for button to cancel (pause) media (attachment) download after backup import"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
@@ -5613,20 +5725,44 @@
     "description": "Hint under the progressbar showing media (attachment) download progress after restoring from backup"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "Cancel media transfer?",
-    "description": "Text for button to cancel (pause) media (attachment) download after backup import"
+    "messageformat": "Cancel media syncing?",
+    "description": "Text for button to cancel media (attachment) download after backup import"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "Your messages and media have not completed restoring. If you choose to cancel, you can transfer again from Settings.",
-    "description": "Text for button to cancel (pause) media (attachment) download after backup import"
+    "messageformat": "Your media has not completed syncing. If you choose to cancel, you can sync again by re-linking this device. <learnMoreLink>Learn more</learnMoreLink>.",
+    "description": "Text for button to cancel media (attachment) download after backup import"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Continue transfer",
+    "messageformat": "Continue syncing",
     "description": "Text for button to close confirmation dialog and continue media (attachment) download"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "Cancel transfer",
+    "messageformat": "Cancel syncing",
     "description": "Text for button to confirm cancellation of media (attachment) download"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Syncing paused",
+    "description": "Label indicating media (attachment) download progress when the transfer has been paused"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "Click “{resumeButtonText}” to continue syncing",
+    "description": "Shown below progress bar when the transfer has been paused. {resumeButtonText} will be 'icu:BackupMediaDownloadProgressSettings__button-resume'"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Resume",
+    "description": "Text for button to resume media (attachment) download after backup import"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Pause",
+    "description": "Text for button to pause media (attachment) download after backup import"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "Syncing media",
+    "description": "Label next to a progress bar showing active media (attachment) download progress after restoring from backup"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize} of {totalSize} ({fractionComplete, number, percent})...",
+    "description": "Hint under the progressbar in the backup import screen"
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
     "messageformat": "Account action required",
@@ -5854,6 +5990,10 @@
   },
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Your contacts will be able add you to this group.",
+    "description": "(Deleted 2025/10/08) This is the modal content for confirming unblock of a group"
+  },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Your contacts will be able to add you to this group.",
     "description": "This is the modal content for confirming unblock of a group"
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
@@ -5864,13 +6004,9 @@
     "messageformat": "{number, plural, one {# member} other {# members}}",
     "description": "This is the number of members in a group"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Shared media",
-    "description": "Title for the media thumbnails in the conversation details screen"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "See all",
-    "description": "This is a button on the conversation details to show all media"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Media and files",
+    "description": "Title for the show all media button in the conversation details screen"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {# member} other {# members}}",
@@ -6612,6 +6748,14 @@
     "messageformat": "Username link needs reset",
     "description": "Accessibility title of an icon in profile editor"
   },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Open username link screen",
+    "description": "Accessibility title for the small qr code icon in the preferences pane list"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Open username link screen",
+    "description": "Accessibility title for the small qr code icon in the preferences pane list"
+  },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Share your username",
     "description": "Title of tooltip displayed under 'QR code or link' button for getting username link"
@@ -6956,6 +7100,14 @@
     "messageformat": "For example, :-) will be converted to <emojify>🙂</emojify>",
     "description": "Description for the auto convert emoji setting"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Keep muted chats archived",
+    "description": "Title for the setting that prevents muted chats from being unarchived when new messages arrive"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Muted chats that are archived will remain archived when a new message arrives.",
+    "description": "Description for the setting that prevents muted chats from being unarchived"
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Advanced",
     "description": "Title for advanced settings"
@@ -6969,7 +7121,7 @@
     "description": "Label for blocked contacts setting"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Signal Backups",
+    "messageformat": "Signal Secure Backups",
     "description": "Feature name for message backups using the Signal service."
   },
   "icu:Preferences--signal-backups-off-description": {
@@ -6989,8 +7141,12 @@
     "description": "Description of a backup plan that backups all of their messages (text) and media"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Your subscription was not found. Renew to continue using Signal Backups.",
+    "messageformat": "Your subscription was not found. Renew to continue using Signal Secure Backups.",
     "description": "Description when a backup subscription used to exist but is not active"
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost} / month",
+    "description": "Text displaying the cost per month of the backup plan. Cost is an internationalized string, e.g. '$2.99' or '2,99 €'"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "Text + {mediaDayCount, plural, one {# day} other {# days}} media backup",
@@ -7013,15 +7169,15 @@
     "description": "Description of plan when it has been canceled (i.e. not going to renew but still active)"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "You can manage or cancel your Signal Backups subscription on your phone.",
+    "messageformat": "You can manage or cancel your Signal Secure Backups subscription on your phone.",
     "description": "Note next to backups plan summary"
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "You can manage or upgrade Signal Backups on your phone.",
+    "messageformat": "You can manage or upgrade Signal Secure Backups on your phone.",
     "description": "Note next to backups plan summary"
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "You can manage or renew your Signal Backups subscription on your phone.",
+    "messageformat": "You can manage or renew your Signal Secure Backups subscription on your phone.",
     "description": "Note next to backups plan summary if we could not find their subscription"
   },
   "icu:Preferences--backup-created-at__label": {
@@ -7031,10 +7187,6 @@
   "icu:Preferences--backup-created-by-phone": {
     "messageformat": "Your phone",
     "description": "Label for the primary device (your phone) that made the most recent cloud backup"
-  },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Backup size",
-    "description": "(Deleted 2025/06/11) Label for the size (e.g. 1.4 GB) of this user's backup"
   },
   "icu:Preferences__local-backups": {
     "messageformat": "Desktop backups",
@@ -8346,10 +8498,6 @@
     "messageformat": "Reset",
     "description": "Text of button at the bottom of the username link modal"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Done",
-    "description": "(Deleted 2025/06/11) Text of button at the bottom of the username link modal"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Username link color, {index, number} of {total, number}",
     "description": "ARIA label of button for selecting username link color"
@@ -8786,36 +8934,337 @@
     "messageformat": "What's New",
     "description": "Title for the whats new modal"
   },
+  "icu:PreferencesDonations__title": {
+    "messageformat": "Privacy over Profit",
+    "description": "Title shown at the top of the donations preferences page"
+  },
+  "icu:PreferencesDonations__description": {
+    "messageformat": "Private messaging, funded by you. No ads, no tracking, no compromise. Donate now to support Signal. <readMoreLink>Read more</readMoreLink>",
+    "description": "Description text explaining Signal's donation model with learn more link"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Donate",
+    "description": "Button text to make a donation"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "My Support",
+    "description": "Section header for the user's current donations"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} one-time",
+    "description": "Label next to the in-app badge associated with a donation amount and type. Amount includes the currency symbol and is formatted in the locale's standard format. The hyphen between one-time is optional depending on language norms. Examples: $10 one-time; ¥1000 one-time; €10 one-time"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Processing donation...",
+    "description": "Label next to the in-app badge associated with a donation while the donation is still processing and the badge is not yet available to the user."
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "Donate {formattedCurrencyAmount}",
+    "description": "Button text to make a donation after selecting a currency amount. Amount includes the currency symbol and is formatted in the locale's standard format. Examples: Donate $10; Donate ¥1000; Donate €10"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "Badges and monthly donations can be managed on your mobile device.",
+    "description": "Information about some donations features only existing on mobile"
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Your information is private",
+    "description": "Title for the modal that explains donation privacy information"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>Signal does not collect or store any of your personal information when you make a donation.</paragraph><paragraph>We use Stripe as our payment processor to receive your donations. We don't access, store, or save any of the information you provide to them.</paragraph><paragraph>Signal does not and cannot connect your donation to your Signal account.</paragraph><paragraph>Thank you for your support!</paragraph>",
+    "description": "Content for the modal that explains donation privacy information"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK",
+    "description": "Button text in the modal that explains donation privacy information. Clicking the button will dismiss the modal."
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Receipts",
+    "description": "Menu item to view donation receipts"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "View receipt details",
+    "description": "Donation receipts list accessibility label for a single receipt."
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Donor FAQs",
+    "description": "Menu item to view donor FAQs"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "Receipts do not sync across devices. If you have reinstalled Signal, receipts from previous donations will not be available.",
+    "description": "Information about donation receipts syncing limitations"
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "No Receipts",
+    "description": "Title shown when there are no donation receipts"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Download receipt",
+    "description": "Button text to download a donation receipt"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Type",
+    "description": "Label for the donation type in donation receipt modal"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Date paid",
+    "description": "Label for the payment date in donation receipt modal"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Make a one time donation",
+    "description": "In the Donations settings section after beginning the donations process, then the user selects currency and amount which they want to donate. This string is the section header above currency amount options for a one time donation."
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Only one time donations are available on desktop. Monthly donations can be made on your mobile device.",
+    "description": "In the Donations settings section after beginning the donations process, then the user selects currency and amount which they want to donate. This footer notice indicates that only one time donations are available on desktop, and recurring donations must be processed on the mobile device."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Having issues? <contactSupportLink>Contact support</contactSupportLink>",
+    "description": "In the Donations settings section, this footer text appears during parts of the donation workflow such as when picking a donation currency and amount, or entering the credit card info."
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Enter Custom Amount",
+    "description": "When selecting currency and amount for a donation, this is the placeholder text in the custom amount input box."
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Credit or Debit Card",
+    "description": "When entering payment card details for a donation, this heading indicates the section for credit or debit cards."
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Enter your credit or debit card details. Signal does not collect or store your personal information. <learnMoreLink>Learn more</learnMoreLink>",
+    "description": "When entering payment card details for a donation, these instructions explain how to use the entry form and how payment information is protected."
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Card Number",
+    "description": "When entering payment card details for a donation, this label is for the credit card account number input box."
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Expiration Date",
+    "description": "When entering payment card details for a donation, this label is for the credit card expiration date input box."
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/YY",
+    "description": "When entering payment card expiration date, this is the placeholder value in the date input box when it is empty. Please specify a value which would be reasonable to see in a payment or checkout form. The format is Month/Year to match the global credit card expiration date format. The localized value is suggested to contain 2 characters for month and 2 characters for year. In CJK languages single characters are acceptable for month and year e.g. 月 and 年. Month and year should be separated by a forward slash (/) because after the user begins typing the date, the app will automatically separate them with a slash."
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Donate {formattedCurrencyAmount} to Signal",
+    "description": "Title above the payment card entry form after selecting a donation amount. Amount includes the currency symbol and is formatted in the locale's standard format. Examples: Donate $10; Donate ¥1000; Donate €10"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Invalid card number",
+    "description": "When entering payment card details, this error appears when the card number was entered incorrectly."
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "Card has expired",
+    "description": "When entering payment card expiration date, this error appears when the card has expired."
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "Year required",
+    "description": "When entering payment card expiration date, this error appears when year was not entered but the user changed focus from the input box."
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Invalid",
+    "description": "When entering payment card details, this error appears when validation fails but we do not have a specific string for the failure case. For example, a card expiration date was mistyped with non-numeric digits."
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Code too short",
+    "description": "When entering payment card CVC/CVV code, this error appears when the code entered did not include all digits in the CVC/CVV code."
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Get the Signal Boost badge for 30 days",
+    "description": "Info text above the payment card entry form when making a one time donation. Explains the in-app badge which you can receive after donating."
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "The minimum donation amount is {formattedCurrencyAmount}",
+    "description": "Error text next to input box when selecting a donation amount and the user has entered a custom amount below the minimum allowed amount. Minimum amount text includes the currency symbol and is formatted in the locale's standard format. Examples: $3; ¥300; €3"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "The minimum amount you can donate is {formattedCurrencyAmount}",
+    "description": "Tooltip for a disabled continue button when selecting a donation amount, when the user has entered a custom amount below the minimum allowed donation amount. Minimum amount text includes the currency symbol and is formatted in the locale's standard format. Examples: $3; ¥300; €3"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "The maximum donation amount is {formattedCurrencyAmount}",
+    "description": "Error text next to input box when selecting a donation amount and the user has entered a custom amount greater than the maximum allowed amount. Maximum amount text includes the currency symbol and is formatted in the locale's standard format. Examples: $999999.99; ¥99999999; €999999.99"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Leaving this page will remove your credit card information. Do you want to proceed?",
+    "description": "While making a donation and after entering payment details, if you try to navigate away then a dialog shows with this body text."
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Remove info",
+    "description": "While making a donation and after entering payment details, if you try to navigate away then a dialog shows and its primary button has this text to confirm cancellation of the donation."
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Continue",
+    "description": "While making a donation and selecting the donation amount, this is the primary button to move to the next step."
+  },
   "icu:DonationReceipt__title": {
     "messageformat": "Donation receipt",
     "description": "Title shown at the top of donation receipt documents"
   },
-
   "icu:DonationReceipt__amount-label": {
     "messageformat": "Amount",
-    "description": "Label for the donation amount field on receipt"
+    "description": "Label for the donation amount field on donation receipt"
   },
-
   "icu:DonationReceipt__type-label": {
     "messageformat": "Type",
-    "description": "Label for the donation type field on receipt"
+    "description": "Label for the donation type field on donation receipt"
   },
-
   "icu:DonationReceipt__date-paid-label": {
     "messageformat": "Date paid",
-    "description": "Label for the payment date field on receipt"
+    "description": "Label for the payment date field on donation receipt"
   },
   "icu:DonationReceipt__type-value--one-time": {
-    "messageformat": "One-time",
-    "description": "Value shown for one-time donations on receipt"
-  },
-  "icu:DonationReceipt__payment-method-label": {
-    "messageformat": "Payment method",
-    "description": "Label for the payment method field on receipt"
+    "messageformat": "One time",
+    "description": "Value shown for one-time donations on donation receipt"
   },
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Thank you for supporting Signal. Your contribution helps fuel the mission of protecting free expression and enabling secure global communication for millions around the world, through open source privacy technology. If you’re a resident of the United States, please retain this receipt for your tax records. Signal Technology Foundation is a tax-exempt nonprofit organization in the United States under section 501c3 of the Internal Revenue Code. Our Federal Tax ID is 82-4506840.",
     "description": "Footer text shown on donation receipts explaining tax deductibility and Signal's mission"
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "You are offline. Please connect to the internet to complete a donation.",
+    "description": "Tooltip for donation related buttons which are temporarily disabled due to the app being offline."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Donation canceled",
+    "description": "Toast shown when a donation was manually canceled by the user"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Donation completed",
+    "description": "Toast shown when a donation started processing after resuming on startup, and it completed successfully when the user is not on the Preferences/Donations screen"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Error processing donation",
+    "description": "Toast shown when a donation fails when the user is not on the Preferences/Donations screen"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Processing donation",
+    "description": "Toast shown when a donation starts processing again after resuming on startup"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Verification failed",
+    "description": "Shown when the user is not on the Preferences/Donations screen, and for some reason their attempt to complete verification failed"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "You have a donation in progress that needs additional verification.",
+    "description": "Shown when the user is not on the Preferences/Donations screen, and donation verification is needed. Like when resuming from startup."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "You have a donation in progress that requires confirmation.",
+    "description": "Shown when the user is not on the Preferences/Donations screen, and donation verification is needed. Like when resuming from startup."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Donation succeeded, but we could not update your badge settings",
+    "description": "(Deleted 2025/09/10) Toast shown when donation completes successfully but badge application fails"
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Donation succeeded, but we could not update your badge settings",
+    "description": "Modal title shown when donation completes successfully but badge application fails"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "To update your badge settings on your mobile device, go to Settings → Donate to Signal → Badges.",
+    "description": "Modal body text shown when badge application fails after successful donation"
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Donation interrupted",
+    "description": "Title of the dialog shown when starting up if a donation had been started, and we've saved payment information, but the charge hasn't happened yet"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "Your card was not charged. Do you want to retry the donation?",
+    "description": "An explanation for the 'donation interrupted' dialog"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Try again",
+    "description": "The button in the 'donation interrupted' dialog which allows the user to move forward with the donation."
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Payment method declined",
+    "description": "Title of the dialog shown with the user's provided payment method has not worked"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Try another payment method or contact your bank for more information.",
+    "description": "An explanation for the 'payment declined' dialog"
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Verification Failed",
+    "description": "Title of the dialog shown when something went wrong processing a user's 3ds verification with their bank"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "Additional verification step failed. Please try again.",
+    "description": "An explanation for the 'verification failed' dialog"
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "An error occurred with your donation",
+    "description": "Title of the dialog shown when some unknown error has happened during a user's attempted donation. This will show when we detect an error but haven't designed a string for the error type."
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "Your donation might not have been processed. Click on “Donate to Signal” and then “Donation Receipts” to check your receipts and confirm.",
+    "description": "An explanation for the 'error occurred' dialog"
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Try again or submit a debug log to Support for help completing your donation. Debug logs helps us diagnose and fix the issue, and do not contain identifying information.",
+    "description": "Description of the dialog shown when an unexpected user interface or coding bug occurs while using a donations-related part of the app."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "Processing donation...",
+    "description": "Explainer text for donation progress dialog"
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Still processing donation",
+    "description": "Title of the dialog shown when the user has made a donation and it's taking some time to complete the process"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "Your donation is still being processed. This can take a few minutes.",
+    "description": "An explanation for the 'still processing' dialog"
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Donation canceled",
+    "description": "Title of the dialog shown when the it's been too long since the last step in the donation process"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "It has been too long since you started your donation. Please start over.",
+    "description": "An explanation for the 'donation timed out' dialog"
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "Additional verification required",
+    "description": "Title of the dialog shown when the user's payment method requires a redirect to a verification website"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Waiting for verification",
+    "description": "Title of the dialog shown when the user's payment method requires a redirect to a verification website"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "Your credit card issuer requires an additional verification step in a web browser.",
+    "description": "An explanation for the 'verification required' dialog"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Open browser",
+    "description": "When external payment method validation is required, this button will open that external verification website"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Re-open browser",
+    "description": "When the user has started external payment method validation, the button switches to this text. It allows them to kick off the process again if necessary."
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Cancel donation",
+    "description": "When external payment method validation is required, this button will open that external verification website"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Thanks for your support!",
+    "description": "Title shown in the 'thanks for your donation' modal"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "You've earned a donor badge from Signal! Display it on your profile to show off your support.",
+    "description": "Description explaining the donor badge in the 'thanks for your donation' modal"
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Display on profile",
+    "description": "Toggle label for displaying the donation badge on user's profile in the 'thanks for your donation' modal"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "You can adjust this on your mobile device under Settings → Donate to Signal → Badges",
+    "description": "Help text below the toggle in donation thank you modal"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "This version contains a number of small tweaks and bug fixes to keep Signal running smoothly.",
@@ -8852,12 +9301,12 @@
     "description": "Release notes for releases that only include bug fixes",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.58--0": {
-    "messageformat": "A new section in the message reaction selector automatically displays all of the emoji reactions that a message has received. Now you can quickly jump on the bandwagon and add a standard sparkling heart just like everyone else already did, or you can follow your own heart and go with the anatomical heart instead.",
-    "description": "(Deleted 2025/06/20) Release notes for version 7.58"
+  "icu:WhatsNew__7.73": {
+    "messageformat": "This update introduces new performance optimizations to help improve battery life, so you'll have more charge available for emotionally charged conversations.",
+    "description": "(Deleted 2025/10/02) Release notes for 7.73 release"
   },
-  "icu:WhatsNew__v7.59--0": {
-    "messageformat": "This update enables GPU acceleration on Linux for improved performance and smoother video playback on supported hardware.",
-    "description": "(Deleted 2025/06/25) Release notes for version 7.59"
+  "icu:WhatsNew__7.74": {
+    "messageformat": "Just in time for autumn, the new \"Leafless Tree\" emoji {leaflessTreeEmoji} (along with the other six new emoji in Unicode 16.0) are now supported in Signal Desktop.",
+    "description": "(Deleted 2025/10/08) Release notes for 7.74 release."
   }
 }

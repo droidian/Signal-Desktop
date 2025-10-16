@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import memoizee from 'memoizee';
-import { instance, PhoneNumberFormat } from '../util/libphonenumberInstance';
-import { createLogger } from '../logging/log';
-import * as Errors from './errors';
+import { instance, PhoneNumberFormat } from '../util/libphonenumberInstance.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from './errors.js';
 
 const log = createLogger('PhoneNumber');
 
@@ -40,7 +40,9 @@ export function getCountryCode(
       return undefined;
     }
 
-    return instance.parse(phoneNumber).getCountryCode();
+    const parsed = instance.parse(phoneNumber);
+
+    return parsed.getCountryCode();
   } catch (error) {
     const errorText = Errors.toLogFormat(error);
     log.info(

@@ -1,14 +1,17 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import 'urlpattern-polyfill';
+// This file gets imported into renderer that does not have access to Node.js
+// builtins, use an `npm` package.
 // We need to use the Node.js version of `URL` because chromium's `URL` doesn't
 // support custom protocols correctly.
+// eslint-disable-next-line import/enforce-node-protocol-usage
 import { URL as NodeURL } from 'url';
 import { z } from 'zod';
-import { strictAssert } from './assert';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import { parsePartial, parseUnknown, safeParseUnknown } from './schemas';
+import { strictAssert } from './assert.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { parsePartial, parseUnknown, safeParseUnknown } from './schemas.js';
 
 const log = createLogger('signalRoutes');
 
@@ -204,6 +207,7 @@ function _route<Key extends string, Args extends object>(
 }
 
 const paramSchema = z.string().min(1);
+const paramEpoch = z.nullable(z.string().min(1));
 
 /**
  * signal.me by phone number
@@ -387,19 +391,25 @@ export const linkCallRoute = _route('linkCall', {
   ],
   schema: z.object({
     key: paramSchema, // ConsonantBase16
+    epoch: paramEpoch, // ConsonantBase16
   }),
   parse(result) {
     const params = new URLSearchParams(result.hash.groups.params);
     return {
       key: params.get('key'),
+      epoch: params.get('epoch'),
     };
   },
   toWebUrl(args) {
-    const params = new URLSearchParams({ key: args.key });
+    const params = new URLSearchParams(
+      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
+    );
     return new URL(`https://signal.link/call/#${params.toString()}`);
   },
   toAppUrl(args) {
-    const params = new URLSearchParams({ key: args.key });
+    const params = new URLSearchParams(
+      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
+    );
     return new URL(`sgnl://signal.link/call/#${params.toString()}`);
   },
 });

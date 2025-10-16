@@ -4,17 +4,17 @@
 /* eslint-env node */
 
 import { ipcRenderer as ipc } from 'electron';
-import * as path from 'path';
+import * as path from 'node:path';
 
 import {
   initLogger,
   LogLevel as SignalClientLogLevel,
 } from '@signalapp/libsignal-client';
 
-import { setPinoDestination, log } from './log';
-import * as Errors from '../types/errors';
-import { createRotatingPinoDest } from '../util/rotatingPinoDest';
-import { redactAll } from '../util/privacy';
+import { setPinoDestination, log } from './log.js';
+import * as Errors from '../types/errors.js';
+import { createRotatingPinoDest } from '../util/rotatingPinoDest.js';
+import { redactAll } from '../util/privacy.js';
 
 let isInitialized = false;
 let shouldRestart = false;
@@ -48,24 +48,11 @@ export function initialize(): void {
   setPinoDestination(stream, redactAll);
 }
 
-function toLocation(source?: string, line?: number, column?: number) {
-  if (source == null) {
-    return '(@ unknown)';
-  }
-  if (line != null && column != null) {
-    return `(@ ${source}:${line}:${column})`;
-  }
-  if (line != null) {
-    return `(@ ${source}:${line})`;
-  }
-  return `(@ ${source})`;
-}
-
 window.onerror = (message, source, line, column, error) => {
   const errorInfo = Errors.toLogFormat(error);
   log.error(
     `Top-level unhandled error: ${message}, ${errorInfo}`,
-    toLocation(source, line, column)
+    Errors.toLocation(source, line, column)
   );
 };
 

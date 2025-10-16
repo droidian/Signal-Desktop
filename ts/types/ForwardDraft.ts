@@ -1,15 +1,14 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { orderBy } from 'lodash';
-import type { ReadonlyMessageAttributesType } from '../model-types';
-import {
-  isVoiceMessage,
-  type AttachmentForUIType,
-  isDownloaded,
-} from './Attachment';
-import type { HydratedBodyRangesType } from './BodyRange';
-import type { LinkPreviewForUIType } from './message/LinkPreviews';
+import lodash from 'lodash';
+import type { ReadonlyMessageAttributesType } from '../model-types.js';
+import type { AttachmentForUIType } from './Attachment.js';
+import { isVoiceMessage, isDownloaded } from '../util/Attachment.js';
+import type { HydratedBodyRangesType } from './BodyRange.js';
+import type { LinkPreviewForUIType } from './message/LinkPreviews.js';
+
+const { orderBy } = lodash;
 
 export type MessageForwardDraft = Readonly<{
   attachments?: ReadonlyArray<AttachmentForUIType>;

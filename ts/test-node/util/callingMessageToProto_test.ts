@@ -10,9 +10,9 @@ import {
   HangupType,
   OpaqueMessage,
 } from '@signalapp/ringrtc';
-import { SignalService as Proto } from '../../protobuf';
+import { SignalService as Proto } from '../../protobuf/index.js';
 
-import { callingMessageToProto } from '../../util/callingMessageToProto';
+import { callingMessageToProto } from '../../util/callingMessageToProto.js';
 
 describe('callingMessageToProto', () => {
   // NOTE: These tests are incomplete.
@@ -44,7 +44,7 @@ describe('callingMessageToProto', () => {
     it('attaches opaque data', () => {
       const callingMessage = new CallingMessage();
       callingMessage.opaque = new OpaqueMessage();
-      callingMessage.opaque.data = Buffer.from([1, 2, 3]);
+      callingMessage.opaque.data = new Uint8Array([1, 2, 3]);
 
       const result = callingMessageToProto(callingMessage);
 
@@ -74,7 +74,7 @@ describe('callingMessageToProto', () => {
     it('attaches urgency and opaque data if both are provided', () => {
       const callingMessage = new CallingMessage();
       callingMessage.opaque = new OpaqueMessage();
-      callingMessage.opaque.data = Buffer.from([1, 2, 3]);
+      callingMessage.opaque.data = new Uint8Array([1, 2, 3]);
 
       const result = callingMessageToProto(
         callingMessage,

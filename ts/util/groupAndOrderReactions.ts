@@ -1,31 +1,38 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { groupBy, orderBy } from 'lodash';
+import lodash from 'lodash';
 import { useMemo } from 'react';
 
-import type { Reaction } from '../components/conversation/ReactionViewer';
+// eslint-disable-next-line import/no-restricted-paths
+import type { Reaction } from '../components/conversation/ReactionViewer.js';
 import {
   isEmojiVariantValue,
   getEmojiVariantKeyByValue,
   getEmojiParentKeyByVariantKey,
   getEmojiVariantByKey,
   type EmojiVariantKey,
-} from '../components/fun/data/emojis';
-import { isNotNil } from './isNotNil';
-import { useFunEmojiLocalizer } from '../components/fun/useFunEmojiLocalizer';
+  type EmojiParentKey,
+  // eslint-disable-next-line import/no-restricted-paths
+} from '../components/fun/data/emojis.js';
+import { isNotNil } from './isNotNil.js';
+// eslint-disable-next-line import/no-restricted-paths
+import { useFunEmojiLocalizer } from '../components/fun/useFunEmojiLocalizer.js';
+
+const { groupBy, orderBy } = lodash;
 
 type ReactionWithEmojiData = Reaction & {
   short_name: string | undefined;
   short_names: Array<string>;
   sheet_x: number;
   sheet_y: number;
+  parentKey: EmojiParentKey;
   variantKey: EmojiVariantKey;
 };
 
 export function useGroupedAndOrderedReactions(
   reactions: ReadonlyArray<Reaction> | undefined,
-  groupByKey: string = 'variantKey'
+  groupByKey: 'variantKey' | 'parentKey'
 ): Array<Array<ReactionWithEmojiData>> {
   const emojiLocalization = useFunEmojiLocalizer();
 

@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { v4 as generateGuid } from 'uuid';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { omit } from 'lodash';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import lodash from 'lodash';
 import * as sinon from 'sinon';
-import { join } from 'path';
+import { join } from 'node:path';
 import { assert } from 'chai';
 
-import type { ConversationModel } from '../../models/conversations';
-import * as Bytes from '../../Bytes';
-import { DataWriter } from '../../sql/Client';
-import { type AciString, generateAci } from '../../types/ServiceId';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { setupBasics, asymmetricRoundtripHarness } from './helpers';
+import type { ConversationModel } from '../../models/conversations.js';
+import * as Bytes from '../../Bytes.js';
+import { DataWriter } from '../../sql/Client.js';
+import { type AciString, generateAci } from '../../types/ServiceId.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { setupBasics, asymmetricRoundtripHarness } from './helpers.js';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -22,26 +22,28 @@ import {
   IMAGE_WEBP,
   LONG_MESSAGE,
   VIDEO_MP4,
-} from '../../types/MIME';
+} from '../../types/MIME.js';
 import type {
   MessageAttributesType,
   QuotedMessageType,
-} from '../../model-types';
+} from '../../model-types.js';
 import {
   hasRequiredInformationForBackup,
   isVoiceMessage,
-  type AttachmentType,
-} from '../../types/Attachment';
-import { strictAssert } from '../../util/assert';
-import { SignalService } from '../../protobuf';
-import { getRandomBytes } from '../../Crypto';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders';
+} from '../../util/Attachment.js';
+import type { AttachmentType } from '../../types/Attachment.js';
+import { strictAssert } from '../../util/assert.js';
+import { SignalService } from '../../protobuf/index.js';
+import { getRandomBytes } from '../../Crypto.js';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.js';
 import {
   generateAttachmentKeys,
   generateKeys,
   getPlaintextHashForInMemoryAttachment,
-} from '../../AttachmentCrypto';
-import { isValidAttachmentKey } from '../../types/Crypto';
+} from '../../AttachmentCrypto.js';
+import { KIBIBYTE } from '../../types/AttachmentSize.js';
+
+const { omit } = lodash;
 
 const CONTACT_A = generateAci();
 
@@ -100,11 +102,14 @@ describe('backup/attachments', () => {
       plaintextHash: Bytes.toHex(getRandomBytes(32)),
       key: Bytes.toBase64(generateKeys()),
       digest: Bytes.toBase64(getRandomBytes(32)),
-      size: 100,
+      size: 100 + index,
       contentType: IMAGE_JPEG,
       path: `/path/to/file${index}.png`,
+      caption: `caption${index}`,
       localKey: Bytes.toBase64(generateAttachmentKeys()),
       uploadTimestamp: index,
+      incrementalMac: Bytes.toBase64(getRandomBytes(32)),
+      chunkSize: index * 128,
       thumbnail: {
         size: 1024,
         width: 150,
@@ -149,6 +154,7 @@ describe('backup/attachments', () => {
     }
     return base;
   }
+
   describe('long-message attachments', () => {
     it('preserves attachment still on message.attachments', async () => {
       const longMessageAttachment = composeAttachment(1, {
@@ -188,7 +194,7 @@ describe('backup/attachments', () => {
         ],
         [
           composeMessage(1, {
-            body: body.slice(0, 2048),
+            body,
             bodyAttachment: {
               contentType: LONG_MESSAGE,
               size: bodyBytes.byteLength,
@@ -206,22 +212,23 @@ describe('backup/attachments', () => {
 
             assert.deepStrictEqual(
               expected.bodyAttachment,
-              // all encryption info will be generated anew
-              omit(msgInDB.bodyAttachment, ['digest', 'key', 'downloadPath'])
+              omit(msgInDB.bodyAttachment, ['localKey', 'path', 'version'])
             );
 
             assert.isUndefined(msgInDB.bodyAttachment?.digest);
-            assert.isTrue(isValidAttachmentKey(msgInDB.bodyAttachment?.key));
           },
         }
       );
     });
 
     it('handles existing bodyAttachments', async () => {
+      const body = 'a'.repeat(3000);
+      const bodyBytes = Bytes.fromString(body);
+
       const attachment = omit(
         composeAttachment(1, {
           contentType: LONG_MESSAGE,
-          size: 3000,
+          size: bodyBytes.byteLength,
           downloadPath: 'downloadPath',
         }),
         'thumbnail'
@@ -232,13 +239,17 @@ describe('backup/attachments', () => {
         [
           composeMessage(1, {
             bodyAttachment: attachment,
-            body: 'a'.repeat(3000),
+            body,
           }),
         ],
         [
           composeMessage(1, {
-            body: 'a'.repeat(2048),
-            bodyAttachment: expectedRoundtrippedFields(attachment),
+            body,
+            bodyAttachment: {
+              contentType: LONG_MESSAGE,
+              size: 3000,
+              plaintextHash: getPlaintextHashForInMemoryAttachment(bodyBytes),
+            },
           }),
         ],
         {
@@ -250,11 +261,105 @@ describe('backup/attachments', () => {
             );
 
             assert.deepStrictEqual(
-              omit(expected.bodyAttachment, ['clientUuid', 'downloadPath']),
-              omit(msgInDB.bodyAttachment, ['clientUuid', 'downloadPath'])
+              expected.bodyAttachment,
+              omit(msgInDB.bodyAttachment, ['localKey', 'path', 'version'])
+            );
+          },
+        }
+      );
+    });
+    it('truncates at 128 KiB', async () => {
+      const body = 'a'.repeat(129 * KIBIBYTE);
+      const truncatedBody = body.slice(0, 128 * KIBIBYTE);
+      const bodyBytes = Bytes.fromString(body);
+
+      const attachment = omit(
+        composeAttachment(1, {
+          contentType: LONG_MESSAGE,
+          size: bodyBytes.byteLength,
+          downloadPath: 'downloadPath',
+        }),
+        'thumbnail'
+      );
+      strictAssert(attachment.digest, 'must exist');
+
+      await asymmetricRoundtripHarness(
+        [
+          composeMessage(1, {
+            bodyAttachment: attachment,
+            body,
+          }),
+        ],
+        [
+          composeMessage(1, {
+            body: truncatedBody,
+            bodyAttachment: {
+              contentType: LONG_MESSAGE,
+              size: 128 * KIBIBYTE,
+              plaintextHash: getPlaintextHashForInMemoryAttachment(
+                Bytes.fromString(truncatedBody)
+              ),
+            },
+          }),
+        ],
+        {
+          backupLevel: BackupLevel.Paid,
+          comparator: (expected, msgInDB) => {
+            assert.deepStrictEqual(
+              omit(expected, 'bodyAttachment'),
+              omit(msgInDB, 'bodyAttachment')
             );
 
-            assert.isNotEmpty(msgInDB.bodyAttachment?.downloadPath);
+            assert.deepStrictEqual(
+              expected.bodyAttachment,
+              omit(msgInDB.bodyAttachment, ['localKey', 'path', 'version'])
+            );
+          },
+        }
+      );
+    });
+    it('includes bodyAttachment if it has not downloaded', async () => {
+      const truncatedBody = 'a'.repeat(2 * KIBIBYTE);
+
+      const attachment = omit(
+        composeAttachment(1, {
+          contentType: LONG_MESSAGE,
+          size: 64 * KIBIBYTE,
+          path: undefined,
+          plaintextHash: undefined,
+          localKey: undefined,
+          downloadPath: undefined,
+          clientUuid: undefined, // clientUuids are not roundtripped for bodyAttachments
+        }),
+        'thumbnail'
+      );
+      strictAssert(attachment.digest, 'must exist');
+
+      await asymmetricRoundtripHarness(
+        [
+          composeMessage(1, {
+            body: truncatedBody,
+            bodyAttachment: attachment,
+          }),
+        ],
+        [
+          composeMessage(1, {
+            body: truncatedBody,
+            bodyAttachment: attachment,
+          }),
+        ],
+        {
+          backupLevel: BackupLevel.Paid,
+          comparator: (expected, msgInDB) => {
+            assert.deepStrictEqual(
+              omit(msgInDB, 'bodyAttachment'),
+              omit(expected, 'bodyAttachment')
+            );
+
+            assert.deepStrictEqual(
+              omit(msgInDB.bodyAttachment, ['downloadPath']),
+              expected.bodyAttachment
+            );
           },
         }
       );
@@ -296,6 +401,44 @@ describe('backup/attachments', () => {
         [
           composeMessage(1, {
             attachments: [expectedRoundtrippedFields(attachment)],
+          }),
+        ],
+        { backupLevel: BackupLevel.Paid }
+      );
+    });
+    it('deduplicates attachments on export based on mediaName', async () => {
+      const attachment1 = composeAttachment(1);
+      const attachment2 = {
+        ...composeAttachment(2),
+        plaintextHash: attachment1.plaintextHash,
+        key: attachment1.key,
+        size: attachment1.size,
+      };
+
+      await asymmetricRoundtripHarness(
+        [
+          composeMessage(1, {
+            attachments: [attachment1],
+          }),
+          composeMessage(2, {
+            attachments: [attachment2],
+          }),
+        ],
+        [
+          composeMessage(1, {
+            attachments: [expectedRoundtrippedFields(attachment1)],
+          }),
+          composeMessage(2, {
+            attachments: [
+              expectedRoundtrippedFields({
+                ...attachment2,
+                cdnKey: attachment1.cdnKey,
+                cdnNumber: attachment1.cdnNumber,
+                uploadTimestamp: attachment1.uploadTimestamp,
+                incrementalMac: attachment1.incrementalMac,
+                chunkSize: attachment1.chunkSize,
+              }),
+            ],
           }),
         ],
         { backupLevel: BackupLevel.Paid }

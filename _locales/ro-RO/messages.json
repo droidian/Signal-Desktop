@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Nu se poate accesa cheia de criptare a bazei de date deoarece backend-ul de criptare al sistemului de operare s-a schimbat de la {previousBackend} la {currentBackend}. Acest lucru se poate întâmpla dacă mediul desktop se schimbă, de exemplu între GNOME și KDE.\n\nTreci de la mediul desktop anterior sau încearcă să execuți semnalul cu steagul din linia de comandă --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Fișier"
   },
@@ -272,6 +281,30 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Introdu un nume de utilizator urmat de un punct și setul său de cifre."
   },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Toate"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Toate conversațiile"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Marchează tot ca citit"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Notificări fără sunet"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Dezactivează sunetul pe toate"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Dezactivează sunetul pe toate"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Editează dosarul"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Prefixul țării"
   },
@@ -305,9 +338,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Setări"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Actualizează Signal"
-  },
   "icu:NavTabs__ItemLabel--Profile": {
     "messageformat": "Profil"
   },
@@ -325,6 +355,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Marchează ca necitit"
+  },
+  "icu:markRead": {
+    "messageformat": "Marchează ca citit"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Selectează mesaje"
@@ -605,6 +638,12 @@
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Chitanță salvată"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Eroare la salvarea chitanței. Te rugăm să încerci din nou."
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nu poți selecta fotografii și videoclipuri împreună cu fișiere."
   },
@@ -664,9 +703,6 @@
   },
   "icu:joinTheBeta": {
     "messageformat": "înscrie-te la beta"
-  },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Preferințe Signal Desktop"
   },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Creator pachet cu autocolante"
@@ -1031,14 +1067,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Informații"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Sondaj · Selectează unul"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Sondaj · Selectează unul sau mai multe"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Sondaj · Rezultate finale"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Vezi voturile"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Ai votat"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Detaliile sondajului"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Întrebare"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} Vot} few {{count,number} Voturi} other {{count,number} de Voturi}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Niciun vot"
+  },
   "icu:deleteConversation": {
     "messageformat": "Șterge"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Ștergi conversația?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Mesajele din această conversație vor fi șterse de pe acest dispozitiv."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Toate mesajele din această conversație vor fi eliminate de pe toate dispozitivele tale."
@@ -1285,6 +1345,174 @@
   },
   "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
     "messageformat": "Tonul pielii emoji"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "Dosare de conversații"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "Adaugă un dosar de conversații"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "Organizează-ți conversațiile în dosare și schimbă între ele pe lista de conversații."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "Editează dosarul"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "Șterge"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Elimini folderul?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Vrei să elimini folderul „ {chatFolderTitle}”?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Șterge"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Anulează"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "Dosare de conversații"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "Organizează-ți conversațiile în dosare și comută rapid între ele, în lista ta de conversații"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "Dosare"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "Toate conversațiile"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "Creează un dosar"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "Dosare sugerate"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "Adaugă"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
+    "messageformat": "Dosarul {chatFolderTitle} a fost adăugat"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "Necitit"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "Mesaje necitite din toate conversațiile"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "Conversații 1 la 1"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "Numai mesajele din conversațiile directe"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "Grupuri"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "Numai mesajele din conversațiile de grup"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "Creează un dosar"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "Numele dosarului"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "Numele dosarului (necesar)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "Conversații incluse"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "Alege conversațiile care dorești să apară în acest dosar"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "Conversații 1 la 1"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Conversații în grup"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "Adaugă conversații"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "Conversații incluse"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "Conversații excluse"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "Caută"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "Tipuri de conversații"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "Conversații 1 la 1"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "Grupuri"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "Conversații recente"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "Gata"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "Excepții"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "Alege ce conversații nu vrei să apară în acest dosar"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "Exclude conversațiile"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "Arată doar conversații necitite"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "Doar conversațiile cu mesaje necitite vor fi afișate în acest dosar."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "Include conversațiile silențioase"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "Elimină dosarul"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Elimini acest dosar de conversații?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Acest folder va fi eliminat din lista ta de chat."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Șterge"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Anulează"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "Salvezi modificările?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "Vrei să salvezi modificările pe care le-ai făcut în acest dosar de conversații?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "Salvează"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "Renunță"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "Salvează"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "Anulează"
   },
   "icu:initialSync": {
     "messageformat": "Sincronizare contacte și grupuri"
@@ -1901,6 +2129,9 @@
   "icu:Toast--download-failed": {
     "messageformat": "A eșuat descărcarea"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Descărcarea atașamentului din backup a eșuat"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Editările pot fi făcute numai în termen de 24 de ore de la trimiterea acestui mesaj."
   },
@@ -2074,6 +2305,9 @@
   },
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Video vizibil o singură dată"
+  },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
   },
   "icu:message--deletedForEveryone": {
     "messageformat": "Acest mesaj a fost șters."
@@ -2386,6 +2620,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Utilizate Recent"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Adaugă un pachet de autocolante"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Rezultatele căutării"
@@ -3362,6 +3599,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "Te rugăm să încerci din nou sau să contactezi serviciul de asistență."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "S-a petrecut o eroare neașteptată"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Trimite jurnalul de depanare"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nu, mulțumesc"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "Okay"
   },
@@ -3792,7 +4038,7 @@
     "messageformat": "O solicitare de aderare la grup de la {joinerName} a fost respinsă."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} a solicitat și apoi a anulat solicitarea de alăturare folosind linkul grupului} few {{joinerName} a solicitat și apoi a anulat {numberOfRequests,number} solicitări de alăturare folosind linkul grupului} other {{joinerName} a cerut și a anulat {numberOfRequests,number} de solicitări pentru a se alătura prin linkul de grup}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} a solicitat și apoi a anulat solicitarea de alăturare prin linkul de grup} few {{joinerName} a solicitat și apoi a anulat {numberOfRequests,number} solicitări de alăturare prin linkul de grup} other {{joinerName} a cerut și a anulat {numberOfRequests,number} de solicitări pentru a se alătura prin linkul de grup}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Ai activat linkul de grup cu aprobarea administratorului dezactivată."
@@ -4026,10 +4272,10 @@
     "messageformat": "Încearcă din nou"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "Se restaurează fișierele"
+    "messageformat": "Se sincronizează fișierele media"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "Restaurare întreruptă"
+    "messageformat": "Sincronizarea a fost întreruptă"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "{currentSize} din {totalSize} restaurat"
@@ -4044,13 +4290,13 @@
     "messageformat": "Se așteaptă conectarea la Internet..."
   },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "Întrerupe transferul"
+    "messageformat": "Pauză"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "Reia transferul"
+    "messageformat": "Reia"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "Anulează transferul"
+    "messageformat": "Anulează sincronizarea"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "Mai multe opțiuni"
@@ -4062,16 +4308,34 @@
     "messageformat": "{currentSize} din {totalSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "Anulezi transferul de fișiere?"
+    "messageformat": "Anulezi sincronizarea fișierelor media?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "Nu s-a finalizat restabilirea mesajelor și ale fișierelor. Dacă alegi să anulezi, poți transfera din nou din Setări."
+    "messageformat": "Sincronizarea fișierelor media nu a fost finalizată. Dacă alegi să anulezi, poți sincroniza din nou conectând din nou acest dispozitiv. <learnMoreLink>Află mai multe</learnMoreLink>."
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Continuă transferul"
+    "messageformat": "Continuă sincronizarea"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "Anulează transferul"
+    "messageformat": "Anulează sincronizarea"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Sincronizarea a fost întreruptă"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "Dă clic pe „ {resumeButtonText}” pentru a continua sincronizarea"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Reia"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Pauză"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "Se sincronizează fișierele media"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize} din {totalSize} ({fractionComplete,number,percent})..."
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
     "messageformat": "Este necesară acțiunea în cont"
@@ -4244,17 +4508,17 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Persoanele tale de contact vor putea să te adauge în acest grup."
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Persoanele tale de contact vor putea să te adauge în acest grup."
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Deblochează"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} membru} few {{number,number} membri} other {{number,number} de membri}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Fișiere media distribuite"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Vezi tot"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Media și fișiere"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} membru} few {{number,number} membri} other {{number,number} de membri}}"
@@ -4811,6 +5075,12 @@
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "Linkul numelui de utilizator trebuie resetat"
   },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Deschide ecranul cu linkul numelui de utilizator"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Deschide ecranul cu linkul numelui de utilizator"
+  },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Împărtășește-ți numele de utilizator"
   },
@@ -5069,6 +5339,12 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "De exemplu, :-) va fi convertit în <emojify>🙂</emojify>"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Păstrează arhivate conversațiile pe silențios"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Conversațiile pe silențios arhivate vor rămâne arhivate atunci când sosește un mesaj nou."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Avansat"
   },
@@ -5079,10 +5355,10 @@
     "messageformat": "Blocat"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Backup-uri Signal"
+    "messageformat": "Backup-uri securizate Signal"
   },
   "icu:Preferences--signal-backups-off-description": {
-    "messageformat": "Automatic backups with Signal’s secure, end-to-end encrypted storage service. Get started on your phone. <learnMoreLink>Learn more</learnMoreLink>."
+    "messageformat": "Backup-uri automate cu serviciul de stocare criptat complet de la Signal. Începe pe telefonul tău. <learnMoreLink>Află mai multe</learnMoreLink>."
   },
   "icu:Preferences--backup-section-description": {
     "messageformat": "Fă back-up pentru istoricul mesajelor, astfel încât niciodată să nu pierzi date, atunci când îți iei un telefon nou sau reinstalezi Signal."
@@ -5094,7 +5370,10 @@
     "messageformat": "Text și backup la toate fișierele media"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Abonamentul tău nu a fost găsit. Reînnoiește pentru a continua să folosești Backup-uri Signal."
+    "messageformat": "Abonamentul tău nu a fost găsit. Reînnoiește abonamentul, pentru a continua să utilizezi Backup-uri securizate Signal."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/lună"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Text + {mediaDayCount,number} zi de backup al fișierelor media} few {Text + {mediaDayCount,number} zile de backup al fișierelor media} other {Text + {mediaDayCount,number} de zile de backup al fișierelor media}}"
@@ -5112,22 +5391,19 @@
     "messageformat": "Abonament anulat"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "Poți gestiona sau anula abonamentul Backup-uri Signal de pe telefon."
+    "messageformat": "Poți gestiona sau anula abonamentul Backup-uri securizate Signal de pe telefon."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "Poți să gestionezi sau să faci upgrade la Backup-uri Signal pe telefon."
+    "messageformat": "Poți gestiona sau actualiza Backup-uri securizate Signal pe telefon."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "Poți să gestionezi sau să reînnoiești abonamentul Backup-uri Signal pe telefon."
+    "messageformat": "Poți să gestionezi sau să reînnoiești abonamentul Backup-uri securizate Signal pe telefon."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Ultimul backup"
   },
   "icu:Preferences--backup-created-by-phone": {
     "messageformat": "Telefonul tău"
-  },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Dimensiunea backup-ului"
   },
   "icu:Preferences__local-backups": {
     "messageformat": "Backup-uri pentru desktop"
@@ -6114,9 +6390,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Resetare"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Gata"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Culoarea linkului numelui de utilizator, {index,number} din {total,number}"
   },
@@ -6444,6 +6717,255 @@
   "icu:WhatsNew__modal-title": {
     "messageformat": "Ce este nou"
   },
+  "icu:PreferencesDonations__title": {
+    "messageformat": "Confidențialitate mai presus de Profit"
+  },
+  "icu:PreferencesDonations__description": {
+    "messageformat": "Mesaje private, finanțate de tine. Fără anunțuri, fără sisteme de urmărire. Donează acum ca să susții Signal. <readMoreLink>Citește mai mult</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Donează"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "Sprijinul meu"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} o singură dată"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Se procesează donația…"
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "Donează {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "Insignele și donațiile lunare pot fi gestionate pe dispozitivul mobil."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Informațiile sunt private"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>Signal nu colectează sau stochează informațiile personale când faci o donație.</paragraph><paragraph>Folosim Stripe ca procesator de plăți ca să primim donațiile tale. Nu accesăm, stocăm sau salvăm niciuna dintre informațiile pe care le oferi către ei.</paragraph><paragraph>Signal nu conectează donația ta cu contul Signal și nici nu poate să o facă.</paragraph><paragraph>Îți mulțumim pentru sprijinul tău!</paragraph>"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Bonuri fiscale"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Vezi confirmările de citire"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Întrebări frecvente privind donatorii"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "Chitanțele nu se sincronizează pe toate dispozitivele. Dacă ai reinstalat Signal, bonurile fiscale ale donațiilor precedente nu vor mai fi disponibile."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "Nu sunt chitanțe"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Descarcă chitanța"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Tip"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Data plății"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Fă o donație unică"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Doar donațiile unice sunt disponibile pe desktop. Donațiile lunare pot fi făcute de pe dispozitivul mobil."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Ai probleme? <contactSupportLink>Contactează serviciul de Asistență</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Introdu o Sumă Specifică"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Card de credit sau debit"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Introdu detaliile tale bancare. Signal nu colectează și nu păstrează informațiile personale. <learnMoreLink>Află mai multe</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Numărul cardului"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Data expirării"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "LL/AA"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Donează {formattedCurrencyAmount} către Signal"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Numărul cardului este invalid"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "Cardul a expirat"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "An necesar"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Invalid"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Cod prea scurt"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Obține insigna Signal Boost timp de 30 de zile"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Suma minimă a donației este {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Suma minimă pe care o poți dona este {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Suma maximă a donației este {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Părăsirea acestei pagini va elimina informațiile despre cardul tău de credit. Dorești să continui?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Elimină informațiile"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Continuă"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "Chitanță donație"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "Suma"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Tip"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "Data plății"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "O dată"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Mulțumesc pentru susținerea acordată Signal. Contribuția ta ajută la îndeplinirea misiunii de a proteja libertatea de exprimare și de a permite o comunicare globală sigură pentru milioane de oameni din întreaga lume, prin intermediul tehnologiei open source pentru confidențialitate. Dacă ești rezident al Statelor Unite, păstrează această chitanță pentru evidența fiscală. Signal Technology Foundation este o organizație non-profit scutită de impozite din Statele Unite, în conformitate cu secțiunea 501c3 din Codul Veniturilor Interne. Codul nostru fiscal federal este 82-4506840."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Ești offline. Conectează-te la internet pentru a finaliza o donație."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Donație anulată"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Donație finalizată"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Eroare la procesarea donației"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Se procesează donația"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Verificarea a Eșuat"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "Ai o donație în curs de desfășurare care necesită verificare suplimentară."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Ai o donație în curs de desfășurare care necesită confirmare."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Donația a reușit, dar nu am putut actualiza setările insignei tale"
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Donația a reușit, dar nu am putut actualiza setările insignei tale"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Pentru a actualiza setările insignei pe dispozitivul mobil, accesează Setări → Donează către Signal → Insigne."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Donație întreruptă"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "Cardul tău nu a fost debitat. Vrei să reîncerci donația?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Încearcă din nou"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Metoda de plată a fost refuzată"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Încearcă o altă metodă de plată sau ia legătura cu banca ta pentru mai multe informații."
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Verificarea a Eșuat"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "Pasul suplimentar de verificare a eșuat. Te rugăm să încerci din nou."
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "A apărut o eroare la donația ta"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "Este posibil ca donația ta să nu fi fost procesată. Dă clic pe „Donează către Signal” și apoi pe „Chitanțe de donație” pentru a verifica chitanțele și a le confirma."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Încearcă din nou sau trimite un jurnal de depanare către Asistență pentru a primi ajutor în finalizarea donației. Jurnalele de depanare ne ajută să diagnosticăm și să remediem problema și nu conțin informații de identificare."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "Se procesează donația…"
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Încă se procesează donația"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "Donația ta este încă în procesare. Această operațiune poate dura câteva minute."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Donație anulată"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "A trecut prea mult timp de când ai început donația. Te rog să o iei de la capăt."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "Este necesară verificarea suplimentară"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Se așteaptă verificarea"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "Emitentul cardului tău de credit necesită un pas suplimentar de verificare într-un browser web."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Deschide browserul"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Redeschide browserul"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Anulează donația"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Îți mulțumim pentru sprijin!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Ai câștigat o insignă de donator de la Signal! Afișează-o la profil ca să îți arăți sprijinul."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Afișează la profil"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Poți ajusta acest lucru pe dispozitivul mobil în Setări → Donează către Signal → Insigne"
+  },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Această versiune conține o serie de mici modificări și remedieri ale unor erori pentru ca Signal să funcționeze fără probleme.",
     "ignoreUnused": true
@@ -6472,10 +6994,10 @@
     "messageformat": "Mici ajustări, soluționări de bug-uri și îmbunătățiri ale performanței. Mersi că folosești Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.58--0": {
-    "messageformat": "O nouă secțiune din selectorul de reacții la mesaje afișează automat toate reacțiile emoji primite de un mesaj. Acum poți să fii în trend și să adaugi o inimă strălucitoare standard, așa cum au făcut deja toți ceilalți, sau poți să-ți urmezi propria inimă și să alegi în schimb, inima anatomică."
+  "icu:WhatsNew__7.73": {
+    "messageformat": "Această actualizare introduce noi optimizări de performanță pentru a îmbunătăți durata de viață a bateriei, astfel încât vei avea mai multă energie disponibilă pentru conversații încărcate emoțional."
   },
-  "icu:WhatsNew__v7.59--0": {
-    "messageformat": "Această actualizare activează accelerarea GPU pe Linux pentru performanțe îmbunătățite și o redare video mai fluidă pe hardware-ul compatibil."
+  "icu:WhatsNew__7.74": {
+    "messageformat": "Chiar la timp pentru toamnă, noul emoji „Copac fără frunze” {leaflessTreeEmoji} (împreună cu celelalte șase emoji noi din Unicode 16.0) este acum compatibil cu Signal Desktop."
   }
 }

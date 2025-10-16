@@ -4,40 +4,22 @@
 import type { ReadonlyDeep } from 'type-fest';
 import type { ThunkAction } from 'redux-thunk';
 
-import { createLogger } from '../../logging/log';
-import { useBoundActions } from '../../hooks/useBoundActions';
-import { Page } from '../../components/Preferences';
+import { createLogger } from '../../logging/log.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
+import { NavTab, SettingsPage } from '../../types/Nav.js';
+import { beforeNavigateService } from '../../services/BeforeNavigate.js';
 
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import type { StateType as RootStateType } from '../reducer';
-import type { EditState } from '../../components/ProfileEditor';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import type { StateType as RootStateType } from '../reducer.js';
+import type { Location } from '../../types/Nav.js';
 
 const log = createLogger('nav');
 
 // Types
 
-export enum NavTab {
-  Chats = 'Chats',
-  Calls = 'Calls',
-  Stories = 'Stories',
-  Settings = 'Settings',
-}
-export type Location = ReadonlyDeep<
-  | {
-      tab: NavTab.Settings;
-      details:
-        | {
-            page: Page.Profile;
-            state: EditState;
-          }
-        | { page: Exclude<Page, Page.Profile> };
-    }
-  | { tab: Exclude<NavTab, NavTab.Settings> }
->;
-
 function printLocation(location: Location): string {
   if (location.tab === NavTab.Settings) {
-    if (location.details.page === Page.Profile) {
+    if (location.details.page === SettingsPage.Profile) {
       return `${location.tab}/${location.details.page}/${location.details.state}`;
     }
     return `${location.tab}/${location.details.page}`;
@@ -72,15 +54,14 @@ export function changeLocation(
     const existingLocation = getState().nav.selectedLocation;
     const logId = `changeLocation/${printLocation(newLocation)}`;
 
-    const needToCancel =
-      await window.Signal.Services.beforeNavigate.shouldCancelNavigation({
-        context: logId,
-        existingLocation,
-        newLocation,
-      });
+    const needToCancel = await beforeNavigateService.shouldCancelNavigation({
+      context: logId,
+      existingLocation,
+      newLocation,
+    });
 
     if (needToCancel) {
-      log.info(`${logId}: Cancelling navigation`);
+      log.info(`${logId}: Canceling navigation`);
       return;
     }
 

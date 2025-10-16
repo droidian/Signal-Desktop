@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { differenceWith, omit } from 'lodash';
+import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
 
 import {
+  ContentHint,
   ErrorCode,
   LibSignalErrorBase,
   groupEncrypt,
@@ -13,27 +14,28 @@ import {
   SenderCertificate,
   UnidentifiedSenderMessageContent,
 } from '@signalapp/libsignal-client';
-import { senderCertificateService } from '../services/senderCertificate';
-import type { SendLogCallbackType } from '../textsecure/OutgoingMessage';
+import { signalProtocolStore, GLOBAL_ZONE } from '../SignalProtocolStore.js';
+import { senderCertificateService } from '../services/senderCertificate.js';
+import type { SendLogCallbackType } from '../textsecure/OutgoingMessage.js';
 import {
   padMessage,
   SenderCertificateMode,
-} from '../textsecure/OutgoingMessage';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import * as Errors from '../types/errors';
-import { DataWriter } from '../sql/Client';
-import { getValue } from '../RemoteConfig';
-import type { ServiceIdString } from '../types/ServiceId';
-import { ServiceIdKind } from '../types/ServiceId';
-import * as Bytes from '../Bytes';
-import { isRecord } from './isRecord';
+} from '../textsecure/OutgoingMessage.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import * as Errors from '../types/errors.js';
+import { DataWriter } from '../sql/Client.js';
+import { getValue } from '../RemoteConfig.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { ServiceIdKind } from '../types/ServiceId.js';
+import * as Bytes from '../Bytes.js';
+import { isRecord } from './isRecord.js';
 
-import { isOlderThan } from './timestamp';
+import { isOlderThan } from './timestamp.js';
 import type {
   GroupSendOptionsType,
   SendOptionsType,
-} from '../textsecure/SendMessage';
+} from '../textsecure/SendMessage.js';
 import {
   ConnectTimeoutError,
   IncorrectSenderKeyAuthError,
@@ -41,39 +43,40 @@ import {
   SendMessageProtoError,
   UnknownRecipientError,
   UnregisteredUserError,
-  HTTPError,
-} from '../textsecure/Errors';
-import { IdentityKeys, SenderKeys, Sessions } from '../LibSignalStores';
-import type { ConversationModel } from '../models/conversations';
-import type { DeviceType, CallbackResultType } from '../textsecure/Types.d';
-import { getKeysForServiceId } from '../textsecure/getKeysForServiceId';
+} from '../textsecure/Errors.js';
+import { IdentityKeys, SenderKeys, Sessions } from '../LibSignalStores.js';
+import type { ConversationModel } from '../models/conversations.js';
+import type { DeviceType, CallbackResultType } from '../textsecure/Types.d.ts';
+import { getKeysForServiceId } from '../textsecure/getKeysForServiceId.js';
 import type {
   ConversationAttributesType,
   SenderKeyInfoType,
-} from '../model-types.d';
-import type { SendTypesType } from './handleMessageSend';
-import { handleMessageSend, shouldSaveProto } from './handleMessageSend';
-import { SEALED_SENDER, ZERO_ACCESS_KEY } from '../types/SealedSender';
-import { parseIntOrThrow } from './parseIntOrThrow';
+} from '../model-types.d.ts';
+import type { SendTypesType } from './handleMessageSend.js';
+import { handleMessageSend, shouldSaveProto } from './handleMessageSend.js';
+import { SEALED_SENDER, ZERO_ACCESS_KEY } from '../types/SealedSender.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { parseIntOrThrow } from './parseIntOrThrow.js';
 import {
   multiRecipient200ResponseSchema,
   multiRecipient409ResponseSchema,
   multiRecipient410ResponseSchema,
-} from '../textsecure/WebAPI';
-import { SignalService as Proto } from '../protobuf';
+} from '../textsecure/WebAPI.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 
-import { strictAssert } from './assert';
-import { createLogger } from '../logging/log';
-import { GLOBAL_ZONE } from '../SignalProtocolStore';
-import { waitForAll } from './waitForAll';
-import type { GroupSendEndorsementState } from './groupSendEndorsements';
+import { strictAssert } from './assert.js';
+import { createLogger } from '../logging/log.js';
+import { waitForAll } from './waitForAll.js';
+import type { GroupSendEndorsementState } from './groupSendEndorsements.js';
 import {
   maybeCreateGroupSendEndorsementState,
   onFailedToSendWithEndorsements,
-} from './groupSendEndorsements';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
-import { isAciString } from './isAciString';
-import { safeParseStrict, safeParseUnknown } from './schemas';
+} from './groupSendEndorsements.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { isAciString } from './isAciString.js';
+import { safeParseStrict, safeParseUnknown } from './schemas.js';
+
+const { differenceWith, omit } = lodash;
 
 const log = createLogger('sendToGroup');
 
@@ -293,7 +296,6 @@ export async function sendToGroupViaSenderKey(
     timestamp,
     urgent,
   } = options;
-  const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
   const logId = `sendToGroupViaSenderKey/${sendTarget.idForLogging()}`;
   log.info(
@@ -312,9 +314,9 @@ export async function sendToGroupViaSenderKey(
   }
 
   if (
-    contentHint !== ContentHint.DEFAULT &&
-    contentHint !== ContentHint.RESENDABLE &&
-    contentHint !== ContentHint.IMPLICIT
+    contentHint !== ContentHint.Default &&
+    contentHint !== ContentHint.Resendable &&
+    contentHint !== ContentHint.Implicit
   ) {
     throw new Error(`${logId}: Invalid contentHint ${contentHint}`);
   }
@@ -353,7 +355,7 @@ export async function sendToGroupViaSenderKey(
   // 2. Fetch all devices we believe we'll be sending to
   const ourAci = window.textsecure.storage.user.getCheckedAci();
   const { devices: currentDevices, emptyServiceIds } =
-    await window.textsecure.storage.protocol.getOpenDevices(ourAci, recipients);
+    await signalProtocolStore.getOpenDevices(ourAci, recipients);
 
   let groupSendEndorsementState: GroupSendEndorsementState | null = null;
   if (groupId != null && !story) {
@@ -768,7 +770,7 @@ export async function resetSenderKey(
   });
 
   const ourAci = window.storage.user.getCheckedAci();
-  await window.textsecure.storage.protocol.removeSenderKey(
+  await signalProtocolStore.removeSenderKey(
     new QualifiedAddress(ourAci, ourAddress),
     distributionId
   );
@@ -948,7 +950,7 @@ async function markServiceIdUnregistered(serviceId: ServiceIdString) {
   conversation.setUnregistered();
   await DataWriter.updateConversation(conversation.attributes);
 
-  await window.textsecure.storage.protocol.archiveAllSessions(serviceId);
+  await signalProtocolStore.archiveAllSessions(serviceId);
 }
 
 function isServiceIdRegistered(serviceId: ServiceIdString) {
@@ -990,7 +992,7 @@ async function handle409Response(
 
           await waitForAll({
             tasks: devices.extraDevices.map(deviceId => async () => {
-              await window.textsecure.storage.protocol.archiveSession(
+              await signalProtocolStore.archiveSession(
                 new QualifiedAddress(ourAci, Address.create(uuid, deviceId))
               );
             }),
@@ -1030,7 +1032,7 @@ async function handle410Response(
           // First, archive our existing sessions with these devices
           await waitForAll({
             tasks: devices.staleDevices.map(deviceId => async () => {
-              await window.textsecure.storage.protocol.archiveSession(
+              await signalProtocolStore.archiveSession(
                 new QualifiedAddress(ourAci, Address.create(uuid, deviceId))
               );
             }),
@@ -1149,11 +1151,10 @@ async function encryptForSenderKey({
   });
   const message = padMessage(contentMessage);
 
-  const ciphertextMessage =
-    await window.textsecure.storage.protocol.enqueueSenderKeyJob(
-      new QualifiedAddress(ourAci, ourAddress),
-      () => groupEncrypt(sender, distributionId, senderKeyStore, message)
-    );
+  const ciphertextMessage = await signalProtocolStore.enqueueSenderKeyJob(
+    new QualifiedAddress(ourAci, ourAddress),
+    () => groupEncrypt(sender, distributionId, senderKeyStore, message)
+  );
 
   const groupIdBuffer = groupId ? Bytes.fromBase64(groupId) : null;
   const senderCertificateObject = await senderCertificateService.get(

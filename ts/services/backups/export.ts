@@ -3,67 +3,72 @@
 
 import Long from 'long';
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
-import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { dirname } from 'path';
+import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import { dirname } from 'node:path';
 import pMap from 'p-map';
 import pTimeout from 'p-timeout';
-import { Readable } from 'stream';
-import { isNumber } from 'lodash';
+import { Readable } from 'node:stream';
+import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
 
-import { Backups, SignalService } from '../../protobuf';
+import { Backups, SignalService } from '../../protobuf/index.js';
 import {
   DataReader,
   DataWriter,
   pauseWriteAccess,
   resumeWriteAccess,
-} from '../../sql/Client';
+} from '../../sql/Client.js';
 import type {
   PageMessagesCursorType,
   IdentityKeyType,
-} from '../../sql/Interface';
-import { createLogger } from '../../logging/log';
-import { GiftBadgeStates } from '../../components/conversation/Message';
-import { type CustomColorType } from '../../types/Colors';
-import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
-import { getStickerPacksForBackup } from '../../types/Stickers';
+} from '../../sql/Interface.js';
+import { createLogger } from '../../logging/log.js';
+import { GiftBadgeStates } from '../../types/GiftBadgeStates.js';
+import { type CustomColorType } from '../../types/Colors.js';
+import { StorySendMode, MY_STORY_ID } from '../../types/Stories.js';
+import { getStickerPacksForBackup } from '../../types/Stickers.js';
 import {
   isPniString,
   isServiceIdString,
   type AciString,
   type ServiceIdString,
-} from '../../types/ServiceId';
-import type { RawBodyRange } from '../../types/BodyRange';
-import { PaymentEventKind } from '../../types/Payment';
-import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
+} from '../../types/ServiceId.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
+import { PaymentEventKind } from '../../types/Payment.js';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.js';
 import type {
   ConversationAttributesType,
   MessageAttributesType,
   QuotedAttachmentType,
-} from '../../model-types.d';
-import { drop } from '../../util/drop';
-import { isNotNil } from '../../util/isNotNil';
-import { explodePromise } from '../../util/explodePromise';
+} from '../../model-types.d.ts';
+import { drop } from '../../util/drop.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { explodePromise } from '../../util/explodePromise.js';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
   isMe,
-} from '../../util/whatTypeOfConversation';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { strictAssert } from '../../util/assert';
-import { getSafeLongFromTimestamp } from '../../util/timestampLongUtils';
-import { DAY, MINUTE, SECOND, DurationInSeconds } from '../../util/durations';
+} from '../../util/whatTypeOfConversation.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { getSafeLongFromTimestamp } from '../../util/timestampLongUtils.js';
+import {
+  DAY,
+  MINUTE,
+  SECOND,
+  DurationInSeconds,
+} from '../../util/durations/index.js';
 import {
   PhoneNumberDiscoverability,
   parsePhoneNumberDiscoverability,
-} from '../../util/phoneNumberDiscoverability';
+} from '../../util/phoneNumberDiscoverability.js';
 import {
   PhoneNumberSharingMode,
   parsePhoneNumberSharingMode,
-} from '../../util/phoneNumberSharingMode';
-import { missingCaseError } from '../../util/missingCaseError';
+} from '../../types/PhoneNumberSharingMode.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
 import {
   isCallHistory,
   isChatSessionRefreshed,
@@ -88,20 +93,20 @@ import {
   isJoinedSignalNotification,
   isTitleTransitionNotification,
   isMessageRequestResponse,
-} from '../../state/selectors/message';
-import * as Bytes from '../../Bytes';
-import { canBeSynced as canPreferredReactionEmojiBeSynced } from '../../reactions/preferredReactionEmoji';
-import { SendStatus } from '../../messages/MessageSendState';
-import { BACKUP_VERSION } from './constants';
+} from '../../state/selectors/message.js';
+import * as Bytes from '../../Bytes.js';
+import { canBeSynced as canPreferredReactionEmojiBeSynced } from '../../reactions/preferredReactionEmoji.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import { BACKUP_VERSION } from './constants.js';
 import {
   getMessageIdForLogging,
   getConversationIdForLogging,
-} from '../../util/idForLogging';
-import { makeLookup } from '../../util/makeLookup';
+} from '../../util/idForLogging.js';
+import { makeLookup } from '../../util/makeLookup.js';
 import type {
   CallHistoryDetails,
   CallStatus,
-} from '../../types/CallDisposition';
+} from '../../types/CallDisposition.js';
 import {
   CallMode,
   CallDirection,
@@ -109,54 +114,61 @@ import {
   DirectCallStatus,
   GroupCallStatus,
   AdhocCallStatus,
-} from '../../types/CallDisposition';
-import { isAciString } from '../../util/isAciString';
-import { hslToRGBInt } from '../../util/hslToRGB';
-import type { AboutMe, LocalChatStyle } from './types';
-import { BackupType } from './types';
-import { messageHasPaymentEvent } from '../../messages/helpers';
+} from '../../types/CallDisposition.js';
+import { isAciString } from '../../util/isAciString.js';
+import { hslToRGBInt } from '../../util/hslToRGB.js';
+import type { AboutMe, LocalChatStyle } from './types.js';
+import { BackupType } from './types.js';
+import { messageHasPaymentEvent } from '../../messages/helpers.js';
 import {
   numberToAddressType,
   numberToPhoneType,
-} from '../../types/EmbeddedContact';
-import { toLogFormat } from '../../types/errors';
+} from '../../types/EmbeddedContact.js';
+import { toLogFormat } from '../../types/errors.js';
+import type { AttachmentType } from '../../types/Attachment.js';
 import {
-  type AttachmentType,
   isGIF,
   isDownloaded,
-} from '../../types/Attachment';
-import { getFilePointerForAttachment } from './util/filePointers';
-import { getBackupMediaRootKey } from './crypto';
+  hasRequiredInformationForBackup,
+} from '../../util/Attachment.js';
+import { getFilePointerForAttachment } from './util/filePointers.js';
+import { getBackupMediaRootKey } from './crypto.js';
 import type {
   CoreAttachmentBackupJobType,
   PartialAttachmentLocalBackupJobType,
-} from '../../types/AttachmentBackup';
-import { AttachmentBackupManager } from '../../jobs/AttachmentBackupManager';
-import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager';
-import { getBackupCdnInfo } from './util/mediaId';
-import { calculateExpirationTimestamp } from '../../util/expirationTimer';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { CallLinkRestrictions } from '../../types/CallLink';
+} from '../../types/AttachmentBackup.js';
+import { AttachmentBackupManager } from '../../jobs/AttachmentBackupManager.js';
+import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager.js';
+import { getBackupCdnInfo, getMediaNameForAttachment } from './util/mediaId.js';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { CallLinkRestrictions } from '../../types/CallLink.js';
 import {
   isCallHistoryForUnusedCallLink,
   toAdminKeyBytes,
-} from '../../util/callLinks';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { migrateAllMessages } from '../../messages/migrateMessageData';
-import { trimBody } from '../../util/longAttachment';
-import { generateBackupsSubscriberData } from '../../util/backupSubscriptionData';
+} from '../../util/callLinks.js';
+import {
+  getRoomIdFromRootKey,
+  toEpochBytes,
+} from '../../util/callLinksRingrtc.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { migrateAllMessages } from '../../messages/migrateMessageData.js';
+import { isBodyTooLong, trimBody } from '../../util/longAttachment.js';
+import { generateBackupsSubscriberData } from '../../util/backupSubscriptionData.js';
 import {
   getEnvironment,
   isTestEnvironment,
   isTestOrMockEnvironment,
-} from '../../environment';
-import { calculateLightness } from '../../util/getHSL';
-import { isSignalServiceId } from '../../util/isSignalConversation';
-import { isValidE164 } from '../../util/isValidE164';
-import { toDayOfWeekArray } from '../../types/NotificationProfile';
-import { getLinkPreviewSetting } from '../../types/LinkPreview';
-import { getTypingIndicatorSetting } from '../../types/Util';
+} from '../../environment.js';
+import { calculateLightness } from '../../util/getHSL.js';
+import { isSignalServiceId } from '../../util/isSignalConversation.js';
+import { isValidE164 } from '../../util/isValidE164.js';
+import { toDayOfWeekArray } from '../../types/NotificationProfile.js';
+import { getLinkPreviewSetting } from '../../types/LinkPreview.js';
+import { getTypingIndicatorSetting } from '../../types/Util.js';
+import { KIBIBYTE } from '../../types/AttachmentSize.js';
+
+const { isNumber } = lodash;
 
 const log = createLogger('export');
 
@@ -169,6 +181,8 @@ const FLUSH_TIMEOUT = 30 * MINUTE;
 
 // Threshold for reporting slow flushes
 const REPORTING_THRESHOLD = SECOND;
+
+const BACKUP_LONG_ATTACHMENT_TEXT_LIMIT = 128 * KIBIBYTE;
 
 type GetRecipientIdOptionsType =
   | Readonly<{
@@ -466,6 +480,7 @@ export class BackupExportStream extends Readable {
     for (const link of callLinks) {
       const {
         rootKey: rootKeyString,
+        epoch,
         adminKey,
         name,
         restrictions,
@@ -488,6 +503,7 @@ export class BackupExportStream extends Readable {
           id: Long.fromNumber(id),
           callLink: {
             rootKey: rootKey.bytes,
+            epoch: epoch ? toEpochBytes(epoch) : null,
             adminKey: adminKey ? toAdminKeyBytes(adminKey) : null,
             name,
             restrictions: toCallLinkRestrictionsProto(restrictions),
@@ -2592,33 +2608,27 @@ export class BackupExportStream extends Readable {
       getBackupCdnInfo,
     });
 
-    // TODO: DESKTOP-8887
-    if (isLocalBackup && filePointer.localLocator) {
-      // Duplicate attachment check. Local backups can only contain 1 file per mediaName,
-      // so if we see a duplicate mediaName then we must reuse the previous FilePointer.
-      const { mediaName } = filePointer.localLocator;
-      strictAssert(
-        mediaName,
-        'FilePointer.LocalLocator must contain mediaName'
-      );
+    if (hasRequiredInformationForBackup(attachment)) {
+      const mediaName = getMediaNameForAttachment(attachment);
+
+      // Re-use existing locatorInfo and backup job if we've already seen this file
       const existingFilePointer = this.#mediaNamesToFilePointers.get(mediaName);
-      if (existingFilePointer) {
-        strictAssert(
-          existingFilePointer.localLocator,
-          'Local backup existing mediaName FilePointer must contain LocalLocator'
-        );
-        strictAssert(
-          existingFilePointer.localLocator.size === attachment.size,
-          'Local backup existing mediaName FilePointer size must match attachment'
-        );
-        return existingFilePointer;
+
+      if (existingFilePointer?.locatorInfo) {
+        filePointer.locatorInfo = existingFilePointer.locatorInfo;
+        // Also copy over incrementalMac, since that depends on the encryption key
+        filePointer.incrementalMac = existingFilePointer.incrementalMac;
+        filePointer.incrementalMacChunkSize =
+          existingFilePointer.incrementalMacChunkSize;
+      } else {
+        if (filePointer.locatorInfo) {
+          this.#mediaNamesToFilePointers.set(mediaName, filePointer);
+        }
+
+        if (backupJob) {
+          this.#attachmentBackupJobs.push(backupJob);
+        }
       }
-
-      this.#mediaNamesToFilePointers.set(mediaName, filePointer);
-    }
-
-    if (backupJob) {
-      this.#attachmentBackupJobs.push(backupJob);
     }
 
     return filePointer;
@@ -2678,9 +2688,15 @@ export class BackupExportStream extends Readable {
       sendStateByConversationId = {},
       unidentifiedDeliveries = [],
       errors = [],
+      received_at_ms: receivedAtMs,
+      editMessageReceivedAtMs,
     }: Pick<
       MessageAttributesType,
-      'sendStateByConversationId' | 'unidentifiedDeliveries' | 'errors'
+      | 'sendStateByConversationId'
+      | 'unidentifiedDeliveries'
+      | 'errors'
+      | 'received_at_ms'
+      | 'editMessageReceivedAtMs'
     >,
     { conversationId }: { conversationId: string }
   ): Backups.ChatItem.IOutgoingMessageDetails {
@@ -2779,8 +2795,12 @@ export class BackupExportStream extends Readable {
 
       sendStatuses.push(sendStatus);
     }
+
+    const dateReceived = editMessageReceivedAtMs || receivedAtMs;
     return {
       sendStatus: sendStatuses,
+      dateReceived:
+        dateReceived != null ? getSafeLongFromTimestamp(dateReceived) : null,
     };
   }
 
@@ -2799,10 +2819,18 @@ export class BackupExportStream extends Readable {
       | 'preview'
       | 'reactions'
       | 'received_at'
+      | 'timestamp'
     >;
     backupLevel: BackupLevel;
     isLocalBackup: boolean;
   }): Promise<Backups.IStandardMessage> {
+    if (
+      message.body &&
+      isBodyTooLong(message.body, BACKUP_LONG_ATTACHMENT_TEXT_LIMIT)
+    ) {
+      log.warn(`${message.timestamp}: Message body is too long; will truncate`);
+    }
+
     return {
       quote: await this.#toQuote({
         message,
@@ -2821,18 +2849,23 @@ export class BackupExportStream extends Readable {
             })
           )
         : undefined,
-      longText: message.bodyAttachment
-        ? await this.#processAttachment({
-            attachment: message.bodyAttachment,
-            backupLevel,
-            isLocalBackup,
-            messageReceivedAt: message.received_at,
-          })
-        : undefined,
+      longText:
+        // We only include the bodyAttachment if it's not downloaded; otherwise all text
+        // is inlined
+        message.bodyAttachment && !isDownloaded(message.bodyAttachment)
+          ? await this.#processAttachment({
+              attachment: message.bodyAttachment,
+              backupLevel,
+              isLocalBackup,
+              messageReceivedAt: message.received_at,
+            })
+          : undefined,
       text:
         message.body != null
           ? {
-              body: message.body ? trimBody(message.body) : undefined,
+              body: message.body
+                ? trimBody(message.body, BACKUP_LONG_ATTACHMENT_TEXT_LIMIT)
+                : undefined,
               bodyRanges: message.bodyRanges?.map(range =>
                 this.#toBodyRange(range)
               ),

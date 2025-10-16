@@ -1,8 +1,11 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { AttachmentDownloadManager } from '../jobs/AttachmentDownloadManager';
-import { DataWriter } from '../sql/Client';
+import { AttachmentDownloadManager } from '../jobs/AttachmentDownloadManager.js';
+import { createLogger } from '../logging/log.js';
+import { DataWriter } from '../sql/Client.js';
+
+const log = createLogger('backupMediaDownload');
 
 export async function startBackupMediaDownload(): Promise<void> {
   await window.storage.put('backupMediaDownloadPaused', false);
@@ -11,10 +14,14 @@ export async function startBackupMediaDownload(): Promise<void> {
 }
 
 export async function pauseBackupMediaDownload(): Promise<void> {
+  log.info('Pausing media download');
   await window.storage.put('backupMediaDownloadPaused', true);
 }
 
 export async function resumeBackupMediaDownload(): Promise<void> {
+  log.info('Resuming media download');
+  // Reset the retry-afters so that all jobs will be immediately retried
+  await DataWriter.resetBackupAttachmentDownloadJobsRetryAfter();
   return startBackupMediaDownload();
 }
 
@@ -28,11 +35,14 @@ export async function resetBackupMediaDownloadItems(): Promise<void> {
 }
 
 export async function cancelBackupMediaDownload(): Promise<void> {
+  log.info('Canceling media download');
+  await dismissBackupMediaDownloadBanner();
   await DataWriter.removeAllBackupAttachmentDownloadJobs();
-  await resetBackupMediaDownloadItems();
+  await resetBackupMediaDownloadStats();
 }
 
-export async function resetBackupMediaDownloadProgress(): Promise<void> {
+export async function resetBackupMediaDownloadStats(): Promise<void> {
+  await DataWriter.resetBackupAttachmentDownloadStats();
   await resetBackupMediaDownloadItems();
 }
 

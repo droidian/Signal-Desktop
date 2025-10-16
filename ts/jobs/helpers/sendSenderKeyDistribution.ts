@@ -1,26 +1,26 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { handleMessageSend } from '../../util/handleMessageSend';
-import { getSendOptions } from '../../util/getSendOptions';
-import { isDirectConversation } from '../../util/whatTypeOfConversation';
+import { handleMessageSend } from '../../util/handleMessageSend.js';
+import { getSendOptions } from '../../util/getSendOptions.js';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.js';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors';
+} from './handleMultipleSendErrors.js';
 
-import type { ConversationModel } from '../../models/conversations';
+import type { ConversationModel } from '../../models/conversations.js';
 import type {
   ConversationQueueJobBundle,
   SenderKeyDistributionJobData,
-} from '../conversationJobQueue';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered';
+} from '../conversationJobQueue.js';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.js';
 import {
   NoSenderKeyError,
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors';
-import { shouldSendToConversation } from './shouldSendToConversation';
+} from '../../textsecure/Errors.js';
+import { shouldSendToConversation } from './shouldSendToConversation.js';
 
 // Note: in regular scenarios, sender keys are sent as part of a group send. This job type
 //   is only used in decryption error recovery scenarios.
@@ -73,14 +73,14 @@ export async function sendSenderKeyDistribution(
 
   if (!distributionId) {
     log.info(
-      `group ${group?.idForLogging()} had no distributionid, cancelling job.`
+      `group ${group?.idForLogging()} had no distributionid, canceling job.`
     );
     return;
   }
 
   if (!serviceId) {
     log.info(
-      `conversation ${conversation.idForLogging()} was missing serviceId, cancelling job.`
+      `conversation ${conversation.idForLogging()} was missing serviceId, canceling job.`
     );
     return;
   }
@@ -106,7 +106,7 @@ export async function sendSenderKeyDistribution(
       error instanceof UnregisteredUserError
     ) {
       log.info(
-        'Send failure was NoSenderKeyError, OutgoingIdentityKeyError or UnregisteredUserError. Cancelling job.'
+        'Send failure was NoSenderKeyError, OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.'
       );
       return;
     }

@@ -10,41 +10,42 @@ import {
   matchText,
   matchNewline,
   matchBreak,
-} from '@signalapp/quill-cjs/modules/clipboard';
-import Emitter from '@signalapp/quill-cjs/core/emitter';
-import type { Context } from '@signalapp/quill-cjs/modules/keyboard';
+} from '@signalapp/quill-cjs/modules/clipboard.js';
+import Emitter from '@signalapp/quill-cjs/core/emitter.js';
+import type { Context } from '@signalapp/quill-cjs/modules/keyboard.js';
 import type { Range as RangeStatic } from '@signalapp/quill-cjs';
 
-import { MentionCompletion } from '../quill/mentions/completion';
-import { FormattingMenu, QuillFormattingStyle } from '../quill/formatting/menu';
-import { MonospaceBlot } from '../quill/formatting/monospaceBlot';
-import { SpoilerBlot } from '../quill/formatting/spoilerBlot';
-import { EmojiBlot, EmojiCompletion } from '../quill/emoji';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import { convertShortName } from './emoji/lib';
+import { MentionCompletion } from '../quill/mentions/completion.js';
+import {
+  FormattingMenu,
+  QuillFormattingStyle,
+} from '../quill/formatting/menu.js';
+import { MonospaceBlot } from '../quill/formatting/monospaceBlot.js';
+import { SpoilerBlot } from '../quill/formatting/spoilerBlot.js';
+import { EmojiBlot, EmojiCompletion } from '../quill/emoji/index.js';
 import type {
   DraftBodyRanges,
   HydratedBodyRangesType,
   RangeNode,
-} from '../types/BodyRange';
+} from '../types/BodyRange.js';
 import {
   BodyRange,
   areBodyRangesEqual,
   collapseRangeTree,
   insertRange,
-} from '../types/BodyRange';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import type { ConversationType } from '../state/ducks/conversations';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import { isAciString } from '../util/isAciString';
-import { MentionBlot } from '../quill/mentions/blot';
+} from '../types/BodyRange.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import { isAciString } from '../util/isAciString.js';
+import { MentionBlot } from '../quill/mentions/blot.js';
 import {
   matchEmojiImage,
   matchEmojiBlot,
   matchEmojiText,
-} from '../quill/emoji/matchers';
-import { matchMention } from '../quill/mentions/matchers';
-import { MemberRepository } from '../quill/memberRepository';
+} from '../quill/emoji/matchers.js';
+import { matchMention } from '../quill/mentions/matchers.js';
+import { MemberRepository } from '../quill/memberRepository.js';
 import {
   getDeltaToRemoveStaleMentions,
   getTextAndRangesFromOps,
@@ -54,34 +55,35 @@ import {
   getDeltaToRestartEmoji,
   insertEmojiOps,
   insertFormattingAndMentionsOps,
-} from '../quill/util';
-import { SignalClipboard } from '../quill/signal-clipboard';
-import { DirectionalBlot } from '../quill/block/blot';
-import { getClassNamesFor } from '../util/getClassNamesFor';
-import { isNotNil } from '../util/isNotNil';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews';
-import { StagedLinkPreview } from './conversation/StagedLinkPreview';
-import type { DraftEditMessageType } from '../model-types.d';
-import { usePrevious } from '../hooks/usePrevious';
+} from '../quill/util.js';
+import { SignalClipboard } from '../quill/signal-clipboard/index.js';
+import { DirectionalBlot } from '../quill/block/blot.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { createLogger } from '../logging/log.js';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.js';
+import { StagedLinkPreview } from './conversation/StagedLinkPreview.js';
+import type { DraftEditMessageType } from '../model-types.d.ts';
+import { usePrevious } from '../hooks/usePrevious.js';
 import {
   matchBold,
   matchItalic,
   matchMonospace,
   matchSpoiler,
   matchStrikethrough,
-} from '../quill/formatting/matchers';
-import { missingCaseError } from '../util/missingCaseError';
-import type { AutoSubstituteAsciiEmojisOptions } from '../quill/auto-substitute-ascii-emojis';
-import { AutoSubstituteAsciiEmojis } from '../quill/auto-substitute-ascii-emojis';
-import { dropNull } from '../util/dropNull';
-import { SimpleQuillWrapper } from './SimpleQuillWrapper';
-import type { EmojiSkinTone } from './fun/data/emojis';
-import { FUN_STATIC_EMOJI_CLASS } from './fun/FunEmoji';
-import { useFunEmojiSearch } from './fun/useFunEmojiSearch';
-import type { EmojiCompletionOptions } from '../quill/emoji/completion';
-import { useFunEmojiLocalizer } from './fun/useFunEmojiLocalizer';
+} from '../quill/formatting/matchers.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import type { AutoSubstituteAsciiEmojisOptions } from '../quill/auto-substitute-ascii-emojis/index.js';
+import { AutoSubstituteAsciiEmojis } from '../quill/auto-substitute-ascii-emojis/index.js';
+import { dropNull } from '../util/dropNull.js';
+import { SimpleQuillWrapper } from './SimpleQuillWrapper.js';
+import { getEmojiVariantByKey, type EmojiSkinTone } from './fun/data/emojis.js';
+import { FUN_STATIC_EMOJI_CLASS } from './fun/FunEmoji.js';
+import { useFunEmojiSearch } from './fun/useFunEmojiSearch.js';
+import type { EmojiCompletionOptions } from '../quill/emoji/completion.js';
+import { useFunEmojiLocalizer } from './fun/useFunEmojiLocalizer.js';
+import { MAX_BODY_ATTACHMENT_BYTE_LENGTH } from '../util/longAttachment.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
 
 const log = createLogger('CompositionInput');
 
@@ -103,7 +105,7 @@ Quill.register(
 
 export type InputApi = {
   focus: () => void;
-  insertEmoji: (e: EmojiPickDataType) => void;
+  insertEmoji: (emojiSelection: FunEmojiSelection) => void;
   setContents: (
     text: string,
     draftBodyRanges?: HydratedBodyRangesType,
@@ -141,7 +143,7 @@ export type Props = Readonly<{
     sendCounter: number;
   }): unknown;
   onTextTooLong(): unknown;
-  onPickEmoji(o: EmojiPickDataType): unknown;
+  onSelectEmoji: (emojiSelection: FunEmojiSelection) => void;
   onBlur?: () => unknown;
   onFocus?: () => unknown;
   onSubmit(
@@ -159,7 +161,6 @@ export type Props = Readonly<{
   onCloseLinkPreview?(conversationId: string): unknown;
 }>;
 
-const MAX_LENGTH = 64 * 1024;
 const BASE_CLASS_NAME = 'module-composition-input';
 
 export function CompositionInput(props: Props): React.ReactElement {
@@ -182,7 +183,7 @@ export function CompositionInput(props: Props): React.ReactElement {
     onCloseLinkPreview,
     onBlur,
     onFocus,
-    onPickEmoji,
+    onSelectEmoji,
     onScroll,
     onSubmit,
     ourConversationId,
@@ -283,7 +284,7 @@ export function CompositionInput(props: Props): React.ReactElement {
     quill.focus();
   };
 
-  const insertEmoji = (e: EmojiPickDataType) => {
+  const insertEmoji = (emojiSelection: FunEmojiSelection) => {
     const quill = quillRef.current;
 
     if (quill === undefined) {
@@ -297,12 +298,12 @@ export function CompositionInput(props: Props): React.ReactElement {
       return;
     }
 
-    const emoji = convertShortName(e.shortName, e.skinTone);
+    const emojiVariant = getEmojiVariantByKey(emojiSelection.variantKey);
 
     const delta = new Delta()
       .retain(insertionRange.index)
       .delete(insertionRange.length)
-      .insert({ emoji: { value: emoji } });
+      .insert({ emoji: { value: emojiVariant.value } });
 
     quill.updateContents(delta, 'user');
     quill.setSelection(insertionRange.index + 1, 0, 'user');
@@ -613,7 +614,7 @@ export function CompositionInput(props: Props): React.ReactElement {
         node.attributes.removeNamedItem('style');
       }
 
-      if (text.length > MAX_LENGTH) {
+      if (Buffer.byteLength(text) > MAX_BODY_ATTACHMENT_BYTE_LENGTH) {
         quill.history.undo();
         propsRef.current.onTextTooLong();
         return;
@@ -766,7 +767,7 @@ export function CompositionInput(props: Props): React.ReactElement {
     onChange,
     onEnter,
     onEscape,
-    onPickEmoji,
+    onSelectEmoji,
     onShortKeyEnter,
     onTab,
   };
@@ -840,8 +841,8 @@ export function CompositionInput(props: Props): React.ReactElement {
             },
             emojiCompletion: {
               setEmojiPickerElement: setEmojiCompletionElement,
-              onPickEmoji: (emoji: EmojiPickDataType) =>
-                callbacksRef.current.onPickEmoji(emoji),
+              onSelectEmoji: (emojiSelection: FunEmojiSelection) =>
+                callbacksRef.current.onSelectEmoji(emojiSelection),
               emojiSkinToneDefault,
               emojiSearch,
               emojiLocalizer,
@@ -951,30 +952,32 @@ export function CompositionInput(props: Props): React.ReactElement {
   const getClassName = getClassNamesFor(BASE_CLASS_NAME, moduleClassName);
 
   const onMouseDown = React.useCallback(
-    (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      try {
-        // If the user is actually clicking the format menu, we drop this event
-        if (target.closest('.module-composition-input__format-menu')) {
-          return;
-        }
-        setIsMouseDown(true);
-
-        const onMouseUp = () => {
-          setIsMouseDown(false);
-          window.removeEventListener('mouseup', onMouseUp);
-        };
-        window.addEventListener('mouseup', onMouseUp);
-      } catch (error) {
-        log.error(
-          'onMouseDown: Failed to check event target',
-          Errors.toLogFormat(error)
-        );
+    (event: MouseEvent<HTMLDivElement>) => {
+      const { currentTarget } = event;
+      // If the user is actually clicking the format menu, we drop this event
+      if (currentTarget.closest('.module-composition-input__format-menu')) {
+        return;
       }
       setIsMouseDown(true);
     },
     [setIsMouseDown]
   );
+
+  React.useEffect(() => {
+    if (!isMouseDown) {
+      return;
+    }
+
+    function onMouseUp() {
+      setIsMouseDown(false);
+    }
+
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isMouseDown]);
 
   return (
     <Manager>

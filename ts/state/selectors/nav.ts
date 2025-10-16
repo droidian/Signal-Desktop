@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { createSelector } from 'reselect';
-import type { StateType } from '../reducer';
-import { NavTab, type NavStateType } from '../ducks/nav';
-import { getAllConversationsUnreadStats } from './conversations';
-import { getStoriesNotificationCount } from './stories';
-import type { UnreadStats } from '../../util/countUnreadStats';
-import { getCallHistoryUnreadCount } from './callHistory';
+import { getAllConversationsUnreadStats } from './conversations.js';
+import { getStoriesNotificationCount } from './stories.js';
+import { getCallHistoryUnreadCount } from './callHistory.js';
+import { NavTab } from '../../types/Nav.js';
+
+import type { StateType } from '../reducer.js';
+import type { NavStateType } from '../ducks/nav.js';
+import type { UnreadStats } from '../../util/countUnreadStats.js';
 
 function getNav(state: StateType): NavStateType {
   return state.nav;
@@ -34,12 +36,13 @@ export const getOtherTabsUnreadStats = createSelector(
   ): UnreadStats => {
     let unreadCount = 0;
     let unreadMentionsCount = 0;
-    let markedUnread = false;
+    let readChatsMarkedUnreadCount = 0;
 
     if (selectedNavTab !== NavTab.Chats) {
       unreadCount += conversationsUnreadStats.unreadCount;
       unreadMentionsCount += conversationsUnreadStats.unreadMentionsCount;
-      markedUnread ||= conversationsUnreadStats.markedUnread;
+      readChatsMarkedUnreadCount +=
+        conversationsUnreadStats.readChatsMarkedUnreadCount;
     }
 
     // Note: Conversation unread stats includes the call history unread count.
@@ -54,7 +57,7 @@ export const getOtherTabsUnreadStats = createSelector(
     return {
       unreadCount,
       unreadMentionsCount,
-      markedUnread,
+      readChatsMarkedUnreadCount,
     };
   }
 );

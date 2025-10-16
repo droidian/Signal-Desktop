@@ -11,35 +11,35 @@ import {
   SubMenu,
 } from 'react-contextmenu';
 import { createPortal } from 'react-dom';
-import type { BadgeType } from '../../badges/types';
+import type { BadgeType } from '../../badges/types.js';
 import {
   useKeyboardShortcuts,
   useStartCallShortcuts,
-} from '../../hooks/useKeyboardShortcuts';
-import { SizeObserver } from '../../hooks/useSizeObserver';
-import type { ConversationTypeType } from '../../state/ducks/conversations';
-import type { HasStories } from '../../types/Stories';
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import { DurationInSeconds } from '../../util/durations';
-import * as expirationTimer from '../../util/expirationTimer';
-import { getMuteOptions } from '../../util/getMuteOptions';
-import { isConversationMuted } from '../../util/isConversationMuted';
-import { isInSystemContacts } from '../../util/isInSystemContacts';
-import { missingCaseError } from '../../util/missingCaseError';
-import { Alert } from '../Alert';
-import { Avatar, AvatarSize } from '../Avatar';
-import { ConfirmationDialog } from '../ConfirmationDialog';
-import { DisappearingTimeDialog } from '../DisappearingTimeDialog';
-import { InContactsIcon } from '../InContactsIcon';
-import { UserText } from '../UserText';
-import type { ContactNameData } from './ContactName';
+} from '../../hooks/useKeyboardShortcuts.js';
+import { SizeObserver } from '../../hooks/useSizeObserver.js';
+import type { ConversationTypeType } from '../../state/ducks/conversations.js';
+import type { HasStories } from '../../types/Stories.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import { DurationInSeconds } from '../../util/durations/index.js';
+import * as expirationTimer from '../../util/expirationTimer.js';
+import { getMuteOptions } from '../../util/getMuteOptions.js';
+import { isConversationMuted } from '../../util/isConversationMuted.js';
+import { isInSystemContacts } from '../../util/isInSystemContacts.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { Alert } from '../Alert.js';
+import { Avatar, AvatarSize } from '../Avatar.js';
+import { ConfirmationDialog } from '../ConfirmationDialog.js';
+import { DisappearingTimeDialog } from '../DisappearingTimeDialog.js';
+import { InContactsIcon } from '../InContactsIcon.js';
+import { UserText } from '../UserText.js';
+import type { ContactNameData } from './ContactName.js';
 import {
   MessageRequestActionsConfirmation,
   MessageRequestState,
-} from './MessageRequestActionsConfirmation';
-import type { MinimalConversation } from '../../hooks/useMinimalConversation';
-import { LocalDeleteWarningModal } from '../LocalDeleteWarningModal';
-import { InAnotherCallTooltip } from './InAnotherCallTooltip';
+} from './MessageRequestActionsConfirmation.js';
+import type { MinimalConversation } from '../../hooks/useMinimalConversation.js';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip.js';
+import { DeleteMessagesConfirmationDialog } from '../DeleteMessagesConfirmationDialog.js';
 
 function HeaderInfoTitle({
   name,
@@ -107,7 +107,6 @@ export type PropsDataType = {
   hasStories?: HasStories;
   hasActiveCall?: boolean;
   localDeleteWarningShown: boolean;
-  isDeleteSyncSendEnabled: boolean;
   isMissingMandatoryProfileSharing?: boolean;
   isSelectMode: boolean;
   isSignalConversation?: boolean;
@@ -166,7 +165,6 @@ export const ConversationHeader = memo(function ConversationHeader({
   hasPanelShowing,
   hasStories,
   i18n,
-  isDeleteSyncSendEnabled,
   isMissingMandatoryProfileSharing,
   isSelectMode,
   isSignalConversation,
@@ -245,7 +243,6 @@ export const ConversationHeader = memo(function ConversationHeader({
       {hasDeleteMessagesConfirmation && (
         <DeleteMessagesConfirmationDialog
           i18n={i18n}
-          isDeleteSyncSendEnabled={isDeleteSyncSendEnabled}
           localDeleteWarningShown={localDeleteWarningShown}
           onDestroyMessages={() => {
             setHasDeleteMessagesConfirmation(false);
@@ -1004,58 +1001,5 @@ function CannotLeaveGroupBecauseYouAreLastAdminAlert({
       )}
       onClose={onClose}
     />
-  );
-}
-
-function DeleteMessagesConfirmationDialog({
-  isDeleteSyncSendEnabled,
-  i18n,
-  localDeleteWarningShown,
-  onDestroyMessages,
-  onClose,
-  setLocalDeleteWarningShown,
-}: {
-  isDeleteSyncSendEnabled: boolean;
-  i18n: LocalizerType;
-  localDeleteWarningShown: boolean;
-  onDestroyMessages: () => void;
-  onClose: () => void;
-  setLocalDeleteWarningShown: () => void;
-}) {
-  if (!localDeleteWarningShown && isDeleteSyncSendEnabled) {
-    return (
-      <LocalDeleteWarningModal
-        i18n={i18n}
-        onClose={setLocalDeleteWarningShown}
-      />
-    );
-  }
-
-  const dialogBody = isDeleteSyncSendEnabled
-    ? i18n(
-        'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
-      )
-    : i18n(
-        'icu:ConversationHeader__DeleteConversationConfirmation__description'
-      );
-
-  return (
-    <ConfirmationDialog
-      dialogName="ConversationHeader.destroyMessages"
-      title={i18n(
-        'icu:ConversationHeader__DeleteConversationConfirmation__title'
-      )}
-      actions={[
-        {
-          action: onDestroyMessages,
-          style: 'negative',
-          text: i18n('icu:delete'),
-        },
-      ]}
-      i18n={i18n}
-      onClose={onClose}
-    >
-      {dialogBody}
-    </ConfirmationDialog>
   );
 }

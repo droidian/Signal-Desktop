@@ -1,11 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../logging/log';
+import { createLogger } from '../logging/log.js';
 
-import type { Location } from '../state/ducks/nav';
-import { SECOND } from '../util/durations';
-import { sleep } from '../util/sleep';
+import { SECOND } from '../util/durations/index.js';
+import { sleep } from '../util/sleep.js';
+
+import type { Location } from '../types/Nav.js';
 
 const log = createLogger('BeforeNavigate');
 
@@ -16,10 +17,16 @@ export enum BeforeNavigateResponse {
   CancelNavigation = 'CancelNavigation',
   TimedOut = 'TimedOut',
 }
-export type BeforeNavigateCallback = (options: {
-  existingLocation?: Location;
+
+export type BeforeNavigateTransitionDetails = Readonly<{
+  existingLocation: Location;
   newLocation: Location;
-}) => Promise<BeforeNavigateResponse>;
+}>;
+
+export type BeforeNavigateCallback = (
+  details: BeforeNavigateTransitionDetails
+) => Promise<BeforeNavigateResponse>;
+
 export type BeforeNavigateEntry = {
   name: string;
   callback: BeforeNavigateCallback;

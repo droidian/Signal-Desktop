@@ -1,22 +1,24 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { last, sortBy } from 'lodash';
+import lodash from 'lodash';
 
-import { createLogger } from '../logging/log';
-import { DataReader, DataWriter, deleteAndCleanup } from '../sql/Client';
-import { deleteData } from '../types/Attachment';
+import { createLogger } from '../logging/log.js';
+import { DataReader, DataWriter, deleteAndCleanup } from '../sql/Client.js';
+import { deleteAllAttachmentFilesOnDisk } from './Attachment.js';
 
-import type { MessageAttributesType } from '../model-types';
-import type { ConversationModel } from '../models/conversations';
-import type { AddressableMessage } from '../textsecure/messageReceiverEvents';
-import type { AttachmentType } from '../types/Attachment';
-import { MessageModel } from '../models/messages';
-import { cleanupMessages, postSaveUpdates } from './cleanup';
+import type { MessageAttributesType } from '../model-types.js';
+import type { ConversationModel } from '../models/conversations.js';
+import type { AddressableMessage } from '../textsecure/messageReceiverEvents.js';
+import type { AttachmentType } from '../types/Attachment.js';
+import { MessageModel } from '../models/messages.js';
+import { cleanupMessages, postSaveUpdates } from './cleanup.js';
 import {
   findMatchingMessage,
   getMessageQueryFromTarget,
-} from './syncIdentifiers';
+} from './syncIdentifiers.js';
+
+const { last, sortBy } = lodash;
 
 const log = createLogger('deleteForMe');
 
@@ -61,11 +63,11 @@ export async function deleteAttachmentFromMessage(
     fallbackPlaintextHash?: string;
   },
   {
-    deleteOnDisk,
+    deleteAttachmentOnDisk,
     deleteDownloadOnDisk,
     logId,
   }: {
-    deleteOnDisk: (path: string) => Promise<void>;
+    deleteAttachmentOnDisk: (path: string) => Promise<void>;
     deleteDownloadOnDisk: (path: string) => Promise<void>;
     logId: string;
   }
@@ -83,7 +85,7 @@ export async function deleteAttachmentFromMessage(
   const message = window.MessageCache.register(new MessageModel(found));
 
   return applyDeleteAttachmentFromMessage(message, deleteAttachmentData, {
-    deleteOnDisk,
+    deleteAttachmentOnDisk,
     deleteDownloadOnDisk,
     logId,
     shouldSave: true,
@@ -102,12 +104,12 @@ export async function applyDeleteAttachmentFromMessage(
     fallbackPlaintextHash?: string;
   },
   {
-    deleteOnDisk,
+    deleteAttachmentOnDisk,
     deleteDownloadOnDisk,
     shouldSave,
     logId,
   }: {
-    deleteOnDisk: (path: string) => Promise<void>;
+    deleteAttachmentOnDisk: (path: string) => Promise<void>;
     deleteDownloadOnDisk: (path: string) => Promise<void>;
     shouldSave: boolean;
     logId: string;
@@ -146,7 +148,10 @@ export async function applyDeleteAttachmentFromMessage(
         if (shouldSave) {
           await saveMessage(message.attributes, { ourAci, postSaveUpdates });
         }
-        await deleteData({ deleteOnDisk, deleteDownloadOnDisk })(attachment);
+        await deleteAllAttachmentFilesOnDisk({
+          deleteAttachmentOnDisk,
+          deleteDownloadOnDisk,
+        })(attachment);
 
         return true;
       }

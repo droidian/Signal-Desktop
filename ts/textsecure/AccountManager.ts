@@ -2,34 +2,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { isNumber, omit, orderBy } from 'lodash';
+import lodash from 'lodash';
 import { PublicKey, type KyberPreKeyRecord } from '@signalapp/libsignal-client';
 import {
   AccountEntropyPool,
   BackupKey,
-} from '@signalapp/libsignal-client/dist/AccountKeys';
-import { Readable } from 'stream';
+} from '@signalapp/libsignal-client/dist/AccountKeys.js';
+import { Readable } from 'node:stream';
 
-import EventTarget from './EventTarget';
+import EventTarget from './EventTarget.js';
 import type {
   UploadKeysType,
   UploadKyberPreKeyType,
   UploadPreKeyType,
   UploadSignedPreKeyType,
   WebAPIType,
-} from './WebAPI';
+} from './WebAPI.js';
 import type {
   CompatPreKeyType,
   CompatSignedPreKeyType,
   KeyPairType,
   KyberPreKeyType,
   PniKeyMaterialType,
-} from './Types.d';
-import createTaskWithTimeout from './TaskWithTimeout';
-import * as Bytes from '../Bytes';
-import * as Errors from '../types/errors';
-import { senderCertificateService } from '../services/senderCertificate';
-import { backupsService } from '../services/backups';
+} from './Types.d.ts';
+import createTaskWithTimeout from './TaskWithTimeout.js';
+import * as Bytes from '../Bytes.js';
+import * as Errors from '../types/errors.js';
+import { isMockEnvironment } from '../environment.js';
+import { senderCertificateService } from '../services/senderCertificate.js';
+import { backupsService } from '../services/backups/index.js';
 import {
   decryptDeviceName,
   deriveAccessKey,
@@ -38,35 +39,42 @@ import {
   encryptDeviceName,
   generateRegistrationId,
   getRandomBytes,
-} from '../Crypto';
+} from '../Crypto.js';
 import {
   generateKeyPair,
   generateKyberPreKey,
   generatePreKey,
   generateSignedPreKey,
-} from '../Curve';
-import type { AciString, PniString, ServiceIdString } from '../types/ServiceId';
+} from '../Curve.js';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from '../types/ServiceId.js';
 import {
   isUntaggedPniString,
   normalizePni,
   ServiceIdKind,
   toTaggedPni,
-} from '../types/ServiceId';
-import { normalizeAci } from '../util/normalizeAci';
-import { drop } from '../util/drop';
-import { isMoreRecentThan, isOlderThan } from '../util/timestamp';
-import { ourProfileKeyService } from '../services/ourProfileKey';
-import { strictAssert } from '../util/assert';
-import { getRegionCodeForNumber } from '../util/libphonenumberUtil';
-import { isNotNil } from '../util/isNotNil';
-import { missingCaseError } from '../util/missingCaseError';
-import { SignalService as Proto } from '../protobuf';
-import { createLogger } from '../logging/log';
-import type { StorageAccessType } from '../types/Storage';
-import { getRelativePath, createName } from '../util/attachmentPath';
-import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled';
-import { getMessageQueueTime } from '../util/getMessageQueueTime';
-import { canAttemptRemoteBackupDownload } from '../util/isBackupEnabled';
+} from '../types/ServiceId.js';
+import { normalizeAci } from '../util/normalizeAci.js';
+import { drop } from '../util/drop.js';
+import { isMoreRecentThan, isOlderThan } from '../util/timestamp.js';
+import { ourProfileKeyService } from '../services/ourProfileKey.js';
+import { strictAssert } from '../util/assert.js';
+import { getRegionCodeForNumber } from '../util/libphonenumberUtil.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import type { StorageAccessType } from '../types/Storage.js';
+import { getRelativePath, createName } from '../util/attachmentPath.js';
+import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.js';
+import { getMessageQueueTime } from '../util/getMessageQueueTime.js';
+import { canAttemptRemoteBackupDownload } from '../util/isBackupEnabled.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+
+const { isNumber, omit, orderBy } = lodash;
 
 const log = createLogger('AccountManager');
 
@@ -96,7 +104,9 @@ const LAST_RESORT_KEY_UPDATE_TIME_KEY: StorageKeyByServiceIdKind = {
 };
 
 const PRE_KEY_ARCHIVE_AGE = 90 * DAY;
-const PRE_KEY_GEN_BATCH_SIZE = 100;
+// Use 20 keys for mock tests which is above the minimum, but takes much less
+// time to generate and store in the database (especially for PQ keys)
+const PRE_KEY_GEN_BATCH_SIZE = isMockEnvironment() ? 20 : 100;
 const PRE_KEY_MAX_COUNT = 200;
 const PRE_KEY_ID_KEY: StorageKeyByServiceIdKind = {
   [ServiceIdKind.ACI]: 'maxPreKeyId',
@@ -272,8 +282,7 @@ export default class AccountManager extends EventTarget {
 
   async decryptDeviceName(base64: string): Promise<string> {
     const ourAci = window.textsecure.storage.user.getCheckedAci();
-    const identityKey =
-      window.textsecure.storage.protocol.getIdentityKeyPair(ourAci);
+    const identityKey = signalProtocolStore.getIdentityKeyPair(ourAci);
     if (!identityKey) {
       throw new Error('decryptDeviceName: No identity key pair!');
     }
@@ -307,7 +316,7 @@ export default class AccountManager extends EventTarget {
     }
     const { storage } = window.textsecure;
     const deviceName = storage.user.getDeviceName();
-    const identityKeyPair = storage.protocol.getIdentityKeyPair(
+    const identityKeyPair = signalProtocolStore.getIdentityKeyPair(
       storage.user.getCheckedAci()
     );
     strictAssert(
@@ -367,11 +376,9 @@ export default class AccountManager extends EventTarget {
   }
 
   #getIdentityKeyOrThrow(ourServiceId: ServiceIdString): KeyPairType {
-    const { storage } = window.textsecure;
-    const store = storage.protocol;
     let identityKey: KeyPairType | undefined;
     try {
-      identityKey = store.getIdentityKeyPair(ourServiceId);
+      identityKey = signalProtocolStore.getIdentityKeyPair(ourServiceId);
     } catch (error) {
       const errorText = Errors.toLogFormat(error);
       throw new Error(
@@ -394,7 +401,6 @@ export default class AccountManager extends EventTarget {
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
     const logId = `AccountManager.generateNewPreKeys(${serviceIdKind})`;
     const { storage } = window.textsecure;
-    const store = storage.protocol;
 
     const startId = getNextKeyId(serviceIdKind, PRE_KEY_ID_KEY);
     log.info(`${logId}: Generating ${count} new keys starting at ${startId}`);
@@ -411,7 +417,7 @@ export default class AccountManager extends EventTarget {
     }
 
     await Promise.all([
-      store.storePreKeys(ourServiceId, toSave),
+      signalProtocolStore.storePreKeys(ourServiceId, toSave),
       storage.put(PRE_KEY_ID_KEY[serviceIdKind], startId + count),
     ]);
 
@@ -426,8 +432,6 @@ export default class AccountManager extends EventTarget {
     count = PRE_KEY_GEN_BATCH_SIZE
   ): Promise<Array<UploadKyberPreKeyType>> {
     const logId = `AccountManager.generateNewKyberPreKeys(${serviceIdKind})`;
-    const { storage } = window.textsecure;
-    const store = storage.protocol;
 
     const startId = getNextKeyId(serviceIdKind, KYBER_KEY_ID_KEY);
     log.info(`${logId}: Generating ${count} new keys starting at ${startId}`);
@@ -437,6 +441,8 @@ export default class AccountManager extends EventTarget {
         `${logId}: Invalid ${KYBER_KEY_ID_KEY[serviceIdKind]} in storage`
       );
     }
+
+    const { storage } = window.textsecure;
 
     const ourServiceId = storage.user.getCheckedServiceId(serviceIdKind);
     const identityKey = this.#getIdentityKeyOrThrow(ourServiceId);
@@ -462,7 +468,7 @@ export default class AccountManager extends EventTarget {
     }
 
     await Promise.all([
-      store.storeKyberPreKeys(ourServiceId, toSave),
+      signalProtocolStore.storeKyberPreKeys(ourServiceId, toSave),
       storage.put(KYBER_KEY_ID_KEY[serviceIdKind], startId + count),
     ]);
 
@@ -636,9 +642,8 @@ export default class AccountManager extends EventTarget {
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
     const identityKey = this.#getIdentityKeyOrThrow(ourServiceId);
     const logId = `AccountManager.maybeUpdateSignedPreKey(${serviceIdKind}, ${ourServiceId})`;
-    const store = window.textsecure.storage.protocol;
 
-    const keys = await store.loadSignedPreKeys(ourServiceId);
+    const keys = await signalProtocolStore.loadSignedPreKeys(ourServiceId);
     const sortedKeys = orderBy(keys, ['created_at'], ['desc']);
     const confirmedKeys = sortedKeys.filter(key => key.confirmed);
     const mostRecent = confirmedKeys[0];
@@ -668,7 +673,11 @@ export default class AccountManager extends EventTarget {
     const key = await this.#generateSignedPreKey(serviceIdKind, identityKey);
     log.info(`${logId}: Saving new signed prekey`, key.keyId);
 
-    await store.storeSignedPreKey(ourServiceId, key.keyId, key.keyPair);
+    await signalProtocolStore.storeSignedPreKey(
+      ourServiceId,
+      key.keyId,
+      key.keyPair
+    );
 
     return signedPreKeyToUploadSignedPreKey(key);
   }
@@ -706,9 +715,10 @@ export default class AccountManager extends EventTarget {
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
     const identityKey = this.#getIdentityKeyOrThrow(ourServiceId);
     const logId = `maybeUpdateLastResortKyberKey(${serviceIdKind}, ${ourServiceId})`;
-    const store = window.textsecure.storage.protocol;
 
-    const keys = store.loadKyberPreKeys(ourServiceId, { isLastResort: true });
+    const keys = signalProtocolStore.loadKyberPreKeys(ourServiceId, {
+      isLastResort: true,
+    });
     const sortedKeys = orderBy(keys, ['createdAt'], ['desc']);
     const confirmedKeys = sortedKeys.filter(key => key.isConfirmed);
     const mostRecent = confirmedKeys[0];
@@ -742,7 +752,7 @@ export default class AccountManager extends EventTarget {
     log.info(`${logId}: Saving new last resort prekey`, record.id());
     const key = kyberPreKeyToStoredSignedPreKey(record, ourServiceId);
 
-    await store.storeKyberPreKeys(ourServiceId, [key]);
+    await signalProtocolStore.storeKyberPreKeys(ourServiceId, [key]);
 
     return kyberPreKeyToUploadSignedPreKey(record);
   }
@@ -751,10 +761,9 @@ export default class AccountManager extends EventTarget {
   async _cleanSignedPreKeys(serviceIdKind: ServiceIdKind): Promise<void> {
     const ourServiceId =
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
-    const store = window.textsecure.storage.protocol;
     const logId = `AccountManager.cleanSignedPreKeys(${serviceIdKind})`;
 
-    const allKeys = store.loadSignedPreKeys(ourServiceId);
+    const allKeys = signalProtocolStore.loadSignedPreKeys(ourServiceId);
     const sortedKeys = orderBy(allKeys, ['created_at'], ['desc']);
     const confirmed = sortedKeys.filter(key => key.confirmed);
     const unconfirmed = sortedKeys.filter(key => !key.confirmed);
@@ -796,7 +805,7 @@ export default class AccountManager extends EventTarget {
     });
     if (toDelete.length > 0) {
       log.info(`${logId}: Removing ${toDelete.length} signed prekeys`);
-      await store.removeSignedPreKeys(ourServiceId, toDelete);
+      await signalProtocolStore.removeSignedPreKeys(ourServiceId, toDelete);
     }
   }
 
@@ -804,10 +813,9 @@ export default class AccountManager extends EventTarget {
   async _cleanLastResortKeys(serviceIdKind: ServiceIdKind): Promise<void> {
     const ourServiceId =
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
-    const store = window.textsecure.storage.protocol;
     const logId = `AccountManager.cleanLastResortKeys(${serviceIdKind})`;
 
-    const allKeys = store.loadKyberPreKeys(ourServiceId, {
+    const allKeys = signalProtocolStore.loadKyberPreKeys(ourServiceId, {
       isLastResort: true,
     });
     const sortedKeys = orderBy(allKeys, ['createdAt'], ['desc']);
@@ -853,17 +861,16 @@ export default class AccountManager extends EventTarget {
     });
     if (toDelete.length > 0) {
       log.info(`${logId}: Removing ${toDelete.length} last resort keys`);
-      await store.removeKyberPreKeys(ourServiceId, toDelete);
+      await signalProtocolStore.removeKyberPreKeys(ourServiceId, toDelete);
     }
   }
 
   async _cleanPreKeys(serviceIdKind: ServiceIdKind): Promise<void> {
-    const store = window.textsecure.storage.protocol;
     const logId = `AccountManager.cleanPreKeys(${serviceIdKind})`;
     const ourServiceId =
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
 
-    const preKeys = store.loadPreKeys(ourServiceId);
+    const preKeys = signalProtocolStore.loadPreKeys(ourServiceId);
     const toDelete: Array<number> = [];
     const sortedKeys = orderBy(preKeys, ['createdAt'], ['desc']);
 
@@ -881,17 +888,16 @@ export default class AccountManager extends EventTarget {
     log.info(`${logId}: ${sortedKeys.length} total prekeys`);
     if (toDelete.length > 0) {
       log.info(`${logId}: Removing ${toDelete.length} obsolete prekeys`);
-      await store.removePreKeys(ourServiceId, toDelete);
+      await signalProtocolStore.removePreKeys(ourServiceId, toDelete);
     }
   }
 
   async _cleanKyberPreKeys(serviceIdKind: ServiceIdKind): Promise<void> {
-    const store = window.textsecure.storage.protocol;
     const logId = `AccountManager.cleanKyberPreKeys(${serviceIdKind})`;
     const ourServiceId =
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
 
-    const preKeys = store.loadKyberPreKeys(ourServiceId, {
+    const preKeys = signalProtocolStore.loadKyberPreKeys(ourServiceId, {
       isLastResort: false,
     });
     const toDelete: Array<number> = [];
@@ -911,7 +917,7 @@ export default class AccountManager extends EventTarget {
     log.info(`${logId}: ${sortedKeys.length} total prekeys`);
     if (toDelete.length > 0) {
       log.info(`${logId}: Removing ${toDelete.length} kyber keys`);
-      await store.removeKyberPreKeys(ourServiceId, toDelete);
+      await signalProtocolStore.removeKyberPreKeys(ourServiceId, toDelete);
     }
   }
 
@@ -995,7 +1001,7 @@ export default class AccountManager extends EventTarget {
       }
 
       try {
-        await storage.protocol.removeAllData();
+        await signalProtocolStore.removeAllData();
         log.info('createAccount: Successfully deleted previous data');
 
         cleanStart = true;
@@ -1007,7 +1013,7 @@ export default class AccountManager extends EventTarget {
       }
     } else {
       log.info('createAccount: Erasing configuration');
-      await storage.protocol.removeAllConfiguration();
+      await signalProtocolStore.removeAllConfiguration();
     }
 
     await senderCertificateService.clear();
@@ -1165,18 +1171,18 @@ export default class AccountManager extends EventTarget {
     const identityAttrs = {
       firstUse: true,
       timestamp: Date.now(),
-      verified: storage.protocol.VerifiedStatus.VERIFIED,
+      verified: signalProtocolStore.VerifiedStatus.VERIFIED,
       nonblockingApproval: true,
     };
 
     // update our own identity key, which may have changed
     // if we're relinking after a reinstall on the master device
     await Promise.all([
-      storage.protocol.saveIdentityWithAttributes(ourAci, {
+      signalProtocolStore.saveIdentityWithAttributes(ourAci, {
         ...identityAttrs,
         publicKey: aciKeyPair.publicKey.serialize(),
       }),
-      storage.protocol.saveIdentityWithAttributes(ourPni, {
+      signalProtocolStore.saveIdentityWithAttributes(ourPni, {
         ...identityAttrs,
         publicKey: pniKeyPair.publicKey.serialize(),
       }),
@@ -1233,24 +1239,22 @@ export default class AccountManager extends EventTarget {
 
     const regionCode = getRegionCodeForNumber(number);
     await storage.put('regionCode', regionCode);
-    await storage.protocol.hydrateCaches();
+    await signalProtocolStore.hydrateCaches();
 
-    const store = storage.protocol;
-
-    await store.storeSignedPreKey(
+    await signalProtocolStore.storeSignedPreKey(
       ourAci,
       aciSignedPreKey.keyId,
       aciSignedPreKey.keyPair
     );
-    await store.storeSignedPreKey(
+    await signalProtocolStore.storeSignedPreKey(
       ourPni,
       pniSignedPreKey.keyId,
       pniSignedPreKey.keyPair
     );
-    await store.storeKyberPreKeys(ourAci, [
+    await signalProtocolStore.storeKyberPreKeys(ourAci, [
       kyberPreKeyToStoredSignedPreKey(aciPqLastResortPreKey, ourAci),
     ]);
-    await store.storeKyberPreKeys(ourPni, [
+    await signalProtocolStore.storeKyberPreKeys(ourPni, [
       kyberPreKeyToStoredSignedPreKey(pniPqLastResortPreKey, ourPni),
     ]);
 
@@ -1310,13 +1314,14 @@ export default class AccountManager extends EventTarget {
     const ourServiceId =
       window.textsecure.storage.user.getCheckedServiceId(serviceIdKind);
     const logId = `AccountManager.confirmKeys(${serviceIdKind})`;
-    const { storage } = window.textsecure;
-    const store = storage.protocol;
 
     const updatedAt = Date.now();
     if (signedPreKey) {
       log.info(`${logId}: confirming signed prekey key`, signedPreKey.keyId);
-      await store.confirmSignedPreKey(ourServiceId, signedPreKey.keyId);
+      await signalProtocolStore.confirmSignedPreKey(
+        ourServiceId,
+        signedPreKey.keyId
+      );
       await window.storage.put(
         SIGNED_PRE_KEY_UPDATE_TIME_KEY[serviceIdKind],
         updatedAt
@@ -1330,7 +1335,10 @@ export default class AccountManager extends EventTarget {
         `${logId}: confirming last resort key`,
         pqLastResortPreKey.keyId
       );
-      await store.confirmKyberPreKey(ourServiceId, pqLastResortPreKey.keyId);
+      await signalProtocolStore.confirmKyberPreKey(
+        ourServiceId,
+        pqLastResortPreKey.keyId
+      );
       await window.storage.put(
         LAST_RESORT_KEY_UPDATE_TIME_KEY[serviceIdKind],
         updatedAt
@@ -1389,14 +1397,14 @@ export default class AccountManager extends EventTarget {
     log.info(`${logId}: updating from ${oldPni}`);
 
     if (oldPni) {
-      await storage.protocol.removeOurOldPni(oldPni);
+      await signalProtocolStore.removeOurOldPni(oldPni);
       await window.ConversationController.clearShareMyPhoneNumber();
     }
 
     await storage.user.setPni(pni);
 
     if (keyMaterial) {
-      await storage.protocol.updateOurPniKeyMaterial(pni, keyMaterial);
+      await signalProtocolStore.updateOurPniKeyMaterial(pni, keyMaterial);
 
       // Intentionally not awaiting since this is processed on encrypted queue
       // of MessageReceiver. Note that `maybeUpdateKeys` runs on the queue so

@@ -1,31 +1,23 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import {
-  compact,
-  difference,
-  flatten,
-  fromPairs,
-  isNumber,
-  omit,
-  values,
-} from 'lodash';
+import lodash from 'lodash';
 import Long from 'long';
-import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup';
+import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup.js';
 import { LRUCache } from 'lru-cache';
-import { createLogger } from './logging/log';
+import { createLogger } from './logging/log.js';
 import {
   getCheckedGroupCredentialsForToday,
   maybeFetchNewCredentials,
-} from './services/groupCredentialFetcher';
-import { storageServiceUploadJob } from './services/storage';
-import { DataReader, DataWriter } from './sql/Client';
-import { toWebSafeBase64, fromWebSafeBase64 } from './util/webSafeBase64';
-import { assertDev, strictAssert } from './util/assert';
-import { isMoreRecentThan } from './util/timestamp';
-import { MINUTE, DurationInSeconds, SECOND } from './util/durations';
-import { drop } from './util/drop';
-import { dropNull } from './util/dropNull';
+} from './services/groupCredentialFetcher.js';
+import { storageServiceUploadJob } from './services/storage.js';
+import { DataReader, DataWriter } from './sql/Client.js';
+import { toWebSafeBase64, fromWebSafeBase64 } from './util/webSafeBase64.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { isMoreRecentThan } from './util/timestamp.js';
+import { MINUTE, DurationInSeconds, SECOND } from './util/durations/index.js';
+import { drop } from './util/drop.js';
+import { dropNull } from './util/dropNull.js';
 import type {
   ConversationAttributesType,
   GroupV2MemberType,
@@ -33,7 +25,7 @@ import type {
   GroupV2PendingMemberType,
   GroupV2BannedMemberType,
   MessageAttributesType,
-} from './model-types.d';
+} from './model-types.d.ts';
 import {
   createProfileKeyCredentialPresentation,
   decodeProfileKeyCredentialPresentation,
@@ -52,215 +44,77 @@ import {
   getClientZkGroupCipher,
   getClientZkProfileOperations,
   verifyNotarySignature,
-} from './util/zkgroup';
+} from './util/zkgroup.js';
 import {
   computeHash,
   deriveMasterKeyFromGroupV1,
   getRandomBytes,
-} from './Crypto';
+} from './Crypto.js';
 import type {
   GroupCredentialsType,
   GroupLogResponseType,
-} from './textsecure/WebAPI';
-import { HTTPError } from './textsecure/Errors';
-import type MessageSender from './textsecure/SendMessage';
-import { CURRENT_SCHEMA_VERSION as MAX_MESSAGE_SCHEMA } from './types/Message2';
-import type { ConversationModel } from './models/conversations';
-import { getGroupSizeHardLimit } from './groups/limits';
+} from './textsecure/WebAPI.js';
+import { HTTPError } from './types/HTTPError.js';
+import type MessageSender from './textsecure/SendMessage.js';
+import { CURRENT_SCHEMA_VERSION as MAX_MESSAGE_SCHEMA } from './types/Message2.js';
+import type { ConversationModel } from './models/conversations.js';
+import { getGroupSizeHardLimit } from './groups/limits.js';
 import {
   isGroupV1 as getIsGroupV1,
   isGroupV2 as getIsGroupV2,
   isGroupV2,
   isMe,
-} from './util/whatTypeOfConversation';
-import * as Bytes from './Bytes';
-import type { AvatarDataType } from './types/Avatar';
-import type { ServiceIdString, AciString, PniString } from './types/ServiceId';
+} from './util/whatTypeOfConversation.js';
+import * as Bytes from './Bytes.js';
+import type { AvatarDataType } from './types/Avatar.js';
+import type { GroupV2ChangeDetailType } from './types/groups.ts';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from './types/ServiceId.js';
 import {
   ServiceIdKind,
   isPniString,
   isServiceIdString,
-} from './types/ServiceId';
-import { isAciString } from './util/isAciString';
-import * as Errors from './types/errors';
-import { SignalService as Proto } from './protobuf';
-import { isNotNil } from './util/isNotNil';
-import { isAccessControlEnabled } from './groups/util';
+} from './types/ServiceId.js';
+import { isAciString } from './util/isAciString.js';
+import * as Errors from './types/errors.js';
+import { SignalService as Proto } from './protobuf/index.js';
+import { isNotNil } from './util/isNotNil.js';
+import { isAccessControlEnabled } from './groups/util.js';
 
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from './jobs/conversationJobQueue';
-import { ReadStatus } from './messages/MessageReadStatus';
-import { SeenStatus } from './MessageSeenStatus';
-import { incrementMessageCounter } from './util/incrementMessageCounter';
-import { sleep } from './util/sleep';
-import { groupInvitesRoute } from './util/signalRoutes';
+} from './jobs/conversationJobQueue.js';
+import { ReadStatus } from './messages/MessageReadStatus.js';
+import { SeenStatus } from './MessageSeenStatus.js';
+import { incrementMessageCounter } from './util/incrementMessageCounter.js';
+import { sleep } from './util/sleep.js';
+import { groupInvitesRoute } from './util/signalRoutes.js';
 import {
   decodeGroupSendEndorsementResponse,
   validateGroupSendEndorsementsExpiration,
-} from './util/groupSendEndorsements';
-import { getProfile } from './util/getProfile';
-import { generateMessageId } from './util/generateMessageId';
-import { postSaveUpdates } from './util/cleanup';
-import { MessageModel } from './models/messages';
-import { areWePending } from './util/groupMembershipUtils';
-import { isConversationAccepted } from './util/isConversationAccepted';
+} from './util/groupSendEndorsements.js';
+import { getProfile } from './util/getProfile.js';
+import { generateMessageId } from './util/generateMessageId.js';
+import { postSaveUpdates } from './util/cleanup.js';
+import { MessageModel } from './models/messages.js';
+import { areWePending } from './util/groupMembershipUtils.js';
+import {
+  isConversationAccepted,
+  isTrustedContact,
+} from './util/isConversationAccepted.js';
+
+const { compact, difference, flatten, fromPairs, isNumber, omit, values } =
+  lodash;
 
 const log = createLogger('groups');
 
 type AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 
-export { joinViaLink } from './groups/joinViaLink';
-
-type GroupV2AccessCreateChangeType = {
-  type: 'create';
-};
-type GroupV2AccessAttributesChangeType = {
-  type: 'access-attributes';
-  newPrivilege: number;
-};
-type GroupV2AccessMembersChangeType = {
-  type: 'access-members';
-  newPrivilege: number;
-};
-type GroupV2AccessInviteLinkChangeType = {
-  type: 'access-invite-link';
-  newPrivilege: number;
-};
-type GroupV2AnnouncementsOnlyChangeType = {
-  type: 'announcements-only';
-  announcementsOnly: boolean;
-};
-type GroupV2AvatarChangeType = {
-  type: 'avatar';
-  removed: boolean;
-};
-type GroupV2TitleChangeType = {
-  type: 'title';
-  // Allow for null, because the title could be removed entirely
-  newTitle?: string;
-};
-type GroupV2GroupLinkAddChangeType = {
-  type: 'group-link-add';
-  privilege: number;
-};
-type GroupV2GroupLinkResetChangeType = {
-  type: 'group-link-reset';
-};
-type GroupV2GroupLinkRemoveChangeType = {
-  type: 'group-link-remove';
-};
-
-// No disappearing messages timer change type - message.expirationTimerUpdate used instead
-
-type GroupV2MemberAddChangeType = {
-  type: 'member-add';
-  aci: AciString;
-};
-type GroupV2MemberAddFromInviteChangeType = {
-  type: 'member-add-from-invite';
-  aci: AciString;
-  pni?: PniString;
-  inviter?: AciString;
-};
-type GroupV2MemberAddFromLinkChangeType = {
-  type: 'member-add-from-link';
-  aci: AciString;
-};
-type GroupV2MemberAddFromAdminApprovalChangeType = {
-  type: 'member-add-from-admin-approval';
-  aci: AciString;
-};
-type GroupV2MemberPrivilegeChangeType = {
-  type: 'member-privilege';
-  aci: AciString;
-  newPrivilege: number;
-};
-type GroupV2MemberRemoveChangeType = {
-  type: 'member-remove';
-  aci: AciString;
-};
-
-type GroupV2PendingAddOneChangeType = {
-  type: 'pending-add-one';
-  serviceId: ServiceIdString;
-};
-type GroupV2PendingAddManyChangeType = {
-  type: 'pending-add-many';
-  count: number;
-};
-// Note: pending-remove is only used if user didn't also join the group at the same time
-type GroupV2PendingRemoveOneChangeType = {
-  type: 'pending-remove-one';
-  serviceId: ServiceIdString;
-  inviter?: AciString;
-};
-// Note: pending-remove is only used if user didn't also join the group at the same time
-type GroupV2PendingRemoveManyChangeType = {
-  type: 'pending-remove-many';
-  count: number;
-  inviter?: AciString;
-};
-
-type GroupV2AdminApprovalAddOneChangeType = {
-  type: 'admin-approval-add-one';
-  aci: AciString;
-};
-// Note: admin-approval-remove-one is only used if user didn't also join the group at
-//   the same time
-type GroupV2AdminApprovalRemoveOneChangeType = {
-  type: 'admin-approval-remove-one';
-  aci: AciString;
-  inviter?: AciString;
-};
-type GroupV2AdminApprovalBounceChangeType = {
-  type: 'admin-approval-bounce';
-  times: number;
-  isApprovalPending: boolean;
-  aci: AciString;
-};
-export type GroupV2DescriptionChangeType = {
-  type: 'description';
-  removed?: boolean;
-  // Adding this field; cannot remove previous field for backwards compatibility
-  description?: string;
-};
-export type GroupV2SummaryType = {
-  type: 'summary';
-};
-
-export type GroupV2ChangeDetailType =
-  | GroupV2AccessAttributesChangeType
-  | GroupV2AccessCreateChangeType
-  | GroupV2AccessInviteLinkChangeType
-  | GroupV2AccessMembersChangeType
-  | GroupV2AdminApprovalAddOneChangeType
-  | GroupV2AdminApprovalRemoveOneChangeType
-  | GroupV2AdminApprovalBounceChangeType
-  | GroupV2AnnouncementsOnlyChangeType
-  | GroupV2AvatarChangeType
-  | GroupV2DescriptionChangeType
-  | GroupV2GroupLinkAddChangeType
-  | GroupV2GroupLinkRemoveChangeType
-  | GroupV2GroupLinkResetChangeType
-  | GroupV2MemberAddChangeType
-  | GroupV2MemberAddFromAdminApprovalChangeType
-  | GroupV2MemberAddFromInviteChangeType
-  | GroupV2MemberAddFromLinkChangeType
-  | GroupV2MemberPrivilegeChangeType
-  | GroupV2MemberRemoveChangeType
-  | GroupV2PendingAddManyChangeType
-  | GroupV2PendingAddOneChangeType
-  | GroupV2PendingRemoveManyChangeType
-  | GroupV2PendingRemoveOneChangeType
-  | GroupV2SummaryType
-  | GroupV2TitleChangeType;
-
-export type GroupV2ChangeType = {
-  from?: ServiceIdString;
-  details: ReadonlyArray<GroupV2ChangeDetailType>;
-};
+export { joinViaLink } from './groups/joinViaLink.js';
 
 export type GroupFields = {
   readonly id: Uint8Array;
@@ -333,8 +187,6 @@ type GroupChangeMessageType = BasicMessageType &
 export const MASTER_KEY_LENGTH = 32;
 const GROUP_TITLE_MAX_ENCRYPTED_BYTES = 1024;
 const GROUP_DESC_MAX_ENCRYPTED_BYTES = 8192;
-export const ID_V1_LENGTH = 16;
-export const ID_LENGTH = 32;
 const TEMPORAL_AUTH_REJECTED_CODE = 401;
 const GROUP_ACCESS_DENIED_CODE = 403;
 const GROUP_NONEXISTENT_CODE = 404;
@@ -354,9 +206,7 @@ export async function getPreJoinGroupInfo(
   inviteLinkPasswordBase64: string,
   masterKeyBase64: string
 ): Promise<Proto.GroupJoinInfo> {
-  const data = window.Signal.Groups.deriveGroupFields(
-    Bytes.fromBase64(masterKeyBase64)
-  );
+  const data = deriveGroupFields(Bytes.fromBase64(masterKeyBase64));
 
   return makeRequestWithCredentials({
     logId: `getPreJoinInfo/groupv2(${data.id})`,
@@ -1567,7 +1417,7 @@ export async function modifyGroupV2({
 
         // Apply change locally, just like we would with an incoming change. This will
         //   change conversation state and add change notifications to the timeline.
-        await window.Signal.Groups.maybeUpdateGroup({
+        await maybeUpdateGroup({
           conversation,
           groupChange: {
             base64: groupChangeBase64,
@@ -1656,7 +1506,7 @@ export async function modifyGroupV2({
         // Fetch credentials only once
         refreshedCredentials = true;
       } else if (error.code === 409) {
-        log.error(
+        log.warn(
           `modifyGroupV2/${logId}: Conflict while updating. Timed out; not retrying.`
         );
         // We don't wait here because we're breaking out of the loop immediately.
@@ -3277,6 +3127,13 @@ async function updateGroup(
       // Return early to discard group changes resulting from unwanted group add
       return;
     }
+
+    if (adder && isTrustedContact(adder?.attributes)) {
+      conversation.enableProfileSharing({
+        reason: 'addedToGroupByTrustedContact',
+        viaStorageServiceSync: false,
+      });
+    }
   }
 
   // We update group membership last to ensure that all notifications are in place before
@@ -3304,7 +3161,11 @@ async function updateGroup(
   });
 
   if (idChanged) {
-    conversation.trigger('idUpdated', conversation, 'groupId', previousId);
+    window.ConversationController.idUpdated(
+      conversation,
+      'groupId',
+      previousId
+    );
   }
 
   // Save these most recent updates to conversation

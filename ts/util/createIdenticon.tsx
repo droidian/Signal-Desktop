@@ -4,14 +4,15 @@
 import React from 'react';
 import loadImage from 'blueimp-load-image';
 import { renderToString } from 'react-dom/server';
-import type { AvatarColorType } from '../types/Colors';
-import { AvatarColorMap } from '../types/Colors';
+import type { AvatarColorType } from '../types/Colors.js';
+import { AvatarColorMap } from '../types/Colors.js';
 import {
   IdenticonSVGForCallLink,
   IdenticonSVGForContact,
   IdenticonSVGForGroup,
-} from '../components/IdenticonSVG';
-import { missingCaseError } from './missingCaseError';
+  // eslint-disable-next-line import/no-restricted-paths
+} from '../components/IdenticonSVG.js';
+import { missingCaseError } from './missingCaseError.js';
 
 const TARGET_MIME = 'image/png';
 

@@ -13,9 +13,8 @@ import { assert } from 'chai';
 import Long from 'long';
 import type { Locator, Page } from 'playwright';
 import { expect } from 'playwright/test';
-import type { SignalService } from '../protobuf';
-import { strictAssert } from '../util/assert';
-import type { App, Bootstrap } from './bootstrap';
+import type { SignalService } from '../protobuf/index.js';
+import { strictAssert } from '../util/assert.js';
 
 const debug = createDebug('mock:test:helpers');
 
@@ -335,16 +334,15 @@ export async function composerAttachImages(
   const AttachmentInput = page.getByTestId('attachfile-input');
 
   const AttachmentsList = page.locator('.module-attachments');
-  const AttachmentsListImage = AttachmentsList.locator('.module-image');
-  const AttachmentsListImageLoaded = AttachmentsListImage.locator(
-    '.module-image__image'
+  const AttachmentsListImageLoaded = AttachmentsList.locator(
+    '.module-image--loaded'
   );
 
   debug('setting input files');
   await AttachmentInput.setInputFiles(filePaths);
 
   debug(`waiting for ${filePaths.length} items`);
-  await AttachmentsListImage.nth(filePaths.length - 1).waitFor();
+  await AttachmentsListImageLoaded.nth(filePaths.length - 1).waitFor();
 
   await Promise.all(
     filePaths.map(async (_, index) => {
@@ -460,30 +458,4 @@ export async function createCallLink(
   });
   const testId = await callLinkItem.getAttribute('data-testid');
   return testId || undefined;
-}
-
-export async function setupAppToUseLibsignalWebsockets(
-  bootstrap: Bootstrap
-): Promise<App> {
-  bootstrap.server.setRemoteConfig(
-    'desktop.experimentalTransportEnabled.alpha',
-    { enabled: true }
-  );
-
-  bootstrap.server.setRemoteConfig('desktop.experimentalTransport.enableAuth', {
-    enabled: true,
-  });
-
-  // Link & close so that app can get remote config first over non-libsignal websocket,
-  // and then on next app start it will connect via libsignal
-  await bootstrap.linkAndClose();
-  return bootstrap.startApp();
-}
-
-export async function assertAppWasUsingLibsignalWebsockets(
-  app: App
-): Promise<void> {
-  const { authenticated, unauthenticated } = await app.getSocketStatus();
-  assert.strictEqual(authenticated.lastConnectionTransport, 'libsignal');
-  assert.strictEqual(unauthenticated.lastConnectionTransport, 'libsignal');
 }

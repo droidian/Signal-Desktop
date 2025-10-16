@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { StrictMode } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
-import { PermissionsPopup } from '../../components/PermissionsPopup';
-import { i18n } from '../sandboxedInit';
-import { strictAssert } from '../../util/assert';
-import { FunDefaultEnglishEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider';
+import { PermissionsPopup } from '../../components/PermissionsPopup.js';
+import { i18n } from '../sandboxedInit.js';
+import { strictAssert } from '../../util/assert.js';
+import { FunDefaultEnglishEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider.js';
+import { AxoProvider } from '../../axo/AxoProvider.js';
 
 const { PermissionsWindowProps } = window.Signal;
 
@@ -26,16 +27,20 @@ if (forCalling) {
   message = i18n('icu:audioPermissionNeeded');
 }
 
-ReactDOM.render(
+const app = document.getElementById('app');
+strictAssert(app != null, 'No #app');
+
+createRoot(app).render(
   <StrictMode>
-    <FunDefaultEnglishEmojiLocalizationProvider>
-      <PermissionsPopup
-        i18n={i18n}
-        message={message}
-        onAccept={PermissionsWindowProps.onAccept}
-        onClose={PermissionsWindowProps.onClose}
-      />
-    </FunDefaultEnglishEmojiLocalizationProvider>
-  </StrictMode>,
-  document.getElementById('app')
+    <AxoProvider dir={i18n.getLocaleDirection()}>
+      <FunDefaultEnglishEmojiLocalizationProvider>
+        <PermissionsPopup
+          i18n={i18n}
+          message={message}
+          onAccept={PermissionsWindowProps.onAccept}
+          onClose={PermissionsWindowProps.onClose}
+        />
+      </FunDefaultEnglishEmojiLocalizationProvider>
+    </AxoProvider>
+  </StrictMode>
 );

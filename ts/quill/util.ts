@@ -9,14 +9,18 @@ import type {
   DisplayNode,
   DraftBodyRange,
   DraftBodyRanges,
-} from '../types/BodyRange';
-import { BodyRange } from '../types/BodyRange';
-import type { MentionBlot } from './mentions/blot';
-import type { EmojiBlot } from './emoji/blot';
-import { isNewlineOnlyOp, QuillFormattingStyle } from './formatting/menu';
-import { isNotNil } from '../util/isNotNil';
-import type { AciString } from '../types/ServiceId';
-import { emojiToData } from '../components/emoji/lib';
+} from '../types/BodyRange.js';
+import { BodyRange } from '../types/BodyRange.js';
+import type { MentionBlot } from './mentions/blot.js';
+import type { EmojiBlot } from './emoji/blot.js';
+import { isNewlineOnlyOp, QuillFormattingStyle } from './formatting/menu.js';
+import { isNotNil } from '../util/isNotNil.js';
+import type { AciString } from '../types/ServiceId.js';
+import {
+  getEmojiVariantByKey,
+  getEmojiVariantKeyByValue,
+  isEmojiVariantValue,
+} from '../components/fun/data/emojis.js';
 
 export type Matcher = (
   node: HTMLElement,
@@ -458,15 +462,17 @@ export const insertEmojiOps = (
 
       // eslint-disable-next-line no-cond-assign
       while ((match = re.exec(text))) {
-        const [emoji] = match;
-        const emojiData = emojiToData(emoji);
-        if (emojiData) {
+        const [emojiMatch] = match;
+        if (isEmojiVariantValue(emojiMatch)) {
+          const variantKey = getEmojiVariantKeyByValue(emojiMatch);
+          const variant = getEmojiVariantByKey(variantKey);
+
           ops.push({ insert: text.slice(index, match.index), attributes });
           ops.push({
-            insert: { emoji: { value: emoji } },
+            insert: { emoji: { value: variant.value } },
             attributes: { ...existingAttributes, ...attributes },
           });
-          index = match.index + emoji.length;
+          index = match.index + variant.value.length;
         }
       }
 

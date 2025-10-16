@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import createDebug from 'debug';
+import { v4 as generateUuid } from 'uuid';
 import type {
   Group,
   PrimaryDevice,
@@ -9,17 +10,19 @@ import type {
   StorageStateRecord,
 } from '@signalapp/mock-server';
 import { StorageState, Proto } from '@signalapp/mock-server';
-import path from 'path';
-import fs from 'fs/promises';
-import { range } from 'lodash';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
-import { App } from '../playwright';
-import { Bootstrap } from '../bootstrap';
-import type { BootstrapOptions } from '../bootstrap';
-import { MY_STORY_ID } from '../../types/Stories';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { artAddStickersRoute } from '../../util/signalRoutes';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
+import { App } from '../playwright.js';
+import { Bootstrap } from '../bootstrap.js';
+import type { BootstrapOptions } from '../bootstrap.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { artAddStickersRoute } from '../../util/signalRoutes.js';
+import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.js';
+
+const { range } = lodash;
 
 export const debug = createDebug('mock:test:storage');
 
@@ -101,6 +104,22 @@ export async function initStorage(
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+        },
+      },
+    });
+
+    state = state.addRecord({
+      type: IdentifierType.CHAT_FOLDER,
+      record: {
+        chatFolder: {
+          id: uuidToBytes(generateUuid()),
+          name: null,
+          position: 0,
+          showOnlyUnread: false,
+          showMutedChats: true,
+          includeAllIndividualChats: true,
+          includeAllGroupChats: true,
+          folderType: Proto.ChatFolderRecord.FolderType.ALL,
         },
       },
     });
@@ -218,5 +237,28 @@ export function getCallLinkRecordPredicate(
     const recordRootKey = CallLinkRootKey.fromBytes(Buffer.from(rootKeyBytes));
     const recordRoomId = getRoomIdFromRootKey(recordRootKey);
     return roomId === recordRoomId;
+  };
+}
+
+export function getChatFolderRecordPredicate(
+  folderType: keyof typeof Proto.ChatFolderRecord.FolderType,
+  name: string,
+  deleted: boolean
+): (record: StorageStateRecord) => boolean {
+  return ({ type, record }) => {
+    const { chatFolder } = record;
+    if (type !== IdentifierType.CHAT_FOLDER || chatFolder == null) {
+      return false;
+    }
+
+    const deletedAtTimestampMs =
+      chatFolder.deletedAtTimestampMs?.toNumber() ?? 0;
+    const isDeleted = deletedAtTimestampMs > 0;
+
+    return (
+      chatFolder.folderType === Proto.ChatFolderRecord.FolderType[folderType] &&
+      chatFolder.name === name &&
+      isDeleted === deleted
+    );
   };
 }

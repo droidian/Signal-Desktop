@@ -1,14 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { GroupV2Membership } from '../components/conversation/conversation-details/ConversationDetailsMembershipList';
+// eslint-disable-next-line import/no-restricted-paths
+import type { GroupV2Membership } from '../components/conversation/conversation-details/ConversationDetailsMembershipList.js';
 import type {
   GroupV2PendingMembership,
   GroupV2RequestingMembership,
-} from '../components/conversation/conversation-details/PendingInvites';
-import type { ConversationType } from '../state/ducks/conversations';
-import type { ServiceIdString } from '../types/ServiceId';
-import { isConversationUnregistered } from './isConversationUnregistered';
+  // eslint-disable-next-line import/no-restricted-paths
+} from '../components/conversation/conversation-details/PendingInvites.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { isConversationUnregistered } from './isConversationUnregistered.js';
 
 export type GroupMemberships = {
   memberships: ReadonlyArray<GroupV2Membership>;

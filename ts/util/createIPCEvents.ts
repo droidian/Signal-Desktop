@@ -3,35 +3,38 @@
 
 import { ipcRenderer } from 'electron';
 import type { SystemPreferences } from 'electron';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 
-import type { ZoomFactorType } from '../types/Storage.d';
-import * as Errors from '../types/errors';
-import * as Stickers from '../types/Stickers';
-import * as Settings from '../types/Settings';
+import type { ZoomFactorType } from '../types/Storage.d.ts';
+import * as Errors from '../types/errors.js';
+import * as Stickers from '../types/Stickers.js';
+import * as Settings from '../types/Settings.js';
 
-import { resolveUsernameByLinkBase64 } from '../services/username';
-import { isInCall } from '../state/selectors/calling';
+import { resolveUsernameByLinkBase64 } from '../services/username.js';
+import { isInCall } from '../state/selectors/calling.js';
 
-import { strictAssert } from './assert';
-import * as Registration from './registration';
-import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId';
-import { createLogger } from '../logging/log';
+import { strictAssert } from './assert.js';
+import * as Registration from './registration.js';
+import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId.js';
+import { createLogger } from '../logging/log.js';
 import {
   type NotificationClickData,
   notificationService,
-} from '../services/notifications';
-import { StoryViewModeType, StoryViewTargetType } from '../types/Stories';
-import { isValidE164 } from './isValidE164';
-import { fromWebSafeBase64 } from './webSafeBase64';
-import { showConfirmationDialog } from './showConfirmationDialog';
+} from '../services/notifications.js';
+import { joinViaLink } from '../groups.js';
+import { StoryViewModeType, StoryViewTargetType } from '../types/Stories.js';
+import { isValidE164 } from './isValidE164.js';
+import { fromWebSafeBase64 } from './webSafeBase64.js';
+import { showConfirmationDialog } from './showConfirmationDialog.js';
 import type {
   EphemeralSettings,
   SettingsValuesType,
   ThemeType,
-} from './preload';
-import { SystemTraySetting } from '../types/SystemTraySetting';
-import OS from './os/osPreload';
+} from './preload.js';
+import { SystemTraySetting } from '../types/SystemTraySetting.js';
+import OS from './os/osPreload.js';
+
+const { noop } = lodash;
 
 const log = createLogger('createIPCEvents');
 
@@ -291,7 +294,7 @@ export function createIPCEvents(
         );
         return true;
       } catch {
-        log.info('requestCloseConfirmation: Close cancelled by user.');
+        log.info('requestCloseConfirmation: Close canceled by user.');
         return false;
       }
     },
@@ -392,7 +395,7 @@ export function createIPCEvents(
         return;
       }
       try {
-        await window.Signal.Groups.joinViaLink(value);
+        await joinViaLink(value);
       } catch (error) {
         log.error(
           'showGroupViaLink: Ran into an error!',

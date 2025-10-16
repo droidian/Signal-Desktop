@@ -3,13 +3,18 @@
 
 import { assert } from 'chai';
 
-import { strictAssert } from '../util/assert';
-import { DataWriter } from '../sql/Client';
+import { strictAssert } from '../util/assert.js';
+import { DataWriter } from '../sql/Client.js';
 
-import type { ConversationModel } from '../models/conversations';
-import type { AciString, PniString, ServiceIdString } from '../types/ServiceId';
-import { generateAci, generatePni } from '../types/ServiceId';
-import type { SafeCombineConversationsParams } from '../ConversationController';
+import type { ConversationModel } from '../models/conversations.js';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from '../types/ServiceId.js';
+import { generateAci, generatePni } from '../types/ServiceId.js';
+import type { SafeCombineConversationsParams } from '../ConversationController.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
 
 const ACI_1 = generateAci();
 const ACI_2 = generateAci();
@@ -37,7 +42,7 @@ describe('ConversationController', () => {
 
       window.ConversationController.reset();
       await window.ConversationController.load();
-      await window.textsecure.storage.protocol.hydrateCaches();
+      await signalProtocolStore.hydrateCaches();
 
       mergeOldAndNew = () => {
         throw new Error('mergeOldAndNew: Should not be called!');

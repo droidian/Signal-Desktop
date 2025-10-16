@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Приступање кључу за шифровање базе података није успело јер је позадински део кључева за шифровање оперативног система промењен са {previousBackend} на {currentBackend}. То се може десити ако се промени окружење радне површине, на пример са окружења GNOME на KDE.\n\nВратите се на претходно окружење радне површине или пробајте да покренете Signal помоћу параметра за командну линију --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Фајл"
   },
@@ -272,6 +281,30 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Унесите корисничко име праћено тачком и скупом бројева."
   },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Све"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Сва ћаскања"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Означи све као прочитано"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Искључи обавештења"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Укључи сва обавештења"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Укључи сва обавештења"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Измени фолдер"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Позивни број државе"
   },
@@ -305,9 +338,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Подешавања"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Ажурирајте Signal"
-  },
   "icu:NavTabs__ItemLabel--Profile": {
     "messageformat": "Профил"
   },
@@ -325,6 +355,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Означи као непрочитано"
+  },
+  "icu:markRead": {
+    "messageformat": "Означи прочитаним"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Изабери поруке"
@@ -605,6 +638,12 @@
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
   },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Признаница је сачувана"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Догодила се грешка приликом чувања признанице. Пробајте поново."
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Није могуће изабрати слике и видео записе заједно са фајловима."
   },
@@ -664,9 +703,6 @@
   },
   "icu:joinTheBeta": {
     "messageformat": "Придружите се бета програму"
-  },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Подешавања за Signal Desktop"
   },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Креатор пакета налепница"
@@ -1031,14 +1067,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Информације"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Анкета · Изаберите један одговор"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Анкета · Изаберите један или више одговора"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Анкета · Коначни резултати"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Прикажи гласове"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Гласали сте"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Детаљи анкете"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Питање"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {Гласова: {count,number}} other {Гласова: {count,number}}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Нема гласова"
+  },
   "icu:deleteConversation": {
     "messageformat": "Избриши"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Желите ли да избришете ћаскање?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Све поруке у овом ћаскању ће бити избрисане са овог уређаја."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Све поруке у овом ћаскању ће бити избрисане са свих ваших уређаја."
@@ -1285,6 +1345,174 @@
   },
   "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
     "messageformat": "Боја коже емоџија"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "Фолдери за ћаскања"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "Додај фолдер за ћаскања"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "Организујте ћаскања по фолдерима и брзо се пребацујте између њих на листи ћаскања."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "Измени фолдер"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "Избриши"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Желите ли да избришете фолдер?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Желите ли да избришете фолдер „{chatFolderTitle}“?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Избриши"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Откажи"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "Фолдери за ћаскања"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "Организујте ћаскања по фолдерима и брзо се пребацујте између њих на листи ћаскања"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "Фолдери"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "Сва ћаскања"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "Креирај фолдер"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "Предложени фолдери"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "Додај"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
+    "messageformat": "Додат је фолдер {chatFolderTitle}"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "Непрочитано"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "Непрочитане поруке из свих ћаскања"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "Ћаскања 1 на 1"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "Само поруке из директних ћаскања"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "Групе"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "Само поруке из групних ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "Креирај фолдер"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "Назив фолдера"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "Назив фолдера (обавезно)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "Укључена ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "Изаберите ћаскања која желите да се појаве у овом фолдеру"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "Ћаскања 1 на 1"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Групна ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "Додај ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "Укључена ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "Искључена ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "Претрага"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "Типови ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "Ћаскања 1 на 1"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "Групе"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "Недавна ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "Готово"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "Изузеци"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "Изаберите ћаскања која не желите да се појаве у овом фолдеру"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "Искључи ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "Прикажи само непрочитана ћаскања"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "У овом фолдеру ће бити приказана само ћаскања са непрочитаним порукама."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "Укључи ћаскања са искљученим обавештењима"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "Избриши фолдер"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Желите ли да избришете овај фолдер за ћаскања?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Овај фолдер ће бити уклоњен из ваше листе са ћаскањима."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Избриши"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Откажи"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "Желите ли да сачувате промене?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "Желите ли да сачувате промене које сте направили у овом фолдеру за ћаскања?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "Сачувај"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "Одбаци"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "Сачувај"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "Откажи"
   },
   "icu:initialSync": {
     "messageformat": "Синхронизују се контакти и групе"
@@ -1901,6 +2129,9 @@
   "icu:Toast--download-failed": {
     "messageformat": "Преузимање није успело"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Преузимање прилога из резервне копије није успело"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Измене се могу применити само у року од 24 сата од тренутка када сте послали ову поруку."
   },
@@ -2074,6 +2305,9 @@
   },
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Једнократни видео"
+  },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
   },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ова порука је избрисана."
@@ -2386,6 +2620,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Недавно коришћено"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Додај пакет налепница"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Резултати претраге"
@@ -3362,6 +3599,15 @@
   "icu:ErrorModal--description": {
     "messageformat": "Пробајте поново или се обратите подршци."
   },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Došlo je do neočekivane greške"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Пошаљи извештај о грешкама"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Не, хвала"
+  },
   "icu:Confirmation--confirm": {
     "messageformat": "У реду"
   },
@@ -3792,7 +4038,7 @@
     "messageformat": "Захтев за придруживање групи од {joinerName} је одбијен."
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} је затражио/ла да се придружи групи преко линка за групу} other {{joinerName} је послао/ла и отказао/ла захтеве ({numberOfRequests,number}) да се придружи преко линка за групу}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} је послао/ла и отказао/ла захтев да се придружи преко линка за групу} other {{joinerName} је послао/ла и отказао/ла захтеве ({numberOfRequests,number}) да се придружи преко линка за групу}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Укључили сте линк за групу без обавезног одобрења администратора."
@@ -4026,10 +4272,10 @@
     "messageformat": "Пробај поново"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "Враћање медија"
+    "messageformat": "Медији се синхронизују"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "Враћање је паузирано"
+    "messageformat": "Синхронизација је паузирана"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "{currentSize} од {totalSize} је враћено"
@@ -4044,13 +4290,13 @@
     "messageformat": "Чека се веза са интернетом…"
   },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "Паузирај пренос"
+    "messageformat": "Паузирај"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "Настави пренос"
+    "messageformat": "Настави"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "Откажи пренос"
+    "messageformat": "Откажи синхронизацију"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "Више опција"
@@ -4062,16 +4308,34 @@
     "messageformat": "{currentSize} од {totalSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "Желите ли да откажете пренос медија?"
+    "messageformat": "Желите ли да прекинете синхронизацију медија?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "Није завршено враћање ваших порука и медија. Ако откажете, можете поново покренути пренос у подешавањима."
+    "messageformat": "Није завршена синхронизација ваших медија. Ако откажете, можете поново да синхронизујете тако што ћете поново повезати овај уређај. <learnMoreLink>Сазнајте више</learnMoreLink>."
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Настави пренос"
+    "messageformat": "Настави синхронизацију"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "Откажи пренос"
+    "messageformat": "Откажи синхронизацију"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Синхронизација је паузирана"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "Кликните на „{resumeButtonText}” да бисте наставили синхронизацију"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Настави"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Паузирај"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "Медији се синхронизују"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize} од {totalSize} ({fractionComplete,number,percent})..."
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
     "messageformat": "Упозорење у вези са налогом"
@@ -4244,17 +4508,17 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Ваши контакти ће моћи да вас додају у ову групу."
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Ваши контакти ће моћи да вас додају у ову групу."
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Одблокирај"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {Чланова: {number,number}} other {Чланова: {number,number}}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Подељени медији"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Прикажи све"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Медији и фајлови"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {Чланова: {number,number}} other {Чланова: {number,number}}}"
@@ -4811,6 +5075,12 @@
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "Линк корисничког имена треба ресетовати"
   },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Екран за отварање линка корисничког имена"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Екран за отварање линка корисничког имена"
+  },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Поделите своје корисничко име"
   },
@@ -5069,6 +5339,12 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "На пример, :-) ће бити претворено у <emojify>🙂</emojify>"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Остави ћаскања са искљученим обавештењима у архиви"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Ћаскања са искљученим обавештењима која су архивирана остаће архивирана када стигне нова порука."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Напредно"
   },
@@ -5079,10 +5355,10 @@
     "messageformat": "Блокирани контакти"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Резервне поруке Signal-а"
+    "messageformat": "Безбедне резервне копије Signal-а"
   },
   "icu:Preferences--signal-backups-off-description": {
-    "messageformat": "Automatic backups with Signal’s secure, end-to-end encrypted storage service. Get started on your phone. <learnMoreLink>Learn more</learnMoreLink>."
+    "messageformat": "Користите аутоматско креирање резервне копије уз помоћ Signal-ове безбедне потпуно шифроване услуге складиштења. Започните на телефону. <learnMoreLink>Сазнајте више</learnMoreLink>."
   },
   "icu:Preferences--backup-section-description": {
     "messageformat": "Направите резервне копије историје порука да не бисте изгубили податке када набавите нови телефон или поново инсталирате Signal."
@@ -5094,7 +5370,10 @@
     "messageformat": "Резервне копије порука и свих медија"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Претплата није пронађена. Обновите је да бисте наставили да користите резервне копије Signal-а."
+    "messageformat": "Претплата није пронађена. Обновите је да бисте наставили да користите безбедне резервне копије Signal-а."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost} месечно"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Резервне копије порука и {mediaDayCount,number} дан(а) резервних копија медија} other {Резервне копије порука и {mediaDayCount,number} дан(а) резервних копија медија}}"
@@ -5112,22 +5391,19 @@
     "messageformat": "Претплата је отказана"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "На свом телефону можете управљати претплатом на резервне копије Signal-а или је отказати."
+    "messageformat": "На свом телефону можете управљати претплатом на безбедне резервне копије Signal-а или је отказати."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "На свом телефону можете управљати резервним копијама Signal-а или их надоградити."
+    "messageformat": "На свом телефону можете управљати безбедним резервним копијама Signal-а или их надоградити."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "На свом телефону можете управљати претплатом на резервне копије Signal-а или је обновити."
+    "messageformat": "На свом телефону можете управљати претплатом на безбедне резервне копије Signal-а или је обновити."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Последња резервна копија"
   },
   "icu:Preferences--backup-created-by-phone": {
     "messageformat": "Ваш телефон"
-  },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Величина резервне копије"
   },
   "icu:Preferences__local-backups": {
     "messageformat": "Резервне копије на рачунару"
@@ -6114,9 +6390,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Ресетуј"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Готово"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Боја линка корисничког имена, {index,number} од {total,number}"
   },
@@ -6444,6 +6717,255 @@
   "icu:WhatsNew__modal-title": {
     "messageformat": "Шта је ново"
   },
+  "icu:PreferencesDonations__title": {
+    "messageformat": "Приватност испред профита"
+  },
+  "icu:PreferencesDonations__description": {
+    "messageformat": "Приватно дописивање које ви финансирате. Без огласа, без праћења, без компромиса. Донирајте сада да подржите Signal. <readMoreLink>Прочитајте опширније</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Донирајте"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "Моја подршка"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "Једнократна донација од {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Обрађујемо донацију…"
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "Донирајте {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "Значкама и месечним донацијама можете управљати на вашем мобилном уређају."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Ваши подаци су приватни"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>Signal не прикупља, нити чува, ваше податке о личности када донирате.</paragraph><paragraph>Користимо Stripe као обрађивача плаћања за примање ваших донација. Не приступамо ниједној од информација које им пружите, нити их складиштимо или чувамо.</paragraph><paragraph>Signal не повезује, нити може да повеже, вашу донацију са вашим налогом на Signal-у.</paragraph><paragraph>Хвала вам на подршци!</paragraph>"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "У реду"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Признанице"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Прикажи детаље признанице"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Честа питања донатора"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "Признанице се не сихнронизују на уређајима. Ако сте поново инсталирали Signal, признанице за претходне донације неће бити доступне."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "Нема признаница"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Преузми признаницу"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Тип"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Датум плаћања"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Дајте једнократну донацију"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Само једнократне донације су доступне на десктоп верзији. Месечне донације можете активирати на мобилном уређају."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Имате проблема? <contactSupportLink>Обратите се подршци</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Унесите износ"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Кредитна или дебитна картица"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Унесите податке са кредитне или дебитне картице. Signal не прикупља нити чува ваше податке о личности. <learnMoreLink>Сазнајте више</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Број картице"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Датум истека"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "ММ/ГГ"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Донирајте {formattedCurrencyAmount} Signal-у"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Неважећи број картице"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "Картица је истекла"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "Година је обавезна"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Неважеће"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Код је прекратак"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Набавите значку подршке за Signal која траје 30 дана"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Минимални износ донације је {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Минимални износ који можете да донирате је {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Максимални износ донације је {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Ако напустите ову страницу, информације са ваше кредитне картице ће бити уклоњене. Желите ли да наставите?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Уклони информације"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Настави"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "Потврда о донацији"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "Износ"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Тип"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "Датум плаћања"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "Једном"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Хвала вам што подржавате Signal. Ваш допринос омогућава подстицање мисије заштите слободног изражавања и пружања безбедне глобалне комуникације милионима широм света кроз технологију отвореног кода за заштиту приватности. Ако сте резидент Сједињених Америчких Држава, сачувајте ову признаницу за своју пореску евиденцију. Signal Technology Foundation је непрофитна организација изузета од опорезивања у Сједињеним Америчким Државама према одељку 501c3 Закона о интерним приходима. Наш савезни порески број је 82-4506840."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Офлајн сте. Повежите се на интернет да бисте довршили донацију."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Донација је отказана"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Донација је извршена"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Грешка приликом обраде донације"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Обрађујемо донацију"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Потврда није успела"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "У току је донација за коју је неопходна додатна верификација."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Имате донацију у току за коју је потребна потврда."
+  },
+  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
+    "messageformat": "Донација је успела, али нисмо успели да ажурирамо подешавања значке"
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Донација је успела, али нисмо успели да ажурирамо подешавања значке"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Да бисте ажурирали подешавања значке на свом мобилном уређају, идите на Подешавања → Донирајте за Signal → Значке."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Донација је прекинута"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "Није вам наплаћено преко картице. Желите ли да поново покушате донацију?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Пробајте поново"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Начин плаћања је одбијен"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Пробајте други начин плаћања или се обратите својој банци за више информација."
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Потврда није успела"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "Додатна верификација није успела. Пробајте поново."
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "Дошло је до грешке са вашом донацијом"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "Ваша донација можда није обрађена. Кликните на „Донирајте Signal-у“, а затим на „Потврде о донацији“ да проверите своје потврде."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Пробајте поново или пошаљите нашој подршци извештај о грешкама за помоћ при довршавању донације. Извештаји о грешкама нам помажу да откријемо и решимо проблем и они не садрже информације на основу којих можете бити идентификовани."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "Обрађујемо донацију…"
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Донација се и даље обрађује"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "Ваша донација се и даље обрађује. Може потрајати пар минута."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Донација је отказана"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "Прошло је превише времена од када сте започели своју донацију. Почните испочетка."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "Потребна је додатна верификација"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Чека се верификација"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "Издавач ваше кредитне картице захтева корак за додатну верификацију у веб-прегледачу."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Отвори прегледач"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Поново отвори прегледач"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Откажи донацију"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Хвала вам на подршци!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Добили сте значку донатора од Signal-а! Прикажите је на профилу да истакнете своју подршку."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Прикажи на профилу"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "То можете подесити на свом мобилном уређају тако што ћете отићи у Подешавања → Донирајте за Signal → Значке"
+  },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ова верзија садржи низ мањих подешавања и исправки грешака како би Signal радио несметано.",
     "ignoreUnused": true
@@ -6472,10 +6994,10 @@
     "messageformat": "Обавили смо мања фина прилагођавања, исправке грешака и побољшања перформанси. Хвала што користите Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.58--0": {
-    "messageformat": "Нови одељак у бирачу реакција на поруке аутоматски приказује све реакције емоџијима које је порука примила."
+  "icu:WhatsNew__7.73": {
+    "messageformat": "Ово ажурирање уводи нове оптимизације перформанси које доприносе побољшању трајања батерије."
   },
-  "icu:WhatsNew__v7.59--0": {
-    "messageformat": "Побољшане су перформансе на Linux-у."
+  "icu:WhatsNew__7.74": {
+    "messageformat": "Signal Desktop сада подржава седам нових емотикона."
   }
 }

@@ -1,12 +1,13 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AciString } from '../types/ServiceId';
-import type { ConversationModel } from '../models/conversations';
-import * as Errors from '../types/errors';
-import { createLogger } from '../logging/log';
-import { drop } from '../util/drop';
-import { getConversationIdForLogging } from '../util/idForLogging';
+import type { AciString } from '../types/ServiceId.js';
+import type { ConversationModel } from '../models/conversations.js';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { drop } from '../util/drop.js';
+import { getConversationIdForLogging } from '../util/idForLogging.js';
+import type { MessageRequestResponseSource } from '../types/MessageRequestResponseEvent.js';
 
 const log = createLogger('MessageRequests');
 
@@ -14,6 +15,12 @@ export type MessageRequestAttributesType = {
   envelopeId: string;
   groupV2Id?: string;
   removeFromMessageReceiverCache: () => unknown;
+  receivedAtMs: number;
+  receivedAtCounter: number;
+  sourceType:
+    | MessageRequestResponseSource.BLOCK_SYNC
+    | MessageRequestResponseSource.MRR_SYNC;
+  sentAt: number;
   threadAci?: AciString;
   type: number;
 };
@@ -64,7 +71,14 @@ export async function onResponse(
   sync: MessageRequestAttributesType
 ): Promise<void> {
   messageRequests.set(sync.envelopeId, sync);
-  const { threadAci, groupV2Id } = sync;
+  const {
+    threadAci,
+    groupV2Id,
+    receivedAtMs,
+    sentAt,
+    receivedAtCounter,
+    sourceType,
+  } = sync;
 
   const logId = `MessageRequests.onResponse(groupv2(${groupV2Id}) ${threadAci}`;
 
@@ -92,7 +106,10 @@ export async function onResponse(
 
     drop(
       conversation.applyMessageRequestResponse(sync.type, {
-        fromSync: true,
+        source: sourceType,
+        receivedAtCounter,
+        receivedAtMs,
+        timestamp: sentAt,
       })
     );
 

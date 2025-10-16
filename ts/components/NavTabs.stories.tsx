@@ -5,11 +5,11 @@ import React from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { NavTabsProps } from './NavTabs';
-import { NavTabs } from './NavTabs';
-import { NavTab } from '../state/ducks/nav';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation';
-import { ThemeType } from '../types/Util';
+import type { NavTabsProps } from './NavTabs.js';
+import { NavTabs } from './NavTabs.js';
+import { NavTab } from '../types/Nav.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.js';
+import { ThemeType } from '../types/Util.js';
 
 const { i18n } = window.SignalContext;
 
@@ -38,7 +38,7 @@ const createProps = (
   unreadConversationsStats: overrideProps.unreadConversationsStats ?? {
     unreadCount: 0,
     unreadMentionsCount: 0,
-    markedUnread: false,
+    readChatsMarkedUnreadCount: 0,
   },
   unreadStoriesCount: overrideProps.unreadStoriesCount ?? 0,
 });

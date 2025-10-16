@@ -3,57 +3,44 @@
 
 // Captures the globals put in place by preload.js, background.js and others
 
+import type EventEmitter from 'node:events';
 import type { Store } from 'redux';
-import type * as Backbone from 'backbone';
 import type { SystemPreferences } from 'electron';
-import type PQueue from 'p-queue/dist';
+import type PQueue from 'p-queue/dist.js';
 import type { assert } from 'chai';
-import type { PhoneNumber, PhoneNumberFormat } from 'google-libphonenumber';
 import type { MochaOptions } from 'mocha';
 
-import type { ConversationModelCollectionType } from './model-types.d';
-import type { textsecure } from './textsecure';
-import type { Storage } from './textsecure/Storage';
+import type { textsecure } from './textsecure/index.js';
+import type { Storage } from './textsecure/Storage.js';
 import type {
   ChallengeHandler,
   IPCRequest as IPCChallengeRequest,
-} from './challenge';
-import type AccountManager from './textsecure/AccountManager';
-import type { WebAPIConnectType } from './textsecure/WebAPI';
-import type { CallingClass } from './services/calling';
-import type * as StorageService from './services/storage';
-import type { BackupsService } from './services/backups';
-import type * as Groups from './groups';
-import type * as Crypto from './Crypto';
-import type * as Curve from './Curve';
-import type * as RemoteConfig from './RemoteConfig';
-import type { OSType } from './util/os/shared';
-import type { LocalizerType, SystemThemeType, ThemeType } from './types/Util';
-import type { Receipt } from './types/Receipt';
-import type { ConversationController } from './ConversationController';
-import type { ReduxActions } from './state/types';
-import type { createApp } from './state/roots/createApp';
-import type { ConversationModel } from './models/conversations';
-import type { BatcherType } from './util/batcher';
-import type { ConfirmationDialog } from './components/ConfirmationDialog';
-import type { SignalProtocolStore } from './SignalProtocolStore';
-import type { SocketStatus } from './types/SocketStatus';
-import type { ScreenShareStatus } from './types/Calling';
-import type { MessageCache } from './services/MessageCache';
-import type { StateType } from './state/reducer';
-import type { Address } from './types/Address';
-import type { QualifiedAddress } from './types/QualifiedAddress';
-import type { CIType } from './CI';
-import type { IPCEventsType } from './util/createIPCEvents';
-import type { SignalContextType } from './windows/context';
-import type * as Message2 from './types/Message2';
-import type { initializeMigrations } from './signal';
-import type { RetryPlaceholders } from './util/retryPlaceholders';
-import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences';
-import type { WindowsNotificationData } from './services/notifications';
-import type { QueryStatsOptions } from './sql/main';
-import type { SocketStatuses } from './textsecure/SocketManager';
-import type { BeforeNavigateService } from './services/BeforeNavigate';
+} from './challenge.js';
+import type AccountManager from './textsecure/AccountManager.js';
+import type { OSType } from './util/os/shared.js';
+import type {
+  LocalizerType,
+  SystemThemeType,
+  ThemeType,
+} from './types/Util.js';
+import type { Receipt } from './types/Receipt.js';
+import type { ConversationController } from './ConversationController.js';
+import type { ReduxActions } from './state/types.js';
+import type { BatcherType } from './util/batcher.js';
+import type { ScreenShareStatus } from './types/Calling.js';
+import type { MessageCache } from './services/MessageCache.js';
+import type { StateType } from './state/reducer.js';
+import type { Address } from './types/Address.js';
+import type { QualifiedAddress } from './types/QualifiedAddress.js';
+import type { CIType } from './CI.js';
+import type { IPCEventsType } from './util/createIPCEvents.js';
+import type { SignalContextType } from './windows/context.js';
+import type * as Message2 from './types/Message2.js';
+import type { initializeMigrations } from './signal.js';
+import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences.js';
+import type { WindowsNotificationData } from './services/notifications.js';
+import type { QueryStatsOptions } from './sql/main.js';
+import type { SocketStatuses } from './textsecure/SocketManager.js';
 
 export { Long } from 'long';
 
@@ -144,26 +131,14 @@ type SettingsWindowPropsType = {
 
 export type SignalCoreType = {
   AboutWindowProps?: AboutWindowPropsType;
-  Crypto: typeof Crypto;
-  Curve: typeof Curve;
   DebugLogWindowProps?: DebugLogWindowPropsType;
-  Groups: typeof Groups;
   PermissionsWindowProps?: PermissionsWindowPropsType;
-  RemoteConfig: typeof RemoteConfig;
   ScreenShareWindowProps?: ScreenShareWindowPropsType;
   Services: {
-    backups: BackupsService;
-    beforeNavigate: BeforeNavigateService;
-    calling: CallingClass;
-    initializeGroupCredentialFetcher: () => Promise<void>;
-    initializeNetworkObserver: (
-      network: ReduxActions['network'],
-      getAuthSocketStatus: () => SocketStatus
-    ) => void;
-    initializeUpdateListener: (updates: ReduxActions['updates']) => void;
-    lightSessionResetQueue?: PQueue;
-    retryPlaceholders?: RetryPlaceholders;
-    storage: typeof StorageService;
+    // Only for development
+    backups: unknown;
+    calling: unknown;
+    donations: unknown;
   };
   SettingsWindowProps?: SettingsWindowPropsType;
   Migrations: ReturnType<typeof initializeMigrations>;
@@ -172,16 +147,7 @@ export type SignalCoreType = {
     Address: typeof Address;
     QualifiedAddress: typeof QualifiedAddress;
   };
-  Components: {
-    ConfirmationDialog: typeof ConfirmationDialog;
-  };
   OS: OSType;
-  State: {
-    Roots: {
-      createApp: typeof createApp;
-    };
-  };
-  conversationControllerStart: () => void;
   challengeHandler?: ChallengeHandler;
 
   // Only for debugging in Dev Tools
@@ -193,18 +159,10 @@ declare global {
   // We want to extend various globals, so we need to use interfaces.
   /* eslint-disable no-restricted-syntax */
   interface Window {
-    // Used in Sticker Creator to create proper paths to emoji images
-    ROOT_PATH?: string;
-    // Used for sticker creator localization
-    localeMessages: { [key: string]: { message: string } };
-
-    openArtCreator: (opts: { username: string; password: string }) => void;
-
     enterKeyboardMode: () => void;
     enterMouseMode: () => void;
     getAccountManager: () => AccountManager;
     getAppInstance: () => string | undefined;
-    getConversations: () => ConversationModelCollectionType;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
     getHostName: () => string;
@@ -221,41 +179,27 @@ declare global {
     isAfterVersion: (version: string, anotherVersion: string) => boolean;
     isBeforeVersion: (version: string, anotherVersion: string) => boolean;
     initialTheme?: ThemeType;
-    libphonenumberInstance: {
-      parse: (number: string) => PhoneNumber;
-      getRegionCodeForNumber: (number: PhoneNumber) => string | undefined;
-      format: (number: PhoneNumber, format: PhoneNumberFormat) => string;
-    };
-    libphonenumberFormat: typeof PhoneNumberFormat;
     nodeSetImmediate: typeof setImmediate;
     platform: string;
     preloadedImages: Array<HTMLImageElement>;
     setImmediate: typeof setImmediate;
     sendChallengeRequest: (request: IPCChallengeRequest) => void;
-    showKeyboardShortcuts: () => void;
     storage: Storage;
     systemTheme: SystemThemeType;
 
     Signal: SignalCoreType;
 
-    getServerTrustRoot: () => string;
+    getServerTrustRoots: () => Array<string>;
     logAuthenticatedConnect?: () => void;
 
     // ========================================================================
     // The types below have been somewhat organized. See DESKTOP-4801
     // ========================================================================
 
-    // Backbone
-    Backbone: typeof Backbone;
-
     ConversationController: ConversationController;
     Events: IPCEventsType;
-    FontFace: typeof FontFace;
     MessageCache: MessageCache;
-    SignalProtocolStore: typeof SignalProtocolStore;
-    WebAPI: WebAPIConnectType;
     Whisper: WhisperType;
-    getSignalProtocolStore: () => SignalProtocolStore;
     i18n: LocalizerType;
     // Note: used in background.html, and not type-checked
     startApp: () => void;
@@ -320,19 +264,10 @@ declare global {
   interface SharedArrayBuffer {
     __arrayBuffer: never;
   }
-
-  interface Set<T> {
-    // Needed until TS upgrade
-    difference<U>(other: ReadonlySet<U>): Set<T>;
-    symmetricDifference<U>(other: ReadonlySet<U>): Set<T>;
-  }
 }
 
 export type WhisperType = {
-  Conversation: typeof ConversationModel;
-  ConversationCollection: typeof ConversationModelCollectionType;
-
   deliveryReceiptQueue: PQueue;
   deliveryReceiptBatcher: BatcherType<Receipt>;
-  events: Backbone.Events;
+  events: EventEmitter;
 };

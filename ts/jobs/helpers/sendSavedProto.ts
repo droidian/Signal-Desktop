@@ -1,26 +1,26 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { handleMessageSend } from '../../util/handleMessageSend';
-import { getSendOptions } from '../../util/getSendOptions';
-import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { SignalService as Proto } from '../../protobuf';
+import { handleMessageSend } from '../../util/handleMessageSend.js';
+import { getSendOptions } from '../../util/getSendOptions.js';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors';
+} from './handleMultipleSendErrors.js';
 
-import type { ConversationModel } from '../../models/conversations';
+import type { ConversationModel } from '../../models/conversations.js';
 import type {
   ConversationQueueJobBundle,
   SavedProtoJobData,
-} from '../conversationJobQueue';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered';
+} from '../conversationJobQueue.js';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.js';
 import {
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors';
-import * as Bytes from '../../Bytes';
+} from '../../textsecure/Errors.js';
+import * as Bytes from '../../Bytes.js';
 
 export async function sendSavedProto(
   conversation: ConversationModel,
@@ -61,7 +61,7 @@ export async function sendSavedProto(
   const serviceId = conversation.getServiceId();
   if (!serviceId) {
     log.info(
-      `conversation ${conversation.idForLogging()} was missing serviceId, cancelling job.`
+      `conversation ${conversation.idForLogging()} was missing serviceId, canceling job.`
     );
     return;
   }
@@ -101,7 +101,7 @@ export async function sendSavedProto(
       error instanceof UnregisteredUserError
     ) {
       log.info(
-        'Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Cancelling job.'
+        'Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.'
       );
       return;
     }

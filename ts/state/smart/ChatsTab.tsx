@@ -2,31 +2,31 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { memo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { ChatsTab } from '../../components/ChatsTab';
-import type { SmartConversationViewProps } from './ConversationView';
-import { SmartConversationView } from './ConversationView';
-import { SmartMiniPlayer } from './MiniPlayer';
-import { SmartLeftPane } from './LeftPane';
-import type { NavTabPanelProps } from '../../components/NavTabs';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { getIntl } from '../selectors/user';
-import { usePrevious } from '../../hooks/usePrevious';
-import { TargetedMessageSource } from '../ducks/conversationsEnums';
-import { useConversationsActions } from '../ducks/conversations';
-import { useToastActions } from '../ducks/toast';
-import { strictAssert } from '../../util/assert';
-import { isStagingServer } from '../../util/isStagingServer';
-import { ToastType } from '../../types/Toast';
-import { getNavTabsCollapsed } from '../selectors/items';
-import { useItemsActions } from '../ducks/items';
-import { getHasAnyFailedStorySends } from '../selectors/stories';
-import { getHasPendingUpdate } from '../selectors/updates';
-import { getOtherTabsUnreadStats } from '../selectors/nav';
+import { ChatsTab } from '../../components/ChatsTab.js';
+import type { SmartConversationViewProps } from './ConversationView.js';
+import { SmartConversationView } from './ConversationView.js';
+import { SmartMiniPlayer } from './MiniPlayer.js';
+import { SmartLeftPane } from './LeftPane.js';
+import type { NavTabPanelProps } from '../../components/NavTabs.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { getIntl } from '../selectors/user.js';
+import { usePrevious } from '../../hooks/usePrevious.js';
+import { TargetedMessageSource } from '../ducks/conversationsEnums.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { useToastActions } from '../ducks/toast.js';
+import { strictAssert } from '../../util/assert.js';
+import { isStagingServer } from '../../util/isStagingServer.js';
+import { ToastType } from '../../types/Toast.js';
+import { getNavTabsCollapsed } from '../selectors/items.js';
+import { useItemsActions } from '../ducks/items.js';
+import { getHasAnyFailedStorySends } from '../selectors/stories.js';
+import { getHasPendingUpdate } from '../selectors/updates.js';
+import { getOtherTabsUnreadStats } from '../selectors/nav.js';
 import {
   getSelectedConversationId,
   getTargetedMessage,
   getTargetedMessageSource,
-} from '../selectors/conversations';
+} from '../selectors/conversations.js';
 
 function renderConversationView(props: SmartConversationViewProps) {
   return <SmartConversationView {...props} />;
@@ -102,18 +102,6 @@ export const SmartChatsTab = memo(function SmartChatsTab() {
   }, [prevConversationId, selectedConversationId]);
 
   useEffect(() => {
-    function refreshConversation({
-      newId,
-      oldId,
-    }: {
-      newId: string;
-      oldId: string;
-    }) {
-      if (prevConversationId === oldId) {
-        showConversation({ conversationId: newId });
-      }
-    }
-
     // Close current opened conversation to reload the group information once
     // linked.
     function unload() {
@@ -128,12 +116,10 @@ export const SmartChatsTab = memo(function SmartChatsTab() {
     }
 
     window.Whisper.events.on('pack-install-failed', packInstallFailed);
-    window.Whisper.events.on('refreshConversation', refreshConversation);
     window.Whisper.events.on('setupAsNewDevice', unload);
 
     return () => {
       window.Whisper.events.off('pack-install-failed', packInstallFailed);
-      window.Whisper.events.off('refreshConversation', refreshConversation);
       window.Whisper.events.off('setupAsNewDevice', unload);
     };
   }, [onConversationClosed, prevConversationId, showConversation, showToast]);

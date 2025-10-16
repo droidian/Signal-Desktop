@@ -14,12 +14,11 @@ import chaiAsPromised from 'chai-as-promised';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { reporters, type MochaOptions } from 'mocha';
 
-import { getSignalProtocolStore } from '../../SignalProtocolStore';
-import { initMessageCleanup } from '../../services/messageStateCleanup';
-import { initializeMessageCounter } from '../../util/incrementMessageCounter';
-import { initializeRedux } from '../../state/initializeRedux';
-import * as Stickers from '../../types/Stickers';
-import { ThemeType } from '../../types/Util';
+import { initMessageCleanup } from '../../services/messageStateCleanup.js';
+import { initializeMessageCounter } from '../../util/incrementMessageCounter.js';
+import { initializeRedux } from '../../state/initializeRedux.js';
+import * as Stickers from '../../types/Stickers.js';
+import { ThemeType } from '../../types/Util.js';
 
 chai.use(chaiAsPromised);
 
@@ -104,6 +103,7 @@ window.testUtilities = {
       callLinks: [],
       callHistory: [],
       callHistoryUnreadCount: 0,
+      chatFolders: [],
       gifs: {
         recentGifs: [],
       },
@@ -127,6 +127,8 @@ window.testUtilities = {
       storyDistributionLists: [],
       donations: {
         currentWorkflow: undefined,
+        didResumeWorkflowAtStartup: false,
+        lastError: undefined,
         receipts: [],
       },
       stickers: {
@@ -148,11 +150,17 @@ window.testUtilities = {
 
     for (let i = 0; i < files.length; i += 1) {
       if (i % workerCount === worker) {
-        // eslint-disable-next-line import/no-dynamic-require, global-require
-        require(files[i]);
+        try {
+          // eslint-disable-next-line import/no-dynamic-require, global-require
+          require(files[i]);
+        } catch (error) {
+          window.testUtilities.onTestEvent({
+            type: 'fail',
+            title: ['Failed to load test:', files[i]],
+            error: error.stack || String(error),
+          });
+        }
       }
     }
   },
 };
-
-window.getSignalProtocolStore = getSignalProtocolStore;

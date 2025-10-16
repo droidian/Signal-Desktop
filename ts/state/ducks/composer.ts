@@ -1,49 +1,47 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import path from 'path';
-import { debounce, isEqual } from 'lodash';
+import path from 'node:path';
+import lodash from 'lodash';
 import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { v4 as generateUuid } from 'uuid';
-import { webUtils } from 'electron';
 
 import type { ReadonlyDeep } from 'type-fest';
 import type {
   AddLinkPreviewActionType,
   RemoveLinkPreviewActionType,
-} from './linkPreviews';
-import {
-  type AttachmentType,
-  type AttachmentDraftType,
-  type InMemoryAttachmentDraftType,
-  isVideoAttachment,
-  isImageAttachment,
-} from '../../types/Attachment';
-import { DataReader, DataWriter } from '../../sql/Client';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import type { DraftBodyRanges } from '../../types/BodyRange';
-import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews';
-import type { ReadonlyMessageAttributesType } from '../../model-types.d';
-import type { NoopActionType } from './noop';
-import type { ShowToastActionType } from './toast';
-import type { StateType as RootStateType } from '../reducer';
-import { createLogger } from '../../logging/log';
-import * as Errors from '../../types/errors';
+} from './linkPreviews.js';
+import type {
+  AttachmentType,
+  AttachmentDraftType,
+  InMemoryAttachmentDraftType,
+} from '../../types/Attachment.js';
+import { isVideoAttachment, isImageAttachment } from '../../util/Attachment.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import type { DraftBodyRanges } from '../../types/BodyRange.js';
+import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.js';
+import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
+import type { NoopActionType } from './noop.js';
+import type { ShowToastActionType } from './toast.js';
+import type { StateType as RootStateType } from '../reducer.js';
+import { createLogger } from '../../logging/log.js';
+import * as Errors from '../../types/errors.js';
 import {
   ADD_PREVIEW as ADD_LINK_PREVIEW,
   REMOVE_PREVIEW as REMOVE_LINK_PREVIEW,
-} from './linkPreviews';
-import { LinkPreviewSourceType } from '../../types/LinkPreview';
-import type { AciString } from '../../types/ServiceId';
-import { completeRecording, getIsRecording } from './audioRecorder';
-import { SHOW_TOAST } from './toast';
-import type { AnyToast } from '../../types/Toast';
-import { ToastType } from '../../types/Toast';
-import { SafetyNumberChangeSource } from '../../components/SafetyNumberChangeDialog';
-import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation';
-import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified';
-import { clearConversationDraftAttachments } from '../../util/clearConversationDraftAttachments';
-import { deleteDraftAttachment } from '../../util/deleteDraftAttachment';
+} from './linkPreviews.js';
+import { LinkPreviewSourceType } from '../../types/LinkPreview.js';
+import type { AciString } from '../../types/ServiceId.js';
+import { completeRecording, getIsRecording } from './audioRecorder.js';
+import { SHOW_TOAST } from './toast.js';
+import type { AnyToast } from '../../types/Toast.js';
+import { ToastType } from '../../types/Toast.js';
+import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.js';
+import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation.js';
+import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified.js';
+import { clearConversationDraftAttachments } from '../../util/clearConversationDraftAttachments.js';
+import { deleteDraftAttachment } from '../../util/deleteDraftAttachment.js';
 import {
   getLinkPreviewForSend,
   hasLinkPreviewLoaded,
@@ -51,50 +49,52 @@ import {
   removeLinkPreview,
   resetLinkPreview,
   suspendLinkPreviews,
-} from '../../services/LinkPreview';
+} from '../../services/LinkPreview.js';
 import {
   getMaximumOutgoingAttachmentSizeInKb,
   getRenderDetailsForLimit,
   KIBIBYTE,
-} from '../../types/AttachmentSize';
-import { getValue as getRemoteConfigValue } from '../../RemoteConfig';
-import { getRecipientsByConversation } from '../../util/getRecipientsByConversation';
-import { processAttachment } from '../../util/processAttachment';
-import { hasDraftAttachments } from '../../util/hasDraftAttachments';
-import { isFileDangerous } from '../../util/isFileDangerous';
-import { stringToMIMEType } from '../../types/MIME';
-import { isNotNil } from '../../util/isNotNil';
-import { replaceIndex } from '../../util/replaceIndex';
-import { resolveAttachmentDraftData } from '../../util/resolveAttachmentDraftData';
-import { resolveDraftAttachmentOnDisk } from '../../util/resolveDraftAttachmentOnDisk';
-import { shouldShowInvalidMessageToast } from '../../util/shouldShowInvalidMessageToast';
-import { writeDraftAttachment } from '../../util/writeDraftAttachment';
-import { getMessageById } from '../../messages/getMessageById';
-import { canReply, isNormalBubble } from '../selectors/message';
-import { getAuthorId } from '../../messages/helpers';
-import { getConversationSelector } from '../selectors/conversations';
-import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend';
-import { useBoundActions } from '../../hooks/useBoundActions';
+} from '../../types/AttachmentSize.js';
+import { getValue as getRemoteConfigValue } from '../../RemoteConfig.js';
+import { getRecipientsByConversation } from '../../util/getRecipientsByConversation.js';
+import { processAttachment } from '../../util/processAttachment.js';
+import { hasDraftAttachments } from '../../util/hasDraftAttachments.js';
+import { isFileDangerous } from '../../util/isFileDangerous.js';
+import { stringToMIMEType } from '../../types/MIME.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { replaceIndex } from '../../util/replaceIndex.js';
+import { resolveAttachmentDraftData } from '../../util/resolveAttachmentDraftData.js';
+import { resolveDraftAttachmentOnDisk } from '../../util/resolveDraftAttachmentOnDisk.js';
+import { shouldShowInvalidMessageToast } from '../../util/shouldShowInvalidMessageToast.js';
+import { writeDraftAttachment } from '../../util/writeDraftAttachment.js';
+import { getMessageById } from '../../messages/getMessageById.js';
+import { canReply, isNormalBubble } from '../selectors/message.js';
+import { getAuthorId } from '../../messages/helpers.js';
+import { getConversationSelector } from '../selectors/conversations.js';
+import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
 import {
   CONVERSATION_UNLOADED,
   TARGETED_CONVERSATION_CHANGED,
   scrollToMessage,
-} from './conversations';
+} from './conversations.js';
 import type {
   ConversationUnloadedActionType,
   TargetedConversationChangedActionType,
   ScrollToMessageActionType,
-} from './conversations';
-import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper';
-import { drop } from '../../util/drop';
-import { strictAssert } from '../../util/assert';
-import { makeQuote } from '../../util/makeQuote';
-import { sendEditedMessage as doSendEditedMessage } from '../../util/sendEditedMessage';
-import { Sound, SoundType } from '../../util/Sound';
+} from './conversations.js';
+import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.js';
+import { drop } from '../../util/drop.js';
+import { strictAssert } from '../../util/assert.js';
+import { makeQuote } from '../../util/makeQuote.js';
+import { sendEditedMessage as doSendEditedMessage } from '../../util/sendEditedMessage.js';
+import { Sound, SoundType } from '../../util/Sound.js';
 import {
   isImageTypeSupported,
   isVideoTypeSupported,
-} from '../../util/GoogleChrome';
+} from '../../util/GoogleChrome.js';
+
+const { debounce, isEqual } = lodash;
 
 const log = createLogger('composer');
 
@@ -103,7 +103,7 @@ const log = createLogger('composer');
 type ComposerStateByConversationType = {
   attachments: ReadonlyArray<AttachmentDraftType>;
   focusCounter: number;
-  isDisabled: boolean;
+  disabledCounter: number;
   linkPreviewLoading: boolean;
   linkPreviewResult?: LinkPreviewForUIType;
   messageCompositionId: string;
@@ -128,7 +128,7 @@ function getEmptyComposerState(): ComposerStateByConversationType {
   return {
     attachments: [],
     focusCounter: 0,
-    isDisabled: false,
+    disabledCounter: 0,
     linkPreviewLoading: false,
     messageCompositionId: generateUuid(),
     sendCounter: 0,
@@ -151,7 +151,7 @@ const RESET_COMPOSER = 'composer/RESET_COMPOSER';
 export const SET_FOCUS = 'composer/SET_FOCUS';
 const SET_HIGH_QUALITY_SETTING = 'composer/SET_HIGH_QUALITY_SETTING';
 const SET_QUOTED_MESSAGE = 'composer/SET_QUOTED_MESSAGE';
-const SET_COMPOSER_DISABLED = 'composer/SET_COMPOSER_DISABLED';
+const UPDATE_COMPOSER_DISABLED = 'composer/UPDATE_COMPOSER_DISABLED';
 
 type AddPendingAttachmentActionType = ReadonlyDeep<{
   type: typeof ADD_PENDING_ATTACHMENT;
@@ -184,8 +184,8 @@ export type ResetComposerActionType = ReadonlyDeep<{
   };
 }>;
 
-type SetComposerDisabledStateActionType = ReadonlyDeep<{
-  type: typeof SET_COMPOSER_DISABLED;
+type UpdateComposerDisabledActionType = ReadonlyDeep<{
+  type: typeof UPDATE_COMPOSER_DISABLED;
   payload: {
     conversationId: string;
     value: boolean;
@@ -226,7 +226,7 @@ type ComposerActionType =
   | ReplaceAttachmentsActionType
   | ResetComposerActionType
   | TargetedConversationChangedActionType
-  | SetComposerDisabledStateActionType
+  | UpdateComposerDisabledActionType
   | SetFocusActionType
   | SetHighQualitySettingActionType
   | SetQuotedMessageActionType;
@@ -252,11 +252,11 @@ export const actions = {
   sendEditedMessage,
   sendMultiMediaMessage,
   sendStickerMessage,
-  setComposerDisabledState,
   setComposerFocus,
   setMediaQualitySetting,
   setQuoteByMessageId,
   setQuotedMessage,
+  updateComposerDisabled,
 };
 
 function incrementSendCounter(conversationId: string): IncrementSendActionType {
@@ -413,7 +413,7 @@ async function withPreSendChecks(
   dispatch: ThunkDispatch<
     RootStateType,
     unknown,
-    SetComposerDisabledStateActionType | ShowToastActionType
+    UpdateComposerDisabledActionType | ShowToastActionType
   >,
   body: () => Promise<void>
 ): Promise<void> {
@@ -432,7 +432,7 @@ async function withPreSendChecks(
     options.draftAttachments ?? conversation.attributes.draftAttachments;
 
   try {
-    dispatch(setComposerDisabledState(conversationId, true));
+    dispatch(updateComposerDisabled(conversationId, true));
 
     try {
       const sendAnyway = await blockSendUntilConversationsAreVerified(
@@ -440,7 +440,6 @@ async function withPreSendChecks(
         SafetyNumberChangeSource.MessageSend
       );
       if (!sendAnyway) {
-        dispatch(setComposerDisabledState(conversationId, false));
         return;
       }
     } catch (error) {
@@ -475,7 +474,7 @@ async function withPreSendChecks(
 
     await body();
   } finally {
-    dispatch(setComposerDisabledState(conversationId, false));
+    dispatch(updateComposerDisabled(conversationId, false));
   }
 
   conversation.clearTypingTimers();
@@ -493,7 +492,7 @@ function sendEditedMessage(
   void,
   RootStateType,
   unknown,
-  SetComposerDisabledStateActionType | ShowToastActionType
+  UpdateComposerDisabledActionType | ShowToastActionType
 > {
   return async dispatch => {
     const conversation = window.ConversationController.get(conversationId);
@@ -548,7 +547,7 @@ function sendMultiMediaMessage(
   | IncrementSendActionType
   | NoopActionType
   | ResetComposerActionType
-  | SetComposerDisabledStateActionType
+  | UpdateComposerDisabledActionType
   | SetQuotedMessageActionType
   | ShowToastActionType
 > {
@@ -622,7 +621,6 @@ function sendMultiMediaMessage(
                 undefined
               );
               dispatch(incrementSendCounter(conversationId));
-              dispatch(setComposerDisabledState(conversationId, false));
 
               if (state.items.audioMessage) {
                 drop(new Sound({ soundType: SoundType.Whoosh }).play());
@@ -707,12 +705,7 @@ function getAttachmentsFromConversationModel(
 export function setQuoteByMessageId(
   conversationId: string,
   messageId: string | undefined
-): ThunkAction<
-  void,
-  RootStateType,
-  unknown,
-  SetComposerDisabledStateActionType | SetQuotedMessageActionType
-> {
+): ThunkAction<void, RootStateType, unknown, SetQuotedMessageActionType> {
   return async (dispatch, getState) => {
     const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
@@ -790,7 +783,6 @@ export function setQuoteByMessageId(
       );
 
       dispatch(setComposerFocus(conversation.id));
-      dispatch(setComposerDisabledState(conversationId, false));
     } else {
       dispatch(setQuotedMessage(conversationId, undefined));
     }
@@ -908,8 +900,10 @@ function addPendingAttachment(
 
     const conversation = window.ConversationController.get(conversationId);
     if (conversation) {
-      conversation.attributes.draftAttachments = nextAttachments;
-      conversation.attributes.draftChanged = true;
+      conversation.set({
+        draftAttachments: nextAttachments,
+        draftChanged: true,
+      });
       drop(DataWriter.updateConversation(conversation.attributes));
     }
   };
@@ -1006,7 +1000,7 @@ function processAttachments({
   void,
   RootStateType,
   unknown,
-  NoopActionType | ShowToastActionType
+  NoopActionType | ShowToastActionType | UpdateComposerDisabledActionType
 > {
   return async (dispatch, getState) => {
     if (!files.length) {
@@ -1040,7 +1034,10 @@ function processAttachments({
     const nextDraftAttachments = (
       conversation.get('draftAttachments') || []
     ).slice();
-    const filesToProcess: Array<File> = [];
+    const filesToProcess: Array<{
+      file: File;
+      pendingAttachment: AttachmentDraftType;
+    }> = [];
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i];
       const processingResult = preProcessAttachment(file, nextDraftAttachments);
@@ -1054,7 +1051,7 @@ function processAttachments({
             getState,
             undefined
           );
-          filesToProcess.push(file);
+          filesToProcess.push({ file, pendingAttachment });
           // we keep a running count of the draft attachments so we can show a
           // toast in case we add too many attachments at once
           nextDraftAttachments.push(pendingAttachment);
@@ -1062,40 +1059,46 @@ function processAttachments({
       }
     }
 
-    await Promise.all(
-      filesToProcess.map(async file => {
-        try {
-          const attachment = await processAttachment(file, {
-            generateScreenshot: true,
-            flags,
-          });
-          if (!attachment) {
-            removeAttachment(conversationId, webUtils.getPathForFile(file))(
+    dispatch(updateComposerDisabled(conversationId, true));
+
+    try {
+      await Promise.all(
+        filesToProcess.map(async ({ file, pendingAttachment }) => {
+          try {
+            const attachment = await processAttachment(file, {
+              generateScreenshot: true,
+              flags,
+            });
+            if (!attachment) {
+              removeAttachment(conversationId, pendingAttachment)(
+                dispatch,
+                getState,
+                undefined
+              );
+              return;
+            }
+            addAttachment(conversationId, attachment)(
               dispatch,
               getState,
               undefined
             );
-            return;
+          } catch (err) {
+            log.error(
+              'handleAttachmentsProcessing: failed to process attachment:',
+              err.stack
+            );
+            removeAttachment(conversationId, pendingAttachment)(
+              dispatch,
+              getState,
+              undefined
+            );
+            toastToShow = { toastType: ToastType.UnableToLoadAttachment };
           }
-          addAttachment(conversationId, attachment)(
-            dispatch,
-            getState,
-            undefined
-          );
-        } catch (err) {
-          log.error(
-            'handleAttachmentsProcessing: failed to process attachment:',
-            err.stack
-          );
-          removeAttachment(conversationId, webUtils.getPathForFile(file))(
-            dispatch,
-            getState,
-            undefined
-          );
-          toastToShow = { toastType: ToastType.UnableToLoadAttachment };
-        }
-      })
-    );
+        })
+      );
+    } finally {
+      dispatch(updateComposerDisabled(conversationId, false));
+    }
 
     if (toastToShow) {
       dispatch({
@@ -1181,7 +1184,7 @@ function getPendingAttachment(file: File): AttachmentDraftType | undefined {
 
 function removeAttachment(
   conversationId: string,
-  filePath: string
+  draft: AttachmentDraftType
 ): ThunkAction<void, RootStateType, unknown, ReplaceAttachmentsActionType> {
   return async (dispatch, getState) => {
     const state = getState();
@@ -1191,21 +1194,28 @@ function removeAttachment(
       conversationId
     );
 
-    const [targetAttachment] = attachments.filter(
-      attachment => attachment.path === filePath
-    );
-    if (!targetAttachment) {
+    const targetAttachmentIndex = attachments.findIndex(attachment => {
+      return (
+        (attachment.clientUuid != null &&
+          attachment.clientUuid === draft.clientUuid) ||
+        (attachment.path != null && attachment.path === draft.path)
+      );
+    });
+    if (targetAttachmentIndex === -1) {
       return;
     }
 
-    const nextAttachments = attachments.filter(
-      attachment => attachment.path !== filePath
-    );
+    const targetAttachment = attachments[targetAttachmentIndex];
+    const nextAttachments = attachments
+      .slice(0, targetAttachmentIndex)
+      .concat(attachments.slice(targetAttachmentIndex + 1));
 
     const conversation = window.ConversationController.get(conversationId);
     if (conversation) {
-      conversation.attributes.draftAttachments = nextAttachments;
-      conversation.attributes.draftChanged = true;
+      conversation.set({
+        draftAttachments: nextAttachments,
+        draftChanged: true,
+      });
       await DataWriter.updateConversation(conversation.attributes);
     }
 
@@ -1349,12 +1359,12 @@ function saveDraft(
   }
 }
 
-function setComposerDisabledState(
+function updateComposerDisabled(
   conversationId: string,
   value: boolean
-): SetComposerDisabledStateActionType {
+): UpdateComposerDisabledActionType {
   return {
-    type: SET_COMPOSER_DISABLED,
+    type: UPDATE_COMPOSER_DISABLED,
     payload: {
       conversationId,
       value,
@@ -1525,9 +1535,10 @@ export function reducer(
     }));
   }
 
-  if (action.type === SET_COMPOSER_DISABLED) {
-    return updateComposerState(state, action, () => ({
-      isDisabled: action.payload.value,
+  if (action.type === UPDATE_COMPOSER_DISABLED) {
+    return updateComposerState(state, action, oldState => ({
+      disabledCounter:
+        oldState.disabledCounter + (action.payload.value ? 1 : -1),
     }));
   }
 

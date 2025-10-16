@@ -5,27 +5,27 @@ import type { AudioDevice } from '@signalapp/ringrtc';
 import type {
   CustomColorsItemType,
   DefaultConversationColorType,
-} from './Colors';
-import type { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability';
-import type { PhoneNumberSharingMode } from '../util/phoneNumberSharingMode';
-import type { RetryItemType } from '../util/retryPlaceholders';
-import type { ConfigMapType as RemoteConfigType } from '../RemoteConfig';
-import type { ExtendedStorageID, UnknownRecord } from './StorageService.d';
+} from './Colors.js';
+import type { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.js';
+import type { RetryItemType } from '../util/retryPlaceholders.js';
+import type { ConfigMapType as RemoteConfigType } from '../RemoteConfig.js';
+import type { ExtendedStorageID, UnknownRecord } from './StorageService.d.ts';
 
-import type { GroupCredentialType } from '../textsecure/WebAPI';
+import type { GroupCredentialType } from '../textsecure/WebAPI.js';
 import type {
   SessionResetsType,
   StorageServiceCredentials,
-} from '../textsecure/Types.d';
+} from '../textsecure/Types.d.ts';
 import type {
   BackupCredentialWrapperType,
   BackupsSubscriptionType,
   BackupStatusType,
-} from './backups';
-import type { ServiceIdString } from './ServiceId';
-import type { RegisteredChallengeType } from '../challenge';
-import type { ServerAlertsType } from '../util/handleServerAlerts';
-import type { NotificationProfileOverride } from './NotificationProfile';
+} from './backups.js';
+import type { ServiceIdString } from './ServiceId.js';
+import type { RegisteredChallengeType } from '../challenge.js';
+import type { ServerAlertsType } from '../util/handleServerAlerts.js';
+import type { NotificationProfileOverride } from './NotificationProfile.js';
+import type { PhoneNumberSharingMode } from './PhoneNumberSharingMode.js';
 
 export type AutoDownloadAttachmentType = {
   photos: boolean;
@@ -78,12 +78,6 @@ export type StorageAccessType = {
   blocked: ReadonlyArray<string>;
   defaultConversationColor: DefaultConversationColorType;
 
-  // Not used UI, stored as is when imported from backup.
-  defaultWallpaperPhotoPointer: Uint8Array;
-  defaultWallpaperPreset: number;
-  defaultDimWallpaperInDarkMode: boolean;
-  defaultAutoBubbleColor: boolean;
-
   customColors: CustomColorsItemType;
   device_name: string;
   existingOnboardingStoryMessageIds: ReadonlyArray<string> | undefined;
@@ -131,6 +125,7 @@ export type StorageAccessType = {
   linkPreviews: boolean;
   universalExpireTimer: number;
   retryPlaceholders: ReadonlyArray<RetryItemType>;
+  donationWorkflow: string;
   chromiumRegistrationDoneEver: '';
   chromiumRegistrationDone: '';
   phoneNumberSharingMode: PhoneNumberSharingMode;
@@ -152,6 +147,7 @@ export type StorageAccessType = {
   'preferred-audio-input-device': AudioDevice | undefined;
   'preferred-audio-output-device': AudioDevice | undefined;
   remoteConfig: RemoteConfigType;
+  remoteConfigHash: string;
   serverTimeSkew: number;
   unidentifiedDeliveryIndicators: boolean;
   groupCredentials: ReadonlyArray<GroupCredentialType>;
@@ -185,6 +181,7 @@ export type StorageAccessType = {
   areWeASubscriber: boolean;
   subscriberId: Uint8Array;
   subscriberCurrencyCode: string;
+  // Note: for historical reasons, this has two l's
   donorSubscriptionManuallyCancelled: boolean;
   backupsSubscriberId: Uint8Array;
   backupsSubscriberPurchaseToken: string;
@@ -204,12 +201,12 @@ export type StorageAccessType = {
   needProfileMovedModal: boolean;
   notificationProfileOverride: NotificationProfileOverride | undefined;
   observedCapabilities: {
-    deleteSync?: true;
-    ssre2?: true;
     attachmentBackfill?: true;
 
     // Note: Upon capability deprecation - change the value type to `never` and
     // remove it in `ts/background.ts`
+    deleteSync?: never;
+    ssre2?: never;
   };
   releaseNotesNextFetchTime: number;
   releaseNotesVersionWatermark: string;
@@ -248,6 +245,13 @@ export type StorageAccessType = {
   postRegistrationSyncsStatus: 'incomplete' | 'complete';
 
   avatarsHaveBeenMigrated: boolean;
+
+  // Test-only
+  // Not used UI, stored as is when imported from backup during tests
+  defaultWallpaperPhotoPointer: Uint8Array;
+  defaultWallpaperPreset: number;
+  defaultDimWallpaperInDarkMode: boolean;
+  defaultAutoBubbleColor: boolean;
 
   // Deprecated
   'challenge:retry-message-ids': never;

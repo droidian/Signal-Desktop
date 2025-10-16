@@ -5,21 +5,22 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { Blurhash } from 'react-blurhash';
 
-import type { LocalizerType, ThemeType } from '../../types/Util';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
 
-import type { AttachmentForUIType } from '../../types/Attachment';
+import type { AttachmentForUIType } from '../../types/Attachment.js';
 import {
   hasNotResolved,
-  getImageDimensions,
+  getImageDimensionsForTimeline,
   defaultBlurHash,
   isDownloadable,
-} from '../../types/Attachment';
-import * as Errors from '../../types/errors';
-import { createLogger } from '../../logging/log';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { AttachmentDetailPill } from './AttachmentDetailPill';
-import { getSpinner } from './Image';
-import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler';
+} from '../../util/Attachment.js';
+import * as Errors from '../../types/errors.js';
+import { createLogger } from '../../logging/log.js';
+import { useReducedMotion } from '../../hooks/useReducedMotion.js';
+import { AttachmentDetailPill } from './AttachmentDetailPill.js';
+import { getSpinner } from './Image.js';
+import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler.js';
+import { isAbortError } from '../../util/isAbortError.js';
 
 const log = createLogger('GIF');
 
@@ -65,7 +66,7 @@ export function GIF(props: Props): JSX.Element {
   const tapToPlay = useReducedMotion() || _forceTapToPlay;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const { height, width } = getImageDimensions(attachment, size);
+  const { height, width } = getImageDimensionsForTimeline(attachment, size);
 
   const [repeatCount, setRepeatCount] = useState(0);
   const [playTime, setPlayTime] = useState(MAX_GIF_TIME);
@@ -96,10 +97,12 @@ export function GIF(props: Props): JSX.Element {
 
     if (isPlaying) {
       video.play().catch(error => {
-        log.info(
-          "Failed to match GIF playback to window's state",
-          Errors.toLogFormat(error)
-        );
+        if (!isAbortError(error)) {
+          log.error(
+            "Failed to match GIF playback to window's state",
+            Errors.toLogFormat(error)
+          );
+        }
       });
     } else {
       video.pause();

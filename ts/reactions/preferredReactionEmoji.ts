@@ -1,12 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { times } from 'lodash';
-import { createLogger } from '../logging/log';
-import { DEFAULT_PREFERRED_REACTION_EMOJI_SHORT_NAMES } from './constants';
-import { convertShortName } from '../components/emoji/lib';
-import { isValidReactionEmoji } from './isValidReactionEmoji';
-import type { EmojiSkinTone } from '../components/fun/data/emojis';
+import lodash from 'lodash';
+import { createLogger } from '../logging/log.js';
+import { DEFAULT_PREFERRED_REACTION_EMOJI_PARENT_KEYS } from './constants.js';
+import { isValidReactionEmoji } from './isValidReactionEmoji.js';
+import {
+  getEmojiVariantByParentKeyAndSkinTone,
+  type EmojiSkinTone,
+} from '../components/fun/data/emojis.js';
+
+const { times } = lodash;
 
 const log = createLogger('preferredReactionEmoji');
 
@@ -14,7 +18,7 @@ const MAX_STORED_LENGTH = 20;
 const MAX_ITEM_LENGTH = 20;
 
 const PREFERRED_REACTION_EMOJI_COUNT =
-  DEFAULT_PREFERRED_REACTION_EMOJI_SHORT_NAMES.length;
+  DEFAULT_PREFERRED_REACTION_EMOJI_PARENT_KEYS.length;
 
 export function getPreferredReactionEmoji(
   storedValue: unknown,
@@ -30,27 +34,27 @@ export function getPreferredReactionEmoji(
       return storedItem;
     }
 
-    const fallbackShortName: undefined | string =
-      DEFAULT_PREFERRED_REACTION_EMOJI_SHORT_NAMES[index];
-    if (!fallbackShortName) {
+    const fallbackParentKey =
+      DEFAULT_PREFERRED_REACTION_EMOJI_PARENT_KEYS.at(index);
+    if (fallbackParentKey == null) {
       log.error(
         'Index is out of range. Is the preferred count larger than the list of fallbacks?'
       );
       return '❤️';
     }
 
-    const fallbackEmoji = convertShortName(
-      fallbackShortName,
+    const fallbackEmoji = getEmojiVariantByParentKeyAndSkinTone(
+      fallbackParentKey,
       emojiSkinToneDefault
     );
-    if (!fallbackEmoji) {
+    if (fallbackEmoji == null) {
       log.error(
         'No fallback emoji. Does the fallback list contain an invalid short name?'
       );
       return '❤️';
     }
 
-    return fallbackEmoji;
+    return fallbackEmoji.value;
   });
 }
 

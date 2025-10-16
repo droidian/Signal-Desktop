@@ -7,26 +7,26 @@ import {
   ErrorCode,
 } from '@signalapp/libsignal-client';
 
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import { strictAssert } from '../util/assert';
-import { sleep } from '../util/sleep';
-import { getMinNickname, getMaxNickname } from '../util/Username';
-import { bytesToUuid, uuidToBytes } from '../util/uuidToBytes';
-import type { UsernameReservationType } from '../types/Username';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.js';
+import { strictAssert } from '../util/assert.js';
+import { sleep } from '../util/sleep.js';
+import { getMinNickname, getMaxNickname } from '../util/Username.js';
+import { bytesToUuid, uuidToBytes } from '../util/uuidToBytes.js';
+import type { UsernameReservationType } from '../types/Username.js';
 import {
   ReserveUsernameError,
   ConfirmUsernameResult,
   getNickname,
   getDiscriminator,
   isCaseChange,
-} from '../types/Username';
-import * as Errors from '../types/errors';
-import { createLogger } from '../logging/log';
-import MessageSender from '../textsecure/SendMessage';
-import { HTTPError } from '../textsecure/Errors';
-import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError';
-import * as Bytes from '../Bytes';
-import { storageServiceUploadJob } from './storage';
+} from '../types/Username.js';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import MessageSender from '../textsecure/SendMessage.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.js';
+import * as Bytes from '../Bytes.js';
+import { storageServiceUploadJob } from './storage.js';
 
 const log = createLogger('username');
 
@@ -210,7 +210,7 @@ async function updateUsernameAndSyncProfile(
 ): Promise<void> {
   const me = window.ConversationController.getOurConversationOrThrow();
 
-  // Update backbone, update DB, then tell linked devices about profile update
+  // Update model, update DB, then tell linked devices about profile update
   await me.updateUsername(username);
 
   try {

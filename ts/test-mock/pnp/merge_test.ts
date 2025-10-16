@@ -8,17 +8,17 @@ import type { PrimaryDevice } from '@signalapp/mock-server';
 import createDebug from 'debug';
 import Long from 'long';
 
-import * as durations from '../../util/durations';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { generateConfigMatrix } from '../../util/generateConfigMatrix';
-import { MY_STORY_ID } from '../../types/Stories';
-import { Bootstrap } from '../bootstrap';
-import type { App } from '../bootstrap';
+import * as durations from '../../util/durations/index.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { generateConfigMatrix } from '../../util/generateConfigMatrix.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { Bootstrap } from '../bootstrap.js';
+import type { App } from '../bootstrap.js';
 import {
   expectSystemMessages,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers';
+} from '../helpers.js';
 
 export const debug = createDebug('mock:test:merge');
 
@@ -527,35 +527,22 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       assert.strictEqual(await messages.count(), 1, 'message count');
     }
 
-    debug('Find and open e164 conversation');
+    debug('Search for phone number, see that nothing comes up');
     const searchBox = window.locator(
       '.module-SearchInput__input.LeftPaneSearchInput__input'
     );
 
     await typeIntoInput(searchBox, aciContact.device.number, '');
+
     const firstSearchResult = await window.locator(
-      '.module-contact-name.module-conversation-list__item--contact-or-conversation__content__header__name__contact-name'
+      '.module-left-pane__no-search-results'
     );
     const firstSearchResultText = await firstSearchResult.innerText();
     assert.equal(
-      firstSearchResultText.slice(-4),
-      aciContact.device.number.slice(-4),
-      'no profile, just phone number'
+      firstSearchResultText,
+      `No results for "${aciContact.device.number}"`,
+      'found something unexpected for e164 search'
     );
-    await firstSearchResult.click();
-
-    debug('Wait for ACI conversation to go away');
-    await window
-      .locator(`.module-conversation-hero >> "${pniContact.profileName}"`)
-      .waitFor({
-        state: 'hidden',
-      });
-
-    debug('Verify absence of messages in the e164 conversation');
-    {
-      const messages = window.locator('.module-message__text');
-      assert.strictEqual(await messages.count(), 0, 'message count');
-    }
   });
 
   it('preserves expireTimerVersion after merge', async () => {

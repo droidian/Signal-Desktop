@@ -9,31 +9,33 @@ import React, {
   useState,
   useRef,
 } from 'react';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import classNames from 'classnames';
 
-import type { LocalizerType } from '../types/I18N';
+import type { LocalizerType } from '../types/I18N.js';
 import {
   FlowingSettingsControl as FlowingControl,
   SettingsRow,
-} from './PreferencesUtil';
-import { Button, ButtonSize, ButtonVariant } from './Button';
+} from './PreferencesUtil.js';
+import { Button, ButtonSize, ButtonVariant } from './Button.js';
 import {
   getOSAuthErrorString,
   SIGNAL_BACKUPS_LEARN_MORE_URL,
-} from './PreferencesBackups';
-import { I18n } from './I18n';
-import type { PreferencesBackupPage } from '../types/PreferencesBackupPage';
-import { Page } from './Preferences';
-import { ToastType } from '../types/Toast';
-import type { ShowToastAction } from '../state/ducks/toast';
-import { Modal } from './Modal';
-import { strictAssert } from '../util/assert';
+} from './PreferencesBackups.js';
+import { I18n } from './I18n.js';
+import type { SettingsLocation } from '../types/Nav.js';
+import { SettingsPage } from '../types/Nav.js';
+import { ToastType } from '../types/Toast.js';
+import type { ShowToastAction } from '../state/ducks/toast.js';
+import { Modal } from './Modal.js';
+import { strictAssert } from '../util/assert.js';
 import type {
   PromptOSAuthReasonType,
   PromptOSAuthResultType,
-} from '../util/os/promptOSAuthMain';
-import { ConfirmationDialog } from './ConfirmationDialog';
+} from '../util/os/promptOSAuthMain.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+
+const { noop } = lodash;
 
 export function PreferencesLocalBackups({
   accountEntropyPool,
@@ -41,10 +43,10 @@ export function PreferencesLocalBackups({
   i18n,
   localBackupFolder,
   onBackupKeyViewedChange,
-  page,
+  settingsLocation,
   pickLocalBackupFolder,
   promptOSAuth,
-  setPage,
+  setSettingsLocation,
   showToast,
 }: {
   accountEntropyPool: string | undefined;
@@ -52,12 +54,12 @@ export function PreferencesLocalBackups({
   i18n: LocalizerType;
   localBackupFolder: string | undefined;
   onBackupKeyViewedChange: (keyViewed: boolean) => void;
-  page: PreferencesBackupPage;
+  settingsLocation: SettingsLocation;
   pickLocalBackupFolder: () => Promise<string | undefined>;
   promptOSAuth: (
     reason: PromptOSAuthReasonType
   ) => Promise<PromptOSAuthResultType>;
-  setPage: (page: PreferencesBackupPage) => void;
+  setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   showToast: ShowToastAction;
 }): JSX.Element {
   const [authError, setAuthError] =
@@ -73,7 +75,8 @@ export function PreferencesLocalBackups({
     );
   }
 
-  const isReferencingBackupKey = page === Page.LocalBackupsKeyReference;
+  const isReferencingBackupKey =
+    settingsLocation.page === SettingsPage.LocalBackupsKeyReference;
   if (!backupKeyViewed || isReferencingBackupKey) {
     strictAssert(accountEntropyPool, 'AEP is required for backup key viewer');
 
@@ -84,7 +87,9 @@ export function PreferencesLocalBackups({
         isReferencing={isReferencingBackupKey}
         onBackupKeyViewed={() => {
           if (backupKeyViewed) {
-            setPage(Page.LocalBackups);
+            setSettingsLocation({
+              page: SettingsPage.LocalBackups,
+            });
           } else {
             onBackupKeyViewedChange(true);
           }
@@ -158,7 +163,9 @@ export function PreferencesLocalBackups({
                   setIsAuthPending(true);
                   const result = await promptOSAuth('view-aep');
                   if (result === 'success' || result === 'unsupported') {
-                    setPage(Page.LocalBackupsKeyReference);
+                    setSettingsLocation({
+                      page: SettingsPage.LocalBackupsKeyReference,
+                    });
                   } else {
                     setAuthError(result);
                   }

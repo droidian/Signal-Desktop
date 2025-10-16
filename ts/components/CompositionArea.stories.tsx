@@ -4,18 +4,18 @@
 import React, { useContext, useState } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { IMAGE_JPEG } from '../types/MIME';
-import type { Props } from './CompositionArea';
-import { CompositionArea } from './CompositionArea';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext';
+import { IMAGE_JPEG } from '../types/MIME.js';
+import type { Props } from './CompositionArea.js';
+import { CompositionArea } from './CompositionArea.js';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.js';
 
-import { fakeDraftAttachment } from '../test-helpers/fakeAttachment';
-import { landscapeGreenUrl } from '../storybook/Fixtures';
-import { RecordingState } from '../types/AudioRecorder';
-import { ConversationColors } from '../types/Colors';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation';
-import { PaymentEventKind } from '../types/Payment';
-import { EmojiSkinTone } from './fun/data/emojis';
+import { fakeDraftAttachment } from '../test-helpers/fakeAttachment.js';
+import { landscapeGreenUrl } from '../storybook/Fixtures.js';
+import { RecordingState } from '../types/AudioRecorder.js';
+import { ConversationColors } from '../types/Colors.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.js';
+import { PaymentEventKind } from '../types/Payment.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
 
 const { i18n } = window.SignalContext;
 
@@ -83,23 +83,11 @@ export default {
     draftText: undefined,
     getPreferredBadge: () => undefined,
     sortedGroupMembers: [],
-    // EmojiButton
-    onPickEmoji: action('onPickEmoji'),
-    onEmojiSkinToneDefaultChange: action('onEmojiSkinToneDefaultChange'),
-    recentEmojis: [],
+    // FunPicker
+    onSelectEmoji: action('onSelectEmoji'),
     emojiSkinToneDefault: EmojiSkinTone.Type1,
-    // StickerButton
-    knownPacks: [],
-    receivedPacks: [],
-    installedPacks: [],
-    blessedPacks: [],
-    recentStickers: [],
-    clearInstalledStickerPack: action('clearInstalledStickerPack'),
     pushPanelForConversation: action('pushPanelForConversation'),
     sendStickerMessage: action('sendStickerMessage'),
-    clearShowIntroduction: action('clearShowIntroduction'),
-    showPickerHint: false,
-    clearShowPickerHint: action('clearShowPickerHint'),
     // Message Requests
     conversationType: 'direct',
     acceptConversation: action('acceptConversation'),
@@ -118,7 +106,7 @@ export default {
     showConversation: action('showConversation'),
     isSmsOnlyOrUnregistered: false,
     isFetchingUUID: false,
-    renderSmartCompositionRecording: _ => <div>RECORDING</div>,
+    renderSmartCompositionRecording: () => <div>RECORDING</div>,
     renderSmartCompositionRecordingDraft: _ => <div>RECORDING DRAFT</div>,
     // Select mode
     selectedMessageIds: undefined,
@@ -149,14 +137,7 @@ export function StartingText(args: Props): JSX.Element {
 
 export function StickerButton(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
-  return (
-    <CompositionArea
-      {...args}
-      theme={theme}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      knownPacks={[{} as any]}
-    />
-  );
+  return <CompositionArea {...args} theme={theme} />;
 }
 
 export function MessageRequest(args: Props): JSX.Element {

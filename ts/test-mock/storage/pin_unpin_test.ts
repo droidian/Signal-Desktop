@@ -6,9 +6,9 @@ import { assert } from 'chai';
 
 import type { Group } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations';
-import type { App, Bootstrap } from './fixtures';
-import { initStorage, debug } from './fixtures';
+import * as durations from '../../util/durations/index.js';
+import type { App, Bootstrap } from './fixtures.js';
+import { initStorage, debug } from './fixtures.js';
 
 describe('storage service', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -48,20 +48,21 @@ describe('storage service', function (this: Mocha.Suite) {
       debug('Unpinning group via storage service');
       {
         const state = await phone.expectStorageState('initial state');
+        const newState = state.unpinGroup(group);
 
-        await phone.setStorageState(state.unpinGroup(group));
+        await phone.setStorageState(newState);
         await phone.sendFetchStorage({
           timestamp: bootstrap.getTimestamp(),
         });
 
-        await leftPane.locator(`[data-testid="${group.id}"]`).waitFor();
+        await app.waitForManifestVersion(newState.version);
       }
 
       debug('Pinning group in the app');
       {
         const state = await phone.expectStorageState('consistency check');
 
-        const convo = leftPane.locator(`[data-testid="${group.id}"]`);
+        const convo = leftPane.getByTestId(group.id);
         await convo.click();
 
         const moreButton = conversationStack.locator(

@@ -1,16 +1,16 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { join, normalize, extname, dirname, basename } from 'path';
-import { pathToFileURL } from 'url';
-import * as os from 'os';
-import { chmod, realpath, writeFile } from 'fs-extra';
-import { randomBytes } from 'crypto';
+import { join, normalize, extname, dirname, basename } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import * as os from 'node:os';
+import fsExtra from 'fs-extra';
+import { randomBytes } from 'node:crypto';
 import { createParser } from 'dashdash';
 
 import fastGlob from 'fast-glob';
 import PQueue from 'p-queue';
-import { get, pick, isNumber, isBoolean, some, debounce, noop } from 'lodash';
+import lodash from 'lodash';
 import {
   app,
   BrowserWindow,
@@ -32,101 +32,109 @@ import {
 import type { MenuItemConstructorOptions, Settings } from 'electron';
 import { z } from 'zod';
 
-import packageJson from '../package.json';
-import * as GlobalErrors from './global_errors';
-import { setup as setupCrashReports } from './crashReports';
-import { setup as setupSpellChecker } from './spell_check';
-import { getDNSFallback } from './dns-fallback';
-import { redactAll, addSensitivePath } from '../ts/util/privacy';
-import { createSupportUrl } from '../ts/util/createSupportUrl';
-import { missingCaseError } from '../ts/util/missingCaseError';
-import { strictAssert } from '../ts/util/assert';
-import { drop } from '../ts/util/drop';
-import type { ThemeSettingType } from '../ts/types/StorageUIKeys';
-import { ThemeType } from '../ts/types/Util';
-import * as Errors from '../ts/types/errors';
-import { resolveCanonicalLocales } from '../ts/util/resolveCanonicalLocales';
-import { createLogger } from '../ts/logging/log';
-import * as debugLog from '../ts/logging/debuglogs';
-import * as uploadDebugLog from '../ts/logging/uploadDebugLog';
-import { explodePromise } from '../ts/util/explodePromise';
+import {
+  version as packageVersion,
+  productName,
+} from '../ts/util/packageJson.js';
+import * as GlobalErrors from './global_errors.js';
+import { setup as setupCrashReports } from './crashReports.js';
+import { setup as setupSpellChecker } from './spell_check.js';
+import { getDNSFallback } from './dns-fallback.js';
+import { redactAll, addSensitivePath } from '../ts/util/privacy.js';
+import { createSupportUrl } from '../ts/util/createSupportUrl.js';
+import { missingCaseError } from '../ts/util/missingCaseError.js';
+import { strictAssert } from '../ts/util/assert.js';
+import { drop } from '../ts/util/drop.js';
+import type { ThemeSettingType } from '../ts/types/StorageUIKeys.js';
+import { ThemeType } from '../ts/types/Util.js';
+import * as Errors from '../ts/types/errors.js';
+import { resolveCanonicalLocales } from '../ts/util/resolveCanonicalLocales.js';
+import { createLogger } from '../ts/logging/log.js';
+import * as debugLog from '../ts/logging/debuglogs.js';
+import * as uploadDebugLog from '../ts/logging/uploadDebugLog.js';
+import { explodePromise } from '../ts/util/explodePromise.js';
 
-import './startup_config';
+import './startup_config.js';
 
-import type { RendererConfigType } from '../ts/types/RendererConfig';
+import type { RendererConfigType } from '../ts/types/RendererConfig.js';
 import {
   directoryConfigSchema,
   rendererConfigSchema,
-} from '../ts/types/RendererConfig';
-import config from './config';
+} from '../ts/types/RendererConfig.js';
+import config from './config.js';
 import {
   Environment,
   getEnvironment,
   isTestEnvironment,
-} from '../ts/environment';
+} from '../ts/environment.js';
 
 // Very important to put before the single instance check, since it is based on the
 //   userData directory. (see requestSingleInstanceLock below)
-import * as userConfig from './user_config';
+import * as userConfig from './user_config.js';
 
 // We generally want to pull in our own modules after this point, after the user
 //   data directory has been set.
-import * as attachments from './attachments';
-import * as attachmentChannel from './attachment_channel';
-import * as bounce from '../ts/services/bounce';
-import * as updater from '../ts/updater/index';
-import { updateDefaultSession } from './updateDefaultSession';
-import { PreventDisplaySleepService } from './PreventDisplaySleepService';
-import { SystemTrayService, focusAndForceToTop } from './SystemTrayService';
-import { SystemTraySettingCache } from './SystemTraySettingCache';
-import { OptionalResourceService } from './OptionalResourceService';
-import { EmojiService } from './EmojiService';
+import * as attachments from './attachments.js';
+import * as attachmentChannel from './attachment_channel.js';
+import * as bounce from '../ts/services/bounce.js';
+import * as updater from '../ts/updater/index.js';
+import { updateDefaultSession } from './updateDefaultSession.js';
+import { PreventDisplaySleepService } from './PreventDisplaySleepService.js';
+import { SystemTrayService, focusAndForceToTop } from './SystemTrayService.js';
+import { SystemTraySettingCache } from './SystemTraySettingCache.js';
+import { OptionalResourceService } from './OptionalResourceService.js';
+import { EmojiService } from './EmojiService.js';
 import {
   SystemTraySetting,
   shouldMinimizeToSystemTray,
   parseSystemTraySetting,
-} from '../ts/types/SystemTraySetting';
+} from '../ts/types/SystemTraySetting.js';
 import {
   getDefaultSystemTraySetting,
   isSystemTraySupported,
   isContentProtectionEnabledByDefault,
-} from '../ts/types/Settings';
-import * as ephemeralConfig from './ephemeral_config';
-import * as mainProcessLogging from '../ts/logging/main_process_logging';
-import { MainSQL } from '../ts/sql/main';
-import * as sqlChannels from './sql_channel';
-import * as windowState from './window_state';
-import type { CreateTemplateOptionsType } from './menu';
-import { createTemplate } from './menu';
-import { installFileHandler, installWebHandler } from './protocol_filter';
-import OS from '../ts/util/os/osMain';
-import { isNightly, isProduction } from '../ts/util/version';
-import { clearTimeoutIfNecessary } from '../ts/util/clearTimeoutIfNecessary';
-import { toggleMaximizedBrowserWindow } from '../ts/util/toggleMaximizedBrowserWindow';
-import { ChallengeMainHandler } from '../ts/main/challengeMain';
-import { NativeThemeNotifier } from '../ts/main/NativeThemeNotifier';
-import { PowerChannel } from '../ts/main/powerChannel';
-import { SettingsChannel } from '../ts/main/settingsChannel';
-import { maybeParseUrl, setUrlSearchParams } from '../ts/util/url';
-import { getHeicConverter } from '../ts/workers/heicConverterMain';
+} from '../ts/types/Settings.js';
+import * as ephemeralConfig from './ephemeral_config.js';
+import * as mainProcessLogging from '../ts/logging/main_process_logging.js';
+import { MainSQL } from '../ts/sql/main.js';
+import * as sqlChannels from './sql_channel.js';
+import * as windowState from './window_state.js';
+import type { CreateTemplateOptionsType } from './menu.js';
+import { createTemplate } from './menu.js';
+import { installFileHandler, installWebHandler } from './protocol_filter.js';
+import OS from '../ts/util/os/osMain.js';
+import { isNightly, isProduction } from '../ts/util/version.js';
+import { clearTimeoutIfNecessary } from '../ts/util/clearTimeoutIfNecessary.js';
+import { toggleMaximizedBrowserWindow } from '../ts/util/toggleMaximizedBrowserWindow.js';
+import { ChallengeMainHandler } from '../ts/main/challengeMain.js';
+import { NativeThemeNotifier } from '../ts/main/NativeThemeNotifier.js';
+import { PowerChannel } from '../ts/main/powerChannel.js';
+import { SettingsChannel } from '../ts/main/settingsChannel.js';
+import { maybeParseUrl, setUrlSearchParams } from '../ts/util/url.js';
+import { getHeicConverter } from '../ts/workers/heicConverterMain.js';
 
-import type { LocaleDirection, LocaleType } from './locale';
-import { load as loadLocale } from './locale';
+import type { LocaleDirection, LocaleType } from './locale.js';
+import { load as loadLocale } from './locale.js';
 
-import { HourCyclePreference } from '../ts/types/I18N';
-import { ScreenShareStatus } from '../ts/types/Calling';
-import type { ParsedSignalRoute } from '../ts/util/signalRoutes';
-import { parseSignalRoute } from '../ts/util/signalRoutes';
-import * as dns from '../ts/util/dns';
-import { ZoomFactorService } from '../ts/services/ZoomFactorService';
-import { SafeStorageBackendChangeError } from '../ts/types/SafeStorageBackendChangeError';
-import { LINUX_PASSWORD_STORE_FLAGS } from '../ts/util/linuxPasswordStoreFlags';
-import { getOwn } from '../ts/util/getOwn';
-import { safeParseLoose, safeParseUnknown } from '../ts/util/schemas';
-import { getAppErrorIcon } from '../ts/util/getAppErrorIcon';
-import { promptOSAuth } from '../ts/util/os/promptOSAuthMain';
+import { HourCyclePreference } from '../ts/types/I18N.js';
+import { ScreenShareStatus } from '../ts/types/Calling.js';
+import type { ParsedSignalRoute } from '../ts/util/signalRoutes.js';
+import { parseSignalRoute } from '../ts/util/signalRoutes.js';
+import * as dns from '../ts/util/dns.js';
+import { ZoomFactorService } from '../ts/services/ZoomFactorService.js';
+import { SafeStorageBackendChangeError } from '../ts/types/SafeStorageBackendChangeError.js';
+import { SafeStorageDecryptionError } from '../ts/types/SafeStorageDecryptionError.js';
+import { LINUX_PASSWORD_STORE_FLAGS } from '../ts/util/linuxPasswordStoreFlags.js';
+import { getOwn } from '../ts/util/getOwn.js';
+import { safeParseLoose, safeParseUnknown } from '../ts/util/schemas.js';
+import { getAppErrorIcon } from '../ts/util/getAppErrorIcon.js';
+import { promptOSAuth } from '../ts/util/os/promptOSAuthMain.js';
+
+const { chmod, realpath, writeFile } = fsExtra;
+const { get, pick, isNumber, isBoolean, some, debounce, noop } = lodash;
 
 const log = createLogger('app/main');
+const updaterLog = log.child('updater');
 
 const animationSettings = systemPreferences.getAnimationSettings();
 
@@ -173,7 +181,11 @@ const preventDisplaySleepService = new PreventDisplaySleepService(
   powerSaveBlocker
 );
 
-const challengeHandler = new ChallengeMainHandler();
+const challengeHandler = new ChallengeMainHandler(
+  config.has('hardcodedCaptchaForLocalTestingOnly')
+    ? config.get<string>('hardcodedCaptchaForLocalTestingOnly')
+    : undefined
+);
 
 const nativeThemeNotifier = new NativeThemeNotifier();
 nativeThemeNotifier.initialize();
@@ -220,7 +232,7 @@ let sendDummyKeystroke: undefined | (() => void);
 if (OS.isWindows()) {
   try {
     // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-    const windowsNotifications = require('./WindowsNotifications');
+    const windowsNotifications = require('./WindowsNotifications.js');
     sendDummyKeystroke = windowsNotifications.sendDummyKeystroke;
   } catch (error) {
     log.error('Failed to initialize Windows Notifications:', error.stack);
@@ -715,7 +727,6 @@ async function createWindow() {
           : '../ts/windows/main/preload.js'
       ),
       spellcheck,
-      backgroundThrottling: true,
     },
     icon: windowIcon,
     ...pick(windowConfig, ['autoHideMenuBar', 'x', 'y']),
@@ -885,7 +896,7 @@ async function createWindow() {
       );
     }
     if (!shouldClose) {
-      updater.onRestartCancelled();
+      updater.onRestartCanceled();
       return;
     }
 
@@ -1109,21 +1120,6 @@ ipc.on('title-bar-double-click', () => {
 
 ipc.on('set-is-call-active', (_event, isCallActive) => {
   preventDisplaySleepService.setEnabled(isCallActive);
-
-  if (!mainWindow) {
-    return;
-  }
-
-  let backgroundThrottling: boolean;
-  if (isCallActive) {
-    log.info('Background throttling disabled because a call is active');
-    backgroundThrottling = false;
-  } else {
-    log.info('Background throttling enabled because no call is active');
-    backgroundThrottling = true;
-  }
-
-  mainWindow.webContents.setBackgroundThrottling(backgroundThrottling);
 });
 
 ipc.on('convert-image', async (event, uuid, data) => {
@@ -1168,24 +1164,27 @@ async function readyForUpdates() {
         return (
           systemTrayService?.isVisible() === true &&
           mainWindow?.isVisible() !== true &&
-          mainWindow?.webContents?.getBackgroundThrottling() !== false
+          !preventDisplaySleepService.isEnabled()
         );
       },
       getMainWindow,
-      logger: log,
+      logger: updaterLog,
       sql,
     });
   } catch (error) {
-    log.error('Error starting update checks:', Errors.toLogFormat(error));
+    updaterLog.error(
+      'Error starting update checks:',
+      Errors.toLogFormat(error)
+    );
   }
 }
 
 async function forceUpdate() {
   try {
-    log.info('starting force update');
+    updaterLog.info('starting force update');
     await updater.force();
   } catch (error) {
-    log.error('Error during force update:', Errors.toLogFormat(error));
+    updaterLog.error('Error during force update:', Errors.toLogFormat(error));
   }
 }
 
@@ -1652,9 +1651,20 @@ function getSQLKey(): string {
     const encrypted = Buffer.from(modernKeyValue, 'hex');
     key = safeStorage.decryptString(encrypted);
 
-    if (legacyKeyValue != null) {
-      log.info('getSQLKey: removing legacy key');
-      userConfig.set('key', undefined);
+    if (typeof legacyKeyValue === 'string') {
+      if (key === legacyKeyValue) {
+        // Confirmed roundtrip encryption, we can remove the legacy key
+        log.info('getSQLKey: removing legacy key');
+        userConfig.set('key', undefined);
+      } else {
+        log.warn('getSQLKey: decrypted modern key mismatch with legacy key');
+        const nextStep = handleSafeStorageDecryptionError();
+        if (nextStep === 'quit') {
+          throw new SafeStorageDecryptionError();
+        }
+
+        key = legacyKeyValue;
+      }
     }
 
     if (isLinux && previousBackend == null) {
@@ -1683,7 +1693,15 @@ function getSQLKey(): string {
     log.info('getSQLKey: updating encrypted key in the config');
     const encrypted = safeStorage.encryptString(key).toString('hex');
     userConfig.set('encryptedKey', encrypted);
-    userConfig.set('key', undefined);
+
+    if (OS.isFlatpak()) {
+      log.info(
+        'getSQLKey: updating plaintext key in the config, will confirm decryption on next start'
+      );
+      userConfig.set('key', key);
+    } else {
+      userConfig.set('key', undefined);
+    }
 
     if (isLinux && safeStorageBackend) {
       log.info(`getSQLKey: saving safeStorageBackend: ${safeStorageBackend}`);
@@ -1695,6 +1713,41 @@ function getSQLKey(): string {
   }
 
   return key;
+}
+
+// In Flatpak, safeStorage encryption may appear to work on the first run but on
+// subsequent starts the decrypted value may be incorrect.
+function handleSafeStorageDecryptionError(): 'continue' | 'quit' {
+  const previousError = userConfig.get('safeStorageDecryptionError');
+  if (typeof previousError === 'string') {
+    return 'continue';
+  }
+
+  const { i18n } = getResolvedMessagesLocale();
+  const message = i18n('icu:systemEncryptionError');
+  const detail = i18n(
+    'icu:systemEncryptionError__linuxSafeStorageDecryptionError'
+  );
+  const buttons = [
+    i18n('icu:copyErrorAndQuit'),
+    i18n('icu:systemEncryptionError__continueWithPlaintextKey'),
+  ];
+  const copyErrorAndQuitIndex = 0;
+  const resultIndex = dialog.showMessageBoxSync({
+    buttons,
+    defaultId: copyErrorAndQuitIndex,
+    cancelId: copyErrorAndQuitIndex,
+    message,
+    detail,
+    icon: getAppErrorIcon(),
+    noLink: true,
+  });
+  if (resultIndex === copyErrorAndQuitIndex) {
+    return 'quit';
+  }
+
+  userConfig.set('safeStorageDecryptionError', 'true');
+  return 'continue';
 }
 
 async function initializeSQL(
@@ -1820,6 +1873,12 @@ const onDatabaseInitializationError = async (error: Error) => {
     buttons.push(i18n('icu:copyErrorAndQuit'));
     copyErrorAndQuitButtonIndex = 0;
     defaultButtonId = copyErrorAndQuitButtonIndex;
+  } else if (error instanceof SafeStorageDecryptionError) {
+    log.error(
+      'onDatabaseInitializationError: SafeStorageDecryptionError, user chose to quit'
+    );
+    app.exit(1);
+    return;
   } else {
     // Otherwise, this is some other kind of DB error, most likely broken safeStorage key.
     // Let's give them the option to delete and show them the support guide.
@@ -1944,11 +2003,6 @@ const featuresToDisable = `HardwareMediaKeyHandling,${app.commandLine.getSwitchV
   'disable-features'
 )}`;
 app.commandLine.appendSwitch('disable-features', featuresToDisable);
-
-if (OS.isLinux()) {
-  // https://github.com/electron/electron/issues/46538#issuecomment-2808806722
-  app.commandLine.appendSwitch('gtk-version', '3');
-}
 
 // This has to run before the 'ready' event.
 electronProtocol.registerSchemesAsPrivileged([
@@ -2127,7 +2181,7 @@ app.on('ready', async () => {
   }
 
   log.info('app ready');
-  log.info(`starting version ${packageJson.version}`);
+  log.info(`starting version ${packageVersion}`);
 
   // This logging helps us debug user reports about broken devices.
   {
@@ -2703,7 +2757,7 @@ ipc.on('get-config', async event => {
   }
 
   const parsed = safeParseLoose(rendererConfigSchema, {
-    name: packageJson.productName,
+    name: productName,
     availableLocales: getResolvedMessagesLocale().availableLocales,
     resolvedTranslationsLocale: getResolvedMessagesLocale().name,
     resolvedTranslationsLocaleDirection: getResolvedMessagesLocale().direction,
@@ -2745,7 +2799,7 @@ ipc.on('get-config', async event => {
     reducedMotionSetting: animationSettings.prefersReducedMotion,
     registrationChallengeUrl: config.get<string>('registrationChallengeUrl'),
     serverPublicParams: config.get<string>('serverPublicParams'),
-    serverTrustRoot: config.get<string>('serverTrustRoot'),
+    serverTrustRoots: config.get<Array<string>>('serverTrustRoots'),
     stripePublishableKey: config.get<string>('stripePublishableKey'),
     genericServerPublicParams: config.get<string>('genericServerPublicParams'),
     backupServerPublicParams: config.get<string>('backupServerPublicParams'),
@@ -2906,6 +2960,7 @@ function handleSignalRoute(route: ParsedSignalRoute) {
   } else if (route.key === 'linkCall') {
     mainWindow.webContents.send('start-call-link', {
       key: route.args.key,
+      epoch: route.args.epoch,
     });
   } else if (route.key === 'showWindow') {
     mainWindow.webContents.send('show-window');
@@ -2917,6 +2972,7 @@ function handleSignalRoute(route: ParsedSignalRoute) {
     showWindow();
   } else if (route.key === 'donationValidationComplete') {
     log.info('donationValidationComplete route handled');
+    mainWindow.webContents.send('donation-validation-complete', route.args);
   } else {
     log.info('handleSignalRoute: Unknown signal route:', route.key);
     mainWindow.webContents.send('unknown-sgnl-link');
@@ -3054,6 +3110,9 @@ ipc.handle('show-save-dialog', async (_event, { defaultPath }) => {
 
   // On Windows, if you change the path from the default, the extension is
   // removed. We want to make sure the extension is always there.
+  if (extname(selectedFilePath) !== '') {
+    return { canceled: false, filePath: selectedFilePath };
+  }
   const defaultExt = extname(defaultPath);
   const finalDirname = dirname(selectedFilePath);
   const finalBasename = basename(selectedFilePath, defaultExt);

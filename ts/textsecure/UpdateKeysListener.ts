@@ -1,13 +1,13 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as durations from '../util/durations';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import * as Registration from '../util/registration';
-import { ServiceIdKind } from '../types/ServiceId';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import { HTTPError } from './Errors';
+import * as durations from '../util/durations/index.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import * as Registration from '../util/registration.js';
+import { ServiceIdKind } from '../types/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { HTTPError } from '../types/HTTPError.js';
 
 const log = createLogger('UpdateKeysListener');
 
@@ -64,7 +64,7 @@ export class UpdateKeysListener {
           (error.code === 422 || error.code === 403)
         ) {
           log.error(`run: Got a ${error.code} uploading PNI keys; unlinking`);
-          window.Whisper.events.trigger('unlinkAndDisconnect');
+          window.Whisper.events.emit('unlinkAndDisconnect');
         } else {
           const errorString =
             error instanceof HTTPError

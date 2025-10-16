@@ -1,9 +1,9 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { BackupCredentialType } from '@signalapp/libsignal-client/dist/zkgroup';
-import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI';
+import type { BackupLevel } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
+import { BackupCredentialType } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
+import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI.js';
 
 export { BackupCredentialType };
 
@@ -38,6 +38,13 @@ export type SubscriptionCostType = {
 export type BackupStatusType = {
   createdTimestamp?: number;
   protoSize?: number;
+};
+
+export type BackupMediaDownloadStatusType = {
+  totalBytes: number;
+  completedBytes: number;
+  isPaused: boolean;
+  isIdle: boolean;
 };
 
 export type BackupsSubscriptionType =

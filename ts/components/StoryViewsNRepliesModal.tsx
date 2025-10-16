@@ -9,39 +9,37 @@ import React, {
   useState,
 } from 'react';
 import classNames from 'classnames';
-import { noop, orderBy } from 'lodash';
-import type { DraftBodyRanges } from '../types/BodyRange';
-import type { LocalizerType } from '../types/Util';
-import type { ConversationType } from '../state/ducks/conversations';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import type { InputApi } from './CompositionInput';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import type { RenderEmojiPickerProps } from './conversation/ReactionPicker';
-import type { ReplyType, StorySendStateType } from '../types/Stories';
-import { StoryViewTargetType } from '../types/Stories';
-import { Avatar, AvatarSize } from './Avatar';
-import { CompositionInput } from './CompositionInput';
-import { ContactName } from './conversation/ContactName';
-import { EmojiButton } from './emoji/EmojiButton';
-import { Emojify } from './conversation/Emojify';
-import { Message, TextDirection } from './conversation/Message';
-import { MessageTimestamp } from './conversation/MessageTimestamp';
-import { Modal } from './Modal';
-import { ReactionPicker } from './conversation/ReactionPicker';
-import { Tabs } from './Tabs';
-import { Theme } from '../util/theme';
-import { ThemeType } from '../types/Util';
-import { WidthBreakpoint } from './_util';
-import { getAvatarColor } from '../types/Colors';
-import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled';
-import { ContextMenu } from './ContextMenu';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import type { EmojiSkinTone } from './fun/data/emojis';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
-import { FunEmojiPicker } from './fun/FunEmojiPicker';
-import { FunEmojiPickerButton } from './fun/FunButton';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
+import lodash from 'lodash';
+import type { DraftBodyRanges } from '../types/BodyRange.js';
+import type { LocalizerType } from '../types/Util.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import type { InputApi } from './CompositionInput.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import type { ReplyType, StorySendStateType } from '../types/Stories.js';
+import { StoryViewTargetType } from '../types/Stories.js';
+import { Avatar, AvatarSize } from './Avatar.js';
+import { CompositionInput } from './CompositionInput.js';
+import { ContactName } from './conversation/ContactName.js';
+import { Emojify } from './conversation/Emojify.js';
+import { Message, TextDirection } from './conversation/Message.js';
+import { MessageTimestamp } from './conversation/MessageTimestamp.js';
+import { Modal } from './Modal.js';
+import { ReactionPicker } from './conversation/ReactionPicker.js';
+import { Tabs } from './Tabs.js';
+import { Theme } from '../util/theme.js';
+import { ThemeType } from '../types/Util.js';
+import { WidthBreakpoint } from './_util.js';
+import { getAvatarColor } from '../types/Colors.js';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.js';
+import { ContextMenu } from './ContextMenu.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import type { EmojiSkinTone } from './fun/data/emojis.js';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.js';
+import { FunEmojiPickerButton } from './fun/FunButton.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.js';
+
+const { noop, orderBy } = lodash;
 
 // Menu is disabled so these actions are inaccessible. We also don't support
 // link previews, tap to view messages, attachments, or gifts. Just regular
@@ -74,7 +72,6 @@ const MESSAGE_DEFAULT_PROPS = {
   scrollToQuotedMessage: shouldNeverBeCalled,
   showConversation: noop,
   showAttachmentDownloadStillInProgressToast: shouldNeverBeCalled,
-  showAttachmentNotAvailableModal: shouldNeverBeCalled,
   showExpiredIncomingTapToViewToast: shouldNeverBeCalled,
   showExpiredOutgoingTapToViewToast: shouldNeverBeCalled,
   showLightbox: shouldNeverBeCalled,
@@ -112,13 +109,10 @@ export type PropsType = {
     bodyRanges: DraftBodyRanges,
     timestamp: number
   ) => unknown;
-  onEmojiSkinToneDefaultChange: (emojiSkinTone: EmojiSkinTone) => void;
   onTextTooLong: () => unknown;
-  onUseEmoji: (_: EmojiPickDataType) => unknown;
+  onSelectEmoji: (emojiSelection: FunEmojiSelection) => unknown;
   ourConversationId: string | undefined;
   preferredReactionEmoji: ReadonlyArray<string>;
-  recentEmojis?: ReadonlyArray<string>;
-  renderEmojiPicker: (props: RenderEmojiPickerProps) => JSX.Element;
   replies: ReadonlyArray<ReplyType>;
   showContactModal: (contactId: string, conversationId?: string) => void;
   emojiSkinToneDefault: EmojiSkinTone | null;
@@ -144,13 +138,10 @@ export function StoryViewsNRepliesModal({
   onClose,
   onReact,
   onReply,
-  onEmojiSkinToneDefaultChange,
   onTextTooLong,
-  onUseEmoji,
+  onSelectEmoji,
   ourConversationId,
   preferredReactionEmoji,
-  recentEmojis,
-  renderEmojiPicker,
   replies,
   showContactModal,
   emojiSkinToneDefault,
@@ -202,32 +193,11 @@ export function StoryViewsNRepliesModal({
     setEmojiPickerOpen(open);
   }, []);
 
-  const focusComposer = useCallback(() => {
+  const handleSelectEmoji = useCallback((emojiSelection: FunEmojiSelection) => {
     if (inputApiRef.current) {
-      inputApiRef.current.focus();
+      inputApiRef.current.insertEmoji(emojiSelection);
     }
-  }, [inputApiRef]);
-
-  const insertEmoji = useCallback(
-    (e: EmojiPickDataType) => {
-      if (inputApiRef.current) {
-        inputApiRef.current.insertEmoji(e);
-        onUseEmoji(e);
-      }
-    },
-    [inputApiRef, onUseEmoji]
-  );
-
-  const handleSelectEmoji = useCallback(
-    (emojiSelection: FunEmojiSelection) => {
-      const data: EmojiPickDataType = {
-        shortName: emojiSelection.englishShortName,
-        skinTone: emojiSelection.skinTone,
-      };
-      insertEmoji(data);
-    },
-    [insertEmoji]
-  );
+  }, []);
 
   let composerElement: JSX.Element | undefined;
 
@@ -270,9 +240,7 @@ export function StoryViewsNRepliesModal({
             }
             onReact(emoji);
           }}
-          onEmojiSkinToneDefaultChange={onEmojiSkinToneDefaultChange}
           preferredReactionEmoji={preferredReactionEmoji}
-          renderEmojiPicker={renderEmojiPicker}
           theme={ThemeType.dark}
         />
         <div className="StoryViewsNRepliesModal__compose-container">
@@ -289,7 +257,7 @@ export function StoryViewsNRepliesModal({
               onEditorStateChange={({ messageText }) => {
                 setMessageBodyText(messageText);
               }}
-              onPickEmoji={onUseEmoji}
+              onSelectEmoji={onSelectEmoji}
               onSubmit={(...args) => {
                 inputApiRef.current?.reset();
                 shouldScrollToBottomRef.current = true;
@@ -317,29 +285,16 @@ export function StoryViewsNRepliesModal({
               shouldHidePopovers={null}
               linkPreviewResult={null}
             >
-              {!isFunPickerEnabled() && (
-                <EmojiButton
-                  className="StoryViewsNRepliesModal__emoji-button"
-                  i18n={i18n}
-                  onPickEmoji={insertEmoji}
-                  onClose={focusComposer}
-                  recentEmojis={recentEmojis}
-                  emojiSkinToneDefault={emojiSkinToneDefault}
-                  onEmojiSkinToneDefaultChange={onEmojiSkinToneDefaultChange}
-                />
-              )}
-              {isFunPickerEnabled() && (
-                <FunEmojiPicker
-                  open={emojiPickerOpen}
-                  onOpenChange={handleEmojiPickerOpenChange}
-                  onSelectEmoji={handleSelectEmoji}
-                  placement="top"
-                  theme={ThemeType.dark}
-                  closeOnSelect={false}
-                >
-                  <FunEmojiPickerButton i18n={i18n} />
-                </FunEmojiPicker>
-              )}
+              <FunEmojiPicker
+                open={emojiPickerOpen}
+                onOpenChange={handleEmojiPickerOpenChange}
+                onSelectEmoji={handleSelectEmoji}
+                placement="top"
+                theme={ThemeType.dark}
+                closeOnSelect={false}
+              >
+                <FunEmojiPickerButton i18n={i18n} />
+              </FunEmojiPicker>
             </CompositionInput>
           </div>
         </div>

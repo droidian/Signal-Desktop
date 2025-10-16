@@ -1,51 +1,56 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { first, get, isNumber, last, throttle } from 'lodash';
+import lodash from 'lodash';
 import classNames from 'classnames';
 import type { ReactChild, ReactNode, RefObject, UIEvent } from 'react';
 import React from 'react';
 
 import type { ReadonlyDeep } from 'type-fest';
-import { ScrollDownButton, ScrollDownButtonVariant } from './ScrollDownButton';
+import {
+  ScrollDownButton,
+  ScrollDownButtonVariant,
+} from './ScrollDownButton.js';
 
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { ConversationType } from '../../state/ducks/conversations';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges';
-import { assertDev, strictAssert } from '../../util/assert';
-import { missingCaseError } from '../../util/missingCaseError';
-import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary';
-import { WidthBreakpoint } from '../_util';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.js';
+import { assertDev, strictAssert } from '../../util/assert.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary.js';
+import { WidthBreakpoint } from '../_util.js';
 
-import { ErrorBoundary } from './ErrorBoundary';
-import { I18n } from '../I18n';
-import { TimelineWarning } from './TimelineWarning';
-import { TimelineWarnings } from './TimelineWarnings';
-import { NewlyCreatedGroupInvitedContactsDialog } from '../NewlyCreatedGroupInvitedContactsDialog';
-import { ContactSpoofingType } from '../../util/contactSpoofing';
-import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from '../../state/smart/ContactSpoofingReviewDialog';
-import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions';
-import { hasUnacknowledgedCollisions } from '../../util/groupMemberNameCollisions';
-import { TimelineFloatingHeader } from './TimelineFloatingHeader';
+import { ErrorBoundary } from './ErrorBoundary.js';
+import { I18n } from '../I18n.js';
+import { TimelineWarning } from './TimelineWarning.js';
+import { TimelineWarnings } from './TimelineWarnings.js';
+import { NewlyCreatedGroupInvitedContactsDialog } from '../NewlyCreatedGroupInvitedContactsDialog.js';
+import { ContactSpoofingType } from '../../util/contactSpoofing.js';
+import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from '../../state/smart/ContactSpoofingReviewDialog.js';
+import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions.js';
+import { hasUnacknowledgedCollisions } from '../../util/groupMemberNameCollisions.js';
+import { TimelineFloatingHeader } from './TimelineFloatingHeader.js';
 import {
   getScrollAnchorBeforeUpdate,
   getWidthBreakpoint,
   ScrollAnchor,
   TimelineMessageLoadingState,
   UnreadIndicatorPlacement,
-} from '../../util/timelineUtil';
+} from '../../util/timelineUtil.js';
 import {
   getScrollBottom,
   scrollToBottom,
   setScrollBottom,
-} from '../../util/scrollUtil';
-import { LastSeenIndicator } from './LastSeenIndicator';
-import { MINUTE } from '../../util/durations';
-import { SizeObserver } from '../../hooks/useSizeObserver';
+} from '../../util/scrollUtil.js';
+import { LastSeenIndicator } from './LastSeenIndicator.js';
+import { MINUTE, SECOND } from '../../util/durations/index.js';
+import { SizeObserver } from '../../hooks/useSizeObserver.js';
 import {
   createScrollerLock,
   ScrollerLockContext,
-} from '../../hooks/useScrollLock';
+} from '../../hooks/useScrollLock.js';
+
+const { first, get, isNumber, last, throttle } = lodash;
 
 const AT_BOTTOM_THRESHOLD = 15;
 const AT_BOTTOM_DETECTOR_STYLE = { height: AT_BOTTOM_THRESHOLD };
@@ -53,6 +58,8 @@ const AT_BOTTOM_DETECTOR_STYLE = { height: AT_BOTTOM_THRESHOLD };
 const MIN_ROW_HEIGHT = 18;
 const SCROLL_DOWN_BUTTON_THRESHOLD = 8;
 const LOAD_NEWER_THRESHOLD = 5;
+
+const DELAY_BEFORE_MARKING_READ_AFTER_FOCUS = SECOND;
 
 export type WarningType = ReadonlyDeep<
   | {
@@ -84,6 +91,7 @@ type PropsHousekeepingType = {
   isBlocked: boolean;
   isConversationSelected: boolean;
   isGroupV1AndDisabled?: boolean;
+  isInFullScreenCall: boolean;
   isIncomingMessageRequest: boolean;
   isSomeoneTyping: boolean;
   unreadCount?: number;
@@ -137,7 +145,7 @@ type PropsHousekeepingType = {
 };
 
 export type PropsActionsType = {
-  // From Backbone
+  // From Model
   acknowledgeGroupMemberNameCollisions: (
     conversationId: string,
     groupNameCollisions: ReadonlyDeep<GroupNameCollisionsWithIdsByTitle>
@@ -452,7 +460,9 @@ export class Timeline extends React.Component<
         setIsNearBottom(id, newIsNearBottom);
 
         if (newestBottomVisibleMessageId) {
-          this.#markNewestBottomVisibleMessageRead();
+          this.#markNewestBottomVisibleMessageRead(
+            newestBottomVisibleMessageId
+          );
 
           const rowIndex = getRowIndexFromElement(newestBottomVisible);
           const maxRowIndex = items.length - 1;
@@ -506,13 +516,25 @@ export class Timeline extends React.Component<
     this.#intersectionObserver.observe(atBottomDetectorEl);
   }
 
-  #markNewestBottomVisibleMessageRead = throttle((): void => {
+  #markNewestBottomVisibleMessageRead = throttle((messageId?: string): void => {
     const { id, markMessageRead } = this.props;
-    const { newestBottomVisibleMessageId } = this.state;
-    if (newestBottomVisibleMessageId) {
-      markMessageRead(id, newestBottomVisibleMessageId);
+    const messageIdToMarkRead =
+      messageId ?? this.state.newestBottomVisibleMessageId;
+    if (messageIdToMarkRead) {
+      markMessageRead(id, messageIdToMarkRead);
     }
   }, 500);
+
+  // When the the window becomes active, or when a fullsceen call is ended, we mark read
+  // with a delay, to allow users to navigate away quickly without marking messages read
+  #markNewestBottomVisibleMessageReadAfterDelay = throttle(
+    this.#markNewestBottomVisibleMessageRead,
+    DELAY_BEFORE_MARKING_READ_AFTER_FOCUS,
+    {
+      leading: false,
+      trailing: true,
+    }
+  );
 
   #setupGroupCallPeekTimeouts(): void {
     this.#cleanupGroupCallPeekTimeouts();
@@ -555,7 +577,7 @@ export class Timeline extends React.Component<
     this.#updateIntersectionObserver();
 
     window.SignalContext.activeWindowService.registerForActive(
-      this.#markNewestBottomVisibleMessageRead
+      this.#markNewestBottomVisibleMessageReadAfterDelay
     );
 
     if (conversationType === 'group') {
@@ -565,9 +587,10 @@ export class Timeline extends React.Component<
 
   public override componentWillUnmount(): void {
     window.SignalContext.activeWindowService.unregisterForActive(
-      this.#markNewestBottomVisibleMessageRead
+      this.#markNewestBottomVisibleMessageReadAfterDelay
     );
-
+    this.#markNewestBottomVisibleMessageReadAfterDelay.cancel();
+    this.#markNewestBottomVisibleMessageRead.cancel();
     this.#intersectionObserver?.disconnect();
     this.#cleanupGroupCallPeekTimeouts();
     this.props.updateVisibleMessages?.([]);
@@ -622,6 +645,7 @@ export class Timeline extends React.Component<
   ): void {
     const {
       conversationType: previousConversationType,
+      isInFullScreenCall: previousIsInFullScreenCall,
       items: oldItems,
       messageChangeCounter: previousMessageChangeCounter,
       messageLoadingState: previousMessageLoadingState,
@@ -630,6 +654,7 @@ export class Timeline extends React.Component<
       conversationType,
       discardMessages,
       id,
+      isInFullScreenCall,
       items: newItems,
       messageChangeCounter,
       messageLoadingState,
@@ -700,6 +725,10 @@ export class Timeline extends React.Component<
     }
     if (previousMessageChangeCounter !== messageChangeCounter) {
       this.#markNewestBottomVisibleMessageRead();
+    }
+
+    if (previousIsInFullScreenCall && !isInFullScreenCall) {
+      this.#markNewestBottomVisibleMessageReadAfterDelay();
     }
 
     if (previousConversationType !== conversationType) {

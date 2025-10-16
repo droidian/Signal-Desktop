@@ -3,14 +3,14 @@
 
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations';
-import type { App, Bootstrap } from './fixtures';
-import { initStorage, debug } from './fixtures';
+import * as durations from '../../util/durations/index.js';
+import type { App, Bootstrap } from './fixtures.js';
+import { initStorage, debug } from './fixtures.js';
 import {
   acceptConversation,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers';
+} from '../helpers.js';
 
 describe('storage service', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -108,9 +108,9 @@ describe('storage service', function (this: Mocha.Suite) {
         'profile key message has valid source'
       );
       assert.isTrue(
-        phone.profileKey
-          .serialize()
-          .equals(dataMessage.profileKey ?? new Uint8Array(0)),
+        Buffer.from(phone.profileKey.serialize()).equals(
+          dataMessage.profileKey ?? new Uint8Array(0)
+        ),
         'profile key message has correct profile key'
       );
     }

@@ -3,48 +3,55 @@
 import { parentPort } from 'node:worker_threads';
 import { format } from 'node:util';
 
-import type { LoggerType } from '../types/Logging';
-import type { WrappedWorkerLogEntry, WrappedWorkerResponse } from './main';
-import { consoleLogger } from '../util/consoleLogger';
-import { strictAssert } from '../util/assert';
+import type { LoggerType } from '../types/Logging.js';
+import type { WrappedWorkerLogEntry, WrappedWorkerResponse } from './main.js';
+import { consoleLogger } from '../util/consoleLogger.js';
+import { strictAssert } from '../util/assert.js';
 
-const log = (
-  level: WrappedWorkerLogEntry['level'],
-  args: Array<unknown>
-): void => {
-  if (parentPort) {
-    const wrappedResponse: WrappedWorkerResponse = {
-      type: 'log',
-      level,
-      args,
-    };
-    parentPort.postMessage(wrappedResponse);
-  } else {
-    strictAssert(process.env.NODE_ENV === 'test', 'must be test environment');
-    consoleLogger[level](format(...args));
+class SQLLogger {
+  #msgPrefix: string;
+
+  constructor(msgPrefix: string) {
+    this.#msgPrefix = msgPrefix;
   }
-};
 
-export const sqlLogger: LoggerType = {
   fatal(...args: Array<unknown>) {
-    log('fatal', args);
-  },
+    this.#log('fatal', args);
+  }
   error(...args: Array<unknown>) {
-    log('error', args);
-  },
+    this.#log('error', args);
+  }
   warn(...args: Array<unknown>) {
-    log('warn', args);
-  },
+    this.#log('warn', args);
+  }
   info(...args: Array<unknown>) {
-    log('info', args);
-  },
+    this.#log('info', args);
+  }
   debug(...args: Array<unknown>) {
-    log('debug', args);
-  },
+    this.#log('debug', args);
+  }
   trace(...args: Array<unknown>) {
-    log('trace', args);
-  },
-  child() {
-    return sqlLogger;
-  },
-};
+    this.#log('trace', args);
+  }
+  child(subsystem: string) {
+    return new SQLLogger(`${this.#msgPrefix}[${subsystem}] `);
+  }
+
+  #log(level: WrappedWorkerLogEntry['level'], args: Array<unknown>): void {
+    if (parentPort) {
+      const [fmt, ...rest] = args;
+
+      const wrappedResponse: WrappedWorkerResponse = {
+        type: 'log',
+        level,
+        args: ([this.#msgPrefix + fmt] as Array<unknown>).concat(rest),
+      };
+      parentPort.postMessage(wrappedResponse);
+    } else {
+      strictAssert(process.env.NODE_ENV === 'test', 'must be test environment');
+      consoleLogger[level](this.#msgPrefix + format(...args));
+    }
+  }
+}
+
+export const sqlLogger: LoggerType = new SQLLogger('');
