@@ -727,6 +727,7 @@ async function createWindow() {
           : '../ts/windows/main/preload.js'
       ),
       spellcheck,
+      backgroundThrottling: false,
     },
     icon: windowIcon,
     ...pick(windowConfig, ['autoHideMenuBar', 'x', 'y']),
