@@ -1,90 +1,105 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { pipeline } from 'stream/promises';
-import { PassThrough } from 'stream';
-import type { Readable, Writable } from 'stream';
-import { createReadStream, createWriteStream } from 'fs';
-import { mkdir, stat, unlink } from 'fs/promises';
-import { ensureFile } from 'fs-extra';
-import { join } from 'path';
-import { createGzip, createGunzip } from 'zlib';
-import { createCipheriv, createHmac, randomBytes } from 'crypto';
-import { isEqual, noop } from 'lodash';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys';
-import { throttle } from 'lodash/fp';
+import { pipeline } from 'node:stream/promises';
+import { PassThrough } from 'node:stream';
+import type { Readable, Writable } from 'node:stream';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { mkdir, stat, unlink } from 'node:fs/promises';
+import fsExtra from 'fs-extra';
+import { join } from 'node:path';
+import { createGzip, createGunzip } from 'node:zlib';
+import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
+import lodash from 'lodash';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import { BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys.js';
+import lodashFp from 'lodash/fp.js';
 import { ipcRenderer } from 'electron';
 
-import { DataReader, DataWriter } from '../../sql/Client';
-import { createLogger } from '../../logging/log';
-import * as Bytes from '../../Bytes';
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { DelimitedStream } from '../../util/DelimitedStream';
-import { appendPaddingStream } from '../../util/logPadding';
-import { prependStream } from '../../util/prependStream';
-import { appendMacStream } from '../../util/appendMacStream';
-import { getMacAndUpdateHmac } from '../../util/getMacAndUpdateHmac';
-import { missingCaseError } from '../../util/missingCaseError';
-import { DAY, HOUR, SECOND } from '../../util/durations';
-import type { ExplodePromiseResultType } from '../../util/explodePromise';
-import { explodePromise } from '../../util/explodePromise';
-import type { RetryBackupImportValue } from '../../state/ducks/installer';
-import { CipherType, HashType } from '../../types/Crypto';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { createLogger } from '../../logging/log.js';
+import * as Bytes from '../../Bytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { TEMP_PATH } from '../../util/basePaths.js';
+import {
+  getAbsoluteDownloadsPath,
+  saveAttachmentToDisk,
+} from '../../util/migrations.js';
+import { waitForAllBatchers } from '../../util/batcher.js';
+import { flushAllWaitBatchers } from '../../util/waitBatcher.js';
+import { DelimitedStream } from '../../util/DelimitedStream.js';
+import { appendPaddingStream } from '../../util/logPadding.js';
+import { prependStream } from '../../util/prependStream.js';
+import { appendMacStream } from '../../util/appendMacStream.js';
+import { getMacAndUpdateHmac } from '../../util/getMacAndUpdateHmac.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { HOUR, SECOND } from '../../util/durations/index.js';
+import type { ExplodePromiseResultType } from '../../util/explodePromise.js';
+import { explodePromise } from '../../util/explodePromise.js';
+import type { RetryBackupImportValue } from '../../state/ducks/installer.js';
+import { CipherType, HashType } from '../../types/Crypto.js';
 import {
   InstallScreenBackupStep,
   InstallScreenBackupError,
-} from '../../types/InstallScreen';
-import * as Errors from '../../types/errors';
+} from '../../types/InstallScreen.js';
+import * as Errors from '../../types/errors.js';
 import {
   BackupCredentialType,
   type BackupsSubscriptionType,
   type BackupStatusType,
-} from '../../types/backups';
-import { HTTPError } from '../../textsecure/Errors';
-import { constantTimeEqual } from '../../Crypto';
-import { measureSize } from '../../AttachmentCrypto';
-import { isTestOrMockEnvironment } from '../../environment';
-import { runStorageServiceSyncJob } from '../storage';
-import { BackupExportStream, type StatsType } from './export';
-import { BackupImportStream } from './import';
+} from '../../types/backups.js';
+import { HTTPError } from '../../types/HTTPError.js';
+import { constantTimeEqual } from '../../Crypto.js';
+import { measureSize } from '../../AttachmentCrypto.js';
+import { signalProtocolStore } from '../../SignalProtocolStore.js';
+import { isTestOrMockEnvironment } from '../../environment.js';
+import { runStorageServiceSyncJob } from '../storage.js';
+import { BackupExportStream, type StatsType } from './export.js';
+import { BackupImportStream } from './import.js';
 import {
   getBackupId,
   getKeyMaterial,
   getLocalBackupMetadataKey,
-} from './crypto';
-import { BackupCredentials } from './credentials';
-import { BackupAPI } from './api';
+} from './crypto.js';
+import { BackupCredentials } from './credentials.js';
+import { BackupAPI } from './api.js';
 import {
   validateBackup,
   validateBackupStream,
   ValidationType,
-} from './validator';
-import { BackupType } from './types';
+} from './validator.js';
+import { BackupType } from './types.js';
 import {
   BackupInstallerError,
   BackupDownloadFailedError,
   BackupImportCanceledError,
   BackupProcessingError,
   RelinkRequestedError,
-} from './errors';
-import { FileStream } from './util/FileStream';
-import { ToastType } from '../../types/Toast';
-import { isAdhoc, isNightly } from '../../util/version';
-import { getMessageQueueTime } from '../../util/getMessageQueueTime';
-import { isLocalBackupsEnabled } from '../../util/isLocalBackupsEnabled';
-import type { ValidateLocalBackupStructureResultType } from './util/localBackup';
+} from './errors.js';
+import { FileStream } from './util/FileStream.js';
+import { ToastType } from '../../types/Toast.js';
+import { isAdhoc, isNightly } from '../../util/version.js';
+import { isLocalBackupsEnabled } from '../../util/isLocalBackupsEnabled.js';
+import type { ValidateLocalBackupStructureResultType } from './util/localBackup.js';
 import {
   writeLocalBackupMetadata,
   verifyLocalBackupMetadata,
   writeLocalBackupFilesList,
   readLocalBackupFilesList,
   validateLocalBackupStructure,
-} from './util/localBackup';
-import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager';
-import { decipherWithAesKey } from '../../util/decipherWithAesKey';
-import { areRemoteBackupsTurnedOn } from '../../util/isBackupEnabled';
+} from './util/localBackup.js';
+import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager.js';
+import { decipherWithAesKey } from '../../util/decipherWithAesKey.js';
+import { areRemoteBackupsTurnedOn } from '../../util/isBackupEnabled.js';
+import { unlink as unlinkAccount } from '../../textsecure/WebAPI.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { ensureFile } = fsExtra;
+
+const { throttle } = lodashFp;
+
+const { isEqual, noop } = lodash;
 
 const log = createLogger('backupsService');
 
@@ -153,13 +168,11 @@ export class BackupsService {
 
   public readonly credentials = new BackupCredentials();
   public readonly api = new BackupAPI(this.credentials);
-  public readonly throttledFetchCloudBackupStatus = throttle(
-    30 * SECOND,
-    this.fetchCloudBackupStatus.bind(this)
+  public readonly throttledFetchCloudBackupStatus = throttle(30 * SECOND, () =>
+    this.#fetchCloudBackupStatus()
   );
-  public readonly throttledFetchSubscriptionStatus = throttle(
-    30 * SECOND,
-    this.fetchSubscriptionStatus.bind(this)
+  public readonly throttledFetchSubscriptionStatus = throttle(30 * SECOND, () =>
+    this.#fetchSubscriptionStatus()
   );
 
   public start(): void {
@@ -183,15 +196,14 @@ export class BackupsService {
     drop(this.#runPeriodicRefresh());
     this.credentials.start();
 
-    window.Whisper.events.on('userChanged', () => {
-      drop(this.credentials.clearCache());
-      this.api.clearCache();
+    window.Whisper.events.on('userChanged', async () => {
+      await this.resetCachedData();
     });
   }
   public async downloadAndImport(
     options: DownloadOptionsType
   ): Promise<{ wasBackupImported: boolean }> {
-    const backupDownloadPath = window.storage.get('backupDownloadPath');
+    const backupDownloadPath = itemStorage.get('backupDownloadPath');
     if (!backupDownloadPath) {
       log.warn('backups.downloadAndImport: no backup download path, skipping');
       return { wasBackupImported: false };
@@ -199,10 +211,9 @@ export class BackupsService {
 
     log.info('backups.downloadAndImport: downloading...');
 
-    const ephemeralKey = window.storage.get('backupEphemeralKey');
+    const ephemeralKey = itemStorage.get('backupEphemeralKey');
 
-    const absoluteDownloadPath =
-      window.Signal.Migrations.getAbsoluteDownloadsPath(backupDownloadPath);
+    const absoluteDownloadPath = getAbsoluteDownloadsPath(backupDownloadPath);
     let hasBackup = false;
 
     // eslint-disable-next-line no-constant-condition
@@ -277,10 +288,10 @@ export class BackupsService {
       break;
     }
 
-    await window.storage.remove('backupDownloadPath');
-    await window.storage.remove('backupEphemeralKey');
-    await window.storage.remove('backupTransitArchive');
-    await window.storage.put('isRestoredFromBackup', hasBackup);
+    await itemStorage.remove('backupDownloadPath');
+    await itemStorage.remove('backupEphemeralKey');
+    await itemStorage.remove('backupTransitArchive');
+    await itemStorage.put('isRestoredFromBackup', hasBackup);
 
     log.info('backups.downloadAndImport: done');
 
@@ -299,7 +310,7 @@ export class BackupsService {
     await this.#waitForEmptyQueues('backups.upload');
 
     const fileName = `backup-${randomBytes(32).toString('hex')}`;
-    const filePath = join(window.BasePaths.temp, fileName);
+    const filePath = join(TEMP_PATH, fileName);
 
     const backupLevel = await this.credentials.getBackupLevel(
       BackupCredentialType.Media
@@ -511,8 +522,6 @@ export class BackupsService {
   // Test harness
   public async exportWithDialog(): Promise<void> {
     const { data } = await this.exportBackupData();
-
-    const { saveAttachmentToDisk } = window.Signal.Migrations;
 
     await saveAttachmentToDisk({
       name: 'backup.bin',
@@ -785,7 +794,7 @@ export class BackupsService {
           abortSignal: controller.signal,
         });
       } else {
-        let archive = window.storage.get('backupTransitArchive');
+        let archive = itemStorage.get('backupTransitArchive');
         if (archive == null) {
           const response = await this.api.getTransferArchive(controller.signal);
           if ('error' in response) {
@@ -808,7 +817,7 @@ export class BackupsService {
             cdn: response.cdn,
             key: response.key,
           };
-          await window.storage.put('backupTransitArchive', archive);
+          await itemStorage.put('backupTransitArchive', archive);
         }
 
         stream = await this.api.downloadEphemeral({
@@ -861,10 +870,10 @@ export class BackupsService {
       try {
         // Import and start writing to the DB. Make sure we are unlinked
         // if the import process is aborted due to error or restart.
-        const password = window.storage.get('password');
+        const password = itemStorage.get('password');
         strictAssert(password != null, 'Must be registered to import backup');
 
-        await window.storage.remove('password');
+        await itemStorage.remove('password');
 
         await this.importFromDisk(downloadPath, {
           ephemeralKey,
@@ -878,7 +887,7 @@ export class BackupsService {
         });
 
         // Restore password on success
-        await window.storage.put('password', password);
+        await itemStorage.put('password', password);
       } catch (e) {
         // Error or manual cancel during import; this is non-retriable
         if (e instanceof BackupInstallerError) {
@@ -1001,7 +1010,7 @@ export class BackupsService {
     });
 
     try {
-      await window.textsecure.server?.unlink();
+      await unlinkAccount();
     } catch (e) {
       log.warn(
         'Error while unlinking; this may be expected for the unlink operation',
@@ -1011,7 +1020,7 @@ export class BackupsService {
 
     try {
       log.info('backups.unlinkAndDeleteAllData: deleting all data');
-      await window.textsecure.storage.protocol.removeAllData();
+      await signalProtocolStore.removeAllData();
       log.info('backups.unlinkAndDeleteAllData: all data deleted successfully');
     } catch (e) {
       log.error(
@@ -1042,10 +1051,7 @@ export class BackupsService {
     await window.waitForEmptyEventQueue();
 
     // Make sure all batches are flushed
-    await Promise.all([
-      window.waitForAllBatchers(),
-      window.flushAllWaitBatchers(),
-    ]);
+    await Promise.all([waitForAllBatchers(), flushAllWaitBatchers()]);
   }
 
   public isImportRunning(): boolean {
@@ -1056,7 +1062,7 @@ export class BackupsService {
   }
 
   #getBackupTierFromStorage(): BackupLevel | null {
-    const backupTier = window.storage.get('backupTier');
+    const backupTier = itemStorage.get('backupTier');
     switch (backupTier) {
       case BackupLevel.Free:
         return BackupLevel.Free;
@@ -1070,7 +1076,7 @@ export class BackupsService {
     }
   }
 
-  async fetchCloudBackupStatus(): Promise<BackupStatusType | undefined> {
+  async #fetchCloudBackupStatus(): Promise<BackupStatusType | undefined> {
     let result: BackupStatusType | undefined;
     const backupProtoInfo = await this.api.getBackupProtoInfo();
 
@@ -1082,52 +1088,64 @@ export class BackupsService {
       };
     }
 
-    await window.storage.put('cloudBackupStatus', result);
+    await itemStorage.put('cloudBackupStatus', result);
     return result;
   }
 
-  async fetchSubscriptionStatus(): Promise<
+  async #fetchSubscriptionStatus(): Promise<
     BackupsSubscriptionType | undefined
   > {
+    const cachedBackupSubscriptionStatus = itemStorage.get(
+      'backupSubscriptionStatus'
+    );
     const backupTier = this.#getBackupTierFromStorage();
-    let result: BackupsSubscriptionType;
+    let result: BackupsSubscriptionType | undefined;
     switch (backupTier) {
       case null:
       case undefined:
-        result = {
-          status: 'off',
-        };
-        break;
       case BackupLevel.Free:
-        result = {
-          status: 'free',
-          mediaIncludedInBackupDurationDays: getMessageQueueTime() / DAY,
-        };
+        result = { status: 'not-found' };
         break;
       case BackupLevel.Paid:
+        await itemStorage.put('backupSubscriptionStatus', {
+          ...(cachedBackupSubscriptionStatus ?? { status: 'not-found' }),
+          isFetching: true,
+        });
         result = await this.api.getSubscriptionInfo();
         break;
       default:
         throw missingCaseError(backupTier);
     }
 
-    drop(window.storage.put('backupSubscriptionStatus', result));
+    await itemStorage.put('backupSubscriptionStatus', {
+      ...result,
+      lastFetchedAtMs: Date.now(),
+      isFetching: false,
+    });
     return result;
   }
 
   async refreshBackupAndSubscriptionStatus(): Promise<void> {
     await Promise.all([
-      this.fetchSubscriptionStatus(),
-      this.fetchCloudBackupStatus(),
+      this.#fetchSubscriptionStatus(),
+      this.#fetchCloudBackupStatus(),
     ]);
   }
 
+  async resetCachedData(): Promise<void> {
+    this.api.clearCache();
+    await this.credentials.clearCache();
+    await itemStorage.remove('backupSubscriptionStatus');
+    await itemStorage.remove('cloudBackupStatus');
+    await this.refreshBackupAndSubscriptionStatus();
+  }
+
   hasMediaBackups(): boolean {
-    return window.storage.get('backupTier') === BackupLevel.Paid;
+    return itemStorage.get('backupTier') === BackupLevel.Paid;
   }
 
   getCachedCloudBackupStatus(): BackupStatusType | undefined {
-    return window.storage.get('cloudBackupStatus');
+    return itemStorage.get('cloudBackupStatus');
   }
 
   async pickLocalBackupFolder(): Promise<string | undefined> {
@@ -1138,7 +1156,7 @@ export class BackupsService {
       return;
     }
 
-    drop(window.storage.put('localBackupFolder', snapshotDir));
+    drop(itemStorage.put('localBackupFolder', snapshotDir));
     return snapshotDir;
   }
 }

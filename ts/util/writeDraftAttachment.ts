@@ -1,20 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { omit } from 'lodash';
+import lodash from 'lodash';
 import type {
   InMemoryAttachmentDraftType,
   AttachmentDraftType,
-} from '../types/Attachment';
-import { isImageAttachment } from '../types/Attachment';
-import { getImageDimensions } from '../types/VisualAttachment';
-import { IMAGE_PNG } from '../types/MIME';
-import * as Errors from '../types/errors';
+} from '../types/Attachment.js';
+import { isImageAttachment } from './Attachment.js';
+import { getImageDimensions } from '../types/VisualAttachment.js';
+import { IMAGE_PNG } from '../types/MIME.js';
+import * as Errors from '../types/errors.js';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from './getLocalAttachmentUrl';
-import { createLogger } from '../logging/log';
+} from './getLocalAttachmentUrl.js';
+import { writeNewDraftData } from './migrations.js';
+import { createLogger } from '../logging/log.js';
+
+const { omit } = lodash;
 
 const logger = createLogger('writeDraftAttachment');
 
@@ -25,14 +28,10 @@ export async function writeDraftAttachment(
     throw new Error('writeDraftAttachment: Cannot write pending attachment');
   }
 
-  const local = await window.Signal.Migrations.writeNewDraftData(
-    attachment.data
-  );
+  const local = await writeNewDraftData(attachment.data);
 
   const localScreenshot = attachment.screenshotData
-    ? await window.Signal.Migrations.writeNewDraftData(
-        attachment.screenshotData
-      )
+    ? await writeNewDraftData(attachment.screenshotData)
     : undefined;
 
   let dimensions: { width?: number; height?: number } = {};

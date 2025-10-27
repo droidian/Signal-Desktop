@@ -2,16 +2,36 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyDeep } from 'type-fest';
+import type { ChatFolderId } from './ChatFolder.js';
+
+export type SettingsLocation = ReadonlyDeep<
+  | {
+      page: SettingsPage.Profile;
+      state: ProfileEditorPage;
+    }
+  | {
+      page: SettingsPage.ChatFolders;
+      previousLocation: Location | null;
+    }
+  | {
+      page: SettingsPage.EditChatFolder;
+      chatFolderId: ChatFolderId | null;
+      previousLocation: Location | null;
+    }
+  | {
+      page: Exclude<
+        SettingsPage,
+        | SettingsPage.Profile
+        | SettingsPage.ChatFolders
+        | SettingsPage.EditChatFolder
+      >;
+    }
+>;
 
 export type Location = ReadonlyDeep<
   | {
       tab: NavTab.Settings;
-      details:
-        | {
-            page: SettingsPage.Profile;
-            state: ProfileEditorPage;
-          }
-        | { page: Exclude<SettingsPage, SettingsPage.Profile> };
+      details: SettingsLocation;
     }
   | { tab: Exclude<NavTab, NavTab.Settings> }
 >;
@@ -43,6 +63,8 @@ export enum SettingsPage {
   DonationsDonateFlow = 'DonationsDonateFlow',
   DonationsReceiptList = 'DonationsReceiptList',
   EditChatFolder = 'EditChatFolder',
+  NotificationProfilesHome = 'NotificationProfilesHome',
+  NotificationProfilesCreateFlow = 'NotificationProfilesCreateFlow',
   PNP = 'PNP',
   BackupsDetails = 'BackupsDetails',
   LocalBackups = 'LocalBackups',

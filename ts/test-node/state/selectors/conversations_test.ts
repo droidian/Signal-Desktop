@@ -8,12 +8,12 @@ import {
   ComposerStep,
   ConversationVerificationState,
   OneTimeModalState,
-} from '../../../state/ducks/conversationsEnums';
+} from '../../../state/ducks/conversationsEnums.js';
 import type {
   ConversationLookupType,
   ConversationType,
-} from '../../../state/ducks/conversations';
-import { getEmptyState } from '../../../state/ducks/conversations';
+} from '../../../state/ducks/conversations.js';
+import { getEmptyState } from '../../../state/ducks/conversations.js';
 import {
   _getConversationComparator,
   _getLeftPaneLists,
@@ -42,24 +42,23 @@ import {
   getSelectedConversationId,
   hasGroupCreationError,
   isCreatingGroup,
-} from '../../../state/selectors/conversations';
-import { noopAction } from '../../../state/ducks/noop';
-import type { StateType } from '../../../state/reducer';
-import { reducer as rootReducer } from '../../../state/reducer';
-import { setupI18n } from '../../../util/setupI18n';
-import type { ServiceIdString } from '../../../types/ServiceId';
-import { generateAci, getAciFromPrefix } from '../../../types/ServiceId';
-import enMessages from '../../../../_locales/en/messages.json';
+} from '../../../state/selectors/conversations.js';
+import { noopAction } from '../../../state/ducks/noop.js';
+import type { StateType } from '../../../state/reducer.js';
+import { reducer as rootReducer } from '../../../state/reducer.js';
+import i18n from '../../util/i18n.js';
+import type { ServiceIdString } from '../../../types/ServiceId.js';
+import { generateAci, getAciFromPrefix } from '../../../types/ServiceId.js';
 import {
   getDefaultConversation,
   getDefaultGroup,
   getDefaultConversationWithServiceId,
-} from '../../../test-helpers/getDefaultConversation';
+} from '../../../test-helpers/getDefaultConversation.js';
 import {
   defaultStartDirectConversationComposerState,
   defaultChooseGroupMembersComposerState,
   defaultSetGroupMetadataComposerState,
-} from '../../../test-helpers/defaultComposerStates';
+} from '../../../test-helpers/defaultComposerStates.js';
 
 describe('both/state/selectors/conversations-extra', () => {
   const SERVICE_ID_1 = generateAci();
@@ -104,8 +103,6 @@ describe('both/state/selectors/conversations-extra', () => {
       getAciFromPrefix(id)
     );
   }
-
-  const i18n = setupI18n('en', enMessages);
 
   describe('#getConversationByIdSelector', () => {
     const state = {
@@ -1152,7 +1149,7 @@ describe('both/state/selectors/conversations-extra', () => {
 
   describe('#_getLeftPaneLists', () => {
     it('sorts conversations based on timestamp then by intl-friendly title', () => {
-      const data: ConversationLookupType = {
+      const conversationLookup: ConversationLookupType = {
         id1: getDefaultConversation({
           id: 'id1',
           e164: '+18005551111',
@@ -1259,9 +1256,16 @@ describe('both/state/selectors/conversations-extra', () => {
           acceptedMessageRequest: true,
         }),
       };
-      const comparator = _getConversationComparator();
+      const conversationComparator = _getConversationComparator();
       const { archivedConversations, conversations, pinnedConversations } =
-        _getLeftPaneLists(data, comparator);
+        _getLeftPaneLists({
+          conversationLookup,
+          conversationComparator,
+          selectedConversationId: undefined,
+          pinnedConversationIds: null,
+          selectedChatFolder: null,
+          stableSelectedConversationIdInChatFolder: null,
+        });
 
       assert.strictEqual(conversations[0].name, 'First!');
       assert.strictEqual(conversations[1].name, 'Á');
@@ -1277,7 +1281,7 @@ describe('both/state/selectors/conversations-extra', () => {
 
     describe('given pinned conversations', () => {
       it('sorts pinned conversations based on order in storage', () => {
-        const data: ConversationLookupType = {
+        const conversationLookup: ConversationLookupType = {
           pin2: getDefaultConversation({
             id: 'pin2',
             e164: '+18005551111',
@@ -1347,9 +1351,16 @@ describe('both/state/selectors/conversations-extra', () => {
         };
 
         const pinnedConversationIds = ['pin1', 'pin2', 'pin3'];
-        const comparator = _getConversationComparator();
+        const conversationComparator = _getConversationComparator();
         const { archivedConversations, conversations, pinnedConversations } =
-          _getLeftPaneLists(data, comparator, undefined, pinnedConversationIds);
+          _getLeftPaneLists({
+            conversationLookup,
+            conversationComparator,
+            selectedConversationId: undefined,
+            pinnedConversationIds,
+            selectedChatFolder: null,
+            stableSelectedConversationIdInChatFolder: null,
+          });
 
         assert.strictEqual(pinnedConversations[0].name, 'Pin One');
         assert.strictEqual(pinnedConversations[1].name, 'Pin Two');
@@ -1361,7 +1372,7 @@ describe('both/state/selectors/conversations-extra', () => {
       });
 
       it('includes archived and pinned conversations with no active_at', () => {
-        const data: ConversationLookupType = {
+        const conversationLookup: ConversationLookupType = {
           pin2: getDefaultConversation({
             id: 'pin2',
             e164: '+18005551111',
@@ -1471,9 +1482,16 @@ describe('both/state/selectors/conversations-extra', () => {
         };
 
         const pinnedConversationIds = ['pin1', 'pin2', 'pin3'];
-        const comparator = _getConversationComparator();
+        const conversationComparator = _getConversationComparator();
         const { archivedConversations, conversations, pinnedConversations } =
-          _getLeftPaneLists(data, comparator, undefined, pinnedConversationIds);
+          _getLeftPaneLists({
+            conversationLookup,
+            conversationComparator,
+            selectedConversationId: undefined,
+            pinnedConversationIds,
+            selectedChatFolder: null,
+            stableSelectedConversationIdInChatFolder: null,
+          });
 
         assert.strictEqual(pinnedConversations[0].name, 'Pin One');
         assert.strictEqual(pinnedConversations[1].name, 'Pin Two');

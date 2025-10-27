@@ -4,31 +4,38 @@
 
 import { existsSync } from 'node:fs';
 import { PassThrough } from 'node:stream';
-import { constants as FS_CONSTANTS, copyFile, mkdir } from 'fs/promises';
+import { constants as FS_CONSTANTS, copyFile, mkdir } from 'node:fs/promises';
 
-import * as durations from '../util/durations';
-import { createLogger } from '../logging/log';
+import * as durations from '../util/durations/index.js';
+import { createLogger } from '../logging/log.js';
 
-import * as Errors from '../types/errors';
-import { redactGenericText } from '../util/privacy';
+import * as Errors from '../types/errors.js';
+import { redactGenericText } from '../util/privacy.js';
+import {
+  getAbsoluteAttachmentPath,
+  getAbsoluteAttachmentPath as doGetAbsoluteAttachmentPath,
+} from '../util/migrations.js';
 import {
   JobManager,
   type JobManagerParamsType,
   type JobManagerJobResultType,
-} from './JobManager';
-import { type BackupsService, backupsService } from '../services/backups';
-import { decryptAttachmentV2ToSink } from '../AttachmentCrypto';
+} from './JobManager.js';
+import {
+  type BackupsService,
+  backupsService,
+} from '../services/backups/index.js';
+import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.js';
 import {
   type AttachmentLocalBackupJobType,
   type CoreAttachmentLocalBackupJobType,
-} from '../types/AttachmentBackup';
-import { isInCall as isInCallSelector } from '../state/selectors/calling';
-import { encryptAndUploadAttachment } from '../util/uploadAttachment';
-import type { WebAPIType } from '../textsecure/WebAPI';
+} from '../types/AttachmentBackup.js';
+import { isInCall as isInCallSelector } from '../state/selectors/calling.js';
+import { encryptAndUploadAttachment } from '../util/uploadAttachment.js';
+import { backupMediaBatch as doBackupMediaBatch } from '../textsecure/WebAPI.js';
 import {
   getLocalBackupDirectoryForMediaName,
   getLocalBackupPathForMediaName,
-} from '../services/backups/util/localBackup';
+} from '../services/backups/util/localBackup.js';
 
 const log = createLogger('AttachmentLocalBackupManager');
 
@@ -161,8 +168,8 @@ function getJobIdForLogging(job: CoreAttachmentLocalBackupJobType): string {
 class AttachmentPermanentlyMissingError extends Error {}
 
 type RunAttachmentBackupJobDependenciesType = {
-  getAbsoluteAttachmentPath: typeof window.Signal.Migrations.getAbsoluteAttachmentPath;
-  backupMediaBatch?: WebAPIType['backupMediaBatch'];
+  getAbsoluteAttachmentPath: typeof doGetAbsoluteAttachmentPath;
+  backupMediaBatch?: typeof doBackupMediaBatch;
   backupsService: BackupsService;
   encryptAndUploadAttachment: typeof encryptAndUploadAttachment;
   decryptAttachmentV2ToSink: typeof decryptAttachmentV2ToSink;
@@ -175,10 +182,9 @@ export async function runAttachmentBackupJob(
     abortSignal: AbortSignal;
   },
   dependencies: RunAttachmentBackupJobDependenciesType = {
-    getAbsoluteAttachmentPath:
-      window.Signal.Migrations.getAbsoluteAttachmentPath,
+    getAbsoluteAttachmentPath: doGetAbsoluteAttachmentPath,
     backupsService,
-    backupMediaBatch: window.textsecure.server?.backupMediaBatch,
+    backupMediaBatch: doBackupMediaBatch,
     encryptAndUploadAttachment,
     decryptAttachmentV2ToSink,
   }
@@ -242,8 +248,7 @@ async function runAttachmentBackupJobInner(
   // TODO: Add check in local FS to prevent double backup
 
   // File is already encrypted with localKey, so we just have to copy it to the backup dir
-  const attachmentPath =
-    window.Signal.Migrations.getAbsoluteAttachmentPath(path);
+  const attachmentPath = getAbsoluteAttachmentPath(path);
 
   // Set COPYFILE_FICLONE for Copy on Write (OS dependent, gracefully falls back to copy)
   await copyFile(

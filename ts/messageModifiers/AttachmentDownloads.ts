@@ -1,17 +1,23 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import { omit } from 'lodash';
-import { createLogger } from '../logging/log';
-import * as Bytes from '../Bytes';
-import type { AttachmentDownloadJobTypeType } from '../types/AttachmentDownload';
+import lodash from 'lodash';
+import { createLogger } from '../logging/log.js';
+import * as Bytes from '../Bytes.js';
+import type { MessageAttachmentType } from '../types/AttachmentDownload.js';
 
-import type { AttachmentType } from '../types/Attachment';
+import type { AttachmentType } from '../types/Attachment.js';
 import {
   doAttachmentsOnSameMessageMatch,
   isDownloaded,
-} from '../types/Attachment';
-import { getMessageById } from '../messages/getMessageById';
-import { trimMessageWhitespace } from '../types/BodyRange';
+} from '../util/Attachment.js';
+import {
+  loadAttachmentData,
+  deleteAttachmentData,
+} from '../util/migrations.js';
+import { getMessageById } from '../messages/getMessageById.js';
+import { trimMessageWhitespace } from '../types/BodyRange.js';
+
+const { omit } = lodash;
 
 const log = createLogger('AttachmentDownloads');
 
@@ -67,7 +73,7 @@ export async function addAttachmentToMessage(
   messageId: string,
   attachment: AttachmentType,
   jobLogId: string,
-  { type }: { type: AttachmentDownloadJobTypeType }
+  { type }: { type: MessageAttachmentType }
 ): Promise<void> {
   const logPrefix = `${jobLogId}/addAttachmentToMessage`;
   const message = await getMessageById(messageId);
@@ -82,8 +88,7 @@ export async function addAttachmentToMessage(
 
     try {
       if (attachment.path) {
-        const loaded =
-          await window.Signal.Migrations.loadAttachmentData(attachment);
+        const loaded = await loadAttachmentData(attachment);
         attachmentData = loaded.data;
       }
 
@@ -159,7 +164,7 @@ export async function addAttachmentToMessage(
       });
     } finally {
       if (attachment.path) {
-        await window.Signal.Migrations.deleteAttachmentData(attachment.path);
+        await deleteAttachmentData(attachment.path);
       }
       if (!handledAnywhere) {
         log.warn(

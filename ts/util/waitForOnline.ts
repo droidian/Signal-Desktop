@@ -1,10 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary';
+import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary.js';
 
 export type WaitForOnlineOptionsType = Readonly<{
-  server?: Readonly<{ isOnline: () => boolean | undefined }>;
+  server: Readonly<{ isOnline: () => boolean | undefined }>;
   events?: {
     on: (event: 'online', fn: () => void) => void;
     off: (event: 'online', fn: () => void) => void;
@@ -13,20 +13,11 @@ export type WaitForOnlineOptionsType = Readonly<{
 }>;
 
 export function waitForOnline({
-  server: maybeServer,
+  server,
   events = window.Whisper.events,
   timeout,
-}: WaitForOnlineOptionsType = {}): Promise<void> {
+}: WaitForOnlineOptionsType): Promise<void> {
   return new Promise((resolve, reject) => {
-    let server = maybeServer;
-    if (server === undefined) {
-      ({ server } = window.textsecure);
-      if (!server) {
-        reject(new Error('waitForOnline: no textsecure server'));
-        return;
-      }
-    }
-
     if (server.isOnline()) {
       resolve();
       return;

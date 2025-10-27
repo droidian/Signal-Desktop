@@ -2,39 +2,42 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { z } from 'zod';
-import { groupBy } from 'lodash';
+import lodash from 'lodash';
 
 import type {
   MessageAttributesType,
   ReadonlyMessageAttributesType,
-} from '../model-types.d';
-import type { SendStateByConversationId } from '../messages/MessageSendState';
-import { isOutgoing, isStory } from '../state/selectors/message';
-import { getOwn } from '../util/getOwn';
-import { missingCaseError } from '../util/missingCaseError';
-import { createWaitBatcher } from '../util/waitBatcher';
-import { isServiceIdString } from '../types/ServiceId';
+} from '../model-types.d.ts';
+import type { SendStateByConversationId } from '../messages/MessageSendState.js';
+import { isOutgoing, isStory } from '../state/selectors/message.js';
+import { getOwn } from '../util/getOwn.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { createWaitBatcher } from '../util/waitBatcher.js';
+import { isServiceIdString } from '../types/ServiceId.js';
 import {
   SendActionType,
   SendStatus,
   UNDELIVERED_SEND_STATUSES,
   sendStateReducer,
-} from '../messages/MessageSendState';
-import { DataReader, DataWriter } from '../sql/Client';
-import type { DeleteSentProtoRecipientOptionsType } from '../sql/Interface';
-import { createLogger } from '../logging/log';
-import { getSourceServiceId } from '../messages/helpers';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { getPropForTimestamp } from '../util/editHelpers';
+} from '../messages/MessageSendState.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import type { DeleteSentProtoRecipientOptionsType } from '../sql/Interface.js';
+import { createLogger } from '../logging/log.js';
+import { getSourceServiceId } from '../messages/sources.js';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import { getPropForTimestamp } from '../util/editHelpers.js';
 import {
   DELETE_SENT_PROTO_BATCHER_WAIT_MS,
   RECEIPT_BATCHER_WAIT_MS,
-} from '../types/Receipt';
-import { drop } from '../util/drop';
-import { getMessageById } from '../messages/getMessageById';
-import { MessageModel } from '../models/messages';
-import { areStoryViewReceiptsEnabled } from '../types/Stories';
+} from '../types/Receipt.js';
+import { drop } from '../util/drop.js';
+import { getMessageById } from '../messages/getMessageById.js';
+import { MessageModel } from '../models/messages.js';
+import { areStoryViewReceiptsEnabled } from '../util/Settings.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { groupBy } = lodash;
 
 const log = createLogger('MessageReceipts');
 
@@ -393,12 +396,12 @@ const shouldDropReceipt = (
     case messageReceiptTypeSchema.Enum.Delivery:
       return false;
     case messageReceiptTypeSchema.Enum.Read:
-      return !window.storage.get('read-receipt-setting');
+      return !itemStorage.get('read-receipt-setting');
     case messageReceiptTypeSchema.Enum.View:
       if (isStory(message)) {
         return !areStoryViewReceiptsEnabled();
       }
-      return !window.storage.get('read-receipt-setting');
+      return !itemStorage.get('read-receipt-setting');
     default:
       throw missingCaseError(type);
   }
@@ -415,7 +418,7 @@ export async function forMessage(
     message
   )})`;
 
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const sourceServiceId = getSourceServiceId(message);
   if (ourAci !== sourceServiceId) {
     return [];

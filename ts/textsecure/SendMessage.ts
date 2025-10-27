@@ -10,98 +10,93 @@ import PQueue from 'p-queue';
 import pMap from 'p-map';
 import type { PlaintextContent } from '@signalapp/libsignal-client';
 import {
+  ContentHint,
   ProtocolAddress,
   SenderKeyDistributionMessage,
 } from '@signalapp/libsignal-client';
 
-import { DataWriter } from '../sql/Client';
-import type { ConversationModel } from '../models/conversations';
-import { GLOBAL_ZONE } from '../SignalProtocolStore';
-import { assertDev, strictAssert } from '../util/assert';
-import { parseIntOrThrow } from '../util/parseIntOrThrow';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import { SenderKeys } from '../LibSignalStores';
+import { GLOBAL_ZONE, signalProtocolStore } from '../SignalProtocolStore.js';
+import { DataWriter } from '../sql/Client.js';
+import type { ConversationModel } from '../models/conversations.js';
+import { assertDev, strictAssert } from '../util/assert.js';
+import { parseIntOrThrow } from '../util/parseIntOrThrow.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import { SenderKeys } from '../LibSignalStores.js';
 import type {
   TextAttachmentType,
   UploadedAttachmentType,
-} from '../types/Attachment';
-import type { AciString, ServiceIdString } from '../types/ServiceId';
+} from '../types/Attachment.js';
+import type { AciString, ServiceIdString } from '../types/ServiceId.js';
 import {
   ServiceIdKind,
   serviceIdSchema,
   isPniString,
-} from '../types/ServiceId';
-import { toAciObject, toPniObject, toServiceIdObject } from '../util/ServiceId';
-import type {
-  ChallengeType,
-  GetGroupLogOptionsType,
-  GroupCredentialsType,
-  GroupLogResponseType,
-  WebAPIType,
-} from './WebAPI';
-import createTaskWithTimeout from './TaskWithTimeout';
-import type {
-  CallbackResultType,
-  StorageServiceCallOptionsType,
-  StorageServiceCredentials,
-} from './Types.d';
+} from '../types/ServiceId.js';
+import {
+  toAciObject,
+  toPniObject,
+  toServiceIdObject,
+} from '../util/ServiceId.js';
+import createTaskWithTimeout from './TaskWithTimeout.js';
+import type { CallbackResultType } from './Types.d.ts';
 import type {
   SerializedCertificateType,
   SendLogCallbackType,
-} from './OutgoingMessage';
-import OutgoingMessage from './OutgoingMessage';
-import * as Bytes from '../Bytes';
-import { getRandomBytes } from '../Crypto';
+} from './OutgoingMessage.js';
+import OutgoingMessage from './OutgoingMessage.js';
+import * as Bytes from '../Bytes.js';
+import { getRandomBytes } from '../Crypto.js';
 import {
   MessageError,
   SendMessageProtoError,
-  HTTPError,
   NoSenderKeyError,
-} from './Errors';
-import { BodyRange } from '../types/BodyRange';
-import type { RawBodyRange } from '../types/BodyRange';
-import type { StoryContextType } from '../types/Util';
-import type {
-  LinkPreviewImage,
-  LinkPreviewMetadata,
-} from '../linkPreviews/linkPreviewFetch';
-import { concat, isEmpty } from '../util/iterables';
-import type { SendTypesType } from '../util/handleMessageSend';
-import { shouldSaveProto, sendTypesEnum } from '../util/handleMessageSend';
-import type { DurationInSeconds } from '../util/durations';
-import { SignalService as Proto } from '../protobuf';
-import { createLogger } from '../logging/log';
-import type { EmbeddedContactWithUploadedAvatar } from '../types/EmbeddedContact';
+} from './Errors.js';
+import { BodyRange } from '../types/BodyRange.js';
+import { HTTPError } from '../types/HTTPError.js';
+import type { RawBodyRange } from '../types/BodyRange.js';
+import type { StoryContextType } from '../types/Util.js';
+import { concat, isEmpty } from '../util/iterables.js';
+import type { SendTypesType } from '../util/handleMessageSend.js';
+import { shouldSaveProto, sendTypesEnum } from '../util/handleMessageSend.js';
+import type { DurationInSeconds } from '../util/durations/index.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import type { EmbeddedContactWithUploadedAvatar } from '../types/EmbeddedContact.js';
 import {
   numberToPhoneType,
   numberToEmailType,
   numberToAddressType,
-} from '../types/EmbeddedContact';
-import { missingCaseError } from '../util/missingCaseError';
-import { drop } from '../util/drop';
+} from '../types/EmbeddedContact.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { drop } from '../util/drop.js';
 import type {
   ConversationIdentifier,
   DeleteForMeSyncEventData,
   DeleteMessageSyncTarget,
   AddressableMessage,
-} from './messageReceiverEvents';
-import { getConversationFromTarget } from '../util/syncIdentifiers';
-import type { CallDetails, CallHistoryDetails } from '../types/CallDisposition';
+} from './messageReceiverEvents.js';
+import { getConversationFromTarget } from '../util/syncIdentifiers.js';
+import type {
+  CallDetails,
+  CallHistoryDetails,
+} from '../types/CallDisposition.js';
 import {
   AdhocCallStatus,
   DirectCallStatus,
   GroupCallStatus,
   CallMode,
-} from '../types/CallDisposition';
+} from '../types/CallDisposition.js';
 import {
   getBytesForPeerId,
   getCallIdForProto,
   getProtoForCallHistory,
-} from '../util/callDisposition';
-import { MAX_MESSAGE_COUNT } from '../util/deleteForMe.types';
-import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
+} from '../util/callDisposition.js';
+import { MAX_MESSAGE_COUNT } from '../util/deleteForMe.types.js';
+import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { itemStorage } from './Storage.js';
+import { accountManager } from './AccountManager.js';
 
 const log = createLogger('SendMessage');
 
@@ -194,7 +189,7 @@ export const singleProtoJobDataSchema = z.object({
 export type SingleProtoJobData = z.infer<typeof singleProtoJobDataSchema>;
 
 export type MessageOptionsType = {
-  attachments?: ReadonlyArray<UploadedAttachmentType>;
+  attachments?: ReadonlyArray<Proto.IAttachmentPointer>;
   body?: string;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
   contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
@@ -220,7 +215,7 @@ export type MessageOptionsType = {
   storyContext?: StoryContextType;
 };
 export type GroupSendOptionsType = {
-  attachments?: ReadonlyArray<UploadedAttachmentType>;
+  attachments?: ReadonlyArray<Proto.IAttachmentPointer>;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
   contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
   deletedForEveryoneTimestamp?: number;
@@ -240,7 +235,7 @@ export type GroupSendOptionsType = {
 };
 
 class Message {
-  attachments: ReadonlyArray<UploadedAttachmentType>;
+  attachments: ReadonlyArray<Proto.IAttachmentPointer>;
 
   body?: string;
 
@@ -663,12 +658,12 @@ function addPniSignatureMessageToProto({
   };
 }
 
-export default class MessageSender {
+export class MessageSender {
   pendingMessages: {
     [id: string]: PQueue;
   };
 
-  constructor(public readonly server: WebAPIType) {
+  constructor() {
     this.pendingMessages = {};
   }
 
@@ -945,14 +940,14 @@ export default class MessageSender {
       );
     }
 
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const groupMembers = groupV2?.members || [];
 
     const blockedIdentifiers = new Set(
       concat(
-        window.storage.blocked.getBlockedServiceIds(),
-        window.storage.blocked.getBlockedNumbers()
+        itemStorage.blocked.getBlockedServiceIds(),
+        itemStorage.blocked.getBlockedNumbers()
       )
     );
 
@@ -1063,7 +1058,6 @@ export default class MessageSender {
     timestamp: number;
     urgent: boolean;
   }>): Promise<void> {
-    const accountManager = window.getAccountManager();
     try {
       if (accountManager.areKeysOutOfDate(ServiceIdKind.ACI)) {
         log.warn(
@@ -1092,7 +1086,6 @@ export default class MessageSender {
       message: proto,
       options,
       sendLogCallback,
-      server: this.server,
       story,
       timestamp,
       urgent,
@@ -1218,7 +1211,7 @@ export default class MessageSender {
     urgent,
     includePniSignatureMessage,
   }: Readonly<{
-    attachments: ReadonlyArray<UploadedAttachmentType> | undefined;
+    attachments: ReadonlyArray<Proto.IAttachmentPointer> | undefined;
     bodyRanges?: ReadonlyArray<RawBodyRange>;
     contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
     contentHint: number;
@@ -1302,7 +1295,7 @@ export default class MessageSender {
     storyMessage?: Proto.StoryMessage;
     storyMessageRecipients?: ReadonlyArray<Proto.SyncMessage.Sent.IStoryMessageRecipient>;
   }>): Promise<CallbackResultType> {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const sentMessage = new Proto.SyncMessage.Sent();
     sentMessage.timestamp = Long.fromNumber(timestamp);
@@ -1360,9 +1353,7 @@ export default class MessageSender {
             }
             if (isPniString(serviceId)) {
               const pniIdentityKey =
-                await window.textsecure.storage.protocol.loadIdentityKey(
-                  serviceId
-                );
+                await signalProtocolStore.loadIdentityKey(serviceId);
               if (pniIdentityKey) {
                 status.destinationPniIdentityKey = pniIdentityKey;
               }
@@ -1381,20 +1372,18 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp,
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent,
     });
   }
 
   static getRequestBlockSyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const request = new Proto.SyncMessage.Request();
     request.type = Proto.SyncMessage.Request.Type.BLOCKED;
@@ -1403,10 +1392,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1418,7 +1405,7 @@ export default class MessageSender {
   }
 
   static getRequestConfigurationSyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const request = new Proto.SyncMessage.Request();
     request.type = Proto.SyncMessage.Request.Type.CONFIGURATION;
@@ -1427,10 +1414,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1442,7 +1427,7 @@ export default class MessageSender {
   }
 
   static getRequestContactSyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const request = new Proto.SyncMessage.Request();
     request.type = Proto.SyncMessage.Request.Type.CONTACTS;
@@ -1451,10 +1436,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1466,7 +1449,7 @@ export default class MessageSender {
   }
 
   static getFetchManifestSyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const fetchLatest = new Proto.SyncMessage.FetchLatest();
     fetchLatest.type = Proto.SyncMessage.FetchLatest.Type.STORAGE_MANIFEST;
@@ -1476,10 +1459,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1491,7 +1472,7 @@ export default class MessageSender {
   }
 
   static getFetchLocalProfileSyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const fetchLatest = new Proto.SyncMessage.FetchLatest();
     fetchLatest.type = Proto.SyncMessage.FetchLatest.Type.LOCAL_PROFILE;
@@ -1501,10 +1482,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1516,7 +1495,7 @@ export default class MessageSender {
   }
 
   static getRequestKeySyncMessage(): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const request = new Proto.SyncMessage.Request();
     request.type = Proto.SyncMessage.Request.Type.KEYS;
@@ -1526,10 +1505,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1543,7 +1520,7 @@ export default class MessageSender {
   static getDeleteForMeSyncMessage(
     data: DeleteForMeSyncEventData
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const deleteForMe = new Proto.SyncMessage.DeleteForMe();
     const messageDeletes: Map<
@@ -1624,10 +1601,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1642,7 +1617,7 @@ export default class MessageSender {
     targetConversation: ConversationIdentifier,
     targetMessage: AddressableMessage
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = this.createSyncMessage();
     syncMessage.attachmentBackfillRequest = {
@@ -1653,10 +1628,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1670,7 +1643,7 @@ export default class MessageSender {
   static getClearCallHistoryMessage(
     latestCall: CallHistoryDetails
   ): SingleProtoJobData {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const callLogEvent = new Proto.SyncMessage.CallLogEvent({
       type: Proto.SyncMessage.CallLogEvent.Type.CLEAR,
       timestamp: Long.fromNumber(latestCall.timestamp),
@@ -1684,10 +1657,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1699,7 +1670,7 @@ export default class MessageSender {
   }
 
   static getDeleteCallEvent(callDetails: CallDetails): SingleProtoJobData {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const { mode } = callDetails;
     let status;
     if (mode === CallMode.Adhoc) {
@@ -1722,10 +1693,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1744,7 +1713,7 @@ export default class MessageSender {
     }>,
     options?: Readonly<SendOptionsType>
   ): Promise<CallbackResultType> {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = MessageSender.createSyncMessage();
     syncMessage.read = [];
@@ -1759,13 +1728,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: true,
     });
@@ -1779,7 +1746,7 @@ export default class MessageSender {
     }>,
     options?: SendOptionsType
   ): Promise<CallbackResultType> {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = MessageSender.createSyncMessage();
     syncMessage.viewed = views.map(
@@ -1792,13 +1759,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
@@ -1823,7 +1788,7 @@ export default class MessageSender {
       throw new Error('syncViewOnceOpen: Missing senderAci');
     }
 
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = MessageSender.createSyncMessage();
 
@@ -1839,13 +1804,11 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: myAci,
       proto: contentMessage,
       timestamp: Date.now(),
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
@@ -1858,7 +1821,7 @@ export default class MessageSender {
       groupIds: Array<Uint8Array>;
     }>
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = MessageSender.createSyncMessage();
 
@@ -1877,10 +1840,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1898,7 +1859,7 @@ export default class MessageSender {
       type: number;
     }>
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     const syncMessage = MessageSender.createSyncMessage();
 
@@ -1921,10 +1882,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1942,7 +1901,7 @@ export default class MessageSender {
       installed: boolean;
     }>
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
     const ENUM = Proto.SyncMessage.StickerPackOperation.Type;
 
     const packOperations = operations.map(item => {
@@ -1962,10 +1921,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -1982,7 +1939,7 @@ export default class MessageSender {
     state: number,
     identityKey: Readonly<Uint8Array>
   ): SingleProtoJobData {
-    const myAci = window.textsecure.storage.user.getCheckedAci();
+    const myAci = itemStorage.user.getCheckedAci();
 
     if (!destinationE164 && !destinationAci) {
       throw new Error('syncVerification: Neither e164 nor UUID were provided');
@@ -2009,10 +1966,8 @@ export default class MessageSender {
     const contentMessage = new Proto.Content();
     contentMessage.syncMessage = syncMessage;
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return {
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
@@ -2045,13 +2000,11 @@ export default class MessageSender {
       reason: `sendCallingMessage(${timestamp})`,
     });
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendMessageProtoAndWait({
       timestamp,
       recipients,
       proto: contentMessage,
-      contentHint: ContentHint.DEFAULT,
+      contentHint: ContentHint.Default,
       groupId: undefined,
       options,
       urgent,
@@ -2134,13 +2087,11 @@ export default class MessageSender {
       });
     }
 
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
-
     return this.sendIndividualProto({
       serviceId: senderAci,
       proto: contentMessage,
       timestamp,
-      contentHint: ContentHint.RESENDABLE,
+      contentHint: ContentHint.Resendable,
       options,
       urgent: false,
     });
@@ -2258,8 +2209,8 @@ export default class MessageSender {
     timestamp: number;
     urgent: boolean;
   }>): Promise<CallbackResultType> {
-    const myE164 = window.textsecure.storage.user.getNumber();
-    const myAci = window.textsecure.storage.user.getAci();
+    const myE164 = itemStorage.user.getNumber();
+    const myAci = itemStorage.user.getAci();
     const serviceIds = recipients.filter(id => id !== myE164 && id !== myAci);
 
     if (serviceIds.length === 0) {
@@ -2316,9 +2267,9 @@ export default class MessageSender {
       timestamp,
     }: { throwIfNotInDatabase?: boolean; timestamp: number }
   ): Promise<Proto.Content> {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const ourDeviceId = parseIntOrThrow(
-      window.textsecure.storage.user.getDeviceId(),
+      itemStorage.user.getDeviceId(),
       'getSenderKeyDistributionMessage'
     );
 
@@ -2329,33 +2280,30 @@ export default class MessageSender {
     );
 
     const senderKeyDistributionMessage =
-      await window.textsecure.storage.protocol.enqueueSenderKeyJob(
-        address,
-        async () => {
-          const senderKeyStore = new SenderKeys({
-            ourServiceId: ourAci,
-            zone: GLOBAL_ZONE,
-          });
+      await signalProtocolStore.enqueueSenderKeyJob(address, async () => {
+        const senderKeyStore = new SenderKeys({
+          ourServiceId: ourAci,
+          zone: GLOBAL_ZONE,
+        });
 
-          if (throwIfNotInDatabase) {
-            const key = await senderKeyStore.getSenderKey(
-              protocolAddress,
-              distributionId
-            );
-            if (!key) {
-              throw new NoSenderKeyError(
-                `getSenderKeyDistributionMessage: Distribution ${distributionId} was not in database as expected`
-              );
-            }
-          }
-
-          return SenderKeyDistributionMessage.create(
+        if (throwIfNotInDatabase) {
+          const key = await senderKeyStore.getSenderKey(
             protocolAddress,
-            distributionId,
-            senderKeyStore
+            distributionId
           );
+          if (!key) {
+            throw new NoSenderKeyError(
+              `getSenderKeyDistributionMessage: Distribution ${distributionId} was not in database as expected`
+            );
+          }
         }
-      );
+
+        return SenderKeyDistributionMessage.create(
+          protocolAddress,
+          distributionId,
+          senderKeyStore
+        );
+      });
 
     log.info(
       `getSenderKeyDistributionMessage: Building ${distributionId} with timestamp ${timestamp}`
@@ -2389,7 +2337,6 @@ export default class MessageSender {
     options?: Readonly<SendOptionsType>
   ): Promise<CallbackResultType> {
     const timestamp = Date.now();
-    const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
     const contentMessage = await this.getSenderKeyDistributionMessage(
       distributionId,
       {
@@ -2401,7 +2348,7 @@ export default class MessageSender {
     const sendLogCallback =
       serviceIds.length > 1
         ? this.makeSendLogCallback({
-            contentHint: contentHint ?? ContentHint.IMPLICIT,
+            contentHint: contentHint ?? ContentHint.Implicit,
             proto: Proto.Content.encode(contentMessage).finish(),
             sendType: 'senderKeyDistributionMessage',
             timestamp,
@@ -2411,7 +2358,7 @@ export default class MessageSender {
         : undefined;
 
     return this.sendGroupProto({
-      contentHint: contentHint ?? ContentHint.IMPLICIT,
+      contentHint: contentHint ?? ContentHint.Implicit,
       groupId,
       options,
       proto: contentMessage,
@@ -2422,125 +2369,9 @@ export default class MessageSender {
       urgent,
     });
   }
-
-  // Simple pass-throughs
-
-  // Note: instead of updating these functions, or adding new ones, remove these and go
-  //   directly to window.textsecure.messaging.server.<function>
-
-  async getAvatar(path: string): Promise<ReturnType<WebAPIType['getAvatar']>> {
-    return this.server.getAvatar(path);
-  }
-
-  async getSticker(
-    packId: string,
-    stickerId: number
-  ): Promise<ReturnType<WebAPIType['getSticker']>> {
-    return this.server.getSticker(packId, stickerId);
-  }
-
-  async getStickerPackManifest(
-    packId: string
-  ): Promise<ReturnType<WebAPIType['getStickerPackManifest']>> {
-    return this.server.getStickerPackManifest(packId);
-  }
-
-  async createGroup(
-    group: Readonly<Proto.IGroup>,
-    options: Readonly<GroupCredentialsType>
-  ): Promise<Proto.IGroupResponse> {
-    return this.server.createGroup(group, options);
-  }
-
-  async uploadGroupAvatar(
-    avatar: Readonly<Uint8Array>,
-    options: Readonly<GroupCredentialsType>
-  ): Promise<string> {
-    return this.server.uploadGroupAvatar(avatar, options);
-  }
-
-  async getGroup(
-    options: Readonly<GroupCredentialsType>
-  ): Promise<Proto.IGroupResponse> {
-    return this.server.getGroup(options);
-  }
-
-  async getGroupFromLink(
-    groupInviteLink: string | undefined,
-    auth: Readonly<GroupCredentialsType>
-  ): Promise<Proto.GroupJoinInfo> {
-    return this.server.getGroupFromLink(groupInviteLink, auth);
-  }
-
-  async getGroupLog(
-    options: GetGroupLogOptionsType,
-    credentials: GroupCredentialsType
-  ): Promise<GroupLogResponseType> {
-    return this.server.getGroupLog(options, credentials);
-  }
-
-  async getGroupAvatar(key: string): Promise<Uint8Array> {
-    return this.server.getGroupAvatar(key);
-  }
-
-  async modifyGroup(
-    changes: Readonly<Proto.GroupChange.IActions>,
-    options: Readonly<GroupCredentialsType>,
-    inviteLinkBase64?: string
-  ): Promise<Proto.IGroupChangeResponse> {
-    return this.server.modifyGroup(changes, options, inviteLinkBase64);
-  }
-
-  async fetchLinkPreviewMetadata(
-    href: string,
-    abortSignal: AbortSignal
-  ): Promise<null | LinkPreviewMetadata> {
-    return this.server.fetchLinkPreviewMetadata(href, abortSignal);
-  }
-
-  async fetchLinkPreviewImage(
-    href: string,
-    abortSignal: AbortSignal
-  ): Promise<null | LinkPreviewImage> {
-    return this.server.fetchLinkPreviewImage(href, abortSignal);
-  }
-
-  async getStorageCredentials(): Promise<StorageServiceCredentials> {
-    return this.server.getStorageCredentials();
-  }
-
-  async getStorageManifest(
-    options: Readonly<StorageServiceCallOptionsType>
-  ): Promise<Uint8Array> {
-    return this.server.getStorageManifest(options);
-  }
-
-  async getStorageRecords(
-    data: Readonly<Uint8Array>,
-    options: Readonly<StorageServiceCallOptionsType>
-  ): Promise<Uint8Array> {
-    return this.server.getStorageRecords(data, options);
-  }
-
-  async modifyStorageRecords(
-    data: Readonly<Uint8Array>,
-    options: Readonly<StorageServiceCallOptionsType>
-  ): Promise<Uint8Array> {
-    return this.server.modifyStorageRecords(data, options);
-  }
-
-  async getGroupMembershipToken(
-    options: Readonly<GroupCredentialsType>
-  ): Promise<Proto.IExternalGroupCredential> {
-    return this.server.getExternalGroupCredential(options);
-  }
-
-  public async sendChallengeResponse(
-    challengeResponse: Readonly<ChallengeType>
-  ): Promise<void> {
-    return this.server.sendChallengeResponse(challengeResponse);
-  }
 }
+
+export const messageSender = new MessageSender();
 
 // Helpers
 

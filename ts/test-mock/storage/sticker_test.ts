@@ -3,8 +3,8 @@
 
 import { assert } from 'chai';
 import { Proto } from '@signalapp/mock-server';
-import * as durations from '../../util/durations';
-import type { App, Bootstrap } from './fixtures';
+import * as durations from '../../util/durations/index.js';
+import type { App, Bootstrap } from './fixtures.js';
 import {
   initStorage,
   debug,
@@ -13,7 +13,7 @@ import {
   storeStickerPacks,
   getStickerPackRecordPredicate,
   getStickerPackLink,
-} from './fixtures';
+} from './fixtures.js';
 
 const { StickerPackOperation } = Proto.SyncMessage;
 
@@ -156,9 +156,23 @@ describe('storage service', function (this: Mocha.Suite) {
     }
 
     debug('opening sticker manager');
-    await conversationView
-      .locator('.CompositionArea .module-sticker-button__button')
-      .click();
+
+    const FunButton = window.getByRole('button', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunDialog = window.getByRole('dialog', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunPickerStickersTab = FunDialog.getByRole('tab', {
+      name: 'Stickers',
+    });
+    const FunPickerAddSticker = FunDialog.getByRole('button', {
+      name: 'Add a sticker pack',
+    });
+
+    await FunButton.click();
+    await FunPickerStickersTab.click();
+    await FunPickerAddSticker.click();
 
     const stickerManager = conversationView.locator(
       '[data-testid=StickerManager]'

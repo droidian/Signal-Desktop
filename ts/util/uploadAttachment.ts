@@ -1,36 +1,38 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import Long from 'long';
-import { createReadStream } from 'fs';
+import { createReadStream } from 'node:fs';
 import type {
   AttachmentWithHydratedData,
   UploadedAttachmentType,
-} from '../types/Attachment';
-import { MIMETypeToString, supportsIncrementalMac } from '../types/MIME';
-import { getRandomBytes } from '../Crypto';
-import { strictAssert } from './assert';
-import { backupsService } from '../services/backups';
-import { tusUpload } from './uploads/tusProtocol';
-import { defaultFileReader } from './uploads/uploads';
-import type { AttachmentUploadFormResponseType } from '../textsecure/WebAPI';
+} from '../types/Attachment.js';
+import { MIMETypeToString, supportsIncrementalMac } from '../types/MIME.js';
+import { getRandomBytes } from '../Crypto.js';
+import { backupsService } from '../services/backups/index.js';
+import { tusUpload } from './uploads/tusProtocol.js';
+import { defaultFileReader } from './uploads/uploads.js';
+import {
+  type AttachmentUploadFormResponseType,
+  getAttachmentUploadForm,
+  createFetchForAttachmentUpload,
+  putEncryptedAttachment,
+} from '../textsecure/WebAPI.js';
 import {
   type EncryptedAttachmentV2,
   encryptAttachmentV2ToDisk,
   safeUnlink,
   type PlaintextSourceType,
-} from '../AttachmentCrypto';
-import { missingCaseError } from './missingCaseError';
-import { uuidToBytes } from './uuidToBytes';
-import { isVisualMedia } from '../types/Attachment';
+} from '../AttachmentCrypto.js';
+import { missingCaseError } from './missingCaseError.js';
+import { uuidToBytes } from './uuidToBytes.js';
+import { isVisualMedia } from './Attachment.js';
+import { getAbsoluteAttachmentPath } from './migrations.js';
 
 const CDNS_SUPPORTING_TUS = new Set([3]);
 
 export async function uploadAttachment(
   attachment: AttachmentWithHydratedData
 ): Promise<UploadedAttachmentType> {
-  const { server } = window.textsecure;
-  strictAssert(server, 'WebAPI must be initialized');
-
   const keys = getRandomBytes(64);
   const needIncrementalMac = supportsIncrementalMac(attachment.contentType);
 
@@ -52,7 +54,6 @@ export async function uploadAttachment(
     cdnNumber,
     clientUuid: clientUuid ? uuidToBytes(clientUuid) : undefined,
     key: keys,
-    iv: encrypted.iv,
     size: attachment.data.byteLength,
     digest: encrypted.digest,
     plaintextHash: encrypted.plaintextHash,
@@ -67,7 +68,6 @@ export async function uploadAttachment(
     height,
     caption,
     blurHash,
-    isReencryptableToSameDigest: true,
   };
 }
 
@@ -86,16 +86,13 @@ export async function encryptAndUploadAttachment({
   cdnNumber: number;
   encrypted: EncryptedAttachmentV2;
 }> {
-  const { server } = window.textsecure;
-  strictAssert(server, 'WebAPI must be initialized');
-
   let uploadForm: AttachmentUploadFormResponseType;
   let absoluteCiphertextPath: string | undefined;
 
   try {
     switch (uploadType) {
       case 'standard':
-        uploadForm = await server.getAttachmentUploadForm();
+        uploadForm = await getAttachmentUploadForm();
         break;
       case 'backup':
         uploadForm = await backupsService.api.getMediaUploadForm();
@@ -105,16 +102,13 @@ export async function encryptAndUploadAttachment({
     }
 
     const encrypted = await encryptAttachmentV2ToDisk({
-      getAbsoluteAttachmentPath:
-        window.Signal.Migrations.getAbsoluteAttachmentPath,
+      getAbsoluteAttachmentPath,
       keys,
       needIncrementalMac,
       plaintext,
     });
 
-    absoluteCiphertextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-      encrypted.path
-    );
+    absoluteCiphertextPath = getAbsoluteAttachmentPath(encrypted.path);
 
     await uploadFile({
       absoluteCiphertextPath,
@@ -139,11 +133,8 @@ export async function uploadFile({
   ciphertextFileSize: number;
   uploadForm: AttachmentUploadFormResponseType;
 }): Promise<void> {
-  const { server } = window.textsecure;
-  strictAssert(server, 'WebAPI must be initialized');
-
   if (CDNS_SUPPORTING_TUS.has(uploadForm.cdn)) {
-    const fetchFn = server.createFetchForAttachmentUpload(uploadForm);
+    const fetchFn = createFetchForAttachmentUpload(uploadForm);
     await tusUpload({
       endpoint: uploadForm.signedUploadLocation,
       // the upload form headers are already included in the created fetch function
@@ -155,7 +146,7 @@ export async function uploadFile({
       fetchFn,
     });
   } else {
-    await server.putEncryptedAttachment(
+    await putEncryptedAttachment(
       (start, end) => createReadStream(absoluteCiphertextPath, { start, end }),
       ciphertextFileSize,
       uploadForm

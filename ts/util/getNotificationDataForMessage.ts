@@ -3,32 +3,32 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 
-import type { RawBodyRange } from '../types/BodyRange';
-import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import type { ICUStringMessageParamsByKeyType } from '../types/Util';
-import * as Attachment from '../types/Attachment';
-import * as EmbeddedContact from '../types/EmbeddedContact';
-import * as GroupChange from '../groupChange';
-import * as MIME from '../types/MIME';
-import * as Stickers from '../types/Stickers';
-import * as expirationTimer from './expirationTimer';
-import { createLogger } from '../logging/log';
-import { GiftBadgeStates } from '../components/conversation/Message';
-import { dropNull } from './dropNull';
-import { getCallHistorySelector } from '../state/selectors/callHistory';
-import { getCallSelector, getActiveCall } from '../state/selectors/calling';
-import { getCallingNotificationText } from './callingNotification';
+import type { RawBodyRange } from '../types/BodyRange.js';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import type { ICUStringMessageParamsByKeyType } from '../types/Util.js';
+import * as Attachment from './Attachment.js';
+import * as EmbeddedContact from '../types/EmbeddedContact.js';
+import * as GroupChange from '../groupChange.js';
+import * as MIME from '../types/MIME.js';
+import * as Stickers from '../types/Stickers.js';
+import * as expirationTimer from './expirationTimer.js';
+import { createLogger } from '../logging/log.js';
+import { GiftBadgeStates } from '../types/GiftBadgeStates.js';
+import { dropNull } from './dropNull.js';
+import { getCallHistorySelector } from '../state/selectors/callHistory.js';
+import { getCallSelector, getActiveCall } from '../state/selectors/calling.js';
+import { getCallingNotificationText } from './callingNotification.js';
 import {
   getConversationSelector,
   getSelectedMessageIds,
   getTargetedMessage,
-} from '../state/selectors/conversations';
-import { getStringForConversationMerge } from './getStringForConversationMerge';
-import { getStringForProfileChange } from './getStringForProfileChange';
-import { getTitleNoDefault, getNumber } from './getTitle';
-import { findAndFormatContact } from './findAndFormatContact';
-import { isGroup, isMe } from './whatTypeOfConversation';
-import { strictAssert } from './assert';
+} from '../state/selectors/conversations.js';
+import { getStringForConversationMerge } from './getStringForConversationMerge.js';
+import { getStringForProfileChange } from './getStringForProfileChange.js';
+import { getTitleNoDefault, getNumber } from './getTitle.js';
+import { findAndFormatContact } from './findAndFormatContact.js';
+import { isGroup, isMe } from './whatTypeOfConversation.js';
+import { strictAssert } from './assert.js';
 import {
   getPropsForCallHistory,
   hasErrors,
@@ -48,17 +48,19 @@ import {
   isUnsupportedMessage,
   isConversationMerge,
   isMessageRequestResponse,
-} from '../state/selectors/message';
+} from '../state/selectors/message.js';
+import { getAuthor } from '../messages/sources.js';
 import {
-  getAuthor,
   messageHasPaymentEvent,
   getPaymentEventNotificationText,
-} from '../messages/helpers';
-import { MessageRequestResponseEvent } from '../types/MessageRequestResponseEvent';
-import { missingCaseError } from './missingCaseError';
-import { getUserConversationId } from '../state/selectors/user';
+} from '../messages/payments.js';
+import { MessageRequestResponseEvent } from '../types/MessageRequestResponseEvent.js';
+import { missingCaseError } from './missingCaseError.js';
+import { getUserConversationId } from '../state/selectors/user.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('getNotificationDataForMessage');
+const { i18n } = window.SignalContext;
 
 function getNameForNumber(e164: string): string {
   const conversation = window.ConversationController.get(e164);
@@ -78,7 +80,7 @@ export function getNotificationDataForMessage(
   if (isDeliveryIssue(attributes)) {
     return {
       emoji: '⚠️',
-      text: window.i18n('icu:DeliveryIssue--preview'),
+      text: i18n('icu:DeliveryIssue--preview'),
     };
   }
 
@@ -104,7 +106,7 @@ export function getNotificationDataForMessage(
           attributes.conversationMerge.renderInfo
         ),
         conversationTitle: conversation.getTitle(),
-        i18n: window.i18n,
+        i18n,
       }),
     };
   }
@@ -112,19 +114,19 @@ export function getNotificationDataForMessage(
   if (isChatSessionRefreshed(attributes)) {
     return {
       emoji: '🔁',
-      text: window.i18n('icu:ChatRefresh--notification'),
+      text: i18n('icu:ChatRefresh--notification'),
     };
   }
 
   if (isUnsupportedMessage(attributes)) {
     return {
-      text: window.i18n('icu:message--getDescription--unsupported-message'),
+      text: i18n('icu:message--getDescription--unsupported-message'),
     };
   }
 
   if (isGroupV1Migration(attributes)) {
     return {
-      text: window.i18n('icu:GroupV1--Migration--was-upgraded'),
+      text: i18n('icu:GroupV1--Migration--was-upgraded'),
     };
   }
 
@@ -136,7 +138,7 @@ export function getNotificationDataForMessage(
     }
 
     return {
-      text: getStringForProfileChange(change, changedContact, window.i18n),
+      text: getStringForProfileChange(change, changedContact, i18n),
     };
   }
 
@@ -148,14 +150,14 @@ export function getNotificationDataForMessage(
     );
 
     const changes = GroupChange.renderChange<string>(change, {
-      i18n: window.i18n,
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
-      ourPni: window.textsecure.storage.user.getCheckedPni(),
+      i18n,
+      ourAci: itemStorage.user.getCheckedAci(),
+      ourPni: itemStorage.user.getCheckedPni(),
       renderContact: (conversationId: string) => {
         const conversation = window.ConversationController.get(conversationId);
         return conversation
           ? conversation.getTitle()
-          : window.i18n('icu:unknownContact');
+          : i18n('icu:unknownContact');
       },
       renderIntl: <Key extends keyof ICUStringMessageParamsByKeyType>(
         key: Key,
@@ -163,7 +165,7 @@ export function getNotificationDataForMessage(
         components: ICUStringMessageParamsByKeyType[Key]
       ) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return window.i18n(key, components as any);
+        return i18n(key, components as any);
       },
     });
 
@@ -179,7 +181,7 @@ export function getNotificationDataForMessage(
         sender.title,
         conversation.title,
         sender.isMe,
-        window.i18n
+        i18n
       ),
       emoji: '💳',
     };
@@ -201,30 +203,24 @@ export function getNotificationDataForMessage(
     const isGroupConversation = isGroup(conversation.attributes);
     let text: string;
     if (event === MessageRequestResponseEvent.ACCEPT) {
-      text = window.i18n(
-        'icu:MessageRequestResponseNotification__Message--Accepted'
-      );
+      text = i18n('icu:MessageRequestResponseNotification__Message--Accepted');
     } else if (event === MessageRequestResponseEvent.SPAM) {
-      text = window.i18n(
-        'icu:MessageRequestResponseNotification__Message--Reported'
-      );
+      text = i18n('icu:MessageRequestResponseNotification__Message--Reported');
     } else if (event === MessageRequestResponseEvent.BLOCK) {
       if (isGroupConversation) {
-        text = window.i18n(
+        text = i18n(
           'icu:MessageRequestResponseNotification__Message--Blocked--Group'
         );
       } else {
-        text = window.i18n(
-          'icu:MessageRequestResponseNotification__Message--Blocked'
-        );
+        text = i18n('icu:MessageRequestResponseNotification__Message--Blocked');
       }
     } else if (event === MessageRequestResponseEvent.UNBLOCK) {
       if (isGroupConversation) {
-        text = window.i18n(
+        text = i18n(
           'icu:MessageRequestResponseNotification__Message--Unblocked--Group'
         );
       } else {
-        text = window.i18n(
+        text = i18n(
           'icu:MessageRequestResponseNotification__Message--Unblocked'
         );
       }
@@ -242,25 +238,25 @@ export function getNotificationDataForMessage(
   if (isTapToView(attributes)) {
     if (attributes.isErased) {
       return {
-        text: window.i18n('icu:message--getDescription--disappearing-media'),
+        text: i18n('icu:message--getDescription--disappearing-media'),
       };
     }
 
     if (Attachment.isImage(attachments)) {
       return {
-        text: window.i18n('icu:message--getDescription--disappearing-photo'),
+        text: i18n('icu:message--getDescription--disappearing-photo'),
         emoji: '📷',
       };
     }
     if (Attachment.isVideo(attachments)) {
       return {
-        text: window.i18n('icu:message--getDescription--disappearing-video'),
+        text: i18n('icu:message--getDescription--disappearing-video'),
         emoji: '🎥',
       };
     }
     // There should be an image or video attachment, but we have a fallback just in
     //   case.
-    return { text: window.i18n('icu:mediaMessage'), emoji: '📎' };
+    return { text: i18n('icu:mediaMessage'), emoji: '📎' };
   }
 
   if (isGroupUpdate(attributes)) {
@@ -272,11 +268,11 @@ export function getNotificationDataForMessage(
     }
 
     if (groupUpdate.left === 'You') {
-      return { text: window.i18n('icu:youLeftTheGroup') };
+      return { text: i18n('icu:youLeftTheGroup') };
     }
     if (groupUpdate.left) {
       return {
-        text: window.i18n('icu:leftTheGroup', {
+        text: i18n('icu:leftTheGroup', {
           name: getNameForNumber(groupUpdate.left),
         }),
       };
@@ -287,10 +283,10 @@ export function getNotificationDataForMessage(
     }
 
     if (isMe(fromContact.attributes)) {
-      messages.push(window.i18n('icu:youUpdatedTheGroup'));
+      messages.push(i18n('icu:youUpdatedTheGroup'));
     } else {
       messages.push(
-        window.i18n('icu:updatedTheGroup', {
+        i18n('icu:updatedTheGroup', {
           name: fromContact.getTitle(),
         })
       );
@@ -306,7 +302,7 @@ export function getNotificationDataForMessage(
 
       if (joinedContacts.length > 1) {
         messages.push(
-          window.i18n('icu:multipleJoinedTheGroup', {
+          i18n('icu:multipleJoinedTheGroup', {
             names: joinedWithoutMe
               .map(contact => contact.getTitle())
               .join(', '),
@@ -314,7 +310,7 @@ export function getNotificationDataForMessage(
         );
 
         if (joinedWithoutMe.length < joinedContacts.length) {
-          messages.push(window.i18n('icu:youJoinedTheGroup'));
+          messages.push(i18n('icu:youJoinedTheGroup'));
         }
       } else {
         const joinedContact = window.ConversationController.getOrCreate(
@@ -322,10 +318,10 @@ export function getNotificationDataForMessage(
           'private'
         );
         if (isMe(joinedContact.attributes)) {
-          messages.push(window.i18n('icu:youJoinedTheGroup'));
+          messages.push(i18n('icu:youJoinedTheGroup'));
         } else {
           messages.push(
-            window.i18n('icu:joinedTheGroup', {
+            i18n('icu:joinedTheGroup', {
               name: joinedContacts[0].getTitle(),
             })
           );
@@ -335,22 +331,22 @@ export function getNotificationDataForMessage(
 
     if (groupUpdate.name) {
       messages.push(
-        window.i18n('icu:titleIsNow', {
+        i18n('icu:titleIsNow', {
           name: groupUpdate.name,
         })
       );
     }
     if (groupUpdate.avatarUpdated) {
-      messages.push(window.i18n('icu:updatedGroupAvatar'));
+      messages.push(i18n('icu:updatedGroupAvatar'));
     }
 
     return { text: messages.join(' ') };
   }
   if (isEndSession(attributes)) {
-    return { text: window.i18n('icu:sessionEnded') };
+    return { text: i18n('icu:sessionEnded') };
   }
   if (isIncoming(attributes) && hasErrors(attributes)) {
-    return { text: window.i18n('icu:incomingError') };
+    return { text: i18n('icu:incomingError') };
   }
 
   const { body: untrimmedBody = '', bodyRanges = [] } = attributes;
@@ -367,7 +363,7 @@ export function getNotificationDataForMessage(
     if (tooBigAttachmentCount === attachments.length) {
       return {
         emoji: '📎',
-        text: window.i18n('icu:message--attachmentTooBig--one'),
+        text: i18n('icu:message--attachmentTooBig--one'),
       };
     }
 
@@ -375,45 +371,41 @@ export function getNotificationDataForMessage(
       return {
         bodyRanges,
         emoji: '🎡',
-        text: body || window.i18n('icu:message--getNotificationText--gif'),
+        text: body || i18n('icu:message--getNotificationText--gif'),
       };
     }
     if (Attachment.isImage(attachments)) {
       return {
         bodyRanges,
         emoji: '📷',
-        text: body || window.i18n('icu:message--getNotificationText--photo'),
+        text: body || i18n('icu:message--getNotificationText--photo'),
       };
     }
     if (Attachment.isVideo(attachments)) {
       return {
         bodyRanges,
         emoji: '🎥',
-        text: body || window.i18n('icu:message--getNotificationText--video'),
+        text: body || i18n('icu:message--getNotificationText--video'),
       };
     }
     if (Attachment.isVoiceMessage(attachment)) {
       return {
         bodyRanges,
         emoji: '🎤',
-        text:
-          body ||
-          window.i18n('icu:message--getNotificationText--voice-message'),
+        text: body || i18n('icu:message--getNotificationText--voice-message'),
       };
     }
     if (Attachment.isAudio(attachments)) {
       return {
         bodyRanges,
         emoji: '🔈',
-        text:
-          body ||
-          window.i18n('icu:message--getNotificationText--audio-message'),
+        text: body || i18n('icu:message--getNotificationText--audio-message'),
       };
     }
 
     return {
       bodyRanges,
-      text: body || window.i18n('icu:message--getNotificationText--file'),
+      text: body || i18n('icu:message--getNotificationText--file'),
       emoji: '📎',
     };
   }
@@ -428,7 +420,7 @@ export function getNotificationDataForMessage(
       log.warn('Unable to get emoji for sticker');
     }
     return {
-      text: window.i18n('icu:message--getNotificationText--stickers'),
+      text: i18n('icu:message--getNotificationText--stickers'),
       emoji: dropNull(emoji),
     };
   }
@@ -445,7 +437,7 @@ export function getNotificationDataForMessage(
       targetedMessageId: getTargetedMessage(state)?.id,
     });
     if (callingNotification) {
-      const text = getCallingNotificationText(callingNotification, window.i18n);
+      const text = getCallingNotificationText(callingNotification, i18n);
       if (text != null) {
         return {
           text,
@@ -458,12 +450,12 @@ export function getNotificationDataForMessage(
   if (isExpirationTimerUpdate(attributes)) {
     const { expireTimer } = attributes.expirationTimerUpdate ?? {};
     if (!expireTimer) {
-      return { text: window.i18n('icu:disappearingMessagesDisabled') };
+      return { text: i18n('icu:disappearingMessagesDisabled') };
     }
 
     return {
-      text: window.i18n('icu:timerSetTo', {
-        time: expirationTimer.format(window.i18n, expireTimer),
+      text: i18n('icu:timerSetTo', {
+        time: expirationTimer.format(i18n, expireTimer),
       }),
     };
   }
@@ -472,7 +464,7 @@ export function getNotificationDataForMessage(
     const { key_changed: identifier } = attributes;
     const conversation = window.ConversationController.get(identifier);
     return {
-      text: window.i18n('icu:safetyNumberChangedGroup', {
+      text: i18n('icu:safetyNumberChangedGroup', {
         name: conversation ? conversation.getTitle() : '',
       }),
     };
@@ -480,9 +472,7 @@ export function getNotificationDataForMessage(
   const { contact: contacts } = attributes;
   if (contacts && contacts.length) {
     return {
-      text:
-        EmbeddedContact.getName(contacts[0]) ||
-        window.i18n('icu:unknownContact'),
+      text: EmbeddedContact.getName(contacts[0]) || i18n('icu:unknownContact'),
       emoji: '👤',
     };
   }
@@ -495,26 +485,25 @@ export function getNotificationDataForMessage(
       const toContact = window.ConversationController.get(
         attributes.conversationId
       );
-      const recipient =
-        toContact?.getTitle() ?? window.i18n('icu:unknownContact');
+      const recipient = toContact?.getTitle() ?? i18n('icu:unknownContact');
       return {
         emoji,
-        text: window.i18n('icu:message--donation--preview--sent', {
+        text: i18n('icu:message--donation--preview--sent', {
           recipient,
         }),
       };
     }
 
     const fromContact = getAuthor(attributes);
-    const sender = fromContact?.getTitle() ?? window.i18n('icu:unknownContact');
+    const sender = fromContact?.getTitle() ?? i18n('icu:unknownContact');
     return {
       emoji,
       text:
         giftBadge.state === GiftBadgeStates.Unopened
-          ? window.i18n('icu:message--donation--preview--unopened', {
+          ? i18n('icu:message--donation--preview--unopened', {
               sender,
             })
-          : window.i18n('icu:message--donation--preview--redeemed'),
+          : i18n('icu:message--donation--preview--redeemed'),
     };
   }
 

@@ -4,14 +4,12 @@
 import type {
   StorageAccessType as Access,
   StorageInterface,
-} from '../types/Storage.d';
-import { User } from './storage/User';
-import { Blocked } from './storage/Blocked';
+} from '../types/Storage.d.ts';
+import { User } from './storage/User.js';
+import { Blocked } from './storage/Blocked.js';
 
-import { assertDev } from '../util/assert';
-import { DataReader, DataWriter } from '../sql/Client';
-import type { SignalProtocolStore } from '../SignalProtocolStore';
-import { createLogger } from '../logging/log';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
 
 const log = createLogger('Storage');
 
@@ -30,25 +28,10 @@ export class Storage implements StorageInterface {
   #ready = false;
   #readyCallbacks: Array<() => void> = [];
   #items: Partial<Access> = Object.create(null);
-  #privProtocol: SignalProtocolStore | undefined;
 
   constructor() {
     this.user = new User(this);
     this.blocked = new Blocked(this);
-
-    window.storage = this;
-  }
-
-  get protocol(): SignalProtocolStore {
-    assertDev(
-      this.#privProtocol !== undefined,
-      'SignalProtocolStore not initialized'
-    );
-    return this.#privProtocol;
-  }
-
-  set protocol(value: SignalProtocolStore) {
-    this.#privProtocol = value;
   }
 
   // `StorageInterface` implementation
@@ -155,3 +138,5 @@ export class Storage implements StorageInterface {
     callbacks.forEach(callback => callback());
   }
 }
+
+export const itemStorage = new Storage();

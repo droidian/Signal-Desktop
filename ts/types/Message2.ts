@@ -1,52 +1,58 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isFunction, isObject, identity } from 'lodash';
+import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
-import * as Contact from './EmbeddedContact';
+import * as Contact from './EmbeddedContact.js';
 import type {
   AddressableAttachmentType,
   AttachmentType,
   AttachmentWithHydratedData,
   LocalAttachmentV2Type,
-} from './Attachment';
+} from './Attachment.js';
 import {
   captureDimensionsAndScreenshot,
   removeSchemaVersion,
   replaceUnicodeOrderOverrides,
   replaceUnicodeV2,
-} from './Attachment';
-import * as Errors from './errors';
-import * as SchemaVersion from './SchemaVersion';
+  shouldGenerateThumbnailForAttachmentType,
+} from '../util/Attachment.js';
+import type { MakeVideoScreenshotResultType } from './VisualAttachment.js';
+import * as Errors from './errors.js';
+import * as SchemaVersion from './SchemaVersion.js';
 
-import { LONG_MESSAGE } from './MIME';
-import type * as MIME from './MIME';
-import type { LoggerType } from './Logging';
+import { LONG_MESSAGE } from './MIME.js';
+import type * as MIME from './MIME.js';
+import type { LoggerType } from './Logging.js';
 import type {
   EmbeddedContactType,
   EmbeddedContactWithHydratedAvatar,
-} from './EmbeddedContact';
+} from './EmbeddedContact.js';
 
 import type {
   MessageAttributesType,
   QuotedAttachmentType,
   QuotedMessageType,
-} from '../model-types.d';
+} from '../model-types.d.ts';
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from './message/LinkPreviews';
-import type { StickerType, StickerWithHydratedData } from './Stickers';
-import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem';
+} from './message/LinkPreviews.js';
+import type { StickerType, StickerWithHydratedData } from './Stickers.js';
+import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.js';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from '../util/getLocalAttachmentUrl';
-import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment';
-import { deepClone } from '../util/deepClone';
-import * as Bytes from '../Bytes';
-import { isBodyTooLong } from '../util/longAttachment';
+} from '../util/getLocalAttachmentUrl.js';
+import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment.js';
+import { deepClone } from '../util/deepClone.js';
+import * as Bytes from '../Bytes.js';
+import { isBodyTooLong } from '../util/longAttachment.js';
+import type { MessageAttachmentType } from './AttachmentDownload.js';
+import { getFilePathsOwnedByMessage } from '../util/messageFilePaths.js';
+
+const { isFunction, isObject, identity } = lodash;
 
 export const GROUP = 'group';
 export const PRIVATE = 'private';
@@ -76,7 +82,7 @@ export type ContextType = {
     objectUrl: string;
     contentType: MIME.MIMEType;
     logger: LoggerType;
-  }) => Promise<Blob>;
+  }) => Promise<MakeVideoScreenshotResultType>;
   maxVersion?: number;
   revokeObjectUrl: (objectUrl: string) => void;
   readAttachmentData: (
@@ -84,7 +90,7 @@ export type ContextType = {
   ) => Promise<Uint8Array>;
   writeNewAttachmentData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
   writeNewStickerData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
-  deleteOnDisk: (path: string) => Promise<void>;
+  deleteAttachmentOnDisk: (path: string) => Promise<void>;
 };
 
 // Schema version history
@@ -490,7 +496,13 @@ const toVersion7 = _withSchemaVersion({
 
 const toVersion8 = _withSchemaVersion({
   schemaVersion: 8,
-  upgrade: _mapAttachments(captureDimensionsAndScreenshot),
+  upgrade: _mapAttachments((attachment, context) =>
+    captureDimensionsAndScreenshot(
+      attachment,
+      { generateThumbnail: true },
+      context
+    )
+  ),
 });
 
 const toVersion9 = _withSchemaVersion({
@@ -703,7 +715,7 @@ export const upgradeSchema = async (
     makeImageThumbnail,
     makeVideoScreenshot,
     writeNewStickerData,
-    deleteOnDisk,
+    deleteAttachmentOnDisk,
     logger,
     maxVersion = CURRENT_SCHEMA_VERSION,
   }: ContextType,
@@ -741,7 +753,7 @@ export const upgradeSchema = async (
         logger,
         getRegionCode,
         writeNewStickerData,
-        deleteOnDisk,
+        deleteAttachmentOnDisk,
       });
     } catch (e) {
       // Throw the error if we were unable to upgrade the message at all
@@ -765,6 +777,7 @@ export const upgradeSchema = async (
 //   downloaded out of band.
 export const processNewAttachment = async (
   attachment: AttachmentType,
+  attachmentType: MessageAttachmentType,
   {
     writeNewAttachmentData,
     makeObjectUrl,
@@ -782,7 +795,6 @@ export const processNewAttachment = async (
     | 'makeImageThumbnail'
     | 'makeVideoScreenshot'
     | 'logger'
-    | 'deleteOnDisk'
   >
 ): Promise<AttachmentType> => {
   if (!isFunction(writeNewAttachmentData)) {
@@ -807,15 +819,22 @@ export const processNewAttachment = async (
     throw new TypeError('context.logger is required');
   }
 
-  const finalAttachment = await captureDimensionsAndScreenshot(attachment, {
-    writeNewAttachmentData,
-    makeObjectUrl,
-    revokeObjectUrl,
-    getImageDimensions,
-    makeImageThumbnail,
-    makeVideoScreenshot,
-    logger,
-  });
+  const finalAttachment = await captureDimensionsAndScreenshot(
+    attachment,
+    {
+      generateThumbnail:
+        shouldGenerateThumbnailForAttachmentType(attachmentType),
+    },
+    {
+      writeNewAttachmentData,
+      makeObjectUrl,
+      revokeObjectUrl,
+      getImageDimensions,
+      makeImageThumbnail,
+      makeVideoScreenshot,
+      logger,
+    }
+  );
 
   return finalAttachment;
 };
@@ -1023,99 +1042,37 @@ export const loadStickerData = (
 };
 
 export const deleteAllExternalFiles = ({
-  deleteAttachmentData,
-  deleteOnDisk,
+  deleteAttachmentOnDisk,
+  deleteDownloadOnDisk,
 }: {
-  deleteAttachmentData: (attachment: AttachmentType) => Promise<void>;
-  deleteOnDisk: (path: string) => Promise<void>;
+  deleteAttachmentOnDisk: (path: string) => Promise<void>;
+  deleteDownloadOnDisk: (path: string) => Promise<void>;
 }): ((message: MessageAttributesType) => Promise<void>) => {
-  if (!isFunction(deleteAttachmentData)) {
+  if (!isFunction(deleteAttachmentOnDisk)) {
     throw new TypeError(
-      'deleteAllExternalFiles: deleteAttachmentData must be a function'
+      'deleteAllExternalFiles: deleteAttachmentOnDisk must be a function'
     );
   }
 
-  if (!isFunction(deleteOnDisk)) {
+  if (!isFunction(deleteDownloadOnDisk)) {
     throw new TypeError(
-      'deleteAllExternalFiles: deleteOnDisk must be a function'
+      'deleteAllExternalFiles: deleteDownloadOnDisk must be a function'
     );
   }
-
   return async (message: MessageAttributesType) => {
-    const {
-      attachments,
-      bodyAttachment,
-      editHistory,
-      quote,
-      contact,
-      preview,
-      sticker,
-    } = message;
+    const { externalAttachments, externalDownloads } =
+      getFilePathsOwnedByMessage(message);
 
-    if (attachments && attachments.length) {
-      await Promise.all(attachments.map(deleteAttachmentData));
-    }
-
-    if (bodyAttachment) {
-      await deleteAttachmentData(bodyAttachment);
-    }
-
-    if (quote && quote.attachments && quote.attachments.length) {
-      await Promise.all(
-        quote.attachments.map(async attachment => {
-          const { thumbnail } = attachment;
-
-          // To prevent spoofing, we copy the original image from the quoted message.
-          //   If so, it will have a 'copied' field. We don't want to delete it if it has
-          //   that field set to true.
-          if (thumbnail && thumbnail.path && !thumbnail.copied) {
-            await deleteOnDisk(thumbnail.path);
-          }
-        })
-      );
-    }
-
-    if (contact && contact.length) {
-      await Promise.all(
-        contact.map(async item => {
-          const { avatar } = item;
-
-          if (avatar && avatar.avatar && avatar.avatar.path) {
-            await deleteOnDisk(avatar.avatar.path);
-          }
-        })
-      );
-    }
-
-    if (preview && preview.length) {
-      await deletePreviews(preview, deleteOnDisk);
-    }
-
-    if (sticker && sticker.data && sticker.data.path) {
-      await deleteOnDisk(sticker.data.path);
-
-      if (sticker.data.thumbnail && sticker.data.thumbnail.path) {
-        await deleteOnDisk(sticker.data.thumbnail.path);
-      }
-    }
-
-    if (editHistory && editHistory.length) {
-      await Promise.all(
-        editHistory.map(async edit => {
-          if (edit.bodyAttachment) {
-            await deleteAttachmentData(edit.bodyAttachment);
-          }
-
-          if (!edit.attachments || !edit.attachments.length) {
-            return;
-          }
-          return Promise.all(edit.attachments.map(deleteAttachmentData));
-        })
-      );
-      await Promise.all(
-        editHistory.map(edit => deletePreviews(edit.preview, deleteOnDisk))
-      );
-    }
+    await Promise.all(
+      [...externalAttachments].map(attachmentPath =>
+        deleteAttachmentOnDisk(attachmentPath)
+      )
+    );
+    await Promise.all(
+      [...externalDownloads].map(downloadPath =>
+        deleteDownloadOnDisk(downloadPath)
+      )
+    );
   };
 };
 
@@ -1145,29 +1102,6 @@ export async function migrateBodyAttachmentToDisk(
     ...message,
     bodyAttachment,
   };
-}
-
-async function deletePreviews(
-  preview: MessageAttributesType['preview'],
-  deleteOnDisk: (path: string) => Promise<void>
-): Promise<Array<void>> {
-  if (!preview) {
-    return [];
-  }
-
-  return Promise.all(
-    preview.map(async item => {
-      const { image } = item;
-
-      if (image && image.path) {
-        await deleteOnDisk(image.path);
-      }
-
-      if (image?.thumbnail?.path) {
-        await deleteOnDisk(image.thumbnail.path);
-      }
-    })
-  );
 }
 
 export const isUserMessage = (message: MessageAttributesType): boolean =>

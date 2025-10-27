@@ -1,10 +1,10 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { AvatarColors } from '../types/Colors';
-import type { ConversationAttributesType } from '../model-types';
-import type { AvatarColorType, CustomColorType } from '../types/Colors';
-import { generateAvatarColor } from '../Crypto';
+import { AvatarColors } from '../types/Colors.js';
+import type { ConversationAttributesType } from '../model-types.js';
+import type { AvatarColorType, CustomColorType } from '../types/Colors.js';
+import { generateAvatarColor } from '../Crypto.js';
 
 const NEW_COLOR_NAMES = new Set(AvatarColors);
 
@@ -12,8 +12,8 @@ export function migrateColor(
   color: string | undefined,
   options: Parameters<typeof generateAvatarColor>[0]
 ): AvatarColorType {
-  if (color && NEW_COLOR_NAMES.has(color)) {
-    return color;
+  if (color && NEW_COLOR_NAMES.has(color as AvatarColorType)) {
+    return color as AvatarColorType;
   }
 
   return generateAvatarColor(options);

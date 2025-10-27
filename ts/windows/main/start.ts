@@ -1,33 +1,38 @@
 // Copyright 2017 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { has } from 'lodash';
+import lodash from 'lodash';
 import { contextBridge } from 'electron';
 
-import { createLogger } from '../../logging/log';
+import { createLogger } from '../../logging/log.js';
 
-import '../context';
+import '../context.js';
 
 // Connect websocket early
-import '../../textsecure/preconnect';
+import '../../textsecure/preconnect.js';
 
-import './phase0-devtools';
-import './phase1-ipc';
-import '../preload';
-import './phase2-dependencies';
-import './phase3-post-signal';
-import './phase4-test';
+import './phase0-devtools.js';
+import './phase1-ipc.js';
+import '../preload.js';
+import './phase2-dependencies.js';
+import './phase3-post-signal.js';
+import './phase4-test.js';
 
 import type {
   CdsLookupOptionsType,
   GetIceServersResultType,
-} from '../../textsecure/WebAPI';
-import type { FeatureFlagType } from '../../window.d';
-import type { StorageAccessType } from '../../types/Storage.d';
-import { initMessageCleanup } from '../../services/messageStateCleanup';
-import { Environment, getEnvironment } from '../../environment';
-import { isProduction } from '../../util/version';
-import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen';
+} from '../../textsecure/WebAPI.js';
+import { cdsLookup, getSocketStatus } from '../../textsecure/WebAPI.js';
+import type { FeatureFlagType } from '../../window.d.ts';
+import type { StorageAccessType } from '../../types/Storage.d.ts';
+import { initMessageCleanup } from '../../services/messageStateCleanup.js';
+import { calling } from '../../services/calling.js';
+import { Environment, getEnvironment } from '../../environment.js';
+import { isProduction } from '../../util/version.js';
+import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { has } = lodash;
 
 const log = createLogger('start');
 
@@ -57,8 +62,7 @@ if (
   window.SignalContext.config.devTools
 ) {
   const SignalDebug = {
-    cdsLookup: (options: CdsLookupOptionsType) =>
-      window.textsecure.server?.cdsLookup(options),
+    cdsLookup: (options: CdsLookupOptionsType) => cdsLookup(options),
     getSelectedConversation: () => {
       const conversationId =
         window.reduxStore.getState().conversations.selectedConversationId;
@@ -81,15 +85,14 @@ if (
       return message?.attributes;
     },
     getReduxState: () => window.reduxStore.getState(),
-    getSfuUrl: () => window.Signal.Services.calling._sfuUrl,
-    getIceServerOverride: () =>
-      window.Signal.Services.calling._iceServerOverride,
-    getSocketStatus: () => window.textsecure.server?.getSocketStatus(),
-    getStorageItem: (name: keyof StorageAccessType) => window.storage.get(name),
+    getSfuUrl: () => calling._sfuUrl,
+    getIceServerOverride: () => calling._iceServerOverride,
+    getSocketStatus: () => getSocketStatus(),
+    getStorageItem: (name: keyof StorageAccessType) => itemStorage.get(name),
     putStorageItem: <K extends keyof StorageAccessType>(
       name: K,
       value: StorageAccessType[K]
-    ) => window.storage.put(name, value),
+    ) => itemStorage.put(name, value),
     setFlag: (name: keyof FeatureFlagType, value: boolean) => {
       if (!has(window.Flags, name)) {
         return;
@@ -97,7 +100,7 @@ if (
       window.Flags[name] = value;
     },
     setSfuUrl: (url: string) => {
-      window.Signal.Services.calling._sfuUrl = url;
+      calling._sfuUrl = url;
     },
     setIceServerOverride: (
       override: GetIceServersResultType | string | undefined
@@ -110,10 +113,10 @@ if (
         }
       }
 
-      window.Signal.Services.calling._iceServerOverride = override;
+      calling._iceServerOverride = override;
     },
     setRtcStatsInterval: (intervalMillis: number) =>
-      window.Signal.Services.calling.setAllRtcStatsInterval(intervalMillis),
+      calling.setAllRtcStatsInterval(intervalMillis),
     ...(window.SignalContext.config.ciMode === 'benchmark'
       ? {
           benchmarkConversationOpen,

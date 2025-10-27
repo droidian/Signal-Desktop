@@ -3,67 +3,72 @@
 
 import Long from 'long';
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
-import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { dirname } from 'path';
+import type { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import { dirname } from 'node:path';
 import pMap from 'p-map';
 import pTimeout from 'p-timeout';
-import { Readable } from 'stream';
-import { isNumber } from 'lodash';
+import { Readable } from 'node:stream';
+import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
 
-import { Backups, SignalService } from '../../protobuf';
+import { Backups, SignalService } from '../../protobuf/index.js';
 import {
   DataReader,
   DataWriter,
   pauseWriteAccess,
   resumeWriteAccess,
-} from '../../sql/Client';
+} from '../../sql/Client.js';
 import type {
   PageMessagesCursorType,
   IdentityKeyType,
-} from '../../sql/Interface';
-import { createLogger } from '../../logging/log';
-import { GiftBadgeStates } from '../../components/conversation/Message';
-import { type CustomColorType } from '../../types/Colors';
-import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
-import { getStickerPacksForBackup } from '../../types/Stickers';
+} from '../../sql/Interface.js';
+import { createLogger } from '../../logging/log.js';
+import { GiftBadgeStates } from '../../types/GiftBadgeStates.js';
+import { type CustomColorType } from '../../types/Colors.js';
+import { StorySendMode, MY_STORY_ID } from '../../types/Stories.js';
+import { getStickerPacksForBackup } from '../../types/Stickers.js';
 import {
   isPniString,
   isServiceIdString,
   type AciString,
   type ServiceIdString,
-} from '../../types/ServiceId';
-import type { RawBodyRange } from '../../types/BodyRange';
-import { PaymentEventKind } from '../../types/Payment';
-import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
+} from '../../types/ServiceId.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
+import { PaymentEventKind } from '../../types/Payment.js';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.js';
 import type {
   ConversationAttributesType,
   MessageAttributesType,
   QuotedAttachmentType,
-} from '../../model-types.d';
-import { drop } from '../../util/drop';
-import { isNotNil } from '../../util/isNotNil';
-import { explodePromise } from '../../util/explodePromise';
+} from '../../model-types.d.ts';
+import { drop } from '../../util/drop.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { explodePromise } from '../../util/explodePromise.js';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
   isMe,
-} from '../../util/whatTypeOfConversation';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import { strictAssert } from '../../util/assert';
-import { getSafeLongFromTimestamp } from '../../util/timestampLongUtils';
-import { DAY, MINUTE, SECOND, DurationInSeconds } from '../../util/durations';
+} from '../../util/whatTypeOfConversation.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { getSafeLongFromTimestamp } from '../../util/timestampLongUtils.js';
+import {
+  DAY,
+  MINUTE,
+  SECOND,
+  DurationInSeconds,
+} from '../../util/durations/index.js';
 import {
   PhoneNumberDiscoverability,
   parsePhoneNumberDiscoverability,
-} from '../../util/phoneNumberDiscoverability';
+} from '../../util/phoneNumberDiscoverability.js';
 import {
   PhoneNumberSharingMode,
   parsePhoneNumberSharingMode,
-} from '../../util/phoneNumberSharingMode';
-import { missingCaseError } from '../../util/missingCaseError';
+} from '../../types/PhoneNumberSharingMode.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
 import {
   isCallHistory,
   isChatSessionRefreshed,
@@ -88,20 +93,20 @@ import {
   isJoinedSignalNotification,
   isTitleTransitionNotification,
   isMessageRequestResponse,
-} from '../../state/selectors/message';
-import * as Bytes from '../../Bytes';
-import { canBeSynced as canPreferredReactionEmojiBeSynced } from '../../reactions/preferredReactionEmoji';
-import { SendStatus } from '../../messages/MessageSendState';
-import { BACKUP_VERSION } from './constants';
+} from '../../state/selectors/message.js';
+import * as Bytes from '../../Bytes.js';
+import { canBeSynced as canPreferredReactionEmojiBeSynced } from '../../reactions/preferredReactionEmoji.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import { BACKUP_VERSION } from './constants.js';
 import {
   getMessageIdForLogging,
   getConversationIdForLogging,
-} from '../../util/idForLogging';
-import { makeLookup } from '../../util/makeLookup';
+} from '../../util/idForLogging.js';
+import { makeLookup } from '../../util/makeLookup.js';
 import type {
   CallHistoryDetails,
   CallStatus,
-} from '../../types/CallDisposition';
+} from '../../types/CallDisposition.js';
 import {
   CallMode,
   CallDirection,
@@ -109,59 +114,64 @@ import {
   DirectCallStatus,
   GroupCallStatus,
   AdhocCallStatus,
-} from '../../types/CallDisposition';
-import { isAciString } from '../../util/isAciString';
-import { hslToRGBInt } from '../../util/hslToRGB';
-import type { AboutMe, LocalChatStyle } from './types';
-import { BackupType } from './types';
-import { messageHasPaymentEvent } from '../../messages/helpers';
+} from '../../types/CallDisposition.js';
+import { isAciString } from '../../util/isAciString.js';
+import { hslToRGBInt } from '../../util/hslToRGB.js';
+import type { AboutMe, LocalChatStyle } from './types.js';
+import { BackupType } from './types.js';
+import { messageHasPaymentEvent } from '../../messages/payments.js';
 import {
   numberToAddressType,
   numberToPhoneType,
-} from '../../types/EmbeddedContact';
-import { toLogFormat } from '../../types/errors';
+} from '../../types/EmbeddedContact.js';
+import { toLogFormat } from '../../types/errors.js';
+import type { AttachmentType } from '../../types/Attachment.js';
 import {
-  type AttachmentType,
   isGIF,
   isDownloaded,
   hasRequiredInformationForBackup,
-} from '../../types/Attachment';
-import { getFilePointerForAttachment } from './util/filePointers';
-import { getBackupMediaRootKey } from './crypto';
+} from '../../util/Attachment.js';
+import { getFilePointerForAttachment } from './util/filePointers.js';
+import { getBackupMediaRootKey } from './crypto.js';
 import type {
   CoreAttachmentBackupJobType,
   PartialAttachmentLocalBackupJobType,
-} from '../../types/AttachmentBackup';
-import { AttachmentBackupManager } from '../../jobs/AttachmentBackupManager';
-import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager';
-import { getBackupCdnInfo, getMediaNameForAttachment } from './util/mediaId';
-import { calculateExpirationTimestamp } from '../../util/expirationTimer';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { CallLinkRestrictions } from '../../types/CallLink';
+} from '../../types/AttachmentBackup.js';
+import { AttachmentBackupManager } from '../../jobs/AttachmentBackupManager.js';
+import { AttachmentLocalBackupManager } from '../../jobs/AttachmentLocalBackupManager.js';
+import { getBackupCdnInfo, getMediaNameForAttachment } from './util/mediaId.js';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { CallLinkRestrictions } from '../../types/CallLink.js';
 import {
   isCallHistoryForUnusedCallLink,
   toAdminKeyBytes,
-} from '../../util/callLinks';
+} from '../../util/callLinks.js';
 import {
   getRoomIdFromRootKey,
   toEpochBytes,
-} from '../../util/callLinksRingrtc';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { migrateAllMessages } from '../../messages/migrateMessageData';
-import { isBodyTooLong, trimBody } from '../../util/longAttachment';
-import { generateBackupsSubscriberData } from '../../util/backupSubscriptionData';
+} from '../../util/callLinksRingrtc.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { migrateAllMessages } from '../../messages/migrateMessageData.js';
+import { isBodyTooLong, trimBody } from '../../util/longAttachment.js';
+import { generateBackupsSubscriberData } from '../../util/backupSubscriptionData.js';
 import {
   getEnvironment,
   isTestEnvironment,
   isTestOrMockEnvironment,
-} from '../../environment';
-import { calculateLightness } from '../../util/getHSL';
-import { isSignalServiceId } from '../../util/isSignalConversation';
-import { isValidE164 } from '../../util/isValidE164';
-import { toDayOfWeekArray } from '../../types/NotificationProfile';
-import { getLinkPreviewSetting } from '../../types/LinkPreview';
-import { getTypingIndicatorSetting } from '../../types/Util';
-import { KIBIBYTE } from '../../types/AttachmentSize';
+} from '../../environment.js';
+import { calculateLightness } from '../../util/getHSL.js';
+import { isSignalServiceId } from '../../util/isSignalConversation.js';
+import { isValidE164 } from '../../util/isValidE164.js';
+import { toDayOfWeekArray } from '../../types/NotificationProfile.js';
+import {
+  getLinkPreviewSetting,
+  getTypingIndicatorSetting,
+} from '../../util/Settings.js';
+import { KIBIBYTE } from '../../types/AttachmentSize.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { isNumber } = lodash;
 
 const log = createLogger('export');
 
@@ -370,7 +380,7 @@ export class BackupExportStream extends Readable {
         version: Long.fromNumber(BACKUP_VERSION),
         backupTimeMs: this.#backupTimeMs,
         mediaRootBackupKey: getBackupMediaRootKey().serialize(),
-        firstAppVersion: window.storage.get('restoredBackupFirstAppVersion'),
+        firstAppVersion: itemStorage.get('restoredBackupFirstAppVersion'),
         currentAppVersion: `Desktop ${window.getVersion()}`,
       }).finish()
     );
@@ -528,7 +538,7 @@ export class BackupExportStream extends Readable {
     }
 
     const pinnedConversationIds =
-      window.storage.get('pinnedConversationIds') || [];
+      itemStorage.get('pinnedConversationIds') || [];
 
     for (const { attributes } of window.ConversationController.getAll()) {
       if (isGroupV1(attributes)) {
@@ -818,13 +828,9 @@ export class BackupExportStream extends Readable {
   }
 
   async #toAccountData(): Promise<Backups.IAccountData> {
-    const { storage } = window;
-
     const me = window.ConversationController.getOurConversationOrThrow();
 
-    const rawPreferredReactionEmoji = window.storage.get(
-      'preferredReactionEmoji'
-    );
+    const rawPreferredReactionEmoji = itemStorage.get('preferredReactionEmoji');
 
     let preferredReactionEmoji: Array<string> | undefined;
     if (canPreferredReactionEmojiBeSynced(rawPreferredReactionEmoji)) {
@@ -834,7 +840,7 @@ export class BackupExportStream extends Readable {
     const PHONE_NUMBER_SHARING_MODE_ENUM =
       Backups.AccountData.PhoneNumberSharingMode;
     const rawPhoneNumberSharingMode = parsePhoneNumberSharingMode(
-      storage.get('phoneNumberSharingMode')
+      itemStorage.get('phoneNumberSharingMode')
     );
     let phoneNumberSharingMode: Backups.AccountData.PhoneNumberSharingMode;
     switch (rawPhoneNumberSharingMode) {
@@ -849,63 +855,63 @@ export class BackupExportStream extends Readable {
         throw missingCaseError(rawPhoneNumberSharingMode);
     }
 
-    const usernameLink = storage.get('usernameLink');
+    const usernameLink = itemStorage.get('usernameLink');
 
-    const subscriberId = storage.get('subscriberId');
-    const currencyCode = storage.get('subscriberCurrencyCode');
+    const subscriberId = itemStorage.get('subscriberId');
+    const currencyCode = itemStorage.get('subscriberCurrencyCode');
 
     const backupsSubscriberData = generateBackupsSubscriberData();
-    const backupTier = storage.get('backupTier');
+    const backupTier = itemStorage.get('backupTier');
 
     return {
-      profileKey: storage.get('profileKey'),
+      profileKey: itemStorage.get('profileKey'),
       username: me.get('username') || null,
       usernameLink: usernameLink
         ? {
             ...usernameLink,
 
             // Same numeric value, no conversion needed
-            color: storage.get('usernameLinkColor'),
+            color: itemStorage.get('usernameLinkColor'),
           }
         : null,
       givenName: me.get('profileName'),
       familyName: me.get('profileFamilyName'),
-      avatarUrlPath: storage.get('avatarUrl'),
+      avatarUrlPath: itemStorage.get('avatarUrl'),
       backupsSubscriberData,
       donationSubscriberData:
         Bytes.isNotEmpty(subscriberId) && currencyCode
           ? {
               subscriberId,
               currencyCode,
-              manuallyCancelled: storage.get(
+              manuallyCancelled: itemStorage.get(
                 'donorSubscriptionManuallyCancelled',
                 false
               ),
             }
           : null,
-      svrPin: storage.get('svrPin'),
+      svrPin: itemStorage.get('svrPin'),
       accountSettings: {
-        readReceipts: storage.get('read-receipt-setting'),
-        sealedSenderIndicators: storage.get('sealedSenderIndicators'),
+        readReceipts: itemStorage.get('read-receipt-setting'),
+        sealedSenderIndicators: itemStorage.get('sealedSenderIndicators'),
         typingIndicators: getTypingIndicatorSetting(),
         linkPreviews: getLinkPreviewSetting(),
         notDiscoverableByPhoneNumber:
           parsePhoneNumberDiscoverability(
-            storage.get('phoneNumberDiscoverability')
+            itemStorage.get('phoneNumberDiscoverability')
           ) === PhoneNumberDiscoverability.NotDiscoverable,
-        preferContactAvatars: storage.get('preferContactAvatars'),
-        universalExpireTimerSeconds: storage.get('universalExpireTimer'),
+        preferContactAvatars: itemStorage.get('preferContactAvatars'),
+        universalExpireTimerSeconds: itemStorage.get('universalExpireTimer'),
         preferredReactionEmoji,
-        displayBadgesOnProfile: storage.get('displayBadgesOnProfile'),
-        keepMutedChatsArchived: storage.get('keepMutedChatsArchived'),
-        hasSetMyStoriesPrivacy: storage.get('hasSetMyStoriesPrivacy'),
-        hasViewedOnboardingStory: storage.get('hasViewedOnboardingStory'),
-        storiesDisabled: storage.get('hasStoriesDisabled'),
-        storyViewReceiptsEnabled: storage.get('storyViewReceiptsEnabled'),
-        hasCompletedUsernameOnboarding: storage.get(
+        displayBadgesOnProfile: itemStorage.get('displayBadgesOnProfile'),
+        keepMutedChatsArchived: itemStorage.get('keepMutedChatsArchived'),
+        hasSetMyStoriesPrivacy: itemStorage.get('hasSetMyStoriesPrivacy'),
+        hasViewedOnboardingStory: itemStorage.get('hasViewedOnboardingStory'),
+        storiesDisabled: itemStorage.get('hasStoriesDisabled'),
+        storyViewReceiptsEnabled: itemStorage.get('storyViewReceiptsEnabled'),
+        hasCompletedUsernameOnboarding: itemStorage.get(
           'hasCompletedUsernameOnboarding'
         ),
-        hasSeenGroupStoryEducationSheet: storage.get(
+        hasSeenGroupStoryEducationSheet: itemStorage.get(
           'hasSeenGroupStoryEducationSheet'
         ),
         phoneNumberSharingMode,
@@ -916,7 +922,11 @@ export class BackupExportStream extends Readable {
         backupTier: backupTier != null ? Long.fromNumber(backupTier) : null,
         // Test only values
         ...(isTestOrMockEnvironment()
-          ? { optimizeOnDeviceStorage: storage.get('optimizeOnDeviceStorage') }
+          ? {
+              optimizeOnDeviceStorage: itemStorage.get(
+                'optimizeOnDeviceStorage'
+              ),
+            }
           : {}),
       },
     };
@@ -1070,7 +1080,7 @@ export class BackupExportStream extends Readable {
         e164,
         username: convo.username,
         blocked: convo.serviceId
-          ? window.storage.blocked.isServiceIdBlocked(convo.serviceId)
+          ? itemStorage.blocked.isServiceIdBlocked(convo.serviceId)
           : null,
         visibility,
         ...(convo.discoveredUnregisteredAt
@@ -1130,7 +1140,7 @@ export class BackupExportStream extends Readable {
         hideStory: convo.hideStory === true,
         storySendMode,
         blocked: convo.groupId
-          ? window.storage.blocked.isGroupBlocked(convo.groupId)
+          ? itemStorage.blocked.isGroupBlocked(convo.groupId)
           : false,
         avatarColor: toAvatarColor(convo.color),
         snapshot: {
@@ -3025,7 +3035,7 @@ export class BackupExportStream extends Readable {
   }
 
   #toCustomChatColors(): Array<Backups.ChatStyle.ICustomChatColor> {
-    const customColors = window.storage.get('customColors');
+    const customColors = itemStorage.get('customColors');
     if (!customColors) {
       return [];
     }
@@ -3089,16 +3099,16 @@ export class BackupExportStream extends Readable {
   }
 
   #toDefaultChatStyle(): Backups.IChatStyle | null {
-    const defaultColor = window.storage.get('defaultConversationColor');
-    const wallpaperPhotoPointer = window.storage.get(
+    const defaultColor = itemStorage.get('defaultConversationColor');
+    const wallpaperPhotoPointer = itemStorage.get(
       'defaultWallpaperPhotoPointer'
     );
-    const wallpaperPreset = window.storage.get('defaultWallpaperPreset');
-    const dimWallpaperInDarkMode = window.storage.get(
+    const wallpaperPreset = itemStorage.get('defaultWallpaperPreset');
+    const dimWallpaperInDarkMode = itemStorage.get(
       'defaultDimWallpaperInDarkMode',
       false
     );
-    const autoBubbleColor = window.storage.get('defaultAutoBubbleColor');
+    const autoBubbleColor = itemStorage.get('defaultAutoBubbleColor');
 
     return this.#toChatStyle({
       wallpaperPhotoPointer,

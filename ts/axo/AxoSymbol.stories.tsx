@@ -4,30 +4,40 @@ import React, { memo, useMemo, useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { Direction } from 'radix-ui';
 import Fuse from 'fuse.js';
-import type { AxoSymbolName } from './AxoSymbol';
-import { AxoSymbol, _getAllAxoSymbolNames, _getAxoSymbol } from './AxoSymbol';
-import { tw } from './tw';
+import { AxoSymbol } from './AxoSymbol.js';
+import { tw } from './tw.js';
+import {
+  _getAllAxoSymbolInlineGlyphNames,
+  getAxoSymbolInlineGlyph,
+} from './_internal/AxoSymbolDefs.generated.js';
 
 export default {
   title: 'Axo/AxoSymbol',
 } satisfies Meta;
 
-const SymbolInfo = memo(function SymbolInfo(props: {
-  symbolName: AxoSymbolName;
-}): JSX.Element {
-  const ltr = _getAxoSymbol(props.symbolName, 'ltr');
-  const rtl = _getAxoSymbol(props.symbolName, 'rtl');
+const allAxoSymbolNames = _getAllAxoSymbolInlineGlyphNames()
+  .slice()
+  .sort((a, b) => a.localeCompare(b));
+const fuse = new Fuse(allAxoSymbolNames);
 
-  const variants =
+const SymbolInfo = memo(function SymbolInfo(props: {
+  symbolName: AxoSymbol.InlineGlyphName;
+}): JSX.Element {
+  const ltr = getAxoSymbolInlineGlyph(props.symbolName, 'ltr');
+  const rtl = getAxoSymbolInlineGlyph(props.symbolName, 'rtl');
+
+  type Variant = { title: string; dir: 'ltr' | 'rtl'; text: string };
+
+  const variants: ReadonlyArray<Variant> =
     ltr === rtl
-      ? ([
+      ? [
           // same
           { title: 'LTR/RTL', dir: 'ltr', text: ltr },
-        ] as const)
-      : ([
+        ]
+      : [
           { title: 'LTR', dir: 'ltr', text: ltr },
           { title: 'RTL', dir: 'rtl', text: rtl },
-        ] as const);
+        ];
 
   return (
     <figure
@@ -43,12 +53,12 @@ const SymbolInfo = memo(function SymbolInfo(props: {
                 {variant.title}
               </span>
               <span className={tw('text-[20px] leading-none')}>
-                <Direction.DirectionProvider dir={variant.dir}>
+                <Direction.Provider dir={variant.dir}>
                   <AxoSymbol.InlineGlyph
                     symbol={props.symbolName}
                     label={null}
                   />
-                </Direction.DirectionProvider>
+                </Direction.Provider>
               </span>
               <code className={tw('type-caption text-label-secondary')}>
                 {Array.from(variant.text, char => {
@@ -70,11 +80,6 @@ const SymbolInfo = memo(function SymbolInfo(props: {
     </figure>
   );
 });
-
-const allAxoSymbolNames = _getAllAxoSymbolNames()
-  .slice()
-  .sort((a, b) => a.localeCompare(b));
-const fuse = new Fuse(allAxoSymbolNames);
 
 export function All(): JSX.Element {
   const [input, setInput] = useState('');

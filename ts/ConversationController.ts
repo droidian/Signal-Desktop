@@ -1,54 +1,68 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { debounce, pick, uniq, without } from 'lodash';
+import lodash from 'lodash';
 import PQueue from 'p-queue';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from './sql/Client';
-import { createLogger } from './logging/log';
-import * as Errors from './types/errors';
-import { getAuthorId } from './messages/helpers';
-import { maybeDeriveGroupV2Id } from './groups';
-import { assertDev, strictAssert } from './util/assert';
-import { drop } from './util/drop';
+import { DataReader, DataWriter } from './sql/Client.js';
+import { createLogger } from './logging/log.js';
+import * as Errors from './types/errors.js';
+import { getAuthorId } from './messages/sources.js';
+import { maybeDeriveGroupV2Id } from './groups.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { drop } from './util/drop.js';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
-} from './util/whatTypeOfConversation';
+} from './util/whatTypeOfConversation.js';
+import {
+  doesAttachmentExist,
+  deleteAttachmentData,
+} from './util/migrations.js';
 import {
   isServiceIdString,
   normalizePni,
   normalizeServiceId,
-} from './types/ServiceId';
-import { normalizeAci } from './util/normalizeAci';
-import { sleep } from './util/sleep';
-import { isNotNil } from './util/isNotNil';
-import { MINUTE, SECOND } from './util/durations';
-import { getServiceIdsForE164s } from './util/getServiceIdsForE164s';
-import { SIGNAL_ACI, SIGNAL_AVATAR_PATH } from './types/SignalConversation';
-import { getTitleNoDefault } from './util/getTitle';
-import * as StorageService from './services/storage';
-import type { ConversationPropsForUnreadStats } from './util/countUnreadStats';
-import { countAllConversationsUnreadStats } from './util/countUnreadStats';
-import { isTestOrMockEnvironment } from './environment';
-import { isConversationAccepted } from './util/isConversationAccepted';
-import { areWePending } from './util/groupMembershipUtils';
-import { conversationJobQueue } from './jobs/conversationJobQueue';
-import { createBatcher } from './util/batcher';
-import { validateConversation } from './util/validateConversation';
-import { ConversationModel } from './models/conversations';
-import { INITIAL_EXPIRE_TIMER_VERSION } from './util/expirationTimer';
-import { missingCaseError } from './util/missingCaseError';
+} from './types/ServiceId.js';
+import { normalizeAci } from './util/normalizeAci.js';
+import { sleep } from './util/sleep.js';
+import { isNotNil } from './util/isNotNil.js';
+import { MINUTE, SECOND } from './util/durations/index.js';
+import { getServiceIdsForE164s } from './util/getServiceIdsForE164s.js';
+import { SIGNAL_ACI, SIGNAL_AVATAR_PATH } from './types/SignalConversation.js';
+import { getTitleNoDefault } from './util/getTitle.js';
+import * as StorageService from './services/storage.js';
+import textsecureUtils from './textsecure/Helpers.js';
+import { cdsLookup } from './textsecure/WebAPI.js';
+import type { ConversationPropsForUnreadStats } from './util/countUnreadStats.js';
+import { countAllConversationsUnreadStats } from './util/countUnreadStats.js';
+import { isTestOrMockEnvironment } from './environment.js';
+import { isConversationAccepted } from './util/isConversationAccepted.js';
+import { areWePending } from './util/groupMembershipUtils.js';
+import { conversationJobQueue } from './jobs/conversationJobQueue.js';
+import { createBatcher } from './util/batcher.js';
+import { validateConversation } from './util/validateConversation.js';
+import { ConversationModel } from './models/conversations.js';
+import { INITIAL_EXPIRE_TIMER_VERSION } from './util/expirationTimer.js';
+import { missingCaseError } from './util/missingCaseError.js';
+import { signalProtocolStore } from './SignalProtocolStore.js';
 
 import type {
   ConversationAttributesType,
   ConversationAttributesTypeType,
   ConversationRenderInfoType,
-} from './model-types.d';
-import type { ServiceIdString, AciString, PniString } from './types/ServiceId';
+} from './model-types.d.ts';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from './types/ServiceId.js';
+import { itemStorage } from './textsecure/Storage.js';
+
+const { debounce, pick, uniq, without } = lodash;
 
 const log = createLogger('ConversationController');
 
@@ -353,7 +367,7 @@ export class ConversationController {
     }
 
     const includeMuted =
-      window.storage.get('badge-count-muted-conversations') || false;
+      itemStorage.get('badge-count-muted-conversations') || false;
 
     const unreadStats = countAllConversationsUnreadStats(
       this.#_conversations.map(
@@ -362,6 +376,8 @@ export class ConversationController {
           // because `conversation.format()` can return cached props by the
           // time this runs
           return {
+            id: conversation.get('id'),
+            type: conversation.get('type') === 'private' ? 'direct' : 'group',
             activeAt: conversation.get('active_at') ?? undefined,
             isArchived: conversation.get('isArchived'),
             markedUnread: conversation.get('markedUnread'),
@@ -374,18 +390,19 @@ export class ConversationController {
       { includeMuted }
     );
 
-    drop(window.storage.put('unreadCount', unreadStats.unreadCount));
+    drop(itemStorage.put('unreadCount', unreadStats.unreadCount));
 
     if (unreadStats.unreadCount > 0) {
-      window.IPC.setBadge(unreadStats.unreadCount);
-      window.IPC.updateTrayIcon(unreadStats.unreadCount);
-      window.document.title = `${window.getTitle()} (${
-        unreadStats.unreadCount
-      })`;
-    } else if (unreadStats.markedUnread) {
-      window.IPC.setBadge('marked-unread');
-      window.IPC.updateTrayIcon(1);
-      window.document.title = `${window.getTitle()} (1)`;
+      const total =
+        unreadStats.unreadCount + unreadStats.readChatsMarkedUnreadCount;
+      window.IPC.setBadge(total);
+      window.IPC.updateTrayIcon(total);
+      window.document.title = `${window.getTitle()} (${total})`;
+    } else if (unreadStats.readChatsMarkedUnreadCount > 0) {
+      const total = unreadStats.readChatsMarkedUnreadCount;
+      window.IPC.setBadge(total);
+      window.IPC.updateTrayIcon(total);
+      window.document.title = `${window.getTitle()} (${total})`;
     } else {
       window.IPC.setBadge(0);
       window.IPC.updateTrayIcon(0);
@@ -481,7 +498,7 @@ export class ConversationController {
         version: 2,
         expireTimerVersion: INITIAL_EXPIRE_TIMER_VERSION,
         unreadCount: 0,
-        verified: window.textsecure.storage.protocol.VerifiedStatus.DEFAULT,
+        verified: signalProtocolStore.VerifiedStatus.DEFAULT,
         messageCount: 0,
         sentMessageCount: 0,
         ...additionalInitialProps,
@@ -497,7 +514,7 @@ export class ConversationController {
         version: 2,
         expireTimerVersion: INITIAL_EXPIRE_TIMER_VERSION,
         unreadCount: 0,
-        verified: window.textsecure.storage.protocol.VerifiedStatus.DEFAULT,
+        verified: signalProtocolStore.VerifiedStatus.DEFAULT,
         messageCount: 0,
         sentMessageCount: 0,
         ...additionalInitialProps,
@@ -513,7 +530,7 @@ export class ConversationController {
         version: 2,
         expireTimerVersion: INITIAL_EXPIRE_TIMER_VERSION,
         unreadCount: 0,
-        verified: window.textsecure.storage.protocol.VerifiedStatus.DEFAULT,
+        verified: signalProtocolStore.VerifiedStatus.DEFAULT,
         messageCount: 0,
         sentMessageCount: 0,
         ...additionalInitialProps,
@@ -590,7 +607,7 @@ export class ConversationController {
       return null;
     }
 
-    const [id] = window.textsecure.utils.unencodeNumber(address);
+    const [id] = textsecureUtils.unencodeNumber(address);
     const conv = this.get(id);
 
     if (conv) {
@@ -601,9 +618,9 @@ export class ConversationController {
   }
 
   getOurConversationId(): string | undefined {
-    const e164 = window.textsecure.storage.user.getNumber();
-    const aci = window.textsecure.storage.user.getAci();
-    const pni = window.textsecure.storage.user.getPni();
+    const e164 = itemStorage.user.getNumber();
+    const aci = itemStorage.user.getAci();
+    const pni = itemStorage.user.getPni();
 
     if (!e164 && !aci && !pni) {
       return undefined;
@@ -675,7 +692,7 @@ export class ConversationController {
   }
 
   areWePrimaryDevice(): boolean {
-    const ourDeviceId = window.textsecure.storage.user.getDeviceId();
+    const ourDeviceId = itemStorage.user.getDeviceId();
 
     return ourDeviceId === 1;
   }
@@ -1357,17 +1374,13 @@ export class ConversationController {
 
       log.warn(`${logId}: Delete all sessions tied to old conversationId`);
       // Note: we use the conversationId here in case we've already lost our service id.
-      await window.textsecure.storage.protocol.removeSessionsByConversation(
-        obsoleteId
-      );
+      await signalProtocolStore.removeSessionsByConversation(obsoleteId);
 
       log.warn(
         `${logId}: Delete all identity information tied to old conversationId`
       );
       if (obsoleteServiceId) {
-        await window.textsecure.storage.protocol.removeIdentityKey(
-          obsoleteServiceId
-        );
+        await signalProtocolStore.removeIdentityKey(obsoleteServiceId);
       }
 
       log.warn(
@@ -1584,7 +1597,7 @@ export class ConversationController {
   }
 
   migrateAvatarsForNonAcceptedConversations(): void {
-    if (window.storage.get('avatarsHaveBeenMigrated')) {
+    if (itemStorage.get('avatarsHaveBeenMigrated')) {
       return;
     }
     const conversations = this.getAll();
@@ -1601,8 +1614,6 @@ export class ConversationController {
         if (avatarPath || profileAvatarPath) {
           drop(
             (async () => {
-              const { doesAttachmentExist, deleteAttachmentData } =
-                window.Signal.Migrations;
               if (avatarPath && (await doesAttachmentExist(avatarPath))) {
                 await deleteAttachmentData(avatarPath);
               }
@@ -1628,11 +1639,11 @@ export class ConversationController {
     log.info(
       `unset avatars for ${numberOfConversationsMigrated} unaccepted conversations`
     );
-    drop(window.storage.put('avatarsHaveBeenMigrated', true));
+    drop(itemStorage.put('avatarsHaveBeenMigrated', true));
   }
 
   repairPinnedConversations(): void {
-    const pinnedIds = window.storage.get('pinnedConversationIds', []);
+    const pinnedIds = itemStorage.get('pinnedConversationIds', []);
 
     for (const id of pinnedIds) {
       const convo = this.get(id);
@@ -1670,10 +1681,8 @@ export class ConversationController {
 
   // For testing
   async _forgetE164(e164: string): Promise<void> {
-    const { server } = window.textsecure;
-    strictAssert(server, 'Server must be initialized');
     const { entries: serviceIdMap, transformedE164s } =
-      await getServiceIdsForE164s(server, [e164]);
+      await getServiceIdsForE164s(cdsLookup, [e164]);
 
     const e164ToUse = transformedE164s.get(e164) ?? e164;
     const pni = serviceIdMap.get(e164ToUse)?.pni;
@@ -1805,9 +1814,7 @@ export class ConversationController {
     recipients.forEach(serviceId => {
       drop(
         queue.add(async () => {
-          await window.textsecure.storage.protocol.archiveAllSessions(
-            serviceId
-          );
+          await signalProtocolStore.archiveAllSessions(serviceId);
         })
       );
     });

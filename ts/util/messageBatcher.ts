@@ -1,12 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReadonlyMessageAttributesType } from '../model-types.d';
-import { createWaitBatcher } from './waitBatcher';
-import { DataWriter } from '../sql/Client';
-import { createLogger } from '../logging/log';
-import { postSaveUpdates } from './cleanup';
-import { MessageModel } from '../models/messages';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import { createWaitBatcher } from './waitBatcher.js';
+import { DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+import { postSaveUpdates } from './cleanup.js';
+import { MessageModel } from '../models/messages.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('messageBatcher');
 
@@ -23,7 +24,7 @@ const updateMessageBatcher = createWaitBatcher<ReadonlyMessageAttributesType>({
     );
 
     await DataWriter.saveMessages(messagesToSave, {
-      ourAci: window.textsecure.storage.user.getCheckedAci(),
+      ourAci: itemStorage.user.getCheckedAci(),
       postSaveUpdates,
     });
   },
@@ -64,7 +65,7 @@ export const saveNewMessageBatcher =
 
       await DataWriter.saveMessages(messagesToSave, {
         forceSave: true,
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
+        ourAci: itemStorage.user.getCheckedAci(),
         postSaveUpdates,
       });
     },

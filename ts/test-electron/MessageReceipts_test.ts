@@ -4,33 +4,34 @@
 import { v4 as uuid } from 'uuid';
 import { assert } from 'chai';
 
-import { type AciString, generateAci } from '../types/ServiceId';
-import type { MessageAttributesType } from '../model-types';
-import { DataReader, DataWriter } from '../sql/Client';
-import { SendStatus } from '../messages/MessageSendState';
+import { type AciString, generateAci } from '../types/ServiceId.js';
+import type { MessageAttributesType } from '../model-types.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { SendStatus } from '../messages/MessageSendState.js';
 import type {
   MessageReceiptAttributesType,
   MessageReceiptType,
-} from '../messageModifiers/MessageReceipts';
+} from '../messageModifiers/MessageReceipts.js';
 import {
   onReceipt,
   messageReceiptTypeSchema,
-} from '../messageModifiers/MessageReceipts';
-import { ReadStatus } from '../messages/MessageReadStatus';
+} from '../messageModifiers/MessageReceipts.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 describe('MessageReceipts', () => {
   let ourAci: AciString;
 
   beforeEach(async () => {
     ourAci = generateAci();
-    await window.textsecure.storage.put('uuid_id', `${ourAci}.1`);
-    await window.textsecure.storage.put('read-receipt-setting', true);
+    await itemStorage.put('uuid_id', `${ourAci}.1`);
+    await itemStorage.put('read-receipt-setting', true);
     await window.ConversationController.load();
   });
 
   afterEach(async () => {
     await DataWriter.removeAll();
-    await window.storage.fetch();
+    await itemStorage.fetch();
   });
 
   function generateReceipt(

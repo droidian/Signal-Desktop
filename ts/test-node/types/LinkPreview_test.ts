@@ -9,7 +9,7 @@ import {
   isValidLink,
   shouldLinkifyMessage,
   shouldPreviewHref,
-} from '../../types/LinkPreview';
+} from '../../types/LinkPreview.js';
 
 describe('Link previews', () => {
   describe('#isValidLink', () => {
@@ -113,6 +113,24 @@ describe('Link previews', () => {
       const expected = ['https://github.com/signalapp/Signal-Desktop'];
 
       const actual = findLinks(text);
+      assert.deepEqual(expected, actual);
+    });
+
+    it('returns all links after emojis with spaces in between, if a caretLocation is provided', () => {
+      const text = '😎 https://github.com/signalapp/Signal-Desktop';
+
+      const expected = ['https://github.com/signalapp/Signal-Desktop'];
+
+      const actual = findLinks(text, 45);
+      assert.deepEqual(expected, actual);
+    });
+
+    it('returns all links after a complex emoji, if a caretLocation is provided', () => {
+      const text = '👨‍👩‍👦 https://github.com/signalapp/Signal-Desktop';
+
+      const expected = ['https://github.com/signalapp/Signal-Desktop'];
+
+      const actual = findLinks(text, 45);
       assert.deepEqual(expected, actual);
     });
 

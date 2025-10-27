@@ -3,54 +3,58 @@
 
 import { z } from 'zod';
 import type PQueue from 'p-queue';
-import { createLogger } from '../logging/log';
+import { createLogger } from '../logging/log.js';
 
-import * as durations from '../util/durations';
-import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff';
-import { InMemoryQueues } from './helpers/InMemoryQueues';
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore';
-import { JOB_STATUS, JobQueue } from './JobQueue';
+import * as durations from '../util/durations/index.js';
+import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.js';
+import { InMemoryQueues } from './helpers/InMemoryQueues.js';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.js';
+import { JOB_STATUS, JobQueue } from './JobQueue.js';
 
-import { sendNormalMessage } from './helpers/sendNormalMessage';
-import { sendCallingMessage } from './helpers/sendCallingMessage';
-import { sendDirectExpirationTimerUpdate } from './helpers/sendDirectExpirationTimerUpdate';
-import { sendGroupCallUpdate } from './helpers/sendGroupCallUpdate';
-import { sendGroupUpdate } from './helpers/sendGroupUpdate';
-import { sendDeleteForEveryone } from './helpers/sendDeleteForEveryone';
-import { sendDeleteStoryForEveryone } from './helpers/sendDeleteStoryForEveryone';
-import { sendProfileKey } from './helpers/sendProfileKey';
-import { sendReaction } from './helpers/sendReaction';
-import { sendStory } from './helpers/sendStory';
-import { sendReceipts } from './helpers/sendReceipts';
+import { sendNormalMessage } from './helpers/sendNormalMessage.js';
+import { sendCallingMessage } from './helpers/sendCallingMessage.js';
+import { sendDirectExpirationTimerUpdate } from './helpers/sendDirectExpirationTimerUpdate.js';
+import { sendGroupCallUpdate } from './helpers/sendGroupCallUpdate.js';
+import { sendGroupUpdate } from './helpers/sendGroupUpdate.js';
+import { sendDeleteForEveryone } from './helpers/sendDeleteForEveryone.js';
+import { sendDeleteStoryForEveryone } from './helpers/sendDeleteStoryForEveryone.js';
+import { sendProfileKey } from './helpers/sendProfileKey.js';
+import { sendReaction } from './helpers/sendReaction.js';
+import { sendStory } from './helpers/sendStory.js';
+import { sendReceipts } from './helpers/sendReceipts.js';
 
-import type { LoggerType } from '../types/Logging';
-import { ConversationVerificationState } from '../state/ducks/conversationsEnums';
-import { MINUTE } from '../util/durations';
+import type { LoggerType } from '../types/Logging.js';
+import { ConversationVerificationState } from '../state/ducks/conversationsEnums.js';
+import { MINUTE } from '../util/durations/index.js';
 import {
   OutgoingIdentityKeyError,
   SendMessageChallengeError,
   SendMessageProtoError,
-} from '../textsecure/Errors';
-import { strictAssert } from '../util/assert';
-import { missingCaseError } from '../util/missingCaseError';
-import { explodePromise } from '../util/explodePromise';
-import type { Job } from './Job';
-import type { ParsedJob, StoredJob } from './types';
-import type SendMessage from '../textsecure/SendMessage';
-import type { ServiceIdString } from '../types/ServiceId';
-import { commonShouldJobContinue } from './helpers/commonShouldJobContinue';
-import { sleeper } from '../util/sleeper';
-import { receiptSchema, ReceiptType } from '../types/Receipt';
-import { serviceIdSchema, aciSchema } from '../types/ServiceId';
-import { sendResendRequest } from './helpers/sendResendRequest';
-import { sendNullMessage } from './helpers/sendNullMessage';
-import { sendSenderKeyDistribution } from './helpers/sendSenderKeyDistribution';
-import { sendSavedProto } from './helpers/sendSavedProto';
-import { drop } from '../util/drop';
-import { isInPast } from '../util/timestamp';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import { FIBONACCI } from '../util/BackOff';
-import { parseUnknown } from '../util/schemas';
+} from '../textsecure/Errors.js';
+import { strictAssert } from '../util/assert.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { explodePromise } from '../util/explodePromise.js';
+import type { Job } from './Job.js';
+import type { ParsedJob, StoredJob } from './types.js';
+import {
+  type MessageSender,
+  messageSender,
+} from '../textsecure/SendMessage.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.js';
+import { sleeper } from '../util/sleeper.js';
+import { receiptSchema, ReceiptType } from '../types/Receipt.js';
+import { serviceIdSchema, aciSchema } from '../types/ServiceId.js';
+import { sendResendRequest } from './helpers/sendResendRequest.js';
+import { sendNullMessage } from './helpers/sendNullMessage.js';
+import { sendSenderKeyDistribution } from './helpers/sendSenderKeyDistribution.js';
+import { sendSavedProto } from './helpers/sendSavedProto.js';
+import { drop } from '../util/drop.js';
+import { isInPast } from '../util/timestamp.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import { FIBONACCI } from '../util/BackOff.js';
+import { parseUnknown } from '../util/schemas.js';
+import { challengeHandler } from '../services/challengeHandler.js';
 
 const globalLogger = createLogger('conversationJobQueue');
 
@@ -267,7 +271,7 @@ export type ConversationQueueJobData = z.infer<
 export type ConversationQueueJobBundle = {
   isFinalAttempt: boolean;
   log: LoggerType;
-  messaging: SendMessage;
+  messaging: MessageSender;
   shouldContinue: boolean;
   timeRemaining: number;
   timestamp: number;
@@ -415,11 +419,7 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
     const { conversationId, type } = data;
 
     if (shouldSendShowCaptcha(data.type)) {
-      strictAssert(
-        window.Signal.challengeHandler,
-        'conversationJobQueue.add: Missing challengeHandler!'
-      );
-      window.Signal.challengeHandler.maybeSolve({
+      challengeHandler.maybeSolve({
         conversationId,
         reason: `conversationJobQueue.add(${conversationId}, ${type})`,
       });
@@ -744,7 +744,7 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
         );
 
         // We're starting to retry jobs; remove the challenge handler
-        drop(window.Signal.challengeHandler?.unregister(conversationId, logId));
+        drop(challengeHandler.unregister(conversationId, logId));
 
         this.#perConversationData.set(conversationId, {
           status: RETRY_STATUS.RUNNING,
@@ -821,7 +821,7 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
       }
 
       const isChallengeRegistered =
-        window.Signal.challengeHandler?.isRegistered(conversationId);
+        challengeHandler.isRegistered(conversationId);
       if (!isChallengeRegistered) {
         this.#unblockConversationRetries(conversationId);
       }
@@ -831,7 +831,7 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
           throw new Error("Shutting down, can't wait for captcha challenge.");
         }
 
-        window.Signal.challengeHandler?.maybeSolve({
+        challengeHandler.maybeSolve({
           conversationId,
           reason:
             'conversationJobQueue.run/addWaiter(' +
@@ -914,13 +914,8 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
       throw missingCaseError(verificationData);
     }
 
-    const { messaging } = window.textsecure;
-    if (!messaging) {
-      throw new Error('messaging interface is not available!');
-    }
-
     const jobBundle: ConversationQueueJobBundle = {
-      messaging,
+      messaging: messageSender,
       isFinalAttempt,
       shouldContinue,
       timeRemaining,
@@ -1015,7 +1010,7 @@ export class ConversationJobQueue extends JobQueue<ConversationQueueJobData> {
           const silent = !shouldSendShowCaptcha(type);
 
           drop(
-            window.Signal.challengeHandler?.register(
+            challengeHandler.register(
               {
                 conversationId,
                 createdAt: Date.now(),

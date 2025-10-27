@@ -2,9 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import Long from 'long';
-import type { Backups, SignalService } from '../protobuf';
-import * as Bytes from '../Bytes';
-import { drop } from './drop';
+import type { Backups, SignalService } from '../protobuf/index.js';
+import * as Bytes from '../Bytes.js';
+import { backupsService } from '../services/backups/index.js';
+import { drop } from './drop.js';
+import { createLogger } from '../logging/log.js';
+import { resetBackupMediaDownloadStats } from './backupMediaDownload.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const log = createLogger('BackupSubscriptionData');
 
 // These two proto messages (Backups.AccountData.IIAPSubscriberData &&
 // SignalService.AccountRecord.IIAPSubscriberData) should remain in sync. If they drift,
@@ -16,16 +22,16 @@ export async function saveBackupsSubscriberData(
     | null
     | undefined
 ): Promise<void> {
-  const previousSubscriberId = window.storage.get('backupsSubscriberId');
+  const previousSubscriberId = itemStorage.get('backupsSubscriberId');
 
   if (previousSubscriberId !== backupsSubscriberData?.subscriberId) {
-    drop(window.Signal.Services.backups.refreshBackupAndSubscriptionStatus());
+    drop(backupsService.refreshBackupAndSubscriptionStatus());
   }
 
   if (backupsSubscriberData == null) {
-    await window.storage.remove('backupsSubscriberId');
-    await window.storage.remove('backupsSubscriberPurchaseToken');
-    await window.storage.remove('backupsSubscriberOriginalTransactionId');
+    await itemStorage.remove('backupsSubscriberId');
+    await itemStorage.remove('backupsSubscriberPurchaseToken');
+    await itemStorage.remove('backupsSubscriberOriginalTransactionId');
     return;
   }
 
@@ -33,39 +39,41 @@ export async function saveBackupsSubscriberData(
     backupsSubscriberData;
 
   if (Bytes.isNotEmpty(subscriberId)) {
-    await window.storage.put('backupsSubscriberId', subscriberId);
+    await itemStorage.put('backupsSubscriberId', subscriberId);
   } else {
-    await window.storage.remove('backupsSubscriberId');
+    await itemStorage.remove('backupsSubscriberId');
   }
 
   if (purchaseToken) {
-    await window.storage.put('backupsSubscriberPurchaseToken', purchaseToken);
+    await itemStorage.put('backupsSubscriberPurchaseToken', purchaseToken);
   } else {
-    await window.storage.remove('backupsSubscriberPurchaseToken');
+    await itemStorage.remove('backupsSubscriberPurchaseToken');
   }
 
   if (originalTransactionId) {
-    await window.storage.put(
+    await itemStorage.put(
       'backupsSubscriberOriginalTransactionId',
       originalTransactionId.toString()
     );
   } else {
-    await window.storage.remove('backupsSubscriberOriginalTransactionId');
+    await itemStorage.remove('backupsSubscriberOriginalTransactionId');
   }
 }
 
 export async function saveBackupTier(
   backupTier: number | undefined
 ): Promise<void> {
-  const previousBackupTier = window.storage.get('backupTier');
-  await window.storage.put('backupTier', backupTier);
+  const previousBackupTier = itemStorage.get('backupTier');
+  await itemStorage.put('backupTier', backupTier);
   if (backupTier !== previousBackupTier) {
-    drop(window.Signal.Services.backups.refreshBackupAndSubscriptionStatus());
+    log.info('backup tier has changed', { previousBackupTier, backupTier });
+    await resetBackupMediaDownloadStats();
+    drop(backupsService.resetCachedData());
   }
 }
 
 export function generateBackupsSubscriberData(): Backups.AccountData.IIAPSubscriberData | null {
-  const backupsSubscriberId = window.storage.get('backupsSubscriberId');
+  const backupsSubscriberId = itemStorage.get('backupsSubscriberId');
 
   if (Bytes.isEmpty(backupsSubscriberId)) {
     return null;
@@ -74,11 +82,11 @@ export function generateBackupsSubscriberData(): Backups.AccountData.IIAPSubscri
   const backupsSubscriberData: Backups.AccountData.IIAPSubscriberData = {
     subscriberId: backupsSubscriberId,
   };
-  const purchaseToken = window.storage.get('backupsSubscriberPurchaseToken');
+  const purchaseToken = itemStorage.get('backupsSubscriberPurchaseToken');
   if (purchaseToken) {
     backupsSubscriberData.purchaseToken = purchaseToken;
   } else {
-    const originalTransactionId = window.storage.get(
+    const originalTransactionId = itemStorage.get(
       'backupsSubscriberOriginalTransactionId'
     );
     if (originalTransactionId) {

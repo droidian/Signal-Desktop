@@ -39,27 +39,31 @@ import {
   GroupCallKind,
   SpeechEvent,
 } from '@signalapp/ringrtc';
-import { uniqBy, noop, compact } from 'lodash';
+import lodash from 'lodash';
 import Long from 'long';
-import type { CallLinkAuthCredentialPresentation } from '@signalapp/libsignal-client/zkgroup';
+import type { CallLinkAuthCredentialPresentation } from '@signalapp/libsignal-client/zkgroup.js';
 import {
   CallLinkSecretParams,
   CreateCallLinkCredentialRequestContext,
   CreateCallLinkCredentialResponse,
   GenericServerPublicParams,
   ServerPublicParams,
-} from '@signalapp/libsignal-client/zkgroup';
+} from '@signalapp/libsignal-client/zkgroup.js';
 import { Aci } from '@signalapp/libsignal-client';
-import { CanvasVideoRenderer, GumVideoCapturer } from '../calling/VideoSupport';
-import type { GumVideoCaptureOptions } from '../calling/VideoSupport';
+import {
+  CanvasVideoRenderer,
+  GumVideoCapturer,
+} from '../calling/VideoSupport.js';
+import type { GumVideoCaptureOptions } from '../calling/VideoSupport.js';
 import type {
   ActionsType as CallingReduxActionsType,
   GroupCallParticipantInfoType,
   GroupCallPeekInfoType,
-} from '../state/ducks/calling';
-import type { ConversationType } from '../state/ducks/conversations';
-import { getConversationCallMode } from '../state/ducks/conversations';
-import { isMe } from '../util/whatTypeOfConversation';
+} from '../state/ducks/calling.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { getConversationCallMode } from '../state/ducks/conversations.js';
+import { isMe } from '../util/whatTypeOfConversation.js';
+import { getAbsoluteTempPath } from '../util/migrations.js';
 import type {
   AvailableIODevicesType,
   CallEndedReason,
@@ -67,34 +71,39 @@ import type {
   IceServerCacheType,
   MediaDeviceSettings,
   PresentedSource,
-} from '../types/Calling';
+} from '../types/Calling.js';
 import {
   GroupCallConnectionState,
   GroupCallJoinState,
   ScreenShareStatus,
-} from '../types/Calling';
-import { CallMode, LocalCallEvent } from '../types/CallDisposition';
+} from '../types/Calling.js';
+import { CallMode, LocalCallEvent } from '../types/CallDisposition.js';
 import {
   findBestMatchingAudioDeviceIndex,
   findBestMatchingCameraId,
-} from '../calling/findBestMatchingDevice';
-import { normalizeAci } from '../util/normalizeAci';
-import { isAciString } from '../util/isAciString';
-import * as Errors from '../types/errors';
-import type { ConversationModel } from '../models/conversations';
-import * as Bytes from '../Bytes';
-import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes';
-import { drop } from '../util/drop';
-import { dropNull } from '../util/dropNull';
-import { getOwn } from '../util/getOwn';
-import * as durations from '../util/durations';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import { fetchMembershipProof, getMembershipList } from '../groups';
-import type { ProcessedEnvelope } from '../textsecure/Types.d';
-import type { GetIceServersResultType } from '../textsecure/WebAPI';
-import { missingCaseError } from '../util/missingCaseError';
-import { normalizeGroupCallTimestamp } from '../util/ringrtc/normalizeGroupCallTimestamp';
-import { requestCameraPermissions } from '../util/callingPermissions';
+} from '../calling/findBestMatchingDevice.js';
+import { normalizeAci } from '../util/normalizeAci.js';
+import { isAciString } from '../util/isAciString.js';
+import * as Errors from '../types/errors.js';
+import type { ConversationModel } from '../models/conversations.js';
+import * as Bytes from '../Bytes.js';
+import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes.js';
+import { drop } from '../util/drop.js';
+import { dropNull } from '../util/dropNull.js';
+import { getOwn } from '../util/getOwn.js';
+import * as durations from '../util/durations/index.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import { fetchMembershipProof, getMembershipList } from '../groups.js';
+import type { ProcessedEnvelope } from '../textsecure/Types.d.ts';
+import type { GetIceServersResultType } from '../textsecure/WebAPI.js';
+import {
+  callLinkCreateAuth,
+  getIceServers,
+  makeSfuRequest,
+} from '../textsecure/WebAPI.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { normalizeGroupCallTimestamp } from '../util/ringrtc/normalizeGroupCallTimestamp.js';
+import { requestCameraPermissions } from '../util/callingPermissions.js';
 import {
   AUDIO_LEVEL_INTERVAL_MS,
   REQUESTED_VIDEO_WIDTH,
@@ -105,20 +114,20 @@ import {
   REQUESTED_SCREEN_SHARE_WIDTH,
   REQUESTED_SCREEN_SHARE_HEIGHT,
   REQUESTED_SCREEN_SHARE_FRAMERATE,
-} from '../calling/constants';
-import { callingMessageToProto } from '../util/callingMessageToProto';
-import { requestMicrophonePermissions } from '../util/requestMicrophonePermissions';
-import { SignalService as Proto } from '../protobuf';
-import { DataReader, DataWriter } from '../sql/Client';
+} from '../calling/constants.js';
+import { callingMessageToProto } from '../util/callingMessageToProto.js';
+import { requestMicrophonePermissions } from '../util/requestMicrophonePermissions.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
 import {
   notificationService,
   NotificationSetting,
   FALLBACK_NOTIFICATION_TITLE,
   NotificationType,
   shouldSaveNotificationAvatarToDisk,
-} from './notifications';
-import { createLogger } from '../logging/log';
-import { assertDev, strictAssert } from '../util/assert';
+} from './notifications.js';
+import { createLogger } from '../logging/log.js';
+import { assertDev, strictAssert } from '../util/assert.js';
 import {
   formatLocalDeviceState,
   formatPeekInfo,
@@ -138,30 +147,36 @@ import {
   updateAdhocCallHistory,
   getCallIdFromEra,
   getCallDetailsForAdhocCall,
-} from '../util/callDisposition';
-import { isNormalNumber } from '../util/isNormalNumber';
-import type { AciString, ServiceIdString } from '../types/ServiceId';
-import { isServiceIdString, isPniString } from '../types/ServiceId';
-import { isSignalConnection } from '../util/getSignalConnections';
-import { toAdminKeyBytes } from '../util/callLinks';
+} from '../util/callDisposition.js';
+import { isNormalNumber } from '../util/isNormalNumber.js';
+import type { AciString, ServiceIdString } from '../types/ServiceId.js';
+import { isServiceIdString, isPniString } from '../types/ServiceId.js';
+import { isSignalConnection } from '../util/getSignalConnections.js';
+import { toAdminKeyBytes } from '../util/callLinks.js';
 import {
-  getCallLinkAuthCredentialPresentation,
   getRoomIdFromRootKey,
   callLinkRestrictionsToRingRTC,
   callLinkStateFromRingRTC,
-} from '../util/callLinksRingrtc';
+} from '../util/callLinksRingrtc.js';
+import { getCallLinkAuthCredentialPresentation } from '../util/callLinks/zkgroup.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
-import type { CallLinkType, CallLinkStateType } from '../types/CallLink';
-import { CallLinkRestrictions } from '../types/CallLink';
-import { getConversationIdForLogging } from '../util/idForLogging';
-import { sendCallLinkUpdateSync } from '../util/sendCallLinkUpdateSync';
-import { createIdenticon } from '../util/createIdenticon';
-import { getColorForCallLink } from '../util/getColorForCallLink';
-import OS from '../util/os/osMain';
-import { sleep } from '../util/sleep';
+} from '../jobs/conversationJobQueue.js';
+import type { CallLinkType, CallLinkStateType } from '../types/CallLink.js';
+import { CallLinkRestrictions } from '../types/CallLink.js';
+import { getConversationIdForLogging } from '../util/idForLogging.js';
+import { sendCallLinkUpdateSync } from '../util/sendCallLinkUpdateSync.js';
+import { createIdenticon } from '../util/createIdenticon.js';
+import { getColorForCallLink } from '../util/getColorForCallLink.js';
+import OS from '../util/os/osMain.js';
+import { sleep } from '../util/sleep.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { i18n } = window.SignalContext;
+
+const { uniqBy, noop, compact } = lodash;
 
 const log = createLogger('calling');
 const ringrtcLog = createLogger('@signalapp/ringrtc');
@@ -240,35 +255,35 @@ export type SetPresentingOptionsType = Readonly<{
 }>;
 
 function getIncomingCallNotification(): boolean {
-  return window.storage.get('incoming-call-notification', true);
+  return itemStorage.get('incoming-call-notification', true);
 }
 function getAlwaysRelayCalls(): boolean {
-  return window.storage.get('always-relay-calls', false);
+  return itemStorage.get('always-relay-calls', false);
 }
 
 function getPreferredAudioInputDevice(): AudioDevice | undefined {
-  return window.storage.get('preferred-audio-input-device');
+  return itemStorage.get('preferred-audio-input-device');
 }
 async function setPreferredAudioInputDevice(
   device: AudioDevice
 ): Promise<void> {
-  await window.storage.put('preferred-audio-input-device', device);
+  await itemStorage.put('preferred-audio-input-device', device);
 }
 
 function getPreferredAudioOutputDevice(): AudioDevice | undefined {
-  return window.storage.get('preferred-audio-output-device');
+  return itemStorage.get('preferred-audio-output-device');
 }
 async function setPreferredAudioOutputDevice(
   device: AudioDevice
 ): Promise<void> {
-  await window.storage.put('preferred-audio-output-device', device);
+  await itemStorage.put('preferred-audio-output-device', device);
 }
 
 function getPreferredVideoInputDevice(): string | undefined {
-  return window.storage.get('preferred-video-input-device');
+  return itemStorage.get('preferred-video-input-device');
 }
 async function setPreferredVideoInputDevice(device: string): Promise<void> {
-  await window.storage.put('preferred-video-input-device', device);
+  await itemStorage.put('preferred-video-input-device', device);
 }
 
 function truncateForLogging(name: string | undefined): string | undefined {
@@ -508,6 +523,10 @@ export class CallingClass {
     RingRTC.handleOutgoingSignaling = this.#handleOutgoingSignaling.bind(this);
     RingRTC.handleIncomingCall = this.#handleIncomingCall.bind(this);
     RingRTC.handleStartCall = this.#handleStartCall.bind(this);
+    RingRTC.handleOutputDeviceChanged =
+      this.#handleOutputDeviceChanged.bind(this);
+    RingRTC.handleInputDeviceChanged =
+      this.#handleInputDeviceChanged.bind(this);
     RingRTC.handleAutoEndedIncomingCallRequest =
       this.#handleAutoEndedIncomingCallRequest.bind(this);
     RingRTC.handleLogMessage = this.#handleLogMessage.bind(this);
@@ -553,7 +572,7 @@ export class CallingClass {
   }
 
   #attemptToGiveOurServiceIdToRingRtc(): void {
-    const ourAci = window.textsecure.storage.user.getAci();
+    const ourAci = itemStorage.user.getAci();
     if (!ourAci) {
       // This can happen if we're not linked. It's okay if we hit this case.
       return;
@@ -739,7 +758,7 @@ export class CallingClass {
 
     const sfuUrl = this._sfuUrl;
     const userId = Aci.parseFromServiceIdString(
-      window.textsecure.storage.user.getCheckedAci()
+      itemStorage.user.getCheckedAci()
     );
 
     const rootKey = CallLinkRootKey.generate();
@@ -754,14 +773,8 @@ export class CallingClass {
     const context = CreateCallLinkCredentialRequestContext.forRoomId(roomId);
     const requestBase64 = Bytes.toBase64(context.getRequest().serialize());
 
-    strictAssert(
-      window.textsecure.messaging,
-      'createCallLink(): We are offline'
-    );
     const { credential: credentialBase64 } =
-      await window.textsecure.messaging.server.callLinkCreateAuth(
-        requestBase64
-      );
+      await callLinkCreateAuth(requestBase64);
 
     const response = new CreateCallLinkCredentialResponse(
       Bytes.fromBase64(credentialBase64)
@@ -1753,7 +1766,7 @@ export class CallingClass {
       return;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const reason = `sendProfileKeysForAdhocCall(${roomId})`;
     peekInfo.devices.forEach(async device => {
       const aci = device.userId ? this.#formatUserId(device.userId) : null;
@@ -2495,7 +2508,7 @@ export class CallingClass {
         );
         url = result.url;
         absolutePath = result.path
-          ? window.Signal.Migrations.getAbsoluteTempPath(result.path)
+          ? getAbsoluteTempPath(result.path)
           : undefined;
       } else {
         const conversation = window.ConversationController.get(conversationId);
@@ -2510,11 +2523,11 @@ export class CallingClass {
         conversationId,
         iconPath: absolutePath,
         iconUrl: url,
-        message: window.i18n('icu:calling__presenting--notification-body'),
+        message: i18n('icu:calling__presenting--notification-body'),
         type: NotificationType.IsPresenting,
         sentAt: 0,
         silent: true,
-        title: window.i18n('icu:calling__presenting--notification-title'),
+        title: i18n('icu:calling__presenting--notification-title'),
       });
     } else {
       ipcRenderer.send(
@@ -2581,13 +2594,13 @@ export class CallingClass {
         conversationId,
         iconPath: absolutePath,
         iconUrl: url,
-        message: window.i18n(
+        message: i18n(
           'icu:calling__presenting--reconnecting--notification-body'
         ),
         type: NotificationType.IsPresenting,
         sentAt: 0,
         silent: true,
-        title: window.i18n(
+        title: i18n(
           'icu:calling__presenting--reconnecting--notification-title'
         ),
       });
@@ -2688,8 +2701,7 @@ export class CallingClass {
     return true;
   }
 
-  async #pollForMediaDevices(): Promise<void> {
-    const newSettings = await this.getMediaDeviceSettings();
+  async #maybeUpdateDevices(newSettings: MediaDeviceSettings): Promise<void> {
     if (
       !this.#mediaDeviceSettingsEqual(
         this.#lastMediaDeviceSettings,
@@ -2708,10 +2720,19 @@ export class CallingClass {
     }
   }
 
-  async getAvailableIODevices(): Promise<AvailableIODevicesType> {
+  async #pollForMediaDevices(): Promise<void> {
+    const newSettings = await this.getMediaDeviceSettings();
+    return this.#maybeUpdateDevices(newSettings);
+  }
+
+  async #getAvailableIODevicesWithPrefetchedDevices(
+    prefetchedMicrophones: Array<AudioDevice> | undefined,
+    prefetchedSpeakers: Array<AudioDevice> | undefined
+  ): Promise<AvailableIODevicesType> {
     const availableCameras = await this.#videoCapturer.enumerateDevices();
-    const availableMicrophones = RingRTC.getAudioInputs();
-    const availableSpeakers = RingRTC.getAudioOutputs();
+    const availableMicrophones =
+      prefetchedMicrophones || RingRTC.getAudioInputs();
+    const availableSpeakers = prefetchedSpeakers || RingRTC.getAudioOutputs();
 
     return {
       availableCameras,
@@ -2720,9 +2741,22 @@ export class CallingClass {
     };
   }
 
-  async getMediaDeviceSettings(): Promise<MediaDeviceSettings> {
+  async getAvailableIODevices(): Promise<AvailableIODevicesType> {
+    return this.#getAvailableIODevicesWithPrefetchedDevices(
+      undefined,
+      undefined
+    );
+  }
+
+  async #getMediaDeviceSettingsWithPrefetchedDevices(
+    prefetchedMicrophones: Array<AudioDevice> | undefined,
+    prefetchedSpeakers: Array<AudioDevice> | undefined
+  ): Promise<MediaDeviceSettings> {
     const { availableCameras, availableMicrophones, availableSpeakers } =
-      await this.getAvailableIODevices();
+      await this.#getAvailableIODevicesWithPrefetchedDevices(
+        prefetchedMicrophones,
+        prefetchedSpeakers
+      );
 
     const preferredMicrophone = getPreferredAudioInputDevice();
     const selectedMicIndex = findBestMatchingAudioDeviceIndex(
@@ -2764,6 +2798,13 @@ export class CallingClass {
       availableCameras,
       selectedCamera,
     };
+  }
+
+  async getMediaDeviceSettings(): Promise<MediaDeviceSettings> {
+    return this.#getMediaDeviceSettingsWithPrefetchedDevices(
+      undefined,
+      undefined
+    );
   }
 
   setPreferredMicrophone(device: AudioDevice): void {
@@ -2845,10 +2886,8 @@ export class CallingClass {
       return;
     }
 
-    const { storage } = window.textsecure;
-
     const senderIdentityRecord =
-      await storage.protocol.getOrMigrateIdentityRecord(remoteUserId);
+      await signalProtocolStore.getOrMigrateIdentityRecord(remoteUserId);
     if (!senderIdentityRecord) {
       log.error(
         `${logId}: Missing sender identity record; ignoring call message.`
@@ -2857,9 +2896,10 @@ export class CallingClass {
     }
     const senderIdentityKey = senderIdentityRecord.publicKey.subarray(1); // Ignore the type header, it is not used.
 
-    const ourAci = storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
-    const receiverIdentityRecord = storage.protocol.getIdentityRecord(ourAci);
+    const receiverIdentityRecord =
+      signalProtocolStore.getIdentityRecord(ourAci);
     if (!receiverIdentityRecord) {
       log.error(
         `${logId}: Missing receiver identity record; ignoring call message.`
@@ -3128,7 +3168,7 @@ export class CallingClass {
       return;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
     if (conversation.get('left') || !conversation.hasMember(ourAci)) {
       log.warn(`${logId}: we left the group`);
@@ -3287,10 +3327,7 @@ export class CallingClass {
       // This is mostly the safety number check, unverified meaning that they were
       // verified before but now they are not.
       const verifiedEnum = await conversation.safeGetVerified();
-      if (
-        verifiedEnum ===
-        window.textsecure.storage.protocol.VerifiedStatus.UNVERIFIED
-      ) {
+      if (verifiedEnum === signalProtocolStore.VerifiedStatus.UNVERIFIED) {
         log.info(`${logId}: Peer is not trusted, ignoring incoming call`);
 
         const localCallEvent = LocalCallEvent.Missed;
@@ -3530,11 +3567,6 @@ export class CallingClass {
     headers: { [name: string]: string },
     body: Uint8Array | undefined
   ) {
-    if (!window.textsecure.messaging) {
-      RingRTC.httpRequestFailed(requestId, 'We are offline');
-      return;
-    }
-
     const httpMethod = RINGRTC_HTTP_METHOD_TO_OUR_HTTP_METHOD.get(method);
     if (httpMethod === undefined) {
       RingRTC.httpRequestFailed(
@@ -3546,12 +3578,7 @@ export class CallingClass {
 
     let result;
     try {
-      result = await window.textsecure.messaging.server.makeSfuRequest(
-        url,
-        httpMethod,
-        headers,
-        body
-      );
+      result = await makeSfuRequest(url, httpMethod, headers, body);
     } catch (err) {
       if (err.code !== -1) {
         // WebAPI treats certain response codes as errors, but RingRTC still needs to
@@ -3583,7 +3610,7 @@ export class CallingClass {
   }
 
   get #localDeviceId(): DeviceId | null {
-    return this.#parseDeviceId(window.textsecure.storage.user.getDeviceId());
+    return this.#parseDeviceId(itemStorage.user.getDeviceId());
   }
 
   #parseDeviceId(deviceId: number | string | undefined): DeviceId | null {
@@ -3633,12 +3660,7 @@ export class CallingClass {
     // Set the default cache expiration time to now + 0.
     let expirationTimestamp = currentTime;
 
-    // The messaging context should have already been checked before entering
-    // this function, so this should be a noop.
-    const { messaging } = window.textsecure;
-    strictAssert(messaging, 'textsecure messaging not available');
-
-    const iceServerConfig = await messaging.server.getIceServers();
+    const iceServerConfig = await getIceServers();
 
     // Advance the next expiration time to the minimum provided ttl value,
     // or if there were none, use 0 to disable the cache.
@@ -3675,10 +3697,6 @@ export class CallingClass {
   }
 
   async #handleStartCall(call: Call): Promise<boolean> {
-    if (!window.textsecure.messaging) {
-      log.error('CallingClass.handleStartCall: offline!');
-      return false;
-    }
     const conversation = window.ConversationController.get(call.remoteUserId);
     if (!conversation) {
       log.error(
@@ -3728,6 +3746,22 @@ export class CallingClass {
     RingRTC.proceed(call.callId, callSettings);
 
     return true;
+  }
+
+  async #handleOutputDeviceChanged(devices: Array<AudioDevice>): Promise<void> {
+    const newSettings = await this.#getMediaDeviceSettingsWithPrefetchedDevices(
+      undefined,
+      devices
+    );
+    return this.#maybeUpdateDevices(newSettings);
+  }
+
+  async #handleInputDeviceChanged(devices: Array<AudioDevice>): Promise<void> {
+    const newSettings = await this.#getMediaDeviceSettingsWithPrefetchedDevices(
+      devices,
+      undefined
+    );
+    return this.#maybeUpdateDevices(newSettings);
   }
 
   public async updateCallHistoryForAdhocCall(
@@ -3890,7 +3924,7 @@ export class CallingClass {
       }
       case NotificationSetting.NoNameOrMessage: {
         notificationTitle = FALLBACK_NOTIFICATION_TITLE;
-        notificationMessage = window.i18n(
+        notificationMessage = i18n(
           'icu:calling__call-notification__started-by-someone'
         );
         break;
@@ -3900,10 +3934,10 @@ export class CallingClass {
         notificationTitle =
           conversation?.getTitle() || FALLBACK_NOTIFICATION_TITLE;
         notificationMessage = creatorConversation
-          ? window.i18n('icu:calling__call-notification__started', {
+          ? i18n('icu:calling__call-notification__started', {
               name: creatorConversation.getTitle(),
             })
-          : window.i18n('icu:calling__call-notification__started-by-someone');
+          : i18n('icu:calling__call-notification__started-by-someone');
         const iconData = await conversation.getAvatarOrIdenticon();
         url = iconData.url;
         absolutePath = iconData.absolutePath;
@@ -3930,7 +3964,7 @@ export class CallingClass {
   ): Promise<void> {
     const shouldNotify =
       !window.SignalContext.activeWindowService.isActive() &&
-      window.storage.get('call-system-notification', true);
+      itemStorage.get('call-system-notification', true);
 
     if (!shouldNotify) {
       return;
@@ -3977,8 +4011,8 @@ export class CallingClass {
       iconPath: absolutePath,
       iconUrl: url,
       message: isVideoCall
-        ? window.i18n('icu:incomingVideoCall')
-        : window.i18n('icu:incomingAudioCall'),
+        ? i18n('icu:incomingVideoCall')
+        : i18n('icu:incomingAudioCall'),
       sentAt: 0,
       // The ringtone plays so we don't need sound for the notification
       silent: true,

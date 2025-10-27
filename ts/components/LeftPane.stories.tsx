@@ -4,36 +4,39 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './LeftPane';
-import { LeftPane } from './LeftPane';
-import { CaptchaDialog } from './CaptchaDialog';
-import { CrashReportDialog } from './CrashReportDialog';
-import { ToastManager } from './ToastManager';
-import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus';
-import { DialogExpiredBuild } from './DialogExpiredBuild';
-import { DialogNetworkStatus } from './DialogNetworkStatus';
-import { DialogRelink } from './DialogRelink';
-import type { PropsType as DialogUpdatePropsType } from './DialogUpdate';
-import { DialogUpdate } from './DialogUpdate';
-import { UnsupportedOSDialog } from './UnsupportedOSDialog';
-import type { ConversationType } from '../state/ducks/conversations';
-import { MessageSearchResult } from './conversationList/MessageSearchResult';
-import { DurationInSeconds, DAY } from '../util/durations';
-import { LeftPaneMode } from '../types/leftPane';
-import { ThemeType } from '../types/Util';
+import type { PropsType } from './LeftPane.js';
+import { LeftPane } from './LeftPane.js';
+import { CaptchaDialog } from './CaptchaDialog.js';
+import { CrashReportDialog } from './CrashReportDialog.js';
+import { ToastManager } from './ToastManager.js';
+import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus.js';
+import { DialogExpiredBuild } from './DialogExpiredBuild.js';
+import { DialogNetworkStatus } from './DialogNetworkStatus.js';
+import { DialogRelink } from './DialogRelink.js';
+import type { PropsType as DialogUpdatePropsType } from './DialogUpdate.js';
+import { DialogUpdate } from './DialogUpdate.js';
+import { UnsupportedOSDialog } from './UnsupportedOSDialog.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.js';
+import { DurationInSeconds, DAY } from '../util/durations/index.js';
+import { LeftPaneMode } from '../types/leftPane.js';
+import { ThemeType } from '../types/Util.js';
 import {
   getDefaultConversation,
   getDefaultGroupListItem,
-} from '../test-helpers/getDefaultConversation';
-import { DialogType } from '../types/Dialogs';
-import { SocketStatus } from '../types/SocketStatus';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext';
+} from '../test-helpers/getDefaultConversation.js';
+import { DialogType } from '../types/Dialogs.js';
+import { SocketStatus } from '../types/SocketStatus.js';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.js';
 import {
   makeFakeLookupConversationWithoutServiceId,
   useUuidFetchState,
-} from '../test-helpers/fakeLookupConversationWithoutServiceId';
-import type { GroupListItemConversationType } from './conversationList/GroupListItem';
-import { ServerAlert } from '../util/handleServerAlerts';
+} from '../test-helpers/fakeLookupConversationWithoutServiceId.js';
+import type { GroupListItemConversationType } from './conversationList/GroupListItem.js';
+import { ServerAlert } from '../types/ServerAlert.js';
+import { LeftPaneChatFolders } from './leftPane/LeftPaneChatFolders.js';
+import { LeftPaneConversationListItemContextMenu } from './leftPane/LeftPaneConversationListItemContextMenu.js';
+import { CurrentChatFolders } from '../types/CurrentChatFolders.js';
 
 const { i18n } = window.SignalContext;
 
@@ -117,6 +120,7 @@ const defaultModeSpecificProps = {
   conversations: defaultConversations,
   archivedConversations: defaultArchivedConversations,
   isAboutToSearch: false,
+  selectedChatFolder: null,
 };
 
 const emptySearchResultsGroup = { isLoading: false, results: [] };
@@ -144,7 +148,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     otherTabsUnreadStats: {
       unreadCount: 0,
       unreadMentionsCount: 0,
-      markedUnread: false,
+      readChatsMarkedUnreadCount: 0,
     },
     backupMediaDownloadProgress: {
       isBackupMediaEnabled: true,
@@ -173,6 +177,17 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     endConversationSearch: action('endConversationSearch'),
     endSearch: action('endSearch'),
     getPreferredBadge: () => undefined,
+    getServerAlertToShow: alerts => {
+      if (alerts[ServerAlert.CRITICAL_IDLE_PRIMARY_DEVICE]) {
+        return ServerAlert.CRITICAL_IDLE_PRIMARY_DEVICE;
+      }
+
+      if (alerts[ServerAlert.IDLE_PRIMARY_DEVICE]) {
+        return ServerAlert.IDLE_PRIMARY_DEVICE;
+      }
+
+      return null;
+    },
     hasFailedStorySends: false,
     hasPendingUpdate: false,
     i18n,
@@ -182,6 +197,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     challengeStatus: 'idle',
     crashReportCount: 0,
 
+    hasAnyCurrentCustomChatFolders: false,
     hasNetworkDialog: false,
     hasExpiredDialog: false,
     hasRelinkDialog: false,
@@ -190,6 +206,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     usernameCorrupted: false,
     usernameLinkCorrupted: false,
     isUpdateDownloaded,
+    isNotificationProfileActive: false,
     navTabsCollapsed: false,
 
     setChallengeStatus: action('setChallengeStatus'),
@@ -200,6 +217,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     preloadConversation: action('preloadConversation'),
     showConversation: action('showConversation'),
     blockConversation: action('blockConversation'),
+    onChatFoldersOpenSettings: action('onChatFoldersOpenSettings'),
     onOutgoingAudioCallInConversation: action(
       'onOutgoingAudioCallInConversation'
     ),
@@ -234,6 +252,9 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
         {...overrideProps.dialogNetworkStatus}
         {...props}
       />
+    ),
+    renderNotificationProfilesMenu: () => (
+      <div className="fakeNotificationProfilesMenu" />
     ),
     renderRelinkDialog: props => (
       <DialogRelink
@@ -285,7 +306,6 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     renderToastManager: ({ containerWidthBreakpoint }) => (
       <ToastManager
         changeLocation={action('changeLocation')}
-        clearDonation={action('clearDonation')}
         OS="unused"
         hideToast={action('hideToast')}
         i18n={i18n}
@@ -293,18 +313,49 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
         onUndoArchive={action('onUndoArchive')}
         openFileInFolder={action('openFileInFolder')}
         setDidResumeDonation={action('setDidResumeDonation')}
-        showAttachmentNotAvailableModal={action(
-          'showAttachmentNotAvailableModal'
-        )}
         toast={undefined}
         megaphone={undefined}
         containerWidthBreakpoint={containerWidthBreakpoint}
         isInFullScreenCall={false}
       />
     ),
+    renderLeftPaneChatFolders: () => (
+      <LeftPaneChatFolders
+        i18n={i18n}
+        navSidebarWidthBreakpoint={null}
+        currentChatFolders={CurrentChatFolders.createEmpty()}
+        allChatFoldersUnreadStats={new Map()}
+        allChatFoldersMutedStats={new Map()}
+        selectedChatFolder={null}
+        onSelectedChatFolderIdChange={action('onSelectedChatFolderIdChange')}
+        onChatFolderMarkRead={action('onChatFolderMarkRead')}
+        onChatFolderUpdateMute={action('onChatFolderUpdateMute')}
+        onChatFolderOpenSettings={action('onChatFolderOpenSettings')}
+      />
+    ),
+    renderConversationListItemContextMenu: props => (
+      <LeftPaneConversationListItemContextMenu
+        i18n={i18n}
+        conversation={getDefaultConversation()}
+        onMarkUnread={action('onMarkUnread')}
+        onMarkRead={action('onMarkRead')}
+        onPin={action('onPin')}
+        onUnpin={action('onUnpin')}
+        onUpdateMute={action('onUpdateMute')}
+        onArchive={action('onArchive')}
+        onUnarchive={action('onUnarchive')}
+        onDelete={action('onDelete')}
+        localDeleteWarningShown={false}
+        setLocalDeleteWarningShown={action('setLocalDeleteWarningShown')}
+      >
+        {props.children}
+      </LeftPaneConversationListItemContextMenu>
+    ),
+    selectedChatFolder: null,
     selectedConversationId: undefined,
     targetedMessageId: undefined,
     openUsernameReservationModal: action('openUsernameReservationModal'),
+    saveAlerts: async () => action('saveAlerts')(),
     savePreferredLeftPaneWidth: action('savePreferredLeftPaneWidth'),
     searchInConversation: action('searchInConversation'),
     setComposeSearchTerm: action('setComposeSearchTerm'),
@@ -354,6 +405,7 @@ export function InboxNoConversations(): JSX.Element {
           conversations: [],
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -393,6 +445,7 @@ export function InboxBackupMediaDownloadWithDialogsAndUnpinnedConversations(): J
           conversations: defaultConversations,
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -450,6 +503,7 @@ export function InboxUsernameCorrupted(): JSX.Element {
           conversations: [],
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
         usernameCorrupted: true,
       })}
@@ -468,6 +522,7 @@ export function InboxUsernameLinkCorrupted(): JSX.Element {
           conversations: [],
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
         usernameLinkCorrupted: true,
       })}
@@ -486,6 +541,7 @@ export function InboxOnlyPinnedConversations(): JSX.Element {
           conversations: [],
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -503,6 +559,7 @@ export function InboxOnlyNonPinnedConversations(): JSX.Element {
           conversations: defaultConversations,
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -520,6 +577,7 @@ export function InboxOnlyArchivedConversations(): JSX.Element {
           conversations: [],
           archivedConversations: defaultArchivedConversations,
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -537,6 +595,7 @@ export function InboxPinnedAndArchivedConversations(): JSX.Element {
           conversations: [],
           archivedConversations: defaultArchivedConversations,
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -554,6 +613,7 @@ export function InboxNonPinnedAndArchivedConversations(): JSX.Element {
           conversations: defaultConversations,
           archivedConversations: defaultArchivedConversations,
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -571,6 +631,7 @@ export function InboxPinnedAndNonPinnedConversations(): JSX.Element {
           conversations: defaultConversations,
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
       })}
     />
@@ -588,6 +649,7 @@ export function InboxPinnedAndNonPinnedConversationsWithBackupDownload(): JSX.El
           conversations: defaultConversations,
           archivedConversations: [],
           isAboutToSearch: false,
+          selectedChatFolder: null,
         },
         backupMediaDownloadProgress,
       })}
@@ -1034,6 +1096,7 @@ export function CaptchaDialogRequired(): JSX.Element {
           archivedConversations: [],
           isAboutToSearch: false,
           searchTerm: '',
+          selectedChatFolder: null,
         },
         challengeStatus: 'required',
       })}
@@ -1053,6 +1116,7 @@ export function CaptchaDialogPending(): JSX.Element {
           archivedConversations: [],
           isAboutToSearch: false,
           searchTerm: '',
+          selectedChatFolder: null,
         },
         challengeStatus: 'pending',
       })}
@@ -1072,6 +1136,7 @@ export function _CrashReportDialog(): JSX.Element {
           archivedConversations: [],
           isAboutToSearch: false,
           searchTerm: '',
+          selectedChatFolder: null,
         },
         crashReportCount: 42,
       })}
@@ -1224,6 +1289,7 @@ export function SearchingConversation(): JSX.Element {
           isAboutToSearch: false,
           searchConversation: getDefaultConversation(),
           searchTerm: '',
+          selectedChatFolder: null,
         },
       })}
     />

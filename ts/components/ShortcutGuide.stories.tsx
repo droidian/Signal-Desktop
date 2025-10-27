@@ -4,8 +4,8 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './ShortcutGuide';
-import { ShortcutGuide } from './ShortcutGuide';
+import type { Props } from './ShortcutGuide.js';
+import { ShortcutGuide } from './ShortcutGuide.js';
 
 const { i18n } = window.SignalContext;
 
@@ -16,7 +16,6 @@ export default {
 const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   i18n,
   close: action('close'),
-  hasInstalledStickers: overrideProps.hasInstalledStickers === true || false,
   platform: overrideProps.platform || 'other',
 });
 
@@ -27,10 +26,5 @@ export function Default(): JSX.Element {
 
 export function Mac(): JSX.Element {
   const props = createProps({ platform: 'darwin' });
-  return <ShortcutGuide {...props} />;
-}
-
-export function HasStickers(): JSX.Element {
-  const props = createProps({ hasInstalledStickers: true });
   return <ShortcutGuide {...props} />;
 }

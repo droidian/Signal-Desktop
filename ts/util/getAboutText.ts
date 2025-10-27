@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types';
+import type { ConversationAttributesType } from '../model-types.js';
 
 export function getAboutText(
   attributes: Pick<ConversationAttributesType, 'about' | 'aboutEmoji'>
@@ -18,8 +18,11 @@ export function getAboutText(
     return text;
   }
 
-  return window.i18n('icu:message--getNotificationText--text-with-emoji', {
-    text,
-    emoji,
-  });
+  return window.SignalContext.i18n(
+    'icu:message--getNotificationText--text-with-emoji',
+    {
+      text,
+      emoji,
+    }
+  );
 }

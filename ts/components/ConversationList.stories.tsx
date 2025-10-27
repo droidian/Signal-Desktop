@@ -2,20 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useContext } from 'react';
-import { times, omit } from 'lodash';
+import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Row, PropsType } from './ConversationList';
-import { ConversationList, RowType } from './ConversationList';
-import { MessageSearchResult } from './conversationList/MessageSearchResult';
-import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem';
-import { MessageStatuses } from './conversationList/ConversationListItem';
-import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation';
-import { ThemeType } from '../types/Util';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext';
-import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId';
+import type { Row, PropsType } from './ConversationList.js';
+import { ConversationList, RowType } from './ConversationList.js';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.js';
+import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.js';
+import { MessageStatuses } from '../types/message/MessageStatus.js';
+import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.js';
+import { ThemeType } from '../types/Util.js';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.js';
+import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId.js';
+
+const { times, omit } = lodash;
 
 const { i18n } = window.SignalContext;
 
@@ -371,17 +373,19 @@ export const ConversationMessageRequest = (): JSX.Element =>
 export function ConversationsUnreadCount(): JSX.Element {
   return (
     <Wrapper
-      rows={[4, 10, 34, 250, 2048].map(unreadCount => ({
-        type: RowType.Conversation,
-        conversation: createConversation({
-          lastMessage: {
-            text: 'Hey there!',
-            status: 'delivered',
-            deletedForEveryone: false,
-          },
-          unreadCount,
-        }),
-      }))}
+      rows={[4, 10, 34, 250, 2048, Number.MAX_SAFE_INTEGER].map(
+        unreadCount => ({
+          type: RowType.Conversation,
+          conversation: createConversation({
+            lastMessage: {
+              text: 'Hey there!',
+              status: 'delivered',
+              deletedForEveryone: false,
+            },
+            unreadCount,
+          }),
+        })
+      )}
     />
   );
 }

@@ -4,16 +4,17 @@
 import type { ThunkAction } from 'redux-thunk';
 
 import type { ReadonlyDeep } from 'type-fest';
-import * as Errors from '../../types/errors';
-import { createLogger } from '../../logging/log';
+import * as Errors from '../../types/errors.js';
+import { cdsLookup } from '../../textsecure/WebAPI.js';
+import { createLogger } from '../../logging/log.js';
 
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import type { StateType as RootStateType } from '../reducer';
-import type { ServiceIdString } from '../../types/ServiceId';
-import { getServiceIdsForE164s } from '../../util/getServiceIdsForE164s';
-import { useBoundActions } from '../../hooks/useBoundActions';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import type { StateType as RootStateType } from '../reducer.js';
+import type { ServiceIdString } from '../../types/ServiceId.js';
+import { getServiceIdsForE164s } from '../../util/getServiceIdsForE164s.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
 
-import type { NoopActionType } from './noop';
+import type { NoopActionType } from './noop.js';
 
 const log = createLogger('accounts');
 
@@ -54,15 +55,6 @@ function checkForAccount(
   AccountUpdateActionType | NoopActionType
 > {
   return async (dispatch, getState) => {
-    const { server } = window.textsecure;
-    if (!server) {
-      dispatch({
-        type: 'NOOP',
-        payload: null,
-      });
-      return;
-    }
-
     const conversation = window.ConversationController.get(phoneNumber);
     if (conversation && conversation.getServiceId()) {
       log.info(`checkForAccount: found ${phoneNumber} in existing contacts`);
@@ -96,7 +88,7 @@ function checkForAccount(
     log.info(`checkForAccount: looking ${phoneNumber} up on server`);
     try {
       const { entries: serviceIdLookup, transformedE164s } =
-        await getServiceIdsForE164s(server, [phoneNumber]);
+        await getServiceIdsForE164s(cdsLookup, [phoneNumber]);
       const phoneNumberToUse = transformedE164s.get(phoneNumber) ?? phoneNumber;
       const maybePair = serviceIdLookup.get(phoneNumberToUse);
 

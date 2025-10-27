@@ -4,32 +4,33 @@
 import type { ReadonlyDeep } from 'type-fest';
 import type { ThunkAction } from 'redux-thunk';
 
-import { useBoundActions } from '../../hooks/useBoundActions';
-import { createLogger } from '../../logging/log';
-import * as Errors from '../../types/errors';
-import { isStagingServer } from '../../util/isStagingServer';
-import { DataWriter } from '../../sql/Client';
-import * as donations from '../../services/donations';
-import { donationStateSchema } from '../../types/Donations';
-import { drop } from '../../util/drop';
-import { storageServiceUploadJob } from '../../services/storage';
-import { getMe } from '../selectors/conversations';
-import {
-  type SetProfileUpdateErrorActionType,
-  actions as conversationActions,
-} from './conversations';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
+import { createLogger } from '../../logging/log.js';
+import * as Errors from '../../types/errors.js';
+import { isStagingServer } from '../../util/isStagingServer.js';
+import { DataWriter } from '../../sql/Client.js';
+import * as donations from '../../services/donations.js';
+import { donationStateSchema } from '../../types/Donations.js';
+import { drop } from '../../util/drop.js';
+import { storageServiceUploadJob } from '../../services/storage.js';
+import { getMe } from '../selectors/conversations.js';
+import { actions as conversationActions } from './conversations.js';
+import type {
+  ProfileDataType,
+  SetProfileUpdateErrorActionType,
+} from './conversations.js';
 
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
 import type {
   CardDetail,
   DonationErrorType,
   DonationReceipt,
   DonationWorkflow,
   StripeDonationAmount,
-} from '../../types/Donations';
-import type { BadgeType } from '../../badges/types';
-import type { ProfileDataType } from './conversations';
-import type { StateType as RootStateType } from '../reducer';
+} from '../../types/Donations.js';
+import type { BadgeType } from '../../badges/types.js';
+import type { StateType as RootStateType } from '../reducer.js';
+import { itemStorage } from '../../textsecure/Storage.js';
 
 const log = createLogger('donations');
 
@@ -157,9 +158,9 @@ function submitDonation({
   void,
   RootStateType,
   unknown,
-  UpdateWorkflowAction
+  UpdateWorkflowAction | UpdateLastErrorAction
 > {
-  return async (_dispatch, getState) => {
+  return async (dispatch, getState) => {
     try {
       const { currentWorkflow } = getState().donations;
       if (
@@ -178,7 +179,11 @@ function submitDonation({
 
       await donations.finishDonationWithCard(paymentDetail);
     } catch (error) {
-      log.warn('submitDonation failed', Errors.toLogFormat(error));
+      log.error('submitDonation failed', Errors.toLogFormat(error));
+      dispatch({
+        type: UPDATE_LAST_ERROR,
+        payload: { lastError: 'GeneralError' },
+      });
     }
   };
 }
@@ -214,10 +219,14 @@ export function applyDonationBadge({
   badge,
   applyBadge,
   onComplete,
+  storage = itemStorage,
 }: {
   badge: BadgeType | undefined;
   applyBadge: boolean;
   onComplete: (error?: Error) => void;
+
+  // Only for testing
+  storage?: Pick<typeof itemStorage, 'get' | 'put'>;
 }): ThunkAction<void, RootStateType, unknown, SetProfileUpdateErrorActionType> {
   return async (dispatch, getState) => {
     const me = getMe(getState());
@@ -298,15 +307,12 @@ export function applyDonationBadge({
       newDisplayBadgesOnProfile = false;
     }
 
-    const storageValue = window.storage.get('displayBadgesOnProfile');
+    const storageValue = storage.get('displayBadgesOnProfile');
     if (
       storageValue == null ||
       previousDisplayBadgesOnProfile !== newDisplayBadgesOnProfile
     ) {
-      await window.storage.put(
-        'displayBadgesOnProfile',
-        newDisplayBadgesOnProfile
-      );
+      await storage.put('displayBadgesOnProfile', newDisplayBadgesOnProfile);
       if (previousDisplayBadgesOnProfile !== newDisplayBadgesOnProfile) {
         storageServiceUploadJob({ reason: 'donation-badge-toggle' });
       }

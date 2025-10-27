@@ -3,11 +3,12 @@
 
 import { z } from 'zod';
 
-import type { JOB_STATUS } from './JobQueue';
-import { JobQueue } from './JobQueue';
+import type { JOB_STATUS } from './JobQueue.js';
+import { JobQueue } from './JobQueue.js';
 
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore';
-import { parseUnknown } from '../util/schemas';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.js';
+import { parseUnknown } from '../util/schemas.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const removeStorageKeyJobDataSchema = z.object({
   key: z.enum([
@@ -32,10 +33,10 @@ export class RemoveStorageKeyJobQueue extends JobQueue<RemoveStorageKeyJobData> 
     typeof JOB_STATUS.NEEDS_RETRY | undefined
   > {
     await new Promise<void>(resolve => {
-      window.storage.onready(resolve);
+      itemStorage.onready(resolve);
     });
 
-    await window.storage.remove(data.key);
+    await itemStorage.remove(data.key);
 
     return undefined;
   }

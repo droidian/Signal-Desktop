@@ -1,11 +1,13 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../logging/log';
-import { isNotNil } from './isNotNil';
-import { updateIdentityKey } from '../services/profiles';
-import type { ServiceIdString } from '../types/ServiceId';
-import * as Bytes from '../Bytes';
+import { createLogger } from '../logging/log.js';
+import { isNotNil } from './isNotNil.js';
+import { updateIdentityKey } from '../services/profiles.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { postBatchIdentityCheck } from '../textsecure/WebAPI.js';
+import * as Bytes from '../Bytes.js';
 
 const log = createLogger('verifyStoryListMembers');
 
@@ -15,18 +17,12 @@ export async function verifyStoryListMembers(
   untrustedServiceIds: Set<ServiceIdString>;
   verifiedServiceIds: Set<ServiceIdString>;
 }> {
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error('verifyStoryListMembers: server not available');
-  }
-
   const verifiedServiceIds = new Set<ServiceIdString>();
   const untrustedServiceIds = new Set<ServiceIdString>();
 
   const elements = await Promise.all(
     serviceIds.map(async serviceId => {
-      const fingerprint =
-        await window.textsecure.storage.protocol.getFingerprint(serviceId);
+      const fingerprint = await signalProtocolStore.getFingerprint(serviceId);
 
       if (!fingerprint) {
         log.warn('no fingerprint found for serviceId=', serviceId);
@@ -39,7 +35,7 @@ export async function verifyStoryListMembers(
     })
   );
 
-  const { elements: unverifiedServiceId } = await server.postBatchIdentityCheck(
+  const { elements: unverifiedServiceId } = await postBatchIdentityCheck(
     elements.filter(isNotNil)
   );
 

@@ -3,7 +3,7 @@
 
 /* eslint-disable no-bitwise */
 
-import { isBoolean, isNumber, isString, noop, omit } from 'lodash';
+import lodash from 'lodash';
 import PQueue from 'p-queue';
 import { v7 as getGuid } from 'uuid';
 
@@ -38,22 +38,22 @@ import {
   SenderKeys,
   Sessions,
   SignedPreKeys,
-} from '../LibSignalStores';
-import { createName } from '../util/attachmentPath';
-import { assertDev, strictAssert } from '../util/assert';
-import type { BatcherType } from '../util/batcher';
-import { createBatcher } from '../util/batcher';
-import { drop } from '../util/drop';
-import { dropNull } from '../util/dropNull';
-import { parseIntOrThrow } from '../util/parseIntOrThrow';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import { Zone } from '../util/Zone';
-import * as durations from '../util/durations';
-import { DurationInSeconds } from '../util/durations';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import { normalizeStoryDistributionId } from '../types/StoryDistributionId';
-import type { ServiceIdString, AciString } from '../types/ServiceId';
+} from '../LibSignalStores.js';
+import { createName } from '../util/attachmentPath.js';
+import { assertDev, strictAssert } from '../util/assert.js';
+import type { BatcherType } from '../util/batcher.js';
+import { createBatcher } from '../util/batcher.js';
+import { drop } from '../util/drop.js';
+import { dropNull } from '../util/dropNull.js';
+import { parseIntOrThrow } from '../util/parseIntOrThrow.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import { Zone } from '../util/Zone.js';
+import * as durations from '../util/durations/index.js';
+import { DurationInSeconds } from '../util/durations/index.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import { normalizeStoryDistributionId } from '../types/StoryDistributionId.js';
+import type { ServiceIdString, AciString } from '../types/ServiceId.js';
 import {
   fromPniObject,
   isPniString,
@@ -63,30 +63,33 @@ import {
   normalizeServiceId,
   ServiceIdKind,
   toTaggedPni,
-} from '../types/ServiceId';
-import { normalizeAci } from '../util/normalizeAci';
-import { isAciString } from '../util/isAciString';
-import * as Errors from '../types/errors';
-import { isPQRatchetEnabled } from '../util/isPQRatchetEnabled';
+} from '../types/ServiceId.js';
+import { normalizeAci } from '../util/normalizeAci.js';
+import { isAciString } from '../util/isAciString.js';
+import { calling } from '../services/calling.js';
+import { retryPlaceholders } from '../services/retryPlaceholders.js';
+import * as Errors from '../types/errors.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
 
-import { SignalService as Proto } from '../protobuf';
-import { deriveGroupFields, MASTER_KEY_LENGTH } from '../groups';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { deriveGroupFields, MASTER_KEY_LENGTH } from '../groups.js';
 
-import createTaskWithTimeout from './TaskWithTimeout';
+import createTaskWithTimeout from './TaskWithTimeout.js';
 import {
   processAttachment,
   processDataMessage,
   processGroupV2Context,
   processPreview,
-} from './processDataMessage';
-import { processSyncMessage } from './processSyncMessage';
-import type { EventHandler } from './EventTarget';
-import EventTarget from './EventTarget';
-import type { IncomingWebSocketRequest } from './WebsocketResources';
-import { ServerRequestType } from './WebsocketResources';
-import type { Storage } from './Storage';
-import { WarnOnlyError } from './Errors';
-import * as Bytes from '../Bytes';
+} from './processDataMessage.js';
+import { processSyncMessage } from './processSyncMessage.js';
+import type { EventHandler } from './EventTarget.js';
+import EventTarget from './EventTarget.js';
+import type { IncomingWebSocketRequest } from './WebsocketResources.js';
+import { ServerRequestType } from './WebsocketResources.js';
+import { type Storage } from './Storage.js';
+import { accountManager } from './AccountManager.js';
+import { WarnOnlyError } from './Errors.js';
+import * as Bytes from '../Bytes.js';
 import type {
   IRequestHandler,
   ProcessedAttachment,
@@ -96,7 +99,7 @@ import type {
   ProcessedSent,
   ProcessedSyncMessage,
   UnprocessedType,
-} from './Types.d';
+} from './Types.d.ts';
 import type {
   ConversationIdentifier,
   DeleteForMeSyncEventData,
@@ -106,7 +109,7 @@ import type {
   AddressableMessage,
   ReadSyncEventData,
   ViewSyncEventData,
-} from './messageReceiverEvents';
+} from './messageReceiverEvents.js';
 import {
   AttachmentBackfillResponseSyncEvent,
   CallEventSyncEvent,
@@ -139,36 +142,38 @@ import {
   ViewEvent,
   ViewOnceOpenSyncEvent,
   ViewSyncEvent,
-} from './messageReceiverEvents';
-import { createLogger } from '../logging/log';
-import { diffArraysAsSets } from '../util/diffArraysAsSets';
-import { generateBlurHash } from '../util/generateBlurHash';
-import { TEXT_ATTACHMENT } from '../types/MIME';
-import type { SendTypesType } from '../util/handleMessageSend';
-import { getStoriesBlocked } from '../util/stories';
-import { isNotNil } from '../util/isNotNil';
-import { chunk } from '../util/iterables';
-import { inspectUnknownFieldTags } from '../util/inspectProtobufs';
-import { incrementMessageCounter } from '../util/incrementMessageCounter';
-import { filterAndClean } from '../types/BodyRange';
+} from './messageReceiverEvents.js';
+import { createLogger } from '../logging/log.js';
+import { diffArraysAsSets } from '../util/diffArraysAsSets.js';
+import { generateBlurHash } from '../util/generateBlurHash.js';
+import { TEXT_ATTACHMENT } from '../types/MIME.js';
+import type { SendTypesType } from '../util/handleMessageSend.js';
+import { getStoriesBlocked } from '../util/stories.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { chunk } from '../util/iterables.js';
+import { inspectUnknownFieldTags } from '../util/inspectProtobufs.js';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.js';
+import { filterAndClean } from '../types/BodyRange.js';
 import {
   getCallEventForProto,
   getCallLogEventForProto,
-} from '../util/callDisposition';
-import { checkOurPniIdentityKey } from '../util/checkOurPniIdentityKey';
-import { CallLinkUpdateSyncType } from '../types/CallLink';
-import { bytesToUuid } from '../util/uuidToBytes';
-import { isBodyTooLong } from '../util/longAttachment';
+} from '../util/callDisposition.js';
+import { checkOurPniIdentityKey } from '../util/checkOurPniIdentityKey.js';
+import { CallLinkUpdateSyncType } from '../types/CallLink.js';
+import { bytesToUuid } from '../util/uuidToBytes.js';
+import { isBodyTooLong } from '../util/longAttachment.js';
 import {
   fromServiceIdBinaryOrString,
   fromAciUuidBytes,
   fromAciUuidBytesOrString,
   fromPniUuidBytesOrUntaggedString,
-} from '../util/ServiceId';
+} from '../util/ServiceId.js';
 import {
   type MessageRequestResponseInfo,
   MessageRequestResponseSource,
-} from '../types/MessageRequestResponseEvent';
+} from '../types/MessageRequestResponseEvent.js';
+
+const { isBoolean, isNumber, isString, noop, omit } = lodash;
 
 const log = createLogger('MessageReceiver');
 
@@ -233,7 +238,7 @@ enum TaskType {
 
 export type MessageReceiverOptions = {
   storage: Storage;
-  serverTrustRoot: string;
+  serverTrustRoots: Array<string>;
 };
 
 const TASK_WITH_TIMEOUT_OPTIONS = {
@@ -314,22 +319,22 @@ export default class MessageReceiver
   #encryptedQueue: PQueue;
   #decryptedQueue: PQueue;
   #retryCachedTimeout: NodeJS.Timeout | undefined;
-  #serverTrustRoot: PublicKey;
+  #serverTrustRoots: Array<PublicKey>;
   #stoppingProcessing?: boolean;
   #pniIdentityKeyCheckRequired?: boolean;
 
-  constructor({ storage, serverTrustRoot }: MessageReceiverOptions) {
+  constructor({ storage, serverTrustRoots }: MessageReceiverOptions) {
     super();
 
     this.#storage = storage;
 
     this.#processedCount = 0;
 
-    if (!serverTrustRoot) {
+    if (serverTrustRoots.length === 0) {
       throw new Error('Server trust root is required!');
     }
-    this.#serverTrustRoot = PublicKey.deserialize(
-      Bytes.fromBase64(serverTrustRoot)
+    this.#serverTrustRoots = serverTrustRoots.map(key =>
+      PublicKey.deserialize(Bytes.fromBase64(key))
     );
 
     this.#incomingQueue = new PQueue({
@@ -933,7 +938,7 @@ export default class MessageReceiver
 
       try {
         const { id } = item;
-        await this.#storage.protocol.removeUnprocessed(id);
+        await signalProtocolStore.removeUnprocessed(id);
       } catch (deleteError) {
         log.error(
           'queueCached error deleting item',
@@ -970,15 +975,13 @@ export default class MessageReceiver
   async *#getAllFromCache(): AsyncIterable<Array<UnprocessedType>> {
     log.info('getAllFromCache');
 
-    const ids = await this.#storage.protocol.getAllUnprocessedIds();
+    const ids = await signalProtocolStore.getAllUnprocessedIds();
 
     log.info(`getAllFromCache - ${ids.length} unprocessed`);
 
     for (const batch of chunk(ids, 1000)) {
       log.info(`getAllFromCache - yielding batch of ${batch.length}`);
-      yield this.#storage.protocol.getUnprocessedByIdsAndIncrementAttempts(
-        batch
-      );
+      yield signalProtocolStore.getUnprocessedByIdsAndIncrementAttempts(batch);
     }
     log.info(`getAllFromCache - done retrieving ${ids.length} unprocessed`);
   }
@@ -994,7 +997,7 @@ export default class MessageReceiver
       }>
     > = [];
 
-    const storageProtocol = this.#storage.protocol;
+    const storageProtocol = signalProtocolStore;
 
     try {
       const zone = new Zone('decryptAndCacheBatch', {
@@ -1186,7 +1189,7 @@ export default class MessageReceiver
   }
 
   async #cacheRemoveBatch(items: Array<string>): Promise<void> {
-    await this.#storage.protocol.removeUnprocessed(items);
+    await signalProtocolStore.removeUnprocessed(items);
   }
 
   #removeFromCache(envelope: ProcessedEnvelope): void {
@@ -1333,6 +1336,17 @@ export default class MessageReceiver
         envelope.sourceServiceId,
         'Unsealed envelope must have source uuid'
       );
+
+      if (
+        isPniString(envelope.sourceServiceId) &&
+        envelope.type !== Proto.Envelope.Type.SERVER_DELIVERY_RECEIPT
+      ) {
+        log.warn(
+          `unsealEnvelope(${logId}): dropping non-receipt envelope from PNI`
+        );
+        return undefined;
+      }
+
       return {
         ...envelope,
         sourceServiceId: envelope.sourceServiceId,
@@ -1632,7 +1646,12 @@ export default class MessageReceiver
       );
     }
 
-    if (!certificate.validate(this.#serverTrustRoot, serverTimestamp)) {
+    if (
+      !certificate.validateWithTrustRoots(
+        this.#serverTrustRoots,
+        serverTimestamp
+      )
+    ) {
       throw new Error(`${logId}: Sealed sender certificate validation failed`);
     }
 
@@ -1699,12 +1718,7 @@ export default class MessageReceiver
       'Missing sender certificate for sealed sender message'
     );
 
-    const unidentifiedSenderTypeEnum =
-      Proto.UnidentifiedSenderMessage.Message.Type;
-
-    if (
-      messageContent.msgType() === unidentifiedSenderTypeEnum.PLAINTEXT_CONTENT
-    ) {
+    if (messageContent.msgType() === CiphertextMessageType.Plaintext) {
       log.info(
         `decryptSealedSender(${logId}): ` +
           'unidentified message/plaintext contents'
@@ -1719,9 +1733,7 @@ export default class MessageReceiver
       };
     }
 
-    if (
-      messageContent.msgType() === unidentifiedSenderTypeEnum.SENDERKEY_MESSAGE
-    ) {
+    if (messageContent.msgType() === CiphertextMessageType.SenderKey) {
       log.info(
         `decryptSealedSender(${logId}): ` +
           'unidentified message/sender key contents'
@@ -1738,7 +1750,7 @@ export default class MessageReceiver
         Address.create(sealedSenderIdentifier, sealedSenderSourceDevice)
       );
 
-      const plaintext = await this.#storage.protocol.enqueueSenderKeyJob(
+      const plaintext = await signalProtocolStore.enqueueSenderKeyJob(
         address,
         () =>
           groupDecrypt(
@@ -1777,10 +1789,10 @@ export default class MessageReceiver
       envelope.sourceDevice
     );
     const message =
-      messageContent.msgType() === unidentifiedSenderTypeEnum.PREKEY_MESSAGE
+      messageContent.msgType() === CiphertextMessageType.PreKey
         ? PreKeySignalMessage.deserialize(messageContent.contents())
         : SignalMessage.deserialize(messageContent.contents());
-    const plaintext = await this.#storage.protocol.enqueueSessionJob(
+    const plaintext = await signalProtocolStore.enqueueSessionJob(
       address,
       () => {
         if (message instanceof PreKeySignalMessage) {
@@ -1791,8 +1803,7 @@ export default class MessageReceiver
             identityKeyStore,
             preKeyStore,
             signedPreKeyStore,
-            kyberPreKeyStore,
-            isPQRatchetEnabled()
+            kyberPreKeyStore
           );
         }
         return signalDecrypt(
@@ -1876,7 +1887,7 @@ export default class MessageReceiver
       }
       const signalMessage = SignalMessage.deserialize(ciphertext);
 
-      const plaintext = await this.#storage.protocol.enqueueSessionJob(
+      const plaintext = await signalProtocolStore.enqueueSessionJob(
         address,
         async () =>
           this.#unpad(
@@ -1905,7 +1916,7 @@ export default class MessageReceiver
       }
       const preKeySignalMessage = PreKeySignalMessage.deserialize(ciphertext);
 
-      const plaintext = await this.#storage.protocol.enqueueSessionJob(
+      const plaintext = await signalProtocolStore.enqueueSessionJob(
         address,
         async () =>
           this.#unpad(
@@ -1916,8 +1927,7 @@ export default class MessageReceiver
               identityKeyStore,
               preKeyStore,
               signedPreKeyStore,
-              kyberPreKeyStore,
-              isPQRatchetEnabled()
+              kyberPreKeyStore
             )
           ),
         zone
@@ -2506,12 +2516,6 @@ export default class MessageReceiver
   async #maybeUpdateTimestamp(
     envelope: UnsealedEnvelope
   ): Promise<UnsealedEnvelope> {
-    const { retryPlaceholders } = window.Signal.Services;
-    if (!retryPlaceholders) {
-      log.warn('maybeUpdateTimestamp: retry placeholders not available!');
-      return envelope;
-    }
-
     const { timestamp } = envelope;
     const identifier = envelope.groupId || envelope.sourceServiceId;
     const conversation = window.ConversationController.get(identifier);
@@ -2685,7 +2689,7 @@ export default class MessageReceiver
       Address.create(sourceServiceId, sourceDevice)
     );
 
-    await this.#storage.protocol.enqueueSenderKeyJob(
+    await signalProtocolStore.enqueueSenderKeyJob(
       address,
       () =>
         processSenderKeyDistributionMessage(
@@ -2718,7 +2722,7 @@ export default class MessageReceiver
     strictAssert(isAciString(aci), `${logId}: invalid ACI`);
     strictAssert(isPniString(pni), `${logId}: invalid PNI`);
 
-    const isValid = await this.#storage.protocol.verifyAlternateIdentity({
+    const isValid = await signalProtocolStore.verifyAlternateIdentity({
       aci,
       pni,
       signature,
@@ -2762,10 +2766,7 @@ export default class MessageReceiver
     }
 
     log.info(`${logId}: Passing to ringrtc`);
-    await window.Signal.Services.calling.handleCallingMessage(
-      envelope,
-      callingMessage
-    );
+    await calling.handleCallingMessage(envelope, callingMessage);
   }
 
   async #handleReceiptMessage(
@@ -3325,14 +3326,13 @@ export default class MessageReceiver
     }
     this.#pniIdentityKeyCheckRequired = false;
 
-    const manager = window.getAccountManager();
-    await manager.setPni(updatedPni, {
+    await accountManager.setPni(updatedPni, {
       identityKeyPair,
       lastResortKyberPreKey: dropNull(lastResortKyberPreKey),
       signedPreKey,
       registrationId,
     });
-    await window.storage.user.setNumber(newE164);
+    await this.#storage.user.setNumber(newE164);
   }
 
   async #handleStickerPackOperation(
@@ -3862,7 +3862,7 @@ export default class MessageReceiver
     await this.#dispatchAndWait(logId, contactSync);
   }
 
-  // This function calls applyMessageRequestResponse before setting window.storage so
+  // This function calls applyMessageRequestResponse before setting storage so
   // proper before/after logic can be applied within that function.
   async #handleBlocked(
     envelope: ProcessedEnvelope,
@@ -4033,7 +4033,7 @@ export default class MessageReceiver
 
     logUnexpectedUrgentValue(envelope, 'resetSession');
 
-    await this.#storage.protocol.archiveAllSessions(theirServiceId);
+    await signalProtocolStore.archiveAllSessions(theirServiceId);
   }
 
   #processDecrypted(

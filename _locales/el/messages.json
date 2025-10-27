@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Δεν είναι δυνατή η πρόσβαση στο κλειδί κρυπτογράφησης της βάσης δεδομένων επειδή το κλειδί κρυπτογράφησης του λειτουργικού συστήματος έχει αλλάξει από {previousBackend} σε {currentBackend}. Αυτό μπορεί να συμβεί αν το περιβάλλον επιφάνειας εργασίας αλλάξει, για παράδειγμα από GNOME σε KDE.\n\nΠήγαινε πίσω στο προηγούμενο περιβάλλον εργασίας ή δοκίμασε να ανοίξεις το Signal με τη σημαία της γραμμής εντολών --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Αρχείο"
   },
@@ -233,6 +242,12 @@
   "icu:archivedConversations": {
     "messageformat": "Αρχειοθετημένες συνομιλίες"
   },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Προσθήκη φακέλου συνομιλίας"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Ρυθμίσεις φακέλου"
+  },
   "icu:LeftPane--pinned": {
     "messageformat": "Καρφιτσωμένο"
   },
@@ -271,6 +286,36 @@
   },
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Γράψε ένα όνομα χρήστη, ακολουθούμενο από μια τελεία και το σύνολο αριθμών του."
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Δεν υπάρχουν συνομιλίες για εμφάνιση"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Ρυθμίσεις φακέλου"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Όλα"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Όλες οι συνομιλίες"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Σημείωση όλων ως αναγνωσμένα"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Σίγαση ειδοποιήσεων"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Αναίρεση σίγασης όλων"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Αναίρεση σίγασης όλων"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Επεξεργασία φακέλου"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Κωδικός χώρας"
@@ -322,6 +367,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Σημείωση ως μη αναγνωσμένα"
+  },
+  "icu:markRead": {
+    "messageformat": "Σημείωση ως αναγνωσμένο"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Επιλογή μηνυμάτων"
@@ -607,6 +655,9 @@
   },
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "Σφάλμα κατά την αποθήκευση της απόδειξης. Δοκίμασε ξανά."
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Προστέθηκε ο φάκελος {chatFolderName}"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Δεν μπορείς να επιλέξεις φωτογραφίες και βίντεο μαζί με αρχεία."
@@ -1031,14 +1082,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Πληροφορίες"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Δημοσκόπηση · Επίλεξε μία"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Δημοσκόπηση · Επίλεξε μία η περισσότερες"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Δημοσκόπηση · Τελικά αποτελέσματα"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Προβολή ψήφων"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Ψήφισες"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Λεπτομέρειες δημοσκόπησης"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Ερώτηση"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} ψήφος} other {{count,number} ψήφοι}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Δεν υπάρχουν ψήφοι"
+  },
   "icu:deleteConversation": {
     "messageformat": "Διαγραφή"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Διαγραφή συνομιλίας;"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Όλα τα μηνύματα σε αυτή τη συνομιλία θα διαγραφούν από αυτή τη συσκευή."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Όλα τα μηνύματα σε αυτήν τη συνομιλία θα διαγραφούν από όλες τις συσκευές."
@@ -1175,36 +1250,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Δεν είναι δυνατή η λήψη του πολυμέσου μιας μόνο προβολής"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Το αρχείο δεν είναι διαθέσιμο"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Το πλήρες μήνυμα δεν είναι διαθέσιμο"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Το πολυμέσο δεν είναι διαθέσιμο"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Το αυτοκόλλητο δεν είναι διαθέσιμο"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Το ηχητικό μήνυμα δεν είναι διαθέσιμο"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Αυτό το αρχείο δεν μεταφέρθηκε από το τηλέφωνό σου όταν συνδέθηκε αυτή η συσκευή. Δεν είναι δυνατός ο συγχρονισμός πολυμέσων και αρχείων παλαιότερων των 45 ημερών κατά τη σύνδεση της συσκευής."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Το πλήρες κείμενο σε αυτό το μήνυμα δεν μεταφέρθηκε από το τηλέφωνό σου όταν συνδέθηκε αυτή η συσκευή. Δεν είναι δυνατός ο συγχρονισμός μεγάλων μηνυμάτων κειμένου παλαιότερων των 45 ημερών κατά τη σύνδεση της συσκευής."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Αυτό το πολυμέσο δεν μεταφέρθηκε από το τηλέφωνό σου όταν συνδέθηκε αυτή η συσκευή. Δεν είναι δυνατός ο συγχρονισμός πολυμέσων παλαιότερων των 45 ημερών κατά τη σύνδεση της συσκευής."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Αυτό το αυτοκόλλητο δεν μεταφέρθηκε από το τηλέφωνό σου όταν συνδέθηκε αυτή η συσκευή. Δεν είναι δυνατός ο συγχρονισμός πολυμέσων και αρχείων παλαιότερων των 45 ημερών κατά τη σύνδεση της συσκευής."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Αυτό το ηχητικό μήνυμα δεν μεταφέρθηκε από το τηλέφωνό σου όταν συνδέθηκε αυτή η συσκευή. Δεν είναι δυνατός ο συγχρονισμός πολυμέσων και αρχείων παλαιότερων των 45 ημερών κατά τη σύνδεση της συσκευής."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Αυτό το πολυμέσο μιας μόνο προβολής δεν είναι πλέον διαθέσιμο για λήψη. Ζήτησε από τον χρήστη {name} να το στείλει ξανά."
   },
@@ -1292,8 +1337,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "Προσθήκη φακέλου συνομιλίας"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Προσθήκη ή επεξεργασία φακέλων"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "Οργάνωσε τις συνομιλίες σου σε φακέλους και κάνε γρήγορη εναλλαγή μεταξύ τους στη λίστα συνομιλιών σου."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} φάκελος} other {{chatFoldersCount,number} φάκελοι}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Ρύθμιση"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Διαχείριση"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "Επεξεργασία φακέλου"
@@ -1328,14 +1385,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "Δημιουργία φακέλου"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Σύρε για να μετακινήσεις τον φάκελο συνομιλιών"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "Προτεινόμενοι φάκελοι"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "Προσθήκη"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "Προστέθηκε ο φάκελος {chatFolderTitle}"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "Μη αναγνωσμένο"
@@ -1369,6 +1426,12 @@
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
     "messageformat": "Επίλεξε τις συνομιλίες που θέλεις να εμφανίζονται σε αυτόν τον φάκελο"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1 συνομιλίες"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Ομαδικές συνομιλίες"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
     "messageformat": "Προσθήκη συνομιλιών"
@@ -1528,6 +1591,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "Αφαιρέθηκες από την κλήση"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Ο μέγιστος αριθμός συμμετεχόντων για αυτή τη κλήση έχει συμπληρωθεί. Προσπάθησε ξανά αργότερα."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Η κλήση είναι γεμάτη"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Όποιος συμμετέχει στην κλήση μέσω του συνδέσμου θα μπορεί να δει το όνομα και τη φωτογραφία σου."
@@ -2063,6 +2132,9 @@
   "icu:Toast--download-failed": {
     "messageformat": "Η λήψη απέτυχε"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Η λήψη του συνημμένου από το αντίγραφο ασφαλείας απέτυχε"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Οι τροποποιήσεις μπορούν να εφαρμοστούν μόνο εντός 24 ωρών από τη στιγμή που έστειλες αυτό το μήνυμα."
   },
@@ -2551,6 +2623,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Πρόσφατα χρησιμοποιημένα"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Προσθήκη πακέτου αυτοκολλήτων"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Αποτελέσματα αναζήτησης"
@@ -4436,17 +4511,17 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Οι επαφές σου θα μπορούν να σε προσθέσουν σε αυτήν την ομάδα."
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Οι επαφές σου θα μπορούν να σε προσθέσουν σε αυτήν την ομάδα."
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Κατάργηση αποκλεισμού"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} μέλος} other {{number,number} μέλη}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Μοιρασμένα πολυμέσα"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Προβολή όλων"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Πολυμέσα και αρχεία"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} μέλος} other {{number,number} μέλη}}"
@@ -5279,11 +5354,257 @@
   "icu:Preferences--notification-content": {
     "messageformat": "Περιεχόμενο ειδοποίησης"
   },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Εικονίδιο φεγγαριού"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Αντίγραφο του προφίλ {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "Π.Μ."
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "Μ.Μ."
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Προφίλ ειδοποιήσεων"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Προφίλ ειδοποιήσεων"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Ενεργό"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Ενεργό μέχρι {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Για μία ώρα"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Μέχρι τις {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Ρυθμίσεις"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "« {name} » ενεργοποιημένο"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "« {name} » απενεργοποιημένο"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Το προφίλ ειδοποιήσεων είναι πλέον ενεργοποιημένο"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Το προφίλ ειδοποιήσεων είναι πλέον απενεργοποιημένο"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Προφίλ ειδοποιήσεων"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Ρύθμιση"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Προφίλ ειδοποιήσεων"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Δημιούργησε ένα προφίλ για να λαμβάνεις ειδοποιήσεις και κλήσεις μόνο από τα άτομα και τις ομάδες που επιλέγεις"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Συνέχεια"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Προσθήκη ή επεξεργασία προφίλ ειδοποιήσεων"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {Ένα προφίλ} other {{profileCount,number} προφίλ}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Δημιουργία προφίλ"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Ονομασία προφίλ"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Όνομα"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Όνομα προφίλ"
+  },
+  "icu:NotificationProfiles--avatar-title": {
+    "messageformat": "Επιλογή εικόνας προφίλ"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Εργασία"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Ύπνος"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Οδήγηση"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Χαλάρωση"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Συγκέντρωση"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Επιτρεπόμενες ειδοποιήσεις"
+  },
+  "icu:NotificationProfiles--allowed-modal-title": {
+    "messageformat": "Επιτρεπόμενες ειδοποιήσεις"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Πρόσθεσε άτομα και ομάδες από τις οποίες θέλεις να λαμβάνεις ειδοποιήσεις όταν είναι ενεργό αυτό το προφίλ"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Προσθήκη ατόμων ή ομάδων"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Εξαιρέσεις"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Να επιτρέπονται όλες οι κλήσεις"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Ειδοποίηση για όλες τις αναφορές"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Προσθήκη προγράμματος"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Πρόγραμμα"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Ενεργοποίησε και επεξεργάσου το πρόγραμμά σου για να αυτοματοποιήσεις το προφίλ ειδοποιήσεων."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Αυτόματη ενεργοποίηση"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Πρόγραμμα"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Από"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Μέχρι"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Επιλογέας ανοιχτής ώρας"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Κυριακή"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Δευτέρα"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Τρίτη"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Τετάρτη"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Πέμπτη"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Παρασκευή"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Σάββατο"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Το προφίλ δημιουργήθηκε"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Αν έχεις προσθέσει ένα πρόγραμμα, το προφίλ σου θα ενεργοποιείται και θα απενεργοποιείται αυτόματα. Μπορείς επίσης να κάνεις κλικ στο εικονίδιο ··· στην κορυφή της λίστας συνομιλίας για να την ενεργοποιήσεις ή να την απενεργοποιήσεις χειροκίνητα."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "Κυρ"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Δευτ"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Τρ"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Τετ."
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Πέμ."
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Παρ."
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "Σαβ"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Εργάσιμες"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Σαββατοκύριακα"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Καθημερινά"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Προφίλ"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Συγχρονισμός σε όλες τις συσκευές"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Τα προφίλ σου θα συγχρονιστούν σε όλες τις συσκευές σου. Η ενεργοποίηση ενός προφίλ για μία συσκευή θα το ενεργοποιήσει και για τις υπόλοιπες."
+  },
+  "icu:NotificationProfiles--new": {
+    "messageformat": "Νέο προφίλ"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Διαγραφή προφίλ"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Να διαγραφεί οριστικά αυτό το προφίλ ειδοποιήσεων;"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Διαγραφή"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Ενεργό"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Ανενεργό"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Επεξεργασία ονόματος αυτού του προφίλ"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "{allowedCount, plural, =0 {Δεν επιτρέπονται ειδοποιήσεις} one {Μία επιτρεπόμενη ειδοποίηση} other {{allowedCount,number} επιτρεπόμενες ειδοποιήσεις}}"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} έως {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Ενεργό"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Ανενεργό"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Λίστα αποκλεισμού"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Αντίγραφα ασφαλείας Signal"
+    "messageformat": "Signal Secure Backups"
   },
   "icu:Preferences--signal-backups-off-description": {
     "messageformat": "Τα αυτόματα αντίγραφα ασφαλείας του Signal διασφαλίζουν υπηρεσία κρυπτογραφημένης αποθήκευσης από άκρο σε άκρο. Ξεκίνησε στο τηλέφωνό σου. <learnMoreLink>Μάθε περισσότερα</learnMoreLink>."
@@ -5298,7 +5619,10 @@
     "messageformat": "Αντίγραφα ασφαλείας κειμένου + όλων των πολυμέσων"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Η συνδρομή σου δεν βρέθηκε. Ανανέωσε για να συνεχίσεις να χρησιμοποιείς τα Αντίγραφα ασφαλείας Signal."
+    "messageformat": "Η συνδρομή σου δεν βρέθηκε. Τσέκαρε το τηλέφωνό σου για να δεις τις λεπτομέρειες του αντιγράφου ασφαλείας."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/μήνα"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Αντίγραφα ασφαλείας κειμένου + των πολυμέσων {mediaDayCount,number} ημέρας} other {Αντίγραφα ασφαλείας κειμένου + των πολυμέσων {mediaDayCount,number} ημερών}}"
@@ -5316,13 +5640,13 @@
     "messageformat": "Η συνδρομή ακυρώθηκε"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "Μπορείς να διαχειριστείς ή να ακυρώσεις τη συνδρομή σου στα Αντίγραφα ασφαλείας Signal στο τηλέφωνό σου."
+    "messageformat": "Μπορείς να διαχειριστείς ή να ακυρώσεις τη συνδρομή σου στα Ασφαλή αντίγραφα Signal στο τηλέφωνό σου."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "Μπορείς να διαχειριστείς ή να αναβαθμίσεις τα Αντίγραφα ασφαλείας Signal στο τηλέφωνό σου."
+    "messageformat": "Μπορείς να διαχειριστείς ή να αναβαθμίσεις τα Ασφαλή αντίγραφα Signal στο τηλέφωνό σου."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "Μπορείς να διαχειριστείς ή να ανανεώσεις τη συνδρομή σου στα Αντίγραφα ασφαλείας Signal στο τηλέφωνό σου."
+    "messageformat": "Μπορείς να διαχειριστείς ή να ανανεώσεις τη συνδρομή σου στα Signal Secure Backups στο τηλέφωνό σου."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Τελευταίο αντίγραφο ασφαλείας"
@@ -6672,23 +6996,23 @@
   "icu:PreferencesDonations__privacy-modal-content": {
     "messageformat": "<paragraph>Το Signal δεν συλλέγει ούτε αποθηκεύει τα προσωπικά στοιχεία σου όταν κάνεις δωρεά.</paragraph><paragraph>Χρησιμοποιούμε τη Stripe για την επεξεργασία πληρωμών, ώστε να λαμβάνουμε τις δωρεές μας. Δεν επεξεργαζόμαστε ούτε αποθηκεύουμε κανένα από τα στοιχεία που της παρέχεις.</paragraph><paragraph>Το Signal δεν μπορεί να συνδέσει τη δωρεά με τον λογαριασμό σου στο Signal.</paragraph><paragraph>Ευχαριστούμε για την υποστήριξή σου!</paragraph>"
   },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Αποδείξεις"
   },
   "icu:PreferencesDonations__receipt-details-button-aria": {
-    "messageformat": "View receipt details"
+    "messageformat": "Προβολή λεπτομερειών παραλήπτη"
   },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Donor FAQs"
+    "messageformat": "Συχνές ερωτήσεις για δωρεές"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Οι αποδείξεις δεν συγχρονίζονται σε όλες τις συσκευές. Αν έχεις επανεγκαταστήσει το Signal, οι αποδείξεις από προηγούμενες δωρεές δεν θα είναι διαθέσιμες."
   },
   "icu:PreferencesDonations--receiptList__empty-title": {
     "messageformat": "Χωρίς παραλήπτες"
-  },
-  "icu:PreferencesDonations__ReceiptModal--title": {
-    "messageformat": "Λεπτομέρειες"
   },
   "icu:PreferencesDonations__ReceiptModal--download": {
     "messageformat": "Λήψη απόδειξης"
@@ -6723,6 +7047,9 @@
   "icu:DonateFlow__card-form-expiration-date": {
     "messageformat": "Ημερομηνία λήξης"
   },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "ΜΜ/ΕΕ"
+  },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
     "messageformat": "Κάνε μια δωρεά {formattedCurrencyAmount} στο Signal"
   },
@@ -6744,8 +7071,23 @@
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
     "messageformat": "Πάρε το σήμα Signal Boost για 30 ημέρες"
   },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Το ελάχιστο ποσό δωρεάς είναι {formattedCurrencyAmount}"
+  },
   "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
-    "messageformat": "The minimum amount you can donate is {formattedCurrencyAmount}"
+    "messageformat": "Το ελάχιστο ποσό που μπορείς να κάνεις δωρεά είναι {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Το μέγιστο ποσό δωρεάς είναι {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Αν αποχωρήσεις από αυτήν τη σελίδα, θα διαγραφούν τα στοιχεία της πιστωτικής σου κάρτας. Θέλεις να συνεχίσεις;"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Κατάργηση πληροφοριών"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Συνέχεια"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Απόδειξη δωρεάς"
@@ -6789,8 +7131,11 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "Έχεις μια δωρεά σε εξέλιξη που χρειάζεται επιβεβαιώση."
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "Donation succeeded, but we could not update your badge settings"
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Η δωρεά ήταν επιτυχής, αλλά δεν μπορέσαμε να ενημερώσουμε τις ρυθμίσεις του σήματος σου"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Για να ενημερώσεις τις ρυθμίσεις του Signal στο κινητό σου, πήγαινε στις Ρυθμίσεις → Δωρεά στο Signal → Σήματα."
   },
   "icu:Donations__DonationInterrupted": {
     "messageformat": "Η δωρεά διακόπηκε"
@@ -6856,16 +7201,16 @@
     "messageformat": "Ακύρωση δωρεάς"
   },
   "icu:Donations__badge-modal--title": {
-    "messageformat": "Thanks for your support!"
+    "messageformat": "Ευχαριστούμε για την υποστήριξη!"
   },
   "icu:Donations__badge-modal--description": {
-    "messageformat": "You've earned a donor badge from Signal! Display it on your profile to show off your support."
+    "messageformat": "Κέρδισες σήμα δωρεάς από το Signal! Πρόσθεσέ το στο προφίλ σου για να δείξεις την υποστήριξή σου."
   },
   "icu:Donations__badge-modal--display-on-profile": {
-    "messageformat": "Display on profile"
+    "messageformat": "Εμφάνιση στο προφίλ"
   },
   "icu:Donations__badge-modal--help-text": {
-    "messageformat": "You can adjust this on your mobile device under Settings → Donate to Signal → Badges"
+    "messageformat": "Μπορείτε να το προσαρμόσεις στο κινητό σου στις Ρυθμίσεις → Δωρεά στο Signal → Σήματα"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Αυτή η έκδοση περιλαμβάνει διάφορες μικρές βελτιώσεις και αποσφαλματώσεις για να συνεχίσει το Signal να λειτουργεί ομαλά.",
@@ -6895,16 +7240,7 @@
     "messageformat": "Μικρές τροποποιήσεις, επιδιορθώσεις σφαλμάτων και βελτιώσεις απόδοσης. Ευχαριστούμε που χρησιμοποιείς το Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.64--0": {
-    "messageformat": "Βελτιώσαμε την εμπειρία αναγνωσμένων/μη αναγνωσμένων μηνυμάτων κατά το multitasking."
-  },
-  "icu:WhatsNew__v7.65--0": {
-    "messageformat": "Διορθώσαμε ένα σφάλμα στο πλαίσιο αναζήτησης emoji."
-  },
-  "icu:WhatsNew__v7.66--0": {
-    "messageformat": "Λίγες επιδιορθώσεις μικρών σφαλμάτων."
-  },
-  "icu:WhatsNew__v7.67--0": {
-    "messageformat": "Διορθώσαμε ένα σφάλμα που εμπόδιζε τη σωστή εμφάνιση των σημάτων δωρεάς για ορισμένους χρήστες. Το Signal είναι ένας μη κερδοσκοπικός οργανισμός 501c3 και εκτιμούμε την υποστήριξή σου!"
+  "icu:WhatsNew__7.76": {
+    "messageformat": "Ρύθμισε προσαρμοσμένα προφίλ ειδοποιήσεων για να ελέγχεις από ποιους χρήστες και ομάδες θα λαμβάνεις ειδοποιήσεις όταν το προφίλ είναι ενεργοποιημένο."
   }
 }

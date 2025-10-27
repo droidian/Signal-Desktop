@@ -813,10 +813,24 @@
   },
   {
     "rule": "React-useRef",
-    "path": "ts/calling/useGetCallingFrameBuffer.ts",
-    "line": "  const ref = useRef<Buffer | null>(null);",
+    "path": "ts/axo/AriaClickable.tsx",
+    "line": "    const ref = useRef<HTMLButtonElement>(null);",
     "reasonCategory": "usageTrusted",
-    "updated": "2021-12-10T23:24:03.829Z",
+    "updated": "2025-08-28T23:36:44.974Z"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/axo/AriaClickable.tsx",
+    "line": "    const onTriggerStateUpdateRef = useRef(onTriggerStateUpdate);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-08-28T23:36:44.974Z"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/calling/useGetCallingFrameBuffer.ts",
+    "line": "  const ref = useRef<Uint8Array | null>(null);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-10-01T20:11:56Z",
     "reasonDetail": "Doesn't touch the DOM."
   },
   {
@@ -1147,13 +1161,6 @@
     "line": "  const fileInputRef = useRef<null | HTMLInputElement>(null);",
     "reasonCategory": "usageTrusted",
     "updated": "2021-09-23T00:07:11.885Z"
-  },
-  {
-    "rule": "React-useRef",
-    "path": "ts/components/CompositionArea.tsx",
-    "line": "  const emojiButtonRef = useRef<EmojiButtonAPI | undefined>();",
-    "reasonCategory": "usageTrusted",
-    "updated": "2022-07-07T20:51:44.602Z"
   },
   {
     "rule": "React-useRef",
@@ -1495,6 +1502,13 @@
   },
   {
     "rule": "React-useRef",
+    "path": "ts/components/PreferencesInternal.tsx",
+    "line": "  const prevAbortControlerRef = useRef<AbortController | null>(null);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-08-20T18:18:34.081Z"
+  },
+  {
+    "rule": "React-useRef",
     "path": "ts/components/PreferencesLocalBackups.tsx",
     "line": "  const backupKeyTextareaRef = useRef<HTMLTextAreaElement>(null);",
     "reasonCategory": "usageTrusted",
@@ -1503,10 +1517,27 @@
   },
   {
     "rule": "React-useRef",
-    "path": "ts/components/PreferencesInternal.tsx",
-    "line": "  const prevAbortControlerRef = useRef<AbortController | null>(null);",
+    "path": "ts/components/PreferencesNotificationProfiles.tsx",
+    "line": "  const tryClose = React.useRef<() => void | undefined>();",
     "reasonCategory": "usageTrusted",
-    "updated": "2025-08-20T18:18:34.081Z"
+    "updated": "2025-08-25T21:04:21.643Z",
+    "reasonDetail": "Holding on to a close function"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/components/PreferencesNotificationProfiles.tsx",
+    "line": "  const selectedHour = React.useRef<HTMLButtonElement | null>(null);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-09-05T21:41:09.931Z",
+    "reasonDetail": "Holding on to element for focus"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/components/PreferencesNotificationProfiles.tsx",
+    "line": "  const selectedMinute = React.useRef<HTMLButtonElement | null>(null);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-09-05T21:41:09.931Z",
+    "reasonDetail": "Holding on to element for scrolling into view"
   },
   {
     "rule": "React-useRef",
@@ -1696,13 +1727,6 @@
     "reasonCategory": "usageTrusted",
     "updated": "2025-05-28T00:57:39.376Z",
     "reasonDetail": "Holding on to a close function"
-  },
-  {
-    "rule": "React-useRef",
-    "path": "ts/components/conversation/AttachmentStatusIcon.tsx",
-    "line": "  const timerRef = useRef<NodeJS.Timeout | undefined>();",
-    "reasonCategory": "usageTrusted",
-    "updated": "2025-02-21T04:17:59.239Z"
   },
   {
     "rule": "React-useRef",
@@ -1902,21 +1926,6 @@
   },
   {
     "rule": "React-useRef",
-    "path": "ts/components/emoji/EmojiButton.tsx",
-    "line": "    const buttonRef = React.useRef<HTMLButtonElement | null>(null);",
-    "reasonCategory": "usageTrusted",
-    "updated": "2022-06-14T22:04:43.988Z",
-    "reasonDetail": "Handling outside click"
-  },
-  {
-    "rule": "React-useRef",
-    "path": "ts/components/emoji/EmojiButton.tsx",
-    "line": "  const popperRef = React.useRef<HTMLDivElement | null>(null);",
-    "reasonCategory": "usageTrusted",
-    "updated": "2023-01-18T22:32:43.901Z"
-  },
-  {
-    "rule": "React-useRef",
     "path": "ts/components/fun/FunGif.tsx",
     "line": "  const ref = useRef<HTMLVideoElement>(null);",
     "reasonCategory": "usageTrusted",
@@ -2078,6 +2087,20 @@
   },
   {
     "rule": "React-useRef",
+    "path": "ts/components/preferences/chatFolders/PreferencesEditChatFoldersPage.tsx",
+    "line": "  const didSaveOrDiscardChangesRef = useRef(false);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-09-24T17:08:10.620Z"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/components/preferences/chatFolders/PreferencesEditChatFoldersPage.tsx",
+    "line": "  const inputRef = useRef<HTMLInputElement>(null);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-10-09T23:03:57.441Z"
+  },
+  {
+    "rule": "React-useRef",
     "path": "ts/components/preferences/donations/DonateInputAmount.tsx",
     "line": "  const inputRef = useRef<HTMLInputElement>(null);",
     "reasonCategory": "usageTrusted",
@@ -2106,14 +2129,6 @@
   },
   {
     "rule": "React-useRef",
-    "path": "ts/components/stickers/StickerButton.tsx",
-    "line": "    const buttonRef = React.useRef<HTMLButtonElement | null>(null);",
-    "reasonCategory": "usageTrusted",
-    "updated": "2022-06-14T22:04:43.988Z",
-    "reasonDetail": "Handling outside click"
-  },
-  {
-    "rule": "React-useRef",
     "path": "ts/hooks/useConfirmDiscard.tsx",
     "line": "  const confirmDiscardPromise = useRef<",
     "reasonCategory": "usageTrusted",
@@ -2133,6 +2148,20 @@
     "line": "  const isMounted = useRef(false);",
     "reasonCategory": "usageTrusted",
     "updated": "2023-10-04T20:50:45.297Z"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/hooks/useNavBlocker.ts",
+    "line": "  const nameRef = useRef(name);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-09-24T17:08:10.620Z"
+  },
+  {
+    "rule": "React-useRef",
+    "path": "ts/hooks/useNavBlocker.ts",
+    "line": "  const shouldBlockRef = useRef(shouldBlock);",
+    "reasonCategory": "usageTrusted",
+    "updated": "2025-09-24T17:08:10.620Z"
   },
   {
     "rule": "React-useRef",
@@ -2295,7 +2324,7 @@
   {
     "rule": "DOM-innerHTML",
     "path": "ts/windows/loading/start.ts",
-    "line": "  message.innerHTML = window.i18n('icu:optimizingApplication');",
+    "line": "  message.innerHTML = window.SignalContext.i18n('icu:optimizingApplication');",
     "reasonCategory": "usageTrusted",
     "updated": "2021-09-17T21:02:59.414Z"
   }

@@ -1,71 +1,88 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber } from 'lodash';
+import lodash from 'lodash';
 import PQueue from 'p-queue';
+import { ContentHint } from '@signalapp/libsignal-client';
+import Long from 'long';
 
-import * as Errors from '../../types/errors';
-import { strictAssert } from '../../util/assert';
-import type { MessageModel } from '../../models/messages';
-import { getMessageById } from '../../messages/getMessageById';
-import type { ConversationModel } from '../../models/conversations';
-import { isGroup, isGroupV2, isMe } from '../../util/whatTypeOfConversation';
-import { getSendOptions } from '../../util/getSendOptions';
-import { SignalService as Proto } from '../../protobuf';
-import { handleMessageSend } from '../../util/handleMessageSend';
-import { findAndFormatContact } from '../../util/findAndFormatContact';
-import { uploadAttachment } from '../../util/uploadAttachment';
-import type { CallbackResultType } from '../../textsecure/Types.d';
-import { isSent } from '../../messages/MessageSendState';
-import { isOutgoing, canReact } from '../../state/selectors/message';
+import * as Errors from '../../types/errors.js';
+import { strictAssert } from '../../util/assert.js';
+import type { MessageModel } from '../../models/messages.js';
+import { getMessageById } from '../../messages/getMessageById.js';
+import type { ConversationModel } from '../../models/conversations.js';
+import { isGroup, isGroupV2, isMe } from '../../util/whatTypeOfConversation.js';
+import { getSendOptions } from '../../util/getSendOptions.js';
+import { handleMessageSend } from '../../util/handleMessageSend.js';
+import { findAndFormatContact } from '../../util/findAndFormatContact.js';
+import { uploadAttachment } from '../../util/uploadAttachment.js';
+import {
+  loadAttachmentData,
+  loadQuoteData,
+  loadPreviewData,
+  loadStickerData,
+  loadContactData,
+} from '../../util/migrations.js';
+import type { CallbackResultType } from '../../textsecure/Types.d.ts';
+import { isSent } from '../../messages/MessageSendState.js';
+import { isOutgoing, canReact } from '../../state/selectors/message.js';
 import type {
   ReactionType,
   OutgoingQuoteType,
   OutgoingQuoteAttachmentType,
   OutgoingLinkPreviewType,
   OutgoingStickerType,
-} from '../../textsecure/SendMessage';
+} from '../../textsecure/SendMessage.js';
 import type {
+  AttachmentDownloadableFromTransitTier,
   AttachmentType,
   UploadedAttachmentType,
-} from '../../types/Attachment';
-import { copyCdnFields } from '../../util/attachments';
-import type { RawBodyRange } from '../../types/BodyRange';
-import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact';
-import type { StoryContextType } from '../../types/Util';
-import type { LoggerType } from '../../types/Logging';
+} from '../../types/Attachment.js';
+import { copyCdnFields } from '../../util/attachments.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
+import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact.js';
+import type { StoryContextType } from '../../types/Util.js';
+import type { LoggerType } from '../../types/Logging.js';
+import { GROUP } from '../../types/Message2.js';
 import type {
   ConversationQueueJobBundle,
   NormalMessageSendJobData,
-} from '../conversationJobQueue';
-import type { QuotedMessageType } from '../../model-types.d';
+} from '../conversationJobQueue.js';
+import type { QuotedMessageType } from '../../model-types.d.ts';
 
-import { handleMultipleSendErrors } from './handleMultipleSendErrors';
-import { ourProfileKeyService } from '../../services/ourProfileKey';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered';
-import { isConversationAccepted } from '../../util/isConversationAccepted';
-import { sendToGroup } from '../../util/sendToGroup';
-import type { DurationInSeconds } from '../../util/durations';
-import type { ServiceIdString } from '../../types/ServiceId';
-import { normalizeAci } from '../../util/normalizeAci';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.js';
+import { ourProfileKeyService } from '../../services/ourProfileKey.js';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.js';
+import { isConversationAccepted } from '../../util/isConversationAccepted.js';
+import { sendToGroup } from '../../util/sendToGroup.js';
+import type { DurationInSeconds } from '../../util/durations/index.js';
+import type { ServiceIdString } from '../../types/ServiceId.js';
+import { normalizeAci } from '../../util/normalizeAci.js';
 import {
   getPropForTimestamp,
   getTargetOfThisEditTimestamp,
   getChangesForPropAtTimestamp,
-} from '../../util/editHelpers';
-import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp';
-import { isSignalConversation } from '../../util/isSignalConversation';
+} from '../../util/editHelpers.js';
+import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp.js';
+import { isSignalConversation } from '../../util/isSignalConversation.js';
 import {
   isBodyTooLong,
   MAX_BODY_ATTACHMENT_BYTE_LENGTH,
   trimBody,
-} from '../../util/longAttachment';
+} from '../../util/longAttachment.js';
 import {
   markFailed,
   saveErrorsOnMessage,
-} from '../../test-node/util/messageFailures';
-import { getMessageIdForLogging } from '../../util/idForLogging';
-import { send, sendSyncMessageOnly } from '../../messages/send';
+} from '../../test-node/util/messageFailures.js';
+import { getMessageIdForLogging } from '../../util/idForLogging.js';
+import { send, sendSyncMessageOnly } from '../../messages/send.js';
+import type { SignalService } from '../../protobuf/index.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import { fromBase64 } from '../../Bytes.js';
+import { MIMETypeToString } from '../../types/MIME.js';
+import { canReuseExistingTransitCdnPointerForEditedMessage } from '../../util/Attachment.js';
+
+const { isNumber } = lodash;
 
 const MAX_CONCURRENT_ATTACHMENT_UPLOADS = 5;
 
@@ -80,8 +97,6 @@ export async function sendNormalMessage(
   }: ConversationQueueJobBundle,
   data: NormalMessageSendJobData
 ): Promise<void> {
-  const { Message } = window.Signal.Types;
-
   const { messageId, revision, editedMessageTimestamp } = data;
   const message = await getMessageById(messageId);
   if (!message) {
@@ -212,7 +227,12 @@ export async function sendNormalMessage(
       sticker,
       storyMessage,
       storyContext,
-    } = await getMessageSendData({ log, message, targetTimestamp });
+    } = await getMessageSendData({
+      log,
+      message,
+      targetTimestamp,
+      isEditedMessageSend: editedMessageTimestamp != null,
+    });
 
     if (reaction) {
       strictAssert(
@@ -302,10 +322,9 @@ export async function sendNormalMessage(
     } else {
       const conversationType = conversation.get('type');
       const sendOptions = await getSendOptions(conversation.attributes);
-      const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
 
       let innerPromise: Promise<CallbackResultType>;
-      if (conversationType === Message.GROUP) {
+      if (conversationType === GROUP) {
         // Note: this will happen for all old jobs queued beore 5.32.x
         if (isGroupV2(conversation.attributes) && !isNumber(revision)) {
           log.error('No revision provided, but conversation is GroupV2');
@@ -324,7 +343,7 @@ export async function sendNormalMessage(
           abortSignal =>
             sendToGroup({
               abortSignal,
-              contentHint: ContentHint.RESENDABLE,
+              contentHint: ContentHint.Resendable,
               groupSendOptions: {
                 attachments,
                 bodyRanges,
@@ -392,7 +411,7 @@ export async function sendNormalMessage(
           attachments,
           bodyRanges,
           contact,
-          contentHint: ContentHint.RESENDABLE,
+          contentHint: ContentHint.Resendable,
           deletedForEveryoneTimestamp,
           expireTimer,
           expireTimerVersion: conversation.getExpireTimerVersion(),
@@ -577,12 +596,14 @@ async function getMessageSendData({
   log,
   message,
   targetTimestamp,
+  isEditedMessageSend,
 }: Readonly<{
   log: LoggerType;
   message: MessageModel;
   targetTimestamp: number;
+  isEditedMessageSend: boolean;
 }>): Promise<{
-  attachments: Array<UploadedAttachmentType>;
+  attachments: Array<SignalService.IAttachmentPointer>;
   body: undefined | string;
   contact?: Array<EmbeddedContactWithUploadedAvatar>;
   deletedForEveryoneTimestamp: undefined | number;
@@ -645,15 +666,21 @@ async function getMessageSendData({
     storyMessage,
   ] = await Promise.all([
     uploadQueue.addAll(
-      preUploadAttachments.map(
-        attachment => () =>
-          uploadSingleAttachment({
-            attachment,
-            log,
-            message,
-            targetTimestamp,
-          })
-      )
+      preUploadAttachments.map(attachment => async () => {
+        if (isEditedMessageSend) {
+          if (canReuseExistingTransitCdnPointerForEditedMessage(attachment)) {
+            return convertAttachmentToPointer(attachment);
+          }
+          log.error('Unable to reuse attachment pointer for edited message');
+        }
+
+        return uploadSingleAttachment({
+          attachment,
+          log,
+          message,
+          targetTimestamp,
+        });
+      })
     ),
     uploadQueue.add(async () =>
       maybeLongAttachment
@@ -744,8 +771,6 @@ async function uploadSingleAttachment({
   message: MessageModel;
   targetTimestamp: number;
 }): Promise<UploadedAttachmentType> {
-  const { loadAttachmentData } = window.Signal.Migrations;
-
   const withData = await loadAttachmentData(attachment);
   const uploaded = await uploadAttachment(withData);
 
@@ -800,8 +825,6 @@ async function uploadLongMessageAttachment({
   message: MessageModel;
   targetTimestamp: number;
 }): Promise<UploadedAttachmentType> {
-  const { loadAttachmentData } = window.Signal.Migrations;
-
   const withData = await loadAttachmentData(attachment);
   const uploaded = await uploadAttachment(withData);
 
@@ -846,8 +869,6 @@ async function uploadMessageQuote({
   targetTimestamp: number;
   uploadQueue: PQueue;
 }): Promise<OutgoingQuoteType | undefined> {
-  const { loadQuoteData } = window.Signal.Migrations;
-
   // We don't update the caches here because (1) we expect the caches to be populated
   //   on initial send, so they should be there in the 99% case (2) if you're retrying
   //   a failed message across restarts, we don't touch the cache for simplicity. If
@@ -990,8 +1011,6 @@ async function uploadMessagePreviews({
   targetTimestamp: number;
   uploadQueue: PQueue;
 }): Promise<Array<OutgoingLinkPreviewType> | undefined> {
-  const { loadPreviewData } = window.Signal.Migrations;
-
   // See uploadMessageQuote for comment on how we do caching for these
   // attachments.
   const startingPreview = getPropForTimestamp({
@@ -1078,8 +1097,6 @@ async function uploadMessageSticker(
   message: MessageModel,
   uploadQueue: PQueue
 ): Promise<OutgoingStickerType | undefined> {
-  const { loadStickerData } = window.Signal.Migrations;
-
   // See uploadMessageQuote for comment on how we do caching for these
   // attachments.
   const startingSticker = message.get('sticker');
@@ -1125,8 +1142,6 @@ async function uploadMessageContacts(
   message: MessageModel,
   uploadQueue: PQueue
 ): Promise<Array<EmbeddedContactWithUploadedAvatar> | undefined> {
-  const { loadContactData } = window.Signal.Migrations;
-
   // See uploadMessageQuote for comment on how we do caching for these
   // attachments.
   const contacts = await loadContactData(message.get('contact'));
@@ -1262,4 +1277,48 @@ function didSendToEveryone({
       return isSent(sendState.status);
     }
   );
+}
+
+function convertAttachmentToPointer(
+  attachment: AttachmentDownloadableFromTransitTier
+): SignalService.IAttachmentPointer {
+  const {
+    cdnKey,
+    cdnNumber,
+    clientUuid,
+    key,
+    size,
+    digest,
+    incrementalMac,
+    chunkSize,
+    uploadTimestamp,
+    contentType,
+    fileName,
+    flags,
+    width,
+    height,
+    caption,
+    blurHash,
+  } = attachment;
+
+  return {
+    cdnKey,
+    cdnNumber,
+    clientUuid: clientUuid ? uuidToBytes(clientUuid) : undefined,
+    key: fromBase64(key),
+    size,
+    digest: fromBase64(digest),
+    incrementalMac: incrementalMac ? fromBase64(incrementalMac) : undefined,
+    chunkSize,
+    uploadTimestamp: uploadTimestamp
+      ? Long.fromNumber(uploadTimestamp)
+      : undefined,
+    contentType: MIMETypeToString(contentType),
+    fileName,
+    flags,
+    width,
+    height,
+    caption,
+    blurHash,
+  };
 }

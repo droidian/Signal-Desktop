@@ -4,20 +4,22 @@
 import { format } from 'node:util';
 import { ipcRenderer } from 'electron';
 
-import type { IPCResponse as ChallengeResponseType } from './challenge';
-import type { MessageAttributesType } from './model-types.d';
-import { createLogger } from './logging/log';
-import { explodePromise } from './util/explodePromise';
-import { AccessType, ipcInvoke } from './sql/channels';
-import { backupsService } from './services/backups';
-import { notificationService } from './services/notifications';
-import { AttachmentBackupManager } from './jobs/AttachmentBackupManager';
-import { migrateAllMessages } from './messages/migrateMessageData';
-import { SECOND } from './util/durations';
-import { isSignalRoute } from './util/signalRoutes';
-import { strictAssert } from './util/assert';
-import { MessageModel } from './models/messages';
-import type { SocketStatuses } from './textsecure/SocketManager';
+import type { IPCResponse as ChallengeResponseType } from './challenge.js';
+import type { MessageAttributesType } from './model-types.d.ts';
+import { createLogger } from './logging/log.js';
+import { explodePromise } from './util/explodePromise.js';
+import { AccessType, ipcInvoke } from './sql/channels.js';
+import { backupsService } from './services/backups/index.js';
+import { notificationService } from './services/notifications.js';
+import { challengeHandler } from './services/challengeHandler.js';
+import { AttachmentBackupManager } from './jobs/AttachmentBackupManager.js';
+import { migrateAllMessages } from './messages/migrateMessageData.js';
+import { SECOND } from './util/durations/index.js';
+import { isSignalRoute } from './util/signalRoutes.js';
+import { strictAssert } from './util/assert.js';
+import { MessageModel } from './models/messages.js';
+import type { SocketStatuses } from './textsecure/SocketManager.js';
+import { itemStorage } from './textsecure/Storage.js';
 
 const log = createLogger('CI');
 
@@ -52,6 +54,7 @@ export type CIType = {
   print: (...args: ReadonlyArray<unknown>) => void;
   resetReleaseNotesFetcher(): void;
   forceUnprocessed: boolean;
+  setMediaPermissions(): Promise<void>;
 };
 
 export type GetCIOptionsType = Readonly<{
@@ -152,7 +155,7 @@ export function getCI({
   }
 
   function solveChallenge(response: ChallengeResponseType): void {
-    window.Signal.challengeHandler?.onResponse(response);
+    challengeHandler.onResponse(response);
   }
 
   async function getMessagesBySentAt(sentAt: number) {
@@ -216,7 +219,7 @@ export function getCI({
     await AttachmentBackupManager.waitForIdle();
 
     // Remove the disclaimer from conversation hero for screenshot backup test
-    await window.storage.put('isRestoredFromBackup', true);
+    await itemStorage.put('isRestoredFromBackup', true);
   }
 
   function unlink() {
@@ -233,13 +236,14 @@ export function getCI({
 
   async function resetReleaseNotesFetcher() {
     await Promise.all([
-      window.textsecure.storage.put(
-        'releaseNotesVersionWatermark',
-        '7.0.0-alpha.1'
-      ),
-      window.textsecure.storage.put('releaseNotesPreviousManifestHash', ''),
-      window.textsecure.storage.put('releaseNotesNextFetchTime', Date.now()),
+      itemStorage.put('releaseNotesVersionWatermark', '7.0.0-alpha.1'),
+      itemStorage.put('releaseNotesPreviousManifestHash', ''),
+      itemStorage.put('releaseNotesNextFetchTime', Date.now()),
     ]);
+  }
+
+  async function setMediaPermissions() {
+    await window.IPC.setMediaPermissions(true);
   }
 
   return {
@@ -263,5 +267,6 @@ export function getCI({
     print,
     resetReleaseNotesFetcher,
     forceUnprocessed,
+    setMediaPermissions,
   };
 }

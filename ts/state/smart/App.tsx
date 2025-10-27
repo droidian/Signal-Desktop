@@ -2,32 +2,34 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { memo } from 'react';
 import { useSelector } from 'react-redux';
-import type { VerificationTransport } from '../../types/VerificationTransport';
-import { DataWriter } from '../../sql/Client';
-import { App } from '../../components/App';
-import OS from '../../util/os/osMain';
-import { getConversation } from '../../util/getConversation';
-import { getChallengeURL } from '../../challenge';
-import { writeProfile } from '../../services/writeProfile';
-import { strictAssert } from '../../util/assert';
-import { SmartCallManager } from './CallManager';
-import { SmartGlobalModalContainer } from './GlobalModalContainer';
-import { SmartLightbox } from './Lightbox';
-import { SmartStoryViewer } from './StoryViewer';
+import { requestVerification as doRequestVerification } from '../../textsecure/WebAPI.js';
+import { accountManager } from '../../textsecure/AccountManager.js';
+import type { VerificationTransport } from '../../types/VerificationTransport.js';
+import { DataWriter } from '../../sql/Client.js';
+import { App } from '../../components/App.js';
+import OS from '../../util/os/osMain.js';
+import { getConversation } from '../../util/getConversation.js';
+import { getChallengeURL } from '../../challenge.js';
+import { writeProfile } from '../../services/writeProfile.js';
+import { challengeHandler } from '../../services/challengeHandler.js';
+import { SmartCallManager } from './CallManager.js';
+import { SmartGlobalModalContainer } from './GlobalModalContainer.js';
+import { SmartLightbox } from './Lightbox.js';
+import { SmartStoryViewer } from './StoryViewer.js';
 import {
   getIsMainWindowMaximized,
   getIsMainWindowFullScreen,
   getTheme,
-} from '../selectors/user';
-import { hasSelectedStoryData as getHasSelectedStoryData } from '../selectors/stories';
-import { useAppActions } from '../ducks/app';
-import { useConversationsActions } from '../ducks/conversations';
-import { useStoriesActions } from '../ducks/stories';
-import { ErrorBoundary } from '../../components/ErrorBoundary';
-import { ModalContainer } from '../../components/ModalContainer';
-import { SmartInbox } from './Inbox';
-import { getApp } from '../selectors/app';
-import { SmartFunProvider } from './FunProvider';
+} from '../selectors/user.js';
+import { hasSelectedStoryData as getHasSelectedStoryData } from '../selectors/stories.js';
+import { useAppActions } from '../ducks/app.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { useStoriesActions } from '../ducks/stories.js';
+import { ErrorBoundary } from '../../components/ErrorBoundary.js';
+import { ModalContainer } from '../../components/ModalContainer.js';
+import { SmartInbox } from './Inbox.js';
+import { getApp } from '../selectors/app.js';
+import { SmartFunProvider } from './FunProvider.js';
 
 function renderInbox(): JSX.Element {
   return <SmartInbox />;
@@ -60,10 +62,7 @@ function renderStoryViewer(closeView: () => unknown): JSX.Element {
 async function getCaptchaToken(): Promise<string> {
   const url = getChallengeURL('registration');
   document.location.href = url;
-  if (!window.Signal.challengeHandler) {
-    throw new Error('Captcha handler is not ready!');
-  }
-  return window.Signal.challengeHandler.requestCaptcha({
+  return challengeHandler.requestCaptcha({
     reason: 'standalone registration',
   });
 }
@@ -73,9 +72,7 @@ function requestVerification(
   captcha: string,
   transport: VerificationTransport
 ): Promise<{ sessionId: string }> {
-  const { server } = window.textsecure;
-  strictAssert(server !== undefined, 'WebAPI not available');
-  return server.requestVerification(number, captcha, transport);
+  return doRequestVerification(number, captcha, transport);
 }
 
 function registerSingleDevice(
@@ -83,9 +80,7 @@ function registerSingleDevice(
   code: string,
   sessionId: string
 ): Promise<void> {
-  return window
-    .getAccountManager()
-    .registerSingleDevice(number, code, sessionId);
+  return accountManager.registerSingleDevice(number, code, sessionId);
 }
 
 function readyForUpdates(): void {

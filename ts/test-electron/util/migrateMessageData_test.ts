@@ -1,13 +1,15 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import assert from 'assert';
+import assert from 'node:assert';
 import { v7 as uuid } from 'uuid';
-import { _migrateMessageData as migrateMessageData } from '../../messages/migrateMessageData';
-import type { MessageAttributesType } from '../../model-types';
-import { DataReader, DataWriter } from '../../sql/Client';
-import { generateAci } from '../../types/ServiceId';
-import { postSaveUpdates } from '../../util/cleanup';
+import { _migrateMessageData as migrateMessageData } from '../../messages/migrateMessageData.js';
+import type { MessageAttributesType } from '../../model-types.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { postSaveUpdates } from '../../util/cleanup.js';
+import { upgradeMessageSchema } from '../../util/migrations.js';
+import { itemStorage } from '../../textsecure/Storage.js';
 
 function composeMessage(timestamp: number): MessageAttributesType {
   return {
@@ -25,11 +27,11 @@ function composeMessage(timestamp: number): MessageAttributesType {
 describe('utils/migrateMessageData', async () => {
   before(async () => {
     await DataWriter.removeAll();
-    await window.storage.put('uuid_id', generateAci());
+    await itemStorage.put('uuid_id', generateAci());
   });
   after(async () => {
     await DataWriter.removeAll();
-    await window.storage.fetch();
+    await itemStorage.fetch();
   });
   it('increments attempts for messages which fail to save', async () => {
     const messages = new Array(5)
@@ -50,7 +52,7 @@ describe('utils/migrateMessageData', async () => {
         if (message.id === CANNOT_UPGRADE_MESSAGE_ID) {
           throw new Error('upgrade failed');
         }
-        return window.Signal.Migrations.upgradeMessageSchema(message, ...rest);
+        return upgradeMessageSchema(message, ...rest);
       },
       getMessagesNeedingUpgrade: async (...args) => {
         const messagesToUpgrade = await DataReader.getMessagesNeedingUpgrade(

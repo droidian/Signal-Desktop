@@ -2,32 +2,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import path from 'path';
-import { tmpdir } from 'os';
-import { omit, sortBy } from 'lodash';
-import { createReadStream } from 'fs';
-import { mkdtemp, rm } from 'fs/promises';
+import path from 'node:path';
+import { tmpdir } from 'node:os';
+import lodash from 'lodash';
+import { createReadStream } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import * as sinon from 'sinon';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { AccountEntropyPool } from '@signalapp/libsignal-client/dist/AccountKeys';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import { AccountEntropyPool } from '@signalapp/libsignal-client/dist/AccountKeys.js';
 
 import type {
   EditHistoryType,
   MessageAttributesType,
   MessageReactionType,
-} from '../../model-types';
+} from '../../model-types.js';
 import type {
   SendStateByConversationId,
   SendState,
-} from '../../messages/MessageSendState';
+} from '../../messages/MessageSendState.js';
 
-import { backupsService } from '../../services/backups';
-import { isUnsupportedMessage } from '../../state/selectors/message';
-import { generateAci, generatePni } from '../../types/ServiceId';
-import { DataReader, DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { postSaveUpdates } from '../../util/cleanup';
+import { backupsService } from '../../services/backups/index.js';
+import { isUnsupportedMessage } from '../../state/selectors/message.js';
+import { generateAci, generatePni } from '../../types/ServiceId.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import * as Bytes from '../../Bytes.js';
+import { postSaveUpdates } from '../../util/cleanup.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { omit, sortBy } = lodash;
 
 export const OUR_ACI = generateAci();
 export const OUR_PNI = generatePni();
@@ -256,19 +259,19 @@ export async function asymmetricRoundtripHarness(
 
 export async function clearData(): Promise<void> {
   await DataWriter.removeAll();
-  await window.storage.fetch();
+  await itemStorage.fetch();
   window.ConversationController.reset();
 
   await setupBasics();
 }
 
 export async function setupBasics(): Promise<void> {
-  await window.storage.put('uuid_id', `${OUR_ACI}.2`);
-  await window.storage.put('pni', OUR_PNI);
-  await window.storage.put('masterKey', MASTER_KEY);
-  await window.storage.put('accountEntropyPool', ACCOUNT_ENTROPY_POOL);
-  await window.storage.put('backupMediaRootKey', MEDIA_ROOT_KEY);
-  await window.storage.put('profileKey', PROFILE_KEY);
+  await itemStorage.put('uuid_id', `${OUR_ACI}.2`);
+  await itemStorage.put('pni', OUR_PNI);
+  await itemStorage.put('masterKey', MASTER_KEY);
+  await itemStorage.put('accountEntropyPool', ACCOUNT_ENTROPY_POOL);
+  await itemStorage.put('backupMediaRootKey', MEDIA_ROOT_KEY);
+  await itemStorage.put('profileKey', PROFILE_KEY);
 
   await window.ConversationController.getOrCreateAndWait(OUR_ACI, 'private', {
     pni: OUR_PNI,

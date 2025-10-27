@@ -3,15 +3,16 @@
 
 import { usernames, LibSignalErrorBase } from '@signalapp/libsignal-client';
 
-import type { UserNotFoundModalStateType } from '../state/ducks/globalModals';
-import { createLogger } from '../logging/log';
-import type { AciString } from '../types/ServiceId';
-import * as Errors from '../types/errors';
-import { ToastType } from '../types/Toast';
-import { HTTPError } from '../textsecure/Errors';
-import { strictAssert } from './assert';
-import type { UUIDFetchStateKeyType } from './uuidFetchState';
-import { getServiceIdsForE164s } from './getServiceIdsForE164s';
+import type { UserNotFoundModalStateType } from '../state/ducks/globalModals.js';
+import { createLogger } from '../logging/log.js';
+import type { AciString } from '../types/ServiceId.js';
+import { getAccountForUsername, cdsLookup } from '../textsecure/WebAPI.js';
+import * as Errors from '../types/errors.js';
+import { ToastType } from '../types/Toast.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { strictAssert } from './assert.js';
+import type { UUIDFetchStateKeyType } from './uuidFetchState.js';
+import { getServiceIdsForE164s } from './getServiceIdsForE164s.js';
 
 const log = createLogger('lookupConversationWithoutServiceId');
 
@@ -65,16 +66,11 @@ export async function lookupConversationWithoutServiceId(
   const { showUserNotFoundModal, setIsFetchingUUID } = options;
   setIsFetchingUUID(identifier, true);
 
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error('server is not available!');
-  }
-
   try {
     let conversationId: string | undefined;
     if (options.type === 'e164') {
       const { entries: serverLookup, transformedE164s } =
-        await getServiceIdsForE164s(server, [options.e164]);
+        await getServiceIdsForE164s(cdsLookup, [options.e164]);
       const e164ToUse = transformedE164s.get(options.e164) ?? options.e164;
 
       const maybePair = serverLookup.get(e164ToUse);
@@ -156,13 +152,8 @@ export async function checkForUsername(
     return undefined;
   }
 
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error('server is not available!');
-  }
-
   try {
-    const account = await server.getAccountForUsername({
+    const account = await getAccountForUsername({
       hash,
     });
 

@@ -6,14 +6,16 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 import sinon from 'sinon';
-import { DataWriter } from '../sql/Client';
-import { ConversationModel } from '../models/conversations';
-import type { ConversationAttributesType } from '../model-types.d';
-import type { WebAPIType } from '../textsecure/WebAPI';
-import { generateAci, normalizeServiceId } from '../types/ServiceId';
-import { normalizeAci } from '../util/normalizeAci';
+import { DataWriter } from '../sql/Client.js';
+import { ConversationModel } from '../models/conversations.js';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { generateAci, normalizeServiceId } from '../types/ServiceId.js';
+import { normalizeAci } from '../util/normalizeAci.js';
 
-import { updateConversationsWithUuidLookup } from '../updateConversationsWithUuidLookup';
+import {
+  updateConversationsWithUuidLookup,
+  type ServerType,
+} from '../updateConversationsWithUuidLookup.js';
 
 describe('updateConversationsWithUuidLookup', () => {
   class FakeConversationController {
@@ -148,7 +150,7 @@ describe('updateConversationsWithUuidLookup', () => {
 
   let fakeCdsLookup: sinon.SinonStub;
   let fakeCheckAccountExistence: sinon.SinonStub;
-  let fakeServer: Pick<WebAPIType, 'cdsLookup' | 'checkAccountExistence'>;
+  let fakeServer: ServerType;
 
   beforeEach(() => {
     sinonSandbox = sinon.createSandbox();

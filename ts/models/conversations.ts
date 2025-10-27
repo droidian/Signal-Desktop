@@ -1,9 +1,10 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { compact, isNumber, throttle, debounce } from 'lodash';
+import lodash from 'lodash';
 import { v4 as generateGuid } from 'uuid';
 import PQueue from 'p-queue';
+import { ContentHint } from '@signalapp/libsignal-client';
 
 import type { ReadonlyDeep } from 'type-fest';
 import type {
@@ -13,87 +14,114 @@ import type {
   MessageAttributesType,
   QuotedMessageType,
   SenderKeyInfoType,
-} from '../model-types.d';
-import { DataReader, DataWriter } from '../sql/Client';
-import { getConversation } from '../util/getConversation';
-import { drop } from '../util/drop';
-import { isShallowEqual } from '../util/isShallowEqual';
-import { getInitials } from '../util/getInitials';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp';
-import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage';
-import { getNotificationDataForMessage } from '../util/getNotificationDataForMessage';
-import type { ProfileNameChangeType } from '../util/getStringForProfileChange';
-import type { AttachmentType, ThumbnailType } from '../types/Attachment';
-import { toDayMillis } from '../util/timestamp';
-import { areWeAdmin } from '../util/areWeAdmin';
-import { isBlocked } from '../util/isBlocked';
-import { getAboutText } from '../util/getAboutText';
+} from '../model-types.d.ts';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { getConversation } from '../util/getConversation.js';
+import {
+  copyAttachmentIntoTempDirectory,
+  deleteAttachmentData,
+  doesAttachmentExist,
+  getAbsoluteAttachmentPath,
+  getAbsoluteTempPath,
+  readStickerData,
+  upgradeMessageSchema,
+  writeNewAttachmentData,
+} from '../util/migrations.js';
+import { drop } from '../util/drop.js';
+import { isShallowEqual } from '../util/isShallowEqual.js';
+import { getInitials } from '../util/getInitials.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.js';
+import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.js';
+import { getNotificationDataForMessage } from '../util/getNotificationDataForMessage.js';
+import type { ProfileNameChangeType } from '../util/getStringForProfileChange.js';
+import type { AttachmentType, ThumbnailType } from '../types/Attachment.js';
+import { toDayMillis } from '../util/timestamp.js';
+import { areWeAdmin } from '../util/areWeAdmin.js';
+import { isBlocked } from '../util/isBlocked.js';
+import { getAboutText } from '../util/getAboutText.js';
 import {
   getAvatar,
   getRawAvatarPath,
   getLocalAvatarUrl,
-} from '../util/avatarUtils';
-import { getDraftPreview } from '../util/getDraftPreview';
-import { hasDraft } from '../util/hasDraft';
-import { hydrateStoryContext } from '../util/hydrateStoryContext';
-import * as Conversation from '../types/Conversation';
-import type { StickerType, StickerWithHydratedData } from '../types/Stickers';
-import * as Stickers from '../types/Stickers';
-import { StorySendMode } from '../types/Stories';
-import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact';
-import type { GroupV2InfoType } from '../textsecure/SendMessage';
-import createTaskWithTimeout from '../textsecure/TaskWithTimeout';
-import MessageSender from '../textsecure/SendMessage';
+} from '../util/avatarUtils.js';
+import { getDraftPreview } from '../util/getDraftPreview.js';
+import { hasDraft } from '../util/hasDraft.js';
+import { hydrateStoryContext } from '../util/hydrateStoryContext.js';
+import * as Conversation from '../types/Conversation.js';
+import type {
+  StickerType,
+  StickerWithHydratedData,
+} from '../types/Stickers.js';
+import * as Stickers from '../types/Stickers.js';
+import { StorySendMode } from '../types/Stories.js';
+import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.js';
+import {
+  type GroupV2InfoType,
+  messageSender,
+} from '../textsecure/SendMessage.js';
+import {
+  getAvatar as doGetAvatar,
+  cdsLookup,
+  checkAccountExistence,
+} from '../textsecure/WebAPI.js';
+import createTaskWithTimeout from '../textsecure/TaskWithTimeout.js';
+import { MessageSender } from '../textsecure/SendMessage.js';
 import type {
   CallbackResultType,
   PniSignatureMessageType,
-} from '../textsecure/Types.d';
+} from '../textsecure/Types.d.ts';
 import type {
   ConversationType,
   DraftPreviewType,
-} from '../state/ducks/conversations';
+} from '../state/ducks/conversations.js';
 import type {
   AvatarColorType,
   ConversationColorType,
   CustomColorType,
-} from '../types/Colors';
-import { strictAssert } from '../util/assert';
-import { isConversationMuted } from '../util/isConversationMuted';
-import { isConversationSMSOnly } from '../util/isConversationSMSOnly';
+} from '../types/Colors.js';
+import { strictAssert } from '../util/assert.js';
+import { isConversationMuted } from '../util/isConversationMuted.js';
+import { isConversationSMSOnly } from '../util/isConversationSMSOnly.js';
 import {
   isConversationEverUnregistered,
   isConversationUnregistered,
   isConversationUnregisteredAndStale,
-} from '../util/isConversationUnregistered';
-import { sniffImageMimeType } from '../util/sniffImageMimeType';
-import { isValidE164 } from '../util/isValidE164';
-import type { MIMEType } from '../types/MIME';
-import { IMAGE_JPEG, IMAGE_WEBP } from '../types/MIME';
-import type { AciString, PniString, ServiceIdString } from '../types/ServiceId';
+} from '../util/isConversationUnregistered.js';
+import { sniffImageMimeType } from '../util/sniffImageMimeType.js';
+import { isValidE164 } from '../util/isValidE164.js';
+import type { MIMEType } from '../types/MIME.js';
+import { IMAGE_JPEG, IMAGE_WEBP } from '../types/MIME.js';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from '../types/ServiceId.js';
 import {
   ServiceIdKind,
   normalizeServiceId,
   normalizePni,
-} from '../types/ServiceId';
-import { isAciString } from '../util/isAciString';
+} from '../types/ServiceId.js';
+import { isAciString } from '../util/isAciString.js';
 import {
   constantTimeEqual,
   decryptProfile,
   decryptProfileName,
   deriveAccessKey,
   hashProfileKey,
-} from '../Crypto';
-import { decryptAttachmentV2 } from '../AttachmentCrypto';
-import * as Bytes from '../Bytes';
-import type { DraftBodyRanges } from '../types/BodyRange';
-import { migrateColor } from '../util/migrateColor';
-import { isNotNil } from '../util/isNotNil';
-import { shouldSaveNotificationAvatarToDisk } from '../services/notifications';
-import { storageServiceUploadJob } from '../services/storage';
-import { getSendOptions } from '../util/getSendOptions';
-import type { IsConversationAcceptedOptionsType } from '../util/isConversationAccepted';
-import { isConversationAccepted } from '../util/isConversationAccepted';
+} from '../Crypto.js';
+import { decryptAttachmentV2 } from '../AttachmentCrypto.js';
+import * as Bytes from '../Bytes.js';
+import type { DraftBodyRanges } from '../types/BodyRange.js';
+import { migrateColor } from '../util/migrateColor.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { shouldSaveNotificationAvatarToDisk } from '../services/notifications.js';
+import { storageServiceUploadJob } from '../services/storage.js';
+import { challengeHandler } from '../services/challengeHandler.js';
+import { getSendOptions } from '../util/getSendOptions.js';
+import type { IsConversationAcceptedOptionsType } from '../util/isConversationAccepted.js';
+import { isConversationAccepted } from '../util/isConversationAccepted.js';
 import {
   getNumber,
   getProfileName,
@@ -102,97 +130,126 @@ import {
   hasNumberTitle,
   hasUsernameTitle,
   canHaveUsername,
-} from '../util/getTitle';
-import { markConversationRead } from '../util/markConversationRead';
-import { handleMessageSend } from '../util/handleMessageSend';
-import { getConversationMembers } from '../util/getConversationMembers';
-import { updateConversationsWithUuidLookup } from '../updateConversationsWithUuidLookup';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SendStatus } from '../messages/MessageSendState';
+} from '../util/getTitle.js';
+import { markConversationRead } from '../util/markConversationRead.js';
+import { handleMessageSend } from '../util/handleMessageSend.js';
+import { getConversationMembers } from '../util/getConversationMembers.js';
+import { updateConversationsWithUuidLookup } from '../updateConversationsWithUuidLookup.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SendStatus } from '../messages/MessageSendState.js';
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from '../types/message/LinkPreviews';
-import { MINUTE, SECOND, DurationInSeconds } from '../util/durations';
-import { concat, filter, map, repeat, zipObject } from '../util/iterables';
-import * as universalExpireTimer from '../util/universalExpireTimer';
-import type { GroupNameCollisionsWithIdsByTitle } from '../util/groupMemberNameCollisions';
+} from '../types/message/LinkPreviews.js';
+import { MINUTE, SECOND, DurationInSeconds } from '../util/durations/index.js';
+import { concat, filter, map, repeat, zipObject } from '../util/iterables.js';
+import * as universalExpireTimer from '../util/universalExpireTimer.js';
+import type { GroupNameCollisionsWithIdsByTitle } from '../util/groupMemberNameCollisions.js';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
   isMe,
-} from '../util/whatTypeOfConversation';
-import { SignalService as Proto } from '../protobuf';
+} from '../util/whatTypeOfConversation.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 import {
   getMessagePropStatus,
   hasErrors,
   isIncoming,
   isStory,
-} from '../state/selectors/message';
-import { getPreloadedConversationId } from '../state/selectors/conversations';
+} from '../state/selectors/message.js';
+import { getPreloadedConversationId } from '../state/selectors/conversations.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
-import { getProfile } from '../util/getProfile';
-import { SEALED_SENDER } from '../types/SealedSender';
-import { createIdenticon } from '../util/createIdenticon';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import { isMessageUnread } from '../util/isMessageUnread';
-import type { SenderKeyTargetType } from '../util/sendToGroup';
-import { resetSenderKey, sendContentMessageToGroup } from '../util/sendToGroup';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import { TimelineMessageLoadingState } from '../util/timelineUtil';
-import { SeenStatus } from '../MessageSeenStatus';
-import { getConversationIdForLogging } from '../util/idForLogging';
-import { getSendTarget } from '../util/getSendTarget';
-import { getRecipients } from '../util/getRecipients';
-import { validateConversation } from '../util/validateConversation';
-import { isSignalConversation } from '../util/isSignalConversation';
-import { removePendingMember } from '../util/removePendingMember';
+} from '../jobs/conversationJobQueue.js';
+import { getProfile } from '../util/getProfile.js';
+import { SEALED_SENDER } from '../types/SealedSender.js';
+import { createIdenticon } from '../util/createIdenticon.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { isMessageUnread } from '../util/isMessageUnread.js';
+import type { SenderKeyTargetType } from '../util/sendToGroup.js';
+import {
+  resetSenderKey,
+  sendContentMessageToGroup,
+} from '../util/sendToGroup.js';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.js';
+import { TimelineMessageLoadingState } from '../util/timelineUtil.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import { getConversationIdForLogging } from '../util/idForLogging.js';
+import { getSendTarget } from '../util/getSendTarget.js';
+import { getRecipients } from '../util/getRecipients.js';
+import { validateConversation } from '../util/validateConversation.js';
+import { isSignalConversation } from '../util/isSignalConversation.js';
+import { removePendingMember } from '../util/removePendingMember.js';
 import {
   isMember,
   isMemberAwaitingApproval,
   isMemberBanned,
   isMemberPending,
   isMemberRequestingToJoin,
-} from '../util/groupMembershipUtils';
-import { imageToBlurHash } from '../util/imageToBlurHash';
-import { ReceiptType } from '../types/Receipt';
-import { getQuoteAttachment } from '../util/makeQuote';
-import { deriveProfileKeyVersion } from '../util/zkgroup';
-import { incrementMessageCounter } from '../util/incrementMessageCounter';
-import { generateMessageId } from '../util/generateMessageId';
-import { getMessageAuthorText } from '../util/getMessageAuthorText';
-import { downscaleOutgoingAttachment } from '../util/attachments';
+} from '../util/groupMembershipUtils.js';
+import { imageToBlurHash } from '../util/imageToBlurHash.js';
+import { ReceiptType } from '../types/Receipt.js';
+import { getQuoteAttachment } from '../util/makeQuote.js';
+import { deriveProfileKeyVersion } from '../util/zkgroup.js';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.js';
+import { generateMessageId } from '../util/generateMessageId.js';
+import { getMessageAuthorText } from '../util/getMessageAuthorText.js';
+import { downscaleOutgoingAttachment } from '../util/attachments.js';
 import {
   MessageRequestResponseSource,
   type MessageRequestResponseInfo,
   MessageRequestResponseEvent,
-} from '../types/MessageRequestResponseEvent';
-import type { AddressableMessage } from '../textsecure/messageReceiverEvents';
+} from '../types/MessageRequestResponseEvent.js';
+import type { AddressableMessage } from '../textsecure/messageReceiverEvents.js';
 import {
   getConversationIdentifier,
   getAddressableMessage,
-} from '../util/syncIdentifiers';
-import { explodePromise } from '../util/explodePromise';
-import { getCallHistorySelector } from '../state/selectors/callHistory';
-import { migrateLegacyReadStatus } from '../messages/migrateLegacyReadStatus';
-import { migrateLegacySendAttributes } from '../messages/migrateLegacySendAttributes';
-import { getIsInitialContactSync } from '../services/contactSync';
-import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../util/queueAttachmentDownloads';
-import { cleanupMessages } from '../util/cleanup';
-import { MessageModel } from './messages';
-import { applyNewAvatar } from '../groups';
-import { safeSetTimeout } from '../util/timeout';
-import { getTypingIndicatorSetting } from '../types/Util';
-import { INITIAL_EXPIRE_TIMER_VERSION } from '../util/expirationTimer';
-import { maybeNotify } from '../messages/maybeNotify';
-import { missingCaseError } from '../util/missingCaseError';
-import * as Message from '../types/Message2';
+} from '../util/syncIdentifiers.js';
+import { explodePromise } from '../util/explodePromise.js';
+import { getCallHistorySelector } from '../state/selectors/callHistory.js';
+import { migrateLegacyReadStatus } from '../messages/migrateLegacyReadStatus.js';
+import { migrateLegacySendAttributes } from '../messages/migrateLegacySendAttributes.js';
+import { getIsInitialContactSync } from '../services/contactSync.js';
+import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../util/queueAttachmentDownloads.js';
+import { cleanupMessages } from '../util/cleanup.js';
+import { MessageModel } from './messages.js';
+import {
+  applyNewAvatar,
+  buildAccessControlAddFromInviteLinkChange,
+  buildAccessControlAttributesChange,
+  buildAccessControlMembersChange,
+  buildAddBannedMemberChange,
+  buildAddMember,
+  buildAddPendingAdminApprovalMemberChange,
+  buildAnnouncementsOnlyChange,
+  buildDeleteMemberChange,
+  buildDeletePendingAdminApprovalMemberChange,
+  buildDisappearingMessagesTimerChange,
+  buildGroupLink,
+  buildInviteLinkPasswordChange,
+  buildModifyMemberRoleChange,
+  buildNewGroupLinkChange,
+  buildPromoteMemberChange,
+  generateGroupInviteLinkPassword,
+  hasV1GroupBeenMigrated,
+  joinGroupV2ViaLinkAndMigrate,
+  modifyGroupV2,
+  waitThenMaybeUpdateGroup,
+  waitThenRespondToGroupV2Migration,
+} from '../groups.js';
+import { safeSetTimeout } from '../util/timeout.js';
+import { getTypingIndicatorSetting } from '../util/Settings.js';
+import { INITIAL_EXPIRE_TIMER_VERSION } from '../util/expirationTimer.js';
+import { maybeNotify } from '../messages/maybeNotify.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import * as Message from '../types/Message2.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { compact, isNumber, throttle, debounce } = lodash;
 
 const log = createLogger('conversations');
 
@@ -285,7 +342,7 @@ export class ConversationModel {
 
   #lastIsTyping?: boolean;
   #muteTimer?: NodeJS.Timeout;
-  #privVerifiedEnum?: typeof window.textsecure.storage.protocol.VerifiedStatus;
+  #privVerifiedEnum?: typeof signalProtocolStore.VerifiedStatus;
   #isShuttingDown = false;
   #savePromises = new Set<Promise<void>>();
 
@@ -382,7 +439,7 @@ export class ConversationModel {
 
     this.storeName = 'conversations';
 
-    this.#privVerifiedEnum = window.textsecure.storage.protocol.VerifiedStatus;
+    this.#privVerifiedEnum = signalProtocolStore.VerifiedStatus;
 
     // This may be overridden by window.ConversationController.getOrCreate, and signify
     //   our first save to the database. Or first fetch from the database.
@@ -486,7 +543,7 @@ export class ConversationModel {
     };
   }
 
-  get #verifiedEnum(): typeof window.textsecure.storage.protocol.VerifiedStatus {
+  get #verifiedEnum(): typeof signalProtocolStore.VerifiedStatus {
     strictAssert(this.#privVerifiedEnum, 'ConversationModel not initialize');
     return this.#privVerifiedEnum;
   }
@@ -521,7 +578,7 @@ export class ConversationModel {
       return undefined;
     }
 
-    return window.Signal.Groups.buildDisappearingMessagesTimerChange({
+    return buildDisappearingMessagesTimerChange({
       expireTimer: seconds || DurationInSeconds.ZERO,
       group: this.attributes,
     });
@@ -533,7 +590,7 @@ export class ConversationModel {
     const idLog = this.idForLogging();
 
     const us = window.ConversationController.getOurConversationOrThrow();
-    const serviceId = window.storage.user.getCheckedServiceId(serviceIdKind);
+    const serviceId = itemStorage.user.getCheckedServiceId(serviceIdKind);
 
     // This user's pending state may have changed in the time between the user's
     //   button press and when we get here. It's especially important to check here
@@ -556,7 +613,7 @@ export class ConversationModel {
     strictAssert(profileKeyCredentialBase64, 'Must have profileKeyCredential');
 
     if (serviceIdKind === ServiceIdKind.ACI) {
-      return window.Signal.Groups.buildPromoteMemberChange({
+      return buildPromoteMemberChange({
         group: this.attributes,
         isPendingPniAciProfileKey: false,
         profileKeyCredentialBase64,
@@ -569,7 +626,7 @@ export class ConversationModel {
       'Must be a PNI promotion'
     );
 
-    return window.Signal.Groups.buildPromoteMemberChange({
+    return buildPromoteMemberChange({
       group: this.attributes,
       isPendingPniAciProfileKey: true,
       profileKeyCredentialBase64,
@@ -593,9 +650,9 @@ export class ConversationModel {
       return undefined;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
-    return window.Signal.Groups.buildDeletePendingAdminApprovalMemberChange({
+    return buildDeletePendingAdminApprovalMemberChange({
       group: this.attributes,
       ourAci,
       aci,
@@ -639,7 +696,7 @@ export class ConversationModel {
       return undefined;
     }
 
-    return window.Signal.Groups.buildAddPendingAdminApprovalMemberChange({
+    return buildAddPendingAdminApprovalMemberChange({
       group: this.attributes,
       profileKeyCredentialBase64,
       serverPublicParamsBase64: window.getServerPublicParams(),
@@ -684,7 +741,7 @@ export class ConversationModel {
       return undefined;
     }
 
-    return window.Signal.Groups.buildAddMember({
+    return buildAddMember({
       group: this.attributes,
       profileKeyCredentialBase64,
       serverPublicParamsBase64: window.getServerPublicParams(),
@@ -713,9 +770,9 @@ export class ConversationModel {
       return undefined;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
-    return window.Signal.Groups.buildDeleteMemberChange({
+    return buildDeleteMemberChange({
       group: this.attributes,
       ourAci,
       serviceId,
@@ -744,7 +801,7 @@ export class ConversationModel {
       ? MEMBER_ROLES.DEFAULT
       : MEMBER_ROLES.ADMINISTRATOR;
 
-    return window.Signal.Groups.buildModifyMemberRoleChange({
+    return buildModifyMemberRoleChange({
       group: this.attributes,
       serviceId,
       role,
@@ -766,7 +823,7 @@ export class ConversationModel {
     name: string;
     syncMessageOnly?: boolean;
   }): Promise<void> {
-    await window.Signal.Groups.modifyGroupV2({
+    await modifyGroupV2({
       conversation: this,
       usingCredentialsFrom,
       createGroupChange,
@@ -908,19 +965,19 @@ export class ConversationModel {
 
     const serviceId = this.getServiceId();
     if (serviceId && isAciString(serviceId)) {
-      drop(window.storage.blocked.addBlockedServiceId(serviceId));
+      drop(itemStorage.blocked.addBlockedServiceId(serviceId));
       blocked = true;
     }
 
     const e164 = this.get('e164');
     if (e164) {
-      drop(window.storage.blocked.addBlockedNumber(e164));
+      drop(itemStorage.blocked.addBlockedNumber(e164));
       blocked = true;
     }
 
     const groupId = this.get('groupId');
     if (groupId) {
-      drop(window.storage.blocked.addBlockedGroup(groupId));
+      drop(itemStorage.blocked.addBlockedGroup(groupId));
       blocked = true;
     }
 
@@ -939,19 +996,19 @@ export class ConversationModel {
 
     const serviceId = this.getServiceId();
     if (serviceId && isAciString(serviceId)) {
-      drop(window.storage.blocked.removeBlockedServiceId(serviceId));
+      drop(itemStorage.blocked.removeBlockedServiceId(serviceId));
       unblocked = true;
     }
 
     const e164 = this.get('e164');
     if (e164) {
-      drop(window.storage.blocked.removeBlockedNumber(e164));
+      drop(itemStorage.blocked.removeBlockedNumber(e164));
       unblocked = true;
     }
 
     const groupId = this.get('groupId');
     if (groupId) {
-      drop(window.storage.blocked.removeBlockedGroup(groupId));
+      drop(itemStorage.blocked.removeBlockedGroup(groupId));
       unblocked = true;
     }
 
@@ -1175,17 +1232,13 @@ export class ConversationModel {
       return;
     }
 
-    await window.Signal.Groups.waitThenMaybeUpdateGroup({
+    await waitThenMaybeUpdateGroup({
       force: options.force,
       conversation: this,
     });
   }
 
   async fetchSMSOnlyUUID(): Promise<void> {
-    const { server } = window.textsecure;
-    if (!server) {
-      return;
-    }
     if (!this.isSMSOnly()) {
       return;
     }
@@ -1202,7 +1255,10 @@ export class ConversationModel {
       await updateConversationsWithUuidLookup({
         conversationController: window.ConversationController,
         conversations: [this],
-        server,
+        server: {
+          cdsLookup,
+          checkAccountExistence,
+        },
       });
     } finally {
       // No redux update here
@@ -1227,12 +1283,12 @@ export class ConversationModel {
       return;
     }
 
-    const isMigrated = await window.Signal.Groups.hasV1GroupBeenMigrated(this);
+    const isMigrated = await hasV1GroupBeenMigrated(this);
     if (!isMigrated) {
       return;
     }
 
-    await window.Signal.Groups.waitThenRespondToGroupV2Migration({
+    await waitThenRespondToGroupV2Migration({
       conversation: this,
     });
   }
@@ -1304,12 +1360,6 @@ export class ConversationModel {
   }
 
   async sendTypingMessage(isTyping: boolean): Promise<void> {
-    const { messaging } = window.textsecure;
-
-    if (!messaging) {
-      return;
-    }
-
     // We don't send typing messages to our other devices
     if (isMe(this.attributes)) {
       return;
@@ -1333,10 +1383,7 @@ export class ConversationModel {
 
     // If captchas are active, then we should drop typing messages because
     // they're less important and could overwhelm the queue.
-    if (
-      window.Signal.challengeHandler?.areAnyRegistered() &&
-      this.isSealedSenderDisabled()
-    ) {
+    if (challengeHandler.areAnyRegistered() && this.isSealedSenderDisabled()) {
       log.info(
         `sendTypingMessage(${this.idForLogging()}): Challenge is registered and can't send sealed, ignoring`
       );
@@ -1348,6 +1395,13 @@ export class ConversationModel {
 
       // We don't send typing messages if our recipients list is empty
       if (!isDirectConversation(this.attributes) && !groupMembers.length) {
+        return;
+      }
+
+      if (!this.areWeAMember()) {
+        log.warn(
+          `sendTypingMessage(${this.idForLogging()}): not sending, we are not a member`
+        );
         return;
       }
 
@@ -1375,9 +1429,7 @@ export class ConversationModel {
         `sendTypingMessage(${this.idForLogging()}): sending ${content.isTyping}`
       );
 
-      const contentMessage = messaging.getTypingContentMessage(content);
-
-      const { ContentHint } = Proto.UnidentifiedSenderMessage.Message;
+      const contentMessage = messageSender.getTypingContentMessage(content);
 
       const sendOptions = {
         ...(await getSendOptions(this.attributes)),
@@ -1385,8 +1437,8 @@ export class ConversationModel {
       };
       if (isDirectConversation(this.attributes)) {
         await handleMessageSend(
-          messaging.sendMessageProtoAndWait({
-            contentHint: ContentHint.IMPLICIT,
+          messageSender.sendMessageProtoAndWait({
+            contentHint: ContentHint.Implicit,
             groupId: undefined,
             options: sendOptions,
             proto: contentMessage,
@@ -1399,7 +1451,7 @@ export class ConversationModel {
       } else {
         await handleMessageSend(
           sendContentMessageToGroup({
-            contentHint: ContentHint.IMPLICIT,
+            contentHint: ContentHint.Implicit,
             contentMessage,
             messageId: undefined,
             online: true,
@@ -2082,7 +2134,7 @@ export class ConversationModel {
     //   for the case where we need to do old and new PNI comparisons. We'll wait
     //   for the PNI update to do that.
     if (oldValue && oldValue !== this.getPni()) {
-      drop(window.textsecure.storage.protocol.removeIdentityKey(oldValue));
+      drop(signalProtocolStore.removeIdentityKey(oldValue));
     }
 
     this.captureChange('updateServiceId');
@@ -2142,9 +2194,8 @@ export class ConversationModel {
       // We're going from an old PNI to a new PNI
       if (pni) {
         const oldIdentityRecord =
-          window.textsecure.storage.protocol.getIdentityRecord(oldValue);
-        const newIdentityRecord =
-          window.textsecure.storage.protocol.getIdentityRecord(pni);
+          signalProtocolStore.getIdentityRecord(oldValue);
+        const newIdentityRecord = signalProtocolStore.getIdentityRecord(pni);
 
         if (
           newIdentityRecord &&
@@ -2163,7 +2214,7 @@ export class ConversationModel {
       // We're just dropping the PNI
       if (!pni) {
         const oldIdentityRecord =
-          window.textsecure.storage.protocol.getIdentityRecord(oldValue);
+          signalProtocolStore.getIdentityRecord(oldValue);
 
         if (oldIdentityRecord) {
           this.trackPreviousIdentityKey(oldIdentityRecord.publicKey);
@@ -2173,7 +2224,7 @@ export class ConversationModel {
 
     // If this PNI is going away or going to someone else, we'll delete all its sessions
     if (oldValue) {
-      drop(window.textsecure.storage.protocol.removeIdentityKey(oldValue));
+      drop(signalProtocolStore.removeIdentityKey(oldValue));
     }
 
     if (pni && !this.getServiceId()) {
@@ -2533,8 +2584,8 @@ export class ConversationModel {
         }
 
         if (isLocalAction) {
-          const ourAci = window.textsecure.storage.user.getCheckedAci();
-          const ourPni = window.textsecure.storage.user.getPni();
+          const ourAci = itemStorage.user.getCheckedAci();
+          const ourPni = itemStorage.user.getPni();
           const ourConversation =
             window.ConversationController.getOurConversationOrThrow();
 
@@ -2601,7 +2652,7 @@ export class ConversationModel {
     inviteLinkPassword: string;
     revision: number;
   }): Promise<void> {
-    await window.Signal.Groups.joinGroupV2ViaLinkAndMigrate({
+    await joinGroupV2ViaLinkAndMigrate({
       approvalRequired,
       conversation: this,
       inviteLinkPassword,
@@ -2616,7 +2667,7 @@ export class ConversationModel {
     inviteLinkPassword: string;
     approvalRequired: boolean;
   }): Promise<void> {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const ourConversation =
       window.ConversationController.getOurConversationOrThrow();
     try {
@@ -2672,7 +2723,7 @@ export class ConversationModel {
   }
 
   async cancelJoinRequest(): Promise<void> {
-    const ourAci = window.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
     const inviteLinkPassword = this.get('groupInviteLinkPassword');
     if (!inviteLinkPassword) {
@@ -2694,8 +2745,8 @@ export class ConversationModel {
       return;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
-    const ourPni = window.textsecure.storage.user.getPni();
+    const ourAci = itemStorage.user.getCheckedAci();
+    const ourPni = itemStorage.user.getPni();
 
     if (this.isMemberPending(ourAci)) {
       await this.modifyGroupV2({
@@ -2747,7 +2798,7 @@ export class ConversationModel {
       return;
     }
 
-    return window.Signal.Groups.buildAddBannedMemberChange({
+    return buildAddBannedMemberChange({
       group: this.attributes,
       serviceId,
     });
@@ -2843,7 +2894,7 @@ export class ConversationModel {
     }
 
     try {
-      return await window.textsecure.storage.protocol.getVerified(serviceId);
+      return await signalProtocolStore.getVerified(serviceId);
     } catch {
       return this.#verifiedEnum.DEFAULT;
     }
@@ -2908,9 +2959,9 @@ export class ConversationModel {
     const keyChange = false;
     if (aci) {
       if (verified === this.#verifiedEnum.DEFAULT) {
-        await window.textsecure.storage.protocol.setVerified(aci, verified);
+        await signalProtocolStore.setVerified(aci, verified);
       } else {
-        await window.textsecure.storage.protocol.setVerified(aci, verified, {
+        await signalProtocolStore.setVerified(aci, verified, {
           firstUse: false,
           nonblockingApproval: true,
         });
@@ -2963,7 +3014,7 @@ export class ConversationModel {
       return;
     }
 
-    const key = await window.textsecure.storage.protocol.loadIdentityKey(aci);
+    const key = await signalProtocolStore.loadIdentityKey(aci);
     if (!key) {
       throw new Error(
         `sendVerifySyncMessage: No identity key found for aci ${aci}`
@@ -3055,7 +3106,7 @@ export class ConversationModel {
     }
 
     return this.queueJob('setApproved', async () => {
-      return window.textsecure.storage.protocol.setApproval(serviceId, true);
+      return signalProtocolStore.setApproval(serviceId, true);
     });
   }
 
@@ -3063,10 +3114,7 @@ export class ConversationModel {
     try {
       const serviceId = this.getServiceId();
       strictAssert(serviceId, `No serviceId for conversation: ${this.id}`);
-      return window.textsecure.storage.protocol.isUntrusted(
-        serviceId,
-        timestampThreshold
-      );
+      return signalProtocolStore.isUntrusted(serviceId, timestampThreshold);
     } catch (err) {
       return false;
     }
@@ -3323,8 +3371,7 @@ export class ConversationModel {
       return;
     }
 
-    const hadSession =
-      await window.textsecure.storage.protocol.hasSessionWith(originalPni);
+    const hadSession = await signalProtocolStore.hasSessionWith(originalPni);
 
     if (!hadSession) {
       log.info(`${logId}: not adding, no PNI session`);
@@ -3596,9 +3643,8 @@ export class ConversationModel {
       'Change number notification without service id'
     );
 
-    const { storage } = window.textsecure;
     if (
-      storage.user.getOurServiceIdKind(sourceServiceId) !==
+      itemStorage.user.getOurServiceIdKind(sourceServiceId) !==
       ServiceIdKind.Unknown
     ) {
       log.info(
@@ -3744,7 +3790,7 @@ export class ConversationModel {
       return undefined;
     }
 
-    return window.Signal.Groups.buildGroupLink(this.attributes);
+    return buildGroupLink(this.attributes);
   }
 
   getMembers(
@@ -3804,8 +3850,6 @@ export class ConversationModel {
   }
 
   async sendStickerMessage(packId: string, stickerId: number): Promise<void> {
-    const { readStickerData } = window.Signal.Migrations;
-
     const packData = Stickers.getStickerPack(packId);
     const stickerData = Stickers.getSticker(packId, stickerId);
     if (!stickerData || !packData) {
@@ -3989,9 +4033,6 @@ export class ConversationModel {
       extraReduxActions?: () => void;
     } = {}
   ): Promise<MessageAttributesType | undefined> {
-    const { deleteAttachmentData, upgradeMessageSchema } =
-      window.Signal.Migrations;
-
     if (this.isGroupV1AndDisabled()) {
       return;
     }
@@ -4412,7 +4453,7 @@ export class ConversationModel {
     }
 
     const groupInviteLinkPassword = Bytes.toBase64(
-      window.Signal.Groups.generateGroupInviteLinkPassword()
+      generateGroupInviteLinkPassword()
     );
 
     log.info('refreshGroupLink for conversation', this.idForLogging());
@@ -4421,10 +4462,7 @@ export class ConversationModel {
       name: 'updateInviteLinkPassword',
       usingCredentialsFrom: [],
       createGroupChange: async () =>
-        window.Signal.Groups.buildInviteLinkPasswordChange(
-          this.attributes,
-          groupInviteLinkPassword
-        ),
+        buildInviteLinkPasswordChange(this.attributes, groupInviteLinkPassword),
     });
 
     this.set({ groupInviteLinkPassword });
@@ -4439,7 +4477,7 @@ export class ConversationModel {
       value && !this.get('groupInviteLinkPassword');
     const groupInviteLinkPassword =
       this.get('groupInviteLinkPassword') ||
-      Bytes.toBase64(window.Signal.Groups.generateGroupInviteLinkPassword());
+      Bytes.toBase64(generateGroupInviteLinkPassword());
 
     log.info('toggleGroupLink for conversation', this.idForLogging(), value);
 
@@ -4453,7 +4491,7 @@ export class ConversationModel {
         name: 'updateNewGroupLink',
         usingCredentialsFrom: [],
         createGroupChange: async () =>
-          window.Signal.Groups.buildNewGroupLinkChange(
+          buildNewGroupLinkChange(
             this.attributes,
             groupInviteLinkPassword,
             addFromInviteLink
@@ -4464,7 +4502,7 @@ export class ConversationModel {
         name: 'updateAccessControlAddFromInviteLink',
         usingCredentialsFrom: [],
         createGroupChange: async () =>
-          window.Signal.Groups.buildAccessControlAddFromInviteLinkChange(
+          buildAccessControlAddFromInviteLinkChange(
             this.attributes,
             addFromInviteLink
           ),
@@ -4499,7 +4537,7 @@ export class ConversationModel {
       name: 'updateAccessControlAddFromInviteLink',
       usingCredentialsFrom: [],
       createGroupChange: async () =>
-        window.Signal.Groups.buildAccessControlAddFromInviteLinkChange(
+        buildAccessControlAddFromInviteLinkChange(
           this.attributes,
           addFromInviteLink
         ),
@@ -4523,10 +4561,7 @@ export class ConversationModel {
       name: 'updateAccessControlAttributes',
       usingCredentialsFrom: [],
       createGroupChange: async () =>
-        window.Signal.Groups.buildAccessControlAttributesChange(
-          this.attributes,
-          value
-        ),
+        buildAccessControlAttributesChange(this.attributes, value),
     });
 
     const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
@@ -4549,10 +4584,7 @@ export class ConversationModel {
       name: 'updateAccessControlMembers',
       usingCredentialsFrom: [],
       createGroupChange: async () =>
-        window.Signal.Groups.buildAccessControlMembersChange(
-          this.attributes,
-          value
-        ),
+        buildAccessControlMembersChange(this.attributes, value),
     });
 
     const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
@@ -4575,10 +4607,7 @@ export class ConversationModel {
       name: 'updateAnnouncementsOnly',
       usingCredentialsFrom: [],
       createGroupChange: async () =>
-        window.Signal.Groups.buildAnnouncementsOnlyChange(
-          this.attributes,
-          value
-        ),
+        buildAnnouncementsOnlyChange(this.attributes, value),
     });
 
     this.set({ announcementsOnly: value });
@@ -4836,7 +4865,7 @@ export class ConversationModel {
       return undefined;
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     const theirAci = this.getAci();
     if (!theirAci) {
       return undefined;
@@ -4938,18 +4967,12 @@ export class ConversationModel {
     decryptionKey?: Uint8Array | null | undefined;
     forceFetch?: boolean;
   }): Promise<void> {
-    const {
-      deleteAttachmentData,
-      doesAttachmentExist,
-      writeNewAttachmentData,
-    } = window.Signal.Migrations;
-
     const { avatarUrl, decryptionKey, forceFetch } = options;
     if (isMe(this.attributes)) {
       if (avatarUrl) {
-        await window.storage.put('avatarUrl', avatarUrl);
+        await itemStorage.put('avatarUrl', avatarUrl);
       } else {
-        await window.storage.remove('avatarUrl');
+        await itemStorage.remove('avatarUrl');
       }
     }
 
@@ -4958,17 +4981,12 @@ export class ConversationModel {
       return;
     }
 
-    const { messaging } = window.textsecure;
-    if (!messaging) {
-      throw new Error('setProfileAvatar: Cannot fetch avatar when offline!');
-    }
-
     if (!this.getAccepted({ ignoreEmptyConvo: true }) && !forceFetch) {
       this.set({ remoteAvatarUrl: avatarUrl });
       return;
     }
 
-    const avatar = await messaging.getAvatar(avatarUrl);
+    const avatar = await doGetAvatar(avatarUrl);
 
     // If decryptionKey isn't provided, use the one from the model
     const modelProfileKey = this.get('profileKey');
@@ -5338,6 +5356,12 @@ export class ConversationModel {
     return areWeAdmin(this.attributes);
   }
 
+  areWeAMember(): boolean {
+    return (
+      !this.get('left') && this.hasMember(itemStorage.user.getCheckedAci())
+    );
+  }
+
   getExpireTimerVersion(): number | undefined {
     return isDirectConversation(this.attributes)
       ? Math.min(this.get('expireTimerVersion') || 0, MAX_EXPIRE_TIMER_VERSION)
@@ -5446,8 +5470,6 @@ export class ConversationModel {
     url: string;
     absolutePath?: string;
   }> {
-    const { getAbsoluteTempPath } = window.Signal.Migrations;
-
     const saveToDisk = shouldSaveNotificationAvatarToDisk();
     const avatarUrl = getLocalAvatarUrl(this.attributes);
     if (avatarUrl) {
@@ -5469,13 +5491,6 @@ export class ConversationModel {
   }
 
   async #getTemporaryAvatarPath(): Promise<string | undefined> {
-    const {
-      copyIntoTempDirectory,
-      deleteAttachmentData,
-      getAbsoluteAttachmentPath,
-      getAbsoluteTempPath,
-    } = window.Signal.Migrations;
-
     const avatar = getAvatar(this.attributes);
     if (avatar?.path == null) {
       return undefined;
@@ -5506,7 +5521,7 @@ export class ConversationModel {
     });
 
     try {
-      const { path: tempPath } = await copyIntoTempDirectory(
+      const { path: tempPath } = await copyAttachmentIntoTempDirectory(
         getAbsoluteAttachmentPath(plaintextPath)
       );
       return getAbsoluteTempPath(tempPath);
@@ -5662,7 +5677,7 @@ export class ConversationModel {
 
     log.info('pinning', this.idForLogging());
     const pinnedConversationIds = new Set(
-      window.storage.get('pinnedConversationIds', new Array<string>())
+      itemStorage.get('pinnedConversationIds', new Array<string>())
     );
 
     pinnedConversationIds.add(this.id);
@@ -5685,7 +5700,7 @@ export class ConversationModel {
     log.info('un-pinning', this.idForLogging());
 
     const pinnedConversationIds = new Set(
-      window.storage.get('pinnedConversationIds', new Array<string>())
+      itemStorage.get('pinnedConversationIds', new Array<string>())
     );
 
     pinnedConversationIds.delete(this.id);
@@ -5697,7 +5712,7 @@ export class ConversationModel {
   }
 
   writePinnedConversations(pinnedConversationIds: Array<string>): void {
-    drop(window.storage.put('pinnedConversationIds', pinnedConversationIds));
+    drop(itemStorage.put('pinnedConversationIds', pinnedConversationIds));
 
     const myId = window.ConversationController.getOurConversationId();
     const me = window.ConversationController.get(myId);
@@ -5754,7 +5769,7 @@ export class ConversationModel {
     if (!this.get('shareMyPhoneNumber')) {
       return undefined;
     }
-    return window.textsecure.storage.protocol.signAlternateIdentity();
+    return signalProtocolStore.signAlternateIdentity();
   }
 
   /** @return only undefined if not a group */

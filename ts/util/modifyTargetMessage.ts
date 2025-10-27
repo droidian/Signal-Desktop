@@ -1,42 +1,55 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isEqual } from 'lodash';
+import lodash from 'lodash';
 import PQueue from 'p-queue';
-import type { ConversationModel } from '../models/conversations';
-import type { MessageModel } from '../models/messages';
-import type { SendStateByConversationId } from '../messages/MessageSendState';
+import type { ConversationModel } from '../models/conversations.js';
+import type { MessageModel } from '../models/messages.js';
+import type { SendStateByConversationId } from '../messages/MessageSendState.js';
 
-import * as Edits from '../messageModifiers/Edits';
-import { createLogger } from '../logging/log';
-import * as Deletes from '../messageModifiers/Deletes';
-import * as DeletesForMe from '../messageModifiers/DeletesForMe';
-import * as MessageReceipts from '../messageModifiers/MessageReceipts';
-import * as Reactions from '../messageModifiers/Reactions';
-import * as ReadSyncs from '../messageModifiers/ReadSyncs';
-import * as ViewOnceOpenSyncs from '../messageModifiers/ViewOnceOpenSyncs';
-import * as ViewSyncs from '../messageModifiers/ViewSyncs';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SeenStatus } from '../MessageSeenStatus';
-import { SendActionType, sendStateReducer } from '../messages/MessageSendState';
-import { canConversationBeUnarchived } from './canConversationBeUnarchived';
-import { deleteForEveryone } from './deleteForEveryone';
-import { drop } from './drop';
-import { handleEditMessage } from './handleEditMessage';
-import { isGroup } from './whatTypeOfConversation';
-import { isStory, isTapToView } from '../state/selectors/message';
-import { getOwn } from './getOwn';
-import { getSourceServiceId } from '../messages/helpers';
-import { missingCaseError } from './missingCaseError';
-import { reduce } from './iterables';
-import { strictAssert } from './assert';
+import * as Edits from '../messageModifiers/Edits.js';
+import { createLogger } from '../logging/log.js';
+import * as Deletes from '../messageModifiers/Deletes.js';
+import * as DeletesForMe from '../messageModifiers/DeletesForMe.js';
+import * as MessageReceipts from '../messageModifiers/MessageReceipts.js';
+import * as Reactions from '../messageModifiers/Reactions.js';
+import * as ReadSyncs from '../messageModifiers/ReadSyncs.js';
+import * as ViewOnceOpenSyncs from '../messageModifiers/ViewOnceOpenSyncs.js';
+import * as ViewSyncs from '../messageModifiers/ViewSyncs.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import {
+  SendActionType,
+  sendStateReducer,
+} from '../messages/MessageSendState.js';
+import { canConversationBeUnarchived } from './canConversationBeUnarchived.js';
+import { deleteForEveryone } from './deleteForEveryone.js';
+import { drop } from './drop.js';
+import { handleEditMessage } from './handleEditMessage.js';
+import { isGroup } from './whatTypeOfConversation.js';
+import { isStory, isTapToView } from '../state/selectors/message.js';
+import { getOwn } from './getOwn.js';
+import { getSourceServiceId } from '../messages/sources.js';
+import { missingCaseError } from './missingCaseError.js';
+import { reduce } from './iterables.js';
+import { strictAssert } from './assert.js';
+import { deleteAttachmentData, deleteDownloadData } from './migrations.js';
 import {
   applyDeleteAttachmentFromMessage,
   applyDeleteMessage,
-} from './deleteForMe';
-import { getMessageIdForLogging } from './idForLogging';
-import { markViewOnceMessageViewed } from '../services/MessageUpdater';
-import { handleReaction } from '../messageModifiers/Reactions';
+} from './deleteForMe.js';
+import { getMessageIdForLogging } from './idForLogging.js';
+import { markViewOnceMessageViewed } from '../services/MessageUpdater.js';
+import { handleReaction } from '../messageModifiers/Reactions.js';
+import {
+  drainCachedTerminatesForMessage as drainCachedPollTerminatesForMessage,
+  drainCachedVotesForMessage as drainCachedPollVotesForMessage,
+  handlePollTerminate,
+  handlePollVote,
+} from '../messageModifiers/Polls.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { isEqual } = lodash;
 
 const log = createLogger('modifyTargetMessage');
 
@@ -59,7 +72,7 @@ export async function modifyTargetMessage(
   const logId = `modifyTargetMessage/${getMessageIdForLogging(message.attributes)}`;
   const type = message.get('type');
   let changed = false;
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const sourceServiceId = getSourceServiceId(message.attributes);
 
   const syncDeletes = await DeletesForMe.forMessage(message.attributes);
@@ -95,8 +108,8 @@ export async function modifyTargetMessage(
           {
             logId,
             shouldSave: false,
-            deleteOnDisk: window.Signal.Migrations.deleteAttachmentData,
-            deleteDownloadOnDisk: window.Signal.Migrations.deleteDownloadData,
+            deleteAttachmentOnDisk: deleteAttachmentData,
+            deleteDownloadOnDisk: deleteDownloadData,
           }
         );
         if (result) {
@@ -312,6 +325,28 @@ export async function modifyTargetMessage(
     })
   );
 
+  const pollVotes = drainCachedPollVotesForMessage(message.attributes);
+  if (pollVotes.length) {
+    changed = true;
+    await Promise.all(
+      pollVotes.map(vote =>
+        handlePollVote(message, vote, { shouldPersist: false })
+      )
+    );
+  }
+
+  const pollTerminates = drainCachedPollTerminatesForMessage(
+    message.attributes
+  );
+  if (pollTerminates.length) {
+    changed = true;
+    await Promise.all(
+      pollTerminates.map(term =>
+        handlePollTerminate(message, term, { shouldPersist: false })
+      )
+    );
+  }
+
   // Does message message have any pending, previously-received associated
   // delete for everyone messages?
   const deletes = Deletes.forMessage(message.attributes);
@@ -332,8 +367,8 @@ export async function modifyTargetMessage(
   if (!isFirstRun && !skipEdits) {
     const edits = Edits.forMessage(message.attributes);
     log.info(`${logId}: ${edits.length} edits in second run`);
-    await Promise.all(
-      edits.map(editAttributes =>
+    edits.map(editAttributes =>
+      drop(
         conversation.queueJob('modifyTargetMessage/edits', () =>
           handleEditMessage(message.attributes, editAttributes)
         )

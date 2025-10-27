@@ -2,30 +2,42 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 
-import { DataWriter } from '../sql/Client';
-import type { ContactSyncEvent } from '../textsecure/messageReceiverEvents';
+import { DataWriter } from '../sql/Client.js';
+import type { ContactSyncEvent } from '../textsecure/messageReceiverEvents.js';
 import {
   parseContactsV2,
   type ContactDetailsWithAvatar,
-} from '../textsecure/ContactsParser';
-import * as Conversation from '../types/Conversation';
-import * as Errors from '../types/errors';
-import type { ValidateConversationType } from '../model-types.d';
-import type { ConversationModel } from '../models/conversations';
-import { validateConversation } from '../util/validateConversation';
-import { isDirectConversation, isMe } from '../util/whatTypeOfConversation';
-import { createLogger } from '../logging/log';
-import { dropNull } from '../util/dropNull';
-import type { ProcessedAttachment } from '../textsecure/Types';
-import { downloadAttachment } from '../textsecure/downloadAttachment';
-import { strictAssert } from '../util/assert';
-import type { ReencryptedAttachmentV2 } from '../AttachmentCrypto';
-import { SECOND } from '../util/durations';
-import { AttachmentVariant } from '../types/Attachment';
-import { MediaTier } from '../types/AttachmentDownload';
-import { waitForOnline } from '../util/waitForOnline';
+} from '../textsecure/ContactsParser.js';
+import {
+  isOnline,
+  getAttachment,
+  getAttachmentFromBackupTier,
+} from '../textsecure/WebAPI.js';
+import * as Conversation from '../types/Conversation.js';
+import * as Errors from '../types/errors.js';
+import type { ValidateConversationType } from '../model-types.d.ts';
+import type { ConversationModel } from '../models/conversations.js';
+import { validateConversation } from '../util/validateConversation.js';
+import {
+  writeNewAttachmentData,
+  deleteAttachmentData,
+  doesAttachmentExist,
+} from '../util/migrations.js';
+import { isDirectConversation, isMe } from '../util/whatTypeOfConversation.js';
+import { createLogger } from '../logging/log.js';
+import { dropNull } from '../util/dropNull.js';
+import type { ProcessedAttachment } from '../textsecure/Types.js';
+import { downloadAttachment } from '../textsecure/downloadAttachment.js';
+import type { ReencryptedAttachmentV2 } from '../AttachmentCrypto.js';
+import { SECOND } from '../util/durations/index.js';
+import { AttachmentVariant } from '../types/Attachment.js';
+import { MediaTier } from '../types/AttachmentDownload.js';
+import { waitForOnline } from '../util/waitForOnline.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { noop } = lodash;
 
 const log = createLogger('contactSync');
 
@@ -48,8 +60,6 @@ async function updateConversationFromContactSync(
   sentAt: number
 ): Promise<void> {
   const logId = `updateConversationFromContactSync(${conversation.idForLogging()}`;
-  const { writeNewAttachmentData, deleteAttachmentData, doesAttachmentExist } =
-    window.Signal.Migrations;
 
   conversation.set({
     name: dropNull(details.name),
@@ -105,12 +115,14 @@ const queue = new PQueue({ concurrency: 1 });
 async function downloadAndParseContactAttachment(
   contactAttachment: ProcessedAttachment
 ) {
-  strictAssert(window.textsecure.server, 'server must exist');
   let downloaded: ReencryptedAttachmentV2 | undefined;
   try {
     const abortController = new AbortController();
     downloaded = await downloadAttachment(
-      window.textsecure.server,
+      {
+        getAttachment,
+        getAttachmentFromBackupTier,
+      },
       { attachment: contactAttachment, mediaTier: MediaTier.STANDARD },
       {
         variant: AttachmentVariant.Default,
@@ -118,6 +130,7 @@ async function downloadAndParseContactAttachment(
         disableRetries: true,
         timeout: 90 * SECOND,
         abortSignal: abortController.signal,
+        logId: 'downloadContactAttachment',
       }
     );
 
@@ -127,7 +140,7 @@ async function downloadAndParseContactAttachment(
     });
   } finally {
     if (downloaded?.path) {
-      await window.Signal.Migrations.deleteAttachmentData(downloaded.path);
+      await deleteAttachmentData(downloaded.path);
     }
   }
 }
@@ -149,10 +162,10 @@ async function doContactSync({
   while (contacts === undefined) {
     attempts += 1;
     try {
-      if (!window.textsecure.server?.isOnline()) {
+      if (!isOnline()) {
         log.info(`${logId}: We are not online; waiting until we are online`);
         // eslint-disable-next-line no-await-in-loop
-        await waitForOnline();
+        await waitForOnline({ server: { isOnline } });
         log.info(`${logId}: We are back online; starting up again`);
       }
 
@@ -260,7 +273,7 @@ async function doContactSync({
 
   await Promise.all(promises);
 
-  await window.storage.put('synced_at', Date.now());
+  await itemStorage.put('synced_at', Date.now());
   window.Whisper.events.emit('contactSync:complete');
   if (isInitialSync) {
     isInitialSync = false;

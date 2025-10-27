@@ -1,13 +1,22 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AciString, PniString } from '../../types/ServiceId';
-import type { ConversationColorType } from '../../types/Colors';
+import type { AciString, PniString } from '../../types/ServiceId.js';
+import type { ConversationColorType } from '../../types/Colors.js';
 
 // Duplicated here to allow loading it in a non-node environment
 export enum BackupLevel {
   Free = 200,
   Paid = 201,
+}
+
+export function backupLevelFromNumber(
+  num: number | undefined
+): BackupLevel | null {
+  if (Object.values(BackupLevel).includes(num as BackupLevel)) {
+    return num as BackupLevel;
+  }
+  return null;
 }
 
 export type AboutMe = {

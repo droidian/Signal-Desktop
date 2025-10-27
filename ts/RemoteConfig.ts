@@ -1,18 +1,21 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { get, throttle } from 'lodash';
+import lodash from 'lodash';
 
-import type { WebAPIType } from './textsecure/WebAPI';
-import { createLogger } from './logging/log';
-import type { AciString } from './types/ServiceId';
-import { parseIntOrThrow } from './util/parseIntOrThrow';
-import { HOUR } from './util/durations';
-import * as Bytes from './Bytes';
-import { uuidToBytes } from './util/uuidToBytes';
-import { HashType } from './types/Crypto';
-import { getCountryCode } from './types/PhoneNumber';
-import { parseRemoteClientExpiration } from './util/parseRemoteClientExpiration';
+import type { getConfig } from './textsecure/WebAPI.js';
+import { createLogger } from './logging/log.js';
+import type { AciString } from './types/ServiceId.js';
+import { parseIntOrThrow } from './util/parseIntOrThrow.js';
+import { HOUR } from './util/durations/index.js';
+import * as Bytes from './Bytes.js';
+import { uuidToBytes } from './util/uuidToBytes.js';
+import { HashType } from './types/Crypto.js';
+import { getCountryCode } from './types/PhoneNumber.js';
+import { parseRemoteClientExpiration } from './util/parseRemoteClientExpiration.js';
+import type { StorageInterface } from './types/Storage.d.ts';
+
+const { get, throttle } = lodash;
 
 const log = createLogger('RemoteConfig');
 
@@ -21,27 +24,23 @@ const KnownConfigKeys = [
   'desktop.chatFolders.beta',
   'desktop.chatFolders.prod',
   'desktop.clientExpiration',
-  'desktop.backup.credentialFetch',
-  'desktop.donations',
+  'desktop.backups.beta',
+  'desktop.backups.prod',
   'desktop.internalUser',
+  'desktop.loggingErrorToasts',
   'desktop.mediaQuality.levels',
   'desktop.messageCleanup',
   'desktop.retryRespondMaxAge',
   'desktop.senderKey.retry',
   'desktop.senderKeyMaxAge',
-  'desktop.experimentalTransport.enableAuth',
-  'desktop.experimentalTransportEnabled.alpha',
-  'desktop.experimentalTransportEnabled.beta',
-  'desktop.experimentalTransportEnabled.prod.2',
   'desktop.libsignalNet.enforceMinimumTls',
   'desktop.libsignalNet.shadowUnauthChatWithNoise',
   'desktop.libsignalNet.shadowAuthChatWithNoise',
-  'desktop.cdsiViaLibsignal',
-  'desktop.cdsiViaLibsignal.disableNewConnectionLogic',
-  'desktop.funPicker', // alpha
-  'desktop.funPicker.beta',
-  'desktop.funPicker.prod',
-  'desktop.usePqRatchet',
+  'desktop.libsignalNet.chatPermessageDeflate',
+  'desktop.libsignalNet.chatPermessageDeflate.prod',
+  'desktop.pollReceive.alpha',
+  'desktop.pollReceive.beta',
+  'desktop.pollReceive.prod',
   'global.attachments.maxBytes',
   'global.attachments.maxReceiveBytes',
   'global.backups.mediaTierFallbackCdnNumber',
@@ -71,8 +70,15 @@ type ConfigListenersMapType = {
 let config: ConfigMapType = {};
 const listeners: ConfigListenersMapType = {};
 
-export function restoreRemoteConfigFromStorage(): void {
-  config = window.storage.get('remoteConfig') || {};
+export type OptionsType = Readonly<{
+  getConfig: typeof getConfig;
+  storage: Pick<StorageInterface, 'get' | 'put' | 'remove'>;
+}>;
+
+export function restoreRemoteConfigFromStorage({
+  storage,
+}: Pick<OptionsType, 'storage'>): void {
+  config = storage.get('remoteConfig') || {};
 }
 
 export function onChange(
@@ -88,17 +94,18 @@ export function onChange(
   };
 }
 
-export const _refreshRemoteConfig = async (
-  server: WebAPIType
-): Promise<void> => {
+export const _refreshRemoteConfig = async ({
+  getConfig,
+  storage,
+}: OptionsType): Promise<void> => {
   const now = Date.now();
-  const oldConfigHash = window.storage.get('remoteConfigHash');
+  const oldConfigHash = storage.get('remoteConfigHash');
 
   const {
     config: newConfig,
     serverTimestamp,
     configHash,
-  } = await server.getConfig(oldConfigHash);
+  } = await getConfig(oldConfigHash);
 
   const serverTimeSkew = serverTimestamp - now;
 
@@ -131,7 +138,7 @@ export const _refreshRemoteConfig = async (
   const oldConfig = config;
   config = Array.from(newConfigValues.entries()).reduce(
     (acc, [name, value]) => {
-      const enabled = value !== undefined;
+      const enabled = value !== undefined && value.toLowerCase() !== 'false';
       const previouslyEnabled: boolean = get(
         oldConfig,
         [name, 'enabled'],
@@ -180,25 +187,25 @@ export const _refreshRemoteConfig = async (
   const remoteExpirationValue = getValue('desktop.clientExpiration');
   if (!remoteExpirationValue) {
     // If remote configuration fetch worked - we are not expired anymore.
-    if (window.storage.get('remoteBuildExpiration') != null) {
+    if (storage.get('remoteBuildExpiration') != null) {
       log.warn('Remote Config: clearing remote expiration on successful fetch');
     }
-    await window.storage.remove('remoteBuildExpiration');
+    await storage.remove('remoteBuildExpiration');
   } else {
     const remoteBuildExpirationTimestamp = parseRemoteClientExpiration(
       remoteExpirationValue
     );
     if (remoteBuildExpirationTimestamp) {
-      await window.storage.put(
+      await storage.put(
         'remoteBuildExpiration',
         remoteBuildExpirationTimestamp
       );
     }
   }
 
-  await window.storage.put('remoteConfig', config);
-  await window.storage.put('remoteConfigHash', configHash);
-  await window.storage.put('serverTimeSkew', serverTimeSkew);
+  await storage.put('remoteConfig', config);
+  await storage.put('remoteConfigHash', configHash);
+  await storage.put('serverTimeSkew', serverTimeSkew);
 };
 
 export const maybeRefreshRemoteConfig = throttle(
@@ -209,12 +216,12 @@ export const maybeRefreshRemoteConfig = throttle(
 );
 
 export async function forceRefreshRemoteConfig(
-  server: WebAPIType,
+  options: OptionsType,
   reason: string
 ): Promise<void> {
   log.info(`forceRefreshRemoteConfig: ${reason}`);
   maybeRefreshRemoteConfig.cancel();
-  await _refreshRemoteConfig(server);
+  await _refreshRemoteConfig(options);
 }
 
 export function isEnabled(
@@ -225,8 +232,11 @@ export function isEnabled(
   return get(reduxConfig ?? config, [name, 'enabled'], false);
 }
 
-export function getValue(name: ConfigKeyType): string | undefined {
-  return get(config, [name, 'value']);
+export function getValue(
+  name: ConfigKeyType, // when called from UI component, provide redux config (items.remoteConfig)
+  reduxConfig?: ConfigMapType
+): string | undefined {
+  return get(reduxConfig ?? config, [name, 'value']);
 }
 
 // See isRemoteConfigBucketEnabled in selectors/items.ts

@@ -1,30 +1,39 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber } from 'lodash';
+import lodash from 'lodash';
+import type { z } from 'zod';
 
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import * as LinkPreview from '../types/LinkPreview';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import * as LinkPreview from '../types/LinkPreview.js';
 
-import { getAuthor, isStory, messageHasPaymentEvent } from './helpers';
-import { getMessageIdForLogging } from '../util/idForLogging';
-import { getSenderIdentifier } from '../util/getSenderIdentifier';
-import { isNormalNumber } from '../util/isNormalNumber';
-import { getOwn } from '../util/getOwn';
+import { isStory } from './helpers.js';
+import { getAuthor } from './sources.js';
+import { messageHasPaymentEvent } from './payments.js';
+import { getMessageIdForLogging } from '../util/idForLogging.js';
+import {
+  deliveryReceiptQueue,
+  deliveryReceiptBatcher,
+} from '../util/deliveryReceipt.js';
+import { getSenderIdentifier } from '../util/getSenderIdentifier.js';
+import { isNormalNumber } from '../util/isNormalNumber.js';
+import { upgradeMessageSchema } from '../util/migrations.js';
+import { getOwn } from '../util/getOwn.js';
 import {
   SendActionType,
   sendStateReducer,
   SendStatus,
-} from './MessageSendState';
-import { DataReader, DataWriter } from '../sql/Client';
-import { eraseMessageContents } from '../util/cleanup';
+} from './MessageSendState.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { eraseMessageContents } from '../util/cleanup.js';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
-} from '../util/whatTypeOfConversation';
-import { generateMessageId } from '../util/generateMessageId';
+} from '../util/whatTypeOfConversation.js';
+import { respondToGroupV2Migration, maybeUpdateGroup } from '../groups.js';
+import { generateMessageId } from '../util/generateMessageId.js';
 import {
   hasErrors,
   isEndSession,
@@ -32,39 +41,44 @@ import {
   isGroupUpdate,
   isTapToView,
   isUnsupportedMessage,
-} from '../state/selectors/message';
-import { drop } from '../util/drop';
-import { strictAssert } from '../util/assert';
-import { isAciString } from '../util/isAciString';
-import { copyFromQuotedMessage } from './copyQuote';
-import { findStoryMessages } from '../util/findStoryMessage';
-import { getRoomIdFromCallLink } from '../util/callLinksRingrtc';
-import { isNotNil } from '../util/isNotNil';
-import { normalizeServiceId } from '../types/ServiceId';
-import { BodyRange, trimMessageWhitespace } from '../types/BodyRange';
-import { hydrateStoryContext } from '../util/hydrateStoryContext';
-import { isMessageEmpty } from '../util/isMessageEmpty';
-import { isValidTapToView } from '../util/isValidTapToView';
-import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage';
-import { getMessageAuthorText } from '../util/getMessageAuthorText';
-import { GiftBadgeStates } from '../components/conversation/Message';
-import { parseBoostBadgeListFromServer } from '../badges/parseBadgesFromServer';
-import { SignalService as Proto } from '../protobuf';
+} from '../state/selectors/message.js';
+import { drop } from '../util/drop.js';
+import { strictAssert } from '../util/assert.js';
+import { isAciString } from '../util/isAciString.js';
+import { copyFromQuotedMessage } from './copyQuote.js';
+import { findStoryMessages } from '../util/findStoryMessage.js';
+import { getRoomIdFromCallLink } from '../util/callLinksRingrtc.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { normalizeServiceId } from '../types/ServiceId.js';
+import { BodyRange, trimMessageWhitespace } from '../types/BodyRange.js';
+import { hydrateStoryContext } from '../util/hydrateStoryContext.js';
+import { isMessageEmpty } from '../util/isMessageEmpty.js';
+import { isValidTapToView } from '../util/isValidTapToView.js';
+import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.js';
+import { getMessageAuthorText } from '../util/getMessageAuthorText.js';
+import { GiftBadgeStates } from '../types/GiftBadgeStates.js';
+import { parseBoostBadgeListFromServer } from '../badges/parseBadgesFromServer.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 import {
   modifyTargetMessage,
   ModifyTargetMessageResult,
-} from '../util/modifyTargetMessage';
-import { saveAndNotify } from './saveAndNotify';
-import { MessageModel } from '../models/messages';
+} from '../util/modifyTargetMessage.js';
+import { saveAndNotify } from './saveAndNotify.js';
+import { MessageModel } from '../models/messages.js';
+import { safeParsePartial } from '../util/schemas.js';
+import { PollCreateSchema, isPollReceiveEnabled } from '../types/Polls.js';
 
-import type { SentEventData } from '../textsecure/messageReceiverEvents';
+import type { SentEventData } from '../textsecure/messageReceiverEvents.js';
 import type {
   ProcessedDataMessage,
   ProcessedUnidentifiedDeliveryStatus,
-} from '../textsecure/Types';
-import type { ServiceIdString } from '../types/ServiceId';
-import type { LinkPreviewType } from '../types/message/LinkPreviews';
-import { getCachedSubscriptionConfiguration } from '../util/subscriptionConfiguration';
+} from '../textsecure/Types.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import type { LinkPreviewType } from '../types/message/LinkPreviews.js';
+import { getCachedSubscriptionConfiguration } from '../util/subscriptionConfiguration.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { isNumber } = lodash;
 
 const log = createLogger('handleDataMessage');
 
@@ -78,7 +92,6 @@ export async function handleDataMessage(
   options: { data?: SentEventData } = {}
 ): Promise<void> {
   const { data } = options;
-  const { upgradeMessageSchema } = window.Signal.Migrations;
 
   // This function is called from the background script in a few scenarios:
   //   1. on an incoming message
@@ -229,7 +242,7 @@ export async function handleDataMessage(
         // If we received a GroupV2 message in a GroupV1 group, we migrate!
 
         const { revision, groupChange } = initialMessage.groupV2;
-        await window.Signal.Groups.respondToGroupV2Migration({
+        await respondToGroupV2Migration({
           conversation,
           groupChange: groupChange
             ? {
@@ -265,7 +278,7 @@ export async function handleDataMessage(
         if (isV2GroupUpdate && initialMessage.groupV2) {
           const { revision, groupChange } = initialMessage.groupV2;
           try {
-            await window.Signal.Groups.maybeUpdateGroup({
+            await maybeUpdateGroup({
               conversation,
               groupChange: groupChange
                 ? {
@@ -288,7 +301,7 @@ export async function handleDataMessage(
       }
     }
 
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sender = window.ConversationController.lookupOrCreate({
       e164: source,
@@ -299,9 +312,9 @@ export async function handleDataMessage(
 
     // Drop if from blocked user. Only GroupV2 messages should need to be dropped here.
     const isBlocked =
-      (source && window.storage.blocked.isBlocked(source)) ||
+      (source && itemStorage.blocked.isBlocked(source)) ||
       (sourceServiceId &&
-        window.storage.blocked.isServiceIdBlocked(sourceServiceId));
+        itemStorage.blocked.isServiceIdBlocked(sourceServiceId));
     if (isBlocked) {
       log.info(
         `${idLog}: Dropping message from blocked sender. hasGroupV2Prop: ${hasGroupV2Prop}`
@@ -311,8 +324,7 @@ export async function handleDataMessage(
       return;
     }
 
-    const areWeMember =
-      !conversation.get('left') && conversation.hasMember(ourAci);
+    const areWeMember = conversation.areWeAMember();
 
     // Drop an incoming GroupV2 message if we or the sender are not part of the group
     //   after applying the message's associated group changes.
@@ -373,12 +385,12 @@ export async function handleDataMessage(
       //   processing incoming messages to start sending outgoing delivery receipts.
       //   The queue can be paused easily.
       drop(
-        window.Whisper.deliveryReceiptQueue.add(() => {
+        deliveryReceiptQueue.add(() => {
           strictAssert(
             isAciString(sourceServiceId),
             'Incoming message must be from ACI'
           );
-          window.Whisper.deliveryReceiptBatcher.add({
+          deliveryReceiptBatcher.add({
             messageId,
             conversationId,
             senderE164: source,
@@ -419,7 +431,7 @@ export async function handleDataMessage(
       const sendState = sendStateByConversationId[sender.id];
 
       const storyQuoteIsFromSelf =
-        candidateQuote.sourceServiceId === window.storage.user.getCheckedAci();
+        candidateQuote.sourceServiceId === itemStorage.user.getCheckedAci();
 
       if (!storyQuoteIsFromSelf) {
         return true;
@@ -481,6 +493,35 @@ export async function handleDataMessage(
       }
     }
 
+    let validatedPollCreate: z.infer<typeof PollCreateSchema> | undefined;
+    if (initialMessage.pollCreate) {
+      if (!isPollReceiveEnabled()) {
+        log.warn(`${idLog}: Dropping PollCreate because flag is not enabled`);
+        confirm();
+        return;
+      }
+      if (!isGroup(conversation.attributes)) {
+        log.warn(
+          `${idLog}: Dropping PollCreate in non-group conversation ${conversation.idForLogging()}`
+        );
+        confirm();
+        return;
+      }
+      const result = safeParsePartial(
+        PollCreateSchema,
+        initialMessage.pollCreate
+      );
+      if (!result.success) {
+        log.warn(
+          `${idLog}: Dropping invalid PollCreate:`,
+          result.error.flatten()
+        );
+        confirm();
+        return;
+      }
+      validatedPollCreate = result.data;
+    }
+
     const withQuoteReference = {
       ...message.attributes,
       ...initialMessage,
@@ -529,7 +570,7 @@ export async function handleDataMessage(
         );
       }
 
-      const ourPni = window.textsecure.storage.user.getCheckedPni();
+      const ourPni = itemStorage.user.getCheckedPni();
       const ourServiceIds: Set<ServiceIdString> = new Set([ourAci, ourPni]);
 
       // eslint-disable-next-line no-param-reassign
@@ -576,6 +617,14 @@ export async function handleDataMessage(
         quote: dataMessage.quote,
         schemaVersion: dataMessage.schemaVersion,
         sticker: dataMessage.sticker,
+        poll: validatedPollCreate
+          ? {
+              question: validatedPollCreate.question,
+              options: validatedPollCreate.options,
+              allowMultiple: Boolean(validatedPollCreate.allowMultiple),
+              votes: [],
+            }
+          : undefined,
         storyId: dataMessage.storyId,
       });
 
@@ -684,8 +733,8 @@ export async function handleDataMessage(
         if (initialMessage.profileKey) {
           const { profileKey } = initialMessage;
           if (
-            source === window.textsecure.storage.user.getNumber() ||
-            sourceServiceId === window.textsecure.storage.user.getAci()
+            source === itemStorage.user.getNumber() ||
+            sourceServiceId === itemStorage.user.getAci()
           ) {
             conversation.set({ profileSharing: true });
           } else if (isDirectConversation(conversation.attributes)) {

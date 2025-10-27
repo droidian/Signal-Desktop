@@ -5,25 +5,27 @@ import classNames from 'classnames';
 import React from 'react';
 import { createPortal } from 'react-dom';
 
-import { SECOND } from '../util/durations';
-import { Toast } from './Toast';
-import { WidthBreakpoint } from './_util';
-import { UsernameMegaphone } from './UsernameMegaphone';
-import { assertDev } from '../util/assert';
-import { missingCaseError } from '../util/missingCaseError';
-import { ToastType } from '../types/Toast';
-import { MegaphoneType } from '../types/Megaphone';
-import { AttachmentNotAvailableModalType } from './AttachmentNotAvailableModal';
-import { NavTab, SettingsPage } from '../types/Nav';
+import { SECOND } from '../util/durations/index.js';
+import { Toast } from './Toast.js';
+import { WidthBreakpoint } from './_util.js';
+import { UsernameMegaphone } from './UsernameMegaphone.js';
+import { assertDev } from '../util/assert.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { ToastType } from '../types/Toast.js';
+import { MegaphoneType } from '../types/Megaphone.js';
+import { NavTab, SettingsPage } from '../types/Nav.js';
+import { AxoSymbol } from '../axo/AxoSymbol.js';
+import { tw } from '../axo/tw.js';
 
-import type { LocalizerType } from '../types/Util';
-import type { AnyToast } from '../types/Toast';
-import type { AnyActionableMegaphone } from '../types/Megaphone';
-import type { Location } from '../types/Nav';
+import type { LocalizerType } from '../types/Util.js';
+import type { AnyToast } from '../types/Toast.js';
+import type { AnyActionableMegaphone } from '../types/Megaphone.js';
+import type { Location } from '../types/Nav.js';
+import { I18n } from './I18n.js';
+import { UserText } from './UserText.js';
 
 export type PropsType = {
   changeLocation: (newLocation: Location) => unknown;
-  clearDonation: () => unknown;
   hideToast: () => unknown;
   i18n: LocalizerType;
   openFileInFolder: (target: string) => unknown;
@@ -34,9 +36,6 @@ export type PropsType = {
     options?: { wasPinned?: boolean }
   ) => unknown;
   setDidResumeDonation: (didResume: boolean) => unknown;
-  showAttachmentNotAvailableModal: (
-    type: AttachmentNotAvailableModalType
-  ) => void;
   toast?: AnyToast;
   megaphone?: AnyActionableMegaphone;
   centerToast?: boolean;
@@ -49,14 +48,12 @@ const SHORT_TIMEOUT = 3 * SECOND;
 
 export function renderToast({
   changeLocation,
-  clearDonation,
   hideToast,
   i18n,
   openFileInFolder,
   onShowDebugLog,
   onUndoArchive,
   setDidResumeDonation,
-  showAttachmentNotAvailableModal,
   OS,
   toast,
 }: PropsType): JSX.Element | null {
@@ -114,16 +111,6 @@ export function renderToast({
         {i18n('icu:attachmentStillDownloading', {
           count: toast.parameters.count,
         })}
-      </Toast>
-    );
-  }
-
-  if (toastType === ToastType.DonationCompletedAndBadgeApplicationFailed) {
-    return (
-      <Toast onClose={hideToast}>
-        {i18n(
-          'icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed'
-        )}
       </Toast>
     );
   }
@@ -198,6 +185,20 @@ export function renderToast({
     return (
       <Toast onClose={hideToast}>
         {i18n('icu:GroupV2--cannot-start-group-call')}
+      </Toast>
+    );
+  }
+
+  if (toastType === ToastType.ChatFolderCreated) {
+    return (
+      <Toast onClose={hideToast}>
+        <I18n
+          i18n={i18n}
+          id="icu:Toast--ChatFolderCreated"
+          components={{
+            chatFolderName: <UserText text={toast.parameters.chatFolderName} />,
+          }}
+        />
       </Toast>
     );
   }
@@ -303,7 +304,6 @@ export function renderToast({
       <Toast
         autoDismissDisabled
         onClose={() => {
-          clearDonation();
           hideToast();
         }}
         toastAction={{
@@ -403,6 +403,21 @@ export function renderToast({
         }}
       >
         {i18n('icu:Toast--error')}
+      </Toast>
+    );
+  }
+
+  if (toastType === ToastType.UnableToDownloadFromBackupTier) {
+    return (
+      <Toast
+        autoDismissDisabled
+        onClose={hideToast}
+        toastAction={{
+          label: i18n('icu:Toast--error--action'),
+          onClick: () => window.IPC.showDebugLog(),
+        }}
+      >
+        {i18n('icu:Toast--unable-download-from-backup-tier')}
       </Toast>
     );
   }
@@ -562,20 +577,7 @@ export function renderToast({
   }
 
   if (toastType === ToastType.MediaNoLongerAvailable) {
-    return (
-      <Toast
-        onClose={hideToast}
-        toastAction={{
-          label: i18n('icu:attachmentNoLongerAvailable__learnMore'),
-          onClick: () =>
-            showAttachmentNotAvailableModal(
-              AttachmentNotAvailableModalType.VisualMedia
-            ),
-        }}
-      >
-        {i18n('icu:mediaNotAvailable')}
-      </Toast>
-    );
+    return <Toast onClose={hideToast}>{i18n('icu:mediaNotAvailable')}</Toast>;
   }
 
   if (toastType === ToastType.MessageBodyTooLong) {
@@ -596,9 +598,63 @@ export function renderToast({
     );
   }
 
+  if (toastType === ToastType.NotificationProfileUpdate) {
+    const { name, enabled } = toast.parameters;
+    const text = enabled
+      ? i18n('icu:NotificationProfilesToast--enabled', { name })
+      : i18n('icu:NotificationProfilesToast--disabled', { name });
+    const label = enabled
+      ? i18n('icu:NotificationProfilesToast--enabled--label')
+      : i18n('icu:NotificationProfilesToast--disabled--label');
+    const symbol = enabled ? 'moon-fill' : 'moon-slash-fill';
+
+    return (
+      <Toast onClose={hideToast}>
+        <div className={tw('flex items-center')}>
+          <AxoSymbol.Icon symbol={symbol} size={12} label={label} />
+          <span className={tw('mx-[10px]')}>{text}</span>
+        </div>
+      </Toast>
+    );
+  }
+
   if (toastType === ToastType.OriginalMessageNotFound) {
     return (
       <Toast onClose={hideToast}>{i18n('icu:originalMessageNotFound')}</Toast>
+    );
+  }
+
+  if (toastType === ToastType._InternalMainProcessLoggingError) {
+    return (
+      <Toast
+        autoDismissDisabled
+        onClose={hideToast}
+        toastAction={{
+          label: i18n('icu:Toast__ActionLabel--SubmitLog'),
+          onClick: onShowDebugLog,
+        }}
+        // eslint-disable-next-line better-tailwindcss/no-restricted-classes
+        className={tw('max-w-[640px]!')}
+      >
+        <h2>
+          [INTERNAL]: {toast.parameters.count} error(s) from main process,
+          please submit log.
+        </h2>
+
+        {toast.parameters.count > toast.parameters.logLines.length ? (
+          <h3
+            className={tw('my-2')}
+          >{`Showing only last ${toast.parameters.logLines.length} errors`}</h3>
+        ) : null}
+
+        <pre
+          className={tw(
+            'my-2 max-h-48 min-h-24 max-w-[520px] overflow-auto border-1 border-solid p-2'
+          )}
+        >
+          {toast.parameters.logLines.join('\n')}
+        </pre>
+      </Toast>
     );
   }
 

@@ -5,7 +5,7 @@
 /* eslint-disable more/no-then */
 /* eslint-disable no-param-reassign */
 
-import { reject } from 'lodash';
+import lodash from 'lodash';
 
 import { z } from 'zod';
 import type {
@@ -23,28 +23,38 @@ import {
   UnidentifiedSenderMessageContent,
 } from '@signalapp/libsignal-client';
 
-import type { WebAPIType, MessageType } from './WebAPI';
-import type { SendMetadataType, SendOptionsType } from './SendMessage';
+import {
+  sendMessages,
+  sendMessagesUnauth,
+  getKeysForServiceId as doGetKeysForServiceId,
+  getKeysForServiceIdUnauth,
+} from './WebAPI.js';
+import type { MessageType } from './WebAPI.js';
+import type { SendMetadataType, SendOptionsType } from './SendMessage.js';
 import {
   OutgoingIdentityKeyError,
   OutgoingMessageError,
   SendMessageNetworkError,
   SendMessageChallengeError,
   UnregisteredUserError,
-  HTTPError,
-} from './Errors';
-import type { CallbackResultType, CustomError } from './Types.d';
-import { Address } from '../types/Address';
-import * as Errors from '../types/errors';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import type { ServiceIdString } from '../types/ServiceId';
-import { Sessions, IdentityKeys } from '../LibSignalStores';
-import { getKeysForServiceId } from './getKeysForServiceId';
-import { SignalService as Proto } from '../protobuf';
-import { createLogger } from '../logging/log';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
-import { isSignalServiceId } from '../util/isSignalConversation';
-import * as Bytes from '../Bytes';
+} from './Errors.js';
+import type { CallbackResultType, CustomError } from './Types.d.ts';
+import { Address } from '../types/Address.js';
+import * as Errors from '../types/errors.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { Sessions, IdentityKeys } from '../LibSignalStores.js';
+import { getKeysForServiceId } from './getKeysForServiceId.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { isSignalServiceId } from '../util/isSignalConversation.js';
+import * as Bytes from '../Bytes.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { itemStorage } from './Storage.js';
+
+const { reject } = lodash;
 
 const log = createLogger('OutgoingMessage');
 
@@ -86,15 +96,19 @@ function ciphertextMessageTypeToEnvelopeType(type: number) {
   );
 }
 
+const PADDING_BLOCK = 80;
+
 function getPaddedMessageLength(messageLength: number): number {
   const messageLengthWithTerminator = messageLength + 1;
-  let messagePartCount = Math.floor(messageLengthWithTerminator / 160);
+  let messagePartCount = Math.floor(
+    messageLengthWithTerminator / PADDING_BLOCK
+  );
 
-  if (messageLengthWithTerminator % 160 !== 0) {
+  if (messageLengthWithTerminator % PADDING_BLOCK !== 0) {
     messagePartCount += 1;
   }
 
-  return messagePartCount * 160;
+  return messagePartCount * PADDING_BLOCK;
 }
 
 export function padMessage(messageBuffer: Uint8Array): Uint8Array {
@@ -108,8 +122,6 @@ export function padMessage(messageBuffer: Uint8Array): Uint8Array {
 }
 
 export default class OutgoingMessage {
-  server: WebAPIType;
-
   timestamp: number;
 
   serviceIds: ReadonlyArray<ServiceIdString>;
@@ -154,7 +166,6 @@ export default class OutgoingMessage {
     message,
     options,
     sendLogCallback,
-    server,
     story,
     timestamp,
     urgent,
@@ -166,7 +177,6 @@ export default class OutgoingMessage {
     message: Proto.Content | Proto.DataMessage | PlaintextContent;
     options?: OutgoingMessageOptionsType;
     sendLogCallback?: SendLogCallbackType;
-    server: WebAPIType;
     story?: boolean;
     timestamp: number;
     urgent: boolean;
@@ -179,7 +189,6 @@ export default class OutgoingMessage {
       this.message = message;
     }
 
-    this.server = server;
     this.timestamp = timestamp;
     this.serviceIds = serviceIds;
     this.contentHint = contentHint;
@@ -267,8 +276,8 @@ export default class OutgoingMessage {
     recurse?: boolean
   ): () => Promise<void> {
     return async () => {
-      const ourAci = window.textsecure.storage.user.getCheckedAci();
-      const deviceIds = await window.textsecure.storage.protocol.getDeviceIds({
+      const ourAci = itemStorage.user.getCheckedAci();
+      const deviceIds = await signalProtocolStore.getDeviceIds({
         ourServiceId: ourAci,
         serviceId,
       });
@@ -297,7 +306,7 @@ export default class OutgoingMessage {
 
     const { accessKeyFailed } = await getKeysForServiceId(
       serviceId,
-      this.server,
+      { getKeysForServiceId: doGetKeysForServiceId, getKeysForServiceIdUnauth },
       updateDevices ?? null,
       accessKey,
       null
@@ -322,7 +331,7 @@ export default class OutgoingMessage {
     let promise;
 
     if (accessKey != null || groupSendToken != null) {
-      promise = this.server.sendMessagesUnauth(serviceId, jsonData, timestamp, {
+      promise = sendMessagesUnauth(serviceId, jsonData, timestamp, {
         accessKey,
         groupSendToken,
         online: this.online,
@@ -330,7 +339,7 @@ export default class OutgoingMessage {
         urgent: this.urgent,
       });
     } else {
-      promise = this.server.sendMessages(serviceId, jsonData, timestamp, {
+      promise = sendMessages(serviceId, jsonData, timestamp, {
         online: this.online,
         story: this.story,
         urgent: this.urgent,
@@ -422,9 +431,9 @@ export default class OutgoingMessage {
       senderCertificate != null;
 
     // We don't send to ourselves unless sealedSender is enabled
-    const ourNumber = window.textsecure.storage.user.getNumber();
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
-    const ourDeviceId = window.textsecure.storage.user.getDeviceId();
+    const ourNumber = itemStorage.user.getNumber();
+    const ourAci = itemStorage.user.getCheckedAci();
+    const ourDeviceId = itemStorage.user.getDeviceId();
     if ((serviceId === ourNumber || serviceId === ourAci) && !sealedSender) {
       deviceIds = reject(
         deviceIds,
@@ -446,7 +455,7 @@ export default class OutgoingMessage {
           new Address(serviceId, destinationDeviceId)
         );
 
-        return window.textsecure.storage.protocol.enqueueSessionJob<MessageType>(
+        return signalProtocolStore.enqueueSessionJob<MessageType>(
           address,
           async () => {
             const protocolAddress = ProtocolAddress.new(
@@ -616,7 +625,7 @@ export default class OutgoingMessage {
           } else {
             p = Promise.all(
               (response.staleDevices || []).map(async (deviceId: number) => {
-                await window.textsecure.storage.protocol.archiveSession(
+                await signalProtocolStore.archiveSession(
                   new QualifiedAddress(ourAci, new Address(serviceId, deviceId))
                 );
               })
@@ -649,7 +658,7 @@ export default class OutgoingMessage {
           );
 
           log.info('closing all sessions for', serviceId);
-          window.textsecure.storage.protocol.archiveAllSessions(serviceId).then(
+          signalProtocolStore.archiveAllSessions(serviceId).then(
             () => {
               throw error;
             },
@@ -677,11 +686,11 @@ export default class OutgoingMessage {
     serviceId: ServiceIdString,
     deviceIdsToRemove: Array<number>
   ): Promise<void> {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
+    const ourAci = itemStorage.user.getCheckedAci();
 
     await Promise.all(
       deviceIdsToRemove.map(async deviceId => {
-        await window.textsecure.storage.protocol.archiveSession(
+        await signalProtocolStore.archiveSession(
           new QualifiedAddress(ourAci, new Address(serviceId, deviceId))
         );
       })
@@ -699,8 +708,8 @@ export default class OutgoingMessage {
     }
 
     try {
-      const ourAci = window.textsecure.storage.user.getCheckedAci();
-      const deviceIds = await window.textsecure.storage.protocol.getDeviceIds({
+      const ourAci = itemStorage.user.getCheckedAci();
+      const deviceIds = await signalProtocolStore.getDeviceIds({
         ourServiceId: ourAci,
         serviceId,
       });

@@ -2,18 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { z } from 'zod';
-import { omit } from 'lodash';
+import lodash from 'lodash';
 
-import { JobQueue } from './JobQueue';
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore';
-import { parseUnknown } from '../util/schemas';
-import { DataReader } from '../sql/Client';
+import { JobQueue } from './JobQueue.js';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.js';
+import { parseUnknown } from '../util/schemas.js';
+import { deleteDownloadData } from '../util/migrations.js';
+import { DataReader } from '../sql/Client.js';
 
-import type { JOB_STATUS } from './JobQueue';
-import type { LoggerType } from '../types/Logging';
-import { commonShouldJobContinue } from './helpers/commonShouldJobContinue';
-import { DAY } from '../util/durations';
-import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff';
+import type { JOB_STATUS } from './JobQueue.js';
+import type { LoggerType } from '../types/Logging.js';
+import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.js';
+import { DAY } from '../util/durations/index.js';
+import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { omit } = lodash;
 
 const deleteDownloadsJobDataSchema = z.object({
   digest: z.string().optional(),
@@ -40,7 +44,7 @@ export class DeleteDownloadsJobQueue extends JobQueue<DeleteDownloadsJobData> {
     { attempt, log }: Readonly<{ attempt: number; log: LoggerType }>
   ): Promise<typeof JOB_STATUS.NEEDS_RETRY | undefined> {
     await new Promise<void>(resolve => {
-      window.storage.onready(resolve);
+      itemStorage.onready(resolve);
     });
 
     const timeRemaining = timestamp + MAX_RETRY_TIME - Date.now();
@@ -59,7 +63,7 @@ export class DeleteDownloadsJobQueue extends JobQueue<DeleteDownloadsJobData> {
     const message = await DataReader.getMessageById(messageId);
     if (!message) {
       log?.warn('Message not found; attempting to delete download path.');
-      await window.Signal.Migrations.deleteDownloadData(downloadPath);
+      await deleteDownloadData(downloadPath);
 
       return undefined;
     }
@@ -82,7 +86,7 @@ export class DeleteDownloadsJobQueue extends JobQueue<DeleteDownloadsJobData> {
       log?.warn(
         'Target attachment not found; attempting to delete download path.'
       );
-      await window.Signal.Migrations.deleteDownloadData(downloadPath);
+      await deleteDownloadData(downloadPath);
       return undefined;
     }
 
@@ -93,7 +97,7 @@ export class DeleteDownloadsJobQueue extends JobQueue<DeleteDownloadsJobData> {
       throw new Error('Attachment still downloading');
     }
 
-    await window.Signal.Migrations.deleteDownloadData(downloadPath);
+    await deleteDownloadData(downloadPath);
 
     const updatedMessage = {
       ...message,

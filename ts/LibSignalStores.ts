@@ -3,7 +3,7 @@
 
 /* eslint-disable max-classes-per-file */
 
-import { isNumber } from 'lodash';
+import lodash from 'lodash';
 
 import type {
   Direction,
@@ -26,12 +26,15 @@ import {
   SessionStore,
   SignedPreKeyStore,
 } from '@signalapp/libsignal-client';
-import { Address } from './types/Address';
-import { QualifiedAddress } from './types/QualifiedAddress';
-import type { ServiceIdString } from './types/ServiceId';
-import { normalizeServiceId } from './types/ServiceId';
+import { Address } from './types/Address.js';
+import { QualifiedAddress } from './types/QualifiedAddress.js';
+import type { ServiceIdString } from './types/ServiceId.js';
+import { normalizeServiceId } from './types/ServiceId.js';
+import { signalProtocolStore } from './SignalProtocolStore.js';
 
-import type { Zone } from './util/Zone';
+import type { Zone } from './util/Zone.js';
+
+const { isNumber } = lodash;
 
 function encodeAddress(address: ProtocolAddress): Address {
   const name = address.name();
@@ -66,7 +69,7 @@ export class Sessions extends SessionStore {
     address: ProtocolAddress,
     record: SessionRecord
   ): Promise<void> {
-    await window.textsecure.storage.protocol.storeSession(
+    await signalProtocolStore.storeSession(
       toQualifiedAddress(this.#ourServiceId, address),
       record,
       { zone: this.#zone }
@@ -75,10 +78,9 @@ export class Sessions extends SessionStore {
 
   async getSession(name: ProtocolAddress): Promise<SessionRecord | null> {
     const encodedAddress = toQualifiedAddress(this.#ourServiceId, name);
-    const record = await window.textsecure.storage.protocol.loadSession(
-      encodedAddress,
-      { zone: this.#zone }
-    );
+    const record = await signalProtocolStore.loadSession(encodedAddress, {
+      zone: this.#zone,
+    });
 
     return record || null;
   }
@@ -89,7 +91,7 @@ export class Sessions extends SessionStore {
     const encodedAddresses = addresses.map(addr =>
       toQualifiedAddress(this.#ourServiceId, addr)
     );
-    return window.textsecure.storage.protocol.loadSessions(encodedAddresses, {
+    return signalProtocolStore.loadSessions(encodedAddresses, {
       zone: this.#zone,
     });
   }
@@ -112,9 +114,7 @@ export class IdentityKeys extends IdentityKeyStore {
   }
 
   async getIdentityKey(): Promise<PrivateKey> {
-    const keyPair = window.textsecure.storage.protocol.getIdentityKeyPair(
-      this.#ourServiceId
-    );
+    const keyPair = signalProtocolStore.getIdentityKeyPair(this.#ourServiceId);
     if (!keyPair) {
       throw new Error('IdentityKeyStore/getIdentityKey: No identity key!');
     }
@@ -122,7 +122,7 @@ export class IdentityKeys extends IdentityKeyStore {
   }
 
   async getLocalRegistrationId(): Promise<number> {
-    const id = await window.textsecure.storage.protocol.getLocalRegistrationId(
+    const id = await signalProtocolStore.getLocalRegistrationId(
       this.#ourServiceId
     );
     if (!isNumber(id)) {
@@ -135,7 +135,7 @@ export class IdentityKeys extends IdentityKeyStore {
 
   async getIdentity(address: ProtocolAddress): Promise<PublicKey | null> {
     const encodedAddress = encodeAddress(address);
-    const key = await window.textsecure.storage.protocol.loadIdentityKey(
+    const key = await signalProtocolStore.loadIdentityKey(
       encodedAddress.serviceId
     );
 
@@ -155,12 +155,9 @@ export class IdentityKeys extends IdentityKeyStore {
 
     // Pass `zone` to let `saveIdentity` archive sibling sessions when identity
     // key changes.
-    return window.textsecure.storage.protocol.saveIdentity(
-      encodedAddress,
-      publicKey,
-      false,
-      { zone: this.#zone }
-    );
+    return signalProtocolStore.saveIdentity(encodedAddress, publicKey, false, {
+      zone: this.#zone,
+    });
   }
 
   async isTrustedIdentity(
@@ -171,7 +168,7 @@ export class IdentityKeys extends IdentityKeyStore {
     const encodedAddress = encodeAddress(name);
     const publicKey = key.serialize();
 
-    return window.textsecure.storage.protocol.isTrustedIdentity(
+    return signalProtocolStore.isTrustedIdentity(
       encodedAddress,
       publicKey,
       direction
@@ -199,10 +196,7 @@ export class PreKeys extends PreKeyStore {
   }
 
   async getPreKey(id: number): Promise<PreKeyRecord> {
-    const preKey = await window.textsecure.storage.protocol.loadPreKey(
-      this.#ourServiceId,
-      id
-    );
+    const preKey = await signalProtocolStore.loadPreKey(this.#ourServiceId, id);
 
     if (preKey === undefined) {
       throw new Error(`getPreKey: PreKey ${id} not found`);
@@ -212,11 +206,9 @@ export class PreKeys extends PreKeyStore {
   }
 
   async removePreKey(id: number): Promise<void> {
-    await window.textsecure.storage.protocol.removePreKeys(
-      this.#ourServiceId,
-      [id],
-      { zone: this.#zone }
-    );
+    await signalProtocolStore.removePreKeys(this.#ourServiceId, [id], {
+      zone: this.#zone,
+    });
   }
 }
 
@@ -235,11 +227,10 @@ export class KyberPreKeys extends KyberPreKeyStore {
   }
 
   async getKyberPreKey(id: number): Promise<KyberPreKeyRecord> {
-    const kyberPreKey =
-      await window.textsecure.storage.protocol.loadKyberPreKey(
-        this.#ourServiceId,
-        id
-      );
+    const kyberPreKey = await signalProtocolStore.loadKyberPreKey(
+      this.#ourServiceId,
+      id
+    );
 
     if (kyberPreKey === undefined) {
       throw new Error(`getKyberPreKey: KyberPreKey ${id} not found`);
@@ -248,10 +239,14 @@ export class KyberPreKeys extends KyberPreKeyStore {
     return kyberPreKey;
   }
 
-  async markKyberPreKeyUsed(id: number): Promise<void> {
-    await window.textsecure.storage.protocol.maybeRemoveKyberPreKey(
+  async markKyberPreKeyUsed(
+    keyId: number,
+    signedPreKeyId: number,
+    baseKey: PublicKey
+  ): Promise<void> {
+    await signalProtocolStore.maybeRemoveKyberPreKey(
       this.#ourServiceId,
-      id,
+      { keyId, signedPreKeyId, baseKey },
       { zone: this.#zone }
     );
   }
@@ -279,7 +274,7 @@ export class SenderKeys extends SenderKeyStore {
   ): Promise<void> {
     const encodedAddress = toQualifiedAddress(this.#ourServiceId, sender);
 
-    await window.textsecure.storage.protocol.saveSenderKey(
+    await signalProtocolStore.saveSenderKey(
       encodedAddress,
       distributionId,
       record,
@@ -293,7 +288,7 @@ export class SenderKeys extends SenderKeyStore {
   ): Promise<SenderKeyRecord | null> {
     const encodedAddress = toQualifiedAddress(this.#ourServiceId, sender);
 
-    const senderKey = await window.textsecure.storage.protocol.getSenderKey(
+    const senderKey = await signalProtocolStore.getSenderKey(
       encodedAddress,
       distributionId,
       { zone: this.zone }
@@ -321,11 +316,10 @@ export class SignedPreKeys extends SignedPreKeyStore {
   }
 
   async getSignedPreKey(id: number): Promise<SignedPreKeyRecord> {
-    const signedPreKey =
-      await window.textsecure.storage.protocol.loadSignedPreKey(
-        this.#ourServiceId,
-        id
-      );
+    const signedPreKey = await signalProtocolStore.loadSignedPreKey(
+      this.#ourServiceId,
+      id
+    );
 
     if (!signedPreKey) {
       throw new Error(`getSignedPreKey: SignedPreKey ${id} not found`);

@@ -1,18 +1,22 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { chunk, map } from 'lodash';
-import type { LoggerType } from '../types/Logging';
-import type { Receipt } from '../types/Receipt';
-import { ReceiptType } from '../types/Receipt';
-import { getSendOptions } from './getSendOptions';
-import { handleMessageSend } from './handleMessageSend';
-import { isConversationAccepted } from './isConversationAccepted';
-import { isConversationUnregistered } from './isConversationUnregistered';
-import { missingCaseError } from './missingCaseError';
-import type { ConversationModel } from '../models/conversations';
-import { mapEmplace } from './mapEmplace';
-import { isSignalConversation } from './isSignalConversation';
+import lodash from 'lodash';
+import type { LoggerType } from '../types/Logging.js';
+import type { Receipt } from '../types/Receipt.js';
+import { ReceiptType } from '../types/Receipt.js';
+import { getSendOptions } from './getSendOptions.js';
+import { handleMessageSend } from './handleMessageSend.js';
+import { isConversationAccepted } from './isConversationAccepted.js';
+import { isConversationUnregistered } from './isConversationUnregistered.js';
+import { missingCaseError } from './missingCaseError.js';
+import type { ConversationModel } from '../models/conversations.js';
+import { mapEmplace } from './mapEmplace.js';
+import { isSignalConversation } from './isSignalConversation.js';
+import { messageSender } from '../textsecure/SendMessage.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { chunk, map } = lodash;
 
 const CHUNK_SIZE = 100;
 
@@ -47,12 +51,7 @@ export async function sendReceipts({
       throw missingCaseError(type);
   }
 
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error('messaging is not available!');
-  }
-
-  if (requiresUserSetting && !window.storage.get('read-receipt-setting')) {
+  if (requiresUserSetting && !itemStorage.get('read-receipt-setting')) {
     log.info('requires user setting. Not sending these receipts');
     return;
   }
@@ -152,7 +151,7 @@ export async function sendReceipts({
           const senderAci = sender.getCheckedAci('sendReceipts');
 
           await handleMessageSend(
-            messaging[methodName]({
+            messageSender[methodName]({
               senderAci,
               isDirectConversation,
               timestamps,

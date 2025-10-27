@@ -5,21 +5,19 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { v4 as generateUuid } from 'uuid';
 
-import type { AttachmentType } from '../../types/Attachment';
-import type { CallbackResultType } from '../../textsecure/Types.d';
-import type { ConversationModel } from '../../models/conversations';
-import type { MessageAttributesType } from '../../model-types.d';
-import { MessageModel } from '../../models/messages';
-import type { RawBodyRange } from '../../types/BodyRange';
-import type { WebAPIType } from '../../textsecure/WebAPI';
-import { DataWriter } from '../../sql/Client';
-import MessageSender from '../../textsecure/SendMessage';
+import type { AttachmentType } from '../../types/Attachment.js';
+import type { CallbackResultType } from '../../textsecure/Types.d.ts';
+import type { ConversationModel } from '../../models/conversations.js';
+import type { MessageAttributesType } from '../../model-types.d.ts';
+import { MessageModel } from '../../models/messages.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
+import { DataWriter } from '../../sql/Client.js';
 import enMessages from '../../../_locales/en/messages.json';
-import { SendStatus } from '../../messages/MessageSendState';
-import { SignalService as Proto } from '../../protobuf';
-import { generateAci } from '../../types/ServiceId';
-import { getAuthor } from '../../messages/helpers';
-import { setupI18n } from '../../util/setupI18n';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { getAuthor } from '../../messages/sources.js';
+import { setupI18n } from '../../util/setupI18n.js';
 import {
   APPLICATION_JSON,
   AUDIO_MP3,
@@ -28,10 +26,12 @@ import {
   LONG_MESSAGE,
   TEXT_ATTACHMENT,
   VIDEO_MP4,
-} from '../../types/MIME';
-import { getNotificationDataForMessage } from '../../util/getNotificationDataForMessage';
-import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage';
-import { send } from '../../messages/send';
+} from '../../types/MIME.js';
+import { getNotificationDataForMessage } from '../../util/getNotificationDataForMessage.js';
+import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage.js';
+import { send } from '../../messages/send.js';
+import { messageSender } from '../../textsecure/SendMessage.js';
+import { itemStorage } from '../../textsecure/Storage.js';
 
 describe('Message', () => {
   const i18n = setupI18n('en', enMessages);
@@ -72,13 +72,13 @@ describe('Message', () => {
     window.ConversationController.reset();
     await window.ConversationController.load();
 
-    await window.textsecure.storage.put('number_id', `${me}.2`);
-    await window.textsecure.storage.put('uuid_id', `${ourServiceId}.2`);
+    await itemStorage.put('number_id', `${me}.2`);
+    await itemStorage.put('uuid_id', `${ourServiceId}.2`);
   });
 
   after(async () => {
     await DataWriter.removeAll();
-    await window.storage.fetch();
+    await itemStorage.fetch();
   });
 
   beforeEach(function (this: Mocha.Context) {
@@ -91,27 +91,8 @@ describe('Message', () => {
 
   // NOTE: These tests are incomplete.
   describe('send', () => {
-    let oldMessageSender: undefined | MessageSender;
-
     beforeEach(function (this: Mocha.Context) {
-      oldMessageSender = window.textsecure.messaging;
-
-      window.textsecure.messaging =
-        oldMessageSender ?? new MessageSender({} as WebAPIType);
-      this.sandbox
-        .stub(window.textsecure.messaging, 'sendSyncMessage')
-        .resolves({});
-    });
-
-    afterEach(() => {
-      if (oldMessageSender) {
-        window.textsecure.messaging = oldMessageSender;
-      } else {
-        // `window.textsecure.messaging` can be undefined in tests. Instead of updating
-        //   the real type, I just ignore it.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window.textsecure as any).messaging;
-      }
+      this.sandbox.stub(messageSender, 'sendSyncMessage').resolves({});
     });
 
     it('updates `sendStateByConversationId`', async function (this: Mocha.Context) {

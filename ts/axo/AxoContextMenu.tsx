@@ -3,9 +3,9 @@
 import React, { memo } from 'react';
 import { ContextMenu } from 'radix-ui';
 import type { FC } from 'react';
-import { AxoSymbol } from './AxoSymbol';
-import { AxoBaseMenu } from './_internal/AxoBaseMenu';
-import { tw } from './tw';
+import { AxoSymbol } from './AxoSymbol.js';
+import { AxoBaseMenu } from './_internal/AxoBaseMenu.js';
+import { tw } from './tw.js';
 
 const Namespace = 'AxoContextMenu';
 
@@ -48,7 +48,6 @@ const Namespace = 'AxoContextMenu';
  * )
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AxoContextMenu {
   /**
    * Component: <AxoContextMenu.Root>
@@ -71,7 +70,7 @@ export namespace AxoContextMenu {
   export type TriggerProps = AxoBaseMenu.MenuTriggerProps;
 
   export const Trigger: FC<TriggerProps> = memo(props => {
-    return <ContextMenu.Trigger>{props.children}</ContextMenu.Trigger>;
+    return <ContextMenu.Trigger asChild>{props.children}</ContextMenu.Trigger>;
   });
 
   Trigger.displayName = `${Namespace}.Trigger`;
@@ -217,7 +216,7 @@ export namespace AxoContextMenu {
         </AxoBaseMenu.ItemLeadingSlot>
         <AxoBaseMenu.ItemContentSlot>
           {props.symbol && (
-            <span className={tw('mr-2')}>
+            <span className={tw('me-2')}>
               <AxoBaseMenu.ItemSymbol symbol={props.symbol} />
             </span>
           )}
@@ -247,7 +246,7 @@ export namespace AxoContextMenu {
   export const RadioGroup: FC<RadioGroupProps> = memo(props => {
     return (
       <ContextMenu.RadioGroup
-        value={props.value}
+        value={props.value ?? undefined}
         onValueChange={props.onValueChange}
         className={AxoBaseMenu.menuRadioGroupStyles}
       >
@@ -283,7 +282,11 @@ export namespace AxoContextMenu {
           </AxoBaseMenu.ItemCheckPlaceholder>
         </AxoBaseMenu.ItemLeadingSlot>
         <AxoBaseMenu.ItemContentSlot>
-          {props.symbol && <AxoBaseMenu.ItemSymbol symbol={props.symbol} />}
+          {props.symbol && (
+            <span className={tw('me-2')}>
+              <AxoBaseMenu.ItemSymbol symbol={props.symbol} />
+            </span>
+          )}
           <AxoBaseMenu.ItemText>{props.children}</AxoBaseMenu.ItemText>
           {props.keyboardShortcut && (
             <AxoBaseMenu.ItemKeyboardShortcut
@@ -352,7 +355,7 @@ export namespace AxoContextMenu {
         )}
         <AxoBaseMenu.ItemContentSlot>
           <AxoBaseMenu.ItemText>{props.children}</AxoBaseMenu.ItemText>
-          <span className={tw('ml-auto')}>
+          <span className={tw('ms-auto')}>
             <AxoSymbol.Icon size={14} symbol="chevron-[end]" label={null} />
           </span>
         </AxoBaseMenu.ItemContentSlot>

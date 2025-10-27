@@ -5,28 +5,28 @@ import React, { useState } from 'react';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../state/ducks/conversations';
+} from '../state/ducks/conversations.js';
 import type {
   ConversationStoryType,
   MyStoryType,
   StoryViewType,
-} from '../types/Stories';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import type { ShowToastAction } from '../state/ducks/toast';
+} from '../types/Stories.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import type { ShowToastAction } from '../state/ducks/toast.js';
 import type {
   AddStoryData,
   ViewUserStoriesActionCreatorType,
   ViewStoryActionCreatorType,
-} from '../state/ducks/stories';
-import { MyStories } from './MyStories';
-import { StoriesPane } from './StoriesPane';
-import { NavSidebar, NavSidebarActionButton } from './NavSidebar';
-import { StoriesAddStoryButton } from './StoriesAddStoryButton';
-import { ContextMenu } from './ContextMenu';
-import { I18n } from './I18n';
-import type { WidthBreakpoint } from './_util';
-import type { UnreadStats } from '../util/countUnreadStats';
+} from '../state/ducks/stories.js';
+import { MyStories } from './MyStories.js';
+import { StoriesPane } from './StoriesPane.js';
+import { NavSidebar, NavSidebarActionButton } from './NavSidebar.js';
+import { StoriesAddStoryButton } from './StoriesAddStoryButton.js';
+import { I18n } from './I18n.js';
+import type { WidthBreakpoint } from './_util.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.js';
 
 export type PropsType = {
   addStoryData: AddStoryData;
@@ -160,33 +160,22 @@ export function StoriesTab({
                 onAddStory={onAddStory}
                 showToast={showToast}
               />
-              <ContextMenu
-                i18n={i18n}
-                menuOptions={[
-                  {
-                    label: i18n('icu:StoriesSettings__context-menu'),
-                    onClick: showStoriesSettings,
-                  },
-                ]}
-                moduleClassName="Stories__pane__settings"
-                popperOptions={{
-                  placement: 'bottom',
-                  strategy: 'absolute',
-                }}
-                portalToRoot
-              >
-                {({ onClick, onKeyDown, ref }) => {
-                  return (
-                    <NavSidebarActionButton
-                      ref={ref}
-                      onClick={onClick}
-                      onKeyDown={onKeyDown}
-                      icon={<span className="StoriesTab__MoreActionsIcon" />}
-                      label={i18n('icu:StoriesTab__MoreActionsLabel')}
-                    />
-                  );
-                }}
-              </ContextMenu>
+              <AxoDropdownMenu.Root>
+                <AxoDropdownMenu.Trigger>
+                  <NavSidebarActionButton
+                    icon={<span className="StoriesTab__MoreActionsIcon" />}
+                    label={i18n('icu:StoriesTab__MoreActionsLabel')}
+                  />
+                </AxoDropdownMenu.Trigger>
+                <AxoDropdownMenu.Content>
+                  <AxoDropdownMenu.Item
+                    symbol="lock"
+                    onSelect={showStoriesSettings}
+                  >
+                    {i18n('icu:StoriesSettings__context-menu')}
+                  </AxoDropdownMenu.Item>
+                </AxoDropdownMenu.Content>
+              </AxoDropdownMenu.Root>
             </>
           }
         >

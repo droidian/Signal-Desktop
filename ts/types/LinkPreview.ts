@@ -1,21 +1,27 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber, compact, isEmpty, range } from 'lodash';
+import lodash from 'lodash';
+// This file gets imported into renderer that does not have access to Node.js
+// builtins, use an `npm` package.
+// eslint-disable-next-line import/enforce-node-protocol-usage
 import nodeUrl from 'url';
 import LinkifyIt from 'linkify-it';
 
-import { maybeParseUrl } from '../util/url';
-import { replaceEmojiWithSpaces } from '../util/emoji';
+import { maybeParseUrl } from '../util/url.js';
+import { replaceEmojiWithSpaces } from '../util/emoji.js';
+import { count } from '../util/grapheme.js';
 
-import type { AttachmentWithHydratedData } from './Attachment';
+import type { AttachmentWithHydratedData } from './Attachment.js';
 import {
   artAddStickersRoute,
   groupInvitesRoute,
   linkCallRoute,
-} from '../util/signalRoutes';
-import type { Backups } from '../protobuf';
-import type { LinkPreviewType } from './message/LinkPreviews';
+} from '../util/signalRoutes.js';
+import type { Backups } from '../protobuf/index.js';
+import type { LinkPreviewType } from './message/LinkPreviews.js';
+
+const { isNumber, compact, isEmpty, range } = lodash;
 
 export type LinkPreviewImage = AttachmentWithHydratedData;
 
@@ -49,10 +55,6 @@ export type AddLinkPreviewOptionsType = Readonly<{
 }>;
 
 const linkify = new LinkifyIt();
-
-export function getLinkPreviewSetting(): boolean {
-  return window.storage.get('linkPreviews', false);
-}
 
 export function isValidLink(maybeUrl: string | undefined): boolean {
   if (maybeUrl == null) {
@@ -162,7 +164,7 @@ export function findLinks(text: string, caretLocation?: number): Array<string> {
   }
 
   const haveCaretLocation = isNumber(caretLocation);
-  const textLength = text ? text.length : 0;
+  const textLength = count(text || '');
 
   const matches = linkify.match(text ? replaceEmojiWithSpaces(text) : '') || [];
   return compact(

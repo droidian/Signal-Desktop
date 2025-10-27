@@ -2,40 +2,37 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 import { usePopper } from 'react-popper';
 import { FocusScope } from 'react-aria';
-import type { EmojiPickDataType } from './emoji/EmojiPicker';
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews';
-import { ThemeType, type LocalizerType } from '../types/Util';
-import type { Props as EmojiButtonPropsType } from './emoji/EmojiButton';
-import type { TextAttachmentType } from '../types/Attachment';
-import { Button, ButtonVariant } from './Button';
-import { ContextMenu } from './ContextMenu';
-import { EmojiButton } from './emoji/EmojiButton';
-import { LinkPreviewSourceType, findLinks } from '../types/LinkPreview';
-import type { MaybeGrabLinkPreviewOptionsType } from '../types/LinkPreview';
-import { Input } from './Input';
-import { Slider } from './Slider';
-import { StoryLinkPreview } from './StoryLinkPreview';
-import { TextAttachment } from './TextAttachment';
-import { Theme, themeClassName } from '../util/theme';
-import { getRGBA, getRGBANumber } from '../mediaEditor/util/color';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.js';
+import { ThemeType, type LocalizerType } from '../types/Util.js';
+import type { TextAttachmentType } from '../types/Attachment.js';
+import { Button, ButtonVariant } from './Button.js';
+import { ContextMenu } from './ContextMenu.js';
+import { LinkPreviewSourceType, findLinks } from '../types/LinkPreview.js';
+import type { MaybeGrabLinkPreviewOptionsType } from '../types/LinkPreview.js';
+import { Input } from './Input.js';
+import { Slider } from './Slider.js';
+import { StoryLinkPreview } from './StoryLinkPreview.js';
+import { TextAttachment } from './TextAttachment.js';
+import { Theme, themeClassName } from '../util/theme.js';
+import { getRGBA, getRGBANumber } from '../mediaEditor/util/color.js';
 import {
   COLOR_BLACK_INT,
   COLOR_WHITE_INT,
   getBackgroundColor,
-} from '../util/getStoryBackground';
-import { convertShortName } from './emoji/lib';
-import { objectMap } from '../util/objectMap';
-import { handleOutsideClick } from '../util/handleOutsideClick';
-import { Spinner } from './Spinner';
-import { FunEmojiPicker } from './fun/FunEmojiPicker';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis';
-import { getEmojiVariantByKey } from './fun/data/emojis';
-import { FunEmojiPickerButton } from './fun/FunButton';
-import { isFunPickerEnabled } from './fun/isFunPickerEnabled';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard';
+} from '../util/getStoryBackground.js';
+import { objectMap } from '../util/objectMap.js';
+import { handleOutsideClick } from '../util/handleOutsideClick.js';
+import { Spinner } from './Spinner.js';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.js';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.js';
+import { getEmojiVariantByKey } from './fun/data/emojis.js';
+import { FunEmojiPickerButton } from './fun/FunButton.js';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.js';
+
+const { noop } = lodash;
 
 export type PropsType = {
   debouncedMaybeGrabLinkPreview: (
@@ -48,11 +45,8 @@ export type PropsType = {
   linkPreview?: LinkPreviewForUIType;
   onClose: () => unknown;
   onDone: (textAttachment: TextAttachmentType) => unknown;
-  onUseEmoji: (_: EmojiPickDataType) => unknown;
-} & Pick<
-  EmojiButtonPropsType,
-  'onEmojiSkinToneDefaultChange' | 'recentEmojis' | 'emojiSkinToneDefault'
->;
+  onSelectEmoji: (emojiSelection: FunEmojiSelection) => unknown;
+};
 
 enum LinkPreviewApplied {
   None = 'None',
@@ -143,10 +137,7 @@ export function TextStoryCreator({
   linkPreview,
   onClose,
   onDone,
-  onEmojiSkinToneDefaultChange,
-  onUseEmoji,
-  recentEmojis,
-  emojiSkinToneDefault,
+  onSelectEmoji,
 }: PropsType): JSX.Element {
   const tryClose = useRef<() => void | undefined>();
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
@@ -348,20 +339,25 @@ export function TextStoryCreator({
     setEmojiPickerOpen(open);
   }, []);
 
-  const handleSelectEmoji = useCallback((emojiSelection: FunEmojiSelection) => {
-    const emojiVariant = getEmojiVariantByKey(emojiSelection.variantKey);
-    const emojiValue = emojiVariant.value;
+  const handleSelectEmoji = useCallback(
+    (emojiSelection: FunEmojiSelection) => {
+      const emojiVariant = getEmojiVariantByKey(emojiSelection.variantKey);
+      const emojiValue = emojiVariant.value;
 
-    setText(originalText => {
-      const insertAt =
-        textEditorRef.current?.selectionEnd ?? originalText.length;
+      onSelectEmoji(emojiSelection);
 
-      const before = originalText.substr(0, insertAt);
-      const after = originalText.substr(insertAt, originalText.length);
+      setText(originalText => {
+        const insertAt =
+          textEditorRef.current?.selectionEnd ?? originalText.length;
 
-      return `${before}${emojiValue}${after}`;
-    });
-  }, []);
+        const before = originalText.substr(0, insertAt);
+        const after = originalText.substr(insertAt, originalText.length);
+
+        return `${before}${emojiValue}${after}`;
+      });
+    },
+    [onSelectEmoji]
+  );
 
   return (
     <FocusScope contain restoreFocus>
@@ -464,43 +460,16 @@ export function TextStoryCreator({
                 }}
                 type="button"
               />
-              {!isFunPickerEnabled() && (
-                <EmojiButton
-                  className="StoryCreator__emoji-button"
-                  i18n={i18n}
-                  onPickEmoji={data => {
-                    onUseEmoji(data);
-                    const emoji = convertShortName(
-                      data.shortName,
-                      data.skinTone
-                    );
-                    const insertAt =
-                      textEditorRef.current?.selectionEnd ?? text.length;
-                    setText(
-                      originalText =>
-                        `${originalText.substr(
-                          0,
-                          insertAt
-                        )}${emoji}${originalText.substr(insertAt, text.length)}`
-                    );
-                  }}
-                  recentEmojis={recentEmojis}
-                  emojiSkinToneDefault={emojiSkinToneDefault}
-                  onEmojiSkinToneDefaultChange={onEmojiSkinToneDefaultChange}
-                />
-              )}
-              {isFunPickerEnabled() && (
-                <FunEmojiPicker
-                  open={emojiPickerOpen}
-                  onOpenChange={handleEmojiPickerOpenChange}
-                  placement="top"
-                  onSelectEmoji={handleSelectEmoji}
-                  theme={ThemeType.dark}
-                  closeOnSelect
-                >
-                  <FunEmojiPickerButton i18n={i18n} />
-                </FunEmojiPicker>
-              )}
+              <FunEmojiPicker
+                open={emojiPickerOpen}
+                onOpenChange={handleEmojiPickerOpenChange}
+                placement="top"
+                onSelectEmoji={handleSelectEmoji}
+                theme={ThemeType.dark}
+                closeOnSelect
+              >
+                <FunEmojiPickerButton i18n={i18n} />
+              </FunEmojiPicker>
             </div>
           ) : (
             <div className="StoryCreator__toolbar--space" />

@@ -2,32 +2,45 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import semver from 'semver';
-import { last } from 'lodash';
+import lodash from 'lodash';
 
-import * as durations from '../util/durations';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
-import * as Registration from '../util/registration';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import { HTTPError } from '../textsecure/Errors';
-import { drop } from '../util/drop';
-import { strictAssert } from '../util/assert';
-import type { MessageAttributesType } from '../model-types';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { incrementMessageCounter } from '../util/incrementMessageCounter';
-import { SeenStatus } from '../MessageSeenStatus';
-import { saveNewMessageBatcher } from '../util/messageBatcher';
-import { generateMessageId } from '../util/generateMessageId';
-import type { RawBodyRange } from '../types/BodyRange';
-import { BodyRange } from '../types/BodyRange';
+import * as durations from '../util/durations/index.js';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.js';
+import * as Registration from '../util/registration.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { drop } from '../util/drop.js';
+import {
+  writeNewAttachmentData,
+  processNewAttachment,
+} from '../util/migrations.js';
+import { strictAssert } from '../util/assert.js';
+import type { MessageAttributesType } from '../model-types.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import { saveNewMessageBatcher } from '../util/messageBatcher.js';
+import { generateMessageId } from '../util/generateMessageId.js';
+import type { RawBodyRange } from '../types/BodyRange.js';
+import { BodyRange } from '../types/BodyRange.js';
 import type {
   ReleaseNotesManifestResponseType,
   ReleaseNoteResponseType,
-} from '../textsecure/WebAPI';
-import type { WithRequiredProperties } from '../types/Util';
-import { MessageModel } from '../models/messages';
-import { stringToMIMEType } from '../types/MIME';
-import { isNotNil } from '../util/isNotNil';
+  isOnline as doIsOnline,
+  getReleaseNote as doGetReleaseNote,
+  getReleaseNoteHash as doGetReleaseNoteHash,
+  getReleaseNoteImageAttachment as doGetReleaseNoteImageAttachment,
+  getReleaseNotesManifest as doGetReleaseNotesManifest,
+  getReleaseNotesManifestHash as doGetReleaseNotesManifestHash,
+} from '../textsecure/WebAPI.js';
+import type { WithRequiredProperties } from '../types/Util.js';
+import { MessageModel } from '../models/messages.js';
+import { stringToMIMEType } from '../types/MIME.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { last } = lodash;
 
 const log = createLogger('releaseNotesFetcher');
 
@@ -60,17 +73,29 @@ const STYLE_MAPPING: Record<string, BodyRange.Style> = {
   spoiler: BodyRange.Style.SPOILER,
   mono: BodyRange.Style.MONOSPACE,
 };
+
+export type ServerType = Readonly<{
+  isOnline: typeof doIsOnline;
+  getReleaseNote: typeof doGetReleaseNote;
+  getReleaseNoteHash: typeof doGetReleaseNoteHash;
+  getReleaseNoteImageAttachment: typeof doGetReleaseNoteImageAttachment;
+  getReleaseNotesManifest: typeof doGetReleaseNotesManifest;
+  getReleaseNotesManifestHash: typeof doGetReleaseNotesManifestHash;
+}>;
+
 export class ReleaseNotesFetcher {
   static initComplete = false;
   #timeout: NodeJS.Timeout | undefined;
   #isRunning = false;
+  #server: ServerType;
+
+  constructor(server: ServerType) {
+    this.#server = server;
+  }
 
   protected setTimeoutForNextRun(options?: FetchOptions): void {
     const now = Date.now();
-    const time = window.textsecure.storage.get(
-      NEXT_FETCH_TIME_STORAGE_KEY,
-      now
-    );
+    const time = itemStorage.get(NEXT_FETCH_TIME_STORAGE_KEY, now);
 
     log.info('Next update scheduled for', new Date(time).toISOString());
 
@@ -84,32 +109,20 @@ export class ReleaseNotesFetcher {
   }
 
   #getOrInitializeVersionWatermark(): string {
-    const versionWatermark = window.textsecure.storage.get(
-      VERSION_WATERMARK_STORAGE_KEY
-    );
+    const versionWatermark = itemStorage.get(VERSION_WATERMARK_STORAGE_KEY);
     if (versionWatermark) {
       return versionWatermark;
     }
 
     log.info('Initializing version high watermark to current version');
     const currentVersion = window.getVersion();
-    drop(
-      window.textsecure.storage.put(
-        VERSION_WATERMARK_STORAGE_KEY,
-        currentVersion
-      )
-    );
+    drop(itemStorage.put(VERSION_WATERMARK_STORAGE_KEY, currentVersion));
     return currentVersion;
   }
 
   async #getReleaseNote(
     note: ManifestReleaseNoteType
   ): Promise<ReleaseNoteType | undefined> {
-    if (!window.textsecure.server) {
-      log.info('WebAPI unavailable');
-      throw new Error('WebAPI unavailable');
-    }
-
     const { uuid, ctaId, link } = note;
     const globalLocale = new Intl.Locale(window.SignalContext.getI18nLocale());
     const localesToTry = [
@@ -121,7 +134,7 @@ export class ReleaseNotesFetcher {
     for (const localeToTry of localesToTry) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        const hash = await window.textsecure.server.getReleaseNoteHash({
+        const hash = await this.#server.getReleaseNoteHash({
           uuid,
           locale: localeToTry,
         });
@@ -131,7 +144,7 @@ export class ReleaseNotesFetcher {
         }
 
         // eslint-disable-next-line no-await-in-loop
-        const result = await window.textsecure.server.getReleaseNote({
+        const result = await this.#server.getReleaseNote({
           uuid,
           locale: localeToTry,
         });
@@ -161,11 +174,6 @@ export class ReleaseNotesFetcher {
   async #processReleaseNotes(
     notes: ReadonlyArray<ManifestReleaseNoteType>
   ): Promise<void> {
-    if (!window.textsecure.server) {
-      log.info('WebAPI unavailable');
-      throw new Error('WebAPI unavailable');
-    }
-
     log.info('Ensuring Signal conversation');
     const signalConversation =
       await window.ConversationController.getOrCreateSignalConversation();
@@ -184,22 +192,13 @@ export class ReleaseNotesFetcher {
       log.info(
         `Signal conversation is blocked, updating watermark to ${versionWatermark}`
       );
-      drop(
-        window.textsecure.storage.put(
-          VERSION_WATERMARK_STORAGE_KEY,
-          versionWatermark
-        )
-      );
+      drop(itemStorage.put(VERSION_WATERMARK_STORAGE_KEY, versionWatermark));
       return;
     }
 
     const hydratedNotesWithRawAttachments = (
       await Promise.all(
         sortedNotes.map(async note => {
-          if (!window.textsecure.server) {
-            log.info('WebAPI unavailable');
-            throw new Error('WebAPI unavailable');
-          }
           if (!note) {
             return null;
           }
@@ -210,7 +209,7 @@ export class ReleaseNotesFetcher {
           }
           if (hydratedNote.media) {
             const { imageData: rawAttachmentData, contentType } =
-              await window.textsecure.server.getReleaseNoteImageAttachment(
+              await this.#server.getReleaseNoteImageAttachment(
                 hydratedNote.media
               );
 
@@ -238,15 +237,15 @@ export class ReleaseNotesFetcher {
           }
 
           const localAttachment =
-            await window.Signal.Migrations.writeNewAttachmentData(
-              rawAttachmentData
-            );
+            await writeNewAttachmentData(rawAttachmentData);
 
-          const processedAttachment =
-            await window.Signal.Migrations.processNewAttachment({
+          const processedAttachment = await processNewAttachment(
+            {
               ...localAttachment,
               contentType: stringToMIMEType(contentType),
-            });
+            },
+            'attachment'
+          );
 
           return { hydratedNote, processedAttachment };
         }
@@ -332,12 +331,7 @@ export class ReleaseNotesFetcher {
     signalConversation.throttledUpdateUnread();
 
     log.info(`Updating version watermark to ${versionWatermark}`);
-    drop(
-      window.textsecure.storage.put(
-        VERSION_WATERMARK_STORAGE_KEY,
-        versionWatermark
-      )
-    );
+    drop(itemStorage.put(VERSION_WATERMARK_STORAGE_KEY, versionWatermark));
   }
 
   async #scheduleForNextRun(options?: {
@@ -345,7 +339,7 @@ export class ReleaseNotesFetcher {
   }): Promise<void> {
     const now = Date.now();
     const nextTime = options?.isNewVersion ? now : now + FETCH_INTERVAL;
-    await window.textsecure.storage.put(NEXT_FETCH_TIME_STORAGE_KEY, nextTime);
+    await itemStorage.put(NEXT_FETCH_TIME_STORAGE_KEY, nextTime);
   }
 
   async #run(options?: FetchOptions): Promise<void> {
@@ -360,19 +354,12 @@ export class ReleaseNotesFetcher {
       const versionWatermark = this.#getOrInitializeVersionWatermark();
       log.info(`Version watermark is ${versionWatermark}`);
 
-      if (!window.textsecure.server) {
-        log.info('WebAPI unavailable');
-        throw new Error('WebAPI unavailable');
-      }
-
-      const hash = await window.textsecure.server.getReleaseNotesManifestHash();
+      const hash = await this.#server.getReleaseNotesManifestHash();
       if (!hash) {
         throw new Error('Release notes manifest hash missing');
       }
 
-      const previousHash = window.textsecure.storage.get(
-        PREVIOUS_MANIFEST_HASH_STORAGE_KEY
-      );
+      const previousHash = itemStorage.get(PREVIOUS_MANIFEST_HASH_STORAGE_KEY);
 
       if (hash !== previousHash || options?.isNewVersion) {
         log.info(
@@ -380,8 +367,7 @@ export class ReleaseNotesFetcher {
             options?.isNewVersion ? 'true' : 'false'
           }, hashChanged=${hash !== previousHash ? 'true' : 'false'}`
         );
-        const manifest =
-          await window.textsecure.server.getReleaseNotesManifest();
+        const manifest = await this.#server.getReleaseNotesManifest();
         const currentVersion = window.getVersion();
         const validNotes = manifest.announcements.filter(
           (note): note is ManifestReleaseNoteType =>
@@ -396,12 +382,7 @@ export class ReleaseNotesFetcher {
           log.info('No new release notes');
         }
 
-        drop(
-          window.textsecure.storage.put(
-            PREVIOUS_MANIFEST_HASH_STORAGE_KEY,
-            hash
-          )
-        );
+        drop(itemStorage.put(PREVIOUS_MANIFEST_HASH_STORAGE_KEY, hash));
       } else {
         log.info('Manifest hash unchanged, aborting fetch');
       }
@@ -422,7 +403,7 @@ export class ReleaseNotesFetcher {
   }
 
   #runWhenOnline(options?: FetchOptions) {
-    if (window.textsecure.server?.isOnline()) {
+    if (this.#server.isOnline()) {
       drop(this.#run(options));
     } else {
       log.info('We are offline; will fetch when we are next online');
@@ -435,6 +416,7 @@ export class ReleaseNotesFetcher {
   }
 
   public static async init(
+    server: ServerType,
     events: MinimalEventsType,
     isNewVersion: boolean
   ): Promise<void> {
@@ -444,7 +426,7 @@ export class ReleaseNotesFetcher {
 
     ReleaseNotesFetcher.initComplete = true;
 
-    const listener = new ReleaseNotesFetcher();
+    const listener = new ReleaseNotesFetcher(server);
 
     if (isNewVersion) {
       await listener.#scheduleForNextRun({ isNewVersion });

@@ -3,40 +3,41 @@
 
 import React, { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { StoryViewer } from '../../components/StoryViewer';
-import { ToastType } from '../../types/Toast';
-import { useToastActions } from '../ducks/toast';
-import { getConversationSelector } from '../selectors/conversations';
+import { StoryViewer } from '../../components/StoryViewer.js';
+import { ToastType } from '../../types/Toast.js';
+import { useToastActions } from '../ducks/toast.js';
+import { getConversationSelector } from '../selectors/conversations.js';
 import {
   getEmojiSkinToneDefault,
   getHasStoryViewReceiptSetting,
   getPreferredReactionEmoji,
   getTextFormattingEnabled,
   isInternalUser,
-} from '../selectors/items';
-import { getIntl, getPlatform, getUserConversationId } from '../selectors/user';
-import { getPreferredBadgeSelector } from '../selectors/badges';
+} from '../selectors/items.js';
+import {
+  getIntl,
+  getPlatform,
+  getUserConversationId,
+} from '../selectors/user.js';
+import { getPreferredBadgeSelector } from '../selectors/badges.js';
 import {
   getSelectedStoryData,
   getStoryReplies,
   getStoryByIdSelector,
   getHasAllStoriesUnmuted,
-} from '../selectors/stories';
-import { isInFullScreenCall } from '../selectors/calling';
-import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation';
-import { renderEmojiPicker } from './renderEmojiPicker';
-import { strictAssert } from '../../util/assert';
-import { asyncShouldNeverBeCalled } from '../../util/shouldNeverBeCalled';
-import { useEmojisActions } from '../ducks/emojis';
-import { useConversationsActions } from '../ducks/conversations';
-import { useRecentEmojis } from '../selectors/emojis';
-import { useItemsActions } from '../ducks/items';
-import { useAudioPlayerActions } from '../ducks/audioPlayer';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { useStoriesActions } from '../ducks/stories';
-import { useIsWindowActive } from '../../hooks/useIsWindowActive';
-import type { DraftBodyRanges } from '../../types/BodyRange';
-import type { StoryViewType } from '../../types/Stories';
+} from '../selectors/stories.js';
+import { isInFullScreenCall } from '../selectors/calling.js';
+import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation.js';
+import { strictAssert } from '../../util/assert.js';
+import { asyncShouldNeverBeCalled } from '../../util/shouldNeverBeCalled.js';
+import { useEmojisActions } from '../ducks/emojis.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { useAudioPlayerActions } from '../ducks/audioPlayer.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { useStoriesActions } from '../ducks/stories.js';
+import { useIsWindowActive } from '../../hooks/useIsWindowActive.js';
+import type { DraftBodyRanges } from '../../types/BodyRange.js';
+import type { StoryViewType } from '../../types/Stories.js';
 
 export const SmartStoryViewer = memo(function SmartStoryViewer() {
   const {
@@ -58,7 +59,6 @@ export const SmartStoryViewer = memo(function SmartStoryViewer() {
     showConversation,
     toggleHideStories,
   } = useConversationsActions();
-  const { setEmojiSkinToneDefault } = useItemsActions();
   const { showToast } = useToastActions();
   const { showContactModal } = useGlobalModalActions();
 
@@ -77,7 +77,6 @@ export const SmartStoryViewer = memo(function SmartStoryViewer() {
   const conversationSelector = useSelector(getConversationSelector);
 
   const getStoryById = useSelector(getStoryByIdSelector);
-  const recentEmojis = useRecentEmojis();
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
   const replyState = useSelector(getStoryReplies);
   const hasAllStoriesUnmuted = useSelector(getHasAllStoriesUnmuted);
@@ -159,15 +158,12 @@ export const SmartStoryViewer = memo(function SmartStoryViewer() {
       onMediaPlaybackStart={pauseVoiceNotePlayer}
       onReactToStory={handleReactToStory}
       onReplyToStory={handleReplyToStory}
-      onEmojiSkinToneDefaultChange={setEmojiSkinToneDefault}
       onTextTooLong={handleTextTooLong}
-      onUseEmoji={onUseEmoji}
+      onSelectEmoji={onUseEmoji}
       ourConversationId={ourConversationId}
       platform={platform}
       preferredReactionEmoji={preferredReactionEmoji}
       queueStoryDownload={queueStoryDownload}
-      recentEmojis={recentEmojis}
-      renderEmojiPicker={renderEmojiPicker}
       replyState={replyState}
       retryMessageSend={retryMessageSend}
       saveAttachment={internalUser ? saveAttachment : asyncShouldNeverBeCalled}

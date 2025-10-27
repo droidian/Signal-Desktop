@@ -1,81 +1,103 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber, throttle } from 'lodash';
+import lodash from 'lodash';
 import { createRoot } from 'react-dom/client';
 import PQueue from 'p-queue';
 import pMap from 'p-map';
 import { v7 as generateUuid } from 'uuid';
 
-import * as Registration from './util/registration';
-import MessageReceiver from './textsecure/MessageReceiver';
+import * as Registration from './util/registration.js';
+import MessageReceiver from './textsecure/MessageReceiver.js';
+import { signalProtocolStore } from './SignalProtocolStore.js';
 import type {
   SessionResetsType,
   ProcessedDataMessage,
-} from './textsecure/Types.d';
-import { HTTPError } from './textsecure/Errors';
+} from './textsecure/Types.d.ts';
+import { HTTPError } from './types/HTTPError.js';
 import createTaskWithTimeout, {
   suspendTasksWithTimeout,
   resumeTasksWithTimeout,
   reportLongRunningTasks,
-} from './textsecure/TaskWithTimeout';
-import type { MessageAttributesType } from './model-types.d';
-import * as Bytes from './Bytes';
-import * as Timers from './Timers';
-import * as indexedDb from './indexeddb';
-import type { MenuOptionsType } from './types/menu';
-import { SocketStatus } from './types/SocketStatus';
-import { DEFAULT_CONVERSATION_COLOR } from './types/Colors';
-import { ThemeType } from './types/Util';
-import { ToastType } from './types/Toast';
-import { ChallengeHandler } from './challenge';
-import * as durations from './util/durations';
-import { drop } from './util/drop';
-import { explodePromise } from './util/explodePromise';
-import type { ExplodePromiseResultType } from './util/explodePromise';
-import { isWindowDragElement } from './util/isWindowDragElement';
-import { assertDev, strictAssert } from './util/assert';
-import { filter } from './util/iterables';
-import { isNotNil } from './util/isNotNil';
-import { areRemoteBackupsTurnedOn } from './util/isBackupEnabled';
-import { setAppLoadingScreenMessage } from './setAppLoadingScreenMessage';
-import { IdleDetector } from './IdleDetector';
+} from './textsecure/TaskWithTimeout.js';
+import type { MessageAttributesType } from './model-types.d.ts';
+import * as Bytes from './Bytes.js';
+import * as Timers from './Timers.js';
+import * as indexedDb from './indexeddb.js';
+import type { MenuOptionsType } from './types/menu.js';
+import { SocketStatus } from './types/SocketStatus.js';
+import { DEFAULT_CONVERSATION_COLOR } from './types/Colors.js';
+import { ThemeType } from './types/Util.js';
+import * as durations from './util/durations/index.js';
+import { drop } from './util/drop.js';
+import { explodePromise } from './util/explodePromise.js';
+import { deliveryReceiptQueue } from './util/deliveryReceipt.js';
+import type { ExplodePromiseResultType } from './util/explodePromise.js';
+import { isWindowDragElement } from './util/isWindowDragElement.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { filter } from './util/iterables.js';
+import { isNotNil } from './util/isNotNil.js';
+import { areRemoteBackupsTurnedOn } from './util/isBackupEnabled.js';
+import { lightSessionResetQueue } from './util/lightSessionResetQueue.js';
+import { setAppLoadingScreenMessage } from './setAppLoadingScreenMessage.js';
+import { IdleDetector } from './IdleDetector.js';
+import { challengeHandler } from './services/challengeHandler.js';
 import {
   initialize as initializeExpiringMessageService,
   update as updateExpiringMessagesService,
-} from './services/expiringMessagesDeletion';
+} from './services/expiringMessagesDeletion.js';
 import {
   initialize as initializeNotificationProfilesService,
-  update as updateNotificationProfileService,
-} from './services/notificationProfilesService';
-import { tapToViewMessagesDeletionService } from './services/tapToViewMessagesDeletionService';
-import { senderCertificateService } from './services/senderCertificate';
-import { GROUP_CREDENTIALS_KEY } from './services/groupCredentialFetcher';
-import * as KeyboardLayout from './services/keyboardLayout';
-import * as StorageService from './services/storage';
-import { usernameIntegrity } from './services/usernameIntegrity';
-import { updateIdentityKey } from './services/profiles';
-import { RoutineProfileRefresher } from './routineProfileRefresh';
-import { isOlderThan } from './util/timestamp';
-import { isValidReactionEmoji } from './reactions/isValidReactionEmoji';
-import type { ConversationModel } from './models/conversations';
-import { getAuthor, isIncoming } from './messages/helpers';
-import { migrateBatchOfMessages } from './messages/migrateMessageData';
-import { createBatcher } from './util/batcher';
+  fastUpdate as updateNotificationProfileService,
+} from './services/notificationProfilesService.js';
+import { tapToViewMessagesDeletionService } from './services/tapToViewMessagesDeletionService.js';
+import { senderCertificateService } from './services/senderCertificate.js';
+import {
+  GROUP_CREDENTIALS_KEY,
+  initializeGroupCredentialFetcher,
+} from './services/groupCredentialFetcher.js';
+import { initializeNetworkObserver } from './services/networkObserver.js';
+import * as KeyboardLayout from './services/keyboardLayout.js';
+import * as StorageService from './services/storage.js';
+import { usernameIntegrity } from './services/usernameIntegrity.js';
+import { updateIdentityKey } from './services/profiles.js';
+import { initializeUpdateListener } from './services/updateListener.js';
+import { RoutineProfileRefresher } from './routineProfileRefresh.js';
+import { isOlderThan } from './util/timestamp.js';
+import { isValidReactionEmoji } from './reactions/isValidReactionEmoji.js';
+import { safeParsePartial } from './util/schemas.js';
+import {
+  PollVoteSchema,
+  PollTerminateSchema,
+  isPollReceiveEnabled,
+} from './types/Polls.js';
+import type { ConversationModel } from './models/conversations.js';
+import { isIncoming } from './messages/helpers.js';
+import { getAuthor } from './messages/sources.js';
+import { migrateBatchOfMessages } from './messages/migrateMessageData.js';
+import { createBatcher, waitForAllBatchers } from './util/batcher.js';
+import {
+  flushAllWaitBatchers,
+  waitForAllWaitBatchers,
+} from './util/waitBatcher.js';
 import {
   initializeAllJobQueues,
   shutdownAllJobQueues,
-} from './jobs/initializeAllJobQueues';
-import { removeStorageKeyJobQueue } from './jobs/removeStorageKeyJobQueue';
-import { ourProfileKeyService } from './services/ourProfileKey';
-import { notificationService } from './services/notifications';
-import { areWeASubscriberService } from './services/areWeASubscriber';
-import { onContactSync, setIsInitialContactSync } from './services/contactSync';
-import { startTimeTravelDetector } from './util/startTimeTravelDetector';
-import { shouldRespondWithProfileKey } from './util/shouldRespondWithProfileKey';
-import { LatestQueue } from './util/LatestQueue';
-import { parseIntOrThrow } from './util/parseIntOrThrow';
-import { getProfile } from './util/getProfile';
+} from './jobs/initializeAllJobQueues.js';
+import { removeStorageKeyJobQueue } from './jobs/removeStorageKeyJobQueue.js';
+import { conversationJobQueue } from './jobs/conversationJobQueue.js';
+import { ourProfileKeyService } from './services/ourProfileKey.js';
+import { notificationService } from './services/notifications.js';
+import { areWeASubscriberService } from './services/areWeASubscriber.js';
+import {
+  onContactSync,
+  setIsInitialContactSync,
+} from './services/contactSync.js';
+import { startTimeTravelDetector } from './util/startTimeTravelDetector.js';
+import { shouldRespondWithProfileKey } from './util/shouldRespondWithProfileKey.js';
+import { LatestQueue } from './util/LatestQueue.js';
+import { parseIntOrThrow } from './util/parseIntOrThrow.js';
+import { getProfile } from './util/getProfile.js';
 import type {
   AttachmentBackfillResponseSyncEvent,
   ConfigurationEvent,
@@ -101,127 +123,169 @@ import type {
   ViewEvent,
   ViewOnceOpenSyncEvent,
   ViewSyncEvent,
-} from './textsecure/messageReceiverEvents';
-import type { WebAPIType } from './textsecure/WebAPI';
-import * as KeyChangeListener from './textsecure/KeyChangeListener';
-import { UpdateKeysListener } from './textsecure/UpdateKeysListener';
-import { isDirectConversation } from './util/whatTypeOfConversation';
-import { BackOff, FIBONACCI_TIMEOUTS } from './util/BackOff';
-import { AppViewType } from './state/ducks/app';
-import { areAnyCallsActiveOrRinging } from './state/selectors/calling';
-import { badgeImageFileDownloader } from './badges/badgeImageFileDownloader';
-import * as Deletes from './messageModifiers/Deletes';
-import * as Edits from './messageModifiers/Edits';
-import * as MessageReceipts from './messageModifiers/MessageReceipts';
-import * as MessageRequests from './messageModifiers/MessageRequests';
-import * as Reactions from './messageModifiers/Reactions';
-import * as ViewOnceOpenSyncs from './messageModifiers/ViewOnceOpenSyncs';
-import type { DeleteAttributesType } from './messageModifiers/Deletes';
-import type { EditAttributesType } from './messageModifiers/Edits';
-import type { MessageRequestAttributesType } from './messageModifiers/MessageRequests';
-import type { ReactionAttributesType } from './messageModifiers/Reactions';
-import type { ViewOnceOpenSyncAttributesType } from './messageModifiers/ViewOnceOpenSyncs';
-import { ReadStatus } from './messages/MessageReadStatus';
-import type { SendStateByConversationId } from './messages/MessageSendState';
-import { SendStatus } from './messages/MessageSendState';
-import * as Stickers from './types/Stickers';
-import * as Errors from './types/errors';
-import { InstallScreenStep } from './types/InstallScreen';
-import { getEnvironment } from './environment';
-import { SignalService as Proto } from './protobuf';
+} from './textsecure/messageReceiverEvents.js';
+import {
+  cancelInflightRequests,
+  checkSockets,
+  connect as connectWebAPI,
+  getConfig,
+  getHasSubscription,
+  getReleaseNote,
+  getReleaseNoteHash,
+  getReleaseNoteImageAttachment,
+  getReleaseNotesManifest,
+  getReleaseNotesManifestHash,
+  getSenderCertificate,
+  getServerAlerts,
+  getSocketStatus,
+  isOnline,
+  logout,
+  onExpiration,
+  onNavigatorOffline,
+  onNavigatorOnline,
+  reconnect as reconnectWebAPI,
+  registerCapabilities as doRegisterCapabilities,
+  registerRequestHandler,
+  reportMessage,
+  unregisterRequestHandler,
+} from './textsecure/WebAPI.js';
+import { accountManager } from './textsecure/AccountManager.js';
+import * as KeyChangeListener from './textsecure/KeyChangeListener.js';
+import { UpdateKeysListener } from './textsecure/UpdateKeysListener.js';
+import { isGroup } from './util/whatTypeOfConversation.js';
+import { BackOff, FIBONACCI_TIMEOUTS } from './util/BackOff.js';
+import { createApp as createAppRoot } from './state/roots/createApp.js';
+import { AppViewType } from './state/ducks/app.js';
+import { areAnyCallsActiveOrRinging } from './state/selectors/calling.js';
+import { badgeImageFileDownloader } from './badges/badgeImageFileDownloader.js';
+import * as Deletes from './messageModifiers/Deletes.js';
+import * as Edits from './messageModifiers/Edits.js';
+import * as MessageReceipts from './messageModifiers/MessageReceipts.js';
+import * as MessageRequests from './messageModifiers/MessageRequests.js';
+import * as Polls from './messageModifiers/Polls.js';
+import * as Reactions from './messageModifiers/Reactions.js';
+import * as ViewOnceOpenSyncs from './messageModifiers/ViewOnceOpenSyncs.js';
+import type { DeleteAttributesType } from './messageModifiers/Deletes.js';
+import type { EditAttributesType } from './messageModifiers/Edits.js';
+import type { MessageRequestAttributesType } from './messageModifiers/MessageRequests.js';
+import type {
+  PollVoteAttributesType,
+  PollTerminateAttributesType,
+} from './messageModifiers/Polls.js';
+import type { ReactionAttributesType } from './messageModifiers/Reactions.js';
+import type { ViewOnceOpenSyncAttributesType } from './messageModifiers/ViewOnceOpenSyncs.js';
+import { ReadStatus } from './messages/MessageReadStatus.js';
+import type { SendStateByConversationId } from './messages/MessageSendState.js';
+import { SendStatus } from './messages/MessageSendState.js';
+import * as Stickers from './types/Stickers.js';
+import * as Errors from './types/errors.js';
+import { InstallScreenStep } from './types/InstallScreen.js';
+import { getEnvironment } from './environment.js';
+import { SignalService as Proto } from './protobuf/index.js';
 import {
   getOnDecryptionError,
   onRetryRequest,
   onInvalidPlaintextMessage,
   onSuccessfulDecrypt,
-} from './util/handleRetry';
-import { themeChanged } from './shims/themeChanged';
-import { createIPCEvents } from './util/createIPCEvents';
-import type { ServiceIdString } from './types/ServiceId';
+} from './util/handleRetry.js';
+import { themeChanged } from './shims/themeChanged.js';
+import { createIPCEvents } from './util/createIPCEvents.js';
+import type { ServiceIdString } from './types/ServiceId.js';
 import {
   ServiceIdKind,
   isPniString,
   isServiceIdString,
-} from './types/ServiceId';
-import { isAciString } from './util/isAciString';
-import { normalizeAci } from './util/normalizeAci';
-import { createLogger } from './logging/log';
-import { deleteAllLogs } from './util/deleteAllLogs';
-import { startInteractionMode } from './services/InteractionMode';
-import { ReactionSource } from './reactions/ReactionSource';
-import { singleProtoJobQueue } from './jobs/singleProtoJobQueue';
-import { conversationJobQueue } from './jobs/conversationJobQueue';
-import { SeenStatus } from './MessageSeenStatus';
-import MessageSender from './textsecure/SendMessage';
-import type AccountManager from './textsecure/AccountManager';
-import { onStoryRecipientUpdate } from './util/onStoryRecipientUpdate';
-import { flushAttachmentDownloadQueue } from './util/attachmentDownloadQueue';
-import { initializeRedux } from './state/initializeRedux';
-import { StartupQueue } from './util/StartupQueue';
-import { showConfirmationDialog } from './util/showConfirmationDialog';
-import { onCallEventSync } from './util/onCallEventSync';
-import { sleeper } from './util/sleeper';
-import { DAY, HOUR, SECOND } from './util/durations';
-import { copyDataMessageIntoMessage } from './util/copyDataMessageIntoMessage';
+} from './types/ServiceId.js';
+import { isAciString } from './util/isAciString.js';
+import { normalizeAci } from './util/normalizeAci.js';
+import { createLogger } from './logging/log.js';
+import { deleteAllLogs } from './util/deleteAllLogs.js';
+import { startInteractionMode } from './services/InteractionMode.js';
+import { calling } from './services/calling.js';
+import { ReactionSource } from './reactions/ReactionSource.js';
+import { singleProtoJobQueue } from './jobs/singleProtoJobQueue.js';
+import { SeenStatus } from './MessageSeenStatus.js';
+import { MessageSender } from './textsecure/SendMessage.js';
+import { onStoryRecipientUpdate } from './util/onStoryRecipientUpdate.js';
+import { flushAttachmentDownloadQueue } from './util/attachmentDownloadQueue.js';
+import { initializeRedux } from './state/initializeRedux.js';
+import { StartupQueue } from './util/StartupQueue.js';
+import { showConfirmationDialog } from './util/showConfirmationDialog.js';
+import { onCallEventSync } from './util/onCallEventSync.js';
+import { sleeper } from './util/sleeper.js';
+import { DAY, HOUR, SECOND } from './util/durations/index.js';
+import { copyDataMessageIntoMessage } from './util/copyDataMessageIntoMessage.js';
 import {
   flushMessageCounter,
   incrementMessageCounter,
   initializeMessageCounter,
-} from './util/incrementMessageCounter';
-import { generateMessageId } from './util/generateMessageId';
-import { RetryPlaceholders } from './util/retryPlaceholders';
-import { setBatchingStrategy } from './util/messageBatcher';
-import { parseRemoteClientExpiration } from './util/parseRemoteClientExpiration';
-import { addGlobalKeyboardShortcuts } from './services/addGlobalKeyboardShortcuts';
-import { createEventHandler } from './quill/signal-clipboard/util';
-import { onCallLogEventSync } from './util/onCallLogEventSync';
-import { backupsService } from './services/backups';
+} from './util/incrementMessageCounter.js';
+import { generateMessageId } from './util/generateMessageId.js';
+import { retryPlaceholders } from './services/retryPlaceholders.js';
+import { setBatchingStrategy } from './util/messageBatcher.js';
+import { parseRemoteClientExpiration } from './util/parseRemoteClientExpiration.js';
+import { addGlobalKeyboardShortcuts } from './services/addGlobalKeyboardShortcuts.js';
+import { createEventHandler } from './quill/signal-clipboard/util.js';
+import { onCallLogEventSync } from './util/onCallLogEventSync.js';
+import { backupsService } from './services/backups/index.js';
 import {
   getCallIdFromEra,
   updateLocalGroupCallHistoryTimestamp,
-} from './util/callDisposition';
-import { deriveStorageServiceKey, deriveMasterKey } from './Crypto';
-import { AttachmentDownloadManager } from './jobs/AttachmentDownloadManager';
-import { onCallLinkUpdateSync } from './util/onCallLinkUpdateSync';
-import { CallMode } from './types/CallDisposition';
-import type { SyncTaskType } from './util/syncTasks';
-import { queueSyncTasks, runAllSyncTasks } from './util/syncTasks';
-import type { ViewSyncTaskType } from './messageModifiers/ViewSyncs';
-import type { ReceiptSyncTaskType } from './messageModifiers/MessageReceipts';
-import type { ReadSyncTaskType } from './messageModifiers/ReadSyncs';
-import { AttachmentBackupManager } from './jobs/AttachmentBackupManager';
-import { getConversationIdForLogging } from './util/idForLogging';
-import { encryptConversationAttachments } from './util/encryptConversationAttachments';
-import { DataReader, DataWriter } from './sql/Client';
-import { restoreRemoteConfigFromStorage } from './RemoteConfig';
-import { getParametersForRedux, loadAll } from './services/allLoaders';
-import { checkFirstEnvelope } from './util/checkFirstEnvelope';
-import { BLOCKED_UUIDS_ID } from './textsecure/storage/Blocked';
-import { ReleaseNotesFetcher } from './services/releaseNotesFetcher';
-import { BuildExpirationService } from './services/buildExpiration';
+} from './util/callDisposition.js';
+import { deriveStorageServiceKey, deriveMasterKey } from './Crypto.js';
+import { AttachmentDownloadManager } from './jobs/AttachmentDownloadManager.js';
+import { onCallLinkUpdateSync } from './util/onCallLinkUpdateSync.js';
+import { CallMode } from './types/CallDisposition.js';
+import type { SyncTaskType } from './util/syncTasks.js';
+import { queueSyncTasks, runAllSyncTasks } from './util/syncTasks.js';
+import type { ViewSyncTaskType } from './messageModifiers/ViewSyncs.js';
+import type { ReceiptSyncTaskType } from './messageModifiers/MessageReceipts.js';
+import type { ReadSyncTaskType } from './messageModifiers/ReadSyncs.js';
+import { AttachmentBackupManager } from './jobs/AttachmentBackupManager.js';
+import { getConversationIdForLogging } from './util/idForLogging.js';
+import { encryptConversationAttachments } from './util/encryptConversationAttachments.js';
+import { DataReader, DataWriter } from './sql/Client.js';
+import {
+  restoreRemoteConfigFromStorage,
+  getValue as getRemoteConfigValue,
+  onChange as onRemoteConfigChange,
+  maybeRefreshRemoteConfig,
+  forceRefreshRemoteConfig,
+} from './RemoteConfig.js';
+import { getParametersForRedux, loadAll } from './services/allLoaders.js';
+import { checkFirstEnvelope } from './util/checkFirstEnvelope.js';
+import { BLOCKED_UUIDS_ID } from './textsecure/storage/Blocked.js';
+import { ReleaseNotesFetcher } from './services/releaseNotesFetcher.js';
+import { BuildExpirationService } from './services/buildExpiration.js';
 import {
   maybeQueueDeviceNameFetch,
   onDeviceNameChangeSync,
-} from './util/onDeviceNameChangeSync';
-import { postSaveUpdates } from './util/cleanup';
-import { handleDataMessage } from './messages/handleDataMessage';
-import { MessageModel } from './models/messages';
-import { waitForEvent } from './shims/events';
-import { sendSyncRequests } from './textsecure/syncRequests';
-import { handleServerAlerts } from './util/handleServerAlerts';
-import { isLocalBackupsEnabled } from './util/isLocalBackupsEnabled';
-import { NavTab, SettingsPage, ProfileEditorPage } from './types/Nav';
-import { initialize as initializeDonationService } from './services/donations';
-import { MessageRequestResponseSource } from './types/MessageRequestResponseEvent';
+} from './util/onDeviceNameChangeSync.js';
+import { postSaveUpdates } from './util/cleanup.js';
+import { handleDataMessage } from './messages/handleDataMessage.js';
+import { MessageModel } from './models/messages.js';
+import { waitForEvent } from './shims/events.js';
+import { sendSyncRequests } from './textsecure/syncRequests.js';
+import { handleServerAlerts } from './util/handleServerAlerts.js';
+import { isLocalBackupsEnabled } from './util/isLocalBackupsEnabled.js';
+import { NavTab, SettingsPage, ProfileEditorPage } from './types/Nav.js';
+import { initialize as initializeDonationService } from './services/donations.js';
+import { MessageRequestResponseSource } from './types/MessageRequestResponseEvent.js';
+import { CURRENT_SCHEMA_VERSION, PRIVATE, GROUP } from './types/Message2.js';
+import { JobCancelReason } from './jobs/types.js';
+import { itemStorage } from './textsecure/Storage.js';
+
+const { isNumber, throttle } = lodash;
 
 const log = createLogger('background');
+const { i18n } = window.SignalContext;
 
 export function isOverHourIntoPast(timestamp: number): boolean {
   return isNumber(timestamp) && isOlderThan(timestamp, HOUR);
 }
 
 export async function cleanupSessionResets(): Promise<void> {
-  const sessionResets = window.storage.get(
+  const sessionResets = itemStorage.get(
     'sessionResets',
     {} as SessionResetsType
   );
@@ -234,12 +298,10 @@ export async function cleanupSessionResets(): Promise<void> {
     }
   });
 
-  await window.storage.put('sessionResets', sessionResets);
+  await itemStorage.put('sessionResets', sessionResets);
 }
 
 export async function startApp(): Promise<void> {
-  window.textsecure.storage.protocol = new window.SignalProtocolStore();
-
   if (window.initialTheme === ThemeType.light) {
     document.body.classList.add('light-theme');
   }
@@ -253,19 +315,17 @@ export async function startApp(): Promise<void> {
 
   StartupQueue.initialize();
   notificationService.initialize({
-    i18n: window.i18n,
-    storage: window.storage,
+    i18n,
+    storage: itemStorage,
   });
 
   await initializeMessageCounter();
 
   // Initialize WebAPI as early as possible
-  let server: WebAPIType | undefined;
   let messageReceiver: MessageReceiver | undefined;
-  let challengeHandler: ChallengeHandler | undefined;
   let routineProfileRefresher: RoutineProfileRefresher | undefined;
 
-  ourProfileKeyService.initialize(window.storage);
+  ourProfileKeyService.initialize(itemStorage);
 
   window.SignalContext.activeWindowService.registerForChange(isActive => {
     if (!isActive) {
@@ -288,17 +348,11 @@ export async function startApp(): Promise<void> {
   const profileKeyResponseQueue = new PQueue();
   profileKeyResponseQueue.pause();
 
-  const lightSessionResetQueue = new PQueue({ concurrency: 1 });
-  window.Signal.Services.lightSessionResetQueue = lightSessionResetQueue;
-  lightSessionResetQueue.pause();
-
   const onDecryptionErrorQueue = new PQueue({ concurrency: 1 });
   onDecryptionErrorQueue.pause();
 
   const onRetryRequestQueue = new PQueue({ concurrency: 1 });
   onRetryRequestQueue.pause();
-
-  window.Whisper.deliveryReceiptQueue.pause();
 
   if (window.platform === 'darwin') {
     window.addEventListener('dblclick', (event: Event) => {
@@ -343,8 +397,6 @@ export async function startApp(): Promise<void> {
   //   of preload.js processing
   window.setImmediate = window.nodeSetImmediate;
 
-  const { Message } = window.Signal.Types;
-
   log.info('page reloaded');
   log.info('environment:', getEnvironment());
 
@@ -363,68 +415,60 @@ export async function startApp(): Promise<void> {
     window.SignalContext.getResolvedMessagesLocaleDirection()
   );
 
-  KeyChangeListener.init(window.textsecure.storage.protocol);
-  window.textsecure.storage.protocol.on(
+  KeyChangeListener.init(signalProtocolStore);
+  signalProtocolStore.on(
     'lowKeys',
     throttle(
       async () => {
-        await window.getAccountManager().maybeUpdateKeys(ServiceIdKind.ACI);
-        await window.getAccountManager().maybeUpdateKeys(ServiceIdKind.PNI);
+        await accountManager.maybeUpdateKeys(ServiceIdKind.ACI);
+        await accountManager.maybeUpdateKeys(ServiceIdKind.PNI);
       },
       durations.MINUTE,
       { trailing: true, leading: false }
     )
   );
 
-  window.textsecure.storage.protocol.on('removeAllData', () => {
+  signalProtocolStore.on('removeAllData', () => {
     window.reduxActions.stories.removeAllStories();
   });
 
+  signalProtocolStore.on('nullMessage', ({ conversationId, idForTracking }) => {
+    drop(
+      conversationJobQueue.add({
+        type: 'NullMessage',
+        conversationId,
+        idForTracking,
+      })
+    );
+  });
+
   window.getSocketStatus = () => {
-    if (server === undefined) {
-      return {
-        authenticated: { status: SocketStatus.CLOSED },
-        unauthenticated: { status: SocketStatus.CLOSED },
-      };
-    }
-    return server.getSocketStatus();
+    return getSocketStatus();
   };
 
-  let accountManager: AccountManager;
-  window.getAccountManager = () => {
-    if (accountManager) {
-      return accountManager;
-    }
-    if (!server) {
-      throw new Error('getAccountManager: server is not available!');
-    }
+  accountManager.addEventListener('startRegistration', () => {
+    pauseProcessing('startRegistration');
+    // We should already be logged out, but this ensures that the next time we connect
+    // to the auth socket it is from newly-registered credentials
+    drop(logout());
+    authSocketConnectCount = 0;
 
-    accountManager = new window.textsecure.AccountManager(server);
-    accountManager.addEventListener('startRegistration', () => {
-      pauseProcessing('startRegistration');
-      // We should already be logged out, but this ensures that the next time we connect
-      // to the auth socket it is from newly-registered credentials
-      drop(server?.logout());
-      authSocketConnectCount = 0;
+    backupReady.reject(new Error('startRegistration'));
+    backupReady = explodePromise();
+    registrationCompleted = explodePromise();
+  });
 
-      backupReady.reject(new Error('startRegistration'));
-      backupReady = explodePromise();
-      registrationCompleted = explodePromise();
-    });
+  accountManager.addEventListener('endRegistration', () => {
+    window.Whisper.events.emit('userChanged', false);
 
-    accountManager.addEventListener('endRegistration', () => {
-      window.Whisper.events.emit('userChanged', false);
-
-      drop(window.storage.put('postRegistrationSyncsStatus', 'incomplete'));
-      registrationCompleted?.resolve();
-      drop(Registration.markDone());
-    });
-    return accountManager;
-  };
+    drop(itemStorage.put('postRegistrationSyncsStatus', 'incomplete'));
+    registrationCompleted?.resolve();
+    drop(Registration.markDone());
+  });
 
   const cancelInitializationMessage = setAppLoadingScreenMessage(
     undefined,
-    window.i18n
+    i18n
   );
 
   const version = await DataReader.getItemById('version');
@@ -441,10 +485,10 @@ export async function startApp(): Promise<void> {
               dialogName: 'deleteOldIndexedDBData',
               noMouseClose: true,
               onTopOfEverything: true,
-              cancelText: window.i18n('icu:quit'),
+              cancelText: i18n('icu:quit'),
               confirmStyle: 'negative',
-              title: window.i18n('icu:deleteOldIndexedDBData'),
-              okText: window.i18n('icu:deleteOldData'),
+              title: i18n('icu:deleteOldIndexedDBData'),
+              okText: i18n('icu:deleteOldData'),
               reject: () => reject(),
               resolve: () => resolve(),
             });
@@ -475,7 +519,7 @@ export async function startApp(): Promise<void> {
       }
 
       // Set a flag to delete IndexedDB on next startup if it wasn't deleted just now.
-      // We need to use direct data calls, since window.storage isn't ready yet.
+      // We need to use direct data calls, since storage isn't ready yet.
       await DataWriter.createOrUpdateItem({
         id: 'indexeddb-delete-needed',
         value: true,
@@ -484,89 +528,42 @@ export async function startApp(): Promise<void> {
   }
 
   // We need this 'first' check because we don't want to start the app up any other time
-  //   than the first time. And window.storage.fetch() will cause onready() to fire.
+  //   than the first time. And storage.fetch() will cause onready() to fire.
   let first = true;
-  window.storage.onready(async () => {
+  itemStorage.onready(async () => {
     if (!first) {
       return;
     }
     first = false;
 
-    restoreRemoteConfigFromStorage();
+    restoreRemoteConfigFromStorage({
+      storage: itemStorage,
+    });
 
     window.Whisper.events.on('firstEnvelope', checkFirstEnvelope);
 
     const buildExpirationService = new BuildExpirationService();
 
-    server = window.WebAPI.connect({
-      ...window.textsecure.storage.user.getWebAPICredentials(),
-      hasBuildExpired: buildExpirationService.hasBuildExpired(),
-      hasStoriesDisabled: window.storage.get('hasStoriesDisabled', false),
-    });
+    drop(
+      connectWebAPI({
+        ...itemStorage.user.getWebAPICredentials(),
+        hasBuildExpired: buildExpirationService.hasBuildExpired(),
+        hasStoriesDisabled: itemStorage.get('hasStoriesDisabled', false),
+      })
+    );
 
     buildExpirationService.on('expired', () => {
-      drop(server?.onExpiration('build'));
-    });
-
-    window.textsecure.server = server;
-    window.textsecure.messaging = new window.textsecure.MessageSender(server);
-
-    challengeHandler = new ChallengeHandler({
-      storage: window.storage,
-
-      startQueue(conversationId: string) {
-        conversationJobQueue.resolveVerificationWaiter(conversationId);
-      },
-
-      requestChallenge(request) {
-        if (window.SignalCI) {
-          window.SignalCI.handleEvent('challenge', request);
-          return;
-        }
-        window.sendChallengeRequest(request);
-      },
-
-      async sendChallengeResponse(data) {
-        const { messaging } = window.textsecure;
-        if (!messaging) {
-          throw new Error('sendChallengeResponse: messaging is not available!');
-        }
-        await messaging.sendChallengeResponse(data);
-      },
-
-      onChallengeFailed() {
-        // TODO: DESKTOP-1530
-        // Display humanized `retryAfter`
-        window.reduxActions.toast.showToast({
-          toastType: ToastType.CaptchaFailed,
-        });
-      },
-
-      onChallengeSolved() {
-        window.reduxActions.toast.showToast({
-          toastType: ToastType.CaptchaSolved,
-        });
-      },
-
-      setChallengeStatus(challengeStatus) {
-        window.reduxActions.network.setChallengeStatus(challengeStatus);
-      },
+      drop(onExpiration('build'));
     });
 
     window.Whisper.events.on('challengeResponse', response => {
-      if (!challengeHandler) {
-        throw new Error('Expected challenge handler to be there');
-      }
-
       challengeHandler.onResponse(response);
     });
 
-    window.Signal.challengeHandler = challengeHandler;
-
     log.info('Initializing MessageReceiver');
     messageReceiver = new MessageReceiver({
-      storage: window.storage,
-      serverTrustRoot: window.getServerTrustRoot(),
+      storage: itemStorage,
+      serverTrustRoots: window.getServerTrustRoots(),
     });
     window.ConversationController.registerDelayBeforeUpdatingRedux(() => {
       if (backupsService.isImportRunning()) {
@@ -724,22 +721,25 @@ export async function startApp(): Promise<void> {
       queuedEventListener(onDeviceNameChangeSync)
     );
 
-    if (!window.storage.get('defaultConversationColor')) {
+    if (!itemStorage.get('defaultConversationColor')) {
       drop(
-        window.storage.put(
-          'defaultConversationColor',
-          DEFAULT_CONVERSATION_COLOR
-        )
+        itemStorage.put('defaultConversationColor', DEFAULT_CONVERSATION_COLOR)
       );
     }
 
     senderCertificateService.initialize({
-      server,
+      server: {
+        isOnline,
+        getSenderCertificate,
+      },
       events: window.Whisper.events,
-      storage: window.storage,
+      storage: itemStorage,
     });
 
-    areWeASubscriberService.update(window.storage, server);
+    areWeASubscriberService.update(itemStorage, {
+      isOnline,
+      getHasSubscription,
+    });
 
     void cleanupSessionResets();
 
@@ -751,7 +751,7 @@ export async function startApp(): Promise<void> {
         flushMessageCounter();
 
         // Hangup active calls
-        window.Signal.Services.calling.hangupAllCalls({
+        calling.hangupAllCalls({
           excludeRinging: true,
           reason: 'background/shutdown: shutdown requested',
         });
@@ -759,20 +759,16 @@ export async function startApp(): Promise<void> {
         const attachmentDownloadStopPromise = AttachmentDownloadManager.stop();
         const attachmentBackupStopPromise = AttachmentBackupManager.stop();
 
-        server?.cancelInflightRequests('shutdown');
+        cancelInflightRequests(JobCancelReason.Shutdown);
 
         // Stop background processing
         idleDetector.stop();
 
         // Stop processing incoming messages
         if (messageReceiver) {
-          strictAssert(
-            server !== undefined,
-            'WebAPI should be initialized together with MessageReceiver'
-          );
           log.info('shutdown: shutting down messageReceiver');
           pauseProcessing('shutdown');
-          await window.waitForAllBatchers();
+          await waitForAllBatchers();
         }
 
         log.info('shutdown: flushing conversations');
@@ -832,10 +828,7 @@ export async function startApp(): Promise<void> {
 
         // A number of still-to-queue database queries might be waiting inside batchers.
         //   We wait for these to empty first, and then shut down the data interface.
-        await Promise.all([
-          window.waitForAllBatchers(),
-          window.waitForAllWaitBatchers(),
-        ]);
+        await Promise.all([waitForAllBatchers(), waitForAllWaitBatchers()]);
 
         log.info(
           'shutdown: waiting for all attachment backups & downloads to finish'
@@ -871,21 +864,21 @@ export async function startApp(): Promise<void> {
     );
 
     const currentVersion = window.getVersion();
-    lastVersion = window.storage.get('version');
+    lastVersion = itemStorage.get('version');
     newVersion = !lastVersion || currentVersion !== lastVersion;
-    await window.storage.put('version', currentVersion);
+    await itemStorage.put('version', currentVersion);
 
     if (newVersion && lastVersion) {
       log.info(
         `New version detected: ${currentVersion}; previous: ${lastVersion}`
       );
 
-      const remoteBuildExpiration = window.storage.get('remoteBuildExpiration');
+      const remoteBuildExpiration = itemStorage.get('remoteBuildExpiration');
       if (remoteBuildExpiration) {
         log.info(
           `Clearing remoteBuildExpiration. Previous value was ${remoteBuildExpiration}`
         );
-        await window.storage.remove('remoteBuildExpiration');
+        await itemStorage.remove('remoteBuildExpiration');
       }
 
       if (window.isBeforeVersion(lastVersion, '6.45.0-alpha')) {
@@ -906,8 +899,8 @@ export async function startApp(): Promise<void> {
       if (window.isBeforeVersion(lastVersion, 'v1.29.2-beta.1')) {
         // Stickers flags
         await Promise.all([
-          window.storage.put('showStickersIntroduction', true),
-          window.storage.put('showStickerPickerHint', true),
+          itemStorage.put('showStickersIntroduction', true),
+          itemStorage.put('showStickerPickerHint', true),
         ]);
       }
 
@@ -930,12 +923,12 @@ export async function startApp(): Promise<void> {
       }
 
       if (window.isBeforeVersion(lastVersion, 'v5.18.0')) {
-        await window.storage.remove('senderCertificate');
-        await window.storage.remove('senderCertificateNoE164');
+        await itemStorage.remove('senderCertificate');
+        await itemStorage.remove('senderCertificateNoE164');
       }
 
       if (window.isBeforeVersion(lastVersion, 'v5.19.0')) {
-        await window.storage.remove(GROUP_CREDENTIALS_KEY);
+        await itemStorage.remove(GROUP_CREDENTIALS_KEY);
       }
 
       if (window.isBeforeVersion(lastVersion, 'v5.37.0-alpha')) {
@@ -948,12 +941,12 @@ export async function startApp(): Promise<void> {
       }
 
       if (window.isBeforeVersion(lastVersion, 'v5.51.0-beta.2')) {
-        await window.storage.put('groupCredentials', []);
+        await itemStorage.put('groupCredentials', []);
         await DataWriter.removeAllProfileKeyCredentials();
       }
 
       if (window.isBeforeVersion(lastVersion, 'v6.38.0-beta.1')) {
-        await window.storage.remove('hasCompletedSafetyNumberOnboarding');
+        await itemStorage.remove('hasCompletedSafetyNumberOnboarding');
       }
 
       // This one should always be last - it could restart the app
@@ -964,48 +957,56 @@ export async function startApp(): Promise<void> {
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.3.0-beta.1')) {
-        await window.storage.remove('lastHeartbeat');
-        await window.storage.remove('lastStartup');
+        await itemStorage.remove('lastHeartbeat');
+        await itemStorage.remove('lastStartup');
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.8.0-beta.1')) {
-        await window.storage.remove('sendEditWarningShown');
-        await window.storage.remove('formattingWarningShown');
+        await itemStorage.remove('sendEditWarningShown');
+        await itemStorage.remove('formattingWarningShown');
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.21.0-beta.1')) {
-        await window.storage.remove(
+        await itemStorage.remove(
           'hasRegisterSupportForUnauthenticatedDelivery'
         );
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.33.0-beta.1')) {
-        await window.storage.remove('masterKeyLastRequestTime');
+        await itemStorage.remove('masterKeyLastRequestTime');
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.43.0-beta.1')) {
-        await window.storage.remove('primarySendsSms');
+        await itemStorage.remove('primarySendsSms');
       }
 
       if (window.isBeforeVersion(lastVersion, 'v7.56.0-beta.1')) {
-        await window.storage.remove('backupMediaDownloadIdle');
+        await itemStorage.remove('backupMediaDownloadIdle');
       }
 
       if (
         window.isBeforeVersion(lastVersion, 'v7.57.0') &&
-        window.storage.get('needProfileMovedModal') === undefined
+        itemStorage.get('needProfileMovedModal') === undefined
       ) {
-        await window.storage.put('needProfileMovedModal', true);
+        await itemStorage.put('needProfileMovedModal', true);
+      }
+
+      if (window.isBeforeVersion(lastVersion, 'v7.75.0-beta.1')) {
+        const hasAllChatsChatFolder = await DataReader.hasAllChatsChatFolder();
+        if (!hasAllChatsChatFolder) {
+          log.info('Creating "all chats" chat folder');
+          await DataWriter.createAllChatsChatFolder();
+          StorageService.storageServiceUploadJobAfterEnabled({
+            reason: 'createAllChatsChatFolder',
+          });
+        }
       }
     }
 
-    setAppLoadingScreenMessage(
-      window.i18n('icu:optimizingApplication'),
-      window.i18n
-    );
+    setAppLoadingScreenMessage(i18n('icu:optimizingApplication'), i18n);
 
-    if (newVersion || window.storage.get('needOrphanedAttachmentCheck')) {
-      await window.storage.remove('needOrphanedAttachmentCheck');
+    if (newVersion || itemStorage.get('needOrphanedAttachmentCheck')) {
+      await itemStorage.remove('needOrphanedAttachmentCheck');
       await DataWriter.cleanupOrphanedAttachments();
     }
 
@@ -1018,12 +1019,12 @@ export async function startApp(): Promise<void> {
       await Stickers.encryptLegacyStickers();
     }
 
-    setAppLoadingScreenMessage(window.i18n('icu:loading'), window.i18n);
+    setAppLoadingScreenMessage(i18n('icu:loading'), i18n);
 
     let isMigrationWithIndexComplete = false;
     let isIdleTaskProcessing = false;
     log.info(
-      `Starting background data migration. Target version: ${Message.CURRENT_SCHEMA_VERSION}`
+      `Starting background data migration. Target version: ${CURRENT_SCHEMA_VERSION}`
     );
     idleDetector.on('idle', async () => {
       const NUM_MESSAGES_PER_BATCH = 250;
@@ -1069,10 +1070,7 @@ export async function startApp(): Promise<void> {
       }
     });
 
-    const retryPlaceholders = new RetryPlaceholders({
-      retryReceiptLifespan: HOUR,
-    });
-    window.Signal.Services.retryPlaceholders = retryPlaceholders;
+    retryPlaceholders.start(itemStorage);
 
     setInterval(async () => {
       const now = Date.now();
@@ -1080,7 +1078,7 @@ export async function startApp(): Promise<void> {
 
       try {
         sentProtoMaxAge = parseIntOrThrow(
-          window.Signal.RemoteConfig.getValue('desktop.retryRespondMaxAge'),
+          getRemoteConfigValue('desktop.retryRespondMaxAge'),
           'retryRespondMaxAge'
         );
       } catch (error) {
@@ -1146,7 +1144,7 @@ export async function startApp(): Promise<void> {
 
       await Promise.all([
         window.ConversationController.getOrCreateSignalConversation(),
-        window.textsecure.storage.protocol.hydrateCaches(),
+        signalProtocolStore.hydrateCaches(),
         loadAll(),
       ]);
       await window.ConversationController.checkForConflicts();
@@ -1158,14 +1156,12 @@ export async function startApp(): Promise<void> {
     } finally {
       setupAppState();
       drop(start());
-      window.Signal.Services.initializeNetworkObserver(
+      initializeNetworkObserver(
         window.reduxActions.network,
         () => window.getSocketStatus().authenticated.status
       );
-      window.Signal.Services.initializeUpdateListener(
-        window.reduxActions.updates
-      );
-      window.Signal.Services.calling.initialize(
+      initializeUpdateListener(window.reduxActions.updates);
+      calling.initialize(
         {
           ...window.reduxActions.calling,
           areAnyCallsActiveOrRinging: () =>
@@ -1184,20 +1180,19 @@ export async function startApp(): Promise<void> {
       );
     }
   });
-  // end of window.storage.onready() callback
+  // end of storage.onready() callback
 
   log.info('Storage fetch');
-  drop(window.storage.fetch());
+  drop(itemStorage.fetch());
 
   function pauseProcessing(reason: string) {
-    strictAssert(server != null, 'WebAPI not initialized');
     strictAssert(
       messageReceiver != null,
       'messageReceiver must be initialized'
     );
 
     StorageService.disableStorageService(reason);
-    server.unregisterRequestHandler(messageReceiver);
+    unregisterRequestHandler(messageReceiver);
     messageReceiver.stopProcessing();
   }
 
@@ -1205,10 +1200,10 @@ export async function startApp(): Promise<void> {
     initializeRedux(getParametersForRedux());
 
     window.Whisper.events.on('userChanged', (reconnect = false) => {
-      const newDeviceId = window.textsecure.storage.user.getDeviceId();
-      const newNumber = window.textsecure.storage.user.getNumber();
-      const newACI = window.textsecure.storage.user.getAci();
-      const newPNI = window.textsecure.storage.user.getPni();
+      const newDeviceId = itemStorage.user.getDeviceId();
+      const newNumber = itemStorage.user.getNumber();
+      const newACI = itemStorage.user.getAci();
+      const newPNI = itemStorage.user.getPni();
       const ourConversation =
         window.ConversationController.getOurConversation();
 
@@ -1222,7 +1217,7 @@ export async function startApp(): Promise<void> {
         ourNumber: newNumber,
         ourAci: newACI,
         ourPni: newPNI,
-        regionCode: window.storage.get('regionCode'),
+        regionCode: itemStorage.get('regionCode'),
       });
 
       if (reconnect) {
@@ -1263,14 +1258,14 @@ export async function startApp(): Promise<void> {
 
   window.Whisper.events.on('powerMonitorSuspend', () => {
     log.info('powerMonitor: suspend');
-    server?.cancelInflightRequests('powerMonitorSuspend');
+    cancelInflightRequests(JobCancelReason.PowerMonitorSuspend);
     suspendTasksWithTimeout();
   });
 
   window.Whisper.events.on('powerMonitorResume', () => {
     log.info('powerMonitor: resume');
-    server?.checkSockets();
-    server?.cancelInflightRequests('powerMonitorResume');
+    checkSockets();
+    cancelInflightRequests(JobCancelReason.PowerMonitorResume);
     resumeTasksWithTimeout();
   });
 
@@ -1282,17 +1277,12 @@ export async function startApp(): Promise<void> {
 
   const enqueueReconnectToWebSocket = () => {
     reconnectToWebSocketQueue.add(async () => {
-      if (!server) {
-        log.info('reconnectToWebSocket: No server. Early return.');
-        return;
-      }
-
       if (remotelyExpired) {
         return;
       }
 
       log.info('reconnectToWebSocket starting...');
-      await server.reconnect();
+      await reconnectWebAPI();
     });
   };
 
@@ -1317,8 +1307,8 @@ export async function startApp(): Promise<void> {
     }
 
     log.error('remote expiration detected, disabling reconnects');
-    drop(window.storage.put('remoteBuildExpiration', Date.now()));
-    drop(server?.onExpiration('remote'));
+    drop(itemStorage.put('remoteBuildExpiration', Date.now()));
+    drop(onExpiration('remote'));
     remotelyExpired = true;
   });
 
@@ -1345,21 +1335,23 @@ export async function startApp(): Promise<void> {
   async function start() {
     // Storage is ready because `start()` is called from `storage.onready()`
 
-    strictAssert(server !== undefined, 'start: server not initialized');
     initializeAllJobQueues({
-      server,
+      server: {
+        isOnline,
+        reportMessage,
+      },
     });
 
     strictAssert(challengeHandler, 'start: challengeHandler');
     await challengeHandler.load();
 
-    if (!window.storage.user.getNumber()) {
+    if (!itemStorage.user.getNumber()) {
       const ourConversation =
         window.ConversationController.getOurConversation();
       const ourE164 = ourConversation?.get('e164');
       if (ourE164) {
         log.warn('Restoring E164 from our conversation');
-        await window.storage.user.setNumber(ourE164);
+        await itemStorage.user.setNumber(ourE164);
       }
     }
 
@@ -1368,7 +1360,7 @@ export async function startApp(): Promise<void> {
         window.ConversationController.repairPinnedConversations();
       }
 
-      if (!window.storage.get('avatarsHaveBeenMigrated', false)) {
+      if (!itemStorage.get('avatarsHaveBeenMigrated', false)) {
         window.ConversationController.migrateAvatarsForNonAcceptedConversations();
       }
     }
@@ -1379,14 +1371,14 @@ export async function startApp(): Promise<void> {
     initializeNotificationProfilesService();
 
     log.info('Blocked uuids cleanup: starting...');
-    const blockedUuids = window.storage.get(BLOCKED_UUIDS_ID, []);
+    const blockedUuids = itemStorage.get(BLOCKED_UUIDS_ID, []);
     const blockedAcis = blockedUuids.filter(isAciString);
     const diff = blockedUuids.length - blockedAcis.length;
     if (diff > 0) {
       log.warn(
         `Blocked uuids cleanup: Found ${diff} non-ACIs in blocked list. Removing.`
       );
-      await window.storage.put(BLOCKED_UUIDS_ID, blockedAcis);
+      await itemStorage.put(BLOCKED_UUIDS_ID, blockedAcis);
     }
     log.info('Blocked uuids cleanup: complete');
 
@@ -1396,7 +1388,7 @@ export async function startApp(): Promise<void> {
     log.info(
       `Expiration start timestamp cleanup: Found ${messagesUnexpectedlyMissingExpirationStartTimestamp.length} messages for cleanup`
     );
-    if (!window.textsecure.storage.user.getAci()) {
+    if (!itemStorage.user.getAci()) {
       log.info(
         "Expiration start timestamp cleanup: Canceling update; we don't have our own UUID"
       );
@@ -1427,7 +1419,7 @@ export async function startApp(): Promise<void> {
         });
 
       await DataWriter.saveMessages(newMessageAttributes, {
-        ourAci: window.textsecure.storage.user.getCheckedAci(),
+        ourAci: itemStorage.user.getCheckedAci(),
         postSaveUpdates,
       });
     }
@@ -1439,10 +1431,8 @@ export async function startApp(): Promise<void> {
 
     const appContainer = document.getElementById('app-container');
     strictAssert(appContainer != null, 'No #app-container');
-    createRoot(appContainer).render(
-      window.Signal.State.Roots.createApp(window.reduxStore)
-    );
-    const hideMenuBar = window.storage.get('hide-menu-bar', false);
+    createRoot(appContainer).render(createAppRoot(window.reduxStore));
+    const hideMenuBar = itemStorage.get('hide-menu-bar', false);
     window.IPC.setAutoHideMenuBar(hideMenuBar);
     window.IPC.setMenuBarVisibility(!hideMenuBar);
 
@@ -1460,13 +1450,13 @@ export async function startApp(): Promise<void> {
     });
 
     const isCoreDataValid = Boolean(
-      window.textsecure.storage.user.getAci() &&
+      itemStorage.user.getAci() &&
         window.ConversationController.getOurConversation()
     );
 
     if (isCoreDataValid && Registration.everDone()) {
       idleDetector.start();
-      if (window.storage.get('backupDownloadPath')) {
+      if (itemStorage.get('backupDownloadPath')) {
         window.reduxActions.installer.showBackupImport();
       } else {
         window.reduxActions.app.openInbox();
@@ -1491,10 +1481,11 @@ export async function startApp(): Promise<void> {
 
     // Maybe refresh remote configuration when we become active
     activeWindowService.registerForActive(async () => {
-      strictAssert(server !== undefined, 'WebAPI not ready');
-
       try {
-        await window.Signal.RemoteConfig.maybeRefreshRemoteConfig(server);
+        await maybeRefreshRemoteConfig({
+          getConfig,
+          storage: itemStorage,
+        });
       } catch (error) {
         if (error instanceof HTTPError) {
           log.warn(
@@ -1507,24 +1498,20 @@ export async function startApp(): Promise<void> {
     });
 
     // Listen for changes to the `desktop.clientExpiration` remote flag
-    window.Signal.RemoteConfig.onChange(
-      'desktop.clientExpiration',
-      ({ enabled, value }) => {
-        if (!enabled) {
-          return;
-        }
-        const remoteBuildExpirationTimestamp =
-          parseRemoteClientExpiration(value);
-        if (remoteBuildExpirationTimestamp) {
-          drop(
-            window.storage.put(
-              'remoteBuildExpiration',
-              remoteBuildExpirationTimestamp
-            )
-          );
-        }
+    onRemoteConfigChange('desktop.clientExpiration', ({ enabled, value }) => {
+      if (!enabled) {
+        return;
       }
-    );
+      const remoteBuildExpirationTimestamp = parseRemoteClientExpiration(value);
+      if (remoteBuildExpirationTimestamp) {
+        drop(
+          itemStorage.put(
+            'remoteBuildExpiration',
+            remoteBuildExpirationTimestamp
+          )
+        );
+      }
+    });
 
     if (resolveOnAppView) {
       resolveOnAppView();
@@ -1535,8 +1522,6 @@ export async function startApp(): Promise<void> {
   }
 
   function setupNetworkChangeListeners() {
-    strictAssert(server, 'server must be initialized');
-
     const onOnline = () => {
       log.info('online');
       drop(afterAuthSocketConnect());
@@ -1557,13 +1542,13 @@ export async function startApp(): Promise<void> {
         hasAppEverBeenRegistered,
       });
 
-      drop(challengeHandler?.onOffline());
+      drop(challengeHandler.onOffline());
       drop(AttachmentDownloadManager.stop());
       drop(AttachmentBackupManager.stop());
 
       if (messageReceiver) {
         drop(messageReceiver.drain());
-        server?.unregisterRequestHandler(messageReceiver);
+        unregisterRequestHandler(messageReceiver);
       }
 
       if (hasAppEverBeenRegistered) {
@@ -1590,9 +1575,9 @@ export async function startApp(): Promise<void> {
 
     // Because these events may have already fired, we manually call their handlers.
     // isOnline() will return undefined if neither of these events have been emitted.
-    if (server.isOnline() === true) {
+    if (isOnline() === true) {
       onOnline();
-    } else if (server.isOnline() === false) {
+    } else if (isOnline() === false) {
       onOffline();
     }
   }
@@ -1619,7 +1604,6 @@ export async function startApp(): Promise<void> {
       return;
     }
 
-    strictAssert(server, 'server must be initialized');
     strictAssert(messageReceiver, 'messageReceiver must be initialized');
 
     while (afterAuthSocketConnectPromise?.promise) {
@@ -1638,12 +1622,12 @@ export async function startApp(): Promise<void> {
         await registrationCompleted?.promise;
       }
 
-      if (!window.textsecure.storage.user.getAci()) {
+      if (!itemStorage.user.getAci()) {
         log.error(`${logId}: ACI not captured during registration, unlinking`);
         return unlinkAndDisconnect();
       }
 
-      if (!window.textsecure.storage.user.getPni()) {
+      if (!itemStorage.user.getPni()) {
         log.error(`${logId}: PNI not captured during registration, unlinking`);
         return unlinkAndDisconnect();
       }
@@ -1651,8 +1635,8 @@ export async function startApp(): Promise<void> {
       // 2. Fetch remote config, before we process the message queue
       if (isFirstAuthSocketConnect) {
         try {
-          await window.Signal.RemoteConfig.forceRefreshRemoteConfig(
-            server,
+          await forceRefreshRemoteConfig(
+            { getConfig, storage: itemStorage },
             'afterAuthSocketConnect/firstConnect'
           );
         } catch (error) {
@@ -1666,7 +1650,7 @@ export async function startApp(): Promise<void> {
       }
 
       const postRegistrationSyncsComplete =
-        window.storage.get('postRegistrationSyncsStatus') !== 'incomplete';
+        itemStorage.get('postRegistrationSyncsStatus') !== 'incomplete';
 
       // 3. Send any critical sync requests after registration
       if (!postRegistrationSyncsComplete) {
@@ -1688,7 +1672,7 @@ export async function startApp(): Promise<void> {
       // `messageReceiver.#isEmptied`.
       log.info(`${logId}: enabling message processing`);
       messageReceiver.startProcessingQueue();
-      server.registerRequestHandler(messageReceiver);
+      registerRequestHandler(messageReceiver);
 
       // 6. Kickoff storage service sync
       if (isFirstAuthSocketConnect || !postRegistrationSyncsComplete) {
@@ -1718,7 +1702,7 @@ export async function startApp(): Promise<void> {
         try {
           log.info(`${logId}: waiting for postRegistrationSyncs`);
           await Promise.all(syncsToAwaitBeforeShowingInbox);
-          await window.storage.put('postRegistrationSyncsStatus', 'complete');
+          await itemStorage.put('postRegistrationSyncsStatus', 'complete');
           log.info(`${logId}: postRegistrationSyncs complete`);
         } catch (error) {
           log.error(
@@ -1762,7 +1746,7 @@ export async function startApp(): Promise<void> {
   async function maybeDownloadAndImportBackup(): Promise<{
     wasBackupImported: boolean;
   }> {
-    const backupDownloadPath = window.storage.get('backupDownloadPath');
+    const backupDownloadPath = itemStorage.get('backupDownloadPath');
     const isLocalBackupAvailable =
       backupsService.isLocalBackupStaged() && isLocalBackupsEnabled();
 
@@ -1832,10 +1816,9 @@ export async function startApp(): Promise<void> {
 
       drop(StorageService.reprocessUnknownFields());
 
-      const manager = window.getAccountManager();
       await Promise.all([
-        manager.maybeUpdateDeviceName(),
-        window.textsecure.storage.user.removeSignalingKey(),
+        accountManager.maybeUpdateDeviceName(),
+        itemStorage.user.removeSignalingKey(),
       ]);
     } catch (e) {
       log.error(
@@ -1847,14 +1830,13 @@ export async function startApp(): Promise<void> {
 
   async function ensureAEP() {
     if (
-      window.storage.get('accountEntropyPool') ||
+      itemStorage.get('accountEntropyPool') ||
       window.ConversationController.areWePrimaryDevice()
     ) {
       return;
     }
 
-    const lastSent =
-      window.storage.get('accountEntropyPoolLastRequestTime') ?? 0;
+    const lastSent = itemStorage.get('accountEntropyPoolLastRequestTime') ?? 0;
     const now = Date.now();
 
     // If we last attempted sync one day in the past, or if we time
@@ -1862,7 +1844,7 @@ export async function startApp(): Promise<void> {
     if (isOlderThan(lastSent, DAY) || lastSent > now) {
       log.warn('ensureAEP: AEP not captured, requesting sync');
       await singleProtoJobQueue.add(MessageSender.getRequestKeySyncMessage());
-      await window.storage.put('accountEntropyPoolLastRequestTime', now);
+      await itemStorage.put('accountEntropyPoolLastRequestTime', now);
     } else {
       log.warn(
         'ensureAEP: AEP not captured, but sync requested recently.' +
@@ -1872,10 +1854,8 @@ export async function startApp(): Promise<void> {
   }
 
   async function registerCapabilities() {
-    strictAssert(server, 'server must be initialized');
-
     try {
-      await server.registerCapabilities({
+      await doRegisterCapabilities({
         attachmentBackfill: true,
         spqr: true,
       });
@@ -1890,31 +1870,18 @@ export async function startApp(): Promise<void> {
   function afterEveryAuthConnect() {
     log.info('afterAuthSocketConnect/afterEveryAuthConnect');
 
-    strictAssert(server, 'afterEveryAuthConnect: server');
-    drop(handleServerAlerts(server.getServerAlerts()));
+    drop(handleServerAlerts(getServerAlerts()));
 
-    strictAssert(challengeHandler, 'afterEveryAuthConnect: challengeHandler');
     drop(challengeHandler.onOnline());
 
     reconnectBackOff.reset();
-    drop(window.Signal.Services.initializeGroupCredentialFetcher());
+    drop(initializeGroupCredentialFetcher());
     drop(AttachmentDownloadManager.start());
 
     if (areRemoteBackupsTurnedOn()) {
       backupsService.start();
       drop(AttachmentBackupManager.start());
     }
-  }
-
-  function onNavigatorOffline() {
-    log.info('navigator offline');
-
-    drop(server?.onNavigatorOffline());
-  }
-
-  function onNavigatorOnline() {
-    log.info('navigator online');
-    drop(server?.onNavigatorOnline());
   }
 
   window.addEventListener('online', onNavigatorOnline);
@@ -1934,7 +1901,7 @@ export async function startApp(): Promise<void> {
     lightSessionResetQueue.pause();
     onDecryptionErrorQueue.pause();
     onRetryRequestQueue.pause();
-    window.Whisper.deliveryReceiptQueue.pause();
+    deliveryReceiptQueue.pause();
     notificationService.disable();
   }
 
@@ -1945,7 +1912,7 @@ export async function startApp(): Promise<void> {
     lightSessionResetQueue.start();
     onDecryptionErrorQueue.start();
     onRetryRequestQueue.start();
-    window.Whisper.deliveryReceiptQueue.start();
+    deliveryReceiptQueue.start();
     notificationService.enable();
   }
 
@@ -2034,12 +2001,7 @@ export async function startApp(): Promise<void> {
   async function onEmpty({
     isFromMessageReceiver,
   }: { isFromMessageReceiver?: boolean } = {}): Promise<void> {
-    const { storage } = window.textsecure;
-
-    await Promise.all([
-      window.waitForAllBatchers(),
-      window.flushAllWaitBatchers(),
-    ]);
+    await Promise.all([waitForAllBatchers(), flushAllWaitBatchers()]);
     log.info('onEmpty: All outstanding database requests complete');
     window.IPC.readyForUpdates();
     window.ConversationController.onEmpty();
@@ -2072,7 +2034,7 @@ export async function startApp(): Promise<void> {
         getAllConversations: () => window.ConversationController.getAll(),
         getOurConversationId: () =>
           window.ConversationController.getOurConversationId(),
-        storage,
+        storage: itemStorage,
       });
 
       void routineProfileRefresher.start();
@@ -2080,7 +2042,20 @@ export async function startApp(): Promise<void> {
 
     drop(usernameIntegrity.start());
 
-    drop(ReleaseNotesFetcher.init(window.Whisper.events, newVersion));
+    drop(
+      ReleaseNotesFetcher.init(
+        {
+          isOnline,
+          getReleaseNote,
+          getReleaseNoteHash,
+          getReleaseNoteImageAttachment,
+          getReleaseNotesManifest,
+          getReleaseNotesManifestHash,
+        },
+        window.Whisper.events,
+        newVersion
+      )
+    );
 
     drop(initializeDonationService());
 
@@ -2141,24 +2116,24 @@ export async function startApp(): Promise<void> {
       linkPreviews,
     } = configuration;
 
-    await window.storage.put('read-receipt-setting', Boolean(readReceipts));
+    await itemStorage.put('read-receipt-setting', Boolean(readReceipts));
 
     if (
       unidentifiedDeliveryIndicators === true ||
       unidentifiedDeliveryIndicators === false
     ) {
-      await window.storage.put(
+      await itemStorage.put(
         'unidentifiedDeliveryIndicators',
         unidentifiedDeliveryIndicators
       );
     }
 
     if (typingIndicators === true || typingIndicators === false) {
-      await window.storage.put('typingIndicators', typingIndicators);
+      await itemStorage.put('typingIndicators', typingIndicators);
     }
 
     if (linkPreviews === true || linkPreviews === false) {
-      await window.storage.put('linkPreviews', linkPreviews);
+      await itemStorage.put('linkPreviews', linkPreviews);
     }
   }
 
@@ -2169,7 +2144,7 @@ export async function startApp(): Promise<void> {
     const { groupV2Id, started } = typing || {};
 
     // We don't do anything with incoming typing messages if the setting is disabled
-    if (!window.storage.get('typingIndicators')) {
+    if (!itemStorage.get('typingIndicators')) {
       return;
     }
 
@@ -2202,20 +2177,25 @@ export async function startApp(): Promise<void> {
       return;
     }
 
-    const ourAci = window.textsecure.storage.user.getAci();
-    const ourPni = window.textsecure.storage.user.getPni();
+    if (isGroup(conversation.attributes)) {
+      // We drop typing notifications in groups we're not a part of
+      if (!conversation.areWeAMember()) {
+        log.warn(
+          `Received typing indicator for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
+        );
+        return;
+      }
 
-    // We drop typing notifications in groups we're not a part of
-    if (
-      !isDirectConversation(conversation.attributes) &&
-      !(ourAci && conversation.hasMember(ourAci)) &&
-      !(ourPni && conversation.hasMember(ourPni))
-    ) {
-      log.warn(
-        `Received typing indicator for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
-      );
-      return;
+      // We also drop typing notifications from users not part of the group
+      const serviceId = senderConversation.getServiceId();
+      if (!serviceId || !conversation.hasMember(serviceId)) {
+        log.warn(
+          `Received typing indicator for group ${conversation.idForLogging()} from a non-group member. Dropping.`
+        );
+        return;
+      }
     }
+
     if (conversation?.isBlocked()) {
       log.info(
         `onTyping: conversation ${conversation.idForLogging()} is blocked, dropping typing message`
@@ -2358,7 +2338,7 @@ export async function startApp(): Promise<void> {
   }: EnvelopeUnsealedEvent): Promise<void> {
     setInboxEnvelopeTimestamp(envelope.serverTimestamp);
 
-    const ourAci = window.textsecure.storage.user.getAci();
+    const ourAci = itemStorage.user.getAci();
     if (
       envelope.sourceServiceId !== ourAci &&
       isAciString(envelope.sourceServiceId)
@@ -2413,7 +2393,7 @@ export async function startApp(): Promise<void> {
       const sender = getAuthor(message.attributes);
       strictAssert(sender, 'MessageModel has no sender');
 
-      const serviceIdKind = window.textsecure.storage.user.getOurServiceIdKind(
+      const serviceIdKind = itemStorage.user.getOurServiceIdKind(
         data.destinationServiceId
       );
 
@@ -2484,6 +2464,100 @@ export async function startApp(): Promise<void> {
       };
 
       drop(Reactions.onReaction(attributes));
+      return;
+    }
+
+    if (data.message.pollVote) {
+      if (!isPollReceiveEnabled()) {
+        log.warn('Dropping PollVote because the flag is disabled');
+        confirm();
+        return;
+      }
+      const { pollVote, timestamp } = data.message;
+
+      const parsed = safeParsePartial(PollVoteSchema, pollVote);
+      if (!parsed.success) {
+        log.warn(
+          'Dropping PollVote due to validation error:',
+          parsed.error.flatten()
+        );
+        confirm();
+        return;
+      }
+
+      const validatedVote = parsed.data;
+      const targetAuthorAci = normalizeAci(
+        validatedVote.targetAuthorAci,
+        'DataMessage.PollVote.targetAuthorAci'
+      );
+
+      const { conversation: fromConversation } =
+        window.ConversationController.maybeMergeContacts({
+          e164: data.source,
+          aci: data.sourceAci,
+          reason: 'onMessageReceived:pollVote',
+        });
+      strictAssert(fromConversation, 'PollVote without fromConversation');
+
+      log.info('Queuing incoming poll vote for', pollVote.targetTimestamp);
+      const attributes: PollVoteAttributesType = {
+        envelopeId: data.envelopeId,
+        removeFromMessageReceiverCache: confirm,
+        fromConversationId: fromConversation.id,
+        source: Polls.PollSource.FromSomeoneElse,
+        targetAuthorAci,
+        targetTimestamp: validatedVote.targetTimestamp,
+        optionIndexes: validatedVote.optionIndexes,
+        voteCount: validatedVote.voteCount,
+        receivedAtDate: data.receivedAtDate,
+        timestamp,
+      };
+
+      drop(Polls.onPollVote(attributes));
+      return;
+    }
+
+    if (data.message.pollTerminate) {
+      if (!isPollReceiveEnabled()) {
+        log.warn('Dropping PollTerminate because the flag is disabled');
+        confirm();
+        return;
+      }
+      const { pollTerminate, timestamp } = data.message;
+
+      const parsedTerm = safeParsePartial(PollTerminateSchema, pollTerminate);
+      if (!parsedTerm.success) {
+        log.warn(
+          'Dropping PollTerminate due to validation error:',
+          parsedTerm.error.flatten()
+        );
+        confirm();
+        return;
+      }
+
+      const { conversation: fromConversation } =
+        window.ConversationController.maybeMergeContacts({
+          e164: data.source,
+          aci: data.sourceAci,
+          reason: 'onMessageReceived:pollTerminate',
+        });
+      strictAssert(fromConversation, 'PollTerminate without fromConversation');
+
+      log.info(
+        'Queuing incoming poll termination for',
+        pollTerminate.targetTimestamp
+      );
+      const attributes: PollTerminateAttributesType = {
+        envelopeId: data.envelopeId,
+        removeFromMessageReceiverCache: confirm,
+        fromConversationId: fromConversation.id,
+        source: Polls.PollSource.FromSomeoneElse,
+        targetTimestamp: parsedTerm.data.targetTimestamp,
+        receivedAtDate: data.receivedAtDate,
+        timestamp,
+      };
+
+      drop(Polls.onPollTerminate(attributes));
       return;
     }
 
@@ -2719,9 +2793,9 @@ export async function startApp(): Promise<void> {
       sendStateByConversationId,
       sent_at: timestamp,
       serverTimestamp: data.serverTimestamp,
-      source: window.textsecure.storage.user.getNumber(),
+      source: itemStorage.user.getNumber(),
       sourceDevice: data.device,
-      sourceServiceId: window.textsecure.storage.user.getAci(),
+      sourceServiceId: itemStorage.user.getAci(),
       timestamp,
       type: data.message.isStory ? 'story' : 'outgoing',
       storyDistributionListId: data.storyDistributionListId,
@@ -2759,7 +2833,7 @@ export async function startApp(): Promise<void> {
       const groupV2 = window.ConversationController.get(id);
       if (groupV2) {
         return {
-          type: Message.GROUP,
+          type: GROUP,
           id: groupV2.id,
         };
       }
@@ -2768,7 +2842,7 @@ export async function startApp(): Promise<void> {
       const groupV1 = window.ConversationController.getByDerivedGroupV2Id(id);
       if (groupV1) {
         return {
-          type: Message.GROUP,
+          type: GROUP,
           id: groupV1.id,
         };
       }
@@ -2782,7 +2856,7 @@ export async function startApp(): Promise<void> {
       });
 
       return {
-        type: Message.GROUP,
+        type: GROUP,
         id: conversationId,
       };
     }
@@ -2798,7 +2872,7 @@ export async function startApp(): Promise<void> {
     );
 
     return {
-      type: Message.PRIVATE,
+      type: PRIVATE,
       id: conversation.id,
     };
   };
@@ -2809,8 +2883,8 @@ export async function startApp(): Promise<void> {
   async function onSentMessage(event: SentEvent): Promise<void> {
     const { data, confirm } = event;
 
-    const source = window.textsecure.storage.user.getNumber();
-    const sourceServiceId = window.textsecure.storage.user.getAci();
+    const source = itemStorage.user.getNumber();
+    const sourceServiceId = itemStorage.user.getAci();
     strictAssert(source && sourceServiceId, 'Missing user number and uuid');
 
     // Make sure destination conversation is created before we hit getMessageDescriptor
@@ -2894,6 +2968,90 @@ export async function startApp(): Promise<void> {
       return;
     }
 
+    if (data.message.pollVote) {
+      if (!isPollReceiveEnabled()) {
+        log.warn('Dropping PollVote because the flag is disabled');
+        confirm();
+        return;
+      }
+      const { pollVote, timestamp } = data.message;
+
+      const parsed = safeParsePartial(PollVoteSchema, pollVote);
+      if (!parsed.success) {
+        log.warn(
+          'Dropping PollVote (sync) due to validation error:',
+          parsed.error.flatten()
+        );
+        confirm();
+        return;
+      }
+
+      const validatedVote = parsed.data;
+      const targetAuthorAci = normalizeAci(
+        validatedVote.targetAuthorAci,
+        'DataMessage.PollVote.targetAuthorAci'
+      );
+
+      const ourConversationId =
+        window.ConversationController.getOurConversationIdOrThrow();
+
+      log.info('Queuing sync poll vote for', pollVote.targetTimestamp);
+      const attributes: PollVoteAttributesType = {
+        envelopeId: data.envelopeId,
+        removeFromMessageReceiverCache: confirm,
+        fromConversationId: ourConversationId,
+        source: Polls.PollSource.FromSync,
+        targetAuthorAci,
+        targetTimestamp: validatedVote.targetTimestamp,
+        optionIndexes: validatedVote.optionIndexes,
+        voteCount: validatedVote.voteCount,
+        receivedAtDate: data.receivedAtDate,
+        timestamp,
+      };
+
+      drop(Polls.onPollVote(attributes));
+      return;
+    }
+
+    if (data.message.pollTerminate) {
+      if (!isPollReceiveEnabled()) {
+        log.warn('Dropping PollTerminate because the flag is disabled');
+        confirm();
+        return;
+      }
+      const { pollTerminate, timestamp } = data.message;
+
+      const parsedTerm = safeParsePartial(PollTerminateSchema, pollTerminate);
+      if (!parsedTerm.success) {
+        log.warn(
+          'Dropping PollTerminate (sync) due to validation error:',
+          parsedTerm.error.flatten()
+        );
+        confirm();
+        return;
+      }
+
+      const ourConversationId =
+        window.ConversationController.getOurConversationIdOrThrow();
+
+      log.info(
+        'Queuing sync poll termination for',
+        pollTerminate.targetTimestamp
+      );
+      const attributes: PollTerminateAttributesType = {
+        envelopeId: data.envelopeId,
+        removeFromMessageReceiverCache: confirm,
+        fromConversationId: ourConversationId,
+        source: Polls.PollSource.FromSync,
+        targetTimestamp: parsedTerm.data.targetTimestamp,
+        receivedAtDate: data.receivedAtDate,
+        timestamp,
+      };
+
+      drop(Polls.onPollTerminate(attributes));
+      return;
+    }
+
     if (data.message.delete) {
       const { delete: del } = data.message;
       strictAssert(
@@ -2929,7 +3087,7 @@ export async function startApp(): Promise<void> {
         envelopeId: data.envelopeId,
         conversationId: message.attributes.conversationId,
         fromId: window.ConversationController.getOurConversationIdOrThrow(),
-        fromDevice: window.storage.user.getDeviceId() ?? 1,
+        fromDevice: itemStorage.user.getDeviceId() ?? 1,
         message: copyDataMessageIntoMessage(data.message, message.attributes),
         targetSentTimestamp: editedMessageTimestamp,
         removeFromMessageReceiverCache: confirm,
@@ -2994,7 +3152,7 @@ export async function startApp(): Promise<void> {
     messageDescriptor: MessageDescriptor
   ): boolean {
     if (message.groupCallUpdate) {
-      if (message.groupV2 && messageDescriptor.type === Message.GROUP) {
+      if (message.groupV2 && messageDescriptor.type === GROUP) {
         const conversationId = messageDescriptor.id;
         const callId =
           message.groupCallUpdate?.eraId != null
@@ -3038,15 +3196,14 @@ export async function startApp(): Promise<void> {
 
     if (messageReceiver) {
       log.info('unlinkAndDisconnect: logging out');
-      strictAssert(server !== undefined, 'WebAPI not initialized');
 
       pauseProcessing('unlinkAndDisconnect');
 
       backupReady.reject(new Error('Aborted'));
       backupReady = explodePromise();
 
-      await server.logout();
-      await window.waitForAllBatchers();
+      await logout();
+      await waitForAllBatchers();
     }
 
     void onEmpty({ isFromMessageReceiver: false });
@@ -3059,15 +3216,11 @@ export async function startApp(): Promise<void> {
     const LAST_PROCESSED_INDEX_KEY = 'attachmentMigration_lastProcessedIndex';
     const IS_MIGRATION_COMPLETE_KEY = 'attachmentMigration_isComplete';
 
-    const previousNumberId = window.textsecure.storage.get(NUMBER_ID_KEY);
-    const previousUuidId = window.textsecure.storage.get(UUID_ID_KEY);
-    const previousPni = window.textsecure.storage.get(PNI_KEY);
-    const lastProcessedIndex = window.textsecure.storage.get(
-      LAST_PROCESSED_INDEX_KEY
-    );
-    const isMigrationComplete = window.textsecure.storage.get(
-      IS_MIGRATION_COMPLETE_KEY
-    );
+    const previousNumberId = itemStorage.get(NUMBER_ID_KEY);
+    const previousUuidId = itemStorage.get(UUID_ID_KEY);
+    const previousPni = itemStorage.get(PNI_KEY);
+    const lastProcessedIndex = itemStorage.get(LAST_PROCESSED_INDEX_KEY);
+    const isMigrationComplete = itemStorage.get(IS_MIGRATION_COMPLETE_KEY);
 
     try {
       log.info('unlinkAndDisconnect: removing configuration');
@@ -3087,37 +3240,34 @@ export async function startApp(): Promise<void> {
       await DataReader.getItemById('manifestVersion');
 
       // Finally, conversations in the database, and delete all config tables
-      await window.textsecure.storage.protocol.removeAllConfiguration();
+      await signalProtocolStore.removeAllConfiguration();
 
       // These three bits of data are important to ensure that the app loads up
       //   the conversation list, instead of showing just the QR code screen.
       if (previousNumberId !== undefined) {
-        await window.textsecure.storage.put(NUMBER_ID_KEY, previousNumberId);
+        await itemStorage.put(NUMBER_ID_KEY, previousNumberId);
       }
       if (previousUuidId !== undefined) {
-        await window.textsecure.storage.put(UUID_ID_KEY, previousUuidId);
+        await itemStorage.put(UUID_ID_KEY, previousUuidId);
       }
       if (previousPni !== undefined) {
-        await window.textsecure.storage.put(PNI_KEY, previousPni);
+        await itemStorage.put(PNI_KEY, previousPni);
       }
 
       // These two are important to ensure we don't rip through every message
       //   in the database attempting to upgrade it after starting up again.
-      await window.textsecure.storage.put(
+      await itemStorage.put(
         IS_MIGRATION_COMPLETE_KEY,
         isMigrationComplete || false
       );
       if (lastProcessedIndex !== undefined) {
-        await window.textsecure.storage.put(
-          LAST_PROCESSED_INDEX_KEY,
-          lastProcessedIndex
-        );
+        await itemStorage.put(LAST_PROCESSED_INDEX_KEY, lastProcessedIndex);
       } else {
-        await window.textsecure.storage.remove(LAST_PROCESSED_INDEX_KEY);
+        await itemStorage.remove(LAST_PROCESSED_INDEX_KEY);
       }
 
       // Re-hydrate items from memory; removeAllConfiguration above changed database
-      await window.storage.fetch();
+      await itemStorage.fetch();
 
       log.info('unlinkAndDisconnect: Successfully cleared local configuration');
     } catch (eraseError) {
@@ -3176,8 +3326,8 @@ export async function startApp(): Promise<void> {
     switch (eventType) {
       case FETCH_LATEST_ENUM.LOCAL_PROFILE: {
         log.info('onFetchLatestSync: fetching latest local profile');
-        const ourAci = window.textsecure.storage.user.getAci() ?? null;
-        const ourE164 = window.textsecure.storage.user.getNumber() ?? null;
+        const ourAci = itemStorage.user.getAci() ?? null;
+        const ourE164 = itemStorage.user.getNumber() ?? null;
         await getProfile({
           serviceId: ourAci,
           e164: ourE164,
@@ -3191,8 +3341,10 @@ export async function startApp(): Promise<void> {
         break;
       case FETCH_LATEST_ENUM.SUBSCRIPTION_STATUS:
         log.info('onFetchLatestSync: fetching latest subscription status');
-        strictAssert(server, 'WebAPI not ready');
-        areWeASubscriberService.update(window.storage, server);
+        areWeASubscriberService.update(itemStorage, {
+          isOnline,
+          getHasSubscription,
+        });
         break;
       default:
         log.info(`onFetchLatestSync: Unknown type encountered ${eventType}`);
@@ -3204,11 +3356,11 @@ export async function startApp(): Promise<void> {
   async function onKeysSync(ev: KeysEvent) {
     const { accountEntropyPool, masterKey, mediaRootBackupKey } = ev;
 
-    const prevMasterKeyBase64 = window.storage.get('masterKey');
+    const prevMasterKeyBase64 = itemStorage.get('masterKey');
     const prevMasterKey = prevMasterKeyBase64
       ? Bytes.fromBase64(prevMasterKeyBase64)
       : undefined;
-    const prevAccountEntropyPool = window.storage.get('accountEntropyPool');
+    const prevAccountEntropyPool = itemStorage.get('accountEntropyPool');
 
     let derivedMasterKey = masterKey;
     if (derivedMasterKey == null && accountEntropyPool) {
@@ -3222,44 +3374,44 @@ export async function startApp(): Promise<void> {
       if (prevAccountEntropyPool != null) {
         log.warn('onKeysSync: deleting window.accountEntropyPool');
       }
-      await window.storage.remove('accountEntropyPool');
+      await itemStorage.remove('accountEntropyPool');
     } else {
       if (prevAccountEntropyPool !== accountEntropyPool) {
         log.info('onKeysSync: updating accountEntropyPool');
       }
-      await window.storage.put('accountEntropyPool', accountEntropyPool);
+      await itemStorage.put('accountEntropyPool', accountEntropyPool);
     }
 
     if (derivedMasterKey == null) {
       if (prevMasterKey != null) {
         log.warn('onKeysSync: deleting window.masterKey');
       }
-      await window.storage.remove('masterKey');
+      await itemStorage.remove('masterKey');
     } else {
       if (!Bytes.areEqual(derivedMasterKey, prevMasterKey)) {
         log.info('onKeysSync: updating masterKey');
       }
       // Override provided storageServiceKey because it is deprecated.
-      await window.storage.put('masterKey', Bytes.toBase64(derivedMasterKey));
+      await itemStorage.put('masterKey', Bytes.toBase64(derivedMasterKey));
     }
 
-    const prevMediaRootBackupKey = window.storage.get('backupMediaRootKey');
+    const prevMediaRootBackupKey = itemStorage.get('backupMediaRootKey');
     if (mediaRootBackupKey == null) {
       if (prevMediaRootBackupKey != null) {
         log.warn('onKeysSync: deleting window.backupMediaRootKey');
       }
-      await window.storage.remove('backupMediaRootKey');
+      await itemStorage.remove('backupMediaRootKey');
     } else {
       if (!Bytes.areEqual(prevMediaRootBackupKey, mediaRootBackupKey)) {
         log.info('onKeysSync: updating window.backupMediaRootKey');
       }
-      await window.storage.put('backupMediaRootKey', mediaRootBackupKey);
+      await itemStorage.put('backupMediaRootKey', mediaRootBackupKey);
     }
 
     if (derivedMasterKey != null) {
       const storageServiceKey = deriveStorageServiceKey(derivedMasterKey);
       const storageServiceKeyBase64 = Bytes.toBase64(storageServiceKey);
-      if (window.storage.get('storageKey') === storageServiceKeyBase64) {
+      if (itemStorage.get('storageKey') === storageServiceKeyBase64) {
         log.info(
           "onKeysSync: storage service key didn't change, " +
             'fetching manifest anyway'
@@ -3269,7 +3421,7 @@ export async function startApp(): Promise<void> {
           'onKeysSync: updated storage service key, erasing state and fetching'
         );
         try {
-          await window.storage.put('storageKey', storageServiceKeyBase64);
+          await itemStorage.put('storageKey', storageServiceKeyBase64);
           await StorageService.eraseAllStorageServiceState({
             keepUnknownFields: true,
           });
@@ -3653,7 +3805,7 @@ export async function startApp(): Promise<void> {
     const logId = `onDeleteForMeSync(${timestamp})`;
 
     // The user clearly knows about this feature; they did it on another device!
-    drop(window.storage.put('localDeleteWarningShown', true));
+    drop(itemStorage.put('localDeleteWarningShown', true));
 
     log.info(`${logId}: Saving ${deleteForMeSync.length} sync tasks`);
 

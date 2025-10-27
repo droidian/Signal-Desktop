@@ -1,11 +1,13 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import type { ContactAvatarType } from '../types/Avatar';
-import { isMe } from './whatTypeOfConversation';
-import { isSignalConversation } from './isSignalConversation';
-import { getLocalAttachmentUrl } from './getLocalAttachmentUrl';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import type { ContactAvatarType } from '../types/Avatar.js';
+import { isMe } from './whatTypeOfConversation.js';
+import { isSignalConversation } from './isSignalConversation.js';
+import { getLocalAttachmentUrl } from './getLocalAttachmentUrl.js';
+import { getAbsoluteAttachmentPath } from './migrations.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 export function hasAvatar(
   conversationAttrs: ConversationAttributesType
@@ -29,7 +31,7 @@ export function getAvatar(
 ): undefined | ContactAvatarType {
   const shouldShowProfileAvatar =
     isMe(conversationAttrs) ||
-    window.storage.get('preferContactAvatars') === false;
+    itemStorage.get('preferContactAvatars') === false;
   const avatar = shouldShowProfileAvatar
     ? conversationAttrs.profileAvatar || conversationAttrs.avatar
     : conversationAttrs.avatar || conversationAttrs.profileAvatar;
@@ -63,7 +65,6 @@ export function getRawAvatarPath(
     return avatar.path;
   }
 
-  const { getAbsoluteAttachmentPath } = window.Signal.Migrations;
   return getAbsoluteAttachmentPath(avatar.path);
 }
 

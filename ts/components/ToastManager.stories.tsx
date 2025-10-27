@@ -5,13 +5,13 @@ import type { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import { ToastManager } from './ToastManager';
-import type { AnyToast } from '../types/Toast';
-import { ToastType } from '../types/Toast';
-import type { AnyActionableMegaphone } from '../types/Megaphone';
-import { MegaphoneType } from '../types/Megaphone';
-import { missingCaseError } from '../util/missingCaseError';
-import type { PropsType } from './ToastManager';
+import { ToastManager } from './ToastManager.js';
+import type { AnyToast } from '../types/Toast.js';
+import { ToastType } from '../types/Toast.js';
+import type { AnyActionableMegaphone } from '../types/Megaphone.js';
+import { MegaphoneType } from '../types/Megaphone.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import type { PropsType } from './ToastManager.js';
 
 const { i18n } = window.SignalContext;
 
@@ -41,10 +41,6 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.Blocked:
       return { toastType: ToastType.Blocked };
-    case ToastType.DonationCompletedAndBadgeApplicationFailed:
-      return {
-        toastType: ToastType.DonationCompletedAndBadgeApplicationFailed,
-      };
     case ToastType.BlockedGroup:
       return { toastType: ToastType.BlockedGroup };
     case ToastType.CallHistoryCleared:
@@ -65,6 +61,11 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.CaptchaFailed };
     case ToastType.CaptchaSolved:
       return { toastType: ToastType.CaptchaSolved };
+    case ToastType.ChatFolderCreated:
+      return {
+        toastType: ToastType.ChatFolderCreated,
+        parameters: { chatFolderName: 'Unread' },
+      };
     case ToastType.ConversationArchived:
       return {
         toastType: ToastType.ConversationArchived,
@@ -156,6 +157,11 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.LinkCopied };
     case ToastType.LoadingFullLogs:
       return { toastType: ToastType.LoadingFullLogs };
+    case ToastType._InternalMainProcessLoggingError:
+      return {
+        toastType: ToastType._InternalMainProcessLoggingError,
+        parameters: { logLines: ['error1', 'error2'], count: 2 },
+      };
     case ToastType.MaxAttachments:
       return { toastType: ToastType.MaxAttachments };
     case ToastType.MediaNoLongerAvailable:
@@ -164,6 +170,11 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.MessageBodyTooLong };
     case ToastType.MessageLoop:
       return { toastType: ToastType.MessageLoop };
+    case ToastType.NotificationProfileUpdate:
+      return {
+        toastType: ToastType.NotificationProfileUpdate,
+        parameters: { name: 'Focus', enabled: true },
+      };
     case ToastType.OriginalMessageNotFound:
       return { toastType: ToastType.OriginalMessageNotFound };
     case ToastType.PinnedConversationsFull:
@@ -210,6 +221,8 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.TooManyMessagesToForward };
     case ToastType.UnableToLoadAttachment:
       return { toastType: ToastType.UnableToLoadAttachment };
+    case ToastType.UnableToDownloadFromBackupTier:
+      return { toastType: ToastType.UnableToDownloadFromBackupTier };
     case ToastType.UnsupportedMultiAttachment:
       return { toastType: ToastType.UnsupportedMultiAttachment };
     case ToastType.UnsupportedOS:
@@ -273,12 +286,10 @@ export default {
   },
   args: {
     changeLocation: action('changeLocation'),
-    clearDonation: action('clearDonation'),
     hideToast: action('hideToast'),
     openFileInFolder: action('openFileInFolder'),
     onShowDebugLog: action('onShowDebugLog'),
     onUndoArchive: action('onUndoArchive'),
-    showAttachmentNotAvailableModal: action('showAttachmentNotAvailableModal'),
     i18n,
     toastType: ToastType.AddingUserToGroup,
     megaphoneType: MegaphoneType.UsernameOnboarding,

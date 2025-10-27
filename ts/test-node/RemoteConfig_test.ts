@@ -4,9 +4,9 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import { omit } from 'lodash';
-import { normalizeAci } from '../util/normalizeAci';
-import type { ConfigKeyType, ConfigListenerType } from '../RemoteConfig';
+import lodash from 'lodash';
+import { normalizeAci } from '../util/normalizeAci.js';
+import type { ConfigKeyType, ConfigListenerType } from '../RemoteConfig.js';
 import {
   getCountryCodeValue,
   getBucketValue,
@@ -14,8 +14,10 @@ import {
   onChange,
   getValue,
   isEnabled,
-} from '../RemoteConfig';
-import { updateRemoteConfig } from '../test-helpers/RemoteConfigStub';
+} from '../RemoteConfig.js';
+import { updateRemoteConfig } from '../test-helpers/RemoteConfigStub.js';
+
+const { omit } = lodash;
 
 describe('RemoteConfig', () => {
   const aci = normalizeAci('95b9729c-51ea-4ddb-b516-652befe78062', 'test');
@@ -137,6 +139,20 @@ describe('RemoteConfig', () => {
         { name: 'desktop.internalUser', value: 'yes' },
       ]);
       assert.equal(isEnabled('desktop.internalUser'), true);
+    });
+
+    it('is true for true string flag', async () => {
+      await updateRemoteConfig([
+        { name: 'desktop.internalUser', value: 'true' },
+      ]);
+      assert.equal(isEnabled('desktop.internalUser'), true);
+    });
+
+    it('is false for false string flag', async () => {
+      await updateRemoteConfig([
+        { name: 'desktop.internalUser', value: 'false' },
+      ]);
+      assert.equal(isEnabled('desktop.internalUser'), false);
     });
 
     it('reflects the value of an unknown flag in the config', async () => {

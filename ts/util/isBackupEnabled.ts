@@ -1,13 +1,14 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as RemoteConfig from '../RemoteConfig';
-import { isTestOrMockEnvironment } from '../environment';
-import { isStagingServer } from './isStagingServer';
-import { isNightly } from './version';
+import * as RemoteConfig from '../RemoteConfig.js';
+import { isTestOrMockEnvironment } from '../environment.js';
+import { isStagingServer } from './isStagingServer.js';
+import { isBeta, isNightly } from './version.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 export function areRemoteBackupsTurnedOn(): boolean {
-  return isBackupFeatureEnabled() && window.storage.get('backupTier') != null;
+  return isBackupFeatureEnabled() && itemStorage.get('backupTier') != null;
 }
 
 // Downloading from a remote backup is currently a test-only feature
@@ -26,7 +27,9 @@ export function isBackupFeatureEnabled(
     return true;
   }
 
-  return Boolean(
-    RemoteConfig.isEnabled('desktop.backup.credentialFetch', reduxConfig)
-  );
+  if (isBeta(window.getVersion())) {
+    return RemoteConfig.isEnabled('desktop.backups.beta', reduxConfig);
+  }
+
+  return Boolean(RemoteConfig.isEnabled('desktop.backups.prod', reduxConfig));
 }

@@ -3,35 +3,37 @@
 
 import { v4 as generateUuid } from 'uuid';
 
-import type { AttachmentType } from '../types/Attachment';
-import type { MessageAttributesType } from '../model-types.d';
+import type { AttachmentType } from '../types/Attachment.js';
+import type { MessageAttributesType } from '../model-types.d.ts';
 import type {
   SendState,
   SendStateByConversationId,
-} from '../messages/MessageSendState';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId';
-import type { ServiceIdString } from '../types/ServiceId';
-import { createLogger } from '../logging/log';
-import { DataReader, DataWriter } from '../sql/Client';
-import { MY_STORY_ID, StorySendMode } from '../types/Stories';
-import { getStoriesBlocked } from './stories';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SeenStatus } from '../MessageSeenStatus';
-import { SendStatus } from '../messages/MessageSendState';
+} from '../messages/MessageSendState.js';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { MY_STORY_ID, StorySendMode } from '../types/Stories.js';
+import { getStoriesBlocked } from './stories.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import { SendStatus } from '../messages/MessageSendState.js';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue';
-import { getRecipients } from './getRecipients';
-import { getSignalConnections } from './getSignalConnections';
-import { incrementMessageCounter } from './incrementMessageCounter';
-import { isGroupV2 } from './whatTypeOfConversation';
-import { isNotNil } from './isNotNil';
-import { collect } from './iterables';
-import { DurationInSeconds } from './durations';
-import { sanitizeLinkPreview } from '../services/LinkPreview';
-import type { DraftBodyRanges } from '../types/BodyRange';
-import { MessageModel } from '../models/messages';
+} from '../jobs/conversationJobQueue.js';
+import { getRecipients } from './getRecipients.js';
+import { getSignalConnections } from './getSignalConnections.js';
+import { incrementMessageCounter } from './incrementMessageCounter.js';
+import { isGroupV2 } from './whatTypeOfConversation.js';
+import { isNotNil } from './isNotNil.js';
+import { collect } from './iterables.js';
+import { loadPreviewData, upgradeMessageSchema } from './migrations.js';
+import { DurationInSeconds } from './durations/index.js';
+import { sanitizeLinkPreview } from '../services/LinkPreview.js';
+import type { DraftBodyRanges } from '../types/BodyRange.js';
+import { MessageModel } from '../models/messages.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('sendStoryMessage');
 
@@ -43,15 +45,6 @@ export async function sendStoryMessage(
 ): Promise<void> {
   if (getStoriesBlocked()) {
     log.warn('stories.sendStoryMessage: stories disabled, returning early');
-    return;
-  }
-
-  const { messaging } = window.textsecure;
-
-  if (!messaging) {
-    log.warn(
-      'stories.sendStoryMessage: messaging not available, returning early'
-    );
     return;
   }
 
@@ -147,7 +140,6 @@ export async function sendStoryMessage(
   const attachments: Array<AttachmentType> = [attachment];
 
   const linkPreview = attachment?.textAttachment?.preview;
-  const { loadPreviewData } = window.Signal.Migrations;
   const sanitizedLinkPreview = linkPreview
     ? sanitizeLinkPreview((await loadPreviewData([linkPreview]))[0])
     : undefined;
@@ -174,7 +166,7 @@ export async function sendStoryMessage(
 
         // Note: we use the same sent_at for these messages because we want de-duplication
         //   on the receiver side.
-        return window.Signal.Migrations.upgradeMessageSchema({
+        return upgradeMessageSchema({
           attachments,
           bodyRanges,
           conversationId: ourConversation.id,
@@ -188,9 +180,9 @@ export async function sendStoryMessage(
           seenStatus: SeenStatus.NotApplicable,
           sendStateByConversationId,
           sent_at: timestamp,
-          source: window.textsecure.storage.user.getNumber(),
-          sourceServiceId: window.textsecure.storage.user.getAci(),
-          sourceDevice: window.textsecure.storage.user.getDeviceId(),
+          source: itemStorage.user.getNumber(),
+          sourceServiceId: itemStorage.user.getAci(),
+          sourceDevice: itemStorage.user.getDeviceId(),
           storyDistributionListId: distributionList.id,
           timestamp,
           type: 'story',
@@ -280,27 +272,26 @@ export async function sendStoryMessage(
           }
         );
 
-      const messageAttributes =
-        await window.Signal.Migrations.upgradeMessageSchema({
-          attachments,
-          bodyRanges,
-          canReplyToStory: true,
-          conversationId: group.id,
-          expireTimer: DurationInSeconds.DAY,
-          expirationStartTimestamp: Date.now(),
-          id: generateUuid(),
-          readStatus: ReadStatus.Read,
-          received_at: incrementMessageCounter(),
-          received_at_ms: groupTimestamp,
-          seenStatus: SeenStatus.NotApplicable,
-          sendStateByConversationId,
-          sent_at: groupTimestamp,
-          source: window.textsecure.storage.user.getNumber(),
-          sourceServiceId: window.textsecure.storage.user.getAci(),
-          sourceDevice: window.textsecure.storage.user.getDeviceId(),
-          timestamp: groupTimestamp,
-          type: 'story',
-        });
+      const messageAttributes = await upgradeMessageSchema({
+        attachments,
+        bodyRanges,
+        canReplyToStory: true,
+        conversationId: group.id,
+        expireTimer: DurationInSeconds.DAY,
+        expirationStartTimestamp: Date.now(),
+        id: generateUuid(),
+        readStatus: ReadStatus.Read,
+        received_at: incrementMessageCounter(),
+        received_at_ms: groupTimestamp,
+        seenStatus: SeenStatus.NotApplicable,
+        sendStateByConversationId,
+        sent_at: groupTimestamp,
+        source: itemStorage.user.getNumber(),
+        sourceServiceId: itemStorage.user.getAci(),
+        sourceDevice: itemStorage.user.getDeviceId(),
+        timestamp: groupTimestamp,
+        type: 'story',
+      });
 
       groupV2MessagesByConversationId.set(group.id, messageAttributes);
     })

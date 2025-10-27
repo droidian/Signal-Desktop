@@ -1,9 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationType } from '../state/ducks/conversations';
-import { PLACEHOLDER_CONTACT_ID } from '../state/selectors/conversations';
-import { format, isValidNumber } from '../types/PhoneNumber';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { PLACEHOLDER_CONTACT_ID } from '../state/selectors/conversations.js';
+import { format, isValidNumber } from '../types/PhoneNumber.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const PLACEHOLDER_CONTACT: ConversationType = {
   acceptedMessageRequest: false,
@@ -11,7 +12,7 @@ const PLACEHOLDER_CONTACT: ConversationType = {
   id: PLACEHOLDER_CONTACT_ID,
   isMe: false,
   sharedGroupNames: [],
-  title: window.i18n('icu:unknownContact'),
+  title: window.SignalContext.i18n('icu:unknownContact'),
   type: 'direct',
 };
 
@@ -27,7 +28,7 @@ export function findAndFormatContact(identifier?: string): ConversationType {
     return contactModel.format();
   }
 
-  const regionCode = window.storage.get('regionCode');
+  const regionCode = itemStorage.get('regionCode');
 
   if (!isValidNumber(identifier, { regionCode })) {
     return PLACEHOLDER_CONTACT;

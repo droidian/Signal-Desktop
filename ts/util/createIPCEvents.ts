@@ -3,37 +3,41 @@
 
 import { ipcRenderer } from 'electron';
 import type { SystemPreferences } from 'electron';
-import { noop } from 'lodash';
+import lodash from 'lodash';
 
-import type { ZoomFactorType } from '../types/Storage.d';
-import * as Errors from '../types/errors';
-import * as Stickers from '../types/Stickers';
-import * as Settings from '../types/Settings';
+import type { ZoomFactorType } from '../types/Storage.d.ts';
+import * as Errors from '../types/errors.js';
+import * as Stickers from '../types/Stickers.js';
+import * as Settings from '../types/Settings.js';
 
-import { resolveUsernameByLinkBase64 } from '../services/username';
-import { isInCall } from '../state/selectors/calling';
+import { resolveUsernameByLinkBase64 } from '../services/username.js';
+import { isInCall } from '../state/selectors/calling.js';
 
-import { strictAssert } from './assert';
-import * as Registration from './registration';
-import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId';
-import { createLogger } from '../logging/log';
+import * as Registration from './registration.js';
+import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId.js';
+import { createLogger } from '../logging/log.js';
 import {
   type NotificationClickData,
   notificationService,
-} from '../services/notifications';
-import { StoryViewModeType, StoryViewTargetType } from '../types/Stories';
-import { isValidE164 } from './isValidE164';
-import { fromWebSafeBase64 } from './webSafeBase64';
-import { showConfirmationDialog } from './showConfirmationDialog';
+} from '../services/notifications.js';
+import { joinViaLink } from '../groups.js';
+import { StoryViewModeType, StoryViewTargetType } from '../types/Stories.js';
+import { isValidE164 } from './isValidE164.js';
+import { fromWebSafeBase64 } from './webSafeBase64.js';
+import { showConfirmationDialog } from './showConfirmationDialog.js';
 import type {
   EphemeralSettings,
   SettingsValuesType,
   ThemeType,
-} from './preload';
-import { SystemTraySetting } from '../types/SystemTraySetting';
-import OS from './os/osPreload';
+} from './preload.js';
+import { SystemTraySetting } from '../types/SystemTraySetting.js';
+import { putStickers } from '../textsecure/WebAPI.js';
+import OS from './os/osPreload.js';
+
+const { noop } = lodash;
 
 const log = createLogger('createIPCEvents');
+const { i18n } = window.SignalContext;
 
 export type IPCEventsValuesType = {
   // IPC-mediated
@@ -273,14 +277,14 @@ export function createIPCEvents(
           showConfirmationDialog({
             dialogName: 'closeConfirmation',
             onTopOfEverything: true,
-            cancelText: window.i18n(
+            cancelText: i18n(
               'icu:ConfirmationDialog__Title--close-requested-not-now'
             ),
             confirmStyle: 'negative',
-            title: window.i18n(
+            title: i18n(
               'icu:ConfirmationDialog__Title--in-call-close-requested'
             ),
-            okText: window.i18n('icu:close'),
+            okText: i18n('icu:close'),
             reject: () => reject(),
             resolve: () => resolve(),
           });
@@ -392,15 +396,15 @@ export function createIPCEvents(
         return;
       }
       try {
-        await window.Signal.Groups.joinViaLink(value);
+        await joinViaLink(value);
       } catch (error) {
         log.error(
           'showGroupViaLink: Ran into an error!',
           Errors.toLogFormat(error)
         );
         window.reduxActions.globalModals.showErrorModal({
-          title: window.i18n('icu:GroupV2--join--general-join-failure--title'),
-          description: window.i18n('icu:GroupV2--join--general-join-failure'),
+          title: i18n('icu:GroupV2--join--general-join-failure--title'),
+          description: i18n('icu:GroupV2--join--general-join-failure'),
         });
       }
     },
@@ -435,8 +439,7 @@ export function createIPCEvents(
       manifest: Uint8Array,
       stickers: ReadonlyArray<Uint8Array>
     ): Promise<string> => {
-      strictAssert(window.textsecure.server, 'WebAPI must be available');
-      return window.textsecure.server.putStickers(manifest, stickers, () =>
+      return putStickers(manifest, stickers, () =>
         ipcRenderer.send('art-creator:onUploadProgress')
       );
     },
@@ -446,7 +449,7 @@ export function createIPCEvents(
 
 function showUnknownSgnlLinkModal(): void {
   window.reduxActions.globalModals.showErrorModal({
-    description: window.i18n('icu:unknown-sgnl-link'),
+    description: i18n('icu:unknown-sgnl-link'),
   });
 }
 

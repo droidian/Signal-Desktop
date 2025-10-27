@@ -145,6 +145,7 @@
 @use 'components/MyStories.scss';
 @use 'components/NavSidebar.scss';
 @use 'components/NavTabs.scss';
+@use 'components/NotificationProfiles.scss';
 @use 'components/OutgoingGiftBadgeModal.scss';
 @use 'components/PermissionsPopup.scss';
 @use 'components/PlaybackButton.scss';
@@ -155,7 +156,6 @@
 @use 'components/ProfileMovedModal.scss';
 @use 'components/ProfileNameWarningModal.scss';
 @use 'components/ProgressBar.scss';
-@use 'components/ProgressCircle.scss';
 @use 'components/Quote.scss';
 @use 'components/ReactionPickerPicker.scss';
 @use 'components/RecordingComposer.scss';
@@ -174,7 +174,6 @@
 @use 'components/SignalConnectionsModal.scss';
 @use 'components/SignalConversationMuteToggle.scss';
 @use 'components/Slider.scss';
-@use 'components/SpinnerV2.scss';
 @use 'components/StagedLinkPreview.scss';
 @use 'components/StickerManager.scss';
 @use 'components/Stories.scss';

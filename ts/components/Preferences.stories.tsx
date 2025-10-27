@@ -4,41 +4,58 @@
 import type { Meta, StoryFn } from '@storybook/react';
 import React, { useState } from 'react';
 import type { MutableRefObject } from 'react';
-
 import { action } from '@storybook/addon-actions';
-import { shuffle } from 'lodash';
-import { Preferences } from './Preferences';
-import { DEFAULT_CONVERSATION_COLOR } from '../types/Colors';
-import { PhoneNumberSharingMode } from '../util/phoneNumberSharingMode';
-import { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability';
-import { EmojiSkinTone } from './fun/data/emojis';
-import { DAY, DurationInSeconds, WEEK } from '../util/durations';
-import { DialogUpdate } from './DialogUpdate';
-import { DialogType } from '../types/Dialogs';
-import { ThemeType } from '../types/Util';
+import lodash from 'lodash';
+
+import { Preferences } from './Preferences.js';
+import { DEFAULT_CONVERSATION_COLOR } from '../types/Colors.js';
+import { PhoneNumberSharingMode } from '../types/PhoneNumberSharingMode.js';
+import { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
+import { DAY, DurationInSeconds, HOUR, WEEK } from '../util/durations/index.js';
+import { DialogUpdate } from './DialogUpdate.js';
+import { DialogType } from '../types/Dialogs.js';
+import { ThemeType } from '../types/Util.js';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-helpers/getDefaultConversation';
-import { ProfileEditor } from './ProfileEditor';
+} from '../test-helpers/getDefaultConversation.js';
+import { ProfileEditor } from './ProfileEditor.js';
 import {
   UsernameEditState,
   UsernameLinkState,
-} from '../state/ducks/usernameEnums';
-import { ProfileEditorPage, SettingsPage } from '../types/Nav';
-import { PreferencesDonations } from './PreferencesDonations';
-import { strictAssert } from '../util/assert';
+} from '../state/ducks/usernameEnums.js';
+import type { SettingsLocation } from '../types/Nav.js';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../types/Nav.js';
+import { PreferencesDonations } from './PreferencesDonations.js';
+import { strictAssert } from '../util/assert.js';
+import { PreferencesChatFoldersPage } from './preferences/chatFolders/PreferencesChatFoldersPage.js';
+import { PreferencesEditChatFolderPage } from './preferences/chatFolders/PreferencesEditChatFoldersPage.js';
+import { CHAT_FOLDER_DEFAULTS } from '../types/ChatFolder.js';
+import {
+  NotificationProfilesHome,
+  NotificationProfilesCreateFlow,
+} from './PreferencesNotificationProfiles.js';
+import { DayOfWeek } from '../types/NotificationProfile.js';
 
-import type { LocalizerType } from '../types/Util';
-import type { PropsType } from './Preferences';
-import type { WidthBreakpoint } from './_util';
-import type { MessageAttributesType } from '../model-types';
+import type { LocalizerType } from '../types/Util.js';
+import type { PropsType } from './Preferences.js';
+import type { WidthBreakpoint } from './_util.js';
+import type { MessageAttributesType } from '../model-types.js';
 import type {
   DonationReceipt,
   DonationWorkflow,
   OneTimeDonationHumanAmounts,
-} from '../types/Donations';
-import type { AnyToast } from '../types/Toast';
+} from '../types/Donations.js';
+import type { AnyToast } from '../types/Toast.js';
+import type { SmartPreferencesChatFoldersPageProps } from '../state/smart/PreferencesChatFoldersPage.js';
+import type { SmartPreferencesEditChatFolderPageProps } from '../state/smart/PreferencesEditChatFolderPage.js';
+import { CurrentChatFolders } from '../types/CurrentChatFolders.js';
+import type { ExternalProps as SmartNotificationProfilesProps } from '../state/smart/PreferencesNotificationProfiles.js';
+import type { NotificationProfileIdString } from '../types/NotificationProfile.js';
+import { BackupLevel } from '../services/backups/types.js';
+
+const { shuffle } = lodash;
 
 const { i18n } = window.SignalContext;
 
@@ -113,6 +130,13 @@ const exportLocalBackupResult = {
 };
 
 const donationAmountsConfig = {
+  cad: {
+    minimum: 4,
+    oneTime: {
+      1: [7, 15, 30, 40, 70, 140],
+      100: [7],
+    },
+  },
   jpy: {
     minimum: 400,
     oneTime: {
@@ -125,6 +149,13 @@ const donationAmountsConfig = {
     oneTime: {
       1: [5, 10, 20, 30, 50, 100],
       100: [5],
+    },
+  },
+  ugx: {
+    minimum: 8000,
+    oneTime: {
+      1: [15000, 35000, 70000, 100000, 150000, 300000],
+      100: [15000],
     },
   },
 } as unknown as OneTimeDonationHumanAmounts;
@@ -171,10 +202,8 @@ function renderProfileEditor({
         'markCompletedUsernameLinkOnboarding'
       )}
       onProfileChanged={action('onProfileChanged')}
-      onEmojiSkinToneDefaultChange={action('onEmojiSkinToneDefaultChange')}
       openUsernameReservationModal={action('openUsernameReservationModal')}
       profileAvatarUrl={undefined}
-      recentEmojis={[]}
       renderUsernameEditor={() => <div />}
       replaceAvatar={action('replaceAvatar')}
       resetUsernameLink={action('resetUsernameLink')}
@@ -199,8 +228,8 @@ function renderProfileEditor({
 
 function renderDonationsPane(props: {
   contentsRef: MutableRefObject<HTMLDivElement | null>;
-  page: SettingsPage;
-  setPage: (page: SettingsPage) => void;
+  settingsLocation: SettingsLocation;
+  setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   me: typeof me;
   donationReceipts: ReadonlyArray<DonationReceipt>;
   saveAttachmentToDisk: (options: {
@@ -224,8 +253,8 @@ function renderDonationsPane(props: {
       initialCurrency="usd"
       resumeWorkflow={action('resumeWorkflow')}
       isOnline
-      page={props.page}
-      setPage={props.setPage}
+      settingsLocation={props.settingsLocation}
+      setSettingsLocation={props.setSettingsLocation}
       submitDonation={action('submitDonation')}
       lastError={undefined}
       workflow={props.workflow}
@@ -254,15 +283,97 @@ function renderToastManager(): JSX.Element {
   return <div />;
 }
 
+function renderPreferencesChatFoldersPage(
+  props: SmartPreferencesChatFoldersPageProps
+): JSX.Element {
+  return (
+    <PreferencesChatFoldersPage
+      i18n={i18n}
+      previousLocation={props.previousLocation}
+      settingsPaneRef={props.settingsPaneRef}
+      changeLocation={action('changeLocation')}
+      currentChatFolders={CurrentChatFolders.createEmpty()}
+      onOpenEditChatFoldersPage={props.onOpenEditChatFoldersPage}
+      onCreateChatFolder={action('onCreateChatFolder')}
+      onDeleteChatFolder={action('onDeletChatFolder')}
+      onUpdateChatFoldersPositions={action('onUpdateChatFoldersPositions')}
+    />
+  );
+}
+
+function renderPreferencesEditChatFolderPage(
+  props: SmartPreferencesEditChatFolderPageProps
+): JSX.Element {
+  return (
+    <PreferencesEditChatFolderPage
+      i18n={i18n}
+      theme={ThemeType.light}
+      previousLocation={{
+        tab: NavTab.Settings,
+        details: { page: SettingsPage.ChatFolders, previousLocation: null },
+      }}
+      settingsPaneRef={props.settingsPaneRef}
+      existingChatFolderId={props.existingChatFolderId}
+      initChatFolderParams={CHAT_FOLDER_DEFAULTS}
+      changeLocation={action('changeLocation')}
+      onCreateChatFolder={action('onCreateChatFolder')}
+      onUpdateChatFolder={action('onUpdateChatFolder')}
+      onDeleteChatFolder={action('onDeleteChatFolder')}
+      conversations={conversations}
+      conversationSelector={conversationSelector}
+      preferredBadgeSelector={() => undefined}
+    />
+  );
+}
+
+function renderNotificationProfilesCreateFlow(
+  props: SmartNotificationProfilesProps
+): JSX.Element {
+  return (
+    <NotificationProfilesCreateFlow
+      contentsRef={props.contentsRef}
+      conversations={conversations}
+      conversationSelector={conversationSelector}
+      createProfile={action('createProfile')}
+      i18n={i18n}
+      preferredBadgeSelector={() => undefined}
+      setSettingsLocation={props.setSettingsLocation}
+      theme={ThemeType.light}
+    />
+  );
+}
+
+function renderNotificationProfilesHome(
+  props: SmartNotificationProfilesProps
+): JSX.Element {
+  return (
+    <NotificationProfilesHome
+      activeProfileId={undefined}
+      allProfiles={[]}
+      contentsRef={props.contentsRef}
+      conversations={conversations}
+      conversationSelector={conversationSelector}
+      hasOnboardingBeenSeen={false}
+      i18n={i18n}
+      isSyncEnabled
+      loading={false}
+      markProfileDeleted={action('markProfileDeleted')}
+      preferredBadgeSelector={() => undefined}
+      setHasOnboardingBeenSeen={action('setHasOnboardingBeenSeen')}
+      setIsSyncEnabled={action('setIsSyncEnabled')}
+      setSettingsLocation={props.setSettingsLocation}
+      setProfileOverride={action('setProfileOverride')}
+      theme={ThemeType.light}
+      updateProfile={action('updateProfile')}
+    />
+  );
+}
+
 export default {
   title: 'Components/Preferences',
   component: Preferences,
   args: {
     i18n,
-
-    conversations,
-    conversationSelector,
-
     accountEntropyPool:
       'uy38jh2778hjjhj8lk19ga61s672jsj089r023s6a57809bap92j2yh5t326vv7t',
     autoDownloadAttachment: {
@@ -293,17 +404,20 @@ export default {
     availableMicrophones,
     availableSpeakers,
     backupFeatureEnabled: false,
+    backupFreeMediaDays: 45,
     backupKeyViewed: false,
     backupLocalBackupsEnabled: false,
-    backupSubscriptionStatus: { status: 'off' },
+    backupSubscriptionStatus: { status: 'not-found' },
+    backupTier: null,
     badge: undefined,
     blockedCount: 0,
+    currentChatFoldersCount: 0,
     customColors: {},
     defaultConversationColor: DEFAULT_CONVERSATION_COLOR,
     deviceName: 'Work Windows ME',
-    donationsFeatureEnabled: false,
     emojiSkinToneDefault: EmojiSkinTone.None,
     phoneNumber: '+1 555 123-4567',
+    hasAnyCurrentCustomChatFolders: false,
     hasAudioNotifications: true,
     hasAutoConvertEmoji: true,
     hasAutoDownloadUpdate: true,
@@ -347,12 +461,16 @@ export default {
     me,
     navTabsCollapsed: false,
     notificationContent: 'name',
+    notificationProfileCount: 0,
     otherTabsUnreadStats: {
       unreadCount: 0,
       unreadMentionsCount: 0,
-      markedUnread: false,
+      readChatsMarkedUnreadCount: 0,
     },
-    page: SettingsPage.Profile,
+    settingsLocation: {
+      page: SettingsPage.Profile,
+      state: ProfileEditorPage.None,
+    },
     preferredSystemLocales: ['en'],
     preferredWidthFromStorage: 300,
     resolvedLocale: 'en',
@@ -371,17 +489,17 @@ export default {
 
     renderDonationsPane: ({
       contentsRef,
-      page,
-      setPage,
+      settingsLocation,
+      setSettingsLocation,
     }: {
       contentsRef: MutableRefObject<HTMLDivElement | null>;
-      page: SettingsPage;
-      setPage: (page: SettingsPage) => void;
+      settingsLocation: SettingsLocation;
+      setSettingsLocation: (settingsLocation: SettingsLocation) => void;
     }) =>
       renderDonationsPane({
         contentsRef,
-        page,
-        setPage,
+        settingsLocation,
+        setSettingsLocation,
         me,
         donationReceipts: [],
         saveAttachmentToDisk: async () => {
@@ -395,11 +513,14 @@ export default {
         },
         showToast: action('showToast'),
       }),
+    renderNotificationProfilesCreateFlow,
+    renderNotificationProfilesHome,
     renderProfileEditor,
     renderToastManager,
     renderUpdateDialog,
+    renderPreferencesChatFoldersPage,
+    renderPreferencesEditChatFolderPage,
     getConversationsWithCustomColor: () => [],
-    getPreferredBadge: () => undefined,
 
     addCustomColor: action('addCustomColor'),
     doDeleteAllData: action('doDeleteAllData'),
@@ -480,7 +601,7 @@ export default {
     setGlobalDefaultConversationColor: action(
       'setGlobalDefaultConversationColor'
     ),
-    setPage: action('setPage'),
+    setSettingsLocation: action('setSettingsLocation'),
     showToast: action('showToast'),
     validateBackup: async () => {
       return {
@@ -505,18 +626,17 @@ export default {
 
 // eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => {
-  const [page, setPage] = useState(args.page);
+  const [settingsLocation, setSettingsLocation] = useState(
+    args.settingsLocation
+  );
   return (
     <Preferences
       {...args}
-      page={page}
-      setPage={(
-        newPage: SettingsPage,
-        profilePage: ProfileEditorPage | undefined
-      ) => {
+      settingsLocation={settingsLocation}
+      setSettingsLocation={(newSettingsLocation: SettingsLocation) => {
         // eslint-disable-next-line no-console
-        console.log('setPage:', newPage, profilePage);
-        setPage(newPage);
+        console.log('setSettingsLocation:', newSettingsLocation);
+        setSettingsLocation(newSettingsLocation);
       }}
     />
   );
@@ -526,62 +646,203 @@ export const _Preferences = Template.bind({});
 
 export const General = Template.bind({});
 General.args = {
-  page: SettingsPage.General,
+  settingsLocation: { page: SettingsPage.General },
 };
 export const Appearance = Template.bind({});
 Appearance.args = {
-  page: SettingsPage.Appearance,
+  settingsLocation: { page: SettingsPage.Appearance },
 };
 export const Chats = Template.bind({});
 Chats.args = {
-  page: SettingsPage.Chats,
+  settingsLocation: { page: SettingsPage.Chats },
 };
 export const ChatFolders = Template.bind({});
 ChatFolders.args = {
-  page: SettingsPage.ChatFolders,
+  settingsLocation: {
+    page: SettingsPage.ChatFolders,
+    previousLocation: null,
+  },
 };
 export const EditChatFolder = Template.bind({});
 EditChatFolder.args = {
-  page: SettingsPage.EditChatFolder,
+  settingsLocation: {
+    page: SettingsPage.EditChatFolder,
+    chatFolderId: null,
+    previousLocation: null,
+  },
 };
 export const Calls = Template.bind({});
 Calls.args = {
-  page: SettingsPage.Calls,
+  settingsLocation: { page: SettingsPage.Calls },
 };
 export const Notifications = Template.bind({});
 Notifications.args = {
-  page: SettingsPage.Notifications,
+  settingsLocation: { page: SettingsPage.Notifications },
 };
 export const Privacy = Template.bind({});
 Privacy.args = {
-  page: SettingsPage.Privacy,
+  settingsLocation: { page: SettingsPage.Privacy },
 };
 export const DataUsage = Template.bind({});
 DataUsage.args = {
-  page: SettingsPage.DataUsage,
+  settingsLocation: { page: SettingsPage.DataUsage },
 };
 export const Donations = Template.bind({});
 Donations.args = {
-  donationsFeatureEnabled: true,
-  page: SettingsPage.Donations,
+  settingsLocation: { page: SettingsPage.Donations },
 };
+
+export const NotificationsPageWithThreeProfiles = Template.bind({});
+const threeProfiles = [
+  {
+    id: 'Weekday' as NotificationProfileIdString,
+    name: 'Weekday',
+    emoji: '😬',
+    color: 0xffe3e3fe,
+
+    createdAtMs: Date.now(),
+
+    allowAllCalls: true,
+    allowAllMentions: true,
+
+    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    scheduleEnabled: true,
+
+    scheduleStartTime: 1800,
+    scheduleEndTime: 2300,
+
+    scheduleDaysEnabled: {
+      [DayOfWeek.SUNDAY]: false,
+      [DayOfWeek.MONDAY]: true,
+      [DayOfWeek.TUESDAY]: true,
+      [DayOfWeek.WEDNESDAY]: true,
+      [DayOfWeek.THURSDAY]: true,
+      [DayOfWeek.FRIDAY]: true,
+      [DayOfWeek.SATURDAY]: false,
+    },
+    deletedAtTimestampMs: undefined,
+    storageNeedsSync: true,
+  },
+  {
+    id: 'Weekend' as NotificationProfileIdString,
+    name: 'Weekend',
+    emoji: '❤️‍🔥',
+    color: 0xffd7d7d9,
+
+    createdAtMs: Date.now(),
+
+    allowAllCalls: true,
+    allowAllMentions: true,
+
+    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    scheduleEnabled: true,
+
+    scheduleStartTime: 100,
+    scheduleEndTime: 1200,
+
+    scheduleDaysEnabled: {
+      [DayOfWeek.SUNDAY]: true,
+      [DayOfWeek.MONDAY]: false,
+      [DayOfWeek.TUESDAY]: false,
+      [DayOfWeek.WEDNESDAY]: false,
+      [DayOfWeek.THURSDAY]: false,
+      [DayOfWeek.FRIDAY]: false,
+      [DayOfWeek.SATURDAY]: true,
+    },
+    deletedAtTimestampMs: undefined,
+    storageNeedsSync: true,
+  },
+  {
+    id: 'Random' as NotificationProfileIdString,
+    name: 'Random',
+    emoji: undefined,
+    color: 0xfffef5d0,
+
+    createdAtMs: Date.now(),
+
+    allowAllCalls: true,
+    allowAllMentions: true,
+
+    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    scheduleEnabled: true,
+
+    scheduleStartTime: 1800,
+    scheduleEndTime: 2300,
+
+    scheduleDaysEnabled: {
+      [DayOfWeek.SUNDAY]: true,
+      [DayOfWeek.MONDAY]: false,
+      [DayOfWeek.TUESDAY]: true,
+      [DayOfWeek.WEDNESDAY]: false,
+      [DayOfWeek.THURSDAY]: true,
+      [DayOfWeek.FRIDAY]: false,
+      [DayOfWeek.SATURDAY]: true,
+    },
+    deletedAtTimestampMs: undefined,
+    storageNeedsSync: true,
+  },
+];
+
+NotificationsPageWithThreeProfiles.args = {
+  settingsLocation: { page: SettingsPage.Notifications },
+  notificationProfileCount: threeProfiles.length,
+  renderNotificationProfilesCreateFlow: (
+    props: SmartNotificationProfilesProps
+  ) => {
+    return (
+      <NotificationProfilesCreateFlow
+        contentsRef={props.contentsRef}
+        conversations={conversations}
+        conversationSelector={conversationSelector}
+        createProfile={action('createProfile')}
+        i18n={i18n}
+        setSettingsLocation={props.setSettingsLocation}
+        preferredBadgeSelector={() => undefined}
+        theme={ThemeType.light}
+      />
+    );
+  },
+  renderNotificationProfilesHome: (props: SmartNotificationProfilesProps) => {
+    return (
+      <NotificationProfilesHome
+        activeProfileId={threeProfiles[0].id}
+        allProfiles={threeProfiles}
+        contentsRef={props.contentsRef}
+        conversations={conversations}
+        conversationSelector={conversationSelector}
+        hasOnboardingBeenSeen
+        i18n={i18n}
+        isSyncEnabled
+        loading={false}
+        markProfileDeleted={action('markProfileDeleted')}
+        preferredBadgeSelector={() => undefined}
+        setHasOnboardingBeenSeen={action('setHasOnboardingBeenSeen')}
+        setIsSyncEnabled={action('setIsSyncEnabled')}
+        setSettingsLocation={props.setSettingsLocation}
+        setProfileOverride={action('setProfileOverride)')}
+        theme={ThemeType.light}
+        updateProfile={action('updateProfile')}
+      />
+    );
+  },
+};
+
 export const DonationsDonateFlow = Template.bind({});
 DonationsDonateFlow.args = {
-  donationsFeatureEnabled: true,
-  page: SettingsPage.DonationsDonateFlow,
+  settingsLocation: { page: SettingsPage.DonationsDonateFlow },
   renderDonationsPane: ({
     contentsRef,
   }: {
     contentsRef: MutableRefObject<HTMLDivElement | null>;
-    page: SettingsPage;
-    setPage: (page: SettingsPage) => void;
+    settingsLocation: SettingsLocation;
+    setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   }) =>
     renderDonationsPane({
       contentsRef,
       me,
       donationReceipts: [],
-      page: SettingsPage.DonationsDonateFlow,
-      setPage: action('setPage'),
+      settingsLocation: { page: SettingsPage.DonationsDonateFlow },
+      setSettingsLocation: action('setSettingsLocation'),
       saveAttachmentToDisk: async () => {
         action('saveAttachmentToDisk')();
         return { fullPath: '/mock/path/to/file.png', name: 'file.png' };
@@ -595,14 +856,13 @@ DonationsDonateFlow.args = {
 };
 export const DonationReceipts = Template.bind({});
 DonationReceipts.args = {
-  donationsFeatureEnabled: true,
-  page: SettingsPage.DonationsDonateFlow,
+  settingsLocation: { page: SettingsPage.DonationsDonateFlow },
   renderDonationsPane: ({
     contentsRef,
   }: {
     contentsRef: MutableRefObject<HTMLDivElement | null>;
-    page: SettingsPage;
-    setPage: (page: SettingsPage) => void;
+    settingsLocation: SettingsLocation;
+    setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   }) =>
     renderDonationsPane({
       contentsRef,
@@ -621,8 +881,8 @@ DonationReceipts.args = {
           timestamp: 1753995255509,
         },
       ],
-      page: SettingsPage.DonationsReceiptList,
-      setPage: action('setPage'),
+      settingsLocation: { page: SettingsPage.DonationsReceiptList },
+      setSettingsLocation: action('setSettingsLocation'),
       saveAttachmentToDisk: async () => {
         action('saveAttachmentToDisk')();
         return { fullPath: '/mock/path/to/file.png', name: 'file.png' };
@@ -636,8 +896,7 @@ DonationReceipts.args = {
 };
 export const DonationsHomeWithInProgressDonation = Template.bind({});
 DonationsHomeWithInProgressDonation.args = {
-  donationsFeatureEnabled: true,
-  page: SettingsPage.Donations,
+  settingsLocation: { page: SettingsPage.Donations },
   renderDonationsPane: ({
     contentsRef,
   }: {
@@ -647,8 +906,8 @@ DonationsHomeWithInProgressDonation.args = {
       contentsRef,
       me,
       donationReceipts: [],
-      page: SettingsPage.Donations,
-      setPage: action('setPage'),
+      settingsLocation: { page: SettingsPage.Donations },
+      setSettingsLocation: action('setSettingsLocation'),
       saveAttachmentToDisk: async () => {
         action('saveAttachmentToDisk')();
         return { fullPath: '/mock/path/to/file.png', name: 'file.png' };
@@ -673,51 +932,52 @@ DonationsHomeWithInProgressDonation.args = {
 };
 export const Internal = Template.bind({});
 Internal.args = {
-  page: SettingsPage.Internal,
+  settingsLocation: { page: SettingsPage.Internal },
   isInternalUser: true,
 };
 
 export const Blocked1 = Template.bind({});
 Blocked1.args = {
   blockedCount: 1,
-  page: SettingsPage.Privacy,
+  settingsLocation: { page: SettingsPage.Privacy },
 };
 
 export const BlockedMany = Template.bind({});
 BlockedMany.args = {
   blockedCount: 55,
-  page: SettingsPage.Privacy,
+  settingsLocation: { page: SettingsPage.Privacy },
 };
 
 export const CustomUniversalExpireTimer = Template.bind({});
 CustomUniversalExpireTimer.args = {
   universalExpireTimer: DurationInSeconds.fromSeconds(9000),
-  page: SettingsPage.Privacy,
+  settingsLocation: { page: SettingsPage.Privacy },
 };
 
 export const PNPSharingDisabled = Template.bind({});
 PNPSharingDisabled.args = {
   whoCanSeeMe: PhoneNumberSharingMode.Nobody,
   whoCanFindMe: PhoneNumberDiscoverability.Discoverable,
-  page: SettingsPage.PNP,
+  settingsLocation: { page: SettingsPage.PNP },
 };
 
 export const PNPDiscoverabilityDisabled = Template.bind({});
 PNPDiscoverabilityDisabled.args = {
   whoCanSeeMe: PhoneNumberSharingMode.Nobody,
   whoCanFindMe: PhoneNumberDiscoverability.NotDiscoverable,
-  page: SettingsPage.PNP,
+  settingsLocation: { page: SettingsPage.PNP },
 };
 
-export const BackupsMediaDownloadActive = Template.bind({});
-BackupsMediaDownloadActive.args = {
-  page: SettingsPage.BackupsDetails,
+export const BackupDetailsMediaDownloadActive = Template.bind({});
+BackupDetailsMediaDownloadActive.args = {
+  settingsLocation: { page: SettingsPage.BackupsDetails },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   cloudBackupStatus: {
     protoSize: 100_000_000,
     createdTimestamp: Date.now() - WEEK,
   },
+  backupTier: BackupLevel.Paid,
   backupSubscriptionStatus: {
     status: 'active',
     cost: {
@@ -733,15 +993,16 @@ BackupsMediaDownloadActive.args = {
     isIdle: false,
   },
 };
-export const BackupsMediaDownloadPaused = Template.bind({});
-BackupsMediaDownloadPaused.args = {
-  page: SettingsPage.BackupsDetails,
+export const BackupDetailsMediaDownloadPaused = Template.bind({});
+BackupDetailsMediaDownloadPaused.args = {
+  settingsLocation: { page: SettingsPage.BackupsDetails },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   cloudBackupStatus: {
     protoSize: 100_000_000,
     createdTimestamp: Date.now() - WEEK,
   },
+  backupTier: BackupLevel.Paid,
   backupSubscriptionStatus: {
     status: 'active',
     cost: {
@@ -758,9 +1019,26 @@ BackupsMediaDownloadPaused.args = {
   },
 };
 
+export const BackupDetailsFree = Template.bind({});
+BackupDetailsFree.args = {
+  settingsLocation: { page: SettingsPage.BackupsDetails },
+  backupFeatureEnabled: true,
+  backupLocalBackupsEnabled: true,
+  cloudBackupStatus: {
+    protoSize: 100_000_000,
+    createdTimestamp: Date.now() - WEEK,
+  },
+  backupTier: BackupLevel.Free,
+  backupSubscriptionStatus: {
+    status: 'not-found',
+    lastFetchedAtMs: Date.now(),
+  },
+};
+
 export const BackupsPaidActive = Template.bind({});
 BackupsPaidActive.args = {
-  page: SettingsPage.Backups,
+  settingsLocation: { page: SettingsPage.Backups },
+  backupTier: BackupLevel.Paid,
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   cloudBackupStatus: {
@@ -777,11 +1055,50 @@ BackupsPaidActive.args = {
   },
 };
 
-export const BackupsPaidCanceled = Template.bind({});
-BackupsPaidCanceled.args = {
-  page: SettingsPage.Backups,
+export const BackupsPaidLoadingSubscription = Template.bind({});
+BackupsPaidLoadingSubscription.args = {
+  settingsLocation: { page: SettingsPage.Backups },
+  backupTier: BackupLevel.Paid,
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
+  cloudBackupStatus: {
+    protoSize: 100_000_000,
+    createdTimestamp: Date.now() - WEEK,
+  },
+  backupSubscriptionStatus: {
+    status: 'active',
+    cost: {
+      amount: 22.99,
+      currencyCode: 'USD',
+    },
+    renewalTimestamp: Date.now() + 20 * DAY,
+    isFetching: true,
+    lastFetchedAtMs: Date.now() - HOUR,
+  },
+};
+
+export const BackupsPaidLoadingFirstTime = Template.bind({});
+BackupsPaidLoadingFirstTime.args = {
+  settingsLocation: { page: SettingsPage.Backups },
+  backupTier: BackupLevel.Paid,
+  backupFeatureEnabled: true,
+  backupLocalBackupsEnabled: true,
+  cloudBackupStatus: {
+    protoSize: 100_000_000,
+    createdTimestamp: Date.now() - WEEK,
+  },
+  backupSubscriptionStatus: {
+    status: 'not-found',
+    isFetching: true,
+  },
+};
+
+export const BackupsPaidCanceled = Template.bind({});
+BackupsPaidCanceled.args = {
+  settingsLocation: { page: SettingsPage.Backups },
+  backupFeatureEnabled: true,
+  backupLocalBackupsEnabled: true,
+  backupTier: BackupLevel.Paid,
   cloudBackupStatus: {
     protoSize: 100_000_000,
     createdTimestamp: Date.now() - WEEK,
@@ -798,37 +1115,50 @@ BackupsPaidCanceled.args = {
 
 export const BackupsFree = Template.bind({});
 BackupsFree.args = {
-  page: SettingsPage.Backups,
+  settingsLocation: { page: SettingsPage.Backups },
+  backupTier: BackupLevel.Free,
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
-  backupSubscriptionStatus: {
-    status: 'free',
-    mediaIncludedInBackupDurationDays: 30,
-  },
+};
+export const BackupsFreeNoLocal = Template.bind({});
+BackupsFreeNoLocal.args = {
+  settingsLocation: { page: SettingsPage.Backups },
+  backupFeatureEnabled: true,
+  backupLocalBackupsEnabled: false,
+  backupTier: BackupLevel.Free,
 };
 
 export const BackupsOff = Template.bind({});
 BackupsOff.args = {
-  page: SettingsPage.Backups,
+  settingsLocation: { page: SettingsPage.Backups },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
+  backupTier: null,
 };
 
 export const BackupsLocalBackups = Template.bind({});
 BackupsLocalBackups.args = {
-  page: SettingsPage.Backups,
+  settingsLocation: { page: SettingsPage.Backups },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
 };
 
-export const BackupsSubscriptionNotFound = Template.bind({});
-BackupsSubscriptionNotFound.args = {
-  page: SettingsPage.Backups,
+export const BackupsRemoteEnabledLocalDisabled = Template.bind({});
+BackupsRemoteEnabledLocalDisabled.args = {
+  settingsLocation: { page: SettingsPage.Backups },
+  backupFeatureEnabled: true,
+  backupLocalBackupsEnabled: false,
+};
+
+export const BackupsPaidSubscriptionNotFound = Template.bind({});
+BackupsPaidSubscriptionNotFound.args = {
+  settingsLocation: { page: SettingsPage.Backups },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   backupSubscriptionStatus: {
     status: 'not-found',
   },
+  backupTier: BackupLevel.Paid,
   cloudBackupStatus: {
     protoSize: 100_000_000,
     createdTimestamp: Date.now() - WEEK,
@@ -837,9 +1167,10 @@ BackupsSubscriptionNotFound.args = {
 
 export const BackupsSubscriptionExpired = Template.bind({});
 BackupsSubscriptionExpired.args = {
-  page: SettingsPage.Backups,
+  settingsLocation: { page: SettingsPage.Backups },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
+  backupTier: null,
   backupSubscriptionStatus: {
     status: 'expired',
   },
@@ -847,7 +1178,7 @@ BackupsSubscriptionExpired.args = {
 
 export const LocalBackups = Template.bind({});
 LocalBackups.args = {
-  page: SettingsPage.LocalBackups,
+  settingsLocation: { page: SettingsPage.LocalBackups },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   backupKeyViewed: true,
@@ -856,14 +1187,14 @@ LocalBackups.args = {
 
 export const LocalBackupsSetupChooseFolder = Template.bind({});
 LocalBackupsSetupChooseFolder.args = {
-  page: SettingsPage.LocalBackupsSetupFolder,
+  settingsLocation: { page: SettingsPage.LocalBackupsSetupFolder },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
 };
 
 export const LocalBackupsSetupViewBackupKey = Template.bind({});
 LocalBackupsSetupViewBackupKey.args = {
-  page: SettingsPage.LocalBackupsSetupKey,
+  settingsLocation: { page: SettingsPage.LocalBackupsSetupKey },
   backupFeatureEnabled: true,
   backupLocalBackupsEnabled: true,
   localBackupFolder: '/home/signaluser/Signal Backups/',
@@ -886,7 +1217,7 @@ NavTabsCollapsedWithBadges.args = {
   otherTabsUnreadStats: {
     unreadCount: 1,
     unreadMentionsCount: 2,
-    markedUnread: false,
+    readChatsMarkedUnreadCount: 0,
   },
 };
 
@@ -897,11 +1228,6 @@ NavTabsCollapsedWithExclamation.args = {
   otherTabsUnreadStats: {
     unreadCount: 1,
     unreadMentionsCount: 2,
-    markedUnread: true,
+    readChatsMarkedUnreadCount: 0,
   },
-};
-
-export const WithDonationsEnabled = Template.bind({});
-WithDonationsEnabled.args = {
-  donationsFeatureEnabled: true,
 };

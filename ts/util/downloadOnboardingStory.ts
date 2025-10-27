@@ -3,16 +3,21 @@
 
 import { v4 as generateUuid } from 'uuid';
 
-import type { AttachmentType } from '../types/Attachment';
-import { MessageModel } from '../models/messages';
-import { createLogger } from '../logging/log';
-import { IMAGE_JPEG } from '../types/MIME';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SeenStatus } from '../MessageSeenStatus';
-import { findAndDeleteOnboardingStoryIfExists } from './findAndDeleteOnboardingStoryIfExists';
-import { saveNewMessageBatcher } from './messageBatcher';
-import { strictAssert } from './assert';
-import { incrementMessageCounter } from './incrementMessageCounter';
+import type { AttachmentType } from '../types/Attachment.js';
+import { MessageModel } from '../models/messages.js';
+import { createLogger } from '../logging/log.js';
+import { IMAGE_JPEG } from '../types/MIME.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SeenStatus } from '../MessageSeenStatus.js';
+import { findAndDeleteOnboardingStoryIfExists } from './findAndDeleteOnboardingStoryIfExists.js';
+import { saveNewMessageBatcher } from './messageBatcher.js';
+import { writeNewAttachmentData, processNewAttachment } from './migrations.js';
+import { incrementMessageCounter } from './incrementMessageCounter.js';
+import {
+  getOnboardingStoryManifest,
+  downloadOnboardingStories,
+} from '../textsecure/WebAPI.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('downloadOnboardingStory');
 
@@ -25,20 +30,14 @@ const log = createLogger('downloadOnboardingStory');
 // * If story has been viewed mark as viewed on AccountRecord.
 // * If we viewed it >24 hours ago, delete.
 export async function downloadOnboardingStory(): Promise<void> {
-  const { server } = window.textsecure;
-
-  strictAssert(server, 'server not initialized');
-
-  const hasViewedOnboardingStory = window.storage.get(
-    'hasViewedOnboardingStory'
-  );
+  const hasViewedOnboardingStory = itemStorage.get('hasViewedOnboardingStory');
 
   if (hasViewedOnboardingStory) {
     await findAndDeleteOnboardingStoryIfExists();
     return;
   }
 
-  const existingOnboardingStoryMessageIds = window.storage.get(
+  const existingOnboardingStoryMessageIds = itemStorage.get(
     'existingOnboardingStoryMessageIds'
   );
 
@@ -47,9 +46,9 @@ export async function downloadOnboardingStory(): Promise<void> {
     return;
   }
 
-  const userLocale = window.i18n.getLocale();
+  const userLocale = window.SignalContext.i18n.getLocale();
 
-  const manifest = await server.getOnboardingStoryManifest();
+  const manifest = await getOnboardingStoryManifest();
 
   log.info('got manifest version:', manifest.version);
 
@@ -58,7 +57,7 @@ export async function downloadOnboardingStory(): Promise<void> {
       ? manifest.languages[userLocale]
       : manifest.languages.en;
 
-  const imageBuffers = await server.downloadOnboardingStories(
+  const imageBuffers = await downloadOnboardingStories(
     manifest.version,
     imageFilenames
   );
@@ -67,13 +66,13 @@ export async function downloadOnboardingStory(): Promise<void> {
 
   const attachments: Array<AttachmentType> = await Promise.all(
     imageBuffers.map(async data => {
-      const local = await window.Signal.Migrations.writeNewAttachmentData(data);
+      const local = await writeNewAttachmentData(data);
       const attachment: AttachmentType = {
         contentType: IMAGE_JPEG,
         ...local,
       };
 
-      return window.Signal.Migrations.processNewAttachment(attachment);
+      return processNewAttachment(attachment, 'attachment');
     })
   );
 
@@ -109,7 +108,7 @@ export async function downloadOnboardingStory(): Promise<void> {
     storyMessages.map(message => saveNewMessageBatcher.add(message.attributes))
   );
 
-  await window.storage.put(
+  await itemStorage.put(
     'existingOnboardingStoryMessageIds',
     storyMessages.map(message => message.id)
   );

@@ -11,15 +11,15 @@ import {
 } from 'react-aria-components';
 import { VisuallyHidden } from 'react-aria';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { LocalizerType } from '../../../types/I18N';
-import { strictAssert } from '../../../util/assert';
-import { missingCaseError } from '../../../util/missingCaseError';
-import type { FunEmojisSection } from '../constants';
+import type { LocalizerType } from '../../../types/I18N.js';
+import { strictAssert } from '../../../util/assert.js';
+import { missingCaseError } from '../../../util/missingCaseError.js';
+import type { FunEmojisSection } from '../constants.js';
 import {
   FunEmojisBase,
   FunEmojisSectionOrder,
   FunSectionCommon,
-} from '../constants';
+} from '../constants.js';
 import {
   FunGridCell,
   FunGridContainer,
@@ -32,28 +32,26 @@ import {
   FunGridRow,
   FunGridRowGroup,
   FunGridScrollerSection,
-} from '../base/FunGrid';
-import { FunItemButton } from '../base/FunItem';
+} from '../base/FunGrid.js';
+import { FunItemButton } from '../base/FunItem.js';
 import {
   FunPanel,
   FunPanelBody,
   FunPanelFooter,
   FunPanelHeader,
-} from '../base/FunPanel';
-import { FunScroller } from '../base/FunScroller';
-import { FunSearch } from '../base/FunSearch';
+} from '../base/FunPanel.js';
+import { FunScroller } from '../base/FunScroller.js';
+import { FunSearch } from '../base/FunSearch.js';
 import {
   FunSubNav,
   FunSubNavIcon,
   FunSubNavListBox,
   FunSubNavListBoxItem,
-} from '../base/FunSubNav';
-import type { EmojiParentKey, EmojiVariantKey } from '../data/emojis';
+} from '../base/FunSubNav.js';
+import type { EmojiVariantKey } from '../data/emojis.js';
 import {
   EmojiSkinTone,
-  emojiParentKeyConstant,
   EmojiPickerCategory,
-  emojiVariantConstant,
   getEmojiParentByKey,
   getEmojiPickerCategoryParentKeys,
   getEmojiVariantByParentKeyAndSkinTone,
@@ -61,24 +59,25 @@ import {
   isEmojiVariantKey,
   getEmojiParentKeyByVariantKey,
   getEmojiVariantByKey,
-  getEmojiSkinToneByVariantKey,
-} from '../data/emojis';
-import { useFunEmojiSearch } from '../useFunEmojiSearch';
-import { FunKeyboard } from '../keyboard/FunKeyboard';
-import type { GridKeyboardState } from '../keyboard/GridKeyboardDelegate';
-import { GridKeyboardDelegate } from '../keyboard/GridKeyboardDelegate';
+  EMOJI_PARENT_KEY_CONSTANTS,
+  EMOJI_VARIANT_KEY_CONSTANTS,
+} from '../data/emojis.js';
+import { useFunEmojiSearch } from '../useFunEmojiSearch.js';
+import { FunKeyboard } from '../keyboard/FunKeyboard.js';
+import type { GridKeyboardState } from '../keyboard/GridKeyboardDelegate.js';
+import { GridKeyboardDelegate } from '../keyboard/GridKeyboardDelegate.js';
 import type {
   CellKey,
   CellLayoutNode,
   GridSectionNode,
-} from '../virtual/useFunVirtualGrid';
-import { useFunVirtualGrid } from '../virtual/useFunVirtualGrid';
-import { FunSkinTonesList } from '../FunSkinTones';
-import { FunStaticEmoji } from '../FunEmoji';
-import { useFunContext } from '../FunProvider';
-import { FunResults, FunResultsHeader } from '../base/FunResults';
-import { useFunEmojiLocalizer } from '../useFunEmojiLocalizer';
-import { FunTooltip } from '../base/FunTooltip';
+} from '../virtual/useFunVirtualGrid.js';
+import { useFunVirtualGrid } from '../virtual/useFunVirtualGrid.js';
+import { FunSkinTonesList } from '../FunSkinTones.js';
+import { FunStaticEmoji } from '../FunEmoji.js';
+import { useFunContext } from '../FunProvider.js';
+import { FunResults, FunResultsHeader } from '../base/FunResults.js';
+import { useFunEmojiLocalizer } from '../useFunEmojiLocalizer.js';
+import { FunTooltip } from '../base/FunTooltip.js';
 
 function getTitleForSection(
   i18n: LocalizerType,
@@ -163,9 +162,6 @@ function getSelectedSection(
 
 export type FunEmojiSelection = Readonly<{
   variantKey: EmojiVariantKey;
-  parentKey: EmojiParentKey;
-  englishShortName: string;
-  skinTone: EmojiSkinTone;
 }>;
 
 export type FunPanelEmojisProps = Readonly<{
@@ -479,7 +475,9 @@ export function FunPanelEmojis({
                   <FunStaticEmoji
                     size={16}
                     role="presentation"
-                    emoji={emojiVariantConstant('\u{1F641}')}
+                    emoji={getEmojiVariantByKey(
+                      EMOJI_VARIANT_KEY_CONSTANTS.SLIGHTLY_FROWNING_FACE
+                    )}
                   />
                 </FunResultsHeader>
               </FunResults>
@@ -656,10 +654,6 @@ const Cell = memo(function Cell(props: CellProps): JSX.Element {
     return getEmojiVariantByKey(props.value);
   }, [props.value]);
 
-  const skinTone = useMemo(() => {
-    return getEmojiSkinToneByVariantKey(emojiVariant.key);
-  }, [emojiVariant.key]);
-
   const handleClick = useCallback(
     (event: PointerEvent) => {
       if (emojiHasSkinToneVariants && emojiSkinToneDefault == null) {
@@ -668,9 +662,6 @@ const Cell = memo(function Cell(props: CellProps): JSX.Element {
       }
       const emojiSelection: FunEmojiSelection = {
         variantKey: emojiVariant.key,
-        parentKey: emojiParent.key,
-        englishShortName: emojiParent.englishShortNameDefault,
-        skinTone,
       };
       const shouldClose =
         event.nativeEvent.pointerType !== 'mouse' &&
@@ -681,9 +672,6 @@ const Cell = memo(function Cell(props: CellProps): JSX.Element {
       emojiHasSkinToneVariants,
       emojiSkinToneDefault,
       emojiVariant.key,
-      emojiParent.key,
-      emojiParent.englishShortNameDefault,
-      skinTone,
       onSelectEmoji,
     ]
   );
@@ -714,19 +702,11 @@ const Cell = memo(function Cell(props: CellProps): JSX.Element {
       onEmojiSkinToneDefaultChange(skinToneSelection);
       const emojiSelection: FunEmojiSelection = {
         variantKey: variant.key,
-        parentKey: emojiParent.key,
-        englishShortName: emojiParent.englishShortNameDefault,
-        skinTone: skinToneSelection,
       };
       const shouldClose = true;
       onSelectEmoji(emojiSelection, shouldClose);
     },
-    [
-      onEmojiSkinToneDefaultChange,
-      emojiParent.key,
-      emojiParent.englishShortNameDefault,
-      onSelectEmoji,
-    ]
+    [onEmojiSkinToneDefaultChange, emojiParent.key, onSelectEmoji]
   );
 
   const emojiName = useMemo(() => {
@@ -836,7 +816,7 @@ function SectionSkinToneHeaderPopover(
         </FunGridHeaderPopoverHeader>
         <FunSkinTonesList
           i18n={i18n}
-          emoji={emojiParentKeyConstant('\u{270B}')}
+          emoji={EMOJI_PARENT_KEY_CONSTANTS.RAISED_HAND}
           skinTone={null}
           onSelectSkinTone={handleSelectSkinTone}
         />

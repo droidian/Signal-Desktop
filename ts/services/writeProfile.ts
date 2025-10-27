@@ -1,23 +1,29 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { DataWriter } from '../sql/Client';
-import type { ConversationType } from '../state/ducks/conversations';
-import * as Errors from '../types/errors';
-import { createLogger } from '../logging/log';
-import { computeHash } from '../Crypto';
-import { encryptProfileData } from '../util/encryptProfileData';
-import { getProfile } from '../util/getProfile';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import { strictAssert } from '../util/assert';
-import { isWhitespace } from '../util/whitespaceStringUtil';
-import { imagePathToBytes } from '../util/imagePathToBytes';
-import { getLocalAvatarUrl } from '../util/avatarUtils';
+import { DataWriter } from '../sql/Client.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { putProfile, uploadAvatar } from '../textsecure/WebAPI.js';
+import * as Errors from '../types/errors.js';
+import { createLogger } from '../logging/log.js';
+import { computeHash } from '../Crypto.js';
+import { encryptProfileData } from '../util/encryptProfileData.js';
+import { getProfile } from '../util/getProfile.js';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.js';
+import { strictAssert } from '../util/assert.js';
+import {
+  writeNewAttachmentData,
+  deleteAttachmentData,
+} from '../util/migrations.js';
+import { isWhitespace } from '../util/whitespaceStringUtil.js';
+import { imagePathToBytes } from '../util/imagePathToBytes.js';
+import { getLocalAvatarUrl } from '../util/avatarUtils.js';
 import type {
   AvatarUpdateOptionsType,
   AvatarUpdateType,
-} from '../types/Avatar';
-import MessageSender from '../textsecure/SendMessage';
+} from '../types/Avatar.js';
+import { MessageSender } from '../textsecure/SendMessage.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('writeProfile');
 
@@ -25,11 +31,6 @@ export async function writeProfile(
   conversation: ConversationType,
   options: AvatarUpdateOptionsType
 ): Promise<void> {
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error('server is not available!');
-  }
-
   // Before we write anything we request the user's profile so that we can
   // have an up-to-date paymentAddress to be able to include it when we write
   const model = window.ConversationController.get(conversation.id);
@@ -83,7 +84,7 @@ export async function writeProfile(
     conversation,
     avatarUpdate
   );
-  const avatarRequestHeaders = await server.putProfile(profileData);
+  const avatarRequestHeaders = await putProfile(profileData);
 
   // Upload the avatar if provided
   // delete existing files on disk if avatar has been removed
@@ -105,7 +106,7 @@ export async function writeProfile(
     newAvatar
   ) {
     log.info('uploading new avatar');
-    const avatarUrl = await server.uploadAvatar(
+    const avatarUrl = await uploadAvatar(
       avatarRequestHeaders,
       encryptedAvatarData
     );
@@ -115,22 +116,20 @@ export async function writeProfile(
     if (hash !== avatarHash) {
       log.info('removing old avatar and saving the new one');
       const [local] = await Promise.all([
-        window.Signal.Migrations.writeNewAttachmentData(newAvatar),
-        rawAvatarPath
-          ? window.Signal.Migrations.deleteAttachmentData(rawAvatarPath)
-          : undefined,
+        writeNewAttachmentData(newAvatar),
+        rawAvatarPath ? deleteAttachmentData(rawAvatarPath) : undefined,
       ]);
       maybeProfileAvatarUpdate = {
         profileAvatar: { hash, ...local },
       };
     }
 
-    await window.storage.put('avatarUrl', avatarUrl);
+    await itemStorage.put('avatarUrl', avatarUrl);
   } else if (rawAvatarPath) {
     log.info('removing avatar');
     await Promise.all([
-      window.Signal.Migrations.deleteAttachmentData(rawAvatarPath),
-      window.storage.put('avatarUrl', undefined),
+      deleteAttachmentData(rawAvatarPath),
+      itemStorage.put('avatarUrl', undefined),
     ]);
 
     maybeProfileAvatarUpdate = { profileAvatar: undefined };

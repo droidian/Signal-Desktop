@@ -1,25 +1,29 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { first, last, sortBy } from 'lodash';
+import lodash from 'lodash';
 import {
   AuthCredentialWithPniResponse,
   CallLinkAuthCredentialResponse,
   GenericServerPublicParams,
-} from '@signalapp/libsignal-client/zkgroup';
+} from '@signalapp/libsignal-client/zkgroup.js';
 
-import { getClientZkAuthOperations } from '../util/zkgroup';
+import { getClientZkAuthOperations } from '../util/zkgroup.js';
 
-import type { GroupCredentialType } from '../textsecure/WebAPI';
-import { strictAssert } from '../util/assert';
-import * as durations from '../util/durations';
-import { BackOff } from '../util/BackOff';
-import { sleep } from '../util/sleep';
-import { toDayMillis } from '../util/timestamp';
-import { toTaggedPni } from '../types/ServiceId';
-import { toPniObject, toAciObject } from '../util/ServiceId';
-import { createLogger } from '../logging/log';
-import * as Bytes from '../Bytes';
+import type { GroupCredentialType } from '../textsecure/WebAPI.js';
+import { getGroupCredentials } from '../textsecure/WebAPI.js';
+import { strictAssert } from '../util/assert.js';
+import * as durations from '../util/durations/index.js';
+import { BackOff } from '../util/BackOff.js';
+import { sleep } from '../util/sleep.js';
+import { toDayMillis } from '../util/timestamp.js';
+import { toTaggedPni } from '../types/ServiceId.js';
+import { toPniObject, toAciObject } from '../util/ServiceId.js';
+import { createLogger } from '../logging/log.js';
+import * as Bytes from '../Bytes.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { first, last, sortBy } = lodash;
 
 const log = createLogger('groupCredentialFetcher');
 
@@ -38,7 +42,7 @@ export type NextCredentialsType = {
 let started = false;
 
 function getCheckedGroupCredentials(reason: string): CredentialsDataType {
-  const result = window.storage.get('groupCredentials');
+  const result = itemStorage.get('groupCredentials');
   strictAssert(
     result !== undefined,
     `getCheckedCredentials: no credentials found, ${reason}`
@@ -49,7 +53,7 @@ function getCheckedGroupCredentials(reason: string): CredentialsDataType {
 function getCheckedCallLinkAuthCredentials(
   reason: string
 ): CredentialsDataType {
-  const result = window.storage.get('callLinkAuthCredentials');
+  const result = itemStorage.get('callLinkAuthCredentials');
   strictAssert(
     result !== undefined,
     `getCheckedCallLinkAuthCredentials: no credentials found, ${reason}`
@@ -152,7 +156,7 @@ export function getCheckedCallLinkAuthCredentialsForToday(
 export async function maybeFetchNewCredentials(): Promise<void> {
   const logId = 'maybeFetchNewCredentials';
 
-  const maybeAci = window.textsecure.storage.user.getAci();
+  const maybeAci = itemStorage.user.getAci();
   if (!maybeAci) {
     log.info(`${logId}: no ACI, returning early`);
     return;
@@ -160,18 +164,12 @@ export async function maybeFetchNewCredentials(): Promise<void> {
   const aci = maybeAci;
 
   const prevGroupCredentials: CredentialsDataType =
-    window.storage.get('groupCredentials') ?? [];
+    itemStorage.get('groupCredentials') ?? [];
   const prevCallLinkAuthCredentials: CredentialsDataType =
-    window.storage.get('callLinkAuthCredentials') ?? [];
+    itemStorage.get('callLinkAuthCredentials') ?? [];
 
   const requestDates = getDatesForRequest(prevGroupCredentials);
   const requestDatesCallLinks = getDatesForRequest(prevCallLinkAuthCredentials);
-
-  const { server } = window.textsecure;
-  if (!server) {
-    log.error(`${logId}: unable to get server`);
-    return;
-  }
 
   let startDayInMs: number;
   let endDayInMs: number;
@@ -204,14 +202,14 @@ export async function maybeFetchNewCredentials(): Promise<void> {
     pni: untaggedPni,
     credentials: rawCredentials,
     callLinkAuthCredentials,
-  } = await server.getGroupCredentials({ startDayInMs, endDayInMs });
+  } = await getGroupCredentials({ startDayInMs, endDayInMs });
   strictAssert(
     untaggedPni,
     'Server must give pni along with group credentials'
   );
   const pni = toTaggedPni(untaggedPni);
 
-  const localPni = window.storage.user.getPni();
+  const localPni = itemStorage.user.getPni();
   if (pni !== localPni) {
     log.error(`${logId}: local PNI ${localPni}, does not match remote ${pni}`);
   }
@@ -301,8 +299,8 @@ export async function maybeFetchNewCredentials(): Promise<void> {
     )}`
   );
 
-  await window.storage.put('groupCredentials', finalGroupCredentials);
-  await window.storage.put(
+  await itemStorage.put('groupCredentials', finalGroupCredentials);
+  await itemStorage.put(
     'callLinkAuthCredentials',
     finalCallLinkAuthCredentials
   );

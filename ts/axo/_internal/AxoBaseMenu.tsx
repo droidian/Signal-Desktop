@@ -2,20 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React from 'react';
 import type { ReactNode } from 'react';
-import { tw } from '../tw';
-import { AxoSymbol, type AxoSymbolName } from '../AxoSymbol';
+import { tw } from '../tw.js';
+import { AxoSymbol } from '../AxoSymbol.js';
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AxoBaseMenu {
   // <Content/SubContent>
   const baseContentStyles = tw(
-    'max-w-[300px] min-w-[200px] p-1.5',
+    'max-w-[300px] min-w-[200px]',
     'select-none',
     'rounded-xl bg-elevated-background-tertiary shadow-elevation-3',
-    'data-[state=closed]:animate-fade-out'
+    'data-[state=closed]:animate-fade-out',
+    'forced-colors:border',
+    'forced-colors:bg-[Canvas]',
+    'forced-colors:text-[CanvasText]'
   );
 
-  const baseContentGridStyles = tw('grid grid-cols-[min-content_auto]');
+  const baseContentGridStyles = tw('grid grid-cols-[min-content_1fr] p-1.5');
 
   // <Group/RadioGroup>
   const baseGroupStyles = tw('col-span-full grid grid-cols-subgrid');
@@ -34,7 +36,12 @@ export namespace AxoBaseMenu {
     'rounded-md type-body-medium',
     'outline-0 data-[highlighted]:bg-fill-secondary-pressed',
     'data-[disabled]:text-label-disabled',
-    'outline-0 outline-border-focused focused:outline-[2.5px]'
+    'outline-0 outline-border-focused focused:outline-[2.5px]',
+    'forced-colors:text-[CanvasText]',
+    'forced-colors:data-[highlighted]:bg-[Highlight]',
+    'forced-colors:data-[highlighted]:text-[HighlightText]',
+    'forced-colors:data-[disabled]:text-[GrayText]',
+    'forced-color-adjust-none'
   );
 
   /**
@@ -54,7 +61,7 @@ export namespace AxoBaseMenu {
     /**
      * An icon that should be rendered before the text.
      */
-    symbol?: AxoSymbolName;
+    symbol?: AxoSymbol.IconName;
   }>;
 
   // <Item/RadioItem/CheckboxItem> (not SubTrigger/Label/Separator)
@@ -106,7 +113,7 @@ export namespace AxoBaseMenu {
    * -----------------------
    */
 
-  export const itemTextStyles = tw('flex-1 truncate text-start');
+  export const itemTextStyles = tw('flex-auto grow-0 truncate text-start');
 
   export type ItemTextProps = Readonly<{
     children: ReactNode;
@@ -130,7 +137,9 @@ export namespace AxoBaseMenu {
     return <AxoSymbol.Icon size={14} symbol="check" label={null} />;
   }
 
-  export function ItemSymbol(props: { symbol: AxoSymbolName }): JSX.Element {
+  export function ItemSymbol(props: {
+    symbol: AxoSymbol.IconName;
+  }): JSX.Element {
     return <AxoSymbol.Icon size={16} symbol={props.symbol} label={null} />;
   }
 
@@ -143,7 +152,10 @@ export namespace AxoBaseMenu {
   ): JSX.Element {
     return (
       <span
-        className={tw('ml-auto px-1 type-body-medium text-label-secondary')}
+        dir="auto"
+        className={tw(
+          'ms-auto px-1 type-body-medium text-label-secondary forced-colors:text-[inherit]'
+        )}
       >
         {props.keyboardShortcut}
       </span>
@@ -241,6 +253,18 @@ export namespace AxoBaseMenu {
   export const selectLabelStyles = tw(baseLabelStyles);
 
   /**
+   * AxoBaseMenu: Header
+   */
+
+  export const menuHeaderStyles = tw('col-span-full col-start-1 p-1.5');
+  export const menuHeaderLabelStyles = tw(
+    'block truncate type-title-small text-label-primary'
+  );
+  export const menuHeaderDescriptionStyles = tw(
+    'block truncate type-caption text-label-secondary'
+  );
+
+  /**
    * AxoBaseMenu: CheckboxItem
    * -------------------------
    */
@@ -270,7 +294,7 @@ export namespace AxoBaseMenu {
     /**
      * The value of the selected item in the group.
      */
-    value: string;
+    value: string | null;
 
     /**
      * Event handler called when the value changes.
@@ -303,13 +327,17 @@ export namespace AxoBaseMenu {
     // N/A
   }>;
 
-  const baseSeparatorStyles = tw(
-    baseItemStyles,
-    'mx-0.5 my-1 border-t-[0.5px] border-border-primary'
-  );
+  const baseSeparatorStyles = tw('my-1 border-t-[0.5px] border-border-primary');
 
-  export const menuSeparatorStyles = tw(baseSeparatorStyles);
-  export const selectSeperatorStyles = tw(baseSeparatorStyles);
+  export const menuSeparatorStyles = tw(
+    'col-span-full col-start-1 mx-0.5',
+    baseSeparatorStyles
+  );
+  export const menuContentSeparatorStyles = tw(
+    'col-span-full col-start-2',
+    baseSeparatorStyles
+  );
+  export const selectSeperatorStyles = tw(baseItemStyles, baseSeparatorStyles);
 
   /**
    * AxoBaseMenu: Sub
@@ -332,7 +360,9 @@ export namespace AxoBaseMenu {
 
   export const menuSubTriggerStyles = tw(
     navigableItemStyles,
-    'data-[state=open]:not-data-[highlighted]:bg-fill-secondary'
+    'data-[state=open]:not-data-[highlighted]:bg-fill-secondary',
+    'forced-colors:data-[state=open]:not-data-[highlighted]:bg-[Highlight]',
+    'forced-colors:data-[state=open]:not-data-[highlighted]:text-[HighlightText]'
   );
 
   /**

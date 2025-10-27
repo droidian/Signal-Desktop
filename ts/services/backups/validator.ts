@@ -3,13 +3,16 @@
 
 import type { Readable } from 'node:stream';
 import { once } from 'node:events';
-import * as libsignal from '@signalapp/libsignal-client/dist/MessageBackup';
-import type { InputStream } from '@signalapp/libsignal-client/dist/io';
-import { Reader } from 'protobufjs';
+import * as libsignal from '@signalapp/libsignal-client/dist/MessageBackup.js';
+import type { InputStream } from '@signalapp/libsignal-client/dist/io.js';
+import protobufjs from 'protobufjs';
 
-import { strictAssert } from '../../util/assert';
-import { toAciObject } from '../../util/ServiceId';
-import { missingCaseError } from '../../util/missingCaseError';
+import { strictAssert } from '../../util/assert.js';
+import { toAciObject } from '../../util/ServiceId.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { Reader } = protobufjs;
 
 export enum ValidationType {
   Export = 'Export',
@@ -21,10 +24,10 @@ export async function validateBackup(
   fileSize: number,
   type: ValidationType
 ): Promise<void> {
-  const accountEntropy = window.storage.get('accountEntropyPool');
+  const accountEntropy = itemStorage.get('accountEntropyPool');
   strictAssert(accountEntropy, 'Account Entropy Pool not available');
 
-  const aci = toAciObject(window.storage.user.getCheckedAci());
+  const aci = toAciObject(itemStorage.user.getCheckedAci());
   const backupKey = new libsignal.MessageBackupKey({
     accountEntropy,
     aci,

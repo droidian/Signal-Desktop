@@ -1,34 +1,35 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import fs from 'fs/promises';
+import fs, { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
-import os from 'os';
-import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 import createDebug from 'debug';
 import { Proto, StorageState } from '@signalapp/mock-server';
 import { assert } from 'chai';
 import { expect } from 'playwright/test';
 import Long from 'long';
 
-import { generateStoryDistributionId } from '../../types/StoryDistributionId';
-import { MY_STORY_ID } from '../../types/Stories';
-import { generateAci } from '../../types/ServiceId';
-import { generateBackup } from '../../test-helpers/generateBackup';
-import { IMAGE_JPEG } from '../../types/MIME';
-import { uuidToBytes } from '../../util/uuidToBytes';
-import * as durations from '../../util/durations';
-import type { App } from '../playwright';
-import { Bootstrap, type LinkOptionsType } from '../bootstrap';
+import * as Bytes from '../../Bytes.js';
+import { generateStoryDistributionId } from '../../types/StoryDistributionId.js';
+import { MY_STORY_ID } from '../../types/Stories.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { generateBackup } from '../../test-helpers/generateBackup.js';
+import { IMAGE_JPEG } from '../../types/MIME.js';
+import { uuidToBytes } from '../../util/uuidToBytes.js';
+import * as durations from '../../util/durations/index.js';
+import type { App } from '../playwright.js';
+import { Bootstrap, type LinkOptionsType } from '../bootstrap.js';
 import {
   getMessageInTimelineByTimestamp,
   sendTextMessage,
   sendReaction,
-} from '../helpers';
-import { toBase64 } from '../../Bytes';
-import { strictAssert } from '../../util/assert';
-import { BackupLevel } from '../../services/backups/types';
+} from '../helpers.js';
+import { toBase64 } from '../../Bytes.js';
+import { strictAssert } from '../../util/assert.js';
+import { BackupLevel } from '../../services/backups/types.js';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.js';
 
 export const debug = createDebug('mock:test:backups');
 
@@ -120,6 +121,35 @@ describe('backups', function (this: Mocha.Suite) {
           isBlockList: false,
           name: 'friend',
           recipientServiceIdsBinary: [friend.device.aciBinary],
+        },
+      },
+    });
+
+    const notificationProfileName1 = 'Work';
+    const now = Date.now();
+    state = state.addRecord({
+      type: IdentifierType.NOTIFICATION_PROFILE,
+      record: {
+        notificationProfile: {
+          id: Bytes.fromHex(generateNotificationProfileId()),
+          name: notificationProfileName1,
+          color: 0xffff0000,
+          createdAtMs: Long.fromNumber(now),
+          allowAllCalls: true,
+        },
+      },
+    });
+
+    const notificationProfileName2 = 'Driving';
+    state = state.addRecord({
+      type: IdentifierType.NOTIFICATION_PROFILE,
+      record: {
+        notificationProfile: {
+          id: Bytes.fromHex(generateNotificationProfileId()),
+          name: notificationProfileName2,
+          color: 0xff00ff00,
+          createdAtMs: Long.fromNumber(now + 1),
+          allowAllMentions: true,
         },
       },
     });
@@ -219,7 +249,7 @@ describe('backups', function (this: Mocha.Suite) {
 
     const catTimestamp = bootstrap.getTimestamp();
     const plaintextCat = await readFile(CAT_PATH);
-    const ciphertextCat = await bootstrap.storeAttachmentOnCDN(
+    const ciphertextCat = await bootstrap.encryptAndStoreAttachmentOnCDN(
       plaintextCat,
       IMAGE_JPEG
     );
@@ -299,12 +329,30 @@ describe('backups', function (this: Mocha.Suite) {
 
         debug('Opening story privacy');
         await window.locator('.StoriesTab__MoreActionsIcon').click();
-        await window.getByRole('button', { name: 'Story Privacy' }).click();
+        await window.getByRole('menuitem', { name: 'Story Privacy' }).click();
         await expect(
           window.locator('.StoriesSettingsModal__overlay')
         ).toHaveCSS('opacity', '1');
 
         await snapshot('story privacy');
+
+        debug('Closing story privacy dialog');
+        await window.locator('.module-Modal__close-button').click();
+
+        debug('Switching to settings tab');
+        await window.getByTestId('NavTabsItem--Settings').click();
+
+        debug('Opening Notification Profiles list screen');
+        await window.getByRole('button', { name: 'Notifications' }).click();
+        await window.getByTestId('ManageNotificationProfiles').click();
+        await expect(
+          window.getByTestId(`EditProfile--${notificationProfileName1}`)
+        ).toBeVisible();
+        await expect(
+          window.getByTestId(`EditProfile--${notificationProfileName2}`)
+        ).toBeVisible();
+
+        await snapshot('notification profile list');
       },
       thisVal.test
     );

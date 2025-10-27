@@ -4,19 +4,21 @@
 import type { ReactNode, FunctionComponent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
-import { isBoolean, isNumber } from 'lodash';
+import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
 
-import { Avatar, AvatarSize } from '../Avatar';
-import type { BadgeType } from '../../badges/types';
-import { isConversationUnread } from '../../util/isConversationUnread';
-import { cleanId } from '../_util';
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { ConversationType } from '../../state/ducks/conversations';
-import { Spinner } from '../Spinner';
-import { Time } from '../Time';
-import { formatDateTimeShort } from '../../util/timestamp';
-import * as durations from '../../util/durations';
+import { Avatar, AvatarSize } from '../Avatar.js';
+import type { BadgeType } from '../../badges/types.js';
+import { isConversationUnread } from '../../util/isConversationUnread.js';
+import { cleanId } from '../_util.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import { Spinner } from '../Spinner.js';
+import { Time } from '../Time.js';
+import { formatDateTimeShort } from '../../util/timestamp.js';
+import * as durations from '../../util/durations/index.js';
+
+const { isBoolean, isNumber } = lodash;
 
 const BASE_CLASS_NAME =
   'module-conversation-list__item--contact-or-conversation';
@@ -31,6 +33,11 @@ export const MESSAGE_TEXT_CLASS_NAME = `${MESSAGE_CLASS_NAME}__text`;
 const CHECKBOX_CONTAINER_CLASS_NAME = `${BASE_CLASS_NAME}__checkbox--container`;
 const CHECKBOX_CLASS_NAME = `${BASE_CLASS_NAME}__checkbox`;
 export const SPINNER_CLASS_NAME = `${BASE_CLASS_NAME}__spinner`;
+
+export type RenderConversationListItemContextMenuProps = Readonly<{
+  conversationId: string;
+  children: ReactNode;
+}>;
 
 type PropsType = {
   buttonAriaLabel?: string;
@@ -56,6 +63,9 @@ type PropsType = {
   unreadMentionsCount?: number;
   avatarSize?: AvatarSize;
   testId?: string;
+  renderConversationListItemContextMenu?: (
+    props: RenderConversationListItemContextMenuProps
+  ) => JSX.Element;
 } & Pick<
   ConversationType,
   | 'avatarPlaceholderGradient'
@@ -112,6 +122,7 @@ export const BaseConversationListItem: FunctionComponent<PropsType> =
       unreadCount,
       unreadMentionsCount,
       serviceId,
+      renderConversationListItemContextMenu,
     } = props;
 
     const identifier = id ? cleanId(id) : undefined;
@@ -273,8 +284,10 @@ export const BaseConversationListItem: FunctionComponent<PropsType> =
       );
     }
 
+    let wrapper: JSX.Element;
+
     if (onClick) {
-      return (
+      wrapper = (
         <button
           aria-label={
             buttonAriaLabel ||
@@ -296,17 +309,26 @@ export const BaseConversationListItem: FunctionComponent<PropsType> =
           {contents}
         </button>
       );
+    } else {
+      wrapper = (
+        <div
+          className={commonClassNames}
+          data-id={identifier}
+          data-testid={testId}
+        >
+          {contents}
+        </div>
+      );
     }
 
-    return (
-      <div
-        className={commonClassNames}
-        data-id={identifier}
-        data-testid={testId}
-      >
-        {contents}
-      </div>
-    );
+    if (renderConversationListItemContextMenu != null && id != null) {
+      return renderConversationListItemContextMenu({
+        conversationId: id,
+        children: wrapper,
+      });
+    }
+
+    return wrapper;
   });
 
 function Timestamp({

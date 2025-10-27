@@ -1,8 +1,11 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { throttle } from 'lodash';
-import type { BackupAttachmentDownloadProgress } from '../sql/Interface';
+import lodash from 'lodash';
+import type { BackupAttachmentDownloadProgress } from '../sql/Interface.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { throttle } = lodash;
 
 export async function updateBackupMediaDownloadProgress(
   getBackupAttachmentDownloadProgress: () => Promise<BackupAttachmentDownloadProgress>
@@ -11,8 +14,8 @@ export async function updateBackupMediaDownloadProgress(
     await getBackupAttachmentDownloadProgress();
 
   await Promise.all([
-    window.storage.put('backupMediaDownloadCompletedBytes', completedBytes),
-    window.storage.put('backupMediaDownloadTotalBytes', totalBytes),
+    itemStorage.put('backupMediaDownloadCompletedBytes', completedBytes),
+    itemStorage.put('backupMediaDownloadTotalBytes', totalBytes),
   ]);
 }
 

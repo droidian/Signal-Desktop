@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import type { ConversationType } from '../state/ducks/conversations';
-import * as Bytes from '../Bytes';
-import { createLogger } from '../logging/log';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import * as Bytes from '../Bytes.js';
+import { createLogger } from '../logging/log.js';
+import { ID_V1_LENGTH, ID_LENGTH } from '../types/groups.js';
 
 const log = createLogger('whatTypeOfConversation');
 
@@ -29,8 +30,9 @@ export function isMe(
   conversationAttrs: Pick<ConversationAttributesType, 'e164' | 'serviceId'>
 ): boolean {
   const { e164, serviceId } = conversationAttrs;
-  const ourNumber = window.textsecure.storage.user.getNumber();
-  const ourAci = window.textsecure.storage.user.getAci();
+  const us = window.ConversationController.getOurConversation();
+  const ourNumber = us?.get('e164');
+  const ourAci = us?.get('serviceId');
   return Boolean(
     (e164 && e164 === ourNumber) || (serviceId && serviceId === ourAci)
   );
@@ -54,7 +56,7 @@ export function isGroupV1(
   }
 
   const buffer = Bytes.fromBinary(groupId);
-  return buffer.byteLength === window.Signal.Groups.ID_V1_LENGTH;
+  return buffer.byteLength === ID_V1_LENGTH;
 }
 
 export function isGroupV2(
@@ -70,8 +72,7 @@ export function isGroupV2(
 
   try {
     return (
-      groupVersion === 2 &&
-      Bytes.fromBase64(groupId).byteLength === window.Signal.Groups.ID_LENGTH
+      groupVersion === 2 && Bytes.fromBase64(groupId).byteLength === ID_LENGTH
     );
   } catch (error) {
     log.error('isGroupV2: Failed to process groupId in base64!');

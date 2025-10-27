@@ -1,19 +1,20 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../logging/log';
-import { DataWriter } from '../sql/Client';
-import { getMessageById } from '../messages/getMessageById';
-import { isNotNil } from './isNotNil';
-import { DurationInSeconds } from './durations';
-import { markViewed } from '../services/MessageUpdater';
-import { storageServiceUploadJob } from '../services/storage';
-import { postSaveUpdates } from './cleanup';
+import { createLogger } from '../logging/log.js';
+import { DataWriter } from '../sql/Client.js';
+import { getMessageById } from '../messages/getMessageById.js';
+import { isNotNil } from './isNotNil.js';
+import { DurationInSeconds } from './durations/index.js';
+import { markViewed } from '../services/MessageUpdater.js';
+import { storageServiceUploadJob } from '../services/storage.js';
+import { postSaveUpdates } from './cleanup.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('markOnboardingStoryAsRead');
 
 export async function markOnboardingStoryAsRead(): Promise<boolean> {
-  const existingOnboardingStoryMessageIds = window.storage.get(
+  const existingOnboardingStoryMessageIds = itemStorage.get(
     'existingOnboardingStoryMessageIds'
   );
 
@@ -47,11 +48,11 @@ export async function markOnboardingStoryAsRead(): Promise<boolean> {
   log.info(`marked ${messageAttributes.length} viewed`);
 
   await DataWriter.saveMessages(messageAttributes, {
-    ourAci: window.textsecure.storage.user.getCheckedAci(),
+    ourAci: itemStorage.user.getCheckedAci(),
     postSaveUpdates,
   });
 
-  await window.storage.put('hasViewedOnboardingStory', true);
+  await itemStorage.put('hasViewedOnboardingStory', true);
 
   storageServiceUploadJob({ reason: 'markOnboardingStoryAsRead' });
 

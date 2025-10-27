@@ -1,41 +1,58 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { debounce, omit } from 'lodash';
+import lodash from 'lodash';
 
 import { CallLinkRootKey, CallLinkEpoch } from '@signalapp/ringrtc';
-import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews';
+import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.js';
 import type {
   LinkPreviewImage,
   LinkPreviewResult,
   LinkPreviewSourceType,
   MaybeGrabLinkPreviewOptionsType,
   AddLinkPreviewOptionsType,
-} from '../types/LinkPreview';
-import type { LinkPreviewImage as LinkPreviewFetchImage } from '../linkPreviews/linkPreviewFetch';
-import * as Errors from '../types/errors';
-import type { StickerPackType as StickerPackDBType } from '../sql/Interface';
-import type { MIMEType } from '../types/MIME';
-import * as Bytes from '../Bytes';
-import { sha256 } from '../Crypto';
-import * as LinkPreview from '../types/LinkPreview';
-import * as Stickers from '../types/Stickers';
-import * as VisualAttachment from '../types/VisualAttachment';
-import { createLogger } from '../logging/log';
-import { IMAGE_JPEG, IMAGE_WEBP, stringToMIMEType } from '../types/MIME';
-import { SECOND } from '../util/durations';
-import { autoScale } from '../util/handleImageAttachment';
-import { dropNull } from '../util/dropNull';
-import { fileToBytes } from '../util/fileToBytes';
-import { imageToBlurHash } from '../util/imageToBlurHash';
-import { maybeParseUrl } from '../util/url';
-import { sniffImageMimeType } from '../util/sniffImageMimeType';
-import { drop } from '../util/drop';
-import { calling } from './calling';
-import { getKeyAndEpochFromCallLink } from '../util/callLinks';
-import { getRoomIdFromCallLink } from '../util/callLinksRingrtc';
+} from '../types/LinkPreview.js';
+import type { LinkPreviewImage as LinkPreviewFetchImage } from '../linkPreviews/linkPreviewFetch.js';
+import * as Errors from '../types/errors.js';
+import type { StickerPackType as StickerPackDBType } from '../sql/Interface.js';
+import type { MIMEType } from '../types/MIME.js';
+import * as Bytes from '../Bytes.js';
+import { sha256 } from '../Crypto.js';
+import * as LinkPreview from '../types/LinkPreview.js';
+import { getLinkPreviewSetting } from '../util/Settings.js';
+import { readTempData, readStickerData } from '../util/migrations.js';
+import * as Stickers from '../types/Stickers.js';
+import * as VisualAttachment from '../types/VisualAttachment.js';
+import { createLogger } from '../logging/log.js';
+import {
+  parseGroupLink,
+  deriveGroupFields,
+  getPreJoinGroupInfo,
+  decryptGroupTitle,
+  decryptGroupAvatar,
+} from '../groups.js';
+import { IMAGE_JPEG, IMAGE_WEBP, stringToMIMEType } from '../types/MIME.js';
+import { SECOND } from '../util/durations/index.js';
+import { autoScale } from '../util/handleImageAttachment.js';
+import { dropNull } from '../util/dropNull.js';
+import { fileToBytes } from '../util/fileToBytes.js';
+import { imageToBlurHash } from '../util/imageToBlurHash.js';
+import { maybeParseUrl } from '../util/url.js';
+import { sniffImageMimeType } from '../util/sniffImageMimeType.js';
+import { drop } from '../util/drop.js';
+import { calling } from './calling.js';
+import { getKeyAndEpochFromCallLink } from '../util/callLinks.js';
+import { getRoomIdFromCallLink } from '../util/callLinksRingrtc.js';
+import {
+  fetchLinkPreviewImage,
+  fetchLinkPreviewMetadata,
+} from '../textsecure/WebAPI.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { debounce, omit } = lodash;
 
 const log = createLogger('LinkPreview');
+const { i18n } = window.SignalContext;
 
 const LINK_PREVIEW_TIMEOUT = 60 * SECOND;
 
@@ -66,13 +83,7 @@ function _maybeGrabLinkPreview(
 ): void {
   // Don't generate link previews if user has turned them off. When posting a
   // story we should return minimal (url-only) link previews.
-  if (!LinkPreview.getLinkPreviewSetting() && mode === 'conversation') {
-    return;
-  }
-
-  // Do nothing if we're offline
-  const { messaging } = window.textsecure;
-  if (!messaging) {
+  if (!getLinkPreviewSetting() && mode === 'conversation') {
     return;
   }
 
@@ -105,7 +116,7 @@ function _maybeGrabLinkPreview(
   drop(
     addLinkPreview(link, source, {
       conversationId,
-      disableFetch: !LinkPreview.getLinkPreviewSetting(),
+      disableFetch: !getLinkPreviewSetting(),
     })
   );
 }
@@ -247,7 +258,7 @@ export function getLinkPreviewForSend(
   message: string
 ): Array<LinkPreviewWithHydratedData> {
   // Don't generate link previews if user has turned them off
-  if (!window.storage.get('linkPreviews', false)) {
+  if (!itemStorage.get('linkPreviews', false)) {
     return [];
   }
 
@@ -297,12 +308,6 @@ async function getPreview(
   url: string,
   abortSignal: Readonly<AbortSignal>
 ): Promise<null | LinkPreviewResult> {
-  const { messaging } = window.textsecure;
-
-  if (!messaging) {
-    throw new Error('messaging is not available!');
-  }
-
   if (LinkPreview.isStickerPack(url)) {
     return getStickerPackPreview(url, abortSignal);
   }
@@ -318,10 +323,7 @@ async function getPreview(
     return null;
   }
 
-  const linkPreviewMetadata = await messaging.fetchLinkPreviewMetadata(
-    url,
-    abortSignal
-  );
+  const linkPreviewMetadata = await fetchLinkPreviewMetadata(url, abortSignal);
   if (!linkPreviewMetadata || abortSignal.aborted) {
     log.warn('aborted');
     return null;
@@ -336,10 +338,7 @@ async function getPreview(
       fetchedImage = null;
     } else {
       try {
-        const fullSizeImage = await messaging.fetchLinkPreviewImage(
-          image,
-          abortSignal
-        );
+        const fullSizeImage = await fetchLinkPreviewImage(image, abortSignal);
         if (abortSignal.aborted) {
           return null;
         }
@@ -475,8 +474,8 @@ async function getStickerPackPreview(
     const sticker = pack.stickers[coverStickerId];
     const data =
       pack.status === 'ephemeral'
-        ? await window.Signal.Migrations.readTempData(sticker)
-        : await window.Signal.Migrations.readStickerData(sticker);
+        ? await readTempData(sticker)
+        : await readStickerData(sticker);
 
     if (abortSignal.aborted) {
       return null;
@@ -530,42 +529,31 @@ async function getGroupPreview(
   }
   const groupData = hash.slice(1);
 
-  const { inviteLinkPassword, masterKey } =
-    window.Signal.Groups.parseGroupLink(groupData);
+  const { inviteLinkPassword, masterKey } = parseGroupLink(groupData);
 
-  const fields = window.Signal.Groups.deriveGroupFields(
-    Bytes.fromBase64(masterKey)
-  );
+  const fields = deriveGroupFields(Bytes.fromBase64(masterKey));
   const id = Bytes.toBase64(fields.id);
   const logId = `groupv2(${id})`;
   const secretParams = Bytes.toBase64(fields.secretParams);
 
   log.info(`getGroupPreview/${logId}: Fetching pre-join state`);
-  const result = await window.Signal.Groups.getPreJoinGroupInfo(
-    inviteLinkPassword,
-    masterKey
-  );
+  const result = await getPreJoinGroupInfo(inviteLinkPassword, masterKey);
 
   if (abortSignal.aborted) {
     return null;
   }
 
   const title =
-    window.Signal.Groups.decryptGroupTitle(
-      dropNull(result.title),
-      secretParams
-    ) || window.i18n('icu:unknownGroup');
-  const description = window.i18n('icu:GroupV2--join--group-metadata--full', {
+    decryptGroupTitle(dropNull(result.title), secretParams) ||
+    i18n('icu:unknownGroup');
+  const description = i18n('icu:GroupV2--join--group-metadata--full', {
     memberCount: result?.memberCount ?? 0,
   });
   let image: undefined | LinkPreviewImage;
 
   if (result.avatar) {
     try {
-      const data = await window.Signal.Groups.decryptGroupAvatar(
-        result.avatar,
-        secretParams
-      );
+      const data = await decryptGroupAvatar(result.avatar, secretParams);
       image = {
         data,
         size: data.byteLength,
@@ -616,9 +604,9 @@ async function getCallLinkPreview(
     url,
     title:
       callLinkState.name === ''
-        ? window.i18n('icu:calling__call-link-default-title')
+        ? i18n('icu:calling__call-link-default-title')
         : callLinkState.name,
-    description: window.i18n('icu:message--call-link-description'),
+    description: i18n('icu:message--call-link-description'),
     image: undefined,
     date: null,
   };

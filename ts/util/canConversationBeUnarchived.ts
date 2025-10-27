@@ -1,8 +1,9 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import { isConversationMuted } from './isConversationMuted';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { isConversationMuted } from './isConversationMuted.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 export function canConversationBeUnarchived(
   attrs: ConversationAttributesType
@@ -15,7 +16,7 @@ export function canConversationBeUnarchived(
     return true;
   }
 
-  if (window.storage.get('keepMutedChatsArchived') ?? false) {
+  if (itemStorage.get('keepMutedChatsArchived') ?? false) {
     return false;
   }
 

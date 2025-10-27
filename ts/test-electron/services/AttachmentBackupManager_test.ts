@@ -3,29 +3,33 @@
 
 import * as sinon from 'sinon';
 import { assert } from 'chai';
-import { join } from 'path';
-import { createWriteStream } from 'fs';
-import { ensureFile } from 'fs-extra';
+import { join } from 'node:path';
+import { createWriteStream } from 'node:fs';
+import fsExtra from 'fs-extra';
 
-import * as Bytes from '../../Bytes';
+import * as Bytes from '../../Bytes.js';
 import {
   AttachmentBackupManager,
   FILE_NOT_FOUND_ON_TRANSIT_TIER_STATUS,
   runAttachmentBackupJob,
-} from '../../jobs/AttachmentBackupManager';
+} from '../../jobs/AttachmentBackupManager.js';
 import type {
   AttachmentBackupJobType,
   CoreAttachmentBackupJobType,
   StandardAttachmentBackupJobType,
   ThumbnailAttachmentBackupJobType,
-} from '../../types/AttachmentBackup';
-import { DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import { APPLICATION_OCTET_STREAM, VIDEO_MP4 } from '../../types/MIME';
-import { createName, getRelativePath } from '../../util/attachmentPath';
-import { encryptAttachmentV2, generateKeys } from '../../AttachmentCrypto';
-import { SECOND } from '../../util/durations';
-import { HTTPError } from '../../textsecure/Errors';
+} from '../../types/AttachmentBackup.js';
+import { DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import { APPLICATION_OCTET_STREAM, VIDEO_MP4 } from '../../types/MIME.js';
+import { createName, getRelativePath } from '../../util/attachmentPath.js';
+import { getAbsoluteAttachmentPath } from '../../util/migrations.js';
+import { encryptAttachmentV2, generateKeys } from '../../AttachmentCrypto.js';
+import { SECOND } from '../../util/durations/index.js';
+import { HTTPError } from '../../types/HTTPError.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { ensureFile } = fsExtra;
 
 const TRANSIT_CDN = 2;
 const TRANSIT_CDN_FOR_NEW_UPLOAD = 42;
@@ -96,7 +100,6 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
   }
 
   before(async () => {
-    const { getAbsoluteAttachmentPath } = window.Signal.Migrations;
     const absolutePath = getAbsoluteAttachmentPath(RELATIVE_ATTACHMENT_PATH);
     await ensureFile(absolutePath);
     await DataWriter.ensureFilePermissions();
@@ -113,8 +116,8 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
   beforeEach(async () => {
     await DataWriter.removeAll();
 
-    await window.storage.put('masterKey', Bytes.toBase64(getRandomBytes(32)));
-    await window.storage.put('backupMediaRootKey', getRandomBytes(32));
+    await itemStorage.put('masterKey', Bytes.toBase64(getRandomBytes(32)));
+    await itemStorage.put('backupMediaRootKey', getRandomBytes(32));
 
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
@@ -139,7 +142,6 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     });
     const decryptAttachmentV2ToSink = sinon.stub();
 
-    const { getAbsoluteAttachmentPath } = window.Signal.Migrations;
     const abortController = new AbortController();
     runJob = sandbox.stub().callsFake((job: AttachmentBackupJobType) => {
       return runAttachmentBackupJob(
@@ -167,7 +169,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     sandbox.restore();
     await backupManager?.stop();
     await DataWriter.removeAll();
-    await window.storage.fetch();
+    await itemStorage.fetch();
   });
 
   async function addJobs(

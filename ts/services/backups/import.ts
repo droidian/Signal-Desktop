@@ -2,52 +2,55 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { Aci, Pni, ServiceId } from '@signalapp/libsignal-client';
-import { ReceiptCredentialPresentation } from '@signalapp/libsignal-client/zkgroup';
+import {
+  BackupLevel,
+  ReceiptCredentialPresentation,
+} from '@signalapp/libsignal-client/zkgroup.js';
 import { v7 as generateUuid } from 'uuid';
 import pMap from 'p-map';
-import { Writable } from 'stream';
-import { isNumber } from 'lodash';
+import { Writable } from 'node:stream';
+import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
 import type Long from 'long';
 
-import { Backups, SignalService } from '../../protobuf';
-import { DataReader, DataWriter } from '../../sql/Client';
+import { Backups, SignalService } from '../../protobuf/index.js';
+import { DataReader, DataWriter } from '../../sql/Client.js';
 import {
   AttachmentDownloadSource,
   type StoryDistributionWithMembersType,
   type IdentityKeyType,
-} from '../../sql/Interface';
-import { createLogger } from '../../logging/log';
-import { GiftBadgeStates } from '../../components/conversation/Message';
-import { StorySendMode, MY_STORY_ID } from '../../types/Stories';
-import type { AciString, ServiceIdString } from '../../types/ServiceId';
-import * as LinkPreview from '../../types/LinkPreview';
+} from '../../sql/Interface.js';
+import { createLogger } from '../../logging/log.js';
+import { GiftBadgeStates } from '../../types/GiftBadgeStates.js';
+import { StorySendMode, MY_STORY_ID } from '../../types/Stories.js';
+import type { AciString, ServiceIdString } from '../../types/ServiceId.js';
+import * as LinkPreview from '../../types/LinkPreview.js';
 import {
   fromAciObject,
   fromPniObject,
   fromServiceIdObject,
-} from '../../types/ServiceId';
-import { isStoryDistributionId } from '../../types/StoryDistributionId';
-import * as Errors from '../../types/errors';
-import { PaymentEventKind } from '../../types/Payment';
-import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
+} from '../../types/ServiceId.js';
+import { isStoryDistributionId } from '../../types/StoryDistributionId.js';
+import * as Errors from '../../types/errors.js';
+import { PaymentEventKind } from '../../types/Payment.js';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.js';
 import {
   ContactFormType,
   AddressType as ContactAddressType,
-} from '../../types/EmbeddedContact';
+} from '../../types/EmbeddedContact.js';
 import {
   STICKERPACK_ID_BYTE_LEN,
   STICKERPACK_KEY_BYTE_LEN,
   createPacksFromBackup,
   type StickerPackPointerType,
-} from '../../types/Stickers';
+} from '../../types/Stickers.js';
 import type {
   ConversationColorType,
   CustomColorsItemType,
   CustomColorType,
   CustomColorDataType,
-} from '../../types/Colors';
-import { SEALED_SENDER } from '../../types/SealedSender';
+} from '../../types/Colors.js';
+import { SEALED_SENDER } from '../../types/SealedSender.js';
 import type {
   ConversationAttributesType,
   CustomError,
@@ -55,53 +58,61 @@ import type {
   MessageReactionType,
   EditHistoryType,
   QuotedMessageType,
-} from '../../model-types.d';
-import { assertDev, strictAssert } from '../../util/assert';
+} from '../../model-types.d.ts';
+import { assertDev, strictAssert } from '../../util/assert.js';
+import { upgradeMessageSchema } from '../../util/migrations.js';
 import {
   getCheckedTimestampFromLong,
   getCheckedTimestampOrUndefinedFromLong,
   getTimestampOrUndefinedFromLong,
-} from '../../util/timestampLongUtils';
-import { MAX_SAFE_DATE } from '../../util/timestamp';
-import { DurationInSeconds, SECOND } from '../../util/durations';
-import { calculateExpirationTimestamp } from '../../util/expirationTimer';
-import { dropNull } from '../../util/dropNull';
+} from '../../util/timestampLongUtils.js';
+import { MAX_SAFE_DATE } from '../../util/timestamp.js';
+import { DurationInSeconds, SECOND } from '../../util/durations/index.js';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.js';
+import { dropNull } from '../../util/dropNull.js';
 import {
   deriveGroupID,
   deriveGroupSecretParams,
   deriveGroupPublicParams,
-} from '../../util/zkgroup';
-import { incrementMessageCounter } from '../../util/incrementMessageCounter';
-import { generateMessageId } from '../../util/generateMessageId';
-import { isAciString } from '../../util/isAciString';
-import { PhoneNumberDiscoverability } from '../../util/phoneNumberDiscoverability';
-import { PhoneNumberSharingMode } from '../../util/phoneNumberSharingMode';
-import { bytesToUuid } from '../../util/uuidToBytes';
-import { missingCaseError } from '../../util/missingCaseError';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SendStatus } from '../../messages/MessageSendState';
-import type { SendStateByConversationId } from '../../messages/MessageSendState';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { constantTimeEqual, deriveAccessKey } from '../../Crypto';
-import * as Bytes from '../../Bytes';
-import { BACKUP_VERSION, WALLPAPER_TO_BUBBLE_COLOR } from './constants';
-import { UnsupportedBackupVersion } from './errors';
-import type { AboutMe, LocalChatStyle } from './types';
-import { BackupType } from './types';
-import { getBackupMediaRootKey } from './crypto';
-import type { GroupV2ChangeDetailType } from '../../groups';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
-import { isNotNil } from '../../util/isNotNil';
-import { isGroup } from '../../util/whatTypeOfConversation';
-import { rgbIntToHSL } from '../../util/rgbToHSL';
+} from '../../util/zkgroup.js';
+import { incrementMessageCounter } from '../../util/incrementMessageCounter.js';
+import { generateMessageId } from '../../util/generateMessageId.js';
+import { isAciString } from '../../util/isAciString.js';
+import { PhoneNumberDiscoverability } from '../../util/phoneNumberDiscoverability.js';
+import { PhoneNumberSharingMode } from '../../types/PhoneNumberSharingMode.js';
+import { bytesToUuid } from '../../util/uuidToBytes.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import type { SendStateByConversationId } from '../../messages/MessageSendState.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { constantTimeEqual, deriveAccessKey } from '../../Crypto.js';
+import { signalProtocolStore } from '../../SignalProtocolStore.js';
+import * as Bytes from '../../Bytes.js';
+import { BACKUP_VERSION, WALLPAPER_TO_BUBBLE_COLOR } from './constants.js';
+import { UnsupportedBackupVersion } from './errors.js';
+import type { AboutMe, LocalChatStyle } from './types.js';
+import { BackupType } from './types.js';
+import { getBackupMediaRootKey } from './crypto.js';
+import type { GroupV2ChangeDetailType } from '../../types/groups.ts';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { isGroup } from '../../util/whatTypeOfConversation.js';
+import { rgbIntToHSL } from '../../util/rgbToHSL.js';
 import {
   convertBackupMessageAttachmentToAttachment,
   convertFilePointerToAttachment,
-} from './util/filePointers';
-import { filterAndClean, trimMessageWhitespace } from '../../types/BodyRange';
-import { APPLICATION_OCTET_STREAM, stringToMIMEType } from '../../types/MIME';
-import { groupAvatarJobQueue } from '../../jobs/groupAvatarJobQueue';
-import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager';
+} from './util/filePointers.js';
+import {
+  filterAndClean,
+  trimMessageWhitespace,
+} from '../../types/BodyRange.js';
+import {
+  APPLICATION_OCTET_STREAM,
+  stringToMIMEType,
+} from '../../types/MIME.js';
+import { groupAvatarJobQueue } from '../../jobs/groupAvatarJobQueue.js';
+import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager.js';
 import {
   AdhocCallStatus,
   CallDirection,
@@ -109,44 +120,47 @@ import {
   CallType,
   DirectCallStatus,
   GroupCallStatus,
-} from '../../types/CallDisposition';
-import type { CallHistoryDetails } from '../../types/CallDisposition';
-import { CallLinkRestrictions, isCallLinkAdmin } from '../../types/CallLink';
-import type { CallLinkType } from '../../types/CallLink';
-import type { RawBodyRange } from '../../types/BodyRange';
+} from '../../types/CallDisposition.js';
+import type { CallHistoryDetails } from '../../types/CallDisposition.js';
+import { CallLinkRestrictions, isCallLinkAdmin } from '../../types/CallLink.js';
+import type { CallLinkType } from '../../types/CallLink.js';
+import type { RawBodyRange } from '../../types/BodyRange.js';
 import {
   fromAdminKeyBytes,
   toCallHistoryFromUnusedCallLink,
-} from '../../util/callLinks';
+} from '../../util/callLinks.js';
 import {
   getRoomIdFromRootKey,
   fromEpochBytes,
-} from '../../util/callLinksRingrtc';
-import { loadAllAndReinitializeRedux } from '../allLoaders';
+} from '../../util/callLinksRingrtc.js';
+import { loadAllAndReinitializeRedux } from '../allLoaders.js';
 import {
-  resetBackupMediaDownloadProgress,
   startBackupMediaDownload,
-} from '../../util/backupMediaDownload';
+  resetBackupMediaDownloadStats,
+} from '../../util/backupMediaDownload.js';
 import {
   getEnvironment,
   isTestEnvironment,
   isTestOrMockEnvironment,
-} from '../../environment';
-import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads';
-import { isAdhoc, isNightly } from '../../util/version';
-import { ToastType } from '../../types/Toast';
-import { isConversationAccepted } from '../../util/isConversationAccepted';
-import { saveBackupsSubscriberData } from '../../util/backupSubscriptionData';
-import { postSaveUpdates } from '../../util/cleanup';
-import type { LinkPreviewType } from '../../types/message/LinkPreviews';
-import { MessageModel } from '../../models/messages';
+} from '../../environment.js';
+import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads.js';
+import { isAdhoc, isNightly } from '../../util/version.js';
+import { ToastType } from '../../types/Toast.js';
+import { isConversationAccepted } from '../../util/isConversationAccepted.js';
+import { saveBackupsSubscriberData } from '../../util/backupSubscriptionData.js';
+import { postSaveUpdates } from '../../util/cleanup.js';
+import type { LinkPreviewType } from '../../types/message/LinkPreviews.js';
+import { MessageModel } from '../../models/messages.js';
 import {
   DEFAULT_PROFILE_COLOR,
   fromDayOfWeekArray,
   type NotificationProfileType,
-} from '../../types/NotificationProfile';
-import { normalizeNotificationProfileId } from '../../types/NotificationProfile-node';
-import { updateBackupMediaDownloadProgress } from '../../util/updateBackupMediaDownloadProgress';
+} from '../../types/NotificationProfile.js';
+import { normalizeNotificationProfileId } from '../../types/NotificationProfile-node.js';
+import { updateBackupMediaDownloadProgress } from '../../util/updateBackupMediaDownloadProgress.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { isNumber } = lodash;
 
 const log = createLogger('import');
 
@@ -254,6 +268,7 @@ export class BackupImportStream extends Writable {
   #releaseNotesChatId: Long | undefined;
   #pendingGroupAvatars = new Map<string, string>();
   #frameErrorCount: number = 0;
+  #backupTier: BackupLevel | undefined;
 
   private constructor(
     private readonly backupType: BackupType,
@@ -267,7 +282,8 @@ export class BackupImportStream extends Writable {
     localBackupSnapshotDir: string | undefined = undefined
   ): Promise<BackupImportStream> {
     await AttachmentDownloadManager.stop();
-    await resetBackupMediaDownloadProgress();
+    await DataWriter.removeAllBackupAttachmentDownloadJobs();
+    await resetBackupMediaDownloadStats();
 
     return new BackupImportStream(backupType, localBackupSnapshotDir);
   }
@@ -294,7 +310,7 @@ export class BackupImportStream extends Writable {
           throw new Error('Missing mediaRootBackupKey');
         }
 
-        await window.storage.put(
+        await itemStorage.put(
           'restoredBackupFirstAppVersion',
           info.firstAppVersion
         );
@@ -304,7 +320,7 @@ export class BackupImportStream extends Writable {
         if (!constantTimeEqual(theirKey, ourKey)) {
           // Use root key from integration test
           if (isTestEnvironment(getEnvironment())) {
-            await window.storage.put(
+            await itemStorage.put(
               'backupMediaRootKey',
               info.mediaRootBackupKey
             );
@@ -369,11 +385,11 @@ export class BackupImportStream extends Writable {
       await window.ConversationController.load();
       await window.ConversationController.checkForConflicts();
 
-      window.storage.reset();
-      await window.storage.fetch();
+      itemStorage.reset();
+      await itemStorage.fetch();
 
       // Load identity keys we just saved.
-      await window.storage.protocol.hydrateCaches();
+      await signalProtocolStore.hydrateCaches();
 
       // Load all data into redux (need to do this before updating a
       // conversation's last message, which uses redux selectors)
@@ -412,7 +428,7 @@ export class BackupImportStream extends Writable {
         { concurrency: MAX_CONCURRENCY }
       );
 
-      await window.storage.put(
+      await itemStorage.put(
         'pinnedConversationIds',
         this.#pinnedConversations
           .sort(([a], [b]) => {
@@ -575,7 +591,7 @@ export class BackupImportStream extends Writable {
     attributes: MessageAttributesType
   ): Promise<MessageAttributesType> {
     try {
-      return await window.Signal.Migrations.upgradeMessageSchema(attributes);
+      return await upgradeMessageSchema(attributes);
     } catch (error) {
       log.error(
         `${this.#logId}: failed to migrate a message ${attributes.sent_at}, ` +
@@ -673,7 +689,9 @@ export class BackupImportStream extends Writable {
           const model = new MessageModel(attributes);
           attachmentDownloadJobPromises.push(
             queueAttachmentDownloads(model, {
-              source: AttachmentDownloadSource.BACKUP_IMPORT,
+              source: this.#isMediaEnabledBackup()
+                ? AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA
+                : AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA,
               isManualDownload: false,
             })
           );
@@ -708,10 +726,8 @@ export class BackupImportStream extends Writable {
     };
     this.#ourConversation = me;
 
-    const { storage } = window;
-
     strictAssert(Bytes.isNotEmpty(profileKey), 'Missing profile key');
-    await storage.put('profileKey', profileKey);
+    await itemStorage.put('profileKey', profileKey);
     this.#ourConversation.profileKey = Bytes.toBase64(profileKey);
     await this.#updateConversation(this.#ourConversation);
 
@@ -722,14 +738,14 @@ export class BackupImportStream extends Writable {
     if (usernameLink != null) {
       const { entropy, serverId, color } = usernameLink;
       if (Bytes.isNotEmpty(entropy) && Bytes.isNotEmpty(serverId)) {
-        await storage.put('usernameLink', {
+        await itemStorage.put('usernameLink', {
           entropy,
           serverId,
         });
       }
 
       // Same numeric value, no conversion needed
-      await storage.put('usernameLinkColor', color ?? 0);
+      await itemStorage.put('usernameLinkColor', color ?? 0);
     }
 
     if (givenName != null) {
@@ -739,19 +755,19 @@ export class BackupImportStream extends Writable {
       me.profileFamilyName = familyName;
     }
     if (avatarUrlPath != null) {
-      await storage.put('avatarUrl', avatarUrlPath);
+      await itemStorage.put('avatarUrl', avatarUrlPath);
     }
     if (donationSubscriberData != null) {
       const { subscriberId, currencyCode, manuallyCancelled } =
         donationSubscriberData;
       if (Bytes.isNotEmpty(subscriberId)) {
-        await storage.put('subscriberId', subscriberId);
+        await itemStorage.put('subscriberId', subscriberId);
       }
       if (currencyCode != null) {
-        await storage.put('subscriberCurrencyCode', currencyCode);
+        await itemStorage.put('subscriberCurrencyCode', currencyCode);
       }
       if (manuallyCancelled != null) {
-        await storage.put(
+        await itemStorage.put(
           'donorSubscriptionManuallyCancelled',
           manuallyCancelled
         );
@@ -760,87 +776,94 @@ export class BackupImportStream extends Writable {
 
     await saveBackupsSubscriberData(backupsSubscriberData);
 
-    await storage.put(
+    await itemStorage.put(
       'read-receipt-setting',
       accountSettings?.readReceipts === true
     );
-    await storage.put(
+    await itemStorage.put(
       'sealedSenderIndicators',
       accountSettings?.sealedSenderIndicators === true
     );
-    await storage.put(
+    await itemStorage.put(
       'typingIndicators',
       accountSettings?.typingIndicators === true
     );
-    await storage.put('linkPreviews', accountSettings?.linkPreviews === true);
-    await storage.put(
+    await itemStorage.put(
+      'linkPreviews',
+      accountSettings?.linkPreviews === true
+    );
+    await itemStorage.put(
       'preferContactAvatars',
       accountSettings?.preferContactAvatars === true
     );
     if (accountSettings?.universalExpireTimerSeconds) {
-      await storage.put(
+      await itemStorage.put(
         'universalExpireTimer',
         accountSettings.universalExpireTimerSeconds
       );
     }
-    await storage.put(
+    await itemStorage.put(
       'displayBadgesOnProfile',
       accountSettings?.displayBadgesOnProfile === true
     );
-    await storage.put(
+    await itemStorage.put(
       'keepMutedChatsArchived',
       accountSettings?.keepMutedChatsArchived === true
     );
-    await storage.put(
+    await itemStorage.put(
       'hasSetMyStoriesPrivacy',
       accountSettings?.hasSetMyStoriesPrivacy === true
     );
-    await storage.put(
+    await itemStorage.put(
       'hasViewedOnboardingStory',
       accountSettings?.hasViewedOnboardingStory === true
     );
-    await storage.put(
+    await itemStorage.put(
       'hasStoriesDisabled',
       accountSettings?.storiesDisabled === true
     );
 
     // an undefined value for storyViewReceiptsEnabled is semantically different from
     // false: it causes us to fallback to `read-receipt-setting`
-    await storage.put(
+    await itemStorage.put(
       'storyViewReceiptsEnabled',
       accountSettings?.storyViewReceiptsEnabled ?? undefined
     );
 
-    await storage.put(
+    await itemStorage.put(
       'hasCompletedUsernameOnboarding',
       accountSettings?.hasCompletedUsernameOnboarding === true
     );
-    await storage.put(
+    await itemStorage.put(
       'hasSeenGroupStoryEducationSheet',
       accountSettings?.hasSeenGroupStoryEducationSheet === true
     );
-    await storage.put(
+    await itemStorage.put(
       'preferredReactionEmoji',
       accountSettings?.preferredReactionEmoji || []
     );
     if (svrPin) {
-      await storage.put('svrPin', svrPin);
+      await itemStorage.put('svrPin', svrPin);
     }
 
     if (isTestOrMockEnvironment()) {
       // Only relevant for tests
-      await storage.put(
+      await itemStorage.put(
         'optimizeOnDeviceStorage',
         accountSettings?.optimizeOnDeviceStorage === true
       );
     }
 
-    await storage.put('backupTier', accountSettings?.backupTier?.toNumber());
+    this.#backupTier = accountSettings?.backupTier?.toNumber();
+    await itemStorage.put(
+      'backupTier',
+      accountSettings?.backupTier?.toNumber()
+    );
 
     const { PhoneNumberSharingMode: BackupMode } = Backups.AccountData;
     switch (accountSettings?.phoneNumberSharingMode) {
       case BackupMode.EVERYBODY:
-        await storage.put(
+        await itemStorage.put(
           'phoneNumberSharingMode',
           PhoneNumberSharingMode.Everybody
         );
@@ -848,7 +871,7 @@ export class BackupImportStream extends Writable {
       case BackupMode.UNKNOWN:
       case BackupMode.NOBODY:
       default:
-        await storage.put(
+        await itemStorage.put(
           'phoneNumberSharingMode',
           PhoneNumberSharingMode.Nobody
         );
@@ -856,12 +879,12 @@ export class BackupImportStream extends Writable {
     }
 
     if (accountSettings?.notDiscoverableByPhoneNumber) {
-      await window.storage.put(
+      await itemStorage.put(
         'phoneNumberDiscoverability',
         PhoneNumberDiscoverability.NotDiscoverable
       );
     } else {
-      await window.storage.put(
+      await itemStorage.put(
         'phoneNumberDiscoverability',
         PhoneNumberDiscoverability.Discoverable
       );
@@ -876,32 +899,32 @@ export class BackupImportStream extends Writable {
     );
 
     if (defaultChatStyle.color != null) {
-      await window.storage.put('defaultConversationColor', {
+      await itemStorage.put('defaultConversationColor', {
         color: defaultChatStyle.color,
         customColorData: defaultChatStyle.customColorData,
       });
     }
 
     if (defaultChatStyle.wallpaperPhotoPointer != null) {
-      await window.storage.put(
+      await itemStorage.put(
         'defaultWallpaperPhotoPointer',
         defaultChatStyle.wallpaperPhotoPointer
       );
     }
     if (defaultChatStyle.wallpaperPreset != null) {
-      await window.storage.put(
+      await itemStorage.put(
         'defaultWallpaperPreset',
         defaultChatStyle.wallpaperPreset
       );
     }
     if (defaultChatStyle.dimWallpaperInDarkMode != null) {
-      await window.storage.put(
+      await itemStorage.put(
         'defaultDimWallpaperInDarkMode',
         defaultChatStyle.dimWallpaperInDarkMode
       );
     }
     if (defaultChatStyle.autoBubbleColor != null) {
-      await window.storage.put(
+      await itemStorage.put(
         'defaultAutoBubbleColor',
         defaultChatStyle.autoBubbleColor
       );
@@ -1014,10 +1037,10 @@ export class BackupImportStream extends Writable {
 
     if (contact.blocked) {
       if (serviceId) {
-        await window.storage.blocked.addBlockedServiceId(serviceId);
+        await itemStorage.blocked.addBlockedServiceId(serviceId);
       }
       if (e164) {
-        await window.storage.blocked.addBlockedNumber(e164);
+        await itemStorage.blocked.addBlockedNumber(e164);
       }
     }
 
@@ -1185,7 +1208,7 @@ export class BackupImportStream extends Writable {
       this.#pendingGroupAvatars.set(attrs.id, avatarUrl);
     }
     if (group.blocked) {
-      await window.storage.blocked.addBlockedGroup(groupId);
+      await itemStorage.blocked.addBlockedGroup(groupId);
     }
 
     return attrs;
@@ -2955,12 +2978,9 @@ export class BackupImportStream extends Writable {
       }
       if (update.groupInvitationDeclinedUpdate) {
         const { inviterAci, inviteeAci } = update.groupInvitationDeclinedUpdate;
-        if (!inviteeAci || Bytes.isEmpty(inviteeAci)) {
-          throw new Error(
-            `${logId}: groupInvitationDeclinedUpdate had missing inviteeAci!`
-          );
-        }
-        from = fromAciObject(Aci.fromUuidBytes(inviteeAci));
+        from = Bytes.isNotEmpty(inviteeAci)
+          ? fromAciObject(Aci.fromUuidBytes(inviteeAci))
+          : undefined;
         details.push({
           type: 'pending-remove-one',
           inviter: Bytes.isNotEmpty(inviterAci)
@@ -3612,7 +3632,7 @@ export class BackupImportStream extends Writable {
       });
     }
 
-    await window.storage.put('customColors', customColors);
+    await itemStorage.put('customColors', customColors);
   }
 
   #fromChatStyle(chatStyle: Backups.IChatStyle | null | undefined): Omit<
@@ -3773,6 +3793,14 @@ export class BackupImportStream extends Writable {
     }
 
     return {};
+  }
+
+  #isLocalBackup() {
+    return this.localBackupSnapshotDir != null;
+  }
+
+  #isMediaEnabledBackup() {
+    return this.#isLocalBackup() || this.#backupTier === BackupLevel.Paid;
   }
 }
 

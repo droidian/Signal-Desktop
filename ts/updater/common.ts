@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /* eslint-disable no-console */
-import { createWriteStream } from 'fs';
-import { pathExists } from 'fs-extra';
-import { mkdir, readdir, stat, writeFile } from 'fs/promises';
-import { throttle } from 'lodash';
-import { release as osRelease, tmpdir } from 'os';
-import { extname, join, normalize } from 'path';
+import { createWriteStream } from 'node:fs';
+import fsExtra from 'fs-extra';
+import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
+import lodash from 'lodash';
+import { release as osRelease, tmpdir } from 'node:os';
+import { extname, join, normalize } from 'node:path';
 
 import config from 'config';
 import type { ParserConfiguration } from 'dashdash';
@@ -19,47 +19,51 @@ import { v4 as getGuid } from 'uuid';
 import type { BrowserWindow } from 'electron';
 import { app, ipcMain } from 'electron';
 
-import { missingCaseError } from '../util/missingCaseError';
-import { getTempPath, getUpdateCachePath } from '../../app/attachments';
-import { markShouldNotQuit, markShouldQuit } from '../../app/window_state';
-import { DialogType } from '../types/Dialogs';
-import * as Errors from '../types/errors';
-import { strictAssert } from '../util/assert';
-import { drop } from '../util/drop';
-import * as durations from '../util/durations';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { getTempPath, getUpdateCachePath } from '../../app/attachments.js';
+import { markShouldNotQuit, markShouldQuit } from '../../app/window_state.js';
+import { DialogType } from '../types/Dialogs.js';
+import * as Errors from '../types/errors.js';
+import { strictAssert } from '../util/assert.js';
+import { drop } from '../util/drop.js';
+import * as durations from '../util/durations/index.js';
 import {
   isAlpha,
   isAxolotl,
   isBeta,
   isNotUpdatable,
   isStaging,
-} from '../util/version';
-import { isPathInside } from '../util/isPathInside';
+} from '../util/version.js';
+import { isPathInside } from '../util/isPathInside.js';
 
-import * as packageJson from '../../package.json';
+import { version as packageVersion } from '../util/packageJson.js';
 
 import {
   getSignatureFileName,
   hexToBinary,
   verifySignature,
-} from './signature';
+} from './signature.js';
 import {
   download as downloadDifferentialData,
   getBlockMapFileName,
   isValidPreparedData as isValidDifferentialData,
   prepareDownload as prepareDifferentialDownload,
-} from './differential';
-import { getGotOptions } from './got';
+} from './differential.js';
+import { getGotOptions } from './got.js';
 import {
   checkIntegrity,
   gracefulRename,
   gracefulRmRecursive,
   isTimeToUpdate,
-} from './util';
+} from './util.js';
 
-import type { LoggerType } from '../types/Logging';
-import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential';
-import type { MainSQL } from '../sql/main';
+import type { LoggerType } from '../types/Logging.js';
+import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential.js';
+import type { MainSQL } from '../sql/main.js';
+
+const { pathExists } = fsExtra;
+
+const { throttle } = lodash;
 
 const POLL_INTERVAL = 30 * durations.MINUTE;
 
@@ -306,7 +310,7 @@ export abstract class Updater {
       this.logger.info('safePoll: polling now');
       await this.#checkForUpdatesMaybeInstall(CheckType.Normal);
     } catch (error) {
-      this.logger.error(`safePoll: ${Errors.toLogFormat(error)}`);
+      this.logger.warn(`safePoll: ${Errors.toLogFormat(error)}`);
     } finally {
       this.#schedulePoll();
     }
@@ -543,7 +547,7 @@ export abstract class Updater {
   async #checkForUpdates(
     checkType: CheckType
   ): Promise<UpdateInformationType | undefined> {
-    if (isNotUpdatable(packageJson.version)) {
+    if (isNotUpdatable(packageVersion)) {
       this.logger.info(
         'checkForUpdates: not checking for updates, this is not an updatable build'
       );
@@ -589,7 +593,7 @@ export abstract class Updater {
 
     if (checkType === CheckType.Normal && !isVersionNewer(version)) {
       this.logger.info(
-        `checkForUpdates: ${version} is not newer than ${packageJson.version}; ` +
+        `checkForUpdates: ${version} is not newer than ${packageVersion}; ` +
           'no new update available'
       );
 
@@ -987,30 +991,27 @@ export function getUpdatesFileName(): string {
 }
 
 function getChannel(): string {
-  const { version } = packageJson;
-  if (isNotUpdatable(version)) {
+  if (isNotUpdatable(packageVersion)) {
     // we don't want ad hoc versions to update
-    return version;
+    return packageVersion;
   }
-  if (isStaging(version)) {
+  if (isStaging(packageVersion)) {
     return 'staging';
   }
-  if (isAlpha(version)) {
+  if (isAlpha(packageVersion)) {
     return 'alpha';
   }
-  if (isAxolotl(version)) {
+  if (isAxolotl(packageVersion)) {
     return 'axolotl';
   }
-  if (isBeta(version)) {
+  if (isBeta(packageVersion)) {
     return 'beta';
   }
   return 'latest';
 }
 
 function isVersionNewer(newVersion: string): boolean {
-  const { version } = packageJson;
-
-  return gt(newVersion, version);
+  return gt(newVersion, packageVersion);
 }
 
 export function getVersion(info: JSONUpdateSchema): string | null {

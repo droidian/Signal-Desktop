@@ -4,16 +4,20 @@
 import type {
   ConversationAttributesType,
   ConversationRenderInfoType,
-} from '../model-types.d';
-import { combineNames } from './combineNames';
-import { getRegionCodeForNumber } from './libphonenumberUtil';
-import { isDirectConversation } from './whatTypeOfConversation';
-import { getE164 } from './getE164';
+} from '../model-types.d.ts';
+import { combineNames } from './combineNames.js';
+import { getRegionCodeForNumber } from './libphonenumberUtil.js';
+import { instance, PhoneNumberFormat } from './libphonenumberInstance.js';
+import { isDirectConversation } from './whatTypeOfConversation.js';
+import { getE164 } from './getE164.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 type TitleOptions = {
   isShort?: boolean;
   ignoreNickname?: boolean;
 };
+
+const { i18n } = window.SignalContext;
 
 export function getTitle(
   attributes: ConversationRenderInfoType,
@@ -25,9 +29,9 @@ export function getTitle(
   }
 
   if (isDirectConversation(attributes)) {
-    return window.i18n('icu:unknownContact');
+    return i18n('icu:unknownContact');
   }
-  return window.i18n('icu:unknownGroup');
+  return i18n('icu:unknownGroup');
 }
 
 export function getTitleNoDefault(
@@ -158,18 +162,12 @@ export function getNumber(
 
 export function renderNumber(e164: string): string | undefined {
   try {
-    const parsedNumber = window.libphonenumberInstance.parse(e164);
+    const parsedNumber = instance.parse(e164);
     const regionCode = getRegionCodeForNumber(e164);
-    if (regionCode === window.storage.get('regionCode')) {
-      return window.libphonenumberInstance.format(
-        parsedNumber,
-        window.libphonenumberFormat.NATIONAL
-      );
+    if (regionCode === itemStorage.get('regionCode')) {
+      return instance.format(parsedNumber, PhoneNumberFormat.NATIONAL);
     }
-    return window.libphonenumberInstance.format(
-      parsedNumber,
-      window.libphonenumberFormat.INTERNATIONAL
-    );
+    return instance.format(parsedNumber, PhoneNumberFormat.INTERNATIONAL);
   } catch (e) {
     return undefined;
   }

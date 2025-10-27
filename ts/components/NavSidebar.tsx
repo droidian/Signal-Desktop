@@ -1,42 +1,43 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { KeyboardEventHandler, MouseEventHandler, ReactNode } from 'react';
-import React, { useEffect, useState } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { useMove } from 'react-aria';
-import { NavTabsToggle } from './NavTabs';
-import type { LocalizerType } from '../types/I18N';
+import { NavTabsToggle } from './NavTabs.js';
+import type { LocalizerType } from '../types/I18N.js';
 import {
   MAX_WIDTH,
   MIN_FULL_WIDTH,
   MIN_WIDTH,
   getWidthFromPreferredWidth,
-} from '../util/leftPaneWidth';
-import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util';
-import type { UnreadStats } from '../util/countUnreadStats';
+} from '../util/leftPaneWidth.js';
+import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
 
-type NavSidebarActionButtonProps = {
-  icon: ReactNode;
-  label: ReactNode;
-  onClick: MouseEventHandler<HTMLButtonElement>;
-  onKeyDown?: KeyboardEventHandler<HTMLButtonElement>;
-};
+export const NavSidebarWidthBreakpointContext =
+  createContext<WidthBreakpoint | null>(null);
+
+type NavSidebarActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  Readonly<{
+    icon: ReactNode;
+    label: ReactNode;
+  }>;
 
 export const NavSidebarActionButton = React.forwardRef<
   HTMLButtonElement,
   NavSidebarActionButtonProps
 >(function NavSidebarActionButtonInner(
-  { icon, label, onClick, onKeyDown },
+  { icon, label, ...rest },
   ref
 ): JSX.Element {
   return (
     <button
+      {...rest}
       ref={ref}
       type="button"
       className="NavSidebar__ActionButton"
-      onClick={onClick}
-      onKeyDown={onKeyDown}
     >
       {icon}
       <span className="NavSidebar__ActionButtonLabel">{label}</span>
@@ -158,76 +159,79 @@ export function NavSidebar({
   }, [dragState]);
 
   return (
-    <div
-      role="navigation"
-      className={classNames('NavSidebar', {
-        'NavSidebar--narrow': widthBreakpoint === WidthBreakpoint.Narrow,
-      })}
-      style={{ width }}
-    >
-      {!hideHeader && (
-        <div className="NavSidebar__Header">
-          {onBack == null && navTabsCollapsed && (
-            <NavTabsToggle
-              i18n={i18n}
-              navTabsCollapsed={navTabsCollapsed}
-              onToggleNavTabsCollapse={onToggleNavTabsCollapse}
-              hasFailedStorySends={hasFailedStorySends}
-              hasPendingUpdate={hasPendingUpdate}
-              otherTabsUnreadStats={otherTabsUnreadStats}
-            />
-          )}
-          <div
-            className={classNames('NavSidebar__HeaderContent', {
-              'NavSidebar__HeaderContent--navTabsCollapsed': navTabsCollapsed,
-              'NavSidebar__HeaderContent--withBackButton': onBack != null,
-            })}
-          >
-            {onBack != null && (
-              <button
-                type="button"
-                role="link"
-                onClick={onBack}
-                className="NavSidebar__BackButton"
-              >
-                <span className="NavSidebar__BackButtonLabel">
-                  {i18n('icu:NavSidebar__BackButtonLabel')}
-                </span>
-              </button>
-            )}
-            <h1
-              className={classNames('NavSidebar__HeaderTitle', {
-                'NavSidebar__HeaderTitle--withBackButton': onBack != null,
-              })}
-              aria-live="assertive"
-            >
-              {title}
-            </h1>
-            {actions && (
-              <div className="NavSidebar__HeaderActions">{actions}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="NavSidebar__Content">{children}</div>
-
+    <NavSidebarWidthBreakpointContext.Provider value={widthBreakpoint}>
       <div
-        className={classNames('NavSidebar__DragHandle', {
-          'NavSidebar__DragHandle--dragging': dragState === DragState.DRAGGING,
+        role="navigation"
+        className={classNames('NavSidebar', {
+          'NavSidebar--narrow': widthBreakpoint === WidthBreakpoint.Narrow,
         })}
-        role="separator"
-        aria-orientation="vertical"
-        aria-valuemin={MIN_WIDTH}
-        aria-valuemax={preferredLeftPaneWidth}
-        aria-valuenow={MAX_WIDTH}
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/separator_role#focusable_separator
-        tabIndex={0}
-        {...moveProps}
-      />
+        style={{ width }}
+      >
+        {!hideHeader && (
+          <div className="NavSidebar__Header">
+            {onBack == null && navTabsCollapsed && (
+              <NavTabsToggle
+                i18n={i18n}
+                navTabsCollapsed={navTabsCollapsed}
+                onToggleNavTabsCollapse={onToggleNavTabsCollapse}
+                hasFailedStorySends={hasFailedStorySends}
+                hasPendingUpdate={hasPendingUpdate}
+                otherTabsUnreadStats={otherTabsUnreadStats}
+              />
+            )}
+            <div
+              className={classNames('NavSidebar__HeaderContent', {
+                'NavSidebar__HeaderContent--navTabsCollapsed': navTabsCollapsed,
+                'NavSidebar__HeaderContent--withBackButton': onBack != null,
+              })}
+            >
+              {onBack != null && (
+                <button
+                  type="button"
+                  role="link"
+                  onClick={onBack}
+                  className="NavSidebar__BackButton"
+                >
+                  <span className="NavSidebar__BackButtonLabel">
+                    {i18n('icu:NavSidebar__BackButtonLabel')}
+                  </span>
+                </button>
+              )}
+              <h1
+                className={classNames('NavSidebar__HeaderTitle', {
+                  'NavSidebar__HeaderTitle--withBackButton': onBack != null,
+                })}
+                aria-live="assertive"
+              >
+                {title}
+              </h1>
+              {actions && (
+                <div className="NavSidebar__HeaderActions">{actions}</div>
+              )}
+            </div>
+          </div>
+        )}
 
-      {renderToastManager({ containerWidthBreakpoint: widthBreakpoint })}
-    </div>
+        <div className="NavSidebar__Content">{children}</div>
+
+        <div
+          className={classNames('NavSidebar__DragHandle', {
+            'NavSidebar__DragHandle--dragging':
+              dragState === DragState.DRAGGING,
+          })}
+          role="separator"
+          aria-orientation="vertical"
+          aria-valuemin={MIN_WIDTH}
+          aria-valuemax={preferredLeftPaneWidth}
+          aria-valuenow={MAX_WIDTH}
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/separator_role#focusable_separator
+          tabIndex={0}
+          {...moveProps}
+        />
+
+        {renderToastManager({ containerWidthBreakpoint: widthBreakpoint })}
+      </div>
+    </NavSidebarWidthBreakpointContext.Provider>
   );
 }
 

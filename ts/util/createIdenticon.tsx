@@ -4,14 +4,16 @@
 import React from 'react';
 import loadImage from 'blueimp-load-image';
 import { renderToString } from 'react-dom/server';
-import type { AvatarColorType } from '../types/Colors';
-import { AvatarColorMap } from '../types/Colors';
+import type { AvatarColorType } from '../types/Colors.js';
+import { AvatarColorMap } from '../types/Colors.js';
 import {
   IdenticonSVGForCallLink,
   IdenticonSVGForContact,
   IdenticonSVGForGroup,
-} from '../components/IdenticonSVG';
-import { missingCaseError } from './missingCaseError';
+  // eslint-disable-next-line import/no-restricted-paths
+} from '../components/IdenticonSVG.js';
+import { missingCaseError } from './missingCaseError.js';
+import { writeNewPlaintextTempData } from './migrations.js';
 
 const TARGET_MIME = 'image/png';
 
@@ -117,8 +119,7 @@ export function createIdenticon(
           }
 
           const data = new Uint8Array(arrayBuffer);
-          const path =
-            await window.Signal.Migrations.writeNewPlaintextTempData(data);
+          const path = await writeNewPlaintextTempData(data);
           resolve({ url, path });
         });
         reader.readAsArrayBuffer(blob);

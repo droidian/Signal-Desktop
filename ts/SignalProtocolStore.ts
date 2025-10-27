@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { omit } from 'lodash';
+import lodash from 'lodash';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 import {
   Direction,
@@ -19,15 +19,15 @@ import {
   SignedPreKeyRecord,
 } from '@signalapp/libsignal-client';
 
-import { DataReader, DataWriter } from './sql/Client';
-import type { ItemType } from './sql/Interface';
-import * as Bytes from './Bytes';
-import { constantTimeEqual, sha256 } from './Crypto';
-import { assertDev, strictAssert } from './util/assert';
-import { isNotNil } from './util/isNotNil';
-import { drop } from './util/drop';
-import { Zone } from './util/Zone';
-import { isMoreRecentThan } from './util/timestamp';
+import { DataReader, DataWriter } from './sql/Client.js';
+import type { ItemType, KyberPreKeyTripleType } from './sql/Interface.js';
+import * as Bytes from './Bytes.js';
+import { constantTimeEqual, sha256 } from './Crypto.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { isNotNil } from './util/isNotNil.js';
+import { drop } from './util/drop.js';
+import { Zone } from './util/Zone.js';
+import { isMoreRecentThan } from './util/timestamp.js';
 import type {
   DeviceType,
   IdentityKeyType,
@@ -48,22 +48,28 @@ import type {
   SignedPreKeyType,
   UnprocessedType,
   CompatPreKeyType,
-} from './textsecure/Types.d';
-import type { ServiceIdString, PniString, AciString } from './types/ServiceId';
-import { isServiceIdString, ServiceIdKind } from './types/ServiceId';
-import type { Address } from './types/Address';
-import type { QualifiedAddressStringType } from './types/QualifiedAddress';
-import { QualifiedAddress } from './types/QualifiedAddress';
-import { createLogger } from './logging/log';
-import * as Errors from './types/errors';
-import { MINUTE } from './util/durations';
-import { conversationJobQueue } from './jobs/conversationJobQueue';
+} from './textsecure/Types.d.ts';
+import type {
+  ServiceIdString,
+  PniString,
+  AciString,
+} from './types/ServiceId.js';
+import { isServiceIdString, ServiceIdKind } from './types/ServiceId.js';
+import type { Address } from './types/Address.js';
+import type { QualifiedAddressStringType } from './types/QualifiedAddress.js';
+import { QualifiedAddress } from './types/QualifiedAddress.js';
+import { createLogger } from './logging/log.js';
+import * as Errors from './types/errors.js';
+import { MINUTE } from './util/durations/index.js';
 import {
   KYBER_KEY_ID_KEY,
   SIGNED_PRE_KEY_ID_KEY,
-} from './textsecure/AccountManager';
-import { formatGroups, groupWhile } from './util/groupWhile';
-import { parseUnknown } from './util/schemas';
+} from './textsecure/AccountManager.js';
+import { formatGroups, groupWhile } from './util/groupWhile.js';
+import { parseUnknown } from './util/schemas.js';
+import { itemStorage } from './textsecure/Storage.js';
+
+const { omit } = lodash;
 
 const log = createLogger('SignalProtocolStore');
 
@@ -207,6 +213,19 @@ export function hydrateSignedPreKey(
   );
 }
 
+// Format: keyId:signedPreKeyId:baseKey
+type KyberTripleCacheKeyPrefixType = `${KyberPreKeyTripleType['id']}:`;
+type KyberTripleCacheKeyType =
+  `${KyberTripleCacheKeyPrefixType}${KyberPreKeyTripleType['signedPreKeyId']}:${string}`;
+
+function getKyberTripleCacheKey({
+  id,
+  signedPreKeyId,
+  baseKey,
+}: KyberPreKeyTripleType): KyberTripleCacheKeyType {
+  return `${id}:${signedPreKeyId}:${Bytes.toHex(baseKey)}`;
+}
+
 type SessionCacheEntry = CacheEntryType<SessionType, SessionRecord>;
 type SenderKeyCacheEntry = CacheEntryType<SenderKeyType, SenderKeyRecord>;
 
@@ -248,6 +267,8 @@ export class SignalProtocolStore extends EventEmitter {
     CacheEntryType<SignedPreKeyType, SignedPreKeyRecord>
   >;
 
+  readonly #kyberTriples = new Set<KyberTripleCacheKeyType>();
+
   senderKeyQueues = new Map<QualifiedAddressStringType, PQueue>();
 
   sessionQueues = new Map<SessionIdType, PQueue>();
@@ -261,6 +282,10 @@ export class SignalProtocolStore extends EventEmitter {
   #pendingSessions = new Map<SessionIdType, SessionCacheEntry>();
   #pendingSenderKeys = new Map<SenderKeyIdType, SenderKeyCacheEntry>();
   #pendingUnprocessed = new Map<string, UnprocessedType>();
+  #pendingKyberTriples = new Map<
+    KyberTripleCacheKeyType,
+    KyberPreKeyTripleType
+  >();
 
   async hydrateCaches(): Promise<void> {
     await Promise.all([
@@ -302,6 +327,15 @@ export class SignalProtocolStore extends EventEmitter {
             'Invalid registration id serviceId'
           );
           this.#ourRegistrationIds.set(serviceId, map.value[serviceId]);
+        }
+      })(),
+      (async () => {
+        this.#kyberTriples.clear();
+
+        const triples = await DataReader.getAllKyberTriples();
+
+        for (const t of triples) {
+          this.#kyberTriples.add(getKyberTripleCacheKey(t));
         }
       })(),
       _fillCaches<string, IdentityKeyType, PublicKey>(
@@ -497,7 +531,11 @@ export class SignalProtocolStore extends EventEmitter {
 
   async maybeRemoveKyberPreKey(
     ourServiceId: ServiceIdString,
-    keyId: number,
+    {
+      keyId,
+      signedPreKeyId,
+      baseKey,
+    }: { keyId: number; signedPreKeyId: number; baseKey: PublicKey },
     { zone = GLOBAL_ZONE }: SessionTransactionOptions = {}
   ): Promise<void> {
     const id: PreKeyIdType = this.#_getKeyId(ourServiceId, keyId);
@@ -506,14 +544,39 @@ export class SignalProtocolStore extends EventEmitter {
     if (!entry) {
       return;
     }
-    if (entry.fromDB.isLastResort) {
-      log.info(
-        `maybeRemoveKyberPreKey: Not removing kyber prekey ${id}; it's a last resort key`
-      );
+    if (!entry.fromDB.isLastResort) {
+      await this.removeKyberPreKeys(ourServiceId, [keyId], { zone });
       return;
     }
 
-    await this.removeKyberPreKeys(ourServiceId, [keyId], { zone });
+    log.info(
+      `maybeRemoveKyberPreKey: Not removing kyber prekey ${id}; it's a last resort key`
+    );
+
+    await this.withZone(zone, 'maybeRemoveKyberPreKey', async () => {
+      const triple: KyberPreKeyTripleType = {
+        id: `${ourServiceId}:${keyId}`,
+        signedPreKeyId,
+        baseKey: baseKey.serialize(),
+      };
+
+      const cacheKey = getKyberTripleCacheKey(triple);
+
+      // Note: we don't have to check for `#pendingKyberPreKeysToRemove` since
+      // it makes the key in question inaccessible to begin with.
+      if (
+        this.#kyberTriples.has(cacheKey) ||
+        this.#pendingKyberTriples.has(cacheKey)
+      ) {
+        throw new Error(`Duplicate kyber triple ${keyId}:${signedPreKeyId}`);
+      }
+
+      this.#pendingKyberTriples.set(cacheKey, triple);
+
+      if (!zone.supportsPendingKyberPreKeysToRemove()) {
+        await this.#commitZoneChanges('removeKyberPreKeys');
+      }
+    });
   }
 
   async removeKyberPreKeys(
@@ -1150,13 +1213,15 @@ export class SignalProtocolStore extends EventEmitter {
     const pendingSenderKeys = this.#pendingSenderKeys;
     const pendingSessions = this.#pendingSessions;
     const pendingUnprocessed = this.#pendingUnprocessed;
+    const pendingKyberTriples = this.#pendingKyberTriples;
 
     if (
       pendingKyberPreKeysToRemove.size === 0 &&
       pendingPreKeysToRemove.size === 0 &&
       pendingSenderKeys.size === 0 &&
       pendingSessions.size === 0 &&
-      pendingUnprocessed.size === 0
+      pendingUnprocessed.size === 0 &&
+      pendingKyberTriples.size === 0
     ) {
       return;
     }
@@ -1167,7 +1232,8 @@ export class SignalProtocolStore extends EventEmitter {
         `pending preKeysToRemove ${pendingKyberPreKeysToRemove.size}, ` +
         `pending senderKeys ${pendingSenderKeys.size}, ` +
         `pending sessions ${pendingSessions.size}, ` +
-        `pending unprocessed ${pendingUnprocessed.size}`
+        `pending unprocessed ${pendingUnprocessed.size}, ` +
+        `pending kyberTriples ${pendingKyberTriples.size}`
     );
 
     this.#pendingKyberPreKeysToRemove = new Set();
@@ -1175,6 +1241,7 @@ export class SignalProtocolStore extends EventEmitter {
     this.#pendingSenderKeys = new Map();
     this.#pendingSessions = new Map();
     this.#pendingUnprocessed = new Map();
+    this.#pendingKyberTriples = new Map();
 
     // Commit both sender keys, sessions and unprocessed in the same database transaction
     //   to unroll both on error.
@@ -1188,17 +1255,30 @@ export class SignalProtocolStore extends EventEmitter {
         ({ fromDB }) => fromDB
       ),
       unprocessed: Array.from(pendingUnprocessed.values()),
+      kyberTriples: Array.from(pendingKyberTriples.values()),
     });
 
     // Apply changes to in-memory storage after successful DB write.
+
+    for (const cacheKey of pendingKyberTriples.keys()) {
+      this.#kyberTriples.add(cacheKey);
+    }
 
     const { kyberPreKeys } = this;
     assertDev(
       kyberPreKeys !== undefined,
       "Can't commit unhydrated kyberPreKeys storage"
     );
-    pendingKyberPreKeysToRemove.forEach(value => {
+    pendingKyberPreKeysToRemove.forEach((value: PreKeyIdType) => {
       kyberPreKeys.delete(value);
+
+      // Remove all cached kyber triples for this key.
+      const prefix: KyberTripleCacheKeyPrefixType = `${value}:`;
+      for (const key of this.#kyberTriples.keys()) {
+        if (key.startsWith(prefix)) {
+          this.#kyberTriples.delete(key);
+        }
+      }
     });
     if (kyberPreKeys.size < LOW_KEYS_THRESHOLD) {
       this.#emitLowKeys(`removeKyberPreKeys@${kyberPreKeys.size}`);
@@ -1731,7 +1811,7 @@ export class SignalProtocolStore extends EventEmitter {
   async lightSessionReset(qualifiedAddress: QualifiedAddress): Promise<void> {
     const id = qualifiedAddress.toString();
 
-    const sessionResets = window.storage.get(
+    const sessionResets = itemStorage.get(
       'sessionResets',
       {} as SessionResetsType
     );
@@ -1747,7 +1827,7 @@ export class SignalProtocolStore extends EventEmitter {
     }
 
     sessionResets[id] = Date.now();
-    await window.storage.put('sessionResets', sessionResets);
+    await itemStorage.put('sessionResets', sessionResets);
 
     try {
       const { serviceId } = qualifiedAddress;
@@ -1765,8 +1845,7 @@ export class SignalProtocolStore extends EventEmitter {
       await this.archiveSession(qualifiedAddress);
 
       // Enqueue a null message with newly-created session
-      await conversationJobQueue.add({
-        type: 'NullMessage',
+      this.emit('nullMessage', {
         conversationId: conversation.id,
         idForTracking: id,
       });
@@ -1774,7 +1853,7 @@ export class SignalProtocolStore extends EventEmitter {
       // If we failed to queue the session reset, then we'll allow another attempt sooner
       //   than one hour from now.
       delete sessionResets[id];
-      await window.storage.put('sessionResets', sessionResets);
+      await itemStorage.put('sessionResets', sessionResets);
 
       log.error(
         `lightSessionReset/${id}: Encountered error`,
@@ -1865,7 +1944,7 @@ export class SignalProtocolStore extends EventEmitter {
     if (encodedAddress == null) {
       throw new Error('isTrustedIdentity: encodedAddress was undefined/null');
     }
-    const isOurIdentifier = window.textsecure.storage.user.isOurServiceId(
+    const isOurIdentifier = itemStorage.user.isOurServiceId(
       encodedAddress.serviceId
     );
 
@@ -2063,7 +2142,7 @@ export class SignalProtocolStore extends EventEmitter {
         );
 
         if (identityKeyChanged) {
-          const isOurIdentifier = window.textsecure.storage.user.isOurServiceId(
+          const isOurIdentifier = itemStorage.user.isOurServiceId(
             encodedAddress.serviceId
           );
 
@@ -2167,8 +2246,7 @@ export class SignalProtocolStore extends EventEmitter {
     const id = serviceId;
 
     // When saving a PNI identity - don't create a separate conversation
-    const serviceIdKind =
-      window.textsecure.storage.user.getOurServiceIdKind(serviceId);
+    const serviceIdKind = itemStorage.user.getOurServiceIdKind(serviceId);
     if (serviceIdKind !== ServiceIdKind.PNI) {
       window.ConversationController.getOrCreate(id, 'private');
     }
@@ -2306,7 +2384,7 @@ export class SignalProtocolStore extends EventEmitter {
     serviceId: ServiceIdString,
     verifiedStatus: number,
     publicKey: Uint8Array
-  ): Promise<boolean> {
+  ): Promise<{ shouldAddVerifiedChangedMessage: boolean }> {
     strictAssert(
       validateVerifiedStatus(verifiedStatus),
       `Invalid verified status: ${verifiedStatus}`
@@ -2356,23 +2434,27 @@ export class SignalProtocolStore extends EventEmitter {
           }
         }
 
+        // We only want to show a notification if the key is the same as before
+        if (hadEntry && !keyMatches) {
+          return { shouldAddVerifiedChangedMessage: false };
+        }
+
         // See: https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/database/RecipientDatabase.kt#L921-L936
         if (
           verifiedStatus === VerifiedStatus.VERIFIED &&
           (!hadEntry || identityRecord?.verified !== VerifiedStatus.VERIFIED)
         ) {
-          // Needs a notification.
-          return true;
+          return { shouldAddVerifiedChangedMessage: true };
         }
         if (
           verifiedStatus !== VerifiedStatus.VERIFIED &&
           hadEntry &&
           identityRecord?.verified === VerifiedStatus.VERIFIED
         ) {
-          // Needs a notification.
-          return true;
+          return { shouldAddVerifiedChangedMessage: true };
         }
-        return false;
+
+        return { shouldAddVerifiedChangedMessage: false };
       }
     );
   }
@@ -2481,8 +2563,6 @@ export class SignalProtocolStore extends EventEmitter {
   }
 
   async removeOurOldPni(oldPni: PniString): Promise<void> {
-    const { storage } = window;
-
     log.info(`removeOurOldPni(${oldPni})`);
 
     // Update caches
@@ -2514,13 +2594,13 @@ export class SignalProtocolStore extends EventEmitter {
 
     // Update database
     await Promise.all([
-      storage.put(
+      itemStorage.put(
         'identityKeyMap',
-        omit(storage.get('identityKeyMap') || {}, oldPni)
+        omit(itemStorage.get('identityKeyMap') || {}, oldPni)
       ),
-      storage.put(
+      itemStorage.put(
         'registrationIdMap',
-        omit(storage.get('registrationIdMap') || {}, oldPni)
+        omit(itemStorage.get('registrationIdMap') || {}, oldPni)
       ),
       DataWriter.removePreKeysByServiceId(oldPni),
       DataWriter.removeSignedPreKeysByServiceId(oldPni),
@@ -2546,8 +2626,6 @@ export class SignalProtocolStore extends EventEmitter {
       ? KyberPreKeyRecord.deserialize(lastResortKyberPreKeyBytes)
       : undefined;
 
-    const { storage } = window;
-
     const pniPublicKey = identityKeyPair.publicKey.serialize();
     const pniPrivateKey = identityKeyPair.privateKey.serialize();
 
@@ -2557,21 +2635,21 @@ export class SignalProtocolStore extends EventEmitter {
 
     // Update database
     await Promise.all<void>([
-      storage.put('identityKeyMap', {
-        ...(storage.get('identityKeyMap') || {}),
+      itemStorage.put('identityKeyMap', {
+        ...(itemStorage.get('identityKeyMap') || {}),
         [pni]: {
           pubKey: pniPublicKey,
           privKey: pniPrivateKey,
         },
       }),
-      storage.put('registrationIdMap', {
-        ...(storage.get('registrationIdMap') || {}),
+      itemStorage.put('registrationIdMap', {
+        ...(itemStorage.get('registrationIdMap') || {}),
         [pni]: registrationId,
       }),
       (async () => {
         const newId = signedPreKey.id() + 1;
         log.warn(`${logId}: Updating next signed pre key id to ${newId}`);
-        await storage.put(SIGNED_PRE_KEY_ID_KEY[ServiceIdKind.PNI], newId);
+        await itemStorage.put(SIGNED_PRE_KEY_ID_KEY[ServiceIdKind.PNI], newId);
       })(),
       this.storeSignedPreKey(
         pni,
@@ -2589,7 +2667,7 @@ export class SignalProtocolStore extends EventEmitter {
         }
         const newId = lastResortKyberPreKey.id() + 1;
         log.warn(`${logId}: Updating next kyber pre key id to ${newId}`);
-        await storage.put(KYBER_KEY_ID_KEY[ServiceIdKind.PNI], newId);
+        await itemStorage.put(KYBER_KEY_ID_KEY[ServiceIdKind.PNI], newId);
       })(),
       lastResortKyberPreKeyBytes && lastResortKyberPreKey
         ? this.storeKyberPreKeys(pni, [
@@ -2610,8 +2688,8 @@ export class SignalProtocolStore extends EventEmitter {
     await DataWriter.removeAll();
     await this.hydrateCaches();
 
-    window.storage.reset();
-    await window.storage.fetch();
+    itemStorage.reset();
+    await itemStorage.fetch();
 
     window.ConversationController.reset();
     await window.ConversationController.load();
@@ -2634,13 +2712,13 @@ export class SignalProtocolStore extends EventEmitter {
 
     await this.hydrateCaches();
 
-    window.storage.reset();
-    await window.storage.fetch();
+    itemStorage.reset();
+    await itemStorage.fetch();
   }
 
   signAlternateIdentity(): PniSignatureMessageType | undefined {
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
-    const ourPni = window.textsecure.storage.user.getPni();
+    const ourAci = itemStorage.user.getCheckedAci();
+    const ourPni = itemStorage.user.getPni();
     if (!ourPni) {
       log.error('signAlternateIdentity: No local pni');
       return undefined;
@@ -2732,6 +2810,14 @@ export class SignalProtocolStore extends EventEmitter {
   public override on(name: 'removeAllData', handler: () => unknown): this;
 
   public override on(
+    name: 'nullMessage',
+    handler: (options: {
+      conversationId: string;
+      idForTracking: string;
+    }) => unknown
+  ): this;
+
+  public override on(
     eventName: string | symbol,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listener: (...args: Array<any>) => void
@@ -2750,6 +2836,14 @@ export class SignalProtocolStore extends EventEmitter {
   public override emit(name: 'removeAllData'): boolean;
 
   public override emit(
+    name: 'nullMessage',
+    options: {
+      conversationId: string;
+      idForTracking: string;
+    }
+  ): boolean;
+
+  public override emit(
     eventName: string | symbol,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...args: Array<any>
@@ -2758,8 +2852,4 @@ export class SignalProtocolStore extends EventEmitter {
   }
 }
 
-export function getSignalProtocolStore(): SignalProtocolStore {
-  return new SignalProtocolStore();
-}
-
-window.SignalProtocolStore = SignalProtocolStore;
+export const signalProtocolStore = new SignalProtocolStore();

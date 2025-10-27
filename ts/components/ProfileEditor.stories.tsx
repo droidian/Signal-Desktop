@@ -7,19 +7,19 @@ import React, { useState } from 'react';
 import casual from 'casual';
 import { v4 as generateUuid } from 'uuid';
 
-import type { PropsType } from './ProfileEditor';
+import type { PropsType } from './ProfileEditor.js';
 
-import { ProfileEditorPage } from '../types/Nav';
-import { ProfileEditor } from './ProfileEditor';
-import { UsernameEditor } from './UsernameEditor';
+import { ProfileEditorPage } from '../types/Nav.js';
+import { ProfileEditor } from './ProfileEditor.js';
+import { UsernameEditor } from './UsernameEditor.js';
 import {
   UsernameEditState,
   UsernameLinkState,
   UsernameReservationState,
-} from '../state/ducks/usernameEnums';
-import { getRandomColor } from '../test-helpers/getRandomColor';
-import { SignalService as Proto } from '../protobuf';
-import { EmojiSkinTone } from './fun/data/emojis';
+} from '../state/ducks/usernameEnums.js';
+import { getRandomColor } from '../test-helpers/getRandomColor.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
 
 const { i18n } = window.SignalContext;
 
@@ -63,13 +63,11 @@ export default {
     usernameEditState: UsernameEditState.Editing,
     usernameLinkState: UsernameLinkState.Ready,
 
-    recentEmojis: [],
     emojiSkinToneDefault: EmojiSkinTone.None,
     userAvatarData: [],
     username: undefined,
 
     onProfileChanged: action('onProfileChanged'),
-    onEmojiSkinToneDefaultChange: action('onEmojiSkinToneDefaultChange'),
     saveAttachment: action('saveAttachment'),
     setUsernameLinkColor: action('setUsernameLinkColor'),
     showToast: action('showToast'),
@@ -107,17 +105,12 @@ function renderUsernameEditor(props: { onClose: () => void }): JSX.Element {
 
 // eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => {
-  const [emojiSkinToneDefault, setEmojiSkinToneDefault] = useState(
-    EmojiSkinTone.None
-  );
   const [editState, setEditState] = useState(args.editState);
 
   return (
     <ProfileEditor
       {...args}
       editState={editState}
-      emojiSkinToneDefault={emojiSkinToneDefault}
-      onEmojiSkinToneDefaultChange={setEmojiSkinToneDefault}
       renderUsernameEditor={renderUsernameEditor}
       setEditState={setEditState}
     />

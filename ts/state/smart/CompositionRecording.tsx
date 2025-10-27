@@ -3,21 +3,15 @@
 
 import React, { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { CompositionRecording } from '../../components/CompositionRecording';
-import { useAudioRecorderActions } from '../ducks/audioRecorder';
-import { useComposerActions } from '../ducks/composer';
-import { useToastActions } from '../ducks/toast';
-import { getSelectedConversationId } from '../selectors/conversations';
-import { getIntl } from '../selectors/user';
-
-export type SmartCompositionRecordingProps = {
-  onBeforeSend: () => void;
-};
+import { CompositionRecording } from '../../components/CompositionRecording.js';
+import { useAudioRecorderActions } from '../ducks/audioRecorder.js';
+import { useComposerActions } from '../ducks/composer.js';
+import { useToastActions } from '../ducks/toast.js';
+import { getSelectedConversationId } from '../selectors/conversations.js';
+import { getIntl } from '../selectors/user.js';
 
 export const SmartCompositionRecording = memo(
-  function SmartCompositionRecording({
-    onBeforeSend,
-  }: SmartCompositionRecordingProps) {
+  function SmartCompositionRecording() {
     const i18n = useSelector(getIntl);
     const selectedConversationId = useSelector(getSelectedConversationId);
     const { errorRecording, cancelRecording, completeRecording } =
@@ -34,18 +28,12 @@ export const SmartCompositionRecording = memo(
     const handleSend = useCallback(() => {
       if (selectedConversationId) {
         completeRecording(selectedConversationId, voiceNoteAttachment => {
-          onBeforeSend();
           sendMultiMediaMessage(selectedConversationId, {
             voiceNoteAttachment,
           });
         });
       }
-    }, [
-      selectedConversationId,
-      completeRecording,
-      onBeforeSend,
-      sendMultiMediaMessage,
-    ]);
+    }, [selectedConversationId, completeRecording, sendMultiMediaMessage]);
 
     if (!selectedConversationId) {
       return null;

@@ -3,14 +3,26 @@
 
 import pMap from 'p-map';
 
-import { createLogger } from '../logging/log';
-import { DataReader, DataWriter } from '../sql/Client';
-import type { ConversationAttributesType } from '../model-types.d';
-import { encryptLegacyAttachment } from './encryptLegacyAttachment';
-import { AttachmentDisposition } from './getLocalAttachmentUrl';
-import { isNotNil } from './isNotNil';
-import { isSignalConversation } from './isSignalConversation';
-import { getConversationIdForLogging } from './idForLogging';
+import { createLogger } from '../logging/log.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { encryptLegacyAttachment } from './encryptLegacyAttachment.js';
+import { AttachmentDisposition } from './getLocalAttachmentUrl.js';
+import { isNotNil } from './isNotNil.js';
+import {
+  deleteAttachmentData,
+  deleteAvatar,
+  deleteDraftFile,
+  readAttachmentData,
+  readAvatarData,
+  readDraftData,
+  writeNewAttachmentData,
+  writeNewAvatarData,
+  writeNewDraftData,
+} from './migrations.js';
+import { isSignalConversation } from './isSignalConversation.js';
+import { getConversationIdForLogging } from './idForLogging.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('encryptConversationAttachments');
 
@@ -73,18 +85,6 @@ async function encryptOne(attributes: ConversationAttributesType): Promise<
 
   const logId = getConversationIdForLogging(attributes);
   const result = { ...attributes };
-
-  const {
-    deleteAttachmentData,
-    deleteAvatar,
-    deleteDraftFile,
-    readAttachmentData,
-    readAvatarData,
-    readDraftData,
-    writeNewAttachmentData,
-    writeNewAvatarData,
-    writeNewDraftData,
-  } = window.Signal.Migrations;
 
   const cleanup: CleanupType = [];
 
@@ -174,7 +174,7 @@ async function encryptOne(attributes: ConversationAttributesType): Promise<
     // Just drop thumbnail reference. It is impossible to recover, and has
     // minimal UI impact.
     if (!path.startsWith('attachment://')) {
-      await window.storage.put('needOrphanedAttachmentCheck', true);
+      await itemStorage.put('needOrphanedAttachmentCheck', true);
       if (result.draftEditMessage) {
         result.draftEditMessage.attachmentThumbnail = undefined;
       }

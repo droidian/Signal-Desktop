@@ -3,16 +3,17 @@
 
 import { assert } from 'chai';
 
-import { DataWriter } from '../../sql/Client';
-import { getRandomBytes } from '../../Crypto';
-import { Address } from '../../types/Address';
-import { generateAci } from '../../types/ServiceId';
-import { explodePromise } from '../../util/explodePromise';
-import { SignalProtocolStore } from '../../SignalProtocolStore';
-import type { ConversationModel } from '../../models/conversations';
-import * as KeyChangeListener from '../../textsecure/KeyChangeListener';
-import * as Bytes from '../../Bytes';
-import { cleanupMessages } from '../../util/cleanup';
+import { DataWriter } from '../../sql/Client.js';
+import { getRandomBytes } from '../../Crypto.js';
+import { Address } from '../../types/Address.js';
+import { generateAci } from '../../types/ServiceId.js';
+import { explodePromise } from '../../util/explodePromise.js';
+import { SignalProtocolStore } from '../../SignalProtocolStore.js';
+import type { ConversationModel } from '../../models/conversations.js';
+import * as KeyChangeListener from '../../textsecure/KeyChangeListener.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+import * as Bytes from '../../Bytes.js';
+import { cleanupMessages } from '../../util/cleanup.js';
 
 describe('KeyChangeListener', () => {
   let oldNumberId: string | undefined;
@@ -29,25 +30,22 @@ describe('KeyChangeListener', () => {
     window.ConversationController.reset();
     await window.ConversationController.load();
 
-    const { storage } = window.textsecure;
-
-    oldNumberId = storage.get('number_id');
-    oldUuidId = storage.get('uuid_id');
-    await storage.put('number_id', '+14155555556.2');
-    await storage.put('uuid_id', `${ourServiceId}.2`);
+    oldNumberId = itemStorage.get('number_id');
+    oldUuidId = itemStorage.get('uuid_id');
+    await itemStorage.put('number_id', '+14155555556.2');
+    await itemStorage.put('uuid_id', `${ourServiceId}.2`);
   });
 
   after(async () => {
     await DataWriter.removeAll();
 
-    const { storage } = window.textsecure;
-    await storage.fetch();
+    await itemStorage.fetch();
 
     if (oldNumberId) {
-      await storage.put('number_id', oldNumberId);
+      await itemStorage.put('number_id', oldNumberId);
     }
     if (oldUuidId) {
-      await storage.put('uuid_id', oldUuidId);
+      await itemStorage.put('uuid_id', oldUuidId);
     }
   });
 

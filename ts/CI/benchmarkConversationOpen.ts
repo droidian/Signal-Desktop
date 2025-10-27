@@ -3,20 +3,22 @@
 
 import { v4 as uuid } from 'uuid';
 
-import { incrementMessageCounter } from '../util/incrementMessageCounter';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { SendStatus } from '../messages/MessageSendState';
-import { DataWriter } from '../sql/Client';
-import { BodyRange } from '../types/BodyRange';
-import { strictAssert } from '../util/assert';
-import { MINUTE } from '../util/durations';
-import { isOlderThan } from '../util/timestamp';
-import { sleep } from '../util/sleep';
-import { stats } from '../util/benchmark/stats';
-import type { StatsType } from '../util/benchmark/stats';
-import type { MessageAttributesType } from '../model-types.d';
-import { createLogger } from '../logging/log';
-import { postSaveUpdates } from '../util/cleanup';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { SendStatus } from '../messages/MessageSendState.js';
+import { DataWriter } from '../sql/Client.js';
+import { BodyRange } from '../types/BodyRange.js';
+import { CURRENT_SCHEMA_VERSION } from '../types/Message2.js';
+import { strictAssert } from '../util/assert.js';
+import { MINUTE } from '../util/durations/index.js';
+import { isOlderThan } from '../util/timestamp.js';
+import { sleep } from '../util/sleep.js';
+import { stats } from '../util/benchmark/stats.js';
+import type { StatsType } from '../util/benchmark/stats.js';
+import type { MessageAttributesType } from '../model-types.d.ts';
+import { createLogger } from '../logging/log.js';
+import { postSaveUpdates } from '../util/cleanup.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('benchmarkConversationOpen');
 
@@ -45,7 +47,7 @@ export async function populateConversationWithMessages({
   const logId = 'benchmarkConversationOpen/populateConversationWithMessages';
   log.info(`${logId}: populating conversation`);
 
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const conversation = window.ConversationController.get(conversationId);
 
   strictAssert(
@@ -71,7 +73,7 @@ export async function populateConversationWithMessages({
       type: isIncoming ? 'incoming' : 'outgoing',
       timestamp,
       sent_at: timestamp,
-      schemaVersion: window.Signal.Types.Message.CURRENT_SCHEMA_VERSION,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       received_at: incrementMessageCounter(),
       readStatus: isUnread ? ReadStatus.Unread : ReadStatus.Read,
       sourceServiceId: isIncoming

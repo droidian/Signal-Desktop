@@ -1,23 +1,28 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { Transform } from 'stream';
+import { Transform } from 'node:stream';
 
-import { createLogger } from '../logging/log';
-import { SignalService as Proto } from '../protobuf';
-import protobuf from '../protobuf/wrap';
-import { DurationInSeconds } from '../util/durations';
-import type { ContactAvatarType } from '../types/Avatar';
-import type { AttachmentType } from '../types/Attachment';
-import type { AciString } from '../types/ServiceId';
-import { computeHash } from '../Crypto';
-import { dropNull } from '../util/dropNull';
-import { fromAciUuidBytesOrString } from '../util/ServiceId';
-import * as Bytes from '../Bytes';
-import { decryptAttachmentV2ToSink } from '../AttachmentCrypto';
+import { createLogger } from '../logging/log.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import protobuf from '../protobuf/wrap.js';
+import { DurationInSeconds } from '../util/durations/index.js';
+import {
+  getAbsoluteAttachmentPath,
+  writeNewAttachmentData,
+  deleteAttachmentData,
+} from '../util/migrations.js';
+import type { ContactAvatarType } from '../types/Avatar.js';
+import type { AttachmentType } from '../types/Attachment.js';
+import type { AciString } from '../types/ServiceId.js';
+import { computeHash } from '../Crypto.js';
+import { dropNull } from '../util/dropNull.js';
+import { fromAciUuidBytesOrString } from '../util/ServiceId.js';
+import * as Bytes from '../Bytes.js';
+import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.js';
 
 import Avatar = Proto.ContactDetails.IAvatar;
-import { stringToMIMEType } from '../types/MIME';
+import { stringToMIMEType } from '../types/MIME.js';
 
 const log = createLogger('ContactsParser');
 
@@ -61,9 +66,7 @@ export async function parseContactsV2(
     {
       idForLogging: 'parseContactsV2',
 
-      ciphertextPath: window.Signal.Migrations.getAbsoluteAttachmentPath(
-        attachment.path
-      ),
+      ciphertextPath: getAbsoluteAttachmentPath(attachment.path),
       keysBase64: attachment.localKey,
       size: attachment.size,
       type: 'local',
@@ -155,7 +158,7 @@ export class ParseContactsTransform extends Transform {
 
           const local =
             // eslint-disable-next-line no-await-in-loop
-            await window.Signal.Migrations.writeNewAttachmentData(avatarData);
+            await writeNewAttachmentData(avatarData);
 
           const contentType = this.activeContact.avatar?.contentType;
           const prepared = prepareContact(this.activeContact, {
@@ -170,7 +173,7 @@ export class ParseContactsTransform extends Transform {
             this.contacts.push(prepared);
           } else {
             // eslint-disable-next-line no-await-in-loop
-            await window.Signal.Migrations.deleteAttachmentData(local.path);
+            await deleteAttachmentData(local.path);
           }
           this.activeContact = undefined;
 

@@ -11,27 +11,34 @@ import {
   PublicKey,
 } from '@signalapp/libsignal-client';
 
-import {
-  OutgoingIdentityKeyError,
-  UnregisteredUserError,
-  HTTPError,
-} from './Errors';
-import { Sessions, IdentityKeys } from '../LibSignalStores';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import type { ServiceIdString } from '../types/ServiceId';
-import type { ServerKeysType, WebAPIType } from './WebAPI';
-import { createLogger } from '../logging/log';
-import { isRecord } from '../util/isRecord';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
-import { onFailedToSendWithEndorsements } from '../util/groupSendEndorsements';
-import { isPQRatchetEnabled } from '../util/isPQRatchetEnabled';
+import { OutgoingIdentityKeyError, UnregisteredUserError } from './Errors.js';
+import { Sessions, IdentityKeys } from '../LibSignalStores.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import type {
+  getKeysForServiceId as doGetKeysForServiceId,
+  getKeysForServiceIdUnauth,
+  ServerKeysType,
+} from './WebAPI.js';
+import { createLogger } from '../logging/log.js';
+import { isRecord } from '../util/isRecord.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { onFailedToSendWithEndorsements } from '../util/groupSendEndorsements.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { itemStorage } from './Storage.js';
 
 const log = createLogger('getKeysForServiceId');
 
+type ServerType = Readonly<{
+  getKeysForServiceId: typeof doGetKeysForServiceId;
+  getKeysForServiceIdUnauth: typeof getKeysForServiceIdUnauth;
+}>;
+
 export async function getKeysForServiceId(
   serviceId: ServiceIdString,
-  server: WebAPIType,
+  server: ServerType,
   devicesToUpdate: Array<number> | null,
   accessKey: string | null,
   groupSendToken: GroupSendToken | null
@@ -51,7 +58,7 @@ export async function getKeysForServiceId(
     };
   } catch (error) {
     if (error instanceof HTTPError && error.code === 404) {
-      await window.textsecure.storage.protocol.archiveAllSessions(serviceId);
+      await signalProtocolStore.archiveAllSessions(serviceId);
 
       throw new UnregisteredUserError(serviceId, error);
     }
@@ -70,7 +77,7 @@ function isUnauthorizedError(error: unknown) {
 
 async function getServerKeys(
   serviceId: ServiceIdString,
-  server: WebAPIType,
+  server: ServerType,
   accessKey: string | null,
   groupSendToken: GroupSendToken | null
 ): Promise<{ accessKeyFailed: boolean; keys: ServerKeysType }> {
@@ -122,7 +129,7 @@ async function handleServerKeys(
   response: ServerKeysType,
   devicesToUpdate: Array<number> | null
 ): Promise<void> {
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const sessionStore = new Sessions({ ourServiceId: ourAci });
   const identityKeyStore = new IdentityKeys({ ourServiceId: ourAci });
 
@@ -180,16 +187,13 @@ async function handleServerKeys(
       );
 
       try {
-        await window.textsecure.storage.protocol.enqueueSessionJob(
-          address,
-          () =>
-            processPreKeyBundle(
-              preKeyBundle,
-              protocolAddress,
-              sessionStore,
-              identityKeyStore,
-              isPQRatchetEnabled()
-            )
+        await signalProtocolStore.enqueueSessionJob(address, () =>
+          processPreKeyBundle(
+            preKeyBundle,
+            protocolAddress,
+            sessionStore,
+            identityKeyStore
+          )
         );
       } catch (error) {
         if (

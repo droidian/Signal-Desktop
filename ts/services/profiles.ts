@@ -4,46 +4,54 @@
 import type {
   ClientZkProfileOperations,
   ProfileKeyCredentialRequestContext,
-} from '@signalapp/libsignal-client/zkgroup';
+} from '@signalapp/libsignal-client/zkgroup.js';
 import PQueue from 'p-queue';
 import { IdentityChange } from '@signalapp/libsignal-client';
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { ConversationModel } from '../models/conversations';
-import type { CapabilitiesType, ProfileType } from '../textsecure/WebAPI';
-import MessageSender from '../textsecure/SendMessage';
-import type { ServiceIdString } from '../types/ServiceId';
-import { DataWriter } from '../sql/Client';
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import * as Bytes from '../Bytes';
-import { explodePromise } from '../util/explodePromise';
-import { isRecord } from '../util/isRecord';
-import { sleep } from '../util/sleep';
-import { MINUTE, SECOND } from '../util/durations';
+import type { ConversationModel } from '../models/conversations.js';
+import type { CapabilitiesType } from '../types/Capabilities.d.ts';
+import type { ProfileType } from '../textsecure/WebAPI.js';
+import {
+  checkAccountExistence,
+  getProfile,
+  getProfileUnauth,
+} from '../textsecure/WebAPI.js';
+import { MessageSender } from '../textsecure/SendMessage.js';
+import type { ServiceIdString } from '../types/ServiceId.js';
+import { DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import * as Bytes from '../Bytes.js';
+import { explodePromise } from '../util/explodePromise.js';
+import { isRecord } from '../util/isRecord.js';
+import { sleep } from '../util/sleep.js';
+import { MINUTE, SECOND } from '../util/durations/index.js';
 import {
   generateProfileKeyCredentialRequest,
   getClientZkProfileOperations,
   handleProfileKeyCredential,
-} from '../util/zkgroup';
-import { isMe } from '../util/whatTypeOfConversation';
-import { parseBadgesFromServer } from '../badges/parseBadgesFromServer';
-import { strictAssert } from '../util/assert';
-import { drop } from '../util/drop';
-import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import { SEALED_SENDER } from '../types/SealedSender';
-import { HTTPError } from '../textsecure/Errors';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import { trimForDisplay, verifyAccessKey, decryptProfile } from '../Crypto';
-import type { ConversationLastProfileType } from '../model-types';
-import type { GroupSendToken } from '../types/GroupSendEndorsements';
+} from '../util/zkgroup.js';
+import { isMe } from '../util/whatTypeOfConversation.js';
+import { parseBadgesFromServer } from '../badges/parseBadgesFromServer.js';
+import { strictAssert } from '../util/assert.js';
+import { drop } from '../util/drop.js';
+import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.js';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.js';
+import { SEALED_SENDER } from '../types/SealedSender.js';
+import { HTTPError } from '../types/HTTPError.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import { trimForDisplay, verifyAccessKey, decryptProfile } from '../Crypto.js';
+import type { ConversationLastProfileType } from '../model-types.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.js';
 import {
   maybeCreateGroupSendEndorsementState,
   onFailedToSendWithEndorsements,
-} from '../util/groupSendEndorsements';
-import { ProfileDecryptError } from '../types/errors';
+} from '../util/groupSendEndorsements.js';
+import { ProfileDecryptError } from '../types/errors.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('profiles');
 
@@ -483,11 +491,6 @@ async function doGetProfile(
   const logId = groupId
     ? `getProfile(${c.idForLogging()} in groupv2(${groupId}))`
     : `getProfile(${c.idForLogging()})`;
-  const { messaging } = window.textsecure;
-  strictAssert(
-    messaging,
-    `${logId}: window.textsecure.messaging not available`
-  );
 
   const { updatesUrl } = window.SignalContext.config;
   strictAssert(
@@ -521,16 +524,15 @@ async function doGetProfile(
   });
   const { request } = options;
 
-  const isVersioned = request.profileKeyVersion != null;
   log.info(`${logId}: Fetching profile (${getFetchOptionsLabel(options)})`);
 
   // Step #: Fetch profile
   let profile: ProfileType;
   try {
     if (request.accessKey != null || request.groupSendToken != null) {
-      profile = await messaging.server.getProfileUnauth(serviceId, request);
+      profile = await getProfileUnauth(serviceId, request);
     } else {
-      profile = await messaging.server.getProfile(serviceId, request);
+      profile = await getProfile(serviceId, request);
     }
   } catch (error) {
     if (error instanceof HTTPError) {
@@ -578,14 +580,14 @@ async function doGetProfile(
 
       // Not Found
       if (error.code === 404) {
-        log.info(`${logId}: Profile not found`);
+        log.info(`${logId}: Profile not found; checking account existence`);
 
-        c.set({ profileLastFetchedAt: Date.now() });
-
-        if (!isVersioned || ignoreProfileKey) {
-          log.info(`${logId}: Marking conversation unregistered`);
+        const doesAccountExist = await checkAccountExistence(serviceId);
+        if (!doesAccountExist) {
           c.setUnregistered();
         }
+
+        c.set({ profileLastFetchedAt: Date.now() });
 
         return;
       }
@@ -689,7 +691,7 @@ async function doGetProfile(
 
   // Step #: Save our own `paymentAddress` to Storage
   if (isFieldDefined(profile.paymentAddress) && isMe(c.attributes)) {
-    await window.storage.put('paymentAddress', profile.paymentAddress);
+    await itemStorage.put('paymentAddress', profile.paymentAddress);
   }
 
   // Step #: Save profile `capabilities` to conversation
@@ -706,7 +708,7 @@ async function doGetProfile(
 
     let hasChanged = false;
     const observedCapabilities = {
-      ...window.storage.get('observedCapabilities'),
+      ...itemStorage.get('observedCapabilities'),
     };
     const newKeys = new Array<string>();
     for (const key of OBSERVED_CAPABILITY_KEYS) {
@@ -724,7 +726,7 @@ async function doGetProfile(
       }
     }
 
-    await window.storage.put('observedCapabilities', observedCapabilities);
+    await itemStorage.put('observedCapabilities', observedCapabilities);
     if (hasChanged) {
       log.info(
         'getProfile: detected a capability flip, sending fetch profile',
@@ -791,8 +793,11 @@ async function doGetProfile(
         );
         isSuccessfullyDecrypted = false;
       }
+    } else {
+      log.warn(`${logId}: No key to decrypt 'name' field; skipping`);
     }
   } else {
+    log.warn(`${logId}: 'name' field missing; clearing profile name`);
     c.set({
       profileName: undefined,
       profileFamilyName: undefined,
@@ -852,7 +857,7 @@ export async function updateIdentityKey(
     return false;
   }
 
-  const saveOutcome = await window.textsecure.storage.protocol.saveIdentity(
+  const saveOutcome = await signalProtocolStore.saveIdentity(
     new Address(serviceId, 1),
     identityKey,
     false,
@@ -863,8 +868,8 @@ export async function updateIdentityKey(
     log.info(`updateIdentityKey(${serviceId}): changed`);
     // save identity will close all sessions except for .1, so we
     // must close that one manually.
-    const ourAci = window.textsecure.storage.user.getCheckedAci();
-    await window.textsecure.storage.protocol.archiveSession(
+    const ourAci = itemStorage.user.getCheckedAci();
+    await signalProtocolStore.archiveSession(
       new QualifiedAddress(ourAci, new Address(serviceId, 1))
     );
   }

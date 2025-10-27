@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { PublicKey, Fingerprint } from '@signalapp/libsignal-client';
-import type { ConversationType } from '../state/ducks/conversations';
+import type { ConversationType } from '../state/ducks/conversations.js';
 
-import { assertDev } from './assert';
-import { uuidToBytes } from './uuidToBytes';
-import { createLogger } from '../logging/log';
-import type { SafetyNumberType } from '../types/safetyNumber';
-import { isAciString } from './isAciString';
+import { assertDev } from './assert.js';
+import { uuidToBytes } from './uuidToBytes.js';
+import { createLogger } from '../logging/log.js';
+import type { SafetyNumberType } from '../types/safetyNumber.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { isAciString } from './isAciString.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('safetyNumber');
 
@@ -24,17 +26,16 @@ export async function generateSafetyNumber(
   const logId = `generateSafetyNumbers(${contact.id})`;
   log.info(`${logId}: starting`);
 
-  const { storage } = window.textsecure;
-  const ourAci = storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
-  const us = storage.protocol.getIdentityRecord(ourAci);
+  const us = signalProtocolStore.getIdentityRecord(ourAci);
   const ourKeyBuffer = us ? us.publicKey : null;
 
   const theirAci = isAciString(contact.serviceId)
     ? contact.serviceId
     : undefined;
   const them = theirAci
-    ? await storage.protocol.getOrMigrateIdentityRecord(theirAci)
+    ? await signalProtocolStore.getOrMigrateIdentityRecord(theirAci)
     : undefined;
   const theirKeyBuffer = them?.publicKey;
 

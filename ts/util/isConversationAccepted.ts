@@ -1,11 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types.d';
-import { SignalService as Proto } from '../protobuf';
-import { isDirectConversation, isMe } from './whatTypeOfConversation';
-import { isInSystemContacts } from './isInSystemContacts';
-import { createLogger } from '../logging/log';
+import type { ConversationAttributesType } from '../model-types.d.ts';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { isDirectConversation, isMe } from './whatTypeOfConversation.js';
+import { isInSystemContacts } from './isInSystemContacts.js';
+import { createLogger } from '../logging/log.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 export type IsConversationAcceptedOptionsType = {
   ignoreEmptyConvo: boolean;
@@ -46,7 +47,7 @@ export function isConversationAccepted(
     profileSharing,
   } = conversationAttrs;
 
-  const ourAci = window.storage.user.getAci();
+  const ourAci = itemStorage.user.getAci();
   const hasRequestedToJoin =
     Boolean(ourAci) &&
     (pendingAdminApprovalV2 || []).some(item => item.aci === ourAci);

@@ -1,10 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber } from 'lodash';
-import { strictAssert } from './assert';
+import lodash from 'lodash';
+import { strictAssert } from './assert.js';
 
-import type { AttachmentType } from '../types/Attachment';
+import type { AttachmentType } from '../types/Attachment.js';
+
+const { isNumber } = lodash;
 
 export enum AttachmentDisposition {
   Attachment = 'attachment',
@@ -33,6 +35,7 @@ export function getLocalAttachmentUrl(
       | 'path'
       | 'size'
       | 'version'
+      | 'copied'
     >
   >,
   {
@@ -102,6 +105,11 @@ export function getLocalAttachmentUrl(
       );
     }
     url.searchParams.set('chunkSize', attachment.chunkSize.toString());
+  }
+
+  // For weak references (e.g. copied quotes) don't error if path is missing
+  if (attachment.copied) {
+    url.searchParams.set('weakReference', '1');
   }
 
   return url.toString();

@@ -5,15 +5,15 @@ import type { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './StoryCreator';
-import { StoryCreator } from './StoryCreator';
-import { fakeAttachment } from '../test-helpers/fakeAttachment';
+import type { PropsType } from './StoryCreator.js';
+import { StoryCreator } from './StoryCreator.js';
+import { fakeAttachment } from '../test-helpers/fakeAttachment.js';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-helpers/getDefaultConversation';
-import { getFakeDistributionListsWithMembers } from '../test-helpers/getFakeDistributionLists';
-import { EmojiSkinTone } from './fun/data/emojis';
+} from '../test-helpers/getDefaultConversation.js';
+import { getFakeDistributionListsWithMembers } from '../test-helpers/getFakeDistributionLists.js';
+import { EmojiSkinTone } from './fun/data/emojis.js';
 
 const { i18n } = window.SignalContext;
 
@@ -30,7 +30,6 @@ export default {
     hasFirstStoryPostExperience: false,
     i18n,
     imageToBlurHash: async () => 'LDA,FDBnm+I=p{tkIUI;~UkpELV]',
-    installedPacks: [],
     isSending: false,
     linkPreview: undefined,
     me: getDefaultConversation(),
@@ -39,12 +38,9 @@ export default {
     onDistributionListCreated: undefined,
     onHideMyStoriesFrom: action('onHideMyStoriesFrom'),
     onSend: action('onSend'),
-    onEmojiSkinToneDefaultChange: action('onEmojiSkinToneDefaultChange'),
-    onUseEmoji: action('onUseEmoji'),
+    onSelectEmoji: action('onSelectEmoji'),
     onViewersUpdated: action('onViewersUpdated'),
     processAttachment: undefined,
-    recentEmojis: [],
-    recentStickers: [],
     sendStoryModalOpenStateChanged: action('sendStoryModalOpenStateChanged'),
     setMyStoriesToAllSignalConnections: action(
       'setMyStoriesToAllSignalConnections'

@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import { DataWriter } from '../sql/Client';
-import { createLogger } from '../logging/log';
-import { MINUTE } from '../util/durations';
-import { missingCaseError } from '../util/missingCaseError';
-import { waitForOnline } from '../util/waitForOnline';
+import { DataWriter } from '../sql/Client.js';
+import { createLogger } from '../logging/log.js';
+import { MINUTE } from '../util/durations/index.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { waitForOnline } from '../util/waitForOnline.js';
+import { writeNewBadgeImageFileData } from '../util/migrations.js';
+import { getBadgeImageFile, isOnline } from '../textsecure/WebAPI.js';
 
 const log = createLogger('badgeImageFileDownloader');
 
@@ -88,18 +90,10 @@ function getUrlsToDownload(): Array<string> {
 }
 
 async function downloadBadgeImageFile(url: string): Promise<string> {
-  await waitForOnline({ timeout: 1 * MINUTE });
+  await waitForOnline({ server: { isOnline }, timeout: 1 * MINUTE });
 
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error(
-      'downloadBadgeImageFile: window.textsecure.server is not available!'
-    );
-  }
-
-  const imageFileData = await server.getBadgeImageFile(url);
-  const localPath =
-    await window.Signal.Migrations.writeNewBadgeImageFileData(imageFileData);
+  const imageFileData = await getBadgeImageFile(url);
+  const localPath = await writeNewBadgeImageFileData(imageFileData);
 
   await DataWriter.badgeImageFileDownloaded(url, localPath);
 

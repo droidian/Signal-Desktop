@@ -4,11 +4,12 @@
 import type { LoadImageResult } from 'blueimp-load-image';
 import loadImage from 'blueimp-load-image';
 
-import type { MIMEType } from '../types/MIME';
-import { IMAGE_JPEG } from '../types/MIME';
-import { canvasToBlob } from './canvasToBlob';
-import { getValue } from '../RemoteConfig';
-import { parseNumber } from './libphonenumberUtil';
+import type { MIMEType } from '../types/MIME.js';
+import { IMAGE_JPEG } from '../types/MIME.js';
+import { canvasToBlob } from './canvasToBlob.js';
+import { getValue } from '../RemoteConfig.js';
+import { parseNumber } from './libphonenumberUtil.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 enum MediaQualityLevels {
   One = 1,
@@ -70,7 +71,7 @@ function getMediaQualityLevel(): MediaQualityLevels {
     return DEFAULT_LEVEL;
   }
 
-  const e164 = window.textsecure.storage.user.getNumber();
+  const e164 = itemStorage.user.getNumber();
   if (!e164) {
     return DEFAULT_LEVEL;
   }

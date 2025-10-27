@@ -4,9 +4,9 @@
 import { assert } from 'chai';
 import { Proto } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations';
-import type { App, Bootstrap } from './fixtures';
-import { initStorage, debug } from './fixtures';
+import * as durations from '../../util/durations/index.js';
+import type { App, Bootstrap } from './fixtures.js';
+import { initStorage, debug } from './fixtures.js';
 
 const IdentifierType = Proto.ManifestRecord.Identifier.Type;
 
@@ -115,7 +115,7 @@ describe('storage service', function (this: Mocha.Suite) {
           type: IdentifierType.ACCOUNT,
           record: oldAccount.record,
         })
-        .updateAccount({})
+        .updateManyAccounts({})
     );
 
     debug('sending fetch storage');

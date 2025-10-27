@@ -5,36 +5,25 @@ import type { FunctionComponent, ReactNode } from 'react';
 import React, { useCallback } from 'react';
 import classNames from 'classnames';
 
+import type { RenderConversationListItemContextMenuProps } from './BaseConversationListItem.js';
 import {
   BaseConversationListItem,
   HEADER_NAME_CLASS_NAME,
   HEADER_CONTACT_NAME_CLASS_NAME,
   MESSAGE_TEXT_CLASS_NAME,
-} from './BaseConversationListItem';
-import { MessageBody } from '../conversation/MessageBody';
-import { ContactName } from '../conversation/ContactName';
-import { TypingAnimation } from '../conversation/TypingAnimation';
+} from './BaseConversationListItem.js';
+import { MessageBody } from '../conversation/MessageBody.js';
+import { ContactName } from '../conversation/ContactName.js';
+import { TypingAnimation } from '../conversation/TypingAnimation.js';
 
-import type { LocalizerType, ThemeType } from '../../types/Util';
-import type { ConversationType } from '../../state/ducks/conversations';
-import type { BadgeType } from '../../badges/types';
-import { isSignalConversation } from '../../util/isSignalConversation';
-import { RenderLocation } from '../conversation/MessageTextRenderer';
+import type { LocalizerType, ThemeType } from '../../types/Util.js';
+import type { ConversationType } from '../../state/ducks/conversations.js';
+import type { BadgeType } from '../../badges/types.js';
+import { isSignalConversation } from '../../util/isSignalConversation.js';
+import { RenderLocation } from '../conversation/MessageTextRenderer.js';
 
 const EMPTY_OBJECT = Object.freeze(Object.create(null));
 const MESSAGE_STATUS_ICON_CLASS_NAME = `${MESSAGE_TEXT_CLASS_NAME}__status-icon`;
-
-export const MessageStatuses = [
-  'sending',
-  'sent',
-  'delivered',
-  'read',
-  'paused',
-  'error',
-  'partial-sent',
-] as const;
-
-export type MessageStatusType = (typeof MessageStatuses)[number];
 
 export type PropsData = Pick<
   ConversationType,
@@ -77,6 +66,9 @@ type PropsHousekeeping = {
   onClick: (id: string) => void;
   onMouseDown: (id: string) => void;
   theme: ThemeType;
+  renderConversationListItemContextMenu?: (
+    props: RenderConversationListItemContextMenuProps
+  ) => JSX.Element;
 };
 
 export type Props = PropsData & PropsHousekeeping;
@@ -115,6 +107,7 @@ export const ConversationListItem: FunctionComponent<Props> = React.memo(
     unreadCount,
     unreadMentionsCount,
     serviceId,
+    renderConversationListItemContextMenu,
   }) {
     const isMuted = Boolean(muteExpiresAt && Date.now() < muteExpiresAt);
     const isSomeoneTyping =
@@ -243,6 +236,9 @@ export const ConversationListItem: FunctionComponent<Props> = React.memo(
         unreadCount={unreadCount}
         unreadMentionsCount={unreadMentionsCount}
         serviceId={serviceId}
+        renderConversationListItemContextMenu={
+          renderConversationListItemContextMenu
+        }
       />
     );
   }

@@ -4,45 +4,38 @@
 import EventEmitter from 'node:events';
 import { ipcRenderer as ipc } from 'electron';
 import * as semver from 'semver';
-import { groupBy, mapValues } from 'lodash';
-import PQueue from 'p-queue';
+import lodash, { throttle } from 'lodash';
 
-import type { IPCType } from '../../window.d';
-import { parseIntWithFallback } from '../../util/parseIntWithFallback';
-import { getSignalConnections } from '../../util/getSignalConnections';
-import { ThemeType } from '../../types/Util';
-import { Environment } from '../../environment';
-import { SignalContext } from '../context';
-import { createLogger } from '../../logging/log';
-import { formatCountForLogging } from '../../logging/formatCountForLogging';
-import * as Errors from '../../types/errors';
+import type { IPCType } from '../../window.d.ts';
+import { parseIntWithFallback } from '../../util/parseIntWithFallback.js';
+import { getSignalConnections } from '../../util/getSignalConnections.js';
+import { ThemeType } from '../../types/Util.js';
+import { Environment } from '../../environment.js';
+import { SignalContext } from '../context.js';
+import { createLogger } from '../../logging/log.js';
+import { formatCountForLogging } from '../../logging/formatCountForLogging.js';
+import * as Errors from '../../types/errors.js';
 
-import { strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import { explodePromise } from '../../util/explodePromise';
-import { DataReader } from '../../sql/Client';
-import type { WindowsNotificationData } from '../../services/notifications';
-import { AggregatedStats } from '../../textsecure/WebsocketResources';
-import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager';
-import { isProduction } from '../../util/version';
-import { ToastType } from '../../types/Toast';
-import { ConversationController } from '../../ConversationController';
-import { createBatcher } from '../../util/batcher';
-import { ReceiptType } from '../../types/Receipt';
-import type { Receipt } from '../../types/Receipt';
-import { MINUTE } from '../../util/durations';
-import {
-  conversationJobQueue,
-  conversationQueueJobEnum,
-} from '../../jobs/conversationJobQueue';
+import { strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
+import { explodePromise } from '../../util/explodePromise.js';
+import { DataReader } from '../../sql/Client.js';
+import type { WindowsNotificationData } from '../../services/notifications.js';
+import { finish3dsValidation } from '../../services/donations.js';
+import { AggregatedStats } from '../../textsecure/WebsocketResources.js';
+import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager.js';
+import { isProduction } from '../../util/version.js';
+import { ToastType } from '../../types/Toast.js';
+import { ConversationController } from '../../ConversationController.js';
+import { isEnabled } from '../../RemoteConfig.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { mapValues } = lodash;
 
 const log = createLogger('phase1-ipc');
 
-// It is important to call this as early as possible
-window.i18n = SignalContext.i18n;
-
 // We are comfortable doing this because we verified the type on the other side!
-const { config } = window.SignalContext;
+const { config } = SignalContext;
 
 // Flags for testing
 const Flags = {
@@ -60,28 +53,6 @@ window.RETRY_DELAY = false;
 
 window.Whisper = {
   events: new EventEmitter(),
-  deliveryReceiptQueue: new PQueue({
-    concurrency: 1,
-    timeout: MINUTE * 30,
-  }),
-  deliveryReceiptBatcher: createBatcher<Receipt>({
-    name: 'Whisper.deliveryReceiptBatcher',
-    wait: 500,
-    maxSize: 100,
-    processBatch: async deliveryReceipts => {
-      const groups = groupBy(deliveryReceipts, 'conversationId');
-      await Promise.all(
-        Object.keys(groups).map(async conversationId => {
-          await conversationJobQueue.add({
-            type: conversationQueueJobEnum.enum.Receipts,
-            conversationId,
-            receiptsType: ReceiptType.Delivery,
-            receipts: groups[conversationId],
-          });
-        })
-      );
-    },
-  }),
 };
 window.ConversationController = new ConversationController();
 window.platform = process.platform;
@@ -91,7 +62,7 @@ window.getVersion = () => config.version;
 window.getBuildCreation = () => parseIntWithFallback(config.buildCreation, 0);
 window.getBuildExpiration = () => config.buildExpiration;
 window.getHostName = () => config.hostname;
-window.getServerTrustRoot = () => config.serverTrustRoot;
+window.getServerTrustRoots = () => config.serverTrustRoots;
 window.getServerPublicParams = () => config.serverPublicParams;
 window.getGenericServerPublicParams = () => config.genericServerPublicParams;
 window.getBackupServerPublicParams = () => config.backupServerPublicParams;
@@ -249,7 +220,7 @@ ipc.on('additional-log-data-request', async event => {
     ? ourConversation.get('capabilities')
     : undefined;
 
-  const remoteConfig = window.storage.get('remoteConfig') || {};
+  const remoteConfig = itemStorage.get('remoteConfig') || {};
 
   let statistics;
   try {
@@ -285,8 +256,8 @@ ipc.on('additional-log-data-request', async event => {
     };
   }
 
-  const ourAci = window.textsecure.storage.user.getAci();
-  const ourPni = window.textsecure.storage.user.getPni();
+  const ourAci = itemStorage.user.getAci();
+  const ourPni = itemStorage.user.getPni();
 
   event.sender.send('additional-log-data-response', {
     capabilities: ourCapabilities || {},
@@ -300,7 +271,7 @@ ipc.on('additional-log-data-request', async event => {
       ...networkStatistics,
     },
     user: {
-      deviceId: window.textsecure.storage.user.getDeviceId(),
+      deviceId: itemStorage.user.getDeviceId(),
       uuid: ourAci,
       pni: ourPni,
       conversationId: ourConversation && ourConversation.id,
@@ -412,7 +383,7 @@ ipc.on('cancel-presenting', () => {
 });
 
 ipc.on('donation-validation-complete', (_event, { token }) => {
-  drop(window.Signal.Services.donations.finish3dsValidation(token));
+  drop(finish3dsValidation(token));
 });
 
 ipc.on('show-conversation-via-token', (_event, token: string) => {
@@ -496,6 +467,56 @@ ipc.on('sql-error', () => {
     toastType: ToastType.SQLError,
   });
 });
+
+let untoastedMainProcessErrorLogCount = 0;
+let untoastedMainProcessErrorLogs: Array<string> = [];
+const MAX_MAIN_PROCESS_ERROR_LOGS_TO_CACHE = 5;
+
+ipc.on('logging-error', (_event, logLine) => {
+  if (isProduction(window.getVersion())) {
+    return;
+  }
+
+  if (!isEnabled('desktop.loggingErrorToasts')) {
+    return;
+  }
+
+  untoastedMainProcessErrorLogCount += 1;
+  const numCached = untoastedMainProcessErrorLogs.unshift(logLine);
+  if (numCached > MAX_MAIN_PROCESS_ERROR_LOGS_TO_CACHE) {
+    untoastedMainProcessErrorLogs.pop();
+  }
+
+  throttledHandleMainProcessErrors();
+});
+
+const throttledHandleMainProcessErrors = throttle(
+  _handleMainProcessErrors,
+  5000
+);
+
+function _handleMainProcessErrors() {
+  if (!window.reduxActions) {
+    // Try again in a bit!
+    throttledHandleMainProcessErrors();
+    return;
+  }
+
+  if (untoastedMainProcessErrorLogs.length === 0) {
+    return;
+  }
+
+  window.reduxActions.toast.showToast({
+    toastType: ToastType._InternalMainProcessLoggingError,
+    parameters: {
+      count: untoastedMainProcessErrorLogCount,
+      logLines: untoastedMainProcessErrorLogs,
+    },
+  });
+
+  untoastedMainProcessErrorLogCount = 0;
+  untoastedMainProcessErrorLogs = [];
+}
 
 ipc.on(
   'art-creator:uploadStickerPack',

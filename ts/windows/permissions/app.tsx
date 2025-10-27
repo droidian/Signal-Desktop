@@ -4,12 +4,14 @@
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { PermissionsPopup } from '../../components/PermissionsPopup';
-import { i18n } from '../sandboxedInit';
-import { strictAssert } from '../../util/assert';
-import { FunDefaultEnglishEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider';
+import '../sandboxedInit.js';
+import { PermissionsPopup } from '../../components/PermissionsPopup.js';
+import { strictAssert } from '../../util/assert.js';
+import { FunDefaultEnglishEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider.js';
+import { AxoProvider } from '../../axo/AxoProvider.js';
 
 const { PermissionsWindowProps } = window.Signal;
+const { i18n } = window.SignalContext;
 
 strictAssert(PermissionsWindowProps, 'window values not provided');
 
@@ -31,13 +33,17 @@ strictAssert(app != null, 'No #app');
 
 createRoot(app).render(
   <StrictMode>
-    <FunDefaultEnglishEmojiLocalizationProvider>
-      <PermissionsPopup
-        i18n={i18n}
-        message={message}
-        onAccept={PermissionsWindowProps.onAccept}
-        onClose={PermissionsWindowProps.onClose}
-      />
-    </FunDefaultEnglishEmojiLocalizationProvider>
+    <AxoProvider
+      dir={window.SignalContext.getResolvedMessagesLocaleDirection()}
+    >
+      <FunDefaultEnglishEmojiLocalizationProvider>
+        <PermissionsPopup
+          i18n={i18n}
+          message={message}
+          onAccept={PermissionsWindowProps.onAccept}
+          onClose={PermissionsWindowProps.onClose}
+        />
+      </FunDefaultEnglishEmojiLocalizationProvider>
+    </AxoProvider>
   </StrictMode>
 );

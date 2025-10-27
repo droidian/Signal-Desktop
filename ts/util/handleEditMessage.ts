@@ -1,33 +1,38 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from '../types/Attachment';
-import type { EditAttributesType } from '../messageModifiers/Edits';
+import type { AttachmentType } from '../types/Attachment.js';
+import type { EditAttributesType } from '../messageModifiers/Edits.js';
 import type {
   EditHistoryType,
   MessageAttributesType,
-  QuotedMessageType,
-} from '../model-types.d';
-import * as Edits from '../messageModifiers/Edits';
-import { createLogger } from '../logging/log';
-import { ReadStatus } from '../messages/MessageReadStatus';
-import { DataWriter } from '../sql/Client';
-import { drop } from './drop';
+} from '../model-types.d.ts';
+import * as Edits from '../messageModifiers/Edits.js';
+import { createLogger } from '../logging/log.js';
+import { ReadStatus } from '../messages/MessageReadStatus.js';
+import { DataWriter } from '../sql/Client.js';
+import { drop } from './drop.js';
+import { upgradeMessageSchema } from './migrations.js';
+import {
+  deliveryReceiptQueue,
+  deliveryReceiptBatcher,
+} from './deliveryReceipt.js';
 import {
   cacheAttachmentBySignature,
   getCachedAttachmentBySignature,
   isVoiceMessage,
-} from '../types/Attachment';
-import { isAciString } from './isAciString';
-import { getMessageIdForLogging } from './idForLogging';
-import { hasErrors } from '../state/selectors/message';
-import { isIncoming, isOutgoing } from '../messages/helpers';
-import { isDirectConversation } from './whatTypeOfConversation';
-import { isTooOldToModifyMessage } from './isTooOldToModifyMessage';
-import { queueAttachmentDownloads } from './queueAttachmentDownloads';
-import { modifyTargetMessage } from './modifyTargetMessage';
-import { isMessageNoteToSelf } from './isMessageNoteToSelf';
-import { MessageModel } from '../models/messages';
+} from './Attachment.js';
+import { isAciString } from './isAciString.js';
+import { getMessageIdForLogging } from './idForLogging.js';
+import { hasErrors } from '../state/selectors/message.js';
+import { isIncoming, isOutgoing } from '../messages/helpers.js';
+import { isDirectConversation } from './whatTypeOfConversation.js';
+import { isTooOldToModifyMessage } from './isTooOldToModifyMessage.js';
+import { queueAttachmentDownloads } from './queueAttachmentDownloads.js';
+import { modifyTargetMessage } from './modifyTargetMessage.js';
+import { isMessageNoteToSelf } from './isMessageNoteToSelf.js';
+import { MessageModel } from '../models/messages.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('handleEditMessage');
 
@@ -54,7 +59,7 @@ export async function handleEditMessage(
 
   // Use local aci for outgoing messages and sourceServiceId for incoming.
   const senderAci = isOutgoing(mainMessage)
-    ? window.storage.user.getCheckedAci()
+    ? itemStorage.user.getCheckedAci()
     : mainMessage.sourceServiceId;
   if (!isAciString(senderAci)) {
     log.warn(`${idLog}: Cannot edit a message from PNI source`);
@@ -128,8 +133,9 @@ export async function handleEditMessage(
     return;
   }
 
-  const upgradedEditedMessageData =
-    await window.Signal.Migrations.upgradeMessageSchema(editAttributes.message);
+  const upgradedEditedMessageData = await upgradeMessageSchema(
+    editAttributes.message
+  );
 
   // Copies over the attachments from the main message if they're the same
   // and they have already been downloaded.
@@ -155,23 +161,6 @@ export async function handleEditMessage(
     }
   }
 
-  let newAttachments = 0;
-  const nextEditedMessageAttachments =
-    upgradedEditedMessageData.attachments?.map(attachment => {
-      const existingAttachment = getCachedAttachmentBySignature(
-        attachmentSignatures,
-        attachment
-      );
-
-      if (existingAttachment) {
-        return existingAttachment;
-      }
-
-      newAttachments += 1;
-      return attachment;
-    });
-
-  let newPreviews = 0;
   const nextEditedMessagePreview = upgradedEditedMessageData.preview?.map(
     preview => {
       if (!preview.image) {
@@ -186,61 +175,27 @@ export async function handleEditMessage(
       if (existingPreviewImage) {
         return { ...preview, image: existingPreviewImage };
       }
-      newPreviews += 1;
+
+      log.info(`${idLog}: replaced preview`);
       return preview;
     }
   );
 
-  let newQuoteThumbnails = 0;
+  const editMessageHasQuote = Boolean(upgradedEditedMessageData.quote);
 
-  const { quote: upgradedQuote } = upgradedEditedMessageData;
-  let nextEditedMessageQuote: QuotedMessageType | undefined;
-  if (!upgradedQuote) {
-    if (mainMessage.quote) {
-      // Quote dropped
-      log.info(`${idLog}: dropping quote`);
-    }
-  } else if (!upgradedQuote.id || upgradedQuote.id === mainMessage.quote?.id) {
-    // Quote preserved
-    nextEditedMessageQuote = mainMessage.quote;
-  } else {
-    // Quote updated!
-    nextEditedMessageQuote = {
-      ...upgradedQuote,
-      attachments: upgradedQuote.attachments.map(attachment => {
-        if (!attachment.thumbnail) {
-          return attachment;
-        }
-
-        const existingQuoteAttachment = getCachedAttachmentBySignature(
-          quoteSignatures,
-          attachment.thumbnail
-        );
-
-        if (existingQuoteAttachment) {
-          return {
-            ...attachment,
-            thumbnail: existingQuoteAttachment.thumbnail,
-          };
-        }
-
-        newQuoteThumbnails += 1;
-        return attachment;
-      }),
-    };
+  if (!editMessageHasQuote && mainMessage.quote) {
+    log.info(`${idLog}: dropping quote`);
   }
 
-  log.info(
-    `${idLog}: editing message, added ${newAttachments} attachments, ` +
-      `${newPreviews} previews, ${newQuoteThumbnails} quote thumbnails`
-  );
-
   const editedMessage: EditHistoryType = {
-    attachments: nextEditedMessageAttachments,
+    // attachments are copied from main message
+    attachments: mainMessage.attachments,
     body: upgradedEditedMessageData.body,
     bodyAttachment: upgradedEditedMessageData.bodyAttachment,
     bodyRanges: upgradedEditedMessageData.bodyRanges,
     preview: nextEditedMessagePreview,
+    // quote can be removed but not modified
+    quote: editMessageHasQuote ? mainMessage.quote : undefined,
     sendStateByConversationId:
       upgradedEditedMessageData.sendStateByConversationId,
     timestamp: upgradedEditedMessageData.timestamp,
@@ -250,7 +205,6 @@ export async function handleEditMessage(
     readStatus: upgradedEditedMessageData.readStatus,
     unidentifiedDeliveryReceived:
       upgradedEditedMessageData.unidentifiedDeliveryReceived,
-    quote: nextEditedMessageQuote,
   };
 
   // The edit history works like a queue where the newest edits are at the top.
@@ -312,8 +266,8 @@ export async function handleEditMessage(
     // processing incoming messages to start sending outgoing delivery receipts.
     // The queue can be paused easily.
     drop(
-      window.Whisper.deliveryReceiptQueue.add(() => {
-        window.Whisper.deliveryReceiptBatcher.add({
+      deliveryReceiptQueue.add(() => {
+        deliveryReceiptBatcher.add({
           messageId: mainMessage.id,
           conversationId: editAttributes.conversationId,
           senderE164: editAttributes.message.source,
@@ -336,7 +290,7 @@ export async function handleEditMessage(
   drop(
     DataWriter.saveEditedMessage(
       mainMessageModel.attributes,
-      window.textsecure.storage.user.getCheckedAci(),
+      itemStorage.user.getCheckedAci(),
       {
         conversationId: editAttributes.conversationId,
         messageId: mainMessage.id,

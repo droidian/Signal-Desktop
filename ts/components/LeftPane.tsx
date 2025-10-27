@@ -3,63 +3,70 @@
 
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import classNames from 'classnames';
-import { isNumber } from 'lodash';
+import lodash from 'lodash';
 
-import type { LeftPaneHelper, ToFindType } from './leftPane/LeftPaneHelper';
-import { FindDirection } from './leftPane/LeftPaneHelper';
-import type { LeftPaneInboxPropsType } from './leftPane/LeftPaneInboxHelper';
-import { LeftPaneInboxHelper } from './leftPane/LeftPaneInboxHelper';
-import type { LeftPaneSearchPropsType } from './leftPane/LeftPaneSearchHelper';
-import { LeftPaneSearchHelper } from './leftPane/LeftPaneSearchHelper';
-import type { LeftPaneArchivePropsType } from './leftPane/LeftPaneArchiveHelper';
-import { LeftPaneArchiveHelper } from './leftPane/LeftPaneArchiveHelper';
-import type { LeftPaneComposePropsType } from './leftPane/LeftPaneComposeHelper';
-import { LeftPaneComposeHelper } from './leftPane/LeftPaneComposeHelper';
-import type { LeftPaneFindByUsernamePropsType } from './leftPane/LeftPaneFindByUsernameHelper';
-import { LeftPaneFindByUsernameHelper } from './leftPane/LeftPaneFindByUsernameHelper';
-import type { LeftPaneFindByPhoneNumberPropsType } from './leftPane/LeftPaneFindByPhoneNumberHelper';
-import { LeftPaneFindByPhoneNumberHelper } from './leftPane/LeftPaneFindByPhoneNumberHelper';
-import type { LeftPaneChooseGroupMembersPropsType } from './leftPane/LeftPaneChooseGroupMembersHelper';
-import { LeftPaneChooseGroupMembersHelper } from './leftPane/LeftPaneChooseGroupMembersHelper';
-import type { LeftPaneSetGroupMetadataPropsType } from './leftPane/LeftPaneSetGroupMetadataHelper';
-import { LeftPaneSetGroupMetadataHelper } from './leftPane/LeftPaneSetGroupMetadataHelper';
+import type { ToFindType } from './leftPane/LeftPaneHelper.js';
+import { FindDirection } from './leftPane/LeftPaneHelper.js';
+import type { LeftPaneInboxPropsType } from './leftPane/LeftPaneInboxHelper.js';
+import { LeftPaneInboxHelper } from './leftPane/LeftPaneInboxHelper.js';
+import type { LeftPaneSearchPropsType } from './leftPane/LeftPaneSearchHelper.js';
+import { LeftPaneSearchHelper } from './leftPane/LeftPaneSearchHelper.js';
+import type { LeftPaneArchivePropsType } from './leftPane/LeftPaneArchiveHelper.js';
+import { LeftPaneArchiveHelper } from './leftPane/LeftPaneArchiveHelper.js';
+import type { LeftPaneComposePropsType } from './leftPane/LeftPaneComposeHelper.js';
+import { LeftPaneComposeHelper } from './leftPane/LeftPaneComposeHelper.js';
+import type { LeftPaneFindByUsernamePropsType } from './leftPane/LeftPaneFindByUsernameHelper.js';
+import { LeftPaneFindByUsernameHelper } from './leftPane/LeftPaneFindByUsernameHelper.js';
+import type { LeftPaneFindByPhoneNumberPropsType } from './leftPane/LeftPaneFindByPhoneNumberHelper.js';
+import { LeftPaneFindByPhoneNumberHelper } from './leftPane/LeftPaneFindByPhoneNumberHelper.js';
+import type { LeftPaneChooseGroupMembersPropsType } from './leftPane/LeftPaneChooseGroupMembersHelper.js';
+import { LeftPaneChooseGroupMembersHelper } from './leftPane/LeftPaneChooseGroupMembersHelper.js';
+import type { LeftPaneSetGroupMetadataPropsType } from './leftPane/LeftPaneSetGroupMetadataHelper.js';
+import { LeftPaneSetGroupMetadataHelper } from './leftPane/LeftPaneSetGroupMetadataHelper.js';
 
-import { LeftPaneMode } from '../types/leftPane';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import { ScrollBehavior } from '../types/Util';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges';
-import { usePrevious } from '../hooks/usePrevious';
-import { missingCaseError } from '../util/missingCaseError';
-import type { DurationInSeconds } from '../util/durations';
-import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util';
-import * as KeyboardLayout from '../services/keyboardLayout';
-import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId';
-import type { ShowConversationType } from '../state/ducks/conversations';
-import type { PropsType as UnsupportedOSDialogPropsType } from '../state/smart/UnsupportedOSDialog';
+import { LeftPaneMode } from '../types/leftPane.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import { ScrollBehavior } from '../types/Util.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.js';
+import { usePrevious } from '../hooks/usePrevious.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import type { DurationInSeconds } from '../util/durations/index.js';
+import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util.js';
+import * as KeyboardLayout from '../services/keyboardLayout.js';
+import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId.js';
+import type { ShowConversationType } from '../state/ducks/conversations.js';
+import type { PropsType as UnsupportedOSDialogPropsType } from '../state/smart/UnsupportedOSDialog.js';
 
-import { ConversationList } from './ConversationList';
-import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox';
-import type { PropsType as DialogExpiredBuildPropsType } from './DialogExpiredBuild';
-import { LeftPaneBanner } from './LeftPaneBanner';
+import { ConversationList } from './ConversationList.js';
+import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.js';
+import type { PropsType as DialogExpiredBuildPropsType } from './DialogExpiredBuild.js';
+import { LeftPaneBanner } from './LeftPaneBanner.js';
 
 import type {
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../types/Avatar';
-import { useSizeObserver } from '../hooks/useSizeObserver';
+} from '../types/Avatar.js';
+import { useSizeObserver } from '../hooks/useSizeObserver.js';
 import {
   NavSidebar,
   NavSidebarActionButton,
   NavSidebarSearchHeader,
-} from './NavSidebar';
-import { ContextMenu } from './ContextMenu';
-import type { UnreadStats } from '../util/countUnreadStats';
-import { BackupMediaDownloadProgress } from './BackupMediaDownloadProgress';
-import type { ServerAlertsType } from '../util/handleServerAlerts';
-import { getServerAlertDialog } from './ServerAlerts';
-import { NavTab, SettingsPage, ProfileEditorPage } from '../types/Nav';
-import type { Location } from '../types/Nav';
+} from './NavSidebar.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
+import { BackupMediaDownloadProgress } from './BackupMediaDownloadProgress.js';
+import type { ServerAlertsType, ServerAlert } from '../types/ServerAlert.js';
+import { getServerAlertDialog } from './ServerAlerts.js';
+import { NavTab, SettingsPage, ProfileEditorPage } from '../types/Nav.js';
+import type { Location } from '../types/Nav.js';
+import type { RenderConversationListItemContextMenuProps } from './conversationList/BaseConversationListItem.js';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.js';
+import type { ChatFolder } from '../types/ChatFolder.js';
+import { isChatFoldersEnabled } from '../types/ChatFolder.js';
+import { ProfileAvatar } from './PreferencesNotificationProfiles.js';
+import { tw } from '../axo/tw.js';
+
+const { isNumber } = lodash;
 
 export type PropsType = {
   backupMediaDownloadProgress: {
@@ -71,6 +78,7 @@ export type PropsType = {
     downloadBannerDismissed: boolean;
   };
   otherTabsUnreadStats: UnreadStats;
+  hasAnyCurrentCustomChatFolders: boolean;
   hasExpiredDialog: boolean;
   hasFailedStorySends: boolean;
   hasNetworkDialog: boolean;
@@ -112,9 +120,12 @@ export type PropsType = {
         mode: LeftPaneMode.SetGroupMetadata;
       } & LeftPaneSetGroupMetadataPropsType);
   getPreferredBadge: PreferredBadgeSelectorType;
+  getServerAlertToShow: (alerts: ServerAlertsType) => ServerAlert | null;
   i18n: LocalizerType;
   isMacOS: boolean;
+  isNotificationProfileActive: boolean;
   preferredWidthFromStorage: number;
+  selectedChatFolder: ChatFolder | null;
   selectedConversationId: undefined | string;
   targetedMessageId: undefined | string;
   challengeStatus: 'idle' | 'required' | 'pending';
@@ -142,9 +153,11 @@ export type PropsType = {
   endSearch: () => void;
   navTabsCollapsed: boolean;
   openUsernameReservationModal: () => void;
+  onChatFoldersOpenSettings: () => void;
   onOutgoingAudioCallInConversation: (conversationId: string) => void;
   onOutgoingVideoCallInConversation: (conversationId: string) => void;
   removeConversation: (conversationId: string) => void;
+  saveAlerts: (alerts: ServerAlertsType) => Promise<void>;
   savePreferredLeftPaneWidth: (_: number) => void;
   searchInConversation: (conversationId: string) => unknown;
   setComposeGroupAvatar: (_: undefined | Uint8Array) => void;
@@ -171,6 +184,9 @@ export type PropsType = {
 
   // Render Props
   renderMessageSearchResult: (id: string) => JSX.Element;
+  renderConversationListItemContextMenu: (
+    props: RenderConversationListItemContextMenuProps
+  ) => JSX.Element;
   renderNetworkStatus: (
     _: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
   ) => JSX.Element;
@@ -186,6 +202,8 @@ export type PropsType = {
   renderCaptchaDialog: (props: { onSkip(): void }) => JSX.Element;
   renderCrashReportDialog: () => JSX.Element;
   renderExpiredBuildDialog: (_: DialogExpiredBuildPropsType) => JSX.Element;
+  renderLeftPaneChatFolders: () => JSX.Element;
+  renderNotificationProfilesMenu: () => JSX.Element;
   renderToastManager: (_: {
     containerWidthBreakpoint: WidthBreakpoint;
   }) => JSX.Element;
@@ -211,6 +229,8 @@ export function LeftPane({
   endConversationSearch,
   endSearch,
   getPreferredBadge,
+  getServerAlertToShow,
+  hasAnyCurrentCustomChatFolders,
   hasExpiredDialog,
   hasFailedStorySends,
   hasNetworkDialog,
@@ -220,10 +240,12 @@ export function LeftPane({
   i18n,
   lookupConversationWithoutServiceId,
   isMacOS,
+  isNotificationProfileActive,
   isOnline,
   isUpdateDownloaded,
   modeSpecificProps,
   navTabsCollapsed,
+  onChatFoldersOpenSettings,
   onOutgoingAudioCallInConversation,
   onOutgoingVideoCallInConversation,
 
@@ -235,15 +257,20 @@ export function LeftPane({
   renderCaptchaDialog,
   renderCrashReportDialog,
   renderExpiredBuildDialog,
+  renderLeftPaneChatFolders,
   renderMessageSearchResult,
+  renderConversationListItemContextMenu,
   renderNetworkStatus,
+  renderNotificationProfilesMenu,
   renderUnsupportedOSDialog,
   renderRelinkDialog,
   renderUpdateDialog,
   renderToastManager,
   resumeBackupMediaDownload,
+  saveAlerts,
   savePreferredLeftPaneWidth,
   searchInConversation,
+  selectedChatFolder,
   selectedConversationId,
   targetedMessageId,
   toggleNavTabsCollapse,
@@ -298,7 +325,15 @@ export function LeftPane({
   //
   // Unfortunately, there's a little bit of repetition here because TypeScript isn't quite
   //   smart enough.
-  let helper: LeftPaneHelper<unknown>;
+  let helper:
+    | LeftPaneInboxHelper
+    | LeftPaneSearchHelper
+    | LeftPaneArchiveHelper
+    | LeftPaneComposeHelper
+    | LeftPaneFindByUsernameHelper
+    | LeftPaneFindByPhoneNumberHelper
+    | LeftPaneChooseGroupMembersHelper
+    | LeftPaneSetGroupMetadataHelper;
   let shouldRecomputeRowHeights: boolean;
   switch (modeSpecificProps.mode) {
     case LeftPaneMode.Inbox: {
@@ -501,9 +536,7 @@ export function LeftPane({
     startSearch,
   ]);
 
-  const backgroundNode = helper.getBackgroundNode({
-    i18n,
-  });
+  const isEmpty = helper.getRowCount() === 0;
 
   const preRowsNode = helper.getPreRowsNode({
     clearConversationSearch,
@@ -517,6 +550,7 @@ export function LeftPane({
     createGroup,
     i18n,
     removeSelectedContact: toggleConversationInChooseMembers,
+    renderLeftPaneChatFolders,
     setComposeGroupAvatar,
     setComposeGroupExpireTimer,
     setComposeGroupName,
@@ -609,6 +643,8 @@ export function LeftPane({
 
   const maybeServerAlert = getServerAlertDialog(
     serverAlerts,
+    getServerAlertToShow,
+    saveAlerts,
     commonDialogProps
   );
   // Yellow dialogs
@@ -735,41 +771,73 @@ export function LeftPane({
       renderToastManager={renderToastManager}
       actions={
         <>
+          {isNotificationProfileActive && (
+            <AxoDropdownMenu.Root>
+              <AxoDropdownMenu.Trigger>
+                <button
+                  type="button"
+                  className={tw(
+                    'rounded-full outline-0 outline-border-focused focused:outline-[2.5px]'
+                  )}
+                >
+                  <ProfileAvatar i18n={i18n} size="medium-small" />
+                </button>
+              </AxoDropdownMenu.Trigger>
+              <AxoDropdownMenu.Content>
+                {renderNotificationProfilesMenu()}
+              </AxoDropdownMenu.Content>
+            </AxoDropdownMenu.Root>
+          )}
           <NavSidebarActionButton
             label={i18n('icu:newConversation')}
             icon={<span className="module-left-pane__startComposingIcon" />}
             onClick={startComposing}
           />
-          <ContextMenu
-            i18n={i18n}
-            menuOptions={[
-              {
-                label: i18n('icu:avatarMenuViewArchive'),
-                onClick: showArchivedConversations,
-              },
-            ]}
-            popperOptions={{
-              placement: 'bottom',
-              strategy: 'absolute',
-            }}
-            portalToRoot
-          >
-            {({ onClick, onKeyDown, ref }) => {
-              return (
-                <NavSidebarActionButton
-                  ref={ref}
-                  onClick={onClick}
-                  onKeyDown={onKeyDown}
-                  icon={<span className="module-left-pane__moreActionsIcon" />}
-                  label="More Actions"
-                />
-              );
-            }}
-          </ContextMenu>
+          <AxoDropdownMenu.Root>
+            <AxoDropdownMenu.Trigger>
+              <NavSidebarActionButton
+                icon={<span className="module-left-pane__moreActionsIcon" />}
+                label="More Actions"
+              />
+            </AxoDropdownMenu.Trigger>
+            <AxoDropdownMenu.Content>
+              <AxoDropdownMenu.Item
+                symbol="archive"
+                onSelect={showArchivedConversations}
+              >
+                {i18n('icu:avatarMenuViewArchive')}
+              </AxoDropdownMenu.Item>
+              {isChatFoldersEnabled() && !hasAnyCurrentCustomChatFolders && (
+                <AxoDropdownMenu.Item
+                  symbol="folder"
+                  onSelect={onChatFoldersOpenSettings}
+                >
+                  {i18n('icu:LeftPane__MoreActionsMenu__AddChatFolder')}
+                </AxoDropdownMenu.Item>
+              )}
+              {isChatFoldersEnabled() && hasAnyCurrentCustomChatFolders && (
+                <AxoDropdownMenu.Item
+                  // TODO: This should be the "folder-settings" symbol
+                  // once it is added to the font
+                  symbol="folder"
+                  onSelect={onChatFoldersOpenSettings}
+                >
+                  {i18n('icu:LeftPane__MoreActionsMenu__FolderSettings')}
+                </AxoDropdownMenu.Item>
+              )}
+              <AxoDropdownMenu.Sub>
+                <AxoDropdownMenu.SubTrigger symbol="moon">
+                  {i18n('icu:NotificationProfileMenuItem')}
+                </AxoDropdownMenu.SubTrigger>
+                <AxoDropdownMenu.SubContent>
+                  {renderNotificationProfilesMenu()}
+                </AxoDropdownMenu.SubContent>
+              </AxoDropdownMenu.Sub>
+            </AxoDropdownMenu.Content>
+          </AxoDropdownMenu.Root>
         </>
       }
     >
-      {backgroundNode}
       <nav
         className={classNames(
           'module-left-pane',
@@ -832,71 +900,82 @@ export function LeftPane({
         ) : null}
         {preRowsNode && <React.Fragment key={0}>{preRowsNode}</React.Fragment>}
         <div className="module-left-pane__list--measure" ref={measureRef}>
-          <div className="module-left-pane__list--wrapper">
-            <div
-              aria-live="polite"
-              className="module-left-pane__list"
-              data-supertab
-              key={listKey}
-              role="presentation"
-              tabIndex={-1}
-            >
-              <ConversationList
-                key={modeSpecificProps.mode}
-                dimensions={measureSize ?? undefined}
-                getPreferredBadge={getPreferredBadge}
-                getRow={getRow}
-                i18n={i18n}
-                hasDialogPadding={hasDialogs}
-                onClickArchiveButton={showArchivedConversations}
-                onClickContactCheckbox={(
-                  conversationId: string,
-                  disabledReason: undefined | ContactCheckboxDisabledReason
-                ) => {
-                  switch (disabledReason) {
-                    case undefined:
-                      toggleConversationInChooseMembers(conversationId);
-                      break;
-                    case ContactCheckboxDisabledReason.AlreadyAdded:
-                    case ContactCheckboxDisabledReason.MaximumContactsSelected:
-                      // These are no-ops.
-                      break;
-                    default:
-                      throw missingCaseError(disabledReason);
+          {isEmpty &&
+            helper.getEmptyViewNode({
+              i18n,
+              selectedChatFolder,
+              changeLocation,
+            })}
+          {!isEmpty && (
+            <div className="module-left-pane__list--wrapper">
+              <div
+                aria-live="polite"
+                className="module-left-pane__list"
+                data-supertab
+                key={listKey}
+                role="presentation"
+                tabIndex={-1}
+              >
+                <ConversationList
+                  key={modeSpecificProps.mode}
+                  dimensions={measureSize ?? undefined}
+                  getPreferredBadge={getPreferredBadge}
+                  getRow={getRow}
+                  i18n={i18n}
+                  hasDialogPadding={hasDialogs}
+                  onClickArchiveButton={showArchivedConversations}
+                  onClickContactCheckbox={(
+                    conversationId: string,
+                    disabledReason: undefined | ContactCheckboxDisabledReason
+                  ) => {
+                    switch (disabledReason) {
+                      case undefined:
+                        toggleConversationInChooseMembers(conversationId);
+                        break;
+                      case ContactCheckboxDisabledReason.AlreadyAdded:
+                      case ContactCheckboxDisabledReason.MaximumContactsSelected:
+                        // These are no-ops.
+                        break;
+                      default:
+                        throw missingCaseError(disabledReason);
+                    }
+                  }}
+                  onClickClearFilterButton={() => {
+                    updateFilterByUnread(false);
+                  }}
+                  showUserNotFoundModal={showUserNotFoundModal}
+                  setIsFetchingUUID={setIsFetchingUUID}
+                  lookupConversationWithoutServiceId={
+                    lookupConversationWithoutServiceId
                   }
-                }}
-                onClickClearFilterButton={() => {
-                  updateFilterByUnread(false);
-                }}
-                showUserNotFoundModal={showUserNotFoundModal}
-                setIsFetchingUUID={setIsFetchingUUID}
-                lookupConversationWithoutServiceId={
-                  lookupConversationWithoutServiceId
-                }
-                showConversation={showConversation}
-                blockConversation={blockConversation}
-                onPreloadConversation={preloadConversation}
-                onSelectConversation={onSelectConversation}
-                onOutgoingAudioCallInConversation={
-                  onOutgoingAudioCallInConversation
-                }
-                onOutgoingVideoCallInConversation={
-                  onOutgoingVideoCallInConversation
-                }
-                removeConversation={removeConversation}
-                renderMessageSearchResult={renderMessageSearchResult}
-                rowCount={helper.getRowCount()}
-                scrollBehavior={scrollBehavior}
-                scrollToRowIndex={rowIndexToScrollTo}
-                scrollable={isScrollable}
-                shouldRecomputeRowHeights={shouldRecomputeRowHeights}
-                showChooseGroupMembers={showChooseGroupMembers}
-                showFindByUsername={showFindByUsername}
-                showFindByPhoneNumber={showFindByPhoneNumber}
-                theme={theme}
-              />
+                  showConversation={showConversation}
+                  blockConversation={blockConversation}
+                  onPreloadConversation={preloadConversation}
+                  onSelectConversation={onSelectConversation}
+                  onOutgoingAudioCallInConversation={
+                    onOutgoingAudioCallInConversation
+                  }
+                  onOutgoingVideoCallInConversation={
+                    onOutgoingVideoCallInConversation
+                  }
+                  removeConversation={removeConversation}
+                  renderMessageSearchResult={renderMessageSearchResult}
+                  renderConversationListItemContextMenu={
+                    renderConversationListItemContextMenu
+                  }
+                  rowCount={helper.getRowCount()}
+                  scrollBehavior={scrollBehavior}
+                  scrollToRowIndex={rowIndexToScrollTo}
+                  scrollable={isScrollable}
+                  shouldRecomputeRowHeights={shouldRecomputeRowHeights}
+                  showChooseGroupMembers={showChooseGroupMembers}
+                  showFindByUsername={showFindByUsername}
+                  showFindByPhoneNumber={showFindByPhoneNumber}
+                  theme={theme}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
         {footerContents && (
           <div className="module-left-pane__footer">{footerContents}</div>

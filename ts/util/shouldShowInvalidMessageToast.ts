@@ -1,17 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ConversationAttributesType } from '../model-types';
-import { hasExpired } from '../state/selectors/expiration';
-import { isOSUnsupported } from '../state/selectors/updates';
+import type { ConversationAttributesType } from '../model-types.js';
+import { hasExpired } from '../state/selectors/expiration.js';
+import { isOSUnsupported } from '../state/selectors/updates.js';
 
-import type { AnyToast } from '../types/Toast';
-import { ToastType } from '../types/Toast';
+import type { AnyToast } from '../types/Toast.js';
+import { ToastType } from '../types/Toast.js';
 import {
   isDirectConversation,
   isGroupV1,
   isGroupV2,
-} from './whatTypeOfConversation';
+} from './whatTypeOfConversation.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const MAX_MESSAGE_BODY_LENGTH = 64 * 1024;
 
@@ -39,8 +40,8 @@ export function shouldShowInvalidMessageToast(
   const { e164, serviceId } = conversationAttributes;
   if (
     isDirectConversation(conversationAttributes) &&
-    ((e164 && window.storage.blocked.isBlocked(e164)) ||
-      (serviceId && window.storage.blocked.isServiceIdBlocked(serviceId)))
+    ((e164 && itemStorage.blocked.isBlocked(e164)) ||
+      (serviceId && itemStorage.blocked.isServiceIdBlocked(serviceId)))
   ) {
     return { toastType: ToastType.Blocked };
   }
@@ -49,7 +50,7 @@ export function shouldShowInvalidMessageToast(
   if (
     !isDirectConversation(conversationAttributes) &&
     groupId &&
-    window.storage.blocked.isGroupBlocked(groupId)
+    itemStorage.blocked.isGroupBlocked(groupId)
   ) {
     return { toastType: ToastType.BlockedGroup };
   }

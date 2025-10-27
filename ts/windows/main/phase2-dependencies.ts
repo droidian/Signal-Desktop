@@ -1,73 +1,44 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
 import * as moment from 'moment';
 // @ts-expect-error -- no types
-import 'moment/min/locales.min';
+import 'moment/min/locales.min.js';
 
-import { textsecure } from '../../textsecure';
-import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging';
-import { setup } from '../../signal';
-import { addSensitivePath } from '../../util/privacy';
-import * as dns from '../../util/dns';
-import { createLogger } from '../../logging/log';
-import { SignalContext } from '../context';
-import * as Attachments from './attachments';
-
-const log = createLogger('phase2-dependencies');
+import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging.js';
+import { setup } from '../../signal.js';
+import { addSensitivePath } from '../../util/privacy.js';
+import * as dns from '../../util/dns.js';
+import {
+  ATTACHMENTS_PATH,
+  STICKERS_PATH,
+  DRAFT_PATH,
+} from '../../util/basePaths.js';
+import { SignalContext } from '../context.js';
 
 initializeLogging();
 
 window.nodeSetImmediate = setImmediate;
-window.textsecure = textsecure;
 
-const { config } = window.SignalContext;
-
-window.WebAPI = window.textsecure.WebAPI.initialize({
-  chatServiceUrl: config.serverUrl,
-  storageUrl: config.storageUrl,
-  updatesUrl: config.updatesUrl,
-  resourcesUrl: config.resourcesUrl,
-  cdnUrlObject: {
-    0: config.cdnUrl0,
-    2: config.cdnUrl2,
-    3: config.cdnUrl3,
-  },
-  certificateAuthority: config.certificateAuthority,
-  contentProxyUrl: config.contentProxyUrl,
-  proxyUrl: config.proxyUrl,
-  version: config.version,
-  disableIPv6: config.disableIPv6,
-  stripePublishableKey: config.stripePublishableKey,
-});
-
-window.libphonenumberInstance = PhoneNumberUtil.getInstance();
-window.libphonenumberFormat = PhoneNumberFormat;
+const { config, i18n } = window.SignalContext;
 
 const { resolvedTranslationsLocale, preferredSystemLocales, localeOverride } =
   config;
 
 moment.updateLocale(localeOverride ?? resolvedTranslationsLocale, {
   relativeTime: {
-    s: window.i18n('icu:timestamp_s'),
-    m: window.i18n('icu:timestamp_m'),
-    h: window.i18n('icu:timestamp_h'),
+    s: i18n('icu:timestamp_s'),
+    m: i18n('icu:timestamp_m'),
+    h: i18n('icu:timestamp_h'),
   },
 });
 moment.locale(
   localeOverride != null ? [localeOverride] : preferredSystemLocales
 );
 
-const userDataPath = SignalContext.getPath('userData');
-window.BasePaths = {
-  attachments: Attachments.getPath(userDataPath),
-  draft: Attachments.getDraftPath(userDataPath),
-  stickers: Attachments.getStickersPath(userDataPath),
-  temp: Attachments.getTempPath(userDataPath),
-};
-
-addSensitivePath(window.BasePaths.attachments);
+addSensitivePath(ATTACHMENTS_PATH);
+addSensitivePath(STICKERS_PATH);
+addSensitivePath(DRAFT_PATH);
 if (config.crashDumpsPath) {
   addSensitivePath(config.crashDumpsPath);
 }
@@ -77,9 +48,4 @@ if (SignalContext.config.disableIPv6) {
 }
 dns.setFallback(SignalContext.config.dnsFallback);
 
-window.Signal = setup({
-  Attachments,
-  getRegionCode: () => window.storage.get('regionCode'),
-  logger: log,
-  userDataPath,
-});
+window.Signal = setup();

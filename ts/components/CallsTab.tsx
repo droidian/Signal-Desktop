@@ -2,29 +2,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useCallback, useEffect, useState } from 'react';
-import type { LocalizerType } from '../types/I18N';
-import { NavSidebar, NavSidebarActionButton } from './NavSidebar';
-import { CallsList } from './CallsList';
-import type { ConversationType } from '../state/ducks/conversations';
+import type { LocalizerType } from '../types/I18N.js';
+import { NavSidebar, NavSidebarActionButton } from './NavSidebar.js';
+import { CallsList } from './CallsList.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
 import type {
   CallHistoryFilterOptions,
   CallHistoryGroup,
   CallHistoryPagination,
-} from '../types/CallDisposition';
-import { CallsNewCall } from './CallsNewCallButton';
-import { useEscapeHandling } from '../hooks/useEscapeHandling';
+} from '../types/CallDisposition.js';
+import { CallsNewCall } from './CallsNewCallButton.js';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.js';
 import type {
   ActiveCallStateType,
   PeekNotConnectedGroupCallType,
-} from '../state/ducks/calling';
-import { ContextMenu } from './ContextMenu';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import type { UnreadStats } from '../util/countUnreadStats';
-import type { WidthBreakpoint } from './_util';
-import type { CallLinkType } from '../types/CallLink';
-import type { CallStateType } from '../state/selectors/calling';
-import type { StartCallData } from './ConfirmLeaveCallModal';
-import { I18n } from './I18n';
+} from '../state/ducks/calling.js';
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
+import type { WidthBreakpoint } from './_util.js';
+import type { CallLinkType } from '../types/CallLink.js';
+import type { CallStateType } from '../state/selectors/calling.js';
+import type { StartCallData } from './ConfirmLeaveCallModal.js';
+import { I18n } from './I18n.js';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.js';
 
 enum CallsTabSidebarView {
   CallsListView,
@@ -235,33 +235,22 @@ export function CallsTab({
                       updateSidebarView(CallsTabSidebarView.NewCallView);
                     }}
                   />
-                  <ContextMenu
-                    i18n={i18n}
-                    menuOptions={[
-                      {
-                        icon: 'CallsTab__ClearCallHistoryIcon',
-                        label: i18n('icu:CallsTab__ClearCallHistoryLabel'),
-                        onClick: handleOpenClearCallHistoryDialog,
-                      },
-                    ]}
-                    popperOptions={{
-                      placement: 'bottom',
-                      strategy: 'absolute',
-                    }}
-                    portalToRoot
-                  >
-                    {({ onClick, onKeyDown, ref }) => {
-                      return (
-                        <NavSidebarActionButton
-                          ref={ref}
-                          onClick={onClick}
-                          onKeyDown={onKeyDown}
-                          icon={<span className="CallsTab__MoreActionsIcon" />}
-                          label={i18n('icu:CallsTab__MoreActionsLabel')}
-                        />
-                      );
-                    }}
-                  </ContextMenu>
+                  <AxoDropdownMenu.Root>
+                    <AxoDropdownMenu.Trigger>
+                      <NavSidebarActionButton
+                        icon={<span className="CallsTab__MoreActionsIcon" />}
+                        label={i18n('icu:CallsTab__MoreActionsLabel')}
+                      />
+                    </AxoDropdownMenu.Trigger>
+                    <AxoDropdownMenu.Content>
+                      <AxoDropdownMenu.Item
+                        symbol="trash"
+                        onSelect={handleOpenClearCallHistoryDialog}
+                      >
+                        {i18n('icu:CallsTab__ClearCallHistoryLabel')}
+                      </AxoDropdownMenu.Item>
+                    </AxoDropdownMenu.Content>
+                  </AxoDropdownMenu.Root>
                 </>
               )}
             </>

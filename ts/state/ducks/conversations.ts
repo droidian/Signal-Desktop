@@ -2,7 +2,236 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ThunkAction } from 'redux-thunk';
+import lodash from 'lodash';
+import { type PhoneNumber } from 'google-libphonenumber';
+
+import { clipboard, ipcRenderer } from 'electron';
+import type { ReadonlyDeep } from 'type-fest';
+import { DataReader, DataWriter } from '../../sql/Client.js';
+import type { AttachmentType } from '../../types/Attachment.js';
+import type { StateType as RootStateType } from '../reducer.js';
+import * as groups from '../../groups.js';
+import { createLogger } from '../../logging/log.js';
+import { calling } from '../../services/calling.js';
+import { retryPlaceholders } from '../../services/retryPlaceholders.js';
+import { getOwn } from '../../util/getOwn.js';
+import { assertDev, strictAssert } from '../../util/assert.js';
+import { drop } from '../../util/drop.js';
 import {
+  deleteAvatar,
+  writeNewAvatarData,
+  getUnusedFilename,
+  readAttachmentData,
+  saveAttachmentToDisk,
+} from '../../util/migrations.js';
+import type { DurationInSeconds } from '../../util/durations/index.js';
+import * as universalExpireTimer from '../../util/universalExpireTimer.js';
+import * as Attachment from '../../util/Attachment.js';
+import type { LocalizerType } from '../../types/I18N.js';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.js';
+import { isFileDangerous } from '../../util/isFileDangerous.js';
+import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.js';
+import { instance as libphonenumberInstance } from '../../util/libphonenumberInstance.js';
+import type {
+  ShowSendAnywayDialogActionType,
+  ShowErrorModalActionType,
+} from './globalModals.js';
+import { SHOW_SEND_ANYWAY_DIALOG, SHOW_ERROR_MODAL } from './globalModals.js';
+import {
+  MODIFY_LIST,
+  DELETE_LIST,
+  HIDE_MY_STORIES_FROM,
+  VIEWERS_CHANGED,
+} from './storyDistributionLists.js';
+import type { StoryDistributionListsActionType } from './storyDistributionLists.js';
+import type {
+  UUIDFetchStateKeyType,
+  UUIDFetchStateType,
+} from '../../util/uuidFetchState.js';
+
+import type {
+  AvatarColorType,
+  ConversationColorType,
+  CustomColorType,
+} from '../../types/Colors.js';
+import type {
+  ConversationAttributesType,
+  DraftEditMessageType,
+  LastMessageStatus,
+  ReadonlyMessageAttributesType,
+} from '../../model-types.d.ts';
+import type {
+  DraftBodyRanges,
+  HydratedBodyRangesType,
+} from '../../types/BodyRange.js';
+import { CallMode } from '../../types/CallDisposition.js';
+import type { MediaItemType } from '../../types/MediaItem.js';
+import type { StoryDistributionIdString } from '../../types/StoryDistributionId.js';
+import { normalizeStoryDistributionId } from '../../types/StoryDistributionId.js';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from '../../types/ServiceId.js';
+import { isAciString } from '../../util/isAciString.js';
+import { MY_STORY_ID, StorySendMode } from '../../types/Stories.js';
+import * as Errors from '../../types/errors.js';
+import {
+  getGroupSizeRecommendedLimit,
+  getGroupSizeHardLimit,
+} from '../../groups/limits.js';
+import { isMessageUnread } from '../../util/isMessageUnread.js';
+import { toggleSelectedContactForGroupAddition } from '../../groups/toggleSelectedContactForGroupAddition.js';
+import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions.js';
+import { writeProfile } from '../../services/writeProfile.js';
+import {
+  getConversationServiceIdsStoppingSend,
+  getConversationIdsStoppedForVerification,
+  getConversationSelector,
+  getMe,
+  getMessagesByConversation,
+  getPendingAvatarDownloadSelector,
+  getAllConversations,
+} from '../selectors/conversations.js';
+import { getIntl } from '../selectors/user.js';
+import type {
+  AvatarDataType,
+  AvatarUpdateOptionsType,
+} from '../../types/Avatar.js';
+import { getDefaultAvatars } from '../../types/Avatar.js';
+import { getAvatarData } from '../../util/getAvatarData.js';
+import { isSameAvatarData } from '../../util/isSameAvatarData.js';
+import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.js';
+import {
+  ComposerStep,
+  ConversationVerificationState,
+  OneTimeModalState,
+  TargetedMessageSource,
+} from './conversationsEnums.js';
+import { markViewed as messageUpdaterMarkViewed } from '../../services/MessageUpdater.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.js';
+import { useBoundActions } from '../../hooks/useBoundActions.js';
+
+import type { NoopActionType } from './noop.js';
+import {
+  conversationJobQueue,
+  conversationQueueJobEnum,
+} from '../../jobs/conversationJobQueue.js';
+import type { TimelineMessageLoadingState } from '../../util/timelineUtil.js';
+import {
+  isDirectConversation,
+  isGroup,
+  isGroupV2,
+  isMe,
+} from '../../util/whatTypeOfConversation.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { viewSyncJobQueue } from '../../jobs/viewSyncJobQueue.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import {
+  isIncoming,
+  isStory,
+  processBodyRanges,
+} from '../selectors/message.js';
+import { getActiveCall, getActiveCallState } from '../selectors/calling.js';
+import { sendDeleteForEveryoneMessage } from '../../util/sendDeleteForEveryoneMessage.js';
+import type { ShowToastActionType } from './toast.js';
+import { SHOW_TOAST } from './toast.js';
+import { ToastType } from '../../types/Toast.js';
+import { isMemberRequestingToJoin } from '../../util/groupMembershipUtils.js';
+import { removePendingMember } from '../../util/removePendingMember.js';
+import { denyPendingApprovalRequest } from '../../util/denyPendingApprovalRequest.js';
+import { SignalService as Proto } from '../../protobuf/index.js';
+import { addReportSpamJob } from '../../jobs/helpers/addReportSpamJob.js';
+import { reportSpamJobQueue } from '../../jobs/reportSpamJobQueue.js';
+import {
+  modifyGroupV2,
+  buildAddMembersChange,
+  buildPromotePendingAdminApprovalMemberChange,
+  buildUpdateAttributesChange,
+  initiateMigrationToGroupV2 as doInitiateMigrationToGroupV2,
+} from '../../groups.js';
+import { getMessageById } from '../../messages/getMessageById.js';
+import type { PanelRenderType, PanelRequestType } from '../../types/Panels.js';
+import type { ConversationQueueJobData } from '../../jobs/conversationJobQueue.js';
+import { isOlderThan } from '../../util/timestamp.js';
+import { DAY } from '../../util/durations/index.js';
+import { isNotNil } from '../../util/isNotNil.js';
+import { PanelType } from '../../types/Panels.js';
+import { startConversation } from '../../util/startConversation.js';
+import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp.js';
+import { removeLinkPreview } from '../../services/LinkPreview.js';
+import type {
+  ReplaceAttachmentsActionType,
+  ResetComposerActionType,
+  SetFocusActionType,
+  SetQuotedMessageActionType,
+} from './composer.js';
+import {
+  SET_FOCUS,
+  replaceAttachments,
+  setComposerFocus,
+  setQuoteByMessageId,
+  resetComposer,
+  saveDraftRecordingIfNeeded,
+} from './composer.js';
+import { ReceiptType } from '../../types/Receipt.js';
+import { Sound, SoundType } from '../../util/Sound.js';
+import {
+  canEditMessage,
+  isWithinMaxEdits,
+  MESSAGE_MAX_EDIT_COUNT,
+} from '../../util/canEditMessage.js';
+import type { ChangeLocationAction } from './nav.js';
+import {
+  CHANGE_LOCATION,
+  changeLocation,
+  actions as navActions,
+} from './nav.js';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../../types/Nav.js';
+import { sortByMessageOrder } from '../../types/ForwardDraft.js';
+import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.js';
+import {
+  getConversationIdForLogging,
+  getMessageIdForLogging,
+} from '../../util/idForLogging.js';
+import { singleProtoJobQueue } from '../../jobs/singleProtoJobQueue.js';
+import { MessageSender } from '../../textsecure/SendMessage.js';
+import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager.js';
+import type {
+  DeleteForMeSyncEventData,
+  AddressableMessage,
+} from '../../textsecure/messageReceiverEvents.js';
+import {
+  getConversationIdentifier,
+  getAddressableMessage,
+} from '../../util/syncIdentifiers.js';
+import { MAX_MESSAGE_COUNT } from '../../util/deleteForMe.types.js';
+import { markCallHistoryReadInConversation } from './callHistory.js';
+import type { CapabilitiesType } from '../../types/Capabilities.d.ts';
+import { actions as searchActions } from './search.js';
+import type { SearchActionType } from './search.js';
+import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage.js';
+import { doubleCheckMissingQuoteReference as doDoubleCheckMissingQuoteReference } from '../../util/doubleCheckMissingQuoteReference.js';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads.js';
+import { markAttachmentAsCorrupted as doMarkAttachmentAsCorrupted } from '../../messageModifiers/AttachmentDownloads.js';
+import {
+  isSent,
+  SendActionType,
+  sendStateReducer,
+} from '../../messages/MessageSendState.js';
+import { markFailed } from '../../test-node/util/messageFailures.js';
+import { cleanupMessages } from '../../util/cleanup.js';
+import type { ConversationModel } from '../../models/conversations.js';
+import { MessageRequestResponseSource } from '../../types/MessageRequestResponseEvent.js';
+import { JobCancelReason } from '../../jobs/types.js';
+import type { ChatFolderId } from '../../types/ChatFolder.js';
+import { isConversationInChatFolder } from '../../types/ChatFolder.js';
+import { getCurrentChatFolders } from '../selectors/chatFolders.js';
+import { isConversationUnread } from '../../util/isConversationUnread.js';
+import { CurrentChatFolders } from '../../types/CurrentChatFolders.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const {
   chunk,
   difference,
   fromPairs,
@@ -12,212 +241,7 @@ import {
   pick,
   values,
   without,
-} from 'lodash';
-import type { PhoneNumber } from 'google-libphonenumber';
-
-import { clipboard, ipcRenderer } from 'electron';
-import type { ReadonlyDeep } from 'type-fest';
-import { DataReader, DataWriter } from '../../sql/Client';
-import type { AttachmentType } from '../../types/Attachment';
-import type { StateType as RootStateType } from '../reducer';
-import * as groups from '../../groups';
-import { createLogger } from '../../logging/log';
-import { calling } from '../../services/calling';
-import { getOwn } from '../../util/getOwn';
-import { assertDev, strictAssert } from '../../util/assert';
-import { drop } from '../../util/drop';
-import type { DurationInSeconds } from '../../util/durations';
-import * as universalExpireTimer from '../../util/universalExpireTimer';
-import * as Attachment from '../../types/Attachment';
-import type { LocalizerType } from '../../types/I18N';
-import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload';
-import { isFileDangerous } from '../../util/isFileDangerous';
-import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl';
-import { instance as libphonenumberInstance } from '../../util/libphonenumberInstance';
-import type {
-  ShowSendAnywayDialogActionType,
-  ShowErrorModalActionType,
-} from './globalModals';
-import { SHOW_SEND_ANYWAY_DIALOG, SHOW_ERROR_MODAL } from './globalModals';
-import {
-  MODIFY_LIST,
-  DELETE_LIST,
-  HIDE_MY_STORIES_FROM,
-  VIEWERS_CHANGED,
-} from './storyDistributionLists';
-import type { StoryDistributionListsActionType } from './storyDistributionLists';
-import type {
-  UUIDFetchStateKeyType,
-  UUIDFetchStateType,
-} from '../../util/uuidFetchState';
-
-import type {
-  AvatarColorType,
-  ConversationColorType,
-  CustomColorType,
-} from '../../types/Colors';
-import type {
-  ConversationAttributesType,
-  DraftEditMessageType,
-  LastMessageStatus,
-  MessageAttributesType,
-  ReadonlyMessageAttributesType,
-} from '../../model-types.d';
-import type {
-  DraftBodyRanges,
-  HydratedBodyRangesType,
-} from '../../types/BodyRange';
-import { CallMode } from '../../types/CallDisposition';
-import type { MediaItemType } from '../../types/MediaItem';
-import type { StoryDistributionIdString } from '../../types/StoryDistributionId';
-import { normalizeStoryDistributionId } from '../../types/StoryDistributionId';
-import type {
-  ServiceIdString,
-  AciString,
-  PniString,
-} from '../../types/ServiceId';
-import { isAciString } from '../../util/isAciString';
-import { MY_STORY_ID, StorySendMode } from '../../types/Stories';
-import * as Errors from '../../types/errors';
-import {
-  getGroupSizeRecommendedLimit,
-  getGroupSizeHardLimit,
-} from '../../groups/limits';
-import { isMessageUnread } from '../../util/isMessageUnread';
-import { toggleSelectedContactForGroupAddition } from '../../groups/toggleSelectedContactForGroupAddition';
-import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions';
-import { writeProfile } from '../../services/writeProfile';
-import {
-  getConversationServiceIdsStoppingSend,
-  getConversationIdsStoppedForVerification,
-  getConversationSelector,
-  getMe,
-  getMessagesByConversation,
-  getPendingAvatarDownloadSelector,
-} from '../selectors/conversations';
-import { getIntl } from '../selectors/user';
-import type {
-  AvatarDataType,
-  AvatarUpdateOptionsType,
-} from '../../types/Avatar';
-import { getDefaultAvatars } from '../../types/Avatar';
-import { getAvatarData } from '../../util/getAvatarData';
-import { isSameAvatarData } from '../../util/isSameAvatarData';
-import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper';
-import {
-  ComposerStep,
-  ConversationVerificationState,
-  OneTimeModalState,
-  TargetedMessageSource,
-} from './conversationsEnums';
-import { markViewed as messageUpdaterMarkViewed } from '../../services/MessageUpdater';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
-import { useBoundActions } from '../../hooks/useBoundActions';
-
-import type { NoopActionType } from './noop';
-import {
-  conversationJobQueue,
-  conversationQueueJobEnum,
-} from '../../jobs/conversationJobQueue';
-import type { TimelineMessageLoadingState } from '../../util/timelineUtil';
-import {
-  isDirectConversation,
-  isGroup,
-  isGroupV2,
-  isMe,
-} from '../../util/whatTypeOfConversation';
-import { missingCaseError } from '../../util/missingCaseError';
-import { viewSyncJobQueue } from '../../jobs/viewSyncJobQueue';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { isIncoming, isStory, processBodyRanges } from '../selectors/message';
-import { getActiveCall, getActiveCallState } from '../selectors/calling';
-import { sendDeleteForEveryoneMessage } from '../../util/sendDeleteForEveryoneMessage';
-import type { ShowToastActionType } from './toast';
-import { SHOW_TOAST } from './toast';
-import { ToastType } from '../../types/Toast';
-import { isMemberRequestingToJoin } from '../../util/groupMembershipUtils';
-import { removePendingMember } from '../../util/removePendingMember';
-import { denyPendingApprovalRequest } from '../../util/denyPendingApprovalRequest';
-import { SignalService as Proto } from '../../protobuf';
-import { addReportSpamJob } from '../../jobs/helpers/addReportSpamJob';
-import { reportSpamJobQueue } from '../../jobs/reportSpamJobQueue';
-import {
-  modifyGroupV2,
-  buildAddMembersChange,
-  buildPromotePendingAdminApprovalMemberChange,
-  buildUpdateAttributesChange,
-  initiateMigrationToGroupV2 as doInitiateMigrationToGroupV2,
-} from '../../groups';
-import { getMessageById } from '../../messages/getMessageById';
-import type { PanelRenderType, PanelRequestType } from '../../types/Panels';
-import type { ConversationQueueJobData } from '../../jobs/conversationJobQueue';
-import { isOlderThan } from '../../util/timestamp';
-import { DAY } from '../../util/durations';
-import { isNotNil } from '../../util/isNotNil';
-import { PanelType } from '../../types/Panels';
-import { startConversation } from '../../util/startConversation';
-import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp';
-import { removeLinkPreview } from '../../services/LinkPreview';
-import type {
-  ReplaceAttachmentsActionType,
-  ResetComposerActionType,
-  SetFocusActionType,
-  SetQuotedMessageActionType,
-} from './composer';
-import {
-  SET_FOCUS,
-  replaceAttachments,
-  setComposerFocus,
-  setQuoteByMessageId,
-  resetComposer,
-  saveDraftRecordingIfNeeded,
-} from './composer';
-import { ReceiptType } from '../../types/Receipt';
-import { Sound, SoundType } from '../../util/Sound';
-import {
-  canEditMessage,
-  isWithinMaxEdits,
-  MESSAGE_MAX_EDIT_COUNT,
-} from '../../util/canEditMessage';
-import type { ChangeLocationAction } from './nav';
-import { CHANGE_LOCATION, changeLocation, actions as navActions } from './nav';
-import { NavTab, ProfileEditorPage, SettingsPage } from '../../types/Nav';
-import { sortByMessageOrder } from '../../types/ForwardDraft';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
-import {
-  getConversationIdForLogging,
-  getMessageIdForLogging,
-} from '../../util/idForLogging';
-import { singleProtoJobQueue } from '../../jobs/singleProtoJobQueue';
-import MessageSender from '../../textsecure/SendMessage';
-import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager';
-import type {
-  DeleteForMeSyncEventData,
-  AddressableMessage,
-} from '../../textsecure/messageReceiverEvents';
-import {
-  getConversationIdentifier,
-  getAddressableMessage,
-} from '../../util/syncIdentifiers';
-import { MAX_MESSAGE_COUNT } from '../../util/deleteForMe.types';
-import { markCallHistoryReadInConversation } from './callHistory';
-import type { CapabilitiesType } from '../../textsecure/WebAPI';
-import { actions as searchActions } from './search';
-import type { SearchActionType } from './search';
-import { getNotificationTextForMessage } from '../../util/getNotificationTextForMessage';
-import { doubleCheckMissingQuoteReference as doDoubleCheckMissingQuoteReference } from '../../util/doubleCheckMissingQuoteReference';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads';
-import { markAttachmentAsCorrupted as doMarkAttachmentAsCorrupted } from '../../messageModifiers/AttachmentDownloads';
-import {
-  isSent,
-  SendActionType,
-  sendStateReducer,
-} from '../../messages/MessageSendState';
-import { markFailed } from '../../test-node/util/messageFailures';
-import { cleanupMessages } from '../../util/cleanup';
-import { MessageModel } from '../../models/messages';
-import type { ConversationModel } from '../../models/conversations';
-import { MessageRequestResponseSource } from '../../types/MessageRequestResponseEvent';
+} = lodash;
 
 const log = createLogger('conversations');
 
@@ -1169,9 +1193,10 @@ export const actions = {
   loadNewerMessages,
   loadNewestMessages,
   loadOlderMessages,
-  loadRecentMediaItems,
   markAttachmentAsCorrupted,
   markMessageRead,
+  markConversationRead,
+  markChatFolderRead,
   markOpenConversationRead,
   messageChanged,
   messageDeleted,
@@ -1229,6 +1254,7 @@ export const actions = {
   setMessageLoadingState,
   setMessageToEdit,
   setMuteExpiration,
+  setChatFolderMuteExpiration,
   setPinned,
   setPreJoinConversation,
   setProfileUpdateError,
@@ -1440,6 +1466,61 @@ function loadOlderMessages(
   };
 }
 
+function _getAllConversationsInChatFolder(
+  state: RootStateType,
+  chatFolderId: ChatFolderId
+) {
+  const currentChatFolders = getCurrentChatFolders(state);
+  const chatFolder = CurrentChatFolders.expect(
+    currentChatFolders,
+    chatFolderId,
+    '_getAllConversationsInChatFolder'
+  );
+  const allConversations = getAllConversations(state);
+  return allConversations.filter(conversation => {
+    return isConversationInChatFolder(chatFolder, conversation);
+  });
+}
+
+function markChatFolderRead(
+  chatFolderId: ChatFolderId
+): ThunkAction<void, RootStateType, unknown, NoopActionType> {
+  return async (dispatch, getState) => {
+    const chatFolderConversations = _getAllConversationsInChatFolder(
+      getState(),
+      chatFolderId
+    );
+
+    const unreadChatFolderConversations = chatFolderConversations.filter(
+      conversation => {
+        return isConversationUnread(conversation);
+      }
+    );
+
+    for (const conversation of unreadChatFolderConversations) {
+      dispatch(markConversationRead(conversation.id));
+    }
+  };
+}
+
+function markConversationRead(
+  conversationId: string
+): ThunkAction<void, RootStateType, unknown, NoopActionType> {
+  return async dispatch => {
+    const model = window.ConversationController.get(conversationId);
+    strictAssert(model, 'Conversation must be found');
+    model.setMarkedUnread(false);
+
+    const lastMessage = await DataReader.getLastConversationMessage({
+      conversationId,
+    });
+    if (lastMessage == null) {
+      return;
+    }
+    dispatch(markMessageRead(conversationId, lastMessage.id));
+  };
+}
+
 function markMessageRead(
   conversationId: string,
   messageId: string
@@ -1559,7 +1640,7 @@ function deleteAvatarFromDisk(
 ): ThunkAction<void, RootStateType, unknown, ReplaceAvatarsActionType> {
   return async (dispatch, getState) => {
     if (avatarData.imagePath) {
-      await window.Signal.Migrations.deleteAvatar(avatarData.imagePath);
+      await deleteAvatar(avatarData.imagePath);
     } else {
       log.info(
         'No path for avatarData. Removing from userAvatarData, but not disk'
@@ -1719,6 +1800,22 @@ function setDontNotifyForMentionsIfMuted(
   };
 }
 
+function setChatFolderMuteExpiration(
+  chatFolderId: ChatFolderId,
+  muteExpiresAt: number
+): ThunkAction<void, RootStateType, unknown, NoopActionType> {
+  return async (dispatch, getState) => {
+    const chatFolderConversations = _getAllConversationsInChatFolder(
+      getState(),
+      chatFolderId
+    );
+
+    for (const conversation of chatFolderConversations) {
+      dispatch(setMuteExpiration(conversation.id, muteExpiresAt));
+    }
+  };
+}
+
 function setMuteExpiration(
   conversationId: string,
   muteExpiresAt = 0
@@ -1750,7 +1847,7 @@ function setPinned(
   }
 
   if (value) {
-    const pinnedConversationIds = window.storage.get(
+    const pinnedConversationIds = itemStorage.get(
       'pinnedConversationIds',
       new Array<string>()
     );
@@ -2089,7 +2186,7 @@ export const markViewed = (messageId: string): void => {
     );
   } else {
     // Use our own ACI for syncing viewed state of an outgoing message.
-    senderAci = window.textsecure.storage.user.getCheckedAci();
+    senderAci = itemStorage.user.getCheckedAci();
   }
 
   drop(
@@ -2183,8 +2280,9 @@ function saveAvatarToDisk(
 
     strictAssert(conversationId, 'conversationId not provided');
 
-    const { path: imagePath, ...localImage } =
-      await window.Signal.Migrations.writeNewAvatarData(avatarData.buffer);
+    const { path: imagePath, ...localImage } = await writeNewAvatarData(
+      avatarData.buffer
+    );
 
     const avatars = await getAvatarsAndUpdateConversation(
       getState().conversations,
@@ -2366,9 +2464,12 @@ function cancelAttachmentDownload({
     }
 
     // A click kicks off downloads for every attachment in a message, so cancel does too
-    await AttachmentDownloadManager.cancelJobs(job => {
-      return job.messageId === messageId;
-    });
+    await AttachmentDownloadManager.cancelJobs(
+      JobCancelReason.UserInitiated,
+      job => {
+        return job.messageId === messageId;
+      }
+    );
 
     await DataWriter.removeAttachmentDownloadJobsForMessage(messageId);
 
@@ -2791,8 +2892,9 @@ function composeSaveAvatarToDisk(
       throw new Error('No avatar Uint8Array provided');
     }
 
-    const { path: imagePath, ...localImage } =
-      await window.Signal.Migrations.writeNewAvatarData(avatarData.buffer);
+    const { path: imagePath, ...localImage } = await writeNewAvatarData(
+      avatarData.buffer
+    );
 
     dispatch({
       type: COMPOSE_ADD_AVATAR,
@@ -2810,7 +2912,7 @@ function composeDeleteAvatarFromDisk(
 ): ThunkAction<void, RootStateType, unknown, ComposeDeleteAvatarActionType> {
   return async dispatch => {
     if (avatarData.imagePath) {
-      await window.Signal.Migrations.deleteAvatar(avatarData.imagePath);
+      await deleteAvatar(avatarData.imagePath);
     } else {
       log.info(
         'No path for avatarData. Removing from userAvatarData, but not disk'
@@ -3785,9 +3887,7 @@ function blockAndReportSpam(
     } else {
       try {
         await singleProtoJobQueue.add(
-          MessageSender.getBlockSync(
-            window.textsecure.storage.blocked.getBlockedData()
-          )
+          MessageSender.getBlockSync(itemStorage.blocked.getBlockedData())
         );
       } catch (error) {
         log.error(
@@ -3838,9 +3938,7 @@ function acceptConversation(
 
       try {
         await singleProtoJobQueue.add(
-          MessageSender.getBlockSync(
-            window.textsecure.storage.blocked.getBlockedData()
-          )
+          MessageSender.getBlockSync(itemStorage.blocked.getBlockedData())
         );
       } catch (error) {
         log.error(
@@ -3919,9 +4017,7 @@ function blockConversation(
 
       try {
         await singleProtoJobQueue.add(
-          MessageSender.getBlockSync(
-            window.textsecure.storage.blocked.getBlockedData()
-          )
+          MessageSender.getBlockSync(itemStorage.blocked.getBlockedData())
         );
       } catch (error) {
         log.error(
@@ -3996,73 +4092,6 @@ function initiateMigrationToGroupV2(conversationId: string): NoopActionType {
   };
 }
 
-function loadRecentMediaItems(
-  conversationId: string,
-  limit: number
-): ThunkAction<void, RootStateType, unknown, SetRecentMediaItemsActionType> {
-  return async dispatch => {
-    const messages: Array<MessageAttributesType> =
-      await DataReader.getOlderMessagesByConversation({
-        conversationId,
-        limit,
-        requireVisualMediaAttachments: true,
-        storyId: undefined,
-        includeStoryReplies: false,
-      });
-
-    // Cache these messages in memory to ensure Lightbox can find them
-    messages.forEach(message => {
-      window.MessageCache.register(new MessageModel(message));
-    });
-
-    let index = 0;
-    const recentMediaItems = messages
-      .filter(message => message.attachments !== undefined)
-      .reduce(
-        (acc, message) => [
-          ...acc,
-          ...(message.attachments || []).map(
-            (attachment: AttachmentType): MediaItemType => {
-              const { thumbnail } = attachment;
-
-              const result = {
-                objectURL: attachment.path
-                  ? getLocalAttachmentUrl(attachment)
-                  : '',
-                thumbnailObjectUrl: thumbnail?.path
-                  ? getLocalAttachmentUrl(thumbnail)
-                  : '',
-                contentType: attachment.contentType,
-                index,
-                attachment,
-                message: {
-                  attachments: message.attachments || [],
-                  conversationId:
-                    window.ConversationController.get(message.sourceServiceId)
-                      ?.id || message.conversationId,
-                  id: message.id,
-                  receivedAt: message.received_at,
-                  receivedAtMs: Number(message.received_at_ms),
-                  sentAt: message.sent_at,
-                },
-              };
-
-              index += 1;
-
-              return result;
-            }
-          ),
-        ],
-        [] as Array<MediaItemType>
-      );
-
-    dispatch({
-      type: 'SET_RECENT_MEDIA_ITEMS',
-      payload: { id: conversationId, recentMediaItems },
-    });
-  };
-}
-
 export type SaveAttachmentActionCreatorType = ReadonlyDeep<
   (attachment: AttachmentType, timestamp?: number, index?: number) => unknown
 >;
@@ -4086,9 +4115,6 @@ function saveAttachment(
       });
       return;
     }
-
-    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
-      window.Signal.Migrations;
 
     const fullPath = await Attachment.save({
       attachment,
@@ -4161,9 +4187,6 @@ function saveAttachments(
     if (canceled || !dirPath) {
       return;
     }
-
-    const { getUnusedFilename, readAttachmentData, saveAttachmentToDisk } =
-      window.Signal.Migrations;
 
     let fullPath;
     let index = 0;
@@ -4794,10 +4817,7 @@ function onConversationOpened(
       log.warn(`${logId}: Did not find message ${messageId}`);
     }
 
-    const { retryPlaceholders } = window.Signal.Services;
-    if (retryPlaceholders) {
-      await retryPlaceholders.findByConversationAndMarkOpened(conversation.id);
-    }
+    await retryPlaceholders.findByConversationAndMarkOpened(conversation.id);
 
     const loadAndUpdate = async () => {
       drop(
@@ -4834,7 +4854,7 @@ function onConversationOpened(
     );
     promises.push(conversation.throttledFetchSMSOnlyUUID());
 
-    const ourAci = window.textsecure.storage.user.getAci();
+    const ourAci = itemStorage.user.getAci();
     if (
       !isGroup(conversation.attributes) ||
       (ourAci && conversation.hasMember(ourAci))

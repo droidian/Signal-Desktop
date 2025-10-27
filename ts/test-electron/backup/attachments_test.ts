@@ -2,19 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { v4 as generateGuid } from 'uuid';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
-import { omit } from 'lodash';
-import * as sinon from 'sinon';
-import { join } from 'path';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import lodash from 'lodash';
 import { assert } from 'chai';
 
-import type { ConversationModel } from '../../models/conversations';
-import * as Bytes from '../../Bytes';
-import { DataWriter } from '../../sql/Client';
-import { type AciString, generateAci } from '../../types/ServiceId';
-import { ReadStatus } from '../../messages/MessageReadStatus';
-import { SeenStatus } from '../../MessageSeenStatus';
-import { setupBasics, asymmetricRoundtripHarness } from './helpers';
+import type { ConversationModel } from '../../models/conversations.js';
+import * as Bytes from '../../Bytes.js';
+import { DataWriter } from '../../sql/Client.js';
+import { type AciString, generateAci } from '../../types/ServiceId.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.js';
+import { SeenStatus } from '../../MessageSeenStatus.js';
+import { setupBasics, asymmetricRoundtripHarness } from './helpers.js';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -22,38 +20,40 @@ import {
   IMAGE_WEBP,
   LONG_MESSAGE,
   VIDEO_MP4,
-} from '../../types/MIME';
+} from '../../types/MIME.js';
 import type {
   MessageAttributesType,
   QuotedMessageType,
-} from '../../model-types';
+} from '../../model-types.js';
 import {
   hasRequiredInformationForBackup,
   isVoiceMessage,
-  type AttachmentType,
-} from '../../types/Attachment';
-import { strictAssert } from '../../util/assert';
-import { SignalService } from '../../protobuf';
-import { getRandomBytes } from '../../Crypto';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders';
+} from '../../util/Attachment.js';
+import type { AttachmentType } from '../../types/Attachment.js';
+import { strictAssert } from '../../util/assert.js';
+import { SignalService } from '../../protobuf/index.js';
+import { getRandomBytes } from '../../Crypto.js';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.js';
 import {
   generateAttachmentKeys,
   generateKeys,
   getPlaintextHashForInMemoryAttachment,
-} from '../../AttachmentCrypto';
-import { KIBIBYTE } from '../../types/AttachmentSize';
+} from '../../AttachmentCrypto.js';
+import { KIBIBYTE } from '../../types/AttachmentSize.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+
+const { omit } = lodash;
 
 const CONTACT_A = generateAci();
 
 const NON_ROUNDTRIPPED_FIELDS = ['path', 'thumbnail', 'screenshot', 'localKey'];
 
 describe('backup/attachments', () => {
-  let sandbox: sinon.SinonSandbox;
   let contactA: ConversationModel;
 
   beforeEach(async () => {
     await DataWriter.removeAll();
-    window.storage.reset();
+    itemStorage.reset();
 
     window.ConversationController.reset();
 
@@ -66,27 +66,10 @@ describe('backup/attachments', () => {
     );
 
     await loadAllAndReinitializeRedux();
-
-    sandbox = sinon.createSandbox();
-    const getAbsoluteAttachmentPath = sandbox.stub(
-      window.Signal.Migrations,
-      'getAbsoluteAttachmentPath'
-    );
-    getAbsoluteAttachmentPath.callsFake(path => {
-      if (path === 'path/to/sticker') {
-        return join(__dirname, '../../../fixtures/kitten-3-64-64.jpg');
-      }
-      if (path === 'path/to/thumbnail') {
-        return join(__dirname, '../../../fixtures/kitten-3-64-64.jpg');
-      }
-      return getAbsoluteAttachmentPath.wrappedMethod(path);
-    });
   });
 
   afterEach(async () => {
     await DataWriter.removeAll();
-
-    sandbox.restore();
   });
 
   function composeAttachment(

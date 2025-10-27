@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assert } from 'chai';
-import { clone } from 'lodash';
+import lodash from 'lodash';
 import {
   Direction,
   IdentityKeyPair,
@@ -14,26 +14,30 @@ import {
 } from '@signalapp/libsignal-client';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../sql/Client';
-import { signal } from '../protobuf/compiled';
-import { sessionStructureToBytes } from '../util/sessionTranslation';
-import * as durations from '../util/durations';
-import { explodePromise } from '../util/explodePromise';
-import { Zone } from '../util/Zone';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { signal } from '../protobuf/compiled.js';
+import { sessionStructureToBytes } from '../util/sessionTranslation.js';
+import * as durations from '../util/durations/index.js';
+import { explodePromise } from '../util/explodePromise.js';
+import { Zone } from '../util/Zone.js';
 
-import * as Bytes from '../Bytes';
-import { getRandomBytes, constantTimeEqual } from '../Crypto';
+import * as Bytes from '../Bytes.js';
+import { getRandomBytes, constantTimeEqual } from '../Crypto.js';
 import {
   clampPrivateKey,
   setPublicKeyTypeByte,
   generateSignedPreKey,
-} from '../Curve';
-import type { SignalProtocolStore } from '../SignalProtocolStore';
-import { GLOBAL_ZONE } from '../SignalProtocolStore';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import { generateAci, generatePni } from '../types/ServiceId';
-import type { IdentityKeyType, KeyPairType } from '../textsecure/Types.d';
+  generateKyberPreKey,
+} from '../Curve.js';
+import type { SignalProtocolStore } from '../SignalProtocolStore.js';
+import { GLOBAL_ZONE, signalProtocolStore } from '../SignalProtocolStore.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import { generateAci, generatePni } from '../types/ServiceId.js';
+import type { IdentityKeyType, KeyPairType } from '../textsecure/Types.d.ts';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { clone } = lodash;
 
 const {
   RecordStructure,
@@ -149,21 +153,21 @@ describe('SignalProtocolStore', () => {
   }
 
   before(async () => {
-    store = window.textsecure.storage.protocol;
+    store = signalProtocolStore;
     await store.hydrateCaches();
     identityKey = IdentityKeyPair.generate();
     testKey = IdentityKeyPair.generate();
 
-    await window.storage.put('registrationIdMap', {
+    await itemStorage.put('registrationIdMap', {
       [ourAci]: 1337,
     });
-    await window.storage.put('identityKeyMap', {
+    await itemStorage.put('identityKeyMap', {
       [ourAci]: {
         privKey: identityKey.privateKey.serialize(),
         pubKey: identityKey.publicKey.serialize(),
       },
     });
-    await window.storage.fetch();
+    await itemStorage.fetch();
 
     window.ConversationController.reset();
     await window.ConversationController.load();
@@ -172,7 +176,7 @@ describe('SignalProtocolStore', () => {
 
   after(async () => {
     await DataWriter.removeAll();
-    await window.storage.fetch();
+    await itemStorage.fetch();
   });
 
   describe('getLocalRegistrationId', () => {
@@ -595,12 +599,9 @@ describe('SignalProtocolStore', () => {
       });
 
       async function testInvalidAttributes() {
-        try {
-          await store.saveIdentityWithAttributes(theirAci, attributes);
-          throw new Error('saveIdentityWithAttributes should have failed');
-        } catch (error) {
-          // good. we expect to fail with invalid attributes.
-        }
+        await assert.isRejected(
+          store.saveIdentityWithAttributes(theirAci, attributes)
+        );
       }
 
       it('rejects an invalid publicKey', async () => {
@@ -710,12 +711,13 @@ describe('SignalProtocolStore', () => {
     it('should create an identity and set verified to DEFAULT', async () => {
       const newAci = generateAci();
 
-      const needsNotification = await store.updateIdentityAfterSync(
-        newAci,
-        store.VerifiedStatus.DEFAULT,
-        newIdentity
-      );
-      assert.isFalse(needsNotification);
+      const { shouldAddVerifiedChangedMessage } =
+        await store.updateIdentityAfterSync(
+          newAci,
+          store.VerifiedStatus.DEFAULT,
+          newIdentity
+        );
+      assert.isFalse(shouldAddVerifiedChangedMessage);
       assert.strictEqual(keychangeTriggered, 0);
 
       const identity = await DataReader.getIdentityKeyById(newAci);
@@ -729,12 +731,13 @@ describe('SignalProtocolStore', () => {
     it('should create an identity and set verified to VERIFIED', async () => {
       const newAci = generateAci();
 
-      const needsNotification = await store.updateIdentityAfterSync(
-        newAci,
-        store.VerifiedStatus.VERIFIED,
-        newIdentity
-      );
-      assert.isTrue(needsNotification);
+      const { shouldAddVerifiedChangedMessage } =
+        await store.updateIdentityAfterSync(
+          newAci,
+          store.VerifiedStatus.VERIFIED,
+          newIdentity
+        );
+      assert.isTrue(shouldAddVerifiedChangedMessage);
       assert.strictEqual(keychangeTriggered, 0);
 
       const identity = await DataReader.getIdentityKeyById(newAci);
@@ -746,12 +749,13 @@ describe('SignalProtocolStore', () => {
     });
 
     it('should update public key without verified change', async () => {
-      const needsNotification = await store.updateIdentityAfterSync(
-        theirAci,
-        store.VerifiedStatus.DEFAULT,
-        newIdentity
-      );
-      assert.isFalse(needsNotification);
+      const { shouldAddVerifiedChangedMessage } =
+        await store.updateIdentityAfterSync(
+          theirAci,
+          store.VerifiedStatus.DEFAULT,
+          newIdentity
+        );
+      assert.isFalse(shouldAddVerifiedChangedMessage);
       assert.strictEqual(keychangeTriggered, 1);
 
       const identity = await DataReader.getIdentityKeyById(theirAci);
@@ -763,12 +767,13 @@ describe('SignalProtocolStore', () => {
     });
 
     it('should update verified without public key change', async () => {
-      const needsNotification = await store.updateIdentityAfterSync(
-        theirAci,
-        store.VerifiedStatus.VERIFIED,
-        testKey.publicKey.serialize()
-      );
-      assert.isTrue(needsNotification);
+      const { shouldAddVerifiedChangedMessage } =
+        await store.updateIdentityAfterSync(
+          theirAci,
+          store.VerifiedStatus.VERIFIED,
+          testKey.publicKey.serialize()
+        );
+      assert.isTrue(shouldAddVerifiedChangedMessage);
       assert.strictEqual(keychangeTriggered, 0);
 
       const identity = await DataReader.getIdentityKeyById(theirAci);
@@ -1633,6 +1638,98 @@ describe('SignalProtocolStore', () => {
       );
       assert.strictEqual(storedSignedPreKey.timestamp(), createdAt);
       // Note: signature is ignored.
+    });
+  });
+
+  describe('maybeRemoveKyberPreKey', () => {
+    beforeEach(async () => {
+      await store.clearKyberPreKeyStore();
+    });
+
+    afterEach(async () => {
+      await store.clearKyberPreKeyStore();
+    });
+
+    it('should detect duplicate triples', async () => {
+      await store.storeKyberPreKeys(ourAci, [
+        {
+          createdAt: Date.now(),
+          data: generateKyberPreKey(identityKey, 1).serialize(),
+          isConfirmed: true,
+          isLastResort: true,
+          keyId: 1,
+          ourServiceId: ourAci,
+        },
+      ]);
+
+      await store.maybeRemoveKyberPreKey(ourAci, {
+        keyId: 1,
+        signedPreKeyId: 1,
+        baseKey: testKey.publicKey,
+      });
+
+      await assert.isRejected(
+        store.maybeRemoveKyberPreKey(ourAci, {
+          keyId: 1,
+          signedPreKeyId: 1,
+          baseKey: testKey.publicKey,
+        }),
+        'Duplicate kyber triple 1:1'
+      );
+    });
+
+    it('should ignore triples for non last resort keys', async () => {
+      await store.storeKyberPreKeys(ourAci, [
+        {
+          createdAt: Date.now(),
+          data: generateKyberPreKey(identityKey, 1).serialize(),
+          isConfirmed: true,
+          isLastResort: false,
+          keyId: 1,
+          ourServiceId: ourAci,
+        },
+      ]);
+
+      await store.maybeRemoveKyberPreKey(ourAci, {
+        keyId: 1,
+        signedPreKeyId: 1,
+        baseKey: testKey.publicKey,
+      });
+
+      // this should not throw since the key was not last resort
+      await store.maybeRemoveKyberPreKey(ourAci, {
+        keyId: 1,
+        signedPreKeyId: 1,
+        baseKey: testKey.publicKey,
+      });
+    });
+
+    it('should remove triples when removing the key', async () => {
+      await store.storeKyberPreKeys(ourAci, [
+        {
+          createdAt: Date.now(),
+          data: generateKyberPreKey(identityKey, 1).serialize(),
+          isConfirmed: true,
+          isLastResort: true,
+          keyId: 1,
+          ourServiceId: ourAci,
+        },
+      ]);
+
+      await store.maybeRemoveKyberPreKey(ourAci, {
+        keyId: 1,
+        signedPreKeyId: 1,
+        baseKey: testKey.publicKey,
+      });
+
+      await store.removeKyberPreKeys(ourAci, [1]);
+
+      // this should not throw since we removed the key
+      await store.maybeRemoveKyberPreKey(ourAci, {
+        keyId: 1,
+        signedPreKeyId: 1,
+        baseKey: testKey.publicKey,
+      });
     });
   });
 });

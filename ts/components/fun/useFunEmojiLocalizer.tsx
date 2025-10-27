@@ -1,16 +1,16 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useMemo } from 'react';
-import type { EmojiParentKey, EmojiVariantKey } from './data/emojis';
+import type { EmojiParentKey, EmojiVariantKey } from './data/emojis.js';
 import {
   getEmojiParentByKey,
   getEmojiParentKeyByVariantKey,
   getEmojiVariantKeyByValue,
   isEmojiVariantValue,
-} from './data/emojis';
-import type { LocaleEmojiListType } from '../../types/emoji';
-import { strictAssert } from '../../util/assert';
-import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider';
+} from './data/emojis.js';
+import type { LocaleEmojiListType } from '../../types/emoji.js';
+import { strictAssert } from '../../util/assert.js';
+import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider.js';
 
 export type FunEmojiLocalizerIndex = Readonly<{
   parentKeyToLocaleShortName: ReadonlyMap<EmojiParentKey, string>;
@@ -23,7 +23,8 @@ export type FunEmojiLocalizer = Readonly<{
 }>;
 
 export function createFunEmojiLocalizerIndex(
-  localeEmojiList: LocaleEmojiListType
+  localeEmojiList: LocaleEmojiListType,
+  defaultLocalizerIndex?: FunEmojiLocalizerIndex
 ): FunEmojiLocalizerIndex {
   const parentKeyToLocaleShortName = new Map<EmojiParentKey, string>();
   const localeShortNameToParentKey = new Map<string, EmojiParentKey>();
@@ -37,8 +38,23 @@ export function createFunEmojiLocalizerIndex(
     const variantKey = getEmojiVariantKeyByValue(entry.emoji);
     const parentKey = getEmojiParentKeyByVariantKey(variantKey);
     const localizedShortName = entry.tags.at(0) ?? entry.shortName;
+
     parentKeyToLocaleShortName.set(parentKey, localizedShortName);
     localeShortNameToParentKey.set(localizedShortName, parentKey);
+  }
+
+  if (defaultLocalizerIndex != null) {
+    for (const [
+      parentKey,
+      defaultShortName,
+    ] of defaultLocalizerIndex.parentKeyToLocaleShortName) {
+      if (parentKeyToLocaleShortName.has(parentKey)) {
+        continue;
+      }
+
+      parentKeyToLocaleShortName.set(parentKey, defaultShortName);
+      localeShortNameToParentKey.set(defaultShortName, parentKey);
+    }
   }
 
   return { parentKeyToLocaleShortName, localeShortNameToParentKey };

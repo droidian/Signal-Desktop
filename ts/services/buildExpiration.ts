@@ -6,9 +6,10 @@ import EventEmitter from 'node:events';
 import {
   hasBuildExpired,
   getBuildExpirationTimestamp,
-} from '../util/buildExpiration';
-import { LongTimeout } from '../util/timeout';
-import { createLogger } from '../logging/log';
+} from '../util/buildExpiration.js';
+import { LongTimeout } from '../util/timeout.js';
+import { createLogger } from '../logging/log.js';
+import { itemStorage } from '../textsecure/Storage.js';
 
 const log = createLogger('buildExpiration');
 
@@ -21,7 +22,7 @@ export class BuildExpirationService extends EventEmitter {
   }
 
   hasBuildExpired(): boolean {
-    const autoDownloadUpdate = window.storage.get('auto-download-update', true);
+    const autoDownloadUpdate = itemStorage.get('auto-download-update', true);
 
     return hasBuildExpired({
       buildExpirationTimestamp: this.#getBuildExpirationTimestamp(),
@@ -34,12 +35,12 @@ export class BuildExpirationService extends EventEmitter {
   // Private
 
   #getBuildExpirationTimestamp(): number {
-    const autoDownloadUpdate = window.storage.get('auto-download-update', true);
+    const autoDownloadUpdate = itemStorage.get('auto-download-update', true);
 
     return getBuildExpirationTimestamp({
       version: window.getVersion(),
       packagedBuildExpiration: window.getBuildExpiration(),
-      remoteBuildExpiration: window.storage.get('remoteBuildExpiration'),
+      remoteBuildExpiration: itemStorage.get('remoteBuildExpiration'),
       autoDownloadUpdate,
       logger: log,
     });

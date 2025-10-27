@@ -1,37 +1,59 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isNumber, reject, groupBy, values, chunk } from 'lodash';
+import lodash from 'lodash';
 import pMap from 'p-map';
 import Queue from 'p-queue';
 
-import { strictAssert } from '../util/assert';
-import { dropNull } from '../util/dropNull';
-import { makeLookup } from '../util/makeLookup';
-import { maybeParseUrl } from '../util/url';
-import { getMessagesById } from '../messages/getMessagesById';
-import * as Bytes from '../Bytes';
-import * as Errors from './errors';
-import { deriveStickerPackKey, decryptAttachmentV1 } from '../Crypto';
-import { IMAGE_WEBP } from './MIME';
-import { sniffImageMimeType } from '../util/sniffImageMimeType';
-import type { AttachmentType, AttachmentWithHydratedData } from './Attachment';
+import { strictAssert } from '../util/assert.js';
+import { dropNull } from '../util/dropNull.js';
+import { makeLookup } from '../util/makeLookup.js';
+import { maybeParseUrl } from '../util/url.js';
+import { getMessagesById } from '../messages/getMessagesById.js';
+import * as Bytes from '../Bytes.js';
+import * as Errors from './errors.js';
+import { deriveStickerPackKey, decryptAttachmentV1 } from '../Crypto.js';
+import { IMAGE_WEBP } from './MIME.js';
+import { sniffImageMimeType } from '../util/sniffImageMimeType.js';
+import type {
+  AttachmentType,
+  AttachmentWithHydratedData,
+} from './Attachment.js';
 import type {
   StickerType as StickerFromDBType,
   StickerPackType,
   StickerPackStatusType,
   UninstalledStickerPackType,
-} from '../sql/Interface';
-import { DataReader, DataWriter } from '../sql/Client';
-import { SignalService as Proto } from '../protobuf';
-import { createLogger } from '../logging/log';
-import type { StickersStateType } from '../state/ducks/stickers';
-import { MINUTE } from '../util/durations';
-import { drop } from '../util/drop';
-import { isNotNil } from '../util/isNotNil';
-import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment';
-import { AttachmentDisposition } from '../util/getLocalAttachmentUrl';
-import { getPlaintextHashForInMemoryAttachment } from '../AttachmentCrypto';
+} from '../sql/Interface.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import type { StickersStateType } from '../state/ducks/stickers.js';
+import { MINUTE } from '../util/durations/index.js';
+import {
+  processNewEphemeralSticker,
+  processNewSticker,
+  deleteTempFile,
+  getAbsoluteStickerPath,
+  copyStickerIntoAttachmentsDirectory,
+  readAttachmentData,
+  deleteSticker,
+  readStickerData,
+  writeNewStickerData,
+} from '../util/migrations.js';
+import { drop } from '../util/drop.js';
+import { isNotNil } from '../util/isNotNil.js';
+import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment.js';
+import { AttachmentDisposition } from '../util/getLocalAttachmentUrl.js';
+import { isPackIdValid, redactPackId } from '../util/Stickers.js';
+import { getPlaintextHashForInMemoryAttachment } from '../AttachmentCrypto.js';
+import {
+  isOnline,
+  getSticker as doGetSticker,
+  getStickerPackManifest,
+} from '../textsecure/WebAPI.js';
+
+const { isNumber, reject, groupBy, values, chunk } = lodash;
 
 const log = createLogger('Stickers');
 
@@ -127,8 +149,6 @@ const STICKER_PACK_DEFAULTS: StickerPackType = {
 
   storageNeedsSync: false,
 };
-
-const VALID_PACK_ID_REGEXP = /^[0-9a-f]{32}$/i;
 
 const DOWNLOAD_PRIORITY_NORMAL = 0;
 const DOWNLOAD_PRIORITY_HIGH = 1;
@@ -392,14 +412,6 @@ export function getInitialState(): StickersStateType {
   return initialState;
 }
 
-export function isPackIdValid(packId: unknown): packId is string {
-  return typeof packId === 'string' && VALID_PACK_ID_REGEXP.test(packId);
-}
-
-export function redactPackId(packId: string): string {
-  return `[REDACTED]${packId.slice(-3)}`;
-}
-
 function getReduxStickerActions() {
   const actions = window.reduxActions;
   strictAssert(actions && actions.stickers, 'Redux not ready');
@@ -427,17 +439,12 @@ async function downloadSticker(
   const { id, emoji } = proto;
   strictAssert(id != null, "Sticker id can't be null");
 
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error('messaging is not available!');
-  }
-
-  const ciphertext = await messaging.getSticker(packId, id);
+  const ciphertext = await doGetSticker(packId, id);
   const plaintext = decryptSticker(packKey, ciphertext);
 
   const sticker = ephemeral
-    ? await window.Signal.Migrations.processNewEphemeralSticker(plaintext)
-    : await window.Signal.Migrations.processNewSticker(plaintext);
+    ? await processNewEphemeralSticker(plaintext)
+    : await processNewSticker(plaintext);
 
   return {
     id,
@@ -497,7 +504,7 @@ export async function removeEphemeralPack(packId: string): Promise<void> {
 
   const stickers = values(existing.stickers);
   const paths = stickers.map(sticker => sticker.path);
-  await pMap(paths, window.Signal.Migrations.deleteTempFile, {
+  await pMap(paths, deleteTempFile, {
     concurrency: 3,
   });
 
@@ -547,12 +554,7 @@ export async function downloadEphemeralPack(
     };
     stickerPackAdded(placeholder);
 
-    const { messaging } = window.textsecure;
-    if (!messaging) {
-      throw new Error('messaging is not available!');
-    }
-
-    const ciphertext = await messaging.getStickerPackManifest(packId);
+    const ciphertext = await getStickerPackManifest(packId);
     const plaintext = decryptSticker(packKey, ciphertext);
     const proto = Proto.StickerPack.decode(plaintext);
     const firstStickerProto = proto.stickers ? proto.stickers[0] : null;
@@ -736,13 +738,8 @@ async function doDownloadStickerPack(
     return;
   }
 
-  const { server } = window.textsecure;
-  if (!server) {
-    throw new Error('server is not available!');
-  }
-
   // We don't count this as an attempt if we're offline
-  const attemptIncrement = server.isOnline() ? 1 : 0;
+  const attemptIncrement = isOnline() ? 1 : 0;
   const downloadAttempts =
     (existing ? existing.downloadAttempts || 0 : 0) + attemptIncrement;
   if (downloadAttempts > 3) {
@@ -784,12 +781,7 @@ async function doDownloadStickerPack(
     };
     stickerPackAdded(placeholder);
 
-    const { messaging } = window.textsecure;
-    if (!messaging) {
-      throw new Error('messaging is not available!');
-    }
-
-    const ciphertext = await messaging.getStickerPackManifest(packId);
+    const ciphertext = await getStickerPackManifest(packId);
     const plaintext = decryptSticker(packKey, ciphertext);
     const proto = Proto.StickerPack.decode(plaintext);
     const firstStickerProto = proto.stickers ? proto.stickers[0] : undefined;
@@ -1084,10 +1076,9 @@ export async function copyStickerToAttachments(
   }
 
   const { path: stickerPath } = sticker;
-  const absolutePath =
-    window.Signal.Migrations.getAbsoluteStickerPath(stickerPath);
+  const absolutePath = getAbsoluteStickerPath(stickerPath);
   const { path, size } =
-    await window.Signal.Migrations.copyIntoAttachmentsDirectory(absolutePath);
+    await copyStickerIntoAttachmentsDirectory(absolutePath);
 
   const newSticker: AttachmentType = {
     ...sticker,
@@ -1097,7 +1088,7 @@ export async function copyStickerToAttachments(
     // Fall-back
     contentType: IMAGE_WEBP,
   };
-  const data = await window.Signal.Migrations.readAttachmentData(newSticker);
+  const data = await readAttachmentData(newSticker);
 
   const sniffedMimeType = sniffImageMimeType(data);
   if (sniffedMimeType) {
@@ -1148,7 +1139,7 @@ export async function deletePackReference(
   const { removeStickerPack } = getReduxStickerActions();
   removeStickerPack(packId);
 
-  await pMap(paths, window.Signal.Migrations.deleteSticker, {
+  await pMap(paths, deleteSticker, {
     concurrency: 3,
   });
 }
@@ -1167,7 +1158,7 @@ async function deletePack(packId: string): Promise<void> {
   const { removeStickerPack } = getReduxStickerActions();
   removeStickerPack(packId);
 
-  await pMap(paths, window.Signal.Migrations.deleteSticker, {
+  await pMap(paths, deleteSticker, {
     concurrency: 3,
   });
 }
@@ -1224,9 +1215,6 @@ async function encryptLegacySticker(
 ): Promise<
   { sticker: StickerFromDBType; cleanup: () => Promise<void> } | undefined
 > {
-  const { deleteSticker, readStickerData, writeNewStickerData } =
-    window.Signal.Migrations;
-
   const updated = await encryptLegacyAttachment(sticker, {
     logId: 'sticker',
     readAttachmentData: readStickerData,

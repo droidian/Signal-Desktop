@@ -1,10 +1,11 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { groupBy, orderBy } from 'lodash';
+import lodash from 'lodash';
 import { useMemo } from 'react';
 
-import type { Reaction } from '../components/conversation/ReactionViewer';
+// eslint-disable-next-line import/no-restricted-paths
+import type { Reaction } from '../components/conversation/ReactionViewer.js';
 import {
   isEmojiVariantValue,
   getEmojiVariantKeyByValue,
@@ -12,9 +13,13 @@ import {
   getEmojiVariantByKey,
   type EmojiVariantKey,
   type EmojiParentKey,
-} from '../components/fun/data/emojis';
-import { isNotNil } from './isNotNil';
-import { useFunEmojiLocalizer } from '../components/fun/useFunEmojiLocalizer';
+  // eslint-disable-next-line import/no-restricted-paths
+} from '../components/fun/data/emojis.js';
+import { isNotNil } from './isNotNil.js';
+// eslint-disable-next-line import/no-restricted-paths
+import { useFunEmojiLocalizer } from '../components/fun/useFunEmojiLocalizer.js';
+
+const { groupBy, orderBy } = lodash;
 
 type ReactionWithEmojiData = Reaction & {
   short_name: string | undefined;

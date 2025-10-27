@@ -6,40 +6,47 @@ import { useSelector } from 'react-redux';
 
 import type { MutableRefObject } from 'react';
 
-import { getIntl, getTheme, getUserNumber } from '../selectors/user';
-import { getMe } from '../selectors/conversations';
-import { PreferencesDonations } from '../../components/PreferencesDonations';
-import type { SettingsPage } from '../../types/Nav';
-import { useDonationsActions } from '../ducks/donations';
-import type { StateType } from '../reducer';
-import { useConversationsActions } from '../ducks/conversations';
-import { generateDonationReceiptBlob } from '../../util/generateDonationReceipt';
-import { useToastActions } from '../ducks/toast';
+import { getIntl, getTheme, getUserNumber } from '../selectors/user.js';
+import { getMe } from '../selectors/conversations.js';
+import { PreferencesDonations } from '../../components/PreferencesDonations.js';
+import type { SettingsLocation } from '../../types/Nav.js';
+import { useDonationsActions } from '../ducks/donations.js';
+import type { StateType } from '../reducer.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { generateDonationReceiptBlob } from '../../util/generateDonationReceipt.js';
+import { useToastActions } from '../ducks/toast.js';
 import {
   getDonationHumanAmounts,
   getCachedSubscriptionConfiguration,
-} from '../../util/subscriptionConfiguration';
-import { drop } from '../../util/drop';
-import type { OneTimeDonationHumanAmounts } from '../../types/Donations';
-import { ONE_TIME_DONATION_CONFIG_ID, BOOST_ID } from '../../types/Donations';
-import { phoneNumberToCurrencyCode } from '../../services/donations';
-import { getPreferredBadgeSelector, getBadgesById } from '../selectors/badges';
-import { parseBoostBadgeListFromServer } from '../../badges/parseBadgesFromServer';
-import { createLogger } from '../../logging/log';
-import { useBadgesActions } from '../ducks/badges';
-import { getNetworkIsOnline } from '../selectors/network';
+} from '../../util/subscriptionConfiguration.js';
+import { drop } from '../../util/drop.js';
+import { saveAttachmentToDisk } from '../../util/migrations.js';
+import type { OneTimeDonationHumanAmounts } from '../../types/Donations.js';
+import {
+  ONE_TIME_DONATION_CONFIG_ID,
+  BOOST_ID,
+} from '../../types/Donations.js';
+import { phoneNumberToCurrencyCode } from '../../services/donations.js';
+import {
+  getPreferredBadgeSelector,
+  getBadgesById,
+} from '../selectors/badges.js';
+import { parseBoostBadgeListFromServer } from '../../badges/parseBadgesFromServer.js';
+import { createLogger } from '../../logging/log.js';
+import { useBadgesActions } from '../ducks/badges.js';
+import { getNetworkIsOnline } from '../selectors/network.js';
 
 const log = createLogger('SmartPreferencesDonations');
 
 export const SmartPreferencesDonations = memo(
   function SmartPreferencesDonations({
     contentsRef,
-    page,
-    setPage,
+    settingsLocation,
+    setSettingsLocation,
   }: {
     contentsRef: MutableRefObject<HTMLDivElement | null>;
-    page: SettingsPage;
-    setPage: (page: SettingsPage) => void;
+    settingsLocation: SettingsLocation;
+    setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   }) {
     const [validCurrencies, setValidCurrencies] = useState<
       ReadonlyArray<string>
@@ -74,7 +81,6 @@ export const SmartPreferencesDonations = memo(
       (state: StateType) => state.donations.receipts
     );
 
-    const { saveAttachmentToDisk } = window.Signal.Migrations;
     const { updateOrCreate } = useBadgesActions();
 
     // Function to fetch donation badge data
@@ -136,7 +142,7 @@ export const SmartPreferencesDonations = memo(
         contentsRef={contentsRef}
         initialCurrency={initialCurrency}
         isOnline={isOnline}
-        page={page}
+        settingsLocation={settingsLocation}
         didResumeWorkflowAtStartup={donationsState.didResumeWorkflowAtStartup}
         lastError={donationsState.lastError}
         workflow={donationsState.currentWorkflow}
@@ -145,7 +151,7 @@ export const SmartPreferencesDonations = memo(
         resumeWorkflow={resumeWorkflow}
         updateLastError={updateLastError}
         submitDonation={submitDonation}
-        setPage={setPage}
+        setSettingsLocation={setSettingsLocation}
         theme={theme}
         donationBadge={badgesById[BOOST_ID] ?? undefined}
         fetchBadgeData={fetchBadgeData}

@@ -4,56 +4,63 @@
 import type { Database, RowType } from '@signalapp/sqlcipher';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { strictAssert } from '../util/assert';
+import { strictAssert } from '../util/assert.js';
 
 import type {
   ConversationAttributesType,
   MessageAttributesType,
   SenderKeyInfoType,
-} from '../model-types.d';
-import type { StoredJob } from '../jobs/types';
-import type { ReactionType, ReactionReadStatus } from '../types/Reactions';
-import type { ConversationColorType, CustomColorType } from '../types/Colors';
-import type { StorageAccessType } from '../types/Storage.d';
-import type { BytesToStrings } from '../types/Util';
-import type { QualifiedAddressStringType } from '../types/QualifiedAddress';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId';
-import type { AciString, PniString, ServiceIdString } from '../types/ServiceId';
-import type { BadgeType } from '../badges/types';
-import type { ReadStatus } from '../messages/MessageReadStatus';
-import type { RawBodyRange } from '../types/BodyRange';
+} from '../model-types.d.ts';
+import type { StoredJob } from '../jobs/types.js';
+import type { ReactionType, ReactionReadStatus } from '../types/Reactions.js';
 import type {
-  GetMessagesBetweenOptions,
-  MaybeStaleCallHistory,
-} from './Server';
-import type { MessageTimestamps } from '../state/ducks/conversations';
+  ConversationColorType,
+  CustomColorType,
+} from '../types/Colors.js';
+import type { StorageAccessType } from '../types/Storage.d.ts';
+import type { BytesToStrings } from '../types/Util.js';
+import type { QualifiedAddressStringType } from '../types/QualifiedAddress.js';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.js';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from '../types/ServiceId.js';
+import type { BadgeType } from '../badges/types.js';
+import type { ReadStatus } from '../messages/MessageReadStatus.js';
+import type { RawBodyRange } from '../types/BodyRange.js';
+import type { MessageTimestamps } from '../state/ducks/conversations.js';
 import type {
   CallHistoryDetails,
   CallHistoryFilter,
   CallHistoryGroup,
   CallHistoryPagination,
   CallLogEventTarget,
-} from '../types/CallDisposition';
+} from '../types/CallDisposition.js';
 import type {
   CallLinkRecord,
   CallLinkStateType,
   CallLinkType,
   DefunctCallLinkType,
-} from '../types/CallLink';
+} from '../types/CallLink.js';
 import type {
   AttachmentDownloadJobType,
-  AttachmentDownloadJobTypeType,
-} from '../types/AttachmentDownload';
+  MessageAttachmentType,
+} from '../types/AttachmentDownload.js';
 import type {
   GroupSendEndorsementsData,
   GroupSendMemberEndorsementRecord,
-} from '../types/GroupSendEndorsements';
-import type { SyncTaskType } from '../util/syncTasks';
-import type { AttachmentBackupJobType } from '../types/AttachmentBackup';
-import type { GifType } from '../components/fun/panels/FunPanelGifs';
-import type { NotificationProfileType } from '../types/NotificationProfile';
-import type { DonationReceipt } from '../types/Donations';
-import type { InsertOrUpdateCallLinkFromSyncResult } from './server/callLinks';
+} from '../types/GroupSendEndorsements.js';
+import type { SyncTaskType } from '../util/syncTasks.js';
+import type { AttachmentBackupJobType } from '../types/AttachmentBackup.js';
+import type { AttachmentType } from '../types/Attachment.js';
+import type { MediaItemMessageType } from '../types/MediaItem.js';
+import type { GifType } from '../components/fun/panels/FunPanelGifs.js';
+import type { NotificationProfileType } from '../types/NotificationProfile.js';
+import type { DonationReceipt } from '../types/Donations.js';
+import type { InsertOrUpdateCallLinkFromSyncResult } from './server/callLinks.js';
+import type { ChatFolderId, ChatFolder } from '../types/ChatFolder.js';
+import type { CurrentChatFolder } from '../types/CurrentChatFolders.js';
 
 export type ReadableDB = Database & { __readable_db: never };
 export type WritableDB = ReadableDB & { __writable_db: never };
@@ -346,8 +353,8 @@ export const StickerPackStatuses = [
 export type StickerPackStatusType = (typeof StickerPackStatuses)[number];
 
 export type StorageServiceFieldsType = Readonly<{
-  storageID?: string;
-  storageVersion?: number;
+  storageID?: string | null;
+  storageVersion?: number | null;
   storageUnknownFields?: Uint8Array | null;
   storageNeedsSync: boolean;
 }>;
@@ -547,7 +554,10 @@ export type GetRecentStoryRepliesOptionsType = {
 };
 
 export enum AttachmentDownloadSource {
-  BACKUP_IMPORT = 'backup_import',
+  // Imported when paid (media) backups were enabled, or from a local backup
+  BACKUP_IMPORT_WITH_MEDIA = 'backup_import',
+  // Imported when paid (media) backups were not enabled
+  BACKUP_IMPORT_NO_MEDIA = 'backup_import_no_media',
   STANDARD = 'standard',
   BACKFILL = 'backfill',
 }
@@ -562,15 +572,50 @@ export type BackupAttachmentDownloadProgress = {
   completedBytes: number;
 };
 
+export type GetOlderMediaOptionsType = Readonly<{
+  conversationId: string;
+  limit: number;
+  messageId?: string;
+  receivedAt?: number;
+  sentAt?: number;
+  type: 'media' | 'files';
+}>;
+
+export type MediaItemDBType = Readonly<{
+  attachment: AttachmentType;
+  index: number;
+  message: MediaItemMessageType;
+}>;
+
+export type KyberPreKeyTripleType = Readonly<{
+  id: PreKeyIdType;
+  signedPreKeyId: number;
+  baseKey: Uint8Array;
+}>;
+
+export type GetMessagesBetweenOptions = Readonly<{
+  after: { received_at: number; sent_at: number };
+  before: { received_at: number; sent_at: number };
+  includeStoryReplies: boolean;
+}>;
+
+export type MaybeStaleCallHistory = Readonly<
+  Pick<CallHistoryDetails, 'callId' | 'peerId'>
+>;
+
 export const MESSAGE_ATTACHMENT_COLUMNS = [
   'messageId',
   'conversationId',
+  'messageType',
+  'receivedAt',
+  'receivedAtMs',
   'sentAt',
   'attachmentType',
   'orderInMessage',
   'editHistoryIndex',
   'clientUuid',
   'size',
+  'duration',
   'contentType',
   'path',
   'localKey',
@@ -608,6 +653,7 @@ export const MESSAGE_ATTACHMENT_COLUMNS = [
   'storyTextAttachmentJson',
   'localBackupPath',
   'isCorrupted',
+  'isViewOnce',
   'backfillError',
   'error',
   'wasTooBig',
@@ -618,13 +664,17 @@ export const MESSAGE_ATTACHMENT_COLUMNS = [
 
 export type MessageAttachmentDBType = {
   messageId: string;
-  attachmentType: AttachmentDownloadJobTypeType;
+  attachmentType: MessageAttachmentType;
   orderInMessage: number;
   editHistoryIndex: number | null;
   conversationId: string;
+  messageType: string;
+  receivedAt: number;
+  receivedAtMs: number | null;
   sentAt: number;
   clientUuid: string | null;
   size: number;
+  duration: number | null;
   contentType: string;
   path: string | null;
   plaintextHash: string | null;
@@ -663,6 +713,7 @@ export type MessageAttachmentDBType = {
   storyTextAttachmentJson: string | null;
   localBackupPath: string | null;
   isCorrupted: 1 | 0 | null;
+  isViewOnce: 1 | 0 | null;
   backfillError: 1 | 0 | null;
   error: 1 | 0 | null;
   wasTooBig: 1 | 0 | null;
@@ -693,6 +744,8 @@ type ReadableInterface = {
   _getAllSentProtoMessageIds: () => Array<SentMessageDBType>;
 
   getAllSessions: () => Array<SessionType>;
+
+  getAllKyberTriples: () => Array<KyberPreKeyTripleType>;
 
   getConversationCount: () => number;
   getConversationById: (id: string) => ConversationType | undefined;
@@ -762,6 +815,8 @@ type ReadableInterface = {
     maxTimestamp: number
   ) => Array<MessageType>;
   // getOlderMessagesByConversation is JSON on server, full message on Client
+  hasMedia: (conversationId: string) => boolean;
+  getOlderMedia: (options: GetOlderMediaOptionsType) => Array<MediaItemDBType>;
   getAllStories: (options: {
     conversationId?: string;
     sourceServiceId?: ServiceIdString;
@@ -872,6 +927,12 @@ type ReadableInterface = {
   getAllDonationReceipts(): Array<DonationReceipt>;
   getDonationReceiptById(id: string): DonationReceipt | undefined;
 
+  getAllChatFolders: () => ReadonlyArray<ChatFolder>;
+  getCurrentChatFolders: () => ReadonlyArray<CurrentChatFolder>;
+  getChatFolder: (id: ChatFolderId) => ChatFolder | null;
+  hasAllChatsChatFolder: () => boolean;
+  getOldestDeletedChatFolder: () => ChatFolder | null;
+
   getMessagesNeedingUpgrade: (
     limit: number,
     options: { maxVersion: number }
@@ -963,6 +1024,7 @@ type WritableInterface = {
     senderKeys: Array<SenderKeyType>;
     sessions: Array<SessionType>;
     unprocessed: Array<UnprocessedType>;
+    kyberTriples: Array<KyberPreKeyTripleType>;
   }): void;
   removeSessionById: (id: SessionIdType) => number;
   removeSessionsByConversation: (conversationId: string) => void;
@@ -1200,6 +1262,24 @@ type WritableInterface = {
   deleteDonationReceiptById(id: string): void;
   createDonationReceipt(profile: DonationReceipt): void;
 
+  createChatFolder: (chatFolder: ChatFolder) => void;
+  createAllChatsChatFolder: () => ChatFolder;
+  upsertAllChatsChatFolderFromSync: (chatFolder: ChatFolder) => void;
+  updateChatFolder: (chatFolder: ChatFolder) => void;
+  updateChatFolderPositions: (chatFolders: ReadonlyArray<ChatFolder>) => void;
+  updateChatFolderDeletedAtTimestampMsFromSync: (
+    chatFolderId: ChatFolderId,
+    deletedAtTimestampMs: number
+  ) => void;
+  markChatFolderDeleted: (
+    chatFolderId: ChatFolderId,
+    deletedAtTimestampMs: number,
+    storageNeedsSync: boolean
+  ) => void;
+  deleteExpiredChatFolders: (
+    messageQueueTime: number
+  ) => ReadonlyArray<ChatFolderId>;
+
   removeAll: () => void;
   removeAllConfiguration: () => void;
   eraseStorageServiceState: () => void;
@@ -1216,6 +1296,8 @@ type WritableInterface = {
 
   processGroupCallRingCancellation(ringId: bigint): void;
   cleanExpiredGroupCallRingCancellations(): void;
+
+  _testOnlyRemoveMessageAttachments(timestamp: number): void;
 };
 
 // Adds a database argument

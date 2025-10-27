@@ -1,44 +1,45 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { existsSync } from 'node:fs';
-import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
 
 import {
   APPLICATION_OCTET_STREAM,
   stringToMIMEType,
-} from '../../../types/MIME';
-import { createLogger } from '../../../logging/log';
+} from '../../../types/MIME.js';
+import { createLogger } from '../../../logging/log.js';
+import type { AttachmentType } from '../../../types/Attachment.js';
+import { getAbsoluteAttachmentPath } from '../../../util/migrations.js';
 import {
-  type AttachmentType,
   hasRequiredInformationForBackup,
   hasRequiredInformationToDownloadFromTransitTier,
-} from '../../../types/Attachment';
-import { Backups, SignalService } from '../../../protobuf';
-import * as Bytes from '../../../Bytes';
+} from '../../../util/Attachment.js';
+import { Backups, SignalService } from '../../../protobuf/index.js';
+import * as Bytes from '../../../Bytes.js';
 import {
   getSafeLongFromTimestamp,
   getTimestampFromLong,
-} from '../../../util/timestampLongUtils';
-import { strictAssert } from '../../../util/assert';
+} from '../../../util/timestampLongUtils.js';
+import { strictAssert } from '../../../util/assert.js';
 import type {
   CoreAttachmentBackupJobType,
   PartialAttachmentLocalBackupJobType,
-} from '../../../types/AttachmentBackup';
+} from '../../../types/AttachmentBackup.js';
 import {
   type GetBackupCdnInfoType,
   getMediaIdFromMediaName,
   getMediaName,
-} from './mediaId';
-import { missingCaseError } from '../../../util/missingCaseError';
-import { bytesToUuid } from '../../../util/uuidToBytes';
-import { createName } from '../../../util/attachmentPath';
-import { generateAttachmentKeys } from '../../../AttachmentCrypto';
-import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup';
+} from './mediaId.js';
+import { missingCaseError } from '../../../util/missingCaseError.js';
+import { bytesToUuid } from '../../../util/uuidToBytes.js';
+import { createName } from '../../../util/attachmentPath.js';
+import { generateAttachmentKeys } from '../../../AttachmentCrypto.js';
+import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup.js';
 import {
   isValidAttachmentKey,
   isValidPlaintextHash,
-} from '../../../types/Crypto';
-import { isTestOrMockEnvironment } from '../../../environment';
+} from '../../../types/Crypto.js';
+import { isTestOrMockEnvironment } from '../../../environment.js';
 
 const log = createLogger('filePointers');
 
@@ -399,9 +400,7 @@ function getLocatorInfoForAttachment({
   if (isLocalBackup && isBackupable) {
     const attachmentExistsLocally =
       attachment.path != null &&
-      existsSync(
-        window.Signal.Migrations.getAbsoluteAttachmentPath(attachment.path)
-      );
+      existsSync(getAbsoluteAttachmentPath(attachment.path));
 
     if (attachmentExistsLocally && attachment.localKey) {
       locatorInfo.localKey = Bytes.fromBase64(attachment.localKey);

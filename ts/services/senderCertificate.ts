@@ -1,23 +1,22 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { SerializedCertificateType } from '../textsecure/OutgoingMessage';
+import { SenderCertificate } from '@signalapp/libsignal-client';
+
+import type { SerializedCertificateType } from '../textsecure/OutgoingMessage.js';
 import {
   SenderCertificateMode,
   serializedCertificateSchema,
-} from '../textsecure/OutgoingMessage';
-import * as Bytes from '../Bytes';
-import { assertDev } from '../util/assert';
-import { missingCaseError } from '../util/missingCaseError';
-import { waitForOnline } from '../util/waitForOnline';
-import { createLogger } from '../logging/log';
-import type { StorageInterface } from '../types/Storage.d';
-import * as Errors from '../types/errors';
-import type { WebAPIType } from '../textsecure/WebAPI';
-import { SignalService as Proto } from '../protobuf';
-
-import SenderCertificate = Proto.SenderCertificate;
-import { safeParseUnknown } from '../util/schemas';
+} from '../textsecure/OutgoingMessage.js';
+import * as Bytes from '../Bytes.js';
+import { assertDev } from '../util/assert.js';
+import { missingCaseError } from '../util/missingCaseError.js';
+import { waitForOnline } from '../util/waitForOnline.js';
+import { createLogger } from '../logging/log.js';
+import type { StorageInterface } from '../types/Storage.d.ts';
+import * as Errors from '../types/errors.js';
+import type { isOnline, getSenderCertificate } from '../textsecure/WebAPI.js';
+import { safeParseUnknown } from '../util/schemas.js';
 
 const log = createLogger('senderCertificate');
 
@@ -28,9 +27,14 @@ function isWellFormed(data: unknown): data is SerializedCertificateType {
 // In case your clock is different from the server's, we "fake" expire certificates early.
 const CLOCK_SKEW_THRESHOLD = 15 * 60 * 1000;
 
+type ServerType = Readonly<{
+  isOnline: typeof isOnline;
+  getSenderCertificate: typeof getSenderCertificate;
+}>;
+
 // This is exported for testing.
 export class SenderCertificateService {
-  #server?: WebAPIType;
+  #server?: ServerType;
 
   #fetchPromises: Map<
     SenderCertificateMode,
@@ -45,7 +49,7 @@ export class SenderCertificateService {
     events,
     storage,
   }: {
-    server: WebAPIType;
+    server: ServerType;
     events?: Pick<typeof window.Whisper.events, 'on' | 'off'>;
     storage: StorageInterface;
   }): void {
@@ -176,11 +180,8 @@ export class SenderCertificateService {
       return undefined;
     }
     const certificate = Bytes.fromBase64(certificateString);
-    const decodedContainer = SenderCertificate.decode(certificate);
-    const decodedCert = decodedContainer.certificate
-      ? SenderCertificate.Certificate.decode(decodedContainer.certificate)
-      : undefined;
-    const expires = decodedCert?.expires?.toNumber();
+    const decodedCert = SenderCertificate.deserialize(certificate);
+    const expires = decodedCert.expiration();
 
     if (!isExpirationValid(expires)) {
       log.warn(
@@ -240,8 +241,8 @@ function modeToLogString(mode: SenderCertificateMode): string {
   }
 }
 
-function isExpirationValid(expiration: unknown): expiration is number {
-  return typeof expiration === 'number' && expiration > Date.now();
+function isExpirationValid(expiration: number): boolean {
+  return expiration > Date.now();
 }
 
 export const senderCertificateService = new SenderCertificateService();

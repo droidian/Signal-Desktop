@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Không thể truy cập cơ sở dữ liệu khóa mã hóa vì phần backend của keyring của hệ điều hành đã được đổi từ {previousBackend} thành {currentBackend}. Điều này có thể xảy ra khi môi trường desktop thay đổi, ví dụ như giữa GNOME và KDE.\n\nVui lòng chuyển thành môi trường desktop trước đó hoặc thử chạy Signal bằng dòng lệnh --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Tập tin"
   },
@@ -233,6 +242,12 @@
   "icu:archivedConversations": {
     "messageformat": "Cuộc trò chuyện đã lưu trữ"
   },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Thêm thư mục trò chuyện"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Cài đặt thư mục"
+  },
   "icu:LeftPane--pinned": {
     "messageformat": "Đã ghim"
   },
@@ -271,6 +286,36 @@
   },
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Nhập tên người dùng, sau đó là một dấu chấm và dãy số của tên người dùng."
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Không có cuộc trò chuyện"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Cài đặt thư mục"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Tất cả"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Tất cả cuộc trò chuyện"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Đánh dấu tất cả đã đọc"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Tắt tiếng thông báo"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Bỏ tắt tiếng tất cả"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Bỏ tắt tiếng tất cả"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Chỉnh sửa thư mục"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Mã quốc gia"
@@ -322,6 +367,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Đánh dấu chưa đọc"
+  },
+  "icu:markRead": {
+    "messageformat": "Đánh dấu đã đọc"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Chọn tin nhắn"
@@ -607,6 +655,9 @@
   },
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "Lỗi khi lưu biên lai. Vui lòng thử lại."
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Đã thêm thư mục {chatFolderName}"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Bạn không thể chọn ảnh và video cùng các tập tin."
@@ -1031,14 +1082,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Thông tin"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Hỏi ý kiến · Chọn một"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Hỏi ý kiến · Chọn một hoặc hơn"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Hỏi ý kiến · Kết quả"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Xem các bình chọn"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Bạn đã bình chọn"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Hỏi ý kiến"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Câu hỏi"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, other {{count,number} bình chọn}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Không có bình chọn"
+  },
   "icu:deleteConversation": {
     "messageformat": "Xóa"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Xóa cuộc trò chuyện?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Tất cả tin nhắn trong cuộc trò chuyện này sẽ được xóa khỏi thiết bị này."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Tất cả tin nhắn trong cuộc trò chuyện này sẽ được xóa khỏi tất cả thiết bị của bạn."
@@ -1175,36 +1250,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Không thể tải xuống đa phương tiện xem một lần"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Tập tin không có sẵn"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Tin nhắn hoàn chỉnh không có sẵn"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Đa phương tiện không có sẵn"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Nhãn dán không có sẵn"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Tin nhắn thoại không có sẵn"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Tập tin này không được chuyển từ điện thoại của bạn khi thiết bị này được liên kết. Đa phương tiện và tập tin cũ hơn 45 ngày tại thời điểm liên kết thiết bị thì không thể được đồng bộ."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Văn bản hoàn chỉnh của tin nhắn không được chuyển từ điện thoại của bạn khi thiết bị này được liên kết. Tin nhắn văn bản có nội dung dài cũ hơn 45 ngày tại thời điểm liên kết thiết bị thì không thể được đồng bộ."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Đa phương tiện này không được chuyển từ điện thoại của bạn khi thiết bị này được liên kết. Đa phương tiện cũ hơn 45 ngày tại thời điểm liên kết thiết bị thì không thể được đồng bộ."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Nhãn dán này không được chuyển từ điện thoại của bạn khi thiết bị này được liên kết. Đa phương tiện và tập tin cũ hơn 45 ngày tại thời điểm liên kết thiết bị thì không thể được đồng bộ."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Tin nhắn thoại này không được chuyển từ điện thoại của bạn khi thiết bị này được liên kết. Đa phương tiện và tập tin cũ hơn 45 ngày tại thời điểm liên kết thiết bị thì không thể được đồng bộ."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Đa phương tiện xem một lần này không còn sẵn có để tải xuống. Hãy nhờ {name} gửi lại."
   },
@@ -1292,8 +1337,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "Thêm thư mục trò chuyện"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Thêm hoặc chỉnh sửa thư mục"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "Sắp xếp và nhanh chóng chuyển giữa các cuộc trò chuyện trong danh sách."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, other {{chatFoldersCount,number} thư mục}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Thiết Lập"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Quản lý"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "Chỉnh sửa thư mục"
@@ -1328,14 +1385,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "Tạo thư mục"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Kéo để di chuyển thư mục trò chuyện"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "Thư mục đề xuất"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "Thêm"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "Đã thêm thư mục {chatFolderTitle}"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "Chưa đọc"
@@ -1369,6 +1426,12 @@
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
     "messageformat": "Chọn cuộc trò chuyện bạn muốn xuất hiện trong thư mục này"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "Cuộc trò chuyện 1:1"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Nhóm chat"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
     "messageformat": "Thêm cuộc trò chuyện"
@@ -1528,6 +1591,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "Đã bị gỡ khỏi cuộc gọi"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Đã đạt số người tham gia tối đa cho cuộc gọi này. Thử lại sau."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Cuộc gọi đã đầy"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Bất kỳ ai tham gia cuộc gọi này qua đường dẫn sẽ thấy tên và ảnh của bạn."
@@ -2063,6 +2132,9 @@
   "icu:Toast--download-failed": {
     "messageformat": "Tải xuống không thành công"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Tải xuống tập tin đính kèm từ bản sao lưu không thành công"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Các chỉnh sửa chỉ có thể được thực hiện trong vòng 24 giờ kể từ lúc bạn gửi tin nhắn này."
   },
@@ -2551,6 +2623,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Sử dụng gần đây"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Đã thêm bộ nhãn dán"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Kết quả tìm kiếm"
@@ -4436,17 +4511,17 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Các liên hệ của bạn sẽ được thêm vào nhóm này."
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Các liên hệ sẽ có thể thêm bạn vào nhóm này."
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Bỏ chặn"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, other {{number,number} thành viên}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Tệp đa phương tiện đã chia sẻ"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Xem tất cả"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Đa phương tiện và tập tin"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, other {{number,number} thành viên}}"
@@ -5279,11 +5354,257 @@
   "icu:Preferences--notification-content": {
     "messageformat": "Nội dung thông báo"
   },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Biểu tượng mặt trăng"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Bản sao của {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Cấu hình thông báo"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Cấu hình Thông báo"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Bật"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Bật cho đến khi {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Một giờ"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Cho đến {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Cài đặt"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "Đã bật \"{name}\""
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "Đã tắt \"{name}\""
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Đã bật cấu hình thông báo"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Đã tắt cấu hình thông báo"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Cấu hình thông báo"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Thiết Lập"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Cấu hình thông báo"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Tạo cấu hình để chỉ nhận thông báo và cuộc gọi từ những người và nhóm bạn chọn"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Tiếp tục"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Thêm hoặc chỉnh sửa cấu hình thông báo"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, other {{profileCount,number} cấu hình}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Tạo cấu hình"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Tên cấu hình của bạn"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Tên"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Tên hồ sơ"
+  },
+  "icu:NotificationProfiles--avatar-title": {
+    "messageformat": "Chọn Anhr đại diện"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Công việc"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Ngủ"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Lái xe"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Ngừng hoạt động"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Tập trung"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Các thông báo được phép"
+  },
+  "icu:NotificationProfiles--allowed-modal-title": {
+    "messageformat": "Các thông báo được phép"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Thêm người và nhóm bạn muốn nhận thông báo khi cấu hình này được bật"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Thêm người hoặc nhóm"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Ngoại trừ"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Đồng ý tất cả cuộc gọi"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Thông báo cho tất cả đề cập"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Thêm lịch trình"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Lịch trình"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Bật và chỉnh sửa lịch của bạn để tự động hóa cấu hình thông báo."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Bật tự động"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Lịch trình"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Từ"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Cho đến"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Mở bảng chọn thời gian"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Chủ nhật"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Thứ 2"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Thứ 3"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Thứ 4"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Thứ 5"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Thứ 6"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Thứ 7"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Cấu hình đã tạo"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Nếu đã thêm lịch, cấu hình của bạn sẽ tự động bật và tắt. Bạn cũng có thể bấm vào biểu tượng ··· ở đầu danh sách trò chuyện để bật hoặc tắt thủ công cấu hình."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "CN"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Th 2"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Th 3"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Thứ 4"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Thứ 5"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Thứ 6"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "Th 7"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Ngày trong tuần"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Cuối tuần"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Hằng ngày"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Cấu hình"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Đồng bộ trên các thiết bị"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Các cấu hình sẽ được đồng bộ trên các thiết bị của bạn. Khi bật cấu hình cho một thiết bị, cấu hình đó cũng sẽ được bật trên các thiết bị khác."
+  },
+  "icu:NotificationProfiles--new": {
+    "messageformat": "Cấu hình mới"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Xóa cấu hình"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Xóa vĩnh viễn cấu hình thông báo này?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Xóa"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Bật"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Tắt"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Chỉnh sửa tên cấu hình này"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "{allowedCount, plural, =0 {Không có thông báo được cho phép} other {{allowedCount,number} thông báo được cho phép}}"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} đến {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Bật"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Tắt"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Đã chặn"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Bản sao lưu Signal"
+    "messageformat": "Sao lưu bảo mật Signal"
   },
   "icu:Preferences--signal-backups-off-description": {
     "messageformat": "Sao lưu tự động với dịch vụ lưu trữ bảo mật, được mã hóa đầu cuối của Signal. Bắt đầu trên điện thoại. <learnMoreLink>Tìm hiểu thêm</learnMoreLink>."
@@ -5298,7 +5619,10 @@
     "messageformat": "Bản sao lưu tin nhắn + tất cả tập tin đa phương tiện"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Không tìm thấy gói đăng ký của bạn. Gia hạn gói đăng ký Sao lưu Signal để tiếp tục sử dụng."
+    "messageformat": "Không tìm thấy gói đăng ký của bạn. Kiểm tra điện thoại của bạn để xem thông tin bản sao lưu."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/tháng"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, other {Bản sao lưu tin nhắn văn bản + tập tin đa phương tiện {mediaDayCount,number} ngày qua}}"
@@ -5316,13 +5640,13 @@
     "messageformat": "Gói đăng ký đã được hủy"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "Bạn có thể quản lý hoặc hủy gói đăng ký Sao lưu Signal trên điện thoại của bạn."
+    "messageformat": "Bạn có thể quản lý hoặc hủy gói đăng ký Sao lưu bảo mật Signal trên điện thoại của bạn."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "Bạn có thể quản lý hoặc nâng cấp gói đăng ký Sao lưu Signal trên điện thoại của bạn."
+    "messageformat": "Bạn có thể quản lý hoặc nâng cấp gói đăng ký Sao lưu bảo mật Signal trên điện thoại của bạn."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "Bạn có thể quản lý hoặc gia hạn gói đăng ký Sao lưu Signal trên điện thoại của bạn."
+    "messageformat": "Bạn có thể quản lý hoặc gia hạn gói đăng ký Sao lưu bảo mật Signal trên điện thoại của bạn."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Bản sao lưu gần nhất"
@@ -6672,23 +6996,23 @@
   "icu:PreferencesDonations__privacy-modal-content": {
     "messageformat": "<paragraph>Signal không thu thập hay lưu trữ thông tin cá nhân của bạn khi bạn gửi khoản ủng hộ.</paragraph><paragraph>Chúng tôi sử dụng Stripe làm hệ thống xử lý thanh toán để nhận các khoản ủng hộ. Chúng tôi không truy cập, lưu trữ, hoặc lưu bất kỳ thông tin nào bạn cung cấp cho phía hệ thống.</paragraph><paragraph>Signal không và không thể liên kết thông tin thanh toán với tài khoản Signal của bạn.</paragraph><paragraph>Cảm ơn sự đóng góp của bạn!</paragraph>"
   },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Biên lai"
   },
   "icu:PreferencesDonations__receipt-details-button-aria": {
-    "messageformat": "View receipt details"
+    "messageformat": "Xem thông tin biên lai"
   },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "Donor FAQs"
+    "messageformat": "Câu hỏi thường gặp về Nhà Ủng hộ"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Người nhận không đồng bộ trên các thiết bị. Nếu bạn đã cài đặt lại Signal, các biên lai của các lần ủng hộ trước sẽ không còn nữa."
   },
   "icu:PreferencesDonations--receiptList__empty-title": {
     "messageformat": "Không có biên lai"
-  },
-  "icu:PreferencesDonations__ReceiptModal--title": {
-    "messageformat": "Chi tiết"
   },
   "icu:PreferencesDonations__ReceiptModal--download": {
     "messageformat": "Tải biên lai"
@@ -6723,6 +7047,9 @@
   "icu:DonateFlow__card-form-expiration-date": {
     "messageformat": "Ngày hết hạn"
   },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/YY"
+  },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
     "messageformat": "Ủng hộ {formattedCurrencyAmount} cho Signal"
   },
@@ -6744,8 +7071,23 @@
   "icu:DonateFlow__one-time-donation-boost-badge-info": {
     "messageformat": "Sở hữu huy hiệu Nhà Ủng hộ trong 30 ngày"
   },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Lượng ủng hộ tối thiểu là {formattedCurrencyAmount}"
+  },
   "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
-    "messageformat": "The minimum amount you can donate is {formattedCurrencyAmount}"
+    "messageformat": "Khoản ủng hộ tối thiểu là {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Lượng ủng hộ tối đa là {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Khi rời khỏi trang, thông tin thẻ tín dụng của bạn sẽ được xóa. Bạn có muốn tiếp tục?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Xóa thông tin"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Tiếp tục"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Biên lai ủng hộ"
@@ -6789,8 +7131,11 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "Bạn có một khoản ủng hộ đang tiến hành cần được xác nhận."
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "Donation succeeded, but we could not update your badge settings"
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Bạn đã ủng hộ thành công, nhưng chúng tôi không thể cập nhật cài đặt huy hiệu của bạn"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Để cập nhật cài đặt huy hiệu của bạn trên thiết bị di động, vào mục Cài đặt → Ủng hộ Signal → Huy hiệu."
   },
   "icu:Donations__DonationInterrupted": {
     "messageformat": "Quá trình bị gián đoạn"
@@ -6856,16 +7201,16 @@
     "messageformat": "Hủy ủng hộ"
   },
   "icu:Donations__badge-modal--title": {
-    "messageformat": "Thanks for your support!"
+    "messageformat": "Cảm ơn bạn đã đóng góp!"
   },
   "icu:Donations__badge-modal--description": {
-    "messageformat": "You've earned a donor badge from Signal! Display it on your profile to show off your support."
+    "messageformat": "Bạn nhận được một huy hiệu nhà ủng hộ từ Signal! Hãy hiển thị huy hiệu trên hồ sơ của bạn để thể hiện sự ủng hộ."
   },
   "icu:Donations__badge-modal--display-on-profile": {
-    "messageformat": "Display on profile"
+    "messageformat": "Hiển thị trên thông tin cá nhân"
   },
   "icu:Donations__badge-modal--help-text": {
-    "messageformat": "You can adjust this on your mobile device under Settings → Donate to Signal → Badges"
+    "messageformat": "Bạn có thể điều chỉnh cài đặt này trên thiết bị di động ở mục Cài đặt → Ủng hộ Signal → Huy hiệu"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Phiên bản này có một số tinh chỉnh và sửa lỗi để giữ cho Signal hoạt động mượt mà.",
@@ -6895,16 +7240,7 @@
     "messageformat": "Các tinh chỉnh, sửa lỗi, và cải thiện hiệu năng. Cảm ơn bạn đã sử dụng Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.64--0": {
-    "messageformat": "Chúng tôi đã cải thiện trải nghiệm đọc/chưa đọc tin nhắn khi người dùng đang cùng lúc thực hiện nhiều tác vụ."
-  },
-  "icu:WhatsNew__v7.65--0": {
-    "messageformat": "Chúng tôi đã sửa lỗi liên quan đến hộp tìm kiếm emoji."
-  },
-  "icu:WhatsNew__v7.66--0": {
-    "messageformat": "Sửa một số lỗi nhỏ."
-  },
-  "icu:WhatsNew__v7.67--0": {
-    "messageformat": "Chúng tôi đã sửa lỗi huy hiệu ủng hộ không hiển thị chính xác đối với một số người dùng."
+  "icu:WhatsNew__7.76": {
+    "messageformat": "Thiết lập cấu hình thông báo tùy chỉnh để kiểm soát những người và nhóm bạn nhận thông báo khi cấu hình đó được bật."
   }
 }

@@ -5,16 +5,16 @@ import type { Key, ReactNode } from 'react';
 import React, { useState } from 'react';
 import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 import classNames from 'classnames';
-import { Avatar, AvatarSize } from './Avatar';
-import type { LocalizerType, ThemeType } from '../types/Util';
-import type { ConversationType } from '../state/ducks/conversations';
-import type { BadgeType } from '../badges/types';
-import { NavTab, ProfileEditorPage, SettingsPage } from '../types/Nav';
-import type { Location } from '../types/Nav';
-import { Tooltip, TooltipPlacement } from './Tooltip';
-import { Theme } from '../util/theme';
-import type { UnreadStats } from '../util/countUnreadStats';
-import { ProfileMovedModal } from './ProfileMovedModal';
+import { Avatar, AvatarSize } from './Avatar.js';
+import type { LocalizerType, ThemeType } from '../types/Util.js';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import type { BadgeType } from '../badges/types.js';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../types/Nav.js';
+import type { Location } from '../types/Nav.js';
+import { Tooltip, TooltipPlacement } from './Tooltip.js';
+import { Theme } from '../util/theme.js';
+import type { UnreadStats } from '../util/countUnreadStats.js';
+import { ProfileMovedModal } from './ProfileMovedModal.js';
 
 type NavTabsItemBadgesProps = Readonly<{
   i18n: LocalizerType;
@@ -46,19 +46,21 @@ function NavTabsItemBadges({
 
   if (unreadStats != null) {
     if (unreadStats.unreadCount > 0) {
+      const total =
+        unreadStats.unreadCount + unreadStats.readChatsMarkedUnreadCount;
       return (
         <span className="NavTabs__ItemUnreadBadge">
           <span className="NavTabs__ItemIconLabel">
             {i18n('icu:NavTabs__ItemIconLabel--UnreadCount', {
-              count: unreadStats.unreadCount,
+              count: total,
             })}
           </span>
-          <span aria-hidden>{unreadStats.unreadCount}</span>
+          <span aria-hidden>{total}</span>
         </span>
       );
     }
 
-    if (unreadStats.markedUnread) {
+    if (unreadStats.readChatsMarkedUnreadCount > 0) {
       return (
         <span className="NavTabs__ItemUnreadBadge">
           <span className="NavTabs__ItemIconLabel">
@@ -307,7 +309,7 @@ export function NavTabs({
             unreadStats={{
               unreadCount: unreadCallsCount,
               unreadMentionsCount: 0,
-              markedUnread: false,
+              readChatsMarkedUnreadCount: 0,
             }}
           />
           {storiesEnabled && (
@@ -321,7 +323,7 @@ export function NavTabs({
               unreadStats={{
                 unreadCount: unreadStoriesCount,
                 unreadMentionsCount: 0,
-                markedUnread: false,
+                readChatsMarkedUnreadCount: 0,
               }}
             />
           )}
@@ -331,11 +333,7 @@ export function NavTabs({
             label={i18n('icu:NavTabs__ItemLabel--Settings')}
             iconClassName="NavTabs__ItemIcon--Settings"
             navTabClassName="NavTabs__Item--Settings"
-            unreadStats={{
-              unreadCount: 0,
-              unreadMentionsCount: 0,
-              markedUnread: false,
-            }}
+            unreadStats={null}
             hasPendingUpdate={hasPendingUpdate}
           />
         </TabList>

@@ -8,37 +8,28 @@ import {
 } from '@signalapp/ringrtc';
 import type { CallLinkState as RingRTCCallLinkState } from '@signalapp/ringrtc';
 import { z } from 'zod';
-import { Aci } from '@signalapp/libsignal-client';
+import {
+  CallLinkNameMaxByteLength,
+  callLinkRecordSchema,
+  defunctCallLinkRecordSchema,
+  toCallLinkRestrictions,
+} from '../types/CallLink.js';
 import type {
   CallLinkRecord,
   CallLinkRestrictions,
   CallLinkType,
   DefunctCallLinkRecord,
   DefunctCallLinkType,
-} from '../types/CallLink';
-import {
-  type CallLinkStateType,
-  CallLinkNameMaxByteLength,
-  callLinkRecordSchema,
-  defunctCallLinkRecordSchema,
-  toCallLinkRestrictions,
-} from '../types/CallLink';
-import { unicodeSlice } from './unicodeSlice';
-import type { CallLinkAuthCredentialPresentation } from './zkgroup';
-import {
-  CallLinkAuthCredential,
-  CallLinkSecretParams,
-  GenericServerPublicParams,
-} from './zkgroup';
-import { getCheckedCallLinkAuthCredentialsForToday } from '../services/groupCredentialFetcher';
-import * as durations from './durations';
+  CallLinkStateType,
+} from '../types/CallLink.js';
+import { unicodeSlice } from './unicodeSlice.js';
 import {
   fromAdminKeyBytes,
   getKeyFromCallLink,
   toAdminKeyBytes,
-} from './callLinks';
-import { parseStrict } from './schemas';
-import * as Bytes from '../Bytes';
+} from './callLinks.js';
+import { parseStrict } from './schemas.js';
+import * as Bytes from '../Bytes.js';
 
 /**
  * RingRTC conversions
@@ -83,40 +74,6 @@ export function getRoomIdFromCallLink(url: string): string {
   const keyString = getKeyFromCallLink(url);
   const key = CallLinkRootKey.parse(keyString);
   return getRoomIdFromRootKey(key);
-}
-
-export async function getCallLinkAuthCredentialPresentation(
-  callLinkRootKey: CallLinkRootKey
-): Promise<CallLinkAuthCredentialPresentation> {
-  const credentials = getCheckedCallLinkAuthCredentialsForToday(
-    'getCallLinkAuthCredentialPresentation'
-  );
-  const todaysCredentials = credentials.today.credential;
-  const credential = new CallLinkAuthCredential(
-    Buffer.from(todaysCredentials, 'base64')
-  );
-
-  const genericServerPublicParamsBase64 = window.getGenericServerPublicParams();
-  const genericServerPublicParams = new GenericServerPublicParams(
-    Buffer.from(genericServerPublicParamsBase64, 'base64')
-  );
-
-  const ourAci = window.textsecure.storage.user.getAci();
-  if (ourAci == null) {
-    throw new Error('Failed to get our ACI');
-  }
-  const userId = Aci.fromUuid(ourAci);
-
-  const callLinkSecretParams = CallLinkSecretParams.deriveFromRootKey(
-    callLinkRootKey.bytes
-  );
-  const presentation = credential.present(
-    userId,
-    credentials.today.redemptionTime / durations.SECOND,
-    genericServerPublicParams,
-    callLinkSecretParams
-  );
-  return presentation;
 }
 
 export function toRootKeyBytes(rootKey: string): Uint8Array {

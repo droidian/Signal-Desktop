@@ -1,18 +1,20 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import Fuse from 'fuse.js';
-import { sortBy } from 'lodash';
+import lodash from 'lodash';
 import { useMemo } from 'react';
-import type { EmojiParentKey } from './data/emojis';
+import type { EmojiParentKey } from './data/emojis.js';
 import {
   getEmojiParentByKey,
   getEmojiParentKeyByValue,
   isEmojiParentValue,
   isEmojiParentValueDeprecated,
   normalizeShortNameCompletionQuery,
-} from './data/emojis';
-import type { LocaleEmojiListType } from '../../types/emoji';
-import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider';
+} from './data/emojis.js';
+import type { LocaleEmojiListType } from '../../types/emoji.js';
+import { useFunEmojiLocalization } from './FunEmojiLocalizationProvider.js';
+
+const { sortBy } = lodash;
 
 export type FunEmojiSearchIndexEntry = Readonly<{
   key: EmojiParentKey;
@@ -35,9 +37,12 @@ export type FunEmojiSearch = (
 ) => ReadonlyArray<FunEmojiSearchResult>;
 
 export function createFunEmojiSearchIndex(
-  localeEmojiList: LocaleEmojiListType
+  localeEmojiList: LocaleEmojiListType,
+  defaultSearchIndex: ReadonlyArray<FunEmojiSearchIndexEntry> = []
 ): FunEmojiSearchIndex {
   const results: Array<FunEmojiSearchIndexEntry> = [];
+
+  const localizedKeys = new Set<string>();
 
   for (const localeEmoji of localeEmojiList) {
     if (!isEmojiParentValue(localeEmoji.emoji)) {
@@ -52,6 +57,7 @@ export function createFunEmojiSearchIndex(
 
     const parentKey = getEmojiParentKeyByValue(localeEmoji.emoji);
     const emoji = getEmojiParentByKey(parentKey);
+    localizedKeys.add(parentKey);
     results.push({
       key: parentKey,
       rank: localeEmoji.rank,
@@ -62,6 +68,12 @@ export function createFunEmojiSearchIndex(
       emoticon: emoji.emoticonDefault,
       emoticons: emoji.emoticons,
     });
+  }
+
+  for (const defaultEntry of defaultSearchIndex) {
+    if (!localizedKeys.has(defaultEntry.key)) {
+      results.push(defaultEntry);
+    }
   }
 
   return results;

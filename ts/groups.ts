@@ -1,31 +1,27 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import {
-  compact,
-  difference,
-  flatten,
-  fromPairs,
-  isNumber,
-  omit,
-  values,
-} from 'lodash';
+import lodash from 'lodash';
 import Long from 'long';
-import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup';
+import type { ClientZkGroupCipher } from '@signalapp/libsignal-client/zkgroup.js';
 import { LRUCache } from 'lru-cache';
-import { createLogger } from './logging/log';
+import { createLogger } from './logging/log.js';
 import {
   getCheckedGroupCredentialsForToday,
   maybeFetchNewCredentials,
-} from './services/groupCredentialFetcher';
-import { storageServiceUploadJob } from './services/storage';
-import { DataReader, DataWriter } from './sql/Client';
-import { toWebSafeBase64, fromWebSafeBase64 } from './util/webSafeBase64';
-import { assertDev, strictAssert } from './util/assert';
-import { isMoreRecentThan } from './util/timestamp';
-import { MINUTE, DurationInSeconds, SECOND } from './util/durations';
-import { drop } from './util/drop';
-import { dropNull } from './util/dropNull';
+} from './services/groupCredentialFetcher.js';
+import { DataReader, DataWriter } from './sql/Client.js';
+import { toWebSafeBase64, fromWebSafeBase64 } from './util/webSafeBase64.js';
+import { assertDev, strictAssert } from './util/assert.js';
+import { isMoreRecentThan } from './util/timestamp.js';
+import { MINUTE, DurationInSeconds, SECOND } from './util/durations/index.js';
+import { drop } from './util/drop.js';
+import { dropNull } from './util/dropNull.js';
+import {
+  writeNewAttachmentData,
+  readAttachmentData,
+  deleteAttachmentData,
+} from './util/migrations.js';
 import type {
   ConversationAttributesType,
   GroupV2MemberType,
@@ -33,7 +29,7 @@ import type {
   GroupV2PendingMemberType,
   GroupV2BannedMemberType,
   MessageAttributesType,
-} from './model-types.d';
+} from './model-types.d.ts';
 import {
   createProfileKeyCredentialPresentation,
   decodeProfileKeyCredentialPresentation,
@@ -52,218 +48,87 @@ import {
   getClientZkGroupCipher,
   getClientZkProfileOperations,
   verifyNotarySignature,
-} from './util/zkgroup';
+} from './util/zkgroup.js';
 import {
   computeHash,
   deriveMasterKeyFromGroupV1,
   getRandomBytes,
-} from './Crypto';
+} from './Crypto.js';
 import type {
   GroupCredentialsType,
   GroupLogResponseType,
-} from './textsecure/WebAPI';
-import { HTTPError } from './textsecure/Errors';
-import type MessageSender from './textsecure/SendMessage';
-import { CURRENT_SCHEMA_VERSION as MAX_MESSAGE_SCHEMA } from './types/Message2';
-import type { ConversationModel } from './models/conversations';
-import { getGroupSizeHardLimit } from './groups/limits';
+} from './textsecure/WebAPI.js';
+import {
+  createGroup,
+  getGroup,
+  getGroupAvatar,
+  getGroupLog,
+  getGroupFromLink,
+  getExternalGroupCredential,
+  modifyGroup,
+  uploadGroupAvatar,
+} from './textsecure/WebAPI.js';
+import { HTTPError } from './types/HTTPError.js';
+import { CURRENT_SCHEMA_VERSION as MAX_MESSAGE_SCHEMA } from './types/Message2.js';
+import type { ConversationModel } from './models/conversations.js';
+import { getGroupSizeHardLimit } from './groups/limits.js';
 import {
   isGroupV1 as getIsGroupV1,
   isGroupV2 as getIsGroupV2,
   isGroupV2,
   isMe,
-} from './util/whatTypeOfConversation';
-import * as Bytes from './Bytes';
-import type { AvatarDataType } from './types/Avatar';
-import type { ServiceIdString, AciString, PniString } from './types/ServiceId';
+} from './util/whatTypeOfConversation.js';
+import * as Bytes from './Bytes.js';
+import type { AvatarDataType } from './types/Avatar.js';
+import type { GroupV2ChangeDetailType } from './types/groups.ts';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from './types/ServiceId.js';
 import {
   ServiceIdKind,
   isPniString,
   isServiceIdString,
-} from './types/ServiceId';
-import { isAciString } from './util/isAciString';
-import * as Errors from './types/errors';
-import { SignalService as Proto } from './protobuf';
-import { isNotNil } from './util/isNotNil';
-import { isAccessControlEnabled } from './groups/util';
+} from './types/ServiceId.js';
+import { isAciString } from './util/isAciString.js';
+import * as Errors from './types/errors.js';
+import { SignalService as Proto } from './protobuf/index.js';
+import { isNotNil } from './util/isNotNil.js';
+import { isAccessControlEnabled } from './groups/util.js';
 
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from './jobs/conversationJobQueue';
-import { ReadStatus } from './messages/MessageReadStatus';
-import { SeenStatus } from './MessageSeenStatus';
-import { incrementMessageCounter } from './util/incrementMessageCounter';
-import { sleep } from './util/sleep';
-import { groupInvitesRoute } from './util/signalRoutes';
+} from './jobs/conversationJobQueue.js';
+import { ReadStatus } from './messages/MessageReadStatus.js';
+import { SeenStatus } from './MessageSeenStatus.js';
+import { incrementMessageCounter } from './util/incrementMessageCounter.js';
+import { sleep } from './util/sleep.js';
+import { groupInvitesRoute } from './util/signalRoutes.js';
 import {
   decodeGroupSendEndorsementResponse,
   validateGroupSendEndorsementsExpiration,
-} from './util/groupSendEndorsements';
-import { getProfile } from './util/getProfile';
-import { generateMessageId } from './util/generateMessageId';
-import { postSaveUpdates } from './util/cleanup';
-import { MessageModel } from './models/messages';
-import { areWePending } from './util/groupMembershipUtils';
+} from './util/groupSendEndorsements.js';
+import { getProfile } from './util/getProfile.js';
+import { generateMessageId } from './util/generateMessageId.js';
+import { postSaveUpdates } from './util/cleanup.js';
+import { MessageModel } from './models/messages.js';
+import { areWePending } from './util/groupMembershipUtils.js';
 import {
   isConversationAccepted,
   isTrustedContact,
-} from './util/isConversationAccepted';
+} from './util/isConversationAccepted.js';
+import { itemStorage } from './textsecure/Storage.js';
+
+const { compact, difference, flatten, fromPairs, isNumber, omit, values } =
+  lodash;
 
 const log = createLogger('groups');
 
 type AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 
-export { joinViaLink } from './groups/joinViaLink';
-
-type GroupV2AccessCreateChangeType = {
-  type: 'create';
-};
-type GroupV2AccessAttributesChangeType = {
-  type: 'access-attributes';
-  newPrivilege: number;
-};
-type GroupV2AccessMembersChangeType = {
-  type: 'access-members';
-  newPrivilege: number;
-};
-type GroupV2AccessInviteLinkChangeType = {
-  type: 'access-invite-link';
-  newPrivilege: number;
-};
-type GroupV2AnnouncementsOnlyChangeType = {
-  type: 'announcements-only';
-  announcementsOnly: boolean;
-};
-type GroupV2AvatarChangeType = {
-  type: 'avatar';
-  removed: boolean;
-};
-type GroupV2TitleChangeType = {
-  type: 'title';
-  // Allow for null, because the title could be removed entirely
-  newTitle?: string;
-};
-type GroupV2GroupLinkAddChangeType = {
-  type: 'group-link-add';
-  privilege: number;
-};
-type GroupV2GroupLinkResetChangeType = {
-  type: 'group-link-reset';
-};
-type GroupV2GroupLinkRemoveChangeType = {
-  type: 'group-link-remove';
-};
-
-// No disappearing messages timer change type - message.expirationTimerUpdate used instead
-
-type GroupV2MemberAddChangeType = {
-  type: 'member-add';
-  aci: AciString;
-};
-type GroupV2MemberAddFromInviteChangeType = {
-  type: 'member-add-from-invite';
-  aci: AciString;
-  pni?: PniString;
-  inviter?: AciString;
-};
-type GroupV2MemberAddFromLinkChangeType = {
-  type: 'member-add-from-link';
-  aci: AciString;
-};
-type GroupV2MemberAddFromAdminApprovalChangeType = {
-  type: 'member-add-from-admin-approval';
-  aci: AciString;
-};
-type GroupV2MemberPrivilegeChangeType = {
-  type: 'member-privilege';
-  aci: AciString;
-  newPrivilege: number;
-};
-type GroupV2MemberRemoveChangeType = {
-  type: 'member-remove';
-  aci: AciString;
-};
-
-type GroupV2PendingAddOneChangeType = {
-  type: 'pending-add-one';
-  serviceId: ServiceIdString;
-};
-type GroupV2PendingAddManyChangeType = {
-  type: 'pending-add-many';
-  count: number;
-};
-// Note: pending-remove is only used if user didn't also join the group at the same time
-type GroupV2PendingRemoveOneChangeType = {
-  type: 'pending-remove-one';
-  serviceId: ServiceIdString;
-  inviter?: AciString;
-};
-// Note: pending-remove is only used if user didn't also join the group at the same time
-type GroupV2PendingRemoveManyChangeType = {
-  type: 'pending-remove-many';
-  count: number;
-  inviter?: AciString;
-};
-
-type GroupV2AdminApprovalAddOneChangeType = {
-  type: 'admin-approval-add-one';
-  aci: AciString;
-};
-// Note: admin-approval-remove-one is only used if user didn't also join the group at
-//   the same time
-type GroupV2AdminApprovalRemoveOneChangeType = {
-  type: 'admin-approval-remove-one';
-  aci: AciString;
-  inviter?: AciString;
-};
-type GroupV2AdminApprovalBounceChangeType = {
-  type: 'admin-approval-bounce';
-  times: number;
-  isApprovalPending: boolean;
-  aci: AciString;
-};
-export type GroupV2DescriptionChangeType = {
-  type: 'description';
-  removed?: boolean;
-  // Adding this field; cannot remove previous field for backwards compatibility
-  description?: string;
-};
-export type GroupV2SummaryType = {
-  type: 'summary';
-};
-
-export type GroupV2ChangeDetailType =
-  | GroupV2AccessAttributesChangeType
-  | GroupV2AccessCreateChangeType
-  | GroupV2AccessInviteLinkChangeType
-  | GroupV2AccessMembersChangeType
-  | GroupV2AdminApprovalAddOneChangeType
-  | GroupV2AdminApprovalRemoveOneChangeType
-  | GroupV2AdminApprovalBounceChangeType
-  | GroupV2AnnouncementsOnlyChangeType
-  | GroupV2AvatarChangeType
-  | GroupV2DescriptionChangeType
-  | GroupV2GroupLinkAddChangeType
-  | GroupV2GroupLinkRemoveChangeType
-  | GroupV2GroupLinkResetChangeType
-  | GroupV2MemberAddChangeType
-  | GroupV2MemberAddFromAdminApprovalChangeType
-  | GroupV2MemberAddFromInviteChangeType
-  | GroupV2MemberAddFromLinkChangeType
-  | GroupV2MemberPrivilegeChangeType
-  | GroupV2MemberRemoveChangeType
-  | GroupV2PendingAddManyChangeType
-  | GroupV2PendingAddOneChangeType
-  | GroupV2PendingRemoveManyChangeType
-  | GroupV2PendingRemoveOneChangeType
-  | GroupV2SummaryType
-  | GroupV2TitleChangeType;
-
-export type GroupV2ChangeType = {
-  from?: ServiceIdString;
-  details: ReadonlyArray<GroupV2ChangeDetailType>;
-};
+export { joinViaLink } from './groups/joinViaLink.js';
 
 export type GroupFields = {
   readonly id: Uint8Array;
@@ -336,8 +201,6 @@ type GroupChangeMessageType = BasicMessageType &
 export const MASTER_KEY_LENGTH = 32;
 const GROUP_TITLE_MAX_ENCRYPTED_BYTES = 1024;
 const GROUP_DESC_MAX_ENCRYPTED_BYTES = 8192;
-export const ID_V1_LENGTH = 16;
-export const ID_LENGTH = 32;
 const TEMPORAL_AUTH_REJECTED_CODE = 401;
 const GROUP_ACCESS_DENIED_CODE = 403;
 const GROUP_NONEXISTENT_CODE = 404;
@@ -357,16 +220,13 @@ export async function getPreJoinGroupInfo(
   inviteLinkPasswordBase64: string,
   masterKeyBase64: string
 ): Promise<Proto.GroupJoinInfo> {
-  const data = window.Signal.Groups.deriveGroupFields(
-    Bytes.fromBase64(masterKeyBase64)
-  );
+  const data = deriveGroupFields(Bytes.fromBase64(masterKeyBase64));
 
   return makeRequestWithCredentials({
     logId: `getPreJoinInfo/groupv2(${data.id})`,
     publicParams: Bytes.toBase64(data.publicParams),
     secretParams: Bytes.toBase64(data.secretParams),
-    request: (sender, options) =>
-      sender.getGroupFromLink(inviteLinkPasswordBase64, options),
+    request: options => getGroupFromLink(inviteLinkPasswordBase64, options),
   });
 }
 
@@ -466,8 +326,7 @@ async function uploadAvatar(options: {
       logId: `uploadGroupAvatar/${logId}`,
       publicParams,
       secretParams,
-      request: (sender, requestOptions) =>
-        sender.uploadGroupAvatar(ciphertext, requestOptions),
+      request: requestOptions => uploadGroupAvatar(ciphertext, requestOptions),
     });
 
     return {
@@ -619,7 +478,7 @@ function buildGroupProto(
     return member;
   });
 
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   const ourAciCipherTextBuffer = encryptServiceId(clientZkGroupCipher, ourAci);
 
@@ -686,7 +545,7 @@ export async function buildAddMembersChange(
   );
   const clientZkGroupCipher = getClientZkGroupCipher(secretParams);
 
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const ourAciCipherTextBuffer = encryptServiceId(clientZkGroupCipher, ourAci);
 
   const now = Date.now();
@@ -1459,8 +1318,7 @@ async function uploadGroupChange({
     logId: `uploadGroupChange/${logId}`,
     publicParams: groupPublicParamsBase64,
     secretParams: groupSecretParamsBase64,
-    request: (sender, options) =>
-      sender.modifyGroup(actions, options, inviteLinkPassword),
+    request: options => modifyGroup(actions, options, inviteLinkPassword),
   });
 }
 
@@ -1570,7 +1428,7 @@ export async function modifyGroupV2({
 
         // Apply change locally, just like we would with an incoming change. This will
         //   change conversation state and add change notifications to the timeline.
-        await window.Signal.Groups.maybeUpdateGroup({
+        await maybeUpdateGroup({
           conversation,
           groupChange: {
             base64: groupChangeBase64,
@@ -1718,18 +1576,11 @@ async function makeRequestWithCredentials<T>({
   logId: string;
   publicParams: string;
   secretParams: string;
-  request: (sender: MessageSender, options: GroupCredentialsType) => Promise<T>;
+  request: (options: GroupCredentialsType) => Promise<T>;
 }): Promise<T> {
   const groupCredentials = getCheckedGroupCredentialsForToday(
     `makeRequestWithCredentials/${logId}`
   );
-
-  const sender = window.textsecure.messaging;
-  if (!sender) {
-    throw new Error(
-      `makeRequestWithCredentials/${logId}: textsecure.messaging is not available!`
-    );
-  }
 
   log.info(`makeRequestWithCredentials/${logId}: starting`);
 
@@ -1740,7 +1591,7 @@ async function makeRequestWithCredentials<T>({
     serverPublicParamsBase64: window.getServerPublicParams(),
   });
 
-  return request(sender, todayOptions);
+  return request(todayOptions);
 }
 
 export async function fetchMembershipProof({
@@ -1764,7 +1615,7 @@ export async function fetchMembershipProof({
     logId: 'fetchMembershipProof',
     publicParams,
     secretParams,
-    request: (sender, options) => sender.getGroupMembershipToken(options),
+    request: options => getExternalGroupCredential(options),
   });
   return dropNull(response.token);
 }
@@ -1806,7 +1657,7 @@ export async function createGroupV2(
   const secretParams = Bytes.toBase64(fields.secretParams);
   const publicParams = Bytes.toBase64(fields.publicParams);
 
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   const ourConversation =
     window.ConversationController.getOurConversationOrThrow();
@@ -1916,8 +1767,7 @@ export async function createGroupV2(
       logId: `createGroupV2/${logId}`,
       publicParams,
       secretParams,
-      request: (sender, requestOptions) =>
-        sender.createGroup(groupProto, requestOptions),
+      request: requestOptions => createGroup(groupProto, requestOptions),
     });
 
     const { groupSendEndorsementResponse } = groupResponse;
@@ -1977,9 +1827,7 @@ export async function createGroupV2(
     try {
       avatarAttribute = {
         url: uploadedAvatar.key,
-        ...(await window.Signal.Migrations.writeNewAttachmentData(
-          uploadedAvatar.data
-        )),
+        ...(await writeNewAttachmentData(uploadedAvatar.data)),
         hash: uploadedAvatar.hash,
       };
     } catch (err) {
@@ -2008,9 +1856,7 @@ export async function createGroupV2(
     }
   );
 
-  await conversation.queueJob('storageServiceUploadJob', async () => {
-    await storageServiceUploadJob({ reason: 'createGroupV2' });
-  });
+  conversation.captureChange('createGroupV2');
 
   const timestamp = Date.now();
   const groupV2Info = conversation.getGroupV2Info({
@@ -2089,7 +1935,7 @@ export async function hasV1GroupBeenMigrated(
       logId: `getGroup/${logId}`,
       publicParams: Bytes.toBase64(fields.publicParams),
       secretParams: Bytes.toBase64(fields.secretParams),
-      request: (sender, options) => sender.getGroup(options),
+      request: options => getGroup(options),
     });
     return true;
   } catch (error) {
@@ -2139,9 +1985,7 @@ export async function isGroupEligibleToMigrate(
     return false;
   }
 
-  const ourAci = window.storage.user.getCheckedAci();
-  const areWeMember =
-    !conversation.get('left') && conversation.hasMember(ourAci);
+  const areWeMember = conversation.areWeAMember();
   if (!areWeMember) {
     return false;
   }
@@ -2181,7 +2025,7 @@ export async function getGroupMigrationMembers(
     );
   }
 
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   let areWeMember = false;
   let areWeInvited = false;
@@ -2391,8 +2235,7 @@ export async function initiateMigrationToGroupV2(
 
       const { avatar: currentAvatar } = conversation.attributes;
       if (currentAvatar?.path) {
-        const avatarData =
-          await window.Signal.Migrations.readAttachmentData(currentAvatar);
+        const avatarData = await readAttachmentData(currentAvatar);
         const { hash, key } = await uploadAvatar({
           logId,
           publicParams,
@@ -2450,7 +2293,7 @@ export async function initiateMigrationToGroupV2(
           logId: `initiateMigrationToGroupV2/${logId}`,
           publicParams,
           secretParams,
-          request: (sender, options) => sender.createGroup(groupProto, options),
+          request: options => createGroup(groupProto, options),
         });
 
         groupSendEndorsementResponse =
@@ -2489,8 +2332,8 @@ export async function initiateMigrationToGroupV2(
         },
       });
 
-      if (window.storage.blocked.isGroupBlocked(previousGroupV1Id)) {
-        await window.storage.blocked.addBlockedGroup(groupId);
+      if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
+        await itemStorage.blocked.addBlockedGroup(groupId);
       }
 
       // Save these most recent updates to conversation
@@ -2576,8 +2419,8 @@ export function buildMigrationBubble(
   previousGroupV1MembersIds: ReadonlyArray<string>,
   newAttributes: ConversationAttributesType
 ): GroupChangeMessageType {
-  const ourAci = window.storage.user.getCheckedAci();
-  const ourPni = window.storage.user.getPni();
+  const ourAci = itemStorage.user.getCheckedAci();
+  const ourPni = itemStorage.user.getPni();
   const ourConversationId =
     window.ConversationController.getOurConversationId();
 
@@ -2738,7 +2581,7 @@ export async function respondToGroupV2Migration({
     );
   }
 
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const wereWePreviouslyAMember = conversation.hasMember(ourAci);
 
   // Derive GroupV2 fields
@@ -2792,8 +2635,8 @@ export async function respondToGroupV2Migration({
       logId: `getGroupLog/${logId}`,
       publicParams,
       secretParams,
-      request: (sender, options) =>
-        sender.getGroupLog(
+      request: options =>
+        getGroupLog(
           {
             startVersion: 0,
             includeFirstState: true,
@@ -2820,7 +2663,7 @@ export async function respondToGroupV2Migration({
           logId: `getGroup/${logId}`,
           publicParams,
           secretParams,
-          request: (sender, options) => sender.getGroup(options),
+          request: options => getGroup(options),
         });
         setLastSuccessfulGroupFetch(conversation.id, fetchedAt);
 
@@ -2833,15 +2676,15 @@ export async function respondToGroupV2Migration({
             `respondToGroupV2Migration/${logId}: Failed to access state endpoint; user is no longer part of group`
           );
 
-          if (window.storage.blocked.isGroupBlocked(previousGroupV1Id)) {
-            await window.storage.blocked.addBlockedGroup(groupId);
+          if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
+            await itemStorage.blocked.addBlockedGroup(groupId);
           }
 
           if (wereWePreviouslyAMember) {
             log.info(
               `respondToGroupV2Migration/${logId}: Upgrading group with migration/removed events`
             );
-            const ourNumber = window.textsecure.storage.user.getNumber();
+            const ourNumber = itemStorage.user.getNumber();
             await updateGroup({
               conversation,
               receivedAt,
@@ -2972,8 +2815,8 @@ export async function respondToGroupV2Migration({
     },
   });
 
-  if (window.storage.blocked.isGroupBlocked(previousGroupV1Id)) {
-    await window.storage.blocked.addBlockedGroup(groupId);
+  if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
+    await itemStorage.blocked.addBlockedGroup(groupId);
   }
 
   // Save these most recent updates to conversation
@@ -3134,8 +2977,8 @@ async function updateGroup(
   const logId = conversation.idForLogging();
 
   const { newAttributes, groupChangeMessages, newProfileKeys } = updates;
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
-  const ourPni = window.textsecure.storage.user.getPni();
+  const ourAci = itemStorage.user.getCheckedAci();
+  const ourPni = itemStorage.user.getPni();
 
   const wasMemberOrPending =
     conversation.hasMember(ourAci) ||
@@ -3442,7 +3285,7 @@ async function appendChangeMessages(
     `appendChangeMessages/${logId}: processing ${messages.length} messages`
   );
 
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   let lastMessage = await DataReader.getLastConversationMessage({
     conversationId: conversation.id,
@@ -3551,7 +3394,7 @@ async function getGroupUpdates({
 
   const currentRevision = group.revision;
   const isFirstFetch = !isNumber(group.revision);
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   const isInitialCreationMessage = isFirstFetch && newRevision === 0;
   const weAreAwaitingApproval = (group.pendingAdminApprovalV2 || []).some(
@@ -3753,7 +3596,7 @@ async function updateGroupViaPreJoinInfo({
   group: ConversationAttributesType;
 }): Promise<UpdatesResultType> {
   const logId = idForLogging(group.groupId);
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   const { publicParams, secretParams } = group;
   if (!secretParams) {
@@ -3773,8 +3616,7 @@ async function updateGroupViaPreJoinInfo({
     logId: `getPreJoinInfo/${logId}`,
     publicParams,
     secretParams,
-    request: (sender, options) =>
-      sender.getGroupFromLink(inviteLinkPassword, options),
+    request: options => getGroupFromLink(inviteLinkPassword, options),
   });
 
   const approvalRequired =
@@ -3846,7 +3688,7 @@ async function updateGroupViaState({
     logId: `getGroup/${logId}`,
     publicParams,
     secretParams,
-    request: (sender, requestOptions) => sender.getGroup(requestOptions),
+    request: requestOptions => getGroup(requestOptions),
   });
   setLastSuccessfulGroupFetch(id, fetchedAt);
 
@@ -4080,8 +3922,8 @@ async function updateGroupViaLogs({
       secretParams,
 
       // eslint-disable-next-line no-loop-func
-      request: (sender, requestOptions) =>
-        sender.getGroupLog(
+      request: requestOptions =>
+        getGroupLog(
           {
             startVersion: revisionToFetch,
             includeFirstState,
@@ -4172,8 +4014,8 @@ async function generateLeftGroupChanges(
 ): Promise<UpdatesResultType> {
   const logId = idForLogging(group.groupId);
   log.info(`generateLeftGroupChanges/${logId}: Starting...`);
-  const ourAci = window.storage.user.getCheckedAci();
-  const ourPni = window.storage.user.getCheckedPni();
+  const ourAci = itemStorage.user.getCheckedAci();
+  const ourPni = itemStorage.user.getCheckedPni();
 
   const { masterKey, groupInviteLinkPassword } = group;
   let { revision } = group;
@@ -4372,7 +4214,7 @@ async function integrateGroupChange({
   }
 
   const isFirstFetch = !isNumber(group.revision);
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const weAreAwaitingApproval = (group.pendingAdminApprovalV2 || []).some(
     item => item.aci === ourAci
   );
@@ -4599,8 +4441,8 @@ function extractDiffs({
 }): Array<GroupChangeMessageType> {
   const logId = idForLogging(old.groupId);
   const details: Array<GroupV2ChangeDetailType> = [];
-  const ourAci = window.storage.user.getCheckedAci();
-  const ourPni = window.storage.user.getPni();
+  const ourAci = itemStorage.user.getCheckedAci();
+  const ourPni = itemStorage.user.getPni();
   const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
 
   let areWeInGroup = false;
@@ -4976,7 +4818,7 @@ function extractDiffs({
         details: [
           {
             type: 'pending-add-one',
-            serviceId: window.storage.user.getCheckedServiceId(
+            serviceId: itemStorage.user.getCheckedServiceId(
               serviceIdKindInvitedToGroup
             ),
           },
@@ -5154,7 +4996,7 @@ async function applyGroupChange({
   sourceServiceId: ServiceIdString;
 }): Promise<GroupApplyChangeResultType> {
   const logId = idForLogging(group.groupId);
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
   const MEMBER_ROLE_ENUM = Proto.Member.Role;
@@ -5716,14 +5558,7 @@ export async function decryptGroupAvatar(
   avatarKey: string,
   secretParamsBase64: string
 ): Promise<Uint8Array> {
-  const sender = window.textsecure.messaging;
-  if (!sender) {
-    throw new Error(
-      'decryptGroupAvatar: textsecure.messaging is not available!'
-    );
-  }
-
-  const ciphertext = await sender.getGroupAvatar(avatarKey);
+  const ciphertext = await getGroupAvatar(avatarKey);
   const clientZkGroupCipher = getClientZkGroupCipher(secretParamsBase64);
   const plaintext = decryptGroupBlob(clientZkGroupCipher, ciphertext);
   const blob = Proto.GroupAttributeBlob.decode(plaintext);
@@ -5764,9 +5599,7 @@ export async function applyNewAvatar(
     // Avatar has been dropped
     if (!newAvatarUrl && attributes.avatar) {
       if (attributes.avatar.path) {
-        await window.Signal.Migrations.deleteAttachmentData(
-          attributes.avatar.path
-        );
+        await deleteAttachmentData(attributes.avatar.path);
       }
       result.avatar = undefined;
     }
@@ -5813,11 +5646,9 @@ export async function applyNewAvatar(
       }
 
       if (attributes.avatar?.path) {
-        await window.Signal.Migrations.deleteAttachmentData(
-          attributes.avatar.path
-        );
+        await deleteAttachmentData(attributes.avatar.path);
       }
-      const local = await window.Signal.Migrations.writeNewAttachmentData(data);
+      const local = await writeNewAttachmentData(data);
       result.avatar = {
         url: avatarUrlToUse,
         ...local,
@@ -5830,7 +5661,7 @@ export async function applyNewAvatar(
       Errors.toLogFormat(error)
     );
     if (result.avatar && result.avatar.path) {
-      await window.Signal.Migrations.deleteAttachmentData(result.avatar.path);
+      await deleteAttachmentData(result.avatar.path);
     }
     result.avatar = undefined;
   }
@@ -5941,7 +5772,7 @@ async function applyGroupState({
 
   // Optimization: we assume we have left the group unless we are found in members
   result.left = true;
-  const ourAci = window.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
 
   // members
   const wasPreviouslyAMember = (result.membersV2 || []).some(

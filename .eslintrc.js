@@ -100,6 +100,14 @@ const rules = {
 
   // We prefer named exports
   'import/prefer-default-export': 'off',
+  'import/enforce-node-protocol-usage': ['error', 'always'],
+  'import/extensions': [
+    'error',
+    'ignorePackages',
+    {
+      checkTypeImports: true,
+    },
+  ],
 
   // Prefer functional components with default params
   'react/require-default-props': 'off',
@@ -252,7 +260,56 @@ const typescriptRules = {
 
   // TODO: DESKTOP-4655
   'import/no-cycle': 'off',
+  'import/no-restricted-paths': [
+    'error',
+    {
+      zones: [
+        {
+          target: ['ts/util', 'ts/types'],
+          from: ['ts/components', 'ts/axo'],
+          message: 'Importing components is forbidden from ts/{util,types}',
+        },
+      ],
+    },
+  ],
 };
+
+const TAILWIND_REPLACEMENTS = [
+  // inset
+  { pattern: 'left-*', fix: 'start-*' },
+  { pattern: 'right-*', fix: 'end-*' },
+  // margin
+  { pattern: 'ml-*', fix: 'ms-*' },
+  { pattern: 'mr-*', fix: 'me-*' },
+  // padding
+  { pattern: 'pl-*', fix: 'ps-*' },
+  { pattern: 'pr-*', fix: 'pe-*' },
+  // border
+  { pattern: 'border-l-*', fix: 'border-s-*' },
+  { pattern: 'border-r-*', fix: 'border-e-*' },
+  // border-radius
+  { pattern: 'rounded-l', fix: 'rounded-s' },
+  { pattern: 'rounded-r', fix: 'rounded-e' },
+  { pattern: 'rounded-tl', fix: 'rounded-ss' },
+  { pattern: 'rounded-tr', fix: 'rounded-se' },
+  { pattern: 'rounded-bl', fix: 'rounded-es' },
+  { pattern: 'rounded-br', fix: 'rounded-ee' },
+  { pattern: 'rounded-l-*', fix: 'rounded-s-*' },
+  { pattern: 'rounded-r-*', fix: 'rounded-e-*' },
+  { pattern: 'rounded-tl-*', fix: 'rounded-ss-*' },
+  { pattern: 'rounded-tr-*', fix: 'rounded-se-*' },
+  { pattern: 'rounded-bl-*', fix: 'rounded-es-*' },
+  { pattern: 'rounded-br-*', fix: 'rounded-ee-*' },
+  // text-align
+  { pattern: 'text-left', fix: 'text-start' },
+  { pattern: 'text-right', fix: 'text-end' },
+  // float
+  { pattern: 'float-left', fix: 'float-start' },
+  { pattern: 'float-right', fix: 'float-end' },
+  // clear
+  { pattern: 'clear-left', fix: 'clear-start' },
+  { pattern: 'clear-right', fix: 'clear-end' },
+];
 
 module.exports = {
   root: true,
@@ -377,7 +434,34 @@ module.exports = {
                 pattern: '^\\*+:.*', // ex: "*:mx-0",
                 message: 'No child variants',
               },
+              ...TAILWIND_REPLACEMENTS.map(item => {
+                const pattern = item.pattern.replace('*', '(.*)');
+                const fix = item.fix.replace('*', '$2');
+                return {
+                  message: `Use logical property ${item.fix} instead of ${item.pattern}`,
+                  pattern: `^(.*:)?${pattern}$`,
+                  fix: `$1${fix}`,
+                };
+              }),
             ],
+          },
+        ],
+      },
+    },
+    {
+      files: ['ts/axo/**/*.tsx'],
+      rules: {
+        '@typescript-eslint/no-namespace': 'off',
+        '@typescript-eslint/no-redeclare': [
+          'error',
+          {
+            ignoreDeclarationMerge: true,
+          },
+        ],
+        '@typescript-eslint/explicit-module-boundary-types': [
+          'error',
+          {
+            allowHigherOrderFunctions: false,
           },
         ],
       },

@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type Fuse from 'fuse.js';
-import type { ConversationType } from '../state/ducks/conversations';
-import { parseAndFormatPhoneNumber } from './libphonenumberInstance';
-import { WEEK } from './durations';
-import { fuseGetFnRemoveDiacritics, getCachedFuseIndex } from './fuse';
-import { countConversationUnreadStats, hasUnread } from './countUnreadStats';
-import { getE164 } from './getE164';
-import { removeDiacritics } from './removeDiacritics';
-import { isAciString } from './isAciString';
+import type { ConversationType } from '../state/ducks/conversations.js';
+import { parseAndFormatPhoneNumber } from './libphonenumberInstance.js';
+import { WEEK } from './durations/index.js';
+import { fuseGetFnRemoveDiacritics, getCachedFuseIndex } from './fuse.js';
+import { isConversationUnread } from './countUnreadStats.js';
+import { getE164 } from './getE164.js';
+import { removeDiacritics } from './removeDiacritics.js';
+import { isAciString } from './isAciString.js';
 
 // Fuse.js scores have order of 0.01
 const ACTIVE_AT_SCORE_FACTOR = (1 / WEEK) * 0.01;
@@ -69,9 +69,7 @@ function filterConversationsByUnread(
   includeMuted: boolean
 ): Array<ConversationType> {
   return conversations.filter(conversation => {
-    return hasUnread(
-      countConversationUnreadStats(conversation, { includeMuted })
-    );
+    return isConversationUnread(conversation, { includeMuted });
   });
 }
 
@@ -102,10 +100,7 @@ COMMANDS.set('groupIdEndsWith', (conversations, query) => {
 });
 
 COMMANDS.set('unread', (conversations, query) => {
-  const includeMuted =
-    /^(?:m|muted)$/i.test(query) ||
-    window.storage.get('badge-count-muted-conversations') ||
-    false;
+  const includeMuted = /^(?:m|muted)$/i.test(query) || false;
   return filterConversationsByUnread(conversations, includeMuted);
 });
 

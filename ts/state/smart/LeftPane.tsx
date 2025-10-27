@@ -1,35 +1,41 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild';
-import { DialogExpiredBuild } from '../../components/DialogExpiredBuild';
-import type { PropsType as LeftPanePropsType } from '../../components/LeftPane';
-import { LeftPane } from '../../components/LeftPane';
-import type { NavTabPanelProps } from '../../components/NavTabs';
-import type { WidthBreakpoint } from '../../components/_util';
+import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild.js';
+import { DialogExpiredBuild } from '../../components/DialogExpiredBuild.js';
+import type { PropsType as LeftPanePropsType } from '../../components/LeftPane.js';
+import { LeftPane } from '../../components/LeftPane.js';
+import type { NavTabPanelProps } from '../../components/NavTabs.js';
+import type { WidthBreakpoint } from '../../components/_util.js';
 import {
   getGroupSizeHardLimit,
   getGroupSizeRecommendedLimit,
-} from '../../groups/limits';
-import { LeftPaneMode } from '../../types/leftPane';
-import { getUsernameFromSearch } from '../../util/Username';
-import { getCountryDataForLocale } from '../../util/getCountryData';
-import { lookupConversationWithoutServiceId } from '../../util/lookupConversationWithoutServiceId';
-import { missingCaseError } from '../../util/missingCaseError';
-import { isDone as isRegistrationDone } from '../../util/registration';
-import { drop } from '../../util/drop';
-import { useCallingActions } from '../ducks/calling';
-import { useConversationsActions } from '../ducks/conversations';
-import { ComposerStep, OneTimeModalState } from '../ducks/conversationsEnums';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { useItemsActions } from '../ducks/items';
-import { useNetworkActions } from '../ducks/network';
-import { useSearchActions } from '../ducks/search';
-import { useUsernameActions } from '../ducks/username';
-import type { StateType } from '../reducer';
-import { getPreferredBadgeSelector } from '../selectors/badges';
+} from '../../groups/limits.js';
+import { LeftPaneMode } from '../../types/leftPane.js';
+import { getUsernameFromSearch } from '../../util/Username.js';
+import { getCountryDataForLocale } from '../../util/getCountryData.js';
+import { lookupConversationWithoutServiceId } from '../../util/lookupConversationWithoutServiceId.js';
+import { missingCaseError } from '../../util/missingCaseError.js';
+import { isDone as isRegistrationDone } from '../../util/registration.js';
+import { drop } from '../../util/drop.js';
+import type { ServerAlertsType } from '../../types/ServerAlert.js';
+import { getServerAlertToShow } from '../../util/handleServerAlerts.js';
+import { itemStorage } from '../../textsecure/Storage.js';
+import { useCallingActions } from '../ducks/calling.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import {
+  ComposerStep,
+  OneTimeModalState,
+} from '../ducks/conversationsEnums.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { useItemsActions } from '../ducks/items.js';
+import { useNetworkActions } from '../ducks/network.js';
+import { useSearchActions } from '../ducks/search.js';
+import { useUsernameActions } from '../ducks/username.js';
+import type { StateType } from '../reducer.js';
+import { getPreferredBadgeSelector } from '../selectors/badges.js';
 import {
   getComposeAvatarData,
   getComposeGroupAvatar,
@@ -53,9 +59,9 @@ import {
   hasGroupCreationError,
   isCreatingGroup,
   isEditingAvatar,
-} from '../selectors/conversations';
-import { getCrashReportCount } from '../selectors/crashReports';
-import { hasExpired } from '../selectors/expiration';
+} from '../selectors/conversations.js';
+import { getCrashReportCount } from '../selectors/crashReports.js';
+import { hasExpired } from '../selectors/expiration.js';
 import {
   getBackupMediaDownloadProgress,
   getNavTabsCollapsed,
@@ -63,12 +69,12 @@ import {
   getServerAlerts,
   getUsernameCorrupted,
   getUsernameLinkCorrupted,
-} from '../selectors/items';
+} from '../selectors/items.js';
 import {
   getChallengeStatus,
   hasNetworkDialog as getHasNetworkDialog,
   getNetworkIsOnline,
-} from '../selectors/network';
+} from '../selectors/network.js';
 import {
   getFilterByUnread,
   getHasSearchQuery,
@@ -79,37 +85,52 @@ import {
   getSearchConversation,
   getSearchResults,
   getStartSearchCounter,
-} from '../selectors/search';
+} from '../selectors/search.js';
 import {
   isUpdateDownloaded as getIsUpdateDownloaded,
   isOSUnsupported,
   isUpdateDialogVisible,
-} from '../selectors/updates';
+} from '../selectors/updates.js';
 import {
   getIntl,
   getIsMacOS,
   getRegionCode,
   getTheme,
-} from '../selectors/user';
-import { SmartCaptchaDialog } from './CaptchaDialog';
-import { SmartCrashReportDialog } from './CrashReportDialog';
-import { SmartMessageSearchResult } from './MessageSearchResult';
-import { SmartNetworkStatus } from './NetworkStatus';
-import { SmartRelinkDialog } from './RelinkDialog';
-import { SmartToastManager } from './ToastManager';
-import type { PropsType as SmartUnsupportedOSDialogPropsType } from './UnsupportedOSDialog';
-import { SmartUnsupportedOSDialog } from './UnsupportedOSDialog';
-import { SmartUpdateDialog } from './UpdateDialog';
+} from '../selectors/user.js';
+import { SmartCaptchaDialog } from './CaptchaDialog.js';
+import { SmartCrashReportDialog } from './CrashReportDialog.js';
+import { SmartMessageSearchResult } from './MessageSearchResult.js';
+import { SmartNetworkStatus } from './NetworkStatus.js';
+import { SmartRelinkDialog } from './RelinkDialog.js';
+import { SmartToastManager } from './ToastManager.js';
+import type { PropsType as SmartUnsupportedOSDialogPropsType } from './UnsupportedOSDialog.js';
+import { SmartUnsupportedOSDialog } from './UnsupportedOSDialog.js';
+import { SmartUpdateDialog } from './UpdateDialog.js';
 import {
   cancelBackupMediaDownload,
   dismissBackupMediaDownloadBanner,
   pauseBackupMediaDownload,
   resumeBackupMediaDownload,
-} from '../../util/backupMediaDownload';
-import { useNavActions } from '../ducks/nav';
+} from '../../util/backupMediaDownload.js';
+import { useNavActions } from '../ducks/nav.js';
+import { SmartLeftPaneChatFolders } from './LeftPaneChatFolders.js';
+import { SmartLeftPaneConversationListItemContextMenu } from './LeftPaneConversationListItemContextMenu.js';
+import type { RenderConversationListItemContextMenuProps } from '../../components/conversationList/BaseConversationListItem.js';
+import {
+  getHasAnyCurrentCustomChatFolders,
+  getSelectedChatFolder,
+} from '../selectors/chatFolders.js';
+import { NavTab, SettingsPage } from '../../types/Nav.js';
+import { SmartNotificationProfilesMenu } from './NotificationProfilesMenu.js';
+import { getActiveProfile } from '../selectors/notificationProfiles.js';
 
 function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
+}
+function renderConversationListItemContextMenu(
+  props: RenderConversationListItemContextMenuProps
+): JSX.Element {
+  return <SmartLeftPaneConversationListItemContextMenu {...props} />;
 }
 function renderNetworkStatus(
   props: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
@@ -137,6 +158,9 @@ function renderExpiredBuildDialog(
 ): JSX.Element {
   return <DialogExpiredBuild {...props} />;
 }
+function renderLeftPaneChatFolders(): JSX.Element {
+  return <SmartLeftPaneChatFolders />;
+}
 function renderUnsupportedOSDialog(
   props: Readonly<SmartUnsupportedOSDialogPropsType>
 ): JSX.Element {
@@ -152,6 +176,10 @@ function renderToastManagerWithoutMegaphone(props: {
   containerWidthBreakpoint: WidthBreakpoint;
 }): JSX.Element {
   return <SmartToastManager disableMegaphone {...props} />;
+}
+
+function renderNotificationProfilesMenu(): JSX.Element {
+  return <SmartNotificationProfilesMenu />;
 }
 
 const getModeSpecificProps = (
@@ -194,6 +222,7 @@ const getModeSpecificProps = (
         searchTerm: getQuery(state),
         startSearchCounter: getStartSearchCounter(state),
         filterByUnread: getFilterByUnread(state),
+        selectedChatFolder: getSelectedChatFolder(state),
         ...getLeftPaneLists(state),
       };
     case ComposerStep.StartDirectConversation:
@@ -270,6 +299,10 @@ function preloadConversation(conversationId: string): void {
   );
 }
 
+async function saveAlerts(alerts: ServerAlertsType): Promise<void> {
+  await itemStorage.put('serverAlerts', alerts);
+}
+
 export const SmartLeftPane = memo(function SmartLeftPane({
   hasFailedStorySends,
   hasPendingUpdate,
@@ -280,6 +313,9 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const crashReportCount = useSelector(getCrashReportCount);
   const getPreferredBadge = useSelector(getPreferredBadgeSelector);
   const hasAppExpired = useSelector(hasExpired);
+  const hasAnyCurrentCustomChatFolders = useSelector(
+    getHasAnyCurrentCustomChatFolders
+  );
   const hasNetworkDialog = useSelector(getHasNetworkDialog);
   const hasSearchQuery = useSelector(getHasSearchQuery);
   const hasUnsupportedOS = useSelector(isOSUnsupported);
@@ -290,6 +326,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const modeSpecificProps = useSelector(getModeSpecificProps);
   const navTabsCollapsed = useSelector(getNavTabsCollapsed);
   const preferredWidthFromStorage = useSelector(getPreferredLeftPaneWidth);
+  const selectedChatFolder = useSelector(getSelectedChatFolder);
   const selectedConversationId = useSelector(getSelectedConversationId);
   const showArchived = useSelector(getShowArchived);
   const targetedMessage = useSelector(getTargetedMessage);
@@ -351,6 +388,18 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const { showUserNotFoundModal } = useGlobalModalActions();
   const { changeLocation } = useNavActions();
 
+  const handleChatFolderOpenSettings = useCallback(() => {
+    changeLocation({
+      tab: NavTab.Settings,
+      details: {
+        page: SettingsPage.ChatFolders,
+        previousLocation: {
+          tab: NavTab.Chats,
+        },
+      },
+    });
+  }, [changeLocation]);
+
   let hasExpiredDialog = false;
   let unsupportedOSDialogType: 'error' | 'warning' | undefined;
   if (hasAppExpired) {
@@ -371,6 +420,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       : renderToastManagerWithoutMegaphone;
 
   const targetedMessageId = targetedMessage?.id;
+  const isNotificationProfileActive = Boolean(useSelector(getActiveProfile));
 
   return (
     <LeftPane
@@ -393,6 +443,8 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       endConversationSearch={endConversationSearch}
       endSearch={endSearch}
       getPreferredBadge={getPreferredBadge}
+      getServerAlertToShow={getServerAlertToShow}
+      hasAnyCurrentCustomChatFolders={hasAnyCurrentCustomChatFolders}
       hasExpiredDialog={hasExpiredDialog}
       hasFailedStorySends={hasFailedStorySends}
       hasNetworkDialog={hasNetworkDialog}
@@ -402,10 +454,12 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       i18n={i18n}
       isMacOS={isMacOS}
       isOnline={isOnline}
+      isNotificationProfileActive={isNotificationProfileActive}
       isUpdateDownloaded={isUpdateDownloaded}
       lookupConversationWithoutServiceId={lookupConversationWithoutServiceId}
       modeSpecificProps={modeSpecificProps}
       navTabsCollapsed={navTabsCollapsed}
+      onChatFoldersOpenSettings={handleChatFolderOpenSettings}
       onOutgoingAudioCallInConversation={onOutgoingAudioCallInConversation}
       onOutgoingVideoCallInConversation={onOutgoingVideoCallInConversation}
       openUsernameReservationModal={openUsernameReservationModal}
@@ -417,15 +471,22 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       renderCaptchaDialog={renderCaptchaDialog}
       renderCrashReportDialog={renderCrashReportDialog}
       renderExpiredBuildDialog={renderExpiredBuildDialog}
+      renderLeftPaneChatFolders={renderLeftPaneChatFolders}
       renderMessageSearchResult={renderMessageSearchResult}
+      renderConversationListItemContextMenu={
+        renderConversationListItemContextMenu
+      }
       renderNetworkStatus={renderNetworkStatus}
+      renderNotificationProfilesMenu={renderNotificationProfilesMenu}
       renderRelinkDialog={renderRelinkDialog}
       renderToastManager={renderToastManager}
       renderUnsupportedOSDialog={renderUnsupportedOSDialog}
       renderUpdateDialog={renderUpdateDialog}
       resumeBackupMediaDownload={resumeBackupMediaDownload}
+      saveAlerts={saveAlerts}
       savePreferredLeftPaneWidth={savePreferredLeftPaneWidth}
       searchInConversation={searchInConversation}
+      selectedChatFolder={selectedChatFolder}
       selectedConversationId={selectedConversationId}
       serverAlerts={serverAlerts}
       setChallengeStatus={setChallengeStatus}

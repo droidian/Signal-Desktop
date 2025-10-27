@@ -4,36 +4,35 @@
 import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './CallManager';
-import { CallManager } from './CallManager';
+import type { PropsType } from './CallManager.js';
+import { CallManager } from './CallManager.js';
 import {
   CallEndedReason,
   CallState,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../types/Calling';
-import { CallMode } from '../types/CallDisposition';
+} from '../types/Calling.js';
+import { CallMode } from '../types/CallDisposition.js';
 import type {
   ActiveGroupCallType,
   GroupCallRemoteParticipantType,
-} from '../types/Calling';
+} from '../types/Calling.js';
 import type {
   ConversationType,
   ConversationTypeType,
-} from '../state/ducks/conversations';
-import { AvatarColors } from '../types/Colors';
-import { generateAci } from '../types/ServiceId';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation';
-import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource';
-import { StorySendMode } from '../types/Stories';
+} from '../state/ducks/conversations.js';
+import { AvatarColors } from '../types/Colors.js';
+import { generateAci } from '../types/ServiceId.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.js';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.js';
+import { StorySendMode } from '../types/Stories.js';
 import {
   FAKE_CALL_LINK,
   FAKE_CALL_LINK_WITH_ADMIN_KEY,
   getDefaultCallLinkConversation,
-} from '../test-helpers/fakeCallLink';
-import { allRemoteParticipants } from './CallScreen.stories';
-import { getPlaceholderContact } from '../state/selectors/conversations';
+} from '../test-helpers/fakeCallLink.js';
+import { allRemoteParticipants } from './CallScreen.stories.js';
 
 const { i18n } = window.SignalContext;
 
@@ -51,13 +50,23 @@ const getConversation = () =>
     lastUpdated: Date.now(),
   });
 
+const placeHolderContact: ConversationType = {
+  acceptedMessageRequest: false,
+  badges: [],
+  id: '123',
+  type: 'direct',
+  title: i18n('icu:unknownContact'),
+  isMe: false,
+  sharedGroupNames: [],
+};
+
 const getUnknownContact = (): ConversationType => ({
-  ...getPlaceholderContact(),
+  ...placeHolderContact,
   serviceId: generateAci(),
 });
 
 const getUnknownParticipant = (): GroupCallRemoteParticipantType => ({
-  ...getPlaceholderContact(),
+  ...placeHolderContact,
   serviceId: generateAci(),
   aci: generateAci(),
   demuxId: Math.round(10000 * Math.random()),
@@ -105,6 +114,7 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   hangUpActiveCall: action('hang-up-active-call'),
   hasInitialLoadCompleted: true,
   i18n,
+  isOnline: true,
   ringingCall: null,
   callLink: storyProps.callLink ?? undefined,
   me: {
@@ -121,7 +131,6 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   blockClient: action('block-client'),
   cancelPresenting: action('cancel-presenting'),
   renderDeviceSelection: () => <div />,
-  renderEmojiPicker: () => <>EmojiPicker</>,
   renderReactionPicker: () => <div />,
   sendGroupCallRaiseHand: action('send-group-call-raise-hand'),
   sendGroupCallReaction: action('send-group-call-reaction'),
@@ -325,7 +334,7 @@ export function CallLinkLobbyParticipants1Unknown(): JSX.Element {
     <CallManager
       {...createProps({
         activeCall: getActiveCallForCallLink({
-          peekedParticipants: [getPlaceholderContact()],
+          peekedParticipants: [placeHolderContact],
         }),
         callLink: FAKE_CALL_LINK,
       })}

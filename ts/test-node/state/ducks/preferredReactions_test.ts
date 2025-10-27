@@ -3,17 +3,18 @@
 
 import { assert } from 'chai';
 import * as sinon from 'sinon';
-import type { StateType } from '../../../state/reducer';
-import { reducer as rootReducer } from '../../../state/reducer';
-import { noopAction } from '../../../state/ducks/noop';
+import type { StateType } from '../../../state/reducer.js';
+import { reducer as rootReducer } from '../../../state/reducer.js';
+import { noopAction } from '../../../state/ducks/noop.js';
 
-import type { PreferredReactionsStateType } from '../../../state/ducks/preferredReactions';
+import type { PreferredReactionsStateType } from '../../../state/ducks/preferredReactions.js';
 import {
   actions,
   getEmptyState,
   reducer,
-} from '../../../state/ducks/preferredReactions';
-import { EmojiSkinTone } from '../../../components/fun/data/emojis';
+} from '../../../state/ducks/preferredReactions.js';
+import { EmojiSkinTone } from '../../../components/fun/data/emojis.js';
+import { itemStorage } from '../../../textsecure/Storage.js';
 
 describe('preferred reactions duck', () => {
   const getEmptyRootState = (): StateType =>
@@ -254,7 +255,7 @@ describe('preferred reactions duck', () => {
     let oldConversationController: any;
 
     beforeEach(() => {
-      storagePutStub = sinonSandbox.stub(window.storage, 'put').resolves();
+      storagePutStub = sinonSandbox.stub(itemStorage, 'put').resolves();
 
       oldConversationController = window.ConversationController;
 

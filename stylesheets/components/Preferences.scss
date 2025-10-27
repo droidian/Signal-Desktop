@@ -24,7 +24,9 @@ $secondary-text-color: light-dark(
   display: flex;
   overflow: hidden;
   user-select: none;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  align-items: stretch;
 
   @include mixins.light-theme {
     background: variables.$color-white;
@@ -343,6 +345,7 @@ $secondary-text-color: light-dark(
     width: 100%;
     padding-top: 8px;
     max-width: 750px;
+    position: relative;
 
     &::-webkit-scrollbar-corner {
       background: transparent;
@@ -1354,26 +1357,50 @@ $secondary-text-color: light-dark(
   margin: 0;
 }
 
-.Preferences__ChatFolders__ChatSelection__Item--Button {
-  @include mixins.button-reset();
-  &:hover {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-80);
-  }
-  @include mixins.keyboard-mode {
-    &:focus {
-      outline: 2px solid variables.$color-ultramarine;
-    }
+.Preferences__ChatFolders__ChatSelection__Item {
+  &[data-dragging='true'] {
+    opacity: 0%;
+    // delay making the item transparent until the browser has a chance to take
+    // a snapshot of the item before for the drag preview
+    transition: opacity 0ms linear;
+    transition-delay: 1ms;
   }
 }
 
-.Preferences__ChatFolders__ChatSelection__Item {
+.Preferences__ChatFolders__ChatSelection__Item--Button {
+  @include mixins.button-reset();
+  & {
+    width: 100%;
+  }
+}
+
+.Preferences__ChatFolders__ChatSelection__Item--Button,
+.Preferences__ChatFolders__ChatSelection__Item--ListItem {
+  outline: 0;
+}
+
+.Preferences__ChatFolders__ChatSelection__Item--Button,
+.Preferences__ChatFolders__ChatSelection__Item--Clickable {
+  cursor: pointer;
+  &:hover .Preferences__ChatFolders__ChatSelection__ItemContent,
+  .Preferences__ChatFolders__ChatSelection__ItemContent[data-state='open'] {
+    background: light-dark(variables.$color-gray-02, variables.$color-gray-80);
+  }
+}
+
+.Preferences__ChatFolders__ChatSelection__ItemContent {
   display: flex;
-  width: 100%;
   align-items: center;
   gap: 12px;
   padding-block: 8px;
   padding-inline: 24px;
-  border-radius: 1px;
+  border-radius: 8px;
+
+  @include mixins.keyboard-mode {
+    .Preferences__ChatFolders__ChatSelection__Item:focus & {
+      outline: 2px solid variables.$color-ultramarine;
+    }
+  }
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar {
@@ -1463,8 +1490,36 @@ $secondary-text-color: light-dark(
   }
 }
 
+.Preferences__EditChatFolderPage__SelectChatsDialog {
+  height: 60vw;
+
+  .module-conversation-list::-webkit-scrollbar-thumb {
+    border-color: light-dark(variables.$color-white, variables.$color-gray-80);
+  }
+}
+
+.Preferences__EditChatFolderPage__SelectChatsDialog__body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.Preferences__EditChatFolderPage__SelectChatsDialog__body_inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .Preferences__ReadonlySqlPlayground__Textarea {
   &__input {
     font-family: variables.$monospace;
+  }
+}
+
+.TimePickerPopup {
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
   }
 }

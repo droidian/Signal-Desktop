@@ -8,7 +8,6 @@ export enum ToastType {
   AlreadyRequestedToJoin = 'AlreadyRequestedToJoin',
   AttachmentDownloadFailed = 'AttachmentDownloadFailed',
   AttachmentDownloadStillInProgress = 'AttachmentDownloadStillInProgress',
-  DonationCompletedAndBadgeApplicationFailed = 'DonationCompletedAndBadgeApplicationFailed',
   Blocked = 'Blocked',
   BlockedGroup = 'BlockedGroup',
   CallHistoryCleared = 'CallHistoryCleared',
@@ -20,6 +19,7 @@ export enum ToastType {
   CannotOpenGiftBadgeIncoming = 'CannotOpenGiftBadgeIncoming',
   CannotOpenGiftBadgeOutgoing = 'CannotOpenGiftBadgeOutgoing',
   CannotStartGroupCall = 'CannotStartGroupCall',
+  ChatFolderCreated = 'ChatFolderCreated',
   ConversationArchived = 'ConversationArchived',
   ConversationMarkedUnread = 'ConversationMarkedUnread',
   ConversationRemoved = 'ConversationRemoved',
@@ -55,10 +55,12 @@ export enum ToastType {
   LeftGroup = 'LeftGroup',
   LinkCopied = 'LinkCopied',
   LoadingFullLogs = 'LoadingFullLogs',
+  _InternalMainProcessLoggingError = '_InternalMainProcessLoggingError',
   MaxAttachments = 'MaxAttachments',
   MediaNoLongerAvailable = 'MediaNoLongerAvailable',
   MessageBodyTooLong = 'MessageBodyTooLong',
   MessageLoop = 'MessageLoop',
+  NotificationProfileUpdate = 'NotificationProfileUpdate',
   OriginalMessageNotFound = 'OriginalMessageNotFound',
   PinnedConversationsFull = 'PinnedConversationsFull',
   ReactionFailed = 'ReactionFailed',
@@ -79,6 +81,7 @@ export enum ToastType {
   TooManyMessagesToForward = 'TooManyMessagesToForward',
   TransportError = 'TransportError',
   UnableToLoadAttachment = 'UnableToLoadAttachment',
+  UnableToDownloadFromBackupTier = 'UnableToDownloadFromBackupTier',
   UnsupportedMultiAttachment = 'UnsupportedMultiAttachment',
   UnsupportedOS = 'UnsupportedOS',
   UserAddedToGroup = 'UserAddedToGroup',
@@ -104,7 +107,6 @@ export type AnyToast =
       toastType: ToastType.AttachmentDownloadStillInProgress;
       parameters: { count: number };
     }
-  | { toastType: ToastType.DonationCompletedAndBadgeApplicationFailed }
   | { toastType: ToastType.Blocked }
   | { toastType: ToastType.BlockedGroup }
   | { toastType: ToastType.CallHistoryCleared }
@@ -116,6 +118,10 @@ export type AnyToast =
   | { toastType: ToastType.CannotStartGroupCall }
   | { toastType: ToastType.CaptchaFailed }
   | { toastType: ToastType.CaptchaSolved }
+  | {
+      toastType: ToastType.ChatFolderCreated;
+      parameters: { chatFolderName: string };
+    }
   | {
       toastType: ToastType.ConversationArchived;
       parameters: { conversationId: string; wasPinned: boolean };
@@ -166,10 +172,18 @@ export type AnyToast =
   | { toastType: ToastType.LeftGroup }
   | { toastType: ToastType.LinkCopied }
   | { toastType: ToastType.LoadingFullLogs }
+  | {
+      toastType: ToastType._InternalMainProcessLoggingError;
+      parameters: { count: number; logLines: Array<string> };
+    }
   | { toastType: ToastType.MaxAttachments }
   | { toastType: ToastType.MediaNoLongerAvailable }
   | { toastType: ToastType.MessageBodyTooLong }
   | { toastType: ToastType.MessageLoop }
+  | {
+      toastType: ToastType.NotificationProfileUpdate;
+      parameters: { enabled: boolean; name: string };
+    }
   | { toastType: ToastType.OriginalMessageNotFound }
   | { toastType: ToastType.PinnedConversationsFull }
   | { toastType: ToastType.ReactionFailed }
@@ -195,6 +209,7 @@ export type AnyToast =
     }
   | { toastType: ToastType.TooManyMessagesToForward }
   | { toastType: ToastType.TransportError }
+  | { toastType: ToastType.UnableToDownloadFromBackupTier }
   | { toastType: ToastType.UnableToLoadAttachment }
   | { toastType: ToastType.UnsupportedMultiAttachment }
   | { toastType: ToastType.UnsupportedOS }

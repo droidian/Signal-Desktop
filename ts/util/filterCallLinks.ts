@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type Fuse from 'fuse.js';
-import { fuseGetFnRemoveDiacritics, getCachedFuseIndex } from './fuse';
-import { removeDiacritics } from './removeDiacritics';
-import type { CallLinkType } from '../types/CallLink';
+import { fuseGetFnRemoveDiacritics, getCachedFuseIndex } from './fuse.js';
+import { removeDiacritics } from './removeDiacritics.js';
+import type { CallLinkType } from '../types/CallLink.js';
 
 // Based on parameters in filterAndSortConversations
 const FUSE_OPTIONS: Fuse.IFuseOptions<CallLinkType> = {
@@ -25,7 +25,7 @@ const FUSE_OPTIONS: Fuse.IFuseOptions<CallLinkType> = {
       item.name === ''
     ) {
       return removeDiacritics(
-        window.i18n('icu:calling__call-link-default-title')
+        window.SignalContext.i18n('icu:calling__call-link-default-title')
       );
     }
 

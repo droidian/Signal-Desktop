@@ -3,24 +3,25 @@
 
 import React, { useCallback, useMemo, memo } from 'react';
 import { useSelector } from 'react-redux';
-import { CompositionArea } from '../../components/CompositionArea';
-import { useContactNameData } from '../../components/conversation/ContactName';
+import { CompositionArea } from '../../components/CompositionArea.js';
+import { useContactNameData } from '../../components/conversation/ContactName.js';
 import type {
   DraftBodyRanges,
   HydratedBodyRangesType,
-} from '../../types/BodyRange';
-import { hydrateRanges } from '../../types/BodyRange';
-import { strictAssert } from '../../util/assert';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation';
-import { imageToBlurHash } from '../../util/imageToBlurHash';
-import { isConversationSMSOnly } from '../../util/isConversationSMSOnly';
-import { isSignalConversation } from '../../util/isSignalConversation';
+} from '../../types/BodyRange.js';
+import { hydrateRanges } from '../../types/BodyRange.js';
+import { strictAssert } from '../../util/assert.js';
+import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.js';
+import { AutoSubstituteAsciiEmojis } from '../../quill/auto-substitute-ascii-emojis/index.js';
+import { imageToBlurHash } from '../../util/imageToBlurHash.js';
+import { isConversationSMSOnly } from '../../util/isConversationSMSOnly.js';
+import { isSignalConversation } from '../../util/isSignalConversation.js';
 import {
   getErrorDialogAudioRecorderType,
   getRecordingState,
-} from '../selectors/audioRecorder';
-import { getPreferredBadgeSelector } from '../selectors/badges';
-import { getComposerStateForConversationIdSelector } from '../selectors/composer';
+} from '../selectors/audioRecorder.js';
+import { getPreferredBadgeSelector } from '../selectors/badges.js';
+import { getComposerStateForConversationIdSelector } from '../selectors/composer.js';
 import {
   getConversationSelector,
   getGroupAdminsSelector,
@@ -29,52 +30,36 @@ import {
   getMessages,
   getSelectedMessageIds,
   isMissingRequiredProfileSharing,
-} from '../selectors/conversations';
-import { selectRecentEmojis } from '../selectors/emojis';
+} from '../selectors/conversations.js';
 import {
   getDefaultConversationColor,
   getEmojiSkinToneDefault,
-  getShowStickerPickerHint,
-  getShowStickersIntroduction,
   getTextFormattingEnabled,
-} from '../selectors/items';
-import { canForward, getPropsForQuote } from '../selectors/message';
-import {
-  getBlessedStickerPacks,
-  getInstalledStickerPacks,
-  getKnownStickerPacks,
-  getReceivedStickerPacks,
-  getRecentStickers,
-  getRecentlyInstalledStickerPack,
-} from '../selectors/stickers';
+} from '../selectors/items.js';
+import { canForward, getPropsForQuote } from '../selectors/message.js';
 import {
   getIntl,
   getPlatform,
   getTheme,
   getUserConversationId,
-} from '../selectors/user';
-import type { SmartCompositionRecordingProps } from './CompositionRecording';
-import { SmartCompositionRecording } from './CompositionRecording';
-import type { SmartCompositionRecordingDraftProps } from './CompositionRecordingDraft';
-import { SmartCompositionRecordingDraft } from './CompositionRecordingDraft';
-import { useItemsActions } from '../ducks/items';
-import { useComposerActions } from '../ducks/composer';
-import { useConversationsActions } from '../ducks/conversations';
-import { useAudioRecorderActions } from '../ducks/audioRecorder';
-import { useEmojisActions } from '../ducks/emojis';
-import { useGlobalModalActions } from '../ducks/globalModals';
-import { useStickersActions } from '../ducks/stickers';
-import { useToastActions } from '../ducks/toast';
-import { isShowingAnyModal } from '../selectors/globalModals';
-import { isConversationEverUnregistered } from '../../util/isConversationUnregistered';
-import { isDirectConversation } from '../../util/whatTypeOfConversation';
-import { isConversationMuted } from '../../util/isConversationMuted';
-import type { EmojiSkinTone } from '../../components/fun/data/emojis';
+} from '../selectors/user.js';
+import { SmartCompositionRecording } from './CompositionRecording.js';
+import type { SmartCompositionRecordingDraftProps } from './CompositionRecordingDraft.js';
+import { SmartCompositionRecordingDraft } from './CompositionRecordingDraft.js';
+import { useComposerActions } from '../ducks/composer.js';
+import { useConversationsActions } from '../ducks/conversations.js';
+import { useAudioRecorderActions } from '../ducks/audioRecorder.js';
+import { useEmojisActions } from '../ducks/emojis.js';
+import { useGlobalModalActions } from '../ducks/globalModals.js';
+import { useToastActions } from '../ducks/toast.js';
+import { isShowingAnyModal } from '../selectors/globalModals.js';
+import { isConversationEverUnregistered } from '../../util/isConversationUnregistered.js';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.js';
+import { isConversationMuted } from '../../util/isConversationMuted.js';
+import { itemStorage } from '../../textsecure/Storage.js';
 
-function renderSmartCompositionRecording(
-  recProps: SmartCompositionRecordingProps
-) {
-  return <SmartCompositionRecording {...recProps} />;
+function renderSmartCompositionRecording() {
+  return <SmartCompositionRecording />;
 }
 
 function renderSmartCompositionRecordingDraft(
@@ -95,21 +80,12 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   const i18n = useSelector(getIntl);
   const theme = useSelector(getTheme);
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
-  const recentEmojis = useSelector(selectRecentEmojis);
   const selectedMessageIds = useSelector(getSelectedMessageIds);
   const messageLookup = useSelector(getMessages);
   const isFormattingEnabled = useSelector(getTextFormattingEnabled);
   const lastEditableMessageId = useSelector(getLastEditableMessageId);
-  const receivedPacks = useSelector(getReceivedStickerPacks);
-  const installedPacks = useSelector(getInstalledStickerPacks);
-  const blessedPacks = useSelector(getBlessedStickerPacks);
-  const knownPacks = useSelector(getKnownStickerPacks);
   const platform = useSelector(getPlatform);
   const shouldHidePopovers = useSelector(getHasPanelOpen);
-  const installedPack = useSelector(getRecentlyInstalledStickerPack);
-  const recentStickers = useSelector(getRecentStickers);
-  const showStickersIntroduction = useSelector(getShowStickersIntroduction);
-  const showStickerPickerHint = useSelector(getShowStickerPickerHint);
   const recordingState = useSelector(getRecordingState);
   const errorDialogAudioRecorderType = useSelector(
     getErrorDialogAudioRecorderType
@@ -205,23 +181,6 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
     defaultConversationColor,
   ]);
 
-  const { putItem, removeItem } = useItemsActions();
-
-  const onEmojiSkinToneDefaultChange = useCallback(
-    (emojiSkinTone: EmojiSkinTone) => {
-      putItem('emojiSkinToneDefault', emojiSkinTone);
-    },
-    [putItem]
-  );
-
-  const clearShowIntroduction = useCallback(() => {
-    removeItem('showStickersIntroduction');
-  }, [removeItem]);
-
-  const clearShowPickerHint = useCallback(() => {
-    removeItem('showStickerPickerHint');
-  }, [removeItem]);
-
   const {
     onTextTooLong,
     onCloseLinkPreview,
@@ -259,9 +218,10 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
     toggleForwardMessagesModal,
     toggleDraftGifMessageSendModal,
   } = useGlobalModalActions();
-  const { clearInstalledStickerPack } = useStickersActions();
   const { showToast } = useToastActions();
   const { onEditorStateChange } = useComposerActions();
+
+  AutoSubstituteAsciiEmojis.enable(itemStorage.get('autoConvertEmoji', true));
 
   return (
     <CompositionArea
@@ -287,6 +247,8 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       discardEditMessage={discardEditMessage}
       onCloseLinkPreview={onCloseLinkPreview}
       onEditorStateChange={onEditorStateChange}
+      // MediaEditor
+      conversationSelector={conversationSelector}
       // AudioCapture
       errorDialogAudioRecorderType={errorDialogAudioRecorderType ?? null}
       recordingState={recordingState}
@@ -306,7 +268,7 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       shouldSendHighQualityAttachments={
         shouldSendHighQualityAttachments !== undefined
           ? shouldSendHighQualityAttachments
-          : window.storage.get('sent-media-quality') === 'high'
+          : itemStorage.get('sent-media-quality') === 'high'
       }
       setMediaQualitySetting={setMediaQualitySetting}
       // StagedLinkPreview
@@ -318,19 +280,9 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       quotedMessageAuthorAci={quotedMessage?.quote?.authorAci ?? null}
       quotedMessageSentAt={quotedMessage?.quote?.id ?? null}
       setQuoteByMessageId={setQuoteByMessageId}
-      // Emojis
-      recentEmojis={recentEmojis}
+      // Fun Picker
       emojiSkinToneDefault={emojiSkinToneDefault}
-      onPickEmoji={onUseEmoji}
-      // Stickers
-      receivedPacks={receivedPacks}
-      installedPack={installedPack}
-      blessedPacks={blessedPacks}
-      knownPacks={knownPacks}
-      installedPacks={installedPacks}
-      recentStickers={recentStickers}
-      showIntroduction={showStickersIntroduction}
-      showPickerHint={showStickerPickerHint}
+      onSelectEmoji={onUseEmoji}
       // Message Requests
       acceptedMessageRequest={conversation.acceptedMessageRequest ?? null}
       removalStage={conversation.removalStage ?? null}
@@ -385,10 +337,6 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       // DraftGifMessageSendModal
       toggleDraftGifMessageSendModal={toggleDraftGifMessageSendModal}
       // Dispatch
-      onEmojiSkinToneDefaultChange={onEmojiSkinToneDefaultChange}
-      clearShowIntroduction={clearShowIntroduction}
-      clearInstalledStickerPack={clearInstalledStickerPack}
-      clearShowPickerHint={clearShowPickerHint}
       showToast={showToast}
       sendStickerMessage={sendStickerMessage}
       sendEditedMessage={sendEditedMessage}

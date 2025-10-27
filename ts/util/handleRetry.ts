@@ -5,24 +5,26 @@ import {
   DecryptionErrorMessage,
   PlaintextContent,
 } from '@signalapp/libsignal-client';
-import { isNumber, random } from 'lodash';
+import lodash from 'lodash';
 import type PQueue from 'p-queue';
 
-import * as Bytes from '../Bytes';
-import { DataReader, DataWriter } from '../sql/Client';
-import { isProduction } from './version';
-import { strictAssert } from './assert';
-import { isGroupV2 } from './whatTypeOfConversation';
-import { isOlderThan } from './timestamp';
-import { parseIntOrThrow } from './parseIntOrThrow';
-import * as RemoteConfig from '../RemoteConfig';
-import { Address } from '../types/Address';
-import { QualifiedAddress } from '../types/QualifiedAddress';
-import type { AciString, ServiceIdString } from '../types/ServiceId';
-import { ToastType } from '../types/Toast';
-import * as Errors from '../types/errors';
+import * as Bytes from '../Bytes.js';
+import { signalProtocolStore } from '../SignalProtocolStore.js';
+import { DataReader, DataWriter } from '../sql/Client.js';
+import { isProduction } from './version.js';
+import { strictAssert } from './assert.js';
+import { lightSessionResetQueue } from './lightSessionResetQueue.js';
+import { isGroupV2 } from './whatTypeOfConversation.js';
+import { isOlderThan } from './timestamp.js';
+import { parseIntOrThrow } from './parseIntOrThrow.js';
+import * as RemoteConfig from '../RemoteConfig.js';
+import { Address } from '../types/Address.js';
+import { QualifiedAddress } from '../types/QualifiedAddress.js';
+import type { AciString, ServiceIdString } from '../types/ServiceId.js';
+import { ToastType } from '../types/Toast.js';
+import * as Errors from '../types/errors.js';
 
-import type { ConversationModel } from '../models/conversations';
+import type { ConversationModel } from '../models/conversations.js';
 import type {
   DecryptionErrorEvent,
   DecryptionErrorEventData,
@@ -30,17 +32,23 @@ import type {
   RetryRequestEvent,
   RetryRequestEventData,
   SuccessfulDecryptEvent,
-} from '../textsecure/messageReceiverEvents';
+} from '../textsecure/messageReceiverEvents.js';
 
-import { SignalService as Proto } from '../protobuf';
-import { createLogger } from '../logging/log';
-import type MessageSender from '../textsecure/SendMessage';
-import type { StoryDistributionListDataType } from '../state/ducks/storyDistributionLists';
-import { drop } from './drop';
-import { conversationJobQueue } from '../jobs/conversationJobQueue';
-import { incrementMessageCounter } from './incrementMessageCounter';
-import { SECOND } from './durations';
-import { sleep } from './sleep';
+import { SignalService as Proto } from '../protobuf/index.js';
+import { createLogger } from '../logging/log.js';
+import {
+  type MessageSender,
+  messageSender,
+} from '../textsecure/SendMessage.js';
+import type { StoryDistributionListDataType } from '../state/ducks/storyDistributionLists.js';
+import { drop } from './drop.js';
+import { conversationJobQueue } from '../jobs/conversationJobQueue.js';
+import { incrementMessageCounter } from './incrementMessageCounter.js';
+import { SECOND } from './durations/index.js';
+import { sleep } from './sleep.js';
+import { itemStorage } from '../textsecure/Storage.js';
+
+const { isNumber, random } = lodash;
 
 const log = createLogger('handleRetry');
 
@@ -204,11 +212,6 @@ export async function onRetryRequest(event: RetryRequestEvent): Promise<void> {
 
   log.info(`onRetryRequest/${logId}: Resending message`);
 
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error(`onRetryRequest/${logId}: messaging is not available!`);
-  }
-
   const { contentHint, messageIds, proto, timestamp, urgent } = sentProto;
 
   // Only applies to sender key sends in groups. See below for story distribution lists.
@@ -232,7 +235,7 @@ export async function onRetryRequest(event: RetryRequestEvent): Promise<void> {
       confirm,
       contentProto,
       logId,
-      messaging,
+      messaging: messageSender,
       requesterAci,
       timestamp,
     });
@@ -345,25 +348,25 @@ async function archiveSessionOnMatch({
   senderDevice,
 }: RetryRequestEventData): Promise<boolean> {
   const ourDeviceId = parseIntOrThrow(
-    window.textsecure.storage.user.getDeviceId(),
+    itemStorage.user.getDeviceId(),
     'archiveSessionOnMatch/getDeviceId'
   );
   if (ourDeviceId !== senderDevice || !ratchetKey) {
     return false;
   }
 
-  const ourAci = window.textsecure.storage.user.getCheckedAci();
+  const ourAci = itemStorage.user.getCheckedAci();
   const address = new QualifiedAddress(
     ourAci,
     Address.create(requesterAci, requesterDevice)
   );
-  const session = await window.textsecure.storage.protocol.loadSession(address);
+  const session = await signalProtocolStore.loadSession(address);
 
   if (session && session.currentRatchetKeyMatches(ratchetKey)) {
     log.info(
       'archiveSessionOnMatch: Matching device and ratchetKey, archiving session'
     );
-    await window.textsecure.storage.protocol.archiveSession(address);
+    await signalProtocolStore.archiveSession(address);
     return true;
   }
 
@@ -378,13 +381,6 @@ async function sendDistributionMessageOrNullMessage(
   const { groupId, requesterAci } = options;
   let sentDistributionMessage = false;
   log.info(`sendDistributionMessageOrNullMessage/${logId}: Starting...`);
-
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error(
-      `sendDistributionMessageOrNullMessage/${logId}: messaging is not available!`
-    );
-  }
 
   const conversation = window.ConversationController.getOrCreate(
     requesterAci,
@@ -582,13 +578,6 @@ async function maybeAddSenderKeyDistributionMessage({
     requestGroupId,
   });
 
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error(
-      `maybeAddSenderKeyDistributionMessage/${logId}: messaging is not available!`
-    );
-  }
-
   if (!conversation) {
     log.warn(
       `maybeAddSenderKeyDistributionMessage/${logId}: Unable to find conversation`
@@ -613,7 +602,7 @@ async function maybeAddSenderKeyDistributionMessage({
   const senderKeyInfo = conversation.get('senderKeyInfo');
   if (senderKeyInfo && senderKeyInfo.distributionId) {
     const protoWithDistributionMessage =
-      await messaging.getSenderKeyDistributionMessage(
+      await messageSender.getSenderKeyDistributionMessage(
         senderKeyInfo.distributionId,
         { throwIfNotInDatabase: true, timestamp }
       );
@@ -654,11 +643,6 @@ async function requestResend(decryptionError: DecryptionErrorEventData) {
     contentHint,
     groupId: groupId ? `groupv2(${groupId})` : undefined,
   });
-
-  const { messaging } = window.textsecure;
-  if (!messaging) {
-    throw new Error(`requestResend/${logId}: messaging is not available!`);
-  }
 
   // 1. Find the target conversation
 
@@ -712,19 +696,12 @@ async function requestResend(decryptionError: DecryptionErrorEventData) {
 
 function scheduleSessionReset(senderAci: AciString, senderDevice: number) {
   // Postpone sending light session resets until the queue is empty
-  const { lightSessionResetQueue } = window.Signal.Services;
-
-  if (!lightSessionResetQueue) {
-    throw new Error(
-      'scheduleSessionReset: lightSessionResetQueue is not available!'
-    );
-  }
 
   drop(
     lightSessionResetQueue.add(async () => {
-      const ourAci = window.textsecure.storage.user.getCheckedAci();
+      const ourAci = itemStorage.user.getCheckedAci();
 
-      await window.textsecure.storage.protocol.lightSessionReset(
+      await signalProtocolStore.lightSessionReset(
         new QualifiedAddress(ourAci, Address.create(senderAci, senderDevice))
       );
     })

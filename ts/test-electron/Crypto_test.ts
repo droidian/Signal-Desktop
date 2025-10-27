@@ -1,17 +1,17 @@
 // Copyright 2015 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { createCipheriv } from 'crypto';
-import { PassThrough } from 'stream';
-import { emptyDir } from 'fs-extra';
+import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { createCipheriv } from 'node:crypto';
+import { PassThrough } from 'node:stream';
+import fsExtra from 'fs-extra';
 import { assert } from 'chai';
-import { isNumber } from 'lodash';
+import lodash from 'lodash';
 
-import { createLogger } from '../logging/log';
-import * as Bytes from '../Bytes';
-import * as Curve from '../Curve';
+import { createLogger } from '../logging/log.js';
+import * as Bytes from '../Bytes.js';
+import * as Curve from '../Curve.js';
 import {
   PaddedLengths,
   encryptProfileItemWithPadding,
@@ -39,22 +39,30 @@ import {
   decryptAttachmentV1,
   padAndEncryptAttachment,
   CipherType,
-} from '../Crypto';
+} from '../Crypto.js';
 import {
   _generateAttachmentIv,
   decryptAttachmentV2,
   encryptAttachmentV2ToDisk,
-  getAesCbcCiphertextLength,
-  getAttachmentCiphertextLength,
   splitKeys,
   generateAttachmentKeys,
   type DecryptedAttachmentV2,
   decryptAttachmentV2ToSink,
-} from '../AttachmentCrypto';
-import type { AciString, PniString } from '../types/ServiceId';
-import { createTempDir, deleteTempDir } from '../updater/common';
-import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes';
-import { getPath } from '../windows/main/attachments';
+} from '../AttachmentCrypto.js';
+import type { AciString, PniString } from '../types/ServiceId.js';
+import { createTempDir, deleteTempDir } from '../updater/common.js';
+import { getAbsoluteAttachmentPath } from '../util/migrations.js';
+import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes.js';
+import {
+  getAesCbcCiphertextSize,
+  getAttachmentCiphertextSize,
+} from '../util/AttachmentCrypto.js';
+import { getPath } from '../windows/main/attachments.js';
+import { MediaTier } from '../types/AttachmentDownload.js';
+
+const { emptyDir } = fsExtra;
+
+const { isNumber } = lodash;
 
 const log = createLogger('Crypto_test');
 
@@ -597,12 +605,9 @@ describe('Crypto', () => {
           },
           theirIncrementalMac: undefined,
           theirChunkSize: undefined,
-          getAbsoluteAttachmentPath:
-            window.Signal.Migrations.getAbsoluteAttachmentPath,
+          getAbsoluteAttachmentPath,
         });
-        plaintextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-          decryptedAttachment.path
-        );
+        plaintextPath = getAbsoluteAttachmentPath(decryptedAttachment.path);
         const plaintext = readFileSync(plaintextPath);
 
         assert.isTrue(constantTimeEqual(FILE_CONTENTS, plaintext));
@@ -627,8 +632,7 @@ describe('Crypto', () => {
         const encryptedAttachment = await encryptAttachmentV2ToDisk({
           keys,
           plaintext: { data: FILE_CONTENTS },
-          getAbsoluteAttachmentPath:
-            window.Signal.Migrations.getAbsoluteAttachmentPath,
+          getAbsoluteAttachmentPath,
           needIncrementalMac: true,
         });
 
@@ -636,10 +640,9 @@ describe('Crypto', () => {
           decryptAttachmentV2ToSink(
             {
               type: 'standard',
-              ciphertextPath:
-                window.Signal.Migrations.getAbsoluteAttachmentPath(
-                  encryptedAttachment.path
-                ),
+              ciphertextPath: getAbsoluteAttachmentPath(
+                encryptedAttachment.path
+              ),
               idForLogging: 'test',
               ...splitKeys(keys),
               size: FILE_CONTENTS.byteLength,
@@ -661,8 +664,7 @@ describe('Crypto', () => {
         const encryptedAttachment = await encryptAttachmentV2ToDisk({
           keys,
           plaintext: { data: FILE_CONTENTS },
-          getAbsoluteAttachmentPath:
-            window.Signal.Migrations.getAbsoluteAttachmentPath,
+          getAbsoluteAttachmentPath,
           needIncrementalMac: true,
         });
 
@@ -670,10 +672,9 @@ describe('Crypto', () => {
           decryptAttachmentV2ToSink(
             {
               type: 'standard',
-              ciphertextPath:
-                window.Signal.Migrations.getAbsoluteAttachmentPath(
-                  encryptedAttachment.path
-                ),
+              ciphertextPath: getAbsoluteAttachmentPath(
+                encryptedAttachment.path
+              ),
               idForLogging: 'test',
               ...splitKeys(keys),
               size: FILE_CONTENTS.byteLength,
@@ -715,14 +716,11 @@ describe('Crypto', () => {
           const encryptedAttachment = await encryptAttachmentV2ToDisk({
             keys,
             plaintext: path ? { absolutePath: path } : { data },
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
             needIncrementalMac: true,
           });
 
-          ciphertextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-            encryptedAttachment.path
-          );
+          ciphertextPath = getAbsoluteAttachmentPath(encryptedAttachment.path);
 
           const macLength = encryptedAttachment.incrementalMac?.length;
           if (
@@ -764,19 +762,19 @@ describe('Crypto', () => {
             },
             theirIncrementalMac: encryptedAttachment.incrementalMac,
             theirChunkSize: encryptedAttachment.chunkSize,
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
           });
 
-          plaintextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-            decryptedAttachment.path
-          );
+          plaintextPath = getAbsoluteAttachmentPath(decryptedAttachment.path);
 
           const plaintext = readFileSync(plaintextPath);
 
           assert.strictEqual(
             encryptedAttachment.ciphertextSize,
-            getAttachmentCiphertextLength(data.byteLength)
+            getAttachmentCiphertextSize({
+              unpaddedPlaintextSize: data.byteLength,
+              mediaTier: MediaTier.STANDARD,
+            })
           );
 
           if (overrideSize == null) {
@@ -856,7 +854,7 @@ describe('Crypto', () => {
               plaintextHash,
               modifyIncrementalMac: true,
             }),
-            /Corrupted/
+            /^Corrupted input data/
           );
         } finally {
           unlinkSync(sourcePath);
@@ -883,13 +881,10 @@ describe('Crypto', () => {
         const encryptedAttachment = await encryptAttachmentV2ToDisk({
           keys,
           plaintext: { absolutePath: FILE_PATH },
-          getAbsoluteAttachmentPath:
-            window.Signal.Migrations.getAbsoluteAttachmentPath,
+          getAbsoluteAttachmentPath,
           needIncrementalMac: false,
         });
-        ciphertextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-          encryptedAttachment.path
-        );
+        ciphertextPath = getAbsoluteAttachmentPath(encryptedAttachment.path);
 
         const ciphertext = readFileSync(ciphertextPath);
 
@@ -940,13 +935,10 @@ describe('Crypto', () => {
           keys,
           plaintext: { absolutePath: FILE_PATH },
           _testOnlyDangerousIv: dangerousTestOnlyIv,
-          getAbsoluteAttachmentPath:
-            window.Signal.Migrations.getAbsoluteAttachmentPath,
+          getAbsoluteAttachmentPath,
           needIncrementalMac: false,
         });
-        ciphertextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-          encryptedAttachmentV2.path
-        );
+        ciphertextPath = getAbsoluteAttachmentPath(encryptedAttachmentV2.path);
 
         const ciphertextV2 = readFileSync(ciphertextPath);
 
@@ -977,29 +969,25 @@ describe('Crypto', () => {
           innerEncryptedAttachment = await encryptAttachmentV2ToDisk({
             keys: innerKeys,
             plaintext: { absolutePath: plaintextAbsolutePath },
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
             needIncrementalMac: true,
           });
-          innerCiphertextPath =
-            window.Signal.Migrations.getAbsoluteAttachmentPath(
-              innerEncryptedAttachment.path
-            );
+          innerCiphertextPath = getAbsoluteAttachmentPath(
+            innerEncryptedAttachment.path
+          );
 
           const outerEncryptedAttachment = await encryptAttachmentV2ToDisk({
             keys: outerKeys,
             plaintext: { absolutePath: innerCiphertextPath },
             // We (and the server!) don't pad the second layer
             _testOnlyDangerousSkipPadding: true,
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
             needIncrementalMac: false,
           });
 
-          outerCiphertextPath =
-            window.Signal.Migrations.getAbsoluteAttachmentPath(
-              outerEncryptedAttachment.path
-            );
+          outerCiphertextPath = getAbsoluteAttachmentPath(
+            outerEncryptedAttachment.path
+          );
         } finally {
           if (innerCiphertextPath) {
             unlinkSync(innerCiphertextPath);
@@ -1039,13 +1027,10 @@ describe('Crypto', () => {
               encryptResult.innerEncryptedAttachment.incrementalMac,
             theirChunkSize: encryptResult.innerEncryptedAttachment.chunkSize,
             outerEncryption: splitKeys(outerKeys),
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
           });
 
-          plaintextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-            decryptedAttachment.path
-          );
+          plaintextPath = getAbsoluteAttachmentPath(decryptedAttachment.path);
           const plaintext = readFileSync(plaintextPath);
           assert.isTrue(constantTimeEqual(FILE_CONTENTS, plaintext));
           assert.strictEqual(
@@ -1101,12 +1086,9 @@ describe('Crypto', () => {
               encryptResult.innerEncryptedAttachment.incrementalMac,
             theirChunkSize: encryptResult.innerEncryptedAttachment.chunkSize,
             outerEncryption: splitKeys(outerKeys),
-            getAbsoluteAttachmentPath:
-              window.Signal.Migrations.getAbsoluteAttachmentPath,
+            getAbsoluteAttachmentPath,
           });
-          plaintextPath = window.Signal.Migrations.getAbsoluteAttachmentPath(
-            decryptedAttachment.path
-          );
+          plaintextPath = getAbsoluteAttachmentPath(decryptedAttachment.path);
           const plaintext = readFileSync(plaintextPath);
           assert.isTrue(constantTimeEqual(data, plaintext));
         } finally {
@@ -1160,8 +1142,7 @@ describe('Crypto', () => {
                 aesKey: splitKeys(outerKeys).aesKey,
                 macKey: splitKeys(innerKeys).macKey, // wrong mac!
               },
-              getAbsoluteAttachmentPath:
-                window.Signal.Migrations.getAbsoluteAttachmentPath,
+              getAbsoluteAttachmentPath,
             }),
             /Bad outer encryption MAC/
           );
@@ -1189,7 +1170,7 @@ describe('Crypto', () => {
     }
     it('calculates cipherTextLength correctly', () => {
       for (let i = 0; i < 128; i += 1) {
-        assert.strictEqual(getAesCbcCiphertextLength(i), encrypt(i).length);
+        assert.strictEqual(getAesCbcCiphertextSize(i), encrypt(i).length);
       }
     });
   });

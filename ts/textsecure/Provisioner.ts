@@ -3,35 +3,35 @@
 
 import pTimeout, { TimeoutError as PTimeoutError } from 'p-timeout';
 
-import { createLogger } from '../logging/log';
-import * as Errors from '../types/errors';
-import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen';
-import { strictAssert } from '../util/assert';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff';
-import { SECOND } from '../util/durations';
-import { explodePromise } from '../util/explodePromise';
-import { drop } from '../util/drop';
-import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled';
-import { normalizeDeviceName } from '../util/normalizeDeviceName';
-import { linkDeviceRoute } from '../util/signalRoutes';
-import { sleep } from '../util/sleep';
-import * as Bytes from '../Bytes';
-import { SignalService as Proto } from '../protobuf';
+import { createLogger } from '../logging/log.js';
+import * as Errors from '../types/errors.js';
+import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen.js';
+import { strictAssert } from '../util/assert.js';
+import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.js';
+import { SECOND } from '../util/durations/index.js';
+import { explodePromise } from '../util/explodePromise.js';
+import { drop } from '../util/drop.js';
+import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.js';
+import { normalizeDeviceName } from '../util/normalizeDeviceName.js';
+import { linkDeviceRoute } from '../util/signalRoutes.js';
+import { sleep } from '../util/sleep.js';
+import * as Bytes from '../Bytes.js';
+import { SignalService as Proto } from '../protobuf/index.js';
 
 import {
   type CreateLinkedDeviceOptionsType,
   AccountType,
-} from './AccountManager';
+} from './AccountManager.js';
 import ProvisioningCipher, {
   type ProvisionDecryptResult,
-} from './ProvisioningCipher';
+} from './ProvisioningCipher.js';
 import {
   type IWebSocketResource,
   type IncomingWebSocketRequest,
   ServerRequestType,
-} from './WebsocketResources';
-import { ConnectTimeoutError } from './Errors';
-import { type WebAPIType } from './WebAPI';
+} from './WebsocketResources.js';
+import { ConnectTimeoutError } from './Errors.js';
+import type { getProvisioningResource } from './WebAPI.js';
 
 const log = createLogger('Provisioner');
 
@@ -45,7 +45,7 @@ export enum EventKind {
 }
 
 export type ProvisionerOptionsType = Readonly<{
-  server: WebAPIType;
+  server: { getProvisioningResource: typeof getProvisioningResource };
 }>;
 
 export type EnvelopeType = ProvisionDecryptResult;
@@ -88,7 +88,6 @@ export type SubscriberType = Readonly<{
 export type PrepareLinkDataOptionsType = Readonly<{
   envelope: EnvelopeType;
   deviceName: string;
-  backupFile?: Uint8Array;
 }>;
 
 enum SocketState {
@@ -107,7 +106,7 @@ const QR_CODE_TIMEOUTS = [10 * SECOND, 20 * SECOND, 30 * SECOND, 60 * SECOND];
 
 export class Provisioner {
   readonly #subscribers = new Set<SubscriberType>();
-  readonly #server: WebAPIType;
+  readonly #server: { getProvisioningResource: typeof getProvisioningResource };
   readonly #retryBackOff = new BackOff(FIBONACCI_TIMEOUTS);
 
   #sockets: Array<IWebSocketResource> = [];
@@ -143,7 +142,6 @@ export class Provisioner {
   public static prepareLinkData({
     envelope,
     deviceName,
-    backupFile,
   }: PrepareLinkDataOptionsType): CreateLinkedDeviceOptionsType {
     const {
       number,
@@ -185,7 +183,6 @@ export class Provisioner {
         0,
         MAX_DEVICE_NAME_LENGTH
       ),
-      backupFile,
       userAgent,
       ourAci,
       ourPni,
@@ -417,7 +414,7 @@ export class Provisioner {
       .toAppUrl({
         uuid,
         pubKey: Bytes.toBase64(cipher.getPublicKey().serialize()),
-        capabilities: isLinkAndSyncEnabled() ? ['backup4'] : [],
+        capabilities: isLinkAndSyncEnabled() ? ['backup4', 'backup5'] : [],
       })
       .toString();
 

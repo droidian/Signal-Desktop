@@ -4,13 +4,14 @@
 import { assert } from 'chai';
 import { v7 as generateUuid } from 'uuid';
 
-import { DataWriter } from '../../sql/Client';
-import { SendStatus } from '../../messages/MessageSendState';
-import { IMAGE_PNG } from '../../types/MIME';
-import { generateAci, generatePni } from '../../types/ServiceId';
-import { MessageModel } from '../../models/messages';
-import { DurationInSeconds } from '../../util/durations';
-import { ConversationModel } from '../../models/conversations';
+import { DataWriter } from '../../sql/Client.js';
+import { SendStatus } from '../../messages/MessageSendState.js';
+import { IMAGE_PNG } from '../../types/MIME.js';
+import { generateAci, generatePni } from '../../types/ServiceId.js';
+import { MessageModel } from '../../models/messages.js';
+import { DurationInSeconds } from '../../util/durations/index.js';
+import { ConversationModel } from '../../models/conversations.js';
+import { itemStorage } from '../../textsecure/Storage.js';
 
 describe('Conversations', () => {
   async function resetConversationController(): Promise<void> {
@@ -18,9 +19,14 @@ describe('Conversations', () => {
     await window.ConversationController.load();
   }
 
+  after(async () => {
+    await DataWriter.removeAll();
+    await itemStorage.fetch();
+  });
+
   beforeEach(async () => {
     await DataWriter.removeAll();
-    await window.textsecure.storage.user.setCredentials({
+    await itemStorage.user.setCredentials({
       number: '+15550000000',
       aci: generateAci(),
       pni: generatePni(),
