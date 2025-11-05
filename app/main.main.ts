@@ -261,20 +261,7 @@ if (!process.mas) {
     app.exit();
   } else {
     app.on('second-instance', (_e: Electron.Event, argv: Array<string>) => {
-      // Workaround to let AllowSetForegroundWindow succeed.
-      // See https://www.npmjs.com/package/@signalapp/windows-dummy-keystroke for a full explanation of why this is needed.
-      if (OS.isWindows()) {
-        sendDummyKeystroke();
-      }
-
-      // Someone tried to run a second instance, we should focus our window
-      if (mainWindow) {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        }
-
-        showWindow();
-      }
+      showWindow();
 
       const route = maybeGetIncomingSignalRoute(argv);
       if (route != null) {
