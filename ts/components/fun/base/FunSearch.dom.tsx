@@ -46,7 +46,7 @@ export function FunSearch(props: FunSearchProps): JSX.Element {
       >
         <AxoSearchField.Icon />
         <AxoSearchField.Input
-          autoFocus={shouldAutoFocus}
+          autoFocus={false}
           placeholder={props.placeholder}
           onFocus={handleFocus}
           onBlur={handleBlur}
