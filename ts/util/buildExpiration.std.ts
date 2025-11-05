@@ -59,30 +59,5 @@ export function hasBuildExpired({
   now,
   logger,
 }: HasBuildExpiredOptionsType): boolean {
-  if (
-    getEnvironment() !== Environment.PackagedApp &&
-    buildExpirationTimestamp === 0
-  ) {
-    return false;
-  }
-
-  if (isInPast(buildExpirationTimestamp)) {
-    return true;
-  }
-
-  const safeExpirationMs = autoDownloadUpdate
-    ? NINETY_ONE_DAYS
-    : THIRTY_ONE_DAYS;
-
-  const buildExpirationDuration = buildExpirationTimestamp - now;
-  const tooFarIntoFuture = buildExpirationDuration > safeExpirationMs;
-
-  if (tooFarIntoFuture) {
-    logger.error(
-      'Build expiration is set too far into the future',
-      buildExpirationTimestamp
-    );
-  }
-
-  return tooFarIntoFuture || isInPast(buildExpirationTimestamp);
+  return false;
 }
