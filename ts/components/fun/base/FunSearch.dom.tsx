@@ -52,7 +52,7 @@ export function FunSearch(props: FunSearchProps): JSX.Element {
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={props.placeholder}
-        autoFocus={shouldAutoFocus}
+        autoFocus={false}
       />
       {props.searchInput !== '' && (
         <button
