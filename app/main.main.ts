@@ -2292,6 +2292,7 @@ app.on('ready', async () => {
           nodeIntegration: false,
           sandbox: true,
           contextIsolation: true,
+          backgroundThrottling: false,
           preload: join(__dirname, '../bundles/loading/preload.preload.js'),
         },
         icon: windowIcon,
