@@ -11,6 +11,7 @@ import {
 } from '../../hooks/useKeyboardShortcuts.dom.js';
 import { SizeObserver } from '../../hooks/useSizeObserver.dom.js';
 import type { ConversationTypeType } from '../../state/ducks/conversations.preload.js';
+import { showConversation } from '../../state/ducks/conversations.preload.js';
 import type { HasStories } from '../../types/Stories.std.js';
 import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
 import type { DurationInSeconds } from '../../util/durations/index.std.js';
@@ -35,6 +36,8 @@ import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.js';
 import { DeleteMessagesConfirmationDialog } from '../DeleteMessagesConfirmationDialog.dom.js';
 import { AxoDropdownMenu } from '../../axo/AxoDropdownMenu.dom.js';
 import { strictAssert } from '../../util/assert.std.js';
+
+import { useDispatch } from 'react-redux';
 
 function HeaderInfoTitle({
   name,
@@ -423,6 +426,11 @@ function HeaderContent({
   onViewUserStories: () => void;
   onViewConversationDetails: () => void;
 }) {
+  const dispatch = useDispatch();
+  const onBackButton = () => {
+    dispatch(showConversation({ conversationId: undefined }));
+  };
+
   let onClick: undefined | (() => void);
   const { type } = conversation;
   switch (type) {
@@ -497,6 +505,13 @@ function HeaderContent({
 
   if (onClick) {
     return (
+      <>
+      <button
+          aria-label={i18n('icu:goBack')}
+          className="ConversationPanel__header__back-button"
+          onClick={onBackButton}
+          type="button"
+      />
       <div className="module-ConversationHeader__header">
         {avatar}
         <div>
@@ -509,6 +524,7 @@ function HeaderContent({
           </button>
         </div>
       </div>
+      </>
     );
   }
 
