@@ -1,0 +1,147 @@
+* {
+  scrollbar-width: none !important;
+}
+
+.Preferences > .NavSidebar {
+    &:has(.NavSidebar__Header) {
+        max-width: 50px !important;
+    }
+}
+
+.Preferences__scroll-area {
+    padding-inline-start: 0px !important;
+    padding-inline-end: 0px !important;
+}
+
+.Preferences__profile-chip {
+    padding-inline-start: 0px !important; 
+    padding-inline-end: 0px !important;
+}
+
+.module-ConversationHeader__header {
+    justify-content: center;
+}
+
+.module-message__text {
+	user-select: none;
+}
+
+.module-message__buttons > * {
+  opacity: 0 !important;
+  interactivity: inert;
+}
+
+.module-ConversationHeader__button.module-ConversationHeader__button--video {
+    display: none !important;
+}
+.module-conversation-list__item--contact-or-conversation__avatar-container {
+    margin-left: 4px !important;
+    .module-conversation-list__item--contact-or-conversation__unread-indicator {
+        margin-right: 4px !important;
+    }
+}
+.module-reaction-viewer {
+    width: 220px !important;
+    height: 220px !important;
+}
+.Preferences__page-selector {
+    min-width: 48px !important;
+    padding-top: 0px !important;
+}
+.Preferences__button {
+    font-size: 0px !important;
+    width: 48px !important;
+}
+.Preferences {
+    width: 100% !important;
+}
+.Preferences__control {
+    flex-direction: column !important;
+}
+.ConversationDetails-panel-row__root {
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+.module-message--incoming {
+    .module-message__buttons {
+        opacity: 1 !important;
+    }
+}
+.module-sticker-manager__preview-modal__modal.module-Modal {
+    width: initial !important;
+}
+.react-contextmenu-submenu {
+    >.react-contextmenu {
+        right: 10px !important;
+    }
+}
+.module-InstallScreenQrCodeNotScannedStep__contents {
+    flex-direction: column !important;
+    top: 44px !important;
+}
+.module-InstallScreenQrCodeNotScannedStep__qr-code {
+    margin-inline: 50% !important;
+}
+
+.Lightbox__main-container {
+    min-height: 100% !important;
+}
+.Lightbox__zoomable-container {
+    margin-inline: 0px !important;
+}
+
+.CompositionArea__button-cell:first-child {
+    margin-inline-start: 5px !important;
+}
+
+.CompositionArea__button-cell {
+    margin-inline: 1px !important;
+}
+
+.CompositionArea__toggle-large {
+  display: none;
+}
+
+.NavTabs__Container {
+    flex-direction: column-reverse !important;
+}
+
+.NavTabs {
+    height: initial !important;
+    width: 100% !important;
+    flex-direction: row !important;
+}
+
+.NavTabs__Item.NavTabs__Toggle {
+    display: none !important;
+}
+
+.NavTabs__TabList {
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+.NavTabs__TabPanel {
+  overflow: hidden !important;
+}
+
+.CallsTab__EmptyState {
+    display: none !important;
+}
+
+.CallsTab__ConversationCallDetails {
+    display: none !important;
+}
+
+.Stories__placeholder {
+    display: none !important;
+}
+
+.NavSidebar {
+    width: 100% !important;
+}
+
+.module-tooltip {
+    display: none !important;
+}
