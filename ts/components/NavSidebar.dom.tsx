@@ -95,161 +95,61 @@ export function NavSidebar({
   renderToastManager,
 }: NavSidebarProps): JSX.Element {
   const isRTL = i18n.getLocaleDirection() === 'rtl';
-  const [dragState, setDragState] = useState(DragState.INITIAL);
-
-  const [preferredWidth, setPreferredWidth] = useState(() => {
-    return getWidthFromPreferredWidth(preferredLeftPaneWidth, {
-      requiresFullWidth,
-    });
-  });
-
-  const width = getWidthFromPreferredWidth(preferredWidth, {
-    requiresFullWidth,
-  });
-
-  const widthBreakpoint = getNavSidebarWidthBreakpoint(width);
-
-  const expandNarrowLeftPane = useCallback(() => {
-    if (preferredWidth < MIN_FULL_WIDTH) {
-      setPreferredWidth(MIN_FULL_WIDTH);
-      savePreferredLeftPaneWidth(MIN_FULL_WIDTH);
-    }
-  }, [preferredWidth, savePreferredLeftPaneWidth]);
-
-  // `useMove` gives us keyboard and mouse dragging support.
-  const { moveProps } = useMove({
-    onMoveStart() {
-      setDragState(DragState.DRAGGING);
-    },
-    onMoveEnd() {
-      setDragState(DragState.DRAGEND);
-    },
-    onMove(event) {
-      const { shiftKey, pointerType } = event;
-      const deltaX = isRTL ? -event.deltaX : event.deltaX;
-      const isKeyboard = pointerType === 'keyboard';
-      const increment = isKeyboard && shiftKey ? 10 : 1;
-      setPreferredWidth(prevWidth => {
-        // Jump minimize for keyboard users
-        if (isKeyboard && prevWidth === MIN_FULL_WIDTH && deltaX < 0) {
-          return MIN_WIDTH;
-        }
-        // Jump maximize for keyboard users
-        if (isKeyboard && prevWidth === MIN_WIDTH && deltaX > 0) {
-          return MIN_FULL_WIDTH;
-        }
-        return prevWidth + deltaX * increment;
-      });
-    },
-  });
-
-  useEffect(() => {
-    // Save the preferred width when the drag ends. We can't do this in onMoveEnd
-    // because the width is not updated yet.
-    if (dragState === DragState.DRAGEND) {
-      setPreferredWidth(width);
-      savePreferredLeftPaneWidth(width);
-      setDragState(DragState.INITIAL);
-    }
-  }, [
-    dragState,
-    preferredLeftPaneWidth,
-    preferredWidth,
-    savePreferredLeftPaneWidth,
-    width,
-  ]);
-
-  useEffect(() => {
-    // This effect helps keep the pointer `col-resize` even when you drag past the handle.
-    const className = 'NavSidebar__document--draggingHandle';
-    if (dragState === DragState.DRAGGING) {
-      document.body.classList.add(className);
-      return () => {
-        document.body.classList.remove(className);
-      };
-    }
-    return undefined;
-  }, [dragState]);
 
   return (
-    <NavSidebarWidthBreakpointContext.Provider value={widthBreakpoint}>
-      <div
-        role="navigation"
-        className={classNames('NavSidebar', {
-          'NavSidebar--narrow': widthBreakpoint === WidthBreakpoint.Narrow,
-        })}
-        style={{ width }}
-      >
-        {!hideHeader && (
-          <AxoDragRegion.Root>
-            <div className="NavSidebar__Header">
-              {onBack == null && navTabsCollapsed && (
-                <NavTabsToggle
-                  i18n={i18n}
-                  navTabsCollapsed={navTabsCollapsed}
-                  onToggleNavTabsCollapse={onToggleNavTabsCollapse}
-                  hasFailedStorySends={hasFailedStorySends}
-                  hasPendingUpdate={hasPendingUpdate}
-                  otherTabsUnreadStats={otherTabsUnreadStats}
-                />
-              )}
-              <div
-                className={classNames('NavSidebar__HeaderContent', {
-                  'NavSidebar__HeaderContent--navTabsCollapsed':
-                    navTabsCollapsed,
-                  'NavSidebar__HeaderContent--withBackButton': onBack != null,
-                })}
+    <div
+      role="navigation"
+      className={classNames('NavSidebar')}
+    >
+      {!hideHeader && (
+        <div className="NavSidebar__Header">
+          {onBack == null && navTabsCollapsed && (
+            <NavTabsToggle
+              i18n={i18n}
+              navTabsCollapsed={navTabsCollapsed}
+              onToggleNavTabsCollapse={onToggleNavTabsCollapse}
+              hasFailedStorySends={hasFailedStorySends}
+              hasPendingUpdate={hasPendingUpdate}
+              otherTabsUnreadStats={otherTabsUnreadStats}
+            />
+          )}
+          <div
+            className={classNames('NavSidebar__HeaderContent', {
+              'NavSidebar__HeaderContent--navTabsCollapsed': navTabsCollapsed,
+              'NavSidebar__HeaderContent--withBackButton': onBack != null,
+            })}
+          >
+            {onBack != null && (
+              <button
+                type="button"
+                role="link"
+                onClick={onBack}
+                className="NavSidebar__BackButton"
               >
-                {onBack != null && (
-                  <button
-                    type="button"
-                    role="link"
-                    onClick={onBack}
-                    className="NavSidebar__BackButton"
-                  >
-                    <span className="NavSidebar__BackButtonLabel">
-                      {i18n('icu:NavSidebar__BackButtonLabel')}
-                    </span>
-                  </button>
-                )}
-                <h1
-                  className={classNames('NavSidebar__HeaderTitle', {
-                    'NavSidebar__HeaderTitle--withBackButton': onBack != null,
-                  })}
-                  aria-live="assertive"
-                >
-                  {title}
-                </h1>
-                {actions && (
-                  <div className="NavSidebar__HeaderActions">{actions}</div>
-                )}
-              </div>
-            </div>
-          </AxoDragRegion.Root>
-        )}
+                <span className="NavSidebar__BackButtonLabel">
+                  {i18n('icu:NavSidebar__BackButtonLabel')}
+                </span>
+              </button>
+            )}
+            <h1
+              className={classNames('NavSidebar__HeaderTitle', {
+                'NavSidebar__HeaderTitle--withBackButton': onBack != null,
+              })}
+              aria-live="assertive"
+            >
+              {title}
+            </h1>
+            {actions && (
+              <div className="NavSidebar__HeaderActions">{actions}</div>
+            )}
+          </div>
+        </div>
+      )}
 
-        <div className="NavSidebar__Content">{children}</div>
+      <div className="NavSidebar__Content">{children}</div>
 
-        <div
-          className={classNames('NavSidebar__DragHandle', {
-            'NavSidebar__DragHandle--dragging':
-              dragState === DragState.DRAGGING,
-          })}
-          role="separator"
-          aria-orientation="vertical"
-          aria-valuemin={MIN_WIDTH}
-          aria-valuemax={preferredLeftPaneWidth}
-          aria-valuenow={MAX_WIDTH}
-          tabIndex={0}
-          {...moveProps}
-        />
-
-        {renderToastManager({
-          containerWidthBreakpoint: widthBreakpoint,
-          expandNarrowLeftPane,
-        })}
-      </div>
-    </NavSidebarWidthBreakpointContext.Provider>
+      {renderToastManager({ containerWidthBreakpoint: 400 })}
+    </div>
   );
 }
 
