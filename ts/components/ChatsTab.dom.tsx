@@ -39,42 +39,31 @@ export function ChatsTab({
 }: ChatsTabProps): JSX.Element {
   return (
     <>
-      <div id="LeftPane">
-        {renderLeftPane({
-          otherTabsUnreadStats,
-          collapsed: navTabsCollapsed,
-          hasPendingUpdate,
-          hasFailedStorySends,
-          onToggleCollapse: onToggleNavTabsCollapse,
-        })}
-      </div>
+
+    {!selectedConversationId &&
+        <div id="LeftPane">
+            {renderLeftPane({
+              otherTabsUnreadStats,
+              hasPendingUpdate,
+              hasFailedStorySends,
+              onToggleCollapse: onToggleNavTabsCollapse,
+            })}
+        </div>
+    }
+
+    {selectedConversationId &&
       <div className="Inbox__conversation-stack">
         <div id="toast" />
-        {selectedConversationId ? (
-          <div
-            // Use `key` to force the tree to fully re-mount
-            key={selectedConversationId}
-            className="Inbox__conversation"
-            id={`conversation-${selectedConversationId}`}
-          >
-            {renderConversationView({ selectedConversationId })}
-          </div>
-        ) : (
-          <div className="Inbox__no-conversation-open">
-            {renderMiniPlayer({ shouldFlow: false })}
-            <div className="module-splash-screen__logo module-splash-screen__logo--96" />
-            <h3 className="Inbox__welcome">
-              {isStaging
-                ? 'THIS IS A STAGING DESKTOP'
-                : i18n('icu:welcomeToSignal')}
-            </h3>
-            <p className="Inbox__whatsnew">
-              <WhatsNewLink i18n={i18n} showWhatsNewModal={showWhatsNewModal} />
-            </p>
-            <div className="Inbox__padding" />
-          </div>
-        )}
+        <div
+          // Use `key` to force the tree to fully re-mount
+          key={selectedConversationId}
+          className="Inbox__conversation"
+          id={`conversation-${selectedConversationId}`}
+        >
+          {renderConversationView({ selectedConversationId })}
+        </div>
       </div>
+    }
     </>
   );
 }
