@@ -2568,7 +2568,7 @@ export function Preferences({
     <>
       <div className="Preferences">
         <NavSidebar
-          title={i18n('icu:Preferences--header')}
+          title=''
           i18n={i18n}
           otherTabsUnreadStats={otherTabsUnreadStats}
           hasFailedStorySends={hasFailedStorySends}
