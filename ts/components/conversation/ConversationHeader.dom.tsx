@@ -11,6 +11,7 @@ import {
   useStartCallShortcuts,
 } from '../../hooks/useKeyboardShortcuts.dom.tsx';
 import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import { showConversation } from '../../state/ducks/conversations.preload.ts';
 import type { ConversationTypeType } from '../../state/ducks/conversations.preload.ts';
 import type { HasStories } from '../../types/Stories.std.ts';
 import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
@@ -53,6 +54,8 @@ import type {
 } from '../../state/selectors/timeline.preload.ts';
 import { tw } from '../../axo/tw.dom.tsx';
 import { AxoDragRegion } from '../../axo/AxoDragRegion.dom.tsx';
+
+import { useDispatch } from 'react-redux';
 
 function HeaderInfoTitle({
   name,
@@ -494,6 +497,11 @@ function HeaderContent({
   onViewUserStories: () => void;
   onViewConversationDetails: () => void;
 }) {
+  const dispatch = useDispatch();
+  const onBackButton = () => {
+    dispatch(showConversation({ conversationId: undefined }));
+  };
+
   let onClick: undefined | (() => void);
   const { type } = conversation;
   switch (type) {
@@ -567,6 +575,13 @@ function HeaderContent({
 
   if (onClick) {
     return (
+      <>
+      <button
+          aria-label={i18n('icu:goBack')}
+          className="ConversationPanel__header__back-button"
+          onClick={onBackButton}
+          type="button"
+      />
       <div className="module-ConversationHeader__header">
         {avatar}
         <div>
@@ -579,6 +594,7 @@ function HeaderContent({
           </button>
         </div>
       </div>
+      </>
     );
   }
 
