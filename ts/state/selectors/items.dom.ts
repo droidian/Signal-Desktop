@@ -252,7 +252,7 @@ export const getTextFormattingEnabled = createSelector(
 
 export const getNavTabsCollapsed = createSelector(
   getItems,
-  (state: ItemsStateType): boolean => Boolean(state.navTabsCollapsed ?? false)
+  (state: ItemsStateType): boolean => Boolean(false)
 );
 
 export const getShowStickersIntroduction = createSelector(
