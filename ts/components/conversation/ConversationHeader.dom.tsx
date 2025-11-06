@@ -16,6 +16,8 @@ import { tinykeys } from 'tinykeys';
 import { MuteExpiration } from '@signalapp/types';
 
 import type { BadgeType } from '../../badges/types.std.ts';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import { showConversation } from '../../state/ducks/conversations.preload.ts';
 import type { ConversationTypeType } from '../../state/ducks/conversations.preload.ts';
 import type { HasStories } from '../../types/Stories.std.ts';
 import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
@@ -65,6 +67,8 @@ import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
 import { AxoButton } from '../../axo/AxoButton.dom.tsx';
 import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
 import { getControlOrAltKey } from '../../hooks/useKeyboardShortcuts.dom.tsx';
+
+import { useDispatch } from 'react-redux';
 
 function HeaderInfoTitle({
   name,
@@ -527,6 +531,11 @@ function HeaderContent({
   onViewUserStories: () => void;
   onViewConversationDetails: () => void;
 }) {
+  const dispatch = useDispatch();
+  const onBackButton = () => {
+    dispatch(showConversation({ conversationId: undefined }));
+  };
+
   let onClick: undefined | (() => void);
   const { type } = conversation;
   switch (type) {
@@ -611,6 +620,13 @@ function HeaderContent({
 
   if (onClick) {
     return (
+      <>
+      <button
+          aria-label={i18n('icu:goBack')}
+          className="ConversationPanel__header__back-button"
+          onClick={onBackButton}
+          type="button"
+      />
       <div className="module-ConversationHeader__header">
         {avatar}
         <div>
@@ -623,6 +639,7 @@ function HeaderContent({
           </button>
         </div>
       </div>
+      </>
     );
   }
 
