@@ -82,21 +82,10 @@ import * as bounce from '../ts/services/bounce.main.js';
 import * as updater from '../ts/updater/index.main.js';
 import { updateDefaultSession } from './updateDefaultSession.main.js';
 import { PreventDisplaySleepService } from './PreventDisplaySleepService.std.js';
-import {
-  SystemTrayService,
-  focusAndForceToTop,
-} from './SystemTrayService.main.js';
 import { SystemTraySettingCache } from './SystemTraySettingCache.node.js';
 import { OptionalResourceService } from './OptionalResourceService.main.js';
 import { EmojiService } from './EmojiService.main.js';
 import {
-  SystemTraySetting,
-  shouldMinimizeToSystemTray,
-  parseSystemTraySetting,
-} from '../ts/types/SystemTraySetting.std.js';
-import {
-  getDefaultSystemTraySetting,
-  isSystemTraySupported,
   isContentProtectionEnabledByDefault,
 } from '../ts/types/Settings.std.js';
 import * as ephemeralConfig from './ephemeral_config.main.js';
@@ -286,15 +275,7 @@ function showWindow() {
     return;
   }
 
-  // Using focus() instead of show() seems to be important on Windows when our window
-  //   has been docked using Aero Snap/Snap Assist. A full .show() call here will cause
-  //   the window to reposition:
-  //   https://github.com/signalapp/Signal-Desktop/issues/1429
-  if (mainWindow.isVisible()) {
-    focusAndForceToTop(mainWindow);
-  } else {
-    mainWindow.show();
-  }
+  mainWindow.show();
 }
 
 if (!process.mas) {
@@ -444,12 +425,6 @@ const zoomFactorService = new ZoomFactorService({
     });
   },
 });
-
-let systemTrayService: SystemTrayService | undefined;
-const systemTraySettingCache = new SystemTraySettingCache(
-  ephemeralConfig,
-  process.argv
-);
 
 const windowFromUserConfig = userConfig.get('window');
 const windowFromEphemeral = ephemeralConfig.get('window');
@@ -720,20 +695,12 @@ async function createWindow() {
     ? Math.min(windowConfig.height, maxHeight)
     : DEFAULT_HEIGHT;
 
-  const [systemTraySetting, backgroundColor, spellcheck] = await Promise.all([
-    systemTraySettingCache.get(),
+  const [backgroundColor, spellcheck] = await Promise.all([
     isTestEnvironment(getEnvironment())
       ? '#ffffff' // Tests should always be rendered on a white background
       : getBackgroundColor(),
     getSpellCheckSetting(),
   ]);
-
-  const startInTray =
-    isTestEnvironment(getEnvironment()) ||
-    systemTraySetting === SystemTraySetting.MinimizeToAndStartInSystemTray;
-
-  const shouldShowWindow =
-    !app.getLoginItemSettings().wasOpenedAsHidden && !startInTray;
 
   const windowOptions: Electron.BrowserWindowConstructorOptions = {
     show: false,
@@ -816,15 +783,6 @@ async function createWindow() {
     getResolvedMessagesLocale().i18n,
     log
   );
-  if (!startInTray && windowConfig && windowConfig.maximized) {
-    mainWindow.maximize();
-  }
-  if (!startInTray && windowConfig && windowConfig.fullscreen) {
-    mainWindow.setFullScreen(true);
-  }
-  if (systemTrayService) {
-    systemTrayService.setMainWindow(mainWindow);
-  }
 
   setupDbus();
 
@@ -902,113 +860,13 @@ async function createWindow() {
       readyForShutdown: windowState.readyForShutdown(),
       shouldQuit: windowState.shouldQuit(),
     });
-    // If the application is terminating, just do the default
-    if (
-      isTestEnvironment(getEnvironment()) ||
-      (windowState.readyForShutdown() && windowState.shouldQuit())
-    ) {
-      return;
-    }
-
     // Prevent the shutdown
     e.preventDefault();
 
     // Disable media playback
     mainWindow.webContents.send('set-media-playback-disabled', true);
 
-    // In certain cases such as during an active call, we ask the user to confirm close
-    // which includes shutdown, clicking X on MacOS or closing to tray.
-    let shouldClose = true;
-    try {
-      shouldClose = await maybeRequestCloseConfirmation();
-    } catch (error) {
-      log.warn(
-        'Error while requesting close confirmation.',
-        Errors.toLogFormat(error)
-      );
-    }
-    if (!shouldClose) {
-      updater.onRestartCanceled();
-      return;
-    }
-
-    /**
-     * if the user is in fullscreen mode and closes the window, not the
-     * application, we need them leave fullscreen first before closing it to
-     * prevent a black screen.
-     * Also check for mainWindow because it might become undefined while
-     * waiting for close confirmation.
-     *
-     * issue: https://github.com/signalapp/Signal-Desktop/issues/4348
-     */
-    if (mainWindow) {
-      if (mainWindow.isFullScreen()) {
-        mainWindow.once('leave-full-screen', () => mainWindow?.hide());
-        mainWindow.setFullScreen(false);
-      } else {
-        mainWindow.hide();
-      }
-    }
-
-    // On Mac, or on other platforms when the tray icon is in use, the window
-    // should be only hidden, not closed, when the user clicks the close button
-    const usingTrayIcon = shouldMinimizeToSystemTray(
-      await systemTraySettingCache.get()
-    );
-    if (
-      mainWindow &&
-      !windowState.shouldQuit() &&
-      (usingTrayIcon || OS.isMacOS())
-    ) {
-      if (!usingTrayIcon) {
-        return;
-      }
-
-      const shownTrayNotice = ephemeralConfig.get('shown-tray-notice');
-      if (shownTrayNotice) {
-        log.info('close: not showing tray notice');
-        return;
-      }
-
-      ephemeralConfig.set('shown-tray-notice', true);
-      log.info('close: showing tray notice');
-
-      if (OS.isWindows()) {
-        showWindowsNotification({
-          type: NotificationType.MinimizedToTray,
-          token: 'unused',
-          heading: getResolvedMessagesLocale().i18n(
-            'icu:minimizeToTrayNotification--title'
-          ),
-          body: getResolvedMessagesLocale().i18n(
-            'icu:minimizeToTrayNotification--body'
-          ),
-        });
-        return;
-      }
-
-      const n = new Notification({
-        title: getResolvedMessagesLocale().i18n(
-          'icu:minimizeToTrayNotification--title'
-        ),
-        body: getResolvedMessagesLocale().i18n(
-          'icu:minimizeToTrayNotification--body'
-        ),
-      });
-
-      n.show();
-      return;
-    }
-
-    // Persist pending window settings to ephemeralConfig
-    debouncedSaveStats.flush();
-
-    windowState.markRequestedShutdown();
-    await requestShutdown();
-    windowState.markReadyForShutdown();
-
-    await sql.close();
-    app.quit();
+    mainWindow.hide();
   });
 
   // Emitted when the window is closed.
@@ -1020,9 +878,6 @@ async function createWindow() {
     mainWindow = undefined;
     if (settingsChannel) {
       settingsChannel.setMainWindow(mainWindow);
-    }
-    if (systemTrayService) {
-      systemTrayService.setMainWindow(mainWindow);
     }
   });
 
@@ -1062,10 +917,7 @@ async function createWindow() {
 
     mainWindow.webContents.send('ci:event', 'db-initialized', {});
 
-    if (shouldShowWindow) {
-      log.info('showing main window');
-      mainWindow.show();
-    }
+    mainWindow.show();
   };
 
   if (OS.isLinux() && OS.isWaylandEnabled()) {
@@ -1946,23 +1798,7 @@ function loadPreferredSystemLocales(): Array<string> {
 }
 
 async function getDefaultLoginItemSettings(): Promise<Settings> {
-  if (!OS.isWindows()) {
-    return {};
-  }
-
-  const systemTraySetting = await systemTraySettingCache.get();
-  if (
-    systemTraySetting !== SystemTraySetting.MinimizeToSystemTray &&
-    // This is true when we just started with `--start-in-tray`
-    systemTraySetting !== SystemTraySetting.MinimizeToAndStartInSystemTray
-  ) {
-    return {};
-  }
-
-  // The effect of this is that if both auto-launch and minimize to system tray
-  // are enabled on Windows - we will start the app in tray automatically,
-  // letting the Desktop shortcuts still start the Signal not in tray.
-  return { args: ['--start-in-tray'] };
+  return {};
 }
 
 // Signal doesn't really use media keys so we set this switch here to unblock
@@ -2048,54 +1884,10 @@ app.on('ready', async () => {
 
   sqlInitPromise = initializeSQL(userDataPath);
 
-  // First run: configure Signal to minimize to tray. Additionally, on Windows
-  // enable auto-start with start-in-tray so that starting from a Desktop icon
-  // would still show the window.
-  // (User can change these settings later)
-  if (
-    isSystemTraySupported(OS) &&
-    (await systemTraySettingCache.get()) === SystemTraySetting.Uninitialized
-  ) {
-    const newValue = getDefaultSystemTraySetting(OS, app.getVersion());
-    log.info(`app.ready: setting system-tray-setting to ${newValue}`);
-    systemTraySettingCache.set(newValue);
-
-    ephemeralConfig.set('system-tray-setting', newValue);
-
-    if (OS.isWindows()) {
-      log.info('app.ready: enabling open at login');
-      app.setLoginItemSettings({
-        ...(await getDefaultLoginItemSettings()),
-        openAtLogin: true,
-      });
-    }
-  }
-
   const startTime = Date.now();
 
   settingsChannel = new SettingsChannel();
   settingsChannel.install();
-
-  settingsChannel.on('change:systemTraySetting', async rawSystemTraySetting => {
-    const { openAtLogin } = app.getLoginItemSettings(
-      await getDefaultLoginItemSettings()
-    );
-
-    const systemTraySetting = parseSystemTraySetting(rawSystemTraySetting);
-    systemTraySettingCache.set(systemTraySetting);
-
-    if (systemTrayService) {
-      const isEnabled = shouldMinimizeToSystemTray(systemTraySetting);
-      systemTrayService.setEnabled(isEnabled);
-    }
-
-    // Default login item settings might have changed, so update the object.
-    log.info('refresh-auto-launch: new value', openAtLogin);
-    app.setLoginItemSettings({
-      ...(await getDefaultLoginItemSettings()),
-      openAtLogin,
-    });
-  });
 
   settingsChannel.on(
     'ephemeral-setting-changed',
@@ -2295,14 +2087,6 @@ app.on('ready', async () => {
   ready = true;
 
   setupMenu();
-
-  systemTrayService = new SystemTrayService({
-    i18n: resolvedTranslationsLocale.i18n,
-  });
-  systemTrayService.setMainWindow(mainWindow);
-  systemTrayService.setEnabled(
-    shouldMinimizeToSystemTray(await systemTraySettingCache.get())
-  );
 
   await ensureFilePermissions([
     'config.json',
@@ -2505,7 +2289,6 @@ app.on('before-quit', e => {
     ...getWindowDebugInfo(),
   });
 
-  systemTrayService?.markShouldQuit();
   windowState.markShouldQuit();
 });
 
@@ -2660,12 +2443,6 @@ ipc.on(
     drop(showScreenShareWindow(sourceName));
   }
 );
-
-ipc.on('update-tray-icon', (_event: Electron.Event, unreadCount: number) => {
-  if (systemTrayService) {
-    systemTrayService.setUnreadCount(unreadCount);
-  }
-});
 
 // Debug Log-related IPC calls
 
