@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Nie można uzyskać dostępu do klucza szyfrowania bazy danych, ponieważ zaplecze pęku kluczy szyfrowania systemu operacyjnego zostało zmienione z {previousBackend} na {currentBackend}. Może się to zdarzyć, jeśli środowisko graficzne zmieniło się z GNOME na KDE lub na odwrót.\n\nPrzełącz się na poprzednie środowisko graficzne lub spróbuj uruchomić Signal z flagą wiersza poleceń --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Plik"
   },
@@ -233,6 +242,12 @@
   "icu:archivedConversations": {
     "messageformat": "Zarchiwizowane czaty"
   },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Dodaj folder z czatami"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Ustawienia folderów"
+  },
   "icu:LeftPane--pinned": {
     "messageformat": "Przypięte"
   },
@@ -271,6 +286,45 @@
   },
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Wpisz nazwę użytkownika, kropkę i zestaw cyfr."
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Brak czatów"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Ustawienia folderu"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Wszystkie"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Wszystkie czaty"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Oznacz wszystkie jako odczytane"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Wycisz powiadomienia"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Wyłącz wyciszenie wszystkich"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Wyłącz wyciszenie wszystkich"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Edytuj folder"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Dodaj do folderu"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Utwórz folder"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Usuń z folderu"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Kod kraju"
@@ -322,6 +376,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Oznacz jako nieodczytane"
+  },
+  "icu:markRead": {
+    "messageformat": "Oznacz jako odczytany"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Zaznacz wiadomości"
@@ -607,6 +664,15 @@
   },
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "Podczas zapisywania potwierdzenia darowizny wystąpił błąd. Spróbuj ponownie."
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Dodano do folderu „{chatFolderName}”"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Usunięto z folderu „{chatFolderName}”"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Folder {chatFolderName} dodany"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Razem z plikami nie można załączać zdjęć ani filmów."
@@ -1031,14 +1097,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Informacje"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Ankieta · Wybierz jedną opcję"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Ankieta · Wybierz jedną lub więcej opcji"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Ankieta · Wyniki"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Wyświetl głosy"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Twój głos"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Szczegóły ankiety"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Pytanie"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} głos} few {{count,number} głosy} many {{count,number} głosów} other {{count,number} głosu}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Brak głosów"
+  },
   "icu:deleteConversation": {
     "messageformat": "Usuń"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Usunąć czat?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Wszystkie wiadomości z tego czatu zostaną usunięte z tego urządzenia."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Wszystkie wiadomości z tego czatu zostaną usunięte ze wszystkich Twoich urządzeń."
@@ -1175,36 +1265,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Nie udało się pobrać multimediów jednorazowych"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Plik niedostępny"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Kompletna wiadomość niedostępna"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Multimedia niedostępne"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Naklejka niedostępna"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Wiadomość głosowa niedostępna"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Podczas łączenia urządzenia z Twoim telefonem plik nie został przeniesiony. Pliki i multimedia, które w momencie łączenia urządzeń mają ponad 45 dni, nie są synchronizowane."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Podczas łączenia urządzenia z Twoim telefonem pełny tekst wiadomości nie został przeniesiony. Długie wiadomości tekstowe, które w momencie łączenia urządzeń mają ponad 45 dni, nie są synchronizowane."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Podczas łączenia urządzenia z Twoim telefonem multimedia nie zostały przeniesione. Multimedia, które w momencie łączenia urządzeń mają ponad 45 dni, nie są synchronizowane."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Podczas łączenia urządzenia z Twoim telefonem naklejka nie została przeniesiona. Pliki i multimedia, które w momencie łączenia urządzeń mają ponad 45 dni, nie są synchronizowane."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Podczas łączenia urządzenia z Twoim telefonem wiadomość głosowa nie została przeniesiona. Pliki i multimedia, które w momencie łączenia urządzeń mają ponad 45 dni, nie są synchronizowane."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Te multimedia jednorazowe nie są już dostępne do pobrania. Zapytaj, czy {name} może je wysłać ponownie."
   },
@@ -1292,8 +1352,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "Dodaj folder z czatami"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Dodaj lub edytuj foldery"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "Uporządkuj czaty w folderach i z łatwością przełączaj się między nimi na swojej liście czatów."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} folder} few {{chatFoldersCount,number} foldery} many {{chatFoldersCount,number} folderów} other {{chatFoldersCount,number} folderu}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Ustaw"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Zarządzaj"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "Edytuj folder"
@@ -1328,14 +1400,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "Utwórz folder"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Przeciągnij, aby przenieść folder z czatami"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "Sugerowane foldery"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "Dodaj"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "Dodano folder {chatFolderTitle}"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "Nieodczytane"
@@ -1358,6 +1430,9 @@
   "icu:Preferences__EditChatFolderPage__Title": {
     "messageformat": "Utwórz folder"
   },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Edytuj folder"
+  },
   "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
     "messageformat": "Nazwa folderu"
   },
@@ -1374,7 +1449,7 @@
     "messageformat": "Czaty 1:1"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
-    "messageformat": "Rozmowy grupowe"
+    "messageformat": "Czaty grupowe"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
     "messageformat": "Dodaj czaty"
@@ -1535,6 +1610,12 @@
   "icu:calling__removed-from-call-title": {
     "messageformat": "Usunięcie z rozmowy"
   },
+  "icu:calling__has-max-devices": {
+    "messageformat": "W połączeniu uczestniczy już maksymalna liczba osób. Spróbuj ponownie później."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Brak miejsc"
+  },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Każda osoba, która dołączy do połączenia za pomocą linku, może wyświetlić Twoje imię oraz zdjęcie."
   },
@@ -1629,7 +1710,7 @@
     "messageformat": "Prosi o przyjęcie…"
   },
   "icu:CallingPendingParticipants__AdditionalRequests": {
-    "messageformat": "{count, plural, one {Jeszcze {count,number} prośba} few {Jeszcze {count,number} prośby} many {Jeszcze {count,number} próśb} other {Jeszcze {count,number} prośby}}"
+    "messageformat": "{count, plural, one {I jeszcze {count,number} prośba} few {I jeszcze {count,number} prośby} many {I jeszcze {count,number} próśb} other {I jeszcze {count,number} prośby}}"
   },
   "icu:CallingPendingParticipants__Toast--added-users-to-call": {
     "messageformat": "{count, plural, one {{count,number} osoba dodana do rozmowy} few {{count,number} osoby dodane do rozmowy} many {{count,number} osób dodanych do rozmowy} other {{count,number} osoby dodanej do rozmowy}}"
@@ -1986,7 +2067,7 @@
     "messageformat": "Zweryfikuj numer bezpieczeństwa"
   },
   "icu:safetyNumberChanged": {
-    "messageformat": "Numer bezpieczeństwa się zmienił"
+    "messageformat": "Macie nowy numer bezpieczeństwa"
   },
   "icu:safetyNumberChanges": {
     "messageformat": "Zmiana numeru bezpieczeństwa"
@@ -2025,7 +2106,7 @@
     "messageformat": "Do siebie"
   },
   "icu:noteToSelfHero": {
-    "messageformat": "W tym czacie możesz robić notatki dla siebie. Jeśli z Twoim kontem są połączone jakieś inne urządzenia, nowe notatki będą na nich synchronizowane."
+    "messageformat": "W tym czacie możesz robić notatki dla siebie. Jeśli z Twoim kontem są połączone inne urządzenia, nowe notatki będą na nich synchronizowane."
   },
   "icu:notificationDrawAttention": {
     "messageformat": "Wyróżniaj to okno, gdy pojawia się powiadomienie"
@@ -2070,13 +2151,16 @@
     "messageformat": "Nie udało się pobrać"
   },
   "icu:Toast--unable-download-from-backup-tier": {
-    "messageformat": "Pobieranie załącznika z kopii zapasowej nie powiodło się"
+    "messageformat": "Nie udało się pobrać załącznika z kopii zapasowej"
   },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Wiadomość można edytować tylko w ciągu 24 godzin od jej wysłania."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} nie jest użytkownikiem Signal. Upewnij się, że podajesz pełną nazwę użytkownika."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} to nieprawidłowa nazwa użytkownika. Upewnij się, że wprowadzasz pełną nazwę użytkownika wraz z ciągiem cyfr."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Nikogo nie znaleziono. {phoneNumber} nie używa aplikacji Signal."
@@ -2231,6 +2315,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Naklejka"
   },
+  "icu:message--getNotificationText--poll": {
+    "messageformat": "Ankieta: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2250,7 +2337,7 @@
     "messageformat": "GIF"
   },
   "icu:message--deletedForEveryone": {
-    "messageformat": "Ta wiadomość została usunięta."
+    "messageformat": "Wiadomość została usunięta."
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "Załącznik jest zbyt duży, aby go wyświetlić."
@@ -2561,6 +2648,9 @@
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Ostatnio używane"
   },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Dodaj pakiet naklejek"
+  },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Wyniki wyszukiwania"
   },
@@ -2703,7 +2793,7 @@
     "messageformat": "Multimedia jednorazowe"
   },
   "icu:Message--tap-to-view--incoming--expired-toast": {
-    "messageformat": "Już wyświetlono tę wiadomość."
+    "messageformat": "Wiadomość została już przez Ciebie wyświetlona."
   },
   "icu:Message--tap-to-view--outgoing--expired-toast": {
     "messageformat": "Wiadomości jednorazowe nie są przechowywane w historii czatu."
@@ -3399,7 +3489,7 @@
     "messageformat": "{name} rozpoczyna połączenie wideo"
   },
   "icu:calling__in-another-call-tooltip": {
-    "messageformat": "Uczestniczysz już w rozmowie"
+    "messageformat": "Uczestniczysz już w połączeniu"
   },
   "icu:calling__call-notification__button__call-full-tooltip": {
     "messageformat": "W połączeniu uczestniczy już maksymalna liczba osób ({max,number})"
@@ -3471,7 +3561,7 @@
     "messageformat": "{count, plural, one {{count,number} osoba} few {{count,number} osoby} many {{count,number} osób} other {{count,number} osoby}}"
   },
   "icu:CallingAdhocCallInfo__UnknownContactLabel--in-addition": {
-    "messageformat": "{count, plural, one {Jeszcze {count,number} osoba} few {Jeszcze {count,number} osoby} many {Jeszcze {count,number} osób} other {Jeszcze {count,number} osoby}}"
+    "messageformat": "{count, plural, one {+ {count,number} osoba} few {+ {count,number} osoby} many {+ {count,number} osób} other {+ {count,number} osoby}}"
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoButton": {
     "messageformat": "Więcej informacji o nowych kontaktach"
@@ -4445,6 +4535,9 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "Osoby z Twoich kontaktów będą mogły Cię dodać do tej grupy."
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Osoby z Twoich kontaktów będą mogły dodać Cię do tej grupy."
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Odblokuj"
   },
@@ -4452,7 +4545,7 @@
     "messageformat": "{number, plural, one {{number,number} osoba} few {{number,number} osoby} many {{number,number} osób} other {{number,number} osoby}}"
   },
   "icu:ConversationDetailsMediaList--title": {
-    "messageformat": "Media, links, and files"
+    "messageformat": "Multimedia i pliki"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} osoba} few {{number,number} osoby} many {{number,number} osób} other {{number,number} osoby}}"
@@ -5285,8 +5378,254 @@
   "icu:Preferences--notification-content": {
     "messageformat": "Treść powiadomień"
   },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Ikona księżyca"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Kopia: {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Profil powiadomień"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Profil powiadomień"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Włączony"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Włączony do {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Na godzinę"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Do {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Ustawienia"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "Profil „{name}” włączony"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "Profil „{name}” wyłączony"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Profil powiadomień włączony"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Profil powiadomień wyłączony"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Profile powiadomień"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Ustaw"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Profile powiadomień"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Utwórz profil, aby otrzymywać powiadomienia i połączenia tylko od wybranych przez Ciebie osób i grup"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Kontynuuj"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Dodaj lub edytuj profile powiadomień"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {1 profil} few {{profileCount,number} profile} many {{profileCount,number} profili} other {{profileCount,number} profilu}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Utwórz profil"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Nazwij profil"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Nazwa"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Nazwa profilu"
+  },
+  "icu:NotificationProfiles--avatar-title": {
+    "messageformat": "Wybierz awatar"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Praca"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Sen"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Za kierownicą"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Czas wolny"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Koncentracja"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Dozwolone powiadomienia"
+  },
+  "icu:NotificationProfiles--allowed-modal-title": {
+    "messageformat": "Dozwolone powiadomienia"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Dodaj osoby oraz grupy, od których chcesz otrzymywać powiadomienia, gdy ten profil będzie włączony"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Dodaj osoby lub grupy"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Wyjątki"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Zezwalaj na wszystkie połączenia"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Powiadamiaj o wszystkich wzmiankach"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Dodaj harmonogram"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Harmonogram"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Włącz lub edytuj harmonogram, aby zautomatyzować swój profil powiadomień."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Włącz automatycznie"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Harmonogram"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Od"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Do"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Otwórz selektor czasu"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "niedziela"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "poniedziałek"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "wtorek"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "środa"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "czwartek"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "piątek"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "sobota"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Profil utworzony"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Gdy dodasz harmonogram, profil powiadomień będzie się włączał i wyłączał automatycznie. Możesz też kliknąć ikonę ··· u góry listy czatów, aby włączyć lub wyłączyć profil ręcznie."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "ND"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "PN"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "WT"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "ŚR"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "CZ"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "PT"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "SB"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Dni powszednie"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Weekendy"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Codziennie"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Profile"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Synchronizuj między urządzeniami"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Profile będą synchronizowane na wszystkich Twoich urządzeniach. Gdy włączysz profil na jednym z nich, zostanie on włączony także na pozostałych urządzeniach."
+  },
+  "icu:NotificationProfiles--new": {
+    "messageformat": "Nowy profil"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Usuń profil"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Trwale usunąć ten profil powiadomień?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Usuń"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Włączony"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Wyłączony"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Edytuj nazwę tego profilu"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Dozwolone powiadomienia"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} do {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Włączony"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Wyłączony"
+  },
   "icu:Preferences--blocked": {
-    "messageformat": "Zablokowane kontakty"
+    "messageformat": "Zablokowane osoby"
   },
   "icu:Preferences--signal-backups": {
     "messageformat": "Bezpieczne kopie zapasowe Signal"
@@ -5304,7 +5643,10 @@
     "messageformat": "Wiadomości tekstowe i wszystkie multimedia"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Nie znaleziono subskrypcji. Aby dalej korzystać z usługi bezpiecznych kopii zapasowych Signal, odnów subskrypcję."
+    "messageformat": "Subskrypcja jest nieaktywna. Szczegóły kopii zapasowej możesz wyświetlić w aplikacji na telefonie."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost} miesięcznie"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Wiadomości tekstowe, w tym multimedia z ostatniego dnia} few {Wiadomości tekstowe, w tym multimedia z ostatnich {mediaDayCount,number} dni} many {Wiadomości tekstowe, w tym multimedia z ostatnich {mediaDayCount,number} dni} other {Wiadomości tekstowe, w tym multimedia z ostatnich {mediaDayCount,number} dni}}"
@@ -6688,16 +7030,13 @@
     "messageformat": "Wyświetl szczegóły potwierdzenia"
   },
   "icu:PreferencesDonations__faqs": {
-    "messageformat": "FAQ darczyńców"
+    "messageformat": "Najczęstsze pytania i odpowiedzi dla darczyńców"
   },
   "icu:PreferencesDonations--receiptList__info": {
     "messageformat": "Potwierdzenia darowizn na różnych urządzeniach nie są synchronizowane. Ponadto jeśli aplikacja Signal zostanie zainstalowana ponownie, wcześniejsze potwierdzenia darowizn nie będą dostępne."
   },
   "icu:PreferencesDonations--receiptList__empty-title": {
     "messageformat": "Brak potwierdzeń darowizn"
-  },
-  "icu:PreferencesDonations__ReceiptModal--title": {
-    "messageformat": "Szczegóły"
   },
   "icu:PreferencesDonations__ReceiptModal--download": {
     "messageformat": "Pobierz potwierdzenie darowizny"
@@ -6757,16 +7096,16 @@
     "messageformat": "Zdobądź odznakę za wsparcie na 30 dni"
   },
   "icu:DonateFlow__custom-amount-below-minimum-error": {
-    "messageformat": "Minimalna kwota darowizny wynosi {formattedCurrencyAmount}"
+    "messageformat": "Minimalna kwota darowizny to {formattedCurrencyAmount}"
   },
   "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
-    "messageformat": "Minimalna kwota darowizny wynosi {formattedCurrencyAmount}"
+    "messageformat": "Minimalna kwota darowizny to {formattedCurrencyAmount}"
   },
   "icu:DonateFlow__custom-amount-above-maximum-error": {
-    "messageformat": "Maksymalna kwota darowizny wynosi {formattedCurrencyAmount}"
+    "messageformat": "Maksymalna kwota darowizny to {formattedCurrencyAmount}"
   },
   "icu:DonateFlow__discard-dialog-body": {
-    "messageformat": "Opuszczenie tej strony spowoduje usunięcie danych Twojej karty kredytowej. Czy chcesz kontynuować?"
+    "messageformat": "Jeśli zamkniesz tę stronę, dane Twojej karty zostaną usunięte. Czy chcesz kontynuować?"
   },
   "icu:DonateFlow__discard-dialog-remove-info": {
     "messageformat": "Usuń dane"
@@ -6816,14 +7155,11 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "Twoja darowizna jest realizowana, ale wymaga jeszcze potwierdzenia."
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "Darowizna powiodła się, ale nie mogliśmy zaktualizować Twoich ustawień odznaki"
-  },
   "icu:Donations__BadgeApplicationFailed__Title": {
-    "messageformat": "Darowizna powiodła się, ale nie mogliśmy zaktualizować Twoich ustawień odznaki"
+    "messageformat": "Darowizna przekazana, ale nie udało się zaktualizować ustawień odznaki"
   },
   "icu:Donations__BadgeApplicationFailed__Description": {
-    "messageformat": "Aby zaktualizować ustawienia odznak na swoim urządzeniu mobilnym, przejdź do sekcji Ustawienia → Wesprzyj Signal darowizną → Odznaki."
+    "messageformat": "Aby zaktualizować ustawienia odznaki na swoim urządzeniu mobilnym, przejdź do sekcji Ustawienia → Wesprzyj Signal darowizną → Odznaki."
   },
   "icu:Donations__DonationInterrupted": {
     "messageformat": "Wpłata darowizny przerwana"
@@ -6892,13 +7228,13 @@
     "messageformat": "Dziękujemy Ci za wsparcie!"
   },
   "icu:Donations__badge-modal--description": {
-    "messageformat": "Zdobywasz odznakę darczyńcy Signal! Pochwal się nią na profilu i pokaż, że wspierasz apkę."
+    "messageformat": "Zdobywasz odznakę darczyńcy Signal. Pochwal się nią w profilu i pokaż, że wspierasz naszą aplikację."
   },
   "icu:Donations__badge-modal--display-on-profile": {
     "messageformat": "Pokaż w profilu"
   },
   "icu:Donations__badge-modal--help-text": {
-    "messageformat": "Możesz to zmienić na swoim smartfonie, przechodząc do sekcji Ustawienia → Wesprzyj Signal darowizną → Odznaki"
+    "messageformat": "Możesz to zmienić na swoim urządzeniu mobilnym. Aby to zrobić, przejdź do sekcji Ustawienia → Wesprzyj Signal darowizną → Odznaki"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ta wersja obejmuje wiele drobnych ulepszeń i poprawek błędów. Wszystko po to, aby aplikacja Signal działała płynnie.",
@@ -6927,5 +7263,20 @@
   "icu:WhatsNew__bugfixes--6": {
     "messageformat": "Drobne ulepszenia, poprawki błędów i większa funkcjonalność. Cieszymy się, że korzystasz z aplikacji Signal!",
     "ignoreUnused": true
+  },
+  "icu:WhatsNew__7.76": {
+    "messageformat": "Skonfiguruj profile powiadomień, aby zdecydować, od których osób i grup będziesz otrzymywać powiadomienia, gdy dany profil jest włączony. Utwórz profil „Praca”, aby nie rozpraszały Cię wiadomości od rodziny i znajomych (z wyjątkiem Twojej drugiej połówki), oraz profil „Czas wolny”, który uniemożliwi szefostwu dobijanie się do Ciebie po godzinach. Możesz dowolnie przełączać się między profilami lub ustawić harmonogram, aby włączały i wyłączały się one automatycznie."
+  },
+  "icu:WhatsNew__7.77-1": {
+    "messageformat": "Grupowe do grupowych, indywidualne do indywidualnych, rodzinne do rodzinnych. Dzięki folderom z czatami w Twoich rozmowach zapanuje ład i porządek. Wyświetlaj nieodczytane wiadomości, segreguj czaty według rodzaju (indywidualne lub grupowe) albo twórz osobne foldery, np. „Osobiste” lub „Praca”, żeby szybko wyświetlić wiadomości istotne dla Ciebie w danej chwili. Aby zacząć, przejdź do sekcji Ustawienia > Czaty."
+  },
+  "icu:WhatsNew__7.77-2": {
+    "messageformat": "W tej aktualizacji naprawiliśmy też błąd, który uniemożliwiał generowanie podglądu linków, gdy wiadomość zawierała emoji. Dzięki, <elias6></elias6>."
+  },
+  "icu:WhatsNew__7.78-1": {
+    "messageformat": "Ta aktualizacja poprawia działanie aplikacji u użytkowników korzystających z czytników ekranu. Nie będą one już odczytywać powtarzających się komunikatów o czasie odebrania nowych wiadomości w danym wątku."
+  },
+  "icu:WhatsNew__7.78-2": {
+    "messageformat": "Naprawiliśmy też błąd, przez który powiadomienia w systemie Windows mogły się nie wyświetlać."
   }
 }

@@ -42,7 +42,7 @@
     "messageformat": "हाई क्वालिटी मीडिया भेजने के लिए अधिक डेटा खर्च होगा।"
   },
   "icu:Preferences__DonateTitle": {
-    "messageformat": "Signal  को दान करें"
+    "messageformat": "Signal को डोनेट करें"
   },
   "icu:sentMediaQualityStandard": {
     "messageformat": "मानक"
@@ -103,6 +103,15 @@
   },
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "डेटाबेस एनक्रिप्शन की ऐक्सेस नहीं कर पाए, क्योंकि OS एनक्रिप्शन कीरिंग बैंकएंड {previousBackend} से बदलकर {currentBackend} हो गया है। ऐसा तब हो सकता है, जब डेस्कटॉप एनवायरनमेंट बदलता है, जैसे कि GNOME और KDE के बीच।\n\nकृपया पिछले डेस्कटॉप एनवायरनमेंट पर स्विच करें या फिर कमांड लाइन फ़्लैग के साथ Signal चलाने की कोशिश करें --password-store=\"{previousBackendFlag}\""
+  },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
   },
   "icu:mainMenuFile": {
     "messageformat": "&File"
@@ -233,6 +242,12 @@
   "icu:archivedConversations": {
     "messageformat": "संग्रहीत की हुई चैट"
   },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "चैट फ़ोल्डर जोड़ें"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "फ़ोल्डर सेटिंग"
+  },
   "icu:LeftPane--pinned": {
     "messageformat": "पिन किया गया"
   },
@@ -271,6 +286,45 @@
   },
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "एक यूज़रनेम और उसके बाद एक बिंदु और उसके अंकों का सेट दर्ज करें।"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "दिखाने के लिए कोई चैट मौजूद नहीं है"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "फ़ोल्डर सेटिंग"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "सभी"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "सभी चैट"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "सभी को 'पढ़ा गया' मार्क करें"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "नोटिफ़िकेशन म्यूट करें"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "सभी को अनम्यूट करें"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "सभी को अनम्यूट करें"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "फ़ोल्डर एडिट करें"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "फ़ोल्डर में जोड़ें"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "फ़ोल्डर बनाएँ"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "फ़ोल्डर से हटाएँ"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "देश कोड"
@@ -322,6 +376,9 @@
   },
   "icu:markUnread": {
     "messageformat": "न पढ़ा हुआ मार्क करें"
+  },
+  "icu:markRead": {
+    "messageformat": "'पढ़ा गया' के तौर पर मार्क करें"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "संदेशों का चयन करें"
@@ -607,6 +664,15 @@
   },
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "रसीद सेव करने में कोई गड़बड़ी हुई। कृपया फिर से कोशिश करें।"
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "“{chatFolderName}” में जोड़ी गई"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "\"{chatFolderName}\" से हटाई गई"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "{chatFolderName} फ़ोल्डर जोड़ा गया"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "आप फ़ाइलों के साथ फ़ोटो और वीडियो नहीं चुन सकते।"
@@ -1031,14 +1097,38 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "जानकारी"
   },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "पोल · कोई एक चुनें"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "पोल · एक या एक से ज़्यादा चुनें"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "पोल · अंतिम परिणाम"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "वोट देखें"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "आपने वोट दिया है"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "पोल का विवरण"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "सवाल"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} वोट} other {{count,number} वोट}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "कोई वोट नहीं मिला"
+  },
   "icu:deleteConversation": {
     "messageformat": "डिलीट करें"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "चैट को डिलीट करना है?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "इस चैट के सभी संदेश इस डिवाइस से डिलीट कर दिए जाएंगे।"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "इस चैट के सभी संदेश आपके सभी डिवाइस से डिलीट कर दिए जाएंगे।"
@@ -1175,36 +1265,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "'देखें-एक बार मीडिया' डाउनलोड नहीं किया जा सकता"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "फ़ाइल उपलब्ध नहीं है"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "पूरा संदेश उपलब्ध नहीं है"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "मीडिया उपलब्ध नहीं है"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "स्टिकर उपलब्ध नहीं है"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "वॉइस संदेश उपलब्ध नहीं है"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "जब यह डिवाइस लिंक था, तब यह फ़ाइल आपके फ़ोन से ट्रांसफ़र नहीं हुई थी। डिवाइस लिंक करते समय, 45 दिनों से पुराने मीडिया और फ़ाइलों को सिंक नहीं किया जा सकता।"
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "जब यह डिवाइस लिंक था, तब इस संदेश का पूरा टेक्स्ट आपके फ़ोन से ट्रांसफ़र नहीं हुआ था। डिवाइस लिंक करते समय, 45 दिनों से पुराने लंबे टेक्स्ट मैसेज सिंक नहीं किए जा सकते।"
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "जब यह डिवाइस लिंक था, तब यह फ़ाइल आपके फ़ोन से ट्रांसफ़र नहीं हुई थी। डिवाइस लिंक करते समय, 45 दिनों से पुराने मीडिया को सिंक नहीं किया जा सकता।"
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "जब यह डिवाइस लिंक था, तब यह स्टिकर आपके फ़ोन से ट्रांसफ़र नहीं हुआ था। डिवाइस लिंक करते समय, 45 दिनों से पुराने मीडिया और फ़ाइलों को सिंक नहीं किया जा सकता।"
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "जब यह डिवाइस लिंक था, तब यह वॉइस संदेश आपके फ़ोन से ट्रांसफ़र नहीं हुआ था। डिवाइस लिंक करते समय, 45 दिनों से पुराने मीडिया और फ़ाइलों को सिंक नहीं किया जा सकता।"
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "यह 'देखें-एक बार मीडिया' अब डाउनलोड के लिए उपलब्ध नहीं है। {name} को इसे फिर से भेजने के लिए कहें।"
   },
@@ -1292,8 +1352,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "चैट फ़ोल्डर जोड़ें"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "फ़ोल्डर जोड़ें या उन्हें एडिट करें"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "अपनी चैट को फ़ोल्डर्स में व्यवस्थित करें और अपनी चैट की सूची में उनके बीच तुरंत स्विच करें।"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} फ़ोल्डर} other {{chatFoldersCount,number} फ़ोल्डर}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "सेटअप करें"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "मैनेज करें"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "फ़ोल्डर संपादित करें"
@@ -1328,14 +1400,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "फ़ोल्डर बनाएं"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "चैट फ़ोल्डर को मूव करने के लिए ड्रैग करें"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "सुझाए गए फ़ोल्डर"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "जोड़ें"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "{chatFolderTitle} फ़ोल्डर जोड़ा गया"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "बिना पढ़े गए"
@@ -1357,6 +1429,9 @@
   },
   "icu:Preferences__EditChatFolderPage__Title": {
     "messageformat": "फ़ोल्डर बनाएं"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "फ़ोल्डर एडिट करें"
   },
   "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
     "messageformat": "फ़ोल्डर का नाम"
@@ -1534,6 +1609,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "कॉल से हटाया गया"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "इस कॉल में हिस्सा लेने की अधिकतम संख्या पूरी हो चुकी है। बाद में दोबारा कोशिश करें।"
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "कॉल में जगह नहीं है"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "लिंक के माध्यम से इस कॉल में शामिल होने वाले किसी भी व्यक्ति को आपका नाम और फोटो दिखाई देगा।"
@@ -2078,6 +2159,9 @@
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} एक Signal यूज़र नहीं है। सुनिश्चित करें कि आपने पूरा यूज़रनेम डाला है।"
   },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} मान्य यूज़रनेम नहीं है। पक्का करें कि आपने पूरा यूज़रनेम और उसके साथ दिए गए अंक सही से डाला है।"
+  },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "यूज़र नहीं मिला। \"{phoneNumber}\" एक Signal यूज़र नहीं है।"
   },
@@ -2231,6 +2315,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "स्टिकर मेसेज"
   },
+  "icu:message--getNotificationText--poll": {
+    "messageformat": "पोल: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2271,7 +2358,7 @@
     "messageformat": "अपना दान देखने के लिए मोबाइल पर इस संदेश को टैप करें"
   },
   "icu:message--donation--unopened--label": {
-    "messageformat": "{sender} ने आपकी ओर से Signal को दान दिया"
+    "messageformat": "{sender} ने आपकी ओर से Signal को डोनेट किया"
   },
   "icu:message--donation--unopened--toast--incoming": {
     "messageformat": "इस दान को खोलने के लिए अपना फोन देखें"
@@ -2280,13 +2367,13 @@
     "messageformat": "अपना दान देखने के लिए अपना फोन देखें"
   },
   "icu:message--donation--preview--unopened": {
-    "messageformat": "{sender} ने आपके लिए दान दिया"
+    "messageformat": "{sender} ने आपकी ओर से Signal को डोनेट किया"
   },
   "icu:message--donation--preview--redeemed": {
     "messageformat": "आपने एक दान को रिडीम किया है"
   },
   "icu:message--donation--preview--sent": {
-    "messageformat": "आपने {recipient} के लिए दान दिया"
+    "messageformat": "आपने {recipient} की ओर से डोनेट किया"
   },
   "icu:message--donation": {
     "messageformat": "दान"
@@ -2560,6 +2647,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "हाल ही में इस्तेमाल किया"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "कोई स्टिकर पैक जोड़ें"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "खोज नतीजे"
@@ -4137,10 +4227,10 @@
     "messageformat": "इसमें कुछ मिनट लग सकते हैं"
   },
   "icu:BadgeDialog__become-a-sustainer-button": {
-    "messageformat": "Signal  को दान करें"
+    "messageformat": "Signal को डोनेट करें"
   },
   "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Signal  को दान करें"
+    "messageformat": "Signal को डोनेट करें"
   },
   "icu:BadgeSustainerInstructions__subheader": {
     "messageformat": "Signal आप जैसे लोगों द्वारा संचालित है. योगदान दें और एक बैज पाएं."
@@ -4152,7 +4242,7 @@
     "messageformat": "सेटिंग्ज़ खोलने के लिए सबसे ऊपर बाईं ओर अपनी प्रोफ़ाइल फ़ोटो पर टैप करें"
   },
   "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "\"Signal को दान दें\" पर टैप करके सब्सक्राइब करें"
+    "messageformat": "\"Signal को डोनेट करें\" पर टैप करके सब्सक्राइब करें"
   },
   "icu:ProfileMovedModal__title": {
     "messageformat": "आपकी प्रोफ़ाइल की जगह बदल दी गई है"
@@ -4445,6 +4535,9 @@
   "icu:ConversationDetailsActions--unblock-group-modal-content": {
     "messageformat": "आपके संपर्क आपको इस ग्रुप में जोड़ सकेंगे।"
   },
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "आपके कॉन्टैक्ट आपको इस ग्रुप में जोड़ पाएंगे।"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "अनब्लॉक करें"
   },
@@ -4452,7 +4545,7 @@
     "messageformat": "{number, plural, one {{number,number} सदस्य} other {{number,number} सदस्य}}"
   },
   "icu:ConversationDetailsMediaList--title": {
-    "messageformat": "Media, links, and files"
+    "messageformat": "मीडिया और फ़ाइलें"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} सदस्य} other {{number,number} सदस्य}}"
@@ -5184,7 +5277,7 @@
     "messageformat": "सामान्य"
   },
   "icu:Preferences__button--donate": {
-    "messageformat": "Signal  को दान करें"
+    "messageformat": "Signal को डोनेट करें"
   },
   "icu:Preferences__button--appearance": {
     "messageformat": "दिखावट"
@@ -5285,6 +5378,252 @@
   "icu:Preferences--notification-content": {
     "messageformat": "नोटिफ़िकेशन का कंटेंट"
   },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "चंद्रमा वाला आइकन"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "{profileName} की कॉपी"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "चालू है"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "{endTime} तक चालू है"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "एक घंटे के लिए"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "{time} तक"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "सेटिंग"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "“{name}” चालू है"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "“{name}” नोटिफ़िकेशन बंद है"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल अब चालू हो गई है"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल अब बंद हो गई है"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "सेटअप करें"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "प्रोफ़ाइल बनाएं, ताकि आपको सिर्फ़ खुद से चुने गए लोगों और ग्रुप से ही नोटिफ़िकेशन और कॉल मिल सकें"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "जारी रखें"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "नोटिफ़िकेशन प्रोफ़ाइल जोड़ें या एडिट करें"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {एक प्रोफ़ाइल} other {{profileCount,number} प्रोफ़ाइल}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "प्रोफ़ाइल बनाएं"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "अपनी प्रोफ़ाइल को नाम दें"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "नाम"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "प्रोफ़ाइल नेम"
+  },
+  "icu:NotificationProfiles--avatar-title": {
+    "messageformat": "कोई अवतार चुनें"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "ऑफ़िस"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "नींद"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "ड्राइविंग"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "डाउनटाइम"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "फ़ोकस"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "इन नोटिफ़िकेशन को मंज़ूरी मिली हुई है"
+  },
+  "icu:NotificationProfiles--allowed-modal-title": {
+    "messageformat": "इन नोटिफ़िकेशन को मंज़ूरी मिली हुई है"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "इस प्रोफ़ाइल के चालू होने पर, आपको जिन लोगों या ग्रुप से नोटिफ़िकेशन चाहिए उन्हें जोड़ें"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "लोग या ग्रुप जोड़ें"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "अपवाद"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "सभी कॉल को मंज़ूरी दें"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "सभी मेंशन के लिए नोटिफ़िकेशन पाएं"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "कोई शेड्यूल जोड़ें"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "शेड्यूल"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "अपनी नोटिफ़िकेशन प्रोफ़ाइल को ऑटोमैट करने के लिए शेड्यूल को चालू और एडिट करें।"
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "ऑटोमैटिक तरीके से चालू करें"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "शेड्यूल"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "से"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "इतने बजे तक"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "टाइम पिकर खोलें"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "रविवार"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "सोमवार"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "मंगलवार"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "बुधवार"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "गुरुवार"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "शुक्रवार"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "शनिवार"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "प्रोफ़ाइल बनाई गई"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "अगर आपने कोई शेड्यूल जोड़ा है, तो आपकी प्रोफ़ाइल अपने-आप चालू और बंद हो जाएगी। इसे मैन्युअल तरीके से चालू या बंद करने के लिए, चैट सूची के ऊपर ··· आइकन पर क्लिक करें।"
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "रवि"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "सोम"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "मंगल"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "बुध"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "गुरु"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "शुक्र"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "शनि"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "सोम-शुक्र"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "शनि-रवि"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "रोज़ाना"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "प्रोफ़ाइल"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "सभी डिवाइस पर सिंक करें"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "आपकी प्रोफ़ाइल आपके सभी डिवाइस पर सिंक हो जाएंगी। किसी एक डिवाइस पर प्रोफ़ाइल चालू करने पर, वह अन्य डिवाइस पर भी चालू हो जाएगी।"
+  },
+  "icu:NotificationProfiles--new": {
+    "messageformat": "नई प्रोफ़ाइल"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "प्रोफ़ाइल डिलीट करें"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "क्या इस नोटिफ़िकेशन प्रोफ़ाइल को हमेशा के लिए डिलीट करना है?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "डिलीट करें"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "चालू है"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "बंद है"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "इस प्रोफ़ाइल का नाम एडिट करें"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "इन नोटिफ़िकेशन को मंज़ूरी मिली हुई है"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} से {endTime} तक"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "चालू है"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "बंद है"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "ब्लॉक किया गया"
   },
@@ -5304,7 +5643,10 @@
     "messageformat": "टेक्स्ट + पूरे मीडिया का बैकअप"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "आपका सब्सक्रिप्शन नहीं मिला। Signal सिक्योर बैकअप का इस्तेमाल जारी रखने के लिए रिन्यू करें।"
+    "messageformat": "आपका सब्सक्रिप्शन नहीं मिल सका। बैकअप की जानकारी देखने के लिए अपना फ़ोन देखें।"
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/माह"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {टेक्स्ट + {mediaDayCount,number} दिन का मीडिया बैकअप} other {टेक्स्ट + {mediaDayCount,number} दिनों का मीडिया बैकअप}}"
@@ -6652,10 +6994,10 @@
     "messageformat": "मुनाफ़े से ज़्यादा निजता को वरीयता"
   },
   "icu:PreferencesDonations__description": {
-    "messageformat": "आपकी फ़ंडिंग पर चल रही प्राइवेट मैसेजिंग सेवा। न कोई विज्ञापन, न ट्रैकिंग, न ही समझौता। Signal को सहयोग करने के लिए अभी दान दें। <readMoreLink>ज़्यादा पढ़ें</readMoreLink>"
+    "messageformat": "आपकी फ़ंडिंग पर चल रही प्राइवेट मैसेजिंग सेवा। न कोई विज्ञापन, न ट्रैकिंग, न ही समझौता। Signal को सहयोग करने के लिए अभी डोनेट करें।<readMoreLink>ज़्यादा पढ़ें</readMoreLink>"
   },
   "icu:PreferencesDonations__donate-button": {
-    "messageformat": "दान दें"
+    "messageformat": "डोनेट करें"
   },
   "icu:PreferencesDonations__my-support": {
     "messageformat": "मेरा सपोर्ट"
@@ -6667,7 +7009,7 @@
     "messageformat": "दान प्रोसेस किया जा रहा है..."
   },
   "icu:PreferencesDonations__donate-button-with-amount": {
-    "messageformat": "{formattedCurrencyAmount} का दान दें"
+    "messageformat": "{formattedCurrencyAmount} डोनेट करें"
   },
   "icu:PreferencesDonations__mobile-info": {
     "messageformat": "बैजस और मासिक दान को आपके मोबाइल डिवाइस पर प्रबंधित किया जा सकता है।"
@@ -6695,9 +7037,6 @@
   },
   "icu:PreferencesDonations--receiptList__empty-title": {
     "messageformat": "कोई रसीद नहीं"
-  },
-  "icu:PreferencesDonations__ReceiptModal--title": {
-    "messageformat": "जानकारी"
   },
   "icu:PreferencesDonations__ReceiptModal--download": {
     "messageformat": "रसीद डाउनलोड करें"
@@ -6736,7 +7075,7 @@
     "messageformat": "MM/YY"
   },
   "icu:DonateFlow__card-form-title-donate-with-amount": {
-    "messageformat": "Signal को {formattedCurrencyAmount} का दान दें"
+    "messageformat": "Signal को {formattedCurrencyAmount} डोनेट करें"
   },
   "icu:DonateFlow__card-form-error-invalid-card-number": {
     "messageformat": "कार्ड संख्या सही नहीं है"
@@ -6760,7 +7099,7 @@
     "messageformat": "न्यूनतम दान राशि है: {formattedCurrencyAmount}"
   },
   "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
-    "messageformat": "न्यूनतम {formattedCurrencyAmount} का दान किया जा सकता है"
+    "messageformat": "{formattedCurrencyAmount} कम रक़म डोनेट नहीं की जा सकती"
   },
   "icu:DonateFlow__custom-amount-above-maximum-error": {
     "messageformat": "अधिकतम दान राशि है: {formattedCurrencyAmount}"
@@ -6816,14 +7155,11 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "आपका एक दान प्रगति में है, जिसकी पुष्टि करने की ज़रूरत है।"
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "दान हो गया है, लेकिन हम आपकी बैज की सेटिंग अपडेट नहीं कर सके"
-  },
   "icu:Donations__BadgeApplicationFailed__Title": {
     "messageformat": "दान पूरा हो गया है, लेकिन हम आपकी बैज की सेटिंग अपडेट नहीं कर सके"
   },
   "icu:Donations__BadgeApplicationFailed__Description": {
-    "messageformat": "अपने मोबाइल डिवाइस पर बैज सेटिंग अपडेट करने के लिए, यहां जाएं: सेटिंग → Signal को दान दें → बैज।"
+    "messageformat": "अपने मोबाइल डिवाइस पर बैज सेटिंग अपडेट करने के लिए, यहां जाएं: सेटिंग → Signal को डोनेट करें → बैज।"
   },
   "icu:Donations__DonationInterrupted": {
     "messageformat": "दान में रुकावट आई है"
@@ -6850,7 +7186,7 @@
     "messageformat": "आपके दान के साथ कोई गड़बड़ी हुई"
   },
   "icu:Donations__GenericError__Description": {
-    "messageformat": "मुमकिन है कि आपका दान प्रोसेस न हुआ हो। रसीद देखने और इसकी पुष्टि करने के लिए, \"Signal को दान करें\" और फिर \"दान रसीद\" पर क्लिक करें।"
+    "messageformat": "मुमकिन है कि आपका डोनेशन प्रोसेस न हुआ हो। रसीद देखने और इसकी पुष्टि करने के लिए, \"Signal को डोनेट करें\" और फिर \"डोनेशन रसीद\" पर क्लिक करें।"
   },
   "icu:DonationsErrorBoundary__DonationUnexpectedError": {
     "messageformat": "फिर से कोशिश करें या अपना दान पूरा करने में मदद के लिए, सपोर्ट टीम को डीबग लॉग सबमिट करें। डीबग लॉग से हमें समस्या को पहचानने और उसे ठीक करने में मदद मिलती है और इनमें आपकी पहचान से जुड़ी कोई जानकारी नहीं होती।"
@@ -6898,7 +7234,7 @@
     "messageformat": "प्रोफ़ाइल पर डिस्प्ले करें"
   },
   "icu:Donations__badge-modal--help-text": {
-    "messageformat": "इसे अपने मोबाइल डिवाइस पर यहां जाकर ऐडजस्ट किया जा सकता है: सेटिंग → Signal को दान दें → बैज"
+    "messageformat": "इसे अपने मोबाइल डिवाइस पर यहां जाकर ऐडजस्ट किया जा सकता है: सेटिंग → Signal को डोनेट करें → बैज"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "सिग्नल को सही रूप से चलाने के लिए इस वर्शन में कई छोटे बदलाव और बग फ़िक्स शामिल हैं.",
@@ -6927,5 +7263,20 @@
   "icu:WhatsNew__bugfixes--6": {
     "messageformat": "छोटे-छोटे ट्वीक, बग फ़िक्स, और प्रदर्शन में सुधार। Signal इस्तेमाल करने के लिए धन्यवाद।",
     "ignoreUnused": true
+  },
+  "icu:WhatsNew__7.76": {
+    "messageformat": "कस्टम नोटिफ़िकेशन प्रोफ़ाइलें सेटअप करें, ताकि आपको प्रोफ़ाइल के चालू होने पर, सिर्फ़ खुद से चुने गए लोगों और ग्रुप से ही नोटिफ़िकेशन मिलें। ऐसा \"वर्क\" प्रोफ़ाइल बनाएं जो सहकर्मियों के अलावा बाकी लोगों के नोटिफ़िकेशन रोक दे (आपके पार्टनर को छोड़कर) और एक \"डाउनटाइम\" प्रोफ़ाइल बनाएं जिसमें आपके बॉस शामिल न हों। जब चाहें, नोटिफ़िकेशन प्रोफ़ाइलों के बीच स्विच करें या कोई शेड्यूल सेट करें जिससे यह काम अपने-आप होता रहे।"
+  },
+  "icu:WhatsNew__7.77-1": {
+    "messageformat": "चैट फ़ोल्डर, आपको अपनी चैट आसानी से व्यवस्थित करने में मदद करते हैं। जैसे, अलग-अलग संस्थाओं, ग्रुप, और निजी चैट को अलग-अलग फ़ोल्डर में रखना। इन फ़ोल्डर को अपनी पसंद के हिसाब से बनाया और व्यवस्थित किया जा सकता है। अपने पसंदीदा लोगों के अनरीड मैसेज देखें, चैट प्रकार (1-टू-1 और ग्रुप) के हिसाब से उन्हें फ़िल्टर करें या \"निजी\" और \"ऑफ़िस\" जैसे अलग फ़ोल्डर बनाएं, ताकि आप अपने लिए ज़रूरी मैसेज तुरंत देख सकें। इसे शुरू करने के लिए, सेटिंग > चैट में जाकर चैट फ़ोल्डर चालू करें।"
+  },
+  "icu:WhatsNew__7.77-2": {
+    "messageformat": "इस अपडेट में उस समस्या का समाधान भी शामिल है, जिसके चलते मैसेज में इमोजी कैरेक्टर शामिल होने पर लिंक के प्रीव्यू जनरेट नहीं हो पा रहे थे। धन्यवाद, <elias6></elias6>"
+  },
+  "icu:WhatsNew__7.78-1": {
+    "messageformat": "इस अपडेट से स्क्रीन रीडर का इस्तेमाल करने वाले लोगों के लिए सुविधा बेहतर हो गई है। अब किसी चैट में नए मैसेज आने पर बार-बार टाइमस्टैंप की घोषणा नहीं होगी।"
+  },
+  "icu:WhatsNew__7.78-2": {
+    "messageformat": "हमने एक गड़बड़ी भी ठीक की है जिसकी वजह से Windows पर कभी-कभी नोटिफ़िकेशन नहीं दिखते थे।"
   }
 }
