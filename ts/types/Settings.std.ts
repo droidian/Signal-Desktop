@@ -24,7 +24,7 @@ export const isDrawAttentionSupported = (OS: OSType): boolean => !OS.isMacOS();
  * option with a command line flag, but that is not officially supported.
  */
 export const isSystemTraySupported = (OS: OSType): boolean =>
-  OS.isWindows() || OS.isLinux();
+  false
 
 export const isContentProtectionSupported = (OS: OSType): boolean =>
   OS.isWindows();
