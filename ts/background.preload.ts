@@ -341,6 +341,8 @@ async function startApp(): Promise<void> {
     storage: itemStorage,
   });
 
+  notificationService.enable();
+
   await initializeMessageCounter();
 
   // Initialize WebAPI as early as possible
@@ -2005,7 +2007,6 @@ async function startApp(): Promise<void> {
     onDecryptionErrorQueue.pause();
     onRetryRequestQueue.pause();
     deliveryReceiptQueue.pause();
-    notificationService.disable();
   }
 
   // 2. After the socket finishes processing any queued messages, restart these queues
@@ -2016,7 +2017,6 @@ async function startApp(): Promise<void> {
     onDecryptionErrorQueue.start();
     onRetryRequestQueue.start();
     deliveryReceiptQueue.start();
-    notificationService.enable();
   }
 
   function isSocketOnline() {
