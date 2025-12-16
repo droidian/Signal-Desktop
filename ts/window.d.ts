@@ -3,58 +3,27 @@
 
 // Captures the globals put in place by preload.js, background.js and others
 
+import type EventEmitter from 'node:events';
 import type { Store } from 'redux';
-import type * as Backbone from 'backbone';
-import type PQueue from 'p-queue/dist';
+import type { SystemPreferences } from 'electron';
 import type { assert } from 'chai';
-import type { PhoneNumber, PhoneNumberFormat } from 'google-libphonenumber';
+import type { MochaOptions } from 'mocha';
 
-import type { ConversationModelCollectionType } from './model-types.d';
-import type { textsecure } from './textsecure';
-import type { Storage } from './textsecure/Storage';
-import type {
-  ChallengeHandler,
-  IPCRequest as IPCChallengeRequest,
-} from './challenge';
-import type AccountManager from './textsecure/AccountManager';
-import type { WebAPIConnectType } from './textsecure/WebAPI';
-import type { CallingClass } from './services/calling';
-import type * as StorageService from './services/storage';
-import type { BackupsService } from './services/backups';
-import type * as Groups from './groups';
-import type * as Crypto from './Crypto';
-import type * as Curve from './Curve';
-import type * as RemoteConfig from './RemoteConfig';
-import type { OSType } from './util/os/shared';
-import type { getEnvironment } from './environment';
-import type { LocalizerType, ThemeType } from './types/Util';
-import type { Receipt } from './types/Receipt';
-import type { ConversationController } from './ConversationController';
-import type { ReduxActions } from './state/types';
-import type { createApp } from './state/roots/createApp';
-import type Data from './sql/Client';
-import type { MessageModel } from './models/messages';
-import type { ConversationModel } from './models/conversations';
-import type { BatcherType } from './util/batcher';
-import type { ConfirmationDialog } from './components/ConfirmationDialog';
-import type { SignalProtocolStore } from './SignalProtocolStore';
-import type { SocketStatus } from './types/SocketStatus';
-import type { ScreenShareStatus } from './types/Calling';
-import type SyncRequest from './textsecure/SyncRequest';
-import type { MessageCache } from './services/MessageCache';
-import type { StateType } from './state/reducer';
-import type { Address } from './types/Address';
-import type { QualifiedAddress } from './types/QualifiedAddress';
-import type { CIType } from './CI';
-import type { IPCEventsType } from './util/createIPCEvents';
-import type { SignalContextType } from './windows/context';
-import type * as Message2 from './types/Message2';
-import type { initializeMigrations } from './signal';
-import type { RetryPlaceholders } from './util/retryPlaceholders';
-import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences';
-import type { WindowsNotificationData } from './services/notifications';
-
-export { Long } from 'long';
+import type { IPCRequest as IPCChallengeRequest } from './challenge.dom.js';
+import type { OSType } from './util/os/shared.std.js';
+import type { SystemThemeType, ThemeType } from './types/Util.std.js';
+import type { ConversationController } from './ConversationController.preload.js';
+import type { ReduxActions } from './state/types.std.js';
+import type { ScreenShareStatus } from './types/Calling.std.js';
+import type { MessageCache } from './services/MessageCache.preload.js';
+import type { StateType } from './state/reducer.preload.js';
+import type { CIType } from './CI.preload.js';
+import type { IPCEventsType } from './util/createIPCEvents.preload.js';
+import type { SignalContextType } from './windows/context.preload.js';
+import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences.dom.js';
+import type { WindowsNotificationData } from './services/notifications.preload.js';
+import type { QueryStatsOptions } from './sql/main.main.js';
+import type { SocketStatuses } from './textsecure/SocketManager.preload.js';
 
 export type IPCType = {
   addSetupMenuItems: () => void;
@@ -66,18 +35,24 @@ export type IPCType = {
     erase: () => Promise<void>;
   };
   drawAttention: () => void;
-  getAutoLaunch: () => Promise<boolean>;
+  getAutoLaunch: () => Promise<boolean | undefined>;
   getMediaAccessStatus: (
     mediaType: 'screen' | 'microphone' | 'camera'
-  ) => Promise<string | undefined>;
-  getMediaCameraPermissions: () => Promise<boolean>;
-  getMediaPermissions: () => Promise<boolean>;
+  ) => Promise<ReturnType<SystemPreferences['getMediaAccessStatus']>>;
+  getMediaCameraPermissions: () => Promise<boolean | undefined>;
+  openSystemMediaPermissions: (
+    mediaType: 'microphone' | 'camera' | 'screenCapture'
+  ) => Promise<void>;
+  getMediaPermissions: () => Promise<boolean | undefined>;
+  whenWindowVisible: () => Promise<void>;
   logAppLoadedEvent?: (options: { processedCount?: number }) => void;
   readyForUpdates: () => void;
   removeSetupMenuItems: () => unknown;
   setAutoHideMenuBar: (value: boolean) => void;
   setAutoLaunch: (value: boolean) => Promise<void>;
   setBadge: (badge: number | 'marked-unread') => void;
+  setMediaPermissions: (value: boolean) => Promise<void>;
+  setMediaCameraPermissions: (value: boolean) => Promise<void>;
   setMenuBarVisibility: (value: boolean) => void;
   showDebugLog: () => void;
   showPermissionsPopup: (
@@ -88,6 +63,8 @@ export type IPCType = {
   showWindow: () => void;
   showWindowsNotification: (data: WindowsNotificationData) => Promise<void>;
   shutdown: () => void;
+  startTrackingQueryStats: () => void;
+  stopTrackingQueryStats: (options?: QueryStatsOptions) => void;
   titleBarDoubleClick: () => void;
   updateTrayIcon: (count: number) => void;
 };
@@ -102,8 +79,8 @@ export type FeatureFlagType = {
 };
 
 type AboutWindowPropsType = {
+  appEnv: string;
   arch: string;
-  environmentText: string;
   platform: string;
 };
 
@@ -122,7 +99,7 @@ type PermissionsWindowPropsType = {
 
 type ScreenShareWindowPropsType = {
   onStopSharing: () => void;
-  presentedSourceName: string;
+  presentedSourceName: string | undefined;
   getStatus: () => ScreenShareStatus;
   setRenderCallback: (cb: () => void) => void;
 };
@@ -135,64 +112,33 @@ type SettingsWindowPropsType = {
 
 export type SignalCoreType = {
   AboutWindowProps?: AboutWindowPropsType;
-  Crypto: typeof Crypto;
-  Curve: typeof Curve;
-  Data: typeof Data;
   DebugLogWindowProps?: DebugLogWindowPropsType;
-  Groups: typeof Groups;
   PermissionsWindowProps?: PermissionsWindowPropsType;
-  RemoteConfig: typeof RemoteConfig;
   ScreenShareWindowProps?: ScreenShareWindowPropsType;
-  Services: {
-    calling: CallingClass;
-    backups: BackupsService;
-    initializeGroupCredentialFetcher: () => Promise<void>;
-    initializeNetworkObserver: (network: ReduxActions['network']) => void;
-    initializeUpdateListener: (updates: ReduxActions['updates']) => void;
-    retryPlaceholders?: RetryPlaceholders;
-    lightSessionResetQueue?: PQueue;
-    storage: typeof StorageService;
-  };
   SettingsWindowProps?: SettingsWindowPropsType;
-  Migrations: ReturnType<typeof initializeMigrations>;
-  Types: {
-    Message: typeof Message2;
-    Address: typeof Address;
-    QualifiedAddress: typeof QualifiedAddress;
-  };
-  Components: {
-    ConfirmationDialog: typeof ConfirmationDialog;
-  };
+
   OS: OSType;
-  State: {
-    Roots: {
-      createApp: typeof createApp;
-    };
+
+  // Only for debugging in Dev Tools
+  Services?: {
+    storage: unknown;
+    backups: unknown;
+    calling: unknown;
+    donations: unknown;
   };
-  conversationControllerStart: () => void;
-  challengeHandler?: ChallengeHandler;
+  DataReader?: unknown;
+  DataWriter?: unknown;
 };
 
 declare global {
   // We want to extend various globals, so we need to use interfaces.
   /* eslint-disable no-restricted-syntax */
   interface Window {
-    // Used in Sticker Creator to create proper paths to emoji images
-    ROOT_PATH?: string;
-    // Used for sticker creator localization
-    localeMessages: { [key: string]: { message: string } };
-
-    isBehindProxy: () => boolean;
-    openArtCreator: (opts: { username: string; password: string }) => void;
-
     enterKeyboardMode: () => void;
     enterMouseMode: () => void;
-    getAccountManager: () => AccountManager;
     getAppInstance: () => string | undefined;
-    getConversations: () => ConversationModelCollectionType;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
-    getEnvironment: typeof getEnvironment;
     getHostName: () => string;
     getInteractionMode: () => 'mouse' | 'keyboard';
     getServerPublicParams: () => string;
@@ -200,53 +146,34 @@ declare global {
     getBackupServerPublicParams: () => string;
     getSfuUrl: () => string;
     getIceServerOverride: () => string;
-    getSocketStatus: () => SocketStatus;
-    getSyncRequest: (timeoutMillis?: number) => SyncRequest;
+    getSocketStatus: () => SocketStatuses;
     getTitle: () => string;
     waitForEmptyEventQueue: () => Promise<void>;
     getVersion: () => string;
     isAfterVersion: (version: string, anotherVersion: string) => boolean;
     isBeforeVersion: (version: string, anotherVersion: string) => boolean;
     initialTheme?: ThemeType;
-    libphonenumberInstance: {
-      parse: (number: string) => PhoneNumber;
-      getRegionCodeForNumber: (number: PhoneNumber) => string | undefined;
-      format: (number: PhoneNumber, format: PhoneNumberFormat) => string;
-    };
-    libphonenumberFormat: typeof PhoneNumberFormat;
     nodeSetImmediate: typeof setImmediate;
     platform: string;
-    preloadedImages: Array<HTMLImageElement>;
     setImmediate: typeof setImmediate;
     sendChallengeRequest: (request: IPCChallengeRequest) => void;
-    showKeyboardShortcuts: () => void;
-    storage: Storage;
-    systemTheme: ThemeType;
+    systemTheme: SystemThemeType;
 
     Signal: SignalCoreType;
 
-    getServerTrustRoot: () => string;
+    getServerTrustRoots: () => Array<string>;
     logAuthenticatedConnect?: () => void;
 
     // ========================================================================
     // The types below have been somewhat organized. See DESKTOP-4801
     // ========================================================================
 
-    // Backbone
-    Backbone: typeof Backbone;
-
     ConversationController: ConversationController;
     Events: IPCEventsType;
-    FontFace: typeof FontFace;
     MessageCache: MessageCache;
-    SignalProtocolStore: typeof SignalProtocolStore;
-    WebAPI: WebAPIConnectType;
     Whisper: WhisperType;
-    getSignalProtocolStore: () => SignalProtocolStore;
-    i18n: LocalizerType;
     // Note: used in background.html, and not type-checked
     startApp: () => void;
-    textsecure: typeof textsecure;
 
     // IPC
     IPC: IPCType;
@@ -258,14 +185,6 @@ declare global {
     // Feature Flags
     Flags: FeatureFlagType;
 
-    // Paths
-    BasePaths: {
-      attachments: string;
-      draft: string;
-      stickers: string;
-      temp: string;
-    };
-
     // Test only
     SignalCI?: CIType;
 
@@ -273,6 +192,7 @@ declare global {
     SignalContext: SignalContextType;
 
     // Used only in preload to calculate load time
+    preloadCompileStartTime: number;
     preloadStartTime: number;
     preloadEndTime: number;
 
@@ -280,9 +200,10 @@ declare global {
     RETRY_DELAY: boolean;
     assert: typeof assert;
     testUtilities: {
+      setup: MochaOptions;
       debug: (info: unknown) => void;
+      onTestEvent: (event: unknown) => void;
       initialize: () => Promise<void>;
-      onComplete: (info: unknown) => void;
       prepareTests: () => void;
     };
   }
@@ -308,11 +229,5 @@ declare global {
 }
 
 export type WhisperType = {
-  Conversation: typeof ConversationModel;
-  ConversationCollection: typeof ConversationModelCollectionType;
-  Message: typeof MessageModel;
-
-  deliveryReceiptQueue: PQueue;
-  deliveryReceiptBatcher: BatcherType<Receipt>;
-  events: Backbone.Events;
+  events: EventEmitter;
 };
