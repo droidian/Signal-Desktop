@@ -41,6 +41,9 @@
   "icu:Preferences__sent-media-quality__description": {
     "messageformat": "A nagyfelbontású média nagyobb adathasználatot igényel."
   },
+  "icu:Preferences__DonateTitle": {
+    "messageformat": "Adomány a Signal számára"
+  },
   "icu:sentMediaQualityStandard": {
     "messageformat": "Normál"
   },
@@ -101,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Nem lehet hozzáférni az adatbázis titkosítási kulcsához, mert az operációs rendszer titkosítási kulcstartó háttérrendszere {previousBackend} értékről {currentBackend} értékre változott. Ez akkor fordulhat elő, ha az asztali környezet megváltozik, például a GNOME és a KDE között.\n\nKérjük, válts az előző asztali környezetre, vagy próbáld meg futtatni a Signalt a --password-store=\"{previousBackendFlag}\" parancssori jelzővel."
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Fájl"
   },
@@ -108,7 +120,7 @@
     "messageformat": "Matricacsomag készítése/feltöltése"
   },
   "icu:mainMenuEdit": {
-    "messageformat": "S&zerkesztés"
+    "messageformat": "&Szerkesztés"
   },
   "icu:mainMenuView": {
     "messageformat": "&Nézet"
@@ -203,6 +215,9 @@
   "icu:menuSetupAsStandalone": {
     "messageformat": "Beállítás önálló eszközként"
   },
+  "icu:menuStageLocalBackupForImport": {
+    "messageformat": "Stage Local Backup for Import…"
+  },
   "icu:messageContextMenuButton": {
     "messageformat": "További tevékenységek"
   },
@@ -226,6 +241,12 @@
   },
   "icu:archivedConversations": {
     "messageformat": "Archivált csevegések"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Csevegésmappa hozzáadása"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Mappabeállítások"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "Rögzítve"
@@ -266,6 +287,45 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Adj meg egy felhasználónevet, amelyet egy pont és a hozzá tartozó számsor követ."
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Nincs megjeleníthető csevegés"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Mappabeállítások"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Összes"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Összes csevegés"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Összes megjelölése olvasottként"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Értesítések némítása"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Összes némítás feloldása"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Összes némítás feloldása"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Mappa szerkesztése"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Hozzáadás a mappához"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Mappa létrehozása"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Eltávolítás a mappából"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Országkód"
   },
@@ -299,9 +359,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Beállítások"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Signal frissítése"
-  },
   "icu:NavTabs__ItemLabel--Profile": {
     "messageformat": "Profil"
   },
@@ -319,6 +376,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Megjelölés olvasatlanként"
+  },
+  "icu:markRead": {
+    "messageformat": "Olvasottnak jelöl"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Üzenetek kiválasztása"
@@ -590,11 +650,29 @@
   "icu:Toast--FailedToSendWithEndorsements": {
     "messageformat": "Failed to send message with endorsements"
   },
+  "icu:Toast--SQLError": {
+    "messageformat": "Adatbázishiba: kérjük, oszd meg a naplófájljaid."
+  },
   "icu:Toast--InvalidStorageServiceHeaders": {
     "messageformat": "Érvénytelen szerver válasz. Kérjük, oszd meg a naplófájlokat."
   },
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Nyugta mentve"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Hiba a nyugta mentése során. Próbáld újra!"
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Hozzáadva a(z) „ {chatFolderName}” mappához"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Eltávolítva a(z) „ {chatFolderName}” mappából"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "{chatFolderName} mappa hozzáadva"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nem választhatsz ki képeket és videókat fájlokkal együtt."
@@ -655,9 +733,6 @@
   },
   "icu:joinTheBeta": {
     "messageformat": "Csatlakozás a béta programhoz"
-  },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "A Signal Desktop beállításai"
   },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Matricacsomag-készítő"
@@ -1022,14 +1097,98 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Részletek"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "Üzenet rögzítése"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "Üzenet rögzítésének feloldása"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "Szavazás befejezése"
+  },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Szavazás · Válassz egyet"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Szavazás · Válassz ki legalább egyet"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Szavazás · Végeredmények"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Szavazatok megtekintése"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Szavaztál"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "Befejezted a szavazást: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name} befejezte a(z) „{poll}” szavazást"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "Szavazás megtekintése"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Szavazás részletei"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Kérdés"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} szavazat} other {{count,number} szavazat}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Nincs szavazat"
+  },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "Nyertes"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "A rögzített üzenet nem található"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "Nem található szavazás"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "Új szavazás"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "Kérdés"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "Tegyél fel egy kérdést"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "Opciók"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "{number} lehetőség"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "Több szavazat engedélyezése"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "Küldés"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "A szavazáshoz tartozó kérdés kitöltése kötelező"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "A szavazáshoz legalább 2 lehetőség szükséges"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "A kérdés túl hosszú"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "Az opció túl hosszú"
+  },
   "icu:deleteConversation": {
     "messageformat": "Törlés"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Csevegés törlése?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Az ebben a csevegésben lévő összes üzenet törlődik erről az eszközről."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "A csevegésben lévő összes üzenet törlődik az összes eszközödről."
@@ -1048,6 +1207,108 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "Kilépés előtt ki kell jelölnöd legalább egy új admint."
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "Rögzítettél egy üzenetet"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender} rögzített egy üzenetet"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "Ugrás az Üzenetekhez"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "Üzenet rögzítésének időtartama..."
+  },
+  "icu:PinMessageDialog__Close": {
+    "messageformat": "Bezárás"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 óra"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7 nap"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30 nap"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "örökké"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "Mégse"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "Rögzítés"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {Rögzített üzenetek} other {Rögzített üzenetek}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "Ugrás a(z) {pinNumber,number} rögzített üzenethez"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "Ugrás az Üzenetekhez"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "További tevékenységek"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "Üzenet rögzítésének feloldása"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "Ugrás az Üzenetekhez"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "Összes üzenet megtekintése"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Address": {
+    "messageformat": "Cím"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "Hangüzenet"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "Fájl"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Contact": {
+    "messageformat": "Névjegy"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "Fizetés"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "Szavazás"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "Matrica"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "Fotó"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "Videó"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "Hangüzenet"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "Fizetés"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "Matrica"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "Rögzített üzenetek"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "Összes üzenet rögzítésének feloldása"
   },
   "icu:sessionEnded": {
     "messageformat": "A biztonságos munkamenet újra lett indítva"
@@ -1166,36 +1427,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Az egyszer megjelenő médiafájl nem tölthető le"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "A fájl nem érhető el"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "A teljes üzenet nem érhető el"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Médiafájl nem érhető el"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Matrica nem elérhető"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Hangüzenet nem érhető el"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Ez a fájl nem lett áthelyezve a telefonodról az eszköz összekapcsolásakor. Az eszköz összekapcsolásakor 45 napnál régebbi médiafájlok és fájlok nem szinkronizálhatók."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Az üzenetben szereplő teljes szöveg nem került át a telefonodról az eszköz összekapcsolásakor. Az eszköz összekapcsolásakor 45 napnál régebbi hosszú szöveges üzenetek nem szinkronizálhatók."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Ez a médiafájl nem lett áthelyezve a telefonodról az eszköz összekapcsolásakor. Az eszköz összekapcsolásakor 45 napnál régebbi médiafájl nem szinkronizálható."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Ez a matrica nem lett áthelyezve a telefonodról az eszköz összekapcsolásakor. Az eszköz összekapcsolásakor 45 napnál régebbi médiafájlok és fájlok nem szinkronizálhatók."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Ez a hangüzenet nem lett áthelyezve a telefonodról az eszköz összekapcsolásakor. Az eszköz összekapcsolásakor 45 napnál régebbi médiafájlok és fájlok nem szinkronizálhatók."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Az egyszer megjelenő médiafájl már nem érhető el letöltésre. Kérd meg {name} felhasználót, hogy küldje el újra."
   },
@@ -1262,6 +1493,9 @@
   "icu:Install__support-link": {
     "messageformat": "Segítségre van szükséged?"
   },
+  "icu:Preferences--header": {
+    "messageformat": "Beállítások"
+  },
   "icu:Preferences--phone-number": {
     "messageformat": "Telefonszám"
   },
@@ -1273,6 +1507,189 @@
   },
   "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
     "messageformat": "Emoji bőrtónus"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "Csevegési mappák"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "Adj hozzá egy csevegési mappát"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Mappák hozzáadása vagy szerkesztése"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "Csevegéseidet mappákba rendezheted, és gyorsan válthatsz közöttük a Csevegőlistán."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} mappa} other {{chatFoldersCount,number} mappa}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Beállítás"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Kezelés"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "Mappa szerkesztése"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "Törlés"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Mappa törlése?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Szeretnéd törölni a(z) „{chatFolderTitle}” mappát?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Törlés"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Mégse"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "Csevegési mappák"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "Csevegéseidet mappákba rendezheted, és gyorsan válthatsz közöttük a Csevegőlistán."
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "Mappák"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "Összes csevegés"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "Mappa létrehozása"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Húzd át a csevegésmappa áthelyezéséhez"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "Javasolt mappák"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "Hozzáadás"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "Olvasatlan"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "Olvasatlan üzenetek az összes csevegésből"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "1:1 csevegések"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "Csak a közvetlen csevegésekből származó üzenetek"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "Csoportok"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "Csak a csoportos csevegésekből származó üzenetek"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "Mappa létrehozása"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Mappa szerkesztése"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "Mappa neve"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "Mappa neve (kötelező)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "A csevegésekkel együtt"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "Válaszd ki azokat a csevegéseket, amelyeket meg szeretnél jeleníteni ebben a mappában."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1 csevegések"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Csoportos csevegés"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "Csevegések hozzáadása"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "A csevegésekkel együtt"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "Csevegések kizárása"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "Keresés"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "Csevegéstípusok"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "1:1 csevegések"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "Csoportok"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "Legutóbbi csevegések"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "Befejezés"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "Kivételek"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "Válaszd ki azokat a csevegéseket, amelyeket nem szeretnél megjeleníteni ebben a mappában."
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "Csevegések kizárása"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "Csak az olvasatlan csevegések megjelenítése"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "Csak az olvasatlan üzeneteket tartalmazó csevegések jelennek meg ebben a mappában."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "A némított csevegéseket is tartalmazza"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "Mappa törlése"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Törlöd ezt a csevegési mappát?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Ez a mappa eltávolításra kerül a csevegőlistádról."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Törlés"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
+    "messageformat": "Mégse"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "Módosítások mentése?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "Mented a csevegési mappában végzett módosításokat?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "Mentés"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "Elvetés"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "Mentés"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "Mégse"
   },
   "icu:initialSync": {
     "messageformat": "Kontaktok és csoportok szinkronizálása"
@@ -1354,6 +1771,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "Eltávolítva a hívásból"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "A csoporthívás elérte a maximális létszámot. Kérlek próbáld később."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "A hívás megtelt"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Bárki, aki csatlakozik ehhez a híváshoz a linken keresztül, látni fogja a nevedet és a fényképedet."
@@ -1670,11 +2093,11 @@
   "icu:notificationSenderInGroup": {
     "messageformat": "{sender} a {group} csoportban"
   },
-  "icu:notificationReaction": {
-    "messageformat": "{sender} {emoji} reakciót küldött az üzenetedre"
-  },
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} {emoji} reakciót küldött erre: {message}"
+  },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender} szavazott a szavazáson: „{pollQuestion}”"
   },
   "icu:sendFailed": {
     "messageformat": "Küldés sikertelen"
@@ -1892,11 +2315,17 @@
   "icu:Toast--download-failed": {
     "messageformat": "Letöltés sikertelen"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Attachment missing from backup CDN"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "A módosításokat csak az üzenet elküldésétől számított 24 órán belül lehet alkalmazni."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} nem Signal-felhasználó. Győződj meg róla, hogy a teljes felhasználónevet adtad meg."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "A(z) {atUsername} érvénytelen felhasználónév. Győződj meg róla, hogy a teljes felhasználónevet és a hozzá tartozó számjegyeket is megadtad."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Felhasználó nem található: \"{phoneNumber}\" nincs regisztrálva a Signalra."
@@ -2051,6 +2480,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Matrica üzenet"
   },
+  "icu:Poll--preview": {
+    "messageformat": "Szavazás: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2065,6 +2497,9 @@
   },
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Egyszer megjelenő videó"
+  },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
   },
   "icu:message--deletedForEveryone": {
     "messageformat": "Ez az üzenet ki lett törölve."
@@ -2174,101 +2609,11 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "Ha kitörlöd a matricákat tartalmazó eredeti üzeneteket, akkor már nem fogod tudni újratelepíteni ezt a matricacsomagot."
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "Bemutatkozik a Matricák: Bandit, a macska"
-  },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "Bemutatkozik a Matricák"
-  },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "Miért használnál szavakat, ha használhatsz matricákat is?"
-  },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "Matricaválasztó megnyitása"
-  },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "Matricacsomag létrehozása"
-  },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "Következő oldal"
-  },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "Előző oldal"
-  },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "Legutóbbi matricák"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "Bizonyos matricákat nem sikerült letölteni."
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "Matricacsomag telepítése…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "Nem található matrica"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "A beérkezett üzeneteid révén újabb matricacsomagok váltak telepíthetővé"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "Nem található matricacsomag"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "A legutóbb használt matricák itt fognak megjelenni."
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "Előzmények"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "Kiemelt"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "Analóg idő"
-  },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Matricsacsomag"
   },
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "Nem sikerült megnyitni a matricacsomagot. Ellenőrizd a hálózati kapcsolatot, majd próbáld újra!"
-  },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "Nem található emoji"
-  },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "Hangulatjel keresés bezárása"
-  },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "Emoji keresése"
-  },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "Bőrszín: {tone}"
-  },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "Előzmények"
-  },
-  "icu:EmojiPicker__button--emoji": {
-    "messageformat": "Emoji"
-  },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "Állat"
-  },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "Étel"
-  },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "Tevékenység"
-  },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "Utazás"
-  },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "Tárgy"
-  },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "Szimbólum"
-  },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "Zászló"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Emoji"
@@ -2333,6 +2678,9 @@
   "icu:FunPanelEmojis__SectionTitle--SearchResults": {
     "messageformat": "Keresési eredmények"
   },
+  "icu:FunPanelEmojis__SectionTitle--ThisMessage": {
+    "messageformat": "Jelenlegi üzenet"
+  },
   "icu:FunPanelEmojis__SectionTitle--Recents": {
     "messageformat": "Nemrég használt"
   },
@@ -2374,6 +2722,9 @@
   },
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Nemrég használt"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Matricacsomag létrehozása"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Keresési eredmények"
@@ -2590,6 +2941,9 @@
   },
   "icu:Keyboard--open-sticker-chooser": {
     "messageformat": "Matricaválasztó megnyitása"
+  },
+  "icu:Keyboard--open-gif-chooser": {
+    "messageformat": "GIF-választó megnyitása"
   },
   "icu:Keyboard--begin-recording-voice-note": {
     "messageformat": "Hangjegyzet rögzítésének megkezdése"
@@ -3137,6 +3491,18 @@
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Mikrofon be"
   },
+  "icu:CallControls__MutedBySomeoneToast": {
+    "messageformat": "{otherName} elnémított téged."
+  },
+  "icu:CallControls__SomeoneMutedSomeoneToast": {
+    "messageformat": "{name} elnémította {otherName} felhasználót."
+  },
+  "icu:CallControls__YouMutedSomeoneToast": {
+    "messageformat": "{otherName} elnémításra került."
+  },
+  "icu:CallControls__YouMutedYourselfToast": {
+    "messageformat": "Elnémítottad magadat egy másik eszközről."
+  },
   "icu:CallControls__LowerHandSuggestionToast": {
     "messageformat": "Leteszed a kezed?"
   },
@@ -3229,9 +3595,6 @@
   },
   "icu:calling__view_mode--updated": {
     "messageformat": "Nézet frissítve"
-  },
-  "icu:calling__hangup": {
-    "messageformat": "Kilépés a hívásból"
   },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "Képernyő megosztása"
@@ -3329,14 +3692,20 @@
   "icu:muteExpirationLabel": {
     "messageformat": "Némítva eddig: {duration}"
   },
-  "icu:EmojiButton__label": {
-    "messageformat": "Emoji"
-  },
   "icu:ErrorModal--title": {
     "messageformat": "Probléma merült fel!"
   },
   "icu:ErrorModal--description": {
     "messageformat": "Próbáld újra, vagy vedd fel a kapcsolatot a támogatással!"
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Váratlan hiba történt"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Hibanapló elküldése"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nem, köszönöm"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "OK"
@@ -3387,7 +3756,7 @@
     "messageformat": "Nem sikerült belépni a csoportba"
   },
   "icu:GroupV2--join--link-forbidden": {
-    "messageformat": "Egy admin távolított el, így már nem tudsz csoporthivatkozás használatával csatlakozni ehhez a csoporthoz."
+    "messageformat": "Egy admin távolított el, így már nem tudsz csoporthivatkozás használatával csatlakozni ehhez a csoporthoz. Lépj kapcsolatba egy adminisztrátorral, hogy újra felvegyenek a csoportba."
   },
   "icu:GroupV2--join--prompt-with-approval": {
     "messageformat": "A csoportba történő belépéshez a csoport egy adminjának jóváhagyása szükséges. A csatlakozási igény elküldésével neved és képed láthatóvá válik a csoport tagjai számára."
@@ -3947,6 +4316,12 @@
   "icu:BadgeSustainerInstructions__instructions__3": {
     "messageformat": "Koppints az „Adományozás a Signalnak” lehetőségre, és iratkozz fel"
   },
+  "icu:ProfileMovedModal__title": {
+    "messageformat": "A profilod átköltözött"
+  },
+  "icu:ProfileMovedModal__description": {
+    "messageformat": "A profilod megtekintéséhez és szerkesztéséhez nyisd meg a Beállítások fület."
+  },
   "icu:BackupImportScreen__title": {
     "messageformat": "Üzenetek szinkronizálása"
   },
@@ -3996,10 +4371,10 @@
     "messageformat": "Újra"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "Médiafájl visszaállítása"
+    "messageformat": "Médiafájlok szinkronizálása"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "Visszaállítás szünetel"
+    "messageformat": "Szinkronizálás szünetel"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "{currentSize}/{totalSize} visszaállítva"
@@ -4014,13 +4389,13 @@
     "messageformat": "Várakozás az internetkapcsolatra..."
   },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "Átvitel szüneteltetése"
+    "messageformat": "Szünet"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "Átvitel folytatása"
+    "messageformat": "Folytatás"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "Átvitel törlése"
+    "messageformat": "Szinkronizálás megszakítása"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "További lehetőségek"
@@ -4032,16 +4407,34 @@
     "messageformat": "{currentSize} / {totalSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "Médiafájl átvitelének törlése?"
+    "messageformat": "Média szinkronizálásának megszakítása?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "Az üzenetek és a médiafájl helyreállítása nem fejeződött be. Ha a törlés mellett döntesz, újra átviheted a fájljaid a Beállításokból."
+    "messageformat": "A médiafájl szinkronizálása nem fejeződött be. Ha úgy döntesz, hogy megszakítod a szinkronizálást, az eszköz újbóli összekapcsolásával újra szinkronizálhatsz. <learnMoreLink>Tudj meg többet</learnMoreLink>!"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Átvitel folytatása"
+    "messageformat": "Szinkronizálás folytatása"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "Átvitel törlése"
+    "messageformat": "Szinkronizálás megszakítása"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Szinkronizálás szünetel"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "A szinkronizálás folytatásához kattints a(z) „{resumeButtonText}” gombra"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Folytatás"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Szünet"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "Médiafájlok szinkronizálása"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize}/{totalSize} ({fractionComplete,number,percent})..."
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
     "messageformat": "Fiókművelet szükséges"
@@ -4061,6 +4454,18 @@
   "icu:CompositionArea--attach-file": {
     "messageformat": "Fájl csatolása"
   },
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "Fotók és videók"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "Fájl"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "Szavazás"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "Melléklet vagy szavazás hozzáadása"
+  },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "Ez a személy nem használ Signalt"
   },
@@ -4075,9 +4480,6 @@
   },
   "icu:CompositionArea__edit-action--send": {
     "messageformat": "Szerkesztett üzenet küldése"
-  },
-  "icu:CompositionArea__FunButtonLabel": {
-    "messageformat": "Adj hozzá hangulatjelet, matricát vagy GIF-et"
   },
   "icu:CompositionArea__ConfirmGifSelection__Title": {
     "messageformat": "Kicseréled a mellékletet?"
@@ -4214,8 +4616,8 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "Letiltás"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
-    "messageformat": "A névjegyeid hozzá fognak tudni adni ehhez a csoporthoz."
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "A névjegyeid hozzá fognak tudni téged adni ehhez a csoporthoz."
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Tiltás feloldása"
@@ -4223,11 +4625,8 @@
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} tag} other {{number,number} tag}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Megosztott médiafájlok"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Összes megtekintése"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Médiatartalmak, linkek és fájlok"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} tag} other {{number,number} tag}}"
@@ -4721,6 +5120,57 @@
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "Csoportleírás hozzáadása…"
   },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "Hangüzenet"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "Hang"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "Hivatkozás megnyitása egy böngészőben"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "Üzenet megjelenítése a beszélgetésben"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "Hang"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "Fájlok"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "Hivatkozások"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "Nincs médiafájl"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "Itt jelennek meg a küldött és fogadott fotók, videók és GIF-ek"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "Nincs hang"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "Itt jelennek meg az általad küldött és fogadott hangüzenetek és hangfájlok"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "Nincs hivatkozás"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "Itt jelennek meg az általad küldött és fogadott hivatkozások"
+  },
+  "icu:MediaGallery__EmptyState__description--documents": {
+    "messageformat": "Itt jelennek meg az általad küldött és fogadott hivatkozások"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "Nincsenek fájlok"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "Itt jelennek meg az általad küldött és fogadott fájlok"
+  },
+  "icu:MediaGallery__EmptyState__description--links": {
+    "messageformat": "Itt jelennek meg az általad küldött és fogadott fájlok"
+  },
   "icu:MediaQualitySelector--button": {
     "messageformat": "Médiafájl minőségének kiválasztása"
   },
@@ -4783,6 +5233,12 @@
   },
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "A felhasználónévhez tartozó hivatkozást vissza kell állítani"
+  },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Felhasználónév linkjét tartalmazó képernyő megnyitása"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Felhasználónév linkjét tartalmazó képernyő megnyitása"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Felhasználónév megosztása"
@@ -4916,6 +5372,9 @@
   "icu:ProfileEditorModal--error": {
     "messageformat": "Nem sikerült frissíteni profilodat. Próbáld újra!"
   },
+  "icu:ProfileEditorModal--sharing": {
+    "messageformat": "Megosztás"
+  },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Üzenet egy adminnak"
   },
@@ -4948,6 +5407,9 @@
   },
   "icu:Preferences__button--general": {
     "messageformat": "Általános"
+  },
+  "icu:Preferences__button--donate": {
+    "messageformat": "Adomány a Signal számára"
   },
   "icu:Preferences__button--appearance": {
     "messageformat": "Megjelenés"
@@ -4991,6 +5453,24 @@
   "icu:Preferences__button--internal": {
     "messageformat": "Belső"
   },
+  "icu:Preferences__button--manage": {
+    "messageformat": "Kezelés"
+  },
+  "icu:Preferences__button--choose-folder": {
+    "messageformat": "Mappa kiválasztása"
+  },
+  "icu:Preferences__button--set-up": {
+    "messageformat": "Beállítás"
+  },
+  "icu:Preferences__internal__local-backups": {
+    "messageformat": "Helyi biztonsági mentések"
+  },
+  "icu:Preferences__internal__export-local-backup": {
+    "messageformat": "Exportálás…"
+  },
+  "icu:Preferences__internal__export-local-backup--description": {
+    "messageformat": "Helyi titkosított biztonsági mentés exportálása egy mappába és annak hitelesítése"
+  },
   "icu:Preferences__internal__validate-backup--description": {
     "messageformat": "Titkosított biztonsági mentés exportálása a memóriába és a validációs csomag futtatása"
   },
@@ -5018,14 +5498,350 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Például a :-) hangulatjel <emojify>🙂</emojify> hangulatjellé kerül átalakításra"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "A némított csevegések maradjanak archiválva"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Az archivált némított csevegések új üzenet érkezésekor továbbra is archiválva maradnak."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Haladó"
   },
   "icu:Preferences--notification-content": {
     "messageformat": "Értesítések tartalma"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "Csevegési előzmények exportálása"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "Exportáld az összes csevegésed géppel olvasható JSON másolatát. Az eltűnő üzenetek nem lesznek exportálva."
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "Exportálás"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "Csevegési előzmények exportálása?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>LÉGY ÓVATOS!</bold> Ezt a fájlt NE oszd meg senkivel! A csevegési előzményeid a számítógépedre lesznek mentve, és a számítógéped engedélyeitől függően más alkalmazások is hozzáférhetnek."
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "Médiafájl beillesztése <secondary>(nagyobb fájlméret)</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "Folytatás"
+  },
+  "icu:PlaintextExport--Confirmation--WaitingLabel": {
+    "messageformat": "Várakozás bevitelre"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "exportálja a csevegési előzményeidet"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "A csevegési előzmények exportálásához igazold a személyazonosságodat."
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "Exportálás"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "A csevegési előzmények exportálásához hitelesítés szükséges."
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "Csevegési előzmények exportálása"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "{currentBytes}/{totalBytes} ({percentage,number,percent}) exportálása..."
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "Ez eltarthat néhány percig"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "Exportálás kész"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>LÉGY ÓVATOS</bold>, hogy hol tárolod az exportált csevegési fájlodat, és ne oszd meg senkivel! A számítógépen található más alkalmazások a számítógép engedélyeitől függően férhetnek hozzá. "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Megjelenítés a Finderben"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "Megjelenítés mappában"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "Megjelenítés mappában"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "Nem sikerült exportálni a csevegési előzményeket"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "Hiba történt és a csevegési előzmények exportálása nem sikerült."
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "Nincs elég tárhely"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "A csevegési előzményeid nem exportálhatók, mert a számítógépeden nincs elég szabad tárhely. Szabadíts fel {bytes} tárhelyet, majd próbáld újra!"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "Nem sikerült exportálni a csevegési előzményeket"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "A csevegési előzményeid nem exportálhatók, mert a számítógépeden nincs elég szabad tárhely. Szabadíts fel {bytes} tárhelyet, majd próbáld újra!"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "Nem sikerült exportálni a csevegési előzményeket"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "A csevegési előzményeid nem exportálhatók, mert a Signal nem rendelkezik engedéllyel fájlok lemezre írásához. Próbáld meg módosítani a lemezed engedélyeit vagy frissíteni a rendszerbeállításaidat, majd exportáld újra."
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Hold ikon"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "{profileName} másolata"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "délelőtt"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "délután"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Értesítési profilok"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Értesítési profilok"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Be"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Bekapcsolva eddig: {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Egy órán át"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "{time}-ig"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Beállítások"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "„{name}” be van kapcsolva"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "„{name}” nincs bekapcsolva"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Értesítési profil mostantól engedélyezve"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Értesítési profil mostantól letiltva"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Értesítési profilok"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Beállítás"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Értesítési profilok"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Hozz létre egy profilt, hogy csak az általad kiválasztott emberektől és csoportoktól kapj értesítéseket és hívásokat"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Folytatás"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Értesítési profilok hozzáadása vagy szerkesztése"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {Egy profil} other {{profileCount,number} profil}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Profil létrehozása"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Profil elnevezése"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Név"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Profilnév"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Munkahelyi"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Alvás"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Vezetés"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Pihenés"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Fókusz"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Engedélyezett értesítések"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Add hozzá azokat a személyeket és csoportokat, akiktől értesítéseket szeretnél kapni, amikor a profil be van kapcsolva"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Személyek vagy csoportok hozzáadása"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Kivételek"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Összes hívás engedélyezése"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Értesítsen az összes említés esetén"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Ütemezés hozzáadása"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Ütemezés"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Engedélyezd és szerkeszd az ütemezést az értesítési profil automatizálásához."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Automatikus bekapcsolás"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Ütemezés"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Feladó"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Eddig:"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Időválasztó megnyitása"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Vasárnap"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Hétfő"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Kedd"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Szerda"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Csütörtök"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Péntek"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Szombat"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Profil létrehozva"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Ha hozzáadtál egy ütemtervet, a profilod automatikusan be- és kikapcsol. A csevegőlista tetején található ··· ikonra kattintva manuálisan is be- vagy kikapcsolhatod."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "Vas"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Hé"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Ke"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Sze"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Csü"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Pén"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "Szo"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Hétköznapok"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Hétvégék"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Naponta"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Profilok"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Szinkronizálás eszközök között"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "A profiljaid szinkronizálva lesznek az eszközeid között. Ha bekapcsolsz egy profilt az egyik eszközön, akkor az a többi eszközön is bekapcsolásra kerül."
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Profil törlése"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Véglegesen törlöd ezt az értesítési profilt?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Törlés"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Be"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Ki"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Profil nevének szerkesztése"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Engedélyezett értesítések"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} → {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Be"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Ki"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Letiltva"
+  },
+  "icu:Preferences--signal-backups": {
+    "messageformat": "Signal Biztonságos Biztonsági mentések"
+  },
+  "icu:Preferences--signal-backups-off-description": {
+    "messageformat": "Automatikus biztonsági mentések a Signal biztonságos végpontok közötti titkosított tárolási szolgáltatásával. Kezdj hozzá a telefonodon! <learnMoreLink>Tudj meg többet!</learnMoreLink>"
+  },
+  "icu:Preferences--backup-section-description": {
+    "messageformat": "Készíts biztonsági másolatot az üzenetelőzményeidről, hogy soha ne veszíts el adatot új telefon vásárlásakor vagy a Signal újratelepítésekor."
   },
   "icu:Preferences--backup-details__header": {
     "messageformat": "Biztonsági mentés részletei"
@@ -5034,7 +5850,10 @@
     "messageformat": "Szöveg és minden médiafájl biztonsági mentése"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Az előfizetés nem található Annak érdekében, hogy tovább használhasd a Signal biztonsági mentéseit, újítsd meg."
+    "messageformat": "Az előfizetésed nem található. A biztonsági mentés részleteinek megtekintéséhez ellenőrizd a telefonodat."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/hónap"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Szöveg és minden médiafájl biztonsági mentése {mediaDayCount,number} napra} other {Szöveg és minden médiafájl biztonsági mentése {mediaDayCount,number} napra}}"
@@ -5052,16 +5871,13 @@
     "messageformat": "Előfizetés törölve"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "A Signal biztonsági mentéseire vonatkozó előfizetésed kezelheted és lemondhatod a telefonodon."
+    "messageformat": "A Signal Biztonságos biztonsági mentéseire vonatkozó előfizetésedet kezelheted és lemondhatod a telefonodon."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "A Signal biztonsági mentéseire vonatkozó előfizetésed kezelheted és frissítheted a telefonodon."
-  },
-  "icu:Preferences--backup-plan__not-found": {
-    "messageformat": "Az előfizetés nem található Annak érdekében, hogy tovább használhasd a Signal biztonsági mentéseit, újítsd meg."
+    "messageformat": "A Signal Biztonságos biztonsági mentéseire vonatkozó előfizetésedet kezelheted és frissítheted a telefonodon."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "A Signal biztonsági mentéseire vonatkozó előfizetésed kezelheted és megújíthatod a telefonodon."
+    "messageformat": "A Signal Biztonságos biztonsági mentéseire vonatkozó előfizetésedet kezelheted és megújíthatod a telefonodon."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Utolsó biztonsági mentés"
@@ -5069,8 +5885,107 @@
   "icu:Preferences--backup-created-by-phone": {
     "messageformat": "A telefonod"
   },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Biztonsági mentés mérete"
+  "icu:Preferences__local-backups": {
+    "messageformat": "Asztali biztonsági mentések"
+  },
+  "icu:Preferences__local-backups-section__description": {
+    "messageformat": "A biztonsági mentések egy kulccsal titkosítva tárolódnak a számítógépeden."
+  },
+  "icu:Preferences--local-backups-off-description": {
+    "messageformat": "Készíts egy végponttól végpontig titkosított biztonsági mentést, amelyet visszaállíthatsz a telefonodon. "
+  },
+  "icu:Preferences--local-backups-restore-info": {
+    "messageformat": "Egy biztonsági mentés visszaállításához először is telepítsd a Signalt! Nyisd meg az alkalmazást, koppints a Biztonsági mentés visszaállítása opcióra, majd keresd ki a biztonsági mentést tartalmazó mappát! <learnMoreLink>Tudj meg többet!</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-setup-folder": {
+    "messageformat": "Válassz egy mappát"
+  },
+  "icu:Preferences--local-backups-setup-folder-description": {
+    "messageformat": "Válassz ki egy mappát a számítógép tárhelyén, ahol a végponttól végpontig titkosított biztonsági mentést tárolni fogod."
+  },
+  "icu:Preferences--local-backups-setup-next": {
+    "messageformat": "Tovább"
+  },
+  "icu:Preferences--local-backups-view-backup-key-done": {
+    "messageformat": "Befejezés"
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt--mac": {
+    "messageformat": "a biztonsági kulcsod megjelenítése"
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt--windows": {
+    "messageformat": "A biztonsági kulcs megtekintéséhez igazold a személyazonosságodat."
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt-description--linux": {
+    "messageformat": "Biztonsági kulcs megtekintése"
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt-message--linux": {
+    "messageformat": "A biztonsági kulcs megtekintéséhez hitelesítés szükséges."
+  },
+  "icu:Preferences--local-backups-backup-key-text-box": {
+    "messageformat": "Biztonsági kulcs szövegmező"
+  },
+  "icu:Preferences--local-backups-enter-backup-key": {
+    "messageformat": "Kulcs megadása"
+  },
+  "icu:Preferences--local-backups-record-backup-key": {
+    "messageformat": "Jegyezd fel a biztonsági kulcsod"
+  },
+  "icu:Preferences--local-backups-record-backup-key-description": {
+    "messageformat": "Ez a kulcs szükséges a fiók és az adatok helyreállításához. Tárold biztonságos helyen ezt a kulcsot. Ha elveszíted, nem tudod helyreállítani a fiókodat. <learnMoreLink>Tudj meg többet!</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-backup-key": {
+    "messageformat": "Erősítsd meg a biztonsági kulcsot"
+  },
+  "icu:Preferences--local-backups-confirm-backup-key-description": {
+    "messageformat": "Írd be az imént rögzített biztonsági kulcsot"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-title": {
+    "messageformat": "Tartsd biztonságban a kulcsod"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-body": {
+    "messageformat": "Ha elveszíted a kulcsod, a Signal nem tud segíteni a biztonsági másolat helyreállításában. Tárold biztonságos helyen, és ne oszd meg másokkal."
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-continue": {
+    "messageformat": "Folytatás"
+  },
+  "icu:Preferences--local-backups-see-backup-key-again": {
+    "messageformat": "Kulcs újbóli megtekintése"
+  },
+  "icu:Preferences__local-backups-folder": {
+    "messageformat": "Biztonsági mentés mappája"
+  },
+  "icu:Preferences__local-backups-folder__change": {
+    "messageformat": "Módosítás"
+  },
+  "icu:Preferences__local-backups-copy-key": {
+    "messageformat": "Másolás vágólapra"
+  },
+  "icu:Preferences__local-backups-copied-key": {
+    "messageformat": "Biztonsági kulcs másolva"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "Biztonsági mentések bekapcsolása"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "A biztonsági mentések engedélyezéséhez igazold a személyazonosságodat."
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "Biztonsági mentések bekapcsolása"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "A biztonsági mentések engedélyezéséhez hitelesítés szükséges."
+  },
+  "icu:Preferences__view-key": {
+    "messageformat": "Kulcs megtekintése"
+  },
+  "icu:Preferences__backup-key": {
+    "messageformat": "Biztonsági kulcs"
+  },
+  "icu:Preferences__backup-key-description": {
+    "messageformat": "A biztonsági mentési kulcs egy 64 jegyű kód, amely a biztonsági mentés visszaállításához szükséges."
+  },
+  "icu:Preferences__backup-other-ways": {
+    "messageformat": "A biztonsági mentés egyéb módjai"
   },
   "icu:Preferences--blocked-count": {
     "messageformat": "{num, plural, one {{num,number} névjegy} other {{num,number} névjegy}}"
@@ -5188,6 +6103,24 @@
   },
   "icu:Preferences__LanguageModal__Restart__Button": {
     "messageformat": "Újraindítás"
+  },
+  "icu:Preferences__Privacy__Application": {
+    "messageformat": "Alkalmazás"
+  },
+  "icu:Preferences__content-protection--label": {
+    "messageformat": "Képernyőbiztonság"
+  },
+  "icu:Preferences__content-protection--description": {
+    "messageformat": "A fokozott adatvédelem érdekében tiltsd le a Signal képernyőképeit ezen a számítógépen."
+  },
+  "icu:Preferences__content-protection__modal--title": {
+    "messageformat": "Kikapcsolod a képernyőbiztonságot?"
+  },
+  "icu:Preferences__content-protection__modal--body": {
+    "messageformat": "Ha le van tiltva, ez lehetővé teheti a Microsoft Windows számára, hogy képernyőképeket készítsen a Signalról, és azokat olyan funkciókhoz használja, amelyek nem feltétlenül privátak."
+  },
+  "icu:Preferences__content-protection__modal--disable": {
+    "messageformat": "Letiltás"
   },
   "icu:DialogUpdate--version-available": {
     "messageformat": "Elérhető frissítés a {version} verzióra"
@@ -5961,9 +6894,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Visszaállítás"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Befejezés"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Felhasználónévhez tartozó hivatkozás színe, {index,number}/{total,number}"
   },
@@ -6033,6 +6963,9 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "Szerkesztve"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "Rögzítve"
+  },
   "icu:DraftGifMessageSendModal__Title": {
     "messageformat": "Szöveg hozzáadása"
   },
@@ -6044,6 +6977,9 @@
   },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "Szerkesztési előzmények"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "Időbélyegző másolása"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "Ezt a szerkesztést nem sikerült elküldeni. Ellenőrizd az internetkapcsolatot, és próbáld újra"
@@ -6285,8 +7221,341 @@
   "icu:ProfileNameWarningModal__list--item3--group": {
     "messageformat": "Ne oszd meg a személyes adataidat olyanokkal, akiket nem ismersz"
   },
+  "icu:SaveMultiDialog__title": {
+    "messageformat": "Mellékletek mentése"
+  },
   "icu:WhatsNew__modal-title": {
     "messageformat": "Újdonságok"
+  },
+  "icu:PreferencesDonations__title": {
+    "messageformat": "Az adatok védelme fontosabb a profitnál"
+  },
+  "icu:PreferencesDonations__description": {
+    "messageformat": "Privát üzenetküldés, általad támogatva. Nincsenek hirdetések, nincs nyomon követés, nincsenek kompromisszumok. Adományozz most és támogasd a Signalt! <readMoreLink>További információk</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Adományozás"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "Támogatásaim"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "Egyszeri {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Adomány feldolgozása..."
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "{formattedCurrencyAmount} adományozása"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "A jelvények és a havi adományok mobileszközödön is kezelhetők."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Az adataid privátak"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>A Signal nem gyűjti és nem tárolja a személyes adataidat, amikor adományozol.</paragraph><paragraph>A Stripe-ot használjuk fizetésfeldolgozóként az adományok fogadására. Nem férünk hozzá, nem tárolunk és nem mentünk el semmilyen információt, amelyet megadsz számukra.</paragraph><paragraph>A Signal nem fogja és nem is tudja összekapcsolni az adományodat a Signal-fiókoddal.</paragraph><paragraph>Köszönjük a támogatásodat!</paragraph>"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Nyugták"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "A nyugta adatainak megtekintése"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Adományozás GYIK"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "A nyugták nem szinkronizálódnak az eszközök között. Ha újratelepítetted a Signalt, korábbi adományaid nyugtái nem lesznek elérhetők."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "Nincsenek nyugták"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Nyugta letöltése"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Típus"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Fizetés dátuma"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Adj egyszeri adományt"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Asztali számítógépen csak egyszeri adományozásra van lehetőség. A havi adományokat mobileszközön adhatod le."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Problémába ütköztél? <contactSupportLink>Segítségkérés</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Egyedi összeg megadása"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Hitel- vagy betéti kártya"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Add meg a hitel- vagy bankkártyád adatait. A Signal nem gyűjti és nem tárolja a személyes adataidat. <learnMoreLink>Tudj meg többet!</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Kártyaszám"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Lejárati idő"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "HH/ÉÉ"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Adományozz {formattedCurrencyAmount} összeget a Signalnak"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Érvénytelen kártyaszám"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "A kártya lejárt"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "Év megadása kötelező"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Érvénytelen"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "A kód túl rövid"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Szerezd meg a Signal Boost-jelvényt 30 napra"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Az adomány minimális összege: {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "A minimális adomány összege: {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Az adomány maximális összege: {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Ha kilépsz erről az oldalról, a hitelkártyaadataid törlődnek. Szeretnéd folytatni?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Információ eltávolítása"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Folytatás"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "Adomány nyugta"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "Összeg"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Típus"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "Fizetés dátuma"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "Egyszer"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Köszönjük, hogy támogatod a Signalt! Adományoddal hozzájárulsz a szabad véleménynyilvánítást és milliók számára biztonságos kommunikációt biztosító, nyílt forrású, magánéletet védő technológiák fejlesztéséhez. Ha az Egyesült Államokban adózol, kérünk, őrizd meg ezt a nyugtát adóbevallásodhoz. A Signal Technology Foundation egy adómentes, non-profit szervezet, amely az USA területén az 501c3 Internal Revenue Code hatálya alá tartozik. Federal Tax ID: 82-4506840."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Offline állapotban vagy. Az adományozás befejezéséhez, kérjük, csatlakozz az internethez."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Adományozás visszavonva"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Adományozás befejeződött"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Hiba történt az adomány feldolgozása közben"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Adomány feldolgozása…"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Visszaellenőrzés sikertelen"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "Van egy folyamatban lévő adományod, amely további ellenőrzést igényel."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Van egy folyamatban lévő adományozásod, amely megerősítést igényel."
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Az adományozás sikeres volt, de nem tudtuk frissíteni a jelvényed beállításait."
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "A jelvénybeállítások frissítéséhez lépj a mobileszközödön a Beállítások → Adományozás a Signalnak → Jelvények menüpontra."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Adományozás megszakadt"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "A kártyádat nem terhelték meg. Szeretnéd újra megpróbálni az adományozást?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Újra"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Fizetési mód elutasítva"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Próbáld újra egy másik fizetési móddal, vagy keresd fel a bankodat további információért!"
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Visszaellenőrzés sikertelen"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "A további ellenőrzési lépés sikertelen. Próbáld újra!"
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "Hiba történt az adományoddal"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "Lehetséges, hogy az adományodat nem dolgoztuk fel. A nyugták ellenőrzéséhez és megerősítéséhez kattints az „Adományozás a Signalnak” lehetőségre, majd az „Adományt igazoló nyugták” opcióra."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Próbáld újra, vagy küldj egy hibanaplót az Ügyfélszolgálatnak, és kérj segítséget az adományozás befejezéséhez. A hibanaplók segítenek diagnosztizálni és kijavítani a problémát, és nem tartalmaznak azonosító információkat."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "Adomány feldolgozása..."
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Az adomány feldolgozása folyamatban van"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "Az adományod feldolgozása még folyamatban van. Ez pár percet is igénybe vehet."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Adományozás visszavonva"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "Túl sok idő telt el az adományozás indítása óta. Kérjük, kezdd újra."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "További ellenőrzés szükséges"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Várakozás az ellenőrzésre"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "A hitelkártya-kibocsátó további ellenőrzési lépést kér egy webböngészőben."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Böngésző megnyitása"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Böngésző újbóli megnyitása"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Adományozás visszavonása"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Köszönjük a támogatásodat!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Kaptál egy adományozói jelvényt a Signaltól! Tedd ki a profilodra, és mutasd meg, hogy te is adományoztál!"
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Megjelenítés profilképen"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Ezt a mobilkészülékeden a Beállítások → Adományozás a Signalnak → Jelvények menüpontban állíthatod be."
+  },
+  "icu:CallQualitySurvey__CloseButton__AccessibilityLabel": {
+    "messageformat": "Bezárás"
+  },
+  "icu:CallQualitySurvey__BackButton__AccessibilityLabel": {
+    "messageformat": "Vissza"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "Milyen volt a hívás minősége?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Ez segít nekünk a Signal-hívások jobbá tételében. Személyazonosításra alkalmas adatokat nem tárolunk."
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "Problémákba ütköztem"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "Nagyszerű"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "Milyen problémáid voltak?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "Jelöld be az összes megfelelőt"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "Hangprobléma"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "Akadozó hang"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "Visszhangot hallottam"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "Mások visszhangot hallottak"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "Hangkimaradás"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "Videóval kapcsolatos probléma"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "A kamera nem működött"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "Rossz videóminőség"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "Alacsony felbontás"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "Megszakadt a hívás"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "Egyéb"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "A probléma leírása"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "Kérjük, add meg a problémához kapcsolódó összes részletet. Amit itt megosztottál, az bizalmas marad, és csak a Signal-hívások fejlesztésére használjuk fel."
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "Folytatás"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "Segíts nekünk fejlődni"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescription": {
+    "messageformat": "Ez segít többet megtudni a hívásokról, és arról, hogy mi működik és mi nem. Beküldés előtt megtekintheted a hibanaplót."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "Hibanapló megosztása"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "Megtekintés"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__HelpText": {
+    "messageformat": "A hibanaplók alacsony szintű alkalmazásinformációkat tartalmaznak, és nem fedik fel az üzenetek tartalmát."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "Küldés"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Ebbe a verzióba néhány kisebb újítás és hibajavítás került annak érdekében, hogy a Signal továbbra is gond nélkül fusson.",
@@ -6316,13 +7585,16 @@
     "messageformat": "Apró finomítások, hibajavítások és teljesítménynövelések. Köszönjük, hogy a Signalt használod!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.51--0": {
-    "messageformat": "Mostantól a Signal Desktopban is kereshetsz animált GIF-eket."
+  "icu:WhatsNew__7.79-1": {
+    "messageformat": "Frissítettük a görgetősávok megjelenését az alkalmazásban, hogy vizuálisan egységesebbé tegyük azokat."
   },
-  "icu:WhatsNew__v7.51--1": {
-    "messageformat": "A kép a képben ablakot is átméreteztük, és kényelmes, új parancsikonokat adtunk hozzá, miközben a hívásablak minimálisra csökkent."
+  "icu:WhatsNew__7.79-2": {
+    "messageformat": "Másolással/beillesztéssel kapcsolatos formázási fejlesztések. Köszönjük, @brianHarder! Köszönjük, <brianHarder></brianHarder>!"
   },
-  "icu:WhatsNew__v7.54--0": {
-    "messageformat": "A smile is the same in any language, but now that the emoji shortcuts in Signal Desktop have been fully translated you can also <code>:smile:</code> or <code>:sourire:</code> or <code>:微笑:</code> in any supported language too."
+  "icu:WhatsNew__7.80-1": {
+    "messageformat": "Megérkeztek a Signal szavazások! A szavazások egyszerű módjai annak, hogy megtudd, mit gondolnak valójában a csoportos csevegés résztvevői. Hozz létre egy szavazást különböző vacsoralehetőségekkel vagy bármilyen más fontos választási lehetőséggel. A csoport minden tagja szavazhat és láthatja a másik válaszait, és eldöntheted, hogy engedélyezed-e a többszörös szavazást."
+  },
+  "icu:WhatsNew__7.81-1": {
+    "messageformat": "A médiagaléria mostantól két új lapot tartalmaz a hangüzenetek és a hivatkozások előnézetei számára. Ha egy hivatkozás egy csoportos csevegésbe kerül, akkor hangjelzés hallható?"
   }
 }

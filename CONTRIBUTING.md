@@ -73,7 +73,7 @@ instance while you make changes - they'll run until you stop them:
 
 ```
 pnpm run dev:transpile # recompiles when you change .ts files
-pnpm run dev:sass      # recompiles when you change .scss files
+pnpm run dev:styles    # recompiles when you change .scss files
 ```
 
 #### Known issues
@@ -309,7 +309,7 @@ Then, run the tests using `pnpm run test-release`.
 macOS requires apps to be code signed with an Apple certificate. To test development builds
 you can ad-hoc sign the packaged app which will let you run it locally.
 
-1. In `package.json` remove the macOS signing script: `"sign": "./ts/scripts/sign-macos.js",`
+1. In `package.json` remove the macOS signing script: `"sign": "./ts/scripts/sign-macos.node.js",`
 2. Build the app and ad-hoc sign the app bundle:
 
 ```
