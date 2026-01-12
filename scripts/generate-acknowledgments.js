@@ -1,23 +1,26 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-const assert = require('assert');
-const fs = require('fs');
-const { join } = require('path');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const { join } = require('node:path');
 const pMap = require('p-map');
 const prettier = require('prettier');
+
+const { default: packageJson } = require('./packageJson.js');
 
 // During development, you might use local versions of dependencies which are missing
 // acknowledgment files. In this case we'll skip rebuilding the acknowledgment files.
 // Enable this flag to throw an error.
 const REQUIRE_SIGNAL_LIB_FILES = Boolean(process.env.REQUIRE_SIGNAL_LIB_FILES);
 
-const {
-  dependencies = {},
-  optionalDependencies = {},
-} = require('../package.json');
+const { dependencies = {}, optionalDependencies = {} } = packageJson;
 
-const SIGNAL_LIBS = ['@signalapp/libsignal-client', '@signalapp/ringrtc'];
+const SIGNAL_LIBS = [
+  '@signalapp/libsignal-client',
+  '@signalapp/ringrtc',
+  '@signalapp/mute-state-change',
+];
 
 const SKIPPED_DEPENDENCIES = new Set(SIGNAL_LIBS);
 
@@ -35,7 +38,7 @@ async function getMarkdownForDependency(dependencyName) {
   // fs-xattr is an optional dependency that may fail to install (on Windows, most
   //   commonly), so we have a special case for it here. We may need to do something
   //   similar for new optionalDependencies in the future.
-  if (dependencyName === 'fs-xattr') {
+  if (dependencyName === 'fs-xattr' || dependencyName === 'growing-file') {
     licenseBody = 'License: MIT';
   } else {
     const dependencyRootPath = join(nodeModulesPath, dependencyName);

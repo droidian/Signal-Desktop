@@ -10,17 +10,16 @@ mocha.setup({ timeout: 10000 });
 
 window.Events = {
   getThemeSetting: () => 'light',
+  addDarkOverlay: () => undefined,
 };
 
 /* Delete the database before running any tests */
 before(async () => {
   await window.testUtilities.initialize();
-  await window.storage.fetch();
 });
 
 window.testUtilities.prepareTests();
 delete window.testUtilities.prepareTests;
-window.textsecure.storage.protocol = window.getSignalProtocolStore();
 
 !(function () {
   class Reporter extends Mocha.reporters.HTML {
@@ -48,6 +47,3 @@ window.textsecure.storage.protocol = window.getSignalProtocolStore();
 
   mocha.run();
 })();
-
-window.getPreferredSystemLocales = () => ['en'];
-window.getLocaleOverride = () => null;
