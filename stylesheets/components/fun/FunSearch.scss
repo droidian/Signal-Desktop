@@ -13,14 +13,8 @@ $clear-icon-size: 16px;
 $input-padding-inline: 12px;
 
 .FunSearch__Container {
-  grid-area: FunSearch__Container;
   position: relative;
-  margin-block: 12px;
-  margin-inline: 12px;
-
-  .FunTabs__TabPanelInner & {
-    margin-top: 0;
-  }
+  width: 100%;
 }
 
 .FunSearch__Icon {
@@ -49,6 +43,7 @@ $input-padding-inline: 12px;
     $input-padding-inline + $icon-actual-size + $icon-margin-inline-start
   );
   @include mixins.font-body-1;
+  color: light-dark(variables.$color-black, variables.$color-white);
   background: light-dark(variables.$color-gray-05, variables.$color-gray-80);
 
   &:focus {

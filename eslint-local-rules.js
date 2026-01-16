@@ -3,5 +3,8 @@
 /* eslint-disable global-require */
 
 module.exports = {
+  'license-comments': require('./.eslint/rules/license-comments'),
   'type-alias-readonlydeep': require('./.eslint/rules/type-alias-readonlydeep'),
+  'enforce-tw': require('./.eslint/rules/enforce-tw'),
+  'file-suffix': require('./.eslint/rules/file-suffix'),
 };
