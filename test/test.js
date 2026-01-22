@@ -8,19 +8,23 @@
 mocha.setup('bdd');
 mocha.setup({ timeout: 10000 });
 
+let themeSetting = 'light';
+
 window.Events = {
-  getThemeSetting: () => 'light',
+  getThemeSetting: () => themeSetting,
+  setThemeSetting: (newSetting) => {
+    themeSetting = newSetting;
+  },
+  addDarkOverlay: () => undefined,
 };
 
 /* Delete the database before running any tests */
 before(async () => {
   await window.testUtilities.initialize();
-  await window.storage.fetch();
 });
 
 window.testUtilities.prepareTests();
 delete window.testUtilities.prepareTests;
-window.textsecure.storage.protocol = window.getSignalProtocolStore();
 
 !(function () {
   class Reporter extends Mocha.reporters.HTML {
@@ -48,6 +52,3 @@ window.textsecure.storage.protocol = window.getSignalProtocolStore();
 
   mocha.run();
 })();
-
-window.getPreferredSystemLocales = () => ['en'];
-window.getLocaleOverride = () => null;

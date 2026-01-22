@@ -3,13 +3,20 @@
 
 import type { StorybookConfig } from '@storybook/react-webpack5';
 import { ProvidePlugin } from 'webpack';
+import { builtinModules } from 'node:module';
+
+const EXTERNALS = new Set(builtinModules);
+
+// We have polyfills for these
+EXTERNALS.delete('buffer');
+EXTERNALS.delete('url');
 
 const config: StorybookConfig = {
   typescript: {
     reactDocgen: false,
   },
 
-  stories: ['../ts/components/**/*.stories.tsx'],
+  stories: ['../ts/axo/**/*.stories.tsx', '../ts/components/**/*.stories.tsx'],
 
   addons: [
     '@storybook/addon-a11y',
@@ -40,6 +47,10 @@ const config: StorybookConfig = {
       from: '../node_modules/emoji-datasource-apple/img',
       to: 'node_modules/emoji-datasource-apple/img',
     },
+    {
+      from: '../node_modules/intl-tel-input/build/img',
+      to: 'node_modules/intl-tel-input/build/img',
+    },
   ],
 
   webpackFinal(config) {
@@ -47,7 +58,9 @@ const config: StorybookConfig = {
       type: 'filesystem',
     };
 
-    config.resolve!.extensions = ['.tsx', '.ts', '...'];
+    config.resolve!.extensionAlias = {
+      '.js': ['.tsx', '.ts', '.js'],
+    };
 
     config.module!.rules!.unshift({
       test: /\.scss$/,
@@ -65,35 +78,34 @@ const config: StorybookConfig = {
       ],
     });
 
+    config.module!.rules!.push({
+      test: /tailwind-config\.css$/,
+      use: [
+        {
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: {
+              config: false,
+              plugins: {
+                '@tailwindcss/postcss': {},
+              },
+            },
+          },
+        },
+      ],
+    });
+
     config.node = { global: true };
 
-    config.externals = {
-      net: 'commonjs net',
-      vm: 'commonjs vm',
-      fs: 'commonjs fs',
-      async_hooks: 'commonjs async_hooks',
-      module: 'commonjs module',
-      stream: 'commonjs stream',
-      tls: 'commonjs tls',
-      dns: 'commonjs dns',
-      http: 'commonjs http',
-      https: 'commonjs https',
-      os: 'commonjs os',
-      constants: 'commonjs constants',
-      zlib: 'commonjs zlib',
-      '@signalapp/libsignal-client': 'commonjs @signalapp/libsignal-client',
-      '@signalapp/libsignal-client/zkgroup':
-        'commonjs @signalapp/libsignal-client/zkgroup',
-      '@signalapp/ringrtc': 'commonjs @signalapp/ringrtc',
-      '@signalapp/better-sqlite3': 'commonjs @signalapp/better-sqlite3',
-      electron: 'commonjs electron',
-      'fs-xattr': 'commonjs fs-xattr',
-      fsevents: 'commonjs fsevents',
-      'mac-screen-capture-permissions':
-        'commonjs mac-screen-capture-permissions',
-      sass: 'commonjs sass',
-      bufferutil: 'commonjs bufferutil',
-      'utf-8-validate': 'commonjs utf-8-validate',
+    config.externals = ({ request }, callback) => {
+      if (
+        (/^node:/.test(request) && request !== 'node:buffer') ||
+        EXTERNALS.has(request)
+      ) {
+        // Keep Node.js imports unchanged
+        return callback(null, 'commonjs ' + request);
+      }
+      callback();
     };
 
     config.plugins!.push(

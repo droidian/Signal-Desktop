@@ -5,22 +5,34 @@ import type { AudioDevice } from '@signalapp/ringrtc';
 import type {
   CustomColorsItemType,
   DefaultConversationColorType,
-} from './Colors';
-import type { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability';
-import type { PhoneNumberSharingMode } from '../util/phoneNumberSharingMode';
-import type { RetryItemType } from '../util/retryPlaceholders';
-import type { ConfigMapType as RemoteConfigType } from '../RemoteConfig';
-import type { ExtendedStorageID, UnknownRecord } from './StorageService.d';
+} from './Colors.std.js';
+import type { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.std.js';
+import type { RetryItemType } from '../services/retryPlaceholders.std.js';
+import type { ConfigMapType as RemoteConfigType } from '../RemoteConfig.dom.js';
+import type { ExtendedStorageID, UnknownRecord } from './StorageService.d.ts';
 
-import type { GroupCredentialType } from '../textsecure/WebAPI';
+import type { GroupCredentialType } from '../textsecure/WebAPI.preload.js';
 import type {
   SessionResetsType,
   StorageServiceCredentials,
-} from '../textsecure/Types.d';
-import type { BackupCredentialType } from './backups';
-import type { ServiceIdString } from './ServiceId';
+} from '../textsecure/Types.d.ts';
+import type {
+  BackupCredentialWrapperType,
+  BackupsSubscriptionType,
+  BackupStatusType,
+} from './backups.node.js';
+import type { ServiceIdString } from './ServiceId.std.js';
+import type { RegisteredChallengeType } from '../challenge.dom.js';
+import type { ServerAlertsType } from '../util/handleServerAlerts.preload.js';
+import type { NotificationProfileOverride } from './NotificationProfile.std.js';
+import type { PhoneNumberSharingMode } from './PhoneNumberSharingMode.std.js';
 
-import type { RegisteredChallengeType } from '../challenge';
+export type AutoDownloadAttachmentType = {
+  photos: boolean;
+  videos: boolean;
+  audio: boolean;
+  documents: boolean;
+};
 
 export type SerializedCertificateType = {
   expires: number;
@@ -47,12 +59,16 @@ export type StorageAccessType = {
   'always-relay-calls': boolean;
   'audio-notification': boolean;
   'auto-download-update': boolean;
+  'auto-download-attachment': AutoDownloadAttachmentType;
   autoConvertEmoji: boolean;
   'badge-count-muted-conversations': boolean;
   'blocked-groups': ReadonlyArray<string>;
   'blocked-uuids': ReadonlyArray<ServiceIdString>;
   'call-ringtone-notification': boolean;
   'call-system-notification': boolean;
+  lastCallQualitySurveyTime: number;
+  lastCallQualityFailureSurveyTime: number;
+  callQualitySurveyCooldownDisabled: boolean;
   'hide-menu-bar': boolean;
   'incoming-call-notification': boolean;
   'notification-draw-attention': boolean;
@@ -65,30 +81,27 @@ export type StorageAccessType = {
   blocked: ReadonlyArray<string>;
   defaultConversationColor: DefaultConversationColorType;
 
-  // Not used UI, stored as is when imported from backup.
-  defaultWallpaperPhotoPointer: Uint8Array;
-  defaultWallpaperPreset: number;
-  defaultDimWallpaperInDarkMode: boolean;
-
   customColors: CustomColorsItemType;
   device_name: string;
   existingOnboardingStoryMessageIds: ReadonlyArray<string> | undefined;
-  hasRegisterSupportForUnauthenticatedDelivery: boolean;
   hasSetMyStoriesPrivacy: boolean;
   hasCompletedUsernameOnboarding: boolean;
   hasCompletedUsernameLinkOnboarding: boolean;
   hasCompletedSafetyNumberOnboarding: boolean;
   hasSeenGroupStoryEducationSheet: boolean;
+  hasSeenNotificationProfileOnboarding: boolean;
   hasViewedOnboardingStory: boolean;
   hasStoriesDisabled: boolean;
-  storyViewReceiptsEnabled: boolean;
+  storyViewReceiptsEnabled: boolean | undefined;
   identityKeyMap: IdentityKeyMap;
   lastAttemptedToRefreshProfilesAt: number;
   lastResortKeyUpdateTime: number;
   lastResortKeyUpdateTimePNI: number;
   localDeleteWarningShown: boolean;
+  accountEntropyPool: string;
   masterKey: string;
-  masterKeyLastRequestTime: number;
+
+  accountEntropyPoolLastRequestTime: number;
   maxPreKeyId: number;
   maxPreKeyIdPNI: number;
   maxKyberPreKeyId: number;
@@ -107,45 +120,56 @@ export type StorageAccessType = {
   signedKeyUpdateTime: number;
   signedKeyUpdateTimePNI: number;
   storageKey: string;
-  synced_at: number;
+  synced_at: number | undefined;
   userAgent: string;
   uuid_id: string;
+  useRingrtcAdm: boolean;
   pni: string;
   version: string;
   linkPreviews: boolean;
   universalExpireTimer: number;
   retryPlaceholders: ReadonlyArray<RetryItemType>;
+  donationWorkflow: string;
   chromiumRegistrationDoneEver: '';
   chromiumRegistrationDone: '';
   phoneNumberSharingMode: PhoneNumberSharingMode;
   phoneNumberDiscoverability: PhoneNumberDiscoverability;
   pinnedConversationIds: ReadonlyArray<string>;
   preferContactAvatars: boolean;
-  primarySendsSms: boolean;
   textFormatting: boolean;
   typingIndicators: boolean;
   sealedSenderIndicators: boolean;
   storageFetchComplete: boolean;
   avatarUrl: string | undefined;
   manifestVersion: number;
+  manifestRecordIkm: Uint8Array;
   storageCredentials: StorageServiceCredentials;
   'storage-service-error-records': ReadonlyArray<UnknownRecord>;
   'storage-service-unknown-records': ReadonlyArray<UnknownRecord>;
   'storage-service-pending-deletes': ReadonlyArray<ExtendedStorageID>;
-  'preferred-video-input-device': string;
-  'preferred-audio-input-device': AudioDevice;
-  'preferred-audio-output-device': AudioDevice;
+  'preferred-video-input-device': string | undefined;
+  'preferred-audio-input-device': AudioDevice | undefined;
+  'preferred-audio-output-device': AudioDevice | undefined;
   remoteConfig: RemoteConfigType;
+  remoteConfigHash: string;
   serverTimeSkew: number;
   unidentifiedDeliveryIndicators: boolean;
   groupCredentials: ReadonlyArray<GroupCredentialType>;
   callLinkAuthCredentials: ReadonlyArray<GroupCredentialType>;
-  backupCredentials: ReadonlyArray<BackupCredentialType>;
-  backupCredentialsLastRequestTime: number;
-  setBackupSignatureKey: boolean;
+  backupCombinedCredentials: ReadonlyArray<BackupCredentialWrapperType>;
+  backupCombinedCredentialsLastRequestTime: number;
+  backupMediaRootKey: Uint8Array;
+  backupMediaDownloadTotalBytes: number;
+  backupMediaDownloadCompletedBytes: number;
+  backupMediaDownloadPaused: boolean;
+  backupMediaDownloadBannerDismissed: boolean;
+  attachmentDownloadManagerIdled: boolean;
+  messageInsertTriggersDisabled: boolean;
+  setBackupMessagesSignatureKey: boolean;
+  setBackupMediaSignatureKey: boolean;
   lastReceivedAtCounter: number;
   preferredReactionEmoji: ReadonlyArray<string>;
-  skinTone: number;
+  emojiSkinToneDefault: EmojiSkinToneDefault;
   unreadCount: number;
   'challenge:conversations': ReadonlyArray<RegisteredChallengeType>;
 
@@ -161,10 +185,11 @@ export type StorageAccessType = {
   areWeASubscriber: boolean;
   subscriberId: Uint8Array;
   subscriberCurrencyCode: string;
+  // Note: for historical reasons, this has two l's
   donorSubscriptionManuallyCancelled: boolean;
   backupsSubscriberId: Uint8Array;
-  backupsSubscriberCurrencyCode: string;
-  backupsSubscriptionManuallyCancelled: boolean;
+  backupsSubscriberPurchaseToken: string;
+  backupsSubscriberOriginalTransactionId: string;
   displayBadgesOnProfile: boolean;
   keepMutedChatsArchived: boolean;
   usernameLastIntegrityCheck: number;
@@ -175,7 +200,79 @@ export type StorageAccessType = {
     entropy: Uint8Array;
     serverId: Uint8Array;
   };
+  serverAlerts: ServerAlertsType;
   needOrphanedAttachmentCheck: boolean;
+  needProfileMovedModal: boolean;
+  notificationProfileOverride: NotificationProfileOverride | undefined;
+  notificationProfileOverrideFromPrimary:
+    | NotificationProfileOverride
+    | undefined;
+  notificationProfileSyncDisabled: boolean;
+  observedCapabilities: {
+    attachmentBackfill?: true;
+
+    // Note: Upon capability deprecation - change the value type to `never` and
+    // remove it in `ts/background.ts`
+    deleteSync?: never;
+    ssre2?: never;
+  };
+  releaseNotesNextFetchTime: number;
+  releaseNotesVersionWatermark: string;
+  releaseNotesPreviousManifestHash: string;
+
+  // If present - we are downloading backup
+  backupDownloadPath: string;
+
+  // If present together with backupDownloadPath - we are downloading
+  // link-and-sync backup
+  backupEphemeralKey: Uint8Array;
+
+  // If present - we are resuming the download of known transfer archive
+  backupTransitArchive: {
+    cdn: number;
+    key: string;
+  };
+
+  backupTier: number | undefined;
+  cloudBackupStatus: BackupStatusType | undefined;
+  backupSubscriptionStatus: BackupsSubscriptionType | undefined;
+
+  backupKeyViewed: boolean;
+  localBackupFolder: string | undefined;
+
+  // If true Desktop message history was restored from backup
+  isRestoredFromBackup: boolean;
+
+  // The `firstAppVersion` present on an BackupInfo from an imported backup.
+  restoredBackupFirstAppVersion: string;
+
+  // Stored solely for pesistance during import/export sequence
+  svrPin: string;
+  optimizeOnDeviceStorage: boolean;
+  pinReminders: boolean | undefined;
+  screenLockTimeoutMinutes: number | undefined;
+  'auto-download-attachment-primary':
+    | undefined
+    | {
+        photos: number;
+        audio: number;
+        videos: number;
+        documents: number;
+      };
+  androidSpecificSettings: unknown;
+  callsUseLessDataSetting: unknown;
+  allowSealedSenderFromAnyone: unknown;
+
+  postRegistrationSyncsStatus: 'incomplete' | 'complete';
+
+  avatarsHaveBeenMigrated: boolean;
+
+  // Test-only
+  // Not used UI, stored as is when imported from backup during tests
+  defaultWallpaperPhotoPointer: Uint8Array;
+  defaultWallpaperPreset: number;
+  defaultDimWallpaperInDarkMode: boolean;
+  defaultAutoBubbleColor: boolean;
 
   // Deprecated
   'challenge:retry-message-ids': never;
@@ -188,6 +285,11 @@ export type StorageAccessType = {
   lastStartup: never;
   sendEditWarningShown: never;
   formattingWarningShown: never;
+  hasRegisterSupportForUnauthenticatedDelivery: never;
+  masterKeyLastRequestTime: never;
+  versionedExpirationTimer: never;
+  primarySendsSms: never;
+  backupMediaDownloadIdle: never;
 };
 
 export type StorageInterface = {
