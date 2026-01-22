@@ -810,7 +810,7 @@ export function MediaEditor({
         });
 
         rect.on('deselected', () => {
-          setEditMode(undefined);
+          fabricCanvas.setActiveObject(rect);
         });
 
         fabricCanvas.add(rect);
