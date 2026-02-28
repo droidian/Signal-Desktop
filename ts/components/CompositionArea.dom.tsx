@@ -458,6 +458,10 @@ export const CompositionArea = memo(function CompositionArea({
     }
   }, []);
 
+  const launchRecorder = useCallback(() => {
+      startRecording(conversationId);
+  }, []);
+
   const launchMediaPicker = useCallback(
     () => launchAttachmentPicker('media'),
     [launchAttachmentPicker]
@@ -803,18 +807,6 @@ export const CompositionArea = memo(function CompositionArea({
     </>
   );
 
-  const micButtonFragment = shouldShowMicrophone ? (
-    <div className="CompositionArea__button-cell">
-      <AudioCapture
-        conversationId={conversationId}
-        draftAttachments={draftAttachments}
-        i18n={i18n}
-        showToast={showToast}
-        startRecording={startRecording}
-      />
-    </div>
-  ) : null;
-
   const editMessageFragment = draftEditMessage ? (
     <>
       {large && <div className="CompositionArea__placeholder" />}
@@ -857,6 +849,9 @@ export const CompositionArea = memo(function CompositionArea({
             </AxoDropdownMenu.Trigger>
           </div>
           <AxoDropdownMenu.Content>
+            <AxoDropdownMenu.Item symbol="message-badge" onSelect={launchRecorder}>
+              {i18n('icu:Keyboard--begin-recording-voice-note')}
+            </AxoDropdownMenu.Item>
             <AxoDropdownMenu.Item symbol="photo" onSelect={launchMediaPicker}>
               {i18n('icu:CompositionArea__AttachMenu__PhotosAndVideos')}
             </AxoDropdownMenu.Item>
@@ -1309,7 +1304,6 @@ export const CompositionArea = memo(function CompositionArea({
         )}
         {!isViewOnceActive && !large && (
           <>
-            {!dirty ? micButtonFragment : null}
             {editMessageFragment}
             {composerAddMenuButton}
           </>
@@ -1324,7 +1318,6 @@ export const CompositionArea = memo(function CompositionArea({
         >
           {leftHandSideButtonsFragment}
           {composerAddMenuButton}
-          {!dirty ? micButtonFragment : null}
           {editMessageFragment}
           {dirty || !shouldShowMicrophone ? sendButtonFragment : null}
         </div>
