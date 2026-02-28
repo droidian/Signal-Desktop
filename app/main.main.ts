@@ -644,14 +644,7 @@ if (OS.isWindows()) {
   windowIcon = join(rootDir, 'build', 'icons', 'png', '512x512.png');
 }
 
-// The titlebar is hidden on:
-//   - Windows < 10 (7, 8)
-//   - macOS (but no custom titlebar is displayed, see
-//     `--title-bar-drag-area-height` in `stylesheets/_titlebar.scss`
-const mainTitleBarStyle = OS.isMacOS()
-  ? ('hidden' as const)
-  : ('default' as const);
-
+const mainTitleBarStyle = 'hidden' as const;
 const nonMainTitleBarStyle = 'default' as const;
 
 async function safeLoadURL(window: BrowserWindow, url: string): Promise<void> {
