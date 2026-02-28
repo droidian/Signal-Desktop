@@ -150,6 +150,27 @@ class NotificationService extends EventEmitter {
     this.#update();
   }
 
+  private async feedback(): void {
+    try {
+        let dbus = require('dbus-native');
+        let bus = dbus.sessionBus();
+        let service = bus.getService('org.sigxcpu.Feedback');
+        let iface = service.getInterface(
+            '/org/sigxcpu/Feedback',
+            'org.sigxcpu.Feedback',
+            function(err, feedback) {
+                feedback.TriggerFeedback(
+                    "signal-desktop",
+                    "message-new-instant",
+                    {},
+                    -1
+                );
+        });
+    } catch(error) {
+        console.log(error);
+    }
+  }
+
   /**
    * A lower-level wrapper around `window.Notification`. You may prefer to use `add`,
    * which includes debouncing and user permission logic.
@@ -205,6 +226,7 @@ class NotificationService extends EventEmitter {
         silent: true,
         tag: conversationId
       });
+      this.feedback();
 
       notification.onclick = () => {
         // Note: this maps to the xmlTemplate() function in app/WindowsNotifications.ts
@@ -232,13 +254,6 @@ class NotificationService extends EventEmitter {
           throw missingCaseError(type);
         }
       };
-    }
-
-    if (!silent) {
-      const soundType =
-        messageId && !useTriToneSound ? SoundType.Pop : SoundType.TriTone;
-      // We kick off the sound to be played. No need to await it.
-      drop(new Sound({ soundType }).play());
     }
   }
 
