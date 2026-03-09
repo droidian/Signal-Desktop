@@ -1,0 +1,556 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import React from 'react';
+import type {
+  CallQualitySurveyPropsType,
+  ContactModalStateType,
+  DeleteMessagesPropsType,
+  EditHistoryMessagesType,
+  EditNicknameAndNoteModalPropsType,
+  ForwardMessagesPropsType,
+  GroupMemberLabelInfoPropsType,
+  MessageRequestActionsConfirmationPropsType,
+  SafetyNumberChangedBlockingDataType,
+  UserNotFoundModalStateType,
+} from '../state/ducks/globalModals.preload.js';
+import type { LocalizerType, ThemeType } from '../types/Util.std.js';
+import { UsernameOnboardingState } from '../types/globalModals.std.js';
+import { missingCaseError } from '../util/missingCaseError.std.js';
+
+import { ButtonVariant } from './Button.dom.js';
+import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
+import { SignalConnectionsModal } from './SignalConnectionsModal.dom.js';
+import { WhatsNewModal } from './WhatsNewModal.dom.js';
+import { MediaPermissionsModal } from './MediaPermissionsModal.dom.js';
+import type { StartCallData } from './ConfirmLeaveCallModal.dom.js';
+import {
+  TapToViewNotAvailableModal,
+  type DataPropsType as TapToViewNotAvailablePropsType,
+} from './TapToViewNotAvailableModal.dom.js';
+import {
+  BackfillFailureModal,
+  type DataPropsType as BackfillFailureModalPropsType,
+} from './BackfillFailureModal.dom.js';
+import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal.preload.js';
+import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal.dom.js';
+import { LowDiskSpaceBackupImportModal } from './LowDiskSpaceBackupImportModal.dom.js';
+import { KeyTransparencyOnboardingDialog } from './KeyTransparencyOnboardingDialog.dom.js';
+import { isUsernameValid } from '../util/Username.dom.js';
+import type { PinMessageDialogData } from '../state/smart/PinMessageDialog.preload.js';
+
+// NOTE: All types should be required for this component so that the smart
+// component gives you type errors when adding/removing props.
+export type PropsType = {
+  i18n: LocalizerType;
+  theme: ThemeType;
+  // AddUserToAnotherGroupModal
+  addUserToAnotherGroupModalContactId: string | undefined;
+  renderAddUserToAnotherGroup: () => React.JSX.Element;
+  // CallLinkAddNameModal
+  callLinkAddNameModalRoomId: string | null;
+  renderCallLinkAddNameModal: () => React.JSX.Element;
+  // CallLinkEditModal
+  callLinkEditModalRoomId: string | null;
+  renderCallLinkEditModal: () => React.JSX.Element;
+  // CallQualitySurvey
+  callQualitySurveyProps: CallQualitySurveyPropsType | null;
+  renderCallQualitySurvey: () => React.JSX.Element;
+  // CallLinkPendingParticipantModal
+  callLinkPendingParticipantContactId: string | undefined;
+  renderCallLinkPendingParticipantModal: () => React.JSX.Element;
+  // ConfirmLeaveCallModal
+  confirmLeaveCallModalState: StartCallData | null;
+  renderConfirmLeaveCallModal: () => React.JSX.Element;
+  // ContactModal
+  contactModalState: ContactModalStateType | undefined;
+  renderContactModal: () => React.JSX.Element;
+  // EditHistoryMessagesModal
+  editHistoryMessages: EditHistoryMessagesType | undefined;
+  renderEditHistoryMessagesModal: () => React.JSX.Element;
+  // EditNicknameAndNoteModal
+  editNicknameAndNoteModalProps: EditNicknameAndNoteModalPropsType | null;
+  renderEditNicknameAndNoteModal: () => React.JSX.Element;
+  // ErrorModal
+  errorModalProps:
+    | {
+        buttonVariant?: ButtonVariant;
+        description?: string;
+        title?: string | null;
+      }
+    | undefined;
+  renderErrorModal: (opts: {
+    buttonVariant?: ButtonVariant;
+    description?: string;
+    title?: string | null;
+  }) => React.JSX.Element;
+  // DebugLogErrorModal
+  debugLogErrorModalProps:
+    | {
+        description?: string;
+      }
+    | undefined;
+  renderDebugLogErrorModal: (opts: {
+    description?: string;
+  }) => React.JSX.Element;
+  // DeleteMessageModal
+  deleteMessagesProps: DeleteMessagesPropsType | undefined;
+  renderDeleteMessagesModal: () => React.JSX.Element;
+  // DraftGifMessageSendModal
+  draftGifMessageSendModalProps: SmartDraftGifMessageSendModalProps | null;
+  renderDraftGifMessageSendModal: () => React.JSX.Element;
+  // ForwardMessageModal
+  forwardMessagesProps: ForwardMessagesPropsType | undefined;
+  renderForwardMessagesModal: () => React.JSX.Element;
+  // GroupMemberLabelInfoModal
+  groupMemberLabelInfoModalState: GroupMemberLabelInfoPropsType | undefined;
+  renderGroupMemberLabelInfoModal: () => React.JSX.Element;
+  // MediaPermissionsModal
+  mediaPermissionsModalProps:
+    | {
+        mediaType: 'camera' | 'microphone';
+        requestor: 'call' | 'voiceNote';
+      }
+    | undefined;
+  closeMediaPermissionsModal: () => void;
+  openSystemMediaPermissions: (mediaType: 'camera' | 'microphone') => void;
+  // MessageRequestActionsConfirmation
+  messageRequestActionsConfirmationProps: MessageRequestActionsConfirmationPropsType | null;
+  renderMessageRequestActionsConfirmation: () => React.JSX.Element;
+  // PinMessageDialog
+  pinMessageDialogData: PinMessageDialogData | null;
+  renderPinMessageDialog: () => React.JSX.Element;
+  // NotePreviewModal
+  notePreviewModalProps: { conversationId: string } | null;
+  renderNotePreviewModal: () => React.JSX.Element;
+  // SafetyNumberModal
+  safetyNumberModalContactId: string | undefined;
+  renderSafetyNumber: () => React.JSX.Element;
+  // ShortcutGuideModal
+  isShortcutGuideModalVisible: boolean;
+  renderShortcutGuideModal: () => React.JSX.Element;
+  // SignalConnectionsModal
+  isSignalConnectionsVisible: boolean;
+  toggleSignalConnectionsModal: () => unknown;
+  // AboutContactModal
+  isAboutContactModalVisible: boolean;
+  renderAboutContactModal: () => React.JSX.Element | null;
+  // StickerPackPreviewModal
+  stickerPackPreviewId: string | undefined;
+  renderStickerPreviewModal: () => React.JSX.Element | null;
+  // StoriesSettings
+  isStoriesSettingsVisible: boolean;
+  renderStoriesSettings: () => React.JSX.Element;
+  // KeyTransparencyErrorDialog
+  isKeyTransparencyErrorVisible: boolean;
+  renderKeyTransparencyErrorDialog: () => React.JSX.Element;
+  // KeyTransparencyOnboardingDialog
+  isKeyTransparencyOnboardingVisible: boolean;
+  hideKeyTransparencyOnboardingDialog: () => void;
+  finishKeyTransparencyOnboarding: () => void;
+  // SendAnywayDialog
+  hasSafetyNumberChangeModal: boolean;
+  safetyNumberChangedBlockingData:
+    | SafetyNumberChangedBlockingDataType
+    | undefined;
+  renderSendAnywayDialog: () => React.JSX.Element;
+  // TapToViewNotAvailableModal
+  tapToViewNotAvailableModalProps: TapToViewNotAvailablePropsType | undefined;
+  hideTapToViewNotAvailableModal: () => void;
+  // BackfillFailureModal
+  backfillFailureModalProps: BackfillFailureModalPropsType | undefined;
+  hideBackfillFailureModal: () => void;
+  // UserNotFoundModal
+  hideUserNotFoundModal: () => unknown;
+  userNotFoundModalState: UserNotFoundModalStateType | undefined;
+  // WhatsNewModal
+  isWhatsNewVisible: boolean;
+  hideWhatsNewModal: () => unknown;
+  // UsernameOnboarding
+  usernameOnboardingState: UsernameOnboardingState;
+  renderUsernameOnboarding: () => React.JSX.Element;
+  isProfileNameWarningModalVisible: boolean;
+  profileNameWarningModalConversationType?: string;
+  renderProfileNameWarningModal: () => React.JSX.Element;
+  // CriticalIdlePrimaryDeviceModal,
+  criticalIdlePrimaryDeviceModal: boolean;
+  hideCriticalIdlePrimaryDeviceModal: () => void;
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal: { bytesNeeded: number } | null;
+  hideLowDiskSpaceBackupImportModal: () => void;
+  // PlaintextExportWorkflow
+  shouldShowPlaintextExportWorkflow: boolean;
+  renderPlaintextExportWorkflow: () => React.JSX.Element;
+  // LocalBackupExportWorkflow
+  shouldShowLocalBackupExportWorkflow: boolean;
+  renderLocalBackupExportWorkflow: () => React.JSX.Element;
+};
+
+export function GlobalModalContainer({
+  i18n,
+  // AddUserToAnotherGroupModal
+  addUserToAnotherGroupModalContactId,
+  renderAddUserToAnotherGroup,
+  // CallLinkAddNameModal
+  callLinkAddNameModalRoomId,
+  renderCallLinkAddNameModal,
+  // CallLinkEditModal
+  callLinkEditModalRoomId,
+  renderCallLinkEditModal,
+  // CallQualitySurvey
+  callQualitySurveyProps,
+  renderCallQualitySurvey,
+  // CallLinkPendingParticipantModal
+  callLinkPendingParticipantContactId,
+  renderCallLinkPendingParticipantModal,
+  // ConfirmLeaveCallModal
+  confirmLeaveCallModalState,
+  renderConfirmLeaveCallModal,
+  // ContactModal
+  contactModalState,
+  renderContactModal,
+  // EditHistoryMessages
+  editHistoryMessages,
+  renderEditHistoryMessagesModal,
+  // EditNicknameAndNoteModal
+  editNicknameAndNoteModalProps,
+  renderEditNicknameAndNoteModal,
+  // ErrorModal
+  errorModalProps,
+  renderErrorModal,
+  // DebugLogErrorModal
+  debugLogErrorModalProps,
+  renderDebugLogErrorModal,
+  // DeleteMessageModal
+  deleteMessagesProps,
+  renderDeleteMessagesModal,
+  // DraftGifMessageSendModal
+  draftGifMessageSendModalProps,
+  renderDraftGifMessageSendModal,
+  // ForwardMessageModal
+  forwardMessagesProps,
+  renderForwardMessagesModal,
+  // GroupMemberLabelInfoModal
+  groupMemberLabelInfoModalState,
+  renderGroupMemberLabelInfoModal,
+  // MediaPermissionsModal
+  mediaPermissionsModalProps,
+  closeMediaPermissionsModal,
+  openSystemMediaPermissions,
+  // MessageRequestActionsConfirmation
+  messageRequestActionsConfirmationProps,
+  renderMessageRequestActionsConfirmation,
+  // NotePreviewModal
+  notePreviewModalProps,
+  renderNotePreviewModal,
+  // PinMessageDialog
+  pinMessageDialogData,
+  renderPinMessageDialog,
+  // SafetyNumberModal
+  safetyNumberModalContactId,
+  renderSafetyNumber,
+  // ShortcutGuideModal
+  isShortcutGuideModalVisible,
+  renderShortcutGuideModal,
+  // SignalConnectionsModal
+  isSignalConnectionsVisible,
+  toggleSignalConnectionsModal,
+  // AboutContactModal
+  isAboutContactModalVisible,
+  renderAboutContactModal,
+  // StickerPackPreviewModal
+  stickerPackPreviewId,
+  renderStickerPreviewModal,
+  // StoriesSettings
+  isStoriesSettingsVisible,
+  renderStoriesSettings,
+  // KeyTransparencyErrorDialog
+  isKeyTransparencyErrorVisible,
+  renderKeyTransparencyErrorDialog,
+  // KeyTransparencyOnboardingDialog
+  isKeyTransparencyOnboardingVisible,
+  hideKeyTransparencyOnboardingDialog,
+  finishKeyTransparencyOnboarding,
+  // SendAnywayDialog
+  hasSafetyNumberChangeModal,
+  safetyNumberChangedBlockingData,
+  renderSendAnywayDialog,
+  // TapToViewNotAvailableModal
+  tapToViewNotAvailableModalProps,
+  hideTapToViewNotAvailableModal,
+  // BackfillFailureModal
+  backfillFailureModalProps,
+  hideBackfillFailureModal,
+  // UserNotFoundModal
+  hideUserNotFoundModal,
+  userNotFoundModalState,
+  // WhatsNewModal
+  hideWhatsNewModal,
+  isWhatsNewVisible,
+  // UsernameOnboarding
+  usernameOnboardingState,
+  renderUsernameOnboarding,
+  // ProfileNameWarningModal
+  isProfileNameWarningModalVisible,
+  renderProfileNameWarningModal,
+  // CriticalIdlePrimaryDeviceModal
+  criticalIdlePrimaryDeviceModal,
+  hideCriticalIdlePrimaryDeviceModal,
+  // LowDiskSpaceBackupImportModal
+  lowDiskSpaceBackupImportModal,
+  hideLowDiskSpaceBackupImportModal,
+  // PlaintextExportWorkflow
+  shouldShowPlaintextExportWorkflow,
+  renderPlaintextExportWorkflow,
+  // LocalBackupExportWorkflow
+  shouldShowLocalBackupExportWorkflow,
+  renderLocalBackupExportWorkflow,
+}: PropsType): React.JSX.Element | null {
+  // We want the following dialogs to show in this order:
+  // 0. Stateful multi-modal workflows
+  // 1. Errors
+  // 2. Safety Number Changes
+  // 3. Forward Modal, so other modals can open it
+  // 4. The Rest (in no particular order, but they're ordered alphabetically)
+
+  if (shouldShowPlaintextExportWorkflow) {
+    return renderPlaintextExportWorkflow();
+  }
+
+  if (shouldShowLocalBackupExportWorkflow) {
+    return renderLocalBackupExportWorkflow();
+  }
+
+  // Errors
+  if (errorModalProps) {
+    return renderErrorModal(errorModalProps);
+  }
+
+  // Errors where we want them to submit a debug log
+  if (debugLogErrorModalProps) {
+    return renderDebugLogErrorModal(debugLogErrorModalProps);
+  }
+
+  if (isKeyTransparencyErrorVisible) {
+    return renderKeyTransparencyErrorDialog();
+  }
+
+  // Safety Number
+  if (hasSafetyNumberChangeModal || safetyNumberChangedBlockingData) {
+    return renderSendAnywayDialog();
+  }
+
+  // Forward Modal
+  if (forwardMessagesProps) {
+    return renderForwardMessagesModal();
+  }
+
+  // Media Permissions Modal
+  if (mediaPermissionsModalProps) {
+    return (
+      <MediaPermissionsModal
+        i18n={i18n}
+        {...mediaPermissionsModalProps}
+        openSystemMediaPermissions={openSystemMediaPermissions}
+        onClose={closeMediaPermissionsModal}
+      />
+    );
+  }
+
+  // The Rest
+
+  if (confirmLeaveCallModalState) {
+    return renderConfirmLeaveCallModal();
+  }
+
+  if (addUserToAnotherGroupModalContactId) {
+    return renderAddUserToAnotherGroup();
+  }
+
+  if (callLinkAddNameModalRoomId) {
+    return renderCallLinkAddNameModal();
+  }
+
+  if (callLinkEditModalRoomId) {
+    return renderCallLinkEditModal();
+  }
+
+  if (callQualitySurveyProps) {
+    return renderCallQualitySurvey();
+  }
+
+  if (editHistoryMessages) {
+    return renderEditHistoryMessagesModal();
+  }
+
+  if (editNicknameAndNoteModalProps) {
+    return renderEditNicknameAndNoteModal();
+  }
+
+  if (deleteMessagesProps) {
+    return renderDeleteMessagesModal();
+  }
+
+  if (draftGifMessageSendModalProps) {
+    return renderDraftGifMessageSendModal();
+  }
+
+  if (messageRequestActionsConfirmationProps) {
+    return renderMessageRequestActionsConfirmation();
+  }
+
+  if (notePreviewModalProps) {
+    return renderNotePreviewModal();
+  }
+
+  if (pinMessageDialogData) {
+    return renderPinMessageDialog();
+  }
+
+  if (isProfileNameWarningModalVisible) {
+    return renderProfileNameWarningModal();
+  }
+
+  if (isShortcutGuideModalVisible) {
+    return renderShortcutGuideModal();
+  }
+
+  if (isSignalConnectionsVisible) {
+    return (
+      <SignalConnectionsModal
+        i18n={i18n}
+        onClose={toggleSignalConnectionsModal}
+      />
+    );
+  }
+
+  // Intentionally above safety number since that causes onboarding flow
+  if (isKeyTransparencyOnboardingVisible) {
+    return (
+      <KeyTransparencyOnboardingDialog
+        i18n={i18n}
+        open
+        onOpenChange={open => {
+          if (!open) {
+            hideKeyTransparencyOnboardingDialog();
+          }
+        }}
+        onContinue={finishKeyTransparencyOnboarding}
+      />
+    );
+  }
+
+  if (safetyNumberModalContactId) {
+    return renderSafetyNumber();
+  }
+
+  if (isAboutContactModalVisible) {
+    return renderAboutContactModal();
+  }
+
+  // This needs to be before the contact modal, which opens it
+  if (groupMemberLabelInfoModalState) {
+    return renderGroupMemberLabelInfoModal();
+  }
+
+  if (contactModalState) {
+    return renderContactModal();
+  }
+
+  // This needs to be after the about contact modal because the pending participant modal
+  // opens the about contact modal
+  if (callLinkPendingParticipantContactId) {
+    return renderCallLinkPendingParticipantModal();
+  }
+
+  if (isStoriesSettingsVisible) {
+    return renderStoriesSettings();
+  }
+
+  if (isWhatsNewVisible) {
+    return <WhatsNewModal hideWhatsNewModal={hideWhatsNewModal} i18n={i18n} />;
+  }
+
+  if (usernameOnboardingState === UsernameOnboardingState.Open) {
+    return renderUsernameOnboarding();
+  }
+
+  if (stickerPackPreviewId) {
+    return renderStickerPreviewModal();
+  }
+
+  if (userNotFoundModalState) {
+    let content: string;
+    if (userNotFoundModalState.type === 'phoneNumber') {
+      content = i18n('icu:startConversation--phone-number-not-found', {
+        phoneNumber: userNotFoundModalState.phoneNumber,
+      });
+    } else if (
+      userNotFoundModalState.type === 'username' &&
+      !isUsernameValid(userNotFoundModalState.username)
+    ) {
+      content = i18n('icu:startConversation--username-not-valid', {
+        atUsername: userNotFoundModalState.username,
+      });
+    } else if (userNotFoundModalState.type === 'username') {
+      content = i18n('icu:startConversation--username-not-found', {
+        atUsername: userNotFoundModalState.username,
+      });
+    } else {
+      throw missingCaseError(userNotFoundModalState);
+    }
+
+    return (
+      <ConfirmationDialog
+        dialogName="GlobalModalContainer.userNotFound"
+        cancelText={i18n('icu:ok')}
+        cancelButtonVariant={ButtonVariant.Secondary}
+        i18n={i18n}
+        onClose={hideUserNotFoundModal}
+      >
+        {content}
+      </ConfirmationDialog>
+    );
+  }
+
+  if (tapToViewNotAvailableModalProps) {
+    return (
+      <TapToViewNotAvailableModal
+        i18n={i18n}
+        onClose={hideTapToViewNotAvailableModal}
+        {...tapToViewNotAvailableModalProps}
+      />
+    );
+  }
+
+  if (backfillFailureModalProps != null) {
+    return (
+      <BackfillFailureModal
+        i18n={i18n}
+        onClose={hideBackfillFailureModal}
+        {...backfillFailureModalProps}
+      />
+    );
+  }
+
+  if (criticalIdlePrimaryDeviceModal) {
+    return (
+      <CriticalIdlePrimaryDeviceModal
+        i18n={i18n}
+        onClose={hideCriticalIdlePrimaryDeviceModal}
+      />
+    );
+  }
+
+  if (lowDiskSpaceBackupImportModal) {
+    return (
+      <LowDiskSpaceBackupImportModal
+        bytesNeeded={lowDiskSpaceBackupImportModal.bytesNeeded}
+        i18n={i18n}
+        onClose={hideLowDiskSpaceBackupImportModal}
+      />
+    );
+  }
+
+  return null;
+}
