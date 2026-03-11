@@ -3,7 +3,7 @@ Type=Application
 Name=Signal
 Comment=Signal Messenger
 Icon=signal-desktop
-Exec=/usr/bin/signal-desktop-mobile --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --wayland-text-input-version=3 -- %u
+Exec=/usr/bin/signal-desktop-mobile %u
 Terminal=false
 Categories=Network;InstantMessaging;
 StartupWMClass=signal
