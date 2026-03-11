@@ -104,6 +104,15 @@
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Kan ikke tilgå databasekrypteringsnøglen, fordi OS-krypteringsnøgleringens backend er ændret fra {previousBackend} til {currentBackend}. Dette kan ske, hvis skrivebordsmiljøet ændres, for eksempel mellem GNOME og KDE.\n\nSkift til det forrige skrivebordsmiljø, eller prøv at køre signal med kommandolinjeargumentet --password-store=\"{previousBackendFlag}\""
   },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
+  },
   "icu:mainMenuFile": {
     "messageformat": "&Fil"
   },
@@ -197,9 +206,6 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "Vis udviklerværktøjer"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "Åbn opkald til udviklerværktøjer"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "Opsæt som ny enhed"
   },
@@ -232,6 +238,12 @@
   },
   "icu:archivedConversations": {
     "messageformat": "Arkiverede chats"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Tilføj chatmappe"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Mappeindstillinger"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "Fastgjort"
@@ -271,6 +283,45 @@
   },
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Angiv et brugernavn efterfulgt af et punktum og de tilhørende tal."
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Ingen chats at vise"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Mappeindstillinger"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Alle"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Alle chats"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Markér alle som læst"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Vis ikke notifikationer"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Slå lyd til på alle"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Slå lyd til på alle"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Rediger mappe"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Tilføj til mappe"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Opret mappe"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Fjern fra mappe"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Landekode"
@@ -322,6 +373,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Markér som ulæst"
+  },
+  "icu:markRead": {
+    "messageformat": "Markér som læst"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Vælg beskeder"
@@ -482,6 +536,9 @@
   "icu:debugLogExplanation": {
     "messageformat": "Når du klikker på Indsend, bliver din log lagt online i 30 dage på en unik, ikke-offentliggjort URL-adresse. Du kan gemme den lokalt først."
   },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "Denne log vil blive offentliggjort online, så bidragydere kan se den. Du kan downloade den før indsendelse."
+  },
   "icu:debugLogError": {
     "messageformat": "Noget gik galt med upload! Send venligst en e-mail til support@signal.org og vedhæft din log som en tekstfil."
   },
@@ -518,14 +575,95 @@
   "icu:SafetyNumberViewer__hint": {
     "messageformat": "For at verificere E2E-krypteringen med {name}, skal du sammenligne ovenstående tal med vedkommendes enhed. De kan også scanne koden på vedkommendes enhed."
   },
+  "icu:SafetyNumberViewer__hint-v2": {
+    "messageformat": "For at verificere E2E-krypteringen med {name} skal du sammenligne ovenstående tal med vedkommendes enhed. De kan også scanne koden på vedkommendes enhed."
+  },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "Læs mere"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "Automatisk nøgleverifikation"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "Verificér automatisk"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "Verificerer kryptering…"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "Kryptering bekræftet"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "Automatisk verifikation ikke tilgængelig"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "Automatisk verifikation er ikke tilgængelig for alle chats."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "Læs mere"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "Kryptering blev automatisk verificeret i denne chat "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body": {
+    "messageformat": "For kontakter, som du er forbundet med via telefonnummer, kan Signal automatisk bekræfte, om forbindelsen er sikker, ved hjælp af en proces kaldet nøgletransparens. For øget sikkerhed skal du verificere end-to-end-kryptering manuelt ved at sammenligne tallene på den forrige skærm eller scanne koden på vedkommendes enhed."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title": {
+    "messageformat": "Automatisk verifikation er ikke længere tilgængelig for denne chat"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body": {
+    "messageformat": "Signal kan ikke længere automatisk verificere krypteringen for denne chat. Dette skyldes sandsynligvis, at {name} har ændret sit telefonnummer. Verificér end-to-end-kryptering manuelt ved at sammenligne tallene på den forrige skærm eller ved at scanne koden på deres enhed."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "Signal kan kun automatisk verificere krypteringen i chats, hvor du er forbundet med nogen via et telefonnummer. Hvis chatten blev startet med et brugernavn eller en fælles gruppe, skal du verificere end-to-end-krypteringen ved at sammenligne tallene på den forrige skærm eller scanne koden på deres enhed."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "Okay"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "Der oprettes et sikkerhedsnummer med denne person, når du har udvekslet beskeder med dem."
   },
   "icu:SafetyNumberNotReady__learn-more": {
     "messageformat": "Læs mere"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "Automatisk nøgleverifikation er i øjeblikket ikke tilgængelig på din enhed. Vil du indsende fejlsøgningslog?"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "Fejlfindingslogfiler hjælper os med at diagnosticere og løse problemet og indeholder ikke identificerende oplysninger."
+  },
+  "icu:KeyTransparencyErrorDialog__CloseButton__AccessibilityLabel": {
+    "messageformat": "Luk"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "Del fejlsøgningslog"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "Vis"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "Indsend"
+  },
+  "icu:KeyTransparencyErrorDialog__Cancel": {
+    "messageformat": "Nej tak"
+  },
+  "icu:KeyTransparencyErrorDialog__Submitting": {
+    "messageformat": "Indsender..."
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "Signal kan nu automatisk verificere sikkerhedsnøglekrypteringen"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "For kontakter, som du er forbundet med via telefonnummer, kan Signal automatisk bekræfte, om forbindelsen er sikker, ved hjælp af en proces kaldet nøgletransparens. For ekstra sikkerhed kan du stadig verificere forbindelser manuelt ved hjælp af en QR-kode eller ved at sammenligne sikkerhedsnumre."
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "Fortsæt"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
+    "messageformat": "Læs mere"
+  },
+  "icu:KeyTransparencyOnboardingDialog__CloseButton__AccessibilityLabel": {
+    "messageformat": "Luk"
   },
   "icu:verified": {
     "messageformat": "Verificeret"
@@ -538,18 +676,6 @@
   },
   "icu:media": {
     "messageformat": "Mediefiler"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "Du har ingen mediefiler i denne chat"
-  },
-  "icu:allMedia": {
-    "messageformat": "Alle mediefiler"
-  },
-  "icu:documents": {
-    "messageformat": "Dokumenter"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "Du har ingen dokumenter i denne chat"
   },
   "icu:today": {
     "messageformat": "I dag"
@@ -607,6 +733,15 @@
   },
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "Fejl ved lagring af kvittering. Prøv igen."
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Tilføjet til \"{chatFolderName}\""
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Fjernet fra \"{chatFolderName}\""
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Mappen {chatFolderName} er tilføjet"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Du kan ikke vælge billeder og videoer sammen med filer."
@@ -676,12 +811,6 @@
   },
   "icu:screenShareWindow": {
     "messageformat": "Deling af skærm"
-  },
-  "icu:callingDeveloperTools": {
-    "messageformat": "Opkald til udviklerværktøjer"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "Dette vindue bruges under udvikling for at vise diagnostik fra igangværende opkald."
   },
   "icu:speech": {
     "messageformat": "Tale"
@@ -754,6 +883,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "Se {whatsNew} i denne opdatering"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "Signal er en nonprofitorganisation"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "nyheder"
@@ -980,6 +1112,12 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} er i dine systemkontakter"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "Tilføj en medlemsetiket"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "Din QR-kode"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "Note"
   },
@@ -1031,14 +1169,98 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Information"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "Fastgør"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "Frigør"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "Afslut afstemning"
+  },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Afstemning · Vælg en"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Afstemning · Vælg en eller flere muligheder"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Afstemning · Endeligt resultat"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Se stemmer"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Du stemte"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "Du afsluttede afstemningen: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name} afsluttede afstemningen: {poll}"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "Se afstemning"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Afstemningsoplysninger"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Spørgsmål"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} stemme} other {{count,number} stemmer}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Ingen stemmer"
+  },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "Vindende"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "Fastgjort besked blev ikke fundet"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "Afstemning ikke fundet"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "Ny afstemning"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "Spørgsmål"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "Stil et spørgsmål"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "Valgmuligheder"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "Mulighed {number}"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "Tillad flere stemmer"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "Send"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "Afstemningsspørgsmål er påkrævet"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "Afstemningen kræver mindst to valgmuligheder"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "Spørgsmålet er for langt"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "Valgmuligheden er for lang"
+  },
   "icu:deleteConversation": {
     "messageformat": "Slet"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Slet chat?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Alle beskeder i denne chat slettes fra denne enhed."
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Alle beskeder i denne chat slettes fra alle dine enheder."
@@ -1057,6 +1279,141 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "Før du forlader gruppen, skal du vælge mindst én ny administrator."
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "Besked fastgjort"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender} har fastgjort en besked"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "Gå til besked"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "Fastgør besked i..."
+  },
+  "icu:PinMessageDialog__Close": {
+    "messageformat": "Luk"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 timer"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7 dage"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30 dage"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "For evigt"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "Annullér"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "Fastgør"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "Vil du erstatte den ældste fastgjorte besked?"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "Hvis du fastgør denne besked, erstattes den ældste."
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Cancel": {
+    "messageformat": "Annullér"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "Fortsæt"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "Fastgørelse af forsvindende beskeder"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "Forsvindende beskeder vil blive frigjort, når tiden udløber, og beskeden fjernes fra chatten."
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "Okay"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {Fastgjort besked} other {Fastgjorte beskeder}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "Gå til den fastgjorte {pinNumber,number}"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "Gå til besked"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "Flere handlinger"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "Frigør"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "Gå til besked"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "Vis alle beskeder"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "Talebesked"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "Fil"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "Betaling"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "Meningsmåling"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "Klistermærke"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "Vis mediefil én gang"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "Billede"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "Video"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "Talebesked"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "Betaling"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "Klistermærke"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "Vis mediefil én gang"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "Fastgjorte beskeder"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "Frigør alle beskeder"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "Vil du frigøre alle beskeder?"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "Fastgjorte beskeder frigøres for medlemmer af denne chat."
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Cancel": {
+    "messageformat": "Annullér"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "Frigør"
   },
   "icu:sessionEnded": {
     "messageformat": "Nulstilling af sikker session"
@@ -1175,36 +1532,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Kan ikke downloade medie med engangsvisning"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Fil ikke tilgængelig"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Hele beskeden er ikke tilgængelig"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Mediet er ikke tilgængeligt"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Klistermærket er ikke tilgængeligt"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Stemmebeskeden er ikke tilgængelig"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Denne fil blev ikke overført fra din telefon, da denne enhed blev tilknyttet. Medier og filer, der er ældre end 45 dage, når enheder tilknyttes, kan ikke synkroniseres."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Hele teksten i denne besked blev ikke overført fra din telefon, da denne enhed blev tilknyttet. Lange beskeder, der er ældre end 45 dage gamle, når enheder tilknyttes, kan ikke synkroniseres."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Dette medie blev ikke overført fra din telefon, da denne enhed blev tilknyttet. Medier, der er ældre end 45 dage, når enheder tilknyttes, kan ikke synkroniseres."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Dette klistermærke blev ikke overført fra din telefon, da denne enhed blev tilknyttet. Medier og filer, der er ældre end 45 dage, når enheder tilknyttes, kan ikke synkroniseres."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Denne stemmebesked blev ikke overført fra din telefon, da denne enhed blev tilknyttet. Medier og filer, der er ældre end 45 dage, når enheder tilknyttes, kan ikke synkroniseres."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Medier med engangsvisning kan ikke længere downloades. Bed {name} om at sende mediet igen."
   },
@@ -1292,8 +1619,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "Tilføj en chatmappe"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Tilføj eller rediger mapper"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "Organiser dine chats i mapper, og skift hurtigt mellem dem i din på din chatliste."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} mappe} other {{chatFoldersCount,number} mapper}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Opsæt"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Administrer"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "Rediger mappe"
@@ -1328,14 +1667,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "Opret en mappe"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Træk for at flytte chatmappen"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "Anbefalede mapper"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "Tilføj"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "Mappen {chatFolderTitle} er tilføjet"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "Ulæst"
@@ -1358,6 +1697,9 @@
   "icu:Preferences__EditChatFolderPage__Title": {
     "messageformat": "Opret en mappe"
   },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Rediger mappe"
+  },
   "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
     "messageformat": "Mappenavn"
   },
@@ -1369,6 +1711,12 @@
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
     "messageformat": "Vælg de chats, du vil have vist i denne mappe"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1-chats"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Gruppesamtaler"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
     "messageformat": "Tilføj chats"
@@ -1447,6 +1795,15 @@
   },
   "icu:Preferences__EditChatFolderPage__CancelButton": {
     "messageformat": "Annullér"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "Automatisk nøgleverifikation"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "Når dette er aktiveret, vil Signal forsøge automatisk at verificere krypteringen af direkte chats."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "Lær mere"
   },
   "icu:initialSync": {
     "messageformat": "Synkroniserer kontakter og grupper"
@@ -1528,6 +1885,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "Fjernet fra opkald"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Det maksimale antal deltagere er nået for dette opkald. Prøv igen senere."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Opkaldet er fuldt"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Alle, der deltager i dette opkald via linket, vil se dit navn og billede."
@@ -1847,11 +2210,26 @@
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} reagerede med {emoji} på: {message}"
   },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender} stemte i afstemningen: \"{pollQuestion}\""
+  },
   "icu:sendFailed": {
     "messageformat": "Send mislykkedes"
   },
   "icu:deleteFailed": {
     "messageformat": "Sletning mislykkedes"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "Kunne ikke slette, tryk for flere oplysninger"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "Vil du forsøge at slette igen?"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "Kunne ikke slette beskeden. Tjek din forbindelse, og prøv igen."
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "Prøv igen"
   },
   "icu:editFailed": {
     "messageformat": "Redigering mislykkedes, klik her for flere oplysninger"
@@ -1864,6 +2242,9 @@
   },
   "icu:partiallyDeleted": {
     "messageformat": "Delvist slettet, klik for at forsøge igen"
+  },
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "Delvist slettet, tryk for flere oplysninger"
   },
   "icu:expiredWarning": {
     "messageformat": "Denne version af Signal Desktop er forældet. Opgrader venligst til den nyeste version for at fortsætte"
@@ -2063,11 +2444,26 @@
   "icu:Toast--download-failed": {
     "messageformat": "Download mislykkedes"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Attachment missing from backup CDN"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "Det er kun administratorer, der kan tildele medlemstitler i denne gruppe."
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "Engangsvisning aktiveret"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "Engangsvisning deaktiveret"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Ændringer kan kun foretages indenfor 24 timer efter at du har sendt denne besked."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} bruger ikke Signal. Tjek, at du har skrevet det korrekte brugernavn."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} er ikke et gyldigt brugernavn. Sørg for at du har angivet det fulde brugernavn efterfulgt af det tilhørende sæt cifre."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Bruger ikke fundet. \"{phoneNumber}\" er ikke en Signal-bruger."
@@ -2222,6 +2618,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Klistermærke-besked"
   },
+  "icu:Poll--preview": {
+    "messageformat": "Afstemning: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2237,8 +2636,20 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Vis engangs-video"
   },
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
   "icu:message--deletedForEveryone": {
     "messageformat": "Beskeden blev slettet."
+  },
+  "icu:message--deletedByAdmin": {
+    "messageformat": "Administratoren {admin} slettede denne besked"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "{name} slettede denne besked"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "Du slettede beskeden"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "Den vedhæftede fil er for stor til at vise."
@@ -2275,6 +2686,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "Du donerede for {recipient}"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "{sender} har fastgjort en besked"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "Besked fastgjort"
   },
   "icu:message--donation": {
     "messageformat": "Donation"
@@ -2345,101 +2762,11 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "Du kan muligvis ikke installere pakken med klistermærke igen, hvis du ikke længere har kildebeskeden."
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "Indtroduktion af klistermærker: Bandit the Cat"
-  },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "Indtroduktion af klistermærker"
-  },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "Hvorfor bruge ord, når du kan bruge klistermærker?"
-  },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "Åbn klistermærke vælger"
-  },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "Tilføj en klistermærkepakke"
-  },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "Næste side"
-  },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "Forrige side"
-  },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "Seneste klistermærke"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "Nogle klistermærker kunne ikke hentes."
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "Installerer klistermærkepakke…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "Ingen fundne klistermærker"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "Nye klistermærkepakker er ankommet via beskeder, du har modtaget"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "Ingen fundne klistermærkepakker"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "Nylige anvendte klistermærker vises her."
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "Seneste"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "Featured"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "Analog tidsvisning"
-  },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Klistermærkepakke"
   },
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "Fejl ved åbning af klistermærkepakke. Kontroller din internetforbindelse, og prøv igen."
-  },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "Ingen fundne emoji'er"
-  },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "Luk emoji-søgning"
-  },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "Søg efter emoji"
-  },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "Hudfarve {tone}"
-  },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "Seneste"
-  },
-  "icu:EmojiPicker__button--emoji": {
-    "messageformat": "Smiley"
-  },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "Dyr"
-  },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "Mad"
-  },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "Aktivitet"
-  },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "Rejser"
-  },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "Objekt"
-  },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "Symbol"
-  },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "Flag"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Smiley"
@@ -2549,6 +2876,9 @@
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Senest brugte"
   },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Tilføj en klistermærkepakke"
+  },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Søgeresultater"
   },
@@ -2564,11 +2894,11 @@
   "icu:FunPanelStickers__LightboxDialog__Label": {
     "messageformat": "Forhåndsvisning af klistermærker"
   },
-  "icu:FunPanelGifs__SearchLabel--Tenor": {
-    "messageformat": "Søg efter GIF'er i Tenor"
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "Søg i GIF'er"
   },
-  "icu:FunPanelGifs__SearchPlaceholder--Tenor": {
-    "messageformat": "Søg i Tenor"
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "Søg i GIF'er"
   },
   "icu:FunPanelGifs__SubNavLabel": {
     "messageformat": "GIF-kategorier"
@@ -2614,6 +2944,9 @@
   },
   "icu:FunPanelGifs__LightboxDialog__Label": {
     "messageformat": "Forhåndsvisning af GIF'er"
+  },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "Drevet af GIPHY"
   },
   "icu:FunSearch__ClearButtonLabel": {
     "messageformat": "Ryd søgning"
@@ -3515,14 +3848,20 @@
   "icu:muteExpirationLabel": {
     "messageformat": "Ignoreres indtil {duration}"
   },
-  "icu:EmojiButton__label": {
-    "messageformat": "Smiley"
-  },
   "icu:ErrorModal--title": {
     "messageformat": "Noget gik galt!"
   },
   "icu:ErrorModal--description": {
     "messageformat": "Prøv venligst igen eller kontakt support"
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Der er opstået en ukendt fejl"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Indsend fejlsøgningslog"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nej tak"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "Okay"
@@ -3954,7 +4293,7 @@
     "messageformat": "En anmodning fra {joinerName} om at deltage i gruppen blev afvist"
   },
   "icu:GroupV2--admin-approval-bounce--pluralized": {
-    "messageformat": "{numberOfRequests, plural, one {{joinerName} anmodede og annullerede deres sin om at blive medlem via gruppelinket} other {{joinerName} anmodede og annullerede {numberOfRequests,number} anmodninger om at blive medlem via gruppelinket}}"
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} anmodede om og annullerede anmodningen om at deltage via gruppelinket} other {{joinerName} anmodede og annullerede {numberOfRequests,number} anmodninger om at deltage via gruppelinket}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Du aktiverede gruppelinket med administratorgodkendelse slået fra."
@@ -4271,6 +4610,18 @@
   "icu:CompositionArea--attach-file": {
     "messageformat": "Vedhæft fil"
   },
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "Billeder og videoer"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "Fil"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "Meningsmåling"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "Tilføj vedhæftet fil eller afstemning"
+  },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "Denne person bruger ikke Signal"
   },
@@ -4295,6 +4646,12 @@
   "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
     "messageformat": "Erstat"
   },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "Engangsvisning"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "Se medier én gang"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "Rediger besked"
   },
@@ -4306,6 +4663,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "Fjern som administrator"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "Dette vil også fjerne deres medlemstitel."
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "Gør til administrator"
@@ -4325,6 +4685,27 @@
   "icu:ContactModal--voice": {
     "messageformat": "Stemme"
   },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "Slå lyd fra"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "Er du sikker på, at du vil slå {contact} fra?"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "Ignorer"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "Medlemstitel"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "Angiv en medlemstitel for at beskrive dig selv eller din rolle i gruppen. Medlemstitler vises kun i denne gruppe."
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "Opret en titel"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "Rediger din titel"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "Chatfarve"
   },
@@ -4339,6 +4720,39 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "Gruppelink"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "Medlemsetiket"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "Angiv din medlemstitel"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "Angiv en medlemsetiket for at beskrive dig selv eller din rolle i gruppen. Medlemsetiketter vises kun i denne gruppe."
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "Forhåndsvisning"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "Hej!"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "Gruppemedlemmer med titler"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "Ingen andre medlemmer har titler"
+  },
+  "icu:ConversationDetails--member-label--saving": {
+    "messageformat": "Gemmer ændringer..."
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "Medlemstitel kan ikke gemmes"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "Tjek din forbindelse, og prøv igen."
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "Det er kun administratorer, der kan tildele medlemstitler i denne gruppe."
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "Forsvindende beskeder"
@@ -4373,6 +4787,9 @@
   "icu:ConversationDetails--group-info-info": {
     "messageformat": "Vælg hvem som kan redigere gruppens navn, foto, beskrivelse og udløbstiden for forsvindende beskeder."
   },
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "Vælg, hvem som kan redigere gruppens navn, billede, beskrivelse, udløbstiden for forsvindende beskeder og fastgjorte beskeder."
+  },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "Hvem kan tilføje medlemmer"
   },
@@ -4384,6 +4801,15 @@
   },
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "Vælg hvem der kan sende beskeder til gruppen."
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "Medlemstitler vil blive fjernet"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "Hvis du ændrer denne tilladelse til \"Kun administratorer\", ryddes medlemstitlerder er angivet af ikke-administratorer i denne gruppe."
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "Fortsæt"
   },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "Anmodninger & invitationer"
@@ -4421,7 +4847,7 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "Blokér"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
     "messageformat": "Dine kontakter vil kunne føje dig til denne gruppe."
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
@@ -4430,17 +4856,17 @@
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} medlem} other {{number,number} medlemmer}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Delte medier"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Se alle"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Medier, links og filer"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} medlem} other {{number,number} medlemmer}}"
   },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "Tilføj medlemmer"
+  },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "Tilføj medlemstitel"
   },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "Se alle"
@@ -4589,6 +5015,9 @@
   "icu:DeleteMessagesModal--title": {
     "messageformat": "{count, plural, one {Slet besked?} other {Slet {count,number} beskeder?}}"
   },
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, one {Vil du slette den valgte besked?} other {Vil du slette de valgte {count,number} beskeder?}}"
+  },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, one {Hvem vil du gerne slette denne besked for?} other {Hvem vil du gerne slette disse beskeder for?}}"
   },
@@ -4607,6 +5036,12 @@
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "Slet for alle"
   },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "Slet for alles vedkommende?"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, one {Som administrator vil gruppemedlemmet se, at du har slettet disse beskeder.} other {Som administrator vil gruppemedlemmerne se, at du har slettet disse beskeder.}}"
+  },
   "icu:DeleteMessagesModal--deleteFromAllDevices": {
     "messageformat": "Slet fra alle enheder"
   },
@@ -4615,6 +5050,21 @@
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, one {Du kan kun vælge op til {count,number} besked, der skal slettes for alle} other {Du kan kun vælge op til {count,number} beskeder, der skal slettes for alle}}"
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "Vil du slette emnet?"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "Dette sletter emnet permanent. Alle beskedtekster, der er knyttet til disse filer, vil også blive slettet."
+  },
+  "icu:DeleteAttachmentModal__Close": {
+    "messageformat": "Luk"
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "Slet"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "Annullér"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "Du kan kun videresende op til 30 beskeder"
@@ -4928,6 +5378,84 @@
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "Tilføj gruppebeskrivelse…"
   },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "Talebesked"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "Lyd"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "Kontakt"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "Åbn linket i en browser"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "Vis besked i samtalen"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "Lyd"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "Filer"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "Links"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "Sortér efter"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "Sortér efter"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "Dato"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "Størrelse"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "Ingen mediefiler"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "Billeder, videoer og GIF'er, som du sender og modtager, vises her"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "Ingen lyd"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "Talebeskeder og lydfiler, som du sender og modtager vises her"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "Ingen links"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "Links, som du sender og modtager, vises her"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "Ingen filer"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "Filer, som du sender og modtager, vises her"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "Vis i chat"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "Videresend"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "Gem"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "Send besked"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "Kopiér link"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "Slet"
+  },
   "icu:MediaQualitySelector--button": {
     "messageformat": "Vælg mediekvalitet"
   },
@@ -4990,6 +5518,12 @@
   },
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "Link til brugernavnet skal nulstilles"
+  },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Åbn skærmen med brugernavnslinket"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Åbn skærmen med brugernavnslinket"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Del dit brugernavn"
@@ -5135,6 +5669,10 @@
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "administratorer"
   },
+  "icu:Avatar__View": {
+    "messageformat": "Vis",
+    "limit": 7
+  },
   "icu:AvatarEditor--choose": {
     "messageformat": "Vælg en avatar"
   },
@@ -5213,15 +5751,6 @@
   "icu:Preferences__button--set-up": {
     "messageformat": "Opsæt"
   },
-  "icu:Preferences__internal__local-backups": {
-    "messageformat": "Lokale sikkerhedskopier"
-  },
-  "icu:Preferences__internal__export-local-backup": {
-    "messageformat": "Eksportér..."
-  },
-  "icu:Preferences__internal__export-local-backup--description": {
-    "messageformat": "Eksportér en lokal krypteret sikkerhedskopi til en mappe og udfør validering"
-  },
   "icu:Preferences__internal__validate-backup--description": {
     "messageformat": "Eksportér en krypteret sikkerhedskopi til hukommelsen, og udfør validering"
   },
@@ -5249,17 +5778,362 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "For eksempel vil :-) blive konverteret til <emojify>🙂</emojify>"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Lad ignorerede chats forblive arkiverede"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Ignorerede chats, der er arkiveret, forbliver arkiverede, når der kommer en ny besked."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Avanceret"
   },
   "icu:Preferences--notification-content": {
     "messageformat": "Notifikationsindhold"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "Eksportér chathistorik"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "Eksportér en maskinlæsbar JSON-kopi af alle dine chats. Forsvindende beskeder vil ikke blive eksporteret."
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "Eksportér"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "Vil du eksportere chathistorikken?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>VÆR FORSIGTIG!</bold> Del IKKE denne fil med nogen. Din chathistorik gemmes på din computer, og andre apps kan få adgang til den afhængigt af din computers tilladelser."
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "Inkluder medier i <secondary>(større filstørrelse)</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "Fortsæt"
+  },
+  "icu:PlaintextExport--Confirmation--WaitingLabel": {
+    "messageformat": "Venter på input"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "eksportér din chathistorik"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "Verificer din identitet for at eksportere din chathistorik."
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "Eksportér"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "Autentificering kræves for at eksportere din chathistorik."
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "Eksporterer chathistorik"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "Eksporterer {currentBytes} af {totalBytes} ({percentage,number,percent})..."
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "Det kan tage et par minutter"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "Eksport gennemført"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>VÆR FORSIGTIG</bold> med hvor du gemmer din chat-eksportfil, og del den ikke med andre. Andre apps på din computer kan få adgang til den afhængigt af computerens tilladelser. "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Vis i Finder"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "Vis i mappe"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "Vis i mappe"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "Kunne ikke eksportere chathistorik"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "Der opstod en fejl, og din chathistorik kunne ikke eksporteres."
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "Der er ikke nok lagerplads"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "Din chathistorik kan ikke eksporteres, fordi din computer ikke har nok ledig plads. Frigør {bytes} plads, og prøv igen."
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "Kunne ikke eksportere chathistorik"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "Din chathistorik kunne ikke eksporteres, fordi computeren ikke har nok ledig lagerplads. Frigør {bytes} plads, og prøv igen."
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "Chathistorik kan ikke eksporteres"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "Din chathistorik kan ikke eksporteres, fordi Signal ikke har tilladelse til at gemme filer på disken. Skift dine diskrettigheder eller systemindstillinger, og prøv at eksportere igen."
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "Eksporterer sikkerhedskopi"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "Eksport af sikkerhedskopi gennemført"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "Sådan gendannes denne sikkerhedskopi:"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "Overfør din sikkerhedskopimappe til telefonens lagerplads"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "Installér en ny kopi af Signal på din mobil"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "Tryk på \"Overfør eller gendan\", og vælg “Sikkerhedskopi på enhed”"
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Måneikon"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Kopi af {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "Morgen/formiddag"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "Eftermiddag/aften"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Notifikationsprofil"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Notifikationsprofil"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Til"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Aktiveret indtil {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "I en time"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Indtil {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Indstillinger"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "“{name}” slået til"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "“{name}“ er slået fra"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Notifikationsprofil slået til"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Notifikationsprofil slået fra"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Notifikationsprofiler"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Opsæt"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Notifikationsprofiler"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Opret en profil for kun at modtage notifikationer og opkald fra de personer og grupper, du vælger"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Fortsæt"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Tilføj eller rediger notifikationsprofiler"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {En profil} other {{profileCount,number} profiler}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Opret profil"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Navngiv din profil"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Navn"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Profilnavn"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Arbejde"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Sovetid"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Kørsel"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Nedetid"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Fokus"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Tilladte notifikationer"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Tilføj personer og grupper, som du ønsker at modtage notifikationer fra, når denne profil er aktiveret"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Tilføj personer og grupper"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Undtagelser"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Tillad alle opkald"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Underret ved alle omtaler"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Tilføj en tidsplan"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Tidsplan"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Aktivér og rediger din tidsplan for at automatisere din notifikationsprofil."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Aktivér automatisk"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Tidsplan"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Fra"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Indtil"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Åbn tidsvælger"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Søndag"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Mandag"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Tirsdag"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Onsdag"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Torsdag"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Fredag"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Lørdag"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Profil oprettet"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Hvis du har tilføjet en tidsplan, vil din profil automatisk slå til eller fra. Du kan også klikke på ikonet ··· øverst på chatlisten for at slå det til eller fra manuelt."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "søn"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "man"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "tir"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Ons."
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Tor."
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Fre."
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "lør"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Hverdage"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Weekender"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Daglig"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Profiler"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Synkroniser på tværs af enheder"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Dine profiler vil blive synkroniseret på tværs af dine enheder. Når du aktiverer en profil på én enhed, aktiveres den også på de andre."
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Slet profil"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Vil du slette denne notifikationsprofil permanent?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Slet"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Til"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Fra"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Rediger navnet på denne profil"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Tilladte notifikationer"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} til {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Til"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Fra"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Blokeret"
   },
   "icu:Preferences--signal-backups": {
-    "messageformat": "Signal-sikkerhedskopier"
+    "messageformat": "Sikre Signal-sikkerhedskopier"
   },
   "icu:Preferences--signal-backups-off-description": {
     "messageformat": "Automatiske sikkerhedskopier med Signals sikre E2E-krypterede lagertjeneste. Kom i gang på din telefon. <learnMoreLink>Få mere at vide.</learnMoreLink>"
@@ -5274,7 +6148,10 @@
     "messageformat": "Sikkerhedskopiering af tekst + alle medier"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Dit abonnement blev ikke fundet. Forny dit abonnement for at fortsætte med at bruge Signal-sikkerhedskopier."
+    "messageformat": "Dit abonnement blev ikke fundet. Tjek din telefon for at se dine sikkerhedskopieringsoplysninger."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/måned"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Sikkerhedskopiering af tekst + {mediaDayCount,number} dags medier} other {Sikkerhedskopiering af tekst + {mediaDayCount,number} dages medier}}"
@@ -5292,13 +6169,13 @@
     "messageformat": "Abonnement annulleret"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "Du kan administrere eller opsige dit abonnement på Signal-sikkerhedskopier på din telefon."
+    "messageformat": "Du kan administrere eller opsige dit abonnement på sikre sikkerhedskopier i Signal på din telefon."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "Du kan administrere eller opgradere Signal-sikkerhedskopier på din telefon."
+    "messageformat": "Du kan administrere eller opgradere sikre sikkerhedskopier i Signal på din telefon."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "Du kan administrere eller forny dit abonnement på Signal-sikkerhedskopier på din telefon."
+    "messageformat": "Du kan administrere eller forny dit abonnement på sikre sikkerhedskopier i Signal på din telefon."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Seneste sikkerhedskopi"
@@ -5330,6 +6207,18 @@
   "icu:Preferences--local-backups-view-backup-key-done": {
     "messageformat": "Udført"
   },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt--mac": {
+    "messageformat": "vis din sikkerhedskopinøgle"
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt--windows": {
+    "messageformat": "Verificer din identitet for at se din sikkerhedskopinøgle."
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt-description--linux": {
+    "messageformat": "Se sikkerhedskopieringsnøgle"
+  },
+  "icu:Preferences--local-backups--view-backup-key--os-prompt-message--linux": {
+    "messageformat": "Autentificering kræves for at se din sikkerhedskopinøgle."
+  },
   "icu:Preferences--local-backups-backup-key-text-box": {
     "messageformat": "Tekstfelt til sikkerhedskopinøgle"
   },
@@ -5360,6 +6249,15 @@
   "icu:Preferences--local-backups-see-backup-key-again": {
     "messageformat": "Se nøglen igen"
   },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "Seneste sikkerhedskopi"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "Aldrig"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "Sikkerhedskopiér nu"
+  },
   "icu:Preferences__local-backups-folder": {
     "messageformat": "Mappe til sikkerhedskopi"
   },
@@ -5371,6 +6269,18 @@
   },
   "icu:Preferences__local-backups-copied-key": {
     "messageformat": "Sikkerhedskopinøglen er kopieret"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "Aktivér sikkerhedskopier"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "Verificer din identitet for at aktivere sikkerhedskopier."
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "Aktivér sikkerhedskopier"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "Autentificering kræves for at aktivere sikkerhedskopier."
   },
   "icu:Preferences__view-key": {
     "messageformat": "Se sikkerhedskopieringsnøgle"
@@ -6360,6 +7270,9 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "Redigeret"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "Fastgjort"
+  },
   "icu:DraftGifMessageSendModal__Title": {
     "messageformat": "Tilføj en besked"
   },
@@ -6371,6 +7284,9 @@
   },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "Redigeringshistorik"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "Kopiér tidsstempel"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "Redigeret besked kunne ikke sendes. Tjek din forbindelse, og prøv igen"
@@ -6618,23 +7534,59 @@
   "icu:WhatsNew__modal-title": {
     "messageformat": "Nyheder"
   },
-  "icu:PreferencesDonations__title": {
-    "messageformat": "Privatliv fremfor profit"
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "Vi er en stolt nonprofit"
   },
-  "icu:PreferencesDonations__description": {
-    "messageformat": "Private beskeder, finansieret af dig. Ingen annoncer, ingen sporing, ingen kompromiser. Donér nu for at støtte Signal. <learnMoreLink>Få mere at vide</learnMoreLink>"
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "Donér for at støtte private beskeder. Hold Signal uafhængig og annoncefri. <readMoreLink>Læs mere</readMoreLink>"
   },
   "icu:PreferencesDonations__donate-button": {
     "messageformat": "Donér"
   },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "Min støtte"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} én gang"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Behandler donation…"
+  },
   "icu:PreferencesDonations__donate-button-with-amount": {
-    "messageformat": "Donate {formattedCurrencyAmount}"
+    "messageformat": "Donér {formattedCurrencyAmount}"
   },
   "icu:PreferencesDonations__mobile-info": {
     "messageformat": "Badges og månedlige donationer kan administreres på din mobilenhed."
   },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Dine oplysninger er private"
+  },
+  "icu:PreferencesDonations__privacy-modal-content": {
+    "messageformat": "<paragraph>Signal indsamler eller opbevarer ingen af dine personlige oplysninger, når du donerer.</paragraph><paragraph>Vi bruger Stripe som vores betalingssystem til at modtage dine donationer. Vi tilgår, opbevarer eller gemmer ikke nogen af de oplysninger, du giver dem.</paragraph><paragraph>Signal kan ikke og forbinder ikke din donation til din Signal-konto.</paragraph><paragraph>Tak for din støtte!</paragraph>"
+  },
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "Som en uafhængig nonprofitorganisation arbejder Signal for private beskeder og opkald. Ingen annoncer, ingen trackere, ingen overvågning. Donér i dag for at støtte Signal."
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "Få et valgfrit badge på din profil, når du donerer"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "Dit privatliv er vores mission"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "Signal er en nonprofitorganisation. US donations are tax deductible."
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Hjerteikon i Signal-logoets stil"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "Ok"
+  },
   "icu:PreferencesDonations__receipts": {
     "messageformat": "Kvitteringer"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Vis kvitteringsoplysninger"
   },
   "icu:PreferencesDonations__faqs": {
     "messageformat": "Ofte stillede spørgsmål om donationer"
@@ -6645,9 +7597,6 @@
   "icu:PreferencesDonations--receiptList__empty-title": {
     "messageformat": "Ingen kvitteringer"
   },
-  "icu:PreferencesDonations__ReceiptModal--title": {
-    "messageformat": "Detaljer"
-  },
   "icu:PreferencesDonations__ReceiptModal--download": {
     "messageformat": "Download kvittering"
   },
@@ -6656,6 +7605,81 @@
   },
   "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
     "messageformat": "Dato for betaling"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Foretag en engangsdonation"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "På computer er kun engangsdonationer tilgængelige. Månedlige donationer kan foretages på din mobilenhed."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Har du problemer? <contactSupportLink>Kontakt support</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Angiv tilpasset beløb"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Kredit- eller debetkort"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Angiv dine kredit- eller betalingskortoplysninger. Signal indsamler eller opbevarer ikke dine personlige oplysninger. <learnMoreLink>Få mere at vide</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Kortnummer"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Udløbsdato"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/ÅÅ"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Donér {formattedCurrencyAmount} til Signal"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Ugyldigt kortnummer"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "Kortet er udløbet"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "År påkrævet"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Ugyldig"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Koden er for kort"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Få et Signal Boost-badge i 30 dage"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Det mindste donationsbeløb er {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Det mindste beløb, du kan donere, er {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Det maksimale donationsbeløb er {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Hvis du forlader denne side, vil dine kreditkortoplysninger blive slettet. Vil du fortsætte?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Fjern oplysninger"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "Hvis du forlader siden nu, annulleres din donation."
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "Forlad"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "Bliv på siden"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Fortsæt"
   },
   "icu:DonationReceipt__title": {
     "messageformat": "Kvittering for donation"
@@ -6675,47 +7699,257 @@
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Tak, fordi du støtter Signal! Dit bidrag er med til at fremme missionen om at beskytte ytringsfriheden og muliggøre sikker global kommunikation for millioner af mennesker verden over gennem open source-privatlivsteknologi. Hvis du er bosiddende i USA, bedes du gemme denne kvittering til dine skatteoptegnelser. Signal Technology Foundation er en skattefritaget nonprofitorganisation i USA i henhold til paragraf 501c3 i Internal Revenue Code. Vores føderale skatte-id er 82-4506840."
   },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Du er offline. Opret forbindelse til internettet for at gennemføre donationen."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Donation annulleret"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Donation gennemført"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Fejl ved behandling af donation"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Behandler donation"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Verifikation mislykkedes"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "Du har en igangværende donation, der kræver yderligere verificering."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Du har en igangværende donation, der kræver bekræftelse."
+  },
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "Du har en igangværende donation, der kræver bekræftelse."
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "PayPal-donationen er annulleret"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "Kunne ikke behandle PayPal-donationen. Du er ikke blevet opkrævet."
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Donationen lykkedes, men vi kunne ikke opdatere dine badgeindstillinger"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "For at opdatere dine badgeindstillinger på din mobilenhed skal du gå til Indstillinger → Donér til Signal → Badges."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Donationen afbrudt"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "Dit kort blev ikke debiteret. Vil du prøve at donere igen?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Prøv igen"
+  },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "Betalingsmetode"
+  },
   "icu:Donations__PaymentMethodDeclined": {
-    "messageformat": "Payment method declined"
+    "messageformat": "Betalingsmetode blev afvist"
   },
   "icu:Donations__PaymentMethodDeclined__Description": {
-    "messageformat": "Try another payment method or contact your bank for more information."
+    "messageformat": "Prøv en anden betalingsmetode, eller kontakt din bank for at få flere oplysninger."
   },
-  "icu:Donations__ErrorProcessingDonation": {
-    "messageformat": "Error processing donation"
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "Kreditkortikon"
   },
-  "icu:Donations__ErrorProcessingDonation__Description": {
-    "messageformat": "Try another payment method or contact your bank for more information."
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "Kredit- eller debetkort"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "Annullér"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "Fuldfør donation"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "PayPal-donationen er annulleret"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "Du er ikke blevet opkrævet. Prøv igen, eller brug en anden betalingsmetode."
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "Fejl ved behandling af PayPal-donationen"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "Du er ikke blevet opkrævet. Prøv igen, eller brug en anden betalingsmetode."
   },
   "icu:Donations__Failed3dsValidation": {
-    "messageformat": "Verification Failed"
+    "messageformat": "Verifikation mislykkedes"
   },
   "icu:Donations__Failed3dsValidation__Description": {
-    "messageformat": "Additional verification step failed. Please try again."
+    "messageformat": "Det ekstra verifikationstrin mislykkedes. Prøv igen."
   },
   "icu:Donations__GenericError": {
-    "messageformat": "An error occurred with your donation"
+    "messageformat": "Der opstod en fejl i forbindelse med din donation."
   },
   "icu:Donations__GenericError__Description": {
-    "messageformat": "Your donation might not have been processed. Click on “Donate to Signal” and then “Donation Receipts” to check your receipts and confirm."
+    "messageformat": "Din donation er muligvis ikke blevet gennemført. Klik på “Donér til Signal”, og klik derefter “Donationskvitteringer” for at tjekke dine kvitteringer og bekræfte."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Prøv igen, eller send en fejlfindingslog til support for at få hjælp til at fuldføre din donation. Fejlfindingslogfiler hjælper os med at diagnosticere og løse problemet og indeholder ikke identificerende oplysninger."
   },
   "icu:Donations__Processing": {
-    "messageformat": "Processing donation..."
+    "messageformat": "Behandler donation…"
   },
   "icu:Donations__StillProcessing": {
-    "messageformat": "Still processing"
+    "messageformat": "Donationen er under behandling"
   },
   "icu:Donations__StillProcessing__Description": {
-    "messageformat": "Your donation is still being processed. This can take a few minutes."
+    "messageformat": "Din donation er stadig under behandling. Dette kan tage et par minutter"
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Donation annulleret"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "Det er for længe siden, du startede din donation. Prøv igen."
   },
   "icu:Donations__3dsValidationNeeded": {
-    "messageformat": "Additional verification required"
+    "messageformat": "Yderligere verificering er påkrævet"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Afventer bekræftelse"
   },
   "icu:Donations__3dsValidationNeeded__Description": {
-    "messageformat": "Your credit card issuer requires an additional verification step in a web browser."
+    "messageformat": "Din kreditkortudsteder kræver et ekstra verifikationstrin i en webbrowser."
   },
   "icu:Donations__3dsValidationNeeded__OpenBrowser": {
-    "messageformat": "Open browser"
+    "messageformat": "Åbn browser"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Genåbn browser"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Annuller donation"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Tak for din støtte!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Du har optjent en donorbadge fra Signal! Vis det på din profil for at vise din støtte."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Vis på profil"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Du kan ændre dette på din mobilenhed under Indstillinger → Donér til Signal → Badges"
+  },
+  "icu:CallQualitySurvey__CloseButton__AccessibilityLabel": {
+    "messageformat": "Luk"
+  },
+  "icu:CallQualitySurvey__BackButton__AccessibilityLabel": {
+    "messageformat": "Tilbage"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "Hvordan var dit opkald?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Dette hjælper os med at forbedre opkald i Signal. Personlige oplysninger vil ikke blive gemt."
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "Oplevede problemer"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "Godt"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "Hvilke problemer oplevede du?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "Vælg alle, der gælder for din situation"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "Problemer med lyden"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "Lyden hakker"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "Jeg får ekko"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "Andre oplevede ekko"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "Lydafbrydelse"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "Videoproblem"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "Kameraet virkede ikke"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "Dårlig videokvalitet"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "Lav opløsning"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "Opkaldet blev afbrudt"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "Noget andet"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "Problembeskrivelse"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "Inkluder venligst alle oplysninger, der er relevante for problemet. Din information holdes fortrolig og bruges kun til at forbedre opkald i Signal."
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "Beskriv dit problem"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "Fortsæt"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "Foretag et valg for at fortsætte"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "Hjælp os med at blive bedre"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "Når du indsender, deles din feedback sammen med <diagnosticInfoLink>diagnostiske oplysninger om dit opkald</diagnosticInfoLink>. Du kan eventuelt dele en fejlfindingslog for at hjælpe os med at forbedre opkaldskvaliteten."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "Del fejlsøgningslog"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "Vis"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "Oplysninger, der deles med os, omfatter appoplysninger på lavt niveau og inkluderer ikke indholdet af dine opkald."
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "Diagnostiske oplysninger"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "Indsend"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__Submitting": {
+    "messageformat": "Indsender undersøgelse…"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "Kunne ikke indsende undersøgelsen"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "Prøv igen"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "Tak for din feedback!"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "Udvid sidebjælken for at bruge megafonen"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Denne version indeholder en række småjusteringer og fejlrettelser som sikrer, at Signal kører problemfrit.",
@@ -6745,16 +7979,17 @@
     "messageformat": "Små tweaks, rettelser og forbedringer af appens præstation. Tak fordi du bruger Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.58--0": {
-    "messageformat": "En ny sektion i beskedreaktionsvælgeren viser automatisk alle de emoji-reaktioner, som en besked har modtaget. Du kan hurtigt tilføje den almindelige glitrende hjerte-emoji, som mange allerede bruger, eller følge dit eget hjerte og vælge den anatomiske hjerte-emoji i stedet."
+  "icu:WhatsNew__7.90--0": {
+    "messageformat": "• Gør privatlivet mere synligt med fem nye officielle klistermærkepakker i Signal Artist Series: \"Chug the Mouse\" af Amanda Cotan, \"Cozy Season\" af Miguel Ángel Camprubí, \"Croco's Feelings\" af Tiffany Beucher, \"My Daily Life 2\" af Plastic Thing og \"Rocky Talk\" af Lexi Vay."
   },
-  "icu:WhatsNew__v7.59--0": {
-    "messageformat": "Denne opdatering muliggør GPU-acceleration på Linux, hvilket forbedrer ydeevnen og sikrer mere flydende videoafspilning på kompatibel hardware."
+  "icu:WhatsNew__8.0--0": {
+    "messageformat": "Sikre sikkerhedskopier er landet! Nu kan du vælge at aktivere automatiske E2E-krypterede sikkerhedskopier, så du aldrig mister en besked, når du får en ny telefon eller geninstallerer Signal. Du kan sikkerhedskopier alle dine beskeder og de sidste 45 dages medier gratis, eller få 100 GB plads til alle vedhæftede filer mod et lille månedligt gebyr. Tryk på Sikkerhedskopier i dine Signal-indstillinger for at komme i gang. Tak til alle, der testede denne funktion under betaperioden!"
   },
-  "icu:WhatsNew__v7.61--0": {
-    "messageformat": "Denne opdatering forbedrer lydkvaliteten og pålideligheden under tale- og videoopkald og introducerer bedre automatisk konfiguration af tilsluttede mikrofoner og højttalere. Tak til <padenot></padenot>, <kinetiknz></kinetiknz>, og <Pehrsons></Pehrsons> hos Mozilla for deres hjælp med dette projekt."
+  "icu:WhatsNew__8.2--0": {
+    "messageformat": "Nu kan du også sende medier, der kun kan ses én gang, fra Signal Desktop. Enkeltbilleder og -videoer, der sendes som engangsbeskeder, fjernes automatisk fra samtalen, når de er blevet set."
   },
-  "icu:WhatsNew__v7.62--0": {
-    "messageformat": "Vi har rettet en sjælden fejl, der kunne forhindre nogle kontakter i at blive synkroniseret korrekt."
+  "icu:WhatsNew__8.3--0": {
+    "messageformat": "Nu kan du valgfrit tilføje en medlemstitel for at beskrive dig selv eller din rolle i gruppechatten. Brug medlemstitler som “Dommer” eller “Målmand” i din lokale fodboldgruppe for at komme i gang, når nye holdkammerater joiner. Skift derefter til en anden titel med din stilling i virksomhedschatten. Medlemstitler vises ved dit profilnavn i gruppen, og gruppeadministratorer kan styre, hvem der kan tildele en titel via tilladelse i “Rediger gruppeinfo”.",
+    "ignoreUnused": true
   }
 }

@@ -42,10 +42,6 @@
     }
   }
 
-  &__donate-button {
-    margin-block-end: 32px;
-  }
-
   &__separator {
     width: 100%;
     height: 0.5px;
@@ -56,6 +52,10 @@
       variables.$color-black-alpha-12,
       variables.$color-white-alpha-12
     );
+
+    &--card-form {
+      margin-block: 20px 12px;
+    }
   }
 
   &__section-header {
@@ -240,13 +240,31 @@
       );
     }
 
-    // Placeholder for icon depending on receipt type
+    @include mixins.keyboard-mode {
+      &:focus {
+        background-color: light-dark(
+          variables.$color-gray-02,
+          variables.$color-gray-80
+        );
+      }
+    }
+
+    // Currently only one time donations are possible
     &__icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 18px;
-      background-color: variables.$color-ultramarine-pale;
-      flex-shrink: 0;
+      @include mixins.light-theme {
+        background: url('../images/rocket-36-light.svg');
+      }
+      @include mixins.dark-theme {
+        background: url('../images/rocket-36-dark.svg');
+      }
+
+      & {
+        width: 36px;
+        height: 36px;
+        background-size: 100%;
+        border-radius: 18px;
+        flex-shrink: 0;
+      }
     }
 
     &__details {
@@ -309,7 +327,50 @@
   }
 }
 
+@mixin donations-modal {
+  &__width-container {
+    max-width: 420px;
+  }
+
+  &__headerTitle,
+  &__body,
+  .module-Modal__button-footer {
+    padding-inline: 24px;
+  }
+
+  &__headerTitle {
+    padding-block-start: 24px;
+  }
+
+  &__title {
+    @include mixins.font-title-medium;
+  }
+
+  &__body {
+    @include mixins.font-body-2;
+    padding-block-end: 16px;
+  }
+
+  .module-Modal__button-footer {
+    padding-block: 0 24px;
+
+    button {
+      @include mixins.font-body-2;
+
+      padding-block: 5px;
+      padding-inline: 12px;
+      border-radius: 6px;
+    }
+  }
+
+  p:not(:last-child) {
+    margin-block: 0 18px;
+  }
+}
+
 .PreferencesDonations__ReceiptModal {
+  @include donations-modal;
+
   &__content {
     display: flex;
     flex-direction: column;
@@ -318,13 +379,12 @@
   }
 
   &__logo-container {
-    margin-bottom: 16px;
+    margin-block-end: 20px;
   }
 
   &__logo {
     width: 100px;
     height: 28.571px;
-    margin-bottom: 24px;
     background-image: url('../images/signal-logo-and-wordmark.svg');
     background-size: contain;
     background-repeat: no-repeat;
@@ -333,16 +393,17 @@
 
   &__amount {
     font-size: 40px;
+    line-height: normal;
     letter-spacing: 0.07px;
     color: light-dark(variables.$color-gray-90, variables.$color-gray-05);
-    margin-bottom: 24px;
+    margin-block-end: 20px;
   }
 
   &__separator {
     width: 100%;
     height: 0.5px;
     border: none;
-    margin: 0;
+    margin-block: 12px;
     background-color: light-dark(
       variables.$color-black-alpha-12,
       variables.$color-white-alpha-12
@@ -365,7 +426,7 @@
       variables.$color-black-alpha-85,
       variables.$color-white-alpha-85
     );
-    margin-bottom: 2px;
+    margin-block-end: 2px;
   }
 
   &__detail-value {
@@ -377,32 +438,91 @@
   }
 }
 
-.DonationPrivacyInformationModal {
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-  }
-
-  &__faqs-link {
-    @include mixins.button-reset;
-
-    & {
-      color: variables.$color-ultramarine;
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-  }
+.PreferencesDonations__badge-list {
+  width: 100%;
+  margin-block: 4px 8px;
 }
 
-.PreferencesDonations__PrimaryButton {
-  @include mixins.font-body-2;
-  padding-block: 5px;
-  padding-inline: 12px;
-  font-weight: 400;
+.PreferencesDonations__badge {
+  &:hover {
+    background: light-dark(variables.$color-gray-04, variables.$color-gray-80);
+  }
+
+  @include mixins.keyboard-mode {
+    &:focus {
+      outline: 2px solid variables.$color-ultramarine;
+    }
+  }
+
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  height: 58px;
+  padding-block: 8px;
+  padding-inline: 12px 8px;
+  background: light-dark(variables.$color-gray-02, variables.$color-gray-85);
+  border: 0.5px solid;
+  border-color: light-dark(
+    variables.$color-black-alpha-12,
+    variables.$color-white-alpha-12
+  );
   border-radius: 6px;
+  cursor: pointer;
+}
+
+.PreferencesDonations__badge-icon {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  background-size: 100%;
+
+  // Currently only one time donations are possible
+  background-image: url('../images/rocket-160.svg');
+}
+
+.PreferencesDonations__badge-info {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  align-items: start;
+}
+
+.PreferencesDonations__badge-label {
+  @include mixins.font-body-1;
+  color: light-dark(
+    variables.$color-black-alpha-85,
+    variables.$color-white-alpha-85
+  );
+}
+
+.PreferencesDonations__badge-processing-info {
+  @include mixins.font-body-small;
+  color: light-dark(
+    variables.$color-black-alpha-50,
+    variables.$color-white-alpha-55
+  );
+}
+
+.PreferencesDonations__payment-icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  @include mixins.color-svg(
+    '../images/icons/v3/payment/payment.svg',
+    variables.$color-white
+  );
+}
+
+.PreferencesDonations__paypal-button {
+  display: flex;
+  width: 280px;
+  height: 36px;
+  background: variables.$color-paypal-yellow;
+  border-radius: 6px;
+  justify-content: center;
+}
+
+.PreferencesDonations__paypal-icon {
+  display: flex;
+  background-image: url('../images/paypal.svg');
 }

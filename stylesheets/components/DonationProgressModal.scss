@@ -18,9 +18,11 @@
 .DonationProgressModal__text {
   margin-top: 20px;
   color: light-dark(variables.$color-gray-60, variables.$color-gray-25);
+  user-select: none;
   @include mixins.font-body-2;
 }
 
-.DonationProgressModal .SpinnerV2__Path {
-  color: variables.$color-ultramarine;
+.DonationProgressModal__SpinnerV2 {
+  display: inline-block;
+  margin-inline: auto;
 }

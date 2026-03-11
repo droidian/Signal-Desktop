@@ -300,6 +300,9 @@ message AccountRecord {
   IAPSubscriberData backupSubscriberData = 41;
   optional AvatarColor avatarColor = 42;
   NotificationProfileManualOverride notificationProfileManualOverride = 44;
+  bool notificationProfileSyncDisabled = 45;
+  bool automaticKeyVerificationDisabled = 46;
+  bool hasSeenAdminDeleteEducationDialog = 47;
 }
 
 message StoryDistributionListRecord {
@@ -338,6 +341,7 @@ message CallLinkRecord {
   bytes adminPasskey = 2; // Non-empty when the current user is an admin
   uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey`
                                    // should be cleared
+  reserved 4; // was epoch, never used
 }
 
 message Recipient {
@@ -372,7 +376,7 @@ message ChatFolderRecord {
   FolderType folderType = 8;
   repeated Recipient includedRecipients = 9;
   repeated Recipient excludedRecipients = 10;
-  uint64 deletedAtTimestampMs = 11;   // When non-zero, `position` should be set to -1 and `includedRecipients` should be empty
+  uint64 deletedAtTimestampMs = 11;   // When non-zero, `position` should be set to 4294967295 (2^32-1) and `includedRecipients` should be empty
 }
 
 message NotificationProfile {
