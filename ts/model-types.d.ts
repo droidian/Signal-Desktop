@@ -3,36 +3,48 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 
-import type { GroupV2ChangeType } from './groups';
-import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange';
-import type { CustomColorType, ConversationColorType } from './types/Colors';
-import type { SendMessageChallengeData } from './textsecure/Errors';
-import type { ProfileNameChangeType } from './util/getStringForProfileChange';
-import type { CapabilitiesType } from './textsecure/WebAPI';
-import type { ReadStatus } from './messages/MessageReadStatus';
-import type { SendStateByConversationId } from './messages/MessageSendState';
-import type { GroupNameCollisionsWithIdsByTitle } from './util/groupMemberNameCollisions';
+import type { GroupV2ChangeType } from './types/groups.std.js';
+import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange.std.js';
+import type {
+  CustomColorType,
+  ConversationColorType,
+} from './types/Colors.std.js';
+import type { SendMessageChallengeData } from './textsecure/Errors.std.js';
+import type { ProfileNameChangeType } from './util/getStringForProfileChange.std.js';
+import type { CapabilitiesType } from './types/Capabilities.d.ts';
+import type { ReadStatus } from './messages/MessageReadStatus.std.js';
+import type { SendStateByConversationId } from './messages/MessageSendState.std.js';
+import type { GroupNameCollisionsWithIdsByTitle } from './util/groupMemberNameCollisions.std.js';
 
-import type { AttachmentDraftType, AttachmentType } from './types/Attachment';
-import type { EmbeddedContactType } from './types/EmbeddedContact';
-import { SignalService as Proto } from './protobuf';
-import type { AvatarDataType, ContactAvatarType } from './types/Avatar';
-import type { AciString, PniString, ServiceIdString } from './types/ServiceId';
-import type { StoryDistributionIdString } from './types/StoryDistributionId';
-import type { SeenStatus } from './MessageSeenStatus';
-import type { GiftBadgeStates } from './components/conversation/Message';
-import type { LinkPreviewType } from './types/message/LinkPreviews';
+import type {
+  AttachmentDraftType,
+  AttachmentType,
+} from './util/Attachment.std.js';
+import type { EmbeddedContactType } from './types/EmbeddedContact.std.js';
+import { SignalService as Proto } from './protobuf/index.std.js';
+import type { AvatarDataType, ContactAvatarType } from './types/Avatar.std.js';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from './types/ServiceId.std.js';
+import type { StoryDistributionIdString } from './types/StoryDistributionId.std.js';
+import type { SeenStatus } from './MessageSeenStatus.std.js';
+import type { GiftBadgeStates } from './types/GiftBadgeStates.std.js';
+import type { LinkPreviewType } from './types/message/LinkPreviews.std.js';
 
-import type { StickerType } from './types/Stickers';
-import type { StorySendMode } from './types/Stories';
-import type { MIMEType } from './types/MIME';
-import type { DurationInSeconds } from './util/durations';
-import type { AnyPaymentEvent } from './types/Payment';
+import type { StickerType } from './types/Stickers.preload.js';
+import type { StorySendMode } from './types/Stories.std.js';
+import type { MIMEType } from './types/MIME.std.js';
+import type { DurationInSeconds } from './util/durations/index.std.js';
+import type { AnyPaymentEvent } from './types/Payment.std.js';
+import type { PollMessageAttribute } from './types/Polls.dom.js';
 
 import AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 import MemberRoleEnum = Proto.Member.Role;
-import type { MessageRequestResponseEvent } from './types/MessageRequestResponseEvent';
-import type { QuotedMessageForComposerType } from './state/ducks/composer';
+import type { MessageRequestResponseEvent } from './types/MessageRequestResponseEvent.std.js';
+import type { QuotedMessageForComposerType } from './state/ducks/composer.preload.js';
+import type { SEALED_SENDER } from './types/SealedSender.std.js';
 
 export type LastMessageStatus =
   | 'paused'
@@ -91,6 +103,7 @@ export type QuotedMessageType = {
   // from backup
   id: number | null;
   isGiftBadge?: boolean;
+  isPoll?: boolean;
   isViewOnce: boolean;
   referencedMessageNotFound: boolean;
   text?: string;
@@ -139,6 +152,11 @@ export type EditHistoryType = {
   unidentifiedDeliveryReceived?: boolean;
 };
 
+export type PinMessageData = Readonly<{
+  targetAuthorAci: AciString;
+  targetSentTimestamp: number;
+}>;
+
 type MessageType =
   | 'call-history'
   | 'change-number-notification'
@@ -152,7 +170,9 @@ type MessageType =
   | 'joined-signal-notification'
   | 'keychange'
   | 'outgoing'
+  | 'pinned-message-notification'
   | 'phone-number-discovery'
+  | 'poll-terminate'
   | 'profile-change'
   | 'story'
   | 'timer-notification'
@@ -174,8 +194,9 @@ export type MessageAttributesType = {
   dataMessage?: Uint8Array | null;
   decrypted_at?: number;
   deletedForEveryone?: boolean;
+  deletedForEveryoneByAdminAci?: AciString;
   deletedForEveryoneTimestamp?: number;
-  errors?: ReadonlyArray<CustomError>;
+  errors?: ReadonlyArray<CustomError> | null;
   expirationStartTimestamp?: number | null;
   expireTimer?: DurationInSeconds;
   groupMigration?: GroupMigrationType;
@@ -198,6 +219,14 @@ export type MessageAttributesType = {
   payment?: AnyPaymentEvent;
   quote?: QuotedMessageType;
   reactions?: ReadonlyArray<MessageReactionType>;
+  pinMessage?: PinMessageData;
+  poll?: PollMessageAttribute;
+  pollTerminateNotification?: {
+    question: string;
+    pollMessageId: string;
+  };
+  // This field will only be set to true for outgoing messages
+  hasUnreadPollVotes?: boolean;
   requiredProtocolVersion?: number;
   sms?: boolean;
   sourceDevice?: number;
@@ -354,6 +383,7 @@ export type ConversationAttributesType = {
   draftChanged?: boolean;
   draftAttachments?: ReadonlyArray<AttachmentDraftType>;
   draftBodyRanges?: DraftBodyRanges;
+  draftIsViewOnce?: boolean;
   draftTimestamp?: number | null;
   hideStory?: boolean;
   inbox_position?: number;
@@ -365,9 +395,12 @@ export type ConversationAttributesType = {
   removalStage?: 'justNotification' | 'messageRequest';
   isPinned?: boolean;
   lastMessageDeletedForEveryone?: boolean;
+  lastMessageDeletedForEveryoneByAdminAci?: AciString;
+  lastMessageAuthorAci?: AciString | null;
   lastMessage?: string | null;
   lastMessageBodyRanges?: ReadonlyArray<RawBodyRange>;
   lastMessagePrefix?: string;
+  /** @deprecated Use lastMessageAuthorAci instead */
   lastMessageAuthor?: string | null;
   lastMessageStatus?: LastMessageStatus | null;
   lastMessageReceivedAt?: number;
@@ -390,9 +423,8 @@ export type ConversationAttributesType = {
    * TODO: Rename this key to be specific to the accessKey on the conversation
    * It's not used for group endorsements.
    */
-  sealedSender?: unknown;
+  sealedSender?: SEALED_SENDER;
   sentMessageCount?: number;
-  sharedGroupNames?: ReadonlyArray<string>;
   voiceNotePlaybackRate?: number;
 
   id: string;
@@ -504,6 +536,13 @@ export type ConversationAttributesType = {
   test_chatFrameImportedFromBackup?: boolean;
 };
 
+// Fields omitted from SettableConversationAttributesType must be set via their
+// appropriate setter functions (e.g. ConverationModel.updateUsername)
+export type SettableConversationAttributesType = Omit<
+  ConversationAttributesType,
+  'username'
+>;
+
 export type ConversationRenderInfoType = Pick<
   ConversationAttributesType,
   | 'e164'
@@ -523,6 +562,8 @@ export type GroupV2MemberType = {
   aci: AciString;
   role: MemberRoleEnum;
   joinedAtVersion: number;
+  labelString?: string;
+  labelEmoji?: string;
 
   // Note that these are temporary flags, generated by applyGroupChange, but eliminated
   //   by applyGroupState. They are used to make our diff-generation more intelligent but
