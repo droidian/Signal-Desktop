@@ -14,26 +14,27 @@ import { Provider } from 'react-redux';
 import { Store, combineReducers, createStore } from 'redux';
 import { Globals } from '@react-spring/web';
 
-import { StorybookThemeContext } from './StorybookThemeContext.js';
-import { SystemThemeType, ThemeType } from '../ts/types/Util.js';
-import { setupI18n } from '../ts/util/setupI18n.js';
-import { HourCyclePreference } from '../ts/types/I18N.js';
-import { AxoProvider } from '../ts/axo/AxoProvider.js';
-import { StateType } from '../ts/state/reducer.js';
+import { StorybookThemeContext } from './StorybookThemeContext.std.js';
+import { SystemThemeType, ThemeType } from '../ts/types/Util.std.js';
+import { setupI18n } from '../ts/util/setupI18n.dom.js';
+import { HourCyclePreference } from '../ts/types/I18N.std.js';
+import { AxoProvider } from '../ts/axo/AxoProvider.dom.js';
+import type { StateType } from '../ts/state/reducer.preload.js';
 import {
   ScrollerLockContext,
   createScrollerLock,
-} from '../ts/hooks/useScrollLock.js';
-import { Environment, setEnvironment } from '../ts/environment.js';
-import { parseUnknown } from '../ts/util/schemas.js';
-import { LocaleEmojiListSchema } from '../ts/types/emoji.js';
-import { FunProvider } from '../ts/components/fun/FunProvider.js';
-import { EmojiSkinTone } from '../ts/components/fun/data/emojis.js';
-import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.js';
+} from '../ts/hooks/useScrollLock.dom.js';
+import { Environment, setEnvironment } from '../ts/environment.std.js';
+import { parseUnknown } from '../ts/util/schemas.std.js';
+import { LocaleEmojiListSchema } from '../ts/types/emoji.std.js';
+import { FunProvider } from '../ts/components/fun/FunProvider.dom.js';
+import { EmojiSkinTone } from '../ts/components/fun/data/emojis.std.js';
+import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.dom.js';
+import { NavTab } from '../ts/types/Nav.std.js';
 
-import type { FunEmojiSelection } from '../ts/components/fun/panels/FunPanelEmojis.js';
-import type { FunGifSelection } from '../ts/components/fun/panels/FunPanelGifs.js';
-import type { FunStickerSelection } from '../ts/components/fun/panels/FunPanelStickers.js';
+import type { FunEmojiSelection } from '../ts/components/fun/panels/FunPanelEmojis.dom.js';
+import type { FunGifSelection } from '../ts/components/fun/panels/FunPanelGifs.dom.js';
+import type { FunStickerSelection } from '../ts/components/fun/panels/FunPanelStickers.dom.js';
 
 setEnvironment(Environment.Development, true);
 
@@ -78,6 +79,16 @@ export const globalTypes = {
 const mockStore: Store<StateType> = createStore(
   combineReducers({
     calling: (state = {}) => state,
+    nav: (
+      state = {
+        selectedLocation: {
+          tab: NavTab.Chats,
+          details: {
+            conversationId: undefined,
+          },
+        },
+      }
+    ) => state,
     conversations: (
       state = {
         conversationLookup: {},
@@ -155,7 +166,6 @@ window.SignalContext = {
   _stopTrackingICUStrings: () => i18n.stopTrackingUsage(),
 };
 
-window.i18n = i18n;
 window.ConversationController = window.ConversationController || {};
 window.ConversationController.isSignalConversationId = () => false;
 window.ConversationController.onConvoMessageMount = noop;
@@ -270,8 +280,10 @@ function withFunProvider(Story, context) {
 }
 
 function withAxoProvider(Story, context) {
+  const globalValue = context.globals.direction ?? 'ltr';
+  const dir = globalValue === 'auto' ? 'ltr' : globalValue;
   return (
-    <AxoProvider dir={context.globals.direction ?? 'ltr'}>
+    <AxoProvider dir={dir}>
       <Story {...context} />
     </AxoProvider>
   );

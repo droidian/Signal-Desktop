@@ -1,3 +1,36 @@
+diff --git a/out/asar/asarUtil.js b/out/asar/asarUtil.js
+index bea8a3b1b2ab56d99ea3679eb88aaf0b4b646803..622e362315642a7144021bbb885e571e9e948e07 100644
+--- a/out/asar/asarUtil.js
++++ b/out/asar/asarUtil.js
+@@ -149,15 +149,24 @@ class AsarPackager {
+             if (a === b) {
+                 return 0;
+             }
++            // SIGNAL CHANGE START
+             // Place addons last because their signature changes per build
+-            const isAAddon = a.endsWith(".node");
+-            const isBAddon = b.endsWith(".node");
+-            if (isAAddon && !isBAddon) {
++            function isFickle(name) {
++              return name.endsWith(".node") ||
++                name.endsWith(path.sep + "local-production.json") ||
++                name.endsWith(path.sep + "preload.bundle.js") ||
++                name.endsWith(path.sep + "preload.bundle.cache") ||
++                name.endsWith(path.sep + "package.json");
++            }
++            const isAFickle = isFickle(a);
++            const isBFickle = isFickle(b);
++            if (isAFickle && !isBFickle) {
+                 return 1;
+             }
+-            if (isBAddon && !isAAddon) {
++            if (isBFickle && !isAFickle) {
+                 return -1;
+             }
++            // SIGNAL CHANGE END
+             // Otherwise order by name
+             return a < b ? -1 : 1;
+         });
 diff --git a/out/targets/FpmTarget.js b/out/targets/FpmTarget.js
 index 47e6f48fcbed88b6ac07cff15c888c1b8b59721f..76dd6cc7265054222f2d70c76aa8456d550f29d1 100644
 --- a/out/targets/FpmTarget.js
@@ -11,10 +44,10 @@ index 47e6f48fcbed88b6ac07cff15c888c1b8b59721f..76dd6cc7265054222f2d70c76aa8456d
              productFilename: packager.appInfo.productFilename,
              ...packager.platformSpecificBuildOptions,
 diff --git a/templates/linux/after-install.tpl b/templates/linux/after-install.tpl
-index 6cf860bd2847bae35ca8885cb680dd6c8c516e39..a19f9610d7101c925bdad8a88c434d839ebdf8f8 100644
+index 6cf860bd2847bae35ca8885cb680dd6c8c516e39..a3cb08a6dc7970ab2b32c731f41ea6e471204a19 100644
 --- a/templates/linux/after-install.tpl
 +++ b/templates/linux/after-install.tpl
-@@ -55,3 +55,24 @@ if apparmor_status --enabled > /dev/null 2>&1; then
+@@ -55,3 +55,26 @@ if apparmor_status --enabled > /dev/null 2>&1; then
      echo "Skipping the installation of the AppArmor profile as this version of AppArmor does not seem to support the bundled profile"
    fi
  fi
@@ -27,10 +60,12 @@ index 6cf860bd2847bae35ca8885cb680dd6c8c516e39..a19f9610d7101c925bdad8a88c434d83
 +  POLICY_ORG='org.signalapp'
 +  POLICY_ENABLE_BACKUPS='enable-backups.policy'
 +  POLICY_VIEW_AEP='view-aep.policy'
++  POLICY_EXPORT='plaintext-export.policy'
 +  mkdir -p "$POLICY_TARGET_PATH";
 +  # Separate policies for staging and production builds
 +  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_ENABLE_BACKUPS" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_ENABLE_BACKUPS"
 +  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_VIEW_AEP" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_VIEW_AEP"
++  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_EXPORT" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_EXPORT"
 +else
 +  echo "Skipping installation of policies as polkit does not seem to be installed. This may affect the availability of some features.";
 +fi

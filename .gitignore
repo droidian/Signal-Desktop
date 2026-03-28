@@ -4,6 +4,7 @@ node_modules_bkp
 coverage/*
 build/curve25519_compiled.js
 build/compact-locales
+build/*.policy
 stylesheets/*.css.map
 /dist
 .DS_Store
@@ -27,7 +28,6 @@ js/util_worker.js
 libtextsecure/components.js
 stylesheets/*.css
 !stylesheets/tailwind-config.css
-!stylesheets/webrtc_internals.css
 /storybook-static/
 preload.bundle.*
 preload.wrapper.js

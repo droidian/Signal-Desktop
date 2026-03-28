@@ -6,42 +6,24 @@
 import type EventEmitter from 'node:events';
 import type { Store } from 'redux';
 import type { SystemPreferences } from 'electron';
-import type PQueue from 'p-queue/dist.js';
 import type { assert } from 'chai';
 import type { MochaOptions } from 'mocha';
 
-import type {
-  ChallengeHandler,
-  IPCRequest as IPCChallengeRequest,
-} from './challenge.js';
-import type AccountManager from './textsecure/AccountManager.js';
-import type { OSType } from './util/os/shared.js';
-import type {
-  LocalizerType,
-  SystemThemeType,
-  ThemeType,
-} from './types/Util.js';
-import type { Receipt } from './types/Receipt.js';
-import type { ConversationController } from './ConversationController.js';
-import type { ReduxActions } from './state/types.js';
-import type * as StorageService from './services/storage.js';
-import type { BatcherType } from './util/batcher.js';
-import type { ScreenShareStatus } from './types/Calling.js';
-import type { MessageCache } from './services/MessageCache.js';
-import type { StateType } from './state/reducer.js';
-import type { Address } from './types/Address.js';
-import type { QualifiedAddress } from './types/QualifiedAddress.js';
-import type { CIType } from './CI.js';
-import type { IPCEventsType } from './util/createIPCEvents.js';
-import type { SignalContextType } from './windows/context.js';
-import type * as Message2 from './types/Message2.js';
-import type { initializeMigrations } from './signal.js';
-import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences.js';
-import type { WindowsNotificationData } from './services/notifications.js';
-import type { QueryStatsOptions } from './sql/main.js';
-import type { SocketStatuses } from './textsecure/SocketManager.js';
-
-export { Long } from 'long';
+import type { IPCRequest as IPCChallengeRequest } from './challenge.dom.js';
+import type { OSType } from './util/os/shared.std.js';
+import type { SystemThemeType, ThemeType } from './types/Util.std.js';
+import type { ConversationController } from './ConversationController.preload.js';
+import type { ReduxActions } from './state/types.std.js';
+import type { ScreenShareStatus } from './types/Calling.std.js';
+import type { MessageCache } from './services/MessageCache.preload.js';
+import type { StateType } from './state/reducer.preload.js';
+import type { CIType } from './CI.preload.js';
+import type { IPCEventsType } from './util/createIPCEvents.preload.js';
+import type { SignalContextType } from './windows/context.preload.js';
+import type { PropsPreloadType as PreferencesPropsType } from './components/Preferences.dom.js';
+import type { WindowsNotificationData } from './services/notifications.preload.js';
+import type { QueryStatsOptions } from './sql/main.main.js';
+import type { SocketStatuses } from './textsecure/SocketManager.preload.js';
 
 export type IPCType = {
   addSetupMenuItems: () => void;
@@ -72,7 +54,11 @@ export type IPCType = {
   setMediaPermissions: (value: boolean) => Promise<void>;
   setMediaCameraPermissions: (value: boolean) => Promise<void>;
   setMenuBarVisibility: (value: boolean) => void;
-  showDebugLog: () => void;
+  showDebugLog: (options?: { mode?: 'submit' | 'close' }) => void;
+  showCallDiagnostic: () => void;
+  closeCallDiagnostic: () => void;
+  closeDebugLog: () => void;
+  updateCallDiagnosticData: (data: string) => void;
   showPermissionsPopup: (
     forCalling: boolean,
     forCamera: boolean
@@ -106,6 +92,12 @@ type DebugLogWindowPropsType = {
   downloadLog: (text: string) => unknown;
   fetchLogs: () => Promise<string>;
   uploadLogs: (text: string) => Promise<string>;
+  mode: 'submit' | 'close';
+};
+
+type CallDiagnosticWindowPropsType = {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => string | null;
 };
 
 type PermissionsWindowPropsType = {
@@ -130,27 +122,21 @@ type SettingsWindowPropsType = {
 
 export type SignalCoreType = {
   AboutWindowProps?: AboutWindowPropsType;
+  CallDiagnosticWindowProps?: CallDiagnosticWindowPropsType;
   DebugLogWindowProps?: DebugLogWindowPropsType;
   PermissionsWindowProps?: PermissionsWindowPropsType;
   ScreenShareWindowProps?: ScreenShareWindowPropsType;
-  Services: {
-    storage: typeof StorageService;
-    // Only for development
+  SettingsWindowProps?: SettingsWindowPropsType;
+
+  OS: OSType;
+
+  // Only for debugging in Dev Tools
+  Services?: {
+    storage: unknown;
     backups: unknown;
     calling: unknown;
     donations: unknown;
   };
-  SettingsWindowProps?: SettingsWindowPropsType;
-  Migrations: ReturnType<typeof initializeMigrations>;
-  Types: {
-    Message: typeof Message2;
-    Address: typeof Address;
-    QualifiedAddress: typeof QualifiedAddress;
-  };
-  OS: OSType;
-  challengeHandler?: ChallengeHandler;
-
-  // Only for debugging in Dev Tools
   DataReader?: unknown;
   DataWriter?: unknown;
 };
@@ -161,7 +147,6 @@ declare global {
   interface Window {
     enterKeyboardMode: () => void;
     enterMouseMode: () => void;
-    getAccountManager: () => AccountManager;
     getAppInstance: () => string | undefined;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
@@ -181,7 +166,6 @@ declare global {
     initialTheme?: ThemeType;
     nodeSetImmediate: typeof setImmediate;
     platform: string;
-    preloadedImages: Array<HTMLImageElement>;
     setImmediate: typeof setImmediate;
     sendChallengeRequest: (request: IPCChallengeRequest) => void;
     systemTheme: SystemThemeType;
@@ -199,7 +183,6 @@ declare global {
     Events: IPCEventsType;
     MessageCache: MessageCache;
     Whisper: WhisperType;
-    i18n: LocalizerType;
     // Note: used in background.html, and not type-checked
     startApp: () => void;
 
@@ -213,19 +196,17 @@ declare global {
     // Feature Flags
     Flags: FeatureFlagType;
 
-    // Paths
-    BasePaths: {
-      attachments: string;
-      draft: string;
-      stickers: string;
-      temp: string;
-    };
-
     // Test only
     SignalCI?: CIType;
 
     // TODO DESKTOP-4801
     SignalContext: SignalContextType;
+
+    SignalClipboard: {
+      clear: () => void;
+      clearIfNeeded: () => void;
+      copyTextTemporarily: (text: string, clearAfterMs: number) => void;
+    };
 
     // Used only in preload to calculate load time
     preloadCompileStartTime: number;
@@ -262,10 +243,38 @@ declare global {
   interface SharedArrayBuffer {
     __arrayBuffer: never;
   }
+
+  interface StringSplitSplitter<T> {
+    [Symbol.split](string: string, limit?: number): T;
+  }
+
+  interface String {
+    split(splitter: string | RegExp): [string, ...Array<string>];
+    split(splitter: string | RegExp, limit: 0): [];
+    split(splitter: string | RegExp, limit: 1): [string];
+    split(splitter: string | RegExp, limit: 2): [string, string?];
+    split(splitter: string | RegExp, limit: 3): [string, string?, string?];
+    split(
+      splitter: string | RegExp,
+      limit: 4
+    ): [string, string?, string?, string?];
+    split(
+      splitter: string | RegExp,
+      limit: 5
+    ): [string, string?, string?, string?, string?];
+    split(splitter: string | RegExp, limit: number): [string, ...Array<string>];
+    split(
+      splitter: string | RegExp,
+      limit?: number
+    ): [string, ...Array<string>];
+    split<T>(splitter: StringSplitSplitter<T>, limit?: number): T;
+    split(
+      splitter: string | RegExp | StringSplitSplitter<Array<string>>,
+      limit?: number
+    ): [string, ...Array<string>];
+  }
 }
 
 export type WhisperType = {
-  deliveryReceiptQueue: PQueue;
-  deliveryReceiptBatcher: BatcherType<Receipt>;
   events: EventEmitter;
 };

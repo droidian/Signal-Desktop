@@ -193,6 +193,8 @@ const rules = {
 const typescriptRules = {
   ...rules,
 
+  'local-rules/file-suffix': 'error',
+
   // Override brace style to enable typescript-specific syntax
   'brace-style': 'off',
   '@typescript-eslint/brace-style': [
@@ -266,12 +268,14 @@ const typescriptRules = {
       zones: [
         {
           target: ['ts/util', 'ts/types'],
-          from: ['ts/components', 'ts/axo'],
+          from: ['ts/components/**', 'ts/axo/**/*.dom.*'],
           message: 'Importing components is forbidden from ts/{util,types}',
         },
       ],
     },
   ],
+
+  'local-rules/enforce-array-buffer': 'error',
 };
 
 const TAILWIND_REPLACEMENTS = [
@@ -330,6 +334,7 @@ module.exports = {
         'ts/**/*.ts',
         'ts/**/*.tsx',
         'app/**/*.ts',
+        'app/**/*.tsx',
         'build/intl-linter/**/*.ts',
       ],
       parser: '@typescript-eslint/parser',
@@ -370,7 +375,7 @@ module.exports = {
       },
     },
     {
-      files: ['ts/**/*_test.{ts,tsx}'],
+      files: ['ts/**/*_test.*.{ts,tsx}'],
       rules: {
         'func-names': 'off',
       },
@@ -449,8 +454,10 @@ module.exports = {
       },
     },
     {
-      files: ['ts/axo/**/*.tsx'],
+      files: ['ts/axo/**/*.{ts,tsx}'],
       rules: {
+        // Rule doesn't understand TypeScript namespaces
+        'no-inner-declarations': 'off',
         '@typescript-eslint/no-namespace': 'off',
         '@typescript-eslint/no-redeclare': [
           'error',

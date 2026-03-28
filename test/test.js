@@ -8,8 +8,13 @@
 mocha.setup('bdd');
 mocha.setup({ timeout: 10000 });
 
+let themeSetting = 'light';
+
 window.Events = {
-  getThemeSetting: () => 'light',
+  getThemeSetting: () => themeSetting,
+  setThemeSetting: (newSetting) => {
+    themeSetting = newSetting;
+  },
   addDarkOverlay: () => undefined,
 };
 
@@ -47,6 +52,3 @@ delete window.testUtilities.prepareTests;
 
   mocha.run();
 })();
-
-window.getPreferredSystemLocales = () => ['en'];
-window.getLocaleOverride = () => null;
