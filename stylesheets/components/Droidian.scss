@@ -26,8 +26,9 @@
 	user-select: none;
 }
 
-.module-message__buttons {
-  display: none;
+.module-message__buttons > * {
+  opacity: 0 !important;
+  interactivity: inert;
 }
 
 .module-ConversationHeader__button.module-ConversationHeader__button--video {
