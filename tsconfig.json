@@ -12,7 +12,7 @@
     /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
     "incremental": true,
     /* Enable constraints that allow a TypeScript project to be used with project references. */
-    "composite": true,
+    "composite": false,
     /* Specify the path to .tsbuildinfo incremental compilation file. */
     // "tsBuildInfoFile": "./.tsbuildinfo",
     /* Disable preferring source files instead of declaration files when referencing composite projects. */
@@ -27,13 +27,12 @@
      */
 
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "target": "ES2021",
+    "target": "ES2023",
     /* Specify a set of bundled library declaration files that describe the target runtime environment. */
     "lib": [
       "DOM", // Required to access `window`
       "DOM.Iterable",
-      "ES2022",
-      "ESNext.Disposable" // For `playwright`
+      "ESNext"
     ],
     /* Specify what JSX code is generated. */
     "jsx": "react",
@@ -113,7 +112,7 @@
      */
 
     /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
-    // "declaration": true,
+    "declaration": false,
     /* Create sourcemaps for d.ts files. */
     // "declarationMap": true,
     /* Only output d.ts files and not JavaScript files. */
@@ -209,7 +208,7 @@
     /* Enable error reporting for fallthrough cases in switch statements. */
     "noFallthroughCasesInSwitch": true,
     /* Add 'undefined' to a type when accessed using an index. */
-    "noUncheckedIndexedAccess": false, // TODO: Major migration needed
+    "noUncheckedIndexedAccess": true,
     /* Ensure overriding members in derived classes are marked with an override modifier. */
     "noImplicitOverride": true,
     /* Enforces using indexed accessors for keys declared using an indexed type. */
@@ -233,6 +232,7 @@
    * ts-node
    */
   "ts-node": {
+    "transpileOnly": true,
     // Override TypeScript options for `ts-node` only
     "compilerOptions": {
       // Necessary for `ts-node` to work with CommonJS modules until we migrate to package.json#type: "module"
