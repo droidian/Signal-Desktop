@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React from 'react';
-import type { FileWithPath } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
+import { getFilePath } from '../../util/api';
 import { processImage } from '../../util/processImage';
 import { useStickerDropzone } from '../../util/useStickerDropzone';
 import { H2, Text } from '../../elements/Typography';
@@ -19,12 +19,11 @@ import {
   useTitle,
   useAuthor,
 } from '../../selectors/art';
-import type { FileWithRequiredPath } from '../../types.d';
 import { useI18n } from '../../contexts/I18n';
 import styles from './MetaStage.module.scss';
 import { AppStage } from './AppStage';
 
-export function MetaStage(): JSX.Element {
+export function MetaStage(): React.JSX.Element {
   const i18n = useI18n();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -37,15 +36,12 @@ export function MetaStage(): JSX.Element {
   const [confirming, setConfirming] = React.useState(false);
 
   const onDrop = React.useCallback(
-    async ([file]: Array<FileWithPath>) => {
+    async ([file]: Array<File>) => {
       try {
-        const stickerImage = await processImage(
-          file as FileWithRequiredPath,
-          artType
-        );
+        const stickerImage = await processImage(file, artType);
         dispatch(setCover(stickerImage));
       } catch (e) {
-        dispatch(removeImage(file.path || file.name));
+        dispatch(removeImage(getFilePath(file) || file.name));
       }
     },
     [dispatch, artType]

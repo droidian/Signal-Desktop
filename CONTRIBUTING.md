@@ -5,17 +5,49 @@
 
 ## Advice for new contributors
 
-Start small. The PRs most likely to be merged are the ones that make small,
-easily reviewed changes with clear and specific intentions. See below for more
-[guidelines on pull requests](#pull-requests).
+First, there are ways to contribute that don't involve the code at all. It helps to
+_start small_. Here's a list of things to consider:
 
-It's a good idea to gauge interest in your intended work by finding the current issue
-for it or creating a new one yourself. You can use also that issue as a place to signal
-your intentions and get feedback from the users most likely to appreciate your changes.
+1. Talk about Signal with your friends and family - get them to join you in using it!
+1. Join the Beta and test out recently-released features before the general public gets access
+1. Find and comment on duplicate GitHub issues, so we can close them
+1. Determine and provide workarounds on existing GitHub issues
+1. Test Signal Desktop and find reliable, well-defined reproduction steps for existing GitHub issues
+1. For a given GitHub issue, test Signal iOS and/or Signal Android to see if their behavior matches Signal Desktop, and provide the details of your analysis.
 
-Once you've spent a little bit of time planning your solution, you can go
-back to the issue and talk about your approach. We'd be happy to provide feedback. [An
-ounce of prevention, as they say!](https://www.goodreads.com/quotes/247269-an-ounce-of-prevention-is-worth-a-pound-of-cure)
+If you're ready to spend some time on a GitHub issue, please consider commenting to ask us
+if there's interest. That will help ensure we minimize wasted time.
+
+### Getting into the code
+
+Have you spent some good time with Signal Desktop and GitHub issues? You can go deeper
+and get into the code itself.
+
+Again, it helps to start small. You don't need to create a PR to contribute!
+
+1. Find the root cause of a GitHub issue, and provide your explanation in the issue, with links to specific places in the code
+1. For a particularly difficult investigation, provide your process. Talk about the changes you made, and what happened - this might be useful to others working to fix the issue.
+1. Test or review the code for others' pull requests
+1. When reporting any issue, also include the specific place in the code where it happens.
+
+### Considering a Pull Request?
+
+If you're getting more comfortable with the code, you can consider assembling a PR. We
+have very high standards for the code we put into Signal Desktop, so take special care
+in changing the code, adding tests, and crafting the PR summary.
+
+Because this can take a lot of time, it's a good idea to gauge interest in your intended
+changes first. Find the current GitHub issue for it or create a new one yourself, then
+post about your plans. That way you'll get feedback from the users most likely to
+appreciate your changes. And we may tell you not to move forward with changes, because we
+have other plans for the issue itself or that area of the code.
+
+Than, once you've spent some time planning your solution, please consider going back
+to the issue and talking about your approach. We'd be happy to provide feedback.
+
+The PRs most likely to be merged are the ones that fix issues with real user impact,
+make small easily reviewed changes, and have clear and specific intentions. See below for
+more [guidelines on pull requests](#pull-requests).
 
 ## Developer Setup
 
@@ -34,10 +66,8 @@ Install the [Xcode Command-Line Tools](http://osxdaily.com/2014/02/12/install-co
 
 ### Windows
 
-1.  Download _Build Tools for Visual Studio 2019_ from the [Visual Studio 'older downloads' page](https://visualstudio.microsoft.com/vs/older-downloads/) and install it, including the "Desktop development with C++" option.
-2.  Install Windows 10 SDK, version 1803 (10.0.17134.x) from the [SDK Archive page](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
-3.  Download and install the latest Python 3 release from https://www.python.org/downloads/windows/ (3.6 or later required).
-4.  Copy `platform.winmd` from your build tools location (like `C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.29.30133\lib\x86\store\references`) to the Windows SDK path: `C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17134.0`. This is for our [`@nodert-win10-rs4`](https://github.com/NodeRT/NodeRT) dependencies.
+1.  Download _Build Tools for Visual Studio 2022 Community Edition_ from [Microsoft's website](https://visualstudio.microsoft.com/vs/community/) and install it, including the "Desktop development with C++" option.
+2.  Download and install the latest Python 3 release from https://www.python.org/downloads/windows/ (3.6 or later required).
 
 ### Linux
 
@@ -52,13 +82,13 @@ Install the [Xcode Command-Line Tools](http://osxdaily.com/2014/02/12/install-co
 Now, run these commands in your preferred terminal in a good directory for development:
 
 ```
-npm install --global yarn      # Make sure you have have `yarn`
 git clone https://github.com/signalapp/Signal-Desktop.git
 cd Signal-Desktop
-yarn install --frozen-lockfile # Install and build dependencies (this will take a while)
-yarn generate                  # Generate final JS and CSS assets
-yarn test                      # A good idea to make sure tests run first
-yarn start                     # Start Signal!
+npm install -g pnpm
+pnpm install       # Install and build dependencies (this will take a while)
+pnpm run generate  # Generate final JS and CSS assets
+pnpm test          # A good idea to make sure tests run first
+pnpm start         # Start Signal!
 ```
 
 You'll need to restart the application regularly to see your changes, as there
@@ -68,14 +98,53 @@ is no automatic restart mechanism. Alternatively, keep the developer tools open
 (Windows & Linux).
 
 Also, note that the assets loaded by the application are not necessarily the same files
-you’re touching. You may not see your changes until you run `yarn generate` on the
+you’re touching. You may not see your changes until you run `pnpm run generate` on the
 command-line like you did during setup. You can make it easier on yourself by generating
 the latest built assets when you change a file. Run each of these in their own terminal
 instance while you make changes - they'll run until you stop them:
 
 ```
-yarn dev:transpile # recompiles when you change .ts files
-yarn dev:sass      # recompiles when you change .scss files
+pnpm run dev:transpile # recompiles when you change .ts files
+pnpm run dev:styles    # recompiles when you change .scss files
+```
+
+#### Known issues
+
+##### `yarn install` prints error 'Could not detect abi for version 30.0.6 and runtime electron'
+
+`yarn install` may print an error like the following, but it can be ignored because the overall operation succeeds.
+
+```
+$ ./node_modules/.bin/electron-builder install-app-deps
+
+  • electron-builder  version=24.6.3
+  • loaded configuration  file=package.json ("build" field)
+  • rebuilding native dependencies  dependencies=@nodert-win10-rs4/windows.data.xml.dom@0.4.4, @nodert-win10-rs4/windows.ui.notifications@0.4.4, @signalapp/better-sqlite3@8.7.1, @signalapp/windows-dummy-keystroke@1.0.0, bufferutil@4.0.7, fs-xattr@0.3.0, mac-screen-capture-permissions@2.0.0, utf-8-validate@5.0.10
+                                    platform=linux
+                                    arch=x64
+  • install prebuilt binary  name=mac-screen-capture-permissions version=2.0.0 platform=linux arch=x64 napi=
+  • build native dependency from sources  name=mac-screen-capture-permissions
+                                          version=2.0.0
+                                          platform=linux
+                                          arch=x64
+                                          napi=
+                                          reason=prebuild-install failed with error (run with env DEBUG=electron-builder to get more information)
+                                          error=/home/ben/sauce/Signal-Desktop/node_modules/node-abi/index.js:30
+      throw new Error('Could not detect abi for version ' + target + ' and runtime ' + runtime + '.  Updating "node-abi" might help solve this issue if it is a new release of ' + runtime)
+      ^
+
+    Error: Could not detect abi for version 30.0.6 and runtime electron.  Updating "node-abi" might help solve this issue if it is a new release of electron
+        at getAbi (/home/ben/sauce/Signal-Desktop/node_modules/node-abi/index.js:30:9)
+        at module.exports (/home/ben/sauce/Signal-Desktop/node_modules/prebuild-install/rc.js:53:57)
+        at Object.<anonymous> (/home/ben/sauce/Signal-Desktop/node_modules/prebuild-install/bin.js:8:25)
+        at Module._compile (node:internal/modules/cjs/loader:1376:14)
+        at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+        at Module.load (node:internal/modules/cjs/loader:1207:32)
+        at Module._load (node:internal/modules/cjs/loader:1023:12)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:135:12)
+        at node:internal/main/run_main_module:28:49
+
+    Node.js v20.11.1
 ```
 
 ### webpack
@@ -85,7 +154,7 @@ You can run a development server for these parts of the app with the
 following command:
 
 ```
-yarn dev
+pnpm run dev
 ```
 
 In order for the app to make requests to the development server you must set
@@ -93,7 +162,7 @@ the `SIGNAL_ENABLE_HTTP` environment variable to a truthy value. On Linux and
 macOS, that simply looks like this:
 
 ```
-SIGNAL_ENABLE_HTTP=1 yarn start
+SIGNAL_ENABLE_HTTP=1 pnpm start
 ```
 
 ## Setting up standalone
@@ -158,7 +227,7 @@ For example, to create an 'alice' profile, put a file called `local-alice.json` 
 Then you can start up the application a little differently to load the profile:
 
 ```
-NODE_APP_INSTANCE=alice yarn run start
+NODE_APP_INSTANCE=alice pnpm start
 ```
 
 This changes the `userData` directory from `%appData%/Signal` to `%appData%/Signal-aliceProfile`.
@@ -174,15 +243,25 @@ Please write tests! Our testing framework is
 [mocha](http://mochajs.org/) and our assertion library is
 [chai](http://chaijs.com/api/assert/).
 
-The easiest way to run all tests at once is `yarn test`, which will run them on the
+The easiest way to run all tests at once is `pnpm test`, which will run them on the
 command line. You can run the client-side tests in an interactive session with
-`NODE_ENV=test yarn run start`.
+`NODE_ENV=test pnpm start`.
 
 ## Pull requests
 
-So you wanna make a pull request? Please observe the following guidelines.
+So you wanna make a pull request?
 
-- First, make sure that your `yarn ready` run passes - it's very similar to what our
+First, know that it's highly unlikely we'll accept visual changes, new strings, or really
+anything that changes the user experience. Please talk to us first if you're planning
+something like this! It's possible that we'll give you the okay, but very likely not.
+
+The best changes fix bugs in our implementation of the existing user experience. For
+example, it's almost certain that we'll reject anything that adds a new option.
+
+More guidelines:
+
+- Don't forget to sign the [CLA](https://signal.org/cla/).
+- Be very sure that your `pnpm run ready` run passes - it's very similar to what our
   Continuous Integration servers do to test the app.
 - Please do not submit pull requests for translation fixes.
 - Never use plain strings right in the source code - pull them from `messages.json`!
@@ -193,7 +272,7 @@ So you wanna make a pull request? Please observe the following guidelines.
   changes on the latest `main` branch, resolving any conflicts.
   This ensures that your changes will merge cleanly when you open your PR.
 - Be sure to add and run tests!
-- Make sure the diff between the development branch and your branch contains only the
+- Make sure the diff between the main branch and your branch contains only the
   minimal set of changes needed to implement your feature or bugfix. This will
   make it easier for the person reviewing your code to approve the changes.
   Please do not submit a PR with commented out code or unfinished features.
@@ -207,7 +286,6 @@ So you wanna make a pull request? Please observe the following guidelines.
   link](http://chris.beams.io/posts/git-commit/)
   for some tips on formatting. As far as content, try to include the following in your
   summary:
-
   1.  What you changed
   2.  Why this change was made. If there is a relevant [GitHub Issue](https://github.com/signalapp/Signal-Desktop/issues), please include the Issue number.
   3.  Any relevant technical details or motivations for your implementation
@@ -261,8 +339,26 @@ will go to your new development desktop app instead of your phone.
 To test changes to the build system, build a release using
 
 ```
-yarn generate
-yarn build
+pnpm run generate
+pnpm run build
 ```
 
-Then, run the tests using `yarn test-release`.
+Then, run the tests using `pnpm run test-release`.
+
+### Testing MacOS builds
+
+macOS requires apps to be code signed with an Apple certificate. To test development builds
+you can ad-hoc sign the packaged app which will let you run it locally.
+
+1. Build the app while skipping the custom macOS signing script:
+
+```
+pnpm run generate
+SKIP_SIGNING_SCRIPT=1 pnpm run build
+cd release
+# Pick the desired app bundle: mac, mac-arm64, or mac-universal
+cd mac-arm64
+codesign --force --deep --sign - Signal.app
+```
+
+2. Now you can run the app locally.

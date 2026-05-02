@@ -6,7 +6,6 @@
 //
 
 export type Credentials = Readonly<{
-  baseUrl?: string;
   username: string;
   password: string;
 }>;
@@ -86,13 +85,4 @@ export type LocaleType = Readonly<{
 export type RenderTextCallbackType = (options: {
   text: string;
   key: number;
-}) => JSX.Element | string;
-
-//
-// Files
-//
-
-export type FileWithRequiredPath = File &
-  Readonly<{
-    path: string;
-  }>;
+}) => React.JSX.Element | string;

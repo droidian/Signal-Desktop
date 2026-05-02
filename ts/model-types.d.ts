@@ -1,38 +1,50 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as Backbone from 'backbone';
+import type { ReadonlyDeep } from 'type-fest';
 
-import type { GroupV2ChangeType } from './groups';
-import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange';
-import type { CustomColorType, ConversationColorType } from './types/Colors';
-import type { SendMessageChallengeData } from './textsecure/Errors';
-import type { ConversationModel } from './models/conversations';
-import type { ProfileNameChangeType } from './util/getStringForProfileChange';
-import type { CapabilitiesType } from './textsecure/WebAPI';
-import type { ReadStatus } from './messages/MessageReadStatus';
-import type { SendStateByConversationId } from './messages/MessageSendState';
-import type { GroupNameCollisionsWithIdsByTitle } from './util/groupMemberNameCollisions';
+import type { GroupV2ChangeType } from './types/groups.std.ts';
+import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange.std.ts';
+import type {
+  CustomColorType,
+  ConversationColorType,
+} from './types/Colors.std.ts';
+import type { SendMessageChallengeData } from './textsecure/Errors.std.ts';
+import type { ProfileNameChangeType } from './util/getStringForProfileChange.std.ts';
+import type { CapabilitiesType } from './types/Capabilities.d.ts';
+import type { ReadStatus } from './messages/MessageReadStatus.std.ts';
+import type { SendStateByConversationId } from './messages/MessageSendState.std.ts';
+import type { GroupNameCollisionsWithIdsByTitle } from './util/groupMemberNameCollisions.std.ts';
 
-import type { AttachmentDraftType, AttachmentType } from './types/Attachment';
-import type { EmbeddedContactType } from './types/EmbeddedContact';
-import { SignalService as Proto } from './protobuf';
-import type { AvatarDataType, ContactAvatarType } from './types/Avatar';
-import type { AciString, PniString, ServiceIdString } from './types/ServiceId';
-import type { StoryDistributionIdString } from './types/StoryDistributionId';
-import type { SeenStatus } from './MessageSeenStatus';
-import type { GiftBadgeStates } from './components/conversation/Message';
-import type { LinkPreviewType } from './types/message/LinkPreviews';
+import type {
+  AttachmentDraftType,
+  AttachmentType,
+} from './util/Attachment.std.ts';
+import type { EmbeddedContactType } from './types/EmbeddedContact.std.ts';
+import { SignalService as Proto } from './protobuf/index.std.ts';
+import type { AvatarDataType, ContactAvatarType } from './types/Avatar.std.ts';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from './types/ServiceId.std.ts';
+import type { StoryDistributionIdString } from './types/StoryDistributionId.std.ts';
+import type { SeenStatus } from './MessageSeenStatus.std.ts';
+import type { GiftBadgeStates } from './types/GiftBadgeStates.std.ts';
+import type { LinkPreviewType } from './types/message/LinkPreviews.std.ts';
 
-import type { StickerType } from './types/Stickers';
-import type { StorySendMode } from './types/Stories';
-import type { MIMEType } from './types/MIME';
-import type { DurationInSeconds } from './util/durations';
-import type { AnyPaymentEvent } from './types/Payment';
+import type { StickerType } from './types/Stickers.preload.ts';
+import type { StorySendMode } from './types/Stories.std.ts';
+import type { MIMEType } from './types/MIME.std.ts';
+import type { DurationInSeconds } from './util/durations/index.std.ts';
+import type { AnyPaymentEvent } from './types/Payment.std.ts';
+import type { PollMessageAttribute } from './types/Polls.dom.ts';
 
 import AccessRequiredEnum = Proto.AccessControl.AccessRequired;
 import MemberRoleEnum = Proto.Member.Role;
-import type { MessageRequestResponseEvent } from './types/MessageRequestResponseEvent';
+import type { MessageRequestResponseEvent } from './types/MessageRequestResponseEvent.std.ts';
+import type { QuotedMessageForComposerType } from './state/ducks/composer.preload.ts';
+import type { SEALED_SENDER } from './types/SealedSender.std.ts';
 
 export type LastMessageStatus =
   | 'paused'
@@ -65,32 +77,39 @@ export type CustomError = Error & {
 
 export type GroupMigrationType = {
   areWeInvited: boolean;
-  droppedMemberIds: Array<string>;
-  invitedMembers: Array<LegacyMigrationPendingMemberType>;
+  droppedMemberIds?: ReadonlyArray<string>;
+  invitedMembers?: ReadonlyArray<LegacyMigrationPendingMemberType>;
+
+  // We don't generate data like this; these were added to support import/export
+  droppedMemberCount?: number;
+  invitedMemberCount?: number;
 };
 
-export type QuotedAttachment = {
+export type QuotedAttachmentType = {
   contentType: MIMEType;
   fileName?: string;
   thumbnail?: AttachmentType;
 };
 
 export type QuotedMessageType = {
-  // TODO DESKTOP-3826
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  attachments: ReadonlyArray<any>;
+  attachments: ReadonlyArray<QuotedAttachmentType>;
   payment?: AnyPaymentEvent;
   // `author` is an old attribute that holds the author's E164. We shouldn't use it for
   //   new messages, but old messages might have this attribute.
   author?: string;
   authorAci?: AciString;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
-  id: number;
+  // id can be null if the referenced message was not found and we imported this quote
+  // from backup
+  id: number | null;
   isGiftBadge?: boolean;
+  isPoll?: boolean;
   isViewOnce: boolean;
-  messageId: string;
   referencedMessageNotFound: boolean;
   text?: string;
+  /** @deprecated `messageId` is used only in composer state, but still may exist in DB
+   * records, particularly for messages sent from this device */
+  messageId?: string;
 };
 
 type StoryReplyContextType = {
@@ -101,7 +120,8 @@ type StoryReplyContextType = {
 
 export type GroupV1Update = {
   avatarUpdated?: boolean;
-  joined?: Array<string>;
+  joined?: ReadonlyArray<string>;
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents
   left?: string | 'You';
   name?: string;
 };
@@ -111,47 +131,85 @@ export type MessageReactionType = {
   fromId: string;
   targetTimestamp: number;
   timestamp: number;
-  receivedAtDate: undefined | number;
   isSentByConversationId?: Record<string, boolean>;
 };
 
 // Note: when adding to the set of things that can change via edits, sendNormalMessage.ts
-//   needs more usage of get/setPropForTimestamp.
+//   needs more usage of get/setPropForTimestamp. Also, these fields must match the fields
+//   in MessageAttributesType.
 export type EditHistoryType = {
-  attachments?: Array<AttachmentType>;
+  attachments?: ReadonlyArray<AttachmentType>;
   body?: string;
   bodyAttachment?: AttachmentType;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
-  preview?: Array<LinkPreviewType>;
+  preview?: ReadonlyArray<LinkPreviewType>;
   quote?: QuotedMessageType;
   sendStateByConversationId?: SendStateByConversationId;
   timestamp: number;
+  received_at: number;
+  received_at_ms?: number;
+  serverTimestamp?: number;
+  readStatus?: ReadStatus;
+  unidentifiedDeliveryReceived?: boolean;
 };
 
+export type PinMessageData = Readonly<{
+  targetAuthorAci: AciString;
+  targetSentTimestamp: number;
+}>;
+
+type MessageType =
+  | 'call-history'
+  | 'change-number-notification'
+  | 'chat-session-refreshed'
+  | 'conversation-merge'
+  | 'delivery-issue'
+  | 'group-v1-migration'
+  | 'group-v2-change'
+  | 'group'
+  | 'incoming'
+  | 'joined-signal-notification'
+  | 'keychange'
+  | 'outgoing'
+  | 'pinned-message-notification'
+  | 'phone-number-discovery'
+  | 'poll-terminate'
+  | 'profile-change'
+  | 'story'
+  | 'timer-notification'
+  | 'universal-timer-notification'
+  | 'contact-removed-notification'
+  | 'title-transition-notification'
+  | 'verified-change'
+  | 'message-request-response-event';
+
+// Note: when adding a property that is likely to be set across many messages,
+//   consider adding a database column as well and updating `MESSAGE_COLUMNS`
+//   in `ts/sql/Server.ts`
 export type MessageAttributesType = {
   bodyAttachment?: AttachmentType;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
   callId?: string;
   canReplyToStory?: boolean;
   changedId?: string;
-  dataMessage?: Uint8Array | null;
+  dataMessage?: Uint8Array<ArrayBuffer> | null;
   decrypted_at?: number;
   deletedForEveryone?: boolean;
+  deletedForEveryoneByAdminAci?: AciString;
   deletedForEveryoneTimestamp?: number;
-  errors?: Array<CustomError>;
+  errors?: ReadonlyArray<CustomError> | null;
   expirationStartTimestamp?: number | null;
   expireTimer?: DurationInSeconds;
   groupMigration?: GroupMigrationType;
   group_update?: GroupV1Update;
-  hasAttachments?: boolean | 0 | 1;
-  hasFileAttachments?: boolean | 0 | 1;
-  hasVisualMediaAttachments?: boolean | 0 | 1;
   mentionsMe?: boolean | 0 | 1;
   isErased?: boolean;
   isTapToViewInvalid?: boolean;
   isViewOnce?: boolean;
-  editHistory?: Array<EditHistoryType>;
+  editHistory?: ReadonlyArray<EditHistoryType>;
   editMessageTimestamp?: number;
+  editMessageReceivedAt?: number;
+  editMessageReceivedAtMs?: number;
   key_changed?: string;
   local?: boolean;
   logger?: unknown;
@@ -162,7 +220,16 @@ export type MessageAttributesType = {
   payment?: AnyPaymentEvent;
   quote?: QuotedMessageType;
   reactions?: ReadonlyArray<MessageReactionType>;
+  pinMessage?: PinMessageData;
+  poll?: PollMessageAttribute;
+  pollTerminateNotification?: {
+    question: string;
+    pollTimestamp: number;
+  };
+  // This field will only be set to true for outgoing messages
+  hasUnreadPollVotes?: boolean;
   requiredProtocolVersion?: number;
+  sms?: boolean;
   sourceDevice?: number;
   storyDistributionListId?: StoryDistributionIdString;
   storyId?: string;
@@ -175,47 +242,34 @@ export type MessageAttributesType = {
   verifiedChanged?: string;
 
   id: string;
-  type:
-    | 'call-history'
-    | 'change-number-notification'
-    | 'chat-session-refreshed'
-    | 'conversation-merge'
-    | 'delivery-issue'
-    | 'group-v1-migration'
-    | 'group-v2-change'
-    | 'group'
-    | 'incoming'
-    | 'keychange'
-    | 'outgoing'
-    | 'phone-number-discovery'
-    | 'profile-change'
-    | 'story'
-    | 'timer-notification'
-    | 'universal-timer-notification'
-    | 'contact-removed-notification'
-    | 'title-transition-notification'
-    | 'verified-change'
-    | 'message-request-response-event';
+  type: MessageType;
   body?: string;
-  attachments?: Array<AttachmentType>;
-  preview?: Array<LinkPreviewType>;
+  attachments?: ReadonlyArray<AttachmentType>;
+  preview?: ReadonlyArray<LinkPreviewType>;
   sticker?: StickerType;
   sent_at: number;
-  unidentifiedDeliveries?: Array<string>;
-  contact?: Array<EmbeddedContactType>;
+  unidentifiedDeliveries?: ReadonlyArray<string>;
+  contact?: ReadonlyArray<EmbeddedContactType>;
   conversationId: string;
   storyReaction?: {
     emoji: string;
     targetAuthorAci: AciString;
     targetTimestamp: number;
   };
-  giftBadge?: {
-    expiration: number;
-    level: number;
-    id: string | undefined;
-    receiptCredentialPresentation: string;
-    state: GiftBadgeStates;
-  };
+  giftBadge?:
+    | {
+        state:
+          | GiftBadgeStates.Unopened
+          | GiftBadgeStates.Opened
+          | GiftBadgeStates.Redeemed;
+        expiration: number;
+        level: number;
+        id: string | undefined;
+        receiptCredentialPresentation: string;
+      }
+    | {
+        state: GiftBadgeStates.Failed;
+      };
 
   expirationTimerUpdate?: {
     expireTimer?: DurationInSeconds;
@@ -256,8 +310,8 @@ export type MessageAttributesType = {
   timestamp: number;
 
   // Backwards-compatibility with prerelease data schema
-  invitedGV2Members?: Array<LegacyMigrationPendingMemberType>;
-  droppedGV2MemberIds?: Array<string>;
+  invitedGV2Members?: ReadonlyArray<LegacyMigrationPendingMemberType>;
+  droppedGV2MemberIds?: ReadonlyArray<string>;
 
   sendHQImages?: boolean;
 
@@ -274,6 +328,8 @@ export type MessageAttributesType = {
   deletedForEveryoneSendStatus?: Record<string, boolean>;
   deletedForEveryoneFailed?: boolean;
 };
+
+export type ReadonlyMessageAttributesType = ReadonlyDeep<MessageAttributesType>;
 
 export type ConversationAttributesTypeType = 'private' | 'group';
 
@@ -294,7 +350,7 @@ export type DraftEditMessageType = {
   body: string;
   preview?: LinkPreviewType;
   targetMessageId: string;
-  quote?: QuotedMessageType;
+  quote?: QuotedMessageForComposerType['quote'];
 };
 
 export type ConversationAttributesType = {
@@ -310,14 +366,25 @@ export type ConversationAttributesType = {
   >;
   capabilities?: CapabilitiesType;
   color?: string;
+  // If present - the numeric value of `color` (possibly not yet supported) that
+  // we got the from primary during either backup or storage service import.
+  colorFromPrimary?: number;
   conversationColor?: ConversationColorType;
   customColor?: CustomColorType;
   customColorId?: string;
+
+  // Set at backup import time, exported as is.
+  wallpaperPhotoPointerBase64?: string;
+  wallpaperPreset?: number;
+  dimWallpaperInDarkMode?: boolean;
+  autoBubbleColor?: boolean;
+
   discoveredUnregisteredAt?: number;
   firstUnregisteredAt?: number;
   draftChanged?: boolean;
   draftAttachments?: ReadonlyArray<AttachmentDraftType>;
   draftBodyRanges?: DraftBodyRanges;
+  draftIsViewOnce?: boolean;
   draftTimestamp?: number | null;
   hideStory?: boolean;
   inbox_position?: number;
@@ -329,15 +396,21 @@ export type ConversationAttributesType = {
   removalStage?: 'justNotification' | 'messageRequest';
   isPinned?: boolean;
   lastMessageDeletedForEveryone?: boolean;
+  lastMessageDeletedForEveryoneByAdminAci?: AciString;
+  lastMessageAuthorAci?: AciString | null;
   lastMessage?: string | null;
   lastMessageBodyRanges?: ReadonlyArray<RawBodyRange>;
   lastMessagePrefix?: string;
+  /** @deprecated Use lastMessageAuthorAci instead */
   lastMessageAuthor?: string | null;
   lastMessageStatus?: LastMessageStatus | null;
+  lastMessageReceivedAt?: number;
+  lastMessageReceivedAtMs?: number;
   markedUnread?: boolean;
   messageCount?: number;
   messageCountBeforeMessageRequests?: number | null;
   messageRequestResponseType?: number;
+  messagesDeleted?: boolean;
   muteExpiresAt?: number;
   dontNotifyForMentionsIfMuted?: boolean;
   sharingPhoneNumber?: boolean;
@@ -347,9 +420,12 @@ export type ConversationAttributesType = {
   lastProfile?: ConversationLastProfileType;
   needsTitleTransition?: boolean;
   quotedMessageId?: string | null;
-  sealedSender?: unknown;
+  /**
+   * TODO: Rename this key to be specific to the accessKey on the conversation
+   * It's not used for group endorsements.
+   */
+  sealedSender?: SEALED_SENDER;
   sentMessageCount?: number;
-  sharedGroupNames?: ReadonlyArray<string>;
   voiceNotePlaybackRate?: number;
 
   id: string;
@@ -367,6 +443,9 @@ export type ConversationAttributesType = {
   systemGivenName?: string;
   systemFamilyName?: string;
   systemNickname?: string;
+  nicknameGivenName?: string | null;
+  nicknameFamilyName?: string | null;
+  note?: string | null;
   needsStorageServiceSync?: boolean;
   needsVerification?: boolean;
   profileSharing?: boolean;
@@ -424,12 +503,15 @@ export type ConversationAttributesType = {
     attributes: AccessRequiredEnum;
     members: AccessRequiredEnum;
     addFromInviteLink: AccessRequiredEnum;
+    memberLabel: AccessRequiredEnum | undefined;
   };
   announcementsOnly?: boolean;
+  terminated?: boolean;
   avatar?: ContactAvatarType | null;
-  avatars?: Array<AvatarDataType>;
+  avatars?: ReadonlyArray<Readonly<AvatarDataType>>;
   description?: string;
   expireTimer?: DurationInSeconds;
+  expireTimerVersion: number;
   membersV2?: Array<GroupV2MemberType>;
   pendingMembersV2?: Array<GroupV2PendingMemberType>;
   pendingAdminApprovalV2?: Array<GroupV2PendingAdminApprovalType>;
@@ -437,21 +519,32 @@ export type ConversationAttributesType = {
   groupInviteLinkPassword?: string;
   previousGroupV1Id?: string;
   previousGroupV1Members?: Array<string>;
-  acknowledgedGroupNameCollisions?: GroupNameCollisionsWithIdsByTitle;
+  acknowledgedGroupNameCollisions?: ReadonlyDeep<GroupNameCollisionsWithIdsByTitle>;
 
   // Used only when user is waiting for approval to join via link
   isTemporary?: boolean;
   temporaryMemberCount?: number;
 
-  // Avatars are blurred for some unapproved conversations, but users can manually unblur
-  //   them. If the avatar was unblurred and then changed, we don't update this value so
-  //   the new avatar gets blurred.
-  //
-  // This value is useless once the message request has been approved. We don't clean it
-  //   up but could. We don't persist it but could (though we'd probably want to clean it
-  //   up in that case).
+  // Legacy field, mapped to above in getConversation()
   unblurredAvatarPath?: string;
+
+  // remoteAvatarUrl
+  remoteAvatarUrl?: string;
+
+  // Only used during backup integration tests. After import, our data model merges
+  // Contact and Chat frames from a backup, and we will then by default export both, even
+  // if the Chat frame was not imported. That's fine in normal usage, but breaks
+  // integration tests that aren't expecting to see a Chat frame on export that was not
+  // there on import.
+  test_chatFrameImportedFromBackup?: boolean;
 };
+
+// Fields omitted from SettableConversationAttributesType must be set via their
+// appropriate setter functions (e.g. ConverationModel.updateUsername)
+export type SettableConversationAttributesType = Omit<
+  ConversationAttributesType,
+  'username'
+>;
 
 export type ConversationRenderInfoType = Pick<
   ConversationAttributesType,
@@ -462,6 +555,8 @@ export type ConversationRenderInfoType = Pick<
   | 'systemGivenName'
   | 'systemFamilyName'
   | 'systemNickname'
+  | 'nicknameGivenName'
+  | 'nicknameFamilyName'
   | 'type'
   | 'username'
 >;
@@ -470,6 +565,8 @@ export type GroupV2MemberType = {
   aci: AciString;
   role: MemberRoleEnum;
   joinedAtVersion: number;
+  labelString?: string;
+  labelEmoji?: string;
 
   // Note that these are temporary flags, generated by applyGroupChange, but eliminated
   //   by applyGroupState. They are used to make our diff-generation more intelligent but
@@ -486,7 +583,7 @@ export type LegacyMigrationPendingMemberType = {
 };
 
 export type GroupV2PendingMemberType = {
-  addedByUserId?: AciString;
+  addedByUserId: AciString;
   serviceId: ServiceIdString;
   timestamp: number;
   role: MemberRoleEnum;
@@ -506,7 +603,3 @@ export type ShallowChallengeError = CustomError & {
   readonly retryAfter: number;
   readonly data: SendMessageChallengeData;
 };
-
-export declare class ConversationModelCollectionType extends Backbone.Collection<ConversationModel> {
-  resetLookups(): void;
-}

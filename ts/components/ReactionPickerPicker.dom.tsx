@@ -1,0 +1,98 @@
+// Copyright 2020 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { CSSProperties, ReactNode } from 'react';
+import React, { forwardRef } from 'react';
+import classNames from 'classnames';
+
+import { Button } from 'react-aria-components';
+import { FunStaticEmoji } from './fun/FunEmoji.dom.tsx';
+import {
+  getEmojiDebugLabel,
+  getEmojiVariantByKey,
+  getEmojiVariantKeyByValue,
+  isEmojiVariantValue,
+} from './fun/data/emojis.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+
+const log = createLogger('ReactionPickerPicker');
+
+export enum ReactionPickerPickerStyle {
+  Picker,
+  Menu,
+}
+
+export const ReactionPickerPickerEmojiButton = React.forwardRef<
+  HTMLButtonElement,
+  {
+    emoji: string;
+    isSelected: boolean;
+    onClick: () => unknown;
+    title?: string;
+  }
+>(function ReactionPickerPickerEmojiButtonInner(
+  { emoji, onClick, isSelected, title },
+  ref
+) {
+  if (!isEmojiVariantValue(emoji)) {
+    log.error(
+      `Expected a valid emoji variant value, got ${getEmojiDebugLabel(emoji)}`
+    );
+    return null;
+  }
+
+  const emojiVariantKey = getEmojiVariantKeyByValue(emoji);
+  const emojiVariant = getEmojiVariantByKey(emojiVariantKey);
+
+  return (
+    <Button
+      ref={ref}
+      className={classNames(
+        'module-ReactionPickerPicker__button',
+        'module-ReactionPickerPicker__button--emoji',
+        isSelected && 'module-ReactionPickerPicker__button--selected'
+      )}
+      onPress={onClick}
+    >
+      <FunStaticEmoji
+        role="img"
+        aria-label={title ?? ''}
+        size={48}
+        emoji={emojiVariant}
+      />
+    </Button>
+  );
+});
+
+export const ReactionPickerPicker = forwardRef<
+  HTMLDivElement,
+  {
+    children: ReactNode;
+    isSomethingSelected: boolean;
+    pickerStyle: ReactionPickerPickerStyle;
+    style?: CSSProperties;
+  }
+>(function ReactionPickerPickerInner(
+  { children, isSomethingSelected, pickerStyle, style },
+  ref
+) {
+  return (
+    <div
+      className={classNames(
+        'module-ReactionPickerPicker',
+        isSomethingSelected &&
+          'module-ReactionPickerPicker--something-selected',
+        {
+          'module-ReactionPickerPicker--picker-style':
+            pickerStyle === ReactionPickerPickerStyle.Picker,
+          'module-ReactionPickerPicker--menu-style':
+            pickerStyle === ReactionPickerPickerStyle.Menu,
+        }
+      )}
+      ref={ref}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+});

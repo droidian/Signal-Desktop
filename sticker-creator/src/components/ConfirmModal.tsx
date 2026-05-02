@@ -8,9 +8,7 @@ import styles from './ConfirmModal.module.scss';
 import type { Props } from '../elements/ConfirmDialog';
 import { ConfirmDialog } from '../elements/ConfirmDialog';
 
-export type Mode = 'removable' | 'pick-emoji' | 'add';
-
-export function ConfirmModal(props: Props): JSX.Element {
+export function ConfirmModal(props: Props): React.JSX.Element {
   const { onCancel } = props;
   const ref = useRef<HTMLDivElement>(null);
   useInteractOutside({ ref, onInteractOutside: onCancel });
