@@ -1,0 +1,59 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import React from 'react';
+import type { Meta } from '@storybook/react';
+import type { Props } from './UniversalTimerNotification.dom.tsx';
+import { UniversalTimerNotification } from './UniversalTimerNotification.dom.tsx';
+import { EXPIRE_TIMERS } from '../../test-helpers/expireTimers.std.ts';
+
+export default {
+  title: 'Components/UniversalTimerNotification',
+} satisfies Meta<Props>;
+
+const { i18n } = window.SignalContext;
+
+export function Seconds(): React.JSX.Element {
+  return (
+    <UniversalTimerNotification
+      i18n={i18n}
+      expireTimer={EXPIRE_TIMERS[0].value}
+    />
+  );
+}
+
+export function Minutes(): React.JSX.Element {
+  return (
+    <UniversalTimerNotification
+      i18n={i18n}
+      expireTimer={EXPIRE_TIMERS[1].value}
+    />
+  );
+}
+
+export function Hours(): React.JSX.Element {
+  return (
+    <UniversalTimerNotification
+      i18n={i18n}
+      expireTimer={EXPIRE_TIMERS[2].value}
+    />
+  );
+}
+
+export function Days(): React.JSX.Element {
+  return (
+    <UniversalTimerNotification
+      i18n={i18n}
+      expireTimer={EXPIRE_TIMERS[3].value}
+    />
+  );
+}
+
+export function Weeks(): React.JSX.Element {
+  return (
+    <UniversalTimerNotification
+      i18n={i18n}
+      expireTimer={EXPIRE_TIMERS[4].value}
+    />
+  );
+}

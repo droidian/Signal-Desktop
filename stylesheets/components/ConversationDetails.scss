@@ -45,9 +45,56 @@
     }
   }
 
-  &__block-group {
+  &-membership-list__member-label {
+    @include mixins.font-body-small;
+  }
+
+  &-membership-list__member-label-button {
+    @include mixins.font-body-small;
+    @include mixins.button-focus-outline(2px);
+
+    @include mixins.mouse-mode {
+      &:hover {
+        background-color: light-dark(
+          variables.$color-gray-02,
+          variables.$color-gray-90
+        );
+      }
+    }
+
+    margin-inline-start: -5px;
+    padding-inline-start: 5px;
+    font-weight: 500;
+    outline: none;
+    border-radius: 5px;
+
+    display: flex;
+    align-items: center;
+    color: light-dark(
+      rgba(variables.$color-black, 0.55),
+      rgba(variables.$color-white, 0.55)
+    );
+
+    &__chevron-icon {
+      height: 16px;
+      width: 16px;
+      margin-bottom: 1px;
+
+      @include mixins.color-svg-themed(
+        '../images/icons/v3/chevron/chevron-right.svg',
+        rgba(variables.$color-black, 0.55),
+        rgba(variables.$color-white, 0.55)
+      );
+    }
+  }
+
+  &__block-group,
+  &__report-spam,
+  &__terminate-group,
+  &__delete {
     color: variables.$color-accent-red;
   }
+
   &__unblock-group {
     color: variables.$color-accent-blue;
   }
@@ -131,6 +178,12 @@
         }
       }
 
+      &--media {
+        &::after {
+          @include details-icon('../images/icons/v3/album/album-tilt.svg');
+        }
+      }
+
       &--mention {
         &::after {
           @include details-icon('../images/icons/v3/at/at.svg');
@@ -140,6 +193,12 @@
       &--lock {
         &::after {
           @include details-icon('../images/icons/v3/key/key.svg');
+        }
+      }
+
+      &--archive {
+        &::after {
+          @include details-icon('../images/icons/v3/archive/archive.svg');
         }
       }
 
@@ -184,6 +243,16 @@
       &--trash {
         &::after {
           @include details-icon('../images/icons/v3/trash/trash.svg');
+        }
+      }
+
+      &--delete {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/trash/trash.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
         }
       }
 
@@ -279,67 +348,54 @@
           @include details-icon('../images/icons/v3/heart/heart.svg');
         }
       }
-    }
-  }
 
-  &-media-list {
-    &__root {
-      display: flex;
-      justify-content: center;
-      padding-block: 0;
-      padding-inline: 20px;
-      padding-bottom: 24px;
-
-      .module-media-grid-item {
-        border-radius: 4px;
-        height: auto;
-        margin-block: 0;
-        margin-inline: 4px;
-        max-height: 94px;
-        overflow: hidden;
-        width: calc(100% / 6);
-
-        .module-media-grid-item__icon {
-          &::before {
-            content: '';
-            display: block;
-            padding-top: 100%;
-          }
+      &--tag {
+        &::after {
+          @include details-icon('../images/icons/v3/tag/tag.svg');
         }
 
-        .module-media-grid-item__image-container,
-        img {
-          margin: 0;
+        &--disabled {
+          opacity: 0.5;
         }
       }
-    }
 
-    &__show-all {
-      background: none;
-      border: none;
-      padding: 0;
-      color: light-dark(variables.$color-gray-95, variables.$color-gray-05);
+      &--spam {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/spam/spam.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
+        }
+      }
+
+      &--terminate {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/x/x-circle.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
+        }
+      }
     }
   }
 
   &-panel-row {
     $row-root-selector: '#{&}__root';
     &__root {
-      align-items: center;
       border-radius: 5px;
       border: 2px solid transparent;
-      display: flex;
       padding-block: 8px;
       padding-inline: 24px;
       user-select: none;
-      width: 100%;
       @include mixins.font-body-2;
 
       &--button {
         color: inherit;
         background: none;
 
-        &:hover:not(:disabled) {
+        &[data-hovered]:not(:disabled) {
           background-color: light-dark(
             variables.$color-gray-02,
             variables.$color-gray-90
@@ -356,7 +412,7 @@
       }
 
       @mixin keyboard-focus-state($color) {
-        &:focus {
+        &[data-focused='true'] {
           border-color: $color;
         }
       }
@@ -369,6 +425,12 @@
       }
     }
 
+    &__inner {
+      align-items: center;
+      display: flex;
+      width: 100%;
+    }
+
     &__icon {
       margin-inline-end: 12px;
       flex-shrink: 0;
@@ -378,6 +440,7 @@
       flex-grow: 1;
       text-align: start;
       margin-inline-end: 12px;
+      min-width: 0;
     }
 
     &__info {
@@ -395,10 +458,10 @@
     &__right {
       position: relative;
       color: variables.$color-gray-45;
-      min-width: 143px;
     }
 
     &__actions {
+      position: static;
       margin-inline-start: 12px;
       overflow: hidden;
       opacity: 0;
@@ -472,6 +535,10 @@
 
 .ConversationDetails__MemberName {
   user-select: text;
+}
+
+.ConversationDetails__MemberLabel--disabled {
+  opacity: 0.5;
 }
 
 .ConversationDetails__CallHistoryGroup__List {
@@ -553,4 +620,9 @@
     '../images/icons/v3/trash/trash.svg',
     light-dark(variables.$color-black, variables.$color-white)
   );
+}
+
+.Input__input--textarea.GroupMemberLabelEditor__input--textarea {
+  line-height: 32px;
+  margin-top: 0px;
 }

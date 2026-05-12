@@ -1,0 +1,42 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import React from 'react';
+import { ConfirmationDialog } from './ConfirmationDialog.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+
+export type ConfirmDialogProps = {
+  i18n: LocalizerType;
+  bodyText?: string;
+  cancelText?: string;
+  discardText?: string;
+  onClose: () => unknown;
+  onDiscard: () => unknown;
+};
+
+export function ConfirmDiscardDialog({
+  i18n,
+  bodyText,
+  cancelText,
+  discardText,
+  onClose,
+  onDiscard,
+}: ConfirmDialogProps): React.JSX.Element {
+  return (
+    <ConfirmationDialog
+      dialogName="ConfirmDiscardDialog"
+      cancelText={cancelText}
+      actions={[
+        {
+          action: onDiscard,
+          text: discardText ?? i18n('icu:discard'),
+          style: 'negative',
+        },
+      ]}
+      i18n={i18n}
+      onClose={onClose}
+    >
+      {bodyText ?? i18n('icu:ConfirmDiscardDialog--discard')}
+    </ConfirmationDialog>
+  );
+}

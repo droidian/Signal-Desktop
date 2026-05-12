@@ -45,7 +45,25 @@
 
     border-radius: 18px;
     overflow: hidden;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: auto-phrase;
+
+    &--with-view-once {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    &--view-once-active {
+      .ql-editor {
+        visibility: hidden;
+      }
+
+      .module-composition-input__input__scroller {
+        height: 32px;
+        overflow: hidden;
+      }
+    }
 
     // Override Quill styles
     .ql-container {
@@ -78,21 +96,15 @@
 
     &__scroller {
       $padding-top: 6px;
+      position: relative;
       padding-block: $padding-top;
       padding-inline: 0;
+      flex: 1;
+      min-width: 0;
 
       min-height: calc(32px - 2 * $border-size);
       max-height: calc(72px - 2 * $border-size);
       overflow: auto;
-
-      &::-webkit-scrollbar-thumb {
-        @include mixins.light-theme {
-          border: 2px solid variables.$color-gray-05;
-        }
-        @include mixins.dark-theme {
-          border: 2px solid variables.$color-gray-75;
-        }
-      }
 
       &--large {
         $largeHeight: calc(212px - 2 * $border-size);
@@ -105,6 +117,11 @@
 
         .DraftEditor-root {
           height: $largeHeightContentBox;
+        }
+
+        .ql-editor {
+          margin-inline-end: calc(-1 * variables.$scrollbar_width);
+          padding-inline-end: variables.$scrollbar_width;
         }
       }
 
@@ -455,6 +472,24 @@
       top: 8px;
       width: 18px;
     }
+  }
+
+  &__view-once-button {
+    flex-shrink: 0;
+    align-self: center;
+    margin-inline-end: 8px;
+    margin-inline-start: 4px;
+  }
+
+  &__view-once-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    color: light-dark(variables.$color-gray-45, variables.$color-gray-25);
   }
 }
 

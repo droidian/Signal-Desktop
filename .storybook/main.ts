@@ -3,13 +3,20 @@
 
 import type { StorybookConfig } from '@storybook/react-webpack5';
 import { ProvidePlugin } from 'webpack';
+import { builtinModules } from 'node:module';
 
-const config: StorybookConfig = {
+const EXTERNALS = new Set(builtinModules);
+
+// We have polyfills for these
+EXTERNALS.delete('buffer');
+EXTERNALS.delete('url');
+
+const storybookConfig: StorybookConfig = {
   typescript: {
     reactDocgen: false,
   },
 
-  stories: ['../ts/components/**/*.stories.tsx'],
+  stories: ['../ts/axo/**/*.stories.tsx', '../ts/components/**/*.stories.tsx'],
 
   addons: [
     '@storybook/addon-a11y',
@@ -37,79 +44,90 @@ const config: StorybookConfig = {
     { from: '../images', to: 'images' },
     { from: '../fixtures', to: 'fixtures' },
     {
-      from: '../node_modules/emoji-datasource-apple/img',
-      to: 'node_modules/emoji-datasource-apple/img',
-    },
-    {
       from: '../node_modules/intl-tel-input/build/img',
       to: 'node_modules/intl-tel-input/build/img',
     },
   ],
 
-  webpackFinal(config) {
-    config.cache = {
+  webpackFinal(webpackConfig) {
+    // oxlint-disable-next-line no-param-reassign
+    webpackConfig.cache = {
       type: 'filesystem',
     };
 
-    config.resolve!.extensions = ['.tsx', '.ts', '...'];
+    // oxlint-disable-next-line no-param-reassign, typescript/no-non-null-assertion
+    webpackConfig.resolve!.extensionAlias = {
+      '.js': ['.tsx', '.ts', '.js'],
+    };
 
-    config.module!.rules!.unshift({
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    webpackConfig.module!.rules!.unshift({
       test: /\.scss$/,
       use: [
-        { loader: 'style-loader' },
-        { loader: 'css-loader', options: { modules: false, url: false } },
-        { loader: 'sass-loader' },
+        { loader: require.resolve('style-loader') },
+        {
+          loader: require.resolve('css-loader'),
+          options: { modules: false, url: false },
+        },
+        {
+          loader: require.resolve('sass-loader'),
+          options: {
+            additionalData: '$is-storybook: true;',
+          },
+        },
       ],
     });
 
-    config.module!.rules!.unshift({
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    webpackConfig.module!.rules!.unshift({
       test: /\.css$/,
       use: [
         // prevent storybook defaults from being applied
       ],
     });
 
-    config.node = { global: true };
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    webpackConfig.module!.rules!.push({
+      test: /tailwind-config\.css$/,
+      use: [
+        {
+          loader: require.resolve('postcss-loader'),
+          options: {
+            postcssOptions: {
+              config: false,
+              plugins: [require.resolve('@tailwindcss/postcss')],
+            },
+          },
+        },
+      ],
+    });
 
-    config.externals = {
-      net: 'commonjs net',
-      vm: 'commonjs vm',
-      fs: 'commonjs fs',
-      async_hooks: 'commonjs async_hooks',
-      module: 'commonjs module',
-      stream: 'commonjs stream',
-      tls: 'commonjs tls',
-      dns: 'commonjs dns',
-      http: 'commonjs http',
-      https: 'commonjs https',
-      os: 'commonjs os',
-      constants: 'commonjs constants',
-      zlib: 'commonjs zlib',
-      '@signalapp/libsignal-client': 'commonjs @signalapp/libsignal-client',
-      '@signalapp/libsignal-client/zkgroup':
-        'commonjs @signalapp/libsignal-client/zkgroup',
-      '@signalapp/ringrtc': 'commonjs @signalapp/ringrtc',
-      '@signalapp/better-sqlite3': 'commonjs @signalapp/better-sqlite3',
-      electron: 'commonjs electron',
-      'fs-xattr': 'commonjs fs-xattr',
-      fsevents: 'commonjs fsevents',
-      'mac-screen-capture-permissions':
-        'commonjs mac-screen-capture-permissions',
-      sass: 'commonjs sass',
-      bufferutil: 'commonjs bufferutil',
-      'utf-8-validate': 'commonjs utf-8-validate',
+    // oxlint-disable-next-line no-param-reassign
+    webpackConfig.node = { global: true };
+
+    // oxlint-disable-next-line no-param-reassign
+    webpackConfig.externals = ({ request }, callback) => {
+      if (
+        (request.startsWith('node:') && request !== 'node:buffer') ||
+        EXTERNALS.has(request)
+      ) {
+        // Keep Node.js imports unchanged
+        return callback(null, 'commonjs ' + request);
+      }
+      callback();
     };
 
-    config.plugins!.push(
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    webpackConfig.plugins!.push(
       new ProvidePlugin({
         Buffer: ['buffer', 'Buffer'],
       })
     );
 
-    return config;
+    return webpackConfig;
   },
 
   docs: {},
 };
 
-export default config;
+export default storybookConfig;
