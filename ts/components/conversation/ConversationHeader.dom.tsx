@@ -372,14 +372,6 @@ export const ConversationHeader = memo(function ConversationHeader({
                   label={isMuted ? i18n('icu:unmute') : i18n('icu:mute')}
                 />
               ) : null}
-              <AxoIconButton.Root
-                symbol="search"
-                size="md"
-                iconWeight={300}
-                onClick={onSearchInConversation}
-                label={i18n('icu:search')}
-                variant="implied-secondary"
-              />
 
               <AxoDropdownMenu.Root>
                 <AxoDropdownMenu.Trigger disabled={isSelectMode}>
