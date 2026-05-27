@@ -1035,7 +1035,6 @@ function OutgoingCallButtons({
 
       return (
         <>
-          {videoElement}
           {inAnotherCall ? (
             <InAnotherCallTooltip i18n={i18n}>
               {audioButton}
