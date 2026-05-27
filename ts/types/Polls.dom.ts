@@ -1,0 +1,124 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { z } from 'zod';
+import { hasAtMostGraphemes } from '../util/grapheme.std.ts';
+import { isFeaturedEnabledNoRedux } from '../util/isFeatureEnabled.dom.ts';
+import type { SendStateByConversationId } from '../messages/MessageSendState.std.ts';
+import { aciSchema } from './ServiceId.std.ts';
+import { MAX_MESSAGE_BODY_BYTE_LENGTH } from '../util/longAttachment.std.ts';
+
+// temporarily limit poll questions to an outbound 100 char and an inbound 200 char
+const POLL_QUESTION_MAX_LENGTH_RECEIVE = 200;
+export const POLL_QUESTION_MAX_LENGTH_SEND = 100;
+export const POLL_OPTION_MAX_LENGTH = 100;
+export const POLL_OPTIONS_MIN_COUNT = 2;
+export const POLL_OPTIONS_MAX_COUNT = 10;
+
+// PollCreate schema (processed shape)
+// - question: required, 1..100 chars
+// - options: required, 2..10 items; each 1..100 chars
+// - allowMultiple: optional boolean
+export const PollCreateSchema = z
+  .object({
+    question: z
+      .string()
+      .min(1)
+      .refine(
+        value => hasAtMostGraphemes(value, POLL_QUESTION_MAX_LENGTH_RECEIVE),
+        {
+          message: `question must contain at most ${POLL_QUESTION_MAX_LENGTH_RECEIVE} characters`,
+        }
+      )
+      .refine(
+        // oxlint-disable-next-line no-undef FIXME
+        value => Buffer.byteLength(value) <= MAX_MESSAGE_BODY_BYTE_LENGTH,
+        {
+          message: `question must contain at most ${MAX_MESSAGE_BODY_BYTE_LENGTH} bytes`,
+        }
+      ),
+    options: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .refine(value => hasAtMostGraphemes(value, POLL_OPTION_MAX_LENGTH), {
+            message: `option must contain at most ${POLL_OPTION_MAX_LENGTH} characters`,
+          })
+          .refine(
+            // oxlint-disable-next-line no-undef FIXME
+            value => Buffer.byteLength(value) <= MAX_MESSAGE_BODY_BYTE_LENGTH,
+            {
+              message: `option must contain at most ${MAX_MESSAGE_BODY_BYTE_LENGTH} bytes`,
+            }
+          )
+      )
+      .min(POLL_OPTIONS_MIN_COUNT)
+      .max(POLL_OPTIONS_MAX_COUNT)
+      .readonly(),
+    allowMultiple: z.boolean().optional(),
+  })
+  .describe('PollCreate');
+
+// PollVote schema (processed shape)
+// - targetAuthorAci: required, non-empty ACI string
+// - targetTimestamp: required, positive int
+// - optionIndexes: required, 0..10 ints in [0, 9] (empty array = clearing vote)
+// - voteCount: optional, int in [0, 1_000_000]
+export const PollVoteSchema = z
+  .object({
+    targetAuthorAci: aciSchema,
+    targetTimestamp: z.number().int().positive(),
+    optionIndexes: z.array(z.number().int().min(0).max(9)).min(0).max(10),
+    voteCount: z.number().int().min(0),
+  })
+  .describe('PollVote');
+export type OutgoingPollVote = Readonly<z.infer<typeof PollVoteSchema>>;
+
+// PollTerminate schema (processed shape)
+// - targetTimestamp: required, positive int
+export const PollTerminateSchema = z
+  .object({
+    targetTimestamp: z.number().int().positive(),
+  })
+  .describe('PollTerminate');
+
+export enum PollTerminateSendStatus {
+  NotInitiated = 'NotInitiated',
+  Pending = 'Pending',
+  Complete = 'Complete',
+  Failed = 'Failed',
+}
+
+export type MessagePollVoteType = {
+  fromConversationId: string;
+  optionIndexes: ReadonlyArray<number>;
+  voteCount: number;
+  timestamp: number;
+  sendStateByConversationId?: SendStateByConversationId;
+};
+
+export type PollMessageAttribute = {
+  question: string;
+  options: ReadonlyArray<string>;
+  allowMultiple: boolean;
+  votes?: ReadonlyArray<MessagePollVoteType>;
+  /**
+   * The value of the terminatedAt timestamp is not reliable for polls that are imported
+   * from backup; only use this field to determine if a poll has been ended or not
+   */
+  terminatedAt?: number;
+  terminateSendStatus?: PollTerminateSendStatus;
+};
+
+export type PollCreateType = Pick<
+  PollMessageAttribute,
+  'question' | 'options' | 'allowMultiple'
+>;
+
+export function isPollSend1to1Enabled(): boolean {
+  return isFeaturedEnabledNoRedux({
+    betaKey: 'desktop.pollSend1to1.beta',
+    prodKey: 'desktop.pollSend1to1.prod',
+  });
+}

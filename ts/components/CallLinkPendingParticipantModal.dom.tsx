@@ -1,0 +1,131 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, useMemo, type JSX } from 'react';
+import { Modal } from './Modal.dom.tsx';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import type { PendingUserActionPayloadType } from '../state/ducks/calling.preload.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { InContactsIcon } from './InContactsIcon.dom.tsx';
+import { isInSystemContacts } from '../util/isInSystemContacts.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import { Theme } from '../util/theme.std.ts';
+import { UserText } from './UserText.dom.tsx';
+import { SharedGroupNames } from './SharedGroupNames.dom.tsx';
+import type { ContactModalStateType } from '../types/globalModals.std.ts';
+
+export type CallLinkPendingParticipantModalProps = {
+  readonly i18n: LocalizerType;
+  readonly conversation: ConversationType;
+  readonly approveUser: (payload: PendingUserActionPayloadType) => void;
+  readonly denyUser: (payload: PendingUserActionPayloadType) => void;
+  readonly onClose: () => void;
+  readonly sharedGroupNames: ReadonlyArray<string>;
+  readonly toggleAboutContactModal: (options: ContactModalStateType) => void;
+};
+
+export function CallLinkPendingParticipantModal({
+  i18n,
+  conversation,
+  approveUser,
+  denyUser,
+  onClose,
+  sharedGroupNames,
+  toggleAboutContactModal,
+}: CallLinkPendingParticipantModalProps): JSX.Element {
+  const serviceId = useMemo(() => {
+    return conversation.serviceId;
+  }, [conversation]);
+
+  const handleApprove = useCallback(() => {
+    approveUser({ serviceId });
+    onClose();
+  }, [approveUser, onClose, serviceId]);
+
+  const handleDeny = useCallback(() => {
+    denyUser({ serviceId });
+    onClose();
+  }, [denyUser, onClose, serviceId]);
+
+  return (
+    <Modal
+      modalName="CallLinkPendingParticipantModal"
+      moduleClassName="CallLinkPendingParticipantModal"
+      hasXButton
+      i18n={i18n}
+      onClose={onClose}
+      theme={Theme.Dark}
+    >
+      <Avatar
+        avatarUrl={conversation.avatarUrl}
+        avatarPlaceholderGradient={conversation.avatarPlaceholderGradient}
+        badge={undefined}
+        color={conversation.color}
+        conversationType="direct"
+        hasAvatar={conversation.hasAvatar}
+        i18n={i18n}
+        profileName={conversation.profileName}
+        size={AvatarSize.EIGHTY}
+        title={conversation.title}
+        theme={ThemeType.dark}
+      />
+
+      <button
+        type="button"
+        onClick={ev => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          toggleAboutContactModal({ contactId: conversation.id });
+        }}
+        className="CallLinkPendingParticipantModal__NameButton"
+      >
+        <div className="CallLinkPendingParticipantModal__Title">
+          <UserText text={conversation.title} />
+          {isInSystemContacts(conversation) && (
+            <span>
+              {' '}
+              <InContactsIcon
+                className="module-in-contacts-icon__icon CallLinkPendingParticipantModal__InContactsIcon"
+                i18n={i18n}
+              />
+            </span>
+          )}
+          <span className="CallLinkPendingParticipantModal__AboutIcon" />
+        </div>
+      </button>
+
+      <div className="CallLinkPendingParticipantModal__SharedGroupInfo">
+        {sharedGroupNames.length > 0 ? (
+          <SharedGroupNames i18n={i18n} sharedGroupNames={sharedGroupNames} />
+        ) : (
+          i18n('icu:no-groups-in-common-warning')
+        )}
+      </div>
+
+      <div className="CallLinkPendingParticipantModal__Hr" />
+
+      <button
+        type="button"
+        className="CallLinkPendingParticipantModal__ActionButton"
+        onClick={handleApprove}
+      >
+        <div className="CallLinkPendingParticipantModal__ButtonIcon">
+          <div className="CallLinkPendingParticipantModal__ButtonIconContent CallLinkPendingParticipantModal__ButtonIconContent--approve" />
+        </div>
+        {i18n('icu:CallLinkPendingParticipantModal__ApproveButtonLabel')}
+      </button>
+
+      <button
+        type="button"
+        className="CallLinkPendingParticipantModal__ActionButton"
+        onClick={handleDeny}
+      >
+        <div className="CallLinkPendingParticipantModal__ButtonIcon">
+          <div className="CallLinkPendingParticipantModal__ButtonIconContent CallLinkPendingParticipantModal__ButtonIconContent--deny" />
+        </div>
+        {i18n('icu:CallLinkPendingParticipantModal__DenyButtonLabel')}
+      </button>
+    </Modal>
+  );
+}

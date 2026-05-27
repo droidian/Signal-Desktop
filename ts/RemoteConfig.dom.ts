@@ -1,0 +1,451 @@
+// Copyright 2020 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import lodash from 'lodash';
+import semver from 'semver';
+import type { REMOTE_CONFIG_KEYS as KeysExpectedByLibsignalNet } from '@signalapp/libsignal-client/dist/net.js';
+
+import type { getConfig } from './textsecure/WebAPI.preload.ts';
+import { createLogger } from './logging/log.std.ts';
+import type { AciString } from './types/ServiceId.std.ts';
+import { parseIntOrThrow } from './util/parseIntOrThrow.std.ts';
+import { HOUR } from './util/durations/index.std.ts';
+import * as Bytes from './Bytes.std.ts';
+import { uuidToBytes } from './util/uuidToBytes.std.ts';
+import { HashType } from './types/Crypto.std.ts';
+import { getCountryCode } from './types/PhoneNumber.std.ts';
+import { parseRemoteClientExpiration } from './util/parseRemoteClientExpiration.dom.ts';
+import type { StorageInterface } from './types/Storage.d.ts';
+import { ToastType } from './types/Toast.dom.tsx';
+import { assertDev, strictAssert } from './util/assert.std.ts';
+import type {
+  ArrayValues,
+  AssertSameMembers,
+  StripPrefix,
+} from './types/Util.std.ts';
+
+const { get, throttle } = lodash;
+
+const log = createLogger('RemoteConfig');
+
+// Semver flags must always be set to a valid semver (no empty enabled-only keys)
+const SemverKeys = [
+  'desktop.adminDelete.receive.beta',
+  'desktop.adminDelete.receive.prod',
+  'desktop.adminDelete.send.beta',
+  'desktop.adminDelete.send.prod',
+  'desktop.binaryServiceId.beta',
+  'desktop.binaryServiceId.prod',
+  'desktop.groupMemberLabels.edit.beta',
+  'desktop.groupMemberLabels.edit.prod',
+  'desktop.groupTerminate.send.beta',
+  'desktop.groupTerminate.send.prod',
+  'desktop.keyTransparency.beta',
+  'desktop.keyTransparency.prod',
+  'desktop.localBackups.beta',
+  'desktop.localBackups.prod',
+  'desktop.plaintextExport.beta',
+  'desktop.plaintextExport.prod',
+  'desktop.pollSend1to1.beta',
+  'desktop.pollSend1to1.prod',
+  'desktop.remoteMute.send.beta',
+  'desktop.remoteMute.send.prod',
+  'desktop.retireAccessKeyGroupSend.beta',
+  'desktop.retireAccessKeyGroupSend.prod',
+] as const;
+
+export type SemverKeyType = ArrayValues<typeof SemverKeys>;
+
+const ScalarKeys = [
+  'desktop.callQualitySurveyPPM',
+  'desktop.calling.dredDuration.alpha',
+  'desktop.calling.dredDuration.beta',
+  'desktop.calling.dredDuration.prod',
+  'desktop.clientExpiration',
+  'desktop.heapSizeWarning',
+  'desktop.internalUser',
+  'desktop.loggingErrorToasts',
+  'desktop.mediaQuality.levels',
+  'desktop.messageCleanup',
+  'desktop.recentGifs.allowLegacyTenorCdnUrls',
+  'desktop.retryRespondMaxAge',
+  'desktop.senderKey.retry',
+  'desktop.senderKeyMaxAge',
+  'global.adminDeleteMaxAgeInSeconds',
+  'global.attachments.maxAutoDownloadSizeBytes',
+  'global.attachments.maxBytes',
+  'global.attachments.maxReceiveBytes',
+  'global.backups.mediaTierFallbackCdnNumber',
+  'global.calling.maxGroupCallRingSize',
+  'global.groupsv2.groupSizeHardLimit',
+  'global.groupsv2.maxGroupSize',
+  'global.messageQueueTimeInSeconds',
+  'global.nicknames.max',
+  'global.nicknames.min',
+  'global.normalDeleteMaxAgeInSeconds',
+  'global.pinned_message_limit',
+  'global.textAttachmentLimitBytes',
+  'global.videoAttachments.transcodeTargetBytes',
+] as const;
+
+// These keys should always match those in Net.REMOTE_CONFIG_KEYS, prefixed by
+// `desktop.libsignalNet`
+const KnownDesktopLibsignalNetKeys = [
+  'desktop.libsignalNet.chatPermessageDeflate.prod',
+  'desktop.libsignalNet.chatRequestConnectionCheckTimeoutMillis',
+  'desktop.libsignalNet.chatRequestConnectionCheckTimeoutMillis.beta',
+  'desktop.libsignalNet.grpc.AccountsAnonymousCheckAccountExistence.2',
+  'desktop.libsignalNet.grpc.AccountsAnonymousCheckAccountExistence.2.beta',
+  'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameHash',
+  'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameHash.beta',
+  'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameLink.2',
+  'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameLink.2.beta',
+  'desktop.libsignalNet.grpc.AttachmentsGetUploadForm',
+  'desktop.libsignalNet.grpc.AttachmentsGetUploadForm.beta',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendMultiRecipientMessage.2',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendMultiRecipientMessage.2.beta',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendSingleRecipientMessage',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendSingleRecipientMessage.beta',
+  'desktop.libsignalNet.grpc.MessagesSendMessage',
+  'desktop.libsignalNet.grpc.MessagesSendMessage.beta',
+  'desktop.libsignalNet.useH2ForAuthChat',
+  'desktop.libsignalNet.useH2ForAuthChat.beta',
+  'desktop.libsignalNet.useH2ForUnauthChat',
+  'desktop.libsignalNet.useH2ForUnauthChat.beta',
+] as const;
+
+type KnownLibsignalKeysType = StripPrefix<
+  ArrayValues<typeof KnownDesktopLibsignalNetKeys>,
+  'desktop.libsignalNet.'
+>;
+type ExpectedLibsignalKeysType = ArrayValues<typeof KeysExpectedByLibsignalNet>;
+
+const _assertLibsignalKeysMatch: AssertSameMembers<
+  KnownLibsignalKeysType,
+  ExpectedLibsignalKeysType
+> = true;
+strictAssert(_assertLibsignalKeysMatch, 'Libsignal keys match');
+
+const KnownConfigKeys = [
+  ...SemverKeys,
+  ...ScalarKeys,
+  ...KnownDesktopLibsignalNetKeys,
+] as const;
+
+export type ConfigKeyType = ArrayValues<typeof KnownConfigKeys>;
+
+type ConfigValueType = {
+  name: ConfigKeyType;
+  enabledAt?: number;
+} & ({ enabled: true; value: string } | { enabled: false; value?: never });
+export type ConfigMapType = {
+  [key in ConfigKeyType]?: ConfigValueType;
+};
+type ConfigListenerType = Readonly<{
+  keys: Set<ConfigKeyType>;
+  callback: () => unknown;
+}>;
+
+let config: ConfigMapType | undefined;
+const listeners = new Set<ConfigListenerType>();
+
+export type OptionsType = Readonly<{
+  getConfig: typeof getConfig;
+  storage: Pick<StorageInterface, 'get' | 'put' | 'remove'>;
+}>;
+
+export function restoreRemoteConfigFromStorage({
+  storage,
+}: Pick<OptionsType, 'storage'>): void {
+  config = storage.get('remoteConfig') || {};
+}
+
+export function onChange(
+  keys: Array<ConfigKeyType>,
+  callback: () => unknown
+): () => void {
+  const listener: ConfigListenerType = {
+    keys: new Set(keys),
+    callback,
+  };
+  listeners.add(listener);
+
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export const _refreshRemoteConfig = async ({
+  getConfig,
+  storage,
+}: OptionsType): Promise<void> => {
+  const now = Date.now();
+  const oldConfigHash = storage.get('remoteConfigHash');
+
+  const {
+    config: newConfig,
+    serverTimestamp,
+    configHash,
+  } = await getConfig(oldConfigHash);
+
+  const serverTimeSkew = serverTimestamp - now;
+
+  if (Math.abs(serverTimeSkew) > HOUR) {
+    log.warn(
+      'Remote Config: severe clock skew detected. ' +
+        `Server time ${serverTimestamp}, local time ${now}`
+    );
+  }
+
+  if (newConfig === 'unmodified') {
+    log.info(
+      'remote config was unmodified; server-generated hash is %s',
+      configHash
+    );
+    return;
+  }
+
+  // Process new configuration in light of the old configuration. Since the
+  // new configuration only includes enabled flags we can't distinguish betewen
+  // a remote flag being deleted or being disabled. We synthesize that for our
+  // known keys.
+  const newConfigValues = new Map<string, string | undefined>(
+    KnownConfigKeys.map(name => [name, undefined])
+  );
+  for (const [name, value] of newConfig) {
+    newConfigValues.set(name, value);
+  }
+
+  const changedKeys = new Set<string>();
+
+  const oldConfig = config;
+  let semverError = false;
+  config = Array.from(newConfigValues.entries()).reduce(
+    (acc, [name, value]) => {
+      const enabled = value !== undefined && value.toLowerCase() !== 'false';
+      const previouslyEnabled: boolean = get(
+        oldConfig,
+        [name, 'enabled'],
+        false
+      );
+      const previousValue: string | undefined = get(
+        oldConfig,
+        [name, 'value'],
+        undefined
+      );
+
+      // If a flag was previously not enabled and is now enabled,
+      // record the time it was enabled
+      const enabledAt: number | undefined =
+        previouslyEnabled && enabled
+          ? now
+          : get(oldConfig, [name, 'enabledAt']);
+
+      const configValue: ConfigValueType = {
+        name: name as ConfigKeyType,
+        enabledAt,
+        ...(enabled ? { enabled: true, value } : { enabled: false }),
+      };
+
+      const hasChanged =
+        previouslyEnabled !== enabled || previousValue !== configValue.value;
+
+      if (
+        SemverKeys.includes(configValue.name as SemverKeyType) &&
+        configValue.enabled &&
+        (!configValue.value || !semver.parse(configValue.value))
+      ) {
+        log.error(
+          `Key ${name} had invalid semver value '${configValue.value}'`
+        );
+        semverError = true;
+      }
+
+      if (hasChanged) {
+        changedKeys.add(name);
+      }
+
+      // Return new configuration object
+      return {
+        ...acc,
+        [name]: configValue,
+      };
+    },
+    {}
+  );
+
+  if (changedKeys.size !== 0) {
+    log.info(
+      `Remote Config: Flags ${[...changedKeys].join(', ')} have changed`
+    );
+
+    // If enablement changes at all, notify listeners
+    for (const { keys, callback } of listeners) {
+      if (!keys.isDisjointFrom(changedKeys)) {
+        callback();
+      }
+    }
+  }
+
+  if (semverError && config['desktop.internalUser']?.enabled) {
+    window.reduxActions.toast.showToast({
+      toastType: ToastType.Error,
+    });
+  }
+
+  const remoteExpirationValue = getValue('desktop.clientExpiration');
+  if (!remoteExpirationValue) {
+    // If remote configuration fetch worked - we are not expired anymore.
+    if (storage.get('remoteBuildExpiration') != null) {
+      log.warn('Remote Config: clearing remote expiration on successful fetch');
+    }
+    await storage.remove('remoteBuildExpiration');
+  } else {
+    const remoteBuildExpirationTimestamp = parseRemoteClientExpiration(
+      remoteExpirationValue
+    );
+    if (remoteBuildExpirationTimestamp) {
+      await storage.put(
+        'remoteBuildExpiration',
+        remoteBuildExpirationTimestamp
+      );
+    }
+  }
+
+  await storage.put('remoteConfig', config);
+  await storage.put('remoteConfigHash', configHash);
+  await storage.put('serverTimeSkew', serverTimeSkew);
+};
+
+export const maybeRefreshRemoteConfig = throttle(
+  _refreshRemoteConfig,
+  // Only fetch remote configuration if the last fetch was more than two hours ago
+  2 * 60 * 60 * 1000,
+  { trailing: false }
+);
+
+export async function forceRefreshRemoteConfig(
+  options: OptionsType,
+  reason: string
+): Promise<void> {
+  log.info(`forceRefreshRemoteConfig: ${reason}`);
+  maybeRefreshRemoteConfig.cancel();
+  await _refreshRemoteConfig(options);
+}
+
+export function isEnabled(
+  name: ConfigKeyType,
+  // when called from UI component, provide redux config (items.remoteConfig)
+  reduxConfig?: ConfigMapType
+): boolean {
+  assertDev(
+    reduxConfig != null || config != null,
+    'getValue called before remote config is ready'
+  );
+  return get(reduxConfig ?? config, [name, 'enabled'], false);
+}
+
+export function getValue(
+  name: ConfigKeyType, // when called from UI component, provide redux config (items.remoteConfig)
+  reduxConfig?: ConfigMapType
+): string | undefined {
+  assertDev(
+    reduxConfig != null || config != null,
+    'getValue called before remote config is ready'
+  );
+  return get(reduxConfig ?? config, [name, 'value']);
+}
+
+// See isRemoteConfigBucketEnabled in selectors/items.ts
+/** @knipignore Keep around for future features that might need it */
+export function isBucketValueEnabled(
+  name: ConfigKeyType,
+  e164: string | undefined,
+  aci: AciString | undefined
+): boolean {
+  return isCountryPpmCsvBucketEnabled(name, getValue(name), e164, aci);
+}
+
+export function isCountryPpmCsvBucketEnabled(
+  name: string,
+  countryPpmCsv: unknown,
+  e164: string | undefined,
+  aci: AciString | undefined
+): boolean {
+  if (e164 == null || aci == null) {
+    return false;
+  }
+
+  const countryCode = getCountryCode(e164);
+  if (countryCode == null) {
+    return false;
+  }
+
+  if (typeof countryPpmCsv !== 'string') {
+    return false;
+  }
+
+  const remoteConfigValue = getCountryCodeValue(
+    countryCode,
+    countryPpmCsv,
+    name
+  );
+  if (remoteConfigValue == null) {
+    return false;
+  }
+
+  const bucketValue = getBucketValue(aci, name);
+  return bucketValue < remoteConfigValue;
+}
+
+export const COUNTRY_CODE_FALLBACK = Symbol('fallback');
+
+export function getCountryCodeValue(
+  countryCode: number | typeof COUNTRY_CODE_FALLBACK,
+  countryPpmCsv: string,
+  logTag: string
+): number | undefined {
+  const logId = `getCountryCodeValue/${logTag}`;
+  if (countryPpmCsv.length === 0) {
+    return undefined;
+  }
+
+  const items = countryPpmCsv.split(',');
+
+  let wildcard: number | undefined;
+  for (const item of items) {
+    const [code, value] = item.split(':');
+    if (code == null || value == null) {
+      log.warn(`${logId}: '${code}:${value}' entry was invalid`);
+      continue;
+    }
+
+    const parsedValue = parseIntOrThrow(
+      value,
+      `${logId}: Country code '${code}' had an invalid number '${value}'`
+    );
+    if (code === '*') {
+      wildcard = parsedValue;
+    } else if (
+      countryCode !== COUNTRY_CODE_FALLBACK &&
+      countryCode.toString() === code
+    ) {
+      return parsedValue;
+    }
+  }
+
+  return wildcard;
+}
+
+export function getBucketValue(aci: AciString, hashSalt: string): number {
+  const hashInput = Bytes.concatenate([
+    Bytes.fromString(`${hashSalt}.`),
+    uuidToBytes(aci),
+  ]);
+  const hashResult = window.SignalContext.crypto.hash(
+    HashType.size256,
+    hashInput
+  );
+
+  return Number(Bytes.readBigUint64BE(hashResult.subarray(0, 8)) % 1_000_000n);
+}

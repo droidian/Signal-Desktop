@@ -5,6 +5,8 @@
 // Credentials
 //
 
+import type { JSX } from 'react';
+
 export type Credentials = Readonly<{
   username: string;
   password: string;

@@ -1,0 +1,326 @@
+// Copyright 2018 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReactNode, MouseEvent, JSX } from 'react';
+import { forwardRef, useCallback, useState } from 'react';
+import classNames from 'classnames';
+
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { MessageStatusType } from '../../types/message/MessageStatus.std.ts';
+import type { DirectionType } from './Message.dom.tsx';
+import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { ExpireTimer } from './ExpireTimer.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import { PanelType } from '../../types/Panels.std.ts';
+import { Spinner } from '../Spinner.dom.tsx';
+import { AxoAlertDialog } from '../../axo/AxoAlertDialog.dom.tsx';
+import { refMerger } from '../../util/refMerger.std.ts';
+import type { Size } from '../../hooks/useSizeObserver.dom.tsx';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+
+type PropsType = {
+  canRetryDeleteForEveryone: boolean;
+  deletedForEveryone?: boolean;
+  direction: DirectionType;
+  expirationLength?: number;
+  expirationTimestamp?: number;
+  hasText: boolean;
+  i18n: LocalizerType;
+  id: string;
+  isEditedMessage?: boolean;
+  isPinned: boolean;
+  isSMS?: boolean;
+  isInline?: boolean;
+  isOutlineOnlyBubble?: boolean;
+  isShowingImage: boolean;
+  isSticker?: boolean;
+  onWidthMeasured?: (width: number) => unknown;
+  pushPanelForConversation: PushPanelForConversationActionType;
+  retryDeleteForEveryone: (messageId: string) => unknown;
+  retryMessageSend: (messageId: string) => unknown;
+  showEditHistoryModal?: (id: string) => unknown;
+  status?: MessageStatusType;
+  textPending?: boolean;
+  timestamp: number;
+};
+
+enum ConfirmationType {
+  EditError = 'EditError',
+  DeleteError = 'DeleteError',
+}
+
+export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
+  function MessageMetadataInner(
+    {
+      canRetryDeleteForEveryone,
+      deletedForEveryone,
+      direction,
+      expirationLength,
+      expirationTimestamp,
+      hasText,
+      i18n,
+      id,
+      isEditedMessage,
+      isPinned,
+      isSMS,
+      isOutlineOnlyBubble,
+      isInline,
+      isShowingImage,
+      isSticker,
+      onWidthMeasured,
+      pushPanelForConversation,
+      retryDeleteForEveryone,
+      retryMessageSend,
+      showEditHistoryModal,
+      status,
+      textPending,
+      timestamp,
+    },
+    ref
+  ) {
+    const [confirmationType, setConfirmationType] = useState<
+      ConfirmationType | undefined
+    >();
+    const withImageNoCaption = !isSticker && !hasText && isShowingImage;
+    const metadataDirection = isSticker ? undefined : direction;
+
+    let timestampNode: ReactNode;
+    {
+      // When deletedForEveryone, the status reflects our delete send,
+      // not the original message direction
+      const isOutgoingOrDelete = direction === 'outgoing' || deletedForEveryone;
+      const isError = status === 'error' && isOutgoingOrDelete;
+      const isPartiallySent = status === 'partial-sent' && isOutgoingOrDelete;
+      const isPaused = status === 'paused';
+
+      if (isError || isPartiallySent || isPaused) {
+        let statusInfo: ReactNode;
+        if (isError) {
+          if (deletedForEveryone && canRetryDeleteForEveryone) {
+            statusInfo = (
+              <button
+                type="button"
+                className="module-message__metadata__tapable"
+                onClick={(event: MouseEvent) => {
+                  event.stopPropagation();
+                  event.preventDefault();
+
+                  setConfirmationType(ConfirmationType.DeleteError);
+                }}
+              >
+                {i18n('icu:deleteFailedClickForDetails')}
+              </button>
+            );
+          } else if (deletedForEveryone) {
+            statusInfo = i18n('icu:deleteFailed');
+          } else if (isEditedMessage) {
+            statusInfo = (
+              <button
+                type="button"
+                className="module-message__metadata__tapable"
+                onClick={(event: MouseEvent) => {
+                  event.stopPropagation();
+                  event.preventDefault();
+
+                  setConfirmationType(ConfirmationType.EditError);
+                }}
+              >
+                {i18n('icu:editFailed')}
+              </button>
+            );
+          } else {
+            statusInfo = i18n('icu:sendFailed');
+          }
+        } else if (isPaused) {
+          statusInfo = i18n('icu:sendPaused');
+        } else {
+          statusInfo = (
+            <button
+              type="button"
+              className="module-message__metadata__tapable"
+              onClick={(event: MouseEvent) => {
+                event.stopPropagation();
+                event.preventDefault();
+
+                pushPanelForConversation({
+                  type: PanelType.MessageDetails,
+                  args: { messageId: id },
+                });
+              }}
+            >
+              {deletedForEveryone
+                ? i18n('icu:partiallyDeleted--clickForDetails')
+                : i18n('icu:partiallySent')}
+            </button>
+          );
+        }
+
+        timestampNode = (
+          <span className="module-message__metadata__date">{statusInfo}</span>
+        );
+      } else {
+        timestampNode = (
+          <MessageTimestamp
+            direction={metadataDirection}
+            i18n={i18n}
+            isOutlineOnlyBubble={isOutlineOnlyBubble}
+            module="module-message__metadata__date"
+            timestamp={timestamp}
+            withImageNoCaption={withImageNoCaption}
+            withSticker={isSticker}
+          />
+        );
+      }
+    }
+
+    let confirmation: JSX.Element | undefined;
+    if (confirmationType === undefined) {
+      // no-op
+    } else if (confirmationType === ConfirmationType.EditError) {
+      confirmation = (
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setConfirmationType(undefined)}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={i18n('icu:ResendMessageEdit__body')}
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="destructive"
+            onClick={() => {
+              retryMessageSend(id);
+              setConfirmationType(undefined);
+            }}
+          >
+            {i18n('icu:ResendMessageEdit__button')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+      );
+    } else if (confirmationType === ConfirmationType.DeleteError) {
+      confirmation = (
+        <AxoAlertDialog.Root
+          open
+          onOpenChange={() => setConfirmationType(undefined)}
+        >
+          <AxoAlertDialog.Content escape="cancel-is-noop">
+            <AxoAlertDialog.Body>
+              <AxoAlertDialog.Title screenReaderOnly>
+                {i18n('icu:retryDeleteForEveryone--title')}
+              </AxoAlertDialog.Title>
+              <AxoAlertDialog.Description>
+                {i18n('icu:retryDeleteForEveryone--body')}
+              </AxoAlertDialog.Description>
+            </AxoAlertDialog.Body>
+            <AxoAlertDialog.Footer>
+              <AxoAlertDialog.Cancel />
+              <AxoAlertDialog.Action
+                variant="primary"
+                onClick={() => {
+                  retryDeleteForEveryone(id);
+                  setConfirmationType(undefined);
+                }}
+              >
+                {i18n('icu:retryDeleteForEveryone--tryAgain')}
+              </AxoAlertDialog.Action>
+            </AxoAlertDialog.Footer>
+          </AxoAlertDialog.Content>
+        </AxoAlertDialog.Root>
+      );
+    } else {
+      throw missingCaseError(confirmationType);
+    }
+
+    const className = classNames(
+      'module-message__metadata',
+      direction === 'outgoing' && 'module-message__metadata--outgoing',
+      isInline && 'module-message__metadata--inline',
+      withImageNoCaption && 'module-message__metadata--with-image-no-caption',
+      isOutlineOnlyBubble && 'module-message__metadata--outline-only-bubble',
+      isSticker && 'module-message__metadata--sticker'
+    );
+    const children = (
+      <>
+        {isPinned && (
+          <span className={tw('me-1')}>
+            <AxoSymbol.InlineGlyph
+              symbol="pin-fill"
+              label={i18n('icu:MessageMetadata__pinned')}
+            />
+          </span>
+        )}
+        {isEditedMessage && showEditHistoryModal && (
+          <button
+            className="module-message__metadata__edited"
+            onClick={() => showEditHistoryModal(id)}
+            type="button"
+          >
+            {i18n('icu:MessageMetadata__edited')}
+          </button>
+        )}
+        {timestampNode}
+        {isSMS ? (
+          <div className="module-message__metadata__sms">
+            <AxoSymbol.InlineGlyph symbol="lock-open" label={null} />
+          </div>
+        ) : null}
+        {expirationLength ? (
+          <ExpireTimer
+            expirationLength={expirationLength}
+            expirationTimestamp={expirationTimestamp}
+          />
+        ) : null}
+        {textPending ? (
+          <div className="module-message__metadata__spinner-container">
+            <Spinner svgSize="small" size="14px" direction={direction} />
+          </div>
+        ) : null}
+        {(!deletedForEveryone || status === 'sending') &&
+        !textPending &&
+        (direction === 'outgoing' || deletedForEveryone) &&
+        status !== 'error' &&
+        status !== 'partial-sent' ? (
+          <div
+            className={classNames(
+              'module-message__metadata__status-icon',
+              `module-message__metadata__status-icon--${status}`
+            )}
+          />
+        ) : null}
+        {confirmation}
+      </>
+    );
+
+    const onResize = useCallback(
+      (size: Size) => {
+        if (size.hidden) {
+          return;
+        }
+        onWidthMeasured?.(size.width);
+      },
+      [onWidthMeasured]
+    );
+
+    if (onWidthMeasured) {
+      return (
+        <SizeObserver onSizeChange={onResize}>
+          {measureRef => (
+            <div className={className} ref={refMerger(measureRef, ref)}>
+              {children}
+            </div>
+          )}
+        </SizeObserver>
+      );
+    }
+
+    return (
+      <div className={className} ref={ref}>
+        {children}
+      </div>
+    );
+  }
+);

@@ -1,0 +1,64 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { JSX } from 'react';
+
+import { isSafetyNumberNotAvailable } from '../util/isSafetyNumberNotAvailable.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
+import type { SafetyNumberProps as SafetyNumberViewerPropsType } from './SafetyNumberChangeDialog.dom.tsx';
+import { SafetyNumberNotReady } from './SafetyNumberNotReady.dom.tsx';
+
+export type PropsType = Readonly<{
+  i18n: LocalizerType;
+  contact: ConversationType;
+  toggleSafetyNumberModal: () => unknown;
+  renderSafetyNumberViewer: (props: SafetyNumberViewerPropsType) => JSX.Element;
+}>;
+
+export function SafetyNumberModal({
+  i18n,
+  contact,
+  toggleSafetyNumberModal,
+  renderSafetyNumberViewer,
+}: PropsType): JSX.Element | null {
+  let title: string | undefined;
+  let content: JSX.Element;
+  let hasXButton = true;
+  if (isSafetyNumberNotAvailable(contact)) {
+    content = (
+      <SafetyNumberNotReady
+        i18n={i18n}
+        onClose={() => toggleSafetyNumberModal()}
+      />
+    );
+    hasXButton = false;
+  } else {
+    title = i18n('icu:SafetyNumberModal__title');
+
+    content = renderSafetyNumberViewer({
+      contactID: contact.id,
+      onClose: toggleSafetyNumberModal,
+    });
+  }
+
+  return (
+    <AxoDialog.Root
+      open
+      onOpenChange={open => {
+        if (!open) {
+          toggleSafetyNumberModal();
+        }
+      }}
+    >
+      <AxoDialog.Content size="sm" escape="cancel-is-noop">
+        <AxoDialog.Header>
+          <AxoDialog.Title>{title}</AxoDialog.Title>
+          {hasXButton && <AxoDialog.Close />}
+        </AxoDialog.Header>
+        <AxoDialog.Body maxHeight={560}>{content}</AxoDialog.Body>
+      </AxoDialog.Content>
+    </AxoDialog.Root>
+  );
+}

@@ -1,0 +1,172 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, type ReactNode, type JSX, type MouseEvent } from 'react';
+import type { ReadonlyDeep } from 'type-fest';
+
+import moment from 'moment';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import type { GenericMediaItemType } from '../../../types/MediaItem.std.ts';
+import type { AttachmentForUIType } from '../../../types/Attachment.std.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { SpinnerV2 } from '../../SpinnerV2.dom.tsx';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AriaClickable } from '../../../axo/AriaClickable.dom.tsx';
+import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
+import { UserText } from '../../UserText.dom.tsx';
+import {
+  useAttachmentStatus,
+  type AttachmentStatusType,
+} from '../../../hooks/useAttachmentStatus.std.ts';
+
+export type Props = Readonly<{
+  i18n: LocalizerType;
+  mediaItem: GenericMediaItemType;
+  thumbnail: ReactNode;
+  title: string;
+  subtitle: ReactNode;
+  readyLabel: string;
+  onClick: (status: AttachmentStatusType['state']) => void;
+  showMessage: () => void;
+  renderContextMenu: (
+    mediaItem: ReadonlyDeep<GenericMediaItemType>,
+    children: ReactNode
+  ) => JSX.Element;
+}>;
+
+export function ListItem({
+  i18n,
+  mediaItem,
+  thumbnail,
+  title,
+  subtitle,
+  readyLabel,
+  onClick,
+  showMessage,
+  renderContextMenu,
+}: Props): JSX.Element {
+  const { message } = mediaItem;
+  let attachment: AttachmentForUIType | undefined;
+
+  if (mediaItem.type === 'link') {
+    attachment = mediaItem.preview.image;
+  } else if (mediaItem.type === 'contact') {
+    attachment = mediaItem.contact.avatar?.avatar;
+  } else {
+    ({ attachment } = mediaItem);
+  }
+
+  const timestamp = message.receivedAtMs || message.receivedAt;
+
+  let label: string;
+
+  const status = useAttachmentStatus(attachment);
+
+  const handleClick = useCallback(
+    (ev: MouseEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      onClick(status?.state || 'ReadyToShow');
+    },
+    [onClick, status?.state]
+  );
+
+  const handleDateClick = useCallback(
+    (ev: MouseEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      showMessage();
+    },
+    [showMessage]
+  );
+
+  if (status == null || status.state === 'ReadyToShow') {
+    label = readyLabel;
+  } else if (status.state === 'NeedsDownload') {
+    label = i18n('icu:downloadAttachment');
+  } else if (status.state === 'Downloading') {
+    label = i18n('icu:cancelDownload');
+  } else {
+    throw missingCaseError(status);
+  }
+
+  let button: JSX.Element | undefined;
+  if (
+    status != null &&
+    status.state !== 'ReadyToShow' &&
+    mediaItem.type !== 'link'
+  ) {
+    button = (
+      <div
+        className={tw(
+          'relative -ms-1 size-7 shrink-0 rounded-full bg-fill-secondary',
+          'flex items-center justify-center'
+        )}
+      >
+        {status.state === 'Downloading' && (
+          <SpinnerV2
+            variant="no-background-incoming"
+            size={28}
+            strokeWidth={1}
+            marginRatio={1}
+            min={0}
+            max={status.size}
+            value={status.totalDownloaded}
+          />
+        )}
+        <div
+          className={tw(
+            'absolute flex items-center justify-center text-label-primary'
+          )}
+        >
+          <AxoSymbol.Icon
+            symbol={status.state === 'Downloading' ? 'x' : 'arrow-down'}
+            size={16}
+            label={null}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AriaClickable.Root
+      className={tw(
+        'mx-2.5 flex flex-row gap-3 rounded-lg px-3.5 py-2',
+        'data-hovered:bg-fill-secondary',
+        'data-focused:bg-fill-secondary',
+        'data-pressed:bg-fill-secondary-pressed',
+        mediaItem.type === 'link' ? undefined : 'items-center'
+      )}
+    >
+      <div className={tw('shrink-0')}>{thumbnail}</div>
+      <div className={tw('grow overflow-hidden text-start')}>
+        <h3 className={tw('truncate')}>
+          <UserText text={title} />
+        </h3>
+        <div className={tw('type-body-small leading-4 text-label-secondary')}>
+          {subtitle}
+        </div>
+      </div>
+      {renderContextMenu(
+        mediaItem,
+        <AriaClickable.HiddenTrigger label={label} onClick={handleClick} />
+      )}
+      <AriaClickable.SubWidget>
+        <button
+          type="button"
+          className={tw(
+            'shrink-0 self-stretch',
+            mediaItem.type === 'link' ? undefined : 'flex items-center',
+            'type-body-small text-label-secondary'
+          )}
+          aria-label={i18n('icu:ListItem__show-message')}
+          onClick={handleDateClick}
+        >
+          {moment(timestamp).format('MMM D')}
+        </button>
+      </AriaClickable.SubWidget>
+      {button}
+    </AriaClickable.Root>
+  );
+}

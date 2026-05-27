@@ -1,0 +1,147 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { JSX } from 'react';
+
+import { action } from '@storybook/addon-actions';
+import { LocalBackupExportWorkflow } from './LocalBackupExportWorkflow.dom.tsx';
+import {
+  LocalExportErrors,
+  LocalBackupExportSteps,
+} from '../types/LocalExport.std.ts';
+
+import type { PropsType } from './LocalBackupExportWorkflow.dom.tsx';
+import type { ComponentMeta } from '../storybook/types.std.ts';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  title: 'Components/LocalBackupExportWorkflow',
+  component: LocalBackupExportWorkflow,
+  args: {
+    cancelWorkflow: action('cancelWorkflow'),
+    clearWorkflow: action('clearWorkflow'),
+    i18n,
+    openFileInFolder: action('openFileInFolder'),
+    osName: undefined,
+    workflow: {
+      step: LocalBackupExportSteps.ExportingMessages,
+      localBackupFolder: 'backups',
+      abortController: new AbortController(),
+    },
+  },
+} satisfies ComponentMeta<PropsType>;
+
+export function ExportingMessages(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.ExportingMessages,
+        abortController: new AbortController(),
+        localBackupFolder: '/somewhere',
+      }}
+    />
+  );
+}
+
+export function ExportingAttachments(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.ExportingAttachments,
+        abortController: new AbortController(),
+        localBackupFolder: '/somewhere',
+        progress: {
+          totalBytes: 1000000,
+          currentBytes: 500000,
+        },
+      }}
+    />
+  );
+}
+
+export function CompleteMac(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      osName="macos"
+      workflow={{
+        step: LocalBackupExportSteps.Complete,
+        localBackupFolder: '/somewhere',
+      }}
+    />
+  );
+}
+
+export function CompleteLinux(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      osName="windows"
+      workflow={{
+        step: LocalBackupExportSteps.Complete,
+        localBackupFolder: '/somewhere',
+      }}
+    />
+  );
+}
+
+export function ErrorGeneric(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.Error,
+        errorDetails: {
+          type: LocalExportErrors.General,
+        },
+      }}
+    />
+  );
+}
+
+export function ErrorNotEnoughStorage(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.Error,
+        errorDetails: {
+          type: LocalExportErrors.NotEnoughStorage,
+          bytesNeeded: 12000000,
+        },
+      }}
+    />
+  );
+}
+
+export function ErrorRanOutOfStorage(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.Error,
+        errorDetails: {
+          type: LocalExportErrors.RanOutOfStorage,
+          bytesNeeded: 12000000,
+        },
+      }}
+    />
+  );
+}
+
+export function ErrorStoragePermissions(args: PropsType): JSX.Element {
+  return (
+    <LocalBackupExportWorkflow
+      {...args}
+      workflow={{
+        step: LocalBackupExportSteps.Error,
+        errorDetails: {
+          type: LocalExportErrors.StoragePermissions,
+        },
+      }}
+    />
+  );
+}

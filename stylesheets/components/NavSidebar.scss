@@ -28,7 +28,6 @@
   align-items: start;
   flex-shrink: 0;
   padding-bottom: 6px;
-  @include mixins.draggable-region;
 
   .NavTabs__Toggle {
     width: variables.$NavTabs__width;
@@ -58,8 +57,8 @@
 }
 
 .NavSidebar__HeaderContent--navTabsCollapsed:not(
-    .NavSidebar__HeaderContent--withBackButton
-  ) {
+  .NavSidebar__HeaderContent--withBackButton
+) {
   padding-inline-start: 0;
 }
 
@@ -231,6 +230,10 @@
   margin-inline: 16px;
   margin-bottom: 8px;
   gap: 12px;
+}
+
+.NavSidebarSearchHeader .module-SearchInput__container {
+  flex: 1 0 0;
 }
 
 .NavSidebarEmpty {

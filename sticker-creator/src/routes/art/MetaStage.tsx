@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
@@ -33,9 +33,9 @@ export function MetaStage(): JSX.Element {
   const cover = useCover();
   const title = useTitle();
   const author = useAuthor();
-  const [confirming, setConfirming] = React.useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  const onDrop = React.useCallback(
+  const onDrop = useCallback(
     async ([file]: Array<File>) => {
       try {
         const stickerImage = await processImage(file, artType);
@@ -50,15 +50,15 @@ export function MetaStage(): JSX.Element {
   const { getRootProps, getInputProps, isDragActive } =
     useStickerDropzone(onDrop);
 
-  const onNext = React.useCallback(() => {
+  const onNext = useCallback(() => {
     setConfirming(true);
   }, []);
 
-  const onCancel = React.useCallback(() => {
+  const onCancel = useCallback(() => {
     setConfirming(false);
   }, []);
 
-  const onConfirm = React.useCallback(() => {
+  const onConfirm = useCallback(() => {
     navigate('/art/upload');
   }, [navigate]);
 

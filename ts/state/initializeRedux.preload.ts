@@ -1,0 +1,117 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { bindActionCreators } from 'redux';
+import { actionCreators } from './actions.preload.ts';
+import { createStore } from './createStore.preload.ts';
+import { getInitialState } from './getInitialState.preload.ts';
+
+import type { BadgesStateType } from './ducks/badges.preload.ts';
+import type { CallHistoryDetails } from '../types/CallDisposition.std.ts';
+import type { DonationsStateType } from './ducks/donations.preload.ts';
+import type { MainWindowStatsType } from '../windows/context.preload.ts';
+import type { MenuOptionsType } from '../types/menu.std.ts';
+import type { StoryDataType } from './ducks/stories.preload.ts';
+import type { StoryDistributionListDataType } from './ducks/storyDistributionLists.preload.ts';
+import type { ThemeType } from '../types/Util.std.ts';
+import type { CallLinkType } from '../types/CallLink.std.ts';
+import type { EmojisStateType } from './ducks/emojis.preload.ts';
+import type { StickersStateType } from './ducks/stickers.preload.ts';
+import type { GifsStateType } from './ducks/gifs.preload.ts';
+import type { NotificationProfileType } from '../types/NotificationProfile.std.ts';
+import type { CurrentChatFolder } from '../types/CurrentChatFolders.std.ts';
+import type { MegaphonesStateType } from './ducks/megaphones.preload.ts';
+
+export type ReduxInitData = {
+  badgesState: BadgesStateType;
+  callHistory: ReadonlyArray<CallHistoryDetails>;
+  callHistoryUnreadCount: number;
+  callLinks: ReadonlyArray<CallLinkType>;
+  chatFolders: ReadonlyArray<CurrentChatFolder>;
+  donations: DonationsStateType;
+  emojis: EmojisStateType;
+  gifs: GifsStateType;
+  mainWindowStats: MainWindowStatsType;
+  megaphones: MegaphonesStateType;
+  menuOptions: MenuOptionsType;
+  notificationProfiles: ReadonlyArray<NotificationProfileType>;
+  stickers: StickersStateType;
+  stories: Array<StoryDataType>;
+  storyDistributionLists: Array<StoryDistributionListDataType>;
+  theme: ThemeType;
+};
+
+export function initializeRedux(data: ReduxInitData): void {
+  const initialState = getInitialState(data);
+
+  const store = createStore(initialState);
+  window.reduxStore = store;
+
+  // Binding these actions to our redux store and exposing them allows us to update
+  //   redux when things change in the rest of the app.
+  window.reduxActions = {
+    accounts: bindActionCreators(actionCreators.accounts, store.dispatch),
+    app: bindActionCreators(actionCreators.app, store.dispatch),
+    installer: bindActionCreators(actionCreators.installer, store.dispatch),
+    audioPlayer: bindActionCreators(actionCreators.audioPlayer, store.dispatch),
+    audioRecorder: bindActionCreators(
+      actionCreators.audioRecorder,
+      store.dispatch
+    ),
+    backups: bindActionCreators(actionCreators.backups, store.dispatch),
+    badges: bindActionCreators(actionCreators.badges, store.dispatch),
+    callHistory: bindActionCreators(actionCreators.callHistory, store.dispatch),
+    calling: bindActionCreators(actionCreators.calling, store.dispatch),
+    chatFolders: bindActionCreators(actionCreators.chatFolders, store.dispatch),
+    composer: bindActionCreators(actionCreators.composer, store.dispatch),
+    conversations: bindActionCreators(
+      actionCreators.conversations,
+      store.dispatch
+    ),
+    crashReports: bindActionCreators(
+      actionCreators.crashReports,
+      store.dispatch
+    ),
+    inbox: bindActionCreators(actionCreators.inbox, store.dispatch),
+    donations: bindActionCreators(actionCreators.donations, store.dispatch),
+    emojis: bindActionCreators(actionCreators.emojis, store.dispatch),
+    expiration: bindActionCreators(actionCreators.expiration, store.dispatch),
+    gifs: bindActionCreators(actionCreators.gifs, store.dispatch),
+    globalModals: bindActionCreators(
+      actionCreators.globalModals,
+      store.dispatch
+    ),
+    items: bindActionCreators(actionCreators.items, store.dispatch),
+    lightbox: bindActionCreators(actionCreators.lightbox, store.dispatch),
+    linkPreviews: bindActionCreators(
+      actionCreators.linkPreviews,
+      store.dispatch
+    ),
+    mediaGallery: bindActionCreators(
+      actionCreators.mediaGallery,
+      store.dispatch
+    ),
+    megaphones: bindActionCreators(actionCreators.megaphones, store.dispatch),
+    nav: bindActionCreators(actionCreators.nav, store.dispatch),
+    network: bindActionCreators(actionCreators.network, store.dispatch),
+    notificationProfiles: bindActionCreators(
+      actionCreators.notificationProfiles,
+      store.dispatch
+    ),
+    safetyNumber: bindActionCreators(
+      actionCreators.safetyNumber,
+      store.dispatch
+    ),
+    search: bindActionCreators(actionCreators.search, store.dispatch),
+    stickers: bindActionCreators(actionCreators.stickers, store.dispatch),
+    stories: bindActionCreators(actionCreators.stories, store.dispatch),
+    storyDistributionLists: bindActionCreators(
+      actionCreators.storyDistributionLists,
+      store.dispatch
+    ),
+    toast: bindActionCreators(actionCreators.toast, store.dispatch),
+    updates: bindActionCreators(actionCreators.updates, store.dispatch),
+    user: bindActionCreators(actionCreators.user, store.dispatch),
+    username: bindActionCreators(actionCreators.username, store.dispatch),
+  };
+}

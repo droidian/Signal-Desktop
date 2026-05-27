@@ -1,0 +1,233 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.std.ts';
+import type { QuotedMessageType } from '../model-types.d.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { SafetyNumberChangeSource } from '../types/SafetyNumberChangeSource.std.ts';
+import { blockSendUntilConversationsAreVerified } from './blockSendUntilConversationsAreVerified.dom.ts';
+import {
+  getMessageIdForLogging,
+  getConversationIdForLogging,
+} from './idForLogging.preload.ts';
+import { isNotNil } from './isNotNil.std.ts';
+import { resetLinkPreview } from '../services/LinkPreview.preload.ts';
+import { getRecipientsByConversation } from './getRecipientsByConversation.dom.ts';
+import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.std.ts';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { StickerWithHydratedData } from '../types/Stickers.preload.ts';
+import { DataReader } from '../sql/Client.preload.ts';
+import {
+  loadAttachmentData,
+  loadContactData,
+  loadPreviewData,
+  loadStickerData,
+} from './migrations.preload.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import {
+  sortByMessageOrder,
+  type ForwardMessageData,
+} from '../types/ForwardDraft.std.ts';
+import { canForward } from '../state/selectors/message.preload.ts';
+
+const log = createLogger('maybeForwardMessages');
+
+export async function maybeForwardMessages(
+  messages: Array<ForwardMessageData>,
+  conversationIds: ReadonlyArray<string>
+): Promise<boolean> {
+  log.info(
+    `maybeForwardMessage: Attempting to forward ${messages.length} messages...`
+  );
+
+  const conversations = conversationIds
+    .map(id => window.ConversationController.get(id))
+    .filter(isNotNil);
+
+  const areAllMessagesForwardable = messages.every(msg =>
+    msg.originalMessage ? canForward(msg.originalMessage) : true
+  );
+
+  if (!areAllMessagesForwardable) {
+    throw new Error(
+      'maybeForwardMessage: Attempting to forward unforwardable message(s)'
+    );
+  }
+
+  const cannotSend = conversations.some(
+    conversation =>
+      conversation?.get('terminated') ||
+      (conversation?.get('announcementsOnly') && !conversation.areWeAdmin())
+  );
+  if (cannotSend) {
+    throw new Error('Cannot send to group');
+  }
+
+  const recipientsByConversation = getRecipientsByConversation(
+    conversations.map(x => x.attributes)
+  );
+
+  // Verify that all contacts that we're forwarding
+  // to are verified and trusted.
+  // If there are any unverified or untrusted contacts, show the
+  // SendAnywayDialog and if we're fine with sending then mark all as
+  // verified and trusted and continue the send.
+  const canSend = await blockSendUntilConversationsAreVerified(
+    recipientsByConversation,
+    SafetyNumberChangeSource.MessageSend
+  );
+  if (!canSend) {
+    return false;
+  }
+
+  const sendMessageOptions = { dontClearDraft: true, isForwarding: true };
+  const baseTimestamp = Date.now();
+
+  let timestampOffset = 0;
+
+  // load any sticker data, attachments, or link previews that we need to
+  // send along with the message and do the send to each conversation.
+  const preparedMessages = await Promise.all(
+    messages.map(async message => {
+      const { draft, originalMessage } = message;
+      const { sticker, contact } = originalMessage ?? {};
+      const { attachments, bodyRanges, messageBody, previews } = draft;
+
+      const idForLogging =
+        originalMessage != null
+          ? getMessageIdForLogging(originalMessage)
+          : '(new message)';
+      log.info(`maybeForwardMessage: Forwarding ${idForLogging}`);
+
+      const attachmentLookup = new Set();
+      if (attachments) {
+        attachments.forEach(attachment => {
+          attachmentLookup.add(
+            `${attachment.fileName}/${attachment.contentType}`
+          );
+        });
+      }
+
+      let enqueuedMessage: {
+        attachments: Array<AttachmentType>;
+        body: string | undefined;
+        bodyRanges?: DraftBodyRanges;
+        contact?: Array<EmbeddedContactWithHydratedAvatar>;
+        preview?: Array<LinkPreviewWithHydratedData>;
+        quote?: QuotedMessageType;
+        sticker?: StickerWithHydratedData;
+      };
+
+      if (sticker) {
+        const stickerWithData = await loadStickerData(sticker);
+        const stickerNoPath = stickerWithData
+          ? {
+              ...stickerWithData,
+              data: {
+                ...stickerWithData.data,
+                path: undefined,
+              },
+            }
+          : undefined;
+
+        enqueuedMessage = {
+          body: undefined,
+          attachments: [],
+          sticker: stickerNoPath,
+        };
+      } else if (contact?.length) {
+        const contactWithHydratedAvatar = await loadContactData(contact);
+        enqueuedMessage = {
+          body: undefined,
+          attachments: [],
+          contact: contactWithHydratedAvatar,
+        };
+      } else {
+        const preview = await loadPreviewData([...previews]);
+        const attachmentsWithData = await Promise.all(
+          (attachments || []).map(async item => ({
+            ...(await loadAttachmentData(item)),
+            path: undefined,
+            thumbnail: undefined,
+            thumbnailFromBackup: undefined,
+            screenshot: undefined,
+          }))
+        );
+        const attachmentsToSend = attachmentsWithData.filter(
+          (attachment: Partial<AttachmentType>) =>
+            attachmentLookup.has(
+              `${attachment.fileName}/${attachment.contentType}`
+            )
+        );
+
+        enqueuedMessage = {
+          body: messageBody || undefined,
+          bodyRanges,
+          attachments: attachmentsToSend,
+          preview,
+        };
+      }
+
+      return { originalMessage, enqueuedMessage };
+    })
+  );
+
+  const sortedMessages = sortByMessageOrder(
+    preparedMessages,
+    message => message.originalMessage
+  );
+
+  // Actually send the messages
+  await Promise.all(
+    conversations.map(async conversation => {
+      if (conversation == null) {
+        return;
+      }
+
+      const stats = await DataReader.getConversationMessageStats({
+        conversationId: conversation.id,
+        // Not used for computing `hasUserInitiatedMessages`
+        includeStoryReplies: false,
+      });
+      // Post a universal disappearing timer notification in case we will
+      // need to set the timer.
+      await conversation.queueJob('maybeSetPendingUniversalTimer', async () =>
+        conversation.maybeSetPendingUniversalTimer(
+          stats.hasUserInitiatedMessages
+        )
+      );
+
+      await Promise.all(
+        sortedMessages.map(async entry => {
+          // Note: there should be no awaits between here...
+          const timestamp = baseTimestamp + timestampOffset;
+          timestampOffset += 1;
+
+          const { enqueuedMessage, originalMessage } = entry;
+          try {
+            // ...and here to ensure that messgaes are sent in the right order.
+            await conversation.enqueueMessageForSend(enqueuedMessage, {
+              ...sendMessageOptions,
+              timestamp,
+            });
+          } catch (error) {
+            log.error(
+              'maybeForwardMessage: message send error',
+              getConversationIdForLogging(conversation.attributes),
+              originalMessage != null
+                ? getMessageIdForLogging(originalMessage)
+                : '(new message)',
+              toLogFormat(error)
+            );
+          }
+        })
+      );
+    })
+  );
+
+  // Cancel any link still pending, even if it didn't make it into the message
+  resetLinkPreview();
+
+  return true;
+}
