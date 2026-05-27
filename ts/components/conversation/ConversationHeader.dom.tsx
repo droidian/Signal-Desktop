@@ -1035,7 +1035,6 @@ function OutgoingCallButtons({
 
       return (
         <>
-          {videoElement}
           {audioElement}
         </>
       );
