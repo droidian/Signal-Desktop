@@ -1,24 +1,19 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { UUIDStringType } from '../../types/UUID';
+import type { Net } from '@signalapp/libsignal-client';
+import type { AciString, PniString } from '../../types/ServiceId.std.ts';
 
-export type CDSAuthType = Readonly<{
-  username: string;
-  password: string;
-}>;
-
-export type CDSResponseEntryType = Readonly<{
-  aci: UUIDStringType | undefined;
-  pni: UUIDStringType | undefined;
-}>;
-
-export type CDSResponseType = ReadonlyMap<string, CDSResponseEntryType>;
+export type CDSAuthType = Net.ServiceAuth;
+export type CDSResponseEntryType = Net.CDSResponseEntryType<
+  AciString,
+  PniString
+>;
+export type CDSResponseType = Net.CDSResponseType<AciString, PniString>;
 
 export type CDSRequestOptionsType = Readonly<{
   e164s: ReadonlyArray<string>;
-  acis: ReadonlyArray<UUIDStringType>;
-  accessKeys: ReadonlyArray<string>;
+  acisAndAccessKeys: ReadonlyArray<{ aci: AciString; accessKey: string }>;
   returnAcisWithoutUaks?: boolean;
   timeout?: number;
 }>;

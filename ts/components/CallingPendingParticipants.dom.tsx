@@ -1,0 +1,400 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import lodash from 'lodash';
+import classNames from 'classnames';
+import { AnimatePresence, motion } from 'motion/react';
+
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import { InContactsIcon } from './InContactsIcon.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { isInSystemContacts } from '../util/isInSystemContacts.std.ts';
+import type {
+  BatchUserActionPayloadType,
+  PendingUserActionPayloadType,
+} from '../state/ducks/calling.preload.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { handleOutsideClick } from '../util/handleOutsideClick.dom.ts';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+
+const { noop } = lodash;
+
+enum ConfirmDialogState {
+  None = 'None',
+  ApproveAll = 'ApproveAll',
+  DenyAll = 'DenyAll',
+}
+
+export type PropsType = {
+  readonly i18n: LocalizerType;
+  readonly participants: Array<ConversationType>;
+  // For storybook
+  readonly defaultIsExpanded?: boolean;
+  readonly approveUser: (payload: PendingUserActionPayloadType) => void;
+  readonly batchUserAction: (payload: BatchUserActionPayloadType) => void;
+  readonly denyUser: (payload: PendingUserActionPayloadType) => void;
+  readonly toggleCallLinkPendingParticipantModal: (
+    conversationId: string
+  ) => void;
+};
+
+export function CallingPendingParticipants({
+  defaultIsExpanded,
+  i18n,
+  participants,
+  approveUser,
+  batchUserAction,
+  denyUser,
+  toggleCallLinkPendingParticipantModal,
+}: PropsType): JSX.Element | null {
+  const reducedMotion = useReducedMotion();
+
+  const participantCount = participants.length;
+  const [isExpanded, setIsExpanded] = useState(defaultIsExpanded ?? false);
+  const [confirmDialogState, setConfirmDialogState] =
+    useState<ConfirmDialogState>(ConfirmDialogState.None);
+  const [serviceIdsStagedForAction, setServiceIdsStagedForAction] = useState<
+    Array<ServiceIdString>
+  >([]);
+
+  const expandedListRef = useRef<HTMLDivElement>(null);
+
+  const handleHideAllRequests = useCallback(() => {
+    setIsExpanded(false);
+  }, [setIsExpanded]);
+
+  // When opening the "Approve all" confirm dialog, save the current list of participants
+  // to ensure we only approve users who the admin has checked. If additional people
+  // request to join while the dialog is open, we don't auto approve those.
+  const stageServiceIdsForAction = useCallback(() => {
+    const serviceIds: Array<ServiceIdString> = [];
+    participants.forEach(participant => {
+      if (participant.serviceId) {
+        serviceIds.push(participant.serviceId);
+      }
+    });
+    setServiceIdsStagedForAction(serviceIds);
+  }, [participants, setServiceIdsStagedForAction]);
+
+  const hideConfirmDialog = useCallback(() => {
+    setConfirmDialogState(ConfirmDialogState.None);
+    setServiceIdsStagedForAction([]);
+  }, [setConfirmDialogState]);
+
+  const handleApprove = useCallback(
+    (participant: ConversationType) => {
+      const { serviceId } = participant;
+      if (!serviceId) {
+        return;
+      }
+
+      approveUser({ serviceId });
+    },
+    [approveUser]
+  );
+
+  const handleDeny = useCallback(
+    (participant: ConversationType) => {
+      const { serviceId } = participant;
+      if (!serviceId) {
+        return;
+      }
+
+      denyUser({ serviceId });
+    },
+    [denyUser]
+  );
+
+  const handleApproveAll = useCallback(() => {
+    batchUserAction({
+      action: 'approve',
+      serviceIds: serviceIdsStagedForAction,
+    });
+    hideConfirmDialog();
+  }, [serviceIdsStagedForAction, batchUserAction, hideConfirmDialog]);
+
+  const handleDenyAll = useCallback(() => {
+    batchUserAction({
+      action: 'deny',
+      serviceIds: serviceIdsStagedForAction,
+    });
+    hideConfirmDialog();
+  }, [serviceIdsStagedForAction, batchUserAction, hideConfirmDialog]);
+
+  const renderApprovalButtons = useCallback(
+    (participant: ConversationType, isEnabled = true) => {
+      if (participant.serviceId == null) {
+        return null;
+      }
+
+      return (
+        <>
+          <Button
+            aria-label={i18n('icu:CallingPendingParticipants__DenyUser')}
+            className="CallingPendingParticipants__PendingActionButton CallingButton__icon"
+            onClick={isEnabled ? () => handleDeny(participant) : noop}
+            variant={ButtonVariant.Destructive}
+          >
+            <span className="CallingPendingParticipants__PendingActionButtonIcon CallingPendingParticipants__PendingActionButtonIcon--Deny" />
+          </Button>
+          <Button
+            aria-label={i18n('icu:CallingPendingParticipants__ApproveUser')}
+            className="CallingPendingParticipants__PendingActionButton CallingButton__icon"
+            onClick={isEnabled ? () => handleApprove(participant) : noop}
+            variant={ButtonVariant.Calling}
+          >
+            <span className="CallingPendingParticipants__PendingActionButtonIcon CallingPendingParticipants__PendingActionButtonIcon--Approve" />
+          </Button>
+        </>
+      );
+    },
+    [i18n, handleApprove, handleDeny]
+  );
+
+  useEffect(() => {
+    if (!isExpanded) {
+      return noop;
+    }
+    return handleOutsideClick(
+      () => {
+        handleHideAllRequests();
+        return true;
+      },
+      {
+        containerElements: [expandedListRef],
+        name: 'CallingPendingParticipantsList.expandedList',
+      }
+    );
+  }, [isExpanded, handleHideAllRequests]);
+
+  if (confirmDialogState === ConfirmDialogState.ApproveAll) {
+    return (
+      <AxoConfirmDialog.Root
+        open
+        onOpenChange={hideConfirmDialog}
+        title={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogTitle--ApproveAll',
+          { count: serviceIdsStagedForAction.length }
+        )}
+        description={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogBody--ApproveAll',
+          { count: serviceIdsStagedForAction.length }
+        )}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action variant="primary" onClick={handleApproveAll}>
+          {i18n('icu:CallingPendingParticipants__ApproveAll')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+    );
+  }
+
+  if (confirmDialogState === ConfirmDialogState.DenyAll) {
+    return (
+      <AxoConfirmDialog.Root
+        open
+        onOpenChange={hideConfirmDialog}
+        title={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogTitle--DenyAll',
+          { count: serviceIdsStagedForAction.length }
+        )}
+        description={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogBody--DenyAll',
+          {
+            count: serviceIdsStagedForAction.length,
+          }
+        )}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action variant="destructive" onClick={handleDenyAll}>
+          {i18n('icu:CallingPendingParticipants__DenyAll')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+    );
+  }
+
+  if (isExpanded) {
+    return (
+      <div
+        className="CallingPendingParticipants CallingPendingParticipants--Expanded module-calling-participants-list"
+        ref={expandedListRef}
+      >
+        <div className="module-calling-participants-list__header">
+          <div className="module-calling-participants-list__title">
+            {i18n('icu:CallingPendingParticipants__RequestsToJoin', {
+              count: participantCount,
+            })}
+          </div>
+          <button
+            type="button"
+            className="module-calling-participants-list__close"
+            onClick={handleHideAllRequests}
+            tabIndex={0}
+            aria-label={i18n('icu:close')}
+          />
+        </div>
+        <ul className="module-calling-participants-list__list">
+          {participants.map((participant: ConversationType, index: number) => (
+            <li
+              className="module-calling-participants-list__contact"
+              // oxlint-disable-next-line react/no-array-index-key
+              key={index}
+            >
+              <button
+                type="button"
+                onClick={ev => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  toggleCallLinkPendingParticipantModal(participant.id);
+                }}
+                className="module-calling-participants-list__avatar-and-name CallingPendingParticipants__ParticipantButton"
+              >
+                <Avatar
+                  avatarPlaceholderGradient={
+                    participant.avatarPlaceholderGradient
+                  }
+                  avatarUrl={participant.avatarUrl}
+                  badge={undefined}
+                  color={participant.color}
+                  conversationType="direct"
+                  i18n={i18n}
+                  profileName={participant.profileName}
+                  title={participant.title}
+                  size={AvatarSize.THIRTY_SIX}
+                />
+                <ContactName
+                  module="module-calling-participants-list__name"
+                  title={participant.title}
+                />
+                {isInSystemContacts(participant) ? (
+                  <span>
+                    {' '}
+                    <InContactsIcon
+                      className="module-calling-participants-list__contact-icon"
+                      i18n={i18n}
+                    />
+                  </span>
+                ) : null}
+              </button>
+              {renderApprovalButtons(participant)}
+            </li>
+          ))}
+        </ul>
+        <div className="CallingPendingParticipants__ActionPanel">
+          <Button
+            className="CallingPendingParticipants__ActionPanelButton CallingPendingParticipants__ActionPanelButton--DenyAll"
+            variant={ButtonVariant.Destructive}
+            onClick={() => {
+              stageServiceIdsForAction();
+              setConfirmDialogState(ConfirmDialogState.DenyAll);
+            }}
+          >
+            {i18n('icu:CallingPendingParticipants__DenyAll')}
+          </Button>
+          <Button
+            className="CallingPendingParticipants__ActionPanelButton CallingPendingParticipants__ActionPanelButton--ApproveAll"
+            variant={ButtonVariant.Calling}
+            onClick={() => {
+              stageServiceIdsForAction();
+              setConfirmDialogState(ConfirmDialogState.ApproveAll);
+            }}
+          >
+            {i18n('icu:CallingPendingParticipants__ApproveAll')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const isVisible = participantCount > 0;
+  const participant = participants[0];
+  const isExpandable = participantCount > 1;
+
+  return (
+    <AnimatePresence>
+      {isVisible && participant ? (
+        <motion.div
+          className={classNames(
+            'CallingPendingParticipants',
+            'CallingPendingParticipants--Compact',
+            'module-calling-participants-list',
+            isExpandable && 'CallingPendingParticipants--Expandable'
+          )}
+          initial={{ opacity: reducedMotion ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: reducedMotion ? 1 : 0 }}
+          transition={{
+            type: 'spring',
+            stiffness: 322,
+            damping: 22,
+          }}
+          aria-hidden={!isVisible}
+        >
+          <div className="CallingPendingParticipants__CompactParticipant">
+            <button
+              type="button"
+              onClick={ev => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (participantCount === 0) {
+                  return;
+                }
+
+                toggleCallLinkPendingParticipantModal(participant.id);
+              }}
+              className="module-calling-participants-list__avatar-and-name CallingPendingParticipants__ParticipantButton"
+            >
+              <Avatar
+                avatarPlaceholderGradient={
+                  participant.avatarPlaceholderGradient
+                }
+                avatarUrl={participant.avatarUrl}
+                badge={undefined}
+                color={participant.color}
+                conversationType="direct"
+                i18n={i18n}
+                profileName={participant.profileName}
+                title={participant.title}
+                size={AvatarSize.FORTY_EIGHT}
+              />
+              <div className="CallingPendingParticipants__CompactParticipantNameColumn">
+                <div className="CallingPendingParticipants__ParticipantName">
+                  <ContactName title={participant.title} />
+                  {isInSystemContacts(participant) ? (
+                    <InContactsIcon
+                      className="module-calling-participants-list__contact-icon"
+                      i18n={i18n}
+                    />
+                  ) : null}
+                  <span className="CallingPendingParticipants__ParticipantAboutIcon" />
+                </div>
+                <div className="CallingPendingParticipants__WouldLikeToJoin">
+                  {i18n('icu:CallingPendingParticipants__WouldLikeToJoin')}
+                </div>
+              </div>
+            </button>
+            {renderApprovalButtons(participant, participantCount > 0)}
+          </div>
+          {isExpandable && (
+            <div className="CallingPendingParticipants__ShowAllRequestsButtonContainer">
+              <button
+                className="CallingPendingParticipants__ShowAllRequestsButton"
+                onClick={() => setIsExpanded(true)}
+                type="button"
+              >
+                {i18n('icu:CallingPendingParticipants__AdditionalRequests', {
+                  count: participantCount - 1,
+                })}
+              </button>
+            </div>
+          )}
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}

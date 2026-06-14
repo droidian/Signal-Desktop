@@ -1,0 +1,97 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, useState, type JSX } from 'react';
+import type { Meta } from '@storybook/react';
+import { action } from '@storybook/addon-actions';
+
+import DeleteMessagesModal from './DeleteMessagesModal.dom.tsx';
+import type { DeleteMessagesModalProps } from './DeleteMessagesModal.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  title: 'Components/DeleteMessagesModal',
+} satisfies Meta;
+
+function Template(props: Partial<DeleteMessagesModalProps>): JSX.Element {
+  const [open, setOpen] = useState(true);
+
+  const handleOpen = useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  return (
+    <>
+      <AxoButton.Root size="md" variant="secondary" onClick={handleOpen}>
+        Open Dialog
+      </AxoButton.Root>
+      {open && (
+        <DeleteMessagesModal
+          isMe={false}
+          canDeleteForEveryone={false}
+          needsAdminDelete={false}
+          isDeletingOwnMessages={false}
+          hasSeenAdminDeleteEducationDialog={false}
+          i18n={i18n}
+          messageCount={1}
+          onClose={handleClose}
+          onDeleteForMe={action('onDeleteForMe')}
+          onDeleteForEveryone={action('onDeleteForEveryone')}
+          onSeenAdminDeleteEducationDialog={action(
+            'onSeenAdminDeleteEducationDialog'
+          )}
+          showToast={action('showToast')}
+          {...props}
+        />
+      )}
+    </>
+  );
+}
+
+export function DeleteForMeOnly(): JSX.Element {
+  return <Template />;
+}
+
+export function DeleteForEveryone(): JSX.Element {
+  return <Template canDeleteForEveryone />;
+}
+
+export function DeleteForEveryoneMultiple(): JSX.Element {
+  return <Template canDeleteForEveryone messageCount={3} />;
+}
+
+export function AdminDelete(): JSX.Element {
+  return <Template canDeleteForEveryone needsAdminDelete />;
+}
+
+export function AdminDeleteMultiple(): JSX.Element {
+  return <Template canDeleteForEveryone needsAdminDelete messageCount={3} />;
+}
+
+export function AdminDeleteAfterOnboarding(): JSX.Element {
+  return (
+    <Template
+      canDeleteForEveryone
+      needsAdminDelete
+      hasSeenAdminDeleteEducationDialog
+    />
+  );
+}
+
+export function NoteToSelf(): JSX.Element {
+  return <Template isMe />;
+}
+
+export function NoteToSelfMultiple(): JSX.Element {
+  return <Template isMe messageCount={3} />;
+}
+
+export function TooManyMessagesForDeleteForEveryone(): JSX.Element {
+  return <Template canDeleteForEveryone messageCount={31} />;
+}

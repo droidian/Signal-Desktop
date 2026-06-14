@@ -1,0 +1,63 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.ComposeStepButton {
+  &__icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+
+    @include mixins.light-theme {
+      background-color: variables.$color-black-alpha-06;
+    }
+    @include mixins.dark-theme {
+      background-color: variables.$color-white-alpha-12;
+    }
+
+    &::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 20px;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+
+      @include mixins.light-theme {
+        background-color: variables.$color-black;
+      }
+      @include mixins.dark-theme {
+        background-color: variables.$color-gray-05;
+      }
+    }
+
+    // Calls Tab avatars are 36px
+    &--call-link {
+      width: 36px;
+      height: 36px;
+      border-radius: 9999px;
+    }
+
+    &--call-link::before {
+      -webkit-mask-image: url('../images/icons/v3/link/link.svg');
+    }
+
+    &--group::before {
+      -webkit-mask-image: url('../images/icons/v3/group/group.svg');
+    }
+
+    &--username::before {
+      -webkit-mask-image: url('../images/icons/v3/at/at.svg');
+    }
+
+    &--phone-number::before {
+      -webkit-mask-image: url('../images/icons/v3/number/number-light.svg');
+    }
+  }
+}

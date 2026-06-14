@@ -1,59 +1,72 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
 .Stories {
-  background: $color-gray-95;
   display: flex;
-  height: var(--window-height);
-  left: 0;
+  height: 100vh;
+  inset-inline-start: 0;
   position: absolute;
   top: 0;
   user-select: none;
   width: 100%;
-  z-index: $z-index-stories;
+  z-index: variables.$z-index-stories;
+  @include mixins.light-theme {
+    background: variables.$color-white;
+  }
+  @include mixins.dark-theme {
+    background: variables.$color-gray-95;
+  }
 
   &__pane {
-    background: $color-gray-80;
-    border-right: 1px solid $color-gray-65;
     display: flex;
     flex-direction: column;
     height: 100%;
     width: 380px;
-    padding-top: calc(14px + var(--title-bar-drag-area-height));
+    padding-top: calc(2px + var(--title-bar-drag-area-height));
+    @include mixins.light-theme {
+      background: variables.$color-gray-04;
+      border-inline-end: 1px solid variables.$color-black-alpha-16;
+    }
+    @include mixins.dark-theme {
+      background: variables.$color-gray-80;
+      border-inline-end: 1px solid variables.$color-white-alpha-16;
+    }
 
-    &__add-story__button {
-      @include color-svg('../images/icons/v2/plus-24.svg', $color-white);
-      height: 22px;
-      position: absolute;
-      right: 63px;
-      top: 0px;
-      width: 22px;
-
+    &__add-story__container {
+      padding: 4px;
+      border-radius: 4px;
+      &:hover,
       &:focus {
-        @include keyboard-mode {
-          background-color: $color-ultramarine;
+        @include mixins.light-theme {
+          background-color: variables.$color-black-alpha-06;
+        }
+        @include mixins.dark-theme {
+          background-color: variables.$color-white-alpha-06;
         }
       }
     }
 
-    &__settings__button {
-      @include dark-theme {
-        @include color-svg(
-          '../images/icons/v2/more-horiz-24.svg',
-          $color-white
+    &__add-story__button {
+      height: 20px;
+      width: 20px;
+      @include mixins.light-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus.svg',
+          variables.$color-black
         );
       }
-      height: 22px;
-      margin-left: 24px;
-      opacity: 1;
-      position: absolute;
-      right: 16px;
-      top: 0px;
-      width: 22px;
+      @include mixins.dark-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus.svg',
+          variables.$color-gray-15
+        );
+      }
 
       &:focus {
-        @include keyboard-mode {
-          background-color: $color-ultramarine;
+        @include mixins.keyboard-mode {
+          background-color: variables.$color-ultramarine;
         }
       }
     }
@@ -62,7 +75,8 @@
       align-items: center;
       display: flex;
       justify-content: space-between;
-      padding: 0 16px;
+      padding-block: 0;
+      padding-inline: 16px;
       position: relative;
 
       &--centered {
@@ -70,113 +84,187 @@
       }
 
       &--title {
-        @include font-body-1-bold;
-        color: $color-gray-05;
-        display: flex;
+        @include mixins.font-title-medium;
         flex: 1;
-        justify-content: center;
+        @include mixins.light-theme {
+          color: variables.$color-black;
+        }
+        @include mixins.dark-theme {
+          color: variables.$color-gray-05;
+        }
       }
 
       &--centered .Stories__pane__header--title {
         text-align: center;
         width: 100%;
       }
-
-      &--back {
-        @include button-reset;
-
-        height: 24px;
-        position: absolute;
-        width: 24px;
-
-        @include color-svg(
-          '../images/icons/v2/chevron-left-24.svg',
-          $color-white
-        );
-
-        @include keyboard-mode {
-          &:hover {
-            @include color-svg(
-              '../images/icons/v2/chevron-left-24.svg',
-              $color-ultramarine-light
-            );
-          }
-        }
-      }
     }
 
     &__list {
-      @include scrollbar;
       display: flex;
       flex-direction: column;
       flex: 1;
-      overflow-y: overlay;
-      padding: 0 14px;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      padding-inline-start: 11px;
+      padding-inline-end: calc(
+        11px - var(--axo-scrollbar-gutter-thin-vertical)
+      );
+      @include mixins.scrollbar-on-hover;
 
       &--empty {
-        @include font-body-1;
+        @include mixins.font-body-1;
         align-items: center;
-        color: $color-gray-45;
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        justify-content: center;
+        @include mixins.light-theme() {
+          color: variables.$color-gray-60;
+        }
+        @include mixins.dark-theme() {
+          color: variables.$color-gray-45;
+        }
+        & {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          justify-content: center;
+        }
       }
     }
-  }
-
-  &__search__container {
-    margin: 14px 16px 10px 16px;
   }
 
   &__placeholder {
     align-items: center;
-    color: $color-gray-45;
     display: flex;
     flex-direction: column;
     flex: 1;
     justify-content: center;
+    opacity: 0.7;
+    padding-block: 78px 28px;
 
-    &__stories {
-      height: 56px;
-      margin-bottom: 22px;
-      width: 56px;
+    @include mixins.light-theme {
+      color: variables.$color-gray-60;
+    }
+    @include mixins.dark-theme {
+      color: variables.$color-gray-25;
+    }
 
-      @include color-svg(
-        '../images/icons/v2/stories-outline-56.svg',
-        $color-gray-45
-      );
+    &__icon {
+      margin-bottom: 12px;
+      width: 40px;
+      height: 40px;
+      @include mixins.light-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/stories/stories-display-bold.svg',
+          variables.$color-gray-60
+        );
+      }
+      @include mixins.dark-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/stories/stories-display-bold.svg',
+          variables.$color-gray-25
+        );
+      }
+    }
+
+    &__text {
+      text-align: center;
+    }
+
+    &__text__action {
+      vertical-align: text-top;
+      display: inline-block;
+
+      width: 16px;
+      height: 16px;
+      @include mixins.light-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus.svg',
+          variables.$color-gray-60
+        );
+      }
+      @include mixins.dark-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus.svg',
+          variables.$color-gray-25
+        );
+      }
     }
   }
 
   &__hidden-stories {
-    @include button-reset;
-    @include font-body-1-bold;
-    align-items: center;
-    color: $color-gray-05;
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 24px;
-    position: relative;
-    width: 100%;
+    @include mixins.button-reset;
+    & {
+      @include mixins.font-body-1-bold;
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      padding-block: 12px;
+      padding-inline: 24px;
+      position: relative;
+      width: 100%;
+    }
+    @include mixins.light-theme {
+      color: variables.$color-black;
+    }
+    @include mixins.dark-theme {
+      color: variables.$color-gray-05;
+    }
 
     &::after {
-      @include color-svg(
-        '../images/icons/v2/chevron-right-24.svg',
-        $color-gray-05
-      );
       content: '';
       height: 16px;
       width: 16px;
     }
 
-    &--expanded {
+    &--collapsed {
       &::after {
-        @include color-svg(
-          '../images/icons/v2/chevron-down-24.svg',
-          $color-gray-05
-        );
+        @include mixins.light-theme {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-right.svg',
+            variables.$color-black
+          );
+        }
+        @include mixins.dark-theme {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-right.svg',
+            variables.$color-gray-05
+          );
+        }
       }
     }
+
+    &--expanded {
+      &::after {
+        @include mixins.light-theme {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-down.svg',
+            variables.$color-black
+          );
+        }
+        @include mixins.dark-theme {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-down.svg',
+            variables.$color-gray-05
+          );
+        }
+      }
+    }
+  }
+}
+
+.StoriesTab__MoreActionsIcon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  @include mixins.light-theme {
+    @include mixins.color-svg(
+      '../images/icons/v3/more/more.svg',
+      variables.$color-black
+    );
+  }
+  @include mixins.dark-theme {
+    @include mixins.color-svg(
+      '../images/icons/v3/more/more.svg',
+      variables.$color-gray-15
+    );
   }
 }

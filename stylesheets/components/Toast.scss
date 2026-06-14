@@ -1,78 +1,68 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .Toast {
   $border-radius-px: 8px;
 
-  @include font-body-2;
+  @include mixins.font-body-2;
 
-  align-items: center;
+  align-items: stretch;
   border-radius: $border-radius-px;
-  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.05), 0px 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0px 0px 4px rgba(0, 0, 0, 0.05),
+    0px 4px 12px rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: space-between;
-  position: absolute;
-  text-align: center;
   user-select: none;
   overflow: hidden;
-  z-index: $z-index-toast;
-  bottom: 62px;
-  left: 50%;
-  transform: translate(-50%, 0);
+  width: fit-content;
+  max-width: 280px;
+  background-color: variables.$color-gray-75;
+  color: variables.$color-gray-05;
+  z-index: variables.$z-index-toast;
 
-  @include light-theme {
-    background-color: $color-gray-80;
-    color: $color-white;
-  }
-  @include dark-theme {
-    background-color: $color-gray-75;
-    color: $color-gray-05;
-  }
+  inset-inline-start: 20px;
+  text-align: start;
 
-  &--align-center {
-    bottom: 62px;
-    left: 50%;
-    transform: translate(-50%, 0);
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      box-shadow: inset 0px 0px 0px 2px variables.$color-ultramarine;
+    }
   }
 
-  &--align-left {
-    left: 20px;
-    bottom: 18px;
+  .ToastManager--narrow-sidebar & {
+    width: max-content;
+  }
+
+  .ToastManager--narrow-sidebar.ToastManager--composition-area-visible & {
+    min-width: initial;
+    text-align: center;
   }
 
   &__content {
-    padding: 8px 12px;
+    padding-block: 13px;
+    padding-inline: 16px;
   }
 
   &__button {
-    @include font-body-2-bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include mixins.font-body-2-bold;
     cursor: pointer;
-    padding: 8px 12px;
+    padding-block: 13px;
+    padding-inline: 16px;
     white-space: nowrap;
+    color: variables.$color-ios-blue-tint;
 
-    @include light-theme {
-      border-left: 1px solid $color-gray-65;
-    }
-    @include dark-theme {
-      border-left: 1px solid $color-gray-60;
-    }
-
-    outline: none;
-
-    &:hover {
-      @include light-theme {
-        background-color: $color-gray-65;
-      }
-      @include dark-theme {
-        background-color: $color-gray-60;
-      }
-    }
     &:focus {
-      @include keyboard-mode {
-        background-color: $color-gray-65;
-      }
-      @include dark-keyboard-mode {
-        background-color: $color-gray-60;
+      outline: none;
+      @include mixins.keyboard-mode {
+        box-shadow: inset 0px 0px 0px 2px variables.$color-ultramarine;
       }
     }
   }

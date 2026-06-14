@@ -1,0 +1,134 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.ConversationPanel {
+  display: flex;
+  flex-direction: column;
+
+  height: 100%;
+  inset-inline-start: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: variables.$z-index-above-base;
+
+  @include mixins.light-theme() {
+    background-color: variables.$color-white;
+  }
+
+  @include mixins.dark-theme() {
+    background-color: variables.$color-gray-95;
+  }
+
+  &__body {
+    // Used for centering EmptyState in All Media view
+    position: relative;
+
+    overflow-y: auto;
+    flex-grow: 1;
+
+    &--padding {
+      padding-inline: 24px;
+    }
+  }
+
+  &__header {
+    flex-shrink: 0;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    height: calc(
+      #{variables.$header-height} + var(--title-bar-drag-area-height)
+    );
+    padding-top: var(--title-bar-drag-area-height);
+    width: 100%;
+    z-index: variables.$z-index-base;
+
+    @include mixins.light-theme {
+      color: variables.$color-gray-90;
+      background-color: variables.$color-white;
+    }
+    @include mixins.dark-theme {
+      color: variables.$color-gray-02;
+      background-color: variables.$color-gray-95;
+    }
+
+    &__info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      &__title {
+        @include mixins.font-body-1-bold;
+        display: flex;
+        align-items: center;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+
+        &__in-contacts-icon {
+          margin-inline-start: 4px;
+        }
+      }
+    }
+
+    &__back-button {
+      border: none;
+      display: inline-block;
+      height: 20px;
+      margin-inline: 24px 6px;
+      min-width: 20px;
+      opacity: 0;
+      opacity: 1;
+      vertical-align: text-bottom;
+      -webkit-app-region: no-drag;
+      width: 20px;
+
+      &:disabled {
+        cursor: default;
+      }
+
+      @include mixins.light-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/chevron/chevron-left.svg',
+          variables.$color-gray-90
+        );
+      }
+      @include mixins.dark-theme {
+        @include mixins.color-svg(
+          '../images/icons/v3/chevron/chevron-left.svg',
+          variables.$color-gray-02
+        );
+      }
+
+      @include mixins.keyboard-mode {
+        &:focus {
+          background-color: variables.$color-ultramarine;
+        }
+      }
+      @include mixins.dark-keyboard-mode {
+        &:focus {
+          background-color: variables.$color-ultramarine-light;
+        }
+      }
+    }
+  }
+
+  &__overlay {
+    height: 100%;
+    inset-inline-start: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: variables.$z-index-above-base;
+  }
+
+  &__hidden {
+    display: none;
+  }
+}

@@ -1,0 +1,2023 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+import * as sinon from 'sinon';
+import { assert } from 'chai';
+import lodash, { pick } from 'lodash';
+import { type StatsFs } from 'node:fs';
+import { v7 } from 'uuid';
+import { emptyDir, ensureFile } from 'fs-extra';
+
+import * as MIME from '../../types/MIME.std.ts';
+import {
+  AttachmentDownloadManager,
+  runDownloadAttachmentJob,
+  runDownloadAttachmentJobInner,
+  type NewAttachmentDownloadJobType,
+} from '../../jobs/AttachmentDownloadManager.preload.ts';
+import {
+  type AttachmentDownloadJobType,
+  AttachmentDownloadUrgency,
+  MediaTier,
+} from '../../types/AttachmentDownload.std.ts';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { DAY, MINUTE, MONTH } from '../../util/durations/index.std.ts';
+import {
+  type AttachmentType,
+  AttachmentUndownloadableFromTransitTierError,
+  AttachmentVariant,
+} from '../../types/Attachment.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { downloadAttachment as downloadAttachmentUtil } from '../../util/downloadAttachment.preload.ts';
+import { AttachmentDownloadSource } from '../../sql/Interface.std.ts';
+import { generateAttachmentKeys } from '../../AttachmentCrypto.node.ts';
+import { getAttachmentCiphertextSize } from '../../util/AttachmentCrypto.std.ts';
+import { KIBIBYTE, MEBIBYTE } from '../../types/AttachmentSize.std.ts';
+import { toBase64 } from '../../Bytes.std.ts';
+import { JobCancelReason } from '../../jobs/types.std.ts';
+import {
+  explodePromise,
+  type ExplodePromiseResultType,
+} from '../../util/explodePromise.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { composeAttachment } from '../../test-node/util/queueAttachmentDownloads_test.preload.ts';
+import { MessageCache } from '../../services/MessageCache.preload.ts';
+import { AttachmentNotNeededForMessageError } from '../../messageModifiers/AttachmentDownloads.preload.ts';
+import {
+  testAttachmentDigest,
+  testAttachmentKey,
+  testAttachmentLocalKey,
+  testPlaintextHash,
+} from '../../test-helpers/attachments.node.ts';
+import type { MessageAttributesType } from '../../model-types.d.ts';
+import { getAttachmentsPath } from '../../../app/attachments.node.ts';
+import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+
+const { omit } = lodash;
+
+const maxAttachmentSize = 100 * MEBIBYTE;
+const maxTextAttachmentSize = 5 * KIBIBYTE;
+const minimumFreeDiskSpace = 500 * MEBIBYTE;
+
+function composeJob({
+  messageId,
+  receivedAt,
+  attachmentOverrides,
+  jobOverrides,
+}: Pick<NewAttachmentDownloadJobType, 'messageId' | 'receivedAt'> & {
+  attachmentOverrides?: Partial<AttachmentType>;
+  jobOverrides?: Partial<AttachmentDownloadJobType>;
+}): AttachmentDownloadJobType {
+  const digest = `digestFor${messageId}`;
+  const plaintextHash = testPlaintextHash();
+  const size = 128;
+  const contentType = MIME.IMAGE_PNG;
+
+  return {
+    messageId,
+    receivedAt,
+    sentAt: receivedAt,
+    attachmentType: 'attachment',
+    attachmentSignature: `${digest}.${plaintextHash}`,
+    size,
+    ciphertextSize: getAttachmentCiphertextSize({
+      unpaddedPlaintextSize: size,
+      mediaTier: MediaTier.STANDARD,
+    }),
+    contentType,
+    active: false,
+    attempts: 0,
+    retryAfter: null,
+    lastAttemptTimestamp: null,
+    originalSource: jobOverrides?.source ?? AttachmentDownloadSource.STANDARD,
+    source: AttachmentDownloadSource.STANDARD,
+    attachment: {
+      contentType,
+      size,
+      digest,
+      plaintextHash,
+      key: testAttachmentKey(),
+      ...attachmentOverrides,
+    },
+    ...jobOverrides,
+  };
+}
+
+// node-fetch does not export AbortError as a constructor, so we copy it here
+class AbortError extends Error {
+  readonly type = 'aborted';
+  override name = 'AbortError';
+}
+
+describe('AttachmentDownloadManager', () => {
+  let downloadManager: AttachmentDownloadManager | undefined;
+  let runJob: sinon.SinonStub<
+    Parameters<typeof runDownloadAttachmentJob>,
+    ReturnType<typeof runDownloadAttachmentJob>
+  >;
+  let sandbox: sinon.SinonSandbox;
+  let clock: sinon.SinonFakeTimers;
+  let hasMediaBackups: sinon.SinonStub;
+  let isInCall: sinon.SinonStub;
+  let onLowDiskSpaceBackupImport: sinon.SinonStub;
+  let statfs: sinon.SinonStub;
+
+  beforeEach(async () => {
+    await DataWriter.removeAll();
+    await itemStorage.user.setAciAndDeviceId(generateAci(), 1);
+    MessageCache.install();
+
+    sandbox = sinon.createSandbox();
+    clock = sandbox.useFakeTimers();
+
+    hasMediaBackups = sandbox.stub().returns(true);
+    isInCall = sandbox.stub().returns(false);
+    onLowDiskSpaceBackupImport = sandbox
+      .stub()
+      .callsFake(async () =>
+        itemStorage.put('backupMediaDownloadPaused', true)
+      );
+    runJob = sandbox
+      .stub<
+        Parameters<typeof runDownloadAttachmentJob>,
+        ReturnType<typeof runDownloadAttachmentJob>
+      >()
+      .callsFake(async () => {
+        return new Promise<{ status: 'finished' | 'retry' }>(resolve => {
+          // oxlint-disable-next-line promise/prefer-await-to-then, typescript/no-floating-promises, signal-desktop/no-then
+          Promise.resolve().then(() => {
+            resolve({ status: 'finished' });
+          });
+        });
+      });
+    statfs = sandbox.stub().callsFake(() =>
+      Promise.resolve({
+        bavail: minimumFreeDiskSpace * 100,
+        bsize: 8,
+      } as StatsFs)
+    );
+
+    downloadManager = new AttachmentDownloadManager({
+      ...AttachmentDownloadManager.defaultParams,
+      saveJob: DataWriter.saveAttachmentDownloadJob,
+      shouldHoldOffOnStartingQueuedJobs: isInCall,
+      runDownloadAttachmentJob: runJob,
+      getRetryConfig: () => ({
+        maxAttempts: 5,
+        backoffConfig: {
+          multiplier: 2,
+          firstBackoffs: [MINUTE],
+          maxBackoffTime: 10 * MINUTE,
+        },
+      }),
+      onLowDiskSpaceBackupImport,
+      hasMediaBackups,
+      maxAttachmentSize,
+      maxTextAttachmentSize,
+      minimumFreeDiskSpace,
+      getMessageQueueTime: () => 45 * DAY,
+      statfs,
+    });
+  });
+
+  afterEach(async () => {
+    await downloadManager?.stop();
+    sandbox.restore();
+    await DataWriter.removeAll();
+    await itemStorage.fetch();
+  });
+
+  function assertAt<T>(array: ReadonlyArray<T>, index: number): T {
+    assert.ok(
+      index >= 0 && index < array.length,
+      `index out of bounds: ${index}`
+    );
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    return array[index]!;
+  }
+
+  async function addJob(
+    job: AttachmentDownloadJobType,
+    urgency: AttachmentDownloadUrgency
+  ) {
+    // Save message first to satisfy foreign key constraint
+    await window.MessageCache.saveMessage(
+      {
+        id: job.messageId,
+        type: 'incoming',
+        sent_at: job.sentAt,
+        timestamp: job.sentAt,
+        received_at: job.receivedAt + 1,
+        conversationId: 'convoId',
+        attachments: [job.attachment],
+      },
+      {
+        forceSave: true,
+      }
+    );
+    await downloadManager?.addJob({
+      urgency,
+      ...job,
+      isManualDownload: Boolean(job.isManualDownload),
+    });
+  }
+  async function addJobs(
+    num: number,
+    jobOverrides?:
+      | Partial<AttachmentDownloadJobType>
+      | ((idx: number) => Partial<AttachmentDownloadJobType>),
+    attachmentOverrides?: Partial<AttachmentType>
+  ): Promise<Array<AttachmentDownloadJobType>> {
+    const jobs = new Array(num).fill(null).map((_, idx) =>
+      composeJob({
+        messageId: `message-${idx}`,
+        receivedAt: idx,
+        jobOverrides:
+          typeof jobOverrides === 'function' ? jobOverrides(idx) : jobOverrides,
+        attachmentOverrides,
+      })
+    );
+    for (const job of jobs) {
+      // oxlint-disable-next-line no-await-in-loop
+      await addJob(job, AttachmentDownloadUrgency.STANDARD);
+    }
+    return jobs;
+  }
+
+  function waitForJobToBeStarted(job: AttachmentDownloadJobType) {
+    return downloadManager?.waitForJobToBeStarted(job);
+  }
+
+  function waitForJobToBeCompleted(job: AttachmentDownloadJobType) {
+    return downloadManager?.waitForJobToBeCompleted(job);
+  }
+
+  function assertRunJobCalledWith(jobs: Array<AttachmentDownloadJobType>) {
+    return assert.strictEqual(
+      JSON.stringify(
+        runJob
+          .getCalls()
+          .map(
+            call =>
+              `${call.args[0].job.messageId}${call.args[0].job.attachmentType}.${call.args[0].job.attachmentSignature}`
+          )
+      ),
+      JSON.stringify(
+        jobs.map(
+          job =>
+            `${job.messageId}${job.attachmentType}.${job.attachmentSignature}`
+        )
+      )
+    );
+  }
+
+  async function flushSQLReads() {
+    await DataWriter.getNextAttachmentDownloadJobs({ limit: 10 });
+  }
+
+  async function advanceTime(ms: number) {
+    // When advancing the timers, we want to make sure any DB operations are completed
+    // first. In cases like maybeStartJobs where we prevent re-entrancy, without this,
+    // prior (unfinished) invocations can prevent subsequent calls after the clock is
+    // ticked forward and make tests unreliable
+    await flushSQLReads();
+    const now = Date.now();
+    while (Date.now() < now + ms) {
+      // oxlint-disable-next-line no-await-in-loop
+      await clock.tickAsync(downloadManager?.tickInterval ?? 1000);
+      // oxlint-disable-next-line no-await-in-loop
+      await flushSQLReads();
+    }
+  }
+
+  function getPromisesForAttempts(
+    job: AttachmentDownloadJobType,
+    attempts: number
+  ) {
+    return new Array(attempts).fill(null).map((_, idx) => {
+      return {
+        started: waitForJobToBeStarted({ ...job, attempts: idx }),
+        completed: waitForJobToBeCompleted({ ...job, attempts: idx }),
+      };
+    });
+  }
+
+  it('runs 3 jobs at a time in descending receivedAt order', async () => {
+    const jobs = await addJobs(5);
+    // Confirm they are saved to DB
+    const allJobs = await DataWriter.getNextAttachmentDownloadJobs({
+      limit: 100,
+    });
+
+    assert.strictEqual(allJobs.length, 5);
+    assert.strictEqual(
+      JSON.stringify(allJobs.map(job => job.messageId)),
+      JSON.stringify([
+        'message-4',
+        'message-3',
+        'message-2',
+        'message-1',
+        'message-0',
+      ])
+    );
+
+    await downloadManager?.start();
+    await waitForJobToBeStarted(assertAt(jobs, 2));
+
+    assert.strictEqual(runJob.callCount, 3);
+    assertRunJobCalledWith([
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+    ]);
+
+    await waitForJobToBeStarted(assertAt(jobs, 0));
+    assert.strictEqual(runJob.callCount, 5);
+    assertRunJobCalledWith([
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
+    ]);
+  });
+
+  it('runs a job immediately if urgency is IMMEDIATE', async () => {
+    const jobs = await addJobs(6);
+    await downloadManager?.start();
+
+    const urgentJobForOldMessage = composeJob({
+      messageId: 'message-urgent',
+      receivedAt: 0,
+    });
+
+    await addJob(urgentJobForOldMessage, AttachmentDownloadUrgency.IMMEDIATE);
+
+    await waitForJobToBeStarted(urgentJobForOldMessage);
+
+    assert.strictEqual(runJob.callCount, 4);
+    assertRunJobCalledWith([
+      assertAt(jobs, 5),
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      urgentJobForOldMessage,
+    ]);
+
+    await waitForJobToBeStarted(assertAt(jobs, 0));
+    assert.strictEqual(runJob.callCount, 7);
+    assertRunJobCalledWith([
+      assertAt(jobs, 5),
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      urgentJobForOldMessage,
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
+    ]);
+  });
+
+  it('prefers jobs for visible messages', async () => {
+    const jobs = await addJobs(5);
+
+    downloadManager?.updateVisibleTimelineMessages(['message-0', 'message-1']);
+
+    await downloadManager?.start();
+
+    await waitForJobToBeStarted(assertAt(jobs, 4));
+    assert.strictEqual(runJob.callCount, 3);
+    assertRunJobCalledWith([
+      assertAt(jobs, 0),
+      assertAt(jobs, 1),
+      assertAt(jobs, 4),
+    ]);
+
+    await waitForJobToBeStarted(assertAt(jobs, 2));
+    assert.strictEqual(runJob.callCount, 5);
+    assertRunJobCalledWith([
+      assertAt(jobs, 0),
+      assertAt(jobs, 1),
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+    ]);
+  });
+
+  it("does not start a job if we're in a call", async () => {
+    const jobs = await addJobs(5);
+
+    isInCall.callsFake(() => true);
+
+    await downloadManager?.start();
+    await advanceTime(2 * MINUTE);
+    assert.strictEqual(runJob.callCount, 0);
+
+    isInCall.callsFake(() => false);
+
+    await advanceTime(2 * MINUTE);
+    await waitForJobToBeStarted(assertAt(jobs, 0));
+    assert.strictEqual(runJob.callCount, 5);
+  });
+
+  it('triggers onLowDiskSpace for backup import jobs', async () => {
+    const jobs = await addJobs(1, _idx => ({
+      source: AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
+    }));
+
+    const jobAttempts = getPromisesForAttempts(assertAt(jobs, 0), 2);
+
+    statfs.callsFake(() =>
+      Promise.resolve({ bavail: minimumFreeDiskSpace / 8 - 1, bsize: 8 })
+    );
+
+    await downloadManager?.start();
+    await assertAt(jobAttempts, 0).completed;
+
+    assert.strictEqual(runJob.callCount, 0);
+    assert.strictEqual(onLowDiskSpaceBackupImport.callCount, 1);
+    assert.isTrue(itemStorage.get('backupMediaDownloadPaused'));
+
+    statfs.callsFake(() =>
+      Promise.resolve({ bavail: minimumFreeDiskSpace / 8, bsize: 8 })
+    );
+    await itemStorage.put('backupMediaDownloadPaused', false);
+
+    await advanceTime(2 * MINUTE);
+    assert.strictEqual(runJob.callCount, 1);
+    await assertAt(jobAttempts, 1).completed;
+  });
+
+  it('handles retries for failed', async () => {
+    const jobs = await addJobs(2);
+    const job0Attempts = getPromisesForAttempts(assertAt(jobs, 0), 1);
+    const job1Attempts = getPromisesForAttempts(assertAt(jobs, 1), 5);
+
+    runJob.callsFake(async ({ job }: { job: AttachmentDownloadJobType }) => {
+      return new Promise<{ status: 'finished' | 'retry' }>(resolve => {
+        // oxlint-disable-next-line typescript/no-floating-promises, promise/prefer-await-to-then, signal-desktop/no-then
+        Promise.resolve().then(() => {
+          if (job.messageId === assertAt(jobs, 0).messageId) {
+            resolve({ status: 'finished' });
+          } else {
+            resolve({ status: 'retry' });
+          }
+        });
+      });
+    });
+
+    await downloadManager?.start();
+
+    await assertAt(job0Attempts, 0).completed;
+    assert.strictEqual(runJob.callCount, 2);
+    assertRunJobCalledWith([assertAt(jobs, 1), assertAt(jobs, 0)]);
+
+    const retriedJob = await DataReader._getAttachmentDownloadJob(
+      assertAt(jobs, 1)
+    );
+    const finishedJob = await DataReader._getAttachmentDownloadJob(
+      assertAt(jobs, 0)
+    );
+
+    assert.isUndefined(finishedJob);
+    assert.strictEqual(retriedJob?.attempts, 1);
+    assert.isNumber(retriedJob?.retryAfter);
+
+    await advanceTime(MINUTE);
+
+    await assertAt(job1Attempts, 1).completed;
+    assert.strictEqual(runJob.callCount, 3);
+    await advanceTime(2 * MINUTE);
+
+    await assertAt(job1Attempts, 2).completed;
+    assert.strictEqual(runJob.callCount, 4);
+
+    await advanceTime(4 * MINUTE);
+    await assertAt(job1Attempts, 3).completed;
+    assert.strictEqual(runJob.callCount, 5);
+
+    await advanceTime(8 * MINUTE);
+    await assertAt(job1Attempts, 4).completed;
+
+    assert.strictEqual(runJob.callCount, 6);
+    assertRunJobCalledWith([
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
+      assertAt(jobs, 1),
+      assertAt(jobs, 1),
+      assertAt(jobs, 1),
+      assertAt(jobs, 1),
+    ]);
+
+    // Ensure it's been removed after completed
+    assert.isUndefined(
+      await DataReader._getAttachmentDownloadJob(assertAt(jobs, 1))
+    );
+  });
+
+  it('will reset attempts if addJob is called again', async () => {
+    const jobs = await addJobs(1);
+    runJob.callsFake(async () => {
+      return new Promise<{ status: 'finished' | 'retry' }>(resolve => {
+        // oxlint-disable-next-line typescript/no-floating-promises, promise/prefer-await-to-then, signal-desktop/no-then
+        Promise.resolve().then(() => {
+          resolve({ status: 'retry' });
+        });
+      });
+    });
+
+    let attempts = getPromisesForAttempts(assertAt(jobs, 0), 4);
+    await downloadManager?.start();
+
+    await assertAt(attempts, 0).completed;
+    assert.strictEqual(runJob.callCount, 1);
+
+    await advanceTime(1 * MINUTE);
+    await assertAt(attempts, 1).completed;
+    assert.strictEqual(runJob.callCount, 2);
+
+    await advanceTime(5 * MINUTE);
+    await assertAt(attempts, 2).completed;
+    assert.strictEqual(runJob.callCount, 3);
+
+    // add the same job again and it should retry ASAP and reset attempts
+    attempts = getPromisesForAttempts(assertAt(jobs, 0), 5);
+    await downloadManager?.addJob({
+      ...assertAt(jobs, 0),
+      isManualDownload: Boolean(assertAt(jobs, 0).isManualDownload),
+    });
+    await assertAt(attempts, 0).completed;
+    assert.strictEqual(runJob.callCount, 4);
+
+    await advanceTime(1 * MINUTE);
+    await assertAt(attempts, 1).completed;
+    assert.strictEqual(runJob.callCount, 5);
+
+    await advanceTime(2 * MINUTE);
+    await assertAt(attempts, 2).completed;
+    assert.strictEqual(runJob.callCount, 6);
+
+    await advanceTime(4 * MINUTE);
+    await assertAt(attempts, 3).completed;
+    assert.strictEqual(runJob.callCount, 7);
+
+    await advanceTime(8 * MINUTE);
+    await assertAt(attempts, 4).completed;
+    assert.strictEqual(runJob.callCount, 8);
+
+    // Ensure it's been removed
+    assert.isUndefined(
+      await DataReader._getAttachmentDownloadJob(assertAt(jobs, 0))
+    );
+  });
+
+  it('only selects backup_import jobs if the mediaDownload is not paused', async () => {
+    await itemStorage.put('backupMediaDownloadPaused', true);
+
+    const jobs = await addJobs(6, idx => ({
+      source:
+        idx % 2 === 0
+          ? AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA
+          : AttachmentDownloadSource.STANDARD,
+    }));
+    // make one of the backup job messages visible to test that code path as well
+    downloadManager?.updateVisibleTimelineMessages(['message-0', 'message-1']);
+    await downloadManager?.start();
+    await waitForJobToBeCompleted(assertAt(jobs, 3));
+    assertRunJobCalledWith([
+      assertAt(jobs, 1),
+      assertAt(jobs, 5),
+      assertAt(jobs, 3),
+    ]);
+    await advanceTime((downloadManager?.tickInterval ?? MINUTE) * 5);
+    assertRunJobCalledWith([
+      assertAt(jobs, 1),
+      assertAt(jobs, 5),
+      assertAt(jobs, 3),
+    ]);
+
+    // resume backups
+    await itemStorage.put('backupMediaDownloadPaused', false);
+    await advanceTime((downloadManager?.tickInterval ?? MINUTE) * 5);
+    assertRunJobCalledWith([
+      assertAt(jobs, 1),
+      assertAt(jobs, 5),
+      assertAt(jobs, 3),
+      assertAt(jobs, 0),
+      assertAt(jobs, 4),
+      assertAt(jobs, 2),
+    ]);
+  });
+
+  it('retries backup job immediately if retryAfters are reset', async () => {
+    strictAssert(downloadManager, 'must exist');
+    const jobs = await addJobs(1, {
+      source: AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
+    });
+    const jobAttempts = getPromisesForAttempts(assertAt(jobs, 0), 2);
+
+    runJob.callsFake(async () => {
+      return new Promise<{ status: 'finished' | 'retry' }>(resolve => {
+        // oxlint-disable-next-line typescript/no-floating-promises, promise/prefer-await-to-then, signal-desktop/no-then
+        Promise.resolve().then(() => {
+          resolve({ status: 'retry' });
+        });
+      });
+    });
+
+    await downloadManager?.start();
+    await assertAt(jobAttempts, 0).completed;
+    assertRunJobCalledWith([assertAt(jobs, 0)]);
+
+    await DataWriter.resetBackupAttachmentDownloadJobsRetryAfter();
+    await downloadManager.start();
+
+    await assertAt(jobAttempts, 1).completed;
+  });
+
+  it('retries job with updated job if provided', async () => {
+    strictAssert(downloadManager, 'must exist');
+    const jobs = await addJobs(1, {
+      source: AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
+    });
+    const job = assertAt(jobs, 0);
+    const jobAttempts = getPromisesForAttempts(job, 3);
+
+    runJob.callsFake(async args => {
+      return new Promise(resolve => {
+        // oxlint-disable-next-line typescript/no-floating-promises, promise/prefer-await-to-then, signal-desktop/no-then
+        Promise.resolve().then(() => {
+          resolve({
+            status: 'retry',
+            updatedJob: {
+              ...args.job,
+              attachment: { ...job.attachment, caption: 'retried' },
+            },
+          });
+        });
+      });
+    });
+
+    await downloadManager?.start();
+    await assertAt(jobAttempts, 0).completed;
+    assertRunJobCalledWith([job]);
+    await assertAt(jobAttempts, 1).completed;
+    assert.deepStrictEqual(
+      runJob.getCall(0).args[0].job.attachment,
+      job.attachment
+    );
+    assert.deepStrictEqual(runJob.getCall(1).args[0].job.attachment, {
+      ...job.attachment,
+      caption: 'retried',
+    });
+  });
+
+  describe('handles aborts properly', () => {
+    let inflightRequestAbortController: AbortController;
+    let downloadStarted: ExplodePromiseResultType<void>;
+
+    beforeEach(() => {
+      inflightRequestAbortController = new AbortController();
+      downloadStarted = explodePromise<void>();
+      runJob.callsFake((...args) =>
+        runDownloadAttachmentJob({
+          ...args[0],
+          dependencies: {
+            downloadAttachment: sandbox
+              .stub()
+              .callsFake(({ options: { abortSignal } }) => {
+                return new Promise((_resolve, reject) => {
+                  abortSignal.addEventListener('abort', () => {
+                    reject(new AbortError('aborted by job'));
+                  });
+
+                  inflightRequestAbortController.signal.addEventListener(
+                    'abort',
+                    () => {
+                      reject(
+                        new AbortError(
+                          'aborted by in-flight requests cancellation'
+                        )
+                      );
+                    }
+                  );
+                  downloadStarted.resolve();
+                });
+              }),
+            cleanupAttachmentFiles: sandbox.stub(),
+            deleteDownloadFile: sandbox.stub(),
+            processNewAttachment: sandbox.stub(),
+            maybeDeleteAttachmentFile: sandbox.stub(),
+            runDownloadAttachmentJobInner,
+          },
+        })
+      );
+    });
+    it('will retry a job when aborted b/c of shutdown', async () => {
+      const jobs = await addJobs(1);
+      const jobAttempts = getPromisesForAttempts(assertAt(jobs, 0), 2);
+
+      await downloadManager?.start();
+      await assertAt(jobAttempts, 0).started;
+      await downloadStarted.promise;
+
+      // Shutdown behavior
+      // oxlint-disable-next-line typescript/no-floating-promises
+      downloadManager?.stop();
+      inflightRequestAbortController.abort();
+
+      await assertAt(jobAttempts, 0).completed;
+      // Ensure it will be retried
+      assert.strictEqual(
+        (await DataReader._getAttachmentDownloadJob(assertAt(jobs, 0)))
+          ?.attempts,
+        1
+      );
+      assert.strictEqual(runJob.callCount, 1);
+    });
+    it('will not retry a job if manually canceled', async () => {
+      const jobs = await addJobs(1);
+      const jobAttempts = getPromisesForAttempts(assertAt(jobs, 0), 2);
+
+      await downloadManager?.start();
+      const downloadManagerIdled = downloadManager?.waitForIdle();
+
+      await assertAt(jobAttempts, 0).started;
+      await downloadStarted.promise;
+
+      // user-canceled behavior
+      // oxlint-disable-next-line typescript/no-floating-promises
+      downloadManager?.cancelJobs(JobCancelReason.UserInitiated, () => true);
+
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      await assert.isRejected(assertAt(jobAttempts, 0).completed!);
+      await downloadManagerIdled;
+
+      // Ensure it will not be retried
+      assert.isUndefined(
+        await DataReader._getAttachmentDownloadJob(assertAt(jobs, 0))
+      );
+      assert.strictEqual(runJob.callCount, 1);
+    });
+  });
+
+  describe('will drop jobs from non-media backup imports that are old', () => {
+    it('will not queue attachments older than 90 days (2 * message queue time)', async () => {
+      await addJobs(
+        1,
+        {
+          source: AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA,
+        },
+        { uploadTimestamp: Date.now() - 4 * MONTH }
+      );
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 0);
+    });
+    it('will queue old attachments with media backups on', async () => {
+      hasMediaBackups.returns(true);
+      await addJobs(
+        1,
+        {
+          source: AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
+        },
+        { uploadTimestamp: Date.now() - 4 * MONTH }
+      );
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 1);
+    });
+    it('will queue old local backup attachments', async () => {
+      hasMediaBackups.returns(false);
+      await addJobs(
+        1,
+        {
+          source: AttachmentDownloadSource.BACKUP_IMPORT_WITH_MEDIA,
+        },
+        {
+          uploadTimestamp: Date.now() - 4 * MONTH,
+          localBackupPath: 'localBackupPath',
+          localKey: toBase64(generateAttachmentKeys()),
+        }
+      );
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 1);
+    });
+    it('will fallback to sentAt if uploadTimestamp is falsy', async () => {
+      hasMediaBackups.returns(false);
+      await addJobs(
+        1,
+        {
+          source: AttachmentDownloadSource.BACKUP_IMPORT_NO_MEDIA,
+          sentAt: Date.now() - 4 * MONTH,
+        },
+        { uploadTimestamp: 0 }
+      );
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 0);
+    });
+  });
+});
+describe('AttachmentDownloadManager.runDownloadAttachmentJob', () => {
+  let sandbox: sinon.SinonSandbox;
+  let cleanupAttachmentFiles: sinon.SinonStub;
+  let maybeDeleteAttachmentFile: sinon.SinonStub;
+  let deleteDownloadFile: sinon.SinonStub;
+  let downloadAttachment: sinon.SinonStub;
+  let processNewAttachment: sinon.SinonStub;
+
+  const downloadedAttachment: Awaited<
+    ReturnType<typeof downloadAttachmentUtil>
+  > = {
+    path: '/path/to/file',
+    digest: 'digest',
+    plaintextHash: 'plaintextHash',
+    localKey: 'localKey',
+    version: 2,
+    size: 128,
+  };
+  beforeEach(async () => {
+    await DataWriter.removeAll();
+    await itemStorage.user.setAciAndDeviceId(generateAci(), 1);
+    sandbox = sinon.createSandbox();
+    downloadAttachment = sandbox
+      .stub()
+      .returns(Promise.resolve(downloadedAttachment));
+    cleanupAttachmentFiles = sandbox.stub();
+    maybeDeleteAttachmentFile = sandbox.stub();
+    deleteDownloadFile = sandbox.stub();
+
+    processNewAttachment = sandbox.stub().callsFake(attachment => attachment);
+  });
+
+  afterEach(async () => {
+    sandbox.restore();
+    await DataWriter.removeAll();
+    MessageCache.install();
+  });
+
+  async function saveMessageForJob(
+    job: AttachmentDownloadJobType,
+    overrides: Partial<MessageAttributesType> = {}
+  ) {
+    await window.MessageCache.saveMessage(
+      {
+        id: job.messageId,
+        type: 'incoming',
+        sent_at: job.sentAt,
+        timestamp: job.sentAt,
+        received_at: job.receivedAt,
+        conversationId: 'convoId',
+        attachments: [job.attachment],
+        ...overrides,
+      },
+      {
+        forceSave: true,
+      }
+    );
+  }
+
+  function getSavedAttachment(messageId: string): AttachmentType {
+    const message = window.MessageCache.getById(messageId);
+    strictAssert(message != null, 'message should exist');
+    const attachment = message.attributes.attachments?.[0];
+    strictAssert(attachment != null, 'attachment should exist');
+    return attachment;
+  }
+
+  async function runJobWithError({
+    job,
+    error,
+    hasMediaBackups = false,
+    isLastAttempt = false,
+  }: {
+    job: AttachmentDownloadJobType;
+    error: Error;
+    hasMediaBackups?: boolean;
+    isLastAttempt?: boolean;
+  }) {
+    const abortController = new AbortController();
+
+    return runDownloadAttachmentJob({
+      job,
+      isLastAttempt,
+      options: {
+        isForCurrentlyVisibleMessage: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        hasMediaBackups,
+      },
+      dependencies: {
+        downloadAttachment,
+        maybeDeleteAttachmentFile,
+        cleanupAttachmentFiles,
+        deleteDownloadFile,
+        processNewAttachment,
+        runDownloadAttachmentJobInner: sandbox.stub().throws(error),
+      },
+    });
+  }
+
+  async function runJobWithTransitTierError({
+    job,
+    hasMediaBackups = false,
+  }: {
+    job: AttachmentDownloadJobType;
+    hasMediaBackups?: boolean;
+  }) {
+    return runJobWithError({
+      job,
+      hasMediaBackups,
+      error: new AttachmentUndownloadableFromTransitTierError('missing'),
+    });
+  }
+
+  it('will delete attachment files if attachment not found on message', async () => {
+    const messageId = 'messageId';
+    const attachment = composeAttachment();
+    const abortController = new AbortController();
+
+    await window.MessageCache.saveMessage(
+      {
+        id: messageId,
+        type: 'incoming',
+        sent_at: Date.now(),
+        timestamp: Date.now(),
+        received_at: Date.now(),
+        conversationId: 'convoId',
+        attachments: [attachment],
+      },
+      {
+        forceSave: true,
+      }
+    );
+
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: attachment,
+    });
+    const result = await runDownloadAttachmentJob({
+      job,
+      isLastAttempt: false,
+      options: {
+        isForCurrentlyVisibleMessage: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        hasMediaBackups: false,
+      },
+      dependencies: {
+        downloadAttachment,
+        maybeDeleteAttachmentFile,
+        cleanupAttachmentFiles,
+        deleteDownloadFile,
+        processNewAttachment,
+        runDownloadAttachmentJobInner: sandbox.stub().throws(
+          new AttachmentNotNeededForMessageError({
+            contentType: MIME.IMAGE_PNG,
+            size: 128,
+            path: 'main/path',
+            downloadPath: '/downloadPath',
+            thumbnail: {
+              contentType: MIME.IMAGE_PNG,
+              size: 128,
+              path: 'thumbnail/path',
+            },
+          })
+        ),
+      },
+    });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(cleanupAttachmentFiles.callCount, 1);
+    assert.deepStrictEqual(cleanupAttachmentFiles.getCall(0).args[0], {
+      contentType: MIME.IMAGE_PNG,
+      size: 128,
+      path: 'main/path',
+      downloadPath: '/downloadPath',
+      thumbnail: {
+        contentType: MIME.IMAGE_PNG,
+        size: 128,
+        path: 'thumbnail/path',
+      },
+    });
+  });
+
+  it('requests backfill for manual downloads that are missing from transit tier', async () => {
+    sandbox
+      .stub(window.ConversationController, 'areWePrimaryDevice')
+      .returns(false);
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 1);
+    assert.strictEqual(requestBackfill.getCall(0).args[0].id, job.messageId);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      error: true,
+      pending: true,
+    });
+  });
+
+  it('does not request backfill for automatic downloads missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('finishes backfill jobs missing from transit tier without requesting another backfill', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+        source: AttachmentDownloadSource.BACKFILL,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('does not request backfill for story attachments missing from transit tier', async () => {
+    sandbox
+      .stub(window.ConversationController, 'areWePrimaryDevice')
+      .returns(false);
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+      },
+    });
+    await saveMessageForJob(job, { type: 'story' });
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('retries backup-tier attachments missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({
+      job,
+      hasMediaBackups: true,
+    });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('retries local-backup attachments missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+        localBackupPath: 'localBackupPath',
+        localKey: toBase64(generateAttachmentKeys()),
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('finishes generic failures on the last attempt', async () => {
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        pending: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithError({
+      job,
+      error: new Error('network error'),
+      isLastAttempt: true,
+    });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...job.attachment,
+      pending: false,
+    });
+  });
+
+  it('retries generic failures before the last attempt', async () => {
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        pending: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithError({
+      job,
+      error: new Error('network error'),
+    });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...job.attachment,
+      pending: false,
+    });
+  });
+});
+
+describe('AttachmentDownloadManager.runDownloadAttachmentJobInner', () => {
+  let sandbox: sinon.SinonSandbox;
+  let cleanupAttachmentFiles: sinon.SinonStub;
+  let maybeDeleteAttachmentFile: sinon.SinonStub;
+  let deleteDownloadFile: sinon.SinonStub;
+  let downloadAttachment: sinon.SinonStub<
+    // oxlint-disable-next-line typescript/no-explicit-any
+    any,
+    ReturnType<typeof downloadAttachmentUtil>
+  >;
+  let processNewAttachment: sinon.SinonStub;
+  const abortController = new AbortController();
+
+  const downloadedAttachment: Awaited<
+    ReturnType<typeof downloadAttachmentUtil>
+  > = {
+    path: '/path/to/file',
+    digest: 'digest',
+    plaintextHash: 'plaintextHash',
+    localKey: 'localKey',
+    version: 2,
+    size: 128,
+  };
+
+  beforeEach(async () => {
+    await DataWriter.removeAll();
+    MessageCache.install();
+    await itemStorage.user.setAciAndDeviceId(generateAci(), 1);
+    sandbox = sinon.createSandbox();
+    downloadAttachment = sandbox
+      .stub()
+      .returns(Promise.resolve(downloadedAttachment));
+    cleanupAttachmentFiles = sandbox.stub();
+    maybeDeleteAttachmentFile = sandbox.stub();
+    deleteDownloadFile = sandbox.stub();
+    processNewAttachment = sandbox.stub().callsFake(attachment => attachment);
+  });
+
+  afterEach(async () => {
+    sandbox.restore();
+    await DataWriter.removeAll();
+    await itemStorage.fetch();
+  });
+
+  describe('attachment size errors', () => {
+    it('throws AttachmentSizeError if attachment > maxAttachmentSize', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+        attachmentOverrides: {
+          size: maxAttachmentSize + 1,
+        },
+      });
+
+      await assert.isRejected(
+        runDownloadAttachmentJobInner({
+          job,
+          isForCurrentlyVisibleMessage: false,
+          hasMediaBackups: true,
+          abortSignal: abortController.signal,
+          maxAttachmentSize,
+          maxTextAttachmentSize,
+          messageExpiresAt: null,
+          dependencies: {
+            cleanupAttachmentFiles,
+            maybeDeleteAttachmentFile,
+            deleteDownloadFile,
+            downloadAttachment,
+            processNewAttachment,
+          },
+        }),
+        'AttachmentSizeError'
+      );
+    });
+    it('throws AttachmentSizeError if longText attachment > maxTextAttachmentSize', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+        attachmentOverrides: {
+          size: maxTextAttachmentSize + 1,
+        },
+        jobOverrides: {
+          attachmentType: 'long-message',
+        },
+      });
+
+      await assert.isRejected(
+        runDownloadAttachmentJobInner({
+          job,
+          isForCurrentlyVisibleMessage: false,
+          hasMediaBackups: true,
+          abortSignal: abortController.signal,
+          maxAttachmentSize,
+          maxTextAttachmentSize,
+          messageExpiresAt: null,
+          dependencies: {
+            cleanupAttachmentFiles,
+            maybeDeleteAttachmentFile,
+            deleteDownloadFile,
+            downloadAttachment,
+            processNewAttachment,
+          },
+        }),
+        'AttachmentSizeError'
+      );
+    });
+  });
+
+  describe('visible message', () => {
+    it('will only download full-size if attachment not from backup', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+        attachmentOverrides: {
+          plaintextHash: undefined,
+        },
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: true,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
+      assert.strictEqual(downloadAttachment.callCount, 1);
+
+      const downloadCallArgs = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+
+    it('will download thumbnail first if attachment is from backup', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+      });
+
+      downloadAttachment = sandbox.stub().callsFake(({ options }) => {
+        if (options.variant === AttachmentVariant.ThumbnailFromBackup) {
+          return Promise.resolve(downloadedAttachment);
+        }
+        throw new Error('error while downloading');
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: true,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      strictAssert(
+        result.downloadedVariant === AttachmentVariant.ThumbnailFromBackup,
+        'downloaded thumbnail'
+      );
+      assert.deepStrictEqual(
+        omit(result.attachmentWithThumbnail, 'thumbnailFromBackup'),
+        job.attachment
+      );
+      assert.equal(
+        result.attachmentWithThumbnail.thumbnailFromBackup?.path,
+        '/path/to/file'
+      );
+      assert.strictEqual(downloadAttachment.callCount, 2);
+
+      const firstDownloadCallArgs = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(firstDownloadCallArgs.attachment, job.attachment);
+      assert.deepStrictEqual(
+        firstDownloadCallArgs.options.variant,
+        AttachmentVariant.ThumbnailFromBackup
+      );
+
+      const secondDownloadCallArgs = downloadAttachment.getCall(1).args[0];
+      assert.deepStrictEqual(
+        secondDownloadCallArgs.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+
+    it('will download full size if backup thumbnail already downloaded', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+        attachmentOverrides: {
+          thumbnailFromBackup: {
+            path: '/path/to/thumbnail',
+            size: 128,
+            contentType: MIME.IMAGE_JPEG,
+          },
+        },
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: true,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
+      assert.strictEqual(downloadAttachment.callCount, 1);
+
+      const downloadCallArgs = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+
+    it('will attempt to download full size if thumbnail fails', async () => {
+      downloadAttachment = sandbox.stub().callsFake(({ options }) => {
+        if (options.variant === AttachmentVariant.Default) {
+          return Promise.resolve(downloadedAttachment);
+        }
+        throw new Error('error while downloading');
+      });
+
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: true,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
+      assert.strictEqual(downloadAttachment.callCount, 2);
+
+      const downloadCallArgs0 = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs0.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs0.options.variant,
+        AttachmentVariant.ThumbnailFromBackup
+      );
+
+      const downloadCallArgs1 = downloadAttachment.getCall(1).args[0];
+      assert.deepStrictEqual(downloadCallArgs1.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs1.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+  });
+  describe('message not visible', () => {
+    it('will only download full-size if message not visible', async () => {
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
+      assert.strictEqual(downloadAttachment.callCount, 1);
+
+      const downloadCallArgs = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+    it('will fallback to thumbnail if main download fails and might exist on backup', async () => {
+      downloadAttachment = sandbox.stub().callsFake(({ options }) => {
+        if (options.variant === AttachmentVariant.Default) {
+          throw new Error('error while downloading');
+        }
+        return downloadedAttachment;
+      });
+
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+      });
+
+      const result = await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: true,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+      assert.strictEqual(
+        result.downloadedVariant,
+        AttachmentVariant.ThumbnailFromBackup
+      );
+      assert.strictEqual(downloadAttachment.callCount, 2);
+
+      const downloadCallArgs0 = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs0.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs0.options.variant,
+        AttachmentVariant.Default
+      );
+
+      const downloadCallArgs1 = downloadAttachment.getCall(1).args[0];
+      assert.deepStrictEqual(downloadCallArgs1.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs1.options.variant,
+        AttachmentVariant.ThumbnailFromBackup
+      );
+    });
+
+    it("won't fallback to thumbnail if main download fails and not on backup", async () => {
+      downloadAttachment = sandbox.stub().callsFake(({ options }) => {
+        if (options.variant === AttachmentVariant.Default) {
+          throw new Error('error while downloading');
+        }
+        return {
+          path: '/path/to/thumbnail',
+          plaintextHash: 'plaintextHash',
+          digest: 'digest',
+        };
+      });
+
+      const job = composeJob({
+        messageId: '1',
+        receivedAt: 1,
+        attachmentOverrides: {
+          plaintextHash: undefined,
+        },
+      });
+
+      await assert.isRejected(
+        runDownloadAttachmentJobInner({
+          job,
+          isForCurrentlyVisibleMessage: false,
+          hasMediaBackups: true,
+          abortSignal: abortController.signal,
+          maxAttachmentSize,
+          maxTextAttachmentSize,
+          messageExpiresAt: null,
+          dependencies: {
+            cleanupAttachmentFiles,
+            maybeDeleteAttachmentFile,
+            deleteDownloadFile,
+            downloadAttachment,
+            processNewAttachment,
+          },
+        })
+      );
+
+      assert.strictEqual(downloadAttachment.callCount, 1);
+
+      const downloadCallArgs = downloadAttachment.getCall(0).args[0];
+      assert.deepStrictEqual(downloadCallArgs.attachment, job.attachment);
+      assert.deepStrictEqual(
+        downloadCallArgs.options.variant,
+        AttachmentVariant.Default
+      );
+    });
+  });
+  describe('deduplicates attachment if one exists on disk', () => {
+    const existingAttachment = {
+      size: 128,
+      contentType: MIME.VIDEO_MP4,
+      version: 2,
+      width: 1123,
+      height: 5811,
+      plaintextHash: testPlaintextHash(),
+      path: 'existingPath',
+      localKey: testAttachmentLocalKey(),
+      thumbnail: {
+        path: 'existingThumbnailPath',
+        version: 2,
+        localKey: testAttachmentLocalKey(),
+        contentType: MIME.IMAGE_BMP,
+        size: 256,
+      },
+      screenshot: {
+        path: 'existingScreenshotPath',
+        version: 2,
+        localKey: testAttachmentLocalKey(),
+        contentType: MIME.IMAGE_JPEG,
+        size: 512,
+      },
+      thumbnailFromBackup: {
+        path: 'shouldbeignored',
+        contentType: MIME.IMAGE_JPEG,
+        size: 1024,
+      },
+    } as const satisfies AttachmentType;
+
+    function composeMessage(): MessageAttributesType {
+      return {
+        id: v7(),
+        type: 'incoming',
+        sent_at: Date.now(),
+        timestamp: Date.now(),
+        received_at: Date.now(),
+        conversationId: v7(),
+      };
+    }
+    const existingMessageWithDownloadedAttachment = {
+      ...composeMessage(),
+      attachments: [existingAttachment],
+    };
+
+    const undownloadedAttachment = {
+      cdnKey: 'cdnKey',
+      cdnNumber: 3,
+      version: 2,
+      key: testAttachmentKey(),
+      size: 128,
+      digest: testAttachmentDigest(),
+      plaintextHash: undefined,
+      contentType: MIME.VIDEO_MP4,
+      fileName: 'new filename',
+    } as const;
+
+    const newMessage = {
+      ...composeMessage(),
+      attachments: [undownloadedAttachment],
+    };
+
+    async function writeAttachmentFile(path: string) {
+      await ensureFile(getAbsoluteAttachmentPath(path));
+    }
+    beforeEach(async () => {
+      await DataWriter.saveMessages(
+        [existingMessageWithDownloadedAttachment, newMessage],
+        {
+          forceSave: true,
+          ourAci: generateAci(),
+          postSaveUpdates: async () => Promise.resolve(),
+        }
+      );
+    });
+    afterEach(async () => {
+      await emptyDir(
+        getAttachmentsPath(window.SignalContext.config.userDataPath)
+      );
+    });
+
+    it('reuses existing attachment based on plaintextHash, version, and contentType', async () => {
+      await writeAttachmentFile('existingPath');
+      await writeAttachmentFile('existingThumbnailPath');
+      await writeAttachmentFile('existingScreenshotPath');
+
+      downloadAttachment.callsFake(async ({ attachment }) => {
+        return {
+          path: 'newlyDownloadedPath',
+          plaintextHash: existingAttachment.plaintextHash,
+          version: existingAttachment.version,
+          localKey: testAttachmentLocalKey(),
+          size: existingAttachment.size,
+          digest: attachment.digest,
+        };
+      });
+      const job = composeJob({
+        messageId: newMessage.id,
+        receivedAt: newMessage.received_at,
+        attachmentOverrides: undownloadedAttachment,
+      });
+
+      await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      // Cleans up newly downloaded path
+      assert.equal(maybeDeleteAttachmentFile.callCount, 1);
+      assert.isTrue(
+        maybeDeleteAttachmentFile.calledWith('newlyDownloadedPath')
+      );
+
+      const updatedMessage = window.MessageCache.getById(newMessage.id);
+      const attachment = updatedMessage?.attributes.attachments?.[0];
+      const propsThatShouldBeTransferred = [
+        'path',
+        'localKey',
+        'version',
+        'width',
+        'height',
+        'thumbnail.path',
+        'thumbnail.localKey',
+        'thumbnail.size',
+        'thumbnail.version',
+        'thumbnail.contentType',
+        'screenshot.path',
+        'screenshot.localKey',
+        'screenshot.size',
+        'screenshot.version',
+        'screenshot.contentType',
+      ];
+
+      assert.strictEqual(attachment?.path, existingAttachment.path);
+      assert.strictEqual(attachment?.width, existingAttachment.width);
+      assert.deepStrictEqual(
+        pick(attachment, propsThatShouldBeTransferred),
+        pick(existingAttachment, propsThatShouldBeTransferred)
+      );
+    });
+
+    it('does not reuse files if contentType differs', async () => {
+      await writeAttachmentFile('existingPath');
+      await writeAttachmentFile('existingThumbnailPath');
+      await writeAttachmentFile('existingScreenshotPath');
+
+      downloadAttachment.callsFake(async ({ attachment }) => {
+        return {
+          path: 'newlyDownloadedPath',
+          plaintextHash: existingAttachment.plaintextHash,
+          version: existingAttachment.version,
+          localKey: testAttachmentLocalKey(),
+          size: existingAttachment.size,
+          digest: attachment.digest,
+        };
+      });
+      const job = composeJob({
+        messageId: newMessage.id,
+        receivedAt: newMessage.received_at,
+        attachmentOverrides: {
+          ...undownloadedAttachment,
+          contentType: MIME.VIDEO_QUICKTIME,
+        },
+      });
+
+      await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      assert.equal(maybeDeleteAttachmentFile.callCount, 0);
+
+      const updatedMessage = window.MessageCache.getById(newMessage.id);
+      const attachment = updatedMessage?.attributes.attachments?.[0];
+
+      assert.strictEqual(attachment.contentType, MIME.VIDEO_QUICKTIME);
+      assert.strictEqual(attachment.path, 'newlyDownloadedPath');
+    });
+
+    it('does not reuse derived files if version differs', async () => {
+      await writeAttachmentFile('existingPath');
+      await writeAttachmentFile('existingThumbnailPath');
+      await writeAttachmentFile('existingScreenshotPath');
+
+      await DataWriter.saveMessages(
+        [
+          {
+            ...existingMessageWithDownloadedAttachment,
+            attachments: [{ ...existingAttachment, version: 1 }],
+          },
+        ],
+        {
+          ourAci: generateAci(),
+          postSaveUpdates: () => Promise.resolve(),
+        }
+      );
+
+      downloadAttachment.callsFake(async ({ attachment }) => {
+        return {
+          path: 'newlyDownloadedPath',
+          plaintextHash: existingAttachment.plaintextHash,
+          version: 2,
+          localKey: testAttachmentLocalKey(),
+          size: existingAttachment.size,
+          digest: attachment.digest,
+        };
+      });
+      const job = composeJob({
+        messageId: newMessage.id,
+        receivedAt: newMessage.received_at,
+        attachmentOverrides: undownloadedAttachment,
+      });
+
+      await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      assert.equal(maybeDeleteAttachmentFile.callCount, 0);
+
+      const updatedMessage = window.MessageCache.getById(newMessage.id);
+      const attachment = updatedMessage?.attributes.attachments?.[0];
+
+      assert.strictEqual(attachment.path, 'newlyDownloadedPath');
+    });
+
+    it('does not reuse attachment if it does not exist on disk', async () => {
+      downloadAttachment.callsFake(async ({ attachment }) => {
+        return {
+          path: 'newlyDownloadedPath',
+          plaintextHash: existingAttachment.plaintextHash,
+          version: existingAttachment.version,
+          localKey: testAttachmentLocalKey(),
+          size: existingAttachment.size,
+          digest: attachment.digest,
+        };
+      });
+      const job = composeJob({
+        messageId: newMessage.id,
+        receivedAt: newMessage.received_at,
+        attachmentOverrides: undownloadedAttachment,
+      });
+
+      await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment,
+        },
+      });
+
+      // Cleans up newly downloaded path
+      assert.equal(maybeDeleteAttachmentFile.callCount, 0);
+
+      const updatedMessage = window.MessageCache.getById(newMessage.id);
+      const attachment = updatedMessage?.attributes.attachments?.[0];
+      assert.strictEqual(attachment?.path, 'newlyDownloadedPath');
+    });
+
+    it('does not reuse thumbnail if it does not exist on disk', async () => {
+      await writeAttachmentFile('existingPath');
+      downloadAttachment.callsFake(async ({ attachment }) => {
+        return {
+          path: 'newlyDownloadedPath',
+          plaintextHash: existingAttachment.plaintextHash,
+          version: existingAttachment.version,
+          localKey: testAttachmentLocalKey(),
+          size: existingAttachment.size,
+          digest: attachment.digest,
+        };
+      });
+      const job = composeJob({
+        messageId: newMessage.id,
+        receivedAt: newMessage.received_at,
+        attachmentOverrides: undownloadedAttachment,
+      });
+
+      await runDownloadAttachmentJobInner({
+        job,
+        isForCurrentlyVisibleMessage: false,
+        hasMediaBackups: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        messageExpiresAt: null,
+        dependencies: {
+          cleanupAttachmentFiles,
+          maybeDeleteAttachmentFile,
+          deleteDownloadFile,
+          downloadAttachment,
+          processNewAttachment: sandbox.stub().callsFake(attachment => ({
+            ...attachment,
+            thumbnail: { path: 'newThumbnailPath' },
+          })),
+        },
+      });
+
+      // Cleans up newly downloaded path
+      assert.equal(maybeDeleteAttachmentFile.callCount, 1);
+
+      const updatedMessage = window.MessageCache.getById(newMessage.id);
+      const attachment = updatedMessage?.attributes.attachments?.[0];
+      assert.strictEqual(attachment?.path, 'existingPath');
+      assert.strictEqual(attachment?.thumbnail?.path, 'newThumbnailPath');
+    });
+  });
+});

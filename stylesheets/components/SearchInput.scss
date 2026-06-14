@@ -1,105 +1,110 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .module-SearchInput {
   &__container {
-    margin: {
-      left: 16px;
-      right: 16px;
-      bottom: 8px;
-    }
     position: relative;
+    margin-inline: 16px;
+    margin-bottom: 8px;
+
+    &--noMargin {
+      margin-inline: 0px;
+      margin-bottom: 0px;
+    }
   }
 
   &__icon {
     height: 16px;
-    left: 8px;
+    inset-inline-start: 8px;
     pointer-events: none;
     position: absolute;
     top: 6px;
     width: 16px;
 
-    @include light-theme {
-      @include color-svg('../images/icons/v2/search-16.svg', $color-gray-45);
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/search/search-compact-light.svg',
+        variables.$color-gray-45
+      );
     }
-    @include dark-theme {
-      @include color-svg('../images/icons/v2/search-16.svg', $color-gray-25);
-    }
-  }
-
-  &__input {
-    background: transparent;
-    border: none;
-    padding-left: 16px;
-    width: 100%;
-
-    &:placeholder {
-      color: $color-gray-45;
-    }
-
-    @include light-theme {
-      color: $color-black;
-    }
-
-    @include dark-theme {
-      color: $color-gray-05;
-    }
-
-    &:focus {
-      outline: none;
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/search/search-compact-light.svg',
+        variables.$color-gray-25
+      );
     }
   }
 
   &__input {
-    @include font-body-2;
+    @include mixins.font-body-2;
     border: solid 1px transparent;
     border-radius: 8px;
     height: 28px;
-    padding-left: 30px;
-    padding-right: 5px;
+    padding-inline: 30px 5px;
     width: 100%;
 
-    @include light-theme {
-      background-color: $color-black-alpha-08;
-      color: $color-gray-90;
+    @include mixins.light-theme {
+      background-color: variables.$color-black-alpha-06;
+      color: variables.$color-gray-90;
 
       &:placeholder {
-        color: $color-gray-45;
+        color: variables.$color-gray-45;
       }
     }
-    @include dark-theme {
-      background-color: $color-white-alpha-12;
-      color: $color-gray-05;
+    @include mixins.dark-theme {
+      background-color: variables.$color-white-alpha-12;
+      color: variables.$color-gray-05;
 
       &:placeholder {
-        color: $color-gray-25;
+        color: variables.$color-gray-25;
       }
     }
 
     &:focus {
-      @include keyboard-mode {
-        border: solid 1px $color-ultramarine;
+      @include mixins.keyboard-mode {
+        border: solid 1px variables.$color-ultramarine;
       }
       outline: none;
     }
 
     &--with-text {
-      padding-right: 30px;
+      padding-inline-end: 30px;
     }
   }
 
   &__cancel {
-    height: 18px;
+    height: 16px;
     position: absolute;
-    right: 8px;
-    top: 5px;
-    width: 18px;
+    inset-inline-end: 8px;
+    top: 6px;
+    width: 16px;
 
-    @include light-theme {
-      @include color-svg('../images/icons/v2/x-24.svg', $color-gray-60);
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x-compact.svg',
+        variables.$color-gray-60
+      );
     }
-    @include dark-theme {
-      @include color-svg('../images/icons/v2/x-24.svg', $color-gray-25);
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x-compact.svg',
+        variables.$color-gray-25
+      );
+    }
+  }
+
+  &__description {
+    margin-block-start: 12px;
+    @include mixins.font-subtitle;
+
+    @include mixins.light-theme {
+      color: variables.$color-gray-60;
+    }
+    @include mixins.dark-theme {
+      color: variables.$color-gray-05;
     }
   }
 }

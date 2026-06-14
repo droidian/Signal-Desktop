@@ -1,18 +1,28 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { SignalService as Proto } from '../protobuf';
-import type { IncomingWebSocketRequest } from './WebsocketResources';
-import type { UUID, UUIDStringType } from '../types/UUID';
-import type { TextAttachmentType } from '../types/Attachment';
-import type { GiftBadgeStates } from '../components/conversation/Message';
-import type { MIMEType } from '../types/MIME';
-import type { DurationInSeconds } from '../util/durations';
-import type { AnyPaymentEvent } from '../types/Payment';
+import type * as client from '@signalapp/libsignal-client';
 
-export {
+import type { SignalService as Proto } from '../protobuf/index.std.ts';
+import type { IncomingWebSocketRequest } from './WebsocketResources.preload.ts';
+import type {
+  ServiceIdString,
+  AciString,
+  PniString,
+} from '../types/ServiceId.std.ts';
+import type { TextAttachmentType } from '../types/Attachment.std.ts';
+import type { GiftBadgeStates } from '../types/GiftBadgeStates.std.ts';
+import type { MIMEType } from '../types/MIME.std.ts';
+import type { DurationInSeconds } from '../util/durations/index.std.ts';
+import type { AnyPaymentEvent } from '../types/Payment.std.ts';
+import type { RawBodyRange } from '../types/BodyRange.std.ts';
+import type { StoryMessageRecipientsType } from '../types/Stories.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+
+export type {
   IdentityKeyType,
   IdentityKeyIdType,
+  KyberPreKeyType,
   PreKeyIdType,
   PreKeyType,
   SenderKeyIdType,
@@ -22,8 +32,7 @@ export {
   SignedPreKeyIdType,
   SignedPreKeyType,
   UnprocessedType,
-  UnprocessedUpdateType,
-} from '../sql/Interface';
+} from '../sql/Interface.std.ts';
 
 export type StorageServiceCallOptionsType = {
   credentials?: StorageServiceCredentials;
@@ -42,7 +51,7 @@ export type WebAPICredentials = {
 
 export type DeviceType = {
   id: number;
-  identifier: string;
+  serviceId: ServiceIdString;
   registrationId: number;
 };
 
@@ -51,7 +60,7 @@ export type DeviceType = {
 export type CompatSignedPreKeyType = {
   keyId: number;
   keyPair: KeyPairType;
-  signature: Uint8Array;
+  signature: Uint8Array<ArrayBuffer>;
 };
 
 export type CompatPreKeyType = {
@@ -61,18 +70,15 @@ export type CompatPreKeyType = {
 
 // How we work with these types thereafter
 
-export type KeyPairType = {
-  privKey: Uint8Array;
-  pubKey: Uint8Array;
-};
+export type KeyPairType = client.IdentityKeyPair;
 
 export type OuterSignedPrekeyType = {
   confirmed: boolean;
 
   created_at: number;
   keyId: number;
-  privKey: Uint8Array;
-  pubKey: Uint8Array;
+  privKey: Uint8Array<ArrayBuffer>;
+  pubKey: Uint8Array<ArrayBuffer>;
 };
 
 export type SessionResetsType = Record<string, number>;
@@ -85,25 +91,28 @@ export type ProcessedEnvelope = Readonly<{
 
   // Mostly from Proto.Envelope except for null/undefined
   type: Proto.Envelope.Type;
-  source?: string;
-  sourceUuid?: UUIDStringType;
-  sourceDevice?: number;
-  destinationUuid: UUID;
-  updatedPni?: UUID;
+  source: string | undefined;
+  sourceServiceId: ServiceIdString | undefined;
+  sourceDevice: number | undefined;
+  destinationServiceId: ServiceIdString;
+  updatedPni: PniString | undefined;
   timestamp: number;
-  content?: Uint8Array;
+  content: Uint8Array<ArrayBuffer>;
   serverGuid: string;
   serverTimestamp: number;
-  groupId?: string;
-  urgent?: boolean;
-  story?: boolean;
+  groupId: string | undefined;
+  urgent: boolean;
+  story: boolean;
+  reportingToken: Uint8Array<ArrayBuffer> | undefined;
+  groupId: string | undefined;
 }>;
 
 export type ProcessedAttachment = {
   cdnId?: string;
   cdnKey?: string;
-  digest?: string;
   contentType: MIMEType;
+  clientUuid?: string;
+  digest?: string;
   key?: string;
   size: number;
   fileName?: string;
@@ -114,17 +123,10 @@ export type ProcessedAttachment = {
   blurHash?: string;
   cdnNumber?: number;
   textAttachment?: Omit<TextAttachmentType, 'preview'>;
-};
-
-export type ProcessedGroupContext = {
-  id: string;
-  type: Proto.GroupContext.Type;
-  name?: string;
-  membersE164: ReadonlyArray<string>;
-  avatar?: ProcessedAttachment;
-
-  // Computed fields
-  derivedGroupV2Id: string;
+  uploadTimestamp?: number;
+  downloadPath?: string;
+  incrementalMac?: string;
+  chunkSize?: number;
 };
 
 export type ProcessedGroupV2Context = {
@@ -139,17 +141,17 @@ export type ProcessedGroupV2Context = {
 };
 
 export type ProcessedQuoteAttachment = {
-  contentType?: string;
+  contentType: MIMEType;
   fileName?: string;
   thumbnail?: ProcessedAttachment;
 };
 
 export type ProcessedQuote = {
   id?: number;
-  authorUuid?: string;
+  authorAci?: AciString;
   text?: string;
   attachments: ReadonlyArray<ProcessedQuoteAttachment>;
-  bodyRanges: ReadonlyArray<Proto.DataMessage.IBodyRange>;
+  bodyRanges?: ReadonlyArray<ProcessedBodyRange>;
   type: Proto.DataMessage.Quote.Type;
 };
 
@@ -158,7 +160,7 @@ export type ProcessedAvatar = {
   isProfile: boolean;
 };
 
-export type ProcessedContact = Omit<Proto.DataMessage.IContact, 'avatar'> & {
+export type ProcessedContact = Omit<Proto.DataMessage.Contact, 'avatar'> & {
   avatar?: ProcessedAvatar;
 };
 
@@ -174,14 +176,37 @@ export type ProcessedSticker = {
   packId?: string;
   packKey?: string;
   stickerId?: number;
-  emoji?: string;
+  emoji?: Emoji.Variant;
   data?: ProcessedAttachment;
 };
 
 export type ProcessedReaction = {
-  emoji?: string;
+  emoji?: Emoji.Variant;
   remove: boolean;
-  targetAuthorUuid?: string;
+  targetAuthorAci?: AciString;
+  targetTimestamp?: number;
+};
+
+export type ProcessedPinMessage = Readonly<{
+  targetAuthorAci: AciString;
+  targetSentTimestamp: number;
+  pinDuration: DurationInSeconds | null;
+}>;
+
+export type ProcessedPollCreate = {
+  question?: string;
+  options?: Array<string>;
+  allowMultiple?: boolean;
+};
+
+export type ProcessedPollVote = {
+  targetAuthorAci?: AciString;
+  targetTimestamp?: number;
+  optionIndexes?: Array<number>;
+  voteCount?: number;
+};
+
+export type ProcessedPollTerminate = {
   targetTimestamp?: number;
 };
 
@@ -189,11 +214,14 @@ export type ProcessedDelete = {
   targetSentTimestamp?: number;
 };
 
-export type ProcessedBodyRange = Proto.DataMessage.IBodyRange;
+export type ProcessedAdminDelete = Readonly<{
+  targetSentTimestamp: number;
+  targetAuthorAci: AciString;
+}>;
 
-export type ProcessedGroupCallUpdate = Proto.DataMessage.IGroupCallUpdate;
+export type ProcessedBodyRange = RawBodyRange;
 
-export type ProcessedStoryContext = Proto.DataMessage.IStoryContext;
+export type ProcessedGroupCallUpdate = Proto.DataMessage.GroupCallUpdate;
 
 export type ProcessedGiftBadge = {
   expiration: number;
@@ -203,13 +231,24 @@ export type ProcessedGiftBadge = {
   state: GiftBadgeStates;
 };
 
+export type ProcessedUnpinMessage = Readonly<{
+  targetAuthorAci: AciString;
+  targetSentTimestamp: number;
+}>;
+
+export type ProcessedStoryContext = {
+  authorAci: AciString | undefined;
+  sentTimestamp: number;
+};
+
 export type ProcessedDataMessage = {
   body?: string;
+  bodyAttachment?: ProcessedAttachment;
   attachments: ReadonlyArray<ProcessedAttachment>;
-  group?: ProcessedGroupContext;
   groupV2?: ProcessedGroupV2Context;
   flags: number;
   expireTimer: DurationInSeconds;
+  expireTimerVersion: number;
   profileKey?: string;
   timestamp: number;
   payment?: AnyPaymentEvent;
@@ -218,35 +257,44 @@ export type ProcessedDataMessage = {
   preview?: ReadonlyArray<ProcessedPreview>;
   sticker?: ProcessedSticker;
   requiredProtocolVersion?: number;
+  editedMessageTimestamp?: number;
   isStory?: boolean;
   isViewOnce: boolean;
   reaction?: ProcessedReaction;
+  pinMessage?: ProcessedPinMessage;
+  pollCreate?: ProcessedPollCreate;
+  pollVote?: ProcessedPollVote;
+  pollTerminate?: ProcessedPollTerminate;
   delete?: ProcessedDelete;
+  adminDelete?: ProcessedAdminDelete;
   bodyRanges?: ReadonlyArray<ProcessedBodyRange>;
   groupCallUpdate?: ProcessedGroupCallUpdate;
   storyContext?: ProcessedStoryContext;
   giftBadge?: ProcessedGiftBadge;
+  unpinMessage?: ProcessedUnpinMessage;
   canReplyToStory?: boolean;
 };
 
-export type ProcessedUnidentifiedDeliveryStatus = Omit<
-  Proto.SyncMessage.Sent.IUnidentifiedDeliveryStatus,
-  'destinationUuid'
-> & {
-  destinationUuid?: string;
+export type ProcessedUnidentifiedDeliveryStatus = Readonly<{
+  destinationServiceId?: ServiceIdString;
   isAllowedToReplyToStory?: boolean;
-};
+  destinationPniIdentityKey?: Uint8Array<ArrayBuffer>;
+  unidentified?: boolean;
+}>;
 
 export type ProcessedSent = Omit<
-  Proto.SyncMessage.ISent,
-  'destinationId' | 'unidentifiedStatus'
+  Proto.SyncMessage.Sent,
+  | '$unknown'
+  | 'destinationId'
+  | 'unidentifiedStatus'
+  | 'storyMessageRecipients'
+  | 'destinationServiceId'
+  | 'destinationServiceIdBinary'
 > & {
   destinationId?: string;
+  destinationServiceId?: ServiceIdString;
   unidentifiedStatus?: Array<ProcessedUnidentifiedDeliveryStatus>;
-};
-
-export type ProcessedSyncMessage = Omit<Proto.ISyncMessage, 'sent'> & {
-  sent?: ProcessedSent;
+  storyMessageRecipients?: StoryMessageRecipientsType;
 };
 
 export type CustomError = Error & {
@@ -255,11 +303,12 @@ export type CustomError = Error & {
 };
 
 export type CallbackResultType = {
-  successfulIdentifiers?: Array<string>;
-  failoverIdentifiers?: Array<string>;
+  successfulServiceIds?: Array<ServiceIdString>;
+  failoverServiceIds?: Array<ServiceIdString>;
   errors?: Array<CustomError>;
-  unidentifiedDeliveries?: Array<string>;
-  dataMessage?: Uint8Array;
+  unidentifiedDeliveries?: Array<ServiceIdString>;
+  dataMessage: Uint8Array<ArrayBuffer> | undefined;
+  editMessage: Uint8Array<ArrayBuffer> | undefined;
 
   // If this send is not the final step in a multi-step send, we shouldn't treat its
   //   results we would treat a one-step send.
@@ -267,24 +316,26 @@ export type CallbackResultType = {
 
   // Fields necessary for send log save
   contentHint?: number;
-  contentProto?: Uint8Array;
+  contentProto?: Uint8Array<ArrayBuffer>;
   timestamp?: number;
-  recipients?: Record<string, Array<number>>;
+  recipients?: Record<ServiceIdString, Array<number>>;
   urgent?: boolean;
   hasPniSignatureMessage?: boolean;
 };
 
 export type IRequestHandler = {
-  handleRequest(request: IncomingWebSocketRequest): void;
+  handleRequest: (request: IncomingWebSocketRequest) => void;
+  handleDisconnect: () => void;
 };
 
 export type PniKeyMaterialType = Readonly<{
-  identityKeyPair: Uint8Array;
-  signedPreKey: Uint8Array;
+  identityKeyPair: Uint8Array<ArrayBuffer>;
+  signedPreKey: Uint8Array<ArrayBuffer>;
+  lastResortKyberPreKey?: Uint8Array<ArrayBuffer>;
   registrationId: number;
 }>;
 
 export type PniSignatureMessageType = Readonly<{
-  pni: UUIDStringType;
-  signature: Uint8Array;
+  pni: PniString;
+  signature: Uint8Array<ArrayBuffer>;
 }>;

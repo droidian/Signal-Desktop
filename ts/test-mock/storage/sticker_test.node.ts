@@ -1,0 +1,321 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { assert } from 'chai';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import { Proto } from '@signalapp/mock-server';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import {
+  initStorage,
+  debug,
+  STICKER_PACKS,
+  EMPTY,
+  storeStickerPacks,
+  getStickerPackRecordPredicate,
+  getStickerPackLink,
+} from './fixtures.node.ts';
+import {
+  getMessageInTimelineByTimestamp,
+  sendTextMessage,
+} from '../helpers.node.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { toNumber } from '../../util/toNumber.std.ts';
+
+const { StickerPackOperation } = Proto.SyncMessage;
+
+describe('stickers', function (this: Mocha.Suite) {
+  this.timeout(durations.MINUTE);
+
+  let bootstrap: Bootstrap;
+  let app: App;
+
+  beforeEach(async () => {
+    ({ bootstrap, app } = await initStorage());
+    const { server } = bootstrap;
+    await storeStickerPacks(server, STICKER_PACKS);
+  });
+
+  afterEach(async function (this: Mocha.Context) {
+    if (!bootstrap) {
+      return;
+    }
+
+    await bootstrap.maybeSaveLogs(this.currentTest, app);
+    await app.close();
+    await bootstrap.teardown();
+  });
+
+  it('should install/uninstall stickers', async () => {
+    const { phone, desktop, contacts } = bootstrap;
+    const [firstContact] = contacts as [PrimaryDevice];
+
+    const window = await app.getWindow();
+
+    const leftPane = window.locator('#LeftPane');
+    const conversationView = window.locator(
+      '.Inbox__conversation > .ConversationView'
+    );
+
+    debug('sending two sticker pack links');
+    await firstContact.sendText(
+      desktop,
+      `First sticker pack ${getStickerPackLink(STICKER_PACKS[0])}`
+    );
+    await firstContact.sendText(
+      desktop,
+      `Second sticker pack ${getStickerPackLink(STICKER_PACKS[1])}`
+    );
+
+    await leftPane
+      .locator(`[data-testid="${firstContact.device.aci}"]`)
+      .click();
+
+    {
+      debug('installing first sticker pack via UI');
+      const state = await phone.expectStorageState('initial state');
+
+      await conversationView
+        .locator(`a:has-text("${STICKER_PACKS[0].id.toString('hex')}")`)
+        .click();
+      await window
+        .getByRole('dialog', { name: 'Sticker Pack' })
+        .getByRole('button', { name: 'Add Stickers' })
+        .click();
+
+      debug('waiting for sync message');
+      const { syncMessage } = await phone.waitForSyncMessage(entry =>
+        Boolean(entry.syncMessage.stickerPackOperation.length)
+      );
+      const [syncOp] = syncMessage.stickerPackOperation ?? [];
+      assert.isTrue(STICKER_PACKS[0].id.equals(syncOp?.packId ?? EMPTY));
+      assert.isTrue(STICKER_PACKS[0].key.equals(syncOp?.packKey ?? EMPTY));
+      assert.strictEqual(syncOp?.type, StickerPackOperation.Type.INSTALL);
+
+      debug('waiting for storage service update');
+      const stateAfter = await phone.waitForStorageState({ after: state });
+      const stickerPack = stateAfter.findRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[0])
+      );
+      assert.ok(
+        stickerPack,
+        'New storage state should have sticker pack record'
+      );
+      assert.isTrue(
+        STICKER_PACKS[0].key.equals(
+          stickerPack.record.stickerPack.packKey ?? EMPTY
+        ),
+        'Wrong sticker pack key'
+      );
+      assert.strictEqual(
+        stickerPack.record.stickerPack.position,
+        11,
+        'Wrong sticker pack position'
+      );
+    }
+
+    {
+      debug('uninstalling first sticker pack via UI');
+      const state = await phone.expectStorageState('initial state');
+
+      // Dialog remains open after install
+      await window
+        .getByRole('dialog', { name: 'Sticker Pack' })
+        .getByRole('button', { name: 'Remove' })
+        .click();
+
+      // Confirm
+      await window
+        .getByRole('alertdialog')
+        .filter({
+          has: window.getByText(
+            'You may not be able to re-install this sticker pack if you no longer have the source message.'
+          ),
+        })
+        .getByRole('button', { name: 'Uninstall' })
+        .click();
+
+      debug('waiting for sync message');
+      const { syncMessage } = await phone.waitForSyncMessage(entry =>
+        Boolean(entry.syncMessage.stickerPackOperation?.length)
+      );
+      const [syncOp] = syncMessage.stickerPackOperation ?? [];
+      assert.isTrue(STICKER_PACKS[0].id.equals(syncOp?.packId ?? EMPTY));
+      assert.strictEqual(syncOp?.type, StickerPackOperation.Type.REMOVE);
+
+      debug('waiting for storage service update');
+      const stateAfter = await phone.waitForStorageState({ after: state });
+      const stickerPack = stateAfter.findRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[0])
+      );
+      assert.ok(
+        stickerPack,
+        'New storage state should have sticker pack record'
+      );
+      assert.deepStrictEqual(
+        stickerPack.record.stickerPack.packKey,
+        EMPTY,
+        'Sticker pack key should be removed'
+      );
+      const deletedAt = toNumber(
+        stickerPack.record.stickerPack.deletedAtTimestamp ?? 0n
+      );
+      assert.isAbove(
+        deletedAt,
+        Date.now() - durations.HOUR,
+        'Sticker pack should have deleted at timestamp'
+      );
+    }
+
+    debug('opening sticker manager');
+
+    const FunButton = window.getByRole('button', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunDialog = window.getByRole('dialog', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunPickerStickersTab = FunDialog.getByRole('tab', {
+      name: 'Stickers',
+    });
+    const FunPickerAddSticker = FunDialog.getByRole('button', {
+      name: 'Add a sticker pack',
+    });
+
+    await FunButton.click();
+    await FunPickerStickersTab.click();
+    await FunPickerAddSticker.click();
+
+    const stickerManager = conversationView.locator(
+      '[data-testid=StickerManager]'
+    );
+
+    debug('switching to Installed tab');
+    await stickerManager.locator('.Tabs__tab >> "Installed"').click();
+
+    {
+      debug('installing first sticker pack via storage service');
+      const state = await phone.expectStorageState('initial state');
+
+      await phone.setStorageState(
+        state.updateRecord(
+          getStickerPackRecordPredicate(STICKER_PACKS[0]),
+          record => ({
+            stickerPack: {
+              ...record.stickerPack,
+              packKey: STICKER_PACKS[0].key,
+              position: 7,
+              deletedAtTimestamp: null,
+            },
+          })
+        )
+      );
+      await phone.sendFetchStorage({
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      debug('waiting for sticker pack to become visible');
+      await stickerManager
+        .locator(`[data-testid="${STICKER_PACKS[0].id.toString('hex')}"]`)
+        .waitFor();
+    }
+
+    {
+      debug('installing second sticker pack via sync message');
+      const state = await phone.expectStorageState('initial state');
+
+      await phone.sendStickerPackSync({
+        type: 'install',
+        packId: STICKER_PACKS[1].id,
+        packKey: STICKER_PACKS[1].key,
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      debug('waiting for sticker pack to become visible');
+      await stickerManager
+        .locator(`[data-testid="${STICKER_PACKS[1].id.toString('hex')}"]`)
+        .waitFor();
+
+      debug('waiting for storage service update');
+      const stateAfter = await phone.waitForStorageState({ after: state });
+      const stickerPack = stateAfter.findRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[1])
+      );
+      assert.ok(
+        stickerPack?.record.stickerPack != null,
+        'New storage state should have sticker pack record'
+      );
+      assert.isTrue(
+        STICKER_PACKS[1].key.equals(
+          stickerPack.record.stickerPack.packKey ?? EMPTY
+        ),
+        'Wrong sticker pack key'
+      );
+      assert.strictEqual(
+        stickerPack.record.stickerPack.position,
+        12,
+        'Wrong sticker pack position'
+      );
+    }
+
+    debug('Verifying the final manifest version');
+    const finalState = await phone.expectStorageState('consistency check');
+
+    assert.strictEqual(finalState.version, 5n);
+
+    debug(
+      'verifying that stickers from packs can be received and paths are deduplicated'
+    );
+    const firstTimestamp = bootstrap.getTimestamp();
+    const secondTimestamp = bootstrap.getTimestamp();
+    await sendTextMessage({
+      from: firstContact,
+      to: desktop,
+      desktop,
+      text: undefined,
+      sticker: {
+        packId: STICKER_PACKS[0].id,
+        packKey: STICKER_PACKS[0].key,
+        stickerId: 0,
+        data: null,
+        emoji: null,
+      },
+      timestamp: firstTimestamp,
+    });
+
+    await sendTextMessage({
+      from: firstContact,
+      to: desktop,
+      desktop,
+      text: undefined,
+      sticker: {
+        packId: STICKER_PACKS[0].id,
+        packKey: STICKER_PACKS[0].key,
+        stickerId: 0,
+        data: null,
+        emoji: null,
+      },
+      timestamp: secondTimestamp,
+    });
+
+    await window.getByRole('button', { name: 'Go back' }).click();
+    await getMessageInTimelineByTimestamp(window, firstTimestamp)
+      .locator('.module-image--loaded')
+      .waitFor();
+
+    await getMessageInTimelineByTimestamp(window, secondTimestamp)
+      .locator('.module-image--loaded')
+      .waitFor();
+
+    const firstStickerData = (await app.getMessagesBySentAt(firstTimestamp))[0]
+      ?.sticker?.data;
+    const secondStickerData = (
+      await app.getMessagesBySentAt(secondTimestamp)
+    )[0]?.sticker?.data;
+
+    strictAssert(firstStickerData?.path, 'path exists');
+    strictAssert(firstStickerData?.localKey, 'localKey exists');
+    assert.strictEqual(firstStickerData.path, secondStickerData?.path);
+    assert.strictEqual(firstStickerData.localKey, secondStickerData?.localKey);
+  });
+});

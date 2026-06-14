@@ -1,7 +1,16 @@
 {
-  "dependencies": {
-    "danger": "11.1.2",
-    "endanger": "7.0.4",
-    "typescript": "4.6.2"
+  "scripts": {
+    "danger:local": "npx --no danger local --dangerfile ../dangerfile.mjs --base main",
+    "danger:ci": "npx --no danger ci --dangerfile ../dangerfile.mjs --base origin/main"
+  },
+  "devDependencies": {
+    "danger": "13.0.7",
+    "js-yaml": "4.1.1",
+    "semver": "7.7.4"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "core-js"
+    ]
   }
 }

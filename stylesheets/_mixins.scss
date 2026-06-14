@@ -1,25 +1,58 @@
 // Copyright 2016 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use 'sass:color';
+@use 'sass:map';
+@use 'sass:string';
+@use 'variables';
+
 // Fonts
 
-@mixin font-family {
-  font-family: $inter;
+@mixin localized-fonts {
   /* Japanese */
   &:lang(ja) {
-    font-family: 'SF Pro JP', 'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3',
-      メイリオ, Meiryo, 'ＭＳ Ｐゴシック', 'Helvetica Neue', Helvetica, Arial,
-      sans-serif;
+    font-family:
+      Inter, 'SF Pro', 'SF Pro JP', 'BIZ UDGothic', 'Hiragino Kaku Gothic Pro',
+      'ヒラギノ角ゴ Pro W3', メイリオ, Meiryo, 'ＭＳ Ｐゴシック',
+      'Helvetica Neue', Helvetica, Arial, 'Signal Emoji Large',
+      'Signal Emoji Small', sans-serif;
   }
   /* Farsi (Persian) */
   &:lang(fa) {
-    font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI',
-      Tahoma, 'Noto Sans Arabic', Helvetica, Arial, sans-serif;
+    font-family:
+      'Vazirmatn',
+      'Signal Emoji Large',
+      'Signal Emoji Small',
+      -apple-system,
+      system-ui,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Tahoma,
+      'Noto Sans Arabic',
+      Helvetica,
+      Arial,
+      sans-serif;
+  }
+  /* Urdu */
+  &:lang(ur) {
+    font-family:
+      'Noto Nastaliq Urdu', Gulzar, 'Jameel Noori Nastaleeq',
+      'Faiz Lahori Nastaleeq', 'Urdu Typesetting', Helvetica, Arial,
+      'Signal Emoji Large', 'Signal Emoji Small', sans-serif;
   }
 }
 
+@mixin font-family {
+  font-family: variables.$inter;
+  @include localized-fonts;
+}
+
+@mixin time-fonts {
+  font-family: Hatsuishi, variables.$inter;
+  @include localized-fonts;
+}
+
 @mixin font-title-1 {
-  @include font-family;
   font-weight: 600;
   font-size: 26px;
   line-height: 32px;
@@ -27,15 +60,20 @@
 }
 
 @mixin font-title-2 {
-  @include font-family;
   font-weight: 600;
   font-size: 20px;
   line-height: 26px;
   letter-spacing: -0.34px;
 }
 
+@mixin font-title-medium {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 25px;
+  letter-spacing: -0.25px;
+}
+
 @mixin font-body-1 {
-  @include font-family;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.08px;
@@ -55,7 +93,6 @@
 }
 
 @mixin font-body-2 {
-  @include font-family;
   font-size: 13px;
   line-height: 18px;
   letter-spacing: -0.03px;
@@ -78,15 +115,29 @@
   font-style: italic;
 }
 
+@mixin font-body-small {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0px;
+}
+@mixin font-body-small-bold {
+  @include font-body-small;
+  font-weight: 600;
+}
+
 @mixin font-subtitle {
-  @include font-family;
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 0;
 }
+@mixin font-subtitle-bold {
+  @include font-subtitle;
+  & {
+    font-weight: 600;
+  }
+}
 
 @mixin font-caption {
-  @include font-family;
   font-size: 11px;
   line-height: 14px;
   letter-spacing: 0.06px;
@@ -104,7 +155,9 @@
 // Themes
 
 @mixin light-theme() {
-  @content;
+  & {
+    @content;
+  }
 }
 
 @mixin explicit-light-theme() {
@@ -114,6 +167,13 @@
 }
 
 @mixin dark-theme() {
+  .dark-theme & {
+    @content;
+  }
+}
+
+@mixin any-theme {
+  &,
   .dark-theme & {
     @content;
   }
@@ -152,10 +212,10 @@
   }
 
   @include light-theme {
-    background: $color-gray-05;
+    background: variables.$color-gray-05;
   }
   @include dark-theme {
-    background: $color-gray-65;
+    background: variables.$color-gray-65;
   }
 }
 
@@ -180,17 +240,85 @@
 
 // Icons
 
+@function str-replace($string, $search, $replace: '') {
+  $index: string.index($string, $search);
+
+  @if $index {
+    @return (
+      string.slice($string, 1, $index - 1) + $replace +
+        str-replace(
+          string.slice($string, $index + string.length($search)),
+          $search,
+          $replace
+        )
+    );
+  }
+
+  @return $string;
+}
+
+$rtl-icon-map: (
+  // v3 icons
+  'chevron-left.svg': 'chevron-right.svg',
+  'chevron-right.svg': 'chevron-left.svg',
+  'chevron-shallow-left.svg': 'chevron-shallow-right.svg',
+  'chevron-shallow-right.svg': 'chevron-shallow-left.svg',
+  'chevron-left-compact-bold.svg': 'chevron-right-compact-bold.svg',
+  'chevron-right-compact-bold.svg': 'chevron-left-compact-bold.svg',
+  'chevron-right-bold.svg': 'chevron-left-bold.svg',
+  'arrow-left.svg': 'arrow-right.svg',
+  'arrow-right.svg': 'arrow-left.svg'
+);
+
+@function get-rtl-svg($svg) {
+  @each $ltr, $rtl in $rtl-icon-map {
+    @if string.index($svg, $ltr) {
+      @if $rtl == '' {
+        @return $ltr;
+      }
+      @return str-replace($svg, $ltr, $rtl);
+    }
+  }
+  @if string.index($svg, 'left') or string.index($svg, 'right') {
+    @error "Missing RTL icon for #{$svg}";
+  }
+  @return false;
+}
+
+@mixin color-svg-themed(
+  $svg,
+  $light-theme-color,
+  $dark-theme-color,
+  $stretch: true,
+  $mask-origin: null
+) {
+  @include light-theme() {
+    @include color-svg($svg, $light-theme-color, $stretch, $mask-origin);
+  }
+  @include dark-theme() {
+    @include color-svg($svg, $dark-theme-color, $stretch, $mask-origin);
+  }
+}
+
 @mixin color-svg($svg, $color, $stretch: true, $mask-origin: null) {
-  -webkit-mask: url($svg) no-repeat center;
-  @if $stretch {
-    -webkit-mask-size: 100%;
+  & {
+    -webkit-mask: url($svg) no-repeat center;
+    @if $stretch {
+      -webkit-mask-size: 100%;
+    }
+    @if $mask-origin {
+      -webkit-mask-origin: $mask-origin;
+    }
+    background-color: $color;
   }
-  @if $mask-origin {
-    -webkit-mask-origin: $mask-origin;
-  }
-  background-color: $color;
   @media (forced-colors: active) {
-    background-color: WindowText;
+    background-color: CanvasText;
+  }
+  $rtl-svg: get-rtl-svg($svg);
+  @if $rtl-svg {
+    :dir(rtl) & {
+      -webkit-mask: url($rtl-svg) no-repeat center;
+    }
   }
 }
 
@@ -223,7 +351,11 @@
 // Other
 
 @mixin popper-shadow() {
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3), 0px 0px 8px rgba(0, 0, 0, 0.05);
+  & {
+    box-shadow:
+      0px 8px 20px rgba(0, 0, 0, 0.3),
+      0px 0px 8px rgba(0, 0, 0, 0.05);
+  }
 
   @media (forced-colors: active) {
     border: 1px solid WindowText;
@@ -231,15 +363,17 @@
 }
 
 @mixin button-reset {
-  background: none;
-  color: inherit;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-  text-align: inherit;
+  & {
+    background: none;
+    color: inherit;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+    text-align: inherit;
+  }
 
   @media (forced-colors: active) {
     border: 1px solid WindowText;
@@ -249,16 +383,18 @@
 @mixin staged-attachment-close-button {
   @include button-reset;
 
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 18px;
-  height: 18px;
-  z-index: $z-index-above-base;
+  & {
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 4px;
+    width: 16px;
+    height: 16px;
+    z-index: variables.$z-index-above-base;
+  }
 }
 
 @mixin calling-text-shadow {
-  text-shadow: 0 0 4px $color-black-alpha-40;
+  text-shadow: 0 0 4px variables.$color-black-alpha-40;
 }
 
 @mixin lonely-local-video-preview {
@@ -273,48 +409,56 @@
 
 // Individual traits
 
-@mixin button-focus-outline {
+@mixin button-focus-outline($width: 3px) {
   &:focus {
     @include keyboard-mode {
-      box-shadow: 0px 0px 0px 3px $color-ultramarine;
+      box-shadow: 0px 0px 0px $width variables.$color-ultramarine;
     }
     @include dark-keyboard-mode {
-      box-shadow: 0px 0px 0px 3px $color-ultramarine-light;
+      box-shadow: 0px 0px 0px $width variables.$color-ultramarine-light;
     }
   }
 }
 
 @mixin button-blue-text {
   @include light-theme {
-    color: $color-ultramarine;
+    color: variables.$color-ultramarine;
   }
   @include dark-theme {
-    color: $color-ultramarine-light;
+    color: variables.$color-ultramarine-light;
   }
 }
 
 // Complete button styles
 
 @mixin button-primary {
-  background-color: $color-ultramarine;
+  background-color: variables.$color-ultramarine;
 
   // Note: the background colors here need to match the parent component
   @include light-theme {
-    color: $color-white;
+    color: variables.$color-white;
     border: 1px solid white;
   }
   @include dark-theme {
-    color: $color-white-alpha-90;
-    border: 1px solid $color-gray-95;
+    color: variables.$color-white-alpha-90;
+    border: 1px solid variables.$color-gray-95;
   }
 
   &:hover {
     @include mouse-mode {
-      background-color: mix($color-black, $color-ultramarine, 15%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-ultramarine,
+        15%
+      );
     }
 
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-ultramarine, 15%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-ultramarine,
+        15%
+      );
     }
   }
 
@@ -322,17 +466,33 @@
     // We need to include all four here for specificity precedence
 
     @include mouse-mode {
-      background-color: mix($color-black, $color-ultramarine, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-ultramarine,
+        25%
+      );
     }
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-ultramarine, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-ultramarine,
+        25%
+      );
     }
 
     @include keyboard-mode {
-      background-color: mix($color-black, $color-ultramarine, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-ultramarine,
+        25%
+      );
     }
     @include dark-keyboard-mode {
-      background-color: mix($color-black, $color-ultramarine, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-ultramarine,
+        25%
+      );
     }
   }
 
@@ -341,21 +501,29 @@
 
 @mixin button-secondary {
   @include light-theme {
-    color: $color-gray-90;
-    background-color: $color-gray-05;
+    color: variables.$color-gray-90;
+    background-color: variables.$color-gray-05;
   }
   @include dark-theme {
-    color: $color-gray-05;
-    background-color: $color-gray-65;
+    color: variables.$color-gray-05;
+    background-color: variables.$color-gray-65;
   }
 
   &:hover {
     @include mouse-mode {
-      background-color: mix($color-black, $color-gray-05, 15%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-05,
+        15%
+      );
     }
 
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-gray-65, 15%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-65,
+        15%
+      );
     }
   }
 
@@ -363,17 +531,33 @@
     // We need to include all four here for specificity precedence
 
     @include mouse-mode {
-      background-color: mix($color-black, $color-gray-05, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-05,
+        25%
+      );
     }
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-gray-65, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-65,
+        25%
+      );
     }
 
     @include keyboard-mode {
-      background-color: mix($color-black, $color-gray-05, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-05,
+        25%
+      );
     }
     @include dark-keyboard-mode {
-      background-color: mix($color-white, $color-gray-65, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-65,
+        25%
+      );
     }
   }
 
@@ -387,21 +571,29 @@
 
 @mixin button-light {
   @include light-theme {
-    color: $color-gray-90;
-    background-color: $color-gray-02;
+    color: variables.$color-gray-90;
+    background-color: variables.$color-gray-02;
   }
   @include dark-theme {
-    color: $color-gray-05;
-    background-color: $color-gray-75;
+    color: variables.$color-gray-05;
+    background-color: variables.$color-gray-75;
   }
 
   &:hover {
     @include mouse-mode {
-      background-color: mix($color-black, $color-gray-02, 10%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-02,
+        10%
+      );
     }
 
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-gray-75, 10%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-75,
+        10%
+      );
     }
   }
 
@@ -409,17 +601,33 @@
     // We need to include all four here for specificity precedence
 
     @include mouse-mode {
-      background-color: mix($color-black, $color-gray-02, 20%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-02,
+        20%
+      );
     }
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-gray-75, 20%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-75,
+        20%
+      );
     }
 
     @include keyboard-mode {
-      background-color: mix($color-black, $color-gray-02, 20%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-gray-02,
+        20%
+      );
     }
     @include dark-keyboard-mode {
-      background-color: mix($color-white, $color-gray-75, 20%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-gray-75,
+        20%
+      );
     }
   }
 
@@ -433,21 +641,29 @@
 
 @mixin button-destructive {
   @include light-theme {
-    color: $color-white;
-    background-color: $color-accent-red;
+    color: variables.$color-white;
+    background-color: variables.$color-accent-red;
   }
   @include dark-theme {
-    color: $color-white-alpha-90;
-    background-color: $color-accent-red;
+    color: variables.$color-white-alpha-90;
+    background-color: variables.$color-accent-red;
   }
 
   &:hover {
     @include mouse-mode {
-      background-color: mix($color-black, $color-accent-red, 15%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-accent-red,
+        15%
+      );
     }
 
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-accent-red, 15%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-accent-red,
+        15%
+      );
     }
   }
 
@@ -455,17 +671,33 @@
     // We need to include all four here for specificity precedence
 
     @include mouse-mode {
-      background-color: mix($color-black, $color-accent-red, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-accent-red,
+        25%
+      );
     }
     @include dark-mouse-mode {
-      background-color: mix($color-white, $color-accent-red, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-accent-red,
+        25%
+      );
     }
 
     @include keyboard-mode {
-      background-color: mix($color-black, $color-accent-red, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        variables.$color-accent-red,
+        25%
+      );
     }
     @include dark-keyboard-mode {
-      background-color: mix($color-white, $color-accent-red, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        variables.$color-accent-red,
+        25%
+      );
     }
   }
 
@@ -473,26 +705,42 @@
 }
 
 @mixin button-green {
-  $background-color: $color-accent-green;
+  $background-color: variables.$color-accent-green;
 
   background-color: $background-color;
-  color: $color-white;
+  color: variables.$color-white;
 
   &:active {
     // We need to include all four here for specificity precedence
 
     @include mouse-mode {
-      background-color: mix($color-black, $background-color, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        $background-color,
+        25%
+      );
     }
     @include dark-mouse-mode {
-      background-color: mix($color-white, $background-color, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        $background-color,
+        25%
+      );
     }
 
     @include keyboard-mode {
-      background-color: mix($color-black, $background-color, 25%);
+      background-color: color.mix(
+        variables.$color-black,
+        $background-color,
+        25%
+      );
     }
     @include dark-keyboard-mode {
-      background-color: mix($color-white, $background-color, 25%);
+      background-color: color.mix(
+        variables.$color-white,
+        $background-color,
+        25%
+      );
     }
   }
 
@@ -505,58 +753,65 @@
 
 @mixin button-small {
   @include rounded-corners;
-  padding: 7px 14px;
+  padding-block: 7px;
+  padding-inline: 14px;
 }
 
 // Modals
 
 @mixin modal-reset {
   @include popper-shadow();
-  border-radius: 8px;
-  margin: 0 auto;
-  max-height: 100%;
-  max-width: 360px;
-  padding: 16px;
-  position: relative;
-  width: 95%;
-  display: flex;
-  flex-direction: column;
+
+  & {
+    border-radius: 8px;
+    margin-block: 0;
+    margin-inline: auto;
+    max-height: 100%;
+    max-width: 360px;
+    padding: 16px;
+    position: relative;
+    width: 95%;
+    display: flex;
+    flex-direction: column;
+  }
 
   @include light-theme() {
-    background: $color-white;
-    color: $color-gray-90;
+    background: variables.$color-white;
+    color: variables.$color-gray-90;
   }
 
   @include dark-theme() {
-    background: $color-gray-95;
-    color: $color-gray-05;
+    background: variables.$color-gray-95;
+    color: variables.$color-gray-05;
   }
 }
 
 @mixin modal-close-button {
   @include button-reset;
 
-  position: absolute;
-  right: 12px;
-  top: 12px;
+  & {
+    position: absolute;
+    inset-inline-end: 12px;
+    top: 12px;
 
-  height: 24px;
-  width: 24px;
+    height: 24px;
+    width: 24px;
+  }
 
   @include light-theme {
-    @include color-svg('../images/icons/v2/x-24.svg', $color-gray-75);
+    @include color-svg('../images/icons/v3/x/x.svg', variables.$color-gray-75);
   }
 
   @include dark-theme {
-    @include color-svg('../images/icons/v2/x-24.svg', $color-gray-15);
+    @include color-svg('../images/icons/v3/x/x.svg', variables.$color-gray-15);
   }
 
   &:focus {
     @include keyboard-mode {
-      background-color: $color-ultramarine;
+      background-color: variables.$color-ultramarine;
     }
     @include dark-keyboard-mode {
-      background-color: $color-ultramarine-light;
+      background-color: variables.$color-ultramarine-light;
     }
   }
 }
@@ -564,35 +819,35 @@
 @mixin color-bubble($bubble-size) {
   background-clip: content-box;
   border-color: transparent;
-  border-radius: $bubble-size + 12px;
+  border-radius: $bubble-size;
   border-style: solid;
   border-width: 4px;
   cursor: pointer;
-  height: $bubble-size + 12px;
+  height: $bubble-size;
   padding: 2px;
-  width: $bubble-size + 12px;
+  width: $bubble-size;
 
-  @each $color, $value in $conversation-colors {
+  @each $color, $value in variables.$conversation-colors {
     &--#{$color} {
       background-color: $value;
     }
   }
-  @each $color, $value in $conversation-colors-gradient {
+  @each $color, $value in variables.$conversation-colors-gradient {
     &--#{$color} {
       background-image: linear-gradient(
-        map-get($value, 'deg'),
-        map-get($value, 'start'),
-        map-get($value, 'end')
+        map.get($value, 'deg'),
+        map.get($value, 'start'),
+        map.get($value, 'end')
       );
     }
   }
 }
 
 @mixin avatar-colors {
-  @each $color, $value in $avatar-colors {
+  @each $color, $value in variables.$avatar-colors {
     &--#{$color} {
-      --bg: #{map-get($value, 'bg')};
-      --fg: #{map-get($value, 'fg')};
+      --bg: #{map.get($value, 'bg')};
+      --fg: #{map.get($value, 'fg')};
 
       background-color: var(--bg);
       color: var(--fg);
@@ -608,62 +863,36 @@
   }
 }
 
-@mixin scrollbar {
-  &::-webkit-scrollbar-thumb {
-    border-radius: 4px;
-    visibility: hidden;
-    width: 6px;
-
-    @include light-theme {
-      background: $color-black-alpha-40;
-    }
-    @include dark-theme {
-      background: $color-white-alpha-40;
-    }
-  }
-
-  &::-webkit-scrollbar {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &:hover::-webkit-scrollbar-thumb {
-    visibility: visible;
-  }
-}
-
 @mixin normal-input {
   @include font-body-1;
-  padding: 8px 12px;
+  padding-block: 8px;
+  padding-inline: 12px;
   border-radius: 6px;
   border-width: 2px;
   border-style: solid;
   width: 100%;
 
   @include light-theme {
-    background: $color-white;
-    color: $color-black;
-    border-color: $color-gray-15;
+    background: variables.$color-white;
+    color: variables.$color-black;
+    border-color: variables.$color-gray-15;
 
     &:disabled {
-      background: $color-gray-02;
-      border-color: $color-gray-05;
-      color: $color-gray-90;
+      background: variables.$color-gray-02;
+      border-color: variables.$color-gray-05;
+      color: variables.$color-gray-90;
     }
   }
 
   @include dark-theme {
-    background: $color-gray-80;
-    color: $color-gray-05;
-    border-color: $color-gray-45;
+    background: variables.$color-gray-80;
+    color: variables.$color-gray-05;
+    border-color: variables.$color-gray-45;
 
     &:disabled {
-      background: $color-gray-95;
-      border-color: $color-gray-60;
-      color: $color-gray-20;
+      background: variables.$color-gray-95;
+      border-color: variables.$color-gray-60;
+      color: variables.$color-gray-20;
     }
   }
 
@@ -671,10 +900,10 @@
     outline: none;
 
     @include light-theme {
-      border-color: $color-ultramarine;
+      border-color: variables.$color-ultramarine;
     }
     @include dark-theme {
-      border-color: $color-ultramarine-light;
+      border-color: variables.$color-ultramarine-light;
     }
   }
 }
@@ -682,20 +911,20 @@
 @mixin install-screen {
   align-items: center;
   display: flex;
-  width: var(--window-width);
-  height: var(--window-height);
+  width: 100vw;
+  height: 100vh;
   justify-content: center;
   line-height: 30px;
   user-select: none;
 
   @include light-theme {
-    background: $color-gray-02;
-    color: $color-black;
+    background: variables.$color-gray-02;
+    color: variables.$color-black;
   }
 
   @include dark-theme {
-    background: $color-gray-95;
-    color: $color-white;
+    background: variables.$color-gray-95;
+    color: variables.$color-white;
   }
 
   h1 {
@@ -710,12 +939,236 @@
 
 @mixin timeline-floating-header-node {
   @include rounded-corners;
-  box-shadow: 0 1px 4px $color-black-alpha-20;
+  box-shadow: 0 1px 4px variables.$color-black-alpha-20;
 
   @include light-theme {
-    background: $color-white;
+    background: variables.$color-white;
   }
   @include dark-theme {
-    background: $color-gray-80;
+    background: variables.$color-gray-80;
+  }
+}
+
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@mixin disabled {
+  &:is(:disabled, [aria-disabled='true']) {
+    @content;
+  }
+}
+
+@mixin not-disabled {
+  &:not(:disabled):not([aria-disabled='true']) {
+    @content;
+  }
+}
+
+@mixin position-absolute-center {
+  position: absolute;
+  top: 50%;
+  /* stylelint-disable-next-line liberty/use-logical-spec */
+  left: 50%;
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+  transform: translate(-50%, -50%);
+}
+
+@mixin position-absolute-center-x {
+  position: absolute;
+  /* stylelint-disable-next-line liberty/use-logical-spec */
+  left: 50%;
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+  transform: translateX(-50%);
+}
+
+@mixin position-absolute-center-y {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@mixin scrollbar-on-hover {
+  &:not(:hover, :focus-within) {
+    scrollbar-color: transparent transparent;
+  }
+}
+
+@mixin tooltip {
+  & {
+    @include font-body-2;
+
+    @include light-theme {
+      background-color: variables.$color-gray-04;
+      color: variables.$color-black;
+      outline: 1px solid variables.$color-gray-20;
+    }
+
+    @include dark-theme {
+      background-color: variables.$color-gray-80;
+      color: variables.$color-gray-15;
+      outline: 1px solid variables.$color-gray-62;
+    }
+
+    & {
+      padding-block: 5px;
+      padding-inline: 12px;
+      border-radius: 6px;
+      filter: drop-shadow(0px 4px 3px variables.$color-black-alpha-16);
+      pointer-events: none;
+    }
+  }
+
+  & .module-tooltip-arrow::before {
+    position: absolute;
+    content: '';
+    border-style: solid;
+    border-width: 7px;
+    border-color: light-dark(
+      variables.$color-gray-04,
+      variables.$color-gray-80
+    );
+  }
+
+  &[data-placement='bottom'] .module-tooltip-arrow::before {
+    @include light-theme {
+      border-color: transparent transparent variables.$color-gray-20 transparent;
+    }
+
+    @include dark-theme {
+      border-color: transparent transparent variables.$color-gray-62 transparent;
+    }
+
+    & {
+      margin-top: -14px;
+      /* stylelint-disable-next-line liberty/use-logical-spec */
+      margin-left: -7px;
+    }
+  }
+
+  &[data-placement='top'] .module-tooltip-arrow::before {
+    @include light-theme {
+      border-color: variables.$color-gray-20 transparent transparent transparent;
+    }
+
+    @include dark-theme {
+      border-color: variables.$color-gray-62 transparent transparent transparent;
+    }
+
+    & {
+      margin-top: 0;
+      /* stylelint-disable-next-line liberty/use-logical-spec */
+      margin-left: -7px;
+    }
+  }
+
+  &[data-placement='left'] .module-tooltip-arrow::before {
+    @include light-theme {
+      border-color: transparent transparent transparent variables.$color-gray-20;
+    }
+
+    @include dark-theme {
+      border-color: transparent transparent transparent variables.$color-gray-62;
+    }
+
+    & {
+      margin-top: -7px;
+      /* stylelint-disable-next-line liberty/use-logical-spec */
+      margin-left: 0px;
+    }
+  }
+
+  &[data-placement='right'] .module-tooltip-arrow::before {
+    @include light-theme {
+      border-color: transparent variables.$color-gray-20 transparent transparent;
+    }
+
+    @include dark-theme {
+      border-color: transparent variables.$color-gray-62 transparent transparent;
+    }
+
+    & {
+      margin-top: -7px;
+      /* stylelint-disable-next-line liberty/use-logical-spec */
+      margin-left: -14px;
+    }
+  }
+}
+
+@mixin button-active-call {
+  $background: variables.$color-accent-green;
+
+  @include font-body-2-bold;
+  @include rounded-corners;
+
+  display: flex;
+  width: auto;
+  align-items: center;
+  background-color: $background;
+  color: variables.$color-white;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+
+  &:before {
+    $icon-size: 16px;
+
+    @include color-svg(
+      '../images/icons/v3/video/video-compact-fill.svg',
+      variables.$color-white
+    );
+    & {
+      content: '';
+      display: block;
+      height: $icon-size;
+      margin-inline-end: 4px;
+      min-width: $icon-size;
+      width: $icon-size;
+    }
+  }
+
+  &:not(:disabled) {
+    &:hover {
+      @include any-theme {
+        background-color: color.adjust($background, $lightness: -16%);
+      }
+    }
+
+    &:focus {
+      @include keyboard-mode {
+        background-color: color.adjust($background, $lightness: -16%);
+      }
+    }
+  }
+}
+
+@mixin module-composition-popper {
+  width: 332px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  z-index: variables.$z-index-context-menu;
+  user-select: none;
+  overflow: hidden;
+
+  @include popper-shadow();
+
+  & {
+    @include light-theme {
+      background: variables.$color-gray-02;
+    }
+
+    @include dark-theme {
+      background: variables.$color-gray-75;
+    }
   }
 }

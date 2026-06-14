@@ -1,0 +1,183 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.module-shortcut-guide {
+  border-radius: 4px;
+  padding: 16px;
+
+  max-height: calc(100vh - 40px);
+  max-width: 600px;
+  margin-inline: auto;
+
+  display: flex;
+  flex-direction: column;
+
+  @include mixins.popper-shadow;
+
+  @include mixins.light-theme {
+    color: variables.$color-gray-90;
+    background-color: variables.$color-white;
+  }
+  @include mixins.dark-theme {
+    color: variables.$color-gray-05;
+    background-color: variables.$color-gray-75;
+  }
+}
+
+.module-shortcut-guide__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  margin-bottom: 20px;
+}
+
+.module-shortcut-guide__header-text {
+  @include mixins.font-title-2;
+
+  flex-grow: 1;
+}
+.module-shortcut-guide__header-close {
+  @include mixins.button-reset;
+  & {
+    height: 24px;
+    width: 24px;
+  }
+
+  @include mixins.light-theme {
+    @include mixins.color-svg(
+      '../images/icons/v3/x/x.svg',
+      variables.$color-gray-60
+    );
+  }
+  @include mixins.dark-theme {
+    @include mixins.color-svg(
+      '../images/icons/v3/x/x.svg',
+      variables.$color-gray-05
+    );
+  }
+
+  &:focus {
+    @include mixins.keyboard-mode {
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x.svg',
+        variables.$color-ultramarine
+      );
+    }
+    @include mixins.dark-keyboard-mode {
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x.svg',
+        variables.$color-ultramarine-light
+      );
+    }
+  }
+}
+
+.module-shortcut-guide__section-header {
+  @include mixins.font-body-1-bold;
+
+  margin-bottom: 8px;
+}
+
+.module-shortcut-guide__scroll-container {
+  outline: none;
+  overflow-y: scroll;
+}
+
+.module-shortcut-guide__section {
+  &:not(:last-child) {
+    margin-bottom: 25px;
+  }
+}
+
+.module-shortcut-guide__shortcut {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  break-inside: avoid;
+
+  padding-inline-start: 4px;
+  min-height: 40px;
+  outline: none;
+
+  &:focus {
+    @include mixins.keyboard-mode {
+      background-color: variables.$color-gray-05;
+    }
+    @include mixins.dark-keyboard-mode {
+      background-color: variables.$color-gray-90;
+    }
+  }
+
+  @include mixins.light-theme {
+    border-bottom: 1px solid variables.$color-gray-05;
+  }
+  @include mixins.dark-theme {
+    border-bottom: 1px solid variables.$color-gray-90;
+  }
+}
+
+.module-shortcut-guide__shortcut__description {
+  flex-grow: 1;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.module-shortcut-guide__shortcut__key-container {
+  margin-bottom: 4px;
+}
+.module-shortcut-guide__shortcut__key-inner-container {
+  text-align: end;
+  margin-top: 4px;
+  margin-inline-end: 4px;
+  white-space: nowrap;
+}
+
+.module-shortcut-guide__shortcut__key {
+  display: inline-block;
+
+  border-radius: 2px;
+  padding: 3px;
+  padding-inline: 8px;
+  margin-inline-start: 4px;
+
+  height: 30px;
+  text-align: center;
+
+  @include mixins.light-theme {
+    border: 1px solid variables.$color-gray-15;
+  }
+  @include mixins.dark-theme {
+    border: 1px solid variables.$color-gray-90;
+  }
+}
+
+.module-shortcut-guide__shortcut__key--square {
+  width: 30px;
+  padding-inline: 0px;
+}
+
+// Module: Shortcut Guide Modal
+
+.module-shortcut-guide-modal {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  bottom: 0;
+
+  padding: 20px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  background-color: variables.$color-black-alpha-40;
+  z-index: variables.$z-index-above-context-menu;
+}
+
+.module-shortcut-guide-container {
+  flex-grow: 1;
+  overflow: hidden;
+}

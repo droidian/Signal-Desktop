@@ -1,0 +1,503 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReadonlyDeep, Simplify } from 'type-fest';
+import type { ThunkAction } from 'redux-thunk';
+
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { isStagingServer } from '../../util/isStagingServer.dom.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import * as donations from '../../services/donations.preload.ts';
+import {
+  donationStateSchema,
+  DonationProcessor,
+} from '../../types/Donations.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { storageServiceUploadJob } from '../../services/storage.preload.ts';
+import { getMe } from '../selectors/conversations.dom.ts';
+import { actions as conversationActions } from './conversations.preload.ts';
+import type {
+  ProfileDataType,
+  SetProfileUpdateErrorActionType,
+} from './conversations.preload.ts';
+
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import type {
+  CardDetail,
+  DonationErrorType,
+  DonationReceipt,
+  DonationWorkflow,
+  OneTimeDonationHumanAmounts,
+  StripeDonationAmount,
+} from '../../types/Donations.std.ts';
+import type { BadgeType } from '../../badges/types.std.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+
+const log = createLogger('donations');
+
+// State
+
+export type DonationsStateType = ReadonlyDeep<{
+  currentWorkflow: DonationWorkflow | undefined;
+  didResumeWorkflowAtStartup: boolean;
+  lastError: DonationErrorType | undefined;
+  lastReturnToken: string | undefined;
+  receipts: Array<DonationReceipt>;
+  configCache: OneTimeDonationHumanAmounts | undefined;
+}>;
+
+// Actions
+
+export const ADD_RECEIPT = 'donations/ADD_RECEIPT';
+export const HYDRATE_CONFIG_CACHE = 'donations/HYDRATE_CONFIG_CACHE';
+export const SUBMIT_DONATION = 'donations/SUBMIT_DONATION';
+export const UPDATE_WORKFLOW = 'donations/UPDATE_WORKFLOW';
+export const UPDATE_LAST_ERROR = 'donations/UPDATE_LAST_ERROR';
+export const SET_DID_RESUME = 'donations/SET_DID_RESUME';
+
+export type AddReceiptAction = ReadonlyDeep<{
+  type: typeof ADD_RECEIPT;
+  payload: { receipt: DonationReceipt };
+}>;
+
+export type HydrateConfigCacheAction = ReadonlyDeep<{
+  type: typeof HYDRATE_CONFIG_CACHE;
+  payload: { configCache: OneTimeDonationHumanAmounts };
+}>;
+
+export type SetDidResumeAction = ReadonlyDeep<{
+  type: typeof SET_DID_RESUME;
+  payload: boolean;
+}>;
+
+export type SubmitDonationAction = ReadonlyDeep<{
+  type: typeof SUBMIT_DONATION;
+  payload: SubmitDonationType;
+}>;
+
+export type UpdateLastErrorAction = ReadonlyDeep<{
+  type: typeof UPDATE_LAST_ERROR;
+  payload: { lastError: DonationErrorType | undefined };
+}>;
+
+export type UpdateWorkflowAction = ReadonlyDeep<{
+  type: typeof UPDATE_WORKFLOW;
+  payload: { nextWorkflow: DonationWorkflow | undefined };
+}>;
+
+export type DonationsActionType = ReadonlyDeep<
+  | AddReceiptAction
+  | HydrateConfigCacheAction
+  | SetDidResumeAction
+  | SubmitDonationAction
+  | UpdateLastErrorAction
+  | UpdateWorkflowAction
+>;
+
+// Action Creators
+
+function addReceipt(receipt: DonationReceipt): AddReceiptAction {
+  return {
+    type: ADD_RECEIPT,
+    payload: { receipt },
+  };
+}
+
+function internalAddDonationReceipt(
+  receipt: DonationReceipt
+): ThunkAction<void, RootStateType, unknown, AddReceiptAction> {
+  return async dispatch => {
+    if (!isStagingServer()) {
+      log.error('internalAddDonationReceipt: Only available on staging server');
+      throw new Error('This feature is only available on staging server');
+    }
+
+    try {
+      await DataWriter.createDonationReceipt(receipt);
+
+      dispatch({
+        type: ADD_RECEIPT,
+        payload: { receipt },
+      });
+    } catch (error) {
+      log.error('Error adding donation receipt', Errors.toLogFormat(error));
+      throw error;
+    }
+  };
+}
+
+function hydrateConfigCache(
+  configCache: OneTimeDonationHumanAmounts
+): HydrateConfigCacheAction {
+  return {
+    type: HYDRATE_CONFIG_CACHE,
+    payload: { configCache },
+  };
+}
+
+function setDidResume(didResume: boolean): SetDidResumeAction {
+  return {
+    type: SET_DID_RESUME,
+    payload: didResume,
+  };
+}
+
+function resumeWorkflow(): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  SetDidResumeAction
+> {
+  return async dispatch => {
+    try {
+      dispatch({
+        type: SET_DID_RESUME,
+        payload: false,
+      });
+
+      await donations.resumeDonation();
+    } catch (error) {
+      log.error('Error resuming workflow', Errors.toLogFormat(error));
+      throw error;
+    }
+  };
+}
+
+type SubmitDonationData = ReadonlyDeep<{
+  currencyType: string;
+  paymentAmount: StripeDonationAmount;
+}>;
+
+type SubmitStripeDonationData = ReadonlyDeep<
+  SubmitDonationData & {
+    paymentDetail: CardDetail;
+  }
+>;
+
+export type SubmitDonationType = Simplify<
+  ReadonlyDeep<
+    | ({ processor: DonationProcessor.Stripe } & SubmitStripeDonationData)
+    | ({ processor: DonationProcessor.Paypal } & SubmitDonationData)
+  >
+>;
+
+function submitDonation(
+  data: SubmitDonationType
+): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  UpdateWorkflowAction | UpdateLastErrorAction
+> {
+  const { currencyType, paymentAmount, processor } = data;
+
+  if (processor === DonationProcessor.Stripe) {
+    const { paymentDetail } = data;
+    return _submitStripeDonation({
+      currencyType,
+      paymentAmount,
+      paymentDetail,
+    });
+  }
+
+  if (processor === DonationProcessor.Paypal) {
+    return _submitPaypalDonation({
+      currencyType,
+      paymentAmount,
+    });
+  }
+
+  throw missingCaseError(processor);
+}
+
+function _submitStripeDonation({
+  currencyType,
+  paymentAmount,
+  paymentDetail,
+}: SubmitStripeDonationData): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  UpdateWorkflowAction | UpdateLastErrorAction
+> {
+  return async (dispatch, getState) => {
+    try {
+      const { currentWorkflow } = getState().donations;
+      if (
+        currentWorkflow?.type === donationStateSchema.enum.INTENT &&
+        currentWorkflow.paymentAmount === paymentAmount &&
+        currentWorkflow.currencyType === currencyType
+      ) {
+        // we can proceed without starting afresh
+      } else {
+        await donations.clearDonation();
+        await donations.startStripeDonation({
+          currencyType,
+          paymentAmount,
+        });
+      }
+
+      await donations.finishDonationWithCard(paymentDetail);
+    } catch (error) {
+      log.error('_submitStripeDonation failed', Errors.toLogFormat(error));
+      dispatch({
+        type: UPDATE_LAST_ERROR,
+        payload: { lastError: 'GeneralError' },
+      });
+    }
+  };
+}
+
+function _submitPaypalDonation({
+  currencyType,
+  paymentAmount,
+}: SubmitDonationData): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  UpdateWorkflowAction | UpdateLastErrorAction
+> {
+  return async dispatch => {
+    try {
+      await donations.clearDonation();
+      await donations.startPaypalDonation({
+        currencyType,
+        paymentAmount,
+      });
+    } catch (error) {
+      log.error('_submitPaypalDonation failed', Errors.toLogFormat(error));
+      dispatch({
+        type: UPDATE_LAST_ERROR,
+        payload: { lastError: 'GeneralError' },
+      });
+    }
+  };
+}
+
+function clearWorkflow(): UpdateWorkflowAction {
+  drop(donations.clearDonation());
+
+  return {
+    type: UPDATE_WORKFLOW,
+    payload: { nextWorkflow: undefined },
+  };
+}
+
+function updateLastError(
+  lastError: DonationErrorType | undefined
+): UpdateLastErrorAction {
+  return {
+    type: UPDATE_LAST_ERROR,
+    payload: { lastError },
+  };
+}
+
+function updateWorkflow(
+  nextWorkflow: DonationWorkflow | undefined
+): UpdateWorkflowAction {
+  return {
+    type: UPDATE_WORKFLOW,
+    payload: { nextWorkflow },
+  };
+}
+
+export function applyDonationBadge({
+  badge,
+  applyBadge,
+  onComplete,
+  storage = itemStorage,
+}: {
+  badge: BadgeType | undefined;
+  applyBadge: boolean;
+  onComplete: (error?: Error) => void;
+
+  // Only for testing
+  storage?: Pick<typeof itemStorage, 'get' | 'put'>;
+}): ThunkAction<void, RootStateType, unknown, SetProfileUpdateErrorActionType> {
+  return async (dispatch, getState) => {
+    const me = getMe(getState());
+
+    if (!badge) {
+      onComplete(new Error('No badge was given to redeem'));
+      return;
+    }
+
+    const allBadgesHaveVisibilityData = me.badges.every(
+      myBadge => 'isVisible' in myBadge
+    );
+
+    const desiredBadgeIndexInUserBadges = me.badges.findIndex(
+      myBadge => myBadge.id === badge.id
+    );
+
+    const userHasDesiredBadgeToApply = desiredBadgeIndexInUserBadges !== -1;
+    const desiredBadgeInUserProfile =
+      me.badges?.[desiredBadgeIndexInUserBadges];
+
+    if (!userHasDesiredBadgeToApply || !desiredBadgeInUserProfile) {
+      onComplete(new Error('User does not have the desired badge to apply'));
+      return;
+    }
+
+    if (
+      !allBadgesHaveVisibilityData ||
+      !('isVisible' in desiredBadgeInUserProfile)
+    ) {
+      onComplete(
+        new Error("Unable to determine user's existing visible badges")
+      );
+      return;
+    }
+
+    const previousDisplayBadgesOnProfile =
+      me.badges.length > 0 &&
+      me.badges.every(myBadge => 'isVisible' in myBadge && myBadge.isVisible);
+
+    const otherBadges = me.badges?.filter(b => b.id !== badge.id) ?? [];
+
+    let newDisplayBadgesOnProfile = previousDisplayBadgesOnProfile;
+
+    if (applyBadge) {
+      // Add the badge to the front and make ALL badges visible
+      const updatedBadges = [
+        { id: badge.id, isVisible: true },
+        ...otherBadges.map(b => ({ ...b, isVisible: true })),
+      ];
+
+      // Note: We pass only the badges we want visible to myProfileChanged.
+      // This is how the API works - we're not "deleting" invisible badges,
+      // we're setting the complete list of visible badges.
+      const profileData: ProfileDataType = {
+        badges: updatedBadges,
+      };
+
+      dispatch(
+        conversationActions.myProfileChanged(profileData, { keepAvatar: true })
+      );
+      newDisplayBadgesOnProfile = true;
+    } else if (
+      // If we're here, the user has unchecked the setting to apply the badge.
+      // If the badge we want to apply is already the primary visible badge, we
+      // disable showing badges.
+      // If the user has another badge as primary, we do nothing and keep it.
+      desiredBadgeIndexInUserBadges === 0 &&
+      desiredBadgeInUserProfile.isVisible
+    ) {
+      const profileData: ProfileDataType = {
+        badges: [],
+      };
+
+      dispatch(
+        conversationActions.myProfileChanged(profileData, { keepAvatar: true })
+      );
+      newDisplayBadgesOnProfile = false;
+    }
+
+    const storageValue = storage.get('displayBadgesOnProfile');
+    if (
+      storageValue == null ||
+      previousDisplayBadgesOnProfile !== newDisplayBadgesOnProfile
+    ) {
+      await storage.put('displayBadgesOnProfile', newDisplayBadgesOnProfile);
+      if (previousDisplayBadgesOnProfile !== newDisplayBadgesOnProfile) {
+        storageServiceUploadJob({ reason: 'donation-badge-toggle' });
+      }
+    }
+
+    onComplete();
+  };
+}
+
+export const actions = {
+  addReceipt,
+  applyDonationBadge,
+  clearWorkflow,
+  internalAddDonationReceipt,
+  hydrateConfigCache,
+  setDidResume,
+  resumeWorkflow,
+  submitDonation,
+  updateLastError,
+  updateWorkflow,
+};
+
+export const useDonationsActions = (): BoundActionCreatorsMapObject<
+  typeof actions
+> => useBoundActions(actions);
+
+// Reducer
+
+export function getEmptyState(): DonationsStateType {
+  return {
+    currentWorkflow: undefined,
+    didResumeWorkflowAtStartup: false,
+    lastError: undefined,
+    lastReturnToken: undefined,
+    receipts: [],
+    configCache: undefined,
+  };
+}
+
+export function reducer(
+  state: Readonly<DonationsStateType> = getEmptyState(),
+  action: Readonly<DonationsActionType>
+): DonationsStateType {
+  if (action.type === ADD_RECEIPT) {
+    return {
+      ...state,
+      receipts: [...state.receipts, action.payload.receipt],
+    };
+  }
+
+  if (action.type === HYDRATE_CONFIG_CACHE) {
+    return {
+      ...state,
+      configCache: action.payload.configCache,
+    };
+  }
+
+  if (action.type === SET_DID_RESUME) {
+    return {
+      ...state,
+      didResumeWorkflowAtStartup: action.payload,
+    };
+  }
+
+  if (action.type === UPDATE_LAST_ERROR) {
+    return {
+      ...state,
+      lastError: action.payload.lastError,
+    };
+  }
+
+  if (action.type === UPDATE_WORKFLOW) {
+    const { nextWorkflow } = action.payload;
+
+    let lastReturnToken: string | undefined;
+    const { currentWorkflow } = state;
+    if (currentWorkflow && 'returnToken' in currentWorkflow) {
+      lastReturnToken = currentWorkflow.returnToken;
+    } else {
+      lastReturnToken = state.lastReturnToken;
+    }
+
+    // If we've cleared the workflow or are starting afresh, we clear the startup flag
+    const didResumeWorkflowAtStartup =
+      !nextWorkflow || nextWorkflow.type === donationStateSchema.enum.INTENT
+        ? false
+        : state.didResumeWorkflowAtStartup;
+
+    return {
+      ...state,
+      didResumeWorkflowAtStartup,
+      currentWorkflow: nextWorkflow,
+      lastReturnToken,
+    };
+  }
+
+  return state;
+}

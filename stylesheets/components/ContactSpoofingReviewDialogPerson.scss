@@ -1,34 +1,105 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .module-ContactSpoofingReviewDialogPerson {
   display: flex;
+  padding-block: 8px;
+  gap: 16px;
 
   &:is(button) {
-    @include button-reset;
+    @include mixins.button-reset;
   }
 
   &__info {
-    margin-left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 
     &__contact-name {
-      @include font-body-1;
+      @include mixins.font-body-1-bold;
+      display: block;
     }
 
     &__property {
-      @include font-body-2;
+      @include mixins.font-body-2;
 
-      @include light-theme {
-        color: $color-gray-60;
+      @include mixins.light-theme {
+        color: variables.$color-gray-60;
       }
 
-      @include dark-theme {
-        color: $color-gray-05;
+      @include mixins.dark-theme {
+        color: variables.$color-gray-05;
       }
 
-      &--callout {
-        @include font-body-2-italic;
-        margin: 12px 0;
+      & {
+        display: flex;
+        gap: 12px;
+      }
+
+      &__icon {
+        display: inline-block;
+        height: 20px;
+        width: 20px;
+        vertical-align: text-top;
+        flex-shrink: 0;
+
+        @mixin contact-spoofing-icon($url) {
+          @include mixins.light-theme {
+            @include mixins.color-svg($url, variables.$color-gray-90);
+          }
+
+          @include mixins.dark-theme {
+            @include mixins.color-svg($url, variables.$color-gray-05);
+          }
+        }
+
+        &--connections {
+          @include contact-spoofing-icon(
+            '../images/icons/v3/connections/connections.svg'
+          );
+        }
+
+        &--person {
+          @include contact-spoofing-icon(
+            '../images/icons/v3/person/person.svg'
+          );
+        }
+
+        &--phone {
+          @include contact-spoofing-icon(
+            '../images/icons/v3/phone/phone-compact.svg'
+          );
+        }
+
+        &--group {
+          @include contact-spoofing-icon('../images/icons/v3/group/group.svg');
+        }
+      }
+
+      &__signal-connection {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        @include mixins.button-reset();
+        & {
+          cursor: pointer;
+        }
+
+        &::after {
+          content: '';
+          display: inline-block;
+          height: 20px;
+          width: 20px;
+
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-right-bold.svg',
+            variables.$color-gray-45
+          );
+        }
       }
     }
   }

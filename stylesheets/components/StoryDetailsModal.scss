@@ -1,6 +1,9 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .StoryDetailsModal {
   min-width: 320px;
   overflow: hidden;
@@ -15,7 +18,7 @@
   }
 
   &__debugger__button {
-    color: $color-gray-25;
+    color: variables.$color-gray-25;
     display: block;
     font-weight: 600;
     height: auto;
@@ -27,40 +30,47 @@
   }
 
   &__copy-icon {
-    @include dark-theme {
-      @include color-svg(
-        '../images/icons/v2/copy-outline-24.svg',
-        $color-white
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/copy/copy.svg',
+        variables.$color-white
       );
     }
-    @include light-theme {
-      @include color-svg(
-        '../images/icons/v2/copy-outline-24.svg',
-        $color-black
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/copy/copy.svg',
+        variables.$color-black
       );
     }
   }
 
   &__download-icon {
-    @include dark-theme {
-      @include color-svg('../images/icons/v2/arrow-down-24.svg', $color-white);
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/save/save.svg',
+        variables.$color-white
+      );
     }
-    @include light-theme {
-      @include color-svg('../images/icons/v2/arrow-down-24.svg', $color-black);
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/save/save.svg',
+        variables.$color-black
+      );
     }
   }
 
   &__contact-container {
-    border-top: 1px solid $color-gray-75;
+    border-top: 1px solid variables.$color-gray-75;
   }
 
   &__contact-group__header {
-    @include font-body-1-bold;
+    @include mixins.font-body-1-bold;
     align-items: center;
     display: flex;
     justify-content: space-between;
     margin-top: 24px;
-    padding: 10px 0;
+    padding-block: 10px;
+    padding-inline: 0;
     user-select: none;
 
     &:first-child {
@@ -70,15 +80,16 @@
 
   &__contact {
     margin-bottom: 8px;
-    padding: 8px 0;
+    padding-block: 8px;
+    padding-inline: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
 
     &__text {
-      @include font-body-1;
+      @include mixins.font-body-1;
       flex-grow: 1;
-      margin-left: 10px;
+      margin-inline-start: 10px;
     }
 
     &:last-child {
@@ -87,6 +98,6 @@
   }
 
   &__status-timestamp {
-    margin-left: 6px;
+    margin-inline-start: 6px;
   }
 }

@@ -1,0 +1,360 @@
+// Copyright 2020 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReactElement, ReactNode, JSX } from 'react';
+import { useState } from 'react';
+import lodash from 'lodash';
+import type { ReadonlyDeep } from 'type-fest';
+
+import { createLogger } from '../../logging/log.std.ts';
+import { I18n } from '../I18n.dom.tsx';
+import type {
+  LocalizerType,
+  ICUJSXMessageParamsByKeyType,
+} from '../../types/Util.std.ts';
+import type {
+  AciString,
+  PniString,
+  ServiceIdString,
+} from '../../types/ServiceId.std.ts';
+import { GroupDescriptionText } from '../GroupDescriptionText.dom.tsx';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+
+import type {
+  GroupV2ChangeType,
+  GroupV2ChangeDetailType,
+} from '../../types/groups.std.ts';
+
+import type { SmartContactRendererType } from '../../groupChange.std.ts';
+import { renderChange } from '../../groupChange.std.ts';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
+
+const { get } = lodash;
+
+const log = createLogger('GroupV2Change');
+
+export type PropsDataType = ReadonlyDeep<{
+  areWeAdmin: boolean;
+  change: GroupV2ChangeType;
+  conversationId: string;
+  groupBannedMemberships?: ReadonlyArray<ServiceIdString>;
+  groupMemberships?: ReadonlyArray<{
+    aci: AciString;
+    isAdmin: boolean;
+  }>;
+  groupName?: string;
+  ourAci: AciString | undefined;
+  ourPni: PniString | undefined;
+}>;
+
+export type PropsActionsType = {
+  blockGroupLinkRequests: (
+    conversationId: string,
+    serviceId: ServiceIdString
+  ) => unknown;
+};
+
+export type PropsHousekeepingType = {
+  i18n: LocalizerType;
+  renderContact: SmartContactRendererType<JSX.Element>;
+};
+
+export type PropsType = PropsDataType &
+  PropsActionsType &
+  PropsHousekeepingType;
+
+function renderStringToIntl<Key extends keyof ICUJSXMessageParamsByKeyType>(
+  id: Key,
+  i18n: LocalizerType,
+  components: ICUJSXMessageParamsByKeyType[Key]
+): JSX.Element {
+  return <I18n id={id} i18n={i18n} components={components} />;
+}
+
+enum ModalState {
+  None = 'None',
+  ViewingGroupDescription = 'ViewingGroupDescription',
+  ConfirmingblockGroupLinkRequests = 'ConfirmingblockGroupLinkRequests',
+}
+
+type GroupIconType =
+  | 'group'
+  | 'group-access'
+  | 'group-add'
+  | 'group-approved'
+  | 'group-avatar'
+  | 'group-decline'
+  | 'group-edit'
+  | 'group-summary'
+  | 'group-leave'
+  | 'group-remove'
+  // TODO: DESKTOP-9894
+  | 'group-terminate';
+
+const changeToIconMap: Record<GroupV2ChangeDetailType['type'], GroupIconType> =
+  {
+    'access-attributes': 'group-access',
+    'access-invite-link': 'group-access',
+    'access-member-label': 'group-access',
+    'access-members': 'group-access',
+    'admin-approval-add-one': 'group-add',
+    'admin-approval-bounce': 'group-decline',
+    'admin-approval-remove-one': 'group-decline',
+    'announcements-only': 'group-access',
+    avatar: 'group-avatar',
+    create: 'group',
+    description: 'group-edit',
+    'group-link-add': 'group-access',
+    'group-link-remove': 'group-access',
+    'group-link-reset': 'group-access',
+    'member-add': 'group-add',
+    'member-add-from-admin-approval': 'group-approved',
+    'member-add-from-invite': 'group-add',
+    'member-add-from-link': 'group-add',
+    'member-privilege': 'group-access',
+    'member-remove': 'group-remove',
+    'pending-add-many': 'group-add',
+    'pending-add-one': 'group-add',
+    'pending-remove-many': 'group-decline',
+    'pending-remove-one': 'group-decline',
+    summary: 'group-summary',
+    title: 'group-edit',
+    // TODO: DESKTOP-9894
+    terminated: 'group-terminate',
+  };
+function getIcon(
+  detail: GroupV2ChangeDetailType,
+  isLastText = true,
+  fromId?: ServiceIdString
+): GroupIconType {
+  const changeType = detail.type;
+  let possibleIcon: GroupIconType | undefined = changeToIconMap[changeType];
+  const isSameId = fromId === get(detail, 'aci', null);
+  if (isSameId) {
+    if (changeType === 'member-remove') {
+      possibleIcon = 'group-leave';
+    }
+    if (changeType === 'member-add-from-invite') {
+      possibleIcon = 'group-approved';
+    }
+  }
+  // Use default icon for "... requested to join via group link" added to
+  // bounce notification.
+  if (changeType === 'admin-approval-bounce' && isLastText) {
+    possibleIcon = undefined;
+  }
+
+  return possibleIcon || 'group';
+}
+
+function GroupV2Detail({
+  areWeAdmin,
+  blockGroupLinkRequests,
+  conversationId,
+  detail,
+  isLastText,
+  fromId,
+  groupMemberships,
+  groupBannedMemberships,
+  groupName,
+  i18n,
+  ourAci,
+  renderContact,
+  text,
+}: {
+  areWeAdmin: boolean;
+  blockGroupLinkRequests: (
+    conversationId: string,
+    serviceId: ServiceIdString
+  ) => unknown;
+  conversationId: string;
+  detail: GroupV2ChangeDetailType;
+  isLastText: boolean;
+  groupMemberships?: ReadonlyArray<{
+    aci: AciString;
+    isAdmin: boolean;
+  }>;
+  groupBannedMemberships?: ReadonlyArray<ServiceIdString>;
+  groupName?: string;
+  i18n: LocalizerType;
+  fromId?: ServiceIdString;
+  ourAci: AciString | undefined;
+  renderContact: SmartContactRendererType<JSX.Element>;
+  text: ReactNode;
+}): JSX.Element {
+  const icon = getIcon(detail, isLastText, fromId);
+  let buttonNode: ReactNode;
+
+  const [modalState, setModalState] = useState<ModalState>(ModalState.None);
+  let modalNode: ReactNode;
+
+  switch (modalState) {
+    case ModalState.None:
+      modalNode = undefined;
+      break;
+    case ModalState.ViewingGroupDescription:
+      if (detail.type !== 'description' || !detail.description) {
+        log.warn(
+          'GroupV2Detail: ViewingGroupDescription but missing description or wrong change type'
+        );
+        modalNode = undefined;
+        break;
+      }
+
+      modalNode = (
+        <AxoDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
+        >
+          <AxoDialog.Content size="md" escape="cancel-is-noop">
+            <AxoDialog.Header>
+              <AxoDialog.Title>{groupName}</AxoDialog.Title>
+              <AxoDialog.Close />
+            </AxoDialog.Header>
+            <AxoDialog.Body>
+              <AxoDialog.Description>
+                <GroupDescriptionText text={detail.description} />
+              </AxoDialog.Description>
+            </AxoDialog.Body>
+            <AxoDialog.Footer />
+          </AxoDialog.Content>
+        </AxoDialog.Root>
+      );
+      break;
+    case ModalState.ConfirmingblockGroupLinkRequests:
+      if (
+        !isLastText ||
+        detail.type !== 'admin-approval-bounce' ||
+        !detail.aci
+      ) {
+        log.warn(
+          'GroupV2Detail: ConfirmingblockGroupLinkRequests but missing aci or wrong change type'
+        );
+        modalNode = undefined;
+        break;
+      }
+
+      modalNode = (
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
+          title={i18n('icu:PendingRequests--block--title')}
+          description={
+            <I18n
+              id="icu:PendingRequests--block--contents"
+              i18n={i18n}
+              components={{
+                name: renderContact(detail.aci),
+              }}
+            />
+          }
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="destructive"
+            onClick={() => blockGroupLinkRequests(conversationId, detail.aci)}
+          >
+            {i18n('icu:PendingRequests--block--confirm')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+      );
+      break;
+    default: {
+      const state: never = modalState;
+      log.warn(`GroupV2Detail: unexpected modal state ${state}`);
+      modalNode = undefined;
+      break;
+    }
+  }
+
+  if (detail.type === 'description' && detail.description) {
+    buttonNode = (
+      <Button
+        onClick={() => setModalState(ModalState.ViewingGroupDescription)}
+        size={ButtonSize.Small}
+        variant={ButtonVariant.SystemMessage}
+      >
+        {i18n('icu:view')}
+      </Button>
+    );
+  } else if (
+    isLastText &&
+    detail.type === 'admin-approval-bounce' &&
+    areWeAdmin &&
+    detail.aci &&
+    detail.aci !== ourAci &&
+    (!fromId || fromId === detail.aci) &&
+    !groupMemberships?.some(item => item.aci === detail.aci) &&
+    !groupBannedMemberships?.some(serviceId => serviceId === detail.aci)
+  ) {
+    buttonNode = (
+      <Button
+        onClick={() =>
+          setModalState(ModalState.ConfirmingblockGroupLinkRequests)
+        }
+        size={ButtonSize.Small}
+        variant={ButtonVariant.SystemMessage}
+      >
+        {i18n('icu:PendingRequests--block--button')}
+      </Button>
+    );
+  }
+
+  return (
+    <>
+      <SystemMessage icon={icon} contents={text} button={buttonNode} />
+      {modalNode}
+    </>
+  );
+}
+
+export function GroupV2Change(props: PropsType): ReactElement {
+  const {
+    areWeAdmin,
+    blockGroupLinkRequests,
+    change,
+    conversationId,
+    groupBannedMemberships,
+    groupMemberships,
+    groupName,
+    i18n,
+    ourAci,
+    ourPni,
+    renderContact,
+  } = props;
+
+  return (
+    <>
+      {renderChange<JSX.Element>(change, {
+        i18n,
+        ourAci,
+        ourPni,
+        renderContact,
+        renderIntl: renderStringToIntl,
+      }).map(({ detail, isLastText, text }, index) => {
+        return (
+          <GroupV2Detail
+            areWeAdmin={areWeAdmin}
+            blockGroupLinkRequests={blockGroupLinkRequests}
+            conversationId={conversationId}
+            detail={detail}
+            isLastText={isLastText}
+            fromId={change.from}
+            groupBannedMemberships={groupBannedMemberships}
+            groupMemberships={groupMemberships}
+            groupName={groupName}
+            i18n={i18n}
+            // Difficult to find a unique key for this type
+            // oxlint-disable-next-line react/no-array-index-key
+            key={index}
+            ourAci={ourAci}
+            renderContact={renderContact}
+            text={text}
+          />
+        );
+      })}
+    </>
+  );
+}

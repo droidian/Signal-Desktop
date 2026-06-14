@@ -1,16 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .CompositionArea {
   position: relative;
   min-height: 42px;
-  padding: 10px 0 10px 0;
+  padding-block: 10px;
+  padding-inline: 0;
 
   &__placeholder {
     flex-grow: 1;
-    margin: {
-      bottom: 6px;
-    }
+    margin-bottom: 6px;
   }
 
   &__row {
@@ -22,7 +24,8 @@
       justify-content: center;
     }
     &--padded {
-      padding: 0 12px;
+      padding-block: 0;
+      padding-inline: 12px;
     }
     &--control-row {
       margin-top: 12px;
@@ -34,7 +37,8 @@
   }
 
   &__button-cell {
-    margin: 0 6px;
+    margin-block: 0;
+    margin-inline: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -42,31 +46,65 @@
     flex-shrink: 0;
 
     &:first-child {
-      margin-left: 12px;
+      margin-inline-start: 12px;
     }
 
     &:last-child {
-      margin-right: 12px;
+      margin-inline-end: 12px;
     }
   }
-  &__send-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: none;
-    border: none;
-    &::after {
-      display: block;
+
+  &__button-edit {
+    margin-bottom: 4px;
+  }
+
+  &__edit-button {
+    @include mixins.button-reset;
+    & {
+      @include mixins.rounded-corners;
+      align-items: center;
+      background-color: variables.$color-gray-45;
+      display: flex;
+      height: 28px;
+      justify-content: center;
+      width: 28px;
+    }
+
+    &::before {
       content: '';
-      width: 24px;
-      height: 24px;
-      flex-shrink: 0;
-      @include color-svg('../images/icons/v2/send-24.svg', $color-ultramarine);
+      height: 20px;
+      width: 20px;
+    }
+
+    &--discard {
+      &::before {
+        @include mixins.color-svg(
+          '../images/icons/v3/x/x.svg',
+          variables.$color-white
+        );
+      }
+    }
+    &--accept {
+      background-color: variables.$color-ultramarine;
+      margin-inline-start: 16px;
+      &::before {
+        @include mixins.color-svg(
+          '../images/icons/v3/check/check.svg',
+          variables.$color-white
+        );
+      }
+      &:disabled {
+        opacity: 0.5;
+      }
     }
   }
+
   &__input {
     flex-grow: 1;
-    margin: 0 6px;
+    position: relative;
+    margin-block: 0;
+    margin-inline: 6px;
+    min-width: 0;
 
     &--large {
       margin: 0;
@@ -80,7 +118,7 @@
     width: $width;
     height: $height;
     position: absolute;
-    left: calc(50% - $width / 2);
+    inset-inline-start: calc(50% - $width / 2);
 
     // 6px coming from padding-top of .module-composition-input__input__scroller
     top: calc(0px - $height / 2 - 6px);
@@ -95,12 +133,12 @@
       pointer-events: all;
     }
 
-    @include light-theme() {
-      background-color: $color-white;
+    @include mixins.light-theme() {
+      background-color: variables.$color-white;
     }
 
-    @include dark-theme() {
-      background-color: $color-gray-95;
+    @include mixins.dark-theme() {
+      background-color: variables.$color-gray-95;
     }
 
     &__button {
@@ -108,35 +146,35 @@
       height: 24px;
       border: none;
 
-      @include light-theme() {
-        @include color-svg(
-          '../images/icons/v2/expand-up-20.svg',
-          $color-gray-45,
+      @include mixins.light-theme() {
+        @include mixins.color-svg(
+          '../images/icons/v3/chevron/chevron-shallow-up.svg',
+          variables.$color-gray-45,
           false
         );
       }
 
-      @include dark-theme() {
-        @include color-svg(
-          '../images/icons/v2/expand-up-20.svg',
-          $color-gray-45,
+      @include mixins.dark-theme() {
+        @include mixins.color-svg(
+          '../images/icons/v3/chevron/chevron-shallow-up.svg',
+          variables.$color-gray-45,
           false
         );
       }
 
       &--large-active {
-        @include light-theme() {
-          @include color-svg(
-            '../images/icons/v2/collapse-down-20.svg',
-            $color-gray-45,
+        @include mixins.light-theme() {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-shallow-down.svg',
+            variables.$color-gray-45,
             false
           );
         }
 
-        @include dark-theme() {
-          @include color-svg(
-            '../images/icons/v2/collapse-down-20.svg',
-            $color-gray-45,
+        @include mixins.dark-theme() {
+          @include mixins.color-svg(
+            '../images/icons/v3/chevron/chevron-shallow-down.svg',
+            variables.$color-gray-45,
             false
           );
         }
@@ -153,74 +191,42 @@
     align-items: center;
 
     // Note the margin in &__placeholder above
-    padding: 14px 16px 18px 16px;
+    padding-block: 14px 18px;
+    padding-inline: 16px;
 
     &:not(.module-composition-area--pending) {
-      @include light-theme {
-        border-top: 1px solid $color-gray-05;
+      @include mixins.light-theme {
+        border-top: 1px solid variables.$color-gray-05;
       }
-      @include dark-theme {
-        border-top: 1px solid $color-gray-75;
+      @include mixins.dark-theme {
+        border-top: 1px solid variables.$color-gray-75;
       }
     }
 
     &__title {
-      @include font-body-2-bold;
-      margin: 0 0 2px 0;
+      @include mixins.font-body-2-bold;
+      margin-block: 0 2px;
+      margin-inline: 0;
 
-      @include light-theme {
-        color: $color-gray-60;
+      @include mixins.light-theme {
+        color: variables.$color-gray-60;
       }
-      @include dark-theme {
-        color: $color-gray-05;
+      @include mixins.dark-theme {
+        color: variables.$color-gray-05;
       }
     }
 
     &__body {
-      @include font-body-2;
+      @include mixins.font-body-2;
       text-align: center;
 
       margin: 0;
 
-      @include light-theme {
-        color: $color-gray-60;
+      @include mixins.light-theme {
+        color: variables.$color-gray-60;
       }
-      @include dark-theme {
-        color: $color-gray-05;
-      }
-    }
-  }
-
-  &__attach-file {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    @include keyboard-mode {
-      &:focus {
-        outline: 2px solid $color-ultramarine;
-      }
-    }
-
-    outline: none;
-
-    &:before {
-      content: '';
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-
-      @include light-theme {
-        @include color-svg('../images/icons/v2/plus-24.svg', $color-gray-75);
-      }
-      @include dark-theme {
-        @include color-svg('../images/icons/v2/plus-24.svg', $color-gray-15);
+      @include mixins.dark-theme {
+        color: variables.$color-gray-05;
       }
     }
   }

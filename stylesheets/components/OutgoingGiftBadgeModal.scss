@@ -1,6 +1,9 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .OutgoingGiftBadgeModal {
   text-align: center;
 
@@ -10,14 +13,13 @@
   }
 
   &__title {
-    @include font-title-2;
+    @include mixins.font-title-2;
     margin-top: 5px;
   }
   &__description {
-    @include font-body-1;
+    @include mixins.font-body-1;
     margin-top: 8px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-inline: auto;
     width: 328px;
   }
   &__badge {
@@ -27,20 +29,19 @@
 
     &--missing {
       border-radius: 50%;
-      margin-left: auto;
-      margin-right: auto;
+      margin-inline: auto;
 
-      @include light-theme {
-        background-color: $color-gray-05;
+      @include mixins.light-theme {
+        background-color: variables.$color-gray-05;
       }
-      @include dark-theme {
-        background-color: $color-gray-60;
+      @include mixins.dark-theme {
+        background-color: variables.$color-gray-60;
       }
     }
   }
   &__badge-summary {
     margin-top: 16px;
     margin-bottom: 16px;
-    @include font-body-1-bold;
+    @include mixins.font-body-1-bold;
   }
 }

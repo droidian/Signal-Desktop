@@ -1,0 +1,401 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import lodash from 'lodash';
+import { ContentHint } from '@signalapp/libsignal-client';
+
+import * as Errors from '../../types/errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { repeat, zipObject } from '../../util/iterables.std.ts';
+import type { CallbackResultType } from '../../textsecure/Types.d.ts';
+import { MessageModel } from '../../models/messages.preload.ts';
+import type { MessageReactionType } from '../../model-types.d.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+
+import * as reactionUtil from '../../reactions/util.std.ts';
+import { isSent, SendStatus } from '../../messages/MessageSendState.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { isIncoming } from '../../messages/helpers.std.ts';
+import {
+  isDirectConversation,
+  isGroupV2,
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { canReact, isStory } from '../../state/selectors/message.preload.ts';
+import { findAndFormatContact } from '../../util/findAndFormatContact.preload.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.ts';
+import { incrementMessageCounter } from '../../util/incrementMessageCounter.preload.ts';
+import { generateMessageId } from '../../util/generateMessageId.node.ts';
+
+import type {
+  ConversationQueueJobBundle,
+  ReactionJobData,
+} from '../conversationJobQueue.preload.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { hydrateStoryContext } from '../../util/hydrateStoryContext.preload.ts';
+import { send, sendSyncMessageOnly } from '../../messages/send.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { getSendRecipientLists } from './getSendRecipientLists.dom.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
+
+const { isNumber } = lodash;
+
+export async function sendReaction(
+  conversation: ConversationModel,
+  {
+    isFinalAttempt,
+    messaging,
+    shouldContinue,
+    timeRemaining,
+    log,
+  }: ConversationQueueJobBundle,
+  data: ReactionJobData
+): Promise<void> {
+  const { messageId, revision } = data;
+  const ourAci = itemStorage.user.getCheckedAci();
+
+  await window.ConversationController.load();
+
+  const ourConversationId =
+    window.ConversationController.getOurConversationIdOrThrow();
+
+  const message = await getMessageById(messageId);
+  if (!message) {
+    log.info(
+      `message ${messageId} was not found, maybe because it was deleted. Giving up on sending its reactions`
+    );
+    return;
+  }
+
+  strictAssert(
+    !isStory(message.attributes),
+    'Story reactions should be handled by sendStoryReaction'
+  );
+  const { pendingReaction, emojiToRemove } =
+    reactionUtil.getNewestPendingOutgoingReaction(
+      getReactions(message),
+      ourConversationId
+    );
+
+  if (!pendingReaction) {
+    log.info(`no pending reaction for ${messageId}. Doing nothing`);
+    return;
+  }
+
+  if (!canReact(message.attributes, ourConversationId, findAndFormatContact)) {
+    log.info(`could not react to ${messageId}. Removing this pending reaction`);
+    markReactionFailed(message, pendingReaction);
+    await window.MessageCache.saveMessage(message.attributes);
+    return;
+  }
+
+  if (!shouldContinue) {
+    log.info(
+      `reacting to message ${messageId} ran out of time. Giving up on sending it`
+    );
+    markReactionFailed(message, pendingReaction);
+    await window.MessageCache.saveMessage(message.attributes);
+    return;
+  }
+
+  let sendErrors: Array<Error> = [];
+  const saveErrors = (errors: Array<Error>): void => {
+    sendErrors = errors;
+  };
+
+  let originalError: Error | undefined;
+
+  try {
+    const messageConversation = window.ConversationController.get(
+      message.get('conversationId')
+    );
+    if (messageConversation !== conversation) {
+      log.error(
+        `message conversation '${messageConversation?.idForLogging()}' does not match job conversation ${conversation.idForLogging()}`
+      );
+      return;
+    }
+
+    const expireTimer = messageConversation.get('expireTimer');
+    const unsentConversationIds = Array.from(
+      reactionUtil.getUnsentConversationIds(pendingReaction)
+    );
+    const {
+      allRecipientServiceIds,
+      recipientServiceIdsWithoutMe,
+      untrustedServiceIds,
+    } = getSendRecipientLists({
+      log,
+      conversationIds: unsentConversationIds,
+      conversation,
+    });
+
+    if (untrustedServiceIds.length) {
+      window.reduxActions.conversations.conversationStoppedByMissingVerification(
+        {
+          conversationId: conversation.id,
+          untrustedServiceIds,
+        }
+      );
+      throw new Error(
+        `Reaction for message ${messageId} sending blocked because ${untrustedServiceIds.length} conversation(s) were untrusted. Failing this attempt.`
+      );
+    }
+
+    const profileKey = conversation.get('profileSharing')
+      ? await ourProfileKeyService.get()
+      : undefined;
+
+    const { emoji, ...restOfPendingReaction } = pendingReaction;
+
+    let targetAuthorAci: AciString;
+    if (isIncoming(message.attributes)) {
+      strictAssert(
+        isAciString(message.attributes.sourceServiceId),
+        'incoming message does not have sender ACI'
+      );
+      ({ sourceServiceId: targetAuthorAci } = message.attributes);
+    } else {
+      targetAuthorAci = ourAci;
+    }
+
+    const reactionForSend = {
+      ...restOfPendingReaction,
+      emoji: emoji || emojiToRemove,
+      targetAuthorAci,
+      remove: !emoji,
+    };
+    const ephemeralMessageForReactionSend = new MessageModel({
+      ...generateMessageId(incrementMessageCounter()),
+      type: 'outgoing',
+      conversationId: conversation.get('id'),
+      sent_at: pendingReaction.timestamp,
+      received_at_ms: pendingReaction.timestamp,
+      timestamp: pendingReaction.timestamp,
+      sendStateByConversationId: zipObject(
+        Object.keys(pendingReaction.isSentByConversationId || {}),
+        repeat({
+          status: SendStatus.Pending,
+          updatedAt: Date.now(),
+        })
+      ),
+    });
+
+    ephemeralMessageForReactionSend.doNotSave = true;
+
+    // Adds the reaction's attributes to the message cache so that we can
+    // safely `set` on it later.
+    window.MessageCache.register(ephemeralMessageForReactionSend);
+
+    let didFullySend: boolean;
+    const successfulConversationIds = new Set<string>();
+
+    if (recipientServiceIdsWithoutMe.length === 0) {
+      if (!window.ConversationController.doWeHaveOtherDevices()) {
+        log.info(
+          'sendReaction: We have no other devices; not sending sync message'
+        );
+        return;
+      }
+
+      log.info('sending sync reaction message only');
+      const dataMessage = await messaging.getDataOrEditMessage({
+        attachments: [],
+        expireTimer,
+        expireTimerVersion: conversation.getExpireTimerVersion(),
+        groupV2: conversation.getGroupV2Info({
+          members: recipientServiceIdsWithoutMe,
+        }),
+        preview: [],
+        profileKey,
+        reaction: reactionForSend,
+        recipients: allRecipientServiceIds,
+        timestamp: pendingReaction.timestamp,
+      });
+      await sendSyncMessageOnly(ephemeralMessageForReactionSend, {
+        dataMessage,
+        saveErrors,
+        targetTimestamp: pendingReaction.timestamp,
+      });
+
+      didFullySend = true;
+      successfulConversationIds.add(ourConversationId);
+    } else {
+      let promise: Promise<CallbackResultType>;
+      if (isDirectConversation(conversation.attributes)) {
+        const [ok, refusal] = shouldSendToDirectConversation(conversation);
+        if (!ok) {
+          log.info(refusal.logLine);
+          markReactionFailed(message, pendingReaction);
+          return;
+        }
+
+        log.info('sending direct reaction message');
+        promise = conversation.queueJob('sendRection/direct', async () => {
+          const sendOptions = await getSendOptions(conversation.attributes);
+          return messaging.sendMessageToServiceId({
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            serviceId: recipientServiceIdsWithoutMe[0]!,
+            messageOptions: {
+              reaction: reactionForSend,
+              timestamp: pendingReaction.timestamp,
+              expireTimer,
+              expireTimerVersion: conversation.getExpireTimerVersion(),
+              profileKey,
+            },
+            groupId: undefined,
+            contentHint: ContentHint.Resendable,
+            options: sendOptions,
+            urgent: true,
+            includePniSignatureMessage: true,
+          });
+        });
+      } else {
+        log.info('sending group reaction message');
+        promise = conversation.queueJob(
+          'conversationQueue/sendReaction',
+          async abortSignal => {
+            // Note: this will happen for all old jobs queued before 5.32.x
+            if (isGroupV2(conversation.attributes) && !isNumber(revision)) {
+              log.error('No revision provided, but conversation is GroupV2');
+            }
+
+            const groupV2Info = conversation.getGroupV2Info({
+              members: recipientServiceIdsWithoutMe,
+            });
+            strictAssert(groupV2Info, 'Missing groupV2Info');
+            if (isNumber(revision)) {
+              groupV2Info.revision = revision;
+            }
+            const sendOptions = await getSendOptions(conversation.attributes);
+            return sendToGroup({
+              abortSignal,
+              contentHint: ContentHint.Resendable,
+              groupSendOptions: {
+                groupV2: groupV2Info,
+                reaction: reactionForSend,
+                timestamp: pendingReaction.timestamp,
+                expireTimer,
+                profileKey,
+              },
+              messageId,
+              sendOptions,
+              sendTarget: conversation.toSenderKeyTarget(),
+              sendType: 'reaction',
+              urgent: true,
+            });
+          }
+        );
+      }
+
+      await send(ephemeralMessageForReactionSend, {
+        promise: handleMessageSend(promise, {
+          messageIds: [messageId],
+          sendType: 'reaction',
+        }),
+        saveErrors,
+        targetTimestamp: pendingReaction.timestamp,
+      });
+
+      // Because message.send swallows and processes errors, we'll await the inner promise
+      //   to get the SendMessageProtoError, which gives us information upstream
+      ///  processors need to detect certain kinds of errors.
+      try {
+        await promise;
+      } catch (error) {
+        if (error instanceof Error) {
+          originalError = error;
+        } else {
+          log.error(
+            `promise threw something other than an error: ${Errors.toLogFormat(
+              error
+            )}`
+          );
+        }
+      }
+
+      didFullySend = true;
+      const reactionSendStateByConversationId =
+        ephemeralMessageForReactionSend.get('sendStateByConversationId') || {};
+      for (const [conversationId, sendState] of Object.entries(
+        reactionSendStateByConversationId
+      )) {
+        if (isSent(sendState.status)) {
+          successfulConversationIds.add(conversationId);
+        } else {
+          didFullySend = false;
+        }
+      }
+
+      if (!ephemeralMessageForReactionSend.doNotSave) {
+        const reactionMessage = ephemeralMessageForReactionSend;
+
+        await hydrateStoryContext(reactionMessage.id, message.attributes, {
+          shouldSave: false,
+        });
+        await window.MessageCache.saveMessage(reactionMessage.attributes, {
+          forceSave: true,
+        });
+
+        window.MessageCache.register(reactionMessage);
+        void conversation.addSingleMessage(reactionMessage.attributes);
+      }
+    }
+
+    const newReactions = reactionUtil.markOutgoingReactionSent(
+      getReactions(message),
+      pendingReaction,
+      successfulConversationIds
+    );
+    setReactions(message, newReactions);
+
+    if (!didFullySend) {
+      throw new Error('reaction did not fully send');
+    }
+  } catch (thrownError: unknown) {
+    await handleMultipleSendErrors({
+      errors: [thrownError, ...sendErrors],
+      isFinalAttempt,
+      log,
+      markFailed: () => markReactionFailed(message, pendingReaction),
+      timeRemaining,
+      // In the case of a failed group send thrownError will not be SentMessageProtoError,
+      //   but we should have been able to harvest the original error. In the Note to Self
+      //   send case, thrownError will be the error we care about, and we won't have an
+      //   originalError.
+      toThrow: originalError || thrownError,
+    });
+  } finally {
+    await window.MessageCache.saveMessage(message.attributes);
+  }
+}
+
+const getReactions = (
+  message: MessageModel
+): ReadonlyArray<MessageReactionType> => message.get('reactions') || [];
+
+const setReactions = (
+  message: MessageModel,
+  reactions: Array<MessageReactionType>
+): void => {
+  if (reactions.length) {
+    message.set({ reactions });
+  } else {
+    message.set({ reactions: undefined });
+  }
+};
+
+function markReactionFailed(
+  message: MessageModel,
+  pendingReaction: MessageReactionType
+): void {
+  const newReactions = reactionUtil.markOutgoingReactionFailed(
+    getReactions(message),
+    pendingReaction
+  );
+  setReactions(message, newReactions);
+}

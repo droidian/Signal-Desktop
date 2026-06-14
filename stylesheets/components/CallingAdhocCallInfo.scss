@@ -1,0 +1,158 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.CallingAdhocCallInfo {
+  flex-shrink: 0;
+  width: 320px;
+  height: auto;
+  margin-block-end: auto;
+  padding-block-end: 16px;
+  pointer-events: auto;
+}
+
+.CallingAdhocCallInfo__width-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  padding-block: 1px;
+  padding-inline-start: 15px;
+  margin-block-end: 80px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.CallingAdhocCallInfo__width-container::after {
+  content: '';
+  display: flex;
+  flex-shrink: 1;
+  flex-basis: 480px;
+}
+
+.CallingAdhocCallInfo__overlay {
+  background: transparent;
+}
+
+.CallingAdhocCallInfo__overlay-container {
+  flex-direction: column;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+.CallingAdhocCallInfo__MenuItem {
+  @include mixins.button-reset;
+  & {
+    @include mixins.font-body-2;
+    display: flex;
+    width: 100%;
+    padding-block: 8px;
+    padding-inline: 10px 2px;
+    align-items: center;
+    border-radius: 6px;
+  }
+}
+
+.CallingAdhocCallInfo__MenuItem:hover {
+  background-color: variables.$color-gray-62;
+}
+
+.CallingAdhocCallInfo__MenuItemIcon {
+  background: variables.$color-gray-65;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  margin-inline-end: 8px;
+  border-radius: 36px;
+  align-items: center;
+  justify-content: center;
+}
+
+.CallingAdhocCallInfo__MenuItemIcon:before {
+  content: '';
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+}
+
+.CallingAdhocCallInfo__MenuItemIcon--copy-link:before {
+  @include mixins.color-svg(
+    '../images/icons/v3/copy/copy.svg',
+    variables.$color-gray-15
+  );
+}
+
+.CallingAdhocCallInfo__MenuItemIcon--share-via-signal:before {
+  @include mixins.color-svg(
+    '../images/icons/v3/forward/forward.svg',
+    variables.$color-gray-15
+  );
+}
+
+.CallingAdhocCallInfo__MenuItemText {
+  display: flex;
+}
+
+.CallingAdhocCallInfo__Divider {
+  display: flex;
+  margin-block: 16px;
+  margin-inline: 10px;
+  border: 1px solid variables.$color-gray-65;
+}
+
+.CallingAdhocCallInfo__RemoveClient {
+  @include mixins.button-reset;
+  & {
+    width: 16px;
+    height: 16px;
+    margin-inline: 8px;
+    background: variables.$color-white;
+  }
+}
+
+.CallingAdhocCallInfo__UnknownContactInfoButton {
+  @include mixins.button-reset;
+  @include mixins.color-svg(
+    '../images/icons/v3/info/info.svg',
+    variables.$color-white
+  );
+  & {
+    display: flex;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-inline: 8px;
+  }
+}
+
+.CallingAdhocCallInfo__UnknownContactInfoButton:focus {
+  @include mixins.keyboard-mode {
+    background: variables.$color-ultramarine;
+  }
+}
+
+.CallingAdhocCallInfo__UnknownContactAvatarSet {
+  height: 36px;
+}
+
+.CallingAdhocCallInfo__UnknownContactAvatar {
+  &:not(:first-child) {
+    margin-inline-start: -24px;
+  }
+
+  .module-Avatar__contents {
+    outline: 2px solid;
+    outline-color: variables.$color-gray-80;
+  }
+}
+
+.CallingAdhocCallInfo
+  .module-calling-participants-list__contact:hover
+  .CallingAdhocCallInfo__UnknownContactAvatar
+  .module-Avatar__contents {
+  // Should match background of .module-calling-participants-list__contact:hover
+  outline-color: variables.$color-gray-62;
+}

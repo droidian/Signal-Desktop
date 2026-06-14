@@ -1,8 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .module-sticker-manager {
-  padding: 0 16px;
+  padding-block: 0;
+  padding-inline: 16px;
   outline: none;
 }
 
@@ -11,25 +15,25 @@
 
   letter-spacing: 0px;
   line-height: 18px;
-  padding-left: 8px;
+  padding-inline-start: 8px;
 
-  @include light-theme() {
-    color: $color-gray-60;
+  @include mixins.light-theme() {
+    color: variables.$color-gray-60;
   }
 
-  @include dark-theme() {
-    color: $color-gray-25;
+  @include mixins.dark-theme() {
+    color: variables.$color-gray-25;
   }
 
   &--heading {
-    @include font-body-1-bold;
+    @include mixins.font-body-1-bold;
 
-    @include light-theme() {
-      color: $color-gray-90;
+    @include mixins.light-theme() {
+      color: variables.$color-gray-90;
     }
 
-    @include dark-theme() {
-      color: $color-gray-05;
+    @include mixins.dark-theme() {
+      color: variables.$color-gray-05;
     }
   }
 }
@@ -41,14 +45,14 @@
   height: 64px;
   border-radius: 8px;
 
-  @include light-theme {
-    background: $color-gray-02;
-    color: $color-gray-60;
+  @include mixins.light-theme {
+    background: variables.$color-gray-02;
+    color: variables.$color-gray-60;
   }
 
-  @include dark-theme {
-    background: $color-gray-90;
-    color: $color-gray-25;
+  @include mixins.dark-theme {
+    background: variables.$color-gray-90;
+    color: variables.$color-gray-25;
   }
 }
 
@@ -56,13 +60,11 @@
   height: 14px;
   width: 14px;
   border-radius: 8px;
-  background-color: $color-white;
+  background-color: variables.$color-white;
   display: inline-block;
   vertical-align: middle;
-  margin: {
-    left: 5px;
-    bottom: 2px;
-  }
+  margin-inline-start: 5px;
+  margin-bottom: 2px;
   position: relative;
 
   &::before {
@@ -72,35 +74,37 @@
     height: 16px;
     position: absolute;
     top: -1px;
-    left: -1px;
+    inset-inline-start: -1px;
 
-    @include light-theme {
-      @include color-svg(
-        '../images/icons/v2/check-circle-solid-24.svg',
-        $color-accent-blue
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/check/check-circle-fill.svg',
+        variables.$color-accent-blue
       );
     }
 
-    @include dark-theme {
-      @include color-svg(
-        '../images/icons/v2/check-circle-solid-24.svg',
-        $color-accent-blue
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/check/check-circle-fill.svg',
+        variables.$color-accent-blue
       );
     }
   }
 }
 
 .module-sticker-manager__pack-row {
-  @include button-reset;
+  @include mixins.button-reset;
 
-  display: flex;
-  flex-direction: row;
-  padding: 16px;
-  padding-left: 8px;
+  & {
+    display: flex;
+    flex-direction: row;
+    padding: 16px;
+    padding-inline-start: 8px;
+  }
 
-  @include keyboard-mode {
+  @include mixins.keyboard-mode {
     &:focus {
-      box-shadow: 0px 0px 0px 2px $color-ultramarine;
+      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
     }
   }
 
@@ -112,7 +116,7 @@
   &__cover-placeholder {
     width: 48px;
     height: 48px;
-    background: $color-gray-05;
+    background: variables.$color-gray-05;
   }
 
   &__meta {
@@ -121,7 +125,8 @@
     flex-direction: column;
 
     &:not(:first-child) {
-      padding: 0 12px;
+      padding-block: 0;
+      padding-inline: 12px;
     }
 
     &__title {
@@ -131,12 +136,12 @@
     &__author {
       flex: 1;
 
-      @include light-theme() {
-        color: $color-gray-45;
+      @include mixins.light-theme() {
+        color: variables.$color-gray-45;
       }
 
-      @include dark-theme() {
-        color: $color-gray-25;
+      @include mixins.dark-theme() {
+        color: variables.$color-gray-25;
       }
     }
 
@@ -160,16 +165,16 @@
           display: block;
           min-width: 24px;
           min-height: 24px;
-          @include light-theme {
-            @include color-svg(
-              '../images/icons/v2/more-horiz-24.svg',
-              $color-gray-60
+          @include mixins.light-theme {
+            @include mixins.color-svg(
+              '../images/icons/v3/more/more.svg',
+              variables.$color-gray-60
             );
           }
-          @include dark-theme {
-            @include color-svg(
-              '../images/icons/v2/more-horiz-24.svg',
-              $color-gray-25
+          @include mixins.dark-theme {
+            @include mixins.color-svg(
+              '../images/icons/v3/more/more.svg',
+              variables.$color-gray-25
             );
           }
         }
@@ -181,143 +186,36 @@
 .module-sticker-manager__install-button {
   background: none;
   border: 0;
-  color: $color-gray-90;
+  color: variables.$color-gray-90;
 
-  @include font-body-1-bold;
+  @include mixins.font-body-1-bold;
 
   height: 24px;
-  background: $color-gray-05;
+  background: variables.$color-gray-05;
   border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 12px;
+  padding-block: 0;
+  padding-inline: 12px;
 
-  @include dark-theme {
-    color: $color-gray-05;
-    background: $color-gray-75;
+  @include mixins.dark-theme {
+    color: variables.$color-gray-05;
+    background: variables.$color-gray-75;
   }
 
-  @include mouse-mode {
+  @include mixins.mouse-mode {
     outline: none;
   }
 
   &--blue {
-    @include light-theme {
-      background: $color-ultramarine;
-      color: $color-white;
+    @include mixins.light-theme {
+      background: variables.$color-ultramarine;
+      color: variables.$color-white;
     }
-    @include dark-theme {
-      background: $color-ultramarine-light;
-      color: $color-white;
-    }
-  }
-}
-
-.module-sticker-manager__preview-modal {
-  &__modal.module-Modal {
-    max-width: 440px;
-    width: 440px;
-  }
-  &__error {
-    color: $color-accent-red;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-    padding: 0 80px 30px 80px;
-
-    @include font-body-1-bold;
-  }
-
-  &__sticker-grid {
-    width: 100%;
-    display: grid;
-    grid-gap: 8px;
-    grid-template-columns: repeat(4, 1fr);
-    overflow-y: auto;
-
-    &__cell {
-      width: 96px;
-      height: 96px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      &__image {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-
-      &--placeholder {
-        border-radius: 4px;
-
-        @include light-theme() {
-          background: $color-gray-05;
-        }
-
-        @include dark-theme() {
-          background: $color-gray-60;
-        }
-      }
-    }
-  }
-
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-
-    &--info {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      flex-shrink: 1;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    &--title {
-      margin: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-
-      @include font-body-1-bold;
-
-      @include light-theme {
-        color: $color-gray-90;
-      }
-
-      @include dark-theme {
-        color: $color-gray-05;
-      }
-    }
-
-    &--author {
-      margin: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-
-      @include light-theme {
-        color: $color-gray-45;
-      }
-
-      @include dark-theme {
-        color: $color-gray-25;
-      }
-    }
-
-    &--blessed-icon {
-      @extend %blessed-sticker-pack-icon;
-    }
-
-    &--install {
-      flex-shrink: 0;
-      overflow: hidden;
+    @include mixins.dark-theme {
+      background: variables.$color-ultramarine-light;
+      color: variables.$color-white;
     }
   }
 }

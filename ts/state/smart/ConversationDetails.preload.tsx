@@ -1,0 +1,329 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import lodash from 'lodash';
+import { memo, useCallback, useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { ConversationDetails } from '../../components/conversation/conversation-details/ConversationDetails.dom.tsx';
+import {
+  getGroupSizeHardLimit,
+  getGroupSizeRecommendedLimit,
+} from '../../groups/limits.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
+import type { CallHistoryGroup } from '../../types/CallDisposition.std.ts';
+import { assertDev } from '../../util/assert.std.ts';
+import { getConversationColorAttributes } from '../../util/getConversationColorAttributes.std.ts';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
+import {
+  getBadgesSelector,
+  getPreferredBadgeSelector,
+} from '../selectors/badges.preload.ts';
+import { getActiveCallState } from '../selectors/calling.std.ts';
+import {
+  getAllComposableConversations,
+  getCachedConversationMemberColorsSelector,
+  getConversationByIdSelector,
+  getConversationByServiceIdSelector,
+  getPendingAvatarDownloadSelector,
+} from '../selectors/conversations.dom.ts';
+import {
+  getAreWeASubscriber,
+  getDefaultConversationColor,
+  getItems,
+} from '../selectors/items.dom.ts';
+import { getSelectedNavTab } from '../selectors/nav.std.ts';
+import {
+  getIntl,
+  getTheme,
+  getUserACI,
+  getVersion,
+} from '../selectors/user.std.ts';
+import type { SmartChooseGroupMembersModalPropsType } from './ChooseGroupMembersModal.preload.tsx';
+import { SmartChooseGroupMembersModal } from './ChooseGroupMembersModal.preload.tsx';
+import type { SmartConfirmAdditionsModalPropsType } from './ConfirmAdditionsModal.dom.tsx';
+import { SmartConfirmAdditionsModal } from './ConfirmAdditionsModal.dom.tsx';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { useSearchActions } from '../ducks/search.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { isSignalConversation } from '../../util/isSignalConversation.dom.ts';
+import { drop } from '../../util/drop.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
+import { getCanAddLabel } from '../../types/GroupMemberLabels.std.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
+
+const { sortBy } = lodash;
+
+export type SmartConversationDetailsProps = {
+  conversationId: string;
+  callHistoryGroup?: CallHistoryGroup | null;
+};
+
+const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
+
+const renderChooseGroupMembersModal = (
+  props: SmartChooseGroupMembersModalPropsType
+) => {
+  return <SmartChooseGroupMembersModal {...props} />;
+};
+
+const renderConfirmAdditionsModal = (
+  props: SmartConfirmAdditionsModalPropsType
+) => {
+  return <SmartConfirmAdditionsModal {...props} />;
+};
+
+function getGroupsInCommonSorted(
+  conversation: ConversationType,
+  allComposableConversations: ReadonlyArray<ConversationType>
+) {
+  if (conversation.type !== 'direct') {
+    return [];
+  }
+  const groupsInCommonUnsorted = allComposableConversations.filter(
+    otherConversation => {
+      if (otherConversation.type !== 'group') {
+        return false;
+      }
+      return otherConversation.memberships?.some(member => {
+        return member.aci === conversation.serviceId;
+      });
+    }
+  );
+
+  return sortBy(groupsInCommonUnsorted, 'title');
+}
+
+export const SmartConversationDetails = memo(function SmartConversationDetails({
+  conversationId,
+  callHistoryGroup,
+}: SmartConversationDetailsProps) {
+  const i18n = useSelector(getIntl);
+  const theme = useSelector(getTheme);
+  const ourAci = useSelector(getUserACI);
+  const activeCall = useSelector(getActiveCallState);
+  const version = useSelector(getVersion);
+  const items = useSelector(getItems);
+  const allComposableConversations = useSelector(getAllComposableConversations);
+  const areWeASubscriber = useSelector(getAreWeASubscriber);
+  const badgesSelector = useSelector(getBadgesSelector);
+  const conversationByServiceIdSelector = useSelector(
+    getConversationByServiceIdSelector
+  );
+  const conversationSelector = useSelector(getConversationByIdSelector);
+  const defaultConversationColor = useSelector(getDefaultConversationColor);
+  const getPreferredBadge = useSelector(getPreferredBadgeSelector);
+  const isPendingAvatarDownload = useSelector(getPendingAvatarDownloadSelector);
+  const selectedNavTab = useSelector(getSelectedNavTab);
+  const getCachedConversationMemberColors = useSelector(
+    getCachedConversationMemberColorsSelector
+  );
+
+  const {
+    acceptConversation,
+    addMembersToGroup,
+    blockConversation,
+    deleteAvatarFromDisk,
+    destroyMessages,
+    getProfilesForConversation,
+    leaveGroup,
+    onArchive,
+    onMoveToInbox,
+    replaceAvatar,
+    reportSpam,
+    saveAvatarToDisk,
+    setDisappearingMessages,
+    setMuteDuration,
+    showConversation,
+    startAvatarDownload,
+    terminateGroup,
+    updateGroupAttributes,
+    updateNicknameAndNote,
+  } = useConversationsActions();
+  const { pushPanelForConversation, changeLocation } = useNavActions();
+  const {
+    onOutgoingAudioCallInConversation,
+    onOutgoingVideoCallInConversation,
+  } = useCallingActions();
+  const { searchInConversation } = useSearchActions();
+  const {
+    showContactModal,
+    toggleAboutContactModal,
+    toggleAddUserToAnotherGroupModal,
+    toggleEditNicknameAndNoteModal,
+    toggleSafetyNumberModal,
+  } = useGlobalModalActions();
+  const { showToast } = useToastActions();
+
+  const conversation = conversationSelector(conversationId);
+  assertDev(
+    conversation,
+    '<SmartConversationDetails> expected a conversation to be found'
+  );
+  const conversationWithColorAttributes = {
+    ...conversation,
+    ...getConversationColorAttributes(conversation, defaultConversationColor),
+  };
+
+  const groupMemberships = getGroupMemberships(
+    conversation,
+    conversationByServiceIdSelector
+  );
+
+  const { memberships, pendingApprovalMemberships, pendingMemberships } =
+    groupMemberships;
+  const badges = badgesSelector(conversation.badges);
+  const canAddNewMembers = conversation.canAddNewMembers ?? false;
+  const canEditGroupInfo = conversation.canEditGroupInfo ?? false;
+  const isEditMemberLabelEnabled = isFeaturedEnabledSelector({
+    betaKey: 'desktop.groupMemberLabels.edit.beta',
+    currentVersion: version,
+    remoteConfig: items.remoteConfig,
+    prodKey: 'desktop.groupMemberLabels.edit.prod',
+  });
+  const isTerminateGroupEnabled = isFeaturedEnabledSelector({
+    betaKey: 'desktop.groupTerminate.send.beta',
+    currentVersion: version,
+    remoteConfig: items.remoteConfig,
+    prodKey: 'desktop.groupTerminate.send.prod',
+  });
+
+  const groupsInCommon = getGroupsInCommonSorted(
+    conversation,
+    allComposableConversations
+  );
+  const hasActiveCall =
+    activeCall != null && activeCall.conversationId !== conversationId;
+  const hasGroupLink =
+    conversation.groupLink != null &&
+    conversation.accessControlAddFromInviteLink !== ACCESS_ENUM.UNSATISFIABLE;
+  const isAdmin = conversation.areWeAdmin ?? false;
+  const isGroup = conversation.type === 'group';
+  const maxGroupSize = getGroupSizeHardLimit(1001);
+  const maxRecommendedGroupSize = getGroupSizeRecommendedLimit(151);
+  const userAvatarData = conversation.avatars ?? [];
+  const memberColors = getCachedConversationMemberColors(conversationId);
+
+  const ourMembership = conversation.memberships?.find(
+    membership => membership?.aci === ourAci
+  );
+  const canAddLabel = getCanAddLabel(conversation, ourMembership);
+
+  const handleDeleteNicknameAndNote = useCallback(() => {
+    updateNicknameAndNote(conversationId, { nickname: null, note: null });
+  }, [conversationId, updateNicknameAndNote]);
+
+  const handleOpenEditNicknameAndNoteModal = useCallback(() => {
+    toggleEditNicknameAndNoteModal({ conversationId });
+  }, [conversationId, toggleEditNicknameAndNoteModal]);
+
+  const onConversationArchive = useCallback(() => {
+    onArchive(conversationId);
+  }, [onArchive, conversationId]);
+
+  const onConversationUnarchive = useCallback(() => {
+    onMoveToInbox(conversationId);
+  }, [onMoveToInbox, conversationId]);
+
+  const onConversationDeleteMessages = useCallback(() => {
+    destroyMessages(conversationId);
+  }, [destroyMessages, conversationId]);
+
+  const onNavigateToDonate = useCallback(() => {
+    changeLocation({
+      tab: NavTab.Settings,
+      details: {
+        page: SettingsPage.DonationsDonateFlow,
+      },
+    });
+  }, [changeLocation]);
+
+  const [hasMedia, setHasMedia] = useState(false);
+
+  useEffect(() => {
+    let isCanceled = false;
+
+    drop(
+      (async () => {
+        const result = await DataReader.hasMedia(conversationId);
+        if (isCanceled) {
+          return;
+        }
+        setHasMedia(result);
+      })()
+    );
+
+    return () => {
+      isCanceled = true;
+    };
+  }, [conversationId]);
+
+  return (
+    <ConversationDetails
+      acceptConversation={acceptConversation}
+      addMembersToGroup={addMembersToGroup}
+      areWeASubscriber={areWeASubscriber}
+      badges={badges}
+      blockConversation={blockConversation}
+      callHistoryGroup={callHistoryGroup}
+      canAddLabel={canAddLabel}
+      canAddNewMembers={canAddNewMembers}
+      canEditGroupInfo={canEditGroupInfo}
+      conversation={conversationWithColorAttributes}
+      deleteAvatarFromDisk={deleteAvatarFromDisk}
+      getPreferredBadge={getPreferredBadge}
+      getProfilesForConversation={getProfilesForConversation}
+      groupsInCommon={groupsInCommon}
+      hasActiveCall={hasActiveCall}
+      hasGroupLink={hasGroupLink}
+      i18n={i18n}
+      isAdmin={isAdmin}
+      isEditMemberLabelEnabled={isEditMemberLabelEnabled}
+      isGroup={isGroup}
+      isSignalConversation={isSignalConversation(conversation)}
+      isTerminateGroupEnabled={isTerminateGroupEnabled}
+      leaveGroup={leaveGroup}
+      hasMedia={hasMedia}
+      maxGroupSize={maxGroupSize}
+      maxRecommendedGroupSize={maxRecommendedGroupSize}
+      memberColors={memberColors}
+      memberships={memberships}
+      onConversationArchive={onConversationArchive}
+      onConversationDeleteMessages={onConversationDeleteMessages}
+      onConversationUnarchive={onConversationUnarchive}
+      onDeleteNicknameAndNote={handleDeleteNicknameAndNote}
+      onNavigateToDonate={onNavigateToDonate}
+      onOpenEditNicknameAndNoteModal={handleOpenEditNicknameAndNoteModal}
+      onOutgoingAudioCallInConversation={onOutgoingAudioCallInConversation}
+      onOutgoingVideoCallInConversation={onOutgoingVideoCallInConversation}
+      pendingApprovalMemberships={pendingApprovalMemberships}
+      pendingAvatarDownload={isPendingAvatarDownload(conversationId)}
+      pendingMemberships={pendingMemberships}
+      pushPanelForConversation={pushPanelForConversation}
+      renderChooseGroupMembersModal={renderChooseGroupMembersModal}
+      renderConfirmAdditionsModal={renderConfirmAdditionsModal}
+      replaceAvatar={replaceAvatar}
+      reportSpam={reportSpam}
+      saveAvatarToDisk={saveAvatarToDisk}
+      searchInConversation={searchInConversation}
+      selectedNavTab={selectedNavTab}
+      setDisappearingMessages={setDisappearingMessages}
+      setMuteDuration={setMuteDuration}
+      showContactModal={showContactModal}
+      showConversation={showConversation}
+      showToast={showToast}
+      startAvatarDownload={() => startAvatarDownload(conversationId)}
+      terminateGroup={terminateGroup}
+      theme={theme}
+      toggleAboutContactModal={toggleAboutContactModal}
+      toggleAddUserToAnotherGroupModal={toggleAddUserToAnotherGroupModal}
+      toggleSafetyNumberModal={toggleSafetyNumberModal}
+      updateGroupAttributes={updateGroupAttributes}
+      userAvatarData={userAvatarData}
+    />
+  );
+});

@@ -1,19 +1,80 @@
-<!-- Copyright 2019 Signal Messenger, LLC -->
+<!-- Copyright 2023 Signal Messenger, LLC -->
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <link
-      href="../../node_modules/@indutny/frameless-titlebar/dist/styles.css"
-      rel="stylesheet"
-      type="text/css"
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/signal.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';
+            child-src 'self';
+            connect-src 'self' https:;
+            font-src 'self' asset:;
+            form-action 'self';
+            frame-src 'none';
+            img-src 'self' blob: data:;
+            media-src 'self' blob:;
+            object-src 'none';
+            script-src 'self';
+            style-src 'self' 'unsafe-inline';"
     />
-    <link rel="stylesheet" href="../../stylesheets/manifest_bridge.css" />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-BoldItalic.woff2"
+      as="font"
+      crossorigin
+      type="font/woff2"
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-SemiBoldItalic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-Italic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-SemiBold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="asset:///fonts/inter-v3.19/Inter-Medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>Signal Sticker Pack Creator</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="text/javascript" src="../../js/components.js"></script>
-    <script type="text/javascript" src="../../ts/set_os_class.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

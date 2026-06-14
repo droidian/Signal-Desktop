@@ -1,0 +1,74 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.Waveform {
+  /**
+   * Progress indicators for audio or video content should always be left-to-right.
+   * This overrides the default direction of the page.
+   */
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+  direction: ltr;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  outline: 0;
+
+  &__bar {
+    display: inline-block;
+
+    width: 2px;
+    border-radius: 2px;
+    transition:
+      height 250ms,
+      background 250ms;
+
+    &:not(:first-of-type) {
+      margin-inline-start: 2px;
+    }
+
+    @include mixins.light-theme {
+      background: variables.$color-black-alpha-40;
+
+      &--active {
+        background: variables.$color-black-alpha-80;
+      }
+    }
+
+    @include mixins.dark-theme {
+      background: variables.$color-white-alpha-40;
+
+      &--active {
+        background: variables.$color-white-alpha-80;
+      }
+    }
+
+    .module-message__audio-attachment--incoming & {
+      @include mixins.light-theme {
+        &--active {
+          background: variables.$color-black-alpha-80;
+        }
+      }
+
+      @include mixins.dark-theme {
+        &--active {
+          background: variables.$color-white-alpha-70;
+        }
+      }
+    }
+
+    .module-message__audio-attachment--outgoing & {
+      background: variables.$color-white-alpha-40;
+
+      &--active {
+        background: variables.$color-white-alpha-80;
+      }
+    }
+  }
+}

@@ -1,0 +1,109 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.ConversationDetailsHeader {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin-block: 0 20px;
+  margin-inline: 0;
+  padding-block: 0;
+  padding-inline: 24px;
+  text-align: center;
+  width: 100%;
+
+  &__edit-button,
+  &__about-button {
+    @include mixins.button-reset();
+    & {
+      cursor: pointer;
+    }
+  }
+
+  &__title {
+    @include mixins.font-title-1;
+    font-weight: 400;
+    padding-bottom: 8px;
+    padding-top: 12px;
+    user-select: text;
+    display: flex;
+    align-items: center;
+  }
+
+  &__title-contact-icon {
+    width: 22px;
+    height: 22px;
+    background-color: currentColor;
+  }
+
+  &__subtitle {
+    @include mixins.font-body-1;
+    color: variables.$color-gray-60;
+    justify-content: center;
+    padding-bottom: 6px;
+
+    @include mixins.dark-theme {
+      color: variables.$color-gray-25;
+    }
+
+    &__about {
+      user-select: text;
+    }
+  }
+
+  &__edit-button &__title {
+    $icon: '../images/icons/v3/edit/edit.svg';
+
+    &::after {
+      $size: 24px;
+
+      display: inline-block;
+      vertical-align: middle;
+      content: '';
+      height: $size;
+      inset-inline-start: $size + 13px;
+      margin-inline-start: -$size;
+      opacity: 0;
+      position: relative;
+      transition: opacity 100ms ease-out;
+      width: $size;
+
+      @include mixins.light-theme {
+        @include mixins.color-svg($icon, variables.$color-gray-60);
+      }
+      @include mixins.dark-theme {
+        @include mixins.color-svg($icon, variables.$color-gray-25);
+      }
+    }
+  }
+
+  &__edit-button:hover &__title::after {
+    opacity: 1;
+  }
+
+  &__about-icon {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+
+    // Align with the text
+    position: relative;
+    inset-block-start: 2px;
+
+    @include mixins.light-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/chevron/chevron-right-bold.svg',
+        variables.$color-black
+      );
+    }
+    @include mixins.dark-theme {
+      @include mixins.color-svg(
+        '../images/icons/v3/chevron/chevron-right-bold.svg',
+        variables.$color-gray-05
+      );
+    }
+  }
+}

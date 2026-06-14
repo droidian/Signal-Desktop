@@ -1,0 +1,6 @@
+dist/
+public/*
+src/assets/*
+src/util/protos.*
+stats.html
+pnpm-lock.yaml

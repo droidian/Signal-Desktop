@@ -1,0 +1,45 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.CallingRaisedHandsToast__Content {
+  display: flex;
+  margin-block: 4px;
+  margin-inline: 8px;
+  font-weight: 500;
+}
+
+.CallingRaisedHandsToast__HandIcon {
+  display: inline-block;
+  $icon-size: 16px;
+  width: $icon-size;
+  height: $icon-size;
+  margin-inline-end: 8px;
+  content: '';
+
+  @include mixins.color-svg(
+    '../images/icons/v3/raise_hand/raise_hand-light.svg',
+    variables.$color-white
+  );
+}
+
+.CallingRaisedHandsToasts__Link {
+  @include mixins.button-reset;
+  & {
+    color: variables.$color-ultramarine-pastel;
+    font-weight: 600;
+    margin-inline-start: 16px;
+  }
+
+  @include mixins.keyboard-mode {
+    &:focus {
+      outline: 2px solid variables.$color-ultramarine;
+    }
+  }
+}
+
+.module-calling-participants-list__status {
+  flex-basis: auto;
+}

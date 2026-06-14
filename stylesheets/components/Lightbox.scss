@@ -1,22 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .Lightbox {
   &__container {
-    background-color: $color-black-alpha-90;
+    background-color: variables.$color-black;
     bottom: 0;
-    left: 0;
+    inset-inline: 0;
     position: absolute;
-    right: 0;
-    top: var(--titlebar-height);
-    z-index: $z-index-popup;
+    top: 0;
+    z-index: variables.$z-index-popup;
   }
 
   &__animated {
     bottom: 0;
-    left: 0;
+    inset-inline: 0;
     position: absolute;
-    right: 0;
     top: 0;
     display: flex;
     flex-direction: column;
@@ -43,52 +44,72 @@
     align-items: center;
     display: flex;
     justify-content: center;
-    left: 50%;
+    inset-inline-start: 50%;
     position: absolute;
 
     &--container {
-      height: 64px;
-      margin-bottom: 16px;
-      margin-top: 10px;
+      height: 44px;
       position: relative;
     }
   }
 
   &__thumbnail {
-    @include button-reset;
-    border-radius: 4px;
-    height: 64px;
-    margin-right: 8px;
-    overflow: hidden;
-    width: 64px;
+    @include mixins.button-reset;
+    & {
+      position: relative;
+      border-radius: 6px;
+      height: 44px;
+      margin-inline-end: 8px;
+      overflow: hidden;
+      width: 44px;
+    }
 
     img {
       height: 100%;
       object-fit: contain;
       width: 100%;
+      opacity: 0.8;
     }
 
-    &--selected {
-      box-shadow: 0px 0px 0px 2px $color-ultramarine;
+    &--selected::after {
+      position: absolute;
+      top: 0;
+      inset-inline-start: 0;
+      content: '';
+      width: 100%;
+      height: 100%;
+      border-radius: 6px;
+      box-shadow: inset 0px 0px 0px 2px variables.$color-white;
     }
 
     &--unavailable {
-      @include color-svg('../images/image.svg', $color-gray-25);
-      height: 100%;
-      width: 100%;
+      @include mixins.color-svg(
+        '../images/image.svg',
+        variables.$color-gray-25
+      );
+      & {
+        height: 100%;
+        width: 100%;
+      }
     }
   }
 
   &__object {
+    height: auto;
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    outline: none;
+    width: auto;
+
     &--container {
       display: inline-flex;
       flex-grow: 1;
       justify-content: center;
-      margin-bottom: 12px;
       overflow: hidden;
       position: relative;
       // Using this so that the zoom cleanly goes over the footer
-      z-index: $z-index-base;
+      z-index: variables.$z-index-base;
 
       &--zoom {
         backface-visibility: hidden;
@@ -97,43 +118,50 @@
 
     &--video {
       height: 100%;
-      left: 0;
+      inset-inline-start: 0;
       position: absolute;
       top: 0;
       width: 100%;
-    }
 
-    height: auto;
-    max-height: 100%;
-    max-width: 100%;
-    object-fit: contain;
-    outline: none;
-    width: auto;
+      // Prevent nav buttons from overlapping video controls in small viewports
+      @media (max-height: 500px) {
+        inset-inline-start: 40px;
+        width: calc(100% - 80px);
+      }
+    }
   }
 
   &__unsupported {
-    @include button-reset;
-    flex-grow: 1;
-    height: 100%;
-    max-width: 200px;
-    width: 100%;
+    @include mixins.button-reset;
+    & {
+      flex-grow: 1;
+      height: 100%;
+      max-width: 200px;
+      width: 100%;
+    }
 
     &--image {
-      @include color-svg('../images/image.svg', $color-gray-25);
+      @include mixins.color-svg(
+        '../images/image.svg',
+        variables.$color-gray-25
+      );
     }
 
     &--video {
-      @include color-svg('../images/movie.svg', $color-gray-25);
+      @include mixins.color-svg(
+        '../images/movie.svg',
+        variables.$color-gray-25
+      );
     }
 
     &--file {
-      @include color-svg('../images/file.svg', $color-gray-25);
+      @include mixins.color-svg('../images/file.svg', variables.$color-gray-25);
     }
 
     &--missing {
-      @include color-svg(
+      @include mixins.color-svg(
         '../images/full-screen-flow/alert-outline.svg',
-        $color-gray-25
+        variables.$color-gray-25
       );
     }
   }
@@ -143,14 +171,17 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 0 40px;
+    margin-block: 0;
+    margin-inline: 40px;
   }
 
   &__zoom-button {
-    @include button-reset;
-    max-height: 100%;
-    max-width: 100%;
-    cursor: zoom-in;
+    @include mixins.button-reset;
+    & {
+      max-height: 100%;
+      max-width: 100%;
+      cursor: zoom-in;
+    }
   }
 
   &__object--container--zoom,
@@ -161,9 +192,10 @@
   }
 
   &__caption {
-    @include font-body-2;
-    color: $color-white;
-    margin: 12px 0;
+    @include mixins.font-body-2;
+    color: variables.$color-white;
+    margin-block: 12px;
+    margin-inline: 0;
     text-align: center;
   }
 
@@ -172,39 +204,78 @@
   }
 
   &__timestamp {
-    @include font-body-1;
-    background-color: $color-black;
+    @include mixins.font-body-1;
+    background-color: variables.$color-black;
     border-radius: 15px;
     color: #eeefef;
-    padding: 6px 18px;
+    padding-block: 6px;
+    padding-inline: 18px;
     text-align: center;
+  }
+
+  &__toast-container {
+    opacity: 0;
+    transition: opacity 500ms;
+
+    position: absolute;
+    bottom: 45px;
+    pointer-events: none;
+
+    // We need this so our toast goes on top of the video
+    z-index: variables.$z-index-above-base;
+
+    .Toast {
+      background-color: variables.$color-black-alpha-80;
+    }
+    .Toast__content {
+      padding-block: 7px;
+      padding-inline: 12px;
+      @include mixins.font-caption;
+    }
+
+    &--visible {
+      opacity: 1;
+    }
   }
 
   &__nav-next,
   &__nav-prev {
-    bottom: 50%;
+    --height: 224px;
     position: absolute;
+    top: calc(50% - var(--height) / 2);
+    height: var(--height);
+
     // We need this so that the buttons stack above the container
-    z-index: $z-index-above-base;
+    z-index: variables.$z-index-above-base;
+
+    // Added extended click zone only when it wouldn't overlap video controls
+    @media (min-height: 500px) {
+      width: 25%;
+      max-width: 96px;
+    }
   }
 
   &__nav-next {
-    right: 21px;
+    inset-inline-end: 0;
+    align-items: end;
   }
 
   &__nav-prev {
-    left: 21px;
+    inset-inline-start: 0;
+    align-items: start;
   }
 
   &__header {
     align-items: center;
     display: flex;
-    height: 56px;
+    height: 52px;
     justify-content: space-between;
-    margin-top: 24px;
-    min-height: 56px;
+    margin-top: var(--title-bar-drag-area-height);
+    margin-bottom: 16px;
+    min-height: 52px;
     opacity: 1;
-    padding: 0 16px;
+    padding-block: 0;
+    padding-inline: 16px;
     transition: opacity 150ms cubic-bezier(0.17, 0.17, 0, 1);
 
     &--container {
@@ -212,23 +283,24 @@
     }
 
     &--avatar {
-      margin-right: 12px;
+      margin-inline-end: 10px;
     }
 
     &--name {
-      @include font-body-2-bold;
-      color: $color-white;
+      @include mixins.font-body-2-bold;
+      color: variables.$color-white;
     }
 
     &--timestamp {
-      @include font-caption;
-      color: $color-gray-25;
+      @include mixins.font-caption;
+      color: variables.$color-gray-25;
     }
   }
 
   &__footer {
     opacity: 1;
-    padding: 0 16px;
+    padding-block: 16px 24px;
+    padding-inline: 16px;
     transition: opacity 150ms cubic-bezier(0.17, 0.17, 0, 1);
   }
 
@@ -239,14 +311,19 @@
     }
   }
 
-  &__button {
-    @include button-reset;
+  &__controls {
+    display: flex;
+    gap: 32px;
+  }
 
-    border-radius: 4px;
-    display: inline-block;
-    margin-left: 24px;
-    height: 24px;
-    width: 24px;
+  &__button {
+    @include mixins.button-reset;
+    & {
+      border-radius: 4px;
+      display: inline-block;
+      height: 24px;
+      width: 24px;
+    }
 
     &::before {
       content: '';
@@ -255,64 +332,95 @@
       width: 100%;
     }
 
-    &:hover {
-      &::before {
-        background: $color-white;
-      }
-    }
-
     &:focus {
-      outline: 4px solid $color-ultramarine;
+      outline: 4px solid variables.$color-ultramarine;
     }
 
     &:disabled {
       &::before {
-        background: $color-gray-65;
+        background: variables.$color-gray-65;
       }
     }
 
     &--forward {
       &::before {
-        transform: scaleX(-1);
-        @include color-svg(
-          '../images/icons/v2/reply-solid-24.svg',
-          $color-gray-15
+        @include mixins.color-svg(
+          '../images/icons/v3/forward/forward.svg',
+          variables.$color-gray-15
         );
       }
     }
 
     &--save {
       &::before {
-        @include color-svg(
-          '../images/icons/v2/save-solid-24.svg',
-          $color-gray-15
+        @include mixins.color-svg(
+          '../images/icons/v3/save/save.svg',
+          variables.$color-gray-15
         );
       }
     }
 
     &--close {
       &::before {
-        @include color-svg('../images/icons/v2/x-24.svg', $color-gray-15);
+        @include mixins.color-svg(
+          '../images/icons/v3/x/x.svg',
+          variables.$color-gray-15
+        );
       }
     }
 
-    &--previous {
-      margin-left: 0;
+    &--previous,
+    &--next {
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 200ms ease-in-out;
+
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
       &::before {
-        @include color-svg(
-          '../images/icons/v2/chevron-left-24.svg',
-          $color-gray-15
-        );
+        width: 32px;
+        height: 32px;
+        -webkit-filter: drop-shadow(0 0 4px variables.$color-black-alpha-40);
+        content: '';
+        display: block;
+        background-size: 100%;
+      }
+
+      &:hover {
+        opacity: 1;
+      }
+
+      outline: none;
+      &:focus {
+        outline: none;
+      }
+
+      @include mixins.keyboard-mode {
+        &:focus {
+          opacity: 1;
+        }
+      }
+      @include mixins.button-focus-outline;
+    }
+
+    &--previous {
+      justify-content: start;
+      padding-inline-start: 16px;
+
+      &::before {
+        background-image: url('../images/icons/v3/chevron/chevron-left-white.svg');
       }
     }
 
     &--next {
-      margin-left: 0;
+      justify-content: end;
+      padding-inline-end: 16px;
+
       &::before {
-        @include color-svg(
-          '../images/icons/v2/chevron-right-24.svg',
-          $color-gray-15
-        );
+        background-image: url('../images/icons/v3/chevron/chevron-right-white.svg');
       }
     }
   }
