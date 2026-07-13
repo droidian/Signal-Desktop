@@ -69,6 +69,7 @@ patchedDependencies:
   'node-fetch@3.3.2': 'patches/node-fetch@3.3.2.patch'
   'playwright-core': 'patches/playwright-core.patch'
   'qrcode-generator': 'patches/qrcode-generator.patch'
+  'fs-extra@11.3.4': 'patches/fs-extra+11.2.0.patch'
   'zod@4.3.6': 'patches/zod@4.3.6.patch'
 
 strictDepBuilds: true
