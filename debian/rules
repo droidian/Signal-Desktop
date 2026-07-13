@@ -15,7 +15,7 @@
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 export PATH := /tmp/signal-desktop/node_modules/.bin:$(PATH)
-
+export NODE_OPTIONS = --max-old-space-size=8192
 override_dh_dwz:
 
 override_dh_shlibdeps:
