@@ -1,6 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use 'sass:color';
+@use '../mixins';
+@use '../variables';
+
 .module-ConversationHeader {
   @mixin icon-element($icon, $margin-right: 4px) {
     display: flex;
@@ -17,44 +21,21 @@
       display: block;
       margin-inline-end: $margin-right;
 
-      @include light-theme {
-        @include color-svg($icon, $color-gray-60);
+      @include mixins.light-theme {
+        @include mixins.color-svg($icon, variables.$color-gray-60);
       }
-      @include dark-theme {
-        @include color-svg($icon, $color-gray-25);
+      @include mixins.dark-theme {
+        @include mixins.color-svg($icon, variables.$color-gray-25);
       }
     }
-  }
-
-  --button-spacing: 12px;
-
-  &.module-ConversationHeader--narrow {
-    --button-spacing: 4px;
-  }
-
-  @include draggable-region;
-  // In Electron v23+, clicking on a `drag` region in an unfocused window may not
-  // propagate clicks to no-drag elements that have a higher CSS order; this avoids that
-  // scenario for interactive elements (e.g. IncomingCallBar) which overlap the
-  // conversation header.
-  @at-root body:not(.window-focused) & {
-    -webkit-app-region: no-drag;
   }
 
   padding-top: var(--title-bar-drag-area-height);
   display: flex;
   flex-direction: row;
+  gap: 8px;
   align-items: center;
-  height: calc(#{$header-height} + var(--title-bar-drag-area-height));
-
-  @include light-theme {
-    color: $color-gray-90;
-    background-color: $color-white;
-  }
-  @include dark-theme {
-    color: $color-gray-02;
-    background-color: $color-gray-95;
-  }
+  height: calc(#{variables.$header-height} + var(--title-bar-drag-area-height));
 
   &__header {
     $padding: 4px 12px;
@@ -63,31 +44,33 @@
     display: flex;
     flex-direction: row;
     flex-grow: 1;
-    margin-inline: 4px var(--button-spacing);
+    margin-inline: 4px;
     padding: $padding;
     overflow: hidden;
     min-width: 0;
     transition: margin-inline-end 200ms ease-out;
 
     &--clickable {
-      @include button-reset;
-      flex: 1;
-      border-radius: 4px;
-      -webkit-app-region: no-drag;
+      @include mixins.button-reset;
+      & {
+        flex: 1;
+        border-radius: 4px;
+        -webkit-app-region: no-drag;
 
-      // These are clobbered by button-reset:
-      margin-inline: 4px var(--button-spacing);
-      padding: $padding;
-      padding-inline-start: 0;
+        // These are clobbered by button-reset:
+        margin-inline: 4px;
+        padding: $padding;
+        padding-inline-start: 0;
+      }
 
-      @include keyboard-mode {
+      @include mixins.keyboard-mode {
         &:focus {
-          color: $color-ultramarine;
+          color: variables.$color-ultramarine;
         }
       }
-      @include dark-keyboard-mode {
+      @include mixins.dark-keyboard-mode {
         &:focus {
-          color: $color-ultramarine-light;
+          color: variables.$color-ultramarine-light;
         }
       }
     }
@@ -105,7 +88,7 @@
       min-width: 0;
 
       &__title {
-        @include font-body-1-bold;
+        @include mixins.font-body-1-bold;
         display: flex;
         align-items: center;
 
@@ -121,186 +104,29 @@
 
       &__subtitle {
         display: flex;
-        @include font-body-2;
+        gap: 12px;
+        @include mixins.font-body-2;
 
-        @include light-theme {
-          color: $color-gray-60;
+        @include mixins.light-theme {
+          color: variables.$color-gray-60;
         }
-        @include dark-theme {
-          color: $color-gray-25;
+        @include mixins.dark-theme {
+          color: variables.$color-gray-25;
         }
 
         &__expiration {
           @include icon-element('../images/icons/v3/timer/timer-compact.svg');
-          margin-inline-end: 12px;
+          & {
+            margin-inline-end: 12px;
+          }
         }
 
         &__verified {
-          @include icon-element('../images/icons/v3/check/check-compact.svg');
+          @include icon-element(
+            '../images/icons/v3/safety_number/safety_number-compact.svg'
+          );
         }
       }
-    }
-  }
-
-  &__button {
-    $icon-size: 32px;
-
-    -webkit-app-region: no-drag;
-    @include button-reset;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    border: 2px solid transparent;
-    display: flex;
-    height: $icon-size;
-    margin-inline-end: var(--button-spacing);
-    min-width: $icon-size;
-    padding: 2px;
-    transition: margin-inline-end 200ms ease-out, opacity 200ms ease-out,
-      background 100ms ease-out;
-    width: $icon-size;
-
-    &:disabled {
-      cursor: default;
-      opacity: 0.5;
-    }
-
-    &--show-disabled {
-      opacity: 0.5;
-    }
-
-    &:not(:disabled) {
-      @include light-theme {
-        &:hover,
-        &:focus {
-          background: $color-gray-02;
-        }
-        &:active {
-          background: $color-gray-05;
-        }
-      }
-      @include dark-theme {
-        &:hover,
-        &:focus {
-          background: $color-gray-80;
-        }
-        &:active {
-          background: $color-gray-75;
-        }
-      }
-
-      @include keyboard-mode {
-        &:focus {
-          border-color: $color-ultramarine;
-        }
-      }
-      @include dark-keyboard-mode {
-        &:focus {
-          border-color: $color-ultramarine-light;
-        }
-      }
-    }
-
-    @mixin normal-button($icon, $size) {
-      &::before {
-        content: '';
-        display: block;
-        width: $size;
-        height: $size;
-
-        @include light-theme {
-          @include color-svg($icon, $color-gray-75);
-          &:hover,
-          &:active,
-          &:focus {
-            @include color-svg($icon, $color-gray-90);
-          }
-        }
-        @include dark-theme {
-          @include color-svg($icon, $color-gray-15);
-          &:hover,
-          &:active,
-          &:focus {
-            @include color-svg($icon, $color-gray-02);
-          }
-        }
-      }
-    }
-
-    &--video {
-      @include normal-button('../images/icons/v3/video/video.svg', 20px);
-    }
-
-    &--audio {
-      @include normal-button('../images/icons/v3/phone/phone.svg', 20px);
-    }
-
-    &--search {
-      @include normal-button('../images/icons/v3/search/search.svg', 20px);
-    }
-
-    &--more {
-      @include normal-button('../images/icons/v3/more/more.svg', 20px);
-      margin-inline-end: 16px;
-    }
-
-    &--join-call {
-      $background: $color-accent-green;
-
-      @include font-body-1;
-      @include rounded-corners;
-      align-items: center;
-      background-color: $background;
-      color: $color-white;
-      display: flex;
-      outline: none;
-      overflow: hidden;
-      padding-block: 5px;
-      padding-inline: 10px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      user-select: none;
-      width: auto;
-      height: 28px;
-
-      &:before {
-        $icon-size: 16px;
-
-        @include color-svg(
-          '../images/icons/v3/video/video-compact-fill.svg',
-          $color-white
-        );
-        content: '';
-        display: block;
-        height: $icon-size;
-        margin-inline-end: 4px;
-        min-width: $icon-size;
-        width: $icon-size;
-      }
-
-      &:not(:disabled) {
-        // Override hover state coming from __button above.
-        &:hover {
-          @include any-theme {
-            background-color: darken($background, 16%);
-          }
-        }
-
-        &:focus {
-          @include keyboard-mode {
-            background-color: darken($background, 16%);
-          }
-        }
-      }
-    }
-  }
-
-  &__disappearing-timer__item {
-    padding-inline-start: 25px;
-
-    &--active {
-      padding-inline-start: 0px;
-      @include icon-element('../images/icons/v3/check/check-compact.svg', 12px);
     }
   }
 }

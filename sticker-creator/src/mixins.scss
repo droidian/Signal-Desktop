@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 @mixin light-theme() {
-  @content;
+  & {
+    @content;
+  }
 }
 
 @mixin dark-theme() {
@@ -23,7 +25,7 @@
   }
   background-color: $color;
   @media (forced-colors: active) {
-    background-color: WindowText;
+    background-color: CanvasText;
   }
 }
 

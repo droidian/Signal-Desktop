@@ -5,6 +5,8 @@
 // Credentials
 //
 
+import type { JSX } from 'react';
+
 export type Credentials = Readonly<{
   username: string;
   password: string;
@@ -29,11 +31,11 @@ export type Manifest = Readonly<{
 export type AnnotatedImage = Readonly<{
   emoji: EmojiData;
   contentType: string;
-  buffer: Uint8Array;
+  buffer: Uint8Array<ArrayBuffer>;
 }>;
 
 export type ArtImageData = Readonly<{
-  buffer: Uint8Array;
+  buffer: Uint8Array<ArrayBuffer>;
   contentType: string;
   src: string;
   path: string;
@@ -86,12 +88,3 @@ export type RenderTextCallbackType = (options: {
   text: string;
   key: number;
 }) => JSX.Element | string;
-
-//
-// Files
-//
-
-export type FileWithRequiredPath = File &
-  Readonly<{
-    path: string;
-  }>;

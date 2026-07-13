@@ -1,32 +1,35 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 @mixin system-message-icon($url) {
-  @include light-theme {
+  @include mixins.light-theme {
     -webkit-mask: url($url) no-repeat center;
     -webkit-mask-size: 100%;
   }
-  @include dark-theme {
+  @include mixins.dark-theme {
     -webkit-mask: url($url) no-repeat center;
     -webkit-mask-size: 100%;
   }
 }
 
 .SystemMessage {
-  @include font-body-2;
+  @include mixins.font-body-2;
   align-items: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   line-height: 16px;
-  padding-bottom: 16px;
-  padding-top: 16px;
+  padding-bottom: 10px;
+  padding-top: 10px;
 
-  @include light-theme {
-    color: $color-gray-60;
+  @include mixins.light-theme {
+    color: variables.$color-gray-60;
   }
-  @include dark-theme {
-    color: $color-gray-25;
+  @include mixins.dark-theme {
+    color: variables.$color-gray-25;
   }
 
   &__contents {
@@ -50,7 +53,7 @@
       }
     }
 
-    &::before {
+    &--has-icon::before {
       content: '';
       display: inline-block;
       height: 16px;
@@ -58,11 +61,11 @@
       width: 16px;
       vertical-align: text-top;
 
-      @include light-theme {
-        background-color: $color-gray-60;
+      @include mixins.light-theme {
+        background-color: variables.$color-gray-60;
       }
-      @include dark-theme {
-        background-color: $color-gray-25;
+      @include mixins.dark-theme {
+        background-color: variables.$color-gray-25;
       }
     }
 
@@ -140,6 +143,15 @@
       @include system-message-icon('../images/icons/v3/info/info-compact.svg');
     }
 
+    &--icon-group-terminate::before {
+      @include system-message-icon(
+        '../images/icons/v3/group/group-x-inline.svg'
+      );
+      & {
+        width: 24px;
+      }
+    }
+
     &--icon-info::before {
       @include system-message-icon('../images/icons/v3/info/info-compact.svg');
     }
@@ -198,7 +210,7 @@
 
     &--icon-verified::before {
       @include system-message-icon(
-        '../images/icons/v3/check/check-compact.svg'
+        '../images/icons/v3/safety_number/safety_number-compact.svg'
       );
     }
 
@@ -263,34 +275,38 @@
 
   &--error {
     .SystemMessage__contents::before {
-      @include light-theme {
-        background-color: $color-accent-red;
+      @include mixins.light-theme {
+        background-color: variables.$color-accent-red;
       }
-      @include dark-theme {
-        background-color: $color-accent-red;
+      @include mixins.dark-theme {
+        background-color: variables.$color-accent-red;
       }
     }
   }
 
   &--danger {
-    @include light-theme {
-      color: $color-accent-red;
+    @include mixins.light-theme {
+      color: variables.$color-accent-red;
     }
-    @include dark-theme {
-      color: $color-accent-red;
+    @include mixins.dark-theme {
+      color: variables.$color-accent-red;
     }
 
     .SystemMessage__contents::before {
-      @include light-theme {
-        background-color: $color-accent-red;
+      @include mixins.light-theme {
+        background-color: variables.$color-accent-red;
       }
-      @include dark-theme {
-        background-color: $color-accent-red;
+      @include mixins.dark-theme {
+        background-color: variables.$color-accent-red;
       }
     }
   }
 
   &__button-container {
     margin-top: 12px;
+  }
+
+  .module-expire-timer {
+    vertical-align: middle;
   }
 }

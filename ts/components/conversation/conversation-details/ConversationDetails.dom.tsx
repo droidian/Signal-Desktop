@@ -1,0 +1,941 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReactNode, JSX } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import classNames from 'classnames';
+
+import { Button, ButtonIconType, ButtonVariant } from '../../Button.dom.tsx';
+import type {
+  ConversationType,
+  PushPanelForConversationActionType,
+  ShowConversationType,
+  UpdateGroupAttributesType,
+} from '../../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { SmartChooseGroupMembersModalPropsType } from '../../../state/smart/ChooseGroupMembersModal.preload.tsx';
+import type { SmartConfirmAdditionsModalPropsType } from '../../../state/smart/ConfirmAdditionsModal.dom.tsx';
+import { assertDev } from '../../../util/assert.std.ts';
+import { getMutedUntilText } from '../../../util/getMutedUntilText.std.ts';
+
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { BadgeType } from '../../../badges/types.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { DurationInSeconds } from '../../../util/durations/index.std.ts';
+
+import { DisappearingTimerSelect } from '../../DisappearingTimerSelect.dom.tsx';
+
+import { PanelRow } from './PanelRow.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { AddGroupMembersModal } from './AddGroupMembersModal.dom.tsx';
+import { ConversationDetailsActions } from './ConversationDetailsActions.dom.tsx';
+import { ConversationDetailsHeader } from './ConversationDetailsHeader.dom.tsx';
+import {
+  ConversationDetailsIcon,
+  IconType,
+} from './ConversationDetailsIcon.dom.tsx';
+import type { GroupV2Membership } from './ConversationDetailsMembershipList.dom.tsx';
+import { ConversationDetailsMembershipList } from './ConversationDetailsMembershipList.dom.tsx';
+import type {
+  GroupV2PendingMembership,
+  GroupV2RequestingMembership,
+} from './PendingInvites.dom.tsx';
+import { EditConversationAttributesModal } from './EditConversationAttributesModal.dom.tsx';
+import { RequestState } from './util.std.ts';
+import { getCustomColorStyle } from '../../../util/getCustomColorStyle.dom.ts';
+import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.ts';
+import { ConversationNotificationsModal } from './ConversationNotificationsModal.dom.tsx';
+import type {
+  AvatarDataType,
+  DeleteAvatarFromDiskActionType,
+  ReplaceAvatarActionType,
+  SaveAvatarToDiskActionType,
+} from '../../../types/Avatar.std.ts';
+import { isConversationMuted } from '../../../util/isConversationMuted.std.ts';
+import { ConversationDetailsGroups } from './ConversationDetailsGroups.dom.tsx';
+import { PanelType } from '../../../types/Panels.std.ts';
+import { type CallHistoryGroup } from '../../../types/CallDisposition.std.ts';
+import { NavTab } from '../../../types/Nav.std.ts';
+import { ContextMenu } from '../../ContextMenu.dom.tsx';
+import { canHaveNicknameAndNote } from '../../../util/nicknames.dom.ts';
+import { CallHistoryGroupPanelSection } from './CallHistoryGroupPanelSection.dom.tsx';
+import {
+  InAnotherCallTooltip,
+  getTooltipContent,
+} from '../InAnotherCallTooltip.dom.tsx';
+import type { ContactModalStateType } from '../../../types/globalModals.std.ts';
+import type { ShowToastAction } from '../../../state/ducks/toast.preload.ts';
+import { ToastType } from '../../../types/Toast.dom.tsx';
+import type { ContactNameColorType } from '../../../types/Colors.std.ts';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
+import { canConversationOnlyBeMutedAlways } from '../../../conversations/canConversationOnlyBeMutedAlways.dom.ts';
+
+enum ModalState {
+  AddingGroupMembers,
+  ConfirmDeleteNicknameAndNote,
+  EditingGroupDescription,
+  EditingGroupTitle,
+  MuteNotifications,
+  NothingOpen,
+  UnmuteNotifications,
+}
+
+export type StateProps = {
+  areWeASubscriber: boolean;
+  badges?: ReadonlyArray<BadgeType>;
+  callHistoryGroup?: CallHistoryGroup | null;
+  canEditGroupInfo: boolean;
+  canAddLabel: boolean;
+  canAddNewMembers: boolean;
+  conversation?: ConversationType;
+  hasGroupLink: boolean;
+  hasMedia: boolean;
+  getPreferredBadge: PreferredBadgeSelectorType;
+  hasActiveCall: boolean;
+  i18n: LocalizerType;
+  isAdmin: boolean;
+  isEditMemberLabelEnabled: boolean;
+  isGroup: boolean;
+  isSignalConversation: boolean;
+  isTerminateGroupEnabled: boolean;
+  groupsInCommon: ReadonlyArray<ConversationType>;
+  maxGroupSize: number;
+  maxRecommendedGroupSize: number;
+  memberships: ReadonlyArray<GroupV2Membership>;
+  memberColors: Map<string, ContactNameColorType>;
+  pendingApprovalMemberships: ReadonlyArray<GroupV2RequestingMembership>;
+  pendingAvatarDownload?: boolean;
+  pendingMemberships: ReadonlyArray<GroupV2PendingMembership>;
+  showToast: ShowToastAction;
+  selectedNavTab: NavTab;
+  startAvatarDownload: () => void;
+  theme: ThemeType;
+  userAvatarData: ReadonlyArray<AvatarDataType>;
+  renderChooseGroupMembersModal: (
+    props: SmartChooseGroupMembersModalPropsType
+  ) => JSX.Element;
+  renderConfirmAdditionsModal: (
+    props: SmartConfirmAdditionsModalPropsType
+  ) => JSX.Element;
+};
+
+type ActionProps = {
+  acceptConversation: (id: string) => void;
+  addMembersToGroup: (
+    conversationId: string,
+    conversationIds: ReadonlyArray<string>,
+    opts: {
+      onSuccess?: () => unknown;
+      onFailure?: () => unknown;
+    }
+  ) => unknown;
+  blockConversation: (id: string) => void;
+  deleteAvatarFromDisk: DeleteAvatarFromDiskActionType;
+  getProfilesForConversation: (id: string) => unknown;
+  leaveGroup: (conversationId: string) => void;
+  onConversationArchive: () => void;
+  onConversationDeleteMessages: () => void;
+  onConversationUnarchive: () => void;
+  onDeleteNicknameAndNote: () => void;
+  onNavigateToDonate: () => void;
+  onOpenEditNicknameAndNoteModal: () => void;
+  onOutgoingAudioCallInConversation: (conversationId: string) => unknown;
+  onOutgoingVideoCallInConversation: (conversationId: string) => unknown;
+  pushPanelForConversation: PushPanelForConversationActionType;
+  replaceAvatar: ReplaceAvatarActionType;
+  reportSpam: (id: string) => void;
+  saveAvatarToDisk: SaveAvatarToDiskActionType;
+  searchInConversation: (id: string) => unknown;
+  setDisappearingMessages: (id: string, seconds: DurationInSeconds) => void;
+  setMuteDuration: (id: string, muteDuration: undefined | number) => unknown;
+  showContactModal: (payload: ContactModalStateType) => void;
+  showConversation: ShowConversationType;
+  terminateGroup: (conversationId: string) => void;
+  toggleAboutContactModal: (options: ContactModalStateType) => void;
+  toggleAddUserToAnotherGroupModal: (contactId?: string) => void;
+  toggleSafetyNumberModal: (conversationId: string) => unknown;
+  updateGroupAttributes: UpdateGroupAttributesType;
+};
+
+export type Props = StateProps & ActionProps;
+
+export function getCannotLeaveBecauseYouAreLastAdmin(
+  memberships: ReadonlyArray<GroupV2Membership>,
+  isAdmin: boolean
+): boolean {
+  const otherMemberships = memberships.filter(({ member }) => !member.isMe);
+  const isJustMe = otherMemberships.length === 0;
+  const isAnyoneElseAnAdmin = otherMemberships.some(
+    membership => membership.isAdmin
+  );
+  const cannotLeaveBecauseYouAreLastAdmin =
+    isAdmin && !isJustMe && !isAnyoneElseAnAdmin;
+  return cannotLeaveBecauseYouAreLastAdmin;
+}
+
+export function ConversationDetails({
+  acceptConversation,
+  addMembersToGroup,
+  areWeASubscriber,
+  badges,
+  blockConversation,
+  callHistoryGroup,
+  canEditGroupInfo,
+  canAddLabel,
+  canAddNewMembers,
+  conversation,
+  deleteAvatarFromDisk,
+  hasGroupLink,
+  hasMedia,
+  getPreferredBadge,
+  getProfilesForConversation,
+  groupsInCommon,
+  hasActiveCall,
+  i18n,
+  isAdmin,
+  isEditMemberLabelEnabled,
+  isGroup,
+  isSignalConversation,
+  isTerminateGroupEnabled,
+  leaveGroup,
+  memberships,
+  memberColors,
+  maxGroupSize,
+  maxRecommendedGroupSize,
+  onConversationArchive,
+  onConversationDeleteMessages,
+  onConversationUnarchive,
+  onDeleteNicknameAndNote,
+  onNavigateToDonate,
+  onOpenEditNicknameAndNoteModal,
+  onOutgoingAudioCallInConversation,
+  onOutgoingVideoCallInConversation,
+  pendingApprovalMemberships,
+  pendingAvatarDownload,
+  pendingMemberships,
+  pushPanelForConversation,
+  renderChooseGroupMembersModal,
+  renderConfirmAdditionsModal,
+  replaceAvatar,
+  reportSpam,
+  saveAvatarToDisk,
+  searchInConversation,
+  selectedNavTab,
+  setDisappearingMessages,
+  setMuteDuration,
+  showContactModal,
+  showConversation,
+  showToast,
+  startAvatarDownload,
+  terminateGroup,
+  theme,
+  toggleAboutContactModal,
+  toggleSafetyNumberModal,
+  toggleAddUserToAnotherGroupModal,
+  updateGroupAttributes,
+  userAvatarData,
+}: Props): JSX.Element {
+  const [modalState, setModalState] = useState<ModalState>(
+    ModalState.NothingOpen
+  );
+  const [editGroupAttributesRequestState, setEditGroupAttributesRequestState] =
+    useState<RequestState>(RequestState.Inactive);
+  const [addGroupMembersRequestState, setAddGroupMembersRequestState] =
+    useState<RequestState>(RequestState.Inactive);
+
+  if (conversation === undefined) {
+    throw new Error('ConversationDetails rendered without a conversation');
+  }
+
+  useEffect(() => {
+    getProfilesForConversation(conversation.id);
+  }, [conversation.id, getProfilesForConversation]);
+
+  const invitesCount =
+    pendingMemberships.length + pendingApprovalMemberships.length;
+
+  const cannotLeaveBecauseYouAreLastAdmin =
+    getCannotLeaveBecauseYouAreLastAdmin(memberships, isAdmin);
+
+  const isGroupTerminated = Boolean(conversation.terminated);
+  const canTerminateGroup =
+    isTerminateGroupEnabled && !isGroupTerminated && isAdmin;
+
+  const onCloseModal = useCallback(() => {
+    setModalState(ModalState.NothingOpen);
+    setEditGroupAttributesRequestState(RequestState.Inactive);
+  }, []);
+
+  let modalNode: ReactNode;
+  switch (modalState) {
+    case ModalState.NothingOpen:
+      modalNode = undefined;
+      break;
+    case ModalState.EditingGroupDescription:
+    case ModalState.EditingGroupTitle:
+      modalNode = (
+        <EditConversationAttributesModal
+          avatarColor={conversation.color}
+          avatarUrl={conversation.avatarUrl}
+          conversationId={conversation.id}
+          groupDescription={conversation.groupDescription}
+          i18n={i18n}
+          initiallyFocusDescription={
+            modalState === ModalState.EditingGroupDescription
+          }
+          makeRequest={async (
+            options: Readonly<{
+              avatar?: undefined | Uint8Array<ArrayBuffer>;
+              description?: string;
+              title?: string;
+            }>
+          ) => {
+            setEditGroupAttributesRequestState(RequestState.Active);
+
+            updateGroupAttributes(conversation.id, options, {
+              onSuccess: () => {
+                setModalState(ModalState.NothingOpen);
+                setEditGroupAttributesRequestState(RequestState.Inactive);
+              },
+              onFailure: () => {
+                setEditGroupAttributesRequestState(
+                  RequestState.InactiveWithError
+                );
+              },
+            });
+          }}
+          onClose={onCloseModal}
+          requestState={editGroupAttributesRequestState}
+          title={conversation.title}
+          deleteAvatarFromDisk={deleteAvatarFromDisk}
+          replaceAvatar={replaceAvatar}
+          saveAvatarToDisk={saveAvatarToDisk}
+          userAvatarData={userAvatarData}
+        />
+      );
+      break;
+    case ModalState.AddingGroupMembers:
+      modalNode = (
+        <AddGroupMembersModal
+          renderChooseGroupMembersModal={renderChooseGroupMembersModal}
+          renderConfirmAdditionsModal={renderConfirmAdditionsModal}
+          clearRequestError={() => {
+            setAddGroupMembersRequestState(oldRequestState => {
+              assertDev(
+                oldRequestState !== RequestState.Active,
+                'Should not be clearing an active request state'
+              );
+              return RequestState.Inactive;
+            });
+          }}
+          conversationIdsAlreadyInGroup={
+            new Set(memberships.map(membership => membership.member.id))
+          }
+          groupTitle={conversation.title}
+          i18n={i18n}
+          makeRequest={async conversationIds => {
+            setAddGroupMembersRequestState(RequestState.Active);
+
+            addMembersToGroup(conversation.id, conversationIds, {
+              onSuccess: () => {
+                setModalState(ModalState.NothingOpen);
+                setAddGroupMembersRequestState(RequestState.Inactive);
+              },
+              onFailure: () => {
+                setAddGroupMembersRequestState(RequestState.InactiveWithError);
+              },
+            });
+          }}
+          maxGroupSize={maxGroupSize}
+          maxRecommendedGroupSize={maxRecommendedGroupSize}
+          onClose={onCloseModal}
+          requestState={addGroupMembersRequestState}
+        />
+      );
+      break;
+    case ModalState.ConfirmDeleteNicknameAndNote:
+      modalNode = (
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={onCloseModal}
+          title={i18n(
+            'icu:ConversationDetails__ConfirmDeleteNicknameAndNote__Title'
+          )}
+          description={i18n(
+            'icu:ConversationDetails__ConfirmDeleteNicknameAndNote__Description'
+          )}
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="destructive"
+            onClick={onDeleteNicknameAndNote}
+          >
+            {i18n('icu:delete')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+      );
+      break;
+    case ModalState.MuteNotifications:
+      modalNode = (
+        <ConversationNotificationsModal
+          i18n={i18n}
+          id={conversation.id}
+          muteExpiresAt={conversation.muteExpiresAt}
+          onClose={onCloseModal}
+          setMuteDuration={setMuteDuration}
+        />
+      );
+      break;
+    case ModalState.UnmuteNotifications:
+      modalNode = (
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={onCloseModal}
+          title={i18n('icu:ConversationDetails__unmute--title')}
+          description={getMutedUntilText(
+            Number(conversation.muteExpiresAt),
+            i18n
+          )}
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="primary"
+            onClick={() => setMuteDuration(conversation.id, 0)}
+          >
+            {i18n('icu:unmute')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+      );
+      break;
+
+    default:
+      throw missingCaseError(modalState);
+  }
+
+  const isMuted = isConversationMuted(conversation);
+
+  return (
+    <div className="conversation-details-panel">
+      <ConversationDetailsHeader
+        areWeASubscriber={areWeASubscriber}
+        badges={badges}
+        canEdit={canEditGroupInfo}
+        conversation={conversation}
+        i18n={i18n}
+        isMe={conversation.isMe}
+        isGroup={isGroup}
+        isSignalConversation={isSignalConversation}
+        membersCount={conversation.membersCount ?? null}
+        onNavigateToDonate={onNavigateToDonate}
+        pendingAvatarDownload={pendingAvatarDownload ?? false}
+        startAvatarDownload={startAvatarDownload}
+        startEditing={(isGroupTitle: boolean) => {
+          setModalState(
+            isGroupTitle
+              ? ModalState.EditingGroupTitle
+              : ModalState.EditingGroupDescription
+          );
+        }}
+        theme={theme}
+        toggleAboutContactModal={toggleAboutContactModal}
+      />
+
+      <div className="ConversationDetails__header-buttons">
+        {selectedNavTab === NavTab.Calls && (
+          <Button
+            icon={ButtonIconType.message}
+            onClick={() => {
+              showConversation({
+                conversationId: conversation?.id,
+                switchToAssociatedView: true,
+              });
+            }}
+            variant={ButtonVariant.Details}
+          >
+            {i18n('icu:ConversationDetails__HeaderButton--Message')}
+          </Button>
+        )}
+        {!conversation.isMe && !isSignalConversation && (
+          <>
+            {!conversation.terminated && (
+              <ConversationDetailsCallButton
+                hasActiveCall={hasActiveCall}
+                i18n={i18n}
+                onClick={() =>
+                  onOutgoingVideoCallInConversation(conversation.id)
+                }
+                type="video"
+              />
+            )}
+            {!isGroup && (
+              <ConversationDetailsCallButton
+                hasActiveCall={hasActiveCall}
+                i18n={i18n}
+                onClick={() =>
+                  onOutgoingAudioCallInConversation(conversation.id)
+                }
+                type="audio"
+              />
+            )}
+          </>
+        )}
+        <Button
+          icon={isMuted ? ButtonIconType.muted : ButtonIconType.unmuted}
+          onClick={() => {
+            if (canConversationOnlyBeMutedAlways(conversation)) {
+              if (isMuted) {
+                setMuteDuration(conversation.id, 0);
+              } else {
+                setMuteDuration(conversation.id, Number.MAX_SAFE_INTEGER);
+              }
+              return;
+            }
+
+            if (isMuted) {
+              setModalState(ModalState.UnmuteNotifications);
+            } else {
+              setModalState(ModalState.MuteNotifications);
+            }
+          }}
+          variant={ButtonVariant.Details}
+        >
+          {isMuted ? i18n('icu:unmute') : i18n('icu:mute')}
+        </Button>
+        {selectedNavTab !== NavTab.Calls && (
+          <Button
+            icon={ButtonIconType.search}
+            onClick={() => {
+              searchInConversation(conversation.id);
+            }}
+            variant={ButtonVariant.Details}
+          >
+            {i18n('icu:search')}
+          </Button>
+        )}
+      </div>
+
+      {isSignalConversation && (
+        <>
+          <PanelSection>
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationHero--signal-official-chat')}
+                  icon={IconType.official}
+                />
+              }
+              label={i18n('icu:ConversationHero--signal-official-chat')}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationHero--release-notes')}
+                  icon={IconType.bell}
+                />
+              }
+              label={i18n('icu:ConversationHero--release-notes')}
+            />
+          </PanelSection>
+
+          <PanelSection title={i18n('icu:ConversationDetails--help-section')}>
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--support-center')}
+                  icon={IconType.help}
+                />
+              }
+              label={i18n('icu:ConversationDetails--support-center')}
+              onClick={() => {
+                openLinkInWebBrowser('https://support.signal.org');
+              }}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:contactUs')}
+                  icon={IconType.invite}
+                />
+              }
+              label={i18n('icu:contactUs')}
+              onClick={() => {
+                openLinkInWebBrowser(
+                  'https://support.signal.org/hc/requests/new?desktop'
+                );
+              }}
+            />
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:BadgeDialog__become-a-sustainer-button')}
+                  icon={IconType.heart}
+                />
+              }
+              label={i18n('icu:BadgeDialog__become-a-sustainer-button')}
+              onClick={onNavigateToDonate}
+            />
+          </PanelSection>
+        </>
+      )}
+
+      {callHistoryGroup && (
+        <CallHistoryGroupPanelSection
+          callHistoryGroup={callHistoryGroup}
+          i18n={i18n}
+        />
+      )}
+
+      {!isSignalConversation && (
+        <PanelSection>
+          {!isGroup || canEditGroupInfo || conversation.expireTimer != null ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n(
+                    'icu:ConversationDetails--disappearing-messages-label'
+                  )}
+                  icon={IconType.timer}
+                />
+              }
+              info={
+                isGroup
+                  ? i18n(
+                      'icu:ConversationDetails--disappearing-messages-info--group'
+                    )
+                  : i18n(
+                      'icu:ConversationDetails--disappearing-messages-info--direct'
+                    )
+              }
+              label={i18n(
+                'icu:ConversationDetails--disappearing-messages-label'
+              )}
+              right={
+                <DisappearingTimerSelect
+                  i18n={i18n}
+                  value={conversation.expireTimer || DurationInSeconds.ZERO}
+                  disabled={
+                    isGroup && (!canEditGroupInfo || conversation.terminated)
+                  }
+                  onChange={value =>
+                    setDisappearingMessages(conversation.id, value)
+                  }
+                />
+              }
+            />
+          ) : null}
+          {canHaveNicknameAndNote(conversation) && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--nickname-label')}
+                  icon={IconType.edit}
+                />
+              }
+              label={i18n('icu:ConversationDetails--nickname-label')}
+              onClick={onOpenEditNicknameAndNoteModal}
+              actions={
+                (conversation.nicknameGivenName ||
+                  conversation.nicknameFamilyName ||
+                  conversation.note) && (
+                  <ContextMenu
+                    i18n={i18n}
+                    portalToRoot
+                    popperOptions={{
+                      placement: 'bottom',
+                      strategy: 'absolute',
+                    }}
+                    menuOptions={[
+                      {
+                        icon: 'ConversationDetails--nickname-actions--delete',
+                        label: i18n(
+                          'icu:ConversationDetails--nickname-actions--delete'
+                        ),
+                        onClick: () => {
+                          setModalState(
+                            ModalState.ConfirmDeleteNicknameAndNote
+                          );
+                        },
+                      },
+                    ]}
+                  >
+                    {({ onClick }) => {
+                      return (
+                        <button
+                          type="button"
+                          className="ConversationDetails--nickname-actions"
+                          onClick={onClick}
+                        >
+                          <span className="ConversationDetails--nickname-actions-label">
+                            {i18n('icu:ConversationDetails--nickname-actions')}
+                          </span>
+                        </button>
+                      );
+                    }}
+                  </ContextMenu>
+                )
+              }
+            />
+          )}
+          {selectedNavTab === NavTab.Chats && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:showChatColorEditor')}
+                  icon={IconType.color}
+                />
+              }
+              label={i18n('icu:showChatColorEditor')}
+              onClick={() => {
+                pushPanelForConversation({
+                  type: PanelType.ChatColorEditor,
+                });
+              }}
+              right={
+                <div
+                  className={`ConversationDetails__chat-color ConversationDetails__chat-color--${conversation.conversationColor}`}
+                  style={{
+                    ...getCustomColorStyle(conversation.customColor),
+                  }}
+                />
+              }
+            />
+          )}
+          {isGroup && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--notifications')}
+                  icon={IconType.notifications}
+                />
+              }
+              label={i18n('icu:ConversationDetails--notifications')}
+              onClick={() =>
+                pushPanelForConversation({
+                  type: PanelType.NotificationSettings,
+                })
+              }
+              right={
+                conversation.muteExpiresAt
+                  ? getMutedUntilText(conversation.muteExpiresAt, i18n)
+                  : undefined
+              }
+            />
+          )}
+          {hasMedia && (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetailsMediaList--title')}
+                  icon={IconType.media}
+                />
+              }
+              label={i18n('icu:ConversationDetailsMediaList--title')}
+              onClick={() => {
+                pushPanelForConversation({
+                  type: PanelType.AllMedia,
+                });
+              }}
+            />
+          )}
+          {!isGroup && !conversation.isMe && (
+            <PanelRow
+              onClick={() => toggleSafetyNumberModal(conversation.id)}
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails__viewSafetyNumber')}
+                  icon={IconType.verify}
+                />
+              }
+              label={
+                <div className="ConversationDetails__safety-number">
+                  {i18n('icu:ConversationDetails__viewSafetyNumber')}
+                </div>
+              }
+            />
+          )}
+        </PanelSection>
+      )}
+      {isGroup && (
+        <ConversationDetailsMembershipList
+          canAddLabel={canAddLabel}
+          canAddNewMembers={canAddNewMembers}
+          conversationId={conversation.id}
+          getPreferredBadge={getPreferredBadge}
+          i18n={i18n}
+          isEditMemberLabelEnabled={isEditMemberLabelEnabled}
+          isTerminated={isGroupTerminated}
+          memberships={memberships}
+          memberColors={memberColors}
+          showContactModal={showContactModal}
+          showLabelEditor={() => {
+            pushPanelForConversation({
+              type: PanelType.GroupMemberLabelEditor,
+            });
+          }}
+          startAddingNewMembers={() => {
+            setModalState(ModalState.AddingGroupMembers);
+          }}
+          theme={theme}
+        />
+      )}
+
+      {isGroup && !isGroupTerminated && (
+        <PanelSection>
+          {isAdmin || hasGroupLink ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--group-link')}
+                  icon={IconType.link}
+                />
+              }
+              label={i18n('icu:ConversationDetails--group-link')}
+              onClick={() =>
+                pushPanelForConversation({
+                  type: PanelType.GroupLinkManagement,
+                })
+              }
+              right={hasGroupLink ? i18n('icu:on') : i18n('icu:off')}
+            />
+          ) : null}
+          {isEditMemberLabelEnabled ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--member-label')}
+                  icon={IconType.tag}
+                  disabled={!canAddLabel}
+                />
+              }
+              label={
+                <div
+                  className={classNames(
+                    !canAddLabel
+                      ? 'ConversationDetails__MemberLabel--disabled'
+                      : null
+                  )}
+                >
+                  {i18n('icu:ConversationDetails--member-label')}
+                </div>
+              }
+              onClick={() => {
+                if (!canAddLabel) {
+                  showToast({ toastType: ToastType.CannotAddMemberLabel });
+                  return;
+                }
+
+                pushPanelForConversation({
+                  type: PanelType.GroupMemberLabelEditor,
+                });
+              }}
+            />
+          ) : null}
+          <PanelRow
+            icon={
+              <ConversationDetailsIcon
+                ariaLabel={i18n(
+                  'icu:ConversationDetails--requests-and-invites'
+                )}
+                icon={IconType.invites}
+              />
+            }
+            label={i18n('icu:ConversationDetails--requests-and-invites')}
+            onClick={() =>
+              pushPanelForConversation({
+                type: PanelType.GroupInvites,
+              })
+            }
+            right={invitesCount}
+          />
+          {isAdmin ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:permissions')}
+                  icon={IconType.lock}
+                />
+              }
+              label={i18n('icu:permissions')}
+              onClick={() =>
+                pushPanelForConversation({
+                  type: PanelType.GroupPermissions,
+                })
+              }
+            />
+          ) : null}
+        </PanelSection>
+      )}
+
+      {!isGroup && !conversation.isMe && !isSignalConversation && (
+        <ConversationDetailsGroups
+          contactId={conversation.id}
+          i18n={i18n}
+          groupsInCommon={groupsInCommon}
+          toggleAddUserToAnotherGroupModal={toggleAddUserToAnotherGroupModal}
+          showConversation={showConversation}
+        />
+      )}
+
+      {!conversation.isMe && (
+        <ConversationDetailsActions
+          acceptConversation={acceptConversation}
+          blockConversation={blockConversation}
+          cannotLeaveBecauseYouAreLastAdmin={cannotLeaveBecauseYouAreLastAdmin}
+          canTerminateGroup={canTerminateGroup}
+          conversationId={conversation.id}
+          conversationTitle={conversation.title}
+          i18n={i18n}
+          isArchived={Boolean(conversation.isArchived)}
+          isBlocked={Boolean(conversation.isBlocked)}
+          isGroup={isGroup}
+          isGroupTerminated={isGroupTerminated}
+          isSignalConversation={isSignalConversation}
+          left={Boolean(conversation.left)}
+          onArchive={onConversationArchive}
+          onDelete={onConversationDeleteMessages}
+          onUnarchive={onConversationUnarchive}
+          onLeave={() => leaveGroup(conversation.id)}
+          onReportSpam={() => reportSpam(conversation.id)}
+          onReportSpamAndBlock={() => {
+            reportSpam(conversation.id);
+            blockConversation(conversation.id);
+          }}
+          onTerminateGroup={() => terminateGroup(conversation.id)}
+        />
+      )}
+
+      {modalNode}
+    </div>
+  );
+}
+
+function ConversationDetailsCallButton({
+  hasActiveCall,
+  i18n,
+  onClick,
+  type,
+}: Readonly<{
+  hasActiveCall: boolean;
+  i18n: LocalizerType;
+  onClick: () => unknown;
+  type: 'audio' | 'video';
+}>) {
+  const tooltipContent = hasActiveCall ? getTooltipContent(i18n) : undefined;
+  const button = (
+    <Button
+      icon={ButtonIconType[type]}
+      onClick={onClick}
+      variant={ButtonVariant.Details}
+      discouraged={hasActiveCall}
+      aria-label={tooltipContent}
+    >
+      {type === 'audio' ? i18n('icu:audio') : i18n('icu:video')}
+    </Button>
+  );
+
+  if (hasActiveCall) {
+    return <InAnotherCallTooltip i18n={i18n}>{button}</InAnotherCallTooltip>;
+  }
+
+  return button;
+}

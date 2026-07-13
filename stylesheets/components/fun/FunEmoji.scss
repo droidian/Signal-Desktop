@@ -1,0 +1,205 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@mixin hidpi {
+  @media (resolution > 1x) {
+    @content;
+  }
+}
+
+.FunStaticEmoji {
+  contain: strict;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 0;
+  flex: none;
+  content-visibility: auto;
+  vertical-align: top;
+  letter-spacing: inherit;
+  font-style: normal;
+
+  // Override global `max-width: 100%`
+  max-width: inherit;
+  color: hsl(from currentColor h s l / 100%);
+}
+
+.FunStaticEmoji__Text {
+  padding-top: 1px;
+
+  // Emoji font images are slightly higher than optical center
+  @media (resolution >= 2x) {
+    padding-top: 0.5px;
+  }
+}
+
+.FunStaticEmoji--Blot {
+  display: inline-flex;
+  margin-bottom: round(-0.4em + 3px, 1px);
+  vertical-align: baseline;
+}
+
+.FunStaticEmoji--Size12 {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+
+  padding-top: 0px;
+}
+
+.FunStaticEmoji--Size14 {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+
+  padding-top: 0px;
+}
+
+.FunStaticEmoji--Size16 {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+
+  padding-top: 0px;
+}
+
+.FunStaticEmoji--Size18 {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.FunStaticEmoji--Size20 {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.FunStaticEmoji--Size24 {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.FunStaticEmoji--Size28 {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.FunStaticEmoji--Size32 {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.FunStaticEmoji--Size36 {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.FunStaticEmoji--Size40 {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.FunStaticEmoji--Size48 {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.FunStaticEmoji--Size56 {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+}
+
+.FunStaticEmoji--Size64 {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+}
+
+.FunStaticEmoji--Size66 {
+  font-size: 66px;
+  width: 66px;
+  height: 66px;
+}
+
+$inline-emoji-container-name: inline-emoji;
+
+.FunInlineEmoji {
+  z-index: 0;
+  contain: strict;
+  container: $inline-emoji-container-name / inline-size;
+  display: inline-block;
+  flex: none;
+  width: var(--fun-inline-emoji-size, round(1em, 1px));
+  height: var(--fun-inline-emoji-size, round(1em, 1px));
+  font-size: var(--fun-inline-emoji-size, round(1.4em, 1px));
+  line-height: var(--fun-inline-emoji-size, round(1em, 1px));
+  letter-spacing: inherit;
+  content-visibility: auto;
+  vertical-align: bottom;
+  font-style: normal;
+  color: hsl(from currentColor h s l / 100%);
+}
+
+.FunInlineEmoji__Small--Hidden {
+  display: none;
+}
+
+.FunInlineEmoji__Image {
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+}
+
+.FunInlineEmoji__Image--loaded {
+  visibility: visible;
+  position: inherit;
+  top: inherit;
+}
+
+.FunInlineEmoji__Small {
+  // Inline-block so copying multiple emoji does not insert newlines around
+  // each one in the clipboard plain-text serialization.
+  display: inline-block;
+
+  // Emoji font images are slightly higher than optical center
+  @container #{$inline-emoji-container-name} (width > 16px) {
+    padding-top: 0.5px;
+  }
+
+  @container #{$inline-emoji-container-name} (width > 45px) {
+    padding-top: 1px;
+  }
+
+  @media (resolution >= 2x) {
+    // Emoji font has images are slightly higher than optical center
+    @container #{$inline-emoji-container-name} (width > 8px) {
+      padding-top: 0.5px;
+    }
+
+    @container #{$inline-emoji-container-name} (width > 40px) {
+      padding-top: 1px;
+    }
+  }
+}
+
+.FunInlineEmoji__Jumbo {
+  display: none;
+  @container #{$inline-emoji-container-name} (width > 32px) {
+    @include hidpi {
+      display: inherit;
+    }
+  }
+
+  @container #{$inline-emoji-container-name} (width > 64px) {
+    display: inherit;
+  }
+}

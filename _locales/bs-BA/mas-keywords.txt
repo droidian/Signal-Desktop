@@ -1,0 +1,1 @@
+signal,poruka,messenger,poziv,glas,šifrirano,privatno,sigurno,privatnost,grupa,video,chat,priče

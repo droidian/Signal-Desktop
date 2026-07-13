@@ -1,0 +1,1389 @@
+// Copyright 2019 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import lodash from 'lodash';
+import classNames from 'classnames';
+import type { ReactNode, UIEvent, JSX, FocusEvent, KeyboardEvent } from 'react';
+import { Component, createRef } from 'react';
+
+import {
+  ScrollDownButton,
+  ScrollDownButtonVariant,
+} from './ScrollDownButton.dom.tsx';
+
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { assertDev, strictAssert } from '../../util/assert.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+
+import { ErrorBoundary } from './ErrorBoundary.dom.tsx';
+import { NewlyCreatedGroupInvitedContactsDialog } from '../NewlyCreatedGroupInvitedContactsDialog.dom.tsx';
+import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from '../../state/smart/ContactSpoofingReviewDialog.preload.tsx';
+import { TimelineFloatingHeader } from './TimelineFloatingHeader.dom.tsx';
+import {
+  getScrollAnchorBeforeUpdate,
+  getWidthBreakpoint,
+  ScrollAnchor,
+  TimelineMessageLoadingState,
+  UnreadIndicatorPlacement,
+} from '../../util/timelineUtil.std.ts';
+import {
+  getScrollBottom,
+  scrollToBottom,
+  setScrollBottom,
+} from '../../util/scrollUtil.std.ts';
+import { LastSeenIndicator } from './LastSeenIndicator.dom.tsx';
+import { MINUTE, SECOND } from '../../util/durations/index.std.ts';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import {
+  createScrollerLock,
+  ScrollerLockContext,
+} from '../../hooks/useScrollLock.dom.tsx';
+import { MessageInteractivity } from './Message.dom.tsx';
+import type { RenderItemProps } from '../../state/smart/TimelineItem.preload.tsx';
+import type { CollapseSet } from '../../util/CollapseSet.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
+
+const { first, get, isNumber, last, throttle } = lodash;
+
+const AT_BOTTOM_THRESHOLD = 15;
+const AT_BOTTOM_DETECTOR_STYLE = { height: AT_BOTTOM_THRESHOLD };
+
+const MIN_ROW_HEIGHT = 18;
+const SCROLL_DOWN_BUTTON_THRESHOLD = 8;
+const LOAD_NEWER_THRESHOLD = 5;
+
+const DELAY_BEFORE_MARKING_READ_AFTER_FOCUS = SECOND;
+
+export type PropsDataType = {
+  haveNewest: boolean;
+  haveOldest: boolean;
+  messageChangeCounter: number;
+  messageLoadingState: TimelineMessageLoadingState | null;
+  isNearBottom: boolean | null;
+  items: ReadonlyArray<CollapseSet>;
+  oldestUnseenIndex: number | null;
+  scrollToIndex: number | null;
+  scrollToIndexCounter: number;
+  totalUnseen: number;
+};
+
+type PropsHousekeepingType = {
+  id: string;
+  isBlocked: boolean;
+  isConversationSelected: boolean;
+  isGroupV1AndDisabled?: boolean;
+  isGroupTerminated: boolean;
+  isInFullScreenCall: boolean;
+  isIncomingMessageRequest: boolean;
+  isSomeoneTyping: boolean;
+  isSignalConversation: boolean;
+  unreadCount?: number;
+  unreadMentionsCount?: number;
+  conversationType: 'direct' | 'group';
+
+  targetedMessageId?: string;
+  invitedContactsForNewlyCreatedGroup: Array<ConversationType>;
+  selectedMessageId?: string;
+
+  hasContactSpoofingReview: boolean | undefined;
+
+  discardMessages: (
+    _: Readonly<
+      | {
+          conversationId: string;
+          numberToKeepAtBottom: number;
+        }
+      | { conversationId: string; numberToKeepAtTop: number }
+    >
+  ) => void;
+  getTimestampForMessage: (messageId: string) => undefined | number;
+  getPreferredBadge: PreferredBadgeSelectorType;
+  i18n: LocalizerType;
+  theme: ThemeType;
+
+  updateVisibleMessages?: (messageIds: Array<string>) => void;
+  renderContactSpoofingReviewDialog: (
+    props: SmartContactSpoofingReviewDialogPropsType
+  ) => JSX.Element;
+  renderHeroRow: (id: string) => JSX.Element;
+  renderItem: (props: RenderItemProps) => JSX.Element;
+  renderTypingBubble: (id: string) => JSX.Element;
+};
+
+export type PropsActionsType = {
+  clearInvitedServiceIdsForNewlyCreatedGroup: () => void;
+  clearTargetedMessage: () => unknown;
+  closeContactSpoofingReview: () => void;
+  loadOlderMessages: (conversationId: string, messageId: string) => unknown;
+  loadNewerMessages: (conversationId: string, messageId: string) => unknown;
+  loadNewestMessages: (
+    conversationId: string,
+    messageId: string,
+    setFocus?: boolean
+  ) => unknown;
+  markMessageRead: (conversationId: string, messageId: string) => unknown;
+  maybePeekGroupCall: (conversationId: string) => unknown;
+  targetMessage: (messageId: string, conversationId: string) => unknown;
+  setCenterMessage: (
+    conversationId: string,
+    messageId: string | undefined
+  ) => void;
+  setIsNearBottom: (conversationId: string, isNearBottom: boolean) => void;
+  scrollToOldestUnreadMention: (conversationId: string) => unknown;
+};
+
+export type PropsType = PropsDataType &
+  PropsHousekeepingType &
+  PropsActionsType;
+
+type StateType = {
+  scrollLocked: boolean;
+  scrollLockHeight: number | undefined;
+  hasRecentlyScrolled: boolean;
+  newestBottomVisibleMessageId?: string;
+  oldestPartiallyVisibleMessageId?: string;
+  widthBreakpoint: WidthBreakpoint;
+};
+
+const scrollToUnreadIndicator = Symbol('scrollToUnreadIndicator');
+
+type SnapshotType =
+  | null
+  | typeof scrollToUnreadIndicator
+  | { scrollToIndex: number }
+  | { scrollTop: number }
+  | { scrollBottom: number };
+
+// oxlint-disable-next-line react/prefer-function-component
+export class Timeline extends Component<PropsType, StateType, SnapshotType> {
+  readonly #containerRef = createRef<HTMLDivElement>();
+  readonly #messagesRef = createRef<HTMLDivElement>();
+  readonly #atBottomDetectorRef = createRef<HTMLDivElement>();
+  readonly #lastSeenIndicatorRef = createRef<HTMLDivElement>();
+  #intersectionObserver?: IntersectionObserver;
+  #intersectionRatios = new Map<Element, number>();
+
+  // This is a best guess. It will likely be overridden when the timeline is measured.
+  #maxVisibleRows = Math.ceil(window.innerHeight / MIN_ROW_HEIGHT);
+
+  #hasRecentlyScrolledTimeout?: NodeJS.Timeout;
+  #delayedPeekTimeout?: NodeJS.Timeout;
+  #peekInterval?: NodeJS.Timeout;
+
+  // oxlint-disable-next-line react/state-in-constructor
+  override state: StateType = {
+    scrollLocked: false,
+    scrollLockHeight: undefined,
+    hasRecentlyScrolled: true,
+
+    widthBreakpoint: WidthBreakpoint.Wide,
+  };
+
+  readonly #onScrollLockChange = (): void => {
+    const scrollLocked = this.#scrollerLock.isLocked();
+    this.setState(() => {
+      // Prevent scroll due to elements shrinking or disappearing (e.g. typing indicators)
+      const scrollLockHeight = scrollLocked
+        ? this.#messagesRef.current?.getBoundingClientRect().height
+        : undefined;
+      return {
+        scrollLocked,
+        scrollLockHeight,
+      };
+    });
+  };
+
+  readonly #scrollerLock = createScrollerLock(
+    'Timeline',
+    this.#onScrollLockChange
+  );
+
+  readonly #onScroll = (event: UIEvent): void => {
+    // When content is removed from the viewport, such as typing indicators leaving
+    // or messages being edited smaller or deleted, scroll events are generated and
+    // they are marked as user-generated (isTrusted === true). Actual user generated
+    // scroll events with movement must scroll a nonbottom state at some point.
+    const isAtBottom = this.#isAtBottom();
+    if (event.isTrusted && !isAtBottom) {
+      this.#scrollerLock.onUserInterrupt('onScroll');
+    }
+
+    // hasRecentlyScrolled is used to show the floating date header, which we only
+    // want to show when scrolling through history or on conversation first open.
+    // Checking bottom prevents new messages and typing from showing the header.
+    if (!this.state.hasRecentlyScrolled && this.#isAtBottom()) {
+      return;
+    }
+
+    this.setState(oldState =>
+      // `onScroll` is called frequently, so it's performance-sensitive. We try our best
+      //   to return `null` from this updater because [that won't cause a re-render][0].
+      //
+      // [0]: https://github.com/facebook/react/blob/29b7b775f2ecf878eaf605be959d959030598b07/packages/react-reconciler/src/ReactUpdateQueue.js#L401-L404
+      oldState.hasRecentlyScrolled ? null : { hasRecentlyScrolled: true }
+    );
+    clearTimeoutIfNecessary(this.#hasRecentlyScrolledTimeout);
+    this.#hasRecentlyScrolledTimeout = setTimeout(() => {
+      this.setState({ hasRecentlyScrolled: false });
+    }, 3000);
+
+    // Because CollapseSets might house many unseen messages, we can't wait for our
+    // intersection observer to tell us that a new item is now fully visible or fully not
+    // visible. We need to check more often to see how many messages are visible within
+    // a given CollapseSet.
+    this.#markNewestBottomVisibleMessageReadAfterDelay();
+  };
+
+  #scrollToItemIndex(itemIndex: number): void {
+    if (this.#scrollerLock.isLocked()) {
+      return;
+    }
+
+    this.#messagesRef.current
+      ?.querySelector(`[data-item-index="${itemIndex}"]`)
+      ?.scrollIntoView({ block: 'center' });
+  }
+
+  readonly #scrollToBottom = (setFocus?: boolean): void => {
+    if (this.#scrollerLock.isLocked()) {
+      return;
+    }
+
+    const { targetMessage, id, items } = this.props;
+
+    if (setFocus && items && items.length > 0) {
+      const lastIndex = items.length - 1;
+      const lastItem = items[lastIndex];
+      strictAssert(lastItem, 'Missing lastItem');
+      targetMessage(lastItem.id, id);
+    } else {
+      const containerEl = this.#containerRef.current;
+      if (containerEl) {
+        scrollToBottom(containerEl);
+      }
+    }
+  };
+
+  readonly #onClickScrollDownButton = (): void => {
+    this.#scrollerLock.onUserInterrupt('onClickScrollDownButton');
+    this.#scrollDown(false);
+  };
+
+  readonly #scrollDown = (setFocus?: boolean): void => {
+    if (this.#scrollerLock.isLocked()) {
+      return;
+    }
+
+    const {
+      haveNewest,
+      id,
+      items,
+      loadNewestMessages,
+      messageLoadingState,
+      oldestUnseenIndex,
+      targetMessage,
+    } = this.props;
+    const { newestBottomVisibleMessageId } = this.state;
+
+    if (!items || items.length < 1) {
+      return;
+    }
+
+    if (messageLoadingState) {
+      this.#scrollToBottom(setFocus);
+      return;
+    }
+
+    if (
+      newestBottomVisibleMessageId &&
+      isNumber(oldestUnseenIndex) &&
+      items.findIndex(item => item.id === newestBottomVisibleMessageId) <
+        oldestUnseenIndex
+    ) {
+      if (setFocus) {
+        const item = items[oldestUnseenIndex];
+        strictAssert(item, 'Missing item at oldestUnseenIndex');
+        targetMessage(item.id, id);
+      } else {
+        this.#lastSeenIndicatorRef.current?.scrollIntoView();
+      }
+    } else if (haveNewest) {
+      this.#scrollToBottom(setFocus);
+    } else {
+      const lastItem = last(items);
+      if (lastItem) {
+        loadNewestMessages(id, lastItem.id, setFocus);
+      }
+    }
+  };
+
+  #isAtBottom(): boolean {
+    const containerEl = this.#containerRef.current;
+    if (!containerEl) {
+      return false;
+    }
+    const isScrolledNearBottom =
+      getScrollBottom(containerEl) <= AT_BOTTOM_THRESHOLD;
+    const hasScrollbars = containerEl.clientHeight < containerEl.scrollHeight;
+    return isScrolledNearBottom || !hasScrollbars;
+  }
+
+  #updateIntersectionObserver(): void {
+    const containerEl = this.#containerRef.current;
+    const messagesEl = this.#messagesRef.current;
+    const atBottomDetectorEl = this.#atBottomDetectorRef.current;
+    if (!containerEl || !messagesEl || !atBottomDetectorEl) {
+      return;
+    }
+
+    const {
+      haveNewest,
+      haveOldest,
+      id,
+      items,
+      loadNewerMessages,
+      loadOlderMessages,
+      messageLoadingState,
+      setIsNearBottom,
+    } = this.props;
+
+    // We re-initialize the `IntersectionObserver`. We don't want stale references to old
+    //   props, and we care about the order of `IntersectionObserverEntry`s. (We could do
+    //   this another way, but this approach works.)
+    this.#intersectionObserver?.disconnect();
+
+    this.#intersectionRatios = new Map();
+
+    this.props.updateVisibleMessages?.([]);
+    const intersectionObserverCallback: IntersectionObserverCallback =
+      entries => {
+        // The first time this callback is called, we'll get entries in observation order
+        //   (which should match DOM order). We don't want to delete anything from our map
+        //   because we don't want the order to change at all.
+        entries.forEach(entry => {
+          this.#intersectionRatios.set(entry.target, entry.intersectionRatio);
+        });
+
+        let newIsNearBottom = false;
+        let oldestPartiallyVisible: undefined | Element;
+        let newestPartiallyVisible: undefined | Element;
+        let newestFullyVisible: undefined | Element;
+        const visibleMessageIds: Array<string> = [];
+        for (const [element, intersectionRatio] of this.#intersectionRatios) {
+          if (intersectionRatio === 0) {
+            continue;
+          }
+
+          const messageId = getMessageIdFromElement(element);
+          if (messageId) {
+            visibleMessageIds.push(messageId);
+          }
+          // We use this "at bottom detector" for two reasons, both for performance. It's
+          //   usually faster to use an `IntersectionObserver` instead of a scroll event,
+          //   and we want to do that here.
+          //
+          // 1. We can determine whether we're near the bottom without `onScroll`
+          // 2. We need this information when deciding whether the bottom of the last
+          //    message is visible. We want to get an intersection observer event when the
+          //    bottom of the container comes into view.
+          if (element === atBottomDetectorEl) {
+            newIsNearBottom = true;
+          } else {
+            oldestPartiallyVisible ??= element;
+            newestPartiallyVisible = element;
+            if (intersectionRatio === 1) {
+              newestFullyVisible = element;
+            }
+          }
+        }
+
+        this.props.updateVisibleMessages?.(visibleMessageIds);
+
+        // If a message is fully visible, then you can see its bottom. If not, there's a
+        //   very tall message around. We assume you can see the bottom of a message if
+        //   (1) another message is partly visible right below it, or (2) you're near the
+        //   bottom of the scrollable container.
+        let newestBottomVisible: undefined | Element;
+        if (newestFullyVisible) {
+          newestBottomVisible = newestFullyVisible;
+        } else if (
+          newIsNearBottom ||
+          newestPartiallyVisible !== oldestPartiallyVisible
+        ) {
+          newestBottomVisible = oldestPartiallyVisible;
+        }
+
+        const oldestPartiallyVisibleMessageId = getMessageIdFromElement(
+          oldestPartiallyVisible
+        );
+        const newestBottomVisibleMessageId =
+          getMessageIdFromElement(newestBottomVisible);
+
+        this.setState({
+          oldestPartiallyVisibleMessageId,
+          newestBottomVisibleMessageId,
+        });
+
+        setIsNearBottom(id, newIsNearBottom);
+
+        if (newestBottomVisibleMessageId) {
+          this.#markNewestBottomVisibleMessageRead(
+            newestBottomVisibleMessageId
+          );
+
+          const rowIndex = getRowIndexFromElement(newestBottomVisible);
+          const maxRowIndex = items.length - 1;
+
+          if (
+            !messageLoadingState &&
+            !haveNewest &&
+            isNumber(rowIndex) &&
+            maxRowIndex >= 0 &&
+            rowIndex >= maxRowIndex - LOAD_NEWER_THRESHOLD
+          ) {
+            let targetMessageId = newestBottomVisibleMessageId;
+            const newestItem = items.find(
+              item => item.id === newestBottomVisibleMessageId
+            );
+            if (newestItem && newestItem.type !== 'none') {
+              const lastItem = last(newestItem.messages);
+              strictAssert(lastItem, 'lastItem in newestItem.messages array');
+              targetMessageId = lastItem.id;
+            }
+
+            loadNewerMessages(id, targetMessageId);
+          }
+        }
+
+        if (
+          !messageLoadingState &&
+          !haveOldest &&
+          oldestPartiallyVisibleMessageId &&
+          oldestPartiallyVisibleMessageId === items[0]?.id
+        ) {
+          loadOlderMessages(id, oldestPartiallyVisibleMessageId);
+        }
+      };
+
+    this.#intersectionObserver = new IntersectionObserver(
+      (entries, observer) => {
+        assertDev(
+          this.#intersectionObserver === observer,
+          'observer.disconnect() should prevent callbacks from firing'
+        );
+
+        // Observer was updated from under us
+        if (this.#intersectionObserver !== observer) {
+          return;
+        }
+
+        intersectionObserverCallback(entries, observer);
+      },
+      {
+        root: containerEl,
+        threshold: [0, 1],
+      }
+    );
+
+    for (const child of messagesEl.children) {
+      if ((child as HTMLElement).dataset.messageId) {
+        this.#intersectionObserver.observe(child);
+      }
+    }
+    this.#intersectionObserver.observe(atBottomDetectorEl);
+  }
+
+  #getCenterMessageId(): string | undefined {
+    const containerEl = this.#containerRef.current;
+    if (!containerEl) {
+      return;
+    }
+
+    const containerElRectTop = containerEl.getBoundingClientRect().top;
+    const containerElMidline = containerEl.clientHeight / 2;
+    const atBottomDetectorEl = this.#atBottomDetectorRef.current;
+
+    let centerMessageId: undefined | string;
+    let centerMessageRelativeTop = 0;
+    for (const [element, intersectionRatio] of this.#intersectionRatios) {
+      if (intersectionRatio === 0) {
+        continue;
+      }
+
+      if (element === atBottomDetectorEl) {
+        return;
+      }
+
+      const messageId = getMessageIdFromElement(element);
+      if (!messageId) {
+        continue;
+      }
+
+      const relativeTop =
+        element.getBoundingClientRect().top - containerElRectTop;
+      if (
+        !centerMessageId ||
+        (relativeTop > centerMessageRelativeTop &&
+          relativeTop < containerElMidline)
+      ) {
+        centerMessageId = messageId;
+        centerMessageRelativeTop = relativeTop;
+      }
+    }
+
+    return centerMessageId;
+  }
+
+  readonly #markNewestBottomVisibleMessageRead = throttle(
+    (itemId?: string): void => {
+      const { id, items, markMessageRead } = this.props;
+      const messageIdToMarkRead =
+        itemId ?? this.state.newestBottomVisibleMessageId;
+
+      if (!messageIdToMarkRead) {
+        return;
+      }
+
+      const lastIndex = items.length - 1;
+      const newestBottomVisibleItemIndex = items.findIndex(
+        item => item.id === messageIdToMarkRead
+      );
+
+      // Mark the newest visible message read if we're at the bottom, or override provided
+      if (
+        messageIdToMarkRead &&
+        (itemId || lastIndex === newestBottomVisibleItemIndex)
+      ) {
+        const item = items[newestBottomVisibleItemIndex];
+        if (!item || item.type === 'none') {
+          markMessageRead(id, messageIdToMarkRead);
+          return;
+        }
+      }
+
+      // We can return early if the newest partially-visible item is not a CollapseSet
+      const newestPartiallyVisibleIndex = Math.min(
+        lastIndex,
+        newestBottomVisibleItemIndex + 1
+      );
+      const newestPartiallyVisibleItem = items[newestPartiallyVisibleIndex];
+      if (
+        newestPartiallyVisibleItem &&
+        newestPartiallyVisibleItem.type === 'none'
+      ) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      // Now we need to figure out which of the CollapseSet's inner messages are visible
+      const collapseSetEl = this.#messagesRef.current?.querySelector(
+        `[data-item-index="${newestPartiallyVisibleIndex}"]`
+      );
+      const containerWindowRect =
+        this.#containerRef.current?.getBoundingClientRect();
+      if (!collapseSetEl || !containerWindowRect) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      const messageEls = collapseSetEl.querySelectorAll('[data-message-id]');
+      const containerWindowBottom =
+        containerWindowRect.y + containerWindowRect.height;
+
+      let newestFullyVisibleMessage;
+      for (let i = messageEls.length - 1; i >= 0; i -= 1) {
+        const messageEl = messageEls[i];
+        strictAssert(messageEl, 'No messageEl at index i');
+
+        // The messages might be rendered, but opacity = 0
+        if (!messageEl.checkVisibility({ opacityProperty: true })) {
+          break;
+        }
+
+        // Make sure the messages are scrolled into view
+        const messageRect = messageEl.getBoundingClientRect();
+        const bottom = messageRect.y + messageRect.height;
+
+        if (bottom <= containerWindowBottom) {
+          newestFullyVisibleMessage = messageEl;
+          break;
+        }
+      }
+
+      if (!newestFullyVisibleMessage) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      const messageId =
+        newestFullyVisibleMessage.getAttribute('data-message-id');
+      markMessageRead(id, messageId || messageIdToMarkRead);
+    },
+    500
+  );
+
+  // When the the window becomes active, or when a fullsceen call is ended, we mark read
+  // with a delay, to allow users to navigate away quickly without marking messages read
+  readonly #markNewestBottomVisibleMessageReadAfterDelay = throttle(
+    this.#markNewestBottomVisibleMessageRead,
+    DELAY_BEFORE_MARKING_READ_AFTER_FOCUS,
+    {
+      leading: false,
+      trailing: true,
+    }
+  );
+
+  #setupGroupCallPeekTimeouts(): void {
+    this.#cleanupGroupCallPeekTimeouts();
+
+    this.#delayedPeekTimeout = setTimeout(() => {
+      const { id, maybePeekGroupCall } = this.props;
+      this.#delayedPeekTimeout = undefined;
+      maybePeekGroupCall(id);
+
+      this.#peekInterval = setInterval(() => {
+        maybePeekGroupCall(id);
+      }, MINUTE);
+    }, 500);
+  }
+
+  #cleanupGroupCallPeekTimeouts(): void {
+    const peekInterval = this.#peekInterval;
+    const delayedPeekTimeout = this.#delayedPeekTimeout;
+
+    clearTimeoutIfNecessary(delayedPeekTimeout);
+    this.#delayedPeekTimeout = undefined;
+
+    if (peekInterval) {
+      clearInterval(peekInterval);
+      this.#peekInterval = undefined;
+    }
+  }
+
+  public override componentDidMount(): void {
+    const containerEl = this.#containerRef.current;
+    const messagesEl = this.#messagesRef.current;
+    const { conversationType, isConversationSelected, isGroupTerminated } =
+      this.props;
+    strictAssert(
+      // We don't render anything unless the conversation is selected
+      (containerEl && messagesEl) || !isConversationSelected,
+      '<Timeline> mounted without some refs'
+    );
+
+    if (containerEl) {
+      this.setState(
+        {
+          widthBreakpoint: getWidthBreakpoint(containerEl.offsetWidth),
+        },
+        () => {
+          this.#updateIntersectionObserver();
+        }
+      );
+    } else {
+      this.#updateIntersectionObserver();
+    }
+
+    window.SignalContext.activeWindowService.registerForActive(
+      this.#markNewestBottomVisibleMessageReadAfterDelay
+    );
+
+    if (conversationType === 'group' && !isGroupTerminated) {
+      this.#setupGroupCallPeekTimeouts();
+    }
+  }
+
+  public override componentWillUnmount(): void {
+    const { id, setCenterMessage, updateVisibleMessages } = this.props;
+
+    window.SignalContext.activeWindowService.unregisterForActive(
+      this.#markNewestBottomVisibleMessageReadAfterDelay
+    );
+    this.#markNewestBottomVisibleMessageReadAfterDelay.cancel();
+    this.#markNewestBottomVisibleMessageRead.cancel();
+    this.#intersectionObserver?.disconnect();
+    this.#cleanupGroupCallPeekTimeouts();
+    updateVisibleMessages?.([]);
+    setCenterMessage(id, this.#getCenterMessageId());
+  }
+
+  public override getSnapshotBeforeUpdate(
+    prevProps: Readonly<PropsType>
+  ): SnapshotType {
+    const containerEl = this.#containerRef.current;
+    if (!containerEl) {
+      return null;
+    }
+
+    const { props } = this;
+    const { scrollToIndex } = props;
+
+    const scrollAnchor = getScrollAnchorBeforeUpdate(
+      prevProps,
+      props,
+      this.#isAtBottom()
+    );
+
+    switch (scrollAnchor) {
+      case ScrollAnchor.ChangeNothing:
+        return null;
+      case ScrollAnchor.ScrollToBottom:
+        return { scrollBottom: 0 };
+      case ScrollAnchor.ScrollToIndex:
+        if (scrollToIndex == null) {
+          assertDev(
+            false,
+            '<Timeline> got "scroll to index" scroll anchor, but no index'
+          );
+        }
+        return { scrollToIndex };
+      case ScrollAnchor.ScrollToUnreadIndicator:
+        return scrollToUnreadIndicator;
+      case ScrollAnchor.Top:
+        return { scrollTop: containerEl.scrollTop };
+      case ScrollAnchor.Bottom:
+        return { scrollBottom: getScrollBottom(containerEl) };
+      default:
+        throw missingCaseError(scrollAnchor);
+    }
+  }
+
+  public override componentDidUpdate(
+    prevProps: Readonly<PropsType>,
+    _prevState: Readonly<StateType>,
+    snapshot: Readonly<SnapshotType>
+  ): void {
+    const {
+      conversationType: previousConversationType,
+      isInFullScreenCall: previousIsInFullScreenCall,
+      items: oldItems,
+      messageChangeCounter: previousMessageChangeCounter,
+      messageLoadingState: previousMessageLoadingState,
+    } = prevProps;
+    const {
+      conversationType,
+      discardMessages,
+      id,
+      isInFullScreenCall,
+      items: newItems,
+      messageChangeCounter,
+      messageLoadingState,
+      oldestUnseenIndex,
+    } = this.props;
+
+    const containerEl = this.#containerRef.current;
+    if (!this.#scrollerLock.isLocked() && containerEl && snapshot) {
+      if (snapshot === scrollToUnreadIndicator) {
+        const lastSeenIndicatorEl = this.#lastSeenIndicatorRef.current;
+        if (lastSeenIndicatorEl) {
+          lastSeenIndicatorEl.scrollIntoView();
+        } else {
+          scrollToBottom(containerEl);
+          assertDev(
+            false,
+            '<Timeline> expected a last seen indicator but it was not found'
+          );
+        }
+      } else if ('scrollToIndex' in snapshot) {
+        // Wait to scroll until after another render has completed, to allow for message
+        // sizes to measured & stabilize
+        this.setState(
+          state => state,
+          () => this.#scrollToItemIndex(snapshot.scrollToIndex)
+        );
+      } else if ('scrollTop' in snapshot) {
+        containerEl.scrollTop = snapshot.scrollTop;
+      } else {
+        setScrollBottom(containerEl, snapshot.scrollBottom);
+      }
+    }
+
+    // We know that all items will be in order and that items can only be added at either
+    // end, so we can check for equality without checking each item in the array
+    const haveItemsChanged =
+      oldItems.length !== newItems.length ||
+      oldItems.at(0) !== newItems.at(0) ||
+      oldItems.at(-1) !== newItems.at(-1);
+
+    if (haveItemsChanged) {
+      this.#updateIntersectionObserver();
+
+      // This condition is somewhat arbitrary.
+      const numberToKeepAtBottom = this.#maxVisibleRows * 2;
+      const shouldDiscardOlderMessages: boolean =
+        this.#isAtBottom() && newItems.length > numberToKeepAtBottom;
+      if (shouldDiscardOlderMessages) {
+        discardMessages({
+          conversationId: id,
+          numberToKeepAtBottom,
+        });
+      }
+
+      const loadingStateThatJustFinished:
+        | undefined
+        | TimelineMessageLoadingState =
+        !messageLoadingState && previousMessageLoadingState
+          ? previousMessageLoadingState
+          : undefined;
+      const numberToKeepAtTop = this.#maxVisibleRows * 5;
+      const shouldDiscardNewerMessages: boolean =
+        !this.#isAtBottom() &&
+        oldestUnseenIndex == null &&
+        loadingStateThatJustFinished ===
+          TimelineMessageLoadingState.LoadingOlderMessages &&
+        newItems.length > numberToKeepAtTop;
+
+      if (shouldDiscardNewerMessages) {
+        discardMessages({
+          conversationId: id,
+          numberToKeepAtTop,
+        });
+      }
+    }
+    if (previousMessageChangeCounter !== messageChangeCounter) {
+      this.#markNewestBottomVisibleMessageRead();
+    }
+
+    if (previousIsInFullScreenCall && !isInFullScreenCall) {
+      this.#markNewestBottomVisibleMessageReadAfterDelay();
+    }
+
+    if (previousConversationType !== conversationType) {
+      this.#cleanupGroupCallPeekTimeouts();
+      if (conversationType === 'group') {
+        this.#setupGroupCallPeekTimeouts();
+      }
+    }
+  }
+
+  readonly #handleBlur = (event: FocusEvent): void => {
+    const { clearTargetedMessage } = this.props;
+
+    const { currentTarget } = event;
+
+    // Thanks to https://gist.github.com/pstoica/4323d3e6e37e8a23dd59
+    setTimeout(() => {
+      // If focus moved to one of our portals, we do not clear the targeted
+      // message so that focus stays inside the portal. We need to be careful
+      // to not create colliding keyboard shortcuts between targeted messages
+      // and our portals!
+      const portals = Array.from(
+        document.querySelectorAll('body > div:not(.inbox)')
+      );
+      if (portals.some(el => el.contains(document.activeElement))) {
+        return;
+      }
+
+      if (!currentTarget.contains(document.activeElement)) {
+        clearTargetedMessage();
+      }
+    }, 0);
+  };
+
+  readonly #handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const { targetMessage, targetedMessageId, items, id } = this.props;
+    const commandKey = get(window, 'platform') === 'darwin' && event.metaKey;
+    const controlKey = get(window, 'platform') !== 'darwin' && event.ctrlKey;
+    const commandOrCtrl = commandKey || controlKey;
+
+    if (!items || items.length < 1) {
+      return;
+    }
+
+    if (
+      targetedMessageId &&
+      !commandOrCtrl &&
+      (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+    ) {
+      const direction = event.key === 'ArrowUp' ? -1 : 1;
+      const currentTargetIndex = items.findIndex(
+        item =>
+          item.id === targetedMessageId ||
+          item.messages?.some(message => message.id === targetedMessageId)
+      );
+      if (currentTargetIndex < 0) {
+        return;
+      }
+
+      const currentItem = items[currentTargetIndex];
+      strictAssert(currentItem, 'No item at currentTargetIndex');
+
+      if (currentItem.type !== 'none') {
+        const innerIndex = currentItem.messages.findIndex(
+          message => message.id === targetedMessageId
+        );
+        const targetIndex = innerIndex + direction;
+
+        if (targetIndex >= 0 && targetIndex < currentItem.messages.length) {
+          const targetInnerMessage = currentItem.messages[targetIndex];
+          strictAssert(
+            targetInnerMessage,
+            'No message at targetIndex in items.messages'
+          );
+          targetMessage(targetInnerMessage.id, id);
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          return;
+        }
+      }
+
+      const targetIndex = currentTargetIndex + direction;
+      if (targetIndex < 0 || targetIndex >= items.length) {
+        return;
+      }
+
+      const targetItem = items[targetIndex];
+      strictAssert(targetItem, 'Missing item at targetIndex');
+      if (targetItem.type === 'none') {
+        targetMessage(targetItem.id, id);
+
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      const targetInnerMessage =
+        direction === -1
+          ? last(targetItem.messages)
+          : first(targetItem.messages);
+
+      strictAssert(targetInnerMessage, 'Expect to get first/last of target');
+      targetMessage(targetInnerMessage.id, id);
+
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (
+      targetedMessageId &&
+      !commandOrCtrl &&
+      (event.key === 'PageUp' || event.key === 'PageDown')
+    ) {
+      if (!this.#containerRef.current) {
+        return;
+      }
+
+      const direction = event.key === 'PageUp' ? -1 : 1;
+      const currentTargetIndex = items.findIndex(
+        item =>
+          item.id === targetedMessageId ||
+          item.messages?.some(message => message.id === targetedMessageId)
+      );
+      if (currentTargetIndex < 0) {
+        return;
+      }
+
+      const currentItem = items[currentTargetIndex];
+      strictAssert(currentItem, 'No item at currentTargetIndex');
+
+      let startingEl = this.#containerRef.current.querySelector(
+        `[data-item-index='${currentTargetIndex}']`
+      );
+      if (currentItem.type !== 'none') {
+        const innerIndex = currentItem.messages.findIndex(
+          message => message.id === targetedMessageId
+        );
+        const message = currentItem.messages[innerIndex];
+        strictAssert(message, 'No message found at innerIndex');
+
+        startingEl = this.#containerRef.current.querySelector(
+          `[data-message-id='${message.id}']`
+        );
+      }
+
+      if (!startingEl) {
+        return;
+      }
+      const allMessageList =
+        this.#containerRef.current.querySelectorAll('[data-message-id]');
+      if (!allMessageList) {
+        return;
+      }
+      const allMessageEls = Array.from(allMessageList);
+      const startingIndex = allMessageEls.findIndex(el => el === startingEl);
+      if (startingIndex < 0) {
+        return;
+      }
+
+      const containerRect = this.#containerRef.current.getBoundingClientRect();
+      const startingRect = startingEl.getBoundingClientRect();
+      const targetTop = startingRect.y - containerRect.height;
+      const targetBottom = startingRect.y + containerRect.height;
+
+      let index = startingIndex + direction;
+      const max = allMessageEls.length;
+
+      while (index >= 0 && index < max) {
+        const currentEl = allMessageEls[index];
+        strictAssert(currentEl, 'No currentEl in allMessageEls at index');
+        const currentMessageId = currentEl.getAttribute('data-message-id');
+        strictAssert(currentMessageId, 'No data-message-id in currentEl');
+        const currentRect = currentEl.getBoundingClientRect();
+        const currentTop = currentRect.y;
+
+        if (direction === -1) {
+          if (currentTop <= targetTop || index === 0) {
+            targetMessage(currentMessageId, id);
+
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        } else {
+          const currentBottom = currentTop + currentRect.height;
+
+          if (currentBottom > targetBottom || index === max - 1) {
+            targetMessage(currentMessageId, id);
+
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        }
+        index += direction;
+      }
+    }
+
+    if (event.key === 'Home' || (commandOrCtrl && event.key === 'ArrowUp')) {
+      const firstMessageId = first(items);
+      if (firstMessageId) {
+        targetMessage(firstMessageId.id, id);
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
+
+    if (event.key === 'End' || (commandOrCtrl && event.key === 'ArrowDown')) {
+      this.#scrollDown(true);
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  public override render(): JSX.Element | null {
+    const {
+      clearInvitedServiceIdsForNewlyCreatedGroup,
+      closeContactSpoofingReview,
+      conversationType,
+      hasContactSpoofingReview,
+      getPreferredBadge,
+      getTimestampForMessage,
+      haveNewest,
+      haveOldest,
+      i18n,
+      id,
+      invitedContactsForNewlyCreatedGroup,
+      isBlocked,
+      isConversationSelected,
+      isGroupV1AndDisabled,
+      items,
+      messageLoadingState,
+      oldestUnseenIndex,
+      renderContactSpoofingReviewDialog,
+      renderHeroRow,
+      renderItem,
+      renderTypingBubble,
+      scrollToOldestUnreadMention,
+      theme,
+      totalUnseen,
+      unreadCount,
+      unreadMentionsCount,
+    } = this.props;
+    const {
+      scrollLocked,
+      scrollLockHeight,
+      hasRecentlyScrolled,
+      newestBottomVisibleMessageId,
+      oldestPartiallyVisibleMessageId,
+      widthBreakpoint,
+    } = this.state;
+
+    // As a performance optimization, we don't need to render anything if this
+    //   conversation isn't the active one.
+    if (!isConversationSelected) {
+      return null;
+    }
+
+    const isGroup = conversationType === 'group';
+    const areThereAnyMessages = items.length > 0;
+    const areAnyMessagesUnread = Boolean(unreadCount);
+    const lastItem = last(items);
+    const areAnyMessagesBelowCurrentPosition =
+      !haveNewest ||
+      Boolean(
+        newestBottomVisibleMessageId &&
+        newestBottomVisibleMessageId !== lastItem?.id
+      );
+    const areAboveScrollDownButtonThreshold =
+      !haveNewest ||
+      (newestBottomVisibleMessageId &&
+        !items
+          .slice(-SCROLL_DOWN_BUTTON_THRESHOLD)
+          .find(item => item.id === newestBottomVisibleMessageId));
+
+    const areUnreadBelowCurrentPosition =
+      areThereAnyMessages &&
+      areAnyMessagesUnread &&
+      areAnyMessagesBelowCurrentPosition;
+    const shouldShowScrollDownButtons = Boolean(
+      areThereAnyMessages &&
+      (areUnreadBelowCurrentPosition || areAboveScrollDownButtonThreshold)
+    );
+
+    let floatingHeader: ReactNode;
+    // It's possible that a message was removed from `items` but we still have its ID in
+    //   state. `getTimestampForMessage` might return undefined in that case.
+    const oldestPartiallyVisibleMessageTimestamp =
+      oldestPartiallyVisibleMessageId
+        ? getTimestampForMessage(oldestPartiallyVisibleMessageId)
+        : undefined;
+    if (
+      oldestPartiallyVisibleMessageId &&
+      oldestPartiallyVisibleMessageTimestamp
+    ) {
+      const isLoadingMessages = Boolean(messageLoadingState);
+      floatingHeader = (
+        <TimelineFloatingHeader
+          i18n={i18n}
+          isLoading={isLoadingMessages}
+          timestamp={oldestPartiallyVisibleMessageTimestamp}
+          visible={
+            (hasRecentlyScrolled || isLoadingMessages) &&
+            (!haveOldest || oldestPartiallyVisibleMessageId !== items[0]?.id)
+          }
+        />
+      );
+    }
+
+    const messageNodes: Array<ReactNode> = [];
+    for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+      const previousItemIndex = itemIndex - 1;
+      const nextItemIndex = itemIndex + 1;
+
+      const previousItem: CollapseSet | undefined = items[previousItemIndex];
+      const nextItem: CollapseSet | undefined = items[nextItemIndex];
+      const item = items[itemIndex];
+
+      if (!item) {
+        assertDev(
+          false,
+          '<Timeline> iterated through items and got an empty message ID'
+        );
+        continue;
+      }
+
+      let unreadIndicatorPlacement: undefined | UnreadIndicatorPlacement;
+      if (oldestUnseenIndex === itemIndex) {
+        unreadIndicatorPlacement = UnreadIndicatorPlacement.JustAbove;
+        messageNodes.push(
+          <LastSeenIndicator
+            key="last seen indicator"
+            count={totalUnseen}
+            i18n={i18n}
+            ref={this.#lastSeenIndicatorRef}
+          />
+        );
+      } else if (oldestUnseenIndex === nextItemIndex) {
+        unreadIndicatorPlacement = UnreadIndicatorPlacement.JustBelow;
+      }
+
+      messageNodes.push(
+        <div
+          key={item.id}
+          className={
+            itemIndex === items.length - 1
+              ? 'module-timeline__last-message'
+              : undefined
+          }
+          data-supertab={
+            oldestUnseenIndex === itemIndex ||
+            (!oldestUnseenIndex && itemIndex === items.length - 1)
+          }
+          data-item-index={itemIndex}
+          data-message-id={item.id}
+          role="listitem"
+        >
+          <ErrorBoundary i18n={i18n} showDebugLog={showDebugLog}>
+            {renderItem({
+              containerElementRef: this.#containerRef,
+              containerWidthBreakpoint: widthBreakpoint,
+              conversationId: id,
+              isBlocked,
+              interactivity: MessageInteractivity.Normal,
+              isGroup,
+              isOldestTimelineItem: haveOldest && itemIndex === 0,
+              item,
+              nextMessageId: nextItem?.id,
+              previousMessageId: previousItem?.id,
+              unreadIndicatorPlacement,
+            })}
+          </ErrorBoundary>
+        </div>
+      );
+    }
+
+    let contactSpoofingReviewDialog: ReactNode;
+    if (hasContactSpoofingReview) {
+      contactSpoofingReviewDialog = renderContactSpoofingReviewDialog({
+        conversationId: id,
+        onClose: closeContactSpoofingReview,
+      });
+    }
+
+    return (
+      <ScrollerLockContext.Provider value={this.#scrollerLock}>
+        <SizeObserver
+          onSizeChange={size => {
+            if (size.hidden) {
+              // triggered when timeline is hidden via display: none
+              return;
+            }
+
+            const { isNearBottom } = this.props;
+
+            this.setState({
+              widthBreakpoint: getWidthBreakpoint(size.width),
+            });
+
+            this.#maxVisibleRows = Math.ceil(size.height / MIN_ROW_HEIGHT);
+
+            const containerEl = this.#containerRef.current;
+            if (containerEl && isNearBottom) {
+              scrollToBottom(containerEl);
+            }
+          }}
+        >
+          {ref => (
+            <div
+              className={classNames(
+                'module-timeline',
+                isGroupV1AndDisabled ? 'module-timeline--disabled' : null,
+                `module-timeline--width-${widthBreakpoint}`
+              )}
+              role="presentation"
+              tabIndex={-1}
+              onBlur={this.#handleBlur}
+              onKeyDown={this.#handleKeyDown}
+              ref={ref}
+            >
+              {floatingHeader}
+
+              <main
+                className="module-timeline__messages__container"
+                onScroll={this.#onScroll}
+                ref={this.#containerRef}
+              >
+                <div
+                  className={classNames(
+                    'module-timeline__messages',
+                    haveNewest && 'module-timeline__messages--have-newest',
+                    haveOldest && 'module-timeline__messages--have-oldest',
+                    scrollLocked && 'module-timeline__messages--scroll-locked'
+                  )}
+                  ref={this.#messagesRef}
+                  role="list"
+                  style={
+                    scrollLockHeight
+                      ? { flexBasis: scrollLockHeight }
+                      : undefined
+                  }
+                >
+                  {haveOldest && renderHeroRow(id)}
+
+                  {messageNodes}
+
+                  {this.props.isSignalConversation ? (
+                    // Spacer at bottom of conversation to give space for the absolutely-positioned
+                    // official-chat chip to not overlap the last message
+                    <div className={tw('h-16')} />
+                  ) : null}
+                  {haveNewest && renderTypingBubble(id)}
+
+                  <div
+                    className="module-timeline__messages__at-bottom-detector"
+                    ref={this.#atBottomDetectorRef}
+                    style={AT_BOTTOM_DETECTOR_STYLE}
+                  />
+                </div>
+              </main>
+              {shouldShowScrollDownButtons ? (
+                <div className="module-timeline__scrolldown-buttons">
+                  {unreadMentionsCount ? (
+                    <ScrollDownButton
+                      variant={ScrollDownButtonVariant.UNREAD_MENTIONS}
+                      count={unreadMentionsCount}
+                      onClick={() => scrollToOldestUnreadMention(id)}
+                      i18n={i18n}
+                    />
+                  ) : null}
+
+                  <ScrollDownButton
+                    variant={ScrollDownButtonVariant.UNREAD_MESSAGES}
+                    count={areUnreadBelowCurrentPosition ? unreadCount : 0}
+                    onClick={this.#onClickScrollDownButton}
+                    i18n={i18n}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+        </SizeObserver>
+
+        {this.props.isSignalConversation ? (
+          <div
+            className={tw(
+              'absolute bottom-5 z-10 flex w-full justify-center pe-3.5'
+            )}
+          >
+            <div
+              className={tw(
+                'rounded-3xl bg-legacy-signal-conversation-bg px-4 py-3',
+                'type-body-medium text-label-primary',
+                'border border-border-secondary'
+              )}
+            >
+              {i18n('icu:Timeline--signal-official-chat--chip')}
+            </div>
+          </div>
+        ) : null}
+        {Boolean(invitedContactsForNewlyCreatedGroup.length) && (
+          <NewlyCreatedGroupInvitedContactsDialog
+            contacts={invitedContactsForNewlyCreatedGroup}
+            getPreferredBadge={getPreferredBadge}
+            i18n={i18n}
+            onClose={clearInvitedServiceIdsForNewlyCreatedGroup}
+            theme={theme}
+          />
+        )}
+
+        {contactSpoofingReviewDialog}
+      </ScrollerLockContext.Provider>
+    );
+  }
+}
+
+function getMessageIdFromElement(
+  element: undefined | Element
+): undefined | string {
+  return element instanceof HTMLElement ? element.dataset.messageId : undefined;
+}
+
+function getRowIndexFromElement(
+  element: undefined | Element
+): undefined | number {
+  return element instanceof HTMLElement && element.dataset.itemIndex
+    ? parseInt(element.dataset.itemIndex, 10)
+    : undefined;
+}
+
+function showDebugLog() {
+  window.IPC.showDebugLog();
+}

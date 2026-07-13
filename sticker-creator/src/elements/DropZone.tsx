@@ -1,19 +1,19 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { FileWithPath } from 'react-dropzone';
+import { useCallback, useEffect, type JSX } from 'react';
 
 import styles from './DropZone.module.scss';
 import { useI18n } from '../contexts/I18n';
+import { getFilePath } from '../util/api';
 import { useStickerDropzone } from '../util/useStickerDropzone';
-import type { FileWithRequiredPath } from '../types.d';
 
 export type Props = {
   readonly inner?: boolean;
   readonly label: string;
-  onDrop(files: ReadonlyArray<FileWithRequiredPath>): unknown;
-  onDragActive?(active: boolean): unknown;
+  onDrop: (files: ReadonlyArray<File>) => void;
+  onDragActive?: (active: boolean) => void;
+  onDropRejected: () => void;
 };
 
 const getClassName = ({ inner }: Props, isDragActive: boolean) => {
@@ -29,24 +29,24 @@ const getClassName = ({ inner }: Props, isDragActive: boolean) => {
 };
 
 export function DropZone(props: Props): JSX.Element {
-  const { inner, label, onDrop, onDragActive } = props;
+  const { inner, label, onDrop, onDragActive, onDropRejected } = props;
   const i18n = useI18n();
 
-  const handleDrop = React.useCallback(
-    (files: ReadonlyArray<FileWithPath>) => {
+  const handleDrop = useCallback(
+    (files: ReadonlyArray<File>) => {
       onDrop(
-        files.filter(
-          (file): file is FileWithRequiredPath => file.path !== undefined
-        )
+        files.filter((file): file is File => getFilePath(file) !== undefined)
       );
     },
     [onDrop]
   );
 
-  const { getRootProps, getInputProps, isDragActive } =
-    useStickerDropzone(handleDrop);
+  const { getRootProps, getInputProps, isDragActive } = useStickerDropzone(
+    handleDrop,
+    onDropRejected
+  );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (onDragActive) {
       onDragActive(isDragActive);
     }

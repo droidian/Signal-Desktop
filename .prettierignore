@@ -2,34 +2,37 @@
 # supports `.gitignore`: https://github.com/prettier/prettier/issues/2294
 
 # Generated files
+build/**/*.js
+build/**/*.json
 app/**/*.js
 config/local-*.json
 config/local.json
 dist/**
-js/components.js
-js/util_worker.js
 libtextsecure/components.js
-libtextsecure/test/test.js
 stylesheets/*.css
-test/test.js
 ts/**/*.js
-!ts/**/.eslintrc.js
 ts/protobuf/*.d.ts
 ts/protobuf/*.js
 stylesheets/manifest.css
+stylesheets/tailwind.css
 ts/util/lint/exceptions.json
 storybook-static
 build/locale-display-names.json
 build/country-display-names.json
 build/compact-locales/**/*.json
+release/**
+pnpm-lock.yaml
 
 # Third-party files
 node_modules/**
+packages/*/node_modules/**
+packages/lame/wrapper.mjs
+packages/lame/lame-*/
+packages/windows-ucv/dist/**
+danger/node_modules/**
+sticker-creator/node_modules/**
 components/**
-js/curve/**
-js/Mp3LameEncoder.min.js
-js/WebAudioRecorderMp3.js
-js/calling-tools/**
+scripts/emoji-datasource/emoji-datasource.json
 
 # Assets
 /images/
@@ -49,6 +52,7 @@ js/calling-tools/**
 stylesheets/_intlTelInput.scss
 
 preload.bundle.*
+preload.wrapper.js
 bundles/**
 
 # Sticker Creator has its own prettier config

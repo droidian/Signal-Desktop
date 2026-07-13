@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useMemo, useCallback, type JSX } from 'react';
 import createDebug from 'debug';
 import { useDispatch } from 'react-redux';
 import type { ItemInterface } from 'react-sortablejs';
@@ -24,6 +24,7 @@ import { useArtType, useArtData, useArtOrder } from '../selectors/art';
 import type { Props as DropZoneProps } from '../elements/DropZone';
 import { DropZone } from '../elements/DropZone';
 import { assert } from '../util/assert';
+import { getFilePath } from '../util/api';
 import { processImage, ProcessImageError } from '../util/processImage';
 import { useI18n } from '../contexts/I18n';
 import { ArtType, MAX_STICKERS } from '../constants';
@@ -69,7 +70,7 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
   const dispatch = useDispatch();
   const artType = useArtType();
 
-  const list = React.useMemo(() => {
+  const list = useMemo(() => {
     assert(artType === ArtType.Sticker, 'Unexpected art type');
     const maxImages = MAX_STICKERS;
     const entries = order.map(id => ({ id, filtered: false }));
@@ -82,7 +83,7 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
 
   const frameMode = mode === 'add' ? 'removable' : 'pick-emoji';
 
-  const setList = React.useCallback(
+  const setList = useCallback(
     (newList: ReadonlyArray<ItemInterface>): void => {
       const newOrder = newList
         .filter(entry => !entry.filtered)
@@ -93,9 +94,11 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
     [dispatch]
   );
 
-  const handleDrop = React.useCallback<DropZoneProps['onDrop']>(
+  const handleDrop = useCallback<DropZoneProps['onDrop']>(
     async files => {
-      dispatch(initializeImages(files.map(({ path, name }) => path || name)));
+      dispatch(
+        initializeImages(files.map(file => getFilePath(file) || file.name))
+      );
       await Promise.all(
         files.map(async file => {
           try {
@@ -103,7 +106,7 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
             dispatch(addImageData(image));
           } catch (e) {
             debug('Error processing image:', e);
-            dispatch(removeImage(file.path));
+            dispatch(removeImage(getFilePath(file)));
 
             const key =
               e instanceof ProcessImageError
@@ -121,12 +124,17 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
     [dispatch, artType]
   );
 
+  const handleDropRejected = useCallback(() => {
+    dispatch(addToast({ key: 'StickerCreator--Toasts--unsupportedFormat' }));
+  }, [dispatch]);
+
   if (list.length === 0) {
     return (
       <div className={styles.drop}>
         <DropZone
           label={i18n('StickerCreator--DropStage--dragDrop')}
           onDrop={handleDrop}
+          onDropRejected={handleDropRejected}
         />
       </div>
     );
@@ -141,6 +149,7 @@ export function ArtGrid({ mode, showGuide }: Props): JSX.Element {
           showGuide={showGuide}
           mode="add"
           onDrop={handleDrop}
+          onDropRejected={handleDropRejected}
         />
       );
     }

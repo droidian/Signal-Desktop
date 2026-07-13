@@ -1,0 +1,157 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ChangeEvent, ReactNode, JSX } from 'react';
+
+import type { Row } from '../ConversationList.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type {
+  DeleteAvatarFromDiskActionType,
+  ReplaceAvatarActionType,
+  SaveAvatarToDiskActionType,
+} from '../../types/Avatar.std.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
+
+export enum FindDirection {
+  Up,
+  Down,
+}
+
+export type ToFindType = {
+  direction: FindDirection;
+  unreadOnly: boolean;
+};
+
+export abstract class LeftPaneHelper<T> {
+  getHeaderContents(
+    _: Readonly<{
+      i18n: LocalizerType;
+      showInbox: () => void;
+      startComposing: () => void;
+      showChooseGroupMembers: () => void;
+    }>
+  ): null | ReactNode {
+    return null;
+  }
+
+  getSearchInput(
+    _: Readonly<{
+      clearConversationSearch: () => unknown;
+      clearSearchQuery: () => unknown;
+      endConversationSearch: () => unknown;
+      endSearch: () => unknown;
+      i18n: LocalizerType;
+      onChangeComposeSearchTerm: (
+        event: ChangeEvent<HTMLInputElement>
+      ) => unknown;
+      onChangeComposeSelectedRegion: (newRegion: string) => void;
+      updateSearchTerm: (searchTerm: string) => unknown;
+      showConversation: ShowConversationType;
+      showInbox: () => void;
+      updateFilterByUnread: (filterByUnread: boolean) => void;
+    }> &
+      LookupConversationWithoutServiceIdActionsType
+  ): null | ReactNode {
+    return null;
+  }
+
+  getBackAction(
+    _: Readonly<{
+      showInbox: () => void;
+      startComposing: () => void;
+      showChooseGroupMembers: () => void;
+    }>
+  ): undefined | (() => void) {
+    return undefined;
+  }
+
+  getEmptyViewNode(
+    _: Readonly<{
+      i18n: LocalizerType;
+    }>
+  ): null | ReactNode {
+    return null;
+  }
+
+  getPreRowsNode(
+    _: Readonly<{
+      clearConversationSearch: () => unknown;
+      clearGroupCreationError: () => void;
+      clearSearchQuery: () => unknown;
+      closeMaximumGroupSizeModal: () => unknown;
+      closeRecommendedGroupSizeModal: () => unknown;
+      composeDeleteAvatarFromDisk: DeleteAvatarFromDiskActionType;
+      composeReplaceAvatar: ReplaceAvatarActionType;
+      composeSaveAvatarToDisk: SaveAvatarToDiskActionType;
+      createGroup: () => unknown;
+      i18n: LocalizerType;
+      removeSelectedContact: (_: string) => unknown;
+      renderLeftPaneChatFolders: () => JSX.Element;
+      setComposeGroupAvatar: (
+        _: undefined | Uint8Array<ArrayBuffer>
+      ) => unknown;
+      setComposeGroupExpireTimer: (_: DurationInSeconds) => void;
+      setComposeGroupName: (_: string) => unknown;
+      toggleComposeEditingAvatar: () => unknown;
+    }>
+  ): null | ReactNode {
+    return null;
+  }
+
+  getFooterContents(
+    _: Readonly<
+      {
+        i18n: LocalizerType;
+        startSettingGroupMetadata: () => void;
+        createGroup: () => unknown;
+        showInbox: () => void;
+        showConversation: ShowConversationType;
+      } & LookupConversationWithoutServiceIdActionsType
+    >
+  ): null | ReactNode {
+    return null;
+  }
+
+  abstract getRowCount(): number;
+
+  abstract getRow(rowIndex: number): undefined | Row;
+
+  getRowIndexToScrollTo(
+    _selectedConversationId: undefined | string
+  ): undefined | number {
+    return undefined;
+  }
+
+  isScrollable(): boolean {
+    return true;
+  }
+
+  requiresFullWidth(): boolean {
+    return true;
+  }
+
+  onKeyDown(
+    _event: KeyboardEvent,
+    _options: Readonly<{
+      searchInConversation: (conversationId: string) => unknown;
+      selectedConversationId: undefined | string;
+      startSearch: () => unknown;
+    }>
+  ): void {
+    return undefined;
+  }
+
+  abstract getConversationAndMessageAtIndex(
+    conversationIndex: number
+  ): undefined | { conversationId: string; messageId?: string };
+
+  abstract getConversationAndMessageInDirection(
+    toFind: Readonly<ToFindType>,
+    selectedConversationId: undefined | string,
+    targetedMessageId: undefined | string
+  ): undefined | { conversationId: string; messageId?: string };
+
+  abstract shouldRecomputeRowHeights(old: Readonly<T>): boolean;
+}

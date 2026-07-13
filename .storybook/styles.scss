@@ -1,7 +1,14 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-@import '../stylesheets/variables';
+@use '../stylesheets/variables';
+
+#storybook-root {
+  height: 100%;
+}
+#storybook-root > div {
+  height: 100%;
+}
 
 .container {
   align-content: stretch;
@@ -11,6 +18,6 @@
 }
 
 .dark-theme {
-  background-color: $color-gray-95;
-  color: $color-gray-05;
+  background-color: variables.$color-gray-95;
+  color: variables.$color-gray-05;
 }

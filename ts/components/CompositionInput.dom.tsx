@@ -1,0 +1,1162 @@
+// Copyright 2019 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import {
+  useState,
+  useRef,
+  useCallback,
+  useImperativeHandle,
+  useEffect,
+  useMemo,
+} from 'react';
+import type {
+  MouseEvent,
+  ReactNode,
+  RefObject,
+  UIEvent,
+  ReactElement,
+  JSX,
+} from 'react';
+import classNames from 'classnames';
+import { Manager, Reference } from 'react-popper';
+import Quill, { Delta } from '@signalapp/quill-cjs';
+import {
+  matchText,
+  matchNewline,
+  matchBreak,
+} from '@signalapp/quill-cjs/modules/clipboard.js';
+import Emitter from '@signalapp/quill-cjs/core/emitter.js';
+import type { Context } from '@signalapp/quill-cjs/modules/keyboard.js';
+import type { Range as RangeStatic } from '@signalapp/quill-cjs';
+
+import { MentionCompletion } from '../quill/mentions/completion.dom.tsx';
+import {
+  FormattingMenu,
+  QuillFormattingStyle,
+} from '../quill/formatting/menu.dom.tsx';
+import { MonospaceBlot } from '../quill/formatting/monospaceBlot.std.ts';
+import { SpoilerBlot } from '../quill/formatting/spoilerBlot.std.ts';
+import { EmojiBlot, EmojiCompletion } from '../quill/emoji/index.dom.tsx';
+import type {
+  DraftBodyRanges,
+  HydratedBodyRangesType,
+  RangeNode,
+} from '../types/BodyRange.std.ts';
+import {
+  BodyRange,
+  areBodyRangesEqual,
+  collapseRangeTree,
+  insertRange,
+} from '../types/BodyRange.std.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import { isAciString } from '../util/isAciString.std.ts';
+import { MentionBlot } from '../quill/mentions/blot.dom.tsx';
+import { matchEmojiBlot, matchEmojiText } from '../quill/emoji/matchers.dom.ts';
+import { matchMention } from '../quill/mentions/matchers.std.ts';
+import { MemberRepository } from '../quill/memberRepository.std.ts';
+import {
+  getDeltaToRemoveStaleMentions,
+  getTextAndRangesFromOps,
+  isMentionBlot,
+  isEmojiBlot,
+  getDeltaToRestartMention,
+  getDeltaToRestartEmoji,
+  insertEmojiOps,
+  insertFormattingAndMentionsOps,
+  isInsertMentionOp,
+} from '../quill/util.dom.ts';
+import { SignalClipboard } from '../quill/signal-clipboard/index.dom.ts';
+import { DirectionalBlot } from '../quill/block/blot.dom.tsx';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.std.ts';
+import { StagedLinkPreview } from './conversation/StagedLinkPreview.dom.tsx';
+import type { DraftEditMessageType } from '../model-types.d.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import {
+  matchBold,
+  matchItalic,
+  matchMonospace,
+  matchSpoiler,
+  matchStrikethrough,
+} from '../quill/formatting/matchers.dom.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import type { AutoSubstituteAsciiEmojisOptions } from '../quill/auto-substitute-ascii-emojis/index.dom.tsx';
+import { AutoSubstituteAsciiEmojis } from '../quill/auto-substitute-ascii-emojis/index.dom.tsx';
+import { dropNull } from '../util/dropNull.std.ts';
+import { SimpleQuillWrapper } from './SimpleQuillWrapper.dom.tsx';
+import { FUN_STATIC_EMOJI_CLASS } from './fun/FunEmoji.dom.tsx';
+import type { EmojiCompletionOptions } from '../quill/emoji/completion.dom.tsx';
+import { MAX_BODY_ATTACHMENT_BYTE_LENGTH } from '../util/longAttachment.std.ts';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.tsx';
+import { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
+import { AxoTooltip } from '../axo/AxoTooltip.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { RecoveryKeyPasteWarning } from './RecoveryKeyPasteWarning.dom.tsx';
+
+const log = createLogger('CompositionInput');
+
+Quill.register(
+  {
+    'formats/emoji': EmojiBlot,
+    'formats/mention': MentionBlot,
+    'formats/block': DirectionalBlot,
+    'formats/monospace': MonospaceBlot,
+    'formats/spoiler': SpoilerBlot,
+    'modules/autoSubstituteAsciiEmojis': AutoSubstituteAsciiEmojis,
+    'modules/emojiCompletion': EmojiCompletion,
+    'modules/mentionCompletion': MentionCompletion,
+    'modules/formattingMenu': FormattingMenu,
+    'modules/signalClipboard': SignalClipboard,
+  },
+  true
+);
+
+export type InputApi = {
+  focus: () => void;
+  hasFocus: () => boolean;
+  insertEmoji: (emojiSelection: FunEmojiSelection) => void;
+  setContents: (
+    text: string,
+    draftBodyRanges?: HydratedBodyRangesType,
+    cursorToEnd?: boolean
+  ) => void;
+  reset: () => void;
+  submit: () => void;
+};
+
+export type Props = Readonly<{
+  children?: ReactNode;
+  conversationId: string | null;
+  i18n: LocalizerType;
+  disabled?: boolean;
+  draftEditMessage: DraftEditMessageType | null;
+  getPreferredBadge: PreferredBadgeSelectorType;
+  large: boolean | null;
+  inputApi: RefObject<InputApi | null> | null;
+  isFormattingEnabled: boolean;
+  isActive: boolean;
+  sendCounter: number;
+  emojiSkinToneDefault: Emoji.SkinTone | null;
+  draftText: string | null;
+  draftBodyRanges: HydratedBodyRangesType | null;
+  moduleClassName?: string;
+  theme: ThemeType;
+  placeholder?: string;
+  sortedGroupMembers: ReadonlyArray<ConversationType> | null;
+  onDirtyChange?: (dirty: boolean) => unknown;
+  onEditorStateChange: (options: {
+    bodyRanges: DraftBodyRanges;
+    caretLocation?: number;
+    conversationId: string | undefined;
+    messageText: string;
+    sendCounter: number;
+  }) => unknown;
+  onTextTooLong: () => unknown;
+  onSelectEmoji: (emojiSelection: FunEmojiSelection) => void;
+  onBlur?: () => unknown;
+  onFocus?: () => unknown;
+  onSubmit: (
+    message: string,
+    bodyRanges: DraftBodyRanges,
+    timestamp: number
+  ) => unknown;
+  onScroll?: (ev: UIEvent<HTMLElement>) => void;
+  ourConversationId: string | undefined;
+  platform: string;
+  showRecoveryKeyPasteWarning: false | ((pastedText: string) => boolean);
+  quotedMessageId: string | null;
+  shouldHidePopovers: boolean | null;
+  linkPreviewLoading?: boolean;
+  linkPreviewResult: LinkPreviewForUIType | null;
+  onCloseLinkPreview?: (conversationId: string) => unknown;
+  showViewOnceButton: boolean;
+  isViewOnceActive: boolean;
+  onToggleViewOnce: () => void;
+}>;
+
+const BASE_CLASS_NAME = 'module-composition-input';
+
+export function CompositionInput(props: Props): ReactElement {
+  const {
+    children,
+    conversationId,
+    disabled,
+    draftBodyRanges,
+    draftEditMessage,
+    draftText,
+    getPreferredBadge,
+    i18n,
+    inputApi,
+    isFormattingEnabled,
+    isActive,
+    large,
+    linkPreviewLoading,
+    linkPreviewResult,
+    moduleClassName,
+    onCloseLinkPreview,
+    onBlur,
+    onFocus,
+    onSelectEmoji,
+    onScroll,
+    onSubmit,
+    ourConversationId,
+    placeholder,
+    platform,
+    quotedMessageId,
+    shouldHidePopovers,
+    emojiSkinToneDefault,
+    sendCounter,
+    sortedGroupMembers,
+    theme,
+    showViewOnceButton,
+    isViewOnceActive,
+    onToggleViewOnce,
+    showRecoveryKeyPasteWarning,
+  } = props;
+
+  const [emojiCompletionElement, setEmojiCompletionElement] =
+    useState<JSX.Element | null>();
+  const [formattingChooserElement, setFormattingChooserElement] =
+    useState<JSX.Element>();
+  const [lastSelectionRange, setLastSelectionRange] =
+    useState<RangeStatic | null>(null);
+  const [mentionCompletionElement, setMentionCompletionElement] =
+    useState<JSX.Element>();
+
+  const emojiCompletionRef = useRef<EmojiCompletion>(undefined);
+  const mentionCompletionRef = useRef<MentionCompletion>(undefined);
+  const quillRef = useRef<Quill>(undefined);
+
+  const propsRef = useRef<Props>(props);
+  const canSendRef = useRef<boolean>(false);
+  const memberRepositoryRef = useRef<MemberRepository>(new MemberRepository());
+
+  const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+
+  const generateDelta = (
+    text: string,
+    bodyRanges: HydratedBodyRangesType
+  ): Delta => {
+    const textLength = text.length;
+    const tree = bodyRanges.reduce<ReadonlyArray<RangeNode>>((acc, range) => {
+      if (range.start < textLength) {
+        return insertRange(range, acc);
+      }
+      return acc;
+    }, []);
+    const nodes = collapseRangeTree({ tree, text });
+    const opsWithFormattingAndMentions = insertFormattingAndMentionsOps(nodes);
+    const opsWithEmojis = insertEmojiOps(opsWithFormattingAndMentions, {});
+
+    return new Delta(opsWithEmojis);
+  };
+
+  const getTextAndRanges = (): {
+    text: string;
+    bodyRanges: DraftBodyRanges;
+  } => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return { text: '', bodyRanges: [] };
+    }
+
+    const contents = quill.getContents();
+
+    if (contents === undefined) {
+      return { text: '', bodyRanges: [] };
+    }
+
+    const { ops } = contents;
+
+    if (ops === undefined) {
+      return { text: '', bodyRanges: [] };
+    }
+
+    const { text, bodyRanges } = getTextAndRangesFromOps(ops);
+
+    return {
+      text,
+      bodyRanges: bodyRanges.filter(range => {
+        if (BodyRange.isMention(range)) {
+          return true;
+        }
+        if (BodyRange.isFormatting(range)) {
+          return true;
+        }
+        throw missingCaseError(range);
+      }),
+    };
+  };
+
+  const focus = useCallback(() => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    quill.focus();
+  }, []);
+
+  const insertEmoji = useCallback(
+    (emojiSelection: FunEmojiSelection) => {
+      const quill = quillRef.current;
+
+      if (quill === undefined) {
+        return;
+      }
+
+      const range = quill.getSelection();
+
+      const insertionRange = range || lastSelectionRange;
+      if (insertionRange == null) {
+        return;
+      }
+
+      const delta = new Delta()
+        .retain(insertionRange.index)
+        .delete(insertionRange.length)
+        .insert({ emoji: { value: emojiSelection.emoji } });
+
+      quill.updateContents(delta, 'user');
+      quill.setSelection(insertionRange.index + 1, 0, 'user');
+    },
+    [lastSelectionRange]
+  );
+
+  const reset = useCallback(() => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    canSendRef.current = true;
+    quill.setText('');
+
+    quill.history.clear();
+  }, []);
+
+  const setContents = useCallback(
+    (
+      text: string,
+      bodyRanges?: HydratedBodyRangesType,
+      cursorToEnd?: boolean
+    ) => {
+      const quill = quillRef.current;
+
+      if (quill === undefined) {
+        return;
+      }
+
+      const delta = generateDelta(text || '', bodyRanges || []);
+
+      canSendRef.current = true;
+      quill.setContents(delta);
+      if (cursorToEnd) {
+        // Waiting a tick here helps cursor positioning with custom blots
+        // that do not have surrounding guards
+        setTimeout(() => quill.setSelection(quill.getLength(), 0), 0);
+      }
+    },
+    []
+  );
+
+  const submit = useCallback(() => {
+    const timestamp = Date.now();
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    if (!canSendRef.current) {
+      log.warn('Not submitting message - cannot send right now');
+      return;
+    }
+
+    const { text, bodyRanges } = getTextAndRanges();
+
+    log.info(
+      `Submitting message ${timestamp} with ${bodyRanges.length} ranges`
+    );
+    canSendRef.current = false;
+    const didSend = onSubmit(text, bodyRanges, timestamp);
+
+    if (!didSend) {
+      canSendRef.current = true;
+    }
+  }, [onSubmit]);
+
+  const hasFocus = useCallback(() => {
+    return quillRef.current?.hasFocus() ?? false;
+  }, []);
+
+  useImperativeHandle(inputApi, () => {
+    return {
+      focus,
+      hasFocus,
+      insertEmoji,
+      setContents,
+      reset,
+      submit,
+    };
+  }, [focus, hasFocus, insertEmoji, reset, setContents, submit]);
+
+  useEffect(() => {
+    propsRef.current = props;
+  }, [props]);
+
+  useEffect(() => {
+    canSendRef.current = !disabled;
+  }, [disabled]);
+
+  const onShortKeyEnter = (): boolean => {
+    submit();
+    return false;
+  };
+
+  const previousFormattingEnabled = usePreviousDeprecated(
+    isFormattingEnabled,
+    isFormattingEnabled
+  );
+  const previousIsMouseDown = usePreviousDeprecated(isMouseDown, isMouseDown);
+
+  useEffect(() => {
+    const formattingChanged =
+      typeof previousFormattingEnabled === 'boolean' &&
+      previousFormattingEnabled !== isFormattingEnabled;
+    const mouseDownChanged = previousIsMouseDown !== isMouseDown;
+
+    const quill = quillRef.current;
+    const changed = formattingChanged || mouseDownChanged;
+    if (quill && changed) {
+      const formattingMenu = quill.getModule('formattingMenu');
+      if (!(formattingMenu instanceof FormattingMenu)) {
+        throw new Error(
+          'CompositionInput: formattingMenu module not properly initialized'
+        );
+      }
+
+      formattingMenu.updateOptions({
+        isMenuEnabled: isFormattingEnabled,
+        isMouseDown,
+      });
+    }
+  }, [
+    isFormattingEnabled,
+    isMouseDown,
+    previousFormattingEnabled,
+    previousIsMouseDown,
+  ]);
+
+  const [onRecoveryKeyPasteConfirm, setOnRecoveryKeyPasteConfirm] =
+    useState<null | { onAllowPaste: () => void }>(null);
+
+  const showRecoveryKeyPasteWarningHandler = useCallback(
+    (text: string, onAllowPaste: () => void) => {
+      if (
+        showRecoveryKeyPasteWarning === false ||
+        !showRecoveryKeyPasteWarning(text)
+      ) {
+        return { isHandlingPaste: false };
+      }
+      setOnRecoveryKeyPasteConfirm({ onAllowPaste });
+      return { isHandlingPaste: true };
+    },
+    [showRecoveryKeyPasteWarning]
+  );
+
+  useEffect(() => {
+    const signalClipboard = quillRef.current?.getModule('signalClipboard');
+    if (!signalClipboard) {
+      return;
+    }
+    if (!(signalClipboard instanceof SignalClipboard)) {
+      throw new Error(
+        'CompositionInput: signalClipboard module not properly initialized'
+      );
+    }
+
+    signalClipboard.updateOptions({
+      isDisabled: !isActive,
+      pasteHandlers: [showRecoveryKeyPasteWarningHandler],
+    });
+  }, [isActive, showRecoveryKeyPasteWarningHandler]);
+
+  const onEnter = (): boolean => {
+    const quill = quillRef.current;
+    const emojiCompletion = emojiCompletionRef.current;
+    const mentionCompletion = mentionCompletionRef.current;
+
+    if (quill === undefined) {
+      return false;
+    }
+
+    if (emojiCompletion === undefined || mentionCompletion === undefined) {
+      return false;
+    }
+
+    if (emojiCompletion.results.length) {
+      emojiCompletion.completeEmoji();
+      return false;
+    }
+
+    if (mentionCompletion.results.length) {
+      mentionCompletion.completeMention();
+      return false;
+    }
+
+    if (propsRef.current.large) {
+      return true;
+    }
+
+    submit();
+
+    return false;
+  };
+
+  const onTab = (): boolean => {
+    const quill = quillRef.current;
+    const emojiCompletion = emojiCompletionRef.current;
+    const mentionCompletion = mentionCompletionRef.current;
+
+    if (quill === undefined) {
+      return false;
+    }
+
+    if (emojiCompletion === undefined || mentionCompletion === undefined) {
+      return false;
+    }
+
+    if (emojiCompletion.results.length) {
+      emojiCompletion.completeEmoji();
+      return false;
+    }
+
+    if (mentionCompletion.results.length) {
+      mentionCompletion.completeMention();
+      return false;
+    }
+
+    return true;
+  };
+
+  const onEscape = (): boolean => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return false;
+    }
+
+    const emojiCompletion = emojiCompletionRef.current;
+    const mentionCompletion = mentionCompletionRef.current;
+
+    if (emojiCompletion) {
+      if (emojiCompletion.results.length) {
+        emojiCompletion.reset();
+        return false;
+      }
+    }
+
+    if (mentionCompletion) {
+      if (mentionCompletion.results.length) {
+        mentionCompletion.clearResults();
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const onBackspace = (_range: RangeStatic, context: Context): boolean => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return true;
+    }
+
+    const selection = quill.getSelection();
+    if (!selection || selection.length > 0) {
+      return true;
+    }
+
+    let startIndex = selection.index;
+    let additionalDeletions = 0;
+
+    const leaf = quill.getLeaf(startIndex);
+    let blotToDelete = leaf[0];
+    const offset = leaf[1];
+
+    if (!blotToDelete) {
+      return true;
+    }
+
+    // If the cursor is at the beginning of a line, getLeaf() returns the blot that starts
+    // that line, even though the cursor is actually before it (offset === 0)
+    if (
+      (isMentionBlot(blotToDelete) || isEmojiBlot(blotToDelete)) &&
+      offset === 0
+    ) {
+      return true;
+    }
+
+    // To match macOS option-delete, search back through non-newline whitespace
+    if (context.event.altKey && platform === 'darwin') {
+      const value = blotToDelete.value();
+
+      // Sometimes the value returned here is an object, the target Blot details.
+      if (typeof value === 'string') {
+        const valueBeforeCursor = value.slice(0, offset);
+        if (/^[^\S\r\n]+$/.test(valueBeforeCursor)) {
+          additionalDeletions = offset;
+          startIndex -= offset;
+
+          [blotToDelete] = quill.getLeaf(startIndex);
+          if (!blotToDelete) {
+            return true;
+          }
+        }
+      }
+    }
+
+    if (isMentionBlot(blotToDelete)) {
+      const contents = quill.getContents(0, startIndex - 1);
+      const restartDelta = getDeltaToRestartMention(contents.ops);
+
+      if (additionalDeletions) {
+        restartDelta.delete(additionalDeletions);
+      }
+
+      quill.updateContents(restartDelta);
+      quill.setSelection(startIndex, 0);
+      return false;
+    }
+
+    if (isEmojiBlot(blotToDelete)) {
+      const contents = quill.getContents(0, startIndex);
+      const restartDelta = getDeltaToRestartEmoji(contents.ops);
+
+      if (additionalDeletions) {
+        restartDelta.delete(additionalDeletions);
+      }
+
+      quill.updateContents(restartDelta);
+      return false;
+    }
+
+    return true;
+  };
+
+  const onChange = (): void => {
+    const quill = quillRef.current;
+
+    const { text, bodyRanges } = getTextAndRanges();
+
+    if (quill !== undefined) {
+      // This is pretty ugly, but it seems that Chromium tries to replicate the computed
+      // style of removed DOM elements. 100% reproducible by selecting formatted lines and
+      // typing new text. This code removes the style tags that we don't want there, and
+      // quill doesn't know about. It can result formatting on the resultant message that
+      // doesn't match the composer.
+      const withStyles = quill.container.querySelectorAll(
+        `[style]:not(.${FUN_STATIC_EMOJI_CLASS})`
+      );
+      for (const node of withStyles) {
+        node.attributes.removeNamedItem('style');
+      }
+
+      // FIXME
+      // oxlint-disable-next-line no-undef
+      if (Buffer.byteLength(text) > MAX_BODY_ATTACHMENT_BYTE_LENGTH) {
+        quill.history.undo();
+        propsRef.current.onTextTooLong();
+        return;
+      }
+
+      const { onEditorStateChange } = propsRef.current;
+
+      if (onEditorStateChange) {
+        // `getSelection` inside the `onChange` event handler will be the
+        // selection value _before_ the change occurs. `setTimeout` 0 here will
+        // let `getSelection` return the selection after the change takes place.
+        // this is necessary for `maybeGrabLinkPreview` as it needs the correct
+        // `caretLocation` from the post-change selection index value.
+        setTimeout(() => {
+          const selection = quill.getSelection();
+
+          onEditorStateChange({
+            bodyRanges,
+            caretLocation: selection ? selection.index : undefined,
+            conversationId: conversationId ?? undefined,
+            messageText: text,
+            sendCounter,
+          });
+        }, 0);
+      }
+    }
+
+    if (propsRef.current.onDirtyChange) {
+      let isDirty = false;
+
+      if (!draftEditMessage) {
+        isDirty = text.length > 0;
+      } else if (text.trimEnd() !== draftEditMessage.body.trimEnd()) {
+        isDirty = true;
+      } else if (
+        !areBodyRangesEqual(bodyRanges, draftEditMessage.bodyRanges ?? [])
+      ) {
+        isDirty = true;
+      } else if (dropNull(quotedMessageId) !== draftEditMessage.quote?.id) {
+        isDirty = true;
+      }
+
+      propsRef.current.onDirtyChange(isDirty);
+    }
+  };
+
+  useEffect(() => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    quill.enable(!disabled);
+    quill.focus();
+  }, [disabled]);
+
+  useEffect(() => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    function handleFocus() {
+      onFocus?.();
+    }
+    function handleBlur() {
+      onBlur?.();
+    }
+
+    quill.root.addEventListener('focus', handleFocus);
+    quill.root.addEventListener('blur', handleBlur);
+
+    return () => {
+      quill.root.removeEventListener('focus', handleFocus);
+      quill.root.removeEventListener('blur', handleBlur);
+    };
+  }, [onFocus, onBlur]);
+
+  useEffect(() => {
+    const emojiCompletion = emojiCompletionRef.current;
+
+    if (emojiCompletion == null) {
+      return;
+    }
+
+    emojiCompletion.options.emojiSkinToneDefault = emojiSkinToneDefault;
+  }, [emojiSkinToneDefault]);
+
+  useEffect(
+    () => () => {
+      const emojiCompletion = emojiCompletionRef.current;
+      const mentionCompletion = mentionCompletionRef.current;
+
+      if (emojiCompletion !== undefined) {
+        emojiCompletion.destroy();
+      }
+
+      if (mentionCompletion !== undefined) {
+        mentionCompletion.destroy();
+      }
+    },
+    []
+  );
+
+  const removeStaleMentions = (
+    currentMembers: ReadonlyArray<ConversationType>
+  ) => {
+    const quill = quillRef.current;
+
+    if (quill === undefined) {
+      return;
+    }
+
+    const { ops } = quill.getContents();
+    if (ops === undefined) {
+      return;
+    }
+    if (!ops.some(isInsertMentionOp)) {
+      return;
+    }
+
+    const currentMemberAcis = currentMembers
+      .map(m => m.serviceId)
+      .filter(isNotNil)
+      .filter(isAciString);
+
+    const newDelta = getDeltaToRemoveStaleMentions(ops, currentMemberAcis);
+
+    // oxlint-disable-next-line typescript/no-explicit-any
+    quill.updateContents(newDelta as any);
+  };
+
+  const memberIdList = useMemo(() => {
+    return JSON.stringify(sortedGroupMembers?.map(mem => mem.id));
+  }, [sortedGroupMembers]);
+  const previousMemberIdList = usePreviousDeprecated(undefined, memberIdList);
+
+  useEffect(() => {
+    memberRepositoryRef.current.updateMembers(sortedGroupMembers || []);
+    if (memberIdList !== previousMemberIdList) {
+      removeStaleMentions(sortedGroupMembers || []);
+    }
+  }, [sortedGroupMembers, memberIdList, previousMemberIdList]);
+
+  // Placing all of these callbacks inside of a ref since Quill is not able
+  // to re-render. We want to make sure that all these callbacks are fresh
+  // so that the consumers of this component won't deal with stale props or
+  // stale state as the result of calling them.
+  const unstaleCallbacks = {
+    onBackspace,
+    onChange,
+    onEnter,
+    onEscape,
+    onSelectEmoji,
+    onShortKeyEnter,
+    onTab,
+  };
+  const callbacksRef = useRef(unstaleCallbacks);
+  callbacksRef.current = unstaleCallbacks;
+
+  const reactQuill = useMemo(
+    () => {
+      const delta = generateDelta(draftText || '', draftBodyRanges || []);
+
+      return (
+        <SimpleQuillWrapper
+          className={`${BASE_CLASS_NAME}__quill`}
+          onChange={() => callbacksRef.current.onChange()}
+          defaultValue={delta}
+          modules={{
+            toolbar: false,
+            signalClipboard: {
+              isDisabled: !isActive,
+            },
+            clipboard: {
+              defaultMatchersOverride: [],
+              disableDefaultListeners: true,
+              matchers: [
+                [Node.TEXT_NODE, matchText],
+                [Node.TEXT_NODE, matchNewline],
+                ['br', matchBreak],
+                [Node.ELEMENT_NODE, matchNewline],
+                ['IMG', matchEmojiBlot],
+                ['SPAN', matchEmojiBlot],
+                ['STRONG', matchBold],
+                ['EM', matchItalic],
+                ['SPAN', matchMonospace],
+                ['S', matchStrikethrough],
+                ['SPAN', matchSpoiler],
+                [Node.TEXT_NODE, matchEmojiText],
+                ['SPAN', matchMention(memberRepositoryRef)],
+              ],
+            },
+            keyboard: {
+              bindings: {
+                ShortEnter: {
+                  key: 'Enter',
+                  shortKey: true,
+                  handler: () => callbacksRef.current.onShortKeyEnter(),
+                },
+                Enter: {
+                  key: 'Enter',
+                  handler: () => callbacksRef.current.onEnter(),
+                },
+                Escape: {
+                  key: 'Escape',
+                  handler: () => callbacksRef.current.onEscape(),
+                },
+                Backspace: {
+                  key: 'Backspace',
+                  // We want to be called no matter the state of these keys
+                  altKey: null,
+                  ctrlKey: null,
+                  shiftKey: null,
+                  metaKey: null,
+                  handler: (_: RangeStatic, context: Context) =>
+                    callbacksRef.current.onBackspace(_, context),
+                },
+              },
+            },
+            emojiCompletion: {
+              setEmojiPickerElement: setEmojiCompletionElement,
+              onSelectEmoji: (emojiSelection: FunEmojiSelection) =>
+                callbacksRef.current.onSelectEmoji(emojiSelection),
+              emojiSkinToneDefault,
+            } satisfies EmojiCompletionOptions,
+            autoSubstituteAsciiEmojis: {
+              emojiSkinToneDefault,
+            } satisfies AutoSubstituteAsciiEmojisOptions,
+            formattingMenu: {
+              i18n,
+              isMenuEnabled: isFormattingEnabled,
+              platform,
+              setFormattingChooserElement,
+            },
+            mentionCompletion: {
+              getPreferredBadge,
+              memberRepositoryRef,
+              setMentionPickerElement: setMentionCompletionElement,
+              ourConversationId,
+              i18n,
+              theme,
+            },
+          }}
+          formats={getQuillFormats()}
+          placeholder={placeholder || i18n('icu:sendMessage')}
+          readOnly={disabled || isViewOnceActive}
+          ref={element => {
+            if (!element) {
+              return;
+            }
+            const quill = element.getQuill();
+            if (!quill) {
+              throw new Error(
+                'CompositionInput: wrapper did not return quill!'
+              );
+            }
+
+            quillRef.current = quill;
+
+            quill.on(Emitter.events.COMPOSITION_START, () => {
+              quill.root.classList.toggle('ql-blank', false);
+            });
+            quill.on(Emitter.events.COMPOSITION_END, () => {
+              quill.root.classList.toggle('ql-blank', quill.editor.isBlank());
+            });
+
+            // When loading a multi-line message out of a draft, the cursor
+            // position needs to be pushed to the end of the input manually.
+            quill.once(Emitter.events.EDITOR_CHANGE, () => {
+              setTimeout(() => {
+                quill.setSelection(quill.getLength(), 0);
+                quill.root.classList.add('ql-editor--loaded');
+              }, 0);
+            });
+
+            quill.on(
+              Emitter.events.SELECTION_CHANGE,
+              (newRange: RangeStatic, oldRange: RangeStatic) => {
+                // If we lose focus, store the last edit point for emoji insertion
+                if (newRange == null) {
+                  setLastSelectionRange(oldRange);
+                }
+              }
+            );
+
+            const tabKey = 'Tab';
+            quill.keyboard.addBinding({
+              key: tabKey,
+              handler: () => callbacksRef.current.onTab(),
+            });
+            const ourHandler = quill.keyboard.bindings[tabKey]?.pop();
+            if (ourHandler) {
+              quill.keyboard.bindings[tabKey]?.unshift(ourHandler);
+            }
+
+            const emojiCompletion = quill.getModule('emojiCompletion');
+            if (!(emojiCompletion instanceof EmojiCompletion)) {
+              throw new Error(
+                'CompositionInput: emojiCompletion module not properly initialized'
+              );
+            }
+            emojiCompletionRef.current = emojiCompletion;
+
+            const mentionCompletion = quill.getModule('mentionCompletion');
+            if (!(mentionCompletion instanceof MentionCompletion)) {
+              throw new Error(
+                'CompositionInput: mentionCompletion module not properly initialized'
+              );
+            }
+            mentionCompletionRef.current = mentionCompletion;
+          }}
+        />
+      );
+    },
+    // quill shouldn't re-render, all changes should take place exclusively
+    // through mutating the quill state directly instead of through props
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  // The onClick handler below is only to make it easier for mouse users to focus the
+  //   message box. In 'large' mode, the actual Quill text box can be one line while the
+  //   visual text box is much larger. Clicking that should allow you to start typing,
+  //   hence the click handler.
+
+  const getClassName = getClassNamesFor(BASE_CLASS_NAME, moduleClassName);
+
+  const onMouseDown = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const { currentTarget } = event;
+      // If the user is actually clicking the format menu, we drop this event
+      if (currentTarget.closest('.module-composition-input__format-menu')) {
+        return;
+      }
+      setIsMouseDown(true);
+    },
+    [setIsMouseDown]
+  );
+
+  useEffect(() => {
+    if (!isMouseDown) {
+      return;
+    }
+
+    function onMouseUp() {
+      setIsMouseDown(false);
+    }
+
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isMouseDown]);
+
+  const isInputEnabled = !disabled && !isViewOnceActive;
+
+  return (
+    <Manager>
+      <Reference>
+        {({ ref }) => (
+          // oxlint-disable-next-line jsx_a11y/no-static-element-interactions
+          <div
+            className={classNames(
+              getClassName('__input'),
+              showViewOnceButton && getClassName('__input--with-view-once'),
+              isViewOnceActive && getClassName('__input--view-once-active')
+            )}
+            data-supertab
+            ref={ref}
+            data-testid="CompositionInput"
+            data-enabled={isInputEnabled ? 'true' : 'false'}
+            onMouseDown={onMouseDown}
+          >
+            {onRecoveryKeyPasteConfirm ? (
+              <RecoveryKeyPasteWarning
+                i18n={i18n}
+                onCancel={() => setOnRecoveryKeyPasteConfirm(null)}
+                onConfirm={() => {
+                  setOnRecoveryKeyPasteConfirm(null);
+                  onRecoveryKeyPasteConfirm.onAllowPaste();
+                }}
+              />
+            ) : null}
+            {draftEditMessage && (
+              <div className={getClassName('__editing-message')}>
+                {i18n('icu:CompositionInput__editing-message')}
+              </div>
+            )}
+            {draftEditMessage?.attachmentThumbnail && (
+              <div className={getClassName('__editing-message__attachment')}>
+                <img
+                  alt={i18n('icu:stagedImageAttachment', {
+                    path: draftEditMessage.attachmentThumbnail,
+                  })}
+                  src={draftEditMessage.attachmentThumbnail}
+                />
+              </div>
+            )}
+            {conversationId && linkPreviewLoading && linkPreviewResult && (
+              <StagedLinkPreview
+                {...linkPreviewResult}
+                moduleClassName="CompositionInput__link-preview"
+                i18n={i18n}
+                onClose={() => onCloseLinkPreview?.(conversationId)}
+              />
+            )}
+            {children}
+            {isViewOnceActive && (
+              <div className={getClassName('__view-once-placeholder')}>
+                {i18n('icu:CompositionArea--viewOnceMediaPlaceholder')}
+              </div>
+            )}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+            <div
+              onClick={focus}
+              onScroll={onScroll}
+              className={classNames(
+                getClassName('__input__scroller'),
+                !large && linkPreviewResult
+                  ? getClassName('__input__scroller--link-preview')
+                  : null,
+                large ? getClassName('__input__scroller--large') : null,
+                children ? getClassName('__input--with-children') : null
+              )}
+            >
+              {reactQuill}
+              {shouldHidePopovers ? null : (
+                <>
+                  {emojiCompletionElement}
+                  {mentionCompletionElement}
+                  {formattingChooserElement}
+                </>
+              )}
+            </div>
+            {showViewOnceButton && (
+              <div className={getClassName('__view-once-button')}>
+                <AxoTooltip.Root
+                  label={i18n('icu:CompositionArea--viewOnceToggle')}
+                  tooltipRepeatsTriggerAccessibleName
+                >
+                  <button
+                    type="button"
+                    aria-label={i18n('icu:CompositionArea--viewOnceToggle')}
+                    onClick={onToggleViewOnce}
+                    className={tw(
+                      'flex cursor-default items-center justify-center rounded-full',
+                      'not-forced-colors:outline-none not-forced-colors:keyboard-mode:focus:outline-focus-ring',
+                      'forced-colors:border forced-colors:border-[ButtonBorder]'
+                    )}
+                  >
+                    <AxoSymbol.Icon
+                      size={20}
+                      symbol={isViewOnceActive ? 'viewonce' : 'viewonce-slash'}
+                      weight={300}
+                      label={null}
+                    />
+                  </button>
+                </AxoTooltip.Root>
+              </div>
+            )}
+          </div>
+        )}
+      </Reference>
+    </Manager>
+  );
+}
+
+function getQuillFormats(): Array<string> {
+  return [
+    // For image replacement (local-only)
+    'emoji',
+    // @mentions
+    'mention',
+    QuillFormattingStyle.spoiler,
+    QuillFormattingStyle.monospace,
+    // Built-in
+    QuillFormattingStyle.bold,
+    QuillFormattingStyle.italic,
+    QuillFormattingStyle.strike,
+  ];
+}

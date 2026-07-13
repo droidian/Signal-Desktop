@@ -1,4 +1,19 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "Cancelar"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "Pendente"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "Voltar"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "Fechar"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "Limpar"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "Adicionar a um grupo"
   },
@@ -38,6 +53,12 @@
   "icu:Preferences__sent-media-quality": {
     "messageformat": "Qualidade da multimédia enviada"
   },
+  "icu:Preferences__sent-media-quality__description": {
+    "messageformat": "Enviar multimédia com alta qualidade utilizará mais dados de internet."
+  },
+  "icu:Preferences__DonateTitle": {
+    "messageformat": "Doar ao Signal"
+  },
   "icu:sentMediaQualityStandard": {
     "messageformat": "Standard"
   },
@@ -50,8 +71,14 @@
   "icu:privacyPolicy": {
     "messageformat": "Termos e política de privacidade"
   },
-  "icu:appleSilicon": {
-    "messageformat": "Apple silicon"
+  "icu:About__AppEnvironment": {
+    "messageformat": "{appEnv}"
+  },
+  "icu:About__AppEnvironment--AppleSilicon": {
+    "messageformat": "{appEnv} (Apple silicon)"
+  },
+  "icu:About__AppEnvironment--AppleIntel": {
+    "messageformat": "{appEnv} (Intel)"
   },
   "icu:copyErrorAndQuit": {
     "messageformat": "Copiar erro e sair"
@@ -59,26 +86,50 @@
   "icu:unknownContact": {
     "messageformat": "Contacto desconhecido"
   },
+  "icu:deletedAccount": {
+    "messageformat": "Conta eliminada"
+  },
+  "icu:unknownContactShort": {
+    "messageformat": "Desconhecido"
+  },
   "icu:unknownGroup": {
     "messageformat": "Grupo desconhecido"
   },
+  "icu:cantOpenSignalError": {
+    "messageformat": "Não é possível abrir o Signal"
+  },
+  "icu:cantOpenSignalError__detail": {
+    "messageformat": "Para ajudar a resolver o problema, siga o guia de recuperação na página de suporte ou contacte o suporte do Signal.\n\nSe precisar de usar o Signal imediatamente, pode apagar os seus dados e voltar a vincular este desktop. Terá a opção de transferir o histórico de mensagens do seu telemóvel."
+  },
   "icu:databaseError": {
     "messageformat": "Erro na base de dados"
-  },
-  "icu:databaseError__detail": {
-    "messageformat": "Ocorreu um erro na base de dados. Pode copiar o erro e entrar em contacto com o suporte do Signal para ajudar a corrigir o problema. Se precisar de usar o Signal imediatamente, pode apagar os seus dados e reiniciar.\n\nEntre em contacto com o suporte visitando: {link}"
   },
   "icu:deleteAndRestart": {
     "messageformat": "Eliminar dados e reiniciar"
   },
   "icu:databaseError__deleteDataConfirmation": {
-    "messageformat": "Eliminar permanentemente todos os dados?"
+    "messageformat": "Eliminar permanentemente todos os dados"
   },
   "icu:databaseError__deleteDataConfirmation__detail": {
-    "messageformat": "Todo o seu histórico de mensagens e suportes de dados serão eliminados permanentemente deste dispositivo. Poderá utilizar o Signal neste dispositivo depois de o voltar a vincular. Isto não irá eliminar nenhuns dados do seu telemóvel."
+    "messageformat": "Todo o seu histórico de mensagens e suportes de dados serão eliminados permanentemente deste dispositivo. Isto não irá eliminar nenhuns dados do seu telemóvel.\n\nPoderá utilizar o Signal neste dispositivo depois de o voltar a vincular. Terá a opção de transferir o histórico de mensagens do seu telemóvel."
   },
   "icu:databaseError__startOldVersion": {
     "messageformat": "A versão da sua base de dados não corresponde a esta versão do Signal. Certifique-se de que está a abrir a versão mais recente do Signal no computador."
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Não é possível aceder à chave de encriptação da base de dados porque o backend da keyring de encriptação do SO foi alterado de {previousBackend} para {currentBackend}. Isto pode ocorrer se o ambiente de trabalho mudar, por exemplo, entre GNOME e KDE.\n\nMude para o ambiente de trabalho anterior."
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Não é possível aceder à chave de encriptação da base de dados porque o backend da keyring de encriptação do SO foi alterado de {previousBackend} para {currentBackend}. Isto pode ocorrer se o ambiente de trabalho mudar, por exemplo, entre GNOME e KDE.\n\nMude para o ambiente de trabalho anterior ou tente executar o Signal com o sinalizador da linha de comando --password-store=\"{previousBackendFlag}\""
+  },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
   },
   "icu:mainMenuFile": {
     "messageformat": "&Ficheiro"
@@ -173,14 +224,14 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "Ativar ferramentas do programador"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "Abrir ferramentas de chamada do desenvolvedor"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "Configurar como novo dispositivo"
   },
   "icu:menuSetupAsStandalone": {
     "messageformat": "Configurar como dispositivo autónomo"
+  },
+  "icu:menuStageLocalBackupForImport": {
+    "messageformat": "Stage Local Backup for Import…"
   },
   "icu:messageContextMenuButton": {
     "messageformat": "Mais ações"
@@ -203,11 +254,14 @@
   "icu:optimizingApplication": {
     "messageformat": "A otimizar aplicação…"
   },
-  "icu:migratingToSQLCipher": {
-    "messageformat": "A otimizar mensagens… {status} completo."
-  },
   "icu:archivedConversations": {
     "messageformat": "Chats arquivados"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Adicionar pasta de chats"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Definições da pasta"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "Afixada(s)"
@@ -248,6 +302,45 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Introduza um nome de utilizador seguido de um ponto e do seu conjunto de números."
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Não há chats para ver"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Definições da pasta"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Tudo"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Todos os chats"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Marcar tudo como lido"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Silenciar notificações"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Anular silêncio em todos"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Anular silêncio em todos"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Editar pasta"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Adicionar à pasta"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Criar pasta"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Remover da lista"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Código do país"
   },
@@ -281,12 +374,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Definições"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Atualizar o Signal"
-  },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "Perfil"
-  },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "Voltar"
   },
@@ -301,6 +388,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Marcar como por ler"
+  },
+  "icu:markRead": {
+    "messageformat": "Marcar como lida"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Selecionar mensagens"
@@ -365,14 +455,8 @@
   "icu:pinnedConversationsFull": {
     "messageformat": "Apenas pode afixar até 4 chats"
   },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, one {A carregar mensagens de há 1 dia...} other {A carregar mensagens de há {daysAgo,number} dias...}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "A carregar mensagens de ontem..."
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "A carregar mensagens de hoje..."
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, one {Só pode afixar {maxPinnedConversations,number} chat} other {Só pode afixar até {maxPinnedConversations,number} chats}}"
   },
   "icu:view": {
     "messageformat": "Ver"
@@ -394,9 +478,6 @@
   },
   "icu:unreadMessages": {
     "messageformat": "{count, plural, one {{count,number} mensagem por ler} other {{count,number} mensagens por ler}}"
-  },
-  "icu:messageHistoryUnsynced": {
-    "messageformat": "Para sua segurança, o histórico de chats não é transferido para os novos dispositivos ligados."
   },
   "icu:youMarkedAsVerified": {
     "messageformat": "Marcou o número de segurança com {name} como verificado"
@@ -464,6 +545,9 @@
   "icu:debugLogExplanation": {
     "messageformat": "Ao clicar em 'Enviar', o seu histórico será postado online durante 30 dias num URL exclusivo e não publicado. Você pode guardá-lo localmente primeiro."
   },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "Este registo será publicado online para ser consultado pelos contribuidores. Pode transferi-lo antes de o enviar."
+  },
   "icu:debugLogError": {
     "messageformat": "Ocorreu algo de errado ao carregar! Por favor envie um e-mail para support@signal.org e anexe o seu relatório como ficheiro de texto."
   },
@@ -497,16 +581,82 @@
   "icu:SafetyNumberViewer__clearVerification": {
     "messageformat": "Limpar verificação"
   },
-  "icu:SafetyNumberViewer__hint": {
-    "messageformat": "Para verificar a criptografia de ponta a ponta com {name}, compare os números acima com os números no dispositivo dessa pessoa. Também é possível escanear seu código com um dispositivo."
+  "icu:SafetyNumberViewer__hint-v2": {
+    "messageformat": "Para verificar a encriptação de ponta a ponta com {name}, compare os números acima com os números no dispositivo dessa pessoa. Também é possível digitalizar o seu código com um dispositivo."
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "Saber mais"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "Verificação automática da chave"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "Verificar automaticamente"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "A verificar a encriptação…"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "Encriptação verificada"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "Autoverificação indisponível"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "A autoverificação não está disponível para todos os chats."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "Saber mais"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "A encriptação foi autoverificada para este chat "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "Para pessoais às quais se ligou por número de telemóvel, o Signal pode confirmar automaticamente se a ligação é segura utilizando um processo denominado transparência de chaves. Para segurança adicional, verifique a encriptação de ponta a ponta manualmente comparando os números no ecrã anterior ou digitalizando o código no seu dispositivo."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "A autoverificação não está disponível para este chat"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "O Signal não pode verificar automaticamente a encriptação para este chat. Isto deve-se provavelmente ao facto de {name} ter mudado o número de telemóvel ou as definições de privacidade do número de telemóvel. Verifique a encriptação de ponta a ponta manualmente comparando os números no ecrã anterior ou digitalizando o código no seu dispositivo."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "O Signal só pode verificar automaticamente a encriptação em chats em que esteja ligado a alguém através de um número de telemóvel. Se o chat tiver sido iniciado com um nome de utilizador ou um grupo em comum, verifique a encriptação de ponta a ponta comparando os números no ecrã anterior ou digitalizando o código no dispositivo."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "Ok"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "Será criado um número de segurança com esta pessoa depois de trocar mensagens com a mesma."
   },
   "icu:SafetyNumberNotReady__learn-more": {
+    "messageformat": "Saber mais"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "A verificação automática de chaves está atualmente indisponível para o seu dispositivo. Enviar registo de depuração?"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "Os relatórios de depuração ajudam-nos a diagnosticar e corrigir o problema e não contêm informações pessoais."
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "Partilhar relatório de depuração"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "Ver"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "Submeter"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "O Signal pode agora verificar automaticamente a encriptação"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "Para contactos aos quais está ligado por número de telemóvel, o Signal pode confirmar automaticamente se a ligação é segura utilizando um processo denominado transparência de chaves. Para mais segurança, pode verificar conexões manualmente utilizando um código QR ou comparando números de segurança."
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
     "messageformat": "Saber mais"
   },
   "icu:verified": {
@@ -520,18 +670,6 @@
   },
   "icu:media": {
     "messageformat": "Multimédia"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "Não tem nenhum ficheiro multimédia neste chat"
-  },
-  "icu:allMedia": {
-    "messageformat": "Todos os multimédia"
-  },
-  "icu:documents": {
-    "messageformat": "Documentos"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "Não tem nenhum documento neste chat"
   },
   "icu:today": {
     "messageformat": "Hoje"
@@ -569,8 +707,32 @@
   "icu:decryptionErrorToast": {
     "messageformat": "O Signal encontrou um erro ao desencriptar uma mensagem de {name}, dispositivo {deviceId}."
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Submeter relatório"
+  },
+  "icu:Toast--SQLError": {
+    "messageformat": "Erro na base de dados: partilhe os seus registos."
+  },
+  "icu:Toast--InvalidStorageServiceHeaders": {
+    "messageformat": "Recebeu uma resposta inválida do serviço de armazenamento. Partilhe os seus registos."
+  },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Recibo guardado"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Erro ao guardar recibo. Tente novamente."
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Adicionado a \"{chatFolderName}\""
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Removido de \"{chatFolderName}\""
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Pasta {chatFolderName} adicionada"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Não pode selecionar fotos e vídeos juntamente com ficheiros."
@@ -583,6 +745,9 @@
   },
   "icu:fileSizeWarning": {
     "messageformat": "Lamentamos, mas o ficheiro selecionado excede o tamanho máximo permitido. {limit,number} {units}"
+  },
+  "icu:videoFileSizeWarning": {
+    "messageformat": "Lamentamos, mas o ficheiro de vídeo selecionado excede o tamanho máximo de mensagem permitido. {limit,number} {units}"
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "Não foi possível carregar o anexo selecionado."
@@ -632,9 +797,6 @@
   "icu:joinTheBeta": {
     "messageformat": "Juntar-se ao Beta"
   },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Definições do Signal Desktop"
-  },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Criador de pacotes de autocolantes"
   },
@@ -643,12 +805,6 @@
   },
   "icu:screenShareWindow": {
     "messageformat": "A partilhar ecrã"
-  },
-  "icu:callingDeveloperTools": {
-    "messageformat": "Ferramentas de chamada do programador"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "Esta janela é utilizada durante o desenvolvimento para apresentar diagnósticos de chamadas em curso."
   },
   "icu:speech": {
     "messageformat": "Fala"
@@ -668,6 +824,9 @@
   "icu:search": {
     "messageformat": "Procurar"
   },
+  "icu:searchUnreadChats": {
+    "messageformat": "Pesquisar chats não lidos"
+  },
   "icu:clearSearch": {
     "messageformat": "Limpar pesquisa"
   },
@@ -677,11 +836,23 @@
   "icu:noSearchResults": {
     "messageformat": "Sem resultados para \"{searchTerm}\""
   },
-  "icu:noSearchResults--sms-only": {
-    "messageformat": "Contactos SMS/MMS não se encontram disponíveis para Desktop."
+  "icu:noSearchResultsWithUnreadFilter": {
+    "messageformat": "Nenhum resultado para \"{searchTerm}\" nos chats não lidos"
+  },
+  "icu:noSearchResultsOnlyUnreadFilter": {
+    "messageformat": "Não há chats não lidos"
   },
   "icu:noSearchResultsInConversation": {
     "messageformat": "Sem resultados para \"{searchTerm}\" em {conversationName}"
+  },
+  "icu:conversationsUnreadHeader": {
+    "messageformat": "Filtrado por não lido"
+  },
+  "icu:filterByUnreadButtonLabel": {
+    "messageformat": "Filtrar por não lido"
+  },
+  "icu:clearFilterButton": {
+    "messageformat": "Limpar filtro"
   },
   "icu:conversationsHeader": {
     "messageformat": "Chats"
@@ -706,6 +877,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "Ver {whatsNew} nesta atualização"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "O Signal é uma organização sem fins lucrativos"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "novidades"
@@ -776,11 +950,14 @@
   "icu:voiceNoteError": {
     "messageformat": "Existe um erro com o gravador de voz."
   },
-  "icu:attachmentSaved": {
-    "messageformat": "Anexo guardado."
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Anexo guardado} other {{count,number} anexos guardados}}"
   },
   "icu:attachmentSavedShow": {
     "messageformat": "Mostrar na pasta"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Não é possível guardar o anexo, uma vez que a transferência ainda não terminou} other {Não é possível guardar os anexos, uma vez que {count,number} transferências ainda não terminaram}}"
   },
   "icu:you": {
     "messageformat": "Você"
@@ -815,11 +992,11 @@
   "icu:mute": {
     "messageformat": "Silenciar"
   },
-  "icu:cannotUpdateDetail": {
-    "messageformat": "O Signal não conseguiu atualizar. {retry} ou visite {url} para o instalar manualmente. Depois, {support} acerca deste problema"
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "O Signal não foi atualizado. <retryUpdateButton>Volte a tentar atualizar</retryUpdateButton> ou visite {url} para instalar manualmente. Depois, <contactSupportLink>contacte o suporte</contactSupportLink> acerca deste problema"
   },
-  "icu:cannotUpdateRequireManualDetail": {
-    "messageformat": "Signal não foi atualizado. Visite {url} para instalá-lo manualmente. De seguida, {support} acerca deste problema"
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "O Signal não foi atualizado. Visite {url} para instalar manualmente. Depois, <contactSupportLink>contacte o suporte</contactSupportLink> acerca deste problema"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Provavelmente o Signal Desktop encontra-se na quarentena do macOS e como tal não será possível atualizar automaticamente. Por favor, tente mover {app} para {folder} com o Finder."
@@ -929,11 +1106,17 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} está nos seus contactos do sistema"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "Adicionar uma etiqueta de membro"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "O seu código QR"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "Nota"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Ver multimédia recente"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Toda a multimédia"
   },
   "icu:back": {
     "messageformat": "Voltar"
@@ -980,14 +1163,101 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Info"
   },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Eliminar mensagens"
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "Afixar"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Eliminar mensagens?"
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "Desafixar"
   },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "As mensagens neste chat serão eliminadas deste dispositivo. Ainda pode procurar este chat após eliminar as mensagens."
+  "icu:Poll__end-poll": {
+    "messageformat": "Terminar sondagem"
+  },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Sondagem · Selecione uma"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Sondagem · Selecione uma ou mais"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Sondagem · Resultados finais"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Ver votos"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Votou"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "Terminou a sondagem: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name} terminou a sondagem: {poll}"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "Ver sondagem"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Detalhes da sondagem"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Pergunta"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} voto} other {{count,number} votos}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Sem votos"
+  },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "Opção vencedora"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "Mensagem fixada não encontrada"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "Sondagem não encontrada"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "Nova sondagem"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "Pergunta"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "Fazer uma pergunta"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "Opções"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "Opção {number}"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "Permitir votos múltiplos"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "Enviar"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "Necessária pergunta de sondagem"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "A sondagem requer pelo menos 2 opções"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "A pergunta é demasiado longa"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "A opção é demasiado longa"
+  },
+  "icu:deleteConversation": {
+    "messageformat": "Eliminar"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Eliminar chat?"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Todas as mensagens neste chat serão eliminadas de todos os seus dispositivos."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Abandonar grupo"
@@ -1003,6 +1273,132 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "Antes de abandonar, deverá escolher pelo menos um administrador para este grupo."
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "Afixou uma mensagem"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender} afixou uma mensagem"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "Ir a mensagem"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "Afixar mensagem durante…"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 horas"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7 dias"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30 dias"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "Para sempre"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "Cancelar"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "Afixar"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "Substituir mensagem afixada mais antiga?"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "Afixar esta mensagem irá substituir a mais antiga."
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "Afixar mensagens temporárias"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "As mensagens temporárias serão desafixadas quando o seu temporizador expirar e a mensagem for removida do chat."
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "Ok"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {Mensagem afixada} other {Mensagens afixadas}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "Ir à mensagem afixada {pinNumber,number}"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "Ir a mensagem"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "Mais ações"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "Desafixar"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "Ir a mensagem"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "Ver todas as mensagens"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "Mensagem de voz"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "Ficheiro"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "Pagamento"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "Sondagem"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "Autocolante"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "Multimédia de visualização única"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "Fotografia"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "Vídeo"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "Mensagem de voz"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "Pagamento"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "Autocolante"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "Multimédia de visualização única"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "Mensagens afixadas"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "Desafixar todas as mensagens"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "Desafixar todas as mensagens?"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "As mensagens serão desafixadas para os membros deste chat."
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "Desafixar"
   },
   "icu:sessionEnded": {
     "messageformat": "Sessão segura reiniciada"
@@ -1079,8 +1475,62 @@
   "icu:lightboxImageAlt": {
     "messageformat": "Imagem enviada no chat"
   },
+  "icu:lightBoxDownloading": {
+    "messageformat": "A transferir {downloaded} de {total}"
+  },
   "icu:imageCaptionIconAlt": {
     "messageformat": "Ícone que mostra que esta imagem tem uma legenda"
+  },
+  "icu:imageOpenAlt": {
+    "messageformat": "Abrir este anexo numa vista maior"
+  },
+  "icu:startDownload": {
+    "messageformat": "Iniciar descarregamento"
+  },
+  "icu:cancelDownload": {
+    "messageformat": "Cancelar transferência"
+  },
+  "icu:downloadNItems": {
+    "messageformat": "{count, plural, one {1 item} other {{count,number} itens}}"
+  },
+  "icu:mediaNotAvailable": {
+    "messageformat": "Este ficheiro multimédia não está disponível"
+  },
+  "icu:attachmentNoLongerAvailable__learnMore": {
+    "messageformat": "Saber mais"
+  },
+  "icu:attachmentNotAvailable__file": {
+    "messageformat": "Ficheiro não disponível"
+  },
+  "icu:attachmentNotAvailable__longMessage": {
+    "messageformat": "Esta mensagem está incompleta"
+  },
+  "icu:attachmentNotAvailable__sticker": {
+    "messageformat": "Autocolante não disponível"
+  },
+  "icu:attachmentNotAvailable__voice": {
+    "messageformat": "Mensagem de voz não disponível"
+  },
+  "icu:attachmentNotAvailable__tapToView": {
+    "messageformat": "Multimédia de visualização única não disponível"
+  },
+  "icu:attachmentNotAvailable__tapToViewCannotDownload": {
+    "messageformat": "Não é possível transferir a multimédia de visualização única"
+  },
+  "icu:TapToViewNotAvailableModal__body--expired": {
+    "messageformat": "Esta multimédia de visualização única já não está disponível para transferência. Peça a {name} que envie novamente."
+  },
+  "icu:TapToViewNotAvailableModal__body--error": {
+    "messageformat": "Não é possível transferir a multimédia de visualização única. {name} terá de a enviar outra vez."
+  },
+  "icu:BackfillFailureModal__title": {
+    "messageformat": "Não é possível transferir multimédia"
+  },
+  "icu:BackfillFailureModal__body--timeout": {
+    "messageformat": "Verifique a ligação à internet do seu computador e telemóvel. Abra o Signal no seu telemóvel e volte a tentar descarregar."
+  },
+  "icu:BackfillFailureModal__body--not-found": {
+    "messageformat": "Este ficheiro multimédia já não está disponível no seu telemóvel e não pode ser descarregado."
   },
   "icu:save": {
     "messageformat": "Guardar"
@@ -1092,7 +1542,7 @@
     "messageformat": "Dispositivos associados"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Associar um novo dispositivo"
+    "messageformat": "Associe um novo dispositivo"
   },
   "icu:Install__learn-more": {
     "messageformat": "Saber mais"
@@ -1110,19 +1560,40 @@
     "messageformat": "Definições"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Toque em {plusButton} (Android) ou em {linkNewDevice} (iPhone)"
+    "messageformat": "Toque em {linkNewDevice}"
   },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "Não foi possível carregar o código QR. Verifique a sua internet e tente novamente. <retry>Tentar novamente</retry>"
+  "icu:Install__qr-failed-load__error--timeout": {
+    "messageformat": "Não foi possível carregar o código QR. Verifique a sua ligação e tente novamente."
+  },
+  "icu:Install__qr-failed-load__error--unknown": {
+    "messageformat": "<paragraph>Ocorreu um erro inesperado.</paragraph><paragraph>Tente novamente.</paragraph>"
+  },
+  "icu:Install__qr-failed-load__error--network": {
+    "messageformat": "O Signal não pode conectar este dispositivo utilizando a sua rede atual."
+  },
+  "icu:Install__qr-failed-load__retry": {
+    "messageformat": "Tentar novamente"
+  },
+  "icu:Install__qr-max-rotations__retry": {
+    "messageformat": "Atualizar código"
+  },
+  "icu:Install__qr-failed-load__get-help": {
+    "messageformat": "Obter ajuda"
   },
   "icu:Install__support-link": {
     "messageformat": "Necessita de ajuda?"
   },
-  "icu:Install__choose-device-name__description": {
-    "messageformat": "Você verá este nome em \"Aparelhos vinculados\", no seu telefone"
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "Eliminar todos os dados?"
   },
-  "icu:Install__choose-device-name__placeholder": {
-    "messageformat": "O meu computador"
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "Está a tentar vincular uma conta diferente do Signal a este desktop. Se continuar, todos os dados atualmente no Signal Desktop serão eliminados."
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:Preferences--header": {
+    "messageformat": "Definições"
   },
   "icu:Preferences--phone-number": {
     "messageformat": "N.º de telemóvel"
@@ -1130,11 +1601,203 @@
   "icu:Preferences--device-name": {
     "messageformat": "Nome do dispositivo"
   },
-  "icu:chooseDeviceName": {
-    "messageformat": "Escolher o nome do dispositivo"
+  "icu:Preferences--device-name__description": {
+    "messageformat": "Para alterar o nome deste dispositivo, abra o Signal no seu telemóvel e navegue até Definições > Dispositivos associados"
   },
-  "icu:finishLinkingPhone": {
-    "messageformat": "Finalizar a associação ao telefone"
+  "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
+    "messageformat": "Tom de pele dos emoji"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "Pastas de chats"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "Adicionar uma pasta de chats"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Adicione ou edite pastas"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "Organize os seus chats em pastas e alterne rapidamente entre eles na sua lista de chats."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} pasta} other {{chatFoldersCount,number} pastas}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Configure"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Gerir"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "Editar pasta"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "Eliminar"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Eliminar pasta?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Quer eliminar a pasta “{chatFolderTitle}”?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Eliminar"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "Pastas de chats"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "Organize os seus chats em pastas e alterne rapidamente entre eles na sua lista de chats"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "Pastas"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "Todos os chats"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "Criar uma pasta"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Arraste para mover a pasta de chats"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "Pastas sugeridas"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "Adicionar"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "Por ler"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "Mensagens não lidas de todos os chats"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "Chats 1:1"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "Só mensagens de chats diretos"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "Grupos"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "Só mensagens de chats de grupo"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "Criar uma pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Editar pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "Nome da pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "Nome da pasta (obrigatório)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "Chats incluídos"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "Escolha os chats que quer que apareçam nesta pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "Chats 1:1"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Conversas de grupo"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "Adicionar chats"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "Chats incluídos"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "Chats excluídos"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "Procurar"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "Tipos de chat"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "Chats 1:1"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "Grupos"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "Chats recentes"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "Concluído"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "Exceções"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "Escolha os chats que não quer que apareçam nesta pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "Excluir chats"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "Mostrar apenas chats não lidos"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "Só chats com mensagens não lidas é que serão mostrados nesta pasta."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "Incluir chats silenciados"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "Eliminar pasta"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Eliminar esta pasta de chats?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Esta pasta será removida da sua lista de chats."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Eliminar"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "Guardar alterações?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "Quer guardar as alterações que fez a esta pasta de chats?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "Guardar"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "Descartar"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "Guardar"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "Cancelar"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
+    "messageformat": "Exibir ícone de estado"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
+    "messageformat": "Exibe um ícone nos detalhes das mensagens quando elas foram entregues utilizando o emissor selado."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "Verificação automática da chave"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "Quando ativado, o Signal tentará verificar automaticamente a encriptação dos chats 1:1."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "Saber mais"
   },
   "icu:initialSync": {
     "messageformat": "A sincronizar contactos e grupos"
@@ -1190,9 +1853,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Não é possível participar na chamada"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Já se encontra numa chamada."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Não foi possível obter informações sobre o link da chamada. Verifique a sua ligação à internet e tente novamente."
   },
@@ -1205,6 +1865,9 @@
   "icu:calling__call-link-default-title": {
     "messageformat": "Chamada do Signal"
   },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Não é possível eliminar link. Verifique a sua ligação e tente novamente."
+  },
   "icu:calling__join-request-denied": {
     "messageformat": "O seu pedido para entrar nesta chamada foi recusado."
   },
@@ -1216,6 +1879,12 @@
   },
   "icu:calling__removed-from-call-title": {
     "messageformat": "Removido da chamada"
+  },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Foi atingido o número máximo de participantes para esta chamada. Tente novamente mais tarde."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "A chamada encontra-se cheia"
   },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Qualquer pessoa que se junte a esta chamada através do link verá o seu nome e fotografia."
@@ -1280,20 +1949,65 @@
   "icu:CallingButton--more-options": {
     "messageformat": "Mais opções"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "Silenciar áudio"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "Ativar som"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "Ver perfil"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "Ir para o chat"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "Remover da chamada"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "Mais ações"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "A apresentar"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
     "messageformat": "Aprovar pedido de entrada"
   },
   "icu:CallingPendingParticipants__DenyUser": {
     "messageformat": "Recusar pedido de entrada"
   },
+  "icu:CallingPendingParticipants__ApproveAll": {
+    "messageformat": "Aprovar todos"
+  },
+  "icu:CallingPendingParticipants__DenyAll": {
+    "messageformat": "Recusar todos"
+  },
+  "icu:CallingPendingParticipants__ConfirmDialogTitle--ApproveAll": {
+    "messageformat": "{count, plural, one {Aprovar {count,number} pedido?} other {Aprovar {count,number} pedidos?}}"
+  },
+  "icu:CallingPendingParticipants__ConfirmDialogTitle--DenyAll": {
+    "messageformat": "{count, plural, one {Recusar {count,number} pedido?} other {Recusar {count,number} pedidos?}}"
+  },
+  "icu:CallingPendingParticipants__ConfirmDialogBody--ApproveAll": {
+    "messageformat": "{count, plural, one {{count,number} pessoa será adicionada à chamada.} other {{count,number} pessoas serão adicionadas à chamada.}}"
+  },
+  "icu:CallingPendingParticipants__ConfirmDialogBody--DenyAll": {
+    "messageformat": "{count, plural, one {{count,number} pessoa não será adicionada à chamada.} other {{count,number} pessoas não serão adicionadas à chamada.}}"
+  },
   "icu:CallingPendingParticipants__RequestsToJoin": {
     "messageformat": "{count, plural, one {{count,number} pedido para entrar na chamada} other {{count,number} pedidos para entrar na chamada}}"
   },
+  "icu:CallingPendingParticipants__WouldLikeToJoin": {
+    "messageformat": "Quer juntar-se…"
+  },
+  "icu:CallingPendingParticipants__AdditionalRequests": {
+    "messageformat": "{count, plural, one {+{count,number} pedido} other {+{count,number} pedidos}}"
+  },
+  "icu:CallingPendingParticipants__Toast--added-users-to-call": {
+    "messageformat": "{count, plural, one {{count,number} pessoa adicionada à chamada} other {{count,number} pessoas adicionadas à chamada}}"
+  },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, one {{count,number} mão levantada} other {{count,number} mãos levantadas}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "(do primeiro ao último)"
   },
   "icu:CallingReactions--me": {
     "messageformat": "Você"
@@ -1318,6 +2032,9 @@
   },
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second} e {others,number} outro estão nesta chamada} other {{first}, {second}, e outros {others,number} estão nesta chamada}}"
+  },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {{count,number} pessoa está nesta chamada} other {{count,number} pessoas estão nesta chamada}}"
   },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "O Signal irá tocar {person}"
@@ -1349,14 +2066,20 @@
   "icu:calling__in-this-call": {
     "messageformat": "{people, plural, one {· {people,number} pessoa nesta chamada} other {· {people,number} pessoas nesta chamada}}"
   },
-  "icu:calling__you-have-blocked": {
-    "messageformat": "Bloqueou {name}"
+  "icu:calling__blocked-participant": {
+    "messageformat": "O utilizador {name} está bloqueado"
+  },
+  "icu:calling__block-info-title": {
+    "messageformat": "O utilizador {name} está bloqueado"
   },
   "icu:calling__block-info": {
-    "messageformat": "Não receberá voz ou vídeo por parte da pessoa nem ela da sua."
+    "messageformat": "Não irá receber os áudios e vídeos deles e eles não receberão os seus."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "Não pode receber áudio e vídeo de {name}"
+  },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Não é possível receber áudio e vídeo"
   },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Isto pode dever-se a este utilizador não ter verificado a sua alteração do seu número de segurança, haver um problema com o seu dispositivo, ou este ter bloqueado o seu perfil."
@@ -1381,6 +2104,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "O Signal está a partilhar {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "A partilha de ecrã do Signal está ativada"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "A ligar novamente…"
@@ -1467,10 +2193,25 @@
     "messageformat": "Eliminar todos os dados?"
   },
   "icu:deleteAllDataBody": {
-    "messageformat": "Eliminar todos os dados e mensagens desta versão do Signal Desktop? Pode sempre voltar a conectar este desktop, mas as suas mensagens não serão restauradas. A sua conta Signal e os dados no seu telemóvel ou outros dispositivos conectados não serão eliminados."
+    "messageformat": "Eliminar todos os dados e mensagens desta versão do Signal Desktop? A sua conta Signal e os dados no seu telemóvel ou outros dispositivos conectados não serão eliminados."
   },
   "icu:deleteAllDataProgress": {
-    "messageformat": "A desligar e a eliminar todos os dados"
+    "messageformat": "A desligar e a eliminar todos os dados…"
+  },
+  "icu:deleteAccountHeader": {
+    "messageformat": "Eliminar conta"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "Isto irá eliminar a sua informação de conta, perfil e todas as suas mensagens. Também será removido de todos os grupos do Signal."
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "Eliminar conta"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "Eliminar conta?"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "Isto irá eliminar a sua informação de conta, perfil e todas as suas mensagens. Também será removido de todos os grupos do Signal. A app será encerrada após a conclusão deste processo."
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Você tem dados obsoletos resultantes de uma instalação anterior do Signal Desktop. Se escolher continuar, serão eliminados e irá começar a partir do início."
@@ -1493,17 +2234,29 @@
   "icu:notificationSenderInGroup": {
     "messageformat": "{sender} em {group}"
   },
-  "icu:notificationReaction": {
-    "messageformat": "{sender} reagiu {emoji} à sua mensagem"
-  },
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} reagiu {emoji} a: {message}"
+  },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender} votou na sondagem: \"{pollQuestion}\""
   },
   "icu:sendFailed": {
     "messageformat": "Falha no envio"
   },
   "icu:deleteFailed": {
     "messageformat": "Falha ao eliminar"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "A eliminação falhou, clique para ver detalhes"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "Repetir a eliminação falhada?"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "Falha ao eliminar a mensagem. Verifique a sua ligação e tente novamente."
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "Tentar novamente"
   },
   "icu:editFailed": {
     "messageformat": "Falha ao editar, clique para mais detalhes"
@@ -1514,8 +2267,8 @@
   "icu:partiallySent": {
     "messageformat": "Enviada parcialmente, clique para mais detalhes"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "Eliminada parcialmente, clique para tentar de novo"
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "Parcialmente eliminado, clique para ver detalhes"
   },
   "icu:expiredWarning": {
     "messageformat": "Esta versão do Signal Desktop expirou. Para poder continuar a enviar mensagens, actualize para a última versão ."
@@ -1534,9 +2287,6 @@
   },
   "icu:syncNow": {
     "messageformat": "Importar agora"
-  },
-  "icu:syncing": {
-    "messageformat": "A importar…"
   },
   "icu:syncFailed": {
     "messageformat": "Falha na importação. Por favor, confirme que o seu computador e o seu telemóvel se encontram ligados à Internet."
@@ -1564,6 +2314,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Ontem {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "O Signal pode não estar a conseguir processar uma mensagem recebida."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "O corpo da mensagem é demasiado longo."
@@ -1643,6 +2396,15 @@
   "icu:ConversationDetails__HeaderButton--Message": {
     "messageformat": "Mensagem"
   },
+  "icu:ConversationDetails--help-section": {
+    "messageformat": "Ajuda"
+  },
+  "icu:ConversationDetails--support-center": {
+    "messageformat": "Centro de suporte"
+  },
+  "icu:ConversationDetails__GroupTerminatedBanner": {
+    "messageformat": "Este grupo foi encerrado"
+  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "Ver número de segurança"
   },
@@ -1703,11 +2465,29 @@
   "icu:Toast--failed-to-fetch-phone-number": {
     "messageformat": "Falha ao procurar o número de telemóvel. Verifique a sua ligação e tente novamente."
   },
+  "icu:Toast--download-failed": {
+    "messageformat": "A transferência falhou"
+  },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "Apenas os administradores podem definir etiquetas de membros neste grupo."
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "Visualização única ativada"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "Visualização única desativada"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "As edições só podem ser aplicadas dentro de 24 horas a partir do momento em que enviou esta mensagem."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} não é um utilizador Signal. Certifique-se de que introduziu o nome de utilizador completo."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} não é um nome de utilizador válido. Certifique-se de que introduziu o nome de utilizador completo seguido do seu conjunto de algarismos."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Utilizador não encontrado. \"{phoneNumber}\" não é um utilizador do Signal."
@@ -1772,14 +2552,17 @@
   "icu:unlinked": {
     "messageformat": "Desassociado"
   },
+  "icu:unregisteredWarning": {
+    "messageformat": "Clique para voltar a registar e continuar a enviar mensagens. O Signal Desktop não está registado, provavelmente porque registou o seu número de telemóvel num dispositivo diferente."
+  },
+  "icu:unregistered": {
+    "messageformat": "Já não está registado"
+  },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "Atualização disponível"
   },
   "icu:autoUpdateRetry": {
     "messageformat": "Retomar atualização"
-  },
-  "icu:autoUpdateContactSupport": {
-    "messageformat": "contactar o suporte"
   },
   "icu:autoUpdateNewVersionMessage": {
     "messageformat": "Clique para reiniciar o Signal"
@@ -1807,6 +2590,27 @@
   },
   "icu:youUpdatedTheGroup": {
     "messageformat": "Você atualizou o grupo."
+  },
+  "icu:collapsedGroupUpdates": {
+    "messageformat": "{count, plural, one {{count,number} atualização de grupos} other {{count,number} atualizações de grupos}}"
+  },
+  "icu:multidayCollapse__container": {
+    "messageformat": "{containerDescription} · {dayCountSummary}"
+  },
+  "icu:multidayCollapse__dayCountSummary": {
+    "messageformat": "{dayCount, plural, one {{dayCount,number} dia} other {{dayCount,number} dias}}"
+  },
+  "icu:collapsedChatUpdates": {
+    "messageformat": "{count, plural, one {{count,number} atualização de chats} other {{count,number} atualizações de chats}}"
+  },
+  "icu:collapsedTimerChanges": {
+    "messageformat": "{count, plural, one {{count,number} alteração do temporizador das mensagens temporárias · {endingState}} other {{count,number} alterações do temporizador das mensagens temporárias · {endingState}}}"
+  },
+  "icu:collapsedTimerChanges--disabled": {
+    "messageformat": "{count, plural, one {{count,number} alteração do temporizador das mensagens temporárias · Desativado} other {{count,number} alterações do temporizador das mensagens temporárias · Desativado}}"
+  },
+  "icu:collapsedCallEvents": {
+    "messageformat": "{count, plural, one {{count,number} evento de chamadas} other {{count,number} eventos de chamadas}}"
   },
   "icu:updatedGroupAvatar": {
     "messageformat": "O avatar do grupo foi atualizado."
@@ -1865,6 +2669,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Mensagem tipo autocolante"
   },
+  "icu:Poll--preview": {
+    "messageformat": "Sondagem: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -1880,8 +2687,17 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Vídeo de visualização única"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "Esta mensagem foi eliminada."
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
+  "icu:message--deletedByAdmin": {
+    "messageformat": "Administrador {admin} eliminou esta mensagem"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "{name} eliminou esta mensagem"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "Eliminou esta mensagem"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "Anexo demasiado grande para exibir."
@@ -1918,6 +2734,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "Doou em nome de {recipient}"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "{sender} afixou uma mensagem"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "Afixou uma mensagem"
   },
   "icu:message--donation": {
     "messageformat": "Doação"
@@ -1967,6 +2789,12 @@
   "icu:stickers--StickerManager--InstalledPacks--Empty": {
     "messageformat": "Sem autocolantes instalados"
   },
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "Sem pacotes de autocolantes. Adicione autocolantes para enviar aos seus amigos."
+  },
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "Adicionar autocolantes"
+  },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "Séries de artista do Signal"
   },
@@ -1976,11 +2804,20 @@
   "icu:stickers--StickerManager--ReceivedPacks": {
     "messageformat": "Autocolantes que recebeu"
   },
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "Partilhados consigo"
+  },
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "Quando receber um autocolante de alguém, o pacote de autocolantes aparecerá aqui."
+  },
   "icu:stickers--StickerManager--ReceivedPacks--Empty": {
     "messageformat": "Os autocolantes das mensagens recebidas irão aparecer aqui"
   },
   "icu:stickers--StickerManager--Install": {
     "messageformat": "Instalar"
+  },
+  "icu:stickers--StickerManager--Installed": {
+    "messageformat": "Instalado"
   },
   "icu:stickers--StickerManager--Uninstall": {
     "messageformat": "Desinstalar"
@@ -1988,56 +2825,17 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "Poderá não conseguir voltar a reinstalar este pacote de autocolantes caso já não possua a mensagem onde estava a sua origem."
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "introdução aos autocolantes: O gato bandido"
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "Tudo"
   },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "Introdução aos autocolantes"
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "Os meus autocolantes"
   },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "Porquê utilizar palavras quando pode utilizar autocolantes?"
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "Adicionar"
   },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "Abra o selecionador de autocolantes"
-  },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "Adicione um pacote de autocolantes"
-  },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "Próxima página"
-  },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "Página anterior"
-  },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "Autocolante recente"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "Não foi possível descarregar alguns autocolantes."
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "A instalar o pacote de autocolantes…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "Não foi encontrado nenhum autocolante"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "Estão disponíveis para instalar novos pacotes de autocolantes para as suas mensagens"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "Não foram encontrados pacotes de autocolantes"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "Os autocolantes recentemente utilizados irão aparecer aqui"
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "Recentes"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "Em destaque"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "Hora analógica"
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "Remover"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Pacote de autocolantes"
@@ -2045,44 +2843,242 @@
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "Erro ao abrir o pacote de autocolantes. Verifique a sua ligação à Internet e tente novamente."
   },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "Nenhum foi encontrado nenhum emoji"
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "Adicionar autocolantes"
   },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "Fechar pesquisa de emojis"
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "Remover"
   },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "Procurar emoji"
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "Link"
   },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "Tom de pele {tone}"
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "Ligação copiada"
   },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "Recentes"
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, one {{count,number} autocolate} other {{count,number} autocolantes}}"
   },
-  "icu:EmojiPicker__button--emoji": {
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "Autocolante sem emoji"
+  },
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "Pacote de autocolantes de {author}"
+  },
+  "icu:stickers--ViewPack": {
+    "messageformat": "Ver pacote"
+  },
+  "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Emoji"
   },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "Animal"
+  "icu:FunPicker__Tab--Stickers": {
+    "messageformat": "Autocolantes"
   },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "Comida"
+  "icu:FunPicker__Tab--Gifs": {
+    "messageformat": "GIF"
   },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "Atividade"
+  "icu:FunPanelEmojis__SearchLabel": {
+    "messageformat": "Procurar emoji"
   },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "Viagem"
+  "icu:FunPanelEmojis__SearchPlaceholder": {
+    "messageformat": "Procurar emoji"
   },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "Objeto"
+  "icu:FunPanelEmojis__SubNavLabel": {
+    "messageformat": "Categorias de emoji"
   },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "Símbolo"
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Recents": {
+    "messageformat": "Recentemente utilizados"
   },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "Bandeira"
+  "icu:FunPanelEmojis__SubNavCategoryLabel--SmileysAndPeople": {
+    "messageformat": "Smileys e pessoas"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--AnimalsAndNature": {
+    "messageformat": "Animais e natureza"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--FoodAndDrink": {
+    "messageformat": "Comida e bebida"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Activities": {
+    "messageformat": "Atividades"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--TravelAndPlaces": {
+    "messageformat": "Viagens e locais"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Objects": {
+    "messageformat": "Objetos"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Symbols": {
+    "messageformat": "Símbolos"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Flags": {
+    "messageformat": "Bandeiras"
+  },
+  "icu:FunPanelEmojis__SearchResults__EmptyHeading": {
+    "messageformat": "Nenhum foi encontrado nenhum emoji"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__SelectSkinToneForSelectedEmoji": {
+    "messageformat": "Selecione o tom de pele para {emojiName}"
+  },
+  "icu:FunPanelEmojis__ChangeSkinToneButtonLabel": {
+    "messageformat": "Alterar preferência do tom de pele"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__LongPressAccessibilityDescription": {
+    "messageformat": "Prima sem soltar para selecionar o tom de pele"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__ChooseDefaultLabel": {
+    "messageformat": "Escolha o seu tom de pele predefinido"
+  },
+  "icu:FunPanelEmojis__SectionTitle--SearchResults": {
+    "messageformat": "Procurar resultados"
+  },
+  "icu:FunPanelEmojis__SectionTitle--ThisMessage": {
+    "messageformat": "Esta mensagem"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Recents": {
+    "messageformat": "Recentemente utilizados"
+  },
+  "icu:FunPanelEmojis__SectionTitle--SmileysAndPeople": {
+    "messageformat": "Smileys e pessoas"
+  },
+  "icu:FunPanelEmojis__SectionTitle--AnimalsAndNature": {
+    "messageformat": "Animais e natureza"
+  },
+  "icu:FunPanelEmojis__SectionTitle--FoodAndDrink": {
+    "messageformat": "Comida e bebida"
+  },
+  "icu:FunPanelEmojis__SectionTitle--TravelAndPlaces": {
+    "messageformat": "Viagens e locais"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Activities": {
+    "messageformat": "Atividades"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Objects": {
+    "messageformat": "Objetos"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Symbols": {
+    "messageformat": "Símbolos"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Flags": {
+    "messageformat": "Bandeiras"
+  },
+  "icu:FunPanelEmojis__CustomizeReactionsButtonLabel": {
+    "messageformat": "Personalizar reações"
+  },
+  "icu:FunPanelStickers__SearchLabel": {
+    "messageformat": "Procurar autocolantes"
+  },
+  "icu:FunPanelStickers__SearchPlaceholder": {
+    "messageformat": "Procurar autocolantes"
+  },
+  "icu:FunPanelSticker__SubNavLabel": {
+    "messageformat": "Pacote de autocolantes"
+  },
+  "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
+    "messageformat": "Recentemente utilizados"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Adicione um pacote de autocolantes"
+  },
+  "icu:FunPanelStickers__SectionTitle--SearchResults": {
+    "messageformat": "Procurar resultados"
+  },
+  "icu:FunPanelStickers__SectionTitle--Recents": {
+    "messageformat": "Recentemente utilizados"
+  },
+  "icu:FunPanelStickers__SectionTitle--Featured": {
+    "messageformat": "Em destaque"
+  },
+  "icu:FunPanelStickers__SearchResults__EmptyHeading": {
+    "messageformat": "Não foi encontrado nenhum autocolante"
+  },
+  "icu:FunPanelStickers__LightboxDialog__Label": {
+    "messageformat": "Pré-visualização de autocolantes"
+  },
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "Procurar GIFs"
+  },
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "Procurar GIFs"
+  },
+  "icu:FunPanelGifs__SubNavLabel": {
+    "messageformat": "Categorias GIF"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Recents": {
+    "messageformat": "Recentemente utilizados"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Trending": {
+    "messageformat": "Popular"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Celebrate": {
+    "messageformat": "Celebrar"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Love": {
+    "messageformat": "Amor"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--ThumbsUp": {
+    "messageformat": "Polegar para cima"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Surprised": {
+    "messageformat": "Surpreendido"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Excited": {
+    "messageformat": "Entusiasmado"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Sad": {
+    "messageformat": "Triste"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Angry": {
+    "messageformat": "Zangado"
+  },
+  "icu:FunPanelGifs__SearchResults__LoadingLabel": {
+    "messageformat": "A carregar GIFs"
+  },
+  "icu:FunPanelGifs__SearchResults__ErrorHeading": {
+    "messageformat": "Não foi possível carregar os GIFs. Verifique a sua ligação e tente novamente."
+  },
+  "icu:FunPanelGifs__SearchResults__ErrorRetryButton": {
+    "messageformat": "Tentar novamente"
+  },
+  "icu:FunPanelGifs__SearchResults__EmptyHeading": {
+    "messageformat": "Não foram encontrados GIFs"
+  },
+  "icu:FunPanelGifs__LightboxDialog__Label": {
+    "messageformat": "Pré-visualização de GIFs"
+  },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "Com apoio GIPHY"
+  },
+  "icu:FunSearch__ClearButtonLabel": {
+    "messageformat": "Limpar pesquisa"
+  },
+  "icu:FunSkinTones__List": {
+    "messageformat": "Tom de pele"
+  },
+  "icu:FunSkinTones__ListItem--None": {
+    "messageformat": "Nenhum"
+  },
+  "icu:FunSkinTones__ListItem--Light": {
+    "messageformat": "Tom de pele claro"
+  },
+  "icu:FunSkinTones__ListItem--MediumLight": {
+    "messageformat": "Tom de pele médio-claro"
+  },
+  "icu:FunSkinTones__ListItem--Medium": {
+    "messageformat": "Tom de pele médio"
+  },
+  "icu:FunSkinTones__ListItem--MediumDark": {
+    "messageformat": "Tom de pele médio-escuro"
+  },
+  "icu:FunSkinTones__ListItem--Dark": {
+    "messageformat": "Tom de pele escuro"
+  },
+  "icu:FunButton__Label--FunPicker": {
+    "messageformat": "Adicionar um emoji, autocolante ou GIF"
+  },
+  "icu:FunButton__Label--EmojiPicker": {
+    "messageformat": "Adicionar um emoji"
+  },
+  "icu:FunButton__Label--StickerPicker": {
+    "messageformat": "Adicionar um autocolante"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "Cancelar"
@@ -2120,23 +3116,26 @@
   "icu:Message--update-signal": {
     "messageformat": "Atualizar o Signal"
   },
-  "icu:Message--tap-to-view-expired": {
+  "icu:Message--tap-to-view--viewed": {
     "messageformat": "Vista(s)"
   },
-  "icu:Message--tap-to-view--outgoing": {
-    "messageformat": "Multimédia"
+  "icu:Message--tap-to-view--media": {
+    "messageformat": "Ver multimédia de visualização única"
   },
   "icu:Message--tap-to-view--incoming--expired-toast": {
     "messageformat": "Já viu esta mensagem."
   },
-  "icu:Message--tap-to-view--outgoing--expired-toast": {
-    "messageformat": "As mensagens de visualização única não são guardadas no histórico do seu chat."
+  "icu:Message--tap-to-view--outgoing--expired-toast-2": {
+    "messageformat": "Os ficheiros de visualização única são apagados após envio"
   },
-  "icu:Message--tap-to-view--incoming": {
-    "messageformat": "Ver fotografia"
+  "icu:Message--tap-to-view--video": {
+    "messageformat": "Vídeo de visualização única"
   },
-  "icu:Message--tap-to-view--incoming-video": {
-    "messageformat": "Ver vídeo"
+  "icu:Message--tap-to-view--photo": {
+    "messageformat": "Foto de visualização única"
+  },
+  "icu:Message--tap-to-view--helper-text": {
+    "messageformat": "Clique para ver"
   },
   "icu:Conversation--getDraftPreview--attachment": {
     "messageformat": "(anexo)"
@@ -2197,6 +3196,9 @@
   },
   "icu:Keyboard--open-sticker-chooser": {
     "messageformat": "Abrir selecionador de etiquetas"
+  },
+  "icu:Keyboard--open-gif-chooser": {
+    "messageformat": "Abrir selecionador de GIFs"
   },
   "icu:Keyboard--begin-recording-voice-note": {
     "messageformat": "Começar a gravar uma nota de voz"
@@ -2330,6 +3332,12 @@
   "icu:Keyboard--toggle-video": {
     "messageformat": "Ativar/desativar o vídeo"
   },
+  "icu:Keyboard--toggle-preview": {
+    "messageformat": "Ativar/desativar pré-visualização expandida"
+  },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "Levante ou baixe a sua mão (só chamadas de grupo)"
+  },
   "icu:Keyboard--accept-video-call": {
     "messageformat": "Responder a chamada com vídeo (só videochamadas)"
   },
@@ -2372,15 +3380,6 @@
   "icu:conversationMarkedUnread": {
     "messageformat": "Chat marcado como não lido"
   },
-  "icu:AuthArtCreator--dialog--message": {
-    "messageformat": "Quer abrir o Criador de pacotes de autocolantes do Signal?"
-  },
-  "icu:AuthArtCreator--dialog--confirm": {
-    "messageformat": "Confirmar"
-  },
-  "icu:AuthArtCreator--dialog--dismiss": {
-    "messageformat": "Ignorar"
-  },
   "icu:ArtCreator--Authentication--error": {
     "messageformat": "Configure o Signal no seu telemóvel e desktop para utilizar o Criador de Pacotes de Autocolantes"
   },
@@ -2396,11 +3395,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "Tudo"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "Dicas de segurança"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "Tenha cuidado ao aceitar pedidos de mensagens de pessoas que não conhece. Cuidado com:"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "Não responda a chats do Signal"
+  },
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "O Signal nunca enviará mensagem para lhe pedir o seu código de registo, PIN ou chave de recuperação. Nunca responda a um chat que finge ser do Signal."
+  },
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "Analise os nomes e as fotos"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "Atente ao aviso \"nome não verificado\". Todos definem os seus nomes de perfil no Signal."
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "Tenha atenção a fraudes"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "Evite mensagens vagas que tentam fazer com que responda. Desconfie de dicas financeiras e links suspeitos."
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "Não responda a chats do Signal"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "O Signal nunca enviará mensagem para lhe pedir o seu código de registo, PIN ou chave de recuperação. Não responda a chats que fingem ser do Signal ou do Suporte do Signal. Agentes com más intenções criam chats falsos para tentar tomar controlo da sua conta."
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "Analise os nomes e as fotos"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "Atente ao aviso \"nome não verificado\". Todos definem os seus nomes e fotos de perfil do Signal. Se não souber quem é o autor de um novo pedido, é melhor ignorar."
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "Fraudes de cripto ou dinheiro"
@@ -2414,11 +3440,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "Os autores de spam muitas vezes começam com uma mensagem simples como \"Olá\", para chamar a atenção. Se responder, eles continuam a falar."
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "Mensagens com links"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "Tenha cuidado com as mensagens de pessoas que não conhece com links para sites. Nunca visite links de pessoas em quem não confia."
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "Mensagens com links"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "Empresas e instituições falsas"
@@ -2426,17 +3452,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "Tenha cuidado com empresas ou agências governamentais que o contactam. Mensagens que envolvem as finanças, serviços de entregas, etc., podem ser spam."
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "Ir para a página {page,number}"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "Dica anterior"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "Próxima dica"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "Concluído"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "Ver mais"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "Permite que {name} entre(m) em contacto consigo e partilhe o seu nome e fotografia com ele(s)? Ele(s) não sabe(m) que viu a mensagem até que aceite."
@@ -2534,6 +3551,12 @@
   "icu:MessageRequests--accept": {
     "messageformat": "Aceitar"
   },
+  "icu:MessageRequests--accept-confirm-title-v2": {
+    "messageformat": "Aceitar pedido?"
+  },
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "Só aceite pedidos de pessoas em quem confia. <bold>O Signal nunca</bold> enviará mensagem para lhe pedir o seu código de registo, PIN ou chave de recuperação."
+  },
   "icu:MessageRequests--continue": {
     "messageformat": "Continuar"
   },
@@ -2545,6 +3568,60 @@
   },
   "icu:ConversationHero--members": {
     "messageformat": "{count, plural, one {1 membro} other {{count,number} membros}}"
+  },
+  "icu:ConversationHero--member-list-and-invited": {
+    "messageformat": "{invitesCount, plural, one {{memberList} (+{invitesCount,number} convidado)} other {{memberList} (+{invitesCount,number} convidados)}}"
+  },
+  "icu:ConversationHero--group-members-zero": {
+    "messageformat": "Não há membros do grupo"
+  },
+  "icu:ConversationHero--group-members-only-you": {
+    "messageformat": "Ainda não há outros membros do grupo"
+  },
+  "icu:ConversationHero--group-members-one": {
+    "messageformat": "{member}"
+  },
+  "icu:ConversationHero--group-members-one-and-you": {
+    "messageformat": "{member} e você"
+  },
+  "icu:ConversationHero--group-members-two": {
+    "messageformat": "{member1} e {member2}"
+  },
+  "icu:ConversationHero--group-members-two-and-you": {
+    "messageformat": "{member1}, {member2} e você"
+  },
+  "icu:ConversationHero--group-members-three": {
+    "messageformat": "{member1}, {member2} e {member3}"
+  },
+  "icu:ConversationHero--group-members-other": {
+    "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3} e mais <clickable>{remainingCount,number}</clickable>} other {{member1}, {member2}, {member3} e mais <clickable>{remainingCount,number}</clickable>}}"
+  },
+  "icu:ConversationHero--group-members-other-and-you": {
+    "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3} e mais <clickable>{remainingCount,number}</clickable>} other {{member1}, {member2}, {member3} e mais <clickable>{remainingCount,number}</clickable>}}"
+  },
+  "icu:ConversationHero--group-names": {
+    "messageformat": "<clickable>Os nomes dos grupos</clickable> não são verificados"
+  },
+  "icu:ConversationHero--profile-names": {
+    "messageformat": "<clickable>Os nomes de perfil</clickable> não são verificados"
+  },
+  "icu:ConversationHero--name-not-verified": {
+    "messageformat": "Nome não verificado"
+  },
+  "icu:ConversationHero--signal-official-chat": {
+    "messageformat": "Este é o chat oficial e único do Signal"
+  },
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "Chat oficial"
+  },
+  "icu:ConversationHero--signal-official-account--description": {
+    "messageformat": "O único chat oficial do Signal. Mantenha-se a par das novidades e atualizações."
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "O único chat oficial do Signal."
+  },
+  "icu:ConversationHero--release-notes": {
+    "messageformat": "Mantenha-se a par das novidades e atualizações."
   },
   "icu:member-of-1-group": {
     "messageformat": "Membro de {group}"
@@ -2577,10 +3654,10 @@
     "messageformat": "Recusar"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Rejeitou uma chamada de voz"
+    "messageformat": "Chamada de voz rejeitada"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Rejeitou uma videochamada"
+    "messageformat": "Videochamada rejeitada"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "A receber chamada de voz"
@@ -2613,10 +3690,10 @@
     "messageformat": "O Signal continuará a funcionar na área de notificações. Pode alterar isto nas definições do Signal."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "A receber chamada de voz…"
+    "messageformat": "A receber chamada de voz"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "A receber videochamada…"
+    "messageformat": "A receber videochamada"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "A efetuar chamada de voz"
@@ -2638,6 +3715,9 @@
   },
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} está a ligar-lhe, {first}, {second} e {remaining,number} outro} other {{ringer} está a ligar-lhe, {first}, {second}, e outros {remaining,number}}}"
+  },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "A ligar…"
   },
   "icu:outgoingCallRinging": {
     "messageformat": "A tocar…"
@@ -2661,10 +3741,13 @@
     "messageformat": "{count, plural, one {{count,number} pessoa} other {{count,number} pessoas}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Chamada de áudio"
+    "messageformat": "Chamada de voz"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Link de chamada"
+  },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Chamada de grupo"
   },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "À espera de entrar"
@@ -2675,11 +3758,35 @@
   "icu:CallControls__JoinLeaveButton--hangup-group": {
     "messageformat": "Sair"
   },
+  "icu:CallControls__JoinLeaveButton--hangup-1-1-tooltip": {
+    "messageformat": "Terminar chamada"
+  },
+  "icu:CallControls__JoinLeaveButton--hangup-group-tooltip": {
+    "messageformat": "Abandonar chamada"
+  },
   "icu:CallControls__MutedToast--muted": {
     "messageformat": "Microfone desligado"
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Microfone ligado"
+  },
+  "icu:CallControls__MutedBySomeoneToast": {
+    "messageformat": "{otherName} silenciou-o."
+  },
+  "icu:CallControls__SomeoneMutedSomeoneToast": {
+    "messageformat": "{name} silenciou {otherName}."
+  },
+  "icu:CallControls__YouMutedSomeoneToast": {
+    "messageformat": "Silenciou {otherName}."
+  },
+  "icu:CallControls__YouMutedYourselfToast": {
+    "messageformat": "Silenciou-se a si a partir de outro dispositivo."
+  },
+  "icu:CallControls__LowerHandSuggestionToast": {
+    "messageformat": "Baixar a mão?"
+  },
+  "icu:CallControls__LowerHandSuggestionToast--button": {
+    "messageformat": "Baixar"
   },
   "icu:CallControls__RingingToast--ringing-on": {
     "messageformat": "Toque ligado"
@@ -2688,13 +3795,13 @@
     "messageformat": "Toque desligado"
   },
   "icu:CallControls__RaiseHandsToast--you": {
-    "messageformat": "You raised a hand."
+    "messageformat": "Levantou a mão."
   },
   "icu:CallControls__RaiseHandsToast--you-and-one": {
-    "messageformat": "You and {otherName} raised a hand."
+    "messageformat": "Você e {otherName} levantaram a mão."
   },
   "icu:CallControls__RaiseHandsToast--you-and-more": {
-    "messageformat": "{overflowCount, plural, one {You, {otherName}, and {overflowCount,number} more raised a hand.} other {You, {otherName}, and {overflowCount,number} more raised a hand.}}"
+    "messageformat": "{overflowCount, plural, one {Você, {otherName} e mais {overflowCount,number} levantaram a mão.} other {Você, {otherName} e mais {overflowCount,number} levantaram a mão.}}"
   },
   "icu:CallControls__RaiseHandsToast--one": {
     "messageformat": "{name} levantou a mão."
@@ -2724,16 +3831,16 @@
     "messageformat": "{people, plural, one {{people,number} na chamada} other {{people,number} na chamada}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "A chamada de grupo terminou"
+    "messageformat": "A videochamada terminou"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Foi iniciada uma chamada de grupo"
+    "messageformat": "Foi iniciada uma videochamada"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Você iniciou uma chamada de grupo"
+    "messageformat": "Iniciou uma videochamada"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} iniciou uma chamada de grupo"
+    "messageformat": "{name} iniciou uma videochamada"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Já se encontra numa chamada"
@@ -2746,6 +3853,12 @@
   },
   "icu:calling__pip--off": {
     "messageformat": "chamada em ecrã completo"
+  },
+  "icu:calling__preview--maximize": {
+    "messageformat": "Maximizar pré-visualização"
+  },
+  "icu:calling__preview--minimize": {
+    "messageformat": "Minimizar pré-visualização"
   },
   "icu:calling__change-view": {
     "messageformat": "Alterar vista"
@@ -2761,9 +3874,6 @@
   },
   "icu:calling__view_mode--updated": {
     "messageformat": "Vista atualizada"
-  },
-  "icu:calling__hangup": {
-    "messageformat": "Abandonar chamada"
   },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "Partilhar o seu ecrã"
@@ -2783,23 +3893,29 @@
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "Copiar link de chamada"
   },
-  "icu:CallingAdhocCallInfo__RemoveClient": {
-    "messageformat": "Remover esta pessoa da chamada"
+  "icu:CallingAdhocCallInfo__ShareViaSignal": {
+    "messageformat": "Partilhar link de chamada através do Signal"
+  },
+  "icu:CallingAdhocCallInfo__RemoveClientDialogBody": {
+    "messageformat": "Remover {name} da chamada?"
+  },
+  "icu:CallingAdhocCallInfo__RemoveClientDialogButton--remove": {
+    "messageformat": "Remover"
+  },
+  "icu:CallingAdhocCallInfo__RemoveClientDialogButton--block": {
+    "messageformat": "Bloquear da chamada"
   },
   "icu:CallingAdhocCallInfo__UnknownContactLabel": {
-    "messageformat": "{count, plural, one {{count,number} person} other {{count,number} people}}"
+    "messageformat": "{count, plural, one {{count,number} pessoa} other {{count,number} pessoas}}"
   },
   "icu:CallingAdhocCallInfo__UnknownContactLabel--in-addition": {
-    "messageformat": "+{count,number} more"
+    "messageformat": "{count, plural, one {+{count,number} mais} other {+{count,number} mais}}"
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoButton": {
-    "messageformat": "More info about new contacts"
+    "messageformat": "Mais informações acerca de novos contactos"
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
-    "messageformat": "Before joining a call you can only see the names of phone contacts, people you’re in a group with, or people you’ve chatted with 1:1. You’ll see all names and photos once you’ve joined the call."
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "Got it"
+    "messageformat": "Antes de entrar numa chamada, só pode ver os nomes dos contactos telefónicos, as pessoas com quem está num grupo, ou as pessoas com quem conversou individualmente. Irá ver todos os nomes e fotos antes de se iniciar à chamada."
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "Vídeo"
@@ -2846,14 +3962,20 @@
   "icu:muteExpirationLabel": {
     "messageformat": "Silenciada até {duration}"
   },
-  "icu:EmojiButton__label": {
-    "messageformat": "Emoji"
-  },
   "icu:ErrorModal--title": {
     "messageformat": "Ocorreu algo de errado!"
   },
   "icu:ErrorModal--description": {
     "messageformat": "Por favor, tente novamente ou contacte o Suporte."
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Ocorreu um erro inesperado"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Submeter registo de depuração"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Não, obrigado"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "Ok"
@@ -2904,10 +4026,10 @@
     "messageformat": "Impossível entrar para o grupo"
   },
   "icu:GroupV2--join--link-forbidden": {
-    "messageformat": "Não se pode juntar a este grupo através do link porque você foi removido por um administrador."
+    "messageformat": "Não se pode juntar a este grupo através do link porque foi removido por um administrador. Contacte um administrador para voltar a ser adicionado ao grupo."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Um administrador deste grupo deverá aprovar o seu pedido antes de você poder entrar para o grupo. Caso seja aprovado, o seu nome e fotografia serão partilhados com os membros desse grupo."
+    "messageformat": "Um administrador deste grupo deverá aprovar o seu pedido antes de você poder entrar para o grupo. Quando pede para entrar o seu nome e fotografia são partilhados com os membros desse grupo."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Entrar"
@@ -2933,11 +4055,23 @@
   "icu:GroupV2--join--requested": {
     "messageformat": "O seu pedido para entrar foi enviado para o administrador do grupo. Será notificado quando ele tomar uma decisão."
   },
+  "icu:GroupV2--join--group-terminated": {
+    "messageformat": "Não é possível juntar-se a este grupo."
+  },
   "icu:GroupV2--join--general-join-failure--title": {
     "messageformat": "Erro de link"
   },
   "icu:GroupV2--join--general-join-failure": {
     "messageformat": "Não foi possível juntar-se ao grupo. Por favor, tente novamente mais tarde."
+  },
+  "icu:GroupV2--terminate-group-in-progress": {
+    "messageformat": "A encerrar grupo…"
+  },
+  "icu:TerminateGroupFailedModal__description": {
+    "messageformat": "Não foi possível encerrar o grupo. Verifique a sua ligação e tente novamente."
+  },
+  "icu:TerminateGroupFailedModal__try-again": {
+    "messageformat": "Tentar novamente"
   },
   "icu:GroupV2--admin": {
     "messageformat": "Administrador"
@@ -3014,23 +4148,41 @@
   "icu:GroupV2--access-attributes--all--unknown": {
     "messageformat": "Um administrador alterou quem pode editar a informação do grupo para \"Todos os membros\"."
   },
-  "icu:GroupV2--access-members--admins--other": {
-    "messageformat": "{adminName} alterou quem pode editar os membros do grupo para \"Apenas administrdores\"."
-  },
   "icu:GroupV2--access-members--admins--you": {
     "messageformat": "Você alterou quem pode editar os elementos do grupo para \"Apenas administradores\"."
+  },
+  "icu:GroupV2--access-members--admins--other": {
+    "messageformat": "{adminName} alterou quem pode editar os membros do grupo para \"Apenas administrdores\"."
   },
   "icu:GroupV2--access-members--admins--unknown": {
     "messageformat": "Um administrador alterou quem pode editar os membros do grupo para \"Apenas administradores\"."
   },
-  "icu:GroupV2--access-members--all--other": {
-    "messageformat": "{adminName} alterou quem pode editar os membros do grupo para \"Todos os membros\"."
-  },
   "icu:GroupV2--access-members--all--you": {
     "messageformat": "Você alterou quem pode editar os membros do grupo para \"Todos os membros\"."
   },
+  "icu:GroupV2--access-members--all--other": {
+    "messageformat": "{adminName} alterou quem pode editar os membros do grupo para \"Todos os membros\"."
+  },
   "icu:GroupV2--access-members--all--unknown": {
     "messageformat": "Um administrador alterou quem pode editar os membros do grupo para \"Todos os membros\"."
+  },
+  "icu:GroupV2--access-member-label--admins--you": {
+    "messageformat": "Pode alterar quem pode adicionar etiquetas de membros para \"Apenas administradores.\""
+  },
+  "icu:GroupV2--access-member-label--admins--other": {
+    "messageformat": "{adminName} alterou quem pode adicionar etiquetas de membros para \"Apenas administradores.\""
+  },
+  "icu:GroupV2--access-member-label--admins--unknown": {
+    "messageformat": "Um administrador alterou quem pode adicionar etiquetas de membros para \"Apenas administradores.\""
+  },
+  "icu:GroupV2--access-member-label--all--you": {
+    "messageformat": "Alterou quem pode adicionar etiquetas de membros para \"Apenas membros.\""
+  },
+  "icu:GroupV2--access-member-label--all--other": {
+    "messageformat": "{adminName} alterou quem pode adicionar etiquetas de membros para \"Apenas membros.\""
+  },
+  "icu:GroupV2--access-member-label--all--unknown": {
+    "messageformat": "Um administrador alterou quem pode adicionar etiquetas de membros para \"Todos os membros.\""
   },
   "icu:GroupV2--access-invite-link--disabled--you": {
     "messageformat": "Desativou a aprovação de administrador para o link de grupo."
@@ -3284,11 +4436,8 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "Foi negado o pedido de {joinerName} para entrar no grupo."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} pediu e cancelou o seu pedido para se juntar através do link de grupo"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} solicitou e cancelou {numberOfRequests,number} pedidos para se juntarem através do link de grupo"
+  "icu:GroupV2--admin-approval-bounce--pluralized": {
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} solicitou e cancelou o pedido para entrar através do link do grupo} other {{joinerName} solicitaram e cancelaram {numberOfRequests,number} pedidos para entrar através do link do grupo}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Você ativou o link do grupo com a aprovação de administrador desativada."
@@ -3364,6 +4513,15 @@
   },
   "icu:GroupV2--summary": {
     "messageformat": "Os membros ou definições deste grupo foram alterados."
+  },
+  "icu:GroupV2--terminated--you": {
+    "messageformat": "Encerrou o grupo."
+  },
+  "icu:GroupV2--terminated--other": {
+    "messageformat": "{memberName} encerrou o grupo"
+  },
+  "icu:GroupV2--terminated--unknown": {
+    "messageformat": "Este grupo foi encerrado"
   },
   "icu:GroupV1--Migration--disabled--link": {
     "messageformat": "Faça o upgrade deste grupo para ativar as funcionalidades novas como @menções e admins. Os membros que não partilharam os seus nomes ou fotografias neste grupo serão convidados a participar. <learnMoreLink>Saiba mais.</learnMoreLink>"
@@ -3446,29 +4604,164 @@
   "icu:next": {
     "messageformat": "seguinte"
   },
+  "icu:ClearingData__description": {
+    "messageformat": "Isto pode demorar alguns minutos"
+  },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "A sair dos grupos…"
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "Dependendo do número de grupos onde está, isto poderá demorar alguns minutos"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "A eliminar conta e todos os dados…"
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "A eliminar dos dados do utilizador e a repôr a aplicação"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Doar ao Signal"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Doar ao Signal"
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} apoia o Signal"
   },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "O Signal é mantido por pessoas como você. Contribua e receba um crachá."
+  "icu:BackupImportScreen__title": {
+    "messageformat": "A sincronizar mensagens"
   },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "Abra o Signal no seu telemóvel"
+  "icu:BackupImportScreen__progressbar-hint": {
+    "messageformat": "A descarregar {currentSize} de {totalSize} ({fractionComplete,number,percent})..."
   },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "Toque na sua fotografia de perfil no canto superior esquerdo para abrir as 'Definições'"
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "A finalizar transferência de mensagens…"
   },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "Toca em \"Doar para o Signal\" e subscreve"
+  "icu:BackupImportScreen__progressbar-hint--canceling": {
+    "messageformat": "A cancelar…"
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "A preparar para descarregar…"
+  },
+  "icu:BackupImportScreen__description": {
+    "messageformat": "Isto pode demorar alguns minutos"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Cancelar"
+  },
+  "icu:BackupImportScreen__security-description": {
+    "messageformat": "As informações das mensagens e chats são protegidas por encriptação de ponta a ponta, incluindo o processo de sincronização. <learnMoreLink>Saiba mais</learnMoreLink>"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Cancelar associação do dispositivo?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Se escolher cancelar, este dispositivo não será associado e as mensagens e ficheiros multimédia não serão transferidos."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Continuar a associar"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Cancelar associação"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Erro ao transferir as suas mensagens"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "As suas mensagens não puderam ser transferidas. Verifique a sua ligação à internet e tente novamente."
+  },
+  "icu:BackupImportScreen__error-fatal__body": {
+    "messageformat": "As suas mensagens não puderam ser transferidas devido a um erro. Tente novamente ligando de novo este desktop."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Tentar novamente"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "A sincronizar ficheiros multimédia"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Sincronização em pausa"
+  },
+  "icu:BackupMediaDownloadProgress__title-idle": {
+    "messageformat": "{currentSize} de {totalSize} restaurados"
+  },
+  "icu:BackupMediaDownloadProgress__description-idle": {
+    "messageformat": "Os ficheiros multimédia continuarão a ser descarregados em segundo plano"
+  },
+  "icu:BackupMediaDownloadProgress__title-offline": {
+    "messageformat": "Restauro dos ficheiros em pausa"
+  },
+  "icu:BackupMediaDownloadProgress__description-offline": {
+    "messageformat": "À espera de ligação à internet…"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Pausar"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Retomar"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Cancelar sincronização"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Mais opções"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Restauro completo"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} de {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Cancelar sincronização de ficheiros?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Os seus ficheiros multimédia não concluíram a sincronização. Se escolher cancelar, pode sincronizar de novo voltando a vincular este dispositivo. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Cancelar sincronização"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Sincronização em pausa"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "Clique em “{resumeButtonText}” para continuar a sincronizar"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Retomar"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Pausar"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "A sincronizar ficheiros multimédia"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize} de {totalSize} ({fractionComplete,number,percent})..."
+  },
+  "icu:CriticalIdlePrimaryDeviceModal__title": {
+    "messageformat": "Necessária ação da conta"
+  },
+  "icu:CriticalIdlePrimaryDeviceModal__description": {
+    "messageformat": "Tem de abrir o Signal no seu telemóvel para continuar a usar esta conta. Se não abrir o Signal no seu telemóvel, a sua conta será eliminada em breve. <learnMoreLink>Saiba mais</learnMoreLink>"
+  },
+  "icu:LowDiskSpaceBackupImportModal__title": {
+    "messageformat": "Não é possível restaurar os ficheiros"
+  },
+  "icu:LowDiskSpaceBackupImportModal__description": {
+    "messageformat": "O seu dispositivo não tem espaço livre suficiente. Liberte até {diskSpaceAmount} de espaço para restaurar os seus ficheiros."
   },
   "icu:CompositionArea--expand": {
     "messageformat": "Expandir"
   },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "Anexar ficheiro"
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "Fotos e vídeos"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "Ficheiro"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "Sondagem"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "Adicionar anexo ou sondagem"
   },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "Esta pessoa não está a utilizar o Signal"
@@ -3485,6 +4778,24 @@
   "icu:CompositionArea__edit-action--send": {
     "messageformat": "Enviar mensagem editada"
   },
+  "icu:CompositionArea__ConfirmGifSelection__Title": {
+    "messageformat": "Substituir anexo?"
+  },
+  "icu:CompositionArea__ConfirmGifSelection__Body": {
+    "messageformat": "Adicionar este GIF irá substituir o item no seu rascunho de mensagem atual."
+  },
+  "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
+    "messageformat": "Substituir"
+  },
+  "icu:CompositionArea--group-terminated": {
+    "messageformat": "Não pode enviar mensagens porque este grupo foi encerrado."
+  },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "Visualização única"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "Ver multimédia de visualização única"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "Editar mensagem"
   },
@@ -3496,6 +4807,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "Remover como administrador"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "Isto também irá eliminar a etiqueta de membro."
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "Tornar administrador"
@@ -3512,6 +4826,33 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Remover do grupo"
   },
+  "icu:ContactModal--voice": {
+    "messageformat": "Voz"
+  },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "Silenciar áudio"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "Tem a certeza de que quer silenciar {contact}?"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "Silenciar"
+  },
+  "icu:ContactModal--remove-from-call": {
+    "messageformat": "Remover da chamada"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "Etiquetas de membro"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "Defina uma etiqueta de membro para se descrever ou descrever a sua função neste grupo. As etiquetas dos membros só são visíveis dentro deste grupo."
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "Definir uma etiqueta"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "Editar a sua etiqueta"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "Cor do chat"
   },
@@ -3526,6 +4867,36 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "Link do grupo"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "Etiqueta de membro"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "Introduza a sua etiqueta de membro"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "Defina uma etiqueta de membro para se descrever ou descrever o seu papel neste grupo. As etiquetas dos membros só são visíveis dentro deste grupo."
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "Pré-visualização"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "Olá!"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "Membros do grupo com etiquetas"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "Nenhum outro membro tem etiquetas"
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "Não é possível guardar a etiqueta de membro"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "Verifique a sua ligação e tente novamente."
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "Apenas os administradores podem definir etiquetas de membros neste grupo."
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "Destruição de mensagens"
@@ -3557,8 +4928,8 @@
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "Quem pode editar a informação do grupo"
   },
-  "icu:ConversationDetails--group-info-info": {
-    "messageformat": "Escolha quem pode editar o nome do grupo, a fotografia, a descrição e o temporizador da destruição de mensagens."
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "Escolha quem pode editar o nome do grupo, a foto, a descrição, o temporizador de mensagens temporárias e as mensagens afixadas."
   },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "Quem pode adicionar membros"
@@ -3572,17 +4943,47 @@
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "Escolha quem pode enviar mensagens para o grupo."
   },
+  "icu:ConversationDetails--member-label--label": {
+    "messageformat": "Quem pode adicionar etiquetas de membros"
+  },
+  "icu:ConversationDetails--member-label--info": {
+    "messageformat": "Escolha quem pode adicionar etiquetas de membros neste grupo."
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "As etiquetas dos membros serão apagadas"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "Alterar esta permissão para \"Apenas administradores\" irá apagar as etiquetas de membros definidas por não administradores neste grupo."
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "Continuar"
+  },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "Pedidos e convites"
   },
   "icu:ConversationDetailsActions--leave-group": {
     "messageformat": "Abandonar grupo"
   },
+  "icu:ConversationDetailsActions--terminate-group": {
+    "messageformat": "Encerrar group"
+  },
   "icu:ConversationDetailsActions--block-group": {
     "messageformat": "Bloquear grupo"
   },
   "icu:ConversationDetailsActions--unblock-group": {
     "messageformat": "Desbloquear grupo"
+  },
+  "icu:ConversationDetailsActions--report-spam": {
+    "messageformat": "Denunciar spam"
+  },
+  "icu:ConversationDetailsActions--archive": {
+    "messageformat": "Arquivar chat"
+  },
+  "icu:ConversationDetailsActions--unarchive": {
+    "messageformat": "Desarquivar chat"
+  },
+  "icu:ConversationDetailsActions--delete": {
+    "messageformat": "Eliminar chat"
   },
   "icu:ConversationDetailsActions--leave-group-must-choose-new-admin": {
     "messageformat": "Antes de abandonar, deverá escolher pelo menos um administrador para este grupo."
@@ -3596,6 +4997,18 @@
   "icu:ConversationDetailsActions--leave-group-modal-confirm": {
     "messageformat": "Abandonar"
   },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-title": {
+    "messageformat": "Encerrar \"{groupName}\"?"
+  },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-content": {
+    "messageformat": "Os membros já não poderão enviar mensagens ou iniciar chamadas no grupo. Serão notificados que encerrou o grupo e ainda poderão aceder ao histórico de mensagens."
+  },
+  "icu:ConversationDetailsActions--terminate-group-modal-confirm": {
+    "messageformat": "Encerrar group"
+  },
+  "icu:ConversationDetailsActions--confirm-terminate-group-confirm-modal-content": {
+    "messageformat": "Isto irá encerrar o grupo permanentemente. Tem a certeza de que quer continuar?"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-title": {
     "messageformat": "Quer desbloquear o grupo \"{groupName}\"?"
   },
@@ -3608,26 +5021,41 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "Bloquear"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
-    "messageformat": "Os teus contactos poderão adicionar-te a este grupo."
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "Os seus contactos poderão adicioná-lo a este grupo."
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Desbloquear"
   },
+  "icu:ConversationDetailsActions--report-spam-modal-content-direct": {
+    "messageformat": "O Signal será notificado de que esta pessoa pode estar a enviar spam. O Signal não consegue ver o conteúdo de nenhum chat."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-group": {
+    "messageformat": "O Signal será notificado de que a pessoa que o convidou para este grupo pode estar a enviar spam. O Signal não consegue ver o conteúdo de nenhum chat."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-spam": {
+    "messageformat": "Denunciar spam"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-and-block": {
+    "messageformat": "Denunciar e bloquear"
+  },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} membro} other {{number,number} membros}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Ficheiros partilhados"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Ver tudo"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Ficheiros multimédia, links e outros ficheiros"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} membro} other {{number,number} membros}}"
   },
+  "icu:ConversationDetailsMembershipList--terminated-title": {
+    "messageformat": "{number, plural, one {{number,number} antigo membro} other {{number,number} antigos membros}}"
+  },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "Adicionar membros"
+  },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "Adicionar etiqueta de membro"
   },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "Ver tudo"
@@ -3693,10 +5121,13 @@
     "messageformat": "Redefinir link"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Aprovar novos membros"
+    "messageformat": "Requerer aprovação do administrador"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Solicite a um administrador que aprove a entrada de novos membros através do link para o grupo"
+  },
+  "icu:GroupLinkManagement__CopyGroupLinkButtonLabel": {
+    "messageformat": "Copiar link do grupo do Signal para a área de transferência"
   },
   "icu:PendingInvites--tab-requests": {
     "messageformat": "Pedidos ({count,number})"
@@ -3770,35 +5201,54 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "Encaminhar as mensagens selecionadas"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, one {Eliminar mensagem?} other {Eliminar {count,number} mensagens?}}"
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, one {Eliminar mensagem selecionada?} other {Eliminar as {count,number} mensagens selecionadas?}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, one {Para quem deseja eliminar esta mensagem?} other {Para quem deseja eliminar estas mensagens?}}"
   },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, one {De que dispositivos gostaria de apagar esta mensagem?} other {De que dispositivos gostaria de apagar estas mensagens?}}"
-  },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
-    "messageformat": "{count, plural, one {This message will be deleted from all your devices.} other {These messages will be deleted from all your devices.}}"
+    "messageformat": "{count, plural, one {Esta mensagem será eliminada de todos os dispositivos.} other {Estas mensagens serão eliminadas de todos os dispositivos.}}"
   },
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "Eliminar para mim"
   },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "Eliminar deste dispositivo"
-  },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "Eliminar para todos"
   },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "Eliminar de todos os dispositivos"
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "Eliminar para todos?"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, one {Como administrador, os membros do grupo irão ver que eliminou esta mensagem.} other {Como administrador, os membros do grupo irão ver que eliminou estas mensagens.}}",
+    "ignoreUnused": true
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
+    "messageformat": "{count, plural, one {Os membros do grupo nas versões mais recentes do Signal poderão ver que eliminou esta mensagem.} other {Os membros do grupo nas versões mais recentes do Signal poderão ver que eliminou estas mensagens.}}"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
-    "messageformat": "Delete"
+    "messageformat": "Eliminar"
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, one {Pode selecionar até {count,number} mensagem a ser excluída para todos} other {Pode selecionar até {count,number} mensagens a ser excluída para todos}}"
+  },
+  "icu:DiscardDraftDialog__title": {
+    "messageformat": "Descartar rascunho?"
+  },
+  "icu:DiscardDraftDialog__description": {
+    "messageformat": "Esta ação não poderá ser revertida."
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "Eliminar item?"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "Isto irá eliminar o item permanentemente. Qualquer mensagem de texto associada a estes itens também será eliminada."
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "Eliminar"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "Cancelar"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "Só pode encaminhar até 30 mensagens"
@@ -3881,11 +5331,11 @@
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": ".5"
   },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Clique no {composeIcon} acima e pesquise pela mensagem dos seus contactos ou grupos."
+  "icu:emptyInbox__title": {
+    "messageformat": "Não há chats"
   },
-  "icu:composeIcon": {
-    "messageformat": "botão compor"
+  "icu:emptyInbox__subtitle": {
+    "messageformat": "Chats recentes aparecerão aqui."
   },
   "icu:ForwardMessageModal__title": {
     "messageformat": "Encaminhar para"
@@ -3902,17 +5352,11 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "Use este link para se juntar a uma chamada do Signal: {url}"
   },
-  "icu:MessageRequestWarning__learn-more": {
-    "messageformat": "Saber mais"
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "Revejo os pedidos de forma cuidada"
   },
-  "icu:MessageRequestWarning__safety-tips": {
+  "icu:MessageRequestWarning__safety-tips-v2": {
     "messageformat": "Dicas de segurança"
-  },
-  "icu:MessageRequestWarning__dialog__details": {
-    "messageformat": "Não tem grupos em comum com esta pessoa. Reveja os pedidos com cuidado antes de aceitar para evitar mensagens indesejadas."
-  },
-  "icu:MessageRequestWarning__dialog__learn-even-more": {
-    "messageformat": "Acerca dos pedidos de mensagem"
   },
   "icu:ContactSpoofing__same-name--link": {
     "messageformat": "Verifique os pedidos com cuidado. O Signal encontrou outro contacto com o mesmo nome. <reviewRequestLink>Verifique o pedido</reviewRequestLink>"
@@ -4008,7 +5452,7 @@
     "messageformat": "Repor todas as cores dos chats"
   },
   "icu:ChatColorPicker__confirm-reset-default": {
-    "messageformat": "Repor padrão"
+    "messageformat": "Repor cores padrão"
   },
   "icu:ChatColorPicker__confirm-reset": {
     "messageformat": "Reiniciar"
@@ -4057,6 +5501,9 @@
   },
   "icu:GradientDial__knob-end": {
     "messageformat": "Fim do gradiente"
+  },
+  "icu:GIF--download": {
+    "messageformat": "Transferir anexo GIF"
   },
   "icu:customDisappearingTimeOption": {
     "messageformat": "Temporizador personalizado…"
@@ -4117,6 +5564,84 @@
   },
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "Adicionar descrição do grupo…"
+  },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "Mensagem de voz"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "Áudio"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "Contacto"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "Abre o link num novo navegador"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "Mostrar mensagem na conversa"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "Áudio"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "Ficheiros"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "Links"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "Ordenar por"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "Ordenar por"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "Data"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "Tamanho"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "Sem multimédia"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "As fotos, vídeos e GIF que enviar e receber irão aparecer aqui"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "Sem áudio"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "As mensagens de voz e ficheiros áudio que enviar e receber irão aparecer aqui"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "Sem links"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "Os ficheiros que envia e recebe irão aparecer aqui"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "Sem ficheiros"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "Os ficheiros que envia e recebe irão aparecer aqui"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "Ver no chat"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "Reencaminhar"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "Guardar"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "Enviar mensagem"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "Copiar link"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "Eliminar"
   },
   "icu:MediaQualitySelector--button": {
     "messageformat": "Selecionar a qualidade dos multimédia"
@@ -4181,6 +5706,12 @@
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "O link do nome de utilizador tem de ser reposto"
   },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Abrir ecrã de link de nome de utilizador"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Abrir ecrã de link de nome de utilizador"
+  },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Partilhe o seu nome de utilizador"
   },
@@ -4196,11 +5727,11 @@
   "icu:ProfileEditor--username--check-starting-character": {
     "messageformat": "Os nomes de utilizadores não podem começar com um número."
   },
-  "icu:ProfileEditor--username--check-character-min": {
-    "messageformat": "Usernames must have at least {min,number} characters."
+  "icu:ProfileEditor--username--check-character-min-plural": {
+    "messageformat": "{min, plural, one {Os nomes de utilizador devem conter pelo menos {min,number} carácter no início.} other {Os nomes de utilizador devem conter pelo menos {min,number} caracteres no início.}}"
   },
-  "icu:ProfileEditor--username--check-character-max": {
-    "messageformat": "Os nomes de utilizadores deverão ter no máximo {max,number} caracteres."
+  "icu:ProfileEditor--username--check-character-max-plural": {
+    "messageformat": "{max, plural, one {Os nomes de utilizadores deverão ter no máximo {max,number} caracteres.} other {Os nomes de utilizadores deverão ter no máximo {max,number} caracteres.}}"
   },
   "icu:ProfileEditor--username--check-discriminator-min": {
     "messageformat": "Nome de utilizador inválido, introduza um mínimo de 2 dígitos."
@@ -4240,9 +5771,6 @@
   },
   "icu:ProfileEditor--username--confirm-delete-button": {
     "messageformat": "Eliminar"
-  },
-  "icu:ProfileEditor--username--delete-unavailable-notice": {
-    "messageformat": "Para eliminar o seu nome de utilizador, abra o Signal no seu telemóvel e vá a Definições > Perfil."
   },
   "icu:ProfileEditor--username--context-menu": {
     "messageformat": "Copiar ou eliminar nome de utilizador"
@@ -4316,6 +5844,9 @@
   "icu:ProfileEditorModal--error": {
     "messageformat": "Não foi possível atualizar o seu perfil. Por favor, tente novamente."
   },
+  "icu:ProfileEditorModal--sharing": {
+    "messageformat": "Partilhar"
+  },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Envie uma mensagem para um administrador"
   },
@@ -4325,11 +5856,21 @@
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "administradores"
   },
+  "icu:Avatar__View": {
+    "messageformat": "Ver",
+    "limit": 7
+  },
   "icu:AvatarEditor--choose": {
     "messageformat": "Selecione um avatar"
   },
   "icu:AvatarColorPicker--choose": {
     "messageformat": "Escolha uma cor"
+  },
+  "icu:AttachmentDetailPill__retryDownload": {
+    "messageformat": "Voltar a tentar descarregamento"
+  },
+  "icu:AttachmentDetailPill__retryDownloadShort": {
+    "messageformat": "Tentar novamente"
   },
   "icu:LeftPaneSetGroupMetadataHelper__avatar-modal-title": {
     "messageformat": "Avatar do grupo"
@@ -4342,6 +5883,9 @@
   },
   "icu:Preferences__button--general": {
     "messageformat": "Geral"
+  },
+  "icu:Preferences__button--donate": {
+    "messageformat": "Doar ao Signal"
   },
   "icu:Preferences__button--appearance": {
     "messageformat": "Aspeto"
@@ -4358,6 +5902,48 @@
   "icu:Preferences__button--privacy": {
     "messageformat": "Privacidade"
   },
+  "icu:Preferences__button--data-usage": {
+    "messageformat": "Utilização de dados"
+  },
+  "icu:Preferences__media-auto-download": {
+    "messageformat": "Descarregar multimédia automaticamente"
+  },
+  "icu:Preferences__media-auto-download__photos": {
+    "messageformat": "Fotografias"
+  },
+  "icu:Preferences__media-auto-download__videos": {
+    "messageformat": "Vídeos"
+  },
+  "icu:Preferences__media-auto-download__audio": {
+    "messageformat": "Áudio"
+  },
+  "icu:Preferences__media-auto-download__documents": {
+    "messageformat": "Documentos"
+  },
+  "icu:Preferences__media-auto-download__description": {
+    "messageformat": "As mensagens de voz e os autocolantes são sempre transferidos automaticamente."
+  },
+  "icu:Preferences__button--backups": {
+    "messageformat": "Cópias de segurança"
+  },
+  "icu:Preferences__button--internal": {
+    "messageformat": "Interno"
+  },
+  "icu:Preferences__button--manage": {
+    "messageformat": "Gerir"
+  },
+  "icu:Preferences__button--choose-folder": {
+    "messageformat": "Escolher pasta"
+  },
+  "icu:Preferences__button--set-up": {
+    "messageformat": "Configure"
+  },
+  "icu:Preferences__internal__validate-backup--description": {
+    "messageformat": "Exportar a cópia de segurança encriptada para a memória e executar o conjunto de validação"
+  },
+  "icu:Preferences__internal__validate-backup": {
+    "messageformat": "Validar"
+  },
   "icu:Preferences--lastSynced": {
     "messageformat": "Última importação feita em {date} {time}"
   },
@@ -4370,8 +5956,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "Gerar pré-visualizações de hiperligações"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "Para alterar esta definição, abra a app do Signal no seu dispositivo móvel e navegue até Definições > Chats"
+  "icu:Preferences__link-previews--new-description": {
+    "messageformat": "Recupere ligações de pré-visualizações diretamente a partir de websites para as mensagens que enviar."
+  },
+  "icu:Preferences__address-book-photos--title": {
+    "messageformat": "Utilizar fotografias do livro de endereços"
+  },
+  "icu:Preferences__address-book-photos--description": {
+    "messageformat": "Exibir as fotografias de contactos a partir do seu livro de endereços, se disponíveis."
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "Converter emoticons escritos em emoji"
@@ -4379,20 +5971,593 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Por exemplo, :-) será convertido em <emojify>🙂</emojify>"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Manter arquivados os chats silenciados"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Os chats silenciados arquivados irão permanecer arquivados ao receber uma nova mensagem."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Avançadas"
   },
   "icu:Preferences--notification-content": {
     "messageformat": "Conteúdo da notificação"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "Exportar histórico de chats"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "Exporta uma cópia JSON legível por computadores de todos os seus chats. As mensagens temporárias não serão exportadas."
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "Exportar"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "Exportar histórico de chats?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>CUIDADO!</bold> NÃO partilhe este ficheiro com ninguém. O seu histórico de chats será guardado no seu computador e outras aplicações podem aceder-lhe, dependendo das permissões do seu computador."
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "Incluir ficheiros multimédia <secondary>(tamanho de ficheiro maior)</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "Continuar"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "exportar o seu histórico de chats"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "Verifique a sua identidade para exportar o seu histórico de chats."
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "Exportar"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "É necessária autenticação para exportar o seu histórico de chats."
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "A exportar histórico de chats"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "A exportar {currentBytes} de {totalBytes} ({percentage,number,percent})..."
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "Isto pode demorar alguns minutos"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "Exportação completa"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>TENHA ATENÇÃO</bold> onde armazena o ficheiro de exportação dos seus chats e não o partilhe com ninguém. Outras aplicações no seu computador podem conseguir aceder-lhe, dependendo das permissões do seu computador. "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Mostrar no Finder"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "Mostrar na pasta"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "Mostrar na pasta"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "Não foi possível exportar o histórico de chats"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "Ocorreu um erro e não foi possível exportar o seu histórico de chats."
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "Espaço de armazenamento insuficiente"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "O seu histórico de chats não pode ser exportado porque o seu computador não tem espaço de armazenamento livre suficiente. Liberte até {bytes} de espaço e tente novamente."
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "Não foi possível exportar o histórico de chats"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "O seu histórico de chats não pôde ser exportado porque o seu computador não tem espaço de armazenamento livre suficiente. Liberte até {bytes} de espaço e tente novamente."
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "Não é possível exportar o histórico de chats"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "O seu histórico de chats não pode ser exportado porque o Signal não tem permissão para gravar ficheiros no disco. Experimente alterar as permissões do seu disco ou atualizar as definições do seu sistema e depois volte a exportar."
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "A exportar cópia de segurança"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "Exportação da cópia de segurança concluída"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "Para restaurar esta cópia de segurança:"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "Transfira a pasta da cópia de segurança para o armazenamento do telemóvel"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "Instale uma nova cópia do Signal no seu telemóvel"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "Toque em \"Restaurar ou transferir\" e escolha \"Cópia de segurança no dispositivo\""
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Ícone de lua"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Cópia de {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Perfil de notificações"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Perfil de notificações"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "On"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Ligado até {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Durante uma hora"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Até {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Definições"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "“{name}” ligado"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "“{name}” desligado"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Perfil de notificações ligado"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Perfil de notificações desligado"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Perfis de notificações"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Configure"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Perfis de notificações"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Crie um perfil para receber notificações e chamadas apenas das pessoas e dos grupos que escolher"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Adicionar ou editar perfis de notificações"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {Um perfil} other {{profileCount,number} perfis}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Criar perfil"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Nomeie o seu perfil"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Nome"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Nome de perfil"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Trabalho"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "A dormir"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "A conduzir"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Inativo"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Concentrado"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Notificações permitidas"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Adicione pessoas e grupos de quem quer notificações quando este perfil está ligado"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Adicionar pessoas ou grupos"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Exceções"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Permitir todas as chamadas"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Notificar em todas as menções"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Adicionar uma agenda"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Agenda"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Ative e edite o seu horário para automatizar o seu perfil de notificações."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Ligar automaticamente"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Agenda"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "De"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Até"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Abrir selecionador de tempo"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Domingo"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Segunda"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Terça-feira"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Quarta-feira"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Quinta-feira"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Sexta-feira"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Sábado"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Perfil criado"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Se tiver adicionado um horário, o seu perfil irá ligar-se e desligar-se automaticamente. Também pode clicar no ícone  ···  no topo da lista de chats para o ligar ou desligar manualmente."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "Dom"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Seg"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Ter"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Qua"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Qui"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Sex"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "Sáb"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Dias da semana"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Fins de semana"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Diariamente"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Perfis"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Sincronizar entre dispositivos"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Os seus perfis serão sincronizados entre os seus dispositivos. Ligar um perfil num dispositivo irá desligá-lo nos outros dispositivos."
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Eliminar perfil"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Eliminar permanentemente este perfil de notificações?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Eliminar"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "On"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Off"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Editar o nome deste perfil"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Notificações permitidas"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} às {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "On"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Off"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Bloqueados"
   },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, one {{num,number} contacto} other {{num,number} contactos}}"
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { Não há utilizadores ou grupos } one {{num,number} utilizador ou grupo} other {{num,number} utilizadores ou grupos}}"
   },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "Para alterar estas definições, abra a aplicação Signal no seu dispositivo móvel e navegue até Definições > Privacidade"
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { Não há utilizadores } one {{num,number} utilizador} other {{num,number} utilizadores}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { Não há grupos } one {{num,number} grupo} other {{num,number} grupos}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "Os utilizadores bloqueados não poderão telefonar-lhe ou enviar-lhe mensagens"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "Utilizadores bloqueados"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "Grupos bloqueados"
+  },
+  "icu:Preferences--signal-backups": {
+    "messageformat": "Cópias de segurança protegidas do Signal"
+  },
+  "icu:Preferences--signal-backups-off-description": {
+    "messageformat": "Cópias de segurança automáticas com o serviço seguro de armazenamento encriptado de ponta a ponta do Signal. Comece no seu telemóvel. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:Preferences--backup-section-description": {
+    "messageformat": "Efetue cópias de segurança do seu histórico de mensagens para nunca perder dados ao mudar de telemóvel ou reinstalar o Signal."
+  },
+  "icu:Preferences--backup-details__header": {
+    "messageformat": "Detalhes da cópia de segurança"
+  },
+  "icu:Preferences--backup-media-plan__description": {
+    "messageformat": "Cópia de segurança de texto e todos os ficheiros multimédia"
+  },
+  "icu:Preferences--backup-plan-not-found__description": {
+    "messageformat": "A sua subscrição não foi encontrada. Veja o seu telemóvel para consultar os detalhes da sua cópia de segurança."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/mês"
+  },
+  "icu:Preferences--backup-messages-plan__description": {
+    "messageformat": "{mediaDayCount, plural, one {Texto + {mediaDayCount,number} dia de cópias de segurança de ficheiros multimédia} other {Texto + {mediaDayCount,number} dias de cópias de segurança de ficheiros multimédia}}"
+  },
+  "icu:Preferences--backup-messages-plan__cost-description": {
+    "messageformat": "O seu plano de cópia de segurança é grátis"
+  },
+  "icu:Preferences--backup-plan__renewal-date": {
+    "messageformat": "Renova a {date}"
+  },
+  "icu:Preferences--backup-plan__expiry-date": {
+    "messageformat": "Expira a {date}"
+  },
+  "icu:Preferences--backup-plan__canceled": {
+    "messageformat": "Subscrição cancelada"
+  },
+  "icu:Preferences--backup-media-plan__note": {
+    "messageformat": "Pode gerir ou cancelar a sua subscrição das cópias de segurança no seu telemóvel."
+  },
+  "icu:Preferences--backup-messages-plan__note": {
+    "messageformat": "Pode gerir ou atualizar as cópias de segurança no seu telemóvel."
+  },
+  "icu:Preferences--backup-plan__not-found__note": {
+    "messageformat": "Pode gerir ou renovar a sua subscrição das cópias de segurança no seu telemóvel."
+  },
+  "icu:Preferences--backup-created-at__label": {
+    "messageformat": "Última cópia de segurança"
+  },
+  "icu:Preferences--backup-created-by-phone": {
+    "messageformat": "O seu telemóvel"
+  },
+  "icu:Preferences__local-backups": {
+    "messageformat": "Cópias de segurança do desktop"
+  },
+  "icu:Preferences__local-backups-section__description": {
+    "messageformat": "A sua cópia de segurança está encriptada de ponta a ponta e armazenada no seu computador."
+  },
+  "icu:Preferences--local-backups-off-description": {
+    "messageformat": "Crie uma cópia de segurança encriptada de ponta a ponta que pode restaurar no seu telemóvel. "
+  },
+  "icu:Preferences--local-backups-restore-info": {
+    "messageformat": "Para restaurar uma cópia de segurança, instale uma nova cópia do Signal no seu telemóvel. Abra a app e toque em &quot;Restaurar ou transferir.&quot; <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-setup-folder": {
+    "messageformat": "Escolha uma pasta"
+  },
+  "icu:Preferences--local-backups-setup-folder-description": {
+    "messageformat": "Escolha uma pasta no armazenamento do seu computador onde a cópia de segurança encriptada ponta a ponta será armazenada."
+  },
+  "icu:Preferences--local-backups-setup-next": {
+    "messageformat": "Seguinte"
+  },
+  "icu:Preferences--local-backups-view-backup-key-done": {
+    "messageformat": "Concluído"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--mac": {
+    "messageformat": "mostrar a sua chave de recuperação"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--windows": {
+    "messageformat": "Verifique a sua identidade para ver a sua chave de recuperação."
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-description--linux": {
+    "messageformat": "Ver chave de recuperação"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-message--linux": {
+    "messageformat": "É necessária autenticação para ver a sua chave de recuperação."
+  },
+  "icu:Preferences--local-backups-recovery-key-text-box": {
+    "messageformat": "Chave de recuperação"
+  },
+  "icu:Preferences--local-backups-enter-backup-key": {
+    "messageformat": "Introduza a chave"
+  },
+  "icu:Preferences--local-backups-record-recovery-key": {
+    "messageformat": "Guarde a sua chave de recuperação"
+  },
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "A sua chave de recuperação"
+  },
+  "icu:Preferences--local-backups-record-backup-key-description": {
+    "messageformat": "Esta chave é necessária para recuperar a sua conta e dados. Guarde esta chave num local seguro. Se a perder, não poderá recuperar a sua conta. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "Esta chave é necessária para recuperar a sua conta e dados. Armazene-a num local seguro e nunca a partilhe com ninguém. O Signal nunca lhe enviará mensagem a pedir a sua chave de recuperação. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "Não partilhe a chave de recuperação"
+  },
+  "icu:Preferences__recovery-key__do-not-share-description": {
+    "messageformat": "<strong>O Signal nunca lhe enviará mensagem</strong> a pedir a sua chave de recuperação. Nunca responda a um chat que finge ser do Signal. Armazene a sua chave de recuperação num local seguro e nunca a partilhe com ninguém. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "Entendido"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "Partilhar chave"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "Não partilhar chave"
+  },
+  "icu:CompositionInput__recovery-key-paste__confirm-description": {
+    "messageformat": "Não partilhe a sua chave de recuperação com ninguém. Isto permite aos outros tomar posse da sua conta. O Signal nunca lhe enviará mensagem a pedir a sua chave de recuperação. Nunca responda a um chat que finge ser do Signal."
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "Não partilhe a sua chave de recuperação com ninguém. Isto permite aos outros tomar posse da sua conta. <strong>O Signal nunca lhe enviará mensagem</strong> a pedir a sua chave de recuperação. Nunca responda a um chat que finge ser do Signal. <learnMoreLink>Saiba mais.</learnMoreLink>"
+  },
+  "icu:CompositionInput__recovery-key-paste__confirm-dont-share": {
+    "messageformat": "Não partilhar"
+  },
+  "icu:CompositionInput__recovery-key-paste__confirm-paste": {
+    "messageformat": "Colar chave"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key": {
+    "messageformat": "Confirme a sua cópia de recuperação"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key-description": {
+    "messageformat": "Introduza a chave de recuperação que acabou de guardar"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-title": {
+    "messageformat": "Mantenha a sua chave segura"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-body": {
+    "messageformat": "Caso perca a sua chave, o Signal não o poderá ajudar a restaurar a sua cópia de segurança. Guarde-a num local seguro e não a partilhe com outras pessoas."
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:Preferences--local-backups-see-backup-key-again": {
+    "messageformat": "Ver chave outra vez"
+  },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "Última cópia de segurança"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "Nunca"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "Efetuar cópia de segurança agora"
+  },
+  "icu:Preferences__local-backups-folder": {
+    "messageformat": "Pasta da cópia de segurança"
+  },
+  "icu:Preferences__local-backups-turn-off": {
+    "messageformat": "Desativar cópias de segurança"
+  },
+  "icu:Preferences__local-backups-turn-off-action": {
+    "messageformat": "Desativar"
+  },
+  "icu:Preferences__local-backups-turn-off-confirmation": {
+    "messageformat": "Já não poderá criar cópias de segurança neste computador sem as voltar a ativar."
+  },
+  "icu:Preferences__local-backups-turn-off-delete": {
+    "messageformat": "Eliminar a minha cópia de segurança deste computador"
+  },
+  "icu:Preferences__local-backups-copy-key": {
+    "messageformat": "Copiar para a área de transferência"
+  },
+  "icu:Preferences__local-backups-copied-recovery-key": {
+    "messageformat": "Chave de recuperação copiada"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "Ativar cópias de segurança"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "Verifique a sua identidade para ativar as cópias de segurança."
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "Ativar cópias de segurança"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "É necessária autenticação para ativar as cópias de segurança."
+  },
+  "icu:Preferences__local-backups-auth-error--unauthorized": {
+    "messageformat": "Esta ação não pôde ser completada porque a autenticação do sistema falhou. Tente novamente ou abra a app do Signal no seu dispositivo móvel e aceda a Definições da cópia de segurança para ver a sua chave de recuperação."
+  },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "Ocorreu um erro ao pedir autenticação do sistema para esta ação."
+  },
+  "icu:Preferences__view-key": {
+    "messageformat": "Ver chave"
+  },
+  "icu:Preferences__recovery-key": {
+    "messageformat": "Chave de recuperação"
+  },
+  "icu:Preferences__recovery-key-description": {
+    "messageformat": "A sua chave de recuperação é um código de 64 caracteres usado para restaurar a sua cópia de segurança"
+  },
+  "icu:Preferences__backup-other-ways": {
+    "messageformat": "Outras formas de fazer cópias de segurança"
+  },
+  "icu:Preferences__recovery-key-updated__title": {
+    "messageformat": "A sua chave de recuperação foi alterada"
+  },
+  "icu:Preferences__recovery-key-updated__description": {
+    "messageformat": "A sua chave de recuperação foi atualizada. Quaisquer cópias de segurança que faça só podem ser restauradas através da sua nova chave de recuperação."
+  },
+  "icu:Preferences__recovery-key-updated__view-key": {
+    "messageformat": "Ver nova chave"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "N.º de telemóvel"
@@ -4451,8 +6616,14 @@
   "icu:Preferences--read-receipts": {
     "messageformat": "Recibos de leitura"
   },
+  "icu:Preferences--read-receipts--description": {
+    "messageformat": "Se desativado, não irá ver as confirmações de leitura dos outros."
+  },
   "icu:Preferences--typing-indicators": {
     "messageformat": "Indicadores de escrita"
+  },
+  "icu:Preferences--typing-indicators--description": {
+    "messageformat": "Se desativado, não irá ver os indicadores de escrita dos outros."
   },
   "icu:Preferences--updates": {
     "messageformat": "Atualizações"
@@ -4505,6 +6676,24 @@
   "icu:Preferences__LanguageModal__Restart__Button": {
     "messageformat": "Reiniciar"
   },
+  "icu:Preferences__Privacy__Application": {
+    "messageformat": "Aplicação"
+  },
+  "icu:Preferences__content-protection--label": {
+    "messageformat": "Segurança de ecrã"
+  },
+  "icu:Preferences__content-protection--description": {
+    "messageformat": "Impede capturas de ecrã do Signal neste computador para maior privacidade."
+  },
+  "icu:Preferences__content-protection__modal--title": {
+    "messageformat": "Desativar segurança de ecrã?"
+  },
+  "icu:Preferences__content-protection__modal--body": {
+    "messageformat": "Se desativada, isto pode permitir ao Microsoft Windows capturar imagens de ecrã do Signal e usá-las para funcionalidades que podem não ser privadas."
+  },
+  "icu:Preferences__content-protection__modal--disable": {
+    "messageformat": "Desativar"
+  },
   "icu:DialogUpdate--version-available": {
     "messageformat": "Está disponível uma atualização para a versão {version}"
   },
@@ -4514,8 +6703,35 @@
   "icu:DialogUpdate__downloaded": {
     "messageformat": "Atualização descarregada"
   },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "Clique para ir à App Store"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "Clique para ir à App Store"
+  },
+  "icu:CriticalIdlePrimaryDevice__title": {
+    "messageformat": "Abra o Signal no seu telemóvel"
+  },
+  "icu:CriticalIdlePrimaryDevice__body": {
+    "messageformat": "A sua conta será eliminada em breve a não ser que abra o Signal do seu telemóvel. Esta mensagem desaparecerá se o tiver feito com êxito. <learnMoreLink>Saiba mais</learnMoreLink>"
+  },
+  "icu:IdlePrimaryDevice__body": {
+    "messageformat": "Abra o Signal no seu telemóvel para manter a sua conta ativa"
+  },
+  "icu:IdlePrimaryDevice__learnMore": {
+    "messageformat": "Saber mais"
+  },
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "O Signal está a ter alguns problemas técnicos. Estamos a trabalhar para restituir o serviço o mais rapidamente possível."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__title": {
+    "messageformat": "Atualização necessária"
+  },
+  "icu:InstallScreenUpdateDialog--update-required__body": {
+    "messageformat": "Para concluir a sincronização das suas mensagens, atualize agora o Signal Desktop."
+  },
+  "icu:InstallScreenUpdateDialog--update-required__action-update": {
+    "messageformat": "Atualizar"
   },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Atualização necessária"
@@ -4646,6 +6862,30 @@
   "icu:MediaEditor__crop-preset--9-16": {
     "messageformat": "9:16"
   },
+  "icu:MediaPermissionsModal__title--microphone": {
+    "messageformat": "Permitir acesso ao seu microfone"
+  },
+  "icu:MediaPermissionsModal__title--camera": {
+    "messageformat": "Permita o acesso à câmara"
+  },
+  "icu:MediaPermissionsModal__subtitle--call": {
+    "messageformat": "Para entrar ou iniciar uma chamada:"
+  },
+  "icu:MediaPermissionsModal__subtitle--call--camera": {
+    "messageformat": "Para ativar o seu vídeo:"
+  },
+  "icu:MediaPermissionsModal__subtitle--voice-note": {
+    "messageformat": "Para enviar mensagens de voz:"
+  },
+  "icu:MediaPermissionsModal__step-1": {
+    "messageformat": "Clique em \"{buttonName}\" em baixo"
+  },
+  "icu:MediaPermissionsModal__step-2": {
+    "messageformat": "Ative \"Signal\""
+  },
+  "icu:MediaPermissionsModal__open": {
+    "messageformat": "Vá às definições"
+  },
   "icu:MyStories__title": {
     "messageformat": "As minhas histórias"
   },
@@ -4675,6 +6915,9 @@
   },
   "icu:MyStories__delete": {
     "messageformat": "Eliminar esta história? Será também eliminada para todos que a receberam."
+  },
+  "icu:MyStories__delete-group-story-for-me": {
+    "messageformat": "Eliminar esta história? Só será eliminado para si porque o grupo foi encerrado."
   },
   "icu:payment-event-notification-message-you-label": {
     "messageformat": "Iniciou um pagamento para {receiver}"
@@ -4709,6 +6952,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "Aceitou o pedido de mensagem"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "Aceitou o pedido de mensagem de {userProfileName}"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "Denunciado como spam"
   },
@@ -4724,8 +6970,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "Desbloqueou o grupo"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "Opções"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "Bloquear ou denunciar…"
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "Saber mais"
@@ -4748,15 +6994,6 @@
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "Os seus contactos podem ver o seu nome, foto e posts no \"A minha história\", a não ser que as esconda deles."
   },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "\"Delete for Me\" now deletes from all of your devices"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "When you delete a message in a chat, the message will be deleted from your phone and all linked devices."
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "Got it"
-  },
   "icu:Stories__title": {
     "messageformat": "Histórias"
   },
@@ -4778,6 +7015,12 @@
   "icu:Stories__list-empty": {
     "messageformat": "De momento sem histórias recentes para exibir"
   },
+  "icu:Stories__list__empty--title": {
+    "messageformat": "Não há histórias"
+  },
+  "icu:Stories__list__empty--subtitle": {
+    "messageformat": "Novas atualizações aparecerão aqui."
+  },
   "icu:Stories__list--sending": {
     "messageformat": "A enviar…"
   },
@@ -4792,6 +7035,9 @@
   },
   "icu:Stories__placeholder--text": {
     "messageformat": "Clique para ver uma história"
+  },
+  "icu:Stories__placeholder-with-icon--text-2": {
+    "messageformat": "Clique em <newStoryButtonIcon></newStoryButtonIcon> para adicionar uma atualização."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} para {group}"
@@ -4889,8 +7135,8 @@
   "icu:StoriesSettings__view-receipts--label": {
     "messageformat": "Confirmações de leitura"
   },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "Para alterar esta definição, abra a aplicação Signal no seu dispositivo móvel e navegue até Definições > Histórias"
+  "icu:StoriesSettings__view-receipts--new-description": {
+    "messageformat": "Veja e partilhe quando as histórias estão a ser vistas. Se desativado, não saberá quando os outros virem a sua história."
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "Quem pode ver esta história"
@@ -5033,7 +7279,10 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Respostas"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
+    "messageformat": "Reagiu à história"
+  },
+  "icu:StoryViewsNRepliesModal__reacted--someone-else": {
     "messageformat": "Reagiu à história"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
@@ -5052,7 +7301,7 @@
     "messageformat": "História"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Exibir histórias"
+    "messageformat": "Reexibir história"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Ocultar história"
@@ -5220,9 +7469,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Reiniciar"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Concluído"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Cor do link do nome de utilizador, {index,number} de {total,number}"
   },
@@ -5292,8 +7538,20 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "Editada"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "Afixada(s)"
+  },
+  "icu:DraftGifMessageSendModal__Title": {
+    "messageformat": "Adicionar uma mensagem"
+  },
+  "icu:DraftGifMessageSendModal__SendButtonLabel": {
+    "messageformat": "Enviar"
+  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "Histórico de edições"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "Copiar timestamp"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "Esta edição não pôde ser enviada. Verifique a sua ligação e tente novamente."
@@ -5323,7 +7581,10 @@
     "messageformat": "Limpar histórico de chamadas?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Isto irá eliminar permanentemente todo o histórico de chamadas"
+    "messageformat": "Isto irá eliminar permanentemente todo o histórico de chamadas."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Isto irá eliminar permanentemente todo o histórico de chamadas. Os links de chamada que criou já não funcionarão para as pessoas que os têm. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Limpar"
@@ -5331,11 +7592,23 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Histórico de Chamadas Apagado"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Clique para ver ou iniciar uma chamada"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Nem todos os links de chamada puderam ser eliminados. Verifique a sua ligação e tente novamente."
+  },
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Nem todo o histórico de chamadas pôde ser eliminado. Verifique a sua ligação e tente novamente."
+  },
+  "icu:CallsTab__EmptyStateText--with-icon-2": {
+    "messageformat": "Clique em <newCallButtonIcon></newCallButtonIcon> para iniciar uma nova chamada de voz ou videochamada."
+  },
+  "icu:CallsList__SearchInputPlaceholder--missed-calls": {
+    "messageformat": "Procurar chamadas perdidas"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Procurar"
+  },
+  "icu:CallsList__FilteredByMissedHeader": {
+    "messageformat": "Filtrar por perdidas"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Filtrar por perdidas"
@@ -5343,14 +7616,23 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Alternar"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Sem chamadas recentes. Comece por ligar a um amigo."
+  "icu:CallsList__EmptyState--noQuery__title": {
+    "messageformat": "Não há chamadas"
+  },
+  "icu:CallsList__EmptyState--noQuery__subtitle": {
+    "messageformat": "Chamadas recentes aparecerão aqui."
   },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Nenhum resultado para “{query}”"
   },
+  "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
+    "messageformat": "Nenhum resultado para \"{query}\" nas chamadas perdidas"
+  },
+  "icu:CallsList__EmptyState--missedCalls": {
+    "messageformat": "Sem chamadas perdidas"
+  },
   "icu:CallsList__CreateCallLink": {
-    "messageformat": "Create a Call Link"
+    "messageformat": "Criar um link de chamada"
   },
   "icu:CallsList__ItemCallInfo--Incoming": {
     "messageformat": "Entrada"
@@ -5361,8 +7643,8 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Perdida"
   },
-  "icu:CallsList__ItemCallInfo--GroupCall": {
-    "messageformat": "Chamada de grupo"
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Recusada"
   },
   "icu:CallsList__ItemCallInfo--CallLink": {
     "messageformat": "Link de chamada"
@@ -5374,7 +7656,7 @@
     "messageformat": "Sair da chamada atual?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Tem de sair da chamada atual antes de entrar numa nova."
+    "messageformat": "Tem de sair da sua chamada atual antes de iniciar ou entrar numa nova."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Abandonar chamada"
@@ -5388,26 +7670,35 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Voltar"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Tem de sair da chamada atual antes de entrar numa nova"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {A efetuar chamada de voz} other {A receber chamada de voz}}} Video {{direction, select, Outgoing {A efetuar videochamada} other {A receber videochamada}}} Group {{direction, select, Outgoing {Chamada de grupo enviada} other {Chamada de grupo recebida}}} other {{direction, select, Outgoing {A efetuar chamada} other {A Receber Chamada}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Chamada de voz perdida} Video {Chamada de video perdida} Group {Chamada de grupo perdida} other {Chamada não atendida}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Chamada de voz não atendida} Video {Videochamada não atendida} Group {Chamada de grupo não atendida} other {Chamada não atendida}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Chamada de voz rejeitada} Video {Videochamada rejeitada} Group {Chamada de grupo rejeitada} other {Chamada rejeitada}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Link de chamada"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {A efetuar videochamada} other {A receber videochamada}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Chamada de video perdida"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Videochamada não atendida"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Videochamada rejeitada"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Entrar"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Adicionar nome de chamada"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Editar nome da chamada"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Requerer aprovação do administrador"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Esta definição não pode ser alterada enquanto a chamada estiver ativa"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Copiar link"
@@ -5415,23 +7706,56 @@
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Partilhar link através do Signal"
   },
-  "icu:CallLinkEditModal__Title": {
-    "messageformat": "Call link details"
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Eliminar link"
   },
-  "icu:CallLinkEditModal__InputLabel--Name--SrOnly": {
-    "messageformat": "Name"
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Eliminar link da chamada?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "O link deixará de funcionar para toda a gente que o tenha."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Eliminar"
+  },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Este link não pode ser eliminado enquanto a chamada estiver ativa"
+  },
+  "icu:CallLinkEditModal__Title": {
+    "messageformat": "Detalhes do link da chamada"
   },
   "icu:CallLinkEditModal__JoinButtonLabel": {
-    "messageformat": "Join"
+    "messageformat": "Entrar"
+  },
+  "icu:CallLinkEditModal__AddCallNameLabel": {
+    "messageformat": "Adicionar nome de chamada"
+  },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Editar nome da chamada"
   },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Approve all members"
+    "messageformat": "Requerer aprovação do administrador"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Aprovar entrada"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Recusar entrada"
+  },
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Off"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "On"
+  },
+  "icu:CallLinkAddNameModal__Title": {
+    "messageformat": "Adicionar nome de chamada"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Editar nome da chamada"
+  },
+  "icu:CallLinkAddNameModal__NameLabel": {
+    "messageformat": "Nome da chamada"
   },
   "icu:TypingBubble__avatar--overflow-count": {
     "messageformat": "{count, plural, one {{count,number} está a escrever.} other {{count,number} estão a escrever.}}"
@@ -5442,8 +7766,479 @@
   "icu:WhoCanFindMeReadOnlyToast": {
     "messageformat": "Para alterar esta definição, selecione \"Ninguém\" em \"Quem pode ver o meu número\"."
   },
+  "icu:ProfileNameWarningModal__description--direct": {
+    "messageformat": "Os nomes de perfil no Signal são escolhidos pelos donos das contas:"
+  },
+  "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
+    "messageformat": "O Signal não verifica nomes e fotos"
+  },
+  "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
+    "messageformat": "O Signal nunca o tentará contactar para lhe pedir o seu código de registo, PIN ou chave de recuperação"
+  },
+  "icu:ProfileNameWarningModal__warning--be-cautious": {
+    "messageformat": "Cuidado com contas que se façam passar por outras pessoas"
+  },
+  "icu:ProfileNameWarningModal__warning--dont-share-info": {
+    "messageformat": "Não partilhe informações pessoais com pessoas que não conhece"
+  },
+  "icu:ProfileNameWarningModal__description--group": {
+    "messageformat": "Os nomes dos grupos são escolhidos pelos membros do grupo."
+  },
+  "icu:ProfileNameWarningModal__list--item1--group": {
+    "messageformat": "Cuidado com grupos que se façam passar por organizações e empresas"
+  },
+  "icu:ProfileNameWarningModal__list--item2--group": {
+    "messageformat": "Os nomes de perfil dos membros em grupos não são verificados"
+  },
+  "icu:ProfileNameWarningModal__list--item3--group": {
+    "messageformat": "Não partilhe informações pessoais com pessoas que não conhece"
+  },
+  "icu:SaveMultiDialog__title": {
+    "messageformat": "Guardar anexos"
+  },
   "icu:WhatsNew__modal-title": {
     "messageformat": "Novidades"
+  },
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "Orgulhosamente sem fins lucrativos"
+  },
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "Faça um donativo para apoiar as mensagens com privacidade. Mantenha o Signal independente e sem anúncios. <readMoreLink>Ler mais</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Doar"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "O meu apoio"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "Donativo único de {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "A processar donativo…"
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "Doar {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "Os crachás e os donativos mensais podem ser geridos no seu dispositivo móvel."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "As suas informações são privadas"
+  },
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "Como uma organização sem fins lucrativos independente, o Signal compromete-se a defender a privacidade de mensagens e chamadas. Sem anúncios, sem rastreadores, sem vigilância. Faça um donativo hoje para apoiar o Signal."
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "Receba um crachá opcional no seu perfil ao fazer um donativo"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "A sua privacidade é a nossa missão"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "O Signal é uma organização sem fins lucrativos."
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Ícone de coração no estilo do logo do Signal"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Recibos"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Ver detalhes do recibo"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Doador - FAQs"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "Os recibos não são sincronizados entre dispositivos. Se reinstalou o Signal, os recibos de doações anteriores não estarão disponíveis."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "Sem recibos"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Recibo de transferência"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Tipo"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Data de pagamento"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Fazer um donativo único"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Os donativos únicos só estão disponíveis no desktop. Os donativos mensais podem ser feitos no seu dispositivo móvel."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Está com problemas? <contactSupportLink>Contacte o suporte</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Introduzir montante personalizado"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Cartão de crédito ou débito"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Introduza as informações do seu cartão de débito ou crédito. O Signal não recolhe nem armazena as suas informações pessoais. <learnMoreLink>Saiba mais</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Número do cartão"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Data de validade"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/AA"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Doar {formattedCurrencyAmount} ao Signal"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Número do cartão inválido"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "O cartão expirou"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "Ano requerido"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Inválido(s)"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Código demasiado curto"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Receba o crachá de Boost do Signal durante 30 dias"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "A quantidade mínima de donativo é {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "A quantia mínima que pode doar é {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "A quantidade máxima de donativo é {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Ao sair desta página, as informações do seu cartão de crédito serão removidas. Quer continuar?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Remover informações"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "Se sair irá cancelar o seu donativo."
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "Sair"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "Ficar na página"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Continuar"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "Recibo de doação"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "Montante"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Tipo"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "Data de pagamento"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "Uma vez"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Obrigado por apoiar o Signal. A sua contribuição ajuda a apoiar a missão de proteger a liberdade de expressão e permitir comunicação global segura para milhões de pessoas em todo o mundo, através de tecnologia de privacidade de código aberto. Se for residente nos Estados Unidos, guarde este recibo para os seus registos fiscais. A Signal Technology Foundation é uma organização sem fins lucrativos isenta de impostos nos Estados Unidos sob a secção 501c3 do Internal Revenue Code. A nossa identificação fiscal federal é 82-4506840."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Está offline. Ligue-se à internet para efetuar um donativo."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Donativo cancelado"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Donativo concluído"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Erro ao processar donativo"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "A processar donativo"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Falha na verificação"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "Tem um donativo em curso que necessita de verificação adicional."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Tem um donativo em curso que necessita de confirmação."
+  },
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "Tem um donativo em curso que necessita de confirmação."
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "Donativo PayPal cancelado"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "Erro a processar o donativo PayPal. Não foi cobrado."
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Donativo bem sucedido, mas não foi possível atualizar as suas definições de crachá"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Para atualizar as definições dos crachás no seu dispositivo móvel, vá a Definições → Doar ao Signal → Crachás."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Donativo interrompido"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "O seu cartão não foi debitado. Quer tentar novamente o donativo?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Tentar novamente"
+  },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "Método de pagamento"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Método de pagamento recusado"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Tente outro método de pagamento ou contacte o seu banco para mais informações."
+  },
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "Ícone do cartão de pagamento"
+  },
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "Cartão de crédito ou débito"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "Cancelar"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "Completar doação"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "Donativo PayPal cancelado"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "Não foi cobrado. Tente novamente ou use outro método de pagamento."
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "Erro a processar o donativo PayPal"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "Não foi cobrado. Tente novamente ou use outro método de pagamento."
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Falha na verificação"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "Falha na etapa de verificação adicional. Tente novamente."
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "Ocorreu um erro com o seu donativo"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "O seu donativo pode não ter sido processado. Clique em \"Doar para o Signal\" e, em seguida, em \"Recibos de doação\" para verificar os seus recibos e confirmar."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Tente novamente ou envie ao Suporte um relatório de depuração para obter ajuda na conclusão do seu donativo. Os relatórios de depuração ajudam-nos a diagnosticar e corrigir o problema e não contêm informações pessoais."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "A processar donativo…"
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Ainda a processar o donativo"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "O seu donativo ainda está a ser processado. Isto poderá demorar alguns minutos."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Donativo cancelado"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "Passou demasiado tempo desde que começou o donativo. Comece de novo."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "Necessária verificação adicional"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "A aguardar verificação"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "O emissor do seu cartão de crédito exige uma etapa adicional de verificação num navegador da internet."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Abrir navegador"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Reabrir o navegador"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Cancelar donativo"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Obrigado pelo seu apoio!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Recebeu um crachá de doador do Signal! Exiba-o no seu perfil para mostrar o seu apoio."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Exibir no perfil"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Pode ajustar isto no seu dispositivo móvel em Definições → Doar ao Signal → Crachás"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "Como foi a sua chamada?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Isto ajuda-nos a melhorar as chamadas no Signal. Não serão armazenadas quaisquer informações de identificação pessoal."
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "Teve problemas"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "Excelente"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "Que problemas teve?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "Selecione todos os que se aplicam"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "Problemas de áudio"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "Quebras no áudio"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "Ouvi eco"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "Os outros ouviram eco"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "Cortes no áudio"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "Problema de vídeo"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "A câmara não funcionou"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "Má qualidade de vídeo"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "Resolução baixa"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "A chamada caiu"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "Outra coisa"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "Descrição dos problemas"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "Inclua quaisquer detalhes relevantes para o problema. Tudo o que partilhar aqui será mantido privado e só será utilizado para ajudar a melhorar as chamadas no Signal."
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "Descreva o seu problema"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "Continuar"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "Faça uma seleção para continuar"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "Ajude-nos a melhorar"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "Ao enviar, partilhará o seu feedback juntamente com <diagnosticInfoLink>informações de diagnóstico sobre a sua chamada</diagnosticInfoLink>. Também pode opcionalmente partilhar um relatório de depuração para nos ajudar a melhorar a qualidade das chamadas."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "Partilhar relatório de depuração"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "Ver"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "As informações partilhadas connosco contêm informações de baixo nível sobre a app e não incluem o conteúdo das suas chamadas."
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "Informações de diagnóstico"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "Submeter"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "Falha ao enviar a sondagem"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "Tentar novamente"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "Obrigado pelo seu feedback!"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "Expande a barra lateral para interagir com o megafone"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "Carrossel"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "Slide"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "Transferir o histórico de mensagens do seu telemóvel para este desktop?"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "Quando voltar a vincular este desktop, pode transferir o seu histórico de mensagens para este dispositivo."
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "Saber mais"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "Isto irá <bold>substituir</bold> o histórico de mensagens neste desktop."
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "Tem de voltar a vincular lendo um código QR."
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "Caso tenha pago pelas cópias de segurança do Signal, todos os seus ficheiros multimédia serão transferidos. Se não, serão incluídos os dos últimos 45 dias."
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "Transferir"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "Não transferir"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "Eliminar todos os dados?"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "Todos os dados atuais no Signal Desktop serão eliminados. Depois pode ler um código QR e transferir o histórico de mensagens a partir do seu telemóvel."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Esta versão contém um número de pequenas funcionalidades e correções de erros de forma a manter o Signal a correr suavemente.",
@@ -5473,19 +8268,16 @@
     "messageformat": "Pequenos ajustes adicionais, correções de bugs e melhorias de desempenho. Obrigado por usar o Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.12--0": {
-    "messageformat": "A nova funcionalidade de levantar a mão é uma forma simples de chamar a atenção de alguém ou fazer uma pergunta durante chamadas de grupo."
+  "icu:WhatsNew__8.16--0": {
+    "messageformat": "Corrigimos um erro no criador de autocolantes que mostrava a interface no idioma errado."
   },
-  "icu:WhatsNew__v7.12--1": {
-    "messageformat": "Esta atualização também inclui uma ferramenta de corte melhorada para redimensionar imagens."
+  "icu:WhatsNew__8.17--0": {
+    "messageformat": "Os administradores dos grupos agora podem eliminar mensagens recentemente enviadas nos chats de grupo. Pode facilmente ver quando uma mensagem foi eliminada e quem o fez, tal como a funcionalidade existente \"Eliminar para todos\"."
   },
-  "icu:WhatsNew__v7.12--2": {
-    "messageformat": "Modificámos o atalho de teclado para enviar uma nota de voz. Agora é Ctrl/Cmd+Shift+Y, para não entrar em conflito com o atalho \"Colar e manter o mesmo estilo\" no Windows e Linux."
+  "icu:WhatsNew__8.17--1": {
+    "messageformat": "Também aumentámos o número máximo de chats afixados de 4 para 10."
   },
-  "icu:WhatsNew__v7.13--0": {
-    "messageformat": "We fixed a bug that displayed images with the wrong aspect ratio if you resized the Signal Desktop window while viewing someone's profile picture. The people you love should only look squeezed if you are giving them a hug."
-  },
-  "icu:WhatsNew__v7.13--1": {
-    "messageformat": "This update also improves the display of quoted replies in RTL languages."
+  "icu:WhatsNew__8.18--0": {
+    "messageformat": "As sondagens agora podem ser criadas em chats individuais também."
   }
 }

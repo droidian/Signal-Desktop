@@ -1,0 +1,62 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { memo, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { CompositionRecording } from '../../components/CompositionRecording.dom.tsx';
+import { useAudioRecorderActions } from '../ducks/audioRecorder.preload.ts';
+import { useComposerActions } from '../ducks/composer.preload.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import { getRecordingPeaks } from '../selectors/audioRecorder.std.ts';
+
+export const SmartCompositionRecording = memo(
+  function SmartCompositionRecording() {
+    const i18n = useSelector(getIntl);
+    const selectedConversationId = useSelector(getSelectedConversationId);
+    const { errorRecording, cancelRecording, completeRecording } =
+      useAudioRecorderActions();
+    const peaks = useSelector(getRecordingPeaks);
+
+    const { sendMultiMediaMessage, saveDraftRecordingIfNeeded: saveDraft } =
+      useComposerActions();
+    const { hideToast, showToast } = useToastActions();
+
+    const handleCancel = useCallback(() => {
+      cancelRecording();
+    }, [cancelRecording]);
+
+    const handleSend = useCallback(() => {
+      if (selectedConversationId) {
+        completeRecording(selectedConversationId, voiceNoteAttachment => {
+          sendMultiMediaMessage(selectedConversationId, {
+            voiceNoteAttachment,
+          });
+        });
+      }
+    }, [selectedConversationId, completeRecording, sendMultiMediaMessage]);
+    const saveDraftRecordingIfNeeded = useCallback(() => {
+      if (selectedConversationId) {
+        saveDraft(selectedConversationId);
+      }
+    }, [saveDraft, selectedConversationId]);
+
+    if (!selectedConversationId) {
+      return null;
+    }
+
+    return (
+      <CompositionRecording
+        i18n={i18n}
+        onCancel={handleCancel}
+        onSend={handleSend}
+        errorRecording={errorRecording}
+        saveDraftRecordingIfNeeded={saveDraftRecordingIfNeeded}
+        showToast={showToast}
+        hideToast={hideToast}
+        peaks={peaks}
+      />
+    );
+  }
+);

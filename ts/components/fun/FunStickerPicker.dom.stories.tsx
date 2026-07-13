@@ -1,0 +1,73 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+import { useCallback, useState, type JSX } from 'react';
+import { Button } from 'react-aria-components';
+import { action } from '@storybook/addon-actions';
+import { type ComponentMeta } from '../../storybook/types.std.ts';
+import type { FunStickerPickerProps } from './FunStickerPicker.dom.tsx';
+import { FunStickerPicker } from './FunStickerPicker.dom.tsx';
+import { MOCK_RECENT_EMOJIS } from '../../test-helpers/funPickerMocks.dom.tsx';
+import { FunProvider } from './FunProvider.dom.tsx';
+import { packs, recentStickers } from '../../test-helpers/stickersMocks.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+
+const { i18n } = window.SignalContext;
+
+type TemplateProps = Omit<
+  FunStickerPickerProps,
+  'open' | 'onOpenChange' | 'children'
+>;
+
+function Template(props: TemplateProps): JSX.Element {
+  const [open, setOpen] = useState(true);
+
+  const handleOpenChange = useCallback((openState: boolean) => {
+    setOpen(openState);
+  }, []);
+
+  return (
+    <FunProvider
+      i18n={i18n}
+      // Recents
+      recentEmojis={MOCK_RECENT_EMOJIS}
+      recentStickers={recentStickers}
+      recentGifs={[]}
+      // Emojis
+      emojiSkinToneDefault={Emoji.SkinTone.None}
+      onEmojiSkinToneDefaultChange={() => null}
+      onOpenCustomizePreferredReactionsModal={() => null}
+      onSelectEmoji={() => null}
+      // Stickers
+      installedStickerPacks={packs}
+      showStickerPickerHint={false}
+      onClearStickerPickerHint={() => null}
+      onSelectSticker={() => null}
+      // Gifs
+      fetchGiphySearch={() => Promise.reject()}
+      fetchGiphyTrending={() => Promise.reject()}
+      fetchGiphyFile={() => Promise.reject()}
+      onRemoveRecentGif={() => null}
+      onSelectGif={() => null}
+    >
+      <FunStickerPicker {...props} open={open} onOpenChange={handleOpenChange}>
+        <Button>Open StickerPicker</Button>
+      </FunStickerPicker>
+    </FunProvider>
+  );
+}
+
+export default {
+  title: 'Components/Fun/FunStickerPicker',
+  component: Template,
+  args: {
+    placement: 'bottom',
+    theme: undefined,
+    onSelectSticker: action('onSelectSticker'),
+    showTimeStickers: false,
+    onSelectTimeSticker: undefined,
+  },
+} satisfies ComponentMeta<TemplateProps>;
+
+export function Default(props: TemplateProps): JSX.Element {
+  return <Template {...props} />;
+}
