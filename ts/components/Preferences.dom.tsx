@@ -396,6 +396,18 @@ const DEFAULT_ZOOM_FACTORS = [
     value: 1,
   },
   {
+    text: '105%',
+    value: 1.05,
+  },
+  {
+    text: '110%',
+    value: 1.1,
+  },
+  {
+    text: '115%',
+    value: 1.15,
+  },
+  {
     text: '125%',
     value: 1.25,
   },
