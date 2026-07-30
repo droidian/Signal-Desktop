@@ -62,7 +62,7 @@
     &:focus {
       outline: none;
       @include mixins.keyboard-mode {
-        box-shadow: inset 0px 0px 0px 2px variables.$color-ultramarine;
+        @include mixins.axo-focus-ring;
       }
     }
   }

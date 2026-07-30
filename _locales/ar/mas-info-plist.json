@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "يستخدِم سيجنال الكاميرا لإجراء مكالمات الفيديو."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "يحتاج سيجنال إلى الوصول للميكروفون على جهازك ليصبح بإمكانك الاتصال أو تسجيل الرسائل الصوتية."
+  }
+}

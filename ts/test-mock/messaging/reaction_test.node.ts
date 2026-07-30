@@ -1,0 +1,463 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import createDebug from 'debug';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import { StorageState } from '@signalapp/mock-server';
+import { type Page } from 'playwright';
+import { expect } from 'playwright/test';
+import { assert } from 'chai';
+
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import { MINUTE } from '../../util/durations/index.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import {
+  clickOnConversation,
+  getMessageInTimelineByTimestamp,
+  sendTextMessage,
+  sendReaction,
+  createGroup,
+} from '../helpers.node.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+
+export const debug = createDebug('mock:test:reactions');
+
+async function getReactionsForMessage(page: Page, timestamp: number) {
+  const reactionsByEmoji: Record<string, Array<string>> = {};
+
+  try {
+    const message = getMessageInTimelineByTimestamp(page, timestamp);
+
+    await message.locator('.module-message__reactions').click();
+
+    const reactionRows = await page
+      .locator('.module-reaction-viewer__body__row')
+      .all();
+
+    for (const row of reactionRows) {
+      // oxlint-disable-next-line no-await-in-loop
+      const emoji = await row
+        .locator('.FunStaticEmoji')
+        .getAttribute('data-emoji');
+      // oxlint-disable-next-line no-await-in-loop
+      const reactor = await row
+        .locator('.module-reaction-viewer__body__row__name')
+        .innerText();
+
+      strictAssert(emoji, 'emoji must exist');
+      reactionsByEmoji[emoji] = (reactionsByEmoji[emoji] ?? []).concat([
+        reactor,
+      ]);
+    }
+    // dismiss reaction popup
+    await page.keyboard.press('Escape');
+  } catch {
+    // pass
+  }
+  return reactionsByEmoji;
+}
+
+async function expectMessageToHaveReactions(
+  page: Page,
+  timestamp: number,
+  reactionsBySender: Record<Emoji.Variant, Array<string>>,
+  options?: { timeout: number }
+): Promise<void> {
+  return expect(async () => {
+    assert.deepEqual(
+      await getReactionsForMessage(page, timestamp),
+      reactionsBySender
+    );
+  }).toPass({ timeout: options?.timeout ?? 10000 });
+}
+
+describe('reactions', function (this: Mocha.Suite) {
+  let bootstrap: Bootstrap;
+  let app: App;
+
+  this.timeout(MINUTE);
+  beforeEach(async () => {
+    bootstrap = new Bootstrap();
+    await bootstrap.init();
+
+    const { phone, contacts } = bootstrap;
+    const [alice, bob, charlie] = contacts as [
+      PrimaryDevice,
+      PrimaryDevice,
+      PrimaryDevice,
+    ];
+    let state = StorageState.getEmpty();
+
+    state = state.addContact(alice, {
+      identityKey: alice.publicKey.serialize(),
+      profileKey: alice.profileKey.serialize(),
+    });
+    state = state.addContact(bob, {
+      identityKey: bob.publicKey.serialize(),
+      profileKey: bob.profileKey.serialize(),
+    });
+    state = state.addContact(charlie, {
+      identityKey: charlie.publicKey.serialize(),
+      profileKey: charlie.profileKey.serialize(),
+    });
+
+    await phone.setStorageState(state);
+
+    app = await bootstrap.link();
+  });
+
+  afterEach(async function (this: Mocha.Context) {
+    if (!bootstrap) {
+      return;
+    }
+
+    await bootstrap.maybeSaveLogs(this.currentTest, app);
+    await app.close();
+    await bootstrap.teardown();
+  });
+
+  it('should correctly match on participant, timestamp, and author in 1:1 conversation', async () => {
+    this.timeout(10000);
+    const { contacts, phone, desktop } = bootstrap;
+    const [alice, bob, charlie] = contacts as [
+      PrimaryDevice,
+      PrimaryDevice,
+      PrimaryDevice,
+    ];
+
+    const window = await app.getWindow();
+
+    const alice1on1Timestamp = Date.now();
+    const outgoingTimestamp = alice1on1Timestamp;
+
+    await sendTextMessage({
+      from: alice,
+      to: desktop,
+      text: 'hi from alice',
+      timestamp: alice1on1Timestamp,
+      desktop,
+    });
+
+    // To test the case where we have different outgoing messages with the same
+    // timestamps, we need to send these without awaiting since otherwise desktop will
+    // drop them since they have the same timestamp (DESKTOP-7301)
+    await Promise.all([
+      sendTextMessage({
+        from: phone,
+        to: bob,
+        text: 'hi bob',
+        timestamp: outgoingTimestamp,
+        desktop,
+      }),
+
+      sendTextMessage({
+        from: phone,
+        to: charlie,
+        text: 'hi charlie',
+        timestamp: outgoingTimestamp,
+        desktop,
+      }),
+    ]);
+
+    // [❌ invalid reaction] bob trying to trick us by reacting to a message in a
+    // conversation he's not a part of
+    await sendReaction({
+      from: bob,
+      to: desktop,
+      emoji: Emoji.GHOST,
+      targetAuthor: alice,
+      targetMessageTimestamp: alice1on1Timestamp,
+      desktop,
+    });
+
+    // [❌ invalid reaction] phone sending message with wrong author but right timestamp
+    await sendReaction({
+      from: phone,
+      to: desktop,
+      emoji: Emoji.SKULL,
+      targetAuthor: bob,
+      targetMessageTimestamp: alice1on1Timestamp,
+      desktop,
+    });
+
+    const thumbsUp = Emoji.getDefaultVariant(Emoji.THUMBS_UP);
+    // [✅ incoming message] alice reacting to her own message
+    await sendReaction({
+      from: alice,
+      to: desktop,
+      emoji: thumbsUp,
+      targetAuthor: alice,
+      targetMessageTimestamp: alice1on1Timestamp,
+      desktop,
+    });
+
+    await clickOnConversation(window, alice);
+    await expectMessageToHaveReactions(window, alice1on1Timestamp, {
+      [thumbsUp]: [alice.profileName],
+    });
+
+    // [✅ incoming message] phone sending message with right author
+    const wave = Emoji.getDefaultVariant(Emoji.WAVE);
+    await sendReaction({
+      from: phone,
+      to: alice,
+      emoji: wave,
+      targetAuthor: alice,
+      targetMessageTimestamp: alice1on1Timestamp,
+      desktop,
+    });
+
+    await expectMessageToHaveReactions(window, alice1on1Timestamp, {
+      [thumbsUp]: [alice.profileName],
+      [wave]: ['You'],
+    });
+
+    // now, receive reactions from those messages with same timestamp
+    // [✅ outgoing message] bob reacting to our message
+    await sendReaction({
+      from: bob,
+      to: desktop,
+      emoji: Emoji.getDefaultVariant(Emoji.WAVE),
+      targetAuthor: phone,
+      targetMessageTimestamp: outgoingTimestamp,
+      desktop,
+    });
+
+    // [✅ outgoing message] alice reacting to our message
+    await sendReaction({
+      from: charlie,
+      to: desktop,
+      emoji: Emoji.getDefaultVariant(Emoji.WAVE),
+      targetAuthor: phone,
+      targetMessageTimestamp: outgoingTimestamp,
+      desktop,
+    });
+
+    await clickOnConversation(window, bob);
+    await expectMessageToHaveReactions(window, outgoingTimestamp, {
+      [wave]: [bob.profileName],
+    });
+
+    await clickOnConversation(window, charlie);
+    await expectMessageToHaveReactions(window, outgoingTimestamp, {
+      [wave]: [charlie.profileName],
+    });
+  });
+
+  it('should correctly match on participant, timestamp, and author in group conversation', async () => {
+    this.timeout(10000);
+
+    const { contacts, phone, desktop } = bootstrap;
+    const [alice, bob, charlie, danielle] = contacts as [
+      PrimaryDevice,
+      PrimaryDevice,
+      PrimaryDevice,
+      PrimaryDevice,
+    ];
+
+    const groupMembers = [alice, bob, charlie];
+    const groupForSending = {
+      group: await createGroup(phone, groupMembers, 'ReactionGroup'),
+      members: groupMembers,
+    };
+
+    const window = await app.getWindow();
+    const leftPane = window.locator('#LeftPane');
+
+    const now = Date.now();
+    const myGroupTimestamp = now;
+    const aliceGroupTimestamp = now + 1;
+    const bobGroupTimestamp = now + 2;
+    const charlieGroupTimestamp = now + 3;
+
+    // [✅ outgoing message]: charlie reacting to bob's group message, early
+    const wave = Emoji.getDefaultVariant(Emoji.WAVE);
+    await sendReaction({
+      from: charlie,
+      to: desktop,
+      emoji: wave,
+      targetAuthor: bob,
+      targetMessageTimestamp: bobGroupTimestamp,
+      desktop,
+    });
+
+    // Send a bunch of messages in the group
+    await sendTextMessage({
+      from: phone,
+      to: groupForSending,
+      text: "hello group, it's me",
+      timestamp: myGroupTimestamp,
+      desktop,
+    });
+
+    await sendTextMessage({
+      from: alice,
+      to: groupForSending,
+      text: "hello group, it's alice",
+      timestamp: aliceGroupTimestamp,
+      desktop,
+    });
+
+    await sendTextMessage({
+      from: bob,
+      to: groupForSending,
+      text: "hello group, it's bob",
+      timestamp: bobGroupTimestamp,
+      desktop,
+    });
+
+    await sendTextMessage({
+      from: charlie,
+      to: groupForSending,
+      text: "hello group, it's charlie",
+      timestamp: charlieGroupTimestamp,
+      desktop,
+    });
+
+    await leftPane.getByText('ReactionGroup').click();
+
+    // [❌ invalid reaction] danielle reacting to our group message, but she's not in the
+    // group!
+    await sendReaction({
+      from: danielle,
+      to: desktop,
+      emoji: Emoji.GHOST,
+      targetAuthor: phone,
+      targetMessageTimestamp: myGroupTimestamp,
+      desktop,
+    });
+
+    // [✅ outgoing message]: alice reacting to our group message
+    const thumbsUp = Emoji.getDefaultVariant(Emoji.THUMBS_UP);
+    await sendReaction({
+      from: alice,
+      to: desktop,
+      emoji: thumbsUp,
+      targetAuthor: phone,
+      targetMessageTimestamp: myGroupTimestamp,
+      desktop,
+    });
+
+    // [✅ outgoing message]: bob reacting to our group message
+    await sendReaction({
+      from: bob,
+      to: desktop,
+      emoji: thumbsUp,
+      targetAuthor: phone,
+      targetMessageTimestamp: myGroupTimestamp,
+      desktop,
+    });
+
+    // [✅ outgoing message]: charlie reacting to alice's group message
+    await sendReaction({
+      from: charlie,
+      to: desktop,
+      emoji: Emoji.STUCK_OUT_TONGUE,
+      targetAuthor: alice,
+      targetMessageTimestamp: aliceGroupTimestamp,
+      desktop,
+    });
+
+    await expectMessageToHaveReactions(window, myGroupTimestamp, {
+      [thumbsUp]: [bob.profileName, alice.profileName],
+    });
+
+    await expectMessageToHaveReactions(window, aliceGroupTimestamp, {
+      [Emoji.STUCK_OUT_TONGUE]: [charlie.profileName],
+    });
+
+    await expectMessageToHaveReactions(window, bobGroupTimestamp, {
+      [wave]: [charlie.profileName],
+    });
+  });
+
+  it("should display the local user's thumbs-up skin tone in a group reaction viewer overlay header", async () => {
+    this.timeout(30_000);
+
+    const { contacts, phone, desktop } = bootstrap;
+    const [alice, bob] = contacts as [PrimaryDevice, PrimaryDevice];
+
+    // Create a group that includes both Alice and Bob
+    const groupForSending = {
+      group: await createGroup(phone, [alice, bob], 'ThumbsToneGroup'),
+      members: [alice, bob],
+    };
+
+    const window = await app.getWindow();
+    const leftPane = window.locator('#LeftPane');
+
+    const ts = Date.now();
+
+    // Send a message from the local user into the group
+    await sendTextMessage({
+      from: phone,
+      to: groupForSending,
+      text: 'group skin-tone test',
+      timestamp: ts,
+      desktop,
+    });
+
+    // Local user reacts with 👍🏽 (medium skin tone)
+    await sendReaction({
+      from: phone,
+      to: desktop,
+      emoji: Emoji.getVariant(Emoji.THUMBS_UP, Emoji.SkinTone.Type3),
+      targetAuthor: phone,
+      targetMessageTimestamp: ts,
+      desktop,
+    });
+
+    // Bob reacts with 👍🏿 (to make him the "most recent")
+    await sendReaction({
+      from: bob,
+      to: desktop,
+      emoji: Emoji.getVariant(Emoji.THUMBS_UP, Emoji.SkinTone.Type5),
+      targetAuthor: phone,
+      targetMessageTimestamp: ts,
+      desktop,
+    });
+
+    // Open the group conversation
+    await leftPane.getByText('ThumbsToneGroup').click();
+
+    // Click the reaction button on that message
+    const msg = getMessageInTimelineByTimestamp(window, ts);
+    await msg.locator('.module-message__reactions').click();
+
+    // Grab the header emoji in the overlay (next to the total count)
+    const headerEmoji = window.locator(
+      '.module-reaction-viewer__header .FunStaticEmoji'
+    );
+
+    // The header emoji should still show the local "👍🏽"
+    await expect(headerEmoji).toHaveAttribute('data-emoji', '👍🏽');
+
+    // Get all reaction rows; Bob's should be first (most recent), then "You"
+    const reactionRows = await window
+      .locator('.module-reaction-viewer__body__row')
+      .all();
+
+    // First row: Bob's 👍🏿
+    const firstReaction = reactionRows[0];
+    strictAssert(firstReaction, 'firstReaction exists');
+    await expect(
+      firstReaction.locator('.module-reaction-viewer__body__row__name')
+    ).toHaveText(bob.profileName);
+    await expect(firstReaction.locator('.FunStaticEmoji')).toHaveAttribute(
+      'data-emoji',
+      '👍🏿'
+    );
+
+    // Second row: local user's 👍🏽
+    const secondReaction = reactionRows[1];
+    strictAssert(secondReaction, 'secondReaction exists');
+    await expect(
+      secondReaction.locator('.module-reaction-viewer__body__row__name')
+    ).toHaveText('You');
+    await expect(secondReaction.locator('.FunStaticEmoji')).toHaveAttribute(
+      'data-emoji',
+      '👍🏽'
+    );
+  });
+});

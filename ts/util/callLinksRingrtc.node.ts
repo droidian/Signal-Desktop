@@ -1,0 +1,176 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import {
+  CallLinkRestrictions as RingRTCCallLinkRestrictions,
+  CallLinkRootKey,
+} from '@signalapp/ringrtc';
+import type { CallLinkState as RingRTCCallLinkState } from '@signalapp/ringrtc';
+import { z } from 'zod';
+import {
+  CallLinkNameMaxByteLength,
+  callLinkRecordSchema,
+  defunctCallLinkRecordSchema,
+  toCallLinkRestrictions,
+} from '../types/CallLink.std.ts';
+import type {
+  CallLinkRecord,
+  CallLinkRestrictions,
+  CallLinkType,
+  DefunctCallLinkRecord,
+  DefunctCallLinkType,
+  CallLinkStateType,
+} from '../types/CallLink.std.ts';
+import { unicodeSlice } from './unicodeSlice.std.ts';
+import {
+  fromAdminKeyBytes,
+  getKeyFromCallLink,
+  toAdminKeyBytes,
+} from './callLinks.std.ts';
+import { parseStrict } from './schemas.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+
+/**
+ * RingRTC conversions
+ */
+
+export function callLinkStateFromRingRTC(
+  state: RingRTCCallLinkState
+): CallLinkStateType {
+  return {
+    name: unicodeSlice(state.name, 0, CallLinkNameMaxByteLength),
+    restrictions: toCallLinkRestrictions(state.restrictions),
+    revoked: state.revoked,
+    expiration: state.expiration.getTime(),
+  };
+}
+
+const RingRTCCallLinkRestrictionsSchema = z.nativeEnum(
+  RingRTCCallLinkRestrictions
+);
+
+export function callLinkRestrictionsToRingRTC(
+  restrictions: CallLinkRestrictions
+): RingRTCCallLinkRestrictions {
+  return parseStrict(RingRTCCallLinkRestrictionsSchema, restrictions);
+}
+
+export function getRoomIdFromRootKey(rootKey: CallLinkRootKey): string {
+  const roomId = rootKey.deriveRoomId();
+  const roomIdBytes: Uint8Array<ArrayBuffer> = roomId;
+  return Bytes.toHex(roomIdBytes);
+}
+
+export function getRoomIdFromRootKeyString(rootKeyString: string): string {
+  const callLinkRootKey = CallLinkRootKey.parse(rootKeyString);
+  return getRoomIdFromRootKey(callLinkRootKey);
+}
+
+export function getRoomIdFromCallLink(url: string): string {
+  const keyString = getKeyFromCallLink(url);
+  const key = CallLinkRootKey.parse(keyString);
+  return getRoomIdFromRootKey(key);
+}
+
+export function toRootKeyBytes(rootKey: string): Uint8Array<ArrayBuffer> {
+  const rootKeyBytes = CallLinkRootKey.parse(rootKey).bytes;
+  const result: Uint8Array<ArrayBuffer> = rootKeyBytes;
+  return result;
+}
+
+export function fromRootKeyBytes(rootKey: Uint8Array<ArrayBuffer>): string {
+  return CallLinkRootKey.fromBytes(rootKey as Buffer<ArrayBuffer>).toString();
+}
+
+/**
+ * DB record conversions
+ */
+
+export function callLinkFromRecord(record: CallLinkRecord): CallLinkType {
+  if (record.rootKey == null) {
+    throw new Error('CallLink.callLinkFromRecord: rootKey is null');
+  }
+
+  // root keys in memory are strings for simplicity
+  const rootKey = fromRootKeyBytes(record.rootKey);
+  const adminKey = record.adminKey ? fromAdminKeyBytes(record.adminKey) : null;
+  return {
+    roomId: record.roomId,
+    rootKey,
+    adminKey,
+    name: record.name,
+    restrictions: toCallLinkRestrictions(record.restrictions),
+    revoked: record.revoked === 1,
+    expiration: record.expiration,
+    storageID: record.storageID || undefined,
+    storageVersion: record.storageVersion || undefined,
+    storageUnknownFields: record.storageUnknownFields || undefined,
+    storageNeedsSync: record.storageNeedsSync === 1,
+  };
+}
+
+export function callLinkToRecord(callLink: CallLinkType): CallLinkRecord {
+  if (callLink.rootKey == null) {
+    throw new Error('CallLink.callLinkToRecord: rootKey is null');
+  }
+
+  const rootKey = toRootKeyBytes(callLink.rootKey);
+  const adminKey = callLink.adminKey
+    ? toAdminKeyBytes(callLink.adminKey)
+    : null;
+  return parseStrict(callLinkRecordSchema, {
+    roomId: callLink.roomId,
+    rootKey,
+    adminKey,
+    name: callLink.name,
+    restrictions: callLink.restrictions,
+    revoked: callLink.revoked ? 1 : 0,
+    expiration: callLink.expiration,
+    storageID: callLink.storageID || null,
+    storageVersion: callLink.storageVersion || null,
+    storageUnknownFields: callLink.storageUnknownFields || null,
+    storageNeedsSync: callLink.storageNeedsSync ? 1 : 0,
+  });
+}
+
+export function defunctCallLinkFromRecord(
+  record: DefunctCallLinkRecord
+): DefunctCallLinkType {
+  if (record.rootKey == null) {
+    throw new Error('CallLink.defunctCallLinkFromRecord: rootKey is null');
+  }
+
+  const rootKey = fromRootKeyBytes(record.rootKey);
+  const adminKey = record.adminKey ? fromAdminKeyBytes(record.adminKey) : null;
+  return {
+    roomId: record.roomId,
+    rootKey,
+    adminKey,
+    storageID: record.storageID || undefined,
+    storageVersion: record.storageVersion || undefined,
+    storageUnknownFields: record.storageUnknownFields || undefined,
+    storageNeedsSync: record.storageNeedsSync === 1,
+  };
+}
+
+export function defunctCallLinkToRecord(
+  defunctCallLink: DefunctCallLinkType
+): DefunctCallLinkRecord {
+  if (defunctCallLink.rootKey == null) {
+    throw new Error('CallLink.defunctCallLinkToRecord: rootKey is null');
+  }
+
+  const rootKey = toRootKeyBytes(defunctCallLink.rootKey);
+  const adminKey = defunctCallLink.adminKey
+    ? toAdminKeyBytes(defunctCallLink.adminKey)
+    : null;
+  return parseStrict(defunctCallLinkRecordSchema, {
+    roomId: defunctCallLink.roomId,
+    rootKey,
+    adminKey,
+    storageID: defunctCallLink.storageID || null,
+    storageVersion: defunctCallLink.storageVersion || null,
+    storageUnknownFields: defunctCallLink.storageUnknownFields || null,
+    storageNeedsSync: defunctCallLink.storageNeedsSync ? 1 : 0,
+  });
+}

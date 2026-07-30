@@ -110,15 +110,17 @@ $audio-attachment-button-margin-small: 4px;
 .PlaybackRateButton,
 .module-message__audio-attachment__waveform {
   &:focus {
+    outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 
   .module-message__audio-attachment--outgoing & {
     &:focus {
+      outline: none;
       @include mixins.keyboard-mode {
-        outline: 2px solid variables.$color-white-alpha-60;
+        @include mixins.axo-focus-ring;
       }
     }
   }

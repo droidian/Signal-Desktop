@@ -95,9 +95,10 @@
     &--accept-video-as-audio {
       background-color: variables.$color-gray-45;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
 
@@ -122,9 +123,10 @@
     &--accept-video {
       background-color: variables.$color-accent-green;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
 
@@ -149,9 +151,10 @@
     &--accept-audio {
       background-color: variables.$color-accent-green;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
 
@@ -176,9 +179,10 @@
     &--decline {
       background-color: variables.$color-accent-red;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
 

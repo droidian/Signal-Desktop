@@ -1,0 +1,28 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@layer base {
+  :root {
+    @apply h-screen scheme-light-dark;
+  }
+
+  body {
+    @apply h-screen w-screen bg-surface-primary font-sans type-body-large text-primary;
+  }
+
+  a[href] {
+    @apply text-accent underline focus:outline-none keyboard-mode:focus:axo-focus-ring;
+  }
+}
+
+@layer components {
+  .light-theme {
+    @apply scheme-light;
+  }
+
+  .dark-theme {
+    @apply scheme-dark;
+  }
+}

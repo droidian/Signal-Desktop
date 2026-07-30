@@ -1,4 +1,22 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "স্থগিত"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "ফিরে যান"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "বন্ধ"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "সাফ করুন"
+  },
+  "icu:AxoBadge.MaxOverflow": {
+    "messageformat": "{max,number}+"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "গ্রুপে যোগ করো"
   },
@@ -38,6 +56,12 @@
   "icu:Preferences__sent-media-quality": {
     "messageformat": "পাঠানো মিডিয়ার মান"
   },
+  "icu:Preferences__sent-media-quality__description": {
+    "messageformat": "উচ্চ মানের মিডিয়া পাঠালে আরও ডেটা ব্যবহার হবে।"
+  },
+  "icu:Preferences__DonateTitle": {
+    "messageformat": "Signal-এ দান করুন"
+  },
   "icu:sentMediaQualityStandard": {
     "messageformat": "স্ট্যান্ডার্ড"
   },
@@ -65,23 +89,32 @@
   "icu:unknownContact": {
     "messageformat": "অজানা কন্ট্যাক্ট"
   },
+  "icu:deletedAccount": {
+    "messageformat": "মুছে ফেলা অ্যাকাউন্ট"
+  },
+  "icu:unknownContactShort": {
+    "messageformat": "অজানা"
+  },
   "icu:unknownGroup": {
     "messageformat": "অচেনা গ্রুপ"
   },
+  "icu:cantOpenSignalError": {
+    "messageformat": "Signal চালু করা যায়নি"
+  },
+  "icu:cantOpenSignalError__detail": {
+    "messageformat": "সমস্যাটি সমাধানে সাহায্য করার জন্য, সহায়তা পেইজে পুনরুদ্ধার নির্দেশিকা অনুসরণ করুন অথবা সমস্যাটি সমাধানে সহায়তার জন্য Signal সাপোর্টের সাথে যোগাযোগ করুন।\n\nযদি আপনার এখনই Signal ব্যবহার করার প্রয়োজন হয়, তাহলে আপনি আপনার ডেটা মুছে ফেলতে পারেন এবং এই ডেস্কটপটি পুনরায় লিঙ্ক করতে পারেন। আপনার ফোন থেকে মেসেজের ইতিহাস ট্রান্সফার করার অপশন থাকবে।"
+  },
   "icu:databaseError": {
     "messageformat": "ডাটাবেস ত্রুটি"
-  },
-  "icu:databaseError__detail": {
-    "messageformat": "ডাটাবেজ সংক্রান্ত একটি ত্রুটি দেখা দিয়েছে। আপনি ত্রুটিটি কপি করতে পারেন এবং সমস্যাটি সমাধানে সাহায্য করতে Signal সহায়তার সাথে যোগাযোগ করতে পারেন। আপনার যদি এখনই Signal ব্যবহার করার প্রয়োজন হয়, তবে আপনি আপনার ডেটা মুছে ফেলতে পারেন এবং পুনরায় চালু করতে পারেন।\n\nএখানে ভিজিট করার মাধ্যমে সাপোর্টের সাথে যোগাযোগ করুন: {link}"
   },
   "icu:deleteAndRestart": {
     "messageformat": "ডেটা মুছুন এবং পুনরায় চালু করুন"
   },
   "icu:databaseError__deleteDataConfirmation": {
-    "messageformat": "স্থায়ীভাবে সব তথ্য মুছে ফেলবেন?"
+    "messageformat": "স্থায়ীভাবে সব তথ্য মুছে ফেলুন"
   },
   "icu:databaseError__deleteDataConfirmation__detail": {
-    "messageformat": "এই ডিভাইস থেকে আপনার যাবতীয় মেসেজের ইতিহাস এবং মিডিয়া স্থায়ীভাবে মুছে ফেলা হবে। আপনি এই ডিভাইসটি পুনরায় লিংক করার পরে Signal ব্যবহার করতে পারবেন। এটি আপনার ফোন থেকে কোনো ডেটা মুছে ফেলবে না।"
+    "messageformat": "এই ডিভাইস থেকে আপনার যাবতীয় মেসেজের ইতিহাস এবং মিডিয়া স্থায়ীভাবে মুছে ফেলা হবে। এটি আপনার ফোন থেকে কোনো ডেটা মুছে ফেলবে না।\n\nআপনি এই ডিভাইসটি পুনরায় লিংক করার পরে Signal ব্যবহার করতে পারবেন। আপনার ফোন থেকে মেসেজের ইতিহাস স্থানান্তর করার অপশন থাকবে।"
   },
   "icu:databaseError__startOldVersion": {
     "messageformat": "আপনার ডাটাবেজের সংস্করণ Signal-এর এই সংস্করণের সাথে মিলে না। নিশ্চিত করুন যে আপনি আপনার কম্পিউটারে Signal-এর নতুন সংস্করণ খুলছেন।"
@@ -91,6 +124,15 @@
   },
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "ডেটাবেজ এনক্রিপশন কী অ্যাক্সেস করতে সক্ষম নয় কারণ OS এনক্রিপশন কী-রিং ব্যাকএন্ড {previousBackend} থেকে {currentBackend}-এ পরিবর্তিত হয়েছে। যদি ডেস্কটপের পরিবেশ পরিবর্তন হয় তবে এটি ঘটতে পারে, যেমন GNOME এবং KDE-এর মধ্যে পরিবর্তন।\n\nঅনুগ্রহ করে পূর্ববর্তী ডেস্কটপ পরিবেশে স্যুইচ করুন অথবা কমান্ড লাইন ফ্ল্যাগ --password-store=\"{previousBackendFlag}\" ব্যবহার করে Signal চালানোর চেষ্টা করুন"
+  },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
   },
   "icu:mainMenuFile": {
     "messageformat": "&ফাইল"
@@ -185,14 +227,14 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "বিকাশকারী সরঞ্জামগুলি দেখান"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "\"ডেভেলপার টুল কল করা হচ্ছে\" খুলুন"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "নতুন ডিভাইস হিসেবে সেট করুন"
   },
   "icu:menuSetupAsStandalone": {
     "messageformat": "স্বাধীন ডিভাইস হিসেবে সেট করুন"
+  },
+  "icu:menuStageLocalBackupForImport": {
+    "messageformat": "Stage Local Backup for Import…"
   },
   "icu:messageContextMenuButton": {
     "messageformat": "আরও ক্রিয়া"
@@ -215,11 +257,14 @@
   "icu:optimizingApplication": {
     "messageformat": "অ্যাপ্লিকেশন অপ্টিমাইজ করা হচ্ছে …"
   },
-  "icu:migratingToSQLCipher": {
-    "messageformat": "মেসেজ অপ্টিমাইজ করা হচ্ছে… {status} শেষ হয়েছে।"
-  },
   "icu:archivedConversations": {
     "messageformat": "আর্কাইভকৃত চ্যাট"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "চ্যাট ফোল্ডার যোগ করুন"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "ফোল্ডার সেটিংস"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "পিন করা"
@@ -260,6 +305,48 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "একটি ব্যবহারকারীর নামের পরে একটি ডট ও একগুচ্ছ সংখ্যা লিখুন।"
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "দেখানোর মতো কোনো চ্যাট নেই"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "ফোল্ডার সেটিংস"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "সকল"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "সকল চ্যাট"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
+    "messageformat": "{maxCount,number}+"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel": {
+    "messageformat": "{count, plural, one {{count,number} টি অপঠিত বার্তা} other {{count,number} টি অপঠিত বার্তা}}"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "সমস্ত পড়া হয়েছে চিহ্নিত করুন"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "নোটিফিকেশন মিউট করুন"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "সব আনমিউট করুন"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "সব আনমিউট করুন"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "ফোল্ডার এডিট করুন"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "ফোল্ডারে যোগ করুন"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "ফোল্ডার তৈরি করুন"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "ফোল্ডার থেকে মুছে ফেলুন"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "দেশ কোড"
   },
@@ -293,12 +380,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "সেটিংস"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Signal আপডেট করুন"
-  },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "প্রোফাইল"
-  },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "ফিরে যান"
   },
@@ -313,6 +394,9 @@
   },
   "icu:markUnread": {
     "messageformat": "পড়া হয়নি হিসাবে চিহ্নিত করুন"
+  },
+  "icu:markRead": {
+    "messageformat": "পঠিত বলে সনাক্ত কর"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "ম্যাসেজ নির্বাচন করুন"
@@ -374,17 +458,8 @@
   "icu:unpinConversation": {
     "messageformat": "চ্যাট আনপিন করুন"
   },
-  "icu:pinnedConversationsFull": {
-    "messageformat": "আপনি কেবলমাত্র 4টি পর্যন্ত চ্যাট পিন করতে পারবেন"
-  },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, one {1 দিন আগের ম্যাসেজ লোড হচ্ছে...} other {{daysAgo,number} দিন আগের ম্যাসেজ লোড হচ্ছে...}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "গতকালের ম্যাসেজ লোড হচ্ছে..."
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "আজকের ম্যাসেজ লোড হচ্ছে..."
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, one {আপনি সর্বোচ্চ {maxPinnedConversations,number}-টি চ্যাটের সাথে শেয়ার করতে পারবেন} other {আপনি শুধু {maxPinnedConversations,number}-টি চ্যাট পিন করতে পারবেন}}"
   },
   "icu:view": {
     "messageformat": "দেখান"
@@ -406,9 +481,6 @@
   },
   "icu:unreadMessages": {
     "messageformat": "{count, plural, one {{count,number} টি অপঠিত বার্তা} other {{count,number} টি অপঠিত বার্তা}}"
-  },
-  "icu:messageHistoryUnsynced": {
-    "messageformat": "আপনার নিরাপত্তার জন্য, চ্যাট-এর ইতিহাস নতুন লিংককৃত ডিভাইসে স্থানান্তর করা হয় না।"
   },
   "icu:youMarkedAsVerified": {
     "messageformat": "{name} এর সাথে আপনি আপনার নিরাপত্তা নাম্বার যাচাইকৃত হিসেবে চিহ্নিত করেছেন।"
@@ -476,6 +548,9 @@
   "icu:debugLogExplanation": {
     "messageformat": "'জমা দিন' ক্লিক করলে, আপনার লগ অনলাইনে 30 দিনের জন্য একটি ইউনিক, অপ্রকাশিত ইউআরএল-এ পোস্ট করা হবে৷ আপনি প্রথমে স্থানীয়ভাবে এটি সেভ করতে পারেন।"
   },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "অবদান রেখেছেন এমন ব্যক্তিরা যাতে দেখতে পান সেই উদ্দেশ্যে এই লগটি সর্বজনীনভাবে অনলাইনে পোস্ট করা হবে। জমা দেওয়ার আগে আপনি এটি ডাউনলোড করতে পারেন।"
+  },
   "icu:debugLogError": {
     "messageformat": "আপলোডে কিছু ভুল হয়েছে! অনুগ্রহ করে support@signal.org ইমেল করুন এবং একটি পাঠ্য ফাইল হিসাবে আপনার লগ সংযুক্ত করুন৷"
   },
@@ -509,17 +584,83 @@
   "icu:SafetyNumberViewer__clearVerification": {
     "messageformat": "যাচাইকরণ সম্পূর্ণ করুন"
   },
-  "icu:SafetyNumberViewer__hint": {
+  "icu:SafetyNumberViewer__hint-v2": {
     "messageformat": "{name}-এর সাথে এন্ড-টু-এন্ড এনক্রিপশন যাচাই করতে, তাদের ডিভাইসের সাথে উপরের নম্বরগুলো তুলনা করুন। তারাও তাদের ডিভাইস দিয়ে আপনার কোড স্ক্যান করতে পারবেন।"
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "আরো জানুন"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "স্বয়ংক্রিয় 'কি' যাচাইকরণ"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "স্বয়ংক্রিয়ভাবে যাচাই করুন"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "এনক্রিপশন যাচাই করা হচ্ছে..."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "এনক্রিপশন যাচাই করা হয়েছে"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "স্বয়ংক্রিয়-যাচাইকরণের সুবিধা নেই"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "সব চ্যাটের ক্ষেত্রে স্বয়ংক্রিয়-যাচাইকরণ সুবিধা নেই।"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "আরো জানুন"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "এই চ্যাটের ক্ষেত্রে এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করা হয়েছে "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "ফোন নম্বরের মাধ্যমে আপনি যেসব কন্টাক্টের সাথে সংযুক্ত আছেন, তাদের জন্য Signal স্বয়ংক্রিয়ভাবে 'কি' ট্রান্সপারেন্সি নামক একটি প্রক্রিয়া ব্যবহার করে সংযোগটি সুরক্ষিত কিনা তা নিশ্চিত করতে পারে। বাড়তি নিরাপত্তার জন্য, আগের স্ক্রিনে থাকা নম্বর তুলনা করে বা তাদের ডিভাইসে কোড স্ক্যান করে ম্যানুয়ালি এন্ড-টু-এন্ড এনক্রিপশন যাচাই করুন।"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "এই চ্যাটের ক্ষেত্রে স্বয়ংক্রিয়-যাচাইকরণের সুবিধা নেই"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "Signal এই চ্যাটের এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করতে পারবে না। এর কারণ হতে পারে যে {name} তার ফোন নম্বর অথবা ফোন নম্বরের গোপনীয়তা সেটিংস পরিবর্তন করেছেন। আগের স্ক্রিনে থাকা নম্বর তুলনা করে অথবা তাদের ডিভাইসে কোড স্ক্যান করে ম্যানুয়ালি এন্ড-টু-এন্ড এনক্রিপশন যাচাই করুন।"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "Signal কেবলমাত্র সেইসব চ্যাটের এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করতে পারে যাদের সাথে আপনি ফোন নম্বরের মাধ্যমে সংযুক্ত আছেন। যদি চ্যাটটি একটি ব্যবহারকারীর নাম বা একটি সাধারণ গ্ৰুপ দিয়ে শুরু হয়ে থাকে, তাহলে আগের স্ক্রিনে থাকা নম্বর তুলনা করে বা তাদের ডিভাইসে কোড স্ক্যান করে এন্ড-টু-এন্ড এনক্রিপশন যাচাই করুন।"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "ঠিক আছে"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "আপনি এই ব্যক্তির সাথে মেসেজ বিনিময় করার পরে একটি নিরাপত্তা নম্বর তৈরি করা হবে।"
   },
   "icu:SafetyNumberNotReady__learn-more": {
     "messageformat": "আরও জানুন"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "আপনার ডিভাইসের জন্য বর্তমানে স্বয়ংক্রিয় 'কি' যাচাইকরণ পাওয়া যাচ্ছে না। ডিবাগ লগ জমা দেবেন?"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "ডিবাগ লগ আমাদের সমস্যা নির্ণয় ও সমাধান করতে সাহায্য করে এবং শনাক্তকরণের তথ্য ধারণ করে না।"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "ডিবাগ লগ শেয়ার করুন"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "দেখান"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "সাবমিট"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "Signal এখন 'কি' এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করতে পারে"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "ফোন নম্বরের মাধ্যমে আপনি যেসব কন্টাক্টের সাথে সংযুক্ত আছেন, তাদের জন্য Signal স্বয়ংক্রিয়ভাবে 'কি' ট্রান্সপারেন্সি নামক একটি প্রক্রিয়া ব্যবহার করে সংযোগটি সুরক্ষিত কিনা তা নিশ্চিত করতে পারে। বাড়তি নিরাপত্তার জন্য, আপনি এখনো একটি QR কোড ব্যবহার করে অথবা নিরাপত্তা নম্বর তুলনা করে সংযোগগুলো ম্যানুয়ালি যাচাই করতে পারেন।"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
+    "messageformat": "আরো জানুন"
   },
   "icu:verified": {
     "messageformat": "যাচাইকৃত"
@@ -532,18 +673,6 @@
   },
   "icu:media": {
     "messageformat": "মিডিয়া"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "এই চ্যাট-এ আপনার কোনো মিডিয়া নেই"
-  },
-  "icu:allMedia": {
-    "messageformat": "সমস্ত মিডিয়া"
-  },
-  "icu:documents": {
-    "messageformat": "নথিপত্র"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "এই চ্যাট-এ আপনার কোনো ডকুমেন্ট নেই"
   },
   "icu:today": {
     "messageformat": "আজ"
@@ -584,11 +713,29 @@
   "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "লগ জমা দিন"
   },
-  "icu:Toast--FailedToSendWithEndorsements": {
-    "messageformat": "Failed to send message with endorsements"
+  "icu:Toast--SQLError": {
+    "messageformat": "ডেটাবেজ সংক্রান্ত ত্রুটি: অনুগ্রহ করে আপনার লগ শেয়ার করুন।"
+  },
+  "icu:Toast--InvalidStorageServiceHeaders": {
+    "messageformat": "স্টোরেজ সার্ভিস থেকে অকার্যকর উত্তর পাওয়া গেছে। অনুগ্রহ করে আপনার লগ শেয়ার করুন।"
   },
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "রিসিপ্ট সংরক্ষণ করা হয়েছে"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "রিসিপ্ট সংরক্ষণ করার সময় ত্রুটি দেখা দিয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "\"{chatFolderName}\"-এ যোগ করা হয়েছে"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "\"{chatFolderName}\" থেকে সরানো হয়েছে"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "{chatFolderName} ফোল্ডার যোগ করা হয়েছে"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "আপনি ফাইল সহ ছবি এবং ভিডিও নির্বাচন করতে পারবেন না।"
@@ -601,6 +748,9 @@
   },
   "icu:fileSizeWarning": {
     "messageformat": "দুঃখিত, নির্বাচিত ফাইলটি মেসেজের আকারের সীমা অতিক্রম করেছে। {limit,number} {units}"
+  },
+  "icu:videoFileSizeWarning": {
+    "messageformat": "দুঃখিত, বেছে নেওয়া ভিডিও ফাইলটি মেসেজের আকারের সীমা অতিক্রম করেছে। {limit,number}{units}"
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "নির্বাচিত সংযুক্তি লোড করতে অক্ষম।"
@@ -650,9 +800,6 @@
   "icu:joinTheBeta": {
     "messageformat": "বিটাতে যোগ দিন"
   },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Signal ডেস্কটপ পছন্দসমূহ"
-  },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "স্টিকার প্যাক ক্রিয়েটর"
   },
@@ -661,12 +808,6 @@
   },
   "icu:screenShareWindow": {
     "messageformat": "স্ক্রিন শেয়ার করা"
-  },
-  "icu:callingDeveloperTools": {
-    "messageformat": "ডেভেলপার টুল কল করা হচ্ছে"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "চলমান কল থেকে ডায়াগনস্টিক প্রদর্শন করতে এই উইন্ডোটি ডেভেলপমেন্ট করার সময় ব্যবহার করা হয়।"
   },
   "icu:speech": {
     "messageformat": "বক্তৃতা"
@@ -704,9 +845,6 @@
   "icu:noSearchResultsOnlyUnreadFilter": {
     "messageformat": "অপঠিত কোনো চ্যাট নেই"
   },
-  "icu:noSearchResults--sms-only": {
-    "messageformat": "SMS/MMS কন্ট্যাক্ট ডেস্কটপে থাকে না।"
-  },
   "icu:noSearchResultsInConversation": {
     "messageformat": "\"{searchTerm}\" এর জন্য {conversationName} মধ্যে কোন ফলাফল নেই"
   },
@@ -742,6 +880,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "এই আপডেটে {whatsNew} দেখুন"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "Signal একটি অলাভজনক প্রতিষ্ঠান"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "নতুন কি"
@@ -968,6 +1109,12 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} আপনার সিস্টেমের কন্টাক্টে আছেন"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "একটি সদস্য লেবেল যোগ করুন"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "আপনার QR কোড"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "নোট"
   },
@@ -1019,14 +1166,98 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "তথ্য"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "পিন করুন"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "আনপিন করুন"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "ভোটগ্রহণ কার্যক্রমটি শেষ করুন"
+  },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "জরিপ · একটি বেছে নিন"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "জরিপ · এক বা একাধিক বেছে নিন"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "জরিপ · চূড়ান্ত ফলাফল"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "ভোট দেখুন"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "আপনি ভোট দিয়েছেন"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "আপনি জরিপটি শেষ করেছেন: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name} জরিপটি শেষ করেছেন: {poll}"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "জরিপ দেখুন"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "ভোটের বিস্তারিত"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "প্রশ্ন"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number}টি ভোট} other {{count,number}টি ভোট}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "কোনো ভোট নেই"
+  },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "জয়ী হচ্ছেন"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "পিনকৃত মেসেজ পাওয়া যায়নি"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "জরিপ পাওয়া যায়নি"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "নতুন ভোট"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "প্রশ্ন"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "একটি প্রশ্ন জিজ্ঞাসা করুন"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "অপশন"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "বিকল্প {number}"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "একাধিক ভোটের অনুমতি দিন"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "পাঠান"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "জরিপের জন্য প্রশ্ন প্রয়োজন"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "জরিপটির জন্য অন্তত 2টি বিকল্প প্রয়োজন"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "প্রশ্নটি অনেক বড়"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "অপশনটি অনেক বড়"
+  },
   "icu:deleteConversation": {
     "messageformat": "মুছে ফেলুন"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "চ্যাট মুছে ফেলবেন?"
-  },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "এই চ্যাটের সকল মেসেজ এই ডিভাইস থেকে মুছে ফেলা হবে।"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "এই চ্যাটের সকল মেসেজ আপনার সকল ডিভাইস থেকে মুছে ফেলা হবে।"
@@ -1045,6 +1276,132 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "আপনি ত্যাগ করার আগে, আপনাকে এই গ্রুপের জন্য অন্তত একজন নতুন অ্যাডমিনকে বেছে নিতে হবে।"
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "আপনি একটি মেসেজ পিন করেছেন"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender} একটি মেসেজ পিন করেছেন"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "মেসেজ-এ যান"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "...এর জন্য মেসেজ পিন করুন"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 ঘন্টা"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "৭ দিন"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "৩০ দিন"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "চিরতরে"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "পিন করুন"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "সবচেয়ে পুরনো পিনটি বদলাবেন?"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "এই মেসেজটি পিন করলে পুরনোটি প্রতিস্থাপন হবে।"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "অদৃশ্য হতে যাওয়া মেসেজ পিন করা হচ্ছে"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "টাইমারের মেয়াদ শেষ হয়ে গেলে এবং চ্যাট থেকে মেসেজ সরিয়ে ফেলা হলে, অদৃশ্য হতে যাওয়া মেসেজ আনপিন করা হবে।"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {পিনকৃত মেসেজ} other {মেসেজ পিন করুন}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "{pinNumber,number} পিনে যান"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "মেসেজ-এ যান"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "আরও ক্রিয়া"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "আনপিন করুন"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "মেসেজ-এ যান"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "সব মেসেজ দেখুন"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "ভয়েস বার্তা"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "ফাইল"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "পেমেন্ট"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "জরিপ"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "স্টিকার"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "একবার দেখা যাবে এমন মিডিয়া"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "ছবি"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "ভিডিও"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "ভয়েস বার্তা"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "পেমেন্ট"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "স্টিকার"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "একবার দেখা যাবে এমন মিডিয়া"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "মেসেজ পিন করুন"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "সব মেসেজ আনপিন করুন"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "সব মেসেজ আনপিন করবেন?"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "এই চ্যাটের সদস্যদের জন্য মেসেজ আনপিন করা হবে।"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "আনপিন করুন"
   },
   "icu:sessionEnded": {
     "messageformat": "নিরাপদ সেশন পুনরায় সেট করা হয়েছে"
@@ -1139,20 +1496,44 @@
   "icu:downloadNItems": {
     "messageformat": "{count, plural, one {{count,number} টি বস্তু} other {{count,number}-টি আইটেম}}"
   },
-  "icu:mediaNoLongerAvailable": {
-    "messageformat": "এই মিডিয়াটি আর নেই।"
-  },
   "icu:mediaNotAvailable": {
     "messageformat": "এই মিডিয়াটি আর নেই"
   },
   "icu:attachmentNoLongerAvailable__learnMore": {
     "messageformat": "আরো জানুন"
   },
-  "icu:fileNotAvailable": {
-    "messageformat": "এই ফাইলটি আর নেই"
+  "icu:attachmentNotAvailable__file": {
+    "messageformat": "ফাইলটি আর নেই"
   },
-  "icu:voiceMessageNotAvailable": {
-    "messageformat": "এই ভয়েস মেসেজটি আর নেই"
+  "icu:attachmentNotAvailable__longMessage": {
+    "messageformat": "এই মেসেজটি অসম্পূর্ণ"
+  },
+  "icu:attachmentNotAvailable__sticker": {
+    "messageformat": "স্টিকার নেই"
+  },
+  "icu:attachmentNotAvailable__voice": {
+    "messageformat": "ভয়েস মেসেজ নেই"
+  },
+  "icu:attachmentNotAvailable__tapToView": {
+    "messageformat": "একবার দেখা যাবে এমন মিডিয়া নেই"
+  },
+  "icu:attachmentNotAvailable__tapToViewCannotDownload": {
+    "messageformat": "একবার দেখা যাবে এমন মিডিয়া ডাউনলোড করা যাচ্ছে না"
+  },
+  "icu:TapToViewNotAvailableModal__body--expired": {
+    "messageformat": "এই একবার দেখা যাবে এমন মিডিয়াটি ডাউনলোডের জন্য আর পাওয়া যাচ্ছে না। {name}-কে আবার পাঠাতে বলুন।"
+  },
+  "icu:TapToViewNotAvailableModal__body--error": {
+    "messageformat": "একবার দেখা যাবে এমন মিডিয়া ডাউনলোড করা যাচ্ছে না। {name}-কে এটি আবার পাঠাতে হবে।"
+  },
+  "icu:BackfillFailureModal__title": {
+    "messageformat": "মিডিয়া ডাউনলোড করা যাচ্ছে না"
+  },
+  "icu:BackfillFailureModal__body--timeout": {
+    "messageformat": "আপনার ডেস্কটপ এবং ফোনের ইন্টারনেট সংযোগ ঠিক আছে কিনা দেখুন। আপনার ফোনে Signal খুলুন, তারপর আবার ডাউনলোড করার চেষ্টা করুন।"
+  },
+  "icu:BackfillFailureModal__body--not-found": {
+    "messageformat": "এই মিডিয়াটি আর আপনার ফোনে আর নেই এবং ডাউনলোড করা যাবে না।"
   },
   "icu:save": {
     "messageformat": "সংরক্ষণ"
@@ -1205,11 +1586,17 @@
   "icu:Install__support-link": {
     "messageformat": "সাহায্য প্রয়োজন?"
   },
-  "icu:Install__choose-device-name__description": {
-    "messageformat": "আপনি এই নামটি আপনার ফোনের \"লিংককৃত ডিভাইস\"-এর নীচে দেখতে পাবেন"
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "সকল ডেটা মুছে ফেলবেন?"
   },
-  "icu:Install__choose-device-name__placeholder": {
-    "messageformat": "আমার কম্পিউটার"
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "আপনি এই ডেস্কটপের সাথে একটি ভিন্ন Signal অ্যাকাউন্ট লিংক করার চেষ্টা করছেন। আপনি যদি এগিয়ে যান, তাহলে বর্তমানে Signal Desktop-এ থাকা সব ডেটা মুছে ফেলা হবে।"
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:Preferences--header": {
+    "messageformat": "সেটিংস"
   },
   "icu:Preferences--phone-number": {
     "messageformat": "ফোন নম্বর"
@@ -1217,11 +1604,203 @@
   "icu:Preferences--device-name": {
     "messageformat": "ডিভাইস এর নাম"
   },
-  "icu:chooseDeviceName": {
-    "messageformat": "এই ডিভাইস'র নাম চয়ন করুন"
+  "icu:Preferences--device-name__description": {
+    "messageformat": "এই ডিভাইসের নাম পরিবর্তন করতে, আপনার ফোনে Signal খুলুন এবং সেটিংস > লিংক করা ডিভাইসে যান"
   },
-  "icu:finishLinkingPhone": {
-    "messageformat": "ফোন সংযুক্তি করা শেষ করুন"
+  "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
+    "messageformat": "ইমোজির ত্বকের রঙ"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "চ্যাট ফোল্ডার"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "একটি চ্যাট ফোল্ডার যোগ করুন"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "ফোল্ডার যোগ করুন বা এডিট করুন"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "ফোল্ডারগুলোতে আপনার চ্যাট সাজান এবং আপনার চ্যাট তালিকায় দ্রুত সেগুলোর মধ্যে সুইচ করুন।"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number}-টি ফোল্ডার} other {{chatFoldersCount,number}-টি ফোল্ডার}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "সেট আপ করুন"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "নিয়ন্ত্রণ করুন"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "ফোল্ডার এডিট করুন"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "মুছে ফেলুন"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "ফোল্ডার মুছে ফেলবেন?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "আপনি কি \"{chatFolderTitle}\" ফোল্ডারটি মুছে ফেলতে চান?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "মুছে ফেলুন"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "চ্যাট ফোল্ডার"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "ফোল্ডারগুলোতে আপনার চ্যাট সাজান এবং আপনার চ্যাট তালিকায় দ্রুত সেগুলোর মধ্যে সুইচ করুন"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "ফোল্ডার"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "সকল চ্যাট"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "একটি ফোল্ডার তৈরি করুন"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "চ্যাট ফোল্ডার সরাতে টেনে আনুন"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "সুপারিশৃত ফোল্ডারসমূহ"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "যোগ করুন"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "অপঠিত"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "সকল চ্যাট থেকে অপঠিত মেসেজ"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "1:1 চ্যাট"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "শুধুমাত্র সরাসরি চ্যাট থেকে আসা মেসেজ"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "গ্রুপসমূহ"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "শুধুমাত্র গ্রুপ চ্যাট থেকে আসা মেসেজ"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "একটি ফোল্ডার তৈরি করুন"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "ফোল্ডার এডিট করুন"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "ফোল্ডারের নাম"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "ফোল্ডারের নাম (আবশ্যক)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "চ্যাট অন্তর্ভুক্ত"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "আপনি এই ফোল্ডারে যেসব চ্যাট দেখতে চান সেগুলি বেছে নিন"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "1:1 চ্যাট"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "গ্রুপ চ্যাট"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "চ্যাট যোগ করুন"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "চ্যাট অন্তর্ভুক্ত"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "বাদ দেওয়া চ্যাট"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "অনুসন্ধান"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "চ্যাটের ধরন"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "1:1 চ্যাট"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "গ্রুপসমূহ"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "সাম্প্রতিক চ্যাট"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "শেষ"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "প্রত্যাশা"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "আপনি এই ফোল্ডারে দেখতে চান না এমন চ্যাট বেছে নিন"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "চ্যাট বাদ দিন"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "শুধুমাত্র অপঠিত চ্যাট দেখান"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "এই ফোল্ডারে শুধুমাত্র অপঠিত মেসেজ সহ চ্যাট দেখানো হবে।"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "মিউট করা চ্যাট অন্তর্ভুক্ত করুন"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "ফোল্ডার মুছে ফেলুন"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "এই চ্যাট ফোল্ডারটি মুছে ফেলবেন?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "এই ফোল্ডারটি আপনার চ্যাট তালিকা থেকে সরানো হবে।"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "মুছে ফেলুন"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "পরিবর্তন সেভ করবেন?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "আপনি কি এই চ্যাট ফোল্ডারে করা পরিবর্তন সংরক্ষণ করতে চান?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "সংরক্ষণ"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "সংরক্ষণ"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
+    "messageformat": "স্ট্যাটাস আইকন দেখান"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
+    "messageformat": "সিল করা প্রেরকের মাধ্যমে কোন মেসেজ পাঠানো হলে মেসেজের বিস্তারিত বিবরণীতে একটি আইকন দেখান।"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "স্বয়ংক্রিয় 'কি' যাচাইকরণ"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "সক্রিয় করা হলে, Signal 1:1 চ্যাটের এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করার চেষ্টা করবে।"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "আরো জানুন"
   },
   "icu:initialSync": {
     "messageformat": "গ্রুপ এবং পরিচিতিসমূহ সমন্বয় করা হচ্ছে"
@@ -1304,6 +1883,12 @@
   "icu:calling__removed-from-call-title": {
     "messageformat": "কল থেকে সরানো হয়েছে"
   },
+  "icu:calling__has-max-devices": {
+    "messageformat": "এই কলের জন্য সর্বোচ্চ অংশগ্রহণকারীর সংখ্যায় পৌঁছেছে। পরে আবার চেষ্টা করুন।"
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "কলটিতে জায়গা নেই"
+  },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "লিংকের মাধ্যমে এই কলে যোগদানকারী যে কেউ আপনার নাম ও ছবি দেখতে পাবেন।"
   },
@@ -1367,6 +1952,27 @@
   "icu:CallingButton--more-options": {
     "messageformat": "আরো অপশন"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "অডিও মিউট করুন"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "অডিও আনমিউট করুন"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "প্রোফাইল দেখুন"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "চ্যাট-এ যান"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "কল থেকে মুছে ফেলুন"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "আরও ক্রিয়া"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "উপস্থাপন করছি"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
     "messageformat": "যোগ দেওয়ার অনুরোধ অনুমোদন করুন"
   },
@@ -1405,9 +2011,6 @@
   },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, one {{count,number} জন হাত তুলেছেন} other {{count,number} জন হাত তুলেছেন}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "(প্রথম থেকে শেষ পর্যন্ত)"
   },
   "icu:CallingReactions--me": {
     "messageformat": "আপনি"
@@ -1593,10 +2196,25 @@
     "messageformat": "সকল ডেটা মুছে ফেলবেন?"
   },
   "icu:deleteAllDataBody": {
-    "messageformat": "Delete all data and messages from this version of Signal Desktop? Your Signal account and data on your phone or other linked devices will not be deleted."
+    "messageformat": "Signal ডেস্কটপের এই সংস্করণ থেকে সকল ডেটা ও মেসেজ মুছে ফেলবেন? আপনার Signal অ্যাকাউন্ট এবং আপনার ফোন বা অন্যান্য লিংককৃত ডিভাইসের ডেটা মুছে ফেলা হবে না।"
   },
   "icu:deleteAllDataProgress": {
     "messageformat": "সংযোগ বিচ্ছিন্ন হচ্ছে এবং সকল ডেটা মুছে ফেলা হচ্ছে…"
+  },
+  "icu:deleteAccountHeader": {
+    "messageformat": "অ্যাকাউন্ট মুছে ফেলুন"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "এর ফলে আপনার অ্যাকাউন্টের তথ্য, প্রোফাইল ও আপনার সকল মেসেজ মুছে যাবে। আপনাকে সকল Signal গ্রুপ থেকেও সরিয়ে দেওয়া হবে।"
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "অ্যাকাউন্ট মুছে ফেলুন"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "অ্যাকাউন্ট মুছে ফেলবেন?"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "এর ফলে আপনার অ্যাকাউন্টের তথ্য, প্রোফাইল ও আপনার সকল মেসেজ মুছে যাবে। আপনাকে সকল Signal গ্রুপ থেকেও সরিয়ে দেওয়া হবে। এই প্রক্রিয়াটি সম্পন্ন হওয়ার পর অ্যাপটি বন্ধ হয়ে যাবে।"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "পূর্বের Signal ডেস্কটপ ইনস্টলেশন থেকে আপনার কিছু পুরনো ডেটা রয়েছে। আপনি চালিয়ে গেলে এগুলো মুছে যাবে এবং আপনি আবার প্রথম থেকে শুরু করবেন।"
@@ -1619,17 +2237,29 @@
   "icu:notificationSenderInGroup": {
     "messageformat": "{group}-এ {sender}"
   },
-  "icu:notificationReaction": {
-    "messageformat": "{sender} আপনার ম্যাসেজে {emoji} রিঅ্যাক্ট করেছেন"
-  },
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} {emoji} রিঅ্যাক্ট করেছেন: {message}-এ"
+  },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender} \"{pollQuestion}\" জরিপে ভোট দিয়েছেন"
   },
   "icu:sendFailed": {
     "messageformat": "পাঠাতে ব্যর্থ হয়েছে"
   },
   "icu:deleteFailed": {
     "messageformat": "মুছে ফেলা সফল হয়নি"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "মুছে ফেলা সফল হয়নি, বিস্তারিত জানতে ক্লিক করুন"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "আবারো মুছে ফেলার চেষ্টা করবেন?"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "মেসেজটি মুছে ফেলা যায়নি। আপনার নেটওয়ার্ক সংযোগ ঠিক আছে কিনা দেখুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "আবার চেষ্টা করুন"
   },
   "icu:editFailed": {
     "messageformat": "এডিট করা সফল হয়নি, বিস্তারিত জানতে ক্লিক করুন"
@@ -1640,8 +2270,8 @@
   "icu:partiallySent": {
     "messageformat": "আংশিক পাঠানো হয়েছে, বিস্তারিত জানতে ক্লিক করুন"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "আংশিক মুছে ফেলা হয়েছে, আবার চেষ্টা করতে ক্লিক করুন"
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "আংশিকভাবে মুছে ফেলা হয়েছে, বিস্তারিত জানার জন্য ক্লিক করুন"
   },
   "icu:expiredWarning": {
     "messageformat": "Signal ডেস্কটপের এই সংস্করণটির মেয়াদ শেষ হয়ে গেছে। বার্তা আদান-প্রদান চালিয়ে যেতে দয়া করে সর্বশেষতম সংস্করণে আপগ্রেড করুন।"
@@ -1660,9 +2290,6 @@
   },
   "icu:syncNow": {
     "messageformat": "এখনই আমদানি করুন"
-  },
-  "icu:syncing": {
-    "messageformat": "ইম্পোর্ট করা হচ্ছে…"
   },
   "icu:syncFailed": {
     "messageformat": "আমদানি ব্যর্থ। আপনার কম্পিউটার এবং আপনার ফোনটি ইন্টারনেটে সংযুক্ত রয়েছে তা নিশ্চিত করুন।"
@@ -1772,6 +2399,15 @@
   "icu:ConversationDetails__HeaderButton--Message": {
     "messageformat": "মেসেজ পাঠান"
   },
+  "icu:ConversationDetails--help-section": {
+    "messageformat": "সাহায্য করুন"
+  },
+  "icu:ConversationDetails--support-center": {
+    "messageformat": "সহায়তা কেন্দ্র"
+  },
+  "icu:ConversationDetails__GroupTerminatedBanner": {
+    "messageformat": "এই গ্রুপটি বন্ধ হয়ে গিয়েছে"
+  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "নিরাপত্তা নম্বর দেখুন"
   },
@@ -1832,11 +2468,29 @@
   "icu:Toast--failed-to-fetch-phone-number": {
     "messageformat": "ফোন নাম্বার আনা সফল হয়নি। আপনার ইন্টারনেট সংযোগ ঠিক আছে কিনা দেখুন এবং আবার চেষ্টা করুন।"
   },
+  "icu:Toast--download-failed": {
+    "messageformat": "ডাউনলোড ব্যর্থ হয়েছে"
+  },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "এই গ্রুপে শুধুমাত্র অ্যাডমিনরাই সদস্যদের লেবেল যোগ করতে পারবেন।"
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "'একবার দেখুন' সক্রিয় করা হয়েছে"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "'একবার দেখুন' বন্ধ আছে"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "এই ম্যাসেজটি পাঠানোর পর শুধুমাত্র পরবর্তী 24 ঘন্টার মধ্যে এটি এডিট করা যাবে।"
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} Signal ব্যবহারকারী নন। নিশ্চিত করুন যে আপনি সম্পূর্ণ ব্যবহারকারীর নাম লিখেছেন।"
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "ব্যবহারকারীর নাম হিসেবে {atUsername} নামটি কার্যকর নয়। নিশ্চিত করুন যে আপনি সম্পূর্ণ ব্যবহারকারীর নামের পরে তার ডিজিটগুলো লিখেছেন।"
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "ব্যবহারকারীকে পাওয়া যায়নি। \"{phoneNumber}\" Signal ব্যবহারকারী নন।"
@@ -1901,6 +2555,12 @@
   "icu:unlinked": {
     "messageformat": "বিচ্ছিন্ন হয়েছে"
   },
+  "icu:unregisteredWarning": {
+    "messageformat": "পুনরায় নিবন্ধন করতে এবং মেসেজ আদান-প্রদান চালিয়ে যেতে ক্লিক করুন। Signal Desktop সম্ভবত অনিবন্ধিত কারণ আপনি আপনার ফোন নম্বরটি অন্য কোনো ডিভাইসে Signal-এর সাথে নিবন্ধন করেছেন।"
+  },
+  "icu:unregistered": {
+    "messageformat": "আর নিবন্ধিত নয়"
+  },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "আপডেট পাওয়া যাচ্ছে"
   },
@@ -1933,6 +2593,27 @@
   },
   "icu:youUpdatedTheGroup": {
     "messageformat": "আপনি গ্রুপটি আপডেট করেছেন।"
+  },
+  "icu:collapsedGroupUpdates": {
+    "messageformat": "{count, plural, one {{count,number}টি গ্রুপ আপডেট} other {{count,number}টি গ্রুপ আপডেট}}"
+  },
+  "icu:multidayCollapse__container": {
+    "messageformat": "{containerDescription} · {dayCountSummary}"
+  },
+  "icu:multidayCollapse__dayCountSummary": {
+    "messageformat": "{dayCount, plural, one {{dayCount,number} দিন} other {{dayCount,number} দিন}}"
+  },
+  "icu:collapsedChatUpdates": {
+    "messageformat": "{count, plural, one {{count,number}টি চ্যাট আপডেট} other {{count,number}টি চ্যাট আপডেট}}"
+  },
+  "icu:collapsedTimerChanges": {
+    "messageformat": "{count, plural, one {{count,number}টি অদৃশ্য হতে যাওয়া মেসেজের টাইমারে পরিবর্তন · {endingState}} other {{count,number}টি অদৃশ্য হতে যাওয়া মেসেজের টাইমারে পরিবর্তন · {endingState}}}"
+  },
+  "icu:collapsedTimerChanges--disabled": {
+    "messageformat": "{count, plural, one {{count,number}টি অদৃশ্য হতে যাওয়া মেসেজের টাইমারে পরিবর্তন · নিষ্ক্রিয় করা হয়েছে} other {{count,number}টি অদৃশ্য হতে যাওয়া মেসেজের টাইমারে পরিবর্তন · নিষ্ক্রিয় করা হয়েছে}}"
+  },
+  "icu:collapsedCallEvents": {
+    "messageformat": "{count, plural, one {{count,number}টি কল ইভেন্ট} other {{count,number}টি কল ইভেন্ট}}"
   },
   "icu:updatedGroupAvatar": {
     "messageformat": "গ্রুপ অবতার আপডেট করা হয়েছে।"
@@ -1991,6 +2672,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "স্টিকার বার্তা"
   },
+  "icu:Poll--preview": {
+    "messageformat": "জরিপ: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2006,8 +2690,17 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "একবার দেখার উপযোগী ভিডিও"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "এই মেসেজটি মুছে ফেলা হয়েছে।"
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
+  "icu:message--deletedByAdmin": {
+    "messageformat": "অ্যাডমিন {admin} এই মেসেজটি মুছে ফেলেছেন"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "{name} এই মেসেজটি মুছে ফেলেছেন"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "আপনি এই মেসেজটি মুছে ফেলেছেন"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "সংযুক্তিটি বেশি বড় তাই দেখানো যাচ্ছে না।"
@@ -2044,6 +2737,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "আপনি {recipient}-এর পক্ষ হয়ে ডোনেট করেছেন"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "{sender} একটি মেসেজ পিন করেছেন"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "আপনি একটি মেসেজ পিন করেছেন"
   },
   "icu:message--donation": {
     "messageformat": "ডোনেশন"
@@ -2084,14 +2783,11 @@
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "স্টিকার প্যাক ইনস্টল করা যায়নি"
   },
-  "icu:stickers--StickerManager--Available": {
-    "messageformat": "পাওয়া যাচ্ছে"
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "কোনো স্টিকার প্যাক নেই, বন্ধুদের পাঠানোর জন্য স্টিকার যোগ করুন।"
   },
-  "icu:stickers--StickerManager--InstalledPacks": {
-    "messageformat": "ইনস্টল করা হয়েছে"
-  },
-  "icu:stickers--StickerManager--InstalledPacks--Empty": {
-    "messageformat": "কোনো স্টিকার ইনস্টল করা নেই"
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "স্টিকার যোগ করুন"
   },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "Signal  শিল্পী সিরিজ"
@@ -2099,14 +2795,17 @@
   "icu:stickers--StickerManager--BlessedPacks--Empty": {
     "messageformat": "কোনও Signal আর্টিস্ট স্টিকার পাওয়া যাচ্ছে না"
   },
-  "icu:stickers--StickerManager--ReceivedPacks": {
-    "messageformat": "আপনার প্রাপ্ত স্টিকার"
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "আপনার সাথে শেয়ার করা হয়েছে"
   },
-  "icu:stickers--StickerManager--ReceivedPacks--Empty": {
-    "messageformat": "আগত বার্তাগুলির স্টিকারসমূহ এখানে উপস্থিত হবে"
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "যখন আপনি কারো কাছ থেকে স্টিকার পাবেন, তখন স্টিকার প্যাকটি এখানে দেখা যাবে।"
   },
   "icu:stickers--StickerManager--Install": {
     "messageformat": "ইনস্টল করুন"
+  },
+  "icu:stickers--StickerManager--Installed": {
+    "messageformat": "ইনস্টল করা হয়েছে"
   },
   "icu:stickers--StickerManager--Uninstall": {
     "messageformat": "আনইনস্টল"
@@ -2114,56 +2813,29 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "আপনার যদি আর উৎস বার্তা না থাকে তবে আপনি এই স্টিকার প্যাকটি পুনরায় ইনস্টল করতে পারবেন না।"
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "স্টিকারের পরিচয়: ব্যান্ডিট দ্য ক্যাট"
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "সকল"
   },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "স্টিকারের সাথে পরিচিত হন"
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "আমার স্টিকার"
   },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "আপনি যখন স্টিকার ব্যবহার করতে পারেন তখন কেন শব্দ ব্যবহার করবেন?"
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "যোগ করুন"
   },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "স্টিকার বাছাইকারী খুলুন"
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "মুছে ফেলুন"
   },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "একটি স্টিকার প্যাক যোগ করুন"
+  "icu:stickers--StickerManagerPackDragHandle--Label": {
+    "messageformat": "স্টিকার প্যাকের ক্রম পরিবর্তন করতে ড্র্যাগ করুন"
   },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "পরবর্তী পৃষ্ঠা"
+  "icu:stickers--StickerManagerBlessedPacksList--Label": {
+    "messageformat": "Signal আর্টিস্ট সিরিজ স্টিকার প্যাক"
   },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "পূর্ববর্তী পৃষ্ঠা"
+  "icu:stickers--StickerManagerReceivedPacksList--Label": {
+    "messageformat": "যেসব স্টিকার প্যাক পাওয়া যাচ্ছে"
   },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "সাম্প্রতিক স্টিকার"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "কিছু স্টিকার ডাউনলোড করা যায়নি।"
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "স্টিকার প্যাক ইনস্টল করা হচ্ছে …"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "কোনও স্টিকার পাওয়া যায় নি"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "আপনার বার্তাগুলি থেকে নতুন স্টিকার প্যাকগুলি ইনস্টল করার জন্য পাওয়া যাচ্ছে"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "কোনও স্টিকার পাওয়া যায় নি"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "সম্প্রতি ব্যবহৃত স্টিকারগুলি এখানে দেখা যাবে।"
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "সাম্প্রতিক"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "ফিচারকৃত"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "অ্যানালাগ সময়"
+  "icu:stickers--StickerManagerInstalledPacksList--Label": {
+    "messageformat": "ইনস্টল করা স্টিকার প্যাক"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "স্টিকার প্যাক"
@@ -2171,44 +2843,254 @@
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "স্টিকার প্যাকটি খোলার সময় ত্রুটি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে দেখুন এবং আবার চেষ্টা করুন।"
   },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "কোনও ইমোজি পাওয়া যায়নি"
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "স্টিকার যোগ করুন"
   },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "ইমোজি অনুসন্ধান বন্ধ করুন"
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "মুছে ফেলুন"
   },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "ইমোজি অনুসন্ধান করুন"
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "লিংক"
   },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "ত্বকের ধরন {tone}"
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "লিংক কপি করা হয়েছে"
   },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "সাম্প্রতিক"
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, one {{count,number}-টি স্টিকার} other {{count,number}-টি স্টিকার}}"
   },
-  "icu:EmojiPicker__button--emoji": {
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "ইমোজি ছাড়া স্টিকার"
+  },
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "{author}-এর স্টিকার প্যাক"
+  },
+  "icu:stickers--ViewPack": {
+    "messageformat": "প্যাক দেখুন"
+  },
+  "icu:FunPicker__Tab--Emojis": {
     "messageformat": "ইমোজি"
   },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "জীবজন্তু"
+  "icu:FunPicker__Tab--Stickers": {
+    "messageformat": "স্টিকারসমূহ"
   },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "খাবার"
+  "icu:FunPicker__Tab--Gifs": {
+    "messageformat": "GIF"
   },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "কার্যকলাপ"
+  "icu:FunPanelEmojis__SearchLabel": {
+    "messageformat": "ইমোজি খুঁজুন"
   },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "ভ্রমণ"
+  "icu:FunPanelEmojis__SearchPlaceholder": {
+    "messageformat": "ইমোজি খুঁজুন"
   },
-  "icu:EmojiPicker__button--object": {
+  "icu:FunPanelEmojis__SubNavLabel": {
+    "messageformat": "ইমোজির প্রকারভেদ"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Recents": {
+    "messageformat": "সম্প্রতি ব্যাবহৃত হয়েছে"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--SmileysAndPeople": {
+    "messageformat": "স্মাইলি এবং মানুষ"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--AnimalsAndNature": {
+    "messageformat": "প্রাণী ও প্রকৃতি"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--FoodAndDrink": {
+    "messageformat": "খাবার ও পানীয়"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Activities": {
+    "messageformat": "কার্যক্রম"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--TravelAndPlaces": {
+    "messageformat": "ভ্রমণ ও স্থান"
+  },
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Objects": {
     "messageformat": "বস্তু"
   },
-  "icu:EmojiPicker__button--symbol": {
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Symbols": {
     "messageformat": "প্রতীক"
   },
-  "icu:EmojiPicker__button--flag": {
+  "icu:FunPanelEmojis__SubNavCategoryLabel--Flags": {
     "messageformat": "পতাকা"
+  },
+  "icu:FunPanelEmojis__SearchResults__EmptyHeading": {
+    "messageformat": "কোনও ইমোজি পাওয়া যায়নি"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__SelectSkinToneForSelectedEmoji": {
+    "messageformat": "{emojiName}-এর জন্য স্কিনের রঙ বেছে নিন"
+  },
+  "icu:FunPanelEmojis__ChangeSkinToneButtonLabel": {
+    "messageformat": "স্কিনের রং-এর পছন্দ পরিবর্তন করুন"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__LongPressAccessibilityDescription": {
+    "messageformat": "স্কিনের রঙ বেছে নিতে ক্লিক করে কিছু সময় ধরে রাখুন"
+  },
+  "icu:FunPanelEmojis__SkinTonePicker__ChooseDefaultLabel": {
+    "messageformat": "আপনার ডিফল্ট স্কিনের রং বেছে নিন"
+  },
+  "icu:FunPanelEmojis__SectionTitle--SearchResults": {
+    "messageformat": "অনুসন্ধানের ফলাফল"
+  },
+  "icu:FunPanelEmojis__SectionTitle--ThisMessage": {
+    "messageformat": "এই মেসেজ"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Recents": {
+    "messageformat": "সম্প্রতি ব্যাবহৃত হয়েছে"
+  },
+  "icu:FunPanelEmojis__SectionTitle--SmileysAndPeople": {
+    "messageformat": "স্মাইলি এবং মানুষ"
+  },
+  "icu:FunPanelEmojis__SectionTitle--AnimalsAndNature": {
+    "messageformat": "প্রাণী ও প্রকৃতি"
+  },
+  "icu:FunPanelEmojis__SectionTitle--FoodAndDrink": {
+    "messageformat": "খাবার ও পানীয়"
+  },
+  "icu:FunPanelEmojis__SectionTitle--TravelAndPlaces": {
+    "messageformat": "ভ্রমণ ও স্থান"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Activities": {
+    "messageformat": "কার্যক্রম"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Objects": {
+    "messageformat": "বস্তু"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Symbols": {
+    "messageformat": "প্রতীক"
+  },
+  "icu:FunPanelEmojis__SectionTitle--Flags": {
+    "messageformat": "পতাকা"
+  },
+  "icu:FunPanelEmojis__CustomizeReactionsButtonLabel": {
+    "messageformat": "প্রতিক্রিয়া কাস্টমাইজ করুন"
+  },
+  "icu:FunPanelStickers__SearchLabel": {
+    "messageformat": "স্টিকারগুলি খুঁজুন"
+  },
+  "icu:FunPanelStickers__SearchPlaceholder": {
+    "messageformat": "স্টিকারগুলি খুঁজুন"
+  },
+  "icu:FunPanelSticker__SubNavLabel": {
+    "messageformat": "স্টিকার প্যাক"
+  },
+  "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
+    "messageformat": "সম্প্রতি ব্যাবহৃত হয়েছে"
+  },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "একটি স্টিকার প্যাক যোগ করুন"
+  },
+  "icu:FunPanelStickers__SectionTitle--SearchResults": {
+    "messageformat": "অনুসন্ধানের ফলাফল"
+  },
+  "icu:FunPanelStickers__SectionTitle--Recents": {
+    "messageformat": "সম্প্রতি ব্যাবহৃত হয়েছে"
+  },
+  "icu:FunPanelStickers__SectionTitle--Featured": {
+    "messageformat": "ফিচারকৃত"
+  },
+  "icu:FunPanelStickers__SearchResults__EmptyHeading": {
+    "messageformat": "কোনও স্টিকার পাওয়া যায় নি"
+  },
+  "icu:FunPanelStickers__LightboxDialog__Label": {
+    "messageformat": "স্টিকার প্রিভিউ"
+  },
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "GIF খুঁজুন"
+  },
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "GIF খুঁজুন"
+  },
+  "icu:FunPanelGifs__SubNavLabel": {
+    "messageformat": "GIF-এর প্রকারভেদ"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Recents": {
+    "messageformat": "সম্প্রতি ব্যাবহৃত হয়েছে"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Trending": {
+    "messageformat": "ট্রেন্ডিং"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Celebrate": {
+    "messageformat": "উদযাপন করুন"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Love": {
+    "messageformat": "ভালোবাসা"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--ThumbsUp": {
+    "messageformat": "থাম্বস আপ"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Surprised": {
+    "messageformat": "অবাক"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Excited": {
+    "messageformat": "উচ্ছসিত"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Sad": {
+    "messageformat": "দুঃখ ভারাক্রান্ত"
+  },
+  "icu:FunPanelGifs__SubNavCategoryLabel--Angry": {
+    "messageformat": "রাগান্বিত"
+  },
+  "icu:FunPanelGifs__SearchResults__LoadingLabel": {
+    "messageformat": "GIF লোড হচ্ছে"
+  },
+  "icu:FunPanelGifs__SearchResults__ErrorHeading": {
+    "messageformat": "GIF লোড করা যায়নি। আপনার নেটওয়ার্ক সংযোগ ঠিক আছে কি না দেখুন এবং আবার চেষ্টা করুন"
+  },
+  "icu:FunPanelGifs__SearchResults__ErrorRetryButton": {
+    "messageformat": "পুনরায় চেষ্টা করুন"
+  },
+  "icu:FunPanelGifs__SearchResults__EmptyHeading": {
+    "messageformat": "কোনো GIF পাওয়া যায়নি"
+  },
+  "icu:FunPanelGifs__LightboxDialog__Label": {
+    "messageformat": "GIF প্রিভিউ"
+  },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "GIPHY দ্বারা চালিত"
+  },
+  "icu:FunSearch__ClearButtonLabel": {
+    "messageformat": "অনুসন্ধান সাফ করুন"
+  },
+  "icu:FunSkinTones__List": {
+    "messageformat": "ত্বকের রঙ"
+  },
+  "icu:FunSkinTones__ListItem--None": {
+    "messageformat": "কিছুই না"
+  },
+  "icu:FunSkinTones__ListItem--Light": {
+    "messageformat": "হালকা ত্বকের রঙ"
+  },
+  "icu:FunSkinTones__ListItem--MediumLight": {
+    "messageformat": "মাঝারি-হালকা ত্বকের রঙ"
+  },
+  "icu:FunSkinTones__ListItem--Medium": {
+    "messageformat": "মাঝারি ত্বকের রঙ"
+  },
+  "icu:FunSkinTones__ListItem--MediumDark": {
+    "messageformat": "মাঝারি-গাঢ় ত্বকের রঙ"
+  },
+  "icu:FunSkinTones__ListItem--Dark": {
+    "messageformat": "গাঢ় ত্বকের রঙ"
+  },
+  "icu:FunButton__Label--FunPicker": {
+    "messageformat": "একটি ইমোজি, স্টিকার, অথবা GIF যোগ করুন"
+  },
+  "icu:FunButton__Label--EmojiPicker": {
+    "messageformat": "একটি ইমোজি যোগ করুন"
+  },
+  "icu:FunButton__Label--StickerPicker": {
+    "messageformat": "একটি স্টিকার যোগ করুন"
+  },
+  "icu:FunPicker__Label--StickerReply": {
+    "messageformat": "প্রত্যুত্তর"
+  },
+  "icu:FunPicker__Label--SendStickerReply": {
+    "messageformat": "পাঠান"
+  },
+  "icu:FunPicker__Label--CancelStickerReply": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:FunPicker__Label--Sticker": {
+    "messageformat": "স্টিকার"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "বাতিল করুন"
@@ -2246,23 +3128,26 @@
   "icu:Message--update-signal": {
     "messageformat": "Signal আপডেট করুন"
   },
-  "icu:Message--tap-to-view-expired": {
+  "icu:Message--tap-to-view--viewed": {
     "messageformat": "দেখা হয়েছে"
   },
-  "icu:Message--tap-to-view--outgoing": {
-    "messageformat": "মিডিয়া"
+  "icu:Message--tap-to-view--media": {
+    "messageformat": "একবার-দেখার উপযোগী মিডিয়া"
   },
   "icu:Message--tap-to-view--incoming--expired-toast": {
     "messageformat": "আপনি ইতিমধ্যেই এই মেসেজটি দেখেছেন।"
   },
-  "icu:Message--tap-to-view--outgoing--expired-toast": {
-    "messageformat": "একবার দেখার উপযোগী ম্যাসেজ আপনার চ্যাট-এর ইতিহাসে সংরক্ষিত হয় না।"
+  "icu:Message--tap-to-view--outgoing--expired-toast-2": {
+    "messageformat": "'শুধুমাত্র-একবার-দেখা-যাবে' এমন মিডিয়া ফাইল পাঠানোর পর মুছে ফেলা হয়"
   },
-  "icu:Message--tap-to-view--incoming": {
-    "messageformat": "ফটো দেখুন"
+  "icu:Message--tap-to-view--video": {
+    "messageformat": "একবার দেখা যাবে এমন ভিডিও"
   },
-  "icu:Message--tap-to-view--incoming-video": {
-    "messageformat": "ভিডিও দেখুন"
+  "icu:Message--tap-to-view--photo": {
+    "messageformat": "একবার দেখা যাবে এমন ছবি"
+  },
+  "icu:Message--tap-to-view--helper-text": {
+    "messageformat": "দেখতে ক্লিক করুন"
   },
   "icu:Conversation--getDraftPreview--attachment": {
     "messageformat": "(সংযুক্তি)"
@@ -2323,6 +3208,9 @@
   },
   "icu:Keyboard--open-sticker-chooser": {
     "messageformat": "স্টিকার বাছাইকারী খুলুন"
+  },
+  "icu:Keyboard--open-gif-chooser": {
+    "messageformat": "GIF বাছাইকারী খুলুন"
   },
   "icu:Keyboard--begin-recording-voice-note": {
     "messageformat": "ভয়েস নোট রেকর্ডিং শুরু করুন"
@@ -2456,6 +3344,12 @@
   "icu:Keyboard--toggle-video": {
     "messageformat": "ভিডিও চালু ও বন্ধ টগল করুন"
   },
+  "icu:Keyboard--toggle-preview": {
+    "messageformat": "বড় করা প্রিভিউ চালু ও বন্ধ করুন"
+  },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "হাত উঠান অথবা হাত নামান (শুধুমাত্র গ্ৰুপ কলে)"
+  },
   "icu:Keyboard--accept-video-call": {
     "messageformat": "ভিডিও-এর মাধ্যমে কলের উত্তর দিন (শুধু ভিডিও কল)"
   },
@@ -2513,11 +3407,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "সমস্ত"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "নিরাপত্তা সংক্রান্ত পরামর্শ"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "আপনি চেনেন না এমন কোনো ব্যক্তির কাছ থেকে মেসেজের অনুরোধ গ্রহণ করার ব্যাপারে সতর্ক থাকুন। যেসব বিষয়ে সতর্ক থাকবেন:"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "Signal থেকে আসা চ্যাটের উত্তর দেবেন না"
+  },
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "Signal কখনোই আপনার রেজিস্ট্রেশন কোড, পিন, বা পুনরুদ্ধার 'কি'-এর জন্য আপনাকে মেসেজ দেবে না। Signal-এর প্রতিনিধি হওয়ার ভান করে এমন কোনো চ্যাটের উত্তর দেবেন না।"
+  },
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "নাম ও ছবি রিভিউ করুন"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "\"নাম যাচাই করা হয়নি\" নোটিশের দিকে খেয়াল রাখুন। প্রত্যেকে Signal-এ তাদের নিজস্ব প্রোফাইল নাম নির্ধারণ করে থাকেন।"
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "জালিয়াতি প্রতিহত করতে সাবধান থাকুন"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "আপনাকে উত্তর দিতে প্ররোচিত করার উদ্দেশ্যে পাঠানো অস্পষ্ট মেসেজ এড়িয়ে চলুন। আর্থিক পরামর্শ এবং সন্দেহজনক ওয়েব লিংক সম্পর্কে সতর্ক থাকুন।"
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "Signal থেকে আসা চ্যাটের উত্তর দেবেন না"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "Signal আপনার রেজিস্ট্রেশন কোড, পিন বা পুনরুদ্ধার 'কি'-এর জন্য আপনাকে কখনোই মেসেজ করবে না। এমন কোনো চ্যাটের উত্তর দিবেন না যেখানে Signal বা Signal সাপোর্ট-এর প্রতিনিধি হওয়ার ভান করা হয়। ক্ষতিকর ব্যক্তিরা আপনার অ্যাকাউন্ট দখলের চেষ্টা করার জন্য ভুয়া চ্যাট সেট আপ করে।"
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "নাম ও ছবি রিভিউ করুন"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "\"নাম যাচাই করা হয়নি\" নোটিশের দিকে খেয়াল রাখুন। প্রত্যেকে Signal-এ তাদের নিজস্ব প্রোফাইলের নাম ও ছবি নির্ধারণ করে থাকেন। নতুন অনুরোধটি কার কাছ থেকে এসেছে সে বিষয়ে আপনি নিশ্চিত না হলে, সেটি এড়িয়ে যাওয়াটাই নিরাপদ।"
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "ক্রিপ্টো বা অর্থ সংক্রান্ত স্ক্যাম"
@@ -2531,11 +3452,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "স্প্যামাররা প্রায়শই আপনাকে আকর্ষণ করার জন্য \"হাই\"-এর মতো একটি সাধারণ মেসেজ দিয়ে কথা শুরু করেন। আপনি উত্তর দিলে তারা আপনাকে আরো জড়িয়ে ফেলতে পারেন।"
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "লিংক সহ মেসেজ"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "আপনি চেনেন না এমন কোনো ব্যক্তির কাছ থেকে আসা মেসেজের ব্যাপারে সতর্ক থাকুন, বিশেষ করে যেসব মেসেজে ওয়েবসাইটের লিংক রয়েছে। আপনি আস্থা রাখতে পারেন না এমন ব্যক্তিদের কাছ থেকে আসা লিংকগুলোতে ভিজিট করবেন না।"
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "ওয়েব লিংক সহ মেসেজ"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "ভুয়া ব্যবসা ও প্রতিষ্ঠান"
@@ -2543,17 +3464,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "কোনো ব্যবসা প্রতিষ্ঠান বা সরকারি সংস্থা যদি আপনার সাথে যোগাযোগ করে তবে সে সম্পর্কে সতর্ক থাকুন। ট্যাক্স এজেন্সি, কুরিয়ার এবং আরো অনেক কিছুর সাথে সম্পর্কিত মেসেজ স্প্যাম হতে পারে।"
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "{page,number} পেজে যান"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "পূর্ববর্তী পরামর্শ"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "পরবর্তী পরামর্শ"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "শেষ"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "আরো দেখুন"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "{name}-কে আপনাকে বার্তা পাঠাতে ও আপনার নাম এবং ফটো তাদের সাথে শেয়ার করতে দেবেন? আপনি স্বীকার না করা পর্যন্ত আপনি যে তাদের বার্তাগুলি দেখেছেন তা তারা জানবেন না।"
@@ -2651,6 +3563,12 @@
   "icu:MessageRequests--accept": {
     "messageformat": "স্বীকার করুন"
   },
+  "icu:MessageRequests--accept-confirm-title-v2": {
+    "messageformat": "অনুরোধ গ্রহণ করবেন?"
+  },
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "আপনি যাদের বিশ্বাস করেন শুধুমাত্র তাদের কাছ থেকেই অনুরোধ গ্রহণ করুন। <bold>Signal কখনোই</bold> আপনার রেজিস্ট্রেশন কোড, পিন, বা পুনরুদ্ধার 'কি'-এর জন্য আপনাকে মেসেজ দেবে না।"
+  },
   "icu:MessageRequests--continue": {
     "messageformat": "চালিয়ে যান"
   },
@@ -2662,6 +3580,60 @@
   },
   "icu:ConversationHero--members": {
     "messageformat": "{count, plural, one {1 জন সদস্য} other {{count,number} জন সদস্য}}"
+  },
+  "icu:ConversationHero--member-list-and-invited": {
+    "messageformat": "{invitesCount, plural, one {{memberList} (+{invitesCount,number} জন আমন্ত্রিত)} other {{memberList} (+{invitesCount,number} জন আমন্ত্রিত)}}"
+  },
+  "icu:ConversationHero--group-members-zero": {
+    "messageformat": "গ্ৰুপে কোনো সদস্য নেই"
+  },
+  "icu:ConversationHero--group-members-only-you": {
+    "messageformat": "এখনো গ্রুপের অন্য কোনো সদস্য নেই"
+  },
+  "icu:ConversationHero--group-members-one": {
+    "messageformat": "{member}"
+  },
+  "icu:ConversationHero--group-members-one-and-you": {
+    "messageformat": "{member} ও আপনি"
+  },
+  "icu:ConversationHero--group-members-two": {
+    "messageformat": "{member1} এবং {member2}"
+  },
+  "icu:ConversationHero--group-members-two-and-you": {
+    "messageformat": "{member1}, {member2}, ও আপনি"
+  },
+  "icu:ConversationHero--group-members-three": {
+    "messageformat": "{member1}, {member2}, ও {member3}"
+  },
+  "icu:ConversationHero--group-members-other": {
+    "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3}, এবং <clickable>অন্য {remainingCount,number} জন</clickable>} other {{member1}, {member2}, {member3}, এবং <clickable>অন্য {remainingCount,number} জন</clickable>}}"
+  },
+  "icu:ConversationHero--group-members-other-and-you": {
+    "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3}, এবং <clickable>অন্য {remainingCount,number} জন</clickable>} other {{member1}, {member2}, {member3}, এবং <clickable>অন্য {remainingCount,number} জন</clickable>}}"
+  },
+  "icu:ConversationHero--group-names": {
+    "messageformat": "<clickable>গ্ৰুপের নাম</clickable> যাচাই করা হয়নি"
+  },
+  "icu:ConversationHero--profile-names": {
+    "messageformat": "<clickable>প্রোফাইলের নাম</clickable> যাচাই করা হয়নি"
+  },
+  "icu:ConversationHero--name-not-verified": {
+    "messageformat": "নাম যাচাইকৃত নয়"
+  },
+  "icu:ConversationHero--signal-official-chat": {
+    "messageformat": "এটি Signal-এর অফিসিয়াল ও একমাত্র চ্যাট"
+  },
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "অফিসিয়াল চ্যাট"
+  },
+  "icu:ConversationHero--signal-official-account--description": {
+    "messageformat": "Signal-এর একমাত্র অফিসিয়াল চ্যাট। খবর ও রিলিজ নোট পেয়ে আপডেট থাকুন।"
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "Signal-এর একমাত্র অফিসিয়াল চ্যাট।"
+  },
+  "icu:ConversationHero--release-notes": {
+    "messageformat": "খবর ও রিলিজ নোট পেয়ে আপডেট থাকুন।"
   },
   "icu:member-of-1-group": {
     "messageformat": "{group}-এর সদস্য"
@@ -2798,11 +3770,29 @@
   "icu:CallControls__JoinLeaveButton--hangup-group": {
     "messageformat": "ত্যাগ করুন"
   },
+  "icu:CallControls__JoinLeaveButton--hangup-1-1-tooltip": {
+    "messageformat": "কল শেষ করুন"
+  },
+  "icu:CallControls__JoinLeaveButton--hangup-group-tooltip": {
+    "messageformat": "কল ছেড়ে যান"
+  },
   "icu:CallControls__MutedToast--muted": {
     "messageformat": "মাইক বন্ধ করুন"
   },
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "মাইক চালু করুন"
+  },
+  "icu:CallControls__MutedBySomeoneToast": {
+    "messageformat": "{otherName} আপনাকে মিউট করেছেন।"
+  },
+  "icu:CallControls__SomeoneMutedSomeoneToast": {
+    "messageformat": "{name} {otherName}-কে মিউট করেছেন।"
+  },
+  "icu:CallControls__YouMutedSomeoneToast": {
+    "messageformat": "আপনি {otherName}-কে মিউট করেছেন।"
+  },
+  "icu:CallControls__YouMutedYourselfToast": {
+    "messageformat": "আপনি অন্য একটি ডিভাইস থেকে নিজেকে মিউট করে রেখেছেন।"
   },
   "icu:CallControls__LowerHandSuggestionToast": {
     "messageformat": "হাত নামবেন?"
@@ -2876,6 +3866,12 @@
   "icu:calling__pip--off": {
     "messageformat": "পূর্ণস্ক্রিনে কল করুন"
   },
+  "icu:calling__preview--maximize": {
+    "messageformat": "প্রিভিউ বড় করুন"
+  },
+  "icu:calling__preview--minimize": {
+    "messageformat": "প্রিভিউ ছোট করুন"
+  },
   "icu:calling__change-view": {
     "messageformat": "ভিউ পরিবর্তন করুন"
   },
@@ -2890,9 +3886,6 @@
   },
   "icu:calling__view_mode--updated": {
     "messageformat": "ভিউ আপডেট করা হয়েছে"
-  },
-  "icu:calling__hangup": {
-    "messageformat": "কল ছেড়ে যান"
   },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "আপনার স্ক্রিন শেয়ার করুন"
@@ -2909,17 +3902,11 @@
   "icu:calling__SelectPresentingSourcesModal--window": {
     "messageformat": "একটি উইন্ডো"
   },
-  "icu:calling__ParticipantInfoButton": {
-    "messageformat": "এই কন্টাক্ট সম্পর্কে আরো তথ্য"
-  },
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "কল লিংক কপি করুন"
   },
   "icu:CallingAdhocCallInfo__ShareViaSignal": {
     "messageformat": "Signal-এর মাধ্যমে কল লিংক শেয়ার করুন"
-  },
-  "icu:CallingAdhocCallInfo__RemoveClient": {
-    "messageformat": "এই ব্যক্তিকে কল থেকে বাদ দিন"
   },
   "icu:CallingAdhocCallInfo__RemoveClientDialogBody": {
     "messageformat": "{name}-কে কল থেকে সরাতে চান?"
@@ -2941,9 +3928,6 @@
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
     "messageformat": "কোনো কলে যোগ দেওয়ার আগে আপনি শুধুমাত্র ফোন কন্টাক্টের নাম, আপনি যাদের সাথে একটি গ্রুপে আছেন বা যাদের সাথে আপনি 1:1 চ্যাট করেছেন তাদের নাম দেখতে পাবেন। একবার আপনি কলে যোগ দিলে আপনি সকল নাম ও ছবি দেখতে পাবেন।"
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "বুঝতে পেরেছি"
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "ভিডিও"
@@ -2990,14 +3974,20 @@
   "icu:muteExpirationLabel": {
     "messageformat": "{duration} পর্যন্ত মিউট করা হয়েছে"
   },
-  "icu:EmojiButton__label": {
-    "messageformat": "ইমোজি"
-  },
   "icu:ErrorModal--title": {
     "messageformat": "কিছু ভুল হয়েছে!"
   },
   "icu:ErrorModal--description": {
     "messageformat": "অনুগ্রহ করে আবার চেষ্টা করুন অথবা সহায়তায় যোগাযোগ করুন।"
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "একটি অপ্রত্যাশিত সমস্যা দেখা দিয়েছে"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "ডিবাগ লগ সাবমিট করুন"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "না ধন্যবাদ"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "ঠিক আছে"
@@ -3048,7 +4038,7 @@
     "messageformat": "গ্রুপে যোগ দেওয়া যাবে না"
   },
   "icu:GroupV2--join--link-forbidden": {
-    "messageformat": "আপনি এই লিংকের মাধ্যমে গ্ৰুপে যোগ দিতে পারবেন না, কারণ একজন অ্যাডমিন আপনাকে সরিয়ে দিয়েছেন।"
+    "messageformat": "আপনি এই লিংকের মাধ্যমে গ্ৰুপে যোগ দিতে পারবেন না, কারণ একজন অ্যাডমিন আপনাকে সরিয়ে দিয়েছেন। গ্রুপে আবারো যুক্ত হতে একজন অ্যাডমিনের সাথে যোগাযোগ করুন।"
   },
   "icu:GroupV2--join--prompt-with-approval": {
     "messageformat": "আপনি এই গ্রুপে যোগদানের আগে এই গ্রুপের একজন এডমিন অবশ্যই আপনার অনুরোধটি অনুমোদন করতে হবে। আপনি যখন যোগদানের জন্য অনুরোধ করবেন তখন আপনার নাম এবং ফটো এর সদস্যদের সাথে শেয়ার করা হবে।"
@@ -3077,11 +4067,23 @@
   "icu:GroupV2--join--requested": {
     "messageformat": "যোগদান করার জন্য আপনার অনুরোধ গ্রুপ অ্যাডমিনের কাছে পাঠানো হয়েছে। তারা কোনও পদক্ষেপ নিলে আপনাকে জানানো হবে।"
   },
+  "icu:GroupV2--join--group-terminated": {
+    "messageformat": "এই গ্রুপে যোগ দেওয়া যাচ্ছে না।"
+  },
   "icu:GroupV2--join--general-join-failure--title": {
     "messageformat": "লিংকে ত্রুটি"
   },
   "icu:GroupV2--join--general-join-failure": {
     "messageformat": "গ্রুপে যোগ দেওয়া যায়নি। পরে আবার চেষ্টা করুন।"
+  },
+  "icu:GroupV2--terminate-group-in-progress": {
+    "messageformat": "গ্ৰুপটি বন্ধ করা হচ্ছে..."
+  },
+  "icu:TerminateGroupFailedModal__description": {
+    "messageformat": "গ্রুপটি বন্ধ করা যায়নি। আপনার নেটওয়ার্ক সংযোগ ঠিক আছে কি না দেখুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:TerminateGroupFailedModal__try-again": {
+    "messageformat": "আবার চেষ্টা করুন"
   },
   "icu:GroupV2--admin": {
     "messageformat": "অ্যাডমিন"
@@ -3158,23 +4160,41 @@
   "icu:GroupV2--access-attributes--all--unknown": {
     "messageformat": "একজন অ্যাডমিন গ্রুপের তথ্য কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “সকল সদস্য” করে দিয়েছেন।"
   },
-  "icu:GroupV2--access-members--admins--other": {
-    "messageformat": "{adminName} গ্রুপের সদস্যতা কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “কেবলমাত্র অ্যাডমিন” করে দিয়েছেন।"
-  },
   "icu:GroupV2--access-members--admins--you": {
     "messageformat": "আপনি গ্রুপের সদস্যতা কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “কেবলমাত্র অ্যাডমিন” করে দিয়েছেন।"
+  },
+  "icu:GroupV2--access-members--admins--other": {
+    "messageformat": "{adminName} গ্রুপের সদস্যতা কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “কেবলমাত্র অ্যাডমিন” করে দিয়েছেন।"
   },
   "icu:GroupV2--access-members--admins--unknown": {
     "messageformat": "একজন অ্যাডমিন গ্রুপের সদস্যপদ কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “কেবলমাত্র অ্যাডমিন” করে দিয়েছেন।"
   },
-  "icu:GroupV2--access-members--all--other": {
-    "messageformat": "{adminName} গ্রুপের সদস্যপদ কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “সকল সদস্য” করে দিয়েছেন।"
-  },
   "icu:GroupV2--access-members--all--you": {
     "messageformat": "আপনি গ্রুপের সদস্যপদ কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “সকল সদস্য” করে দিয়েছেন।"
   },
+  "icu:GroupV2--access-members--all--other": {
+    "messageformat": "{adminName} গ্রুপের সদস্যপদ কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “সকল সদস্য” করে দিয়েছেন।"
+  },
   "icu:GroupV2--access-members--all--unknown": {
     "messageformat": "একজন অ্যাডমিন গ্রুপের সদস্যতা কারা সম্পাদনা করতে পারবেন সেটি পরিবর্তন করে “সকল সদস্য” করে দিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--admins--you": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা আপনি পরিবর্তন করে \"শুধুমাত্র অ্যাডমিন\" বেছে নিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--admins--other": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা {adminName} পরিবর্তন করে \"শুধুমাত্র অ্যাডমিন\" বেছে নিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--admins--unknown": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা একজন অ্যাডমিন পরিবর্তন করে \"শুধুমাত্র অ্যাডমিন\" বেছে নিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--all--you": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা আপনি পরিবর্তন করে \"সব সদস্য\" বেছে নিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--all--other": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা {adminName} পরিবর্তন করে \"সব সদস্য\" বেছে নিয়েছেন।"
+  },
+  "icu:GroupV2--access-member-label--all--unknown": {
+    "messageformat": "সদস্য লেবেল কে যোগ করতে পারবেন তা একজন অ্যাডমিন পরিবর্তন করে \"সব সদস্য\" বেছে নিয়েছেন।"
   },
   "icu:GroupV2--access-invite-link--disabled--you": {
     "messageformat": "আপনি গ্রুপ লিংকের জন্য অ্যাডমিনের অনুমোদন নিষ্ক্রিয় করে দিয়েছেন।"
@@ -3506,6 +4526,15 @@
   "icu:GroupV2--summary": {
     "messageformat": "এই গ্রুপের সদস্য বা সেটিংস পরিবর্তন করা হয়েছে।"
   },
+  "icu:GroupV2--terminated--you": {
+    "messageformat": "আপনি গ্ৰুপটি বন্ধ করেছেন"
+  },
+  "icu:GroupV2--terminated--other": {
+    "messageformat": "{memberName} গ্ৰুপটি বন্ধ করেছেন"
+  },
+  "icu:GroupV2--terminated--unknown": {
+    "messageformat": "এই গ্রুপটি বন্ধ হয়ে গিয়েছে"
+  },
   "icu:GroupV1--Migration--disabled--link": {
     "messageformat": "@মেনশন এবং অ্যাডমিন-এর মতো নতুন ফিচার সচল করতে এই গ্রুপটিকে আপগ্রেড করুন। যেসব সদস্যরা এই গ্রুপে তাদের নাম বা ছবি শেয়ার করেননি তাদের যোগ দেওয়ার জন্য আমন্ত্রণ জানানো হবে। <learnMoreLink>আরো জানুন।</learnMoreLink>"
   },
@@ -3590,23 +4619,23 @@
   "icu:ClearingData__description": {
     "messageformat": "এতে কয়েক মিনিট সময় লাগতে পারে"
   },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "গ্ৰুপ ছেড়ে যাচ্ছেন..."
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "আপনি যতগুলো গ্ৰুপে আছেন তার উপর নির্ভর করে, এতে কয়েক মিনিট সময় লাগতে পারে"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "অ্যাকাউন্ট ও সকল ডেটা মুছে ফেলা হচ্ছে..."
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "ব্যবহারকারীর ডেটা মুছে ফেলা হচ্ছে এবং অ্যাপ রিসেট করা হচ্ছে"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signal-এ দান করুন"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Signal-এ দান করুন"
-  },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "সিগন্যাল আপনার মতো লোকদের দ্বারা চালিত হয়। অবদান রাখুন এবং একটি ব্যাজ গ্রহণ করুন।"
-  },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "আপনার ফোনে সিগন্যাল খুলুন"
-  },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "সেটিংস খুলতে উপরের বাম কোণে আপনার প্রোফাইল ছবির উপর ট্যাপ করুন"
-  },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "\"Signal-এ অনুদান দিন\" ট্যাপ করুন এবং সাবস্ক্রাইব করুন"
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} Signal-কে সমর্থন করে"
   },
   "icu:BackupImportScreen__title": {
     "messageformat": "মেসেজ সিঙ্ক করা হচ্ছে"
@@ -3616,6 +4645,9 @@
   },
   "icu:BackupImportScreen__progressbar-hint--processing": {
     "messageformat": "মেসেজ ট্রান্সফার চূড়ান্ত করা হচ্ছে..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--canceling": {
+    "messageformat": "বাতিল করা হচ্ছে..."
   },
   "icu:BackupImportScreen__progressbar-hint--preparing": {
     "messageformat": "ডাউনলোড করার জন্য প্রস্তুতি নিচ্ছে..."
@@ -3630,16 +4662,16 @@
     "messageformat": "সিঙ্ক প্রক্রিয়া সহ মেসেজ এবং চ্যাটের তথ্য এন্ড-টু-এন্ড এনক্রিপশন দ্বারা সুরক্ষিত। <learnMoreLink>আরো জানুন</learnMoreLink>"
   },
   "icu:BackupImportScreen__cancel-confirmation__title": {
-    "messageformat": "স্থানান্তর বাতিল করবেন?"
+    "messageformat": "ডিভাইস লিংক করা বাতিল করবেন?"
   },
   "icu:BackupImportScreen__cancel-confirmation__body": {
-    "messageformat": "আপনার মেসেজ এবং মিডিয়া পুনর্বহাল সম্পন্ন হয়নি। আপনি যদি বাতিল করতে চান, তবে আপনার মেসেজের ইতিহাস ছাড়াই আপনার ডিভাইস লিংক করা হবে।"
+    "messageformat": "আপনি যদি বাতিল করতে চান, তাহলে এই ডিভাইসটি লিংক করা হবে না এবং কোনো মেসেজ বা মিডিয়া ট্রান্সফার করা হবে না।"
   },
   "icu:BackupImportScreen__cancel-confirmation__cancel": {
-    "messageformat": "স্থানান্তর চালিয়ে যান"
+    "messageformat": "লিংক করা চালিয়ে যান"
   },
   "icu:BackupImportScreen__cancel-confirmation__confirm": {
-    "messageformat": "স্থানান্তর বাতিল করুন"
+    "messageformat": "লিংক করা বাতিল করুন"
   },
   "icu:BackupImportScreen__error__title": {
     "messageformat": "আপনার মেসেজ ট্রান্সফারে ত্রুটি দেখা দিয়েছে"
@@ -3653,23 +4685,11 @@
   "icu:BackupImportScreen__error__confirm": {
     "messageformat": "পুনরায় চেষ্টা করুন"
   },
-  "icu:BackupImportScreen__skip": {
-    "messageformat": "এড়িয়ে যান"
-  },
-  "icu:BackupImportScreen__skip-confirmation__title": {
-    "messageformat": "মেসেজ ট্রান্সফার এড়িয়ে যাবেন?"
-  },
-  "icu:BackupImportScreen__skip-confirmation__body": {
-    "messageformat": "আপনি যদি এড়িয়ে যেতে চান, তাহলে এই ডিভাইসে কোনো মেসেজ বা মিডিয়াতে আপনার অ্যাক্সেস থাকবে না। আপনি 'সেটিংস > চ্যাট > ট্রান্সফার' থেকে এড়িয়ে যাওয়ার পরে একটি নতুন ট্রান্সফার শুরু করতে পারবেন।"
-  },
-  "icu:BackupImportScreen__skip-confirmation__cancel": {
-    "messageformat": "বাতিল করুন"
-  },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "মিডিয়া পুনরুদ্ধার করা হচ্ছে"
+    "messageformat": "মিডিয়া সিঙ্ক হচ্ছে"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "পুনর্বহালে সাময়িক বিরতি দেওয়া হয়েছে"
+    "messageformat": "সিঙ্ক প্রক্রিয়া স্থগিত করা হয়েছে"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "{totalSize}-এর মধ্যে {currentSize}-টি পুনর্বহাল করা হয়েছে"
@@ -3677,14 +4697,20 @@
   "icu:BackupMediaDownloadProgress__description-idle": {
     "messageformat": "মিডিয়া ব্যাকগ্রাউন্ডে ডাউনলোড হতে থাকবে"
   },
+  "icu:BackupMediaDownloadProgress__title-offline": {
+    "messageformat": "মিডিয়া পুনরুদ্ধার স্থগিত করা হয়েছে"
+  },
+  "icu:BackupMediaDownloadProgress__description-offline": {
+    "messageformat": "ইন্টারনেট সংযোগের জন্য অপেক্ষা করা হচ্ছে..."
+  },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "ট্রান্সফারে সাময়িক বিরতি দিন"
+    "messageformat": "পজ করুন"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "ট্রান্সফার পুনরায় চালু করুন"
+    "messageformat": "শুরু করুন"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "স্থানান্তর বাতিল করুন"
+    "messageformat": "সিঙ্ক প্রক্রিয়া বাতিল করুন"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "আরো অপশন"
@@ -3696,22 +4722,58 @@
     "messageformat": "{currentSize} এর {totalSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "মিডিয়া ট্রান্সফার বাতিল করবেন?"
+    "messageformat": "মিডিয়া সিঙ্ক প্রক্রিয়া বাতিল করবেন?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "আপনার মেসেজ এবং মিডিয়া পুনর্বহাল সম্পন্ন হয়নি। আপনি যদি বাতিল করতে চান, তবে আপনি সেটিংস থেকে আবার স্থানান্তর করতে পারবেন।"
-  },
-  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "স্থানান্তর চালিয়ে যান"
+    "messageformat": "আপনার মিডিয়া সিঙ্ক করা সম্পন্ন হয়নি। যদি আপনি বাতিল করতে চান, তাহলে এই ডিভাইসটি পুনরায় লিঙ্ক করে আবার সিঙ্ক করতে পারেন। <learnMoreLink>আরো জানুন</learnMoreLink>।"
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "স্থানান্তর বাতিল করুন"
+    "messageformat": "সিঙ্ক প্রক্রিয়া বাতিল করুন"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "সিঙ্ক প্রক্রিয়া স্থগিত করা হয়েছে"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "সিঙ্ক প্রক্রিয়া চালিয়ে যেতে \"{resumeButtonText}\"-এ ক্লিক করুন"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "শুরু করুন"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "পজ করুন"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "মিডিয়া সিঙ্ক হচ্ছে"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{totalSize}-এর মধ্যে {currentSize} ({fractionComplete,number,percent})..."
+  },
+  "icu:CriticalIdlePrimaryDeviceModal__title": {
+    "messageformat": "অ্যাকাউন্ট সংক্রান্ত পদক্ষেপ গ্রহণ করা প্রয়োজন"
+  },
+  "icu:CriticalIdlePrimaryDeviceModal__description": {
+    "messageformat": "এই অ্যাকাউন্টটির ব্যবহার চালিয়ে যেতে আপনাকে অবশ্যই আপনার ফোনে Signal খুলতে হবে। আপনি যদি আপনার ফোনে Signal না খুলেন, তাহলে আপনার অ্যাকাউন্ট শীঘ্রই মুছে ফেলা হবে। <learnMoreLink>আরো জানুন</learnMoreLink>"
+  },
+  "icu:LowDiskSpaceBackupImportModal__title": {
+    "messageformat": "মিডিয়া পুনরুদ্ধার করা যায়নি"
+  },
+  "icu:LowDiskSpaceBackupImportModal__description": {
+    "messageformat": "আপনার ডিভাইসে পর্যাপ্ত খালি জায়গা নেই। আপনার মিডিয়া পুনরুদ্ধার করতে {diskSpaceAmount} জায়গা খালি করুন।"
   },
   "icu:CompositionArea--expand": {
     "messageformat": "প্রসারিত করুন"
   },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "ফাইল সংযুক্ত করুন"
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "ছবি ও ভিডিও"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "ফাইল"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "জরিপ"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "সংযুক্তি বা জরিপ যোগ করুন"
   },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "এই ব্যক্তিটি Signal ব্যবহার করছেন না"
@@ -3728,6 +4790,24 @@
   "icu:CompositionArea__edit-action--send": {
     "messageformat": "এডিট করা ম্যাসেজ পাঠান"
   },
+  "icu:CompositionArea__ConfirmGifSelection__Title": {
+    "messageformat": "সংযুক্তিটি পুনর্বহাল করবেন?"
+  },
+  "icu:CompositionArea__ConfirmGifSelection__Body": {
+    "messageformat": "এই GIF যোগ করলে আপনার বর্তমান খসড়া মেসেজের আইটেমটি পুনর্বহাল করা হবে।"
+  },
+  "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
+    "messageformat": "প্রতিস্থাপন করুন"
+  },
+  "icu:CompositionArea--group-terminated": {
+    "messageformat": "আপনি এই গ্রুপে মেসেজ পাঠাতে পারবেন না, কারণ গ্রুপটি বন্ধ হয়ে গিয়েছে।"
+  },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "একবার দেখুন"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "একবার-দেখার উপযোগী মিডিয়া"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "ম্যাসেজ এডিট করুন"
   },
@@ -3739,6 +4819,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "অ্যাডমিন হিসেবে সরিয়ে ফেলুন"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "এটি তাদের সদস্য লেবেলও মুছে ফেলবে।"
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "অ্যাডমিন বানান"
@@ -3758,6 +4841,30 @@
   "icu:ContactModal--voice": {
     "messageformat": "ভয়েস"
   },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "অডিও মিউট করুন"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "আপনি কি {contact}-কে মিউট করার ব্যাপারে নিশ্চিত?"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "মিউট"
+  },
+  "icu:ContactModal--remove-from-call": {
+    "messageformat": "কল থেকে মুছে ফেলুন"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "সদস্য লেবেল"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "এই গ্রুপে নিজেকে বা আপনার ভূমিকা বর্ণনা করার জন্য একটি সদস্য লেবেল নির্ধারণ করুন। সদস্য লেবেল শুধুমাত্র এই গ্রুপের মধ্যেই দৃশ্যমান।"
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "একটি লেবেল নির্ধারণ করুন"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "আপনার লেবেল এডিট করুন"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "চ্যাট-এর রং"
   },
@@ -3772,6 +4879,36 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "গ্রুপের লিংক"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "সদস্য লেবেল"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "আপনার সদস্য লেবেল লিখুন"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "এই গ্রুপে নিজেকে বা আপনার ভূমিকা বর্ণনা করার জন্য একটি সদস্য লেবেল নির্ধারণ করুন। সদস্য লেবেল শুধুমাত্র এই গ্রুপের মধ্যেই দৃশ্যমান।"
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "প্রিভিউ"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "হ্যালো!"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "লেবেল সহ গ্রুপের সদস্য"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "অন্য কোনো সদস্যের লেবেল নেই"
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "সদস্য লেবেল সেভ করা যাচ্ছে না"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "আপনার নেটওয়ার্ক সংযোগ ঠিক আছে কিনা দেখুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "এই গ্রুপে শুধুমাত্র অ্যাডমিনরাই সদস্যদের লেবেল নির্ধারণ করতে পারবেন।"
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "মেসেজ অদৃশ্য হওয়া"
@@ -3803,8 +4940,8 @@
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "যারা গ্রুপের তথ্য সম্পাদনা করতে পারবেন"
   },
-  "icu:ConversationDetails--group-info-info": {
-    "messageformat": "গ্রুপের নাম, ফটো, বিবরণ ও মেসেজ অদৃশ্য হওয়ার সময় কারা সম্পাদনা করতে পারবেন তা বেছে নিন।"
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "গ্ৰুপের নাম, ছবি, বিবরণ, অদৃশ্য হতে যাওয়া মেসেজের টাইমার ও পিনকৃত মেসেজ কে এডিট করতে পারবেন তা বেছে নিন।"
   },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "যারা সদস্যদের যোগ করতে পারবেন"
@@ -3818,17 +4955,47 @@
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "কারা এই গ্রুপে মেসেজ পাঠাতে পারবেন তা বেছে নিন।"
   },
+  "icu:ConversationDetails--member-label--label": {
+    "messageformat": "কে সদস্য লেবেল যোগ করতে পারবেন"
+  },
+  "icu:ConversationDetails--member-label--info": {
+    "messageformat": "এই গ্ৰুপে কে সদস্য লেবেল যোগ করতে পারবেন তা বেছে নিন।"
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "সদস্য লেবেলগুলো মুছে ফেলা হবে"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "এই অনুমতি \"শুধুমাত্র অ্যাডমিন\"-এ পরিবর্তন করলে এই গ্রুপে যারা অ্যাডমিন নন তাদের দ্বারা নির্ধারণ করা সদস্য লেবেলগুলো মুছে যাবে।"
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "চালিয়ে যান"
+  },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "অনুরোধ ও আমন্ত্রণ"
   },
   "icu:ConversationDetailsActions--leave-group": {
     "messageformat": "গ্রুপ ছেড়ে যান"
   },
+  "icu:ConversationDetailsActions--terminate-group": {
+    "messageformat": "গ্ৰুপ বন্ধ করুন"
+  },
   "icu:ConversationDetailsActions--block-group": {
     "messageformat": "গ্রুপটি ব্লক করুন"
   },
   "icu:ConversationDetailsActions--unblock-group": {
     "messageformat": "গ্রুপটি আনব্লক করুন"
+  },
+  "icu:ConversationDetailsActions--report-spam": {
+    "messageformat": "স্প্যাম রিপোর্ট করা হয়েছে"
+  },
+  "icu:ConversationDetailsActions--archive": {
+    "messageformat": "চ্যাট আর্কাইভ করুন"
+  },
+  "icu:ConversationDetailsActions--unarchive": {
+    "messageformat": "চ্যাট আনআর্কাইভ করুন"
+  },
+  "icu:ConversationDetailsActions--delete": {
+    "messageformat": "চ্যাট মুছে ফেলুন"
   },
   "icu:ConversationDetailsActions--leave-group-must-choose-new-admin": {
     "messageformat": "আপনি ছেড়ে চলে যাওয়ার আগে, আপনাকে এই গ্রুপের জন্য অন্তত একজন নতুন অ্যাডমিনকে বেছে নিতে হবে।"
@@ -3842,6 +5009,18 @@
   "icu:ConversationDetailsActions--leave-group-modal-confirm": {
     "messageformat": "ছেড়ে চলে যান"
   },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-title": {
+    "messageformat": "\"{groupName}\" বন্ধ করবেন?"
+  },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-content": {
+    "messageformat": "সদস্যরা গ্রুপে আর মেসেজ পাঠাতে বা কল শুরু করতে পারবেন না। আপনি যে গ্রুপটি বন্ধ করে দিয়েছেন, সে বিষয়ে তাদের জানানো হবে এবং তারা আগের মেসেজের ইতিহাস দেখতে পারবেন।"
+  },
+  "icu:ConversationDetailsActions--terminate-group-modal-confirm": {
+    "messageformat": "গ্ৰুপ বন্ধ করুন"
+  },
+  "icu:ConversationDetailsActions--confirm-terminate-group-confirm-modal-content": {
+    "messageformat": "এর মাধ্যমে গ্রুপটি স্থায়ীভাবে বন্ধ হয়ে যাবে। আপনি কি এগিয়ে যাওয়ার ব্যাপারে নিশ্চিত?"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-title": {
     "messageformat": "\"{groupName}\" গ্রুপটি আনব্লক করবেন?"
   },
@@ -3854,26 +5033,41 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "ব্লক করুন"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
-    "messageformat": "আপনার কন্টাক্টরা আপনাকে এই গ্ৰুপে যোগ করতে পারবেন।"
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
+    "messageformat": "আপনার কন্টাক্টগণ আপনাকে এই গ্ৰুপে যোগ করতে পারবেন।"
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "আনব্লক করুন"
   },
+  "icu:ConversationDetailsActions--report-spam-modal-content-direct": {
+    "messageformat": "Signal-কে জানানো হবে যে এই ব্যক্তি সম্ভবত স্প্যাম মেসেজ পাঠাচ্ছেন। Signal কোনো চ্যাটের কন্টেন্ট দেখতে পারে না।"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-group": {
+    "messageformat": "Signal-কে জানানো হবে যে যেই ব্যক্তি আপনাকে গ্ৰুপটিতে আমন্ত্রণ করেছেন তিনি সম্ভবত স্প্যাম মেসেজ পাঠাচ্ছেন। Signal কোনো চ্যাটের কন্টেন্ট দেখতে পারে না।"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-spam": {
+    "messageformat": "স্প্যাম রিপোর্ট করা হয়েছে"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-and-block": {
+    "messageformat": "রিপোর্ট করুন এবং ব্লক করুন"
+  },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} জন সদস্য} other {{number,number} জন সদস্য}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "শেয়ার করা মিডিয়া"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "সব দেখুন"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "মিডিয়া, লিংক ও ফাইল"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} জন সদস্য} other {{number,number} জন সদস্য}}"
   },
+  "icu:ConversationDetailsMembershipList--terminated-title": {
+    "messageformat": "{number, plural, one {{number,number} জন প্রাক্তন সদস্য} other {{number,number} জন প্রাক্তন সদস্য}}"
+  },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "সদস্যকে যোগ করুন"
+  },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "সদস্য লেবেল যোগ করুন"
   },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "সব দেখুন"
@@ -3943,6 +5137,9 @@
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "গ্রুপ লিংক ব্যবহার করে যোগদান করার জন্য অনুমোদন পেতে নতুন সদস্যদের একজন অ্যাডমিনের প্রয়োজন হয়"
+  },
+  "icu:GroupLinkManagement__CopyGroupLinkButtonLabel": {
+    "messageformat": "signal.group লিংকটি ক্লিপবোর্ডে কপি করুন"
   },
   "icu:PendingInvites--tab-requests": {
     "messageformat": "অনুরোধসমূহ ({count,number}টি)"
@@ -4016,14 +5213,11 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "নির্বাচিত ম্যাসেজগুলো ফরোয়ার্ড করুন"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, one {ম্যাসেজ মুছবেন?} other {{count,number}টি ম্যাসেজ মুছবেন?}}"
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, one {নির্বাচিত মেসেজটি মুছে ফেলবেন?} other {নির্বাচিত {count,number}-টি মেসেজ মুছে ফেলবেন?}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, one {আপনি কার জন্য ম্যাসেজটি মুছে ফেলতে চান?} other {আপনি কার জন্য ম্যাসেজগুলো মুছে ফেলতে চান?}}"
-  },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, one {কোন কোন ডিভাইস থেকে আপনি এই ম্যাসেজটি মুছে ফেলতে চান?} other {কোন কোন ডিভাইস থেকে আপনি এই ম্যাসেজগুলো মুছে ফেলতে চান?}}"
   },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
     "messageformat": "{count, plural, one {এই মেসেজটি আপনার সকল ডিভাইস থেকে মুছে ফেলা হবে।} other {এই মেসেজগুলি আপনার সকল ডিভাইস থেকে মুছে ফেলা হবে।}}"
@@ -4031,20 +5225,42 @@
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "আমার জন্য মুছে ফেলুন"
   },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "এই ডিভাইস থেকে মুছে ফেলুন"
-  },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "সবার জন্য মুছে ফেলুন"
   },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "সকল ডিভাইস থেকে মুছে ফেলুন"
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "সবার জন্য মুছে ফেলবেন?"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, one {একজন অ্যাডমিন হিসেবে, গ্রুপের সদস্যরা দেখতে পাবেন যে আপনি এই মেসেজটি মুছে ফেলেছেন।} other {একজন অ্যাডমিন হিসেবে, গ্রুপের সদস্যরা দেখতে পাবেন যে আপনি এই মেসেজগুলো মুছে ফেলেছেন।}}",
+    "ignoreUnused": true
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
+    "messageformat": "{count, plural, one {Signal-এর সর্বশেষ সংস্করণের গ্রুপ সদস্যরা দেখতে পাবেন যে আপনি এই মেসেজ মুছে ফেলেছেন।} other {Signal-এর সর্বশেষ সংস্করণের গ্রুপ সদস্যরা দেখতে পাবেন যে আপনি এই মেসেজগুলি মুছে ফেলেছেন।}}"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
     "messageformat": "মুছে ফেলুন"
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, one {আপনি সবার জন্য মুছে ফেলতে শুধু {count,number}টি পর্যন্ত ম্যাসেজ নির্বাচন করতে পারবেন} other {আপনি সবার জন্য মুছে ফেলতে শুধু {count,number}টি পর্যন্ত ম্যাসেজ নির্বাচন করতে পারবেন}}"
+  },
+  "icu:DiscardDraftDialog__title": {
+    "messageformat": "খসড়া বাতিল করবেন?"
+  },
+  "icu:DiscardDraftDialog__description": {
+    "messageformat": "এই কার্যক্রমটি পূর্বাবস্থায় ফেরানো যাবে না।"
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "আইটেমটি মুছে ফেলবেন?"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "এটি আইটেমটি স্থায়ীভাবে মুছে ফেলবে। এই আইটেমটির সাথে সম্পৃক্ত কোনো মেসেজ টেক্সটও মুছে ফেলা হবে।"
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "মুছে ফেলুন"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "বাতিল করুন"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "আপনি সর্বোচ্চ 30টি ম্যাসেজ ফরোয়ার্ড করতে পারবেন"
@@ -4148,17 +5364,11 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "Signal কলে যোগ দিতে এই লিংকটি ব্যবহার করুন: {url}"
   },
-  "icu:MessageRequestWarning__learn-more": {
-    "messageformat": "আরও জানুন"
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "তোমার অনুরোধ ভালোভাবে দেখো"
   },
-  "icu:MessageRequestWarning__safety-tips": {
+  "icu:MessageRequestWarning__safety-tips-v2": {
     "messageformat": "নিরাপত্তা সংক্রান্ত পরামর্শ"
-  },
-  "icu:MessageRequestWarning__dialog__details": {
-    "messageformat": "আপনার এবং এই ব্যক্তির মধ্যে কোনও কমন গ্রুপ নেই। অনাকাঙ্ক্ষিত মেসেজ পাওয়া এড়াতে গ্রহণ করার পূর্বে অনুরোধগুলো যত্ন সহকারে পর্যালোচনা করুন।"
-  },
-  "icu:MessageRequestWarning__dialog__learn-even-more": {
-    "messageformat": "মেসেজের অনুরোধ সম্পর্কে"
   },
   "icu:ContactSpoofing__same-name--link": {
     "messageformat": "সতর্কতার সাথে অনুরোধ পর্যালোচনা করুন। Signal একই নামের আরেকটি কন্টাক্ট খুঁজে পেয়েছে। <reviewRequestLink>পর্যালোচনা করার অনুরোধ</reviewRequestLink>"
@@ -4254,7 +5464,7 @@
     "messageformat": "সবগুলো চ্যাট-এর রং রিসেট করুন"
   },
   "icu:ChatColorPicker__confirm-reset-default": {
-    "messageformat": "ডিফল্ট রিসেট করুন"
+    "messageformat": "ডিফল্ট রং রিসেট করুন"
   },
   "icu:ChatColorPicker__confirm-reset": {
     "messageformat": "রিসেট করুন"
@@ -4303,6 +5513,9 @@
   },
   "icu:GradientDial__knob-end": {
     "messageformat": "গ্রেডিয়েন্ট শেষ"
+  },
+  "icu:GIF--download": {
+    "messageformat": "GIF সংযুক্তি ডাউনলোড করুন"
   },
   "icu:customDisappearingTimeOption": {
     "messageformat": "কাস্টম সময়…"
@@ -4363,6 +5576,84 @@
   },
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "গ্রুপের বিবরণ যোগ করুন…"
+  },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "ভয়েস মেসেজ"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "শব্দ"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "পরিচিতি"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "একটি ব্রাউজারে লিংকটি খুলুন"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "কথোপকথনে মেসেজ দেখান"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "শব্দ"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "ফাইলসমূহ"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "লিংকসমূহ"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "এভাবে সাজান"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "এভাবে সাজান"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "তারিখ"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "আকার"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "কোনো মিডিয়া নেই"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "আপনি যেসব ছবি, ভিডিও ও GIF পাঠান ও গ্রহণ করেন, সেগুলো এখানে দেখা যাবে"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "কোনো অডিও নেই"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "আপনি যেসব ভয়েস মেসেজ এবং অডিও ফাইল পাঠান ও গ্রহণ করেন, সেগুলো এখানে দেখা যাবে।"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "কোনো লিংক নেই"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "আপনার প্রেরিত ও গৃহীত ফাইলগুলো এখানে প্রদর্শিত হবে"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "কোনো ফাইল নেই"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "আপনার পাঠানো এবং পাওয়া ফাইলগুলো এখানে প্রদর্শিত হবে"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "চ্যাটে দেখুন"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "ফরওয়ার্ড"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "সংরক্ষণ"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "মেসেজ পাঠান"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "লিংক কপি করুন"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "মুছে ফেলুন"
   },
   "icu:MediaQualitySelector--button": {
     "messageformat": "মিডিয়ার মান নির্বাচন করুন"
@@ -4426,6 +5717,12 @@
   },
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "ব্যবহারকারীর নামের লিংক রিসেট করা প্রয়োজন"
+  },
+  "icu:ProfileEditor__open": {
+    "messageformat": "'ব্যবহারকারীর নাম' লিংকের স্ক্রিনটি খুলুন"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "'ব্যবহারকারীর নাম' লিংকের স্ক্রিনটি খুলুন"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "আপনার 'ব্যবহারকারীর নাম' শেয়ার করুন"
@@ -4559,6 +5856,9 @@
   "icu:ProfileEditorModal--error": {
     "messageformat": "আপনার প্রোফাইলটি আপডেট করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
   },
+  "icu:ProfileEditorModal--sharing": {
+    "messageformat": "শেয়ার করা হচ্ছে"
+  },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "একজন অ্যাডমিনকে মেসেজ পাঠান"
   },
@@ -4567,6 +5867,10 @@
   },
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "অ্যাডমিন"
+  },
+  "icu:Avatar__View": {
+    "messageformat": "দেখান",
+    "limit": 7
   },
   "icu:AvatarEditor--choose": {
     "messageformat": "একটি অবতার নির্বাচন করুন"
@@ -4592,6 +5896,9 @@
   "icu:Preferences__button--general": {
     "messageformat": "সাধারন"
   },
+  "icu:Preferences__button--donate": {
+    "messageformat": "Signal-এ দান করুন"
+  },
   "icu:Preferences__button--appearance": {
     "messageformat": "অবয়ব।"
   },
@@ -4607,6 +5914,48 @@
   "icu:Preferences__button--privacy": {
     "messageformat": "গোপনীয়তা"
   },
+  "icu:Preferences__button--data-usage": {
+    "messageformat": "ডেটার ব্যবহার"
+  },
+  "icu:Preferences__media-auto-download": {
+    "messageformat": "মিডিয়া অটো-ডাউনলোড"
+  },
+  "icu:Preferences__media-auto-download__photos": {
+    "messageformat": "ছবি"
+  },
+  "icu:Preferences__media-auto-download__videos": {
+    "messageformat": "ভিডিও"
+  },
+  "icu:Preferences__media-auto-download__audio": {
+    "messageformat": "শব্দ"
+  },
+  "icu:Preferences__media-auto-download__documents": {
+    "messageformat": "নথিপত্র"
+  },
+  "icu:Preferences__media-auto-download__description": {
+    "messageformat": "ভয়েস মেসেজ ও স্টিকার সবসময় স্বয়ংক্রিয়ভাবে ডাউনলোড হয়।"
+  },
+  "icu:Preferences__button--backups": {
+    "messageformat": "ব্যাকআপ সমূহ"
+  },
+  "icu:Preferences__button--internal": {
+    "messageformat": "অভ্যন্তরীণ"
+  },
+  "icu:Preferences__button--manage": {
+    "messageformat": "নিয়ন্ত্রণ করুন"
+  },
+  "icu:Preferences__button--choose-folder": {
+    "messageformat": "ফোল্ডার চয়ন করুন"
+  },
+  "icu:Preferences__button--set-up": {
+    "messageformat": "সেট আপ করুন"
+  },
+  "icu:Preferences__internal__validate-backup--description": {
+    "messageformat": "এনক্রিপ্ট করা ব্যাকআপ মেমোরিতে স্থানান্তর করুন এবং এতে যাচাইকরণ স্যুট চালান"
+  },
+  "icu:Preferences__internal__validate-backup": {
+    "messageformat": "যাচাই করুন"
+  },
   "icu:Preferences--lastSynced": {
     "messageformat": "শেষ ইমপোর্ট {date} {time} এ"
   },
@@ -4619,8 +5968,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "লিঙ্কের প্রিভিউ তৈরি করুন"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "এই সেটিং পরিবর্তন করতে, আপনার মোবাইল ডিভাইসে Signal অ্যাপটি খুলুন এবং সেটিংস > চ্যাট-এ যান"
+  "icu:Preferences__link-previews--new-description": {
+    "messageformat": "আপনার পাঠানো মেসেজের জন্য ওয়েবসাইটগুলি থেকে সরাসরি লিঙ্কের প্রিভিউ পুনরুদ্ধার করুন।"
+  },
+  "icu:Preferences__address-book-photos--title": {
+    "messageformat": "অ্যাড্রেস বুকের ছবি ব্যবহার করুন"
+  },
+  "icu:Preferences__address-book-photos--description": {
+    "messageformat": "যদি থাকে তবে আপনার অ্যাড্রেস বুক থেকে কন্টাক্টদের ছবি দেখান।"
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "টাইপ করা ইমোটিকনকে ইমোজিতে রূপান্তর করুন"
@@ -4628,20 +5983,575 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "উদাহরণস্বরূপ, :-) <emojify>🙂</emojify>-এ রূপান্তরিত হবে"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "মিউট করা চ্যাট আর্কাইভকৃত অবস্থায় রাখুন"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "যখন নতুন ম্যাসেজ আসবে তখন আর্কাইভ করা মিউটকৃত চ্যাট আর্কাইভ অবস্থায়ই থাকবে।"
+  },
   "icu:Preferences--advanced": {
     "messageformat": "অ্যাডভান্সড"
   },
   "icu:Preferences--notification-content": {
     "messageformat": "নোটিফিকেশনের বিষয়বস্তু"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করুন"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "আপনার সব চ্যাটের একটি মেশিন কর্তৃক পাঠযোগ্য JSON কপি এক্সপোর্ট করুন। অদৃশ্য হতে যাওয়া মেসেজ এক্সপোর্ট করা হবে না।"
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "এক্সপোর্ট করুন"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করবেন?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>সাবধান!</bold> এই ফাইলটি কারো সাথে শেয়ার করবেন না। আপনার চ্যাট-এর ইতিহাস আপনার কম্পিউটারে সংরক্ষণ করা হবে এবং আপনার কম্পিউটারের অনুমতির উপর নির্ভর করে অন্যান্য অ্যাপ এটি অ্যাক্সেস করতে পারবে।"
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "মিডিয়া অন্তর্ভুক্ত করুন <secondary>(বড় আকারের ফাইল)</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করুন"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করতে আপনার পরিচয় যাচাই করুন।"
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "এক্সপোর্ট করুন"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করার জন্য যাচাইকরণ প্রয়োজন।"
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করুন"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "{totalBytes} ({percentage,number,percent})-এর {currentBytes} এক্সপোর্ট করা হচ্ছে..."
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "এতে কয়েক মিনিট সময় লাগতে পারে"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "এক্সপোর্ট সম্পন্ন হয়েছে"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "আপনি আপনার চ্যাট এক্সপোর্ট ফাইল কোথায় সংরক্ষণ করছেন সে ব্যাপারে <bold>সাবধান</bold> এবং এটি কারো সাথে শেয়ার করবেন না। আপনার কম্পিউটারের অনুমতির উপর নির্ভর করে আপনার কম্পিউটারের অন্যান্য অ্যাপ এটি অ্যাক্সেস করতে পারে। "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "ফাইন্ডারে দেখান"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "ফোল্ডারে দেখান"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "ফোল্ডারে দেখান"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করা যায়নি"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "একটি ত্রুটি ঘটেছে এবং আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করা যায়নি।"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "স্টোরেজের পর্যাপ্ত জায়গা খালি নেই"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "আপনার কম্পিউটারে পর্যাপ্ত খালি জায়গা না থাকায় আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করা যাচ্ছে না। {bytes} জায়গা খালি করুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করা যায়নি"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "আপনার কম্পিউটারে পর্যাপ্ত খালি স্টোরেজ না থাকার কারণে আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করা যায়নি। {bytes} জায়গা খালি করুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "চ্যাট-এর ইতিহাস এক্সপোর্ট করা যাচ্ছে না"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "আপনার চ্যাট-এর ইতিহাস এক্সপোর্ট করা যাচ্ছে না, কারণ Signal-এর ডিস্কে ফাইল রাইট করার অনুমতি নেই। আপনার ডিস্কের অনুমতি পরিবর্তন করার চেষ্টা করুন অথবা আপনার সিস্টেম সেটিংস আপডেট করুন এবং তারপর আবার এক্সপোর্ট করুন।"
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "ব্যাকআপ এক্সপোর্ট করা হচ্ছে"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "ব্যাকআপ এক্সপোর্ট সম্পন্ন হয়েছে"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "এই ব্যাকআপটি পুনর্বহাল করতে:"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "আপনার ব্যাকআপ ফোল্ডারটি আপনার ফোনের স্টোরেজে ট্রান্সফার করুন"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "আপনার ফোনে Signal-এর একটি নতুন কপি ইনস্টল করুন"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "\"পুনর্বহাল বা ট্রান্সফার করুন\"-এ ট্যাপ করুন এবং \"ডিভাইস ব্যাকআপ\" বেছে নিন"
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "চাঁদের আইকন"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "{profileName}-এর কপি"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "চালু"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "{endTime} পর্যন্ত চালু আছে"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "এক ঘন্টার জন্য"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "{time} পর্যন্ত"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "সেটিংস"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "\"{name}\" চালু"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "\"{name}\" বন্ধ"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল এখন সক্রিয় আছে"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল এখন নিষ্ক্রিয় করা হয়েছে"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "সেট আপ করুন"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "শুধুমাত্র আপনার পছন্দের ব্যক্তি ও গ্রুপ থেকে নোটিফিকেশন ও কল পেতে একটি প্রোফাইল তৈরি করুন"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "নোটিফিকেশন প্রোফাইল যোগ করুন বা এডিট করুন"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {একটি প্রোফাইল} other {{profileCount,number}-টি প্রোফাইল}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "প্রোফাইল তৈরি করুন"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "আপনার প্রোফাইলের নাম দিন"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "নাম"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "প্রোফাইল নাম"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "কর্মক্ষেত্র"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "ঘুম"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "গাড়ি চালাচ্ছি"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "ডাউনটাইম"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "ফোকাস"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "অনুমোদিত নোটিফিকেশন"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "প্রোফাইল চালু থাকা অবস্থায় আপনি যেসকল ব্যক্তি ও গ্ৰুপের নোটিফিকেশন পেতে চান সেগুলো যোগ করুন"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "ব্যক্তি অথবা গ্ৰুপ যোগ করুন"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "প্রত্যাশা"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "সকল কল অনুমোদন করুন"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "সকল উল্লেখ অবহিত করুন"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "সময়সূচী যোগ করুন"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "সময়সূচী"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "আপনার নোটিফিকেশন প্রোফাইল স্বয়ংক্রিয় করতে আপনার সময়সূচী সক্রিয় করুন এবং এডিট করুন।"
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "স্বয়ংক্রিয়ভাবে চালু করুন"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "সময়সূচী"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "থেকে"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "পর্যন্ত"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "টাইম পিকার খুলুন"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "রবিবার"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "সোমবার"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "মঙ্গলবার"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "বুধবার"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "বৃহস্পতিবার"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "শুক্রবার"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "শনিবার"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "প্রোফাইল তৈরি করা হয়েছে"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "যদি আপনি একটি সময়সূচী যোগ করে থাকেন, তাহলে আপনার প্রোফাইল স্বয়ংক্রিয়ভাবে চালু ও বন্ধ হবে। আপনি চ্যাট তালিকার উপরে থাকা ··· আইকনে ক্লিক করে ম্যানুয়াল উপায়েও এটি চালু বা বন্ধ করতে পারবেন।"
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "রবি"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "সোমবার"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "মঙ্গলবার"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "বুধ"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "বৃহঃ"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "শুক্র"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "শনি"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "কর্মদিবস"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "উইকেন্ড"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "দৈনিক"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "প্রোফাইল"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "সকল ডিভাইস সিঙ্ক করুন"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "আপনার প্রোফাইলগুলো আপনার সকল ডিভাইসে সিঙ্ক করা হবে। একটি ডিভাইসের জন্য প্রোফাইল চালু করলে অন্য ডিভাইসগুলোতেও এটি চালু হয়ে যাবে।"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "প্রোফাইল মুছে ফেলুন"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "এই নোটিফিকেশন প্রোফাইলটি স্থায়ীভাবে মুছে ফেলবেন?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "মুছে ফেলুন"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "চালু"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "বন্ধ"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "এই প্রোফাইলের নাম এডিট করুন"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "অনুমোদিত নোটিফিকেশন"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} থেকে {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "চালু"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "বন্ধ"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "ব্লক করা আছে"
   },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, one {{num,number} জন কন্টাক্ট} other {{num,number} জন কন্টাক্ট}}"
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { কোনো ব্যবহারকারী বা গ্ৰুপ নেই } one {{num,number} ব্যবহারকারী বা গ্ৰুপ} other {{num,number} ব্যবহারকারী বা গ্ৰুপ}}"
   },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "এই সেটিংস পরিবর্তন করতে, আপনার মোবাইল ডিভাইসে Signal অ্যাপটি খুলুন এবং সেটিংস > গোপনীয়তায় নেভিগেট করুন"
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { কোনো ব্যবহারকারী নেই } one {{num,number} জন ব্যবহারকারী} other {{num,number} জন ব্যবহারকারী}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { কোনো গ্ৰুপ নেই } one {{num,number}টি গ্ৰুপ} other {{num,number}টি গ্ৰুপ}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "ব্লক করা ব্যবহারকারীরা আপনাকে কল করতে বা মেসেজ পাঠাতে পারবেন না"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "ব্লক করা হয়েছে এমন ইউজার"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "ব্লক করা হয়েছে এমন গ্রুপ"
+  },
+  "icu:Preferences--signal-backups": {
+    "messageformat": "Signal নিরাপদ ব্যাকআপ"
+  },
+  "icu:Preferences--signal-backups-off-description": {
+    "messageformat": "Signal-এর সুরক্ষিত এন্ড-টু-এন্ড এনক্রিপ্টকৃত স্টোরেজ সার্ভিস সহ স্বয়ংক্রিয় ব্যাকআপ। আপনার ফোনে শুরু করুন। <learnMoreLink>আরো জানুন</learnMoreLink>।"
+  },
+  "icu:Preferences--backup-section-description": {
+    "messageformat": "আপনার মেসেজের ইতিহাসের ব্যাকআপ নিন, যাতে আপনি যখন কোনো নতুন ফোন ব্যবহার করা শুরু করবেন বা Signal পুনরায় ইনস্টল করবেন তখন আপনি কখনোই ডেটা হারাবেন না।"
+  },
+  "icu:Preferences--backup-details__header": {
+    "messageformat": "ব্যাকআপের বিস্তারিত"
+  },
+  "icu:Preferences--backup-media-plan__description": {
+    "messageformat": "টেক্সট + সকল মিডিয়া ব্যাকআপ"
+  },
+  "icu:Preferences--backup-plan-not-found__description": {
+    "messageformat": "আপনার সাবস্ক্রিপশন পাওয়া যায়নি। আপনার ব্যাকআপের বিবরণ দেখতে আপনার ফোন চেক করুন।"
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/মাস"
+  },
+  "icu:Preferences--backup-messages-plan__description": {
+    "messageformat": "{mediaDayCount, plural, one {টেক্সট + {mediaDayCount,number} দিনের মিডিয়া ব্যাকআপ} other {টেক্সট + {mediaDayCount,number} দিনের মিডিয়া ব্যাকআপ}}"
+  },
+  "icu:Preferences--backup-messages-plan__cost-description": {
+    "messageformat": "আপনার ব্যাকআপ প্ল্যান ফ্রি"
+  },
+  "icu:Preferences--backup-plan__renewal-date": {
+    "messageformat": "{date} নবায়ন করছে"
+  },
+  "icu:Preferences--backup-plan__expiry-date": {
+    "messageformat": "মেয়াদ {date} পর্যন্ত"
+  },
+  "icu:Preferences--backup-plan__canceled": {
+    "messageformat": "সাবস্ক্রিপশন বাতিল করা হয়েছে"
+  },
+  "icu:Preferences--backup-media-plan__note": {
+    "messageformat": "আপনি আপনার ফোনে আপনার Signal নিরাপদ ব্যাকআপ সাবস্ক্রিপশন নিয়ন্ত্রণ করতে বা বাতিল করতে পারবেন।"
+  },
+  "icu:Preferences--backup-messages-plan__note": {
+    "messageformat": "আপনি আপনার ফোনে Signal নিরাপদ ব্যাকআপ নিয়ন্ত্রণ বা আপগ্রেড করতে পারবেন।"
+  },
+  "icu:Preferences--backup-plan__not-found__note": {
+    "messageformat": "আপনি আপনার ফোনে আপনার Signal নিরাপদ ব্যাকআপ সাবস্ক্রিপশন নিয়ন্ত্রণ করতে বা নবায়ন করতে পারবেন।"
+  },
+  "icu:Preferences--backup-created-at__label": {
+    "messageformat": "সর্বশেষ ব্যাকআপ"
+  },
+  "icu:Preferences--backup-created-by-phone": {
+    "messageformat": "আপনার ফোন"
+  },
+  "icu:Preferences__local-backups": {
+    "messageformat": "ডেস্কটপ ব্যাকআপ"
+  },
+  "icu:Preferences__local-backups-section__description": {
+    "messageformat": "আপনার ব্যাকআপটি এন্ড-টু-এন্ড এনক্রিপ্ট করা এবং আপনার কম্পিউটারে সংরক্ষিত।"
+  },
+  "icu:Preferences--local-backups-off-description": {
+    "messageformat": "একটি এন্ড-টু-এন্ড এনক্রিপ্টকৃত ব্যাকআপ তৈরি করুন যা আপনি আপনার ফোনে পুনর্বহাল করতে পারবেন। "
+  },
+  "icu:Preferences--local-backups-restore-info": {
+    "messageformat": "ব্যাকআপ পুনর্বহাল করতে, আপনার ফোনে Signal-এর একটি নতুন কপি ইনস্টল করুন। অ্যাপটি খুলুন এবং &quot;পুনর্বহাল করুন বা ট্রান্সফার করুন&quot;-এ ট্যাপ করুন। <learnMoreLink>আরো জানুন।</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-setup-folder": {
+    "messageformat": "একটি ফোল্ডার বেছে নিন"
+  },
+  "icu:Preferences--local-backups-setup-folder-description": {
+    "messageformat": "আপনার কম্পিউটারের স্টোরেজে এমন একটি ফোল্ডার বেছে নিন যেখানে আপনার এন্ড-টু-এন্ড এনক্রিপ্টকৃত ব্যাকআপ সংরক্ষণ করা হবে।"
+  },
+  "icu:Preferences--local-backups-setup-next": {
+    "messageformat": "পরবর্তী"
+  },
+  "icu:Preferences--local-backups-view-backup-key-done": {
+    "messageformat": "শেষ"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--mac": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' দেখান"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--windows": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' দেখতে আপনার পরিচয় যাচাই করুন।"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-description--linux": {
+    "messageformat": "পুনরুদ্ধার 'কি' দেখুন"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-message--linux": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' দেখার জন্য অথেন্টিকেশন করা প্রয়োজন।"
+  },
+  "icu:Preferences--local-backups-recovery-key-text-box": {
+    "messageformat": "পুনরুদ্ধার 'কি'"
+  },
+  "icu:Preferences--local-backups-enter-backup-key": {
+    "messageformat": "'কি' লিখুন"
+  },
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি'"
+  },
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "আপনার অ্যাকাউন্ট এবং ডেটা পুনরুদ্ধার করতে এই 'কি' প্রয়োজন। এটি কোনো নিরাপদ স্থানে রাখুন এবং কখনো কারো সাথে শেয়ার করবেন না। Signal আপনার পুনরুদ্ধার 'কি' জানতে চেয়ে কখনোই আপনাকে মেসেজ করবে না। <learnMoreLink>আরো জানুন।</learnMoreLink>"
+  },
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "পুনরুদ্ধার 'কি' শেয়ার করবেন না"
+  },
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "বুঝতে পেরেছি"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "'কি' শেয়ার করুন"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "'কি' শেয়ার করবেন না"
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' কারো সাথে শেয়ার করবেন না। শেয়ার করলে তারা আপনার অ্যাকাউন্ট দখলে নিয়ে নিতে পারেন। আপনার পুনরুদ্ধার 'কি' জানতে চেয়ে <strong>Signal কখনোই আপনাকে মেসেজ করবে না</strong>। Signal-এর প্রতিনিধি হওয়ার ছদ্মবেশ ধারণ করেন এমন কোনো চ্যাটের উত্তর দিবেন না। <learnMoreLink>আরো জানুন।</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' নিশ্চিত করুন"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key-description": {
+    "messageformat": "আপনার রেকর্ড করা পুনরুদ্ধার 'কি'-টি লিখুন"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-title": {
+    "messageformat": "আপনার 'কি' নিরাপদ রাখুন"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-body": {
+    "messageformat": "আপনি আপনার 'কি' হারিয়ে ফেললে Signal আপনাকে আপনার ব্যাকআপ পুনরুদ্ধারে সাহায্য করতে সক্ষম হবে না। এটিকে নিরাপদ ও সুরক্ষিত স্থানে সংরক্ষণ করুন এবং অন্যদের সাথে শেয়ার করবেন না।"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:Preferences--local-backups-see-backup-key-again": {
+    "messageformat": "'কি'-টি আবার দেখুন"
+  },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "সর্বশেষ ব্যাকআপ"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "কখনোই না"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "এখনি ব্যাকআপ করুন"
+  },
+  "icu:Preferences__local-backups-folder": {
+    "messageformat": "ব্যাকআপ ফোল্ডার"
+  },
+  "icu:Preferences__local-backups-turn-off": {
+    "messageformat": "ব্যাকআপ বন্ধ করুন"
+  },
+  "icu:Preferences__local-backups-turn-off-action": {
+    "messageformat": "বন্ধ করুন"
+  },
+  "icu:Preferences__local-backups-turn-off-confirmation": {
+    "messageformat": "পুনরায় সচল না করলে আপনি এই কম্পিউটারে আর ব্যাকআপ তৈরি করতে পারবেন না।"
+  },
+  "icu:Preferences__local-backups-turn-off-delete": {
+    "messageformat": "এই কম্পিউটার থেকে আমার ব্যাকআপ মুছে ফেলুন"
+  },
+  "icu:Preferences__local-backups-copy-key": {
+    "messageformat": "ক্লিপবোর্ডে অনুলিপি করুন"
+  },
+  "icu:Preferences__local-backups-copied-recovery-key": {
+    "messageformat": "পুনর্বহাল 'কি' কপি করা হয়েছে"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "ব্যাকআপ সক্ষম করুন"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "ব্যাকআপ সক্রিয় করতে আপনার পরিচয় যাচাই করুন।"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "ব্যাকআপ সক্ষম করুন"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "ব্যাকআপ সক্রিয় করার জন্য যাচাইকরণ প্রয়োজন।"
+  },
+  "icu:Preferences__local-backups-auth-error--unauthorized": {
+    "messageformat": "সিস্টেম যাচাইকরণ ব্যর্থ হওয়ায় এই কার্যক্রমটি সম্পন্ন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন অথবা আপনার মোবাইল ডিভাইসে Signal অ্যাপটি খুলে ব্যাকআপ সেটিংসে গিয়ে আপনার পুনরুদ্ধার 'কি' দেখুন।"
+  },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "এই কার্যিক্রমটির জন্য সিস্টেম যাচাইকরণের অনুরোধ করার সময় একটি ত্রুটি ঘটেছে।"
+  },
+  "icu:Preferences__view-key": {
+    "messageformat": "'কি' দেখুন"
+  },
+  "icu:Preferences__recovery-key": {
+    "messageformat": "পুনরুদ্ধার 'কি'"
+  },
+  "icu:Preferences__recovery-key-description": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' হলো একটি 64-ক্যারেক্টারের কোড, যা আপনার ব্যাকআপ পুনরুদ্ধার করতে ব্যবহৃত হয়"
+  },
+  "icu:Preferences__backup-other-ways": {
+    "messageformat": "ব্যাকআপ রাখার অন্যান্য উপায়"
+  },
+  "icu:Preferences__recovery-key-updated__title": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' পরিবর্তন করা হয়েছে"
+  },
+  "icu:Preferences__recovery-key-updated__description": {
+    "messageformat": "আপনার পুনরুদ্ধার 'কি' আপডেট করা হয়েছে। আপনার তৈরি করা যেকোনো নতুন ব্যাকআপ শুধুমাত্র আপনার নতুন পুনরুদ্ধার 'কি' ব্যবহার করেই পুনরুদ্ধার করা যাবে।"
+  },
+  "icu:Preferences__recovery-key-updated__view-key": {
+    "messageformat": "নতুন 'কি' দেখুন"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "ফোন নম্বর"
@@ -4700,8 +6610,14 @@
   "icu:Preferences--read-receipts": {
     "messageformat": "পড়ার প্রাপ্তিগুলি"
   },
+  "icu:Preferences--read-receipts--description": {
+    "messageformat": "এটি নিষ্ক্রিয় করা থাকলে, আপনি অন্যদের পাঠানো মেসেজ পড়ার রিড রিসিপ্ট দেখতে পাবেন না।"
+  },
   "icu:Preferences--typing-indicators": {
     "messageformat": "টাইপিং সূচক"
+  },
+  "icu:Preferences--typing-indicators--description": {
+    "messageformat": "এটি নিষ্ক্রিয় করা থাকলে, আপনি অন্যদের টাইপিং সূচক দেখতে পাবেন না।"
   },
   "icu:Preferences--updates": {
     "messageformat": "আপডেট"
@@ -4754,6 +6670,24 @@
   "icu:Preferences__LanguageModal__Restart__Button": {
     "messageformat": "পুনরায় চালু করুন"
   },
+  "icu:Preferences__Privacy__Application": {
+    "messageformat": "অ্যাপ্লিকেশন"
+  },
+  "icu:Preferences__content-protection--label": {
+    "messageformat": "স্ক্রীন সুরক্ষা"
+  },
+  "icu:Preferences__content-protection--description": {
+    "messageformat": "অতিরিক্ত গোপনীয়তা রক্ষার্থে এই কম্পিউটারে Signal-এর স্ক্রিনশট নেওয়া বন্ধ করুন।"
+  },
+  "icu:Preferences__content-protection__modal--title": {
+    "messageformat": "স্ক্রিনের নিরাপত্তা বন্ধ করবেন?"
+  },
+  "icu:Preferences__content-protection__modal--body": {
+    "messageformat": "যদি নিষ্ক্রিয় করা হয়, তাহলে এটি Microsoft Windows-কে Signal-এর স্ক্রিনশট নিতে এবং সেগুলো এমন ফিচারের জন্য ব্যবহার করার অনুমতি দিতে পারে যা ব্যক্তিগত নাও হতে পারে।"
+  },
+  "icu:Preferences__content-protection__modal--disable": {
+    "messageformat": "নিষ্ক্রিয় করুন"
+  },
   "icu:DialogUpdate--version-available": {
     "messageformat": "{version} সহজলভ্য সংস্করণে আপডেট করুন"
   },
@@ -4762,6 +6696,24 @@
   },
   "icu:DialogUpdate__downloaded": {
     "messageformat": "আপডেট ডাউনলোড হয়েছে"
+  },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "App Store-এ যেতে ক্লিক করুন"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "App Store-এ যেতে ক্লিক করুন"
+  },
+  "icu:CriticalIdlePrimaryDevice__title": {
+    "messageformat": "আপনার ফোনে সিগন্যাল খুলুন"
+  },
+  "icu:CriticalIdlePrimaryDevice__body": {
+    "messageformat": "আপনি আপনার ফোনে Signal না খুললে আপনার অ্যাকাউন্ট শীঘ্রই মুছে ফেলা হবে। আপনি যদি এটি সফলভাবে করেন তবে এই মেসেজটি চলে যাবে। <learnMoreLink>আরো জানুন</learnMoreLink>"
+  },
+  "icu:IdlePrimaryDevice__body": {
+    "messageformat": "আপনার অ্যাকাউন্ট সক্রিয় রাখতে আপনার ফোনে Signal খুলুন"
+  },
+  "icu:IdlePrimaryDevice__learnMore": {
+    "messageformat": "আরো জানুন"
   },
   "icu:DialogNetworkStatus__outage": {
     "messageformat": "Signal  প্রযুক্তিগত অসুবিধাগুলি অনুভব করছে। আমরা যত তাড়াতাড়ি সম্ভব সেবা পুনরুদ্ধার করতে কঠোর পরিশ্রম করছি।"
@@ -4789,6 +6741,405 @@
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Signal ডেস্কটপ আপডেট করতে ব্যর্থ হয়েছে, তবে একটি নতুন সংস্করণ পাওয়া যাচ্ছে। {downloadUrl}-এ যান এবং ম্যানুয়ালি নতুন সংস্করণ ইনস্টল করুন, তারপর সহায়তায় যোগাযোগ করুন বা এই সমস্যা সম্পর্কে একটি বাগ ফাইল করুন।"
+  },
+  "icu:StandaloneRegistration--signal-logo": {
+    "messageformat": "Signal লোগো"
+  },
+  "icu:StandaloneRegistration--back": {
+    "messageformat": "ফিরে যান"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--header": {
+    "messageformat": "ফোন নম্বর"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-1": {
+    "messageformat": "আপনার অ্যাকাউন্ট যাচাই করতে আপনার ফোন নম্বর দিন।"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-2": {
+    "messageformat": "ক্যারিয়ার রেট প্রযোজ্য হতে পারে।"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--waiting": {
+    "messageformat": "অনুগ্রহ করে {duration} পরে আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--placeholder": {
+    "messageformat": "ফোন নম্বর"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--button": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--description": {
+    "messageformat": "উপরে প্রদর্শিত আপনার ফোন নম্বরটি কি সঠিক?"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--cancel": {
+    "messageformat": "নম্বর সম্পাদনা"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--confirm": {
+    "messageformat": "হ্যাঁ"
+  },
+  "icu:StandaloneRegistration--Captcha--header": {
+    "messageformat": "চালিয়ে যেতে আপনি যে একজন মানুষ, তা যাচাই করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--description": {
+    "messageformat": "Signal-এ স্প্যাম প্রতিরোধে সাহায্য করার জন্য, অনুগ্রহ করে যাচাইকরণ সম্পন্ন করুন। যাচাই করার পর, আপনি রেজিস্ট্রেশন চালিয়ে যেতে পারবেন।"
+  },
+  "icu:StandaloneRegistration--Captcha--retry-button": {
+    "messageformat": "পুনরায় যাচাইকরণ সম্পন্ন করার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--button": {
+    "messageformat": "ব্রাউজারে যাচাই করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--button--wait": {
+    "messageformat": "{duration} পরে আবার যাচাই করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--header": {
+    "messageformat": "আরো যাচাইকরণ প্রয়োজন"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--description": {
+    "messageformat": "রেজিস্ট্রেশন চালিয়ে যেতে অনুগ্রহ করে আরেকটি ক্যাপচা পূরণ করুন।"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--retry": {
+    "messageformat": "পুনরায় যাচাইকরণ সম্পন্ন করার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--aria-title": {
+    "messageformat": "পরে আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-1": {
+    "messageformat": "এই মুহূর্তে যাচাইকরণ সম্পন্ন করা যাচ্ছে না।"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-2": {
+    "messageformat": "{duration} পরে আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--header": {
+    "messageformat": "যাচাইকরণে ত্রুটি দেখা দিয়েছে"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--description": {
+    "messageformat": "রেজিস্ট্রেশন চালিয়ে যেতে আবার যাচাই করার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--try-again": {
+    "messageformat": "আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--header": {
+    "messageformat": "যাচাইকরণ কোড"
+  },
+  "icu:StandaloneRegistration--VerificationCode--description": {
+    "messageformat": "{phoneNumber}-তে পাঠানো কোড টি এন্টার করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--button": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms": {
+    "messageformat": "কোডটি আবারো পাঠান"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms--duration": {
+    "messageformat": "{duration}-এর মধ্যে কোডটি পুনরায় পাঠান"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me": {
+    "messageformat": "আমাকে কল করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me--duration": {
+    "messageformat": "{duration}-এ আমাকে কল করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--wrong-number": {
+    "messageformat": "ভুল নম্বর?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--having-trouble": {
+    "messageformat": "রেজিস্ট্রেশন করতে সমস্যা হচ্ছে?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--aria-title": {
+    "messageformat": "ভুল কোড"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--description": {
+    "messageformat": "আপনার দেওয়া কোডটি ভুল। অনুগ্রহ করে 6-সংখ্যার কোডটি রিভিউ করুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--aria-title": {
+    "messageformat": "অকার্যকর কোড"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--description": {
+    "messageformat": "আপনি যে কোডটি লিখেছেন তা কার্যকর নয়। অনুগ্রহ করে কোডটি আবার পাঠান এবং আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--resend-button": {
+    "messageformat": "কোডটি আবারো পাঠান"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--edit-number-button": {
+    "messageformat": "নম্বর সম্পাদনা"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--aria-title": {
+    "messageformat": "এসএমএস পাঠানো যাচ্ছে না"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--description": {
+    "messageformat": "আমরা আপনাকে SMS-এর মাধ্যমে যাচাইকরণ কোড পাঠাতে পারিনি। এর পরিবর্তে আপনি ভয়েস কলের মাধ্যমে আপনার কোড পাওয়ার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--confirm": {
+    "messageformat": "ভয়েস কল"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--aria-title": {
+    "messageformat": "পরে আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--description": {
+    "messageformat": "কোড ব্যবহার করে প্রবেশ করার জন্য আপনি অনেকবার চেষ্টা করে ফেলেছেন। {duration} পরে আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--aria-title": {
+    "messageformat": "অনেকবার চেষ্টা করা হয়েছে"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--description": {
+    "messageformat": "কোড ব্যবহার করে প্রবেশ করার জন্য আপনি অনেকবার চেষ্টা করে ফেলেছেন। অনুগ্রহ করে কোডটি আবার পাঠান এবং আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--resend-button": {
+    "messageformat": "কোডটি আবারো পাঠান"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--edit-number-button": {
+    "messageformat": "নম্বর সম্পাদনা"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--aria-title": {
+    "messageformat": "কল করা যাচ্ছে না"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--description": {
+    "messageformat": "আপনার দেওয়া ফোন নম্বরে আমরা কল করতে পারিনি। ফোন নম্বরটি সঠিক কিনা তা নিশ্চিত করুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--ok-button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--aria-title": {
+    "messageformat": "কোড পাঠানো যাচ্ছে না"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--description": {
+    "messageformat": "আপনার দেওয়া ফোন নম্বরে যাচাইকরণ কোড পাঠানো যাচ্ছে না। আপনার দেওয়া নম্বরটি সঠিক কিনা তা নিশ্চিত করুন, অথবা অন্য একটি নম্বর দিয়ে চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--ok-button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--aria-title": {
+    "messageformat": "পরে আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--description": {
+    "messageformat": "একটি ত্রুটি ঘটেছে এবং যাচাইকরণ কোডটি পাঠানো যায়নি। {duration} পরে আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--ok-button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--header": {
+    "messageformat": "আপনার প্রোফাইল সেট করুন"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--description": {
+    "messageformat": "প্রোফাইলগুলো আপনার ম্যাসেজ, কন্টাক্ট এবং গ্ৰুপগুলোর কাছে দৃশ্যমান হবে।"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--learn-more": {
+    "messageformat": "আরো জানুন"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--add-photo": {
+    "messageformat": "ছবি যুক্ত করুন"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--first-name": {
+    "messageformat": "নামের প্রথম অংশ (প্রয়োজনীয়)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--last-name": {
+    "messageformat": "নামের শেষ অংশ (ঐচ্ছিক)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability": {
+    "messageformat": "ফোন নম্বর দিয়ে আমাকে কে খুঁজে পেতে পারেন"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--change-button": {
+    "messageformat": "পরিবর্তন করুন"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--done-button": {
+    "messageformat": "শেষ"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--AvatarModal--header": {
+    "messageformat": "তোমার অবতার"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--header": {
+    "messageformat": "আপনার পিন প্রবেশ করান"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--description": {
+    "messageformat": "আপনার অ্যাকাউন্টের জন্য তৈরি করা পিনটি লিখুন। এটি আপনার এসএমএস যাচাইকরণ কোড থেকে ভিন্ন। <needHelp>সাহায্য প্রয়োজন?</needHelp>"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--placeholder": {
+    "messageformat": "আপনার পিন প্রবেশ করান"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin": {
+    "messageformat": "ভুল পিন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin--with-count": {
+    "messageformat": "{triesRemaining, plural, one {ভুল PIN। {triesRemaining,number} টি সুযোগ বাকি আছে।} other {ভুল PIN। {triesRemaining,number} টি সুযোগ বাকি আছে।}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--header": {
+    "messageformat": "সাহায্য প্রয়োজন?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--no-reglock": {
+    "messageformat": "আপনার পিন হলো আপনারই তৈরি একটি 4+ সংখ্যার কোড, যা সংখ্যাসূচক বা আলফানিউমেরিক হতে পারে। আপনি যদি আপনার পিন মনে রাখতে না পারেন তবে আপনি একটি নতুন পিন তৈরি করতে পারেন। আপনি আপনার অ্যাকাউন্ট নিবন্ধন করতে ও ব্যবহার করতে পারবেন, তবে আপনি আপনার প্রোফাইলের তথ্যের মতো কিছু সংরক্ষিত সেটিংস হারাবেন। <learnMore>আরো জানুন</learnMore>।"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--reglock": {
+    "messageformat": "আপনার পিন হলো আপনারই তৈরি একটি 4+ সংখ্যার কোড, যা সংখ্যাসূচক বা আলফানিউমেরিক হতে পারে। যদি আপনি আপনার পিন মনে রাখতে না পারেন, তাহলে আপনার অ্যাকাউন্ট পুনরায় নিবন্ধন করার জন্য আপনাকে 7 দিন অপেক্ষা করতে হবে। <learnMore>আরো জানুন</learnMore>।"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--skip-button--no-reglock": {
+    "messageformat": "এড়িয়ে যান এবং নতুন পিন তৈরি করুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--contact-support-button": {
+    "messageformat": "সহায়তায় যোগাযোগ করুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--header": {
+    "messageformat": "ভুল পিন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--no-reglock": {
+    "messageformat": "{triesRemaining, plural, one {আপনার {triesRemaining,number}-টি সুযোগ বাকি আছে। সুযোগ শেষ হয়ে গেলে, আপনি একটি নতুন পিন তৈরি করতে পারবেন। আপনি আপনার অ্যাকাউন্ট নিবন্ধন এবং ব্যবহার করতে পারবেন, কিন্তু আপনার প্রোফাইল তথ্যের মতো কিছু সংরক্ষিত সেটিংস হারিয়ে যাবে। <learnMore>আরো জানুন</learnMore>।} other {আপনার {triesRemaining,number}-টি সুযোগ বাকি আছে। সুযোগ শেষ হয়ে গেলে, আপনি একটি নতুন পিন তৈরি করতে পারবেন। আপনি আপনার অ্যাকাউন্ট নিবন্ধন এবং ব্যবহার করতে পারবেন, কিন্তু আপনার প্রোফাইল তথ্যের মতো কিছু সংরক্ষিত সেটিংস হারিয়ে যাবে। <learnMore>আরো জানুন</learnMore>।}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--reglock": {
+    "messageformat": "{triesRemaining, plural, one {আপনার {triesRemaining,number}-টি সুযোগ বাকি আছে। সুযোগ শেষ হয়ে গেলে, আপনার অ্যাকাউন্ট 7 দিনের জন্য লক হয়ে যাবে। 7 দিন নিষ্ক্রিয় থাকার পর, আপনি আপনার পিন ছাড়াই পুনরায় রেজিস্ট্রেশন করতে পারবেন। সব কন্টেন্ট মুছে ফেলা হবে। <learnMore>আরো জানুন</learnMore>।} other {আপনার {triesRemaining,number}-টি সুযোগ বাকি আছে। সুযোগ শেষ হয়ে গেলে, আপনার অ্যাকাউন্ট 7 দিনের জন্য লক হয়ে যাবে। 7 দিন নিষ্ক্রিয় থাকার পর, আপনি আপনার পিন ছাড়াই পুনরায় রেজিস্ট্রেশন করতে পারবেন। সব কন্টেন্ট মুছে ফেলা হবে। <learnMore>আরো জানুন</learnMore>।}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--header": {
+    "messageformat": "ভুল পিন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--description": {
+    "messageformat": "আপনার পিন অনুমানের সংখ্যা শেষ হয়ে গেছে, তবে আপনি এখনও একটি নতুন পিন তৈরি করে আপনার Signal অ্যাকাউন্টটি অ্যাক্সেস করতে পারবেন। আপনার গোপনীয়তা এবং সুরক্ষার জন্য আপনার অ্যাকাউন্ট কোনও সংরক্ষিত প্রোফাইল তথ্য বা সেটিংস ছাড়াই পুনরুদ্ধার করা হবে।"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--create-new-pin": {
+    "messageformat": "PIN তৈরি করুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--learn-more": {
+    "messageformat": "পিনগুলি সম্পর্কে আরও জানুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--menu--skip-pin": {
+    "messageformat": "পিন এড়িয়ে যান"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--header": {
+    "messageformat": "PIN প্রবেশ করানো উপেক্ষা করবেন?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--description": {
+    "messageformat": "আপনি যদি আপনার পিন মনে রাখতে না পারেন তবে আপনি একটি নতুন পিন তৈরি করতে পারেন। আপনি আপনার অ্যাকাউন্ট নিবন্ধন করতে ও ব্যবহার করতে পারবেন, তবে আপনি আপনার প্রোফাইলের তথ্যের মতো কিছু সংরক্ষিত সেটিংস হারাবেন। আরও জানুন।"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--skip-button": {
+    "messageformat": "এড়িয়ে যান এবং নতুন পিন তৈরি করুন"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--cancel-button": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--header": {
+    "messageformat": "আপনার পিন তৈরি করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--description": {
+    "messageformat": "পিন আপনাকে আপনার অ্যাকাউন্ট পুনরুদ্ধার করতে এবং Signal-এর সাথে আপনার তথ্য এনক্রিপ্ট করে রাখতে সাহায্য করতে পারে। <learnMore>আরো জানুন</learnMore>"
+  },
+  "icu:StandaloneRegistration--CreatePIN--placeholder": {
+    "messageformat": "আপনার পিন তৈরি করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--helper-text": {
+    "messageformat": "পিন অবশ্যই কমপক্ষে 4টি অক্ষরের হতে হবে"
+  },
+  "icu:StandaloneRegistration--CreatePIN--continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:StandaloneRegistration--CreatePIN--open-menu": {
+    "messageformat": "মেনু খুলুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--more-about": {
+    "messageformat": "পিন সম্পর্কে আরো তথ্য"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--disable": {
+    "messageformat": "পিন নিষ্ক্রিয় করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--header": {
+    "messageformat": "সতর্কবার্তা"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--description": {
+    "messageformat": "আপনি যদি পিন নিষ্ক্রিয় করেন, আপনি যদি আরেকটি iOS ডিভাইস থেকে সেটি স্থানান্তর না করেন তবে Signal-এ পুনরায় রেজিস্টার করার সময় আপনার সকল ডেটা হারাবেন। পিন নিষ্ক্রিয় থাকা অবস্থায় আপনি রেজিস্ট্রেশন লক চালু করতে পারবেন না।"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--disable-button": {
+    "messageformat": "পিন নিষ্ক্রিয় করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--header": {
+    "messageformat": "Signal পিন সম্পর্কে তথ্য"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--description": {
+    "messageformat": "পিন Signal এনক্রিপ্টেড অবস্থায় আপনার তথ্য সংরক্ষিত রাখে, যাতে শুধুমাত্র আপনিই এতে অ্যাক্সেস করতে পারেবেন। আপনি যখন পুনরায় ইনস্টল করবেন তখন আপনার প্রোফাইল, সেটিংস এবং কন্টাক্ট পুনর্বহাল করা হবে।"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--learn-more-button": {
+    "messageformat": "আরো জানুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--ok-button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--header": {
+    "messageformat": "আপনার পিনটি নিশ্চিত করুন"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--description": {
+    "messageformat": "এই মাত্র তৈরি করা পিনটি আবারো লিখুন।"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--placeholder": {
+    "messageformat": "আপনার পিন প্রবেশ করান"
+  },
+  "icu:StandaloneRegistration--AccountLocked--header": {
+    "messageformat": "অ্যাকাউন্ট লক্ করা হয়েছে"
+  },
+  "icu:StandaloneRegistration--AccountLocked--description": {
+    "messageformat": "আপনার গোপনীয়তা এবং নিরাপত্তা রক্ষার জন্য আপনার অ্যাকাউন্টটি লক করা হয়েছে। আপনার অ্যাকাউন্টে ৭ দিন কোনো কার্যক্রম না থাকলে, আপনি আপনার পিন ছাড়াই এই ফোন নম্বরটি পুনরায় রেজিস্ট্রেশন করতে পারবেন। সব কন্টেন্ট মুছে ফেলা হবে।"
+  },
+  "icu:StandaloneRegistration--AccountLocked--start-over-button": {
+    "messageformat": "অন্য একটি ফোন নম্বর ব্যবহার করুন"
+  },
+  "icu:StandaloneRegistration--AccountLocked--help-button": {
+    "messageformat": "লক করা অ্যাকাউন্ট সম্পর্কে জানুন"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--header": {
+    "messageformat": "আপডেট করা প্রয়োজন"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--description": {
+    "messageformat": "নিবন্ধন চালিয়ে যেতে, অনুগ্রহ করে Signal-এর সর্বশেষ সংস্করণে আপডেট করুন।"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--update": {
+    "messageformat": "আপডেট করুন"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--header": {
+    "messageformat": "আপনার সংযোগ ঠিক আছে কিনা দেখুন"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--description": {
+    "messageformat": "চালিয়ে যেতে, আপনার কম্পিউটারের ইন্টারনেট সংযোগ ঠিক আছে কিনা দেখুন এবং আবার চেষ্টা করুন।"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--button": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--header": {
+    "messageformat": "রেজিস্ট্রেশন সম্পন্ন করা যাচ্ছে না"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--description": {
+    "messageformat": "একটি ত্রুটি ঘটেছে এবং রেজিস্ট্রেশন সম্পন্ন করা যাচ্ছে না। এই সমস্যাটি চলতে থাকলে, অনুগ্রহ করে সাপোর্টে যোগাযোগ করুন।"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--try-again-button": {
+    "messageformat": "আবার চেষ্টা করুন"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--contact-support-button": {
+    "messageformat": "সহায়তা কেন্দ্রে যোগাযোগ করুন"
   },
   "icu:NSIS__retry-dialog--first-line": {
     "messageformat": "Signal বন্ধ করা যাবে না।",
@@ -4904,6 +7255,30 @@
   "icu:MediaEditor__crop-preset--9-16": {
     "messageformat": "9:16"
   },
+  "icu:MediaPermissionsModal__title--microphone": {
+    "messageformat": "আপনার মাইক্রোফোনে অ্যাক্সেসের অনুমতি দিন"
+  },
+  "icu:MediaPermissionsModal__title--camera": {
+    "messageformat": "আপনার ক্যামেরায় অ্যাক্সেসের অনুমতি দিন"
+  },
+  "icu:MediaPermissionsModal__subtitle--call": {
+    "messageformat": "যোগ দিতে বা কল শুরু করতে:"
+  },
+  "icu:MediaPermissionsModal__subtitle--call--camera": {
+    "messageformat": "আপনার ভিডিও সক্রিয় করতে:"
+  },
+  "icu:MediaPermissionsModal__subtitle--voice-note": {
+    "messageformat": "ভয়েস মেসেজ পাঠাতে:"
+  },
+  "icu:MediaPermissionsModal__step-1": {
+    "messageformat": "নিচে \"{buttonName}\"-এ ক্লিক করুন"
+  },
+  "icu:MediaPermissionsModal__step-2": {
+    "messageformat": "\"Signal\" চালু করুন"
+  },
+  "icu:MediaPermissionsModal__open": {
+    "messageformat": "সেটিংস-এ যান"
+  },
   "icu:MyStories__title": {
     "messageformat": "আমার স্টোরি"
   },
@@ -4933,6 +7308,9 @@
   },
   "icu:MyStories__delete": {
     "messageformat": "স্টোরিটি মুছে ফেলবেন? যারা এটি পেয়েছেন তাদের জন্যও এটি মুছে যাবে৷"
+  },
+  "icu:MyStories__delete-group-story-for-me": {
+    "messageformat": "এই স্টোরিটি মুছে ফেলবেন? গ্রুপটি বন্ধ হয়ে যাওয়ায় এটি শুধু আপনার জন্য মুছে যাবে।"
   },
   "icu:payment-event-notification-message-you-label": {
     "messageformat": "আপনি {receiver}-কে পেমেন্ট দিতে শুরু করেছেন"
@@ -4967,6 +7345,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "আপনি মেসেজের অনুরোধ গ্রহণ করেছেন"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "আপনি {userProfileName}-এর মেসেজের অনুরোধ গ্রহণ করেছেন"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "স্প্যাম হিসেবে রিপোর্ট করা হয়েছে"
   },
@@ -4982,8 +7363,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "আপনি গ্রুপটিকে আনব্লক করেছেন"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "অপশন"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "ব্লক করুন অথবা রিপোর্ট করুন..."
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "আরো জানুন"
@@ -5005,15 +7386,6 @@
   },
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "আপনার কানেকশনরা আপনার নাম এবং ছবি দেখতে পারেন এবং \"আমার স্টোরি\"-এর পোস্টগুলো দেখতে পারেন যদি না আপনি এটি তাদের কাছ থেকে লুকিয়ে রাখেন"
-  },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "মুছে ফেলার বিষয়টি আপনার সকল ডিভাইসেই সিঙ্ক করা হয়েছে"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "আপনি মেসেজ বা চ্যাট মুছে ফেললে, সেগুলো আপনার ফোন এবং সকল ডিভাইস থেকে মুছে যাবে।"
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "বুঝতে পেরেছি"
   },
   "icu:Stories__title": {
     "messageformat": "স্টোরি"
@@ -5156,8 +7528,8 @@
   "icu:StoriesSettings__view-receipts--label": {
     "messageformat": "রিসিপ্ট দেখুন"
   },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "এই সেটিং পরিবর্তন করতে, আপনার মোবাইল ডিভাইসে Signal অ্যাপটি খুলুন এবং সেটিংস > স্টোরি-তে যান"
+  "icu:StoriesSettings__view-receipts--new-description": {
+    "messageformat": "স্টোরি দেখা হলে তা দেখুন ও শেয়ার করুন। নিষ্ক্রিয় থাকলে, অন্যরা কখন আপনার স্টোরি দেখেন তা আপনি দেখতে পারবেন না।"
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "যারা এই স্টোরি দেখতে পাবেন"
@@ -5490,9 +7862,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "রিসেট করুন"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "শেষ"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "'ব্যবহারকারীর নাম' লিংকের রং, {total,number}-এর {index,number}"
   },
@@ -5562,8 +7931,20 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "এডিট করা হয়েছে"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "পিন করা"
+  },
+  "icu:DraftGifMessageSendModal__Title": {
+    "messageformat": "বার্তা যোগ করুন"
+  },
+  "icu:DraftGifMessageSendModal__SendButtonLabel": {
+    "messageformat": "পাঠান"
+  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "এডিট করার ইতিহাস"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "টাইমস্ট্যাম্প কপি করুন"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "এই এডিটটি পাঠানো যায়নি। আপনার নেটওয়ার্ক সংযোগ ঠিক আছে কি না দেখুন এবং আবার চেষ্টা করুন"
@@ -5727,9 +8108,6 @@
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
     "messageformat": "কারো কাছে এই লিংকটি থাকলে তা আর কাজ করবে না।"
   },
-  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
-    "messageformat": "বাতিল করুন"
-  },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "মুছে ফেলুন"
   },
@@ -5781,8 +8159,479 @@
   "icu:WhoCanFindMeReadOnlyToast": {
     "messageformat": "এই সেটিংসটি পরিবর্তন করতে, \"কে আমার নম্বর দেখতে পারবেন\" তা \"কেউই নয়\"-তে সেট করুন।"
   },
+  "icu:ProfileNameWarningModal__description--direct": {
+    "messageformat": "প্রোফাইলের নাম Signal-এর অ্যাকাউন্টধারীরা বেছে নেন:"
+  },
+  "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
+    "messageformat": "Signal নাম ও ছবি যাচাই করতে পারছে না"
+  },
+  "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
+    "messageformat": "Signal কখনোই আপনার রেজিস্ট্রেশন কোড, পিন বা পুনরুদ্ধার 'কি'-এর জন্য আপনার সাথে যোগাযোগ করবে না"
+  },
+  "icu:ProfileNameWarningModal__warning--be-cautious": {
+    "messageformat": "অন্যদের ছদ্মবেশ ধারণ করে আছে এমন কারো অ্যাকাউন্ট থেকে সাবধান থাকুন"
+  },
+  "icu:ProfileNameWarningModal__warning--dont-share-info": {
+    "messageformat": "আপনার পরিচিত নন এমন কোনো ব্যক্তির সাথে ব্যক্তিগত তথ্য শেয়ার করবেন না"
+  },
+  "icu:ProfileNameWarningModal__description--group": {
+    "messageformat": "গ্রুপের নাম গ্রুপের সদস্যরা বেছে নেন।"
+  },
+  "icu:ProfileNameWarningModal__list--item1--group": {
+    "messageformat": "প্রতিষ্ঠান ও ব্যবসার ছদ্মবেশ ধারণকারী গ্ৰুপের ব্যাপারে সতর্ক থাকুন"
+  },
+  "icu:ProfileNameWarningModal__list--item2--group": {
+    "messageformat": "গ্রুপের সদস্যদের প্রোফাইলের নাম যাচাই করা হয় না"
+  },
+  "icu:ProfileNameWarningModal__list--item3--group": {
+    "messageformat": "আপনার পরিচিত নন এমন কোনো ব্যক্তির সাথে ব্যক্তিগত তথ্য শেয়ার করবেন না"
+  },
+  "icu:SaveMultiDialog__title": {
+    "messageformat": "সংযুক্তিগুলো সংরক্ষণ করুন"
+  },
   "icu:WhatsNew__modal-title": {
     "messageformat": "নতুন কি"
+  },
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "গর্বিত অলাভজনক প্রতিষ্ঠান"
+  },
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "ব্যক্তিগত মেসেজ পাঠানো চালিয়ে যাওয়া সমর্থন করতে ডোনেট করুন। Signal-কে স্বাধীন ও বিজ্ঞাপনমুক্ত রাখুন। <readMoreLink>আরো পড়ুন</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "ডোনেট করুন"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "আমার সমর্থন"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} এককালীন"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "ডোনেশন প্রক্রিয়া করা হচ্ছে..."
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "{formattedCurrencyAmount}-কে ডোনেট করুন"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "ব্যাজ ও মাসিক ডোনেশন আপনার মোবাইল ডিভাইসে নিয়ন্ত্রণ করা যাবে।"
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "আপনার তথ্য গোপনীয়"
+  },
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "একটি স্বাধীন অলাভজনক প্রতিষ্ঠান হিসেবে, Signal ব্যক্তিগত মেসেজ ও কলের সার্ভিস প্রদানের জন্য প্রতিশ্রুতিবদ্ধ। নেই কোনো বিজ্ঞাপন, নেই কোনো ট্র্যাকার, নেই কোনো নজরদারি। Signal-কে সহায়তা করার জন্য আজই ডোনেট করুন।"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "ডোনেট করার ফলে ইচ্ছা হলে আপনার প্রোফাইলের জন্য একটি ব্যাজ নিতে পারেন"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "আপনার গোপনীয়তা রক্ষাই আমাদের লক্ষ্য"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "Signal একটি অলাভজনক প্রতিষ্ঠান। মার্কিন যুক্তরাষ্ট্রে ডোনেশনের ক্ষেত্রে কর ছাড় পাওয়া যায়।"
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Signal লোগোর স্টাইলে হার্ট আইকন"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "ঠিক আছে"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "রিসিপ্ট"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "রিসিপ্টের বিবরণ দেখুন"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "ডোনার সম্পর্কিত প্রশ্নাবলী"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "রিসিপ্ট বিভিন্ন ডিভাইস জুড়ে সিঙ্ক হয় না। আপনি যদি Signal পুনরায় ইনস্টল করে থাকেন, তবে পূর্ববর্তী ডোনেশনের রিসিপ্ট পাওয়া যাবে না।"
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "রিসিপ্ট নেই"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "রিসিপ্ট ডাউনলোড করুন"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "টাইপ করুন"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "পরিশোধের তারিখ"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "এককালীন ডোনেশন দিন"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "শুধুমাত্র ডেস্কটপে এককালীন ডোনেশন দেওয়া যাবে। আপনার মোবাইল ডিভাইসের মাধ্যমে আপনি মাসিক ডোনেশন দিতে পারবেন।"
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "সমস্যা হচ্ছে? <contactSupportLink>সহায়তায় যোগাযোগ করুন</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "কাস্টম পরিমাণ লিখুন"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "ক্রেডিট বা ডেবিট কার্ড"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "আপনার ক্রেডিট বা ডেবিট কার্ডের বিস্তারিত লিখুন। Signal আপনার ব্যক্তিগত তথ্য সংগ্রহ কিংবা সংরক্ষণ করে না। <learnMoreLink>আরো জানুন</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "কার্ডের নম্বর"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "মেয়াদ শেষ হওয়ার তারিখ"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/YY"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Signal-এ {formattedCurrencyAmount} ডোনেট করুন"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "কার্ড নম্বর অকার্যকর"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "কার্ডের মেয়াদ শেষ হয়ে গেছে"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "বছর প্রয়োজন"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "অকার্যকর"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "কোডটি খুবই ছোট"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "30 দিনের জন্য Signal বুস্ট ব্যাজ নিন"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "ডোনেশনের সর্বনিম্ন পরিমাণ হলো {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "আপনি সর্বনিম্ন যে পরিমাণ অর্থ ডোনেট করতে পারেন তা হলো {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "ডোনেশনের সর্বোচ্চ পরিমাণ হলো {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "এই পেইজটি ছেড়ে গেলে আপনার ক্রেডিট কার্ডের তথ্য মুছে যাবে। আপনি কি এগিয়ে যেতে চান?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "তথ্য মুছে ফেলুন"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "চলে গেলে আপনার ডোনেশন বাতিল হয়ে যাবে।"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "ত্যাগ করুন"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "পেইজে থাকুন"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "ডোনেশন রিসিপ্ট"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "পরিমাণ"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "টাইপ করুন"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "পরিশোধের তারিখ"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "একবার"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Signal-এর পাশে থাকার জন্য আপনাকে ধন্যবাদ। আপনার অবদান ওপেন সোর্স গোপনীয়তা প্রযুক্তির মাধ্যমে বিশ্বজুড়ে লক্ষ লক্ষ মানুষের জন্য স্বাধীন মত প্রকাশের সুরক্ষা এবং বিশ্বব্যাপী নিরাপদ যোগাযোগ সক্ষম করার লক্ষ্যকে আরো এগিয়ে নিয়ে যেতে সাহায্য করবে। আপনি যদি মার্কিন যুক্তরাষ্ট্রের অধিবাসী হয়ে থাকেন, তাহলে অনুগ্রহ করে আপনার ট্যাক্স রেকর্ডের জন্য এই রিসিপ্টটি সংরক্ষণ করুন। Signal টেকনোলজি ফাউন্ডেশন হলো অভ্যন্তরীণ রাজস্ব কোডের ধারা 501c3-এর অধীনে মার্কিন যুক্তরাষ্ট্রের একটি কর-মুক্ত অলাভজনক সংস্থা। আমাদের ফেডারেল ট্যাক্স আইডি হলো 82-4506840।"
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "আপনি অফলাইনে আছেন। অনুদান সম্পন্ন করতে ইন্টারনেটের সাথে সংযোগ স্থাপন করুন।"
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "ডোনেশন বাতিল করা হয়েছে"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "ডোনেশন সম্পন্ন হয়েছে"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "ডোনেশন প্রক্রিয়াকরণে ত্রুটি দেখা দিয়েছে"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "ডোনেশন প্রক্রিয়া করা হচ্ছে"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "যাচাইকরন ব্যর্থ"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "আপনার একটি ডোনেশন প্রক্রিয়াধীন আছে যার বাড়তি যাচাইকরণ প্রয়োজন।"
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "আপনার একটি ডোনেশন প্রক্রিয়াধীন আছে, যার নিশ্চিতকরণ প্রয়োজন।"
+  },
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "আপনার একটি ডোনেশন প্রক্রিয়াধীন আছে, যার নিশ্চিতকরণ প্রয়োজন।"
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "PayPal ডোনেশন বাতিল করা হয়েছে"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "PayPal ডোনেশন প্রক্রিয়াকরণে ত্রুটি দেখা দিয়েছে। আপনার কাছ থেকে অর্থ কেটে নেওয়া হয়নি।"
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "ডোনেশন সফল হয়েছে, কিন্তু আমরা আপনার ব্যাজ সেটিংস আপডেট করতে পারিনি"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "আপনার মোবাইল ডিভাইসে ব্যাজ সেটিংস আপডেট করতে, সেটিংস → Signal-এ ডোনেট করুন → ব্যাজ-এ যান।"
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "ডোনেশন ব্যাহত হয়েছে"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "আপনার কার্ড থেকে কোনো চার্জ কাটা হয়নি। আপনি কি আবার ডোনেশন পাঠানোর চেষ্টা করতে চান?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "আবার চেষ্টা করুন"
+  },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "পেমেন্ট পদ্ধতি"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "পেমেন্ট পদ্ধতি প্রত্যাখ্যান করা হয়েছে"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "আরেকটি পেমেন্ট পদ্ধতি ব্যবহার করে দেখুন বা আরো তথ্যের জন্য আপনার ব্যাংকের সাথে যোগাযোগ করুন।"
+  },
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "পেমেন্ট কার্ড আইকন"
+  },
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "ক্রেডিট বা ডেবিট কার্ড"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "বাতিল করুন"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "ডোনেশন সম্পন্ন করুন"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "PayPal ডোনেশন বাতিল করা হয়েছে"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "আপনার কাছ থেকে অর্থ কেটে নেওয়া হয়নি। আবার চেষ্টা করুন অথবা অন্য পেমেন্ট পদ্ধতি ব্যবহার করুন।"
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "PayPal ডোনেশন প্রক্রিয়াকরণে ত্রুটি দেখা দিয়েছে"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "আপনার কাছ থেকে অর্থ কেটে নেওয়া হয়নি। আবার চেষ্টা করুন অথবা অন্য পেমেন্ট পদ্ধতি ব্যবহার করুন।"
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "যাচাইকরন ব্যর্থ"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "বাড়তি যাচাইকরণের ধাপ ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "আপনার ডোনেশন প্রদানের সময় একটি ত্রুটি ঘটেছে"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "সম্ভবত আপনার ডোনেশন প্রক্রিয়া করা যায়নি। আপনার রসিদগুলো পরীক্ষা করে নিশ্চিত করতে \"Signal-এ ডোনেট করুন\" এবং তারপর \"ডোনেশনের রসিদ\"-এ ক্লিক করুন।"
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "আবার চেষ্টা করুন অথবা আপনার ডোনেশন সম্পন্ন করতে সাহায্যের জন্য সহায়তা কেন্দ্রে একটি ডিবাগ লগ জমা দিন। ডিবাগ লগ আমাদের সমস্যা নির্ণয় ও সমাধান করতে সাহায্য করে এবং শনাক্তকরণের তথ্য ধারণ করে না।"
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "ডোনেশন প্রক্রিয়া করা হচ্ছে..."
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "এখনো ডোনেশন প্রক্রিয়া করা হচ্ছে"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "আপনার ডোনেশন এখনো প্রক্রিয়া করা হচ্ছে। এই কয়েক মিনিট সময় নিতে পারে."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "ডোনেশন বাতিল করা হয়েছে"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "আপনি ডোনেশন পাঠানো শুরু করার পর অনেক দিন হয়ে গেছে। অনুগ্রহ করে আবারো শুরু করুন।"
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "আরো যাচাইকরণ প্রয়োজন"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "যাচাইয়ের জন্য অপেক্ষা করা হচ্ছে"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "আপনার ক্রেডিট কার্ড ইস্যুকারীর জন্য ওয়েব ব্রাউজারে একটি বাড়তি যাচাইকরণ ধাপ প্রয়োজন।"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "ব্রাউজার খুলুন"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "ব্রাউজারটি পুনরায় খুলুন"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "ডোনেশন বাতিল করুন"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "আপনার সহযোগিতার জন্য ধন্যবাদ!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "আপনি Signal থেকে একটি ডোনার ব্যাজ অর্জন করেছেন! আপনার সমর্থন দেখাতে আপনার প্রোফাইলে এটি প্রদর্শন করুন।"
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "প্রোফাইলে প্রদর্শন করুন"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "আপনি আপনার মোবাইল ডিভাইসে সেটিংস → Signal-এ ডোনেট করুন → ব্যাজ-এ গিয়ে এটি সমন্বয় করতে পারবেন"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "আপনার কলটি কেমন ছিলো?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "এটি আমাদের Signal-এ কল উন্নত করতে সাহায্য করে। ব্যক্তিগতভাবে শনাক্ত করা সম্ভব এমন কোনো তথ্য সংরক্ষণ করা হবে না।"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "সমস্যা ছিলো"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "দারুণ"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "আপনার কী সমস্যা হয়েছিলো?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "প্রযোজ্য সবগুলো বেছে নিন"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "অডিওর সমস্যা"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "অডিও থেমে থেমে আসছে"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "আমি প্রতিধ্বনি শুনতে পেয়েছি"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "অন্যরা প্রতিধ্বনি শুনতে পেয়েছেন"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "অডিও বাদ পড়েছে"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "ভিডিওর সমস্যা"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "ক্যামেরা কাজ করেনি"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "ভিডিওর মান বেশ খারাপ"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "কম রেজোলিউশন"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "কল ড্রপ হয়েছে"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "অন্য কিছু"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "সমস্যার বিবরণ"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "সমস্যাটির সাথে প্রাসঙ্গিক যেকোনো বিবরণ অন্তর্ভুক্ত করুন। আপনি এখানে যা কিছু শেয়ার করবেন তা গোপন রাখা হবে এবং শুধুমাত্র Signal-এ কল উন্নত করতে সাহায্য করার জন্য ব্যবহার করা হবে।"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "আপনার সমস্যাটি বর্ণনা করুন"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "চালিয়ে যান"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "চালিয়ে যাওয়ার জন্য একটি বেছে নিন"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "আমাদের উন্নতি করতে সাহায্য করুন"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "জমা দিলে <diagnosticInfoLink>আপনার কল সম্পর্কিত ডায়াগনস্টিক তথ্য</diagnosticInfoLink> সহ আপনার মতামত শেয়ার করা হবে। কলের মান উন্নত করতে আমাদের সাহায্য করার জন্য ইচ্ছা হলে আপনি একটি ডিবাগ লগ শেয়ার করতে পারেন।"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "ডিবাগ লগ শেয়ার করুন"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "দেখান"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "আমাদের সাথে শেয়ার করা তথ্যে অ্যাপ সংক্রান্ত খুব সাধারণ কিছু তথ্য রয়েছে এবং এতে আপনার কলের কোনো কন্টেন্ট অন্তর্ভুক্ত থাকে না।"
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "ডায়াগনস্টিক তথ্য"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "সাবমিট"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "জরিপ জমা দেওয়া সফল হয়নি"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "পুনরায় চেষ্টা করুন"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "আপনার ফিডব্যাকের জন্য ধন্যবাদ!"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "মেগাফোনের সাথে ইন্টারঅ্যাক্ট করতে সাইডবারটি সম্প্রসারিত করুন"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "ক্যারোসেল"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "স্লাইড"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "আপনার ফোনের মেসেজের ইতিহাস এই ডেস্কটপে ট্রান্সফার করবেন?"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "যখন আপনি এই ডেস্কটপটি পুনরায় লিংক করবেন, তখন আপনি আপনার ফোনের মেসেজের ইতিহাস এই ডিভাইসে ট্রান্সফার করতে পারবেন।"
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "আরো জানুন"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "এটি এই ডেস্কটপের মেসেজের ইতিহাস <bold>প্রতিস্থাপন</bold> করবে।"
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "আপনাকে একটি QR কোড স্ক্যান করে পুনরায় লিংক করতে হবে।"
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "যদি আপনি Signal নিরাপদ ব্যাকআপ-এর জন্য পেমেন্ট করে থাকেন, তাহলে আপনার সব মিডিয়া ট্রান্সফার করা হবে। অন্যথায়, শুধু আপনার শেষ 45 দিনের মিডিয়া অন্তর্ভুক্ত থাকবে।"
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "স্থানান্তর"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "ট্রান্সফার করবেন না"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "সকল ডেটা মুছে ফেলবেন?"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "Signal Desktop-এ থাকা সব বর্তমান ডেটা মুছে ফেলা হবে। এরপর আপনি একটি QR কোড স্ক্যান করে আপনার ফোন থেকে মেসেজের ইতিহাস ট্রান্সফার করতে পারবেন।"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "সিগন্যালকে মসৃণভাবে চলমান রাখতে এই সংস্করণে অনেকগুলি ছোটখাট পরিবর্তন রয়েছে এবং বাগ সংশোধন করা হয়েছে।",
@@ -5812,13 +8661,16 @@
     "messageformat": "ছোট ছোট কিছু পরিবর্তন, বাগ সংশোধন এবং পারফর্মেন্স সমৃদ্ধ করা হয়েছে। Signal ব্যবহার করার জন্য ধন্যবাদ!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.39--0": {
-    "messageformat": "এখন আপনি টাচস্ক্রিন ডিভাইসে চ্যাট লিস্টের সাইডবারের আকার সমন্বয় করতে পারবেন।"
+  "icu:WhatsNew__8.18--0": {
+    "messageformat": "এখন থেকে ব্যক্তিগত চ্যাটেও পোল তৈরি করা যাবে।"
   },
-  "icu:WhatsNew__v7.40--0": {
-    "messageformat": "আমরা এমন একটি বিরল বাগ সংশোধন করেছি যার কারণে কিছু চ্যাট সঠিকভাবে খুলতে পারতো না।"
+  "icu:WhatsNew__8.19--0": {
+    "messageformat": "গ্রুপ অ্যাডমিনরা এখন গ্রুপ সেটিংসে থাকা নতুন \"গ্রুপ বন্ধ করুন\" অপশনটির মাধ্যমে চ্যাট শেষ করতে পারবেন। গ্রুপ শেষ করলে গ্রুপের সদস্যরা আর মেসেজ পাঠাতে বা কল শুরু করতে পারবেন না এবং আমন্ত্রণও নিষ্ক্রিয় হয়ে যাবে।"
   },
-  "icu:WhatsNew__v7.40--1": {
-    "messageformat": "এখন আপনি আপনার চ্যাটের ইতিহাস এবং আপনার শেষ 45 দিনের মিডিয়া একটি নতুন লিংক করা ডিভাইসে ট্রান্সফার করার জন্য নির্বাচন করতে পারবেন। ট্রান্সফার করার প্রক্রিয়া এন্ড-টু-এন্ড এনক্রিপ্টেড এবং সম্পূর্ণ ঐচ্ছিক।"
+  "icu:WhatsNew__8.20--0": {
+    "messageformat": "চলে এলো অদৃশ্য হতে যাওয়া কল ইভেন্ট: এই আপডেটটি ইনস্টল করার পর হওয়া মিসড, আউটগোয়িং এবং রিসিভ করা কলগুলো এখন থেকে অদৃশ্য হতে যাওয়া মেসেজ চালু থাকা যেকোনো চ্যাট থেকে স্বয়ংক্রিয়ভাবে অদৃশ্য হয়ে যাবে।"
+  },
+  "icu:WhatsNew__8.20--1": {
+    "messageformat": "এখন আপনি ইনস্টল করা স্টিকার প্যাকগুলোর ক্রম পরিবর্তন করতে পারবেন, যাতে আপনার নতুন পছন্দের লিস্টের শেষে আটকে না যায়।"
   }
 }

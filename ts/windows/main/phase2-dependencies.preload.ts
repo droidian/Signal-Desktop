@@ -1,0 +1,59 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import os from 'node:os';
+
+import * as moment from 'moment';
+import 'moment/min/locales.min.js';
+
+import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging.preload.ts';
+import { setup } from '../../signal.preload.ts';
+import { addSensitivePath } from '../../util/privacy.node.ts';
+import * as dns from '../../util/dns.node.ts';
+import {
+  ATTACHMENTS_PATH,
+  STICKERS_PATH,
+  DRAFT_PATH,
+  TEMP_PATH,
+} from '../../util/basePaths.preload.ts';
+import { SignalContext } from '../context.preload.ts';
+import '../clipboard.dom.ts';
+
+initializeLogging();
+
+window.nodeSetImmediate = setImmediate;
+
+const { config, i18n } = window.SignalContext;
+
+const { resolvedTranslationsLocale, preferredSystemLocales, localeOverride } =
+  config;
+
+moment.updateLocale(localeOverride ?? resolvedTranslationsLocale, {
+  relativeTime: {
+    s: i18n('icu:timestamp_s'),
+    m: i18n('icu:timestamp_m'),
+    h: i18n('icu:timestamp_h'),
+  },
+});
+moment.locale(
+  localeOverride != null ? [localeOverride] : preferredSystemLocales
+);
+
+const homedir = os.homedir();
+if (homedir && homedir !== '/' && homedir !== '\\') {
+  addSensitivePath(homedir);
+}
+addSensitivePath(ATTACHMENTS_PATH);
+addSensitivePath(STICKERS_PATH);
+addSensitivePath(DRAFT_PATH);
+addSensitivePath(TEMP_PATH);
+if (config.crashDumpsPath) {
+  addSensitivePath(config.crashDumpsPath);
+}
+
+if (SignalContext.config.disableIPv6) {
+  dns.setIPv6Enabled(false);
+}
+dns.setFallback(SignalContext.config.dnsFallback);
+
+window.Signal = setup();

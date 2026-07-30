@@ -7,9 +7,13 @@
 .module-SearchInput {
   &__container {
     position: relative;
-    flex: 1 0 0;
     margin-inline: 16px;
     margin-bottom: 8px;
+
+    &--noMargin {
+      margin-inline: 0px;
+      margin-bottom: 0px;
+    }
   }
 
   &__icon {
@@ -20,18 +24,10 @@
     top: 6px;
     width: 16px;
 
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/search/search-compact-light.svg',
-        variables.$color-gray-45
-      );
-    }
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/search/search-compact-light.svg',
-        variables.$color-gray-25
-      );
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/search/search-compact-light.svg',
+      var(--axo-color-label-secondary)
+    );
   }
 
   &__input {
@@ -42,28 +38,18 @@
     padding-inline: 30px 5px;
     width: 100%;
 
-    @include mixins.light-theme {
-      background-color: variables.$color-black-alpha-06;
-      color: variables.$color-gray-90;
+    background: var(--axo-color-fill-primary);
+    color: var(--axo-color-label-primary);
 
-      &:placeholder {
-        color: variables.$color-gray-45;
-      }
-    }
-    @include mixins.dark-theme {
-      background-color: variables.$color-white-alpha-12;
-      color: variables.$color-gray-05;
-
-      &:placeholder {
-        color: variables.$color-gray-25;
-      }
+    &::placeholder {
+      color: var(--axo-color-label-placeholder);
     }
 
     &:focus {
-      @include mixins.keyboard-mode {
-        border: solid 1px variables.$color-ultramarine;
-      }
       outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring-inset;
+      }
     }
 
     &--with-text {
@@ -78,18 +64,10 @@
     top: 6px;
     width: 16px;
 
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/x/x-compact.svg',
-        variables.$color-gray-60
-      );
-    }
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/x/x-compact.svg',
-        variables.$color-gray-25
-      );
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/x/x-compact.svg',
+      var(--axo-color-label-secondary)
+    );
   }
 
   &__description {

@@ -24,6 +24,8 @@
 
   @include mixins.keyboard-mode {
     &:focus-within {
+      @include mixins.axo-focus-ring;
+
       @include mixins.light-theme {
         background: variables.$color-gray-45;
         color: variables.$color-white;
@@ -73,15 +75,14 @@
       }
     }
 
-    @include mixins.keyboard-mode {
-      &:focus {
+    &:focus {
+      outline: none;
+      @include mixins.keyboard-mode {
         &::before {
           @include mixins.color-svg($icon, variables.$color-white);
         }
       }
-    }
-    @include mixins.dark-keyboard-mode {
-      &:focus {
+      @include mixins.dark-keyboard-mode {
         &::before {
           @include mixins.color-svg($icon, variables.$color-gray-90);
         }

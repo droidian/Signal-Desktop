@@ -27,12 +27,17 @@
     }
 
     @at-root button#{&} {
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0 0 0 3px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
     }
+  }
+
+  &__contents:has(.module-Avatar__image) {
+    background-color: transparent;
   }
 
   &__image,
@@ -96,7 +101,7 @@
     background-color: var(--fg);
 
     @media (forced-colors: active) {
-      background-color: WindowText;
+      background-color: CanvasText;
     }
 
     &--callLink {
@@ -143,9 +148,10 @@
       border: 0;
       outline: none;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          outline: 2px solid variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
           border-radius: 6px;
         }
       }
@@ -173,14 +179,14 @@
   &--signal-official {
     .module-Avatar__contents {
       align-items: center;
-      background-color: variables.$color-ultramarine;
+      background-color: #3640fd;
       display: flex;
       justify-content: center;
     }
 
     .module-Avatar__image {
-      height: 66%;
-      width: 66%;
+      height: 62%;
+      width: 62%;
     }
   }
 }

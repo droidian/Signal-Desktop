@@ -1,0 +1,59 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import { isIncoming, isOutgoing } from '../messages/helpers.std.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import {
+  isSent,
+  isViewed,
+  isNoteToSelf,
+  getHighestSuccessfulRecipientStatus,
+} from '../messages/MessageSendState.std.ts';
+
+export function isVoiceMessagePlayed(
+  message: Pick<
+    ReadonlyMessageAttributesType,
+    | 'conversationId'
+    | 'type'
+    | 'isErased'
+    | 'errors'
+    | 'readStatus'
+    | 'sendStateByConversationId'
+  >,
+  ourConversationId: string | undefined
+): boolean {
+  if (message.isErased) {
+    return false;
+  }
+
+  if (message.errors != null && message.errors.length > 0) {
+    return false;
+  }
+
+  if (isIncoming(message)) {
+    return message.readStatus === ReadStatus.Viewed;
+  }
+
+  if (isOutgoing(message)) {
+    const { sendStateByConversationId = {} } = message;
+
+    if (isNoteToSelf({ message, ourConversationId })) {
+      return isSent(
+        getHighestSuccessfulRecipientStatus(
+          sendStateByConversationId,
+          undefined
+        )
+      );
+    }
+
+    return isViewed(
+      getHighestSuccessfulRecipientStatus(
+        sendStateByConversationId,
+        ourConversationId
+      )
+    );
+  }
+
+  return false;
+}

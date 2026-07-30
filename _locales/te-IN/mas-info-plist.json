@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "వీడియో కాలింగ్ కోసం Signal మీ కెమెరాను ఉపయోగిస్తుంది."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "ఫోన్ కాల్స్ చేయడానికి, స్వీకరించడానికి మరియు స్వర సందేశాలను రికార్డ్ చేయడానికి Signal‌కు మీ మైక్రోఫోన్ యాక్సెస్ అవసరం."
+  }
+}

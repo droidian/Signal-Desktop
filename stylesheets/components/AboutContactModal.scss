@@ -44,13 +44,10 @@
     flex-shrink: 0;
 
     @mixin about-modal-icon($url) {
-      @include mixins.light-theme {
-        @include mixins.color-svg($url, variables.$color-black);
-      }
-
-      @include mixins.dark-theme {
-        @include mixins.color-svg($url, variables.$color-gray-05);
-      }
+      @include mixins.color-svg(
+        $url,
+        light-dark(variables.$color-black, variables.$color-gray-05)
+      );
     }
 
     &--profile {
@@ -106,6 +103,44 @@
     &--note {
       @include about-modal-icon('../images/icons/v3/note/note.svg');
     }
+
+    &--group-question {
+      @include about-modal-icon(
+        '../images/icons/v3/group/group-questionmark-compact.svg'
+      );
+    }
+
+    &--direct-question {
+      @include about-modal-icon(
+        '../images/icons/v3/person/person-questionmark-compact.svg'
+      );
+    }
+
+    &--label {
+      @include about-modal-icon('../images/icons/v3/tag/tag.svg');
+    }
+
+    &--qr-code {
+      @include about-modal-icon('../images/icons/v3/qr_code/qr_code.svg');
+    }
+  }
+
+  &__label-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    max-width: 100%;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__label-container__string {
+    min-width: 0px;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
   }
 
   &__button {
@@ -115,11 +150,19 @@
     min-width: 0;
 
     @include mixins.button-reset();
+    @include mixins.button-focus-outline;
+
     & {
+      border-radius: 3px;
+      padding: 1px;
       cursor: pointer;
     }
 
-    &::after {
+    &:disabled {
+      cursor: auto;
+    }
+
+    &:not(:disabled)::after {
       content: '';
       display: inline-block;
       height: 20px;
@@ -147,7 +190,7 @@
 
 .AboutContactModal__OneLineEllipsis {
   white-space: nowrap;
-  overflow: hidden;
+  overflow-x: hidden;
   text-overflow: ellipsis;
 }
 

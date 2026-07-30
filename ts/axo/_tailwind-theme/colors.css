@@ -1,0 +1,532 @@
+/**
+ * Copyright 2025 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+/**
+ * Reset
+ * ----------------------------------------------------------------------------
+ */
+
+@theme {
+  --color-*: initial; /* reset defaults */
+  --color-transparent: transparent;
+}
+
+/**
+ * Brand
+ * ----------------------------------------------------------------------------
+ */
+
+@theme {
+  --axo-color-brand-primary: #3b45fd;
+}
+
+/**
+ * Labels
+ * ----------------------------------------------------------------------------
+ * Text & Icons
+ */
+
+/* Omitting transparency modifiers for now, they should hopefully not be necessary within the color system */
+/* color: --alpha(--value(--axo-color-label-*) / --modifier(integer)); */
+
+@utility text-* {
+  /* Text/icons should use label colors */
+  color: --value(--axo-color-label-*);
+}
+
+/* prettier-ignore */
+@theme {
+  --axo-color-label-primary:     light-dark(--alpha(#000000 / 90%), --alpha(#ffffff / 90%));
+  --axo-color-label-secondary:   light-dark(--alpha(#000000 / 60%), --alpha(#ffffff / 60%));
+  --axo-color-label-placeholder: light-dark(--alpha(#000000 / 35%), --alpha(#ffffff / 35%));
+  --axo-color-label-disabled:    light-dark(--alpha(#000000 / 25%), --alpha(#ffffff / 25%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-label-primary:     light-dark(#000000, #ffffff);
+      --axo-color-label-secondary:   light-dark(--alpha(#000000 / 70%), --alpha(#ffffff / 70%));
+      --axo-color-label-placeholder: light-dark(--alpha(#000000 / 50%), --alpha(#ffffff / 50%));
+      --axo-color-label-disabled:    light-dark(--alpha(#000000 / 40%), --alpha(#ffffff / 40%));
+    }
+  }
+}
+
+/**
+ * Labels (On Color)
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-label-primary-oncolor:     light-dark(#ffffff, --alpha(#ffffff / 90%));
+  --axo-color-label-secondary-oncolor:   light-dark(--alpha(#ffffff / 80%), --alpha(#ffffff / 70%));
+  --axo-color-label-placeholder-oncolor: light-dark(--alpha(#ffffff / 45%), --alpha(#ffffff / 45%));
+  --axo-color-label-disabled-oncolor:    light-dark(--alpha(#ffffff / 35%), --alpha(#ffffff / 35%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-label-primary-oncolor:     light-dark(#ffffff, #ffffff);
+      --axo-color-label-secondary-oncolor:   light-dark(--alpha(#ffffff / 90%), --alpha(#ffffff / 90%));
+      --axo-color-label-placeholder-oncolor: light-dark(--alpha(#ffffff / 60%), --alpha(#ffffff / 60%));
+      --axo-color-label-disabled-oncolor:    light-dark(--alpha(#ffffff / 50%), --alpha(#ffffff / 50%));
+    }
+  }
+}
+
+/**
+ * Labels (On Bright Colors)
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-label-primary-onbright:     light-dark(--alpha(#000000 / 90%), --alpha(#000000 / 90%));
+  --axo-color-label-secondary-onbright:   light-dark(--alpha(#000000 / 70%), --alpha(#000000 / 70%));
+  --axo-color-label-placeholder-onbright: light-dark(--alpha(#000000 / 45%), --alpha(#000000 / 45%));
+  --axo-color-label-disabled-onbright:    light-dark(--alpha(#000000 / 35%), --alpha(#000000 / 35%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-label-primary-onbright:     light-dark(#000000, #000000);
+      --axo-color-label-secondary-onbright:   light-dark(--alpha(#000000 / 80%), --alpha(#000000 / 80%));
+      --axo-color-label-placeholder-onbright: light-dark(--alpha(#000000 / 60%), --alpha(#000000 / 60%));
+      --axo-color-label-disabled-onbright:    light-dark(--alpha(#000000 / 50%), --alpha(#000000 / 50%));
+    }
+  }
+}
+
+/**
+ * Labels (Inverted)
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-label-primary-inverted:     light-dark(--alpha(#ffffff / 90%), --alpha(#000000 / 90%));
+  --axo-color-label-secondary-inverted:   light-dark(--alpha(#ffffff / 60%), --alpha(#000000 / 60%));
+  --axo-color-label-placeholder-inverted: light-dark(--alpha(#ffffff / 35%), --alpha(#000000 / 35%));
+  --axo-color-label-disabled-inverted:    light-dark(--alpha(#ffffff / 25%), --alpha(#000000 / 25%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-label-primary-inverted:     light-dark(#ffffff, #000000);
+      --axo-color-label-secondary-inverted:   light-dark(--alpha(#ffffff / 70%), --alpha(#000000 / 70%));
+      --axo-color-label-placeholder-inverted: light-dark(--alpha(#ffffff / 50%), --alpha(#000000 / 50%));
+      --axo-color-label-disabled-inverted:    light-dark(--alpha(#ffffff / 40%), --alpha(#000000 / 40%));
+    }
+  }
+}
+
+/**
+ * Labels (Colors)
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-label-accent:               light-dark(#030ffc, #99a1ff);
+  --axo-color-label-accent-disabled:      light-dark(--alpha(#030ffc / 25%), --alpha(#99a1ff / 25%));
+  --axo-color-label-affirmative:          light-dark(#00a015, #30d150);
+  --axo-color-label-affirmative-disabled: light-dark(--alpha(#00a015 / 25%), --alpha(#30d150 / 25%));
+  --axo-color-label-warning:              light-dark(#332900, #ffde5b);
+  --axo-color-label-warning-disabled:     light-dark(--alpha(#332900 / 25%), --alpha(#ffde5b / 25%));
+  --axo-color-label-safety:               light-dark(#b94b29, #eb977d);
+  --axo-color-label-safety-disabled:      light-dark(--alpha(#b94b29 / 25%), --alpha(#eb977d / 25%));
+  --axo-color-label-destructive:          light-dark(#f21602, #ff4a3a);
+  --axo-color-label-destructive-disabled: light-dark(--alpha(#f21602 / 25%), --alpha(#ff4a3a / 25%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-label-accent:               light-dark(#000cf3, #b6bcff);
+      --axo-color-label-accent-disabled:      light-dark(--alpha(#000cf3 / 40%), --alpha(#b6bcff / 40%));
+      --axo-color-label-affirmative:          light-dark(#005b0c, #10f53e);
+      --axo-color-label-affirmative-disabled: light-dark(--alpha(#005b0c / 40%), --alpha(#10f53e / 40%));
+      --axo-color-label-warning:              light-dark(#332900, #ffde5b);
+      --axo-color-label-warning-disabled:     light-dark(--alpha(#332900 / 40%), --alpha(#ffde5b / 40%));
+      --axo-color-label-safety:               light-dark(#932200, #ffa88d);
+      --axo-color-label-safety-disabled:      light-dark(--alpha(#932200 / 40%), --alpha(#ffa88d / 40%));
+      --axo-color-label-destructive:          light-dark(#a20d00, #ff9e99);
+      --axo-color-label-destructive-disabled: light-dark(--alpha(#a20d00 / 40%), --alpha(#ff9e99 / 40%));
+    }
+  }
+}
+
+/**
+ * Surfaces:
+ * --------------------------------------------------------------------------
+ * Solid colors, usually backgrounds and containers.
+ */
+
+@utility bg-surface-* {
+  background-color: --value(--axo-color-surface-*);
+}
+
+@utility fill-surface-* {
+  fill: --value(--axo-color-surface-*);
+}
+
+/* prettier-ignore */
+@theme {
+  --axo-color-surface-primary:          light-dark(#fafafa, #191919);
+  --axo-color-surface-secondary:        light-dark(#f5f5f5, #1e1e1e);
+  --axo-color-surface-tertiary:         light-dark(#f0f0f0, #282828);
+  --axo-color-surface-quaternary:       light-dark(#e6e6e6, #373737);
+  --axo-color-surface-card:             light-dark(#ffffff, --alpha(#969696 / 8%));
+  --axo-color-surface-message-incoming: light-dark(#ebebeb, #323232);
+  --axo-color-surface-message-outgoing: light-dark(#2267f5, #2267f5);
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-surface-primary:          light-dark(#fafafa, #191919);
+      --axo-color-surface-secondary:        light-dark(#f5f5f5, #1e1e1e);
+      --axo-color-surface-tertiary:         light-dark(#f0f0f0, #282828);
+      --axo-color-surface-quaternary:       light-dark(#e6e6e6, #373737);
+      --axo-color-surface-card:             light-dark(#ffffff, --alpha(#969696 / 8%));
+      --axo-color-surface-message-incoming: light-dark(#e1e1e1, #3c3c3c);
+      --axo-color-surface-message-outgoing: light-dark(#0842b9, #0842b9);
+    }
+  }
+}
+
+/**
+ * Materials
+ * --------------------------------------------------------------------------
+ * Color with background blur and effects, usually backgrounds and containers
+ */
+
+@utility bg-material-* {
+  background-color: --value(--axo-color-material-*);
+}
+
+/* prettier-ignore */
+@theme {
+  --axo-color-material-primary:            light-dark(--alpha(#fafafa / 90%), --alpha(#191919 / 90%));
+  --axo-color-material-secondary:          light-dark(--alpha(#f4f4f4 / 90%), --alpha(#1f1f1f / 90%));
+  --axo-color-material-tertiary:           light-dark(--alpha(#efefef / 90%), --alpha(#2a2a2a / 90%));
+  --axo-color-material-tertiary-pressed:   light-dark(--alpha(#e9e9e9 / 90%), --alpha(#2f2f2f / 90%));
+  --axo-color-material-quaternary:         light-dark(--alpha(#e4e4e4 / 90%), --alpha(#353535 / 90%));
+  --axo-color-material-quaternary-pressed: light-dark(--alpha(#dedede / 90%), --alpha(#3a3a3a / 90%));
+  --axo-color-material-dim-primary:        light-dark(--alpha(#383838 / 90%), --alpha(#515151 / 90%));
+  --axo-color-material-dim-secondary:      light-dark(--alpha(#646464 / 90%), --alpha(#454545 / 90%));
+  --axo-color-material-dialog:             light-dark(--alpha(#fafafa / 90%), --alpha(#353535 / 90%));
+  --axo-color-material-warning:            light-dark(--alpha(#fff7d6 / 80%), --alpha(#49442f / 80%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-material-primary:            light-dark(#fafafa, #191919);
+      --axo-color-material-secondary:          light-dark(#f5f5f5, #1e1e1e);
+      --axo-color-material-tertiary:           light-dark(#f0f0f0, #282828);
+      --axo-color-material-tertiary-pressed:   light-dark(#ebebeb, #2d2d2d);
+      --axo-color-material-quaternary:         light-dark(#e6e6e6, #323232);
+      --axo-color-material-quaternary-pressed: light-dark(#e1e1e1, #373737);
+      --axo-color-material-dim-primary:        light-dark(#4b4b4b, #4b4b4b);
+      --axo-color-material-dim-secondary:      light-dark(#737373, #414141);
+      --axo-color-material-dialog:             light-dark(#fafafa, #323232);
+      --axo-color-material-warning:            light-dark(#fff9e0, #443f2c);
+    }
+  }
+}
+
+/**
+ * Fills
+ * --------------------------------------------------------------------------
+ * Usually semi-transparent, used for buttons and other primatives, has
+ * pressed states.
+ */
+
+@utility bg-* {
+  background-color: --value(--axo-color-fill-*);
+}
+
+@utility fill-* {
+  fill: --value(--axo-color-fill-*);
+}
+
+/* prettier-ignore */
+@theme {
+  --axo-color-fill-primary:           light-dark(--alpha(#7d7d7d / 8%), --alpha(#969696 / 12%));
+  --axo-color-fill-primary-pressed:   light-dark(--alpha(#7d7d7d / 12%), --alpha(#969696 / 16%));
+  --axo-color-fill-secondary:         light-dark(--alpha(#7d7d7d / 16%), --alpha(#969696 / 20%));
+  --axo-color-fill-secondary-pressed: light-dark(--alpha(#7d7d7d / 20%), --alpha(#969696 / 24%));
+  --axo-color-fill-tertiary:          light-dark(--alpha(#7d7d7d / 24%), --alpha(#969696 / 28%));
+  --axo-color-fill-tertiary-pressed:  light-dark(--alpha(#7d7d7d / 28%), --alpha(#969696 / 32%));
+  --axo-color-fill-control:           light-dark(#ffffff, --alpha(#969696 / 12%));
+  --axo-color-fill-control-pressed:   light-dark(#fafafa, --alpha(#969696 / 16%));
+  --axo-color-fill-inverted:          light-dark(#414141, #dcdcdc);
+  --axo-color-fill-inverted-pressed:  light-dark(#4b4b4b, #d2d2d2);
+  --axo-color-fill-overlay:           light-dark(--alpha(#000000 / 24%), --alpha(#000000 / 48%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-fill-primary:           light-dark(--alpha(#7d7d7d / 16%), --alpha(#969696 / 20%));
+      --axo-color-fill-primary-pressed:   light-dark(--alpha(#7d7d7d / 20%), --alpha(#969696 / 24%));
+      --axo-color-fill-secondary:         light-dark(--alpha(#7d7d7d / 24%), --alpha(#969696 / 28%));
+      --axo-color-fill-secondary-pressed: light-dark(--alpha(#7d7d7d / 28%), --alpha(#969696 / 32%));
+      --axo-color-fill-tertiary:          light-dark(--alpha(#7d7d7d / 32%), --alpha(#969696 / 36%));
+      --axo-color-fill-tertiary-pressed:  light-dark(--alpha(#7d7d7d / 36%), --alpha(#969696 / 40%));
+      --axo-color-fill-control:           light-dark(--alpha(#969696 / 20%));
+      --axo-color-fill-control-pressed:   light-dark(#fafafa, --alpha(#969696 / 24%));
+      --axo-color-fill-inverted:          light-dark(#232323, #ebebeb);
+      --axo-color-fill-inverted-pressed:  light-dark(#2d2d2d, #e1e1e1);
+      --axo-color-fill-overlay:           light-dark(--alpha(#000000 / 48%), --alpha(#000000 / 64%));
+    }
+  }
+}
+
+/**
+ * Fills (On Message)
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-fill-onmessage-incoming-primary:           light-dark(--alpha(#fefefe / 80%), --alpha(#e6e6e6 / 16%));
+  --axo-color-fill-onmessage-incoming-primary-pressed:   light-dark(--alpha(#fefefe / 60%), --alpha(#e6e6e6 / 20%));
+  --axo-color-fill-onmessage-incoming-secondary:         light-dark(--alpha(#fefefe / 60%), --alpha(#e6e6e6 / 12%));
+  --axo-color-fill-onmessage-incoming-secondary-pressed: light-dark(--alpha(#fefefe / 36%), --alpha(#e6e6e6 / 16%));
+  --axo-color-fill-onmessage-outgoing-primary:           light-dark(--alpha(#ffffff / 20%), --alpha(#ffffff / 20%));
+  --axo-color-fill-onmessage-outgoing-primary-pressed:   light-dark(--alpha(#ffffff / 16%), --alpha(#ffffff / 24%));
+  --axo-color-fill-onmessage-outgoing-secondary:         light-dark(--alpha(#ffffff / 60%), --alpha(#ffffff / 52%));
+  --axo-color-fill-onmessage-outgoing-secondary-pressed: light-dark(--alpha(#ffffff / 56%), --alpha(#ffffff / 56%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-fill-onmessage-incoming-primary:           light-dark(--alpha(#fefefe / 80%), --alpha(#e6e6e6 / 16%));
+      --axo-color-fill-onmessage-incoming-primary-pressed:   light-dark(--alpha(#fefefe / 60%), --alpha(#e6e6e6 / 20%));
+      --axo-color-fill-onmessage-incoming-secondary:         light-dark(--alpha(#fefefe / 64%), --alpha(#e6e6e6 / 12%));
+      --axo-color-fill-onmessage-incoming-secondary-pressed: light-dark(--alpha(#fefefe / 52%), --alpha(#e6e6e6 / 16%));
+      --axo-color-fill-onmessage-outgoing-primary:           light-dark(--alpha(#ffffff / 20%), --alpha(#ffffff / 20%));
+      --axo-color-fill-onmessage-outgoing-primary-pressed:   light-dark(--alpha(#ffffff / 16%), --alpha(#ffffff / 24%));
+      --axo-color-fill-onmessage-outgoing-secondary:         light-dark(--alpha(#ffffff / 68%), --alpha(#ffffff / 64%));
+      --axo-color-fill-onmessage-outgoing-secondary-pressed: light-dark(--alpha(#ffffff / 64%), --alpha(#ffffff / 68%));
+    }
+  }
+}
+
+/**
+ * Fills (Colors)
+ * --------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-fill-accent:                     light-dark(#4655ff, #5563ff);
+  --axo-color-fill-accent-pressed:             light-dark(#3b4af4, #616eff);
+  --axo-color-fill-accent-bright:              light-dark(#b2b9ff, #b2b9ff);
+  --axo-color-fill-accent-bright-pressed:      light-dark(#a8b0ff, #a8b0ff);
+  --axo-color-fill-accent-tint:                light-dark(--alpha(#030ffc / 6%), --alpha(#99a1ff / 12%));
+  --axo-color-fill-accent-tint-pressed:        light-dark(--alpha(#030ffc / 10%), --alpha(#99a1ff / 16%));
+
+  --axo-color-fill-affirmative:                light-dark(#09a523, #07ab23);
+  --axo-color-fill-affirmative-pressed:        light-dark(#089b21, #08b525);
+  --axo-color-fill-affirmative-bright:         light-dark(#6ce280, #6ce280);
+  --axo-color-fill-affirmative-bright-pressed: light-dark(#55dd6b, #55dd6b);
+  --axo-color-fill-affirmative-tint:           light-dark(--alpha(#00a015 / 8%), --alpha(#30d150 / 12%));
+  --axo-color-fill-affirmative-tint-pressed:   light-dark(--alpha(#00a015 / 12%), --alpha(#30d150 / 16%));
+
+  --axo-color-fill-warning-bright:             light-dark(#f9dd6c, #f9dd6c);
+  --axo-color-fill-warning-bright-pressed:     light-dark(#f5d761, #f5d761);
+  --axo-color-fill-warning-tint:               light-dark(--alpha(#f5c400 / 20%), --alpha(#ffde5b / 12%));
+  --axo-color-fill-warning-tint-pressed:       light-dark(--alpha(#f5c400 / 24%), --alpha(#ffde5b / 16%));
+
+  --axo-color-fill-safety:                     light-dark(#d35e3b, #b14f32);
+  --axo-color-fill-safety-pressed:             light-dark(#bc5a2a, #bf5536);
+  --axo-color-fill-safety-tint:                light-dark(--alpha(#b95929 / 12%), --alpha(#eb977d / 16%));
+  --axo-color-fill-safety-tint-pressed:        light-dark(--alpha(#b95929 / 16%), --alpha(#eb977d / 20%));
+
+  --axo-color-fill-destructive:                light-dark(#f21c0d, #ee382c);
+  --axo-color-fill-destructive-pressed:        light-dark(#e41a0c, #ef493e);
+  --axo-color-fill-destructive-tint:           light-dark(--alpha(#f21602 / 6%), --alpha(#ff4a3a / 12%));
+  --axo-color-fill-destructive-tint-pressed:   light-dark(--alpha(#f21602 / 10%), --alpha(#ff4a3a / 16%));
+
+  --axo-color-fill-white:                      light-dark(#ffffff, #ffffff);
+  --axo-color-fill-white-pressed:              light-dark(#fafafa, #fafafa);
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-fill-accent:                     light-dark(#1f31ff, #2536f9);
+      --axo-color-fill-accent-pressed:             light-dark(#0519ff, #2e3ffa);
+      --axo-color-fill-accent-bright:              light-dark(#b2b9ff, #b2b9ff);
+      --axo-color-fill-accent-bright-pressed:      light-dark(#a8b0ff, #a8b0ff);
+      --axo-color-fill-accent-tint:                light-dark(--alpha(#030ffc / 10%), --alpha(#99a1ff / 18%));
+      --axo-color-fill-accent-tint-pressed:        light-dark(--alpha(#030ffc / 14%), --alpha(#99a1ff / 22%));
+
+      --axo-color-fill-affirmative:                light-dark(#007514, #007514);
+      --axo-color-fill-affirmative-pressed:        light-dark(#006b12, #008016);
+      --axo-color-fill-affirmative-bright:         light-dark(#6ce280, #6ce280);
+      --axo-color-fill-affirmative-bright-pressed: light-dark(#55dd6b, #55dd6b);
+      --axo-color-fill-affirmative-tint:           light-dark(--alpha(#00a015 / 12%), --alpha(#30d150 / 20%));
+      --axo-color-fill-affirmative-tint-pressed:   light-dark(--alpha(#00a015 / 16%), --alpha(#30d150 / 24%));
+
+      --axo-color-fill-warning-bright:             light-dark(#f9dd6c, #f9dd6c);
+      --axo-color-fill-warning-bright-pressed:     light-dark(#f5d761, #f5d761);
+      --axo-color-fill-warning-tint:               light-dark(--alpha(#f5c400 / 20%), --alpha(#ffde5b / 16%));
+      --axo-color-fill-warning-tint-pressed:       light-dark(--alpha(#f5c400 / 24%), --alpha(#ffde5b / 20%));
+
+      --axo-color-fill-safety:                     light-dark(#993f24, #993f24);
+      --axo-color-fill-safety-pressed:             light-dark(#8c3a21, #a14226);
+      --axo-color-fill-safety-tint:                light-dark(--alpha(#b95929 / 12%), --alpha(#eb977d / 16%));
+      --axo-color-fill-safety-tint-pressed:        light-dark(--alpha(#b95929 / 16%), --alpha(#eb977d / 20%));
+
+      --axo-color-fill-destructive:                light-dark(#b80c00, #b80c00);
+      --axo-color-fill-destructive-pressed:        light-dark(#a80b00, #c20d00);
+      --axo-color-fill-destructive-tint:           light-dark(--alpha(#d91304 / 12%), --alpha(#ff4a3a / 20%));
+      --axo-color-fill-destructive-tint-pressed:   light-dark(--alpha(#d91304 / 16%), --alpha(#ff4a3a / 24%));
+
+      --axo-color-fill-white:                      light-dark(#ffffff, #ffffff);
+      --axo-color-fill-white-pressed:              light-dark(#fafafa, #fafafa);
+    }
+  }
+}
+
+/**
+ * Borders
+ * --------------------------------------------------------------------------
+ */
+
+@utility border-* {
+  border-color: --value(--axo-color-border-*);
+}
+
+@utility border-t-* {
+  border-top-color: --value(--axo-color-border-*);
+}
+@utility border-b-* {
+  border-bottom-color: --value(--axo-color-border-*);
+}
+@utility border-l-* {
+  border-left-color: --value(--axo-color-border-*);
+}
+@utility border-r-* {
+  border-right-color: --value(--axo-color-border-*);
+}
+
+@utility border-x-* {
+  border-inline-color: --value(--axo-color-border-*);
+}
+@utility border-y-* {
+  border-block-color: --value(--axo-color-border-*);
+}
+
+@utility border-s-* {
+  border-inline-start-color: --value(--axo-color-border-*);
+}
+@utility border-e-* {
+  border-inline-end-color: --value(--axo-color-border-*);
+}
+
+@utility border-bs-* {
+  border-block-start-color: --value(--axo-color-border-*);
+}
+@utility border-be-* {
+  border-block-end-color: --value(--axo-color-border-*);
+}
+
+@utility stroke-* {
+  stroke: --value(--axo-color-border-*);
+}
+
+@utility outline-* {
+  outline-color: --value(--axo-color-border-*);
+}
+
+/* prettier-ignore */
+@theme {
+  --axo-color-border-primary:               light-dark(--alpha(#000000 / 6%), --alpha(#ffffff / 6%));
+  --axo-color-border-secondary:             light-dark(--alpha(#000000 / 10%), --alpha(#ffffff / 10%));
+  --axo-color-border-tertiary:              light-dark(--alpha(#000000 / 24%), --alpha(#ffffff / 24%));
+  --axo-color-border-selected:              light-dark(#4655ff, #c9ceff);
+  --axo-color-border-selected-oncolor:      light-dark(#fafafa, #fafafa);
+  --axo-color-border-focused-inner:         light-dark(#ffffff, #000000);
+  --axo-color-border-focused-outer:         light-dark(#808190, #c9cbda);
+  --axo-color-border-focused-inner-oncolor: light-dark(#000000, #000000);
+  --axo-color-border-focused-outer-oncolor: light-dark(#f4f5fe, #f4f5fe);
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-border-primary:               light-dark(--alpha(#000000 / 24%), --alpha(#ffffff / 24%));
+      --axo-color-border-secondary:             light-dark(--alpha(#000000 / 32%), --alpha(#ffffff / 32%));
+      --axo-color-border-tertiary:              light-dark(--alpha(#000000 / 70%), --alpha(#ffffff / 70%));
+      --axo-color-border-selected:              light-dark(#3243ff, #c9ceff);
+      --axo-color-border-selected-oncolor:      light-dark(#fafafa, #fafafa);
+      --axo-color-border-focused-inner:         light-dark(#ffffff, #000000);
+      --axo-color-border-focused-outer:         light-dark(#67697e, #e4e5f0);
+      --axo-color-border-focused-inner-oncolor: light-dark(#000000, #000000);
+      --axo-color-border-focused-outer-oncolor: light-dark(#ffffff, #ffffff);
+    }
+  }
+}
+
+/**
+ * Deprecated Axo Colors
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-deprecated-border-error:  light-dark(#fd2512, #fb4332);
+  --axo-color-deprecated-fill-on-media: light-dark(--alpha(#000000 / 75%), --alpha(#000000 / 75%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-color-deprecated-border-error:  light-dark(#b7271a, #fb4332);
+      --axo-color-deprecated-fill-on-media: light-dark(--alpha(#000000 / 85%), --alpha(#000000 / 85%));
+    }
+  }
+}
+
+/**
+ * Legacy Colors
+ * ----------------------------------------------------------------------------
+ * These should all eventually be removed, but in places where we need new
+ * components to specifically match the colors of older components, we can
+ * add them here.
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-color-legacy-conversation-header-bg:   light-dark(#fff, #121212);
+  --axo-color-legacy-signal-conversation-bg:   light-dark(#F6F7FF, #2F3240);
+  --axo-color-legacy-official-chat-badge-bg:   light-dark(--alpha(#4655FF / 12%), --alpha(#4952F8 / 40%));
+  --axo-color-legacy-official-chat-badge-text: light-dark(#030FFC, #C2C5FE);
+  --axo-color-legacy-signal-chat-message-bg:   light-dark(#8889B4, #444664);
+  --axo-color-legacy-warning-badge:            light-dark(#C84118, #EB977D);
+}

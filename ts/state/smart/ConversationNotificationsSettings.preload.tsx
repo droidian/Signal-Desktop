@@ -1,0 +1,43 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useSelector } from 'react-redux';
+import { memo } from 'react';
+import { ConversationNotificationsSettings } from '../../components/conversation/conversation-details/ConversationNotificationsSettings.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getConversationByIdSelector } from '../selectors/conversations.dom.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+
+export type SmartConversationNotificationsSettingsProps = {
+  conversationId: string;
+};
+
+export const SmartConversationNotificationsSettings = memo(
+  function SmartConversationNotificationsSettings({
+    conversationId,
+  }: SmartConversationNotificationsSettingsProps) {
+    const i18n = useSelector(getIntl);
+    const conversationSelector = useSelector(getConversationByIdSelector);
+    const { setMuteDuration, setDontNotifyForMentionsIfMuted } =
+      useConversationsActions();
+    const conversation = conversationSelector(conversationId);
+    strictAssert(conversation, 'Expected a conversation to be found');
+    const {
+      type: conversationType,
+      dontNotifyForMentionsIfMuted,
+      muteExpiresAt,
+    } = conversation;
+    return (
+      <ConversationNotificationsSettings
+        id={conversationId}
+        conversationType={conversationType}
+        dontNotifyForMentionsIfMuted={dontNotifyForMentionsIfMuted ?? false}
+        i18n={i18n}
+        muteExpiresAt={muteExpiresAt}
+        setMuteDuration={setMuteDuration}
+        setDontNotifyForMentionsIfMuted={setDontNotifyForMentionsIfMuted}
+      />
+    );
+  }
+);

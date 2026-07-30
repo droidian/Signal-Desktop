@@ -1,0 +1,201 @@
+/**
+ * Copyright 2025 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+/**
+ * Type Util
+ * ----------------------------------------------------------------------------
+ * Prefer using `type-*` over individual properties
+ */
+
+/* prettier-ignore */
+@utility type-* {
+  font-family:    --value(--font-sans);
+  font-size:      --value(--axo-text-*);
+  font-weight:    --value(--axo-font-weight-*);
+  letter-spacing: --value(--axo-tracking-*);
+  line-height:    --value(--axo-leading-*);
+}
+
+/**
+ * Font Family
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --font-*: initial; /* reset defaults */
+  /* Note: --font-sans also has language */
+  --font-sans:
+    Inter,
+    'Source Sans Pro',
+    'Source Han Sans',
+    'Signal Emoji Large',
+    'Signal Emoji Small',
+    -apple-system,
+    system-ui,
+    'Segoe UI',
+    'Noto Sans',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  /* Note: This font-family is checked for in matchMonospace, to support paste scenarios */
+  --font-mono:
+    'SF Mono',
+    SFMono-Regular,
+    ui-monospace,
+    'DejaVu Sans Mono',
+    Menlo,
+    Consolas,
+    monospace;
+  --font-symbols: 'SignalSymbols';
+}
+
+/* prettier-ignore */
+@layer theme {
+  /* Japanese */
+  :lang(ja) {
+    --font-sans:
+      Inter,
+       'SF Pro',
+       'SF Pro JP',
+       'BIZ UDGothic',
+       'Hiragino Kaku Gothic Pro',
+      'ヒラギノ角ゴ Pro W3',
+       メイリオ,
+       Meiryo,
+       'ＭＳ Ｐゴシック',
+      'Signal Emoji Large',
+       'Signal Emoji Small',
+       'Helvetica Neue',
+       Helvetica,
+      Arial,
+      sans-serif;
+  }
+  /* Farsi (Persian) */
+  :lang(fa) {
+    --font-sans:
+      'Vazirmatn',
+      Inter,
+      'Noto Sans Arabic',
+      'Signal Emoji Large',
+      'Signal Emoji Small',
+      -apple-system,
+      system-ui,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Tahoma,
+      Helvetica,
+      Arial,
+      sans-serif;
+  }
+  /* Urdu */
+  :lang(ur) {
+    --font-sans:
+      'Noto Nastaliq Urdu',
+      Gulzar,
+      'Jameel Noori Nastaleeq',
+      'Faiz Lahori Nastaleeq',
+      'Urdu Typesetting',
+      Helvetica,
+      Arial,
+      'Signal Emoji Large',
+      'Signal Emoji Small',
+      sans-serif;
+  }
+}
+
+/**
+ * Font Sizes
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  /* text-size */
+  --text-*: initial; /* reset defaults */
+
+  /* (no defaults, use presets) */
+
+  /* Presets */
+  --axo-text-title-large:  1.5rem    /* 24px */;
+  --axo-text-title-medium: 1.125rem  /* 18px */;
+  --axo-text-title-small:  0.875rem  /* 14px */;
+  --axo-text-body-large:   0.875rem  /* 14px */;
+  --axo-text-body-medium:  0.8125rem /* 13px */;
+  --axo-text-body-small:   0.75rem   /* 12px */;
+  --axo-text-caption:      0.6875rem /* 11px */;
+}
+
+/**
+ * Font Weights
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  /* font-weight */
+  --font-weight-*: initial; /* reset defaults */
+
+  /* Defaults */
+  --font-weight-semibold: 600;
+  --font-weight-medium:   500;
+  --font-weight-regular:  400;
+  --font-weight-light:    300;
+
+  /* Presets */
+  --axo-font-weight-title-large:  var(--font-weight-semibold);
+  --axo-font-weight-title-medium: var(--font-weight-semibold);
+  --axo-font-weight-title-small:  var(--font-weight-semibold);
+  --axo-font-weight-body-large:   var(--font-weight-regular);
+  --axo-font-weight-body-medium:  var(--font-weight-regular);
+  --axo-font-weight-body-small:   var(--font-weight-regular);
+  --axo-font-weight-caption:      var(--font-weight-regular);
+}
+
+/**
+ * Letter Spacing
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  /* letter-spacing */
+  --tracking-*: initial; /* reset defaults */
+
+  /* (no defaults, use presets) */
+
+  /* Presets */
+  --axo-tracking-title-large:  -0.019em /* (@ 24px) -0.46px */;
+  --axo-tracking-title-medium: -0.014em /* (@ 18px) -0.25px */;
+  --axo-tracking-title-small:  -0.006em /* (@ 14px) -0.08px */;
+  --axo-tracking-body-large:   -0.006em /* (@ 14px) -0.08px */;
+  --axo-tracking-body-medium:  -0.003em /* (@ 13px) -0.04px */;
+  --axo-tracking-body-small:    0em     /* (@ 12px)  0px    */;
+  --axo-tracking-caption:       0.005em /* (@ 11px)  0.05px */;
+}
+
+/**
+ * Line Height
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  /* line-height */
+  --leading-*: initial; /* reset defaults */
+  --leading-none: 1; /* useful as reset */
+
+  /* (no defaults, use presets) */
+
+  /* Presets */
+  --axo-leading-title-large:  2rem     /* 32px */;
+  --axo-leading-title-medium: 1.5rem   /* 24px */;
+  --axo-leading-title-small:  1.25rem  /* 20px */;
+  --axo-leading-body-large:   1.25rem  /* 20px */;
+  --axo-leading-body-medium:  1.125rem /* 18px */;
+  --axo-leading-body-small:   1rem     /* 16px */;
+  --axo-leading-caption:      0.875rem /* 14px */;
+}

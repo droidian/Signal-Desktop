@@ -1,0 +1,51 @@
+{
+  "name": "@signalapp/types",
+  "version": "0.0.0",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Signal Messenger, LLC",
+    "email": "support@signal.org"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "source": "src/index.std.ts",
+  "main": "dist/index.std.cjs",
+  "module": "dist/index.std.mjs",
+  "types": "dist/index.std.d.mts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.std.d.mts",
+        "default": "./dist/index.std.mjs"
+      },
+      "require": {
+        "types": "./dist/index.std.d.cts",
+        "default": "./dist/index.std.cjs"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=24.17.0"
+  },
+  "scripts": {
+    "check": "tsgo --noEmit",
+    "build": "tsdown",
+    "prepare": "pnpm run build"
+  },
+  "dependencies": {
+    "buffer": "6.0.3",
+    "semver": "7.7.4",
+    "type-fest": "5.5.0",
+    "uuid": "13.0.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "0.18.4",
+    "@typescript/native-preview": "7.0.0-dev.20260515.1",
+    "publint": "0.3.21",
+    "tsdown": "0.22.3"
+  }
+}
