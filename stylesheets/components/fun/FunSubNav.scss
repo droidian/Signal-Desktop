@@ -118,13 +118,13 @@ $image-radius: $button-radius - $image-margin;
   }
 
   &:hover {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
+    background: var(--axo-color-fill-primary);
   }
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -173,7 +173,7 @@ $image-radius: $button-radius - $image-margin;
   justify-content: center;
 
   .FunSubNav__ListBoxItem:hover & {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
+    background: var(--axo-color-fill-primary);
   }
 }
 
@@ -185,12 +185,12 @@ $image-radius: $button-radius - $image-margin;
   inset-inline-start: 0;
   width: 100%;
   height: 100%;
-  background: light-dark(variables.$color-gray-05, variables.$color-gray-60);
+  background: var(--axo-color-fill-primary-pressed);
 
   .FunSubNav__ListBoxItem[data-focused='true'] & {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -206,10 +206,7 @@ $image-radius: $button-radius - $image-margin;
 }
 
 @mixin icon($svg) {
-  @include mixins.color-svg(
-    $svg,
-    light-dark(variables.$color-black-alpha-50, variables.$color-white-alpha-50)
-  );
+  @include mixins.color-svg($svg, var(--axo-color-label-secondary));
 }
 
 /* Shared */

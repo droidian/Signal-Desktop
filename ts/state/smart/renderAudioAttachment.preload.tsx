@@ -1,0 +1,28 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ReactElement } from 'react';
+import { VoiceNotesPlaybackContext } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import type { Props as MessageAudioProps } from './MessageAudio.preload.tsx';
+import { SmartMessageAudio } from './MessageAudio.preload.tsx';
+
+export type RenderAudioAttachmentProps = Omit<
+  MessageAudioProps,
+  'computePeaks'
+>;
+
+export function renderAudioAttachment(
+  props: RenderAudioAttachmentProps
+): ReactElement {
+  return (
+    <VoiceNotesPlaybackContext.Consumer>
+      {voiceNotesPlaybackProps => {
+        return (
+          voiceNotesPlaybackProps && (
+            <SmartMessageAudio {...props} {...voiceNotesPlaybackProps} />
+          )
+        );
+      }}
+    </VoiceNotesPlaybackContext.Consumer>
+  );
+}

@@ -1,7 +1,7 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { type JSX } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   useLoaderData,

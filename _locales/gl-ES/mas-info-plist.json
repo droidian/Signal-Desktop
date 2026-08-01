@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal emprega a túa cámara nas videochamadas."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal necesita acceder ao micrófono para facer e recibir chamadas e gravar mensaxes de voz."
+  }
+}

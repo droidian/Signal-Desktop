@@ -1,4 +1,22 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "保留中"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "戻る"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "閉じる"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "消去する"
+  },
+  "icu:AxoBadge.MaxOverflow": {
+    "messageformat": "{max,number}+"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "グループへ追加"
   },
@@ -6,7 +24,7 @@
     "messageformat": "新しいメンバーを追加しますか？"
   },
   "icu:AddUserToAnotherGroupModal__confirm-add": {
-    "messageformat": "追加する"
+    "messageformat": "追加"
   },
   "icu:AddUserToAnotherGroupModal__confirm-message": {
     "messageformat": "「 {contact}」を「{group}」グループに追加します"
@@ -71,6 +89,9 @@
   "icu:unknownContact": {
     "messageformat": "不明な連絡先"
   },
+  "icu:deletedAccount": {
+    "messageformat": "消去されたアカウント"
+  },
   "icu:unknownContactShort": {
     "messageformat": "不明"
   },
@@ -87,7 +108,7 @@
     "messageformat": "データベースのエラー"
   },
   "icu:deleteAndRestart": {
-    "messageformat": "すべてのデータを消去して再起動する"
+    "messageformat": "すべてのデータを消去して再起動"
   },
   "icu:databaseError__deleteDataConfirmation": {
     "messageformat": "すべてのデータを完全に消去します"
@@ -206,9 +227,6 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "開発者ツール"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "開発者ツール呼び出しを開く"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "新規の端末として設定"
   },
@@ -222,7 +240,7 @@
     "messageformat": "その他"
   },
   "icu:contextMenuCopyLink": {
-    "messageformat": "リンクをコピーする"
+    "messageformat": "リンクをコピー"
   },
   "icu:contextMenuCopyImage": {
     "messageformat": "画像をコピー"
@@ -242,6 +260,12 @@
   "icu:archivedConversations": {
     "messageformat": "アーカイブ済みのチャット"
   },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "チャットフォルダを追加"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "フォルダを設定"
+  },
   "icu:LeftPane--pinned": {
     "messageformat": "ピン留め中"
   },
@@ -252,13 +276,13 @@
     "messageformat": "ユーザーネームに問題が発生したため、アカウントに割り当てられていません。もう一度設定し直すか、新しいものを選んでみてください。"
   },
   "icu:LeftPane--corrupted-username--action-text": {
-    "messageformat": "今すぐ修正する"
+    "messageformat": "今すぐ修正"
   },
   "icu:LeftPane--corrupted-username-link--text": {
     "messageformat": "QRコードとユーザーネームのリンクに問題が発生したため、無効になりました。新しいリンクを作成して他のユーザーと共有してください。"
   },
   "icu:LeftPane--corrupted-username-link--action-text": {
-    "messageformat": "今すぐ修正する"
+    "messageformat": "今すぐ修正"
   },
   "icu:LeftPane__compose__findByUsername": {
     "messageformat": "ユーザーネームで検索"
@@ -281,29 +305,47 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "ユーザーネームの後ろに「.（ドット）」と、対になる数字を入力してください。"
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "表示するチャットがありません"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "フォルダを設定"
+  },
   "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
-    "messageformat": "All"
+    "messageformat": "すべて"
   },
   "icu:LeftPaneChatFolders__ItemLabel--All": {
-    "messageformat": "All chats"
+    "messageformat": "すべてのチャット"
   },
   "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
     "messageformat": "{maxCount,number}+"
   },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel": {
+    "messageformat": "{count, plural, other {{count,number}件の未読メッセージ}}"
+  },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
-    "messageformat": "Mark all read"
+    "messageformat": "すべて既読にする"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
-    "messageformat": "Mute notifications"
+    "messageformat": "通知をミュート"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
-    "messageformat": "Unmute all"
+    "messageformat": "すべてミュート"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
-    "messageformat": "Unmute all"
+    "messageformat": "すべてミュート"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
-    "messageformat": "Edit folder"
+    "messageformat": "フォルダを編集"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "フォルダに追加"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "フォルダを作成"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "フォルダから削除"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "国番号"
@@ -312,7 +354,7 @@
     "messageformat": "国番号"
   },
   "icu:NavTabsToggle__showTabs": {
-    "messageformat": "タブを表示する"
+    "messageformat": "タブを表示"
   },
   "icu:NavTabsToggle__hideTabs": {
     "messageformat": "タブを隠す"
@@ -338,9 +380,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "設定"
   },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "プロフィール"
-  },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "戻る"
   },
@@ -351,31 +390,31 @@
     "messageformat": "アーカイブ済みのチャットはありません。"
   },
   "icu:archiveConversation": {
-    "messageformat": "アーカイブする"
+    "messageformat": "アーカイブ"
   },
   "icu:markUnread": {
     "messageformat": "未読にする"
   },
   "icu:markRead": {
-    "messageformat": "Mark read"
+    "messageformat": "既読にする"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "メッセージの選択"
   },
   "icu:ConversationHeader__MenuItem--Accept": {
-    "messageformat": "承認する"
+    "messageformat": "承認"
   },
   "icu:ConversationHeader__MenuItem--Block": {
-    "messageformat": "ブロックする"
+    "messageformat": "ブロック"
   },
   "icu:ConversationHeader__MenuItem--Unblock": {
     "messageformat": "ブロックを解除"
   },
   "icu:ConversationHeader__MenuItem--ReportSpam": {
-    "messageformat": "スパムとして報告する"
+    "messageformat": "スパムとして報告"
   },
   "icu:ConversationHeader__MenuItem--DeleteChat": {
-    "messageformat": "チャットを消去する"
+    "messageformat": "チャットを消去"
   },
   "icu:ContactListItem__menu": {
     "messageformat": "連絡先の管理"
@@ -393,7 +432,7 @@
     "messageformat": "削除"
   },
   "icu:ContactListItem__menu__block": {
-    "messageformat": "ブロックする"
+    "messageformat": "ブロック"
   },
   "icu:ContactListItem__remove--title": {
     "messageformat": "{title} さんを削除しますか？"
@@ -414,22 +453,13 @@
     "messageformat": "アーカイブ解除"
   },
   "icu:pinConversation": {
-    "messageformat": "チャットをピン留めする"
+    "messageformat": "チャットをピン留め"
   },
   "icu:unpinConversation": {
-    "messageformat": "チャットのピン留めを解除する"
+    "messageformat": "チャットのピン留めを解除"
   },
-  "icu:pinnedConversationsFull": {
-    "messageformat": "ピン留めできるチャットは4件までです"
-  },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, other {{daysAgo,number} 日前のメッセージを読み込み中..}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "昨日のメッセージを読み込み中..."
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "今日のメッセージを読み込み中..."
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, other {ピン留めできるチャットは{maxPinnedConversations,number}件までです}}"
   },
   "icu:view": {
     "messageformat": "表示"
@@ -492,7 +522,7 @@
     "messageformat": "安全番号の検証"
   },
   "icu:safetyNumberChangeDialog__remove": {
-    "messageformat": "ストーリーから削除する"
+    "messageformat": "ストーリーから削除"
   },
   "icu:safetyNumberChangeDialog__actions-contact": {
     "messageformat": "連絡先 {contact}を開く"
@@ -501,7 +531,7 @@
     "messageformat": "ストーリー {story}を開く"
   },
   "icu:sendAnyway": {
-    "messageformat": "とにかく送信する"
+    "messageformat": "それでも送信"
   },
   "icu:safetyNumberChangeDialog_send": {
     "messageformat": "送信"
@@ -510,13 +540,16 @@
     "messageformat": "完了"
   },
   "icu:callAnyway": {
-    "messageformat": "とにかく発信する"
+    "messageformat": "それでも発信"
   },
   "icu:joinAnyway": {
-    "messageformat": "それでも参加する"
+    "messageformat": "それでも参加"
   },
   "icu:debugLogExplanation": {
     "messageformat": "「送信する」をクリックすると、このログがユニークな未公開のURLで30日間見られるようになります。\n「保存」をクリックすると、送信する前にあなたの端末にログを保存しておくこともできます。"
+  },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "このログは、関係者が閲覧できるようにオンラインで公開されます。ログは、送信前にダウンロードすることができます。"
   },
   "icu:debugLogError": {
     "messageformat": "アップロードできませんでした！ログのテキストファイルを support@signal.org にメールでお送りください。"
@@ -531,7 +564,7 @@
     "messageformat": "…完全なログを表示するには、保存をクリックします。"
   },
   "icu:debugLogCopy": {
-    "messageformat": "リンクをコピーする"
+    "messageformat": "リンクをコピー"
   },
   "icu:debugLogSave": {
     "messageformat": "保存"
@@ -543,7 +576,7 @@
     "messageformat": "サポートに問い合わせる"
   },
   "icu:submit": {
-    "messageformat": "送信する"
+    "messageformat": "送信"
   },
   "icu:SafetyNumberViewer__markAsVerified": {
     "messageformat": "検証済みにする"
@@ -551,16 +584,82 @@
   "icu:SafetyNumberViewer__clearVerification": {
     "messageformat": "未検証にする"
   },
-  "icu:SafetyNumberViewer__hint": {
-    "messageformat": "{name} とのやりとりがエンドツーエンドで暗号化されているかを検証するには、お互いの端末で、上記の番号が相手端末上の番号と同じか確認してください。相手の端末であなたのコードをスキャンしてもらう方法もあります。"
+  "icu:SafetyNumberViewer__hint-v2": {
+    "messageformat": "{name} とのやりとりがエンドツーエンドで暗号化されているかを確認するには、お互いの端末で、上記の番号が相手端末上の番号と同じか見比べてください。相手の端末であなたのコードをスキャンしてもらう方法もあります。"
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "さらに詳しく"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "自動キー確認"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "自動で確認"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "暗号化を確認中…"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "暗号化が確認されました"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "自動確認できません"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "すべてのチャットが自動確認できるわけではありません。"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "さらに詳しく"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "このチャットの暗号化は自動確認されました "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "電話番号を介して繋がっている相手の場合、Signalはkey transparencyと呼ばれるプロセスを使用して、接続の安全性を自動的に確認します。安全性を強化するには、前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を手動で確認してください。"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "このチャットの自動確認ができません"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "Signalは、このチャットの暗号化を自動で確認できません。{name} が電話番号を変更したか、電話番号のプライバシー設定を変更した可能性があります。前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を手動で確認してください。"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "Signalが暗号化を自動で確認できるのは、相手の電話番号を通じて接続しているチャットのみです。ユーザーネームまたは共通のグループを通じてチャットが開始された場合は、前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を確認してください。"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "OK"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "メッセージ交換をすると、相手との間に安全番号が作成されます。"
   },
   "icu:SafetyNumberNotReady__learn-more": {
+    "messageformat": "さらに詳しく"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "お使いの端末では、キーの自動確認は現在ご利用いただけません。デバッグログを送信しますか？"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "デバッグログは、問題の診断と修正に役立てられます。個人を特定する情報は含まれません。"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "デバッグログを共有する"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "表示"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "送信"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "Signalは、暗号化を自動で確認できるようになりました"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "電話番号を介して繋がっている連絡先の場合、Signalはkey transparencyと呼ばれるプロセスを使用して、接続の安全性を自動的に確認します。セキュリティをさらに強化したい場合は、QRコードを使う、安全番号を見比べるなど、手動で接続を確認することもできます。"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "続ける"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
     "messageformat": "さらに詳しく"
   },
   "icu:verified": {
@@ -574,18 +673,6 @@
   },
   "icu:media": {
     "messageformat": "メディア"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "このチャットにはメディアはありません"
-  },
-  "icu:allMedia": {
-    "messageformat": "すべてのメディア"
-  },
-  "icu:documents": {
-    "messageformat": "文書"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "このチャットにはドキュメントはありません"
   },
   "icu:today": {
     "messageformat": "今日"
@@ -626,9 +713,6 @@
   "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "ログを送信"
   },
-  "icu:Toast--FailedToSendWithEndorsements": {
-    "messageformat": "Failed to send message with endorsements"
-  },
   "icu:Toast--SQLError": {
     "messageformat": "データベースエラー：ログを共有してください。"
   },
@@ -644,6 +728,15 @@
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "領収書が保存できませんでした。もう一度お試しください。"
   },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "「{chatFolderName}」に追加しました"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "「{chatFolderName}」から削除しました"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "「{chatFolderName}」のフォルダが追加されました"
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "写真や動画をファイルと一緒に選択することはできません。"
   },
@@ -655,6 +748,9 @@
   },
   "icu:fileSizeWarning": {
     "messageformat": "選択されたファイルは大きすぎます。 {limit,number} {units}"
+  },
+  "icu:videoFileSizeWarning": {
+    "messageformat": "選択された動画ファイルは下記の送信可能なサイズ上限を超えています。{limit,number}{units}"
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "選択された添付ファイルをロードできません。"
@@ -713,12 +809,6 @@
   "icu:screenShareWindow": {
     "messageformat": "共有中の画面"
   },
-  "icu:callingDeveloperTools": {
-    "messageformat": "開発者ツール呼び出し"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "このウィンドウは、開発中に、進行中の通話からの診断情報を表示するために使用されます。"
-  },
   "icu:speech": {
     "messageformat": "スピーチ"
   },
@@ -762,10 +852,10 @@
     "messageformat": "未読でフィルタリング"
   },
   "icu:filterByUnreadButtonLabel": {
-    "messageformat": "未読をフィルタリングする"
+    "messageformat": "未読をフィルタリング"
   },
   "icu:clearFilterButton": {
-    "messageformat": "検索条件を解除する"
+    "messageformat": "検索条件を解除"
   },
   "icu:conversationsHeader": {
     "messageformat": "チャット"
@@ -790,6 +880,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "このアップデートの{whatsNew}をご覧ください"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "Signalは非営利団体です"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "更新情報"
@@ -846,7 +939,7 @@
     "messageformat": "元のメッセージが見つかりません"
   },
   "icu:voiceRecording--start": {
-    "messageformat": "音声メッセージの録音を開始する"
+    "messageformat": "音声メッセージの録音を開始"
   },
   "icu:voiceRecordingInterruptedMax": {
     "messageformat": "制限時間がきたので音声メッセージの録音は停止されました。"
@@ -882,7 +975,7 @@
     "messageformat": "ビデオ通話を始めるために、Signal Desktopにカメラへのアクセスを許可してください。"
   },
   "icu:allowAccess": {
-    "messageformat": "アクセスを許可する"
+    "messageformat": "アクセスを許可"
   },
   "icu:audio": {
     "messageformat": "音声"
@@ -927,7 +1020,7 @@
     "messageformat": "消去"
   },
   "icu:accept": {
-    "messageformat": "承認する"
+    "messageformat": "承認"
   },
   "icu:edit": {
     "messageformat": "編集"
@@ -939,7 +1032,7 @@
     "messageformat": "完了"
   },
   "icu:update": {
-    "messageformat": "アップデートする"
+    "messageformat": "アップデート"
   },
   "icu:next2": {
     "messageformat": "進む"
@@ -981,10 +1074,10 @@
     "messageformat": "メッセージ"
   },
   "icu:showMembers": {
-    "messageformat": "メンバーを表示する"
+    "messageformat": "メンバーを表示"
   },
   "icu:showSafetyNumber": {
-    "messageformat": "安全番号を表示する"
+    "messageformat": "安全番号を表示"
   },
   "icu:AboutContactModal__title": {
     "messageformat": "連絡先"
@@ -1016,6 +1109,12 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} はシステムの連絡先に含まれています"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "メンバーラベルを追加"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "QRコード"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "メモ"
   },
@@ -1035,13 +1134,13 @@
     "messageformat": "テキストをコピー"
   },
   "icu:MessageContextMenu__select": {
-    "messageformat": "選択する"
+    "messageformat": "選択"
   },
   "icu:MessageTextRenderer--spoiler--label": {
     "messageformat": "スポイラー"
   },
   "icu:retrySend": {
-    "messageformat": "再送信する"
+    "messageformat": "再送信"
   },
   "icu:retryDeleteForEveryone": {
     "messageformat": "全員分の消去を再実行"
@@ -1067,6 +1166,15 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "詳細"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "ピン留め"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "ピン留めを解除する"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "投票を終了"
+  },
   "icu:PollMessage--SelectOne": {
     "messageformat": "1つ選んで投票してください"
   },
@@ -1077,10 +1185,19 @@
     "messageformat": "最終投票結果"
   },
   "icu:PollMessage__ViewVotesButton": {
-    "messageformat": "投票結果を表示する"
+    "messageformat": "投票結果を表示"
   },
   "icu:PollMessage--YouVoted": {
     "messageformat": "あなたは投票済みです"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "あなたが「{poll}」の投票を締め切りました"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name}が「{poll}」の投票を締め切りました"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "投票結果を見る"
   },
   "icu:PollVotesModal__title": {
     "messageformat": "投票の詳細"
@@ -1094,6 +1211,48 @@
   "icu:PollVotesModal__noVotes": {
     "messageformat": "投票なし"
   },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "最多得票"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "ピン留めされたメッセージが見つかりません"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "投票が見つかりません"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "新しい投票"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "質問"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "質問"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "選択肢"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "選択肢{number}"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "複数投票を許可"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "送信"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "投票の質問は必須です"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "投票には少なくとも2つの選択肢が必要です"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "質問が長すぎます"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "選択肢が長すぎます"
+  },
   "icu:deleteConversation": {
     "messageformat": "消去"
   },
@@ -1103,8 +1262,11 @@
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "このチャット内のすべてのメッセージはこの端末から消去されます。"
   },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync--still-member": {
+    "messageformat": "このチャット内の全メッセージがすべての端末から消去されますが、このグループのメンバーであることは変わりません。"
+  },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
-    "messageformat": "グループを退出する"
+    "messageformat": "グループを退出"
   },
   "icu:ConversationHeader__LeaveGroupConfirmation__title": {
     "messageformat": "本当に退出しますか？"
@@ -1113,10 +1275,136 @@
     "messageformat": "このグループでのメッセージ送受信が出来なくなります。"
   },
   "icu:ConversationHeader__LeaveGroupConfirmation__confirmButton": {
-    "messageformat": "退出する"
+    "messageformat": "退出"
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "グループから退出する前に、新しい管理者を1人以上選択する必要があります。"
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "メッセージをピン留めしました"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender}がメッセージをピン留めしました"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "メッセージへ移動"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "メッセージをピン留めするのは…"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24時間"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7日"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30日"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "無期限"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "ピン留め"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "最初にピン留めしたものと置き換えますか？"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "このメッセージをピン留めすると、一番最初にピン留めしたメッセージと置き換えられます。"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "続ける"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "消えるメッセージをピン留め"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "消えるメッセージは、期間が過ぎてチャットから消えた時にピン留めも解除されます。"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "OK"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, other {ピン留めされたメッセージ}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "ピン{pinNumber,number}に移動"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "メッセージへ移動"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "その他"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "ピン留めを解除する"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "メッセージへ移動"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "すべてのメッセージを見る"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "音声メッセージ"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "ファイル"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "支払い"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "投票"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "ステッカー"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "使い捨てメディア"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "写真"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "動画"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "音声メッセージ"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "支払い"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "ステッカー"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "使い捨てメディア"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "ピン留めされたメッセージ"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "すべてのメッセージのピン留めを解除"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "すべてのメッセージのピン留めを解除しますか？"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "メッセージは、このチャットメンバーのピン留めから解除されます。"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "ピン留めを解除する"
   },
   "icu:sessionEnded": {
     "messageformat": "セキュアセッションがリセットされました"
@@ -1185,7 +1473,7 @@
     "messageformat": "これは{oldTitle}と始めたチャットです"
   },
   "icu:imageAttachmentAlt": {
-    "messageformat": "メッセージにイメージを添付する"
+    "messageformat": "メッセージにイメージを添付"
   },
   "icu:videoAttachmentAlt": {
     "messageformat": "メッセージに添付された動画のスクリーンショット"
@@ -1203,7 +1491,7 @@
     "messageformat": "この添付ファイルを拡大表示で開く"
   },
   "icu:startDownload": {
-    "messageformat": "ダウンロードを開始する"
+    "messageformat": "ダウンロードを開始"
   },
   "icu:cancelDownload": {
     "messageformat": "ダウンロードをキャンセルする"
@@ -1235,36 +1523,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "使い捨てメディアをダウンロードできません。"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "ファイルがダウンロードできません"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "完全なメッセージがダウンロードできません"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "メディアはご利用になれません"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "ステッカーはご利用になれません"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "ボイスメッセージはご利用になれません"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "この端末をリンクしたとき、このファイルはスマートフォンから移行されませんでした。端末をリンクした時点で45日以上経過したメディアやファイルは同期できません。"
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "この端末をリンクしたとき、このメッセージの完全なテキストはスマートフォンから移行されませんでした。端末をリンクした時点で45日以上経過した長いテキストメッセージは同期できません。"
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "この端末をリンクしたとき、このメディアはスマートフォンから移行されませんでした。端末をリンクした時点で45日以上経過したメディアは同期できません。"
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "この端末をリンクしたとき、このステッカーはスマートフォンから移行されませんでした。端末をリンクした時点で45日以上経過したメディアやファイルは同期できません。"
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "この端末をリンクしたときにこのボイスメッセージはスマートフォンから移行されませんでした。端末をリンクした時点で45日以上経過したメディアやファイルは同期できません。"
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "この使い捨てメディアはダウンロードできなくなりました。{name} さんにもう一度送信してもらってください。"
   },
@@ -1284,7 +1542,7 @@
     "messageformat": "保存"
   },
   "icu:reset": {
-    "messageformat": "リセットする"
+    "messageformat": "リセット"
   },
   "icu:linkedDevices": {
     "messageformat": "リンク済み端末"
@@ -1323,13 +1581,22 @@
     "messageformat": "再試行"
   },
   "icu:Install__qr-max-rotations__retry": {
-    "messageformat": "コードを更新する"
+    "messageformat": "コードを更新"
   },
   "icu:Install__qr-failed-load__get-help": {
-    "messageformat": "ヘルプを表示する"
+    "messageformat": "ヘルプを表示"
   },
   "icu:Install__support-link": {
     "messageformat": "お困りですか？"
+  },
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "すべてのデータを消去しますか？"
+  },
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "このデスクトップに別のSignalアカウントをリンクしようとしています。続行すると、Signal Desktop内の既存のすべてのデータが消去されます。"
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "続ける"
   },
   "icu:Preferences--header": {
     "messageformat": "設定"
@@ -1350,13 +1617,25 @@
     "messageformat": "チャットフォルダ"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
-    "messageformat": "チャットフォルダを追加する"
+    "messageformat": "チャットフォルダを追加"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "フォルダを追加または編集"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "チャットをフォルダに整理し、チャットリストですばやく切り替えることができます。"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, other {{chatFoldersCount,number}個のフォルダ}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "設定"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "管理する"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
-    "messageformat": "フォルダを編集する"
+    "messageformat": "フォルダを編集"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
     "messageformat": "消去"
@@ -1369,9 +1648,6 @@
   },
   "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "消去"
-  },
-  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "キャンセル"
   },
   "icu:Preferences__ChatFoldersPage__Title": {
     "messageformat": "チャットフォルダ"
@@ -1386,16 +1662,16 @@
     "messageformat": "すべてのチャット"
   },
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
-    "messageformat": "フォルダを作成する"
+    "messageformat": "フォルダを作成"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "ドラッグしてチャットフォルダを移動します"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "おすすめのフォルダ"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
-    "messageformat": "追加する"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "「{chatFolderTitle}」のフォルダが追加されました"
+    "messageformat": "追加"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "未読チャット"
@@ -1416,7 +1692,10 @@
     "messageformat": "グループチャットのメッセージのみ"
   },
   "icu:Preferences__EditChatFolderPage__Title": {
-    "messageformat": "フォルダを作成する"
+    "messageformat": "フォルダを作成"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "フォルダを編集"
   },
   "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
     "messageformat": "フォルダ名"
@@ -1437,7 +1716,7 @@
     "messageformat": "グループチャット"
   },
   "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
-    "messageformat": "チャットを追加する"
+    "messageformat": "チャットを追加"
   },
   "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
     "messageformat": "対象のチャット"
@@ -1470,10 +1749,10 @@
     "messageformat": "このフォルダ内に表示したくないチャットを選択してください"
   },
   "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
-    "messageformat": "チャットを除外する"
+    "messageformat": "チャットを除外"
   },
   "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
-    "messageformat": "未読のチャットだけを表示する"
+    "messageformat": "未読のチャットだけを表示"
   },
   "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
     "messageformat": "このフォルダ内に表示されるのは未読メッセージのあるチャットだけになります。"
@@ -1482,7 +1761,7 @@
     "messageformat": "ミュート中のチャットも含める"
   },
   "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
-    "messageformat": "フォルダを消去する"
+    "messageformat": "フォルダを消去"
   },
   "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
     "messageformat": "このチャットフォルダを消去しますか？"
@@ -1492,9 +1771,6 @@
   },
   "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "消去"
-  },
-  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "キャンセル"
   },
   "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
     "messageformat": "変更を保存しますか？"
@@ -1513,6 +1789,21 @@
   },
   "icu:Preferences__EditChatFolderPage__CancelButton": {
     "messageformat": "キャンセル"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
+    "messageformat": "ステータスアイコンを表示する"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
+    "messageformat": "送信者を秘匿化して届けられたメッセージの詳細で、アイコンを表示します。"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "自動キー確認"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "有効にすると、Signalは1対1のチャットの暗号化を自動的に確認します。"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "詳しく見る"
   },
   "icu:initialSync": {
     "messageformat": "連絡先とグループを同期しています"
@@ -1548,10 +1839,10 @@
     "messageformat": "折り返す"
   },
   "icu:calling__call-again": {
-    "messageformat": "リダイヤルする"
+    "messageformat": "リダイヤル"
   },
   "icu:calling__join": {
-    "messageformat": "通話に参加する"
+    "messageformat": "通話に参加"
   },
   "icu:calling__return": {
     "messageformat": "通話に戻る"
@@ -1595,6 +1886,12 @@
   "icu:calling__removed-from-call-title": {
     "messageformat": "通話から退出しました"
   },
+  "icu:calling__has-max-devices": {
+    "messageformat": "この通話の参加者が、上限人数に達しました。あとで再度試してください。"
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "満席です"
+  },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "リンク経由でこの通話に参加する人には、あなたの名前と写真が表示されます。"
   },
@@ -1605,16 +1902,16 @@
     "messageformat": "承認待ちです…"
   },
   "icu:CallingLobbyJoinButton--join": {
-    "messageformat": "参加する"
+    "messageformat": "参加"
   },
   "icu:CallingLobbyJoinButton--start": {
-    "messageformat": "開始する"
+    "messageformat": "開始"
   },
   "icu:CallingLobbyJoinButton--call-full": {
     "messageformat": "定員オーバーです"
   },
   "icu:CallingLobbyJoinButton--ask-to-join": {
-    "messageformat": "参加をリクエストする"
+    "messageformat": "参加をリクエスト"
   },
   "icu:calling__button--video-disabled": {
     "messageformat": "カメラが無効になっています"
@@ -1638,10 +1935,10 @@
     "messageformat": "画面の共有は無効です"
   },
   "icu:calling__button--presenting-on": {
-    "messageformat": "画面を共有する"
+    "messageformat": "画面を共有"
   },
   "icu:calling__button--presenting-off": {
-    "messageformat": "画面の共有を停止する"
+    "messageformat": "画面の共有を停止"
   },
   "icu:calling__button--react": {
     "messageformat": "リアクションする"
@@ -1658,17 +1955,38 @@
   "icu:CallingButton--more-options": {
     "messageformat": "その他のオプション"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "音声をミュート"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "ミュート解除"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "プロフィールを表示"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "チャットする"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "通話から削除"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "その他"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "発表中"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
-    "messageformat": "参加リクエストを承認する"
+    "messageformat": "参加リクエストを承認"
   },
   "icu:CallingPendingParticipants__DenyUser": {
-    "messageformat": "参加リクエストを拒否する"
+    "messageformat": "参加リクエストを拒否"
   },
   "icu:CallingPendingParticipants__ApproveAll": {
-    "messageformat": "全員承認する"
+    "messageformat": "全員承認"
   },
   "icu:CallingPendingParticipants__DenyAll": {
-    "messageformat": "全員拒否する"
+    "messageformat": "全員拒否"
   },
   "icu:CallingPendingParticipants__ConfirmDialogTitle--ApproveAll": {
     "messageformat": "{count, plural, other {{count,number} 人のリクエストを承認しますか？}}"
@@ -1696,9 +2014,6 @@
   },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, other {{count,number}人が手を挙げています}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "（手を挙げた順番）"
   },
   "icu:CallingReactions--me": {
     "messageformat": "あなた"
@@ -1878,7 +2193,7 @@
     "messageformat": "ボタンを押すと、アプリケーション内のすべてのデータの消去、すべてのメッセージの削除、保存されたアカウント情報の削除がおこなわれます。"
   },
   "icu:clearDataButton": {
-    "messageformat": "データを消去する"
+    "messageformat": "データを消去"
   },
   "icu:deleteAllDataHeader": {
     "messageformat": "すべてのデータを消去しますか？"
@@ -1888,6 +2203,21 @@
   },
   "icu:deleteAllDataProgress": {
     "messageformat": "接続を切って全データを消去しています…"
+  },
+  "icu:deleteAccountHeader": {
+    "messageformat": "アカウントの消去"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "あなたのアカウント情報、プロフィールおよびずべてのメッセージを消去します。Signalの各グループからも退出することになります。"
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "アカウントの消去"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "アカウントを消去しますか？"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "あなたのアカウント情報、プロフィールおよびずべてのメッセージを消去します。Signalの各グループからも退出することになります。この処理が完了するとアプリは終了します。"
   },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "以前のバージョンの Signal Desktop で利用していた、すでに利用できなくなっているデータが残っています。続行するとこのデータは消去され、フレッシュな状態で改めて利用を始めることになります。"
@@ -1913,11 +2243,26 @@
   "icu:notificationReactionMessage": {
     "messageformat": "{emoji}のリアクションを、{sender}さんが「{message}」にしました"
   },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender}が「{pollQuestion}」に投票しました"
+  },
   "icu:sendFailed": {
     "messageformat": "送信できませんでした"
   },
   "icu:deleteFailed": {
     "messageformat": "消去できませんでした"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "消去できませんでした。詳細を表示"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "もう一度、消去を試しますか？"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "メッセージを消去できませんでした。インターネット接続を確認して再度試してください。"
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "もう一度試す"
   },
   "icu:editFailed": {
     "messageformat": "編集できませんでした。クリックすると詳細が表示されます。"
@@ -1928,8 +2273,8 @@
   "icu:partiallySent": {
     "messageformat": "一部だけ送信しました。タップして詳細を表示"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "一部だけ消去済み、クリックして再実行"
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "一部消去されました。詳細を表示"
   },
   "icu:expiredWarning": {
     "messageformat": "アプリのバージョンが古すぎます。最新版にアップデートしてください。"
@@ -1948,9 +2293,6 @@
   },
   "icu:syncNow": {
     "messageformat": "インポートする"
-  },
-  "icu:syncing": {
-    "messageformat": "インポートしています…"
   },
   "icu:syncFailed": {
     "messageformat": "取り込みに失敗しました。パソコンと携帯端末がインターネットに接続されているか確認してください。"
@@ -2066,6 +2408,9 @@
   "icu:ConversationDetails--support-center": {
     "messageformat": "サポートセンター"
   },
+  "icu:ConversationDetails__GroupTerminatedBanner": {
+    "messageformat": "このグループは閉じられました"
+  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "安全番号の検証"
   },
@@ -2130,13 +2475,25 @@
     "messageformat": "ダウンロードできませんでした"
   },
   "icu:Toast--unable-download-from-backup-tier": {
-    "messageformat": "バックアップからの添付ファイルのダウンロードが失敗しました"
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "このグループのメンバーラベルを追加できるのは管理者のみです。"
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "一度きりの表示が有効になりました"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "一度きりの表示が無効になりました"
   },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "編集は、このメッセージを送信後24時間以内のみ可能です。"
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername}さんはSignalユーザーではありません。ユーザーネームが正しく入力されているか確認してください。"
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} は有効なユーザーネームではありません。数字とセットになっている正確なユーザーネームを入力しているか確認しててください。"
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "ユーザーが見つかりません。\"{phoneNumber}\"は、Signalユーザーではありません。"
@@ -2201,6 +2558,12 @@
   "icu:unlinked": {
     "messageformat": "未リンク"
   },
+  "icu:unregisteredWarning": {
+    "messageformat": "クリックして再登録し、メッセージのやり取りを継続してください。別の端末でSignalに電話番号を登録したため、Signal Desktopの登録が解除された可能性があります。"
+  },
+  "icu:unregistered": {
+    "messageformat": "登録されていません"
+  },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "アップデートがあります"
   },
@@ -2233,6 +2596,27 @@
   },
   "icu:youUpdatedTheGroup": {
     "messageformat": "グループを更新しました。"
+  },
+  "icu:collapsedGroupUpdates": {
+    "messageformat": "{count, plural, other {{count,number} 件のグループ内更新}}"
+  },
+  "icu:multidayCollapse__container": {
+    "messageformat": "{containerDescription} · {dayCountSummary}"
+  },
+  "icu:multidayCollapse__dayCountSummary": {
+    "messageformat": "{dayCount, plural, other {{dayCount,number}日前}}"
+  },
+  "icu:collapsedChatUpdates": {
+    "messageformat": "{count, plural, other {{count,number} 件のチャット内更新}}"
+  },
+  "icu:collapsedTimerChanges": {
+    "messageformat": "{count, plural, other {{count,number} 件の消えるメッセージのタイマー変更：{endingState}}}"
+  },
+  "icu:collapsedTimerChanges--disabled": {
+    "messageformat": "{count, plural, other {{count,number}件の消えるメッセージのタイマー変更 · 無効}}"
+  },
+  "icu:collapsedCallEvents": {
+    "messageformat": "{count, plural, other {{count,number} 件の通話関連のお知らせ}}"
   },
   "icu:updatedGroupAvatar": {
     "messageformat": "グループアバターが更新されました。"
@@ -2291,6 +2675,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "ステッカーメッセージ"
   },
+  "icu:Poll--preview": {
+    "messageformat": "投票：{pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2309,8 +2696,14 @@
   "icu:message--getDescription--gif": {
     "messageformat": "GIF"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "このメッセージは消去されました。"
+  "icu:message--deletedByAdmin": {
+    "messageformat": "管理者の{admin}がこのメッセージを消去しました"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "{name}がこのメッセージを消去しました"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "メッセージを消去しました"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "添付ファイルが大きすぎて表示できません。"
@@ -2319,7 +2712,7 @@
     "messageformat": "添付ファイルが大きすぎて表示できないものがあります。"
   },
   "icu:message--call-link-description": {
-    "messageformat": "リンクを使用して Signal 通話に参加する"
+    "messageformat": "リンクを使用して Signal 通話に参加"
   },
   "icu:donation--missing": {
     "messageformat": "寄付の詳細を取得できません"
@@ -2347,6 +2740,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "{recipient} に代わって寄付しました"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "{sender}がメッセージをピン留めしました"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "メッセージをピン留めしました"
   },
   "icu:message--donation": {
     "messageformat": "寄付"
@@ -2387,14 +2786,11 @@
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "ステッカーパックをインストールできませんでした"
   },
-  "icu:stickers--StickerManager--Available": {
-    "messageformat": "利用できます"
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "ステッカーパックがありません。友達に送るステッカーを追加しましょう。"
   },
-  "icu:stickers--StickerManager--InstalledPacks": {
-    "messageformat": "インストール"
-  },
-  "icu:stickers--StickerManager--InstalledPacks--Empty": {
-    "messageformat": "ステッカーはインストールされていません"
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "ステッカーを追加"
   },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "Signalアーティストシリーズ"
@@ -2402,13 +2798,16 @@
   "icu:stickers--StickerManager--BlessedPacks--Empty": {
     "messageformat": "Signalアーティストによるステッカーはありません"
   },
-  "icu:stickers--StickerManager--ReceivedPacks": {
-    "messageformat": "受信済みステッカー"
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "共有されたステッカー"
   },
-  "icu:stickers--StickerManager--ReceivedPacks--Empty": {
-    "messageformat": "受信メッセージのステッカーはここに表示されます"
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "誰かからステッカーを受け取ると、ステッカーパックの内容がここに表示されます。"
   },
   "icu:stickers--StickerManager--Install": {
+    "messageformat": "インストール"
+  },
+  "icu:stickers--StickerManager--Installed": {
     "messageformat": "インストール"
   },
   "icu:stickers--StickerManager--Uninstall": {
@@ -2417,56 +2816,29 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "元のメッセージがない場合は、このステッカーパックを再インストールできないかもしれません。"
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "ステッカーのご紹介: Bandit the Cat"
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "すべて"
   },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "ステッカーのご紹介"
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "マイステッカー"
   },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "言葉ではなくステッカーを使いませんか？"
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "追加"
   },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "ステッカー選択画面を開く"
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "削除"
   },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "ステッカーパックを追加"
+  "icu:stickers--StickerManagerPackDragHandle--Label": {
+    "messageformat": "ドラッグしてステッカーパックを並べ替える"
   },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "次のページ"
+  "icu:stickers--StickerManagerBlessedPacksList--Label": {
+    "messageformat": "Signalアーティストシリーズのステッカーパック"
   },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "前のページ"
+  "icu:stickers--StickerManagerReceivedPacksList--Label": {
+    "messageformat": "受信したステッカーパック"
   },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "最近使ったステッカー"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "一部のステッカーをダウンロードできませんでした。"
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "ステッカーパックをインストールしています…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "ステッカーはありません"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "メッセージ内の新しいステッカーパックをインストールできます。"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "ステッカーパックはありません"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "最近使用したステッカーはここに表示されます。"
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "最近使ったもの"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "人気"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "アナログ時間"
+  "icu:stickers--StickerManagerInstalledPacksList--Label": {
+    "messageformat": "インストールしたステッカーパック"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "ステッカーパック"
@@ -2474,44 +2846,29 @@
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "ステッカーパックを開けませんでした。インターネット接続を確認して再度試してください。"
   },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "該当する絵文字はありません"
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "ステッカーを追加"
   },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "絵文字検索をキャンセルする"
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "削除"
   },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "絵文字を検索"
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "リンク"
   },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "肌色: {tone}"
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "リンクをコピーしました"
   },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "最近使ったもの"
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, other {{count,number}個のステッカー}}"
   },
-  "icu:EmojiPicker__button--emoji": {
-    "messageformat": "絵文字"
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "絵文字未設定のステッカー"
   },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "動物"
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "{author}ステッカーパック"
   },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "食べ物"
-  },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "活動"
-  },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "旅行"
-  },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "オブジェクト"
-  },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "記号"
-  },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "旗"
+  "icu:stickers--ViewPack": {
+    "messageformat": "パック内容を表示する"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "絵文字"
@@ -2565,7 +2922,7 @@
     "messageformat": "{emojiName} のスキントーンを選択してください"
   },
   "icu:FunPanelEmojis__ChangeSkinToneButtonLabel": {
-    "messageformat": "スキントーンの設定を変更する"
+    "messageformat": "スキントーンの設定を変更"
   },
   "icu:FunPanelEmojis__SkinTonePicker__LongPressAccessibilityDescription": {
     "messageformat": "長押ししてスキントーンを選択"
@@ -2622,7 +2979,7 @@
     "messageformat": "最近使ったもの"
   },
   "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
-    "messageformat": "Add a sticker pack"
+    "messageformat": "ステッカーパックを追加"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "検索結果"
@@ -2639,11 +2996,11 @@
   "icu:FunPanelStickers__LightboxDialog__Label": {
     "messageformat": "ステッカープレビュー"
   },
-  "icu:FunPanelGifs__SearchLabel--Tenor": {
-    "messageformat": "Tenor内でGIFを検索"
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "GiFを検索"
   },
-  "icu:FunPanelGifs__SearchPlaceholder--Tenor": {
-    "messageformat": "Tenorを検索"
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "GiFを検索"
   },
   "icu:FunPanelGifs__SubNavLabel": {
     "messageformat": "GIFカテゴリー"
@@ -2690,6 +3047,9 @@
   "icu:FunPanelGifs__LightboxDialog__Label": {
     "messageformat": "GIFプレビュー"
   },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "この機能はGIPHYにより提供されています"
+  },
   "icu:FunSearch__ClearButtonLabel": {
     "messageformat": "検索テキストを消去"
   },
@@ -2715,13 +3075,25 @@
     "messageformat": "暗いスキントーン"
   },
   "icu:FunButton__Label--FunPicker": {
-    "messageformat": "絵文字、ステッカー、GIFを追加する"
+    "messageformat": "絵文字、ステッカー、GIFを追加"
   },
   "icu:FunButton__Label--EmojiPicker": {
-    "messageformat": "絵文字を追加する"
+    "messageformat": "絵文字を追加"
   },
   "icu:FunButton__Label--StickerPicker": {
     "messageformat": "ステッカーを追加"
+  },
+  "icu:FunPicker__Label--StickerReply": {
+    "messageformat": "返信"
+  },
+  "icu:FunPicker__Label--SendStickerReply": {
+    "messageformat": "送信"
+  },
+  "icu:FunPicker__Label--CancelStickerReply": {
+    "messageformat": "キャンセル"
+  },
+  "icu:FunPicker__Label--Sticker": {
+    "messageformat": "ステッカー"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "キャンセル"
@@ -2768,8 +3140,8 @@
   "icu:Message--tap-to-view--incoming--expired-toast": {
     "messageformat": "このメッセージは閲覧済みです。"
   },
-  "icu:Message--tap-to-view--outgoing--expired-toast": {
-    "messageformat": "使い捨てメッセージはチャット履歴に保存されません。"
+  "icu:Message--tap-to-view--outgoing--expired-toast-2": {
+    "messageformat": "使い捨てメディアは送信後に削除されます"
   },
   "icu:Message--tap-to-view--video": {
     "messageformat": "使い捨て動画"
@@ -2778,7 +3150,7 @@
     "messageformat": "使い捨て写真"
   },
   "icu:Message--tap-to-view--helper-text": {
-    "messageformat": "クリックして表示する"
+    "messageformat": "クリックして表示"
   },
   "icu:Conversation--getDraftPreview--attachment": {
     "messageformat": "(添付ファイル)"
@@ -2978,11 +3350,14 @@
   "icu:Keyboard--toggle-preview": {
     "messageformat": "拡張プレビューのオンとオフの切り替え"
   },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "手を挙げる、または下ろす（グループ通話中のみ）"
+  },
   "icu:Keyboard--accept-video-call": {
-    "messageformat": "ビデオありで通話に応答する(ビデオ通話のみ)"
+    "messageformat": "ビデオありで通話に応答(ビデオ通話のみ)"
   },
   "icu:Keyboard--accept-call-without-video": {
-    "messageformat": "ビデオなしで通話に応答する"
+    "messageformat": "ビデオなしで通話に応答"
   },
   "icu:Keyboard--start-audio-call": {
     "messageformat": "音声通話を開始する"
@@ -3035,17 +3410,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "すべて"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "安全な使い方のヒント"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "知らない人からのメッセージリクエストにはご注意ください。次の点にご注意ください。"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "Signalからのチャットに返信しないでください"
   },
-  "icu:SafetyTipsModal__TipTitle--Fake": {
-    "messageformat": "偽名と偽アカウント"
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "Signalは決して、登録コード、PIN、回復キーについて皆さんにメッセージしません。Signalを装ったチャットには返信しないでください。"
   },
-  "icu:SafetyTipsModal__TipDescription--Fake": {
-    "messageformat": "Signalが登録コードやPINについてお客様に連絡することは一切ありません。なりすましによる不正アクセスにはご注意ください。プロフィールネームはアカウント所有者によって選択され、検証はされません。"
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "名前や写真を確認してください"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "「未確認の名前です」という表示に注意してください。Signalでは、プロフィールの名前を自由に設定できます。"
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "詐欺に注意してください"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "返信させようとする怪しいメッセージは無視してください。また、利益をうたったものや不審なウェブリンクに注意してください。"
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "Signalからのチャットに返信しないでください"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "Signalは決して、登録コード、PIN、回復キーについて皆さんにメッセージすることはありません。SignalやSignalサポートを装ったチャットには返信しないでください。悪意のある相手は、あなたのアカウントを乗っ取ろうと偽名を設定します。"
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "名前や写真を確認してください"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "「未確認の名前です」という表示に注意してください。Signalでは、プロフィールの名前や写真を自由に設定できます。知らない相手から突然リクエストが来たら、無視するのが安全です。"
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "暗号通貨または金銭詐欺"
@@ -3059,11 +3455,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "スパマーは、大抵の場合「こんにちは」などのシンプルなメッセージであなたの気を引きます。返信すると、彼らはさらにあなたの注意を引こうとするでしょう。"
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "リンクを含むメッセージ"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "知らない人からのメッセージで、ウェブサイトへのリンクが含まれている場合は注意が必要です。信頼していない人が送ってきたウェブサイトのリンクは開かないようにしましょう。"
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "ウェブリンクを含むメッセージ"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "偽の企業や団体"
@@ -3071,17 +3467,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "企業や政府機関からの連絡にはご注意ください。税務署や宅配業者などのメッセージはスパムである可能性があります。"
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "{page,number}ページへ移動する"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "前のヒント"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "次のヒント"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "完了"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "続き"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "{name}があなたへメッセージを送信できるように、またあなたの名前とプロフィール画像が共有されるようにしますか? あなたが承認するまで、相手にはあなたがメッセージを見たことははわかりません。"
@@ -3179,11 +3566,11 @@
   "icu:MessageRequests--accept": {
     "messageformat": "承認する"
   },
-  "icu:MessageRequests--accept-confirm-title": {
+  "icu:MessageRequests--accept-confirm-title-v2": {
     "messageformat": "申請を承認しますか？"
   },
-  "icu:MessageRequests--accept-confirm-body": {
-    "messageformat": "慎重に申請を確認してください。プロフィールネームはアカウント所有者によって選択され、検証はされません。"
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "信頼できる相手からのリクエストのみ承認してください。<bold>Signalは決して</bold>、登録コード、PIN、回復キーについて皆さんにメッセージしません。"
   },
   "icu:MessageRequests--continue": {
     "messageformat": "続ける"
@@ -3227,17 +3614,26 @@
   "icu:ConversationHero--group-members-other-and-you": {
     "messageformat": "{remainingCount, plural, other {{member1}、{member2}、{member3}、<clickable>他{remainingCount,number}人</clickable>}}"
   },
-  "icu:ConversationHero--review-carefully": {
-    "messageformat": "慎重に確認してください"
-  },
   "icu:ConversationHero--group-names": {
     "messageformat": "<clickable>グループネーム</clickable>は検証されません"
   },
   "icu:ConversationHero--profile-names": {
     "messageformat": "<clickable>プロフィールネーム</clickable>は検証されません"
   },
+  "icu:ConversationHero--name-not-verified": {
+    "messageformat": "未確認の名前です"
+  },
   "icu:ConversationHero--signal-official-chat": {
     "messageformat": "これはSignalの公式かつ唯一のチャットです"
+  },
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "公式チャット"
+  },
+  "icu:ConversationHero--signal-official-account--description": {
+    "messageformat": "Signalからの唯一の公式チャットです。ニュースやリリースノートで最新情報をチェックしてください。"
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "Signalからの唯一の公式チャットです。"
   },
   "icu:ConversationHero--release-notes": {
     "messageformat": "ニュースやリリースノートで最新情報をチェックしてください。"
@@ -3509,17 +3905,11 @@
   "icu:calling__SelectPresentingSourcesModal--window": {
     "messageformat": "ウィンドウ"
   },
-  "icu:calling__ParticipantInfoButton": {
-    "messageformat": "この連絡先の詳細"
-  },
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "通話リンクをコピーする"
   },
   "icu:CallingAdhocCallInfo__ShareViaSignal": {
     "messageformat": "Signal経由で通話リンクを共有する"
-  },
-  "icu:CallingAdhocCallInfo__RemoveClient": {
-    "messageformat": "このユーザーを通話から退出させる"
   },
   "icu:CallingAdhocCallInfo__RemoveClientDialogBody": {
     "messageformat": "{name} を通話から削除しますか？"
@@ -3541,9 +3931,6 @@
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
     "messageformat": "通話に参加する前に表示されるのは、電話の連絡先、グループに参加しているユーザー、1対1でチャットしたユーザーの名前だけです。通話に参加すると、全員の名前と写真が表示されます。"
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "わかりました"
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "動画"
@@ -3589,9 +3976,6 @@
   },
   "icu:muteExpirationLabel": {
     "messageformat": "{duration}までミュート"
-  },
-  "icu:EmojiButton__label": {
-    "messageformat": "絵文字"
   },
   "icu:ErrorModal--title": {
     "messageformat": "エラーが発生しました！"
@@ -3686,11 +4070,23 @@
   "icu:GroupV2--join--requested": {
     "messageformat": "あなたの参加申請はグループ管理者に送信されました。応答があると通知されます。"
   },
+  "icu:GroupV2--join--group-terminated": {
+    "messageformat": "このグループに参加できません。"
+  },
   "icu:GroupV2--join--general-join-failure--title": {
     "messageformat": "リンクエラー"
   },
   "icu:GroupV2--join--general-join-failure": {
     "messageformat": "グループに参加できませんでした。あとで再度試してください。"
+  },
+  "icu:GroupV2--terminate-group-in-progress": {
+    "messageformat": "グループを閉じています…"
+  },
+  "icu:TerminateGroupFailedModal__description": {
+    "messageformat": "グル－プを閉じられませんでした。インターネット接続を確認してもう一度お試しください。"
+  },
+  "icu:TerminateGroupFailedModal__try-again": {
+    "messageformat": "もう一度試す"
   },
   "icu:GroupV2--admin": {
     "messageformat": "管理者"
@@ -3767,23 +4163,41 @@
   "icu:GroupV2--access-attributes--all--unknown": {
     "messageformat": "管理者がグループ情報を編集できるユーザーを「すべてのメンバー」に変更しました。"
   },
-  "icu:GroupV2--access-members--admins--other": {
-    "messageformat": "{adminName} がグループのメンバーを変更できるユーザーを「管理者のみ」に変更しました。"
-  },
   "icu:GroupV2--access-members--admins--you": {
     "messageformat": "グループのメンバーを変更できるユーザーを「管理者のみ」に変更しました。"
+  },
+  "icu:GroupV2--access-members--admins--other": {
+    "messageformat": "{adminName} がグループのメンバーを変更できるユーザーを「管理者のみ」に変更しました。"
   },
   "icu:GroupV2--access-members--admins--unknown": {
     "messageformat": "管理者がグループのメンバーを変更できるユーザーを「管理者のみ」に変更しました。"
   },
-  "icu:GroupV2--access-members--all--other": {
-    "messageformat": "{adminName} がグループのメンバーを変更できるユーザーを「すべてのメンバー」に変更しました。"
-  },
   "icu:GroupV2--access-members--all--you": {
     "messageformat": "グループのメンバーを変更できるユーザーを「すべてのメンバー」に変更しました。"
   },
+  "icu:GroupV2--access-members--all--other": {
+    "messageformat": "{adminName} がグループのメンバーを変更できるユーザーを「すべてのメンバー」に変更しました。"
+  },
   "icu:GroupV2--access-members--all--unknown": {
     "messageformat": "管理者がグループのメンバーを変更できるユーザーを「すべてのメンバー」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--admins--you": {
+    "messageformat": "メンバーラベルを追加できる人を「管理者のみ」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--admins--other": {
+    "messageformat": "{adminName}が、メンバーラベルを追加できる人を「管理者のみ」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--admins--unknown": {
+    "messageformat": "管理者が、メンバーラベルを追加できる人を「管理者のみ」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--all--you": {
+    "messageformat": "メンバーラベルを追加できる人を「すべてのメンバー」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--all--other": {
+    "messageformat": "{adminName}が、メンバーラベルを追加できる人を「すべてのメンバー」に変更しました。"
+  },
+  "icu:GroupV2--access-member-label--all--unknown": {
+    "messageformat": "管理者が、メンバーラベルを追加できる人を「すべてのメンバー」に変更しました。"
   },
   "icu:GroupV2--access-invite-link--disabled--you": {
     "messageformat": "グループリンクの管理者承認を不要にしました。"
@@ -4115,6 +4529,15 @@
   "icu:GroupV2--summary": {
     "messageformat": "このグループのメンバーまたは設定が変更されました。"
   },
+  "icu:GroupV2--terminated--you": {
+    "messageformat": "あなたがグループを閉じました"
+  },
+  "icu:GroupV2--terminated--other": {
+    "messageformat": "{memberName}がグループを閉じました"
+  },
+  "icu:GroupV2--terminated--unknown": {
+    "messageformat": "このグループは閉じられました"
+  },
   "icu:GroupV1--Migration--disabled--link": {
     "messageformat": "@メンションや管理者などの機能を有効にするため、グループをアップグレードしてください。名前や写真を共有していないメンバーは、改めてこのグループに招待されます。<learnMoreLink>さらに詳しく。</learnMoreLink>"
   },
@@ -4199,29 +4622,23 @@
   "icu:ClearingData__description": {
     "messageformat": "これには数分かかる場合があります"
   },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "グループから退出しています…"
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "参加しているグループ数によっては数分かかることがあります"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "アカウントとすべてのデータを消去しています…"
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "ユーザーデータの削除とアプリのリセットを行っています"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Signalへの寄付"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Signalへの寄付"
-  },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "Signalはユーザーの皆様によって支えられています。ご寄付いただきバッジを獲得してください。"
-  },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "あなたの電話でSignalを開きます"
-  },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "左上の写真をタップして、設定を開きます"
-  },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "「シグナルに寄付する」をタップして申し込む"
-  },
-  "icu:ProfileMovedModal__title": {
-    "messageformat": "プロフィールの場所が変更されました"
-  },
-  "icu:ProfileMovedModal__description": {
-    "messageformat": "プロフィールの表示や編集は、設定タブから行えます。"
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} さんはSignalをサポートしています"
   },
   "icu:BackupImportScreen__title": {
     "messageformat": "メッセージを同期しています"
@@ -4313,9 +4730,6 @@
   "icu:BackupMediaDownloadCancelConfirmation__description": {
     "messageformat": "メディアの同期が完了していません。キャンセルした場合は、この端末を再リンクすることで再度同期できます。<learnMoreLink>詳しく見る</learnMoreLink>。"
   },
-  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "同期を続ける"
-  },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
     "messageformat": "同期をキャンセルする"
   },
@@ -4352,8 +4766,17 @@
   "icu:CompositionArea--expand": {
     "messageformat": "大きく"
   },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "ファイルを添付する"
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "写真と動画"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "ファイル"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "投票"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "添付ファイルまたは投票を追加する"
   },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "この方はSignalを使用していません"
@@ -4379,6 +4802,15 @@
   "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
     "messageformat": "置き換え"
   },
+  "icu:CompositionArea--group-terminated": {
+    "messageformat": "グループは閉じられたのでメッセージを送信できません。"
+  },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "一度きりの表示"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "使い捨てメディア"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "メッセージの編集"
   },
@@ -4390,6 +4822,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "管理者から外す"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "削除するとメンバーラベルも削除されます。"
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "管理者にする"
@@ -4409,6 +4844,30 @@
   "icu:ContactModal--voice": {
     "messageformat": "音声通話"
   },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "音声をミュート"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "{contact}をミュートしますか？"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "ミュート"
+  },
+  "icu:ContactModal--remove-from-call": {
+    "messageformat": "通話から削除"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "メンバーラベル"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "自分自身や、このグループ内での自分の役割を説明するメンバーラベルを使いましょう。メンバーラベルはこのグループ内でのみ表示されます。"
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "ラベルを設定"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "ラベルを編集"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "チャットの色"
   },
@@ -4423,6 +4882,36 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "グループリンク"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "メンバーラベル"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "メンバーラベルを入力"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "自分自身や、このグループ内での自分の役割を説明するメンバーラベルを設定します。メンバーラベルはこのグループ内でのみ表示されます。"
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "プレビュー"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "ハロー！"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "ラベル付きのグループメンバー"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "他のメンバーにはラベルが付いていません"
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "メンバーラベルを保存できません"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "インターネット接続を確認して再度試してください。"
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "このグループのメンバーラベルを設定できるのは管理者のみです。"
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "消えるメッセージ"
@@ -4454,8 +4943,8 @@
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "グループ情報を編集できるユーザー"
   },
-  "icu:ConversationDetails--group-info-info": {
-    "messageformat": "グループ名、アイコン、説明、消えるメッセージのタイマーを編集できるユーザーを選択してください。"
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "グループ名、写真、説明、消えるメッセージのタイマー、ピン留めされたメッセージなどの編集権限を設定します。"
   },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "メンバーを追加できるユーザー"
@@ -4469,17 +4958,47 @@
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "このグループにメッセージを送信できるユーザーを選択してください。"
   },
+  "icu:ConversationDetails--member-label--label": {
+    "messageformat": "メンバーラベルを追加できる人"
+  },
+  "icu:ConversationDetails--member-label--info": {
+    "messageformat": "このグループ内でメンバーラベルを追加できる人を選択してください。"
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "メンバーラベルは削除されます"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "この権限を「管理者のみ」に変更すると、このグループ内の管理者以外のユーザーが設定したメンバーラベルは削除されます。"
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "続ける"
+  },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "申請と招待"
   },
   "icu:ConversationDetailsActions--leave-group": {
     "messageformat": "グループを抜ける"
   },
+  "icu:ConversationDetailsActions--terminate-group": {
+    "messageformat": "グループを閉じる"
+  },
   "icu:ConversationDetailsActions--block-group": {
     "messageformat": "グループをブロック"
   },
   "icu:ConversationDetailsActions--unblock-group": {
     "messageformat": "グループのブロックを解除"
+  },
+  "icu:ConversationDetailsActions--report-spam": {
+    "messageformat": "スパムとして報告"
+  },
+  "icu:ConversationDetailsActions--archive": {
+    "messageformat": "チャットをアーカイブ"
+  },
+  "icu:ConversationDetailsActions--unarchive": {
+    "messageformat": "チャットのアーカイブを解除"
+  },
+  "icu:ConversationDetailsActions--delete": {
+    "messageformat": "チャットを消去"
   },
   "icu:ConversationDetailsActions--leave-group-must-choose-new-admin": {
     "messageformat": "グループから抜ける前に、新しい管理者を1人以上選択する必要があります。"
@@ -4493,6 +5012,18 @@
   "icu:ConversationDetailsActions--leave-group-modal-confirm": {
     "messageformat": "抜ける"
   },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-title": {
+    "messageformat": "「{groupName}」を閉じますか？"
+  },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-content": {
+    "messageformat": "メンバーは、グループへメッセージを送信したり通話を開始したりできなくなります。グループを閉じたことはメンバーに通知されます。メッセージ履歴には引き続きアクセスできます。"
+  },
+  "icu:ConversationDetailsActions--terminate-group-modal-confirm": {
+    "messageformat": "グループを閉じる"
+  },
+  "icu:ConversationDetailsActions--confirm-terminate-group-confirm-modal-content": {
+    "messageformat": "グループは完全に閉じられます。本当によろしいですか？"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-title": {
     "messageformat": "「{groupName}」グループのブロックを解除しますか？"
   },
@@ -4505,26 +5036,41 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "ブロックする"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
-    "messageformat": "連絡先からこのグループに追加することができます。"
-  },
   "icu:ConversationDetailsActions--unblock-group-modal-body": {
-    "messageformat": "Your contacts will be able to add you to this group."
+    "messageformat": "連絡先をこのグループに追加することができます。"
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "ブロックを解除"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-direct": {
+    "messageformat": "この人物がスパムを送信している可能性をSignalに通知します。Signalはチャットの内容を見ることはできません。"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-group": {
+    "messageformat": "このグループへあなたを招待している相手がスパムを送信している可能性をSignalに通知します。Signalはチャットの内容を見ることはできません。"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-spam": {
+    "messageformat": "スパムとして報告"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-and-block": {
+    "messageformat": "報告してブロック"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, other {メンバー{number,number}人}}"
   },
   "icu:ConversationDetailsMediaList--title": {
-    "messageformat": "メディアとファイル"
+    "messageformat": "メディア、リンク、ファイル"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, other {メンバー{number,number}人}}"
   },
+  "icu:ConversationDetailsMembershipList--terminated-title": {
+    "messageformat": "{number, plural, other {チャットにいたメンバー：{number,number}人}}"
+  },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "メンバーを追加する"
+  },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "メンバーラベルを追加"
   },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "すべて表示"
@@ -4670,14 +5216,11 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "選択したメッセージを転送"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, other {{count,number} 件のメッセージを消去しますか？}}"
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, other {選択した{count,number}件のメッセージを削除しますか？}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, other {このメッセージを誰に対して消去しますか？}}"
-  },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, other {これらのメッセージを消去する端末を選んでください}}"
   },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
     "messageformat": "{count, plural, other {これらのメッセージはご利用のすべての端末から消去されます。}}"
@@ -4685,20 +5228,42 @@
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "自分の分だけ消去"
   },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "この端末から消去する"
-  },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "全員分を消去"
   },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "すべての端末から消去する"
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "全員に対して消去しますか？"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, other {管理者がメッセージを消去したことは、グループメンバー全員に表示されます。}}",
+    "ignoreUnused": true
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
+    "messageformat": "{count, plural, other {Signalの最新版を使用しているグループメンバーは、あなたがこれらのメッセージを消去したことを確認できます。}}"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
     "messageformat": "消去"
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, other {一度に消去できるメッセージは、全員分で最大{count,number}件までです}}"
+  },
+  "icu:DiscardDraftDialog__title": {
+    "messageformat": "下書きを削除しますか？"
+  },
+  "icu:DiscardDraftDialog__description": {
+    "messageformat": "この操作は元に戻せません。"
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "アイテムを消去しますか？"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "消去すると二度と元には戻せません。これらのアイテムに関連付けられているメッセージテキストもすべて消去されます。"
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "消去"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "キャンセル"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "転送できるメッセージは 30 件までです"
@@ -4802,7 +5367,10 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "リンクを使用して Signal 通話に参加する　{url}"
   },
-  "icu:MessageRequestWarning__safety-tips": {
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "慎重に申請を確認してください"
+  },
+  "icu:MessageRequestWarning__safety-tips-v2": {
     "messageformat": "安全な使い方のヒント"
   },
   "icu:ContactSpoofing__same-name--link": {
@@ -5011,6 +5579,84 @@
   },
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "グループの説明を追加してください…"
+  },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "音声メッセージ"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "音声"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "連絡先"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "ブラウザでリンクを開く"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "会話内にメッセージを表示"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "音声"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "ファイル"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "リンク"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "並び替え条件"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "並び替え条件"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "日付"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "サイズ"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "メディアがありません"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "送受信した写真、動画、GIF がここに表示されます"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "音声ファイルがありません"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "送受信した音声メッセージと音声ファイルがここに表示されます"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "リンクがありません"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "送受信したリンクはここに表示されます"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "ファイルがありません"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "送受信したファイルがここに表示されます"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "チャットで表示"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "転送"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "保存"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "メッセージを送信"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "リンクをコピーします"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "消去"
   },
   "icu:MediaQualitySelector--button": {
     "messageformat": "メディアの画質を選択"
@@ -5225,6 +5871,10 @@
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "管理者"
   },
+  "icu:Avatar__View": {
+    "messageformat": "表示",
+    "limit": 7
+  },
   "icu:AvatarEditor--choose": {
     "messageformat": "アバターを選択してください"
   },
@@ -5303,15 +5953,6 @@
   "icu:Preferences__button--set-up": {
     "messageformat": "設定"
   },
-  "icu:Preferences__internal__local-backups": {
-    "messageformat": "ローカルバックアップ"
-  },
-  "icu:Preferences__internal__export-local-backup": {
-    "messageformat": "エクスポートする"
-  },
-  "icu:Preferences__internal__export-local-backup--description": {
-    "messageformat": "ローカル内の暗号化されたバックアップをフォルダにエクスポートして検証します"
-  },
   "icu:Preferences__internal__validate-backup--description": {
     "messageformat": "暗号化されたバックアップをメモリにエクスポートし、検証処理を実行します"
   },
@@ -5330,8 +5971,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "リンクプレビューを生成する"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "この設定の変更は、スマートフォン版Signalの設定 > チャットから行ってください"
+  "icu:Preferences__link-previews--new-description": {
+    "messageformat": "送信メッセージのリンクプレビューを、ウェブサイトから直接取得します。"
+  },
+  "icu:Preferences__address-book-photos--title": {
+    "messageformat": "アドレス帳の写真を使用する"
+  },
+  "icu:Preferences__address-book-photos--description": {
+    "messageformat": "可能であれば、連絡先の表示にアドレス帳の写真を使用します。"
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "入力した顔文字を絵文字に変換する"
@@ -5351,8 +5998,362 @@
   "icu:Preferences--notification-content": {
     "messageformat": "通知内容"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "チャット履歴をエクスポートする"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "すべてのチャットの機械判読可読なJSONコピーをエクスポートします。消えるメッセージはエクスポートされません。"
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "エクスポート"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "チャット履歴をエクスポートしますか？"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>ご注意ください！</bold>このファイルは誰とも共有しないでください。チャット履歴はご利用中のコンピューターに保存され、コンピューターの権限によっては他のアプリがアクセスできることがあります。"
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "メディアを含める<secondary>（ファイルサイズが大きくなります）</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "続ける"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "チャット履歴をエクスポートする"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "チャット履歴をエクスポートするには、本人確認をおこなってください。"
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "エクスポート"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "チャット履歴をエクスポートするには認証が必要です。"
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "チャット履歴をエクスポートしています"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "{totalBytes}のうち{currentBytes} をエクスポートしています（{percentage,number,percent}）…"
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "これには数分かかる場合があります"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "エクスポートが完了しました"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>ご注意ください</bold> チャットのエクスポートファイルの保存場所に注意し、誰とも共有しないでください。コンピューターの権限によっては、コンピューター上の他のアプリもアクセスできることがあります。 "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Finderで表示"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "フォルダで表示"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "フォルダで表示"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "チャット履歴をエクスポートできませんでした"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "エラーが発生したため、チャット履歴をエクスポートできませんでした。"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "ストレージ容量が不足しています"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "ご利用中のコンピューターに十分な空き容量がないため、チャット履歴をエクスポートできません。{bytes}の空き容量を確保してからもう一度お試しください。"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "チャット履歴をエクスポートできませんでした"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "お使いのコンピューターに十分な空き容量がないため、チャット履歴をエクスポートできませんでした。{bytes}の空き容量を確保してからもう一度お試しください。"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "チャット履歴をエクスポートできません"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "Signalには、ディスクにファイルを書き込む権限がないため、チャット履歴をエクスポートできません。ディスクの権限を変更するか、システム設定を更新してからもう一度エクスポートしてください。"
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "バックアップをエクスポートしています"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "バックアップのエクスポートが完了しました"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "バックアップの復元方法"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "バックアップフォルダをスマートフォンのストレージに移行します"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "ご利用のスマートフォンに、Signalを新規でインストールします"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "「復元または移行する」をタップして、「端末上のバックアップ」を選択します"
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "月のアイコン"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "{profileName}（コピー）"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "通知モード"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "通知モード"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "オン"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "{endTime}まで有効"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "1時間"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "{time}まで"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "設定"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "「{name}」の通知がオンです"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "「{name}」の通知がオフです"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "通知モードを有効にしました"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "通知モードを無効にしました"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "通知モード"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "設定"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "通知モード"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "モードを設定すると、選択した相手やグループからの通知や通話だけを受信できます。"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "続ける"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "通知モードを追加または編集する"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, other {モード：{profileCount,number}}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "モードを作成"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "モード名の選択"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "名前"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "モードネーム"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "職場"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "睡眠"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "運転"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "休憩"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "集中"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "通知許可"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "モードがオンのときに通知を受け取りたい相手やグループを追加してください"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "人またはグループを追加"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "例外"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "すべての通話を許可する"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "すべてのメンションを通知する"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "スケジュールの追加"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "スケジュール"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "スケジュールを有効にして編集し、通知モードを自動化します。"
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "自動化をオンにする"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "スケジュール"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "開始時刻"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "終了時刻"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "時刻選択画面"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "日曜日"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "月曜日"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "火曜日"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "水曜日"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "木曜日"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "金曜日"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "土曜日"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "モードを作成しました"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "スケジュールを追加すると、モードのオンとオフが自動的に切り替わります。チャットリストの上部にある「···」アイコンをクリックして、手動でオンとオフを切り替えることもできます。"
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "日曜日"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "月曜日"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "火曜日"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "水曜日"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "木曜日"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "金曜日"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "土曜日"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "平日"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "週末"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "毎日"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": "、 "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "モード"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "端末間で同期する"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "モードを端末間で同期します。1つの端末でモードをオンにすると、他の端末でもオンになります。"
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "モードを消去"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "この通知モードを完全に消去しますか？"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "消去"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "オン"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "オフ"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "モードの名前を編集する"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "通知許可"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} から {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "オン"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "オフ"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "ブロック中のユーザー"
+  },
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { 0件のユーザーまたはグループ } other {{num,number}件のユーザーまたはグループ}}"
+  },
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { ブロックしたユーザーはいません } other {{num,number} 件のユーザー}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { ブロックしたグループはありません } other {{num,number} 件のグループ}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "ブロックしたユーザーは、あなたに通話したりメッセージを送信したりできなくなります"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "ブロック中のユーザー"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "ブロック中のグループ"
   },
   "icu:Preferences--signal-backups": {
     "messageformat": "Signalセキュアバックアップ"
@@ -5370,7 +6371,7 @@
     "messageformat": "テキストとすべてのメディアのバックアップ"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "ご利用のサブスクリプションは確認できませんでした。Signalセキュアバックアップを引き続き使用するには、更新してください。"
+    "messageformat": "ご利用のサブスクリプションは確認できませんでした。携帯電話でバックアップの詳細をご確認ください。"
   },
   "icu:Preferences--backup-subscription-monthly-cost": {
     "messageformat": "{cost}/月"
@@ -5409,13 +6410,13 @@
     "messageformat": "デスクトップ用バックアップ"
   },
   "icu:Preferences__local-backups-section__description": {
-    "messageformat": "バックアップはキーで暗号化され、パソコンに保存されます。"
+    "messageformat": "バックアップは暗号化されパソコンに保存されます。"
   },
   "icu:Preferences--local-backups-off-description": {
     "messageformat": "スマートフォン上で復元できる、エンドツーエンドで暗号化されたバックアップを作成できます。 "
   },
   "icu:Preferences--local-backups-restore-info": {
-    "messageformat": "バックアップを復元するには、新しいSignalをインストールしてください。その後アプリを開き、「バックアップを復元する」をタップしてバックアップフォルダの場所を指定します。<learnMoreLink>さらに詳しく。</learnMoreLink>"
+    "messageformat": "バックアップを復元するには、お使いのスマートフォンにSignalを新しくインストールしてください。アプリを開いて「復元または転送」をタップします。<learnMoreLink>さらに詳しく。</learnMoreLink>"
   },
   "icu:Preferences--local-backups-setup-folder": {
     "messageformat": "フォルダを選択"
@@ -5429,23 +6430,50 @@
   "icu:Preferences--local-backups-view-backup-key-done": {
     "messageformat": "完了"
   },
-  "icu:Preferences--local-backups-backup-key-text-box": {
-    "messageformat": "バックアップキー確認欄"
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--mac": {
+    "messageformat": "回復キーを表示"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--windows": {
+    "messageformat": "回復キーを表示するには本人確認をおこなってください。"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-description--linux": {
+    "messageformat": "回復キーを表示する"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-message--linux": {
+    "messageformat": "回復キーを表示するには認証が必要です。"
+  },
+  "icu:Preferences--local-backups-recovery-key-text-box": {
+    "messageformat": "回復キー"
   },
   "icu:Preferences--local-backups-enter-backup-key": {
     "messageformat": "キーを入力"
   },
-  "icu:Preferences--local-backups-record-backup-key": {
-    "messageformat": "バックアップキーを保管する"
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "回復キーとは"
   },
-  "icu:Preferences--local-backups-record-backup-key-description": {
-    "messageformat": "このキーは、アカウントとデータを復元する際に必要です。このキーを安全な場所に保管してください。紛失した場合、アカウントを復元できなくなります。 <learnMoreLink>さらに詳しく。</learnMoreLink>"
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "このキーは、アカウントとデータを復元する際に必要です。キーは安全な場所に保存し、決して、誰とも共有しないでください。Signalは決して、回復キーについて皆さんにメッセージしません。<learnMoreLink>さらに詳しく。</learnMoreLink>"
   },
-  "icu:Preferences--local-backups-confirm-backup-key": {
-    "messageformat": "バックアップキーを確認してください"
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "回復キーは共有しないでください"
   },
-  "icu:Preferences--local-backups-confirm-backup-key-description": {
-    "messageformat": "先ほど記録したバックアップキーを入力してください"
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "わかりました"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "キーを貼りつける"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "やめる"
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "回復キーは誰とも共有しないでください。共有するとアカウントが乗っ取られる可能性があります。回復キーについて、<strong>Signalは決して皆さんにメッセージしません</strong>。Signalを装ったチャットには返信しないでください。<learnMoreLink>さらに詳しく。</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key": {
+    "messageformat": "回復キーを確認してください"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key-description": {
+    "messageformat": "記録した回復キーを入力してください"
   },
   "icu:Preferences__local-backups-confirm-key-modal-title": {
     "messageformat": "キーの取り扱いは厳重にしてください"
@@ -5459,35 +6487,74 @@
   "icu:Preferences--local-backups-see-backup-key-again": {
     "messageformat": "キーをもう一度見る"
   },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "最終バックアップ"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "なし"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "いますぐバックアップ"
+  },
   "icu:Preferences__local-backups-folder": {
     "messageformat": "バックアップフォルダ"
   },
-  "icu:Preferences__local-backups-folder__change": {
-    "messageformat": "変更する"
+  "icu:Preferences__local-backups-turn-off": {
+    "messageformat": "バックアップの無効化"
+  },
+  "icu:Preferences__local-backups-turn-off-action": {
+    "messageformat": "無効にする"
+  },
+  "icu:Preferences__local-backups-turn-off-confirmation": {
+    "messageformat": "再度オンにしない限り、このコンピューター上でバックアップを作成することはできません。"
+  },
+  "icu:Preferences__local-backups-turn-off-delete": {
+    "messageformat": "このコンピューターからバックアップを消去する"
   },
   "icu:Preferences__local-backups-copy-key": {
     "messageformat": "クリップボードにコピー"
   },
-  "icu:Preferences__local-backups-copied-key": {
-    "messageformat": "バックアップキーをコピーしました"
+  "icu:Preferences__local-backups-copied-recovery-key": {
+    "messageformat": "回復キーをコピーしました"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "バックアップを有効にする"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "バックアップを有効にするには、本人確認をおこなってください。"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "バックアップを有効にする"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "バックアップを有効にするには認証が必要です。"
+  },
+  "icu:Preferences__local-backups-auth-error--unauthorized": {
+    "messageformat": "システムの認証ができなかったので、この操作を完了できませんでした。もう一度お試しになるか、スマートフォンでSignalアプリを開いてバックアップの設定から回復キーを確認してください。"
+  },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "この操作のシステム認証中にエラーが発生しました。"
   },
   "icu:Preferences__view-key": {
     "messageformat": "キーを表示する"
   },
-  "icu:Preferences__backup-key": {
-    "messageformat": "バックアップキー"
+  "icu:Preferences__recovery-key": {
+    "messageformat": "回復キー"
   },
-  "icu:Preferences__backup-key-description": {
-    "messageformat": "バックアップキーは、バックアップを復元するために使用する64桁のコードです"
+  "icu:Preferences__recovery-key-description": {
+    "messageformat": "回復キーは、バックアップを復元するために必要な64文字のコードです"
   },
   "icu:Preferences__backup-other-ways": {
     "messageformat": "その他のバックアップ方法"
   },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, other {{num,number}人}}"
+  "icu:Preferences__recovery-key-updated__title": {
+    "messageformat": "回復キーが変更されました"
   },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "これらの設定の変更は、スマートフォン版Signalの 設定 > チャット から行ってください。"
+  "icu:Preferences__recovery-key-updated__description": {
+    "messageformat": "回復キーが更新されました。これから作成するバックアップは、新しい回復キーでのみ復元できます。"
+  },
+  "icu:Preferences__recovery-key-updated__view-key": {
+    "messageformat": "新しいキーを表示"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "電話番号"
@@ -5546,8 +6613,14 @@
   "icu:Preferences--read-receipts": {
     "messageformat": "既読通知"
   },
+  "icu:Preferences--read-receipts--description": {
+    "messageformat": "無効にすると、相手の既読通知も受け取れません。"
+  },
   "icu:Preferences--typing-indicators": {
     "messageformat": "入力中アイコン"
+  },
+  "icu:Preferences--typing-indicators--description": {
+    "messageformat": "無効の場合、相手の入力中アイコンも表示されません。"
   },
   "icu:Preferences--updates": {
     "messageformat": "アップデート"
@@ -5627,6 +6700,12 @@
   "icu:DialogUpdate__downloaded": {
     "messageformat": "アップデートがダウンロードされました"
   },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "クリックしてApp Storeへ移動"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "クリックしてApp Storeへ移動"
+  },
   "icu:CriticalIdlePrimaryDevice__title": {
     "messageformat": "ご利用のスマートフォンでSignalを開いてください"
   },
@@ -5665,6 +6744,411 @@
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Signal Desktop はアップデートに失敗しましたが、ご利用可能な新しいバージョンがあります。{downloadUrl} へアクセスして新しいバージョンを手動でインストールしてから、サポートへ連絡するか、この問題についてのバグを報告してください。"
+  },
+  "icu:StandaloneRegistration--signal-logo": {
+    "messageformat": "Signalのロゴ"
+  },
+  "icu:StandaloneRegistration--back": {
+    "messageformat": "戻る"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--header": {
+    "messageformat": "電話番号"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-1": {
+    "messageformat": "アカウントを確認するために電話番号を入力してください。"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-2": {
+    "messageformat": "通信料金が発生する場合があります。"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--waiting": {
+    "messageformat": "{duration}分後にもう一度お試しください"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--placeholder": {
+    "messageformat": "電話番号"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--button": {
+    "messageformat": "続ける"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--description": {
+    "messageformat": "上記の電話番号で間違いありませんか？"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--cancel": {
+    "messageformat": "番号を編集する"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--confirm": {
+    "messageformat": "はい"
+  },
+  "icu:StandaloneRegistration--Captcha--header": {
+    "messageformat": "続行するには、本人確認をおこなってください"
+  },
+  "icu:StandaloneRegistration--Captcha--description": {
+    "messageformat": "Signalでスパムを回避するために、確認を完了してください。確認後、登録を続行できます。"
+  },
+  "icu:StandaloneRegistration--Captcha--retry-button": {
+    "messageformat": "もう一度確認"
+  },
+  "icu:StandaloneRegistration--Captcha--button": {
+    "messageformat": "ブラウザで確認"
+  },
+  "icu:StandaloneRegistration--Captcha--button--wait": {
+    "messageformat": "{duration}後に確認"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--header": {
+    "messageformat": "追加の確認が必要です"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--description": {
+    "messageformat": "登録を続行するには他のキャプチャを完了してください。"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--retry": {
+    "messageformat": "もう一度確認"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--aria-title": {
+    "messageformat": "あとでもう一度お試しください"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-1": {
+    "messageformat": "現在、確認を完了できません。"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-2": {
+    "messageformat": "{duration} 内にもう一度お試しください"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--header": {
+    "messageformat": "確認エラー"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--description": {
+    "messageformat": "登録を続行するには、もう一度確認をおこなってください。"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--try-again": {
+    "messageformat": "もう一度試す"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--VerificationCode--header": {
+    "messageformat": "認証コード"
+  },
+  "icu:StandaloneRegistration--VerificationCode--description": {
+    "messageformat": "{phoneNumber} に届いたコードを入力してください"
+  },
+  "icu:StandaloneRegistration--VerificationCode--button": {
+    "messageformat": "続ける"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms": {
+    "messageformat": "コードを再送信する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms--duration": {
+    "messageformat": "{duration}後にコードを再送する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me": {
+    "messageformat": "電話してください"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me--duration": {
+    "messageformat": "{duration}後に電話してください"
+  },
+  "icu:StandaloneRegistration--VerificationCode--wrong-number": {
+    "messageformat": "電話番号を訂正"
+  },
+  "icu:StandaloneRegistration--VerificationCode--having-trouble": {
+    "messageformat": "登録でお困りですか？"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--aria-title": {
+    "messageformat": "コードが違います"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--description": {
+    "messageformat": "入力されたコードが正しくありません。6桁のコードを確認してもう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--aria-title": {
+    "messageformat": "無効なセキュリティコードです"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--description": {
+    "messageformat": "入力されたコードは無効です。コードを再送信して、もう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--resend-button": {
+    "messageformat": "コードを再送信する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--edit-number-button": {
+    "messageformat": "番号を編集する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--aria-title": {
+    "messageformat": "SMSを送信できません"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--description": {
+    "messageformat": "SMSで認証コードを送信できませんでした。音声通話でコードを受信してみてください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--confirm": {
+    "messageformat": "音声通話"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--aria-title": {
+    "messageformat": "あとでもう一度お試しください"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--description": {
+    "messageformat": "このコードの入力試行回数が多すぎます。{duration}後にもう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--aria-title": {
+    "messageformat": "試行回数が多すぎます"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--description": {
+    "messageformat": "このコードの入力試行回数が多すぎます。コードを再送信して、もう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--resend-button": {
+    "messageformat": "コードを再送信する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--edit-number-button": {
+    "messageformat": "番号を編集する"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--aria-title": {
+    "messageformat": "通話できません"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--description": {
+    "messageformat": "入力した電話番号へ電話できませんでした。電話番号が正しいかを確認して、もう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--aria-title": {
+    "messageformat": "コードを送信できません"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--description": {
+    "messageformat": "入力した電話番号へ確認コードを送信できません。入力した番号が正しいかを確認するか、他の番号でお試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--aria-title": {
+    "messageformat": "あとでもう一度お試しください"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--description": {
+    "messageformat": "エラーが発生したため、確認コードを送信できませんでした。{duration}後にもう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--header": {
+    "messageformat": "プロフィールの設定"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--description": {
+    "messageformat": "プロフィールは、メッセージの相手、連絡先、グループに表示されます。"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--learn-more": {
+    "messageformat": "さらに詳しく"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--add-photo": {
+    "messageformat": "画像を追加"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--first-name": {
+    "messageformat": "名 (必須)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--last-name": {
+    "messageformat": "姓 (任意)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability": {
+    "messageformat": "私を電話番号から検索できる人"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--change-button": {
+    "messageformat": "変更する"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--done-button": {
+    "messageformat": "完了"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--continue": {
+    "messageformat": "続ける"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--AvatarModal--header": {
+    "messageformat": "アバター"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--header": {
+    "messageformat": "PINを入力してください"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--description": {
+    "messageformat": "アカウント用に作成したPINを入力してください。SNSで届く確認コードとは異なります。<needHelp>お困りですか？</needHelp>"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--placeholder": {
+    "messageformat": "PINを入力してください"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin": {
+    "messageformat": "PINが違います"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin--with-count": {
+    "messageformat": "{triesRemaining, plural, other {PINが違います。あと{triesRemaining,number}回試せます。}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--just-count": {
+    "messageformat": "{triesRemaining, plural, other {あと{triesRemaining,number}回試せます。}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--header": {
+    "messageformat": "お困りですか？"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--no-reglock": {
+    "messageformat": "PINは4桁以上のコードで、数字または英数字のいずれかです。PINを忘れた場合は、新しいPINを作成できます。アカウントの登録と使用は可能ですが、プロフィール情報など保存された設定の一部が失われる可能性があります。<learnMore>詳しく見る</learnMore>。"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--reglock": {
+    "messageformat": "PINは4桁以上のコードで、数字または英数字のいずれかです。もしPINを覚えていない場合、アカウントを再登録するまで7日間の待機期間が発生します。<learnMore>詳しく見る</learnMore>。"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--skip-button--no-reglock": {
+    "messageformat": "スキップして新しいPINを作成"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--contact-support-button": {
+    "messageformat": "サポートに問い合わせる"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--header": {
+    "messageformat": "PINが違います"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--no-reglock": {
+    "messageformat": "{triesRemaining, plural, other {試行回数は残り{triesRemaining,number}回です。入力回数の上限に達すると、新しいPINを作成することができます。アカウントの登録と使用は可能ですが、プロフィール情報など保存された設定の一部が失われる可能性があります。<learnMore>詳しくはこちら</learnMore>}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--reglock": {
+    "messageformat": "{triesRemaining, plural, other {あと{triesRemaining,number} 回、PINを入力することができます。入力回数の上限に達すると、アカウントは7日間ロックされます。7日間利用がない場合、PINなしで再登録ができるようになりますが、すべてのコンテンツが消去されます。<learnMore>詳しくはこちら</learnMore>}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--header": {
+    "messageformat": "PINが違います"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--description": {
+    "messageformat": "PINの試行回数はなくなりましたが、新しいPINを作成することでSignalアカウントにアクセスできます。プライバシーとセキュリティー保護のため、アカウントに保存されているプロフィールや設定情報は復元されません。"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--create-new-pin": {
+    "messageformat": "新しいPINを作成"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--learn-more": {
+    "messageformat": "PINに関する詳細情報"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--open-menu": {
+    "messageformat": "メニューを開く"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--menu--skip-pin": {
+    "messageformat": "PIN を使用しない"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--header": {
+    "messageformat": "PINの入力を省略しますか？"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--description": {
+    "messageformat": "PINを忘れた場合は、新しいPINを作成できます。アカウントの登録と使用は可能ですが、プロフィール情報など保存された設定の一部が失われます。<learnMore>詳しく見る</learnMore>。"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--skip-button": {
+    "messageformat": "スキップして新しいPINを作成"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--cancel-button": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--CreatePIN--header": {
+    "messageformat": "PINを作成"
+  },
+  "icu:StandaloneRegistration--CreatePIN--description": {
+    "messageformat": "PINは、アカウントの復元に使用され、お客様の情報をSignalで暗号化してお預かりすることを可能にします。 <learnMore>詳しく見る</learnMore>"
+  },
+  "icu:StandaloneRegistration--CreatePIN--placeholder": {
+    "messageformat": "PINを作成"
+  },
+  "icu:StandaloneRegistration--CreatePIN--helper-text": {
+    "messageformat": "PINは4文字以上にしてください"
+  },
+  "icu:StandaloneRegistration--CreatePIN--continue": {
+    "messageformat": "続ける"
+  },
+  "icu:StandaloneRegistration--CreatePIN--open-menu": {
+    "messageformat": "メニューを開く"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--more-about": {
+    "messageformat": "PIN とは？"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--disable": {
+    "messageformat": "PINを無効にする"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--header": {
+    "messageformat": "ご注意ください"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--description": {
+    "messageformat": "PINを無効にすると、他のiOS端末から移行しない限り、Signalに再登録する際すべてのデータが失われます。PINを無効にしている間は登録ロックは使用できません。"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--disable-button": {
+    "messageformat": "PINを無効にする"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--header": {
+    "messageformat": "Signal PIN について"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--description": {
+    "messageformat": "Signal 内に保存された情報は、PIN により暗号化を保持されるため、あなたのみがアクセスできます。PIN を使うことで、再インストール時にあなたのプロフィール、設定および連絡先が復元されます。"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--learn-more-button": {
+    "messageformat": "さらに詳しく"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--header": {
+    "messageformat": "PINの確認"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--description": {
+    "messageformat": "先ほど作成したPINを再入力してください。"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--placeholder": {
+    "messageformat": "PINを入力してください"
+  },
+  "icu:StandaloneRegistration--AccountLocked--header": {
+    "messageformat": "アカウントがロックされました"
+  },
+  "icu:StandaloneRegistration--AccountLocked--description": {
+    "messageformat": "プライバシーとセキュリティ保護のため、アカウントをロックしました。アカウントが7日間利用されなかった場合、PINなしでこの電話番号を再登録できるようになります。すべてのコンテンツは消去されます。"
+  },
+  "icu:StandaloneRegistration--AccountLocked--start-over-button": {
+    "messageformat": "別の電話番号を使用する"
+  },
+  "icu:StandaloneRegistration--AccountLocked--help-button": {
+    "messageformat": "アカウントがロックされた場合"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--header": {
+    "messageformat": "アップデートが必要です"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--description": {
+    "messageformat": "登録を続行するには、Signal の最新バージョンにアップデートしてください。"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--update": {
+    "messageformat": "アップデート"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--header": {
+    "messageformat": "インターネット接続を確認して再度試してください"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--description": {
+    "messageformat": "続行するには、コンピュータのインターネット接続を確認してもう一度お試しください。"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--header": {
+    "messageformat": "登録を完了できません"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--description": {
+    "messageformat": "エラーが発生したため、登録を完了できませんでした。問題が解決しない場合はサポートへお問い合わせください。"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--try-again-button": {
+    "messageformat": "もう一度試す"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--contact-support-button": {
+    "messageformat": "サポートに問い合わせる"
   },
   "icu:NSIS__retry-dialog--first-line": {
     "messageformat": "Signalを終了できません。",
@@ -5834,6 +7318,9 @@
   "icu:MyStories__delete": {
     "messageformat": "このストーリーを消去しますか？これを受けとった人も消去されます。"
   },
+  "icu:MyStories__delete-group-story-for-me": {
+    "messageformat": "このストーリーを消去しますか？グループは閉じられているので、消去はあなたにのみ適用されます。"
+  },
   "icu:payment-event-notification-message-you-label": {
     "messageformat": "{receiver}さんへの支払いを開始しました"
   },
@@ -5867,6 +7354,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "メッセージ申請を承認しました"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "{userProfileName}のメッセージ申請を承認しました"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "スパムとして報告する"
   },
@@ -5882,8 +7372,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "グループへのブロックを解除しました"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "オプション"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "ブロックまたは報告…"
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "詳しく見る"
@@ -5905,15 +7395,6 @@
   },
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "あなたのコネクションの人たちは、あなたの名前や写真を見ることができ、あなたが非表示にしない限り「マイストーリー」への投稿を見ることができます。"
-  },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "消去機能は端末間で同期されます"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "メッセージやチャットを消去すると、ご利用のすべての端末から消去されます。"
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "わかりました"
   },
   "icu:Stories__title": {
     "messageformat": "ストーリー"
@@ -6056,8 +7537,8 @@
   "icu:StoriesSettings__view-receipts--label": {
     "messageformat": "閲覧済表示"
   },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "この設定の変更は、モバイル端末でSignalアプリを開き、設定 > ストーリーから行ってください"
+  "icu:StoriesSettings__view-receipts--new-description": {
+    "messageformat": "ストーリーが閲覧されたことを確認・共有することができます。無効にすると、他の人があなたのストーリーを閲覧したことが確認できません。"
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "ストーリーを閲覧できる人"
@@ -6459,17 +7940,20 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "編集済み"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "ピン留め中"
+  },
   "icu:DraftGifMessageSendModal__Title": {
     "messageformat": "メッセージを追加してください"
   },
   "icu:DraftGifMessageSendModal__SendButtonLabel": {
     "messageformat": "送信"
   },
-  "icu:DraftGifMessageSendModal__CancelButtonLabel": {
-    "messageformat": "キャンセル"
-  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "編集履歴"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "タイムスタンプをコピーする"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "編集したメッセージを送信できませんでした。インターネット接続を確認して再度試してください"
@@ -6633,9 +8117,6 @@
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
     "messageformat": "リンクを消去すると、他のメンバーもこのリンクを使えなくなります。"
   },
-  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
-    "messageformat": "キャンセル"
-  },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "消去"
   },
@@ -6690,13 +8171,16 @@
   "icu:ProfileNameWarningModal__description--direct": {
     "messageformat": "Signal上のプロフィールネームは、アカウント所有者によって選択されます。"
   },
-  "icu:ProfileNameWarningModal__list--item1--direct": {
-    "messageformat": "プロフィールネームは検証されません"
+  "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
+    "messageformat": "Signalは名前や写真を確認することはできません"
   },
-  "icu:ProfileNameWarningModal__list--item2--direct": {
+  "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
+    "messageformat": "Signalは決して、登録コード、PIN、回復キーについて皆さんに連絡しません"
+  },
+  "icu:ProfileNameWarningModal__warning--be-cautious": {
     "messageformat": "なりすましの可能性のあるアカウントにはご注意ください"
   },
-  "icu:ProfileNameWarningModal__list--item3--direct": {
+  "icu:ProfileNameWarningModal__warning--dont-share-info": {
     "messageformat": "知らない人とは個人情報を共有しないでください"
   },
   "icu:ProfileNameWarningModal__description--group": {
@@ -6717,11 +8201,11 @@
   "icu:WhatsNew__modal-title": {
     "messageformat": "更新情報"
   },
-  "icu:PreferencesDonations__title": {
-    "messageformat": "利益よりもプライバシーを"
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "非営利が理念です"
   },
-  "icu:PreferencesDonations__description": {
-    "messageformat": "あなたが資金提供するプライベートメッセージ。広告なし、トラッキングなし、不正アクセスなし。Signalをサポートするための寄付を今すぐお願いします。<readMoreLink>続きを読む</readMoreLink>"
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "メッセージのやりとりをプライベートに保つためにご寄付をお願いします。Signalが独立性を保ち、広告なしで運営するためには皆様のご協力が必要です。<readMoreLink>続きを読む</readMoreLink>"
   },
   "icu:PreferencesDonations__donate-button": {
     "messageformat": "寄付する"
@@ -6744,8 +8228,20 @@
   "icu:PreferencesDonations__privacy-modal-title": {
     "messageformat": "お客様の個人情報は保護されています"
   },
-  "icu:PreferencesDonations__privacy-modal-content": {
-    "messageformat": "<paragraph>Signalは、寄付を受ける際に、お客様のいかなる個人情報も収集したり保存したりすることはありません。</paragraph><paragraph>Signalでは寄付を受け取る決済処理にStripeを使用しています。Signalは、お客様から提供されたいかなる情報にもアクセスすることはありません。また保管・保存したりすることもありません。</paragraph><paragraph>Signalは、寄付からお客様のSignalアカウントを特定することはありません。特定はできない仕組みになっています。</paragraph><paragraph>ご支援ありがとうございます！</paragraph>"
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "Signalは、独立した非営利団体としてメッセージと通話のプライバシーを守ることに取り組んでいます。広告なし、トラッキングなし、監視なし。Signalのこの取り組みのために、ご支援をお願いします。"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "寄付をすると、プロフィールにバッジが表示（任意）されます"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "皆さんのプライバシーを守ることが私たちの使命です"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "Signalは非営利団体です。"
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Signalロゴ風のハートアイコン"
   },
   "icu:PreferencesDonations__privacy-modal-ok": {
     "messageformat": "OK"
@@ -6837,6 +8333,15 @@
   "icu:DonateFlow__discard-dialog-remove-info": {
     "messageformat": "情報を削除する"
   },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "ページを離れると寄付はキャンセルされます。"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "離れる"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "このページに留まる"
+  },
   "icu:DonateFlow__continue": {
     "messageformat": "続ける"
   },
@@ -6857,6 +8362,9 @@
   },
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Signalをサポートしていただきありがとうございます。皆様のご寄付は、オープンソースのプライバシー技術を通して表現の自由を守り、世界中の何百万人もの人々に安全なグローバルコミュニケーションを可能にするというミッションを推進する原動力となるものです。米国にお住まいの方は、この領収書を税務記録のために保管しておいてください。Signal Technology Foundationは、米国内国歳入法第501c3条に基づく非課税の非営利団体です。連邦税IDは82-4506840です。"
+  },
+  "icu:DonationReceipt__footer-text-v2": {
+    "messageformat": "Signalをサポートしていただきありがとうございます。皆様のご寄付は、オープンソースのプライバシー技術を通して表現の自由を守り、世界中の何百万人もの人々に安全なグローバルコミュニケーションを可能にするというミッションを推進する原動力となるものです。米国にお住まいの方は、この領収書を税務記録のために保管しておいてください。Signal Technology Foundationは、米国内国歳入法第501c3条に基づく非課税の非営利団体です。連邦税IDは82-4506840です。Signalは、寄付の対価としていかなるグッズもサービスも提供していません。"
   },
   "icu:Donations__OfflineTooltip": {
     "messageformat": "オフラインです。寄付を完了するには、インターネットに接続してください。"
@@ -6882,8 +8390,14 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "確認が必要な寄付のお手続き中です。"
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "寄付は完了しましたが、バッジの設定をアップデートできませんでした"
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "確認が必要な寄付のお手続き中です。"
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "PayPalでの寄付はキャンセルされました"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "PayPalでの寄付の処理中にエラーが発生しました。課金はされていません。"
   },
   "icu:Donations__BadgeApplicationFailed__Title": {
     "messageformat": "寄付は完了しましたが、バッジの設定をアップデートできませんでした"
@@ -6900,11 +8414,41 @@
   "icu:Donations__DonationInterrupted__RetryButton": {
     "messageformat": "もう一度試す"
   },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "決済方法"
+  },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "支払い方法が承認されませんでした"
   },
   "icu:Donations__PaymentMethodDeclined__Description": {
     "messageformat": "別の決済方法をお試しいただくか、取引先の銀行にお問い合わせください。"
+  },
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "支払いカードアイコン"
+  },
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "クレジットカードまたはデビットカード"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "キャンセル"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "寄付をする"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "PayPalでの寄付はキャンセルされました"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "課金はされていません。もう一度お試しいただくか、他の決済方法をお試しください。"
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "PayPalでの寄付の処理中にエラーが発生しました"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "課金はされていません。もう一度お試しいただくか、他の決済方法をお試しください。"
   },
   "icu:Donations__Failed3dsValidation": {
     "messageformat": "認証失敗"
@@ -6966,6 +8510,141 @@
   "icu:Donations__badge-modal--help-text": {
     "messageformat": "ご利用のモバイル端末の「設定」→「Signalへの寄付」→「バッジ」から、ご自身で変更ができます"
   },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "通話状態はいかがでしたか？"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Signalの通話品質改善にご協力をお願いいたします。個人情報は一切保存されません。"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "問題あり"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "良好"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "どのような問題がありますか?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "該当するものをすべて選んでください"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "音声の問題"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "音声が途切れる"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "音声が反響する"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "他の人に、自分の声が反響して聞こえる"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "音声が聞こえない時がある"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "ビデオの問題"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "カメラが動作しない"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "ビデオの画質が悪い"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "解像度が低い"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "通話が切れる"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "その他"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "問題の詳細をご記入ください"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "問題に関して、できるだけ詳細にご記入ください。ここで共有いただいた内容はすべて非公開であり、Signalでの通話品質の改善の為のみに使用されます。"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "問題についてのご記入をお願いします"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "続ける"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "続けるには選択してください"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "改善にご協力ください"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "提出すると、<diagnosticInfoLink>通話に関する診断情報</diagnosticInfoLink>とフィードバックが共有されます。デバッグログの共有（任意）は、通話品質の向上につながります。"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "デバッグログを共有する"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "表示"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "私たちと共有されるのは最低限のアプリ情報であり、通話内容は含まれません。"
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "診断情報"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "送信する"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "フィードバックの送信に失敗しました"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "再試行"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "フィードバックをありがとうございます！"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "サイドバーを展開してメガホンを操作できます"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "カルーセル"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "スライド"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "スマートフォンのメッセージ履歴をこのデスクトップへ移行しますか？"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "このデスクトップを再リンクすると、スマートフォンのメッセージ履歴をこの端末に移行できます。"
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "さらに詳しく"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "移行すると、このデスクトップ上にあるメッセージ履歴が<bold>置き換えられます</bold>。"
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "QRコードをスキャンして再リンクする必要があります。"
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "Signalセキュアバックアップに加入している場合、すべてのメディアが移行されます。そうでない場合は、直近45日間のメディアのみが移行されます。"
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "振替"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "移行しない"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "すべてのデータを消去しますか？"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "Signal Desktop内の、既存のすべてのデータが消去されます。その後、QRコードをスキャンしてスマートフォンからメッセージ履歴を移行できます。"
+  },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Signalをスムーズに動作させるための微調整とバグ修正を行いました。",
     "ignoreUnused": true
@@ -6994,10 +8673,16 @@
     "messageformat": "細かな微調整、バグ修正、パフォーマンスの向上。 Signalをご利用いただきありがとうございます。",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__7.73": {
-    "messageformat": "今回のアップデートでは、バッテリー持ちを上げる新しいパフォーマンス最適化を導入しました。"
+  "icu:WhatsNew__8.18--0": {
+    "messageformat": "個別のチャットでも投票が作成できるようになりました。"
   },
-  "icu:WhatsNew__7.74": {
-    "messageformat": "Signal Desktopが、7つの新しい絵文字に対応しました。"
+  "icu:WhatsNew__8.19--0": {
+    "messageformat": "グループ管理者は、グループ設定内に追加された「グループを終了」という新しいオプションを使用して、チャットを終了できるようになりました。グループを終了すると、メンバーはメッセージ送信や通話開始ができなくなり、招待も無効になります。"
+  },
+  "icu:WhatsNew__8.20--0": {
+    "messageformat": "通話関連履歴、自動消去のお知らせを追加しました。このアップデートをインストールすると、消えるメッセージが有効になっているチャットでは、不在着信、発信、着信履歴が自動的に消去されます。"
+  },
+  "icu:WhatsNew__8.20--1": {
+    "messageformat": "インストールしたステッカーパックを並べ替えられるようになりました。これで、新しいお気に入りのパックがリストの後ろに埋もれてしまうことはありません。"
   }
 }

@@ -1,4 +1,22 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "Laukiama"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "Atgal"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "Užverti"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "Išvalyti"
+  },
+  "icu:AxoBadge.MaxOverflow": {
+    "messageformat": "{max,number}+"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "Pridėti į grupę"
   },
@@ -70,6 +88,9 @@
   },
   "icu:unknownContact": {
     "messageformat": "Nežinomas adresatas"
+  },
+  "icu:deletedAccount": {
+    "messageformat": "Ištrinta paskyra"
   },
   "icu:unknownContactShort": {
     "messageformat": "Nežinoma"
@@ -206,9 +227,6 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "Perjungti kūrėjo įrankius"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "Atverti kūrėjo įrankius skambučiams"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "Nusistatyti kaip naują įrenginį"
   },
@@ -241,6 +259,12 @@
   },
   "icu:archivedConversations": {
     "messageformat": "Archyvuoti pokalbiai"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Pridėti pokalbio aplanką"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Aplanko nustatymai"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "Prisegti pokalbiai"
@@ -281,29 +305,47 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Įveskite naudotojo vardą, tašką ir skaitmenų derinį."
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Nėra pokalbių, kuriuos galima parodyti"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Aplanko nustatymai"
+  },
   "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
-    "messageformat": "All"
+    "messageformat": "Visi"
   },
   "icu:LeftPaneChatFolders__ItemLabel--All": {
-    "messageformat": "All chats"
+    "messageformat": "Visi pokalbiai"
   },
   "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
     "messageformat": "{maxCount,number}+"
   },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel": {
+    "messageformat": "{count, plural, one {{count,number} neskaityta žinutė} few {{count,number} neskaitytos žinutės} many {{count,number} neskaitytų žinučių} other {{count,number} neskaitytų žinučių}}"
+  },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
-    "messageformat": "Mark all read"
+    "messageformat": "Žymėti visus skaitytais"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
-    "messageformat": "Mute notifications"
+    "messageformat": "Nutildyti pranešimus"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
-    "messageformat": "Unmute all"
+    "messageformat": "Įjungti garsą visiems"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
-    "messageformat": "Unmute all"
+    "messageformat": "Įjungti garsą visiems"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
-    "messageformat": "Edit folder"
+    "messageformat": "Redaguoti aplanką"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Pridėti į aplanką"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Sukurti aplanką"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Pašalinti iš aplanko"
   },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Valstybės kodas"
@@ -338,9 +380,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Nustatymai"
   },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "Profilis"
-  },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "Atgal"
   },
@@ -357,7 +396,7 @@
     "messageformat": "Žymėti kaip neskaitytą"
   },
   "icu:markRead": {
-    "messageformat": "Mark read"
+    "messageformat": "Žymėti kaip skaitytą"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Pasirinkti žinutes"
@@ -419,17 +458,8 @@
   "icu:unpinConversation": {
     "messageformat": "Nusegti pokalbį"
   },
-  "icu:pinnedConversationsFull": {
-    "messageformat": "Gali prisegti daugiausiai 4 pokalbius"
-  },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, one {Įkeliamos 1 dienos senumo žinutės…} few {Įkeliamos {daysAgo,number} dienų senumo žinutės…} many {Įkeliamos {daysAgo,number} dienos senumo žinutės} other {Įkeliamos {daysAgo,number} dienų senumo žinutės}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "Įkeliamos vakarykštės žinutės…"
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "Įkeliamos šiandienos žinutės…"
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, one {Galite prisegti daugiausia {maxPinnedConversations,number} pokalbį} few {Galite prisegti daugiausia {maxPinnedConversations,number} pokalbius} many {Galite prisegti daugiausia {maxPinnedConversations,number} pokalbio} other {Galite prisegti daugiausia {maxPinnedConversations,number} pokalbių}}"
   },
   "icu:view": {
     "messageformat": "Žiūrėti"
@@ -518,6 +548,9 @@
   "icu:debugLogExplanation": {
     "messageformat": "Kai spustelėsite „Pateikti“, jūsų žurnalas bus 30-čiai dienų paskelbtas internete unikaliu neskelbiamu URL adresu. Galite, iš pradžių, įsirašyti jį savo įrenginyje."
   },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "Šis žurnalas bus viešai paskelbtas internete talkininkams peržiūrėti. Prieš pateikdami, galite jį atsisiųsti."
+  },
   "icu:debugLogError": {
     "messageformat": "Kažkas nutiko su išsiuntimu! Prašome parašyti el. laišką adresu support@signal.org ir pridėti savo žurnalą kaip tekstinį failą."
   },
@@ -551,16 +584,82 @@
   "icu:SafetyNumberViewer__clearVerification": {
     "messageformat": "Išvalyti patvirtinimą"
   },
-  "icu:SafetyNumberViewer__hint": {
-    "messageformat": "Jei nori patikrinti, ar pokalbis su {name} yra visiškai užšifruotas, palygink skaičius viršuje ir pašnekovo įrenginyje. Pašnekovas taip pat gali nuskaityti tavo kodą savo įrenginiu."
+  "icu:SafetyNumberViewer__hint-v2": {
+    "messageformat": "Jei norite patikrinti, ar pokalbis su {name} yra visiškai užšifruotas, palyginkite skaičius viršuje ir pašnekovo įrenginyje. Pašnekovas taip pat gali nuskaityti tavo kodą savo įrenginiu."
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "Sužinoti daugiau"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "Automatinis rakto patvirtinimas"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "Patvirtinti automatiškai"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "Tikrinamas šifravimas…"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "Šifravimas patvirtintas"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "Automatinis patvirtinimas nepasiekiamas"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "Automatinis patvirtinimas pasiekiamas ne visiems pokalbiams."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "Sužinoti daugiau"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "Šio pokalbio šifravimas buvo automatiškai patvirtintas "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "Jei su žmonėmis bendraujate naudodami telefono numerius, „Signal“ automatiškai patvirtins, ar ryšys saugus, pagal rakto skaidrumo procesą. Jei pageidaujate papildomo saugumo, patvirtinkite ištisinį šifravimą rankiniu būdu, palygindami ankstesniame ekrane pateiktus skaičius arba nuskaitydami kodą jų įrenginyje."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "Automatinis patvirtinimas šiam pokalbiui nepasiekiamas"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "„Signal“ negali automatiškai patvirtinti šio pokalbio šifravimo. Tikėtina, kad taip yra todėl, jog {name} pasikeitė telefono numerį arba telefono numerio privatumo nustatymus. Patvirtinkite ištisinį šifravimą rankiniu būdu, palygindami ankstesniame ekrane pateiktus skaičius arba nuskaitydami kodą jų įrenginyje."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "„Signal“ gali automatiškai patvirtinti šifravimą tik tuose pokalbiuose, kur su asmeniu bendraujate turėdami telefono numerį. Jei pokalbis pradėtas turint naudotojo vardą arba bendroje grupėje, patvirtinkite ištisinį šifravimą rankiniu būdu, palygindami ankstesniame ekrane pateiktus skaičius arba nuskaitydami kodą jų įrenginyje."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "Gerai"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "Saugumo numeris su šiuo asmeniu bus sukurtas tada, kai vienas kitam parašysite žinutes."
   },
   "icu:SafetyNumberNotReady__learn-more": {
+    "messageformat": "Sužinoti daugiau"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "Automatinis rakto patvirtinimas jūsų įrenginyje šiuo metu negalimas. Pateikti derinimo žurnalą?"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "Derinimo žurnalai padeda mums diagnozuoti ir išspręsti problemą, juose nėra identifikavimo informacijos."
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "Bendrinti derinimo žurnalą"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "Žiūrėti"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "Pateikti"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "„Signal“ dabar gali automatiškai patvirtinti šifravimą"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "Jei su adresatais bendraujate naudodami telefono numerius, „Signal“ automatiškai patvirtins, ar ryšys saugus, pagal rakto skaidrumo procesą. Dėl papildomo saugumo ryšius vis dar galite patvirtinti patys, naudodami QR kodą arba palygindami saugumo numerius."
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "Tęsti"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
     "messageformat": "Sužinoti daugiau"
   },
   "icu:verified": {
@@ -574,18 +673,6 @@
   },
   "icu:media": {
     "messageformat": "Medija"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "Šiame pokalbyje nėra jokių įrašų"
-  },
-  "icu:allMedia": {
-    "messageformat": "Visa medija"
-  },
-  "icu:documents": {
-    "messageformat": "Dokumentai"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "Šiame pokalbyje nėra jokių dokumentų"
   },
   "icu:today": {
     "messageformat": "Šiandien"
@@ -626,9 +713,6 @@
   "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Pateikti žurnalą"
   },
-  "icu:Toast--FailedToSendWithEndorsements": {
-    "messageformat": "Failed to send message with endorsements"
-  },
   "icu:Toast--SQLError": {
     "messageformat": "Duomenų bazės klaida: pasidalinkite savo žurnalais."
   },
@@ -644,6 +728,15 @@
   "icu:Toast--ReceiptSaveFailed": {
     "messageformat": "Įrašant kvitą įvyko klaida. Bandykite dar kartą."
   },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Pridėta prie „{chatFolderName}“"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Pašalinta iš „{chatFolderName}“"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Pridėtas pokalbis: {chatFolderName}."
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nuotraukų ir vaizdo įrašų negalima pasirinkti kartu su failais."
   },
@@ -655,6 +748,9 @@
   },
   "icu:fileSizeWarning": {
     "messageformat": "Atleiskite, pasirinktas failas viršija žinutės dydžio apribojimus. {limit,number} {units}"
+  },
+  "icu:videoFileSizeWarning": {
+    "messageformat": "Deja, pasirinktas vaizdo įrašo failas viršija žinutės dydžio apribojimus. {limit,number}{units}"
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "Nepavyko įkelti pasirinkto priedo."
@@ -712,12 +808,6 @@
   },
   "icu:screenShareWindow": {
     "messageformat": "Ekrano bendrinimas"
-  },
-  "icu:callingDeveloperTools": {
-    "messageformat": "Kūrėjo įrankiai skambučiams"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "Šis langas naudojamas kuriant programinę įrangą, kad būtų rodoma vykstančių skambučių diagnostika."
   },
   "icu:speech": {
     "messageformat": "Šneka"
@@ -790,6 +880,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "Atraskite, {whatsNew} šiame atnaujinime"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "„Signal“ yra ne pelno organizacija"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "kas naujo"
@@ -1016,6 +1109,12 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} yra jūsų sistemos kontaktuose"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "Pridėti nario kategoriją"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "Jūsų QR kodas"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "Pastaba"
   },
@@ -1067,6 +1166,15 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Informacija"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "Prisegti"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "Atsegti"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "Baigti apklausą"
+  },
   "icu:PollMessage--SelectOne": {
     "messageformat": "Apklausa · Pasirinkite vieną"
   },
@@ -1082,6 +1190,15 @@
   "icu:PollMessage--YouVoted": {
     "messageformat": "Jūs balsavote"
   },
+  "icu:PollTerminate--you": {
+    "messageformat": "Baigėte apklausą: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "{name} baigė apklausą: {poll}"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "Peržiūrėti apklausą"
+  },
   "icu:PollVotesModal__title": {
     "messageformat": "Apklausos informacija"
   },
@@ -1094,6 +1211,48 @@
   "icu:PollVotesModal__noVotes": {
     "messageformat": "Balsų nėra"
   },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "Laimėjimo galimybė"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "Prisegta žinutė nerasta"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "Apklausa nerasta"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "Nauja apklausa"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "Klausimas"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "Užduokite klausimą"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "Parinktys"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "{number} variantas"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "Leisti balsuoti kelis kartus"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "Siųsti"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "Reikia pateikti apklausos klausimą"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "Apklausai reikia bent 2 variantų"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "Klausimas per ilgas"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "Variantas per ilgas"
+  },
   "icu:deleteConversation": {
     "messageformat": "Ištrinti"
   },
@@ -1102,6 +1261,9 @@
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Visos šio pokalbio žinutės bus ištrintos iš visų jūsų įrenginių."
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync--still-member": {
+    "messageformat": "Visos šio pokalbio žinutės bus ištrintos iš visų jūsų įrenginių. Jūs ir toliau liksite grupės nariu."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Išeiti iš grupės"
@@ -1117,6 +1279,132 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "Prieš išeinant tau reikia parinkti šiai grupei bent vieną naują administratorių."
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "Prisegėte žinutę"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "{sender} prisegė žinutę"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "Eiti į žinutę"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "Prisegti žinutę..."
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 val."
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7 d."
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30 dienų"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "Amžinai"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "Prisegti"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "Pakeisti seniausią prisegtą žinutę?"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "Prisegus šią žinutę, ji pakeis seniausią."
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "Tęsti"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "Prisegamos dingstančios žinutės"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "Dingstančios žinutės bus atsegtos, kai baigsis joms skirtas laikas – tada žinutė bus pašalinta iš pokalbio."
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "Gerai"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {Prisegta žinutė} few {Prisegtos žinutės} many {Prisegtos žinutės} other {Prisegtų žinučių}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "Eiti į {pinNumber,number} prisegtą žinutę"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "Eiti į žinutę"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "Daugiau veiksmų"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "Atsegti"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "Eiti į žinutę"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "Žiūrėti visas žinutes"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "Balso žinutė"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "Failas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "Mokėjimas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "Apklausa"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "Lipdukas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "Vienkartinės peržiūros medija"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "Nuotrauka"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "Vaizdo įrašas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "Balso žinutė"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "Mokėjimas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "Lipdukas"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "Vienkartinės peržiūros medija"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "Prisegtos žinutės"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "Atsegti visas žinutes"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "Atsegti visas žinutes?"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "Žinutės bus atsegtos šio pokalbio nariams."
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "Atsegti"
   },
   "icu:sessionEnded": {
     "messageformat": "Saugusis seansas atstatytas"
@@ -1235,36 +1523,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Nepavyksta atsisiųsti medijos, kurią galima peržiūrėti vieną kartą"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Failas nepasiekiamas"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Visa žinutė nepasiekiama"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Įrašas nepasiekiamas"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Lipdukas nepasiekiamas"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Balso žinutė nepasiekiama"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Šis failas nebuvo perkeltas iš jūsų telefono susiejus šį įrenginį. Įrašų ir failų, kurie įrenginio susiejimo metu yra senesni nei 45 dienos, sinchronizuoti negalima."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Visas šios žinutės tekstas nebuvo perkeltas iš jūsų telefono susiejus šį įrenginį. Ilgų tekstinių žinučių, kurios įrenginio susiejimo metu yra senesnės nei 45 dienos, sinchronizuoti negalima."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Šis įrašas nebuvo perkeltas iš jūsų telefono susiejus šį įrenginį. Įrašų, kurie įrenginio susiejimo metu yra senesni nei 45 dienos, sinchronizuoti negalima."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Šis lipdukas nebuvo perkeltas iš jūsų telefono susiejus šį įrenginį. Įrašų ir failų, kurie įrenginio susiejimo metu yra senesni nei 45 dienos, sinchronizuoti negalima."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Ši balso žinutė nebuvo perkelta iš jūsų telefono susiejus šį įrenginį. Įrašų ir failų, kurie įrenginio susiejimo metu yra senesni nei 45 dienos, sinchronizuoti negalima."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Ši medija, kurią galima peržiūrėti vieną kartą, nebeprieinama. Paprašykite, kad {name} išsiųstų ją dar kartą."
   },
@@ -1331,6 +1589,15 @@
   "icu:Install__support-link": {
     "messageformat": "Reikia pagalbos?"
   },
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "Ištrinti visus duomenis?"
+  },
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "Su šiuo kompiuteriu bandote susieti kitą „Signal“ paskyrą. Jei tęsite, visi šiuo metu „Signal Desktop“ esantys duomenys bus ištrinti."
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "Tęsti"
+  },
   "icu:Preferences--header": {
     "messageformat": "Nustatymai"
   },
@@ -1352,8 +1619,20 @@
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
     "messageformat": "Pridėti pokalbio aplanką"
   },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Pridėkite arba redaguokite aplankus"
+  },
   "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
     "messageformat": "Suskirstykite pokalbius į aplankus ir greitai naršykite juos pokalbių sąraše."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} aplankas} few {{chatFoldersCount,number} aplankai} many {{chatFoldersCount,number} aplanko} other {{chatFoldersCount,number} aplankų}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Nustatyti"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Tvarkyti"
   },
   "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
     "messageformat": "Redaguoti aplanką"
@@ -1370,9 +1649,6 @@
   "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "Ištrinti"
   },
-  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "Atšaukti"
-  },
   "icu:Preferences__ChatFoldersPage__Title": {
     "messageformat": "Pokalbių aplankai"
   },
@@ -1388,14 +1664,14 @@
   "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
     "messageformat": "Sukurti aplanką"
   },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Vilkite, kad perkeltumėte pokalbių aplanką"
+  },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
     "messageformat": "Siūlomi aplankai"
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
     "messageformat": "Pridėti"
-  },
-  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton__Toast": {
-    "messageformat": "Pridėtas pokalbis: {chatFolderTitle}."
   },
   "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
     "messageformat": "Neskaitytos"
@@ -1417,6 +1693,9 @@
   },
   "icu:Preferences__EditChatFolderPage__Title": {
     "messageformat": "Sukurti aplanką"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Redaguoti aplanką"
   },
   "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
     "messageformat": "Aplanko pavadinimas"
@@ -1493,9 +1772,6 @@
   "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "Ištrinti"
   },
-  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "Atšaukti"
-  },
   "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
     "messageformat": "Išsaugoti pakeitimus?"
   },
@@ -1513,6 +1789,21 @@
   },
   "icu:Preferences__EditChatFolderPage__CancelButton": {
     "messageformat": "Atšaukti"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
+    "messageformat": "Rodyti būsenos piktogramą"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
+    "messageformat": "Išsamesnėje žinučių informacijoje rodyti piktogramą tais atvejais, kai jos buvo pristatytos naudojant užantspauduotą siuntėją."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "Automatinis rakto patvirtinimas"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "Įjungus, „Signal“ bandys automatiškai patvirtinti asmeninių pokalbių šifravimą."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "Sužinoti daugiau"
   },
   "icu:initialSync": {
     "messageformat": "Sinchronizuojami adresatai ir grupės"
@@ -1595,6 +1886,12 @@
   "icu:calling__removed-from-call-title": {
     "messageformat": "Pašalinimas iš skambučio"
   },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Šiame skambutyje yra pasiektas didžiausias dalyvių skaičius. Bandykite vėliau."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Skambutis yra pilnas"
+  },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Visi, kurie prisijungs prie šio skambučio per nuorodą, matys jūsų vardą ir nuotrauką."
   },
@@ -1658,6 +1955,27 @@
   "icu:CallingButton--more-options": {
     "messageformat": "Daugiau parinkčių"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "Nutildyti garsą"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "Įjungti garsą"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "Rodyti profilį"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "Pereiti į pokalbį"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "Pašalinti iš skambučio"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "Daugiau veiksmų"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "Pristatinėja"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
     "messageformat": "Patvirtinti prisijungimo prašymą"
   },
@@ -1696,9 +2014,6 @@
   },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, one {{count,number} pakėlė ranką} few {{count,number} pakėlė rankas} many {{count,number} pakėlė rankas} other {{count,number} pakėlė rankas}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "(nuo pirmo iki paskutinio)"
   },
   "icu:CallingReactions--me": {
     "messageformat": "Jūs"
@@ -1889,6 +2204,21 @@
   "icu:deleteAllDataProgress": {
     "messageformat": "Atsijungiama ir ištrinami visi duomenys…"
   },
+  "icu:deleteAccountHeader": {
+    "messageformat": "Ištrinti paskyrą"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "Tai ištrins jūsų paskyros informaciją, profilį ir visas žinutes. Taip pat būsite pašalinti iš visų „Signal“ grupių."
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "Ištrinti paskyrą"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "Ištrinti paskyrą?"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "Tai ištrins jūsų paskyros informaciją, profilį ir visas žinutes. Taip pat būsite pašalinti iš visų „Signal“ grupių. Užbaigus šį procesą, programėlė bus užverta."
+  },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Turi nebenaudojamų duomenų, likusių iš ankstesnio „Signal Desktop“ diegimo. Jei pasirinksi tęsti, jie bus ištrinti ir pradėsi viską nuo nulio."
   },
@@ -1913,11 +2243,26 @@
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} sureagavo {emoji} į „{message}“"
   },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "{sender} balsavo apklausoje „{pollQuestion}“"
+  },
   "icu:sendFailed": {
     "messageformat": "Išsiuntimas nepavyko"
   },
   "icu:deleteFailed": {
     "messageformat": "Nepavyko ištrinti"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "Ištrinti nepavyko, spustelėkite, jei norite sužinoti daugiau"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "Bandyti dar kartą ištrinti žinutę, kurios ištrinti nepavyko?"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "Nepavyko ištrinti žinutės. Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "Bandykite dar kartą"
   },
   "icu:editFailed": {
     "messageformat": "Redaguoti nepavyko; spustelėkite, jei norite sužinoti daugiau"
@@ -1928,8 +2273,8 @@
   "icu:partiallySent": {
     "messageformat": "Dalinai išsiųsta, spustelėkite išsamesnei informacijai"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "Dalinai ištrinta, spustelėk, kad bandytum dar kartą"
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "Iš dalies ištrinta, spustelėkite, jei norite sužinoti daugiau"
   },
   "icu:expiredWarning": {
     "messageformat": "Pasibaigė šios Signal Desktop skirtos versijos galiojimas. Norint tęsti susirašinėjimą, prašome atsinaujinti iki naujausios versijos."
@@ -1948,9 +2293,6 @@
   },
   "icu:syncNow": {
     "messageformat": "Importuoti dabar"
-  },
-  "icu:syncing": {
-    "messageformat": "Importuojama…"
   },
   "icu:syncFailed": {
     "messageformat": "Importavimas nepavyko. Įsitikinkite, kad jūsų kompiuteris ir telefonas yra prijungti prie interneto."
@@ -2066,6 +2408,9 @@
   "icu:ConversationDetails--support-center": {
     "messageformat": "Palaikymo centras"
   },
+  "icu:ConversationDetails__GroupTerminatedBanner": {
+    "messageformat": "Ši grupė buvo uždaryta"
+  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "Rodyti saugumo numerį"
   },
@@ -2130,13 +2475,25 @@
     "messageformat": "Atsisiųsti nepavyko"
   },
   "icu:Toast--unable-download-from-backup-tier": {
-    "messageformat": "Nepavyko atsisiųsti priedo iš atsarginės kopijos"
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "Šioje grupėje narių kategorijas gali pridėti tik administratoriai."
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "Vienkartinė peržiūra įjungta"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "Vienkartinė peržiūra išjungta"
   },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Redaguoti galima ne vėliau kaip per 24 val. nuo šios žinutės išsiuntimo."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} nenaudoja „Signal“. Įsitikinkite, kad įvedėte visą naudotojo vardą."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} nėra galiojantis naudotojo vardas. Įsitikinkite, kad įvedėte visą naudotojo vardą su skaitmenų pora."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Naudotojas nerastas. „{phoneNumber}“ nėra Signal naudotojas."
@@ -2201,6 +2558,12 @@
   "icu:unlinked": {
     "messageformat": "Atsietas"
   },
+  "icu:unregisteredWarning": {
+    "messageformat": "Spustelėkite, jei pageidaujate užsiregistruoti iš naujo ir toliau siųsti žinutes. Gali būti, kad „Signal Desktop“ nebėra registruotas, nes savo telefono numerį „Signal“ užregistravote kitame įrenginyje."
+  },
+  "icu:unregistered": {
+    "messageformat": "Nebėra registruotas"
+  },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "Galimas atnaujinimas"
   },
@@ -2233,6 +2596,27 @@
   },
   "icu:youUpdatedTheGroup": {
     "messageformat": "Jūs atnaujinote grupę."
+  },
+  "icu:collapsedGroupUpdates": {
+    "messageformat": "{count, plural, one {{count,number} grupės atnaujinimas} few {{count,number} grupės atnaujinimai} many {{count,number} grupės atnaujinimo} other {{count,number} grupės atnaujinimų}}"
+  },
+  "icu:multidayCollapse__container": {
+    "messageformat": "{containerDescription} · {dayCountSummary}"
+  },
+  "icu:multidayCollapse__dayCountSummary": {
+    "messageformat": "{dayCount, plural, one {{dayCount,number} diena} few {{dayCount,number} dienos} many {{dayCount,number} dienų} other {{dayCount,number} dienų}}"
+  },
+  "icu:collapsedChatUpdates": {
+    "messageformat": "{count, plural, one {{count,number} pokalbio atnaujinimas} few {{count,number} pokalbio atnaujinimai} many {{count,number} pokalbio atnaujinimo} other {{count,number} pokalbio atnaujinimų}}"
+  },
+  "icu:collapsedTimerChanges": {
+    "messageformat": "{count, plural, one {{count,number} išnykstančių žinučių laikmačio pakeitimas · {endingState}} few {{count,number} išnykstančių žinučių laikmačio pakeitimai · {endingState}} many {{count,number} išnykstančių žinučių laikmačio pakeitimo · {endingState}} other {{count,number} išnykstančių žinučių laikmačio pakeitimų · {endingState}}}"
+  },
+  "icu:collapsedTimerChanges--disabled": {
+    "messageformat": "{count, plural, one {{count,number} išnykstančių žinučių laikmačio pakeitimas · Išjungtas} few {{count,number} išnykstančių žinučių laikmačio pakeitimai · Išjungtas} many {{count,number} išnykstančių žinučių laikmačio pakeitimo · Išjungtas} other {{count,number} išnykstančių žinučių laikmačio pakeitimų · Išjungtas}}"
+  },
+  "icu:collapsedCallEvents": {
+    "messageformat": "{count, plural, one {{count,number} skambučio įvykis} few {{count,number} skambučio įvykiai} many {{count,number} skambučio įvykio} other {{count,number} skambučio įvykių}}"
   },
   "icu:updatedGroupAvatar": {
     "messageformat": "Grupės avataras buvo atnaujintas."
@@ -2291,6 +2675,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Lipduko žinutė"
   },
+  "icu:Poll--preview": {
+    "messageformat": "Apklausa: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2309,8 +2696,14 @@
   "icu:message--getDescription--gif": {
     "messageformat": "GIF"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "Ši žinutė buvo ištrinta."
+  "icu:message--deletedByAdmin": {
+    "messageformat": "Administratorius {admin} ištrynė šią žinutę"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "{name} ištrynė šią žinutę"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "Jūs ištrynėte šią žinutę"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "Priedas nerodomas, nes per didelis."
@@ -2347,6 +2740,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "Tu skyrei paramą {recipient} vardu"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "{sender} prisegė žinutę"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "Prisegėte žinutę"
   },
   "icu:message--donation": {
     "messageformat": "Parama"
@@ -2387,14 +2786,11 @@
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "Nepavyko įdiegti lipdukų paketo"
   },
-  "icu:stickers--StickerManager--Available": {
-    "messageformat": "Galimas"
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "Lipdukų paketų nėra. Pridėkite lipdukų siųsti draugams."
   },
-  "icu:stickers--StickerManager--InstalledPacks": {
-    "messageformat": "Įdiegtas"
-  },
-  "icu:stickers--StickerManager--InstalledPacks--Empty": {
-    "messageformat": "Nėra jokių įdiegtų lipdukų"
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "Pridėti lipdukų"
   },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "Signal menininkų serija"
@@ -2402,14 +2798,17 @@
   "icu:stickers--StickerManager--BlessedPacks--Empty": {
     "messageformat": "Nėra prieinami jokie Signal menininkų lipdukai"
   },
-  "icu:stickers--StickerManager--ReceivedPacks": {
-    "messageformat": "Jūsų gauti lipdukai"
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "Pasidalino su jumis"
   },
-  "icu:stickers--StickerManager--ReceivedPacks--Empty": {
-    "messageformat": "Čia bus rodomi lipdukai iš gaunamų žinučių"
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "Iš kieno nors gavus lipduką, lipdukų paketas bus rodomas čia."
   },
   "icu:stickers--StickerManager--Install": {
     "messageformat": "Įdiegti"
+  },
+  "icu:stickers--StickerManager--Installed": {
+    "messageformat": "Įdiegtas"
   },
   "icu:stickers--StickerManager--Uninstall": {
     "messageformat": "Pašalinti"
@@ -2417,56 +2816,29 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "Jei neturite pradinės žinutės, gali būti, kad negalėsite iš naujo įdiegti šio lipdukų paketo."
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "Pristatome lipdukus: Katiną banditą"
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "Visi"
   },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "Pristatome lipdukus"
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "Mano lipdukai"
   },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "Kam naudoti žodžius, kai galima naudoti lipdukus?"
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "Pridėti"
   },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "Atverti lipdukų parinkiklį"
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "Šalinti"
   },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "Pridėti lipdukų paketą"
+  "icu:stickers--StickerManagerPackDragHandle--Label": {
+    "messageformat": "Vilkite norėdami pakeisti lipdukų paketų tvarką"
   },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "Kitas puslapis"
+  "icu:stickers--StickerManagerBlessedPacksList--Label": {
+    "messageformat": "„Signal“ menininkų serijos lipdukų paketas"
   },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "Ankstesnis puslapis"
+  "icu:stickers--StickerManagerReceivedPacksList--Label": {
+    "messageformat": "Gauti lipdukų paketai"
   },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "Paskiausiai naudoti lipdukai"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "Kai kurių lipdukų atsisiųsti nepavyko."
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "Įdiegiamas lipdukų paketas…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "Nerasta jokių lipdukų"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "Yra prieinami įdiegti nauji lipdukų paketai iš jūsų žinučių"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "Nerasta jokių lipdukų paketų"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "Čia bus rodomi paskiausiai naudoti lipdukai."
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "Paskiausi"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "Pagrindiniai"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "Analoginis laikas"
+  "icu:stickers--StickerManagerInstalledPacksList--Label": {
+    "messageformat": "Įdiegti lipdukų paketai"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Lipdukų paketas"
@@ -2474,44 +2846,29 @@
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "Klaida atveriant lipdukų paketą. Patikrinkite savo interneto ryšį ir bandykite dar kartą."
   },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "Nerasta jokių šypsenėlių"
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "Pridėti lipdukų"
   },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "Uždaryti jaustukų paiešką"
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "Šalinti"
   },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "Ieškoti šypsenėlių"
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "Nuoroda"
   },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "Odos atspalvis {tone}"
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "Nuoroda nukopijuota"
   },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "Paskiausi"
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, one {{count,number} lipdukas} few {{count,number} lipdukai} many {{count,number} lipduko} other {{count,number} lipdukų}}"
   },
-  "icu:EmojiPicker__button--emoji": {
-    "messageformat": "Šypsenėlės"
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "Lipdukas be jaustuko"
   },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "Gyvūnai"
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "{author} lipdukų paketas"
   },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "Maistas"
-  },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "Veiklos"
-  },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "Kelionės"
-  },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "Objektai"
-  },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "Simboliai"
-  },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "Vėliavos"
+  "icu:stickers--ViewPack": {
+    "messageformat": "Peržiūrėti paketą"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Šypsenėlės"
@@ -2622,7 +2979,7 @@
     "messageformat": "Paskiausi"
   },
   "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
-    "messageformat": "Add a sticker pack"
+    "messageformat": "Pridėti lipdukų paketą"
   },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Paieškos rezultatai"
@@ -2639,11 +2996,11 @@
   "icu:FunPanelStickers__LightboxDialog__Label": {
     "messageformat": "Lipduko peržiūra"
   },
-  "icu:FunPanelGifs__SearchLabel--Tenor": {
-    "messageformat": "Ieškoti GIF „Tenor“"
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "Ieškoti GIF"
   },
-  "icu:FunPanelGifs__SearchPlaceholder--Tenor": {
-    "messageformat": "Ieškoti „Tenor“"
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "Ieškoti GIF"
   },
   "icu:FunPanelGifs__SubNavLabel": {
     "messageformat": "GIF kategorijos"
@@ -2690,6 +3047,9 @@
   "icu:FunPanelGifs__LightboxDialog__Label": {
     "messageformat": "GIF peržiūra"
   },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "Sukurta naudojant GIPHY"
+  },
   "icu:FunSearch__ClearButtonLabel": {
     "messageformat": "Išvalyti paiešką"
   },
@@ -2722,6 +3082,18 @@
   },
   "icu:FunButton__Label--StickerPicker": {
     "messageformat": "Pridėti lipduką"
+  },
+  "icu:FunPicker__Label--StickerReply": {
+    "messageformat": "Atsakyti"
+  },
+  "icu:FunPicker__Label--SendStickerReply": {
+    "messageformat": "Siųsti"
+  },
+  "icu:FunPicker__Label--CancelStickerReply": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:FunPicker__Label--Sticker": {
+    "messageformat": "Lipdukas"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "Atšaukti"
@@ -2768,8 +3140,8 @@
   "icu:Message--tap-to-view--incoming--expired-toast": {
     "messageformat": "Jūs jau žiūrėjote šią žinutę."
   },
-  "icu:Message--tap-to-view--outgoing--expired-toast": {
-    "messageformat": "Vienkartinės peržiūros žinutės nesaugomos tavo pokalbio istorijoje."
+  "icu:Message--tap-to-view--outgoing--expired-toast-2": {
+    "messageformat": "Vienkartinės peržiūros įrašas ištrinamas po išsiuntimo"
   },
   "icu:Message--tap-to-view--video": {
     "messageformat": "Vienkartinės peržiūros vaizdo įrašas"
@@ -2978,6 +3350,9 @@
   "icu:Keyboard--toggle-preview": {
     "messageformat": "Perjungti išskleistą peržiūrą"
   },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "Pakelti arba nuleisti ranką (tik grupės skambučiuose)"
+  },
   "icu:Keyboard--accept-video-call": {
     "messageformat": "Atsiliepti su vaizdu (tik vaizdo skambučiams)"
   },
@@ -3035,17 +3410,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "Visi"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "Saugos patarimai"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "Atsargiai vertinkite žinučių užklausas iš nepažįstamų žmonių. Štai į ką reikia atkreipti dėmesį:"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "Neatsakykite į „Signal“ pradėtus pokalbius"
   },
-  "icu:SafetyTipsModal__TipTitle--Fake": {
-    "messageformat": "Netikri vardai ir paskyros"
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "„Signal“ niekada neprašys jūsų pateikti registracijos kodą, PIN ar atkūrimo raktą. Niekada neatsakykite į pokalbius, kuriuose apsimetama „Signal“."
   },
-  "icu:SafetyTipsModal__TipDescription--Fake": {
-    "messageformat": "„Signal“ niekada neprašys jūsų pateikti registracijos kodą ar PIN. Būkite atidūs – naudotojai gali apsimesti kitais žmonėmis. Profilio vardus pasirenka paskyros turėtojai, jie nėra patvirtinti."
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "Peržiūrėkite vardus ir nuotraukas"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "Žiūrėkite, ar nėra pranešimo „Vardas nepatvirtintas“. Programoje „Signal“ kiekvienas nusistato savo profilio vardą."
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "Saugokitės sukčių"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "Neatsakykite į bendro pobūdžio žinutes, kuriomis bandoma iš jūsų išgauti atsakymą. Nepasitikėkite asmenimis, kurie siunčia finansinius patarimus ar įtartinas internetines nuorodas."
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "Neatsakykite į „Signal“ pradėtus pokalbius"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "„Signal“ niekada neprašys jūsų pateikti registracijos kodą, PIN ar atkūrimo raktą. Neatsakykite į pokalbius, kuriuos neva atsiuntė „Signal“ ar „Signal“ palaikymo komanda. Sukčiai sukuria netikrus vardus bandydami perimti jūsų paskyrą."
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "Peržiūrėkite vardus ir nuotraukas"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "Žiūrėkite, ar nėra pranešimo „Vardas nepatvirtintas“. Programoje „Signal“ kiekvienas nusistato savo profilio vardą ir nuotrauką. Jei nesate tikri, nuo ko yra gautas naujas prašymas, geriau nekreipkite į jį dėmesio."
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "Kriptovaliutų ar pinigų sukčiai"
@@ -3059,11 +3455,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "Šlamšto siuntėjai dažnai parašo paprastą žinutę, pvz., „Labas“, kad patrauktų jūsų dėmesį. Jei atsakysite, jie gali bandyti jus dar labiau sudominti."
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "Žinutės su nuorodomis"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "Atsargiai vertinkite žinutes iš nepažįstamų žmonių, kuriose yra nuorodos į svetaines. Niekada nespauskite nuorodų, kurias atsiuntė nepatikimi žmonės."
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "Žinutės su internetinėmis nuorodomis"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "Netikros įmonės ir institucijos"
@@ -3071,17 +3467,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "Atsargiai vertinkite su jumis susisiekti bandančias įmones ar vyriausybines institucijas. Žinutės nuo mokesčių inspekcijos, kurjerių ir pan. gali būti šlamštas."
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "Eiti į {page,number} puslapį"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "Ankstesnis patarimas"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "Kitas patarimas"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "Atlikta"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "Rodyti daugiau"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "Ar norite leisti, kad {name} rašytų jums žinutes, ir bendrinti savo vardą bei nuotrauką su šiuo naudotoju? Naudotojas nežinos, kad matėte jo žinutes tol, kol nesutiksite."
@@ -3179,11 +3566,11 @@
   "icu:MessageRequests--accept": {
     "messageformat": "Priimti"
   },
-  "icu:MessageRequests--accept-confirm-title": {
+  "icu:MessageRequests--accept-confirm-title-v2": {
     "messageformat": "Priimti užklausą?"
   },
-  "icu:MessageRequests--accept-confirm-body": {
-    "messageformat": "Atidžiai peržiūrėkite užklausas. Profilio vardus pasirenka paskyros savininkai, jie nėra patvirtinti."
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "Priimkite prašymus tik iš žmonių, kuriais pasitikite. <bold>„Signal“ niekada</bold> neprašys jūsų pateikti registracijos kodą, PIN ar atkūrimo raktą."
   },
   "icu:MessageRequests--continue": {
     "messageformat": "Tęsti"
@@ -3227,17 +3614,26 @@
   "icu:ConversationHero--group-members-other-and-you": {
     "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3} ir dar <clickable>{remainingCount,number} žmogus</clickable>} few {{member1}, {member2}, {member3} ir dar <clickable>{remainingCount,number} žmonės</clickable>} many {{member1}, {member2}, {member3} ir dar <clickable>{remainingCount,number} žmonių</clickable>} other {{member1}, {member2}, {member3} ir dar <clickable>{remainingCount,number} žmonių</clickable>}}"
   },
-  "icu:ConversationHero--review-carefully": {
-    "messageformat": "Atidžiai peržiūrėkite"
-  },
   "icu:ConversationHero--group-names": {
     "messageformat": "<clickable>Grupių vardai</clickable> nėra patvirtinti"
   },
   "icu:ConversationHero--profile-names": {
     "messageformat": "<clickable>Profilių vardai</clickable> nėra patvirtinti"
   },
+  "icu:ConversationHero--name-not-verified": {
+    "messageformat": "Vardas nepatvirtintas"
+  },
   "icu:ConversationHero--signal-official-chat": {
     "messageformat": "Tai oficialus ir vienintelis pokalbis su „Signal“"
+  },
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "Oficialus pokalbis"
+  },
+  "icu:ConversationHero--signal-official-account--description": {
+    "messageformat": "Tai vienintelis oficialus pokalbis su „Signal“. Sekite naujienas ir informaciją apie naujas versijas."
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "Tai vienintelis oficialus pokalbis su „Signal“."
   },
   "icu:ConversationHero--release-notes": {
     "messageformat": "Sekite naujienas ir informaciją apie naujas versijas."
@@ -3509,17 +3905,11 @@
   "icu:calling__SelectPresentingSourcesModal--window": {
     "messageformat": "Langą"
   },
-  "icu:calling__ParticipantInfoButton": {
-    "messageformat": "Daugiau informacijos apie šį adresatą"
-  },
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "Kopijuoti skambučio nuorodą"
   },
   "icu:CallingAdhocCallInfo__ShareViaSignal": {
     "messageformat": "Bendrinti skambučio nuorodą per „Signal“"
-  },
-  "icu:CallingAdhocCallInfo__RemoveClient": {
-    "messageformat": "Pašalinti šį asmenį iš skambučio"
   },
   "icu:CallingAdhocCallInfo__RemoveClientDialogBody": {
     "messageformat": "Pašalinti {name} iš skambučio?"
@@ -3541,9 +3931,6 @@
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
     "messageformat": "Prieš prisijungdami prie skambučio galite matyti tik telefono adresatų, žmonių, su kuriais esate grupėje, arba žmonių, su kuriais bendravote asmeniškai, vardus. Prisijungę prie skambučio matysite visus vardus ir nuotraukas."
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "Supratau"
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "Vaizdo įrašas"
@@ -3589,9 +3976,6 @@
   },
   "icu:muteExpirationLabel": {
     "messageformat": "Nutildyta iki {duration}"
-  },
-  "icu:EmojiButton__label": {
-    "messageformat": "Šypsenėlės"
   },
   "icu:ErrorModal--title": {
     "messageformat": "Kažkas nutiko!"
@@ -3686,11 +4070,23 @@
   "icu:GroupV2--join--requested": {
     "messageformat": "Jūsų prašymas prisijungti prie grupės buvo išsiųstas grupės administratoriui. Jums bus pranešta, kai jis atliks tam tikrus veiksmus."
   },
+  "icu:GroupV2--join--group-terminated": {
+    "messageformat": "Prie šios grupės prisijungti neįmanoma."
+  },
   "icu:GroupV2--join--general-join-failure--title": {
     "messageformat": "Nuorodos klaida"
   },
   "icu:GroupV2--join--general-join-failure": {
     "messageformat": "Nepavyko prisijungti prie grupės. Vėliau bandykite dar kartą."
+  },
+  "icu:GroupV2--terminate-group-in-progress": {
+    "messageformat": "Uždaroma grupė…"
+  },
+  "icu:TerminateGroupFailedModal__description": {
+    "messageformat": "Nepavyko uždaryti grupės. Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:TerminateGroupFailedModal__try-again": {
+    "messageformat": "Bandykite dar kartą"
   },
   "icu:GroupV2--admin": {
     "messageformat": "Administratorius"
@@ -3767,23 +4163,41 @@
   "icu:GroupV2--access-attributes--all--unknown": {
     "messageformat": "Administratorius pakeitė asmenis, kurie gali keisti grupės informaciją į „Visi nariai“."
   },
-  "icu:GroupV2--access-members--admins--other": {
-    "messageformat": "{adminName} pakeitė asmenis, kurie gali keisti grupės narystes į „Tik administratoriai“."
-  },
   "icu:GroupV2--access-members--admins--you": {
     "messageformat": "Jūs pakeitėte asmenis, kurie gali keisti grupės narystes į „Tik administratoriai“."
+  },
+  "icu:GroupV2--access-members--admins--other": {
+    "messageformat": "{adminName} pakeitė asmenis, kurie gali keisti grupės narystes į „Tik administratoriai“."
   },
   "icu:GroupV2--access-members--admins--unknown": {
     "messageformat": "Administratorius pakeitė asmenis, kurie gali keisti grupės narystes į „Tik administratoriai“."
   },
-  "icu:GroupV2--access-members--all--other": {
-    "messageformat": "{adminName} pakeitė asmenis, kurie gali keisti grupės narystes į „Visi nariai“."
-  },
   "icu:GroupV2--access-members--all--you": {
     "messageformat": "Jūs pakeitėte asmenis, kurie gali keisti grupės narystes į „Visi nariai“."
   },
+  "icu:GroupV2--access-members--all--other": {
+    "messageformat": "{adminName} pakeitė asmenis, kurie gali keisti grupės narystes į „Visi nariai“."
+  },
   "icu:GroupV2--access-members--all--unknown": {
     "messageformat": "Administratorius pakeitė asmenis, kurie gali keisti grupės narystes į „Visi nariai“."
+  },
+  "icu:GroupV2--access-member-label--admins--you": {
+    "messageformat": "Jūs pakeitėte asmenis, kurie gali pridėti narių kategorijas, į „Tik administratoriai“."
+  },
+  "icu:GroupV2--access-member-label--admins--other": {
+    "messageformat": "{adminName} pakeitė asmenis, kurie gali pridėti narių kategorijas, į „Tik administratoriai“."
+  },
+  "icu:GroupV2--access-member-label--admins--unknown": {
+    "messageformat": "Administratorius pakeitė asmenis, kurie gali pridėti narių kategorijas, į „Tik administratoriai“."
+  },
+  "icu:GroupV2--access-member-label--all--you": {
+    "messageformat": "Jūs pakeitėte asmenis, kurie gali pridėti narių kategorijas, į „Visi nariai“."
+  },
+  "icu:GroupV2--access-member-label--all--other": {
+    "messageformat": "{adminName} pakeitė asmenis, kurie gali pridėti narių kategorijas, į „Visi nariai“."
+  },
+  "icu:GroupV2--access-member-label--all--unknown": {
+    "messageformat": "Administratorius pakeitė asmenis, kurie gali pridėti narių kategorijas, į „Visi nariai“."
   },
   "icu:GroupV2--access-invite-link--disabled--you": {
     "messageformat": "Jūs išjungėte administratoriaus patvirtinimus grupės nuorodai."
@@ -4115,6 +4529,15 @@
   "icu:GroupV2--summary": {
     "messageformat": "Pasikeitė šios grupės nariai arba nustatymai."
   },
+  "icu:GroupV2--terminated--you": {
+    "messageformat": "Jūs uždarėte grupę"
+  },
+  "icu:GroupV2--terminated--other": {
+    "messageformat": "{memberName} uždarė grupę"
+  },
+  "icu:GroupV2--terminated--unknown": {
+    "messageformat": "Ši grupė buvo uždaryta"
+  },
   "icu:GroupV1--Migration--disabled--link": {
     "messageformat": "Naujink šią grupę ir aktyvink tokias naujas funkcijas kaip @paminėjimai ir administratoriai. Nariai, kurie nebendrino savo vardo ar nuotraukos šioje grupėje, bus pakviesti prisijungti. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
   },
@@ -4199,29 +4622,23 @@
   "icu:ClearingData__description": {
     "messageformat": "Tai gali šiek tiek užtrukti"
   },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "Išeinama iš grupių…"
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "Priklausomai nuo to, kelių grupių narys esate, tai gali užimti kelias minutes"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "Ištrinama paskyra ir visi duomenys..."
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "Ištrinami naudotojo duomenys ir atstatoma programėlė"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Paaukokite Signal programėlei"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Paaukokite Signal programėlei"
-  },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "Signal veikia dėka tokių žmonių kaip jūs. Prisidėkite ir gaukite ženkliuką."
-  },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "Atverkite savo telefone Signal programėlę"
-  },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "Viršutiniame kairiajame kampe bakstelėkite ant savo profilio nuotraukos, kad būtų atverti Nustatymai"
-  },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "Bakstelėk „Paremti Signal“ ir prenumeruok"
-  },
-  "icu:ProfileMovedModal__title": {
-    "messageformat": "Jūsų profilis perkeltas"
-  },
-  "icu:ProfileMovedModal__description": {
-    "messageformat": "Atidarykite kortelę „Nustatymai“, kad peržiūrėtumėte ir redaguotumėte savo profilį."
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} remia „Signal“"
   },
   "icu:BackupImportScreen__title": {
     "messageformat": "Sinchronizuojamos žinutės"
@@ -4313,9 +4730,6 @@
   "icu:BackupMediaDownloadCancelConfirmation__description": {
     "messageformat": "Jūsų įrašų sinchronizavimas nebaigtas. Jei nuspręsite atšaukti, vėl galėsite sinchronizuoti iš naujo susieję šį įrenginį. <learnMoreLink>Sužinoti daugiau</learnMoreLink>."
   },
-  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Tęsti sinchronizavimą"
-  },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
     "messageformat": "Atšaukti sinchronizavimą"
   },
@@ -4352,8 +4766,17 @@
   "icu:CompositionArea--expand": {
     "messageformat": "Išskleisti"
   },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "Pridėti failą"
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "Nuotraukos ir vaizdo įrašai"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "Failas"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "Apklausa"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "Pridėti priedą arba apklausą"
   },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "Šis žmogus nesinaudoja Signal"
@@ -4379,6 +4802,15 @@
   "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
     "messageformat": "Pakeisti"
   },
+  "icu:CompositionArea--group-terminated": {
+    "messageformat": "Negalite siųsti žinučių, nes grupė buvo uždaryta."
+  },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "Vienkartinė peržiūra"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "Medija, kurią galima peržiūrėti vieną kartą"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "Redaguoti žinutę"
   },
@@ -4390,6 +4822,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "Pašalinti iš administratorių"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "Tai taip pat išvalys jų nario kategoriją."
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "Paskirti administratoriumi"
@@ -4409,6 +4844,30 @@
   "icu:ContactModal--voice": {
     "messageformat": "Skambutis"
   },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "Nutildyti garsą"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "Ar tikrai norite nutildyti {contact}?"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "Nutildyti"
+  },
+  "icu:ContactModal--remove-from-call": {
+    "messageformat": "Pašalinti iš skambučio"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "Narių kategorijos"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "Apibūdinkite save arba savo vaidmenį šioje grupėje naudodami nario kategoriją. Narių kategorijos matomos tik šioje grupėje."
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "Nustatyti kategoriją"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "Redaguoti savo kategoriją"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "Pokalbio spalva"
   },
@@ -4423,6 +4882,36 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "Grupės nuoroda"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "Nario kategorija"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "Įrašykite savo nario kategoriją"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "Apibūdinkite save arba savo vaidmenį šioje grupėje nustatydami nario kategoriją. Narių kategorijos matomos tik šioje grupėje."
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "Peržiūra"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "Sveiki!"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "Grupės nariai su kategorijomis"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "Jokie kiti nariai neturi kategorijų"
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "Nepavyko išsaugoti nario kategorijos"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "Šioje grupėje narių kategorijas gali nustatyti tik administratoriai."
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "Išnykstančios žinutės"
@@ -4454,8 +4943,8 @@
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "Kas gali taisyti grupės informaciją"
   },
-  "icu:ConversationDetails--group-info-info": {
-    "messageformat": "Pasirinkite, kas gali taisyti grupės pavadinimą, nuotrauką, aprašą bei išnykstančių žinučių laikmatį."
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "Pasirinkite, kas gali taisyti grupės pavadinimą, nuotrauką, aprašą, išnykstančių žinučių laikmatį ir prisegtas žinutes."
   },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "Kas gali pridėti narius"
@@ -4469,17 +4958,47 @@
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "Pasirinkite, kas gali siųsti žinutes į grupę."
   },
+  "icu:ConversationDetails--member-label--label": {
+    "messageformat": "Kas gali pridėti narių kategorijas?"
+  },
+  "icu:ConversationDetails--member-label--info": {
+    "messageformat": "Pasirinkite kas gali pridėti narių kategorijas šioje grupėje."
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "Narių kategorijos bus išvalytos"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "Pakeitus šį leidimą į „Tik administratoriai“, bus išvalytos šios grupės narių kategorijos, kurias nustatė ne administratoriai."
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "Tęsti"
+  },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "Prašymai ir pakvietimai"
   },
   "icu:ConversationDetailsActions--leave-group": {
     "messageformat": "Išeiti iš grupės"
   },
+  "icu:ConversationDetailsActions--terminate-group": {
+    "messageformat": "Uždaryti grupę"
+  },
   "icu:ConversationDetailsActions--block-group": {
     "messageformat": "Užblokuoti grupę"
   },
   "icu:ConversationDetailsActions--unblock-group": {
     "messageformat": "Atblokuoti grupę"
+  },
+  "icu:ConversationDetailsActions--report-spam": {
+    "messageformat": "Pranešti apie šlamštą"
+  },
+  "icu:ConversationDetailsActions--archive": {
+    "messageformat": "Archyvuoti pokalbį"
+  },
+  "icu:ConversationDetailsActions--unarchive": {
+    "messageformat": "Išarchyvuoti pokalbį"
+  },
+  "icu:ConversationDetailsActions--delete": {
+    "messageformat": "Ištrinti pokalbį"
   },
   "icu:ConversationDetailsActions--leave-group-must-choose-new-admin": {
     "messageformat": "Prieš išeidami, privalote pasirinkti šiai grupei bent vieną naują administratorių."
@@ -4493,6 +5012,18 @@
   "icu:ConversationDetailsActions--leave-group-modal-confirm": {
     "messageformat": "Išeiti"
   },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-title": {
+    "messageformat": "Uždaryti „{groupName}“?"
+  },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-content": {
+    "messageformat": "Nariai nebegalės siųsti žinučių arba skambinti į grupę. Jiems bus pranešta, kad uždarėte šią grupę, ir jie vis dar turės prieigą prie žinučių istorijos."
+  },
+  "icu:ConversationDetailsActions--terminate-group-modal-confirm": {
+    "messageformat": "Uždaryti grupę"
+  },
+  "icu:ConversationDetailsActions--confirm-terminate-group-confirm-modal-content": {
+    "messageformat": "Tai visam laikui uždarys grupę. Ar tikrai norite tęsti?"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-title": {
     "messageformat": "Atblokuoti grupę „{groupName}\"?"
   },
@@ -4505,26 +5036,41 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "Užblokuoti"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
-    "messageformat": "Tavo adresatai galės pridėti tave į šią grupę"
-  },
   "icu:ConversationDetailsActions--unblock-group-modal-body": {
-    "messageformat": "Your contacts will be able to add you to this group."
+    "messageformat": "Tavo adresatai galės pridėti tave į šią grupę."
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Atblokuoti"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-direct": {
+    "messageformat": "„Signal“ bus pranešta, kad šis asmuo gali siųsti šlamštą. „Signal“ nemato jokių pokalbių turinio."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-group": {
+    "messageformat": "„Signal“ bus pranešta, kad asmuo, pakvietęs jus į šią grupę, gali siųsti šlamštą. „Signal“ nemato jokių pokalbių turinio."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-spam": {
+    "messageformat": "Pranešti apie šlamštą"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-and-block": {
+    "messageformat": "Pranešti ir užblokuoti"
   },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} narys} few {{number,number} nariai} many {{number,number} nario} other {{number,number} narių}}"
   },
   "icu:ConversationDetailsMediaList--title": {
-    "messageformat": "Įrašai ir failai"
+    "messageformat": "Įrašai, nuorodos ir failai"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} narys} few {{number,number} nariai} many {{number,number} nario} other {{number,number} narių}}"
   },
+  "icu:ConversationDetailsMembershipList--terminated-title": {
+    "messageformat": "{number, plural, one {{number,number} ankstesnis narys} few {{number,number} ankstesni nariai} many {{number,number} ankstesnio nario} other {{number,number} ankstesnių narių}}"
+  },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "Pridėti narius"
+  },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "Pridėti nario kategoriją"
   },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "Rodyti visus"
@@ -4670,14 +5216,11 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "Persiųsti pasirinktas žinutes"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, one {Ištrinti žinutę?} few {Ištrinti {count,number} žinutes?} many {Ištrinti {count,number} žinutės?} other {Ištrinti {count,number} žinučių?}}"
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, one {Ištrinti pažymėtą žinutę?} few {Ištrinti {count,number} pažymėtas žinutes?} many {Ištrinti {count,number} pažymėtos žinutės?} other {Ištrinti {count,number} pažymėtų žinučių?}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, one {Kokiam žmogui norėtum ištrinti šią žinutę?} few {Kokiam žmogui norėtum ištrinti šias žinutes?} many {Kokiam žmogui norėtum ištrinti šias žinutes?} other {Kokiam žmogui norėtum ištrinti šias žinutes?}}"
-  },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, one {Iš kokių įrenginių norėtum ištrinti šią žinutę?} few {Iš kokių įrenginių norėtum ištrinti šias žinutes?} many {Iš kokių įrenginių norėtum ištrinti šias žinutes?} other {Iš kokių įrenginių norėtum ištrinti šias žinutes?}}"
   },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
     "messageformat": "{count, plural, one {Ši žinutė bus ištrinta iš visų jūsų įrenginių.} few {Šios žinutės bus ištrintos iš visų jūsų įrenginių.} many {Šios žinutės bus ištrintos iš visų jūsų įrenginių.} other {Šios žinutės bus ištrintos iš visų jūsų įrenginių.}}"
@@ -4685,20 +5228,42 @@
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "Ištrinti man"
   },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "Ištrinti iš šio įrenginio"
-  },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "Ištrinti visiems"
   },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "Ištrinti iš visų įrenginių"
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "Ištrinti visiems?"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, one {Kadangi esate administratorius, grupės nariai matys, kad ištrynėte šią žinutę.} few {Kadangi esate administratorius, grupės nariai matys, kad ištrynėte šias žinutes.} many {Kadangi esate administratorius, grupės nariai matys, kad ištrynėte šias žinutes.} other {Kadangi esate administratorius, grupės nariai matys, kad ištrynėte šias žinutes.}}",
+    "ignoreUnused": true
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
+    "messageformat": "{count, plural, one {Naujausias „Signal“ versijas naudojantys grupės nariai matys, kad jūs ištrynėte šią žinutę.} few {Naujausias „Signal“ versijas naudojantys grupės nariai matys, kad jūs ištrynėte šias žinutes.} many {Naujausias „Signal“ versijas naudojantys grupės nariai matys, kad jūs ištrynėte šias žinutes.} other {Naujausias „Signal“ versijas naudojantys grupės nariai matys, kad jūs ištrynėte šias žinutes.}}"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
     "messageformat": "Ištrinti"
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, one {Gali pasirinkti ištrinti visiems ne daugiau kaip {count,number} žinutę} few {Gali pasirinkti ištrinti visiems ne daugiau kaip {count,number} žinutes} many {Gali pasirinkti ištrinti visiems ne daugiau kaip {count,number} žinutės} other {Gali pasirinkti ištrinti visiems ne daugiau kaip {count,number} žinučių}}"
+  },
+  "icu:DiscardDraftDialog__title": {
+    "messageformat": "Atmesti juodraštį?"
+  },
+  "icu:DiscardDraftDialog__description": {
+    "messageformat": "Šio veiksmo nebus galima atšaukti."
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "Ištrinti elementą?"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "Tai negrįžtamai ištrins elementą. Visos su šiuo elementu susietos žinutės taip pat bus ištrintos."
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "Ištrinti"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "Atšaukti"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "Galima persiųsti ne daugiau kaip 30 žinučių"
@@ -4802,7 +5367,10 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "Naudok šią nuorodą prisijungti prie „Signal“ skambučio: {url}"
   },
-  "icu:MessageRequestWarning__safety-tips": {
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "Atidžiai peržiūrėkite prašymus"
+  },
+  "icu:MessageRequestWarning__safety-tips-v2": {
     "messageformat": "Saugos patarimai"
   },
   "icu:ContactSpoofing__same-name--link": {
@@ -5011,6 +5579,84 @@
   },
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "Pridėk grupės aprašymą…"
+  },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "Balso žinutė"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "Garso įrašas"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "Adresatas"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "Atverti nuorodą naršyklėje"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "Rodyti žinutę pokalbyje"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "Garso įrašas"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "Failai"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "Nuorodos"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "Rikiuoti pagal"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "Rikiuoti pagal"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "Data"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "Dydis"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "Nėra medijos"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "Čia bus rodomos jūsų siunčiamos ir gaunamos nuotraukos, vaizdo įrašai ir GIF failai"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "Garso įrašų nėra"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "Čia bus rodomos jūsų siunčiamos ir gaunamos balso žinutės ir garso failai"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "Nuorodų nėra"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "Čia bus rodomos jūsų siunčiamos ir gaunamos nuorodos"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "Failų nėra"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "Čia bus rodomi jūsų siunčiami ir gaunami failai"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "Peržiūrėti pokalbyje"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "Persiųsti"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "Įrašyti"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "Siųsti žinutę"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "Kopijuoti nuorodą"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "Ištrinti"
   },
   "icu:MediaQualitySelector--button": {
     "messageformat": "Pasirinkti medijos kokybę"
@@ -5225,6 +5871,10 @@
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "administratoriai"
   },
+  "icu:Avatar__View": {
+    "messageformat": "Žiūrėti",
+    "limit": 7
+  },
   "icu:AvatarEditor--choose": {
     "messageformat": "Pasirinkti avatarą"
   },
@@ -5303,15 +5953,6 @@
   "icu:Preferences__button--set-up": {
     "messageformat": "Nustatyti"
   },
-  "icu:Preferences__internal__local-backups": {
-    "messageformat": "Vietinės atsarginės kopijos"
-  },
-  "icu:Preferences__internal__export-local-backup": {
-    "messageformat": "Eksportuoti…"
-  },
-  "icu:Preferences__internal__export-local-backup--description": {
-    "messageformat": "Eksportuoti vietinę užšifruotą atsarginę kopiją į aplanką ir ją patvirtinti"
-  },
   "icu:Preferences__internal__validate-backup--description": {
     "messageformat": "Eksportuokite užšifruotą atsarginę kopiją į atmintį ir paleiskite joje patvirtinimo rinkinį"
   },
@@ -5330,8 +5971,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "Generuoti nuorodų peržiūras"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "Jei nori pakeisti šį nustatymą, atverk „Signal“ savo mobiliajame įrenginyje ir eik čia: Nustatymai > Pokalbiai"
+  "icu:Preferences__link-previews--new-description": {
+    "messageformat": "Gauti savo siunčiamoms žinutėms nuorodų peržiūras tiesiogiai iš internetinių svetainių."
+  },
+  "icu:Preferences__address-book-photos--title": {
+    "messageformat": "Naudoti adresų knygos nuotraukas"
+  },
+  "icu:Preferences__address-book-photos--description": {
+    "messageformat": "Jei prieinama, rodyti adresatų nuotraukas iš jūsų adresų knygos."
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "Konvertuoti tekstinius jaustukus į paveikslėlius"
@@ -5351,8 +5998,362 @@
   "icu:Preferences--notification-content": {
     "messageformat": "Pranešimų turinys"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "Eksportuoti pokalbių istoriją"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "Eksportuoti visus pokalbius kompiuterio skaitomu JSON formatu. Dingstančios žinutės nebus eksportuotos."
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "Eksportuoti"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "Eksportuoti pokalbių istoriją?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>BŪKITE ATSARGŪS!</bold> NESIDALYKITE šiuo failu su niekuo. Jūsų pokalbių istorija bus išsaugota jūsų kompiuteryje ir ją galės pasiekti kitos programos, priklausomai nuo jūsų kompiuterio leidimų."
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "Įtraukti įrašus <secondary>(didesnius failus )</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "Tęsti"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "eksportuoti pokalbių istoriją"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "Patvirtinkite savo tapatybę, kad galėtumėte eksportuoti pokalbių istoriją."
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "Eksportuoti"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "Norint eksportuoti pokalbių istoriją, reikalingas autentifikavimas."
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "Eksportuojama pokalbių istorija"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "Eksportuojame {currentBytes} iš {totalBytes} ({percentage,number,percent})..."
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "Tai gali šiek tiek užtrukti"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "Eksportavimas atliktas"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>BŪKITE ATSARGŪS</bold> rinkdamiesi vietą, kur išsaugoti eksportuotą pokalbių istoriją, ir nesidalykite ja su niekuo. Priklausomai nuo jūsų kompiuterio leidimų, ją galės pasiekti kitos programos. "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Rodyti „Finder“"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "Rodyti aplanke"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "Rodyti aplanke"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "Nepavyko eksportuoti pokalbių istorijos"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "Įvyko klaida ir nepavyko eksportuoti pokalbių istorijos."
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "Nepakanka vietos saugykloje"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "Jūsų pokalbių istorijos negalima eksportuoti, nes jūsų kompiuterio saugykloje nėra pakankamai laisvos vietos. Atlaisvinkite {bytes} vietos ir bandykite dar kartą."
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "Nepavyko eksportuoti pokalbių istorijos"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "Jūsų pokalbių istorijos negalima eksportuoti, nes jūsų kompiuterio saugykloje nėra pakankamai laisvos vietos. Atlaisvinkite {bytes} vietos ir bandykite dar kartą."
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "Nepavyksta eksportuoti pokalbių istorijos"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "Jūsų pokalbių istorijos negalima eksportuoti, nes „Signal“ neturi leidimo įrašyti failus į diską. Pabandykite pakeisti disko leidimus arba atnaujinti sistemos nustatymus ir tada eksportuoti dar kartą."
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "Eksportuojama atsarginė kopija"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "Atsarginės kopijos eksportavimas baigtas"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "Norėdami atkurti šią atsarginę kopiją:"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "Perkelkite atsarginių kopijų aplanką į telefono saugyklą."
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "Įdiekite naują „Signal“ kopiją savo telefone."
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "Palieskite „Atkurti arba perkelti“ ir pasirinkite „Atsarginė kopija įrenginyje“."
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Mėnulio piktograma"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "{profileName} kopija"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Pranešimų profilis"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Pranešimų profilis"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Įjungta"
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Įjungtas iki {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Vienai valandai"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Iki {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Nustatymai"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "„{name}“ įjungtas"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "„{name}“ išjungtas"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Pranešimų profilis dabar įjungtas"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Pranešimų profilis dabar išjungtas"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Pranešimų profiliai"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Nustatyti"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Pranešimų profiliai"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Sukurkite profilį, kad gautumėte pranešimus ir skambučius tik iš jūsų pasirinktų žmonių ir grupių"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Tęsti"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Pridėti arba taisyti pranešimų profilius"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {Vienas profilis} few {{profileCount,number} profiliai} many {{profileCount,number} profilio} other {{profileCount,number} profilių}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Sukurti profilį"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Suteikite profiliui pavadinimą"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Vardas"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Profilio vardas"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Darbo"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Miegas"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Vairavimas"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Laisvas laikas"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Susikaupimo laikas"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Leidžiami pranešimai"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Pridėkite žmones ir grupes, iš kurių, įjungus šį profilį, norite gauti pranešimus."
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Pridėti žmones ar grupes"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Išimtys"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Leisti visus skambučius"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Pranešti apie visus paminėjimus"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Pridėkite tvarkaraštį"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Tvarkaraštis"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Įjunkite ir redaguokite savo tvarkaraštį, kad automatizuotumėte pranešimų profilį."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Įjungti automatiškai"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Tvarkaraštis"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Nuo"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Iki"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Atverti laiko parinkiklį"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Sekmadienis"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Pirmadienis"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Antradienis"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Trečiadienis"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Ketvirtadienis"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Penktadienis"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Šeštadienis"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Profilis sukurtas"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Jei pridėjote tvarkaraštį, jūsų profilis įsijungs ir išsijungs automatiškai. Taip pat galite spustelėti ··· piktogramą pokalbių sąrašo viršuje, kad jį įjungtumėte arba išjungtumėte rankiniu būdu."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "Sekm."
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Pirm."
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Antr."
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "Treč."
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Ketv."
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Penkt."
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "Šešt."
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Darbo dienomis"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Savaitgaliais"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Kasdien"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Profiliai"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Sinchronizuoti skirtinguose įrenginiuose"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Jūsų profiliai bus sinchronizuoti visuose jūsų įrenginiuose. Įjungus profilį viename įrenginyje, jis bus įjungtas ir kituose."
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Ištrinti profilį"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Ar ištrinti šį pranešimų profilį visiems laikams?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Ištrinti"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Įjungta"
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Išjungta"
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Redaguoti šio profilio pavadinimą"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Leidžiami pranešimai"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "Nuo {startTime} iki {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Įjungta"
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Išjungta"
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Užblokuota"
+  },
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { Jokių naudotojų ar grupių } one {{num,number} naudotojas ar grupė} few {{num,number} naudotojai ar grupės} many {{num,number} naudotojo ar grupių} other {{num,number} naudotojų ar grupių}}"
+  },
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { Jokių naudotojų } one {{num,number} naudotojas} few {{num,number} naudotojai} many {{num,number} naudotojo} other {{num,number} naudotojų}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { Jokių grupių } one {{num,number} grupė} few {{num,number} grupės} many {{num,number} grupės} other {{num,number} grupių}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "Užblokuoti naudotojai negalės jums skambinti ar siųsti žinučių"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "Užblokuoti naudotojai"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "Užblokuotos grupės"
   },
   "icu:Preferences--signal-backups": {
     "messageformat": "„Signal“ saugiosios atsarginės kopijos"
@@ -5370,7 +6371,7 @@
     "messageformat": "Žinučių ir visų įrašų atsarginė kopija"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Prenumerata nerasta. Atnaujinkite, kad galėtumėte toliau naudoti „Signal“ saugiąsias atsargines kopijas."
+    "messageformat": "Prenumerata nerasta. Patikrinkite savo telefoną, kad peržiūrėtumėte atsarginės kopijos informaciją."
   },
   "icu:Preferences--backup-subscription-monthly-cost": {
     "messageformat": "{cost}/mėnesį"
@@ -5409,13 +6410,13 @@
     "messageformat": "Darbalaukio atsarginės kopijos"
   },
   "icu:Preferences__local-backups-section__description": {
-    "messageformat": "Atsarginės kopijos yra šifruojamos naudojant raktą ir yra laikomos jūsų įrenginyje."
+    "messageformat": "Jūsų atsarginė kopija yra visiškai užšifruota ir saugoma jūsų kompiuteryje."
   },
   "icu:Preferences--local-backups-off-description": {
     "messageformat": "Sukurkite visiškai užšifruotą atsarginę kopiją, kurią galėsite atkurti savo telefone. "
   },
   "icu:Preferences--local-backups-restore-info": {
-    "messageformat": "Norėdami atkurti atsarginę kopiją, įsidiekite naują „Signal“ kopiją. Atverkite programėlę ir bakstelėkite „Atkurti atsarginę kopiją“, tada eikite į atsarginės kopijos aplanką. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
+    "messageformat": "Norėdami atkurti atsarginę kopiją, telefone įsidiekite naują „Signal“ kopiją. Atverkite programėlę ir bakstelėkite „Atkurti arba perkelti“. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
   },
   "icu:Preferences--local-backups-setup-folder": {
     "messageformat": "Pasirinkti aplanką"
@@ -5429,23 +6430,50 @@
   "icu:Preferences--local-backups-view-backup-key-done": {
     "messageformat": "Atlikta"
   },
-  "icu:Preferences--local-backups-backup-key-text-box": {
-    "messageformat": "Atsarginės kopijos rakto teksto laukas"
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--mac": {
+    "messageformat": "parodyti jūsų atkūrimo raktą"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--windows": {
+    "messageformat": "Patvirtinkite savo tapatybę, kad galėtumėte peržiūrėti atkūrimo raktą."
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-description--linux": {
+    "messageformat": "Rodyti atkūrimo raktą"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-message--linux": {
+    "messageformat": "Norint peržiūrėti atkūrimo raktą, reikalingas autentifikavimas."
+  },
+  "icu:Preferences--local-backups-recovery-key-text-box": {
+    "messageformat": "Atkūrimo raktas"
   },
   "icu:Preferences--local-backups-enter-backup-key": {
     "messageformat": "Įvesti raktą"
   },
-  "icu:Preferences--local-backups-record-backup-key": {
-    "messageformat": "Užsirašykite savo atsarginės kopijos raktą"
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "Jūsų atkūrimo raktas"
   },
-  "icu:Preferences--local-backups-record-backup-key-description": {
-    "messageformat": "Šis raktas reikalingas norint atkurti paskyrą ir duomenis. Išsaugokite jį saugioje vietoje. Pamiršę raktą savo paskyros atkurti negalėsite. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "Šis raktas reikalingas norint atkurti paskyrą ir duomenis. Išsaugokite jį saugioje vietoje ir niekada nesidalykite juo su kitais. „Signal“ niekada neprašys jūsų pateikti atkūrimo raktą. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
   },
-  "icu:Preferences--local-backups-confirm-backup-key": {
-    "messageformat": "Patvirtinkite atsarginės kopijos raktą"
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "Nesidalinkite atkūrimo raktu"
   },
-  "icu:Preferences--local-backups-confirm-backup-key-description": {
-    "messageformat": "Įveskite ką tik įrašytą atsarginės kopijos raktą"
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "Supratau"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "Dalintis raktu"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "Nesidalinkite raktu"
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "Su niekuo nesidalinkite savo atkūrimo raktu. Antraip šie asmenys galės perimti jūsų paskyrą. <strong>„Signal“ niekada neprašys jūsų</strong> pateikti atkūrimo raktą. Niekada neatsakykite į pokalbius, kuriuose apsimetama „Signal“. <learnMoreLink>Sužinoti daugiau.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key": {
+    "messageformat": "Patvirtinkite atkūrimo raktą"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key-description": {
+    "messageformat": "Įveskite ką tik įrašytą atkūrimo raktą"
   },
   "icu:Preferences__local-backups-confirm-key-modal-title": {
     "messageformat": "Saugokite savo raktą"
@@ -5459,35 +6487,74 @@
   "icu:Preferences--local-backups-see-backup-key-again": {
     "messageformat": "Rodyti raktą dar kartą"
   },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "Paskutinė atsarginė kopija"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "Niekada"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "Daryti atsarginę kopiją dabar"
+  },
   "icu:Preferences__local-backups-folder": {
     "messageformat": "Atsarginių kopijų aplankas"
   },
-  "icu:Preferences__local-backups-folder__change": {
-    "messageformat": "Keisti"
+  "icu:Preferences__local-backups-turn-off": {
+    "messageformat": "Išjungti atsargines kopijas"
+  },
+  "icu:Preferences__local-backups-turn-off-action": {
+    "messageformat": "Išjungti"
+  },
+  "icu:Preferences__local-backups-turn-off-confirmation": {
+    "messageformat": "Šiame kompiuteryje nebegalėsite kurti atsarginių kopijų, nebent vėl jas įjungsite."
+  },
+  "icu:Preferences__local-backups-turn-off-delete": {
+    "messageformat": "Ištrinti mano atsarginę kopiją iš šio kompiuterio"
   },
   "icu:Preferences__local-backups-copy-key": {
     "messageformat": "Kopijuoti į iškarpinę"
   },
-  "icu:Preferences__local-backups-copied-key": {
-    "messageformat": "Atsarginės kopijos raktas nukopijuotas"
+  "icu:Preferences__local-backups-copied-recovery-key": {
+    "messageformat": "Atkūrimo raktas nukopijuotas"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "Įjungti atsargines kopijas"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "Patvirtinkite savo tapatybę, kad įjungtumėte atsargines kopijas."
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "Įjungti atsargines kopijas"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "Norint įjungti atsargines kopijas, reikalingas autentifikavimas."
+  },
+  "icu:Preferences__local-backups-auth-error--unauthorized": {
+    "messageformat": "Šio veiksmo atlikti nepavyko, nes nepavyko sistemos autentifikavimas. Bandykite dar kartą arba atverkite „Signal“ programėlę mobiliajame įrenginyje ir norėdami peržiūrėti atkūrimo raktą eikite į „Atsarginės kopijos nustatymai“."
+  },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "Prašant sistemos patvirtinti šį veiksmą įvyko klaida."
   },
   "icu:Preferences__view-key": {
     "messageformat": "Peržiūrėti raktą"
   },
-  "icu:Preferences__backup-key": {
-    "messageformat": "Atsarginės kopijos raktas"
+  "icu:Preferences__recovery-key": {
+    "messageformat": "Atkūrimo raktas"
   },
-  "icu:Preferences__backup-key-description": {
-    "messageformat": "Jūsų atsarginės kopijos raktas yra 64 skaitmenų kodas, naudojamas atsarginei kopijai atkurti."
+  "icu:Preferences__recovery-key-description": {
+    "messageformat": "Jūsų atkūrimo raktas yra 64 skaitmenų kodas, naudojamas atsarginei kopijai atkurti."
   },
   "icu:Preferences__backup-other-ways": {
     "messageformat": "Kiti atsarginės kopijos kūrimo būdai"
   },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, one {{num,number} adresatas} few {{num,number} adresatai} many {{num,number} adresato} other {{num,number} adresatų}}"
+  "icu:Preferences__recovery-key-updated__title": {
+    "messageformat": "Jūsų atkūrimo raktas pasikeitė"
   },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "Norėdami keisti šiuos nustatymus, atverkite Signal programėlę savo mobiliajame įrenginyje ir pereikite į Nustatymai > Privatumas"
+  "icu:Preferences__recovery-key-updated__description": {
+    "messageformat": "Jūsų atkūrimo raktas atnaujintas. Bet kokias kitas kuriamas atsargines kopijas galima atkurti naujuoju atkūrimo raktu."
+  },
+  "icu:Preferences__recovery-key-updated__view-key": {
+    "messageformat": "Peržiūrėti naują raktą"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "Telefono numeris"
@@ -5546,8 +6613,14 @@
   "icu:Preferences--read-receipts": {
     "messageformat": "Pranešimai apie žinučių skaitymą"
   },
+  "icu:Preferences--read-receipts--description": {
+    "messageformat": "Išjungę nebegalėsite matyti kitų žmonių perskaitymo pranešimų."
+  },
   "icu:Preferences--typing-indicators": {
     "messageformat": "Rašymo indikatoriai"
+  },
+  "icu:Preferences--typing-indicators--description": {
+    "messageformat": "Išjungę nebegalėsite matyti kitų žmonių rašymo indikatorių."
   },
   "icu:Preferences--updates": {
     "messageformat": "Atnaujinimai"
@@ -5627,6 +6700,12 @@
   "icu:DialogUpdate__downloaded": {
     "messageformat": "Naujinys atsisiųstas"
   },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "Spustelėkite eiti į „App Store“"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "Spustelėkite eiti į „App Store“"
+  },
   "icu:CriticalIdlePrimaryDevice__title": {
     "messageformat": "Atverkite savo telefone Signal programėlę"
   },
@@ -5665,6 +6744,411 @@
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Nepavyko atnaujinti „Signal Desktop“, bet gali atsisiųsti naują versiją. Eik į {downloadUrl} ir įdiek naują versiją rankiniu būdu, o tada kreipkis į aptarnavimo komandą arba pranešk apie šią problemą."
+  },
+  "icu:StandaloneRegistration--signal-logo": {
+    "messageformat": "„Signal“ logotipas"
+  },
+  "icu:StandaloneRegistration--back": {
+    "messageformat": "Atgal"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--header": {
+    "messageformat": "Telefono numeris"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-1": {
+    "messageformat": "Įveskite savo telefono numerį, kad patvirtintumėte paskyrą."
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-2": {
+    "messageformat": "Gali būti taikomi operatoriaus mokesčiai."
+  },
+  "icu:StandaloneRegistration--PhoneNumber--waiting": {
+    "messageformat": "Bandykite už {duration}"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--placeholder": {
+    "messageformat": "Telefono numeris"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--button": {
+    "messageformat": "Tęsti"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--description": {
+    "messageformat": "Ar jūsų telefono numeris aukščiau yra teisingas?"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--cancel": {
+    "messageformat": "Taisyti numerį"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--confirm": {
+    "messageformat": "Taip"
+  },
+  "icu:StandaloneRegistration--Captcha--header": {
+    "messageformat": "Norėdami tęsti patvirtinkite, kad esate žmogus"
+  },
+  "icu:StandaloneRegistration--Captcha--description": {
+    "messageformat": "Siekdami neleisti brukalo „Signal“ programėlėje, prašome jūsų užbaigti patvirtinimą. Patvirtinę galėsite tęsti registraciją."
+  },
+  "icu:StandaloneRegistration--Captcha--retry-button": {
+    "messageformat": "Kartoti patvirtinimą"
+  },
+  "icu:StandaloneRegistration--Captcha--button": {
+    "messageformat": "Patvirtinti naršyklėje"
+  },
+  "icu:StandaloneRegistration--Captcha--button--wait": {
+    "messageformat": "Patvirtinkite už {duration}"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--header": {
+    "messageformat": "Reikalingas tolesnis patvirtinimas"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--description": {
+    "messageformat": "Norėdami tęsti registraciją užbaikite dar vieną CAPTCHA."
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--retry": {
+    "messageformat": "Kartoti patvirtinimą"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--aria-title": {
+    "messageformat": "Bandykite vėliau"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-1": {
+    "messageformat": "Šiuo metu negalima užbaigti patvirtinimo."
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-2": {
+    "messageformat": "Bandykite dar kartą už {duration}."
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--header": {
+    "messageformat": "Patvirtinimo klaida"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--description": {
+    "messageformat": "Norėdami tęsti registraciją bandykite patvirtinti dar kartą."
+  },
+  "icu:StandaloneRegistration--Captcha--Error--try-again": {
+    "messageformat": "Bandykite dar kartą"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--VerificationCode--header": {
+    "messageformat": "Patvirtinimo kodas"
+  },
+  "icu:StandaloneRegistration--VerificationCode--description": {
+    "messageformat": "Įveskite kodą, kurį išsiuntėme į {phoneNumber}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--button": {
+    "messageformat": "Tęsti"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms": {
+    "messageformat": "Siųsti kodą iš naujo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms--duration": {
+    "messageformat": "Siųsti kodą iš naujo po {duration}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me": {
+    "messageformat": "Paskambinkite man"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me--duration": {
+    "messageformat": "Paskambinkite man po {duration}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--wrong-number": {
+    "messageformat": "Neteisingas numeris?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--having-trouble": {
+    "messageformat": "Nepavyksta prisiregistruoti?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--aria-title": {
+    "messageformat": "Neteisingas kodas"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--description": {
+    "messageformat": "Įvedėte neteisingą kodą. Peržiūrėkite 6 skaitmenų kodą ir bandykite vėl."
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--aria-title": {
+    "messageformat": "Neteisingas kodas"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--description": {
+    "messageformat": "Įvedėte neteisingą kodą. Prašykite dar vieno kodo ir bandykite vėl."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--resend-button": {
+    "messageformat": "Siųsti kodą iš naujo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--edit-number-button": {
+    "messageformat": "Taisyti numerį"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--aria-title": {
+    "messageformat": "Nepavyko išsiųsti SMS"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--description": {
+    "messageformat": "Mums nepavyko tau išsiųsti patvirtinimo kodo SMS žinute. Pabandyk gauti savo kodą balso skambučiu."
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--confirm": {
+    "messageformat": "Balso skambutis"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--aria-title": {
+    "messageformat": "Bandykite vėliau"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--description": {
+    "messageformat": "Atlikote per daug bandymų įvesti kodą. Bandykite dar kartą už {duration}."
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--aria-title": {
+    "messageformat": "Per daug bandymų"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--description": {
+    "messageformat": "Atlikote per daug bandymų įvesti kodą. Prašykite dar vieno kodo ir bandykite vėl."
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--resend-button": {
+    "messageformat": "Siųsti kodą iš naujo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--edit-number-button": {
+    "messageformat": "Taisyti numerį"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--aria-title": {
+    "messageformat": "Nepavyko paskambinti"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--description": {
+    "messageformat": "Nepavyko paskambinti jūsų įvestu telefono numeriu. Įsitikinkite, kad telefono numeris yra teisingas, ir bandykite vėl."
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--ok-button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--aria-title": {
+    "messageformat": "Negalima išsiųsti kodo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--description": {
+    "messageformat": "Jūsų įvestu telefono numeriu patvirtinimo kodo išsiųsti negalima. Įsitikinkite, kad įvedėte teisingą numerį, arba bandykite įvesti kitą."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--ok-button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--aria-title": {
+    "messageformat": "Bandykite vėliau"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--description": {
+    "messageformat": "Įvyko klaida ir nepavyko išsiųsti patvirtinimo kodo. Bandykite dar kartą už {duration}."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--ok-button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--header": {
+    "messageformat": "Nusistatykite savo profilį"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--description": {
+    "messageformat": "Profiliai matomi adresatams, grupėms ir tiems, kam siunti žinutes."
+  },
+  "icu:StandaloneRegistration--ProfileEntry--learn-more": {
+    "messageformat": "Sužinoti daugiau"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--add-photo": {
+    "messageformat": "Pridėti nuotrauką"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--first-name": {
+    "messageformat": "Vardas (būtinas)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--last-name": {
+    "messageformat": "Pavardė (nebūtina)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability": {
+    "messageformat": "Kas gali mane rasti pagal telefono numerį"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--change-button": {
+    "messageformat": "Keisti"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--done-button": {
+    "messageformat": "Atlikta"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--continue": {
+    "messageformat": "Tęsti"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--AvatarModal--header": {
+    "messageformat": "Jūsų avataras"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--header": {
+    "messageformat": "Įveskite savo PIN kodą"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--description": {
+    "messageformat": "Įveskite savo paskyrai sukurtą PIN kodą. Tai yra kas kita, nei jūsų SMS patvirtinimo kodas. <needHelp>Reikia pagalbos?</needHelp>"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--placeholder": {
+    "messageformat": "Įveskite savo PIN kodą"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin": {
+    "messageformat": "Neteisingas PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin--with-count": {
+    "messageformat": "{triesRemaining, plural, one {Neteisingas PIN kodas. Liko {triesRemaining,number} bandymas.} few {Neteisingas PIN kodas. Liko {triesRemaining,number} bandymai.} many {Neteisingas PIN kodas. Liko {triesRemaining,number} bandymų.} other {Neteisingas PIN kodas. Liko {triesRemaining,number} bandymas.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--just-count": {
+    "messageformat": "{triesRemaining, plural, one {Liko {triesRemaining,number} bandymas.} few {Liko {triesRemaining,number} bandymai.} many {Liko {triesRemaining,number} bandymų.} other {Liko {triesRemaining,number} bandymas.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--header": {
+    "messageformat": "Reikia pagalbos?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--no-reglock": {
+    "messageformat": "Jūsų PIN yra 4+ skaitmenų kodas, kurį susikūrėte iš skaitmenų arba iš skaitmenų ir raidžių. Jei neprisimenate savo PIN kodo, galite susikurti naują. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--reglock": {
+    "messageformat": "Jūsų PIN yra 4+ skaitmenų kodas, kurį susikūrėte iš skaitmenų arba iš skaitmenų ir raidžių. Jei neprisimenate savo PIN kodo, turėsite palaukti 7 dienas, kol galėsite iš naujo registruotis. <learnMore>Sužinoti daugiau</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--skip-button--no-reglock": {
+    "messageformat": "Praleisti ir sukurti naują PIN kodą"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--contact-support-button": {
+    "messageformat": "Susisiekti su palaikymu"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--header": {
+    "messageformat": "Neteisingas PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--no-reglock": {
+    "messageformat": "{triesRemaining, plural, one {Jums liko {triesRemaining,number} bandymas. Jei išnaudosite visus bandymus, galėsite susikurti naują PIN kodą. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>.} few {Jums liko {triesRemaining,number} bandymai. Jei išnaudosite visus bandymus, galėsite susikurti naują PIN kodą. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>.} many {Jums liko {triesRemaining,number} bandymų. Jei išnaudosite visus bandymus, galėsite susikurti naują PIN kodą. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>.} other {Jums liko {triesRemaining,number} bandymų. Jei išnaudosite visus bandymus, galėsite susikurti naują PIN kodą. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--reglock": {
+    "messageformat": "{triesRemaining, plural, one {Jums liko {triesRemaining,number} bandymas. Jei išnaudosite visus bandymus, jūsų paskyra bus užrakinta 7 dienoms. Po 7 dienų neveiklumo galėsite iš naujo registruotis be savo PIN kodo. Visas turinys bus ištrintas. <learnMore>Sužinoti daugiau</learnMore>.} few {Jums liko {triesRemaining,number} bandymai. Jei išnaudosite visus bandymus, jūsų paskyra bus užrakinta 7 dienoms. Po 7 dienų neveiklumo galėsite iš naujo registruotis be savo PIN kodo. Visas turinys bus ištrintas. <learnMore>Sužinoti daugiau</learnMore>.} many {Jums liko {triesRemaining,number} bandymų. Jei išnaudosite visus bandymus, jūsų paskyra bus užrakinta 7 dienoms. Po 7 dienų neveiklumo galėsite iš naujo registruotis be savo PIN kodo. Visas turinys bus ištrintas. <learnMore>Sužinoti daugiau</learnMore>.} other {Jums liko {triesRemaining,number} bandymų. Jei išnaudosite visus bandymus, jūsų paskyra bus užrakinta 7 dienoms. Po 7 dienų neveiklumo galėsite iš naujo registruotis be savo PIN kodo. Visas turinys bus ištrintas. <learnMore>Sužinoti daugiau</learnMore>.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--header": {
+    "messageformat": "Neteisingas PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--description": {
+    "messageformat": "Jums nebeliko PIN kodo spėjimų, bet vis dar galite gauti prieigą prie savo „Signal“ paskyros susikurdami naują PIN kodą. Siekiant apsaugoti jūsų privatumą, saugumo sumetimais jūsų paskyra bus atkurta be įrašytos profilio informacijos ir įrašytų nustatymų."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--create-new-pin": {
+    "messageformat": "Sukurti naują PIN kodą"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--learn-more": {
+    "messageformat": "Sužinokite daugiau apie PIN kodus"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--open-menu": {
+    "messageformat": "Atidaryti meniu"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--menu--skip-pin": {
+    "messageformat": "Praleisti PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--header": {
+    "messageformat": "Praleisti PIN kodo įrašą?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--description": {
+    "messageformat": "Jei neprisimenate savo PIN kodo, galite susikurti naują. Galėsite registruotis ir naudotis savo paskyra, bet prarasite kai kuriuos įrašytus nustatymus, kaip pavyzdžiui, profilio informaciją. <learnMore>Sužinoti daugiau</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--skip-button": {
+    "messageformat": "Praleisti ir sukurti naują PIN kodą"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--cancel-button": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--CreatePIN--header": {
+    "messageformat": "Susikurti PIN kodą"
+  },
+  "icu:StandaloneRegistration--CreatePIN--description": {
+    "messageformat": "PIN kodai gali padėti atkurti tavo paskyrą ir išsaugoti užšifruotą informaciją programėlėje „Signal“. <learnMore>Sužinoti daugiau</learnMore>"
+  },
+  "icu:StandaloneRegistration--CreatePIN--placeholder": {
+    "messageformat": "Susikurti PIN kodą"
+  },
+  "icu:StandaloneRegistration--CreatePIN--helper-text": {
+    "messageformat": "PIN kodą privalo sudaryti bent 4 simboliai"
+  },
+  "icu:StandaloneRegistration--CreatePIN--continue": {
+    "messageformat": "Tęsti"
+  },
+  "icu:StandaloneRegistration--CreatePIN--open-menu": {
+    "messageformat": "Atidaryti meniu"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--more-about": {
+    "messageformat": "Daugiau apie PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--disable": {
+    "messageformat": "Išjungti PIN kodą"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--header": {
+    "messageformat": "Įspėjimas"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--description": {
+    "messageformat": "Jei išjungsite PIN kodą, tuomet registruodamiesi iš naujo „Signal“ programėlėje prarasite visus duomenis, nebent perkelsite juos iš kito „iOS“ įrenginio. Tol, kol PIN kodas yra išjungtas, negalėsite įjungti Registracijos užrakto."
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--disable-button": {
+    "messageformat": "Išjungti PIN kodą"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--header": {
+    "messageformat": "Apie „Signal“ PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--description": {
+    "messageformat": "PIN kodai šifruotu pavidalu saugo informaciją, kuri yra laikoma „Signal“, todėl tik jūs galite gauti prieigą prie jos. Jums įdiegus iš naujo, jūsų profilis, nustatymai ir adresatai bus atkurti."
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--learn-more-button": {
+    "messageformat": "Sužinoti daugiau"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--ok-button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--header": {
+    "messageformat": "Patvirtinkite savo PIN kodą"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--description": {
+    "messageformat": "Dar kartą įvesk savo sukurtą PIN kodą."
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--placeholder": {
+    "messageformat": "Įveskite savo PIN kodą"
+  },
+  "icu:StandaloneRegistration--AccountLocked--header": {
+    "messageformat": "Paskyra užrakinta"
+  },
+  "icu:StandaloneRegistration--AccountLocked--description": {
+    "messageformat": "Siekiant apsaugoti jūsų privatumą ir saugumą, jūsų paskyra buvo užrakinta. Po 7 dienų neveiklumo galėsite iš naujo registruoti šį telefono numerį be būtinybės įvesti PIN kodą. Visas turinys bus ištrintas."
+  },
+  "icu:StandaloneRegistration--AccountLocked--start-over-button": {
+    "messageformat": "Naudoti kitą numerį"
+  },
+  "icu:StandaloneRegistration--AccountLocked--help-button": {
+    "messageformat": "Sužinoti apie užrakintas paskyras"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--header": {
+    "messageformat": "Reikia atnaujinimo"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--description": {
+    "messageformat": "Norėdami tęsti registraciją, atnaujinkite „Signal“ į naujausią versiją."
+  },
+  "icu:StandaloneRegistration--UpdateRequired--update": {
+    "messageformat": "Atnaujinti"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--header": {
+    "messageformat": "Patikrinkite ryšį"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--description": {
+    "messageformat": "Norėdami tęsti, patikrinkite kompiuterio interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--button": {
+    "messageformat": "Gerai"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--header": {
+    "messageformat": "Registracijos užbaigti nepavyko"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--description": {
+    "messageformat": "Įvyko klaida ir nepavyko užbaigti registracijos. Jei problema išlieka, kreipkitės į palaikymo komandą."
+  },
+  "icu:StandaloneRegistration--UnexpectedError--try-again-button": {
+    "messageformat": "Bandykite dar kartą"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--contact-support-button": {
+    "messageformat": "Susisiekti su aptarnavimo komanda"
   },
   "icu:NSIS__retry-dialog--first-line": {
     "messageformat": "Nepavyksta užverti Signal.",
@@ -5834,6 +7318,9 @@
   "icu:MyStories__delete": {
     "messageformat": "Ištrinti šią istoriją? Ji taip pat bus ištrinta visiems, kas ją gavo."
   },
+  "icu:MyStories__delete-group-story-for-me": {
+    "messageformat": "Ištrinti šią istoriją? Ji bus ištrinta tik jums, nes grupė buvo uždaryta."
+  },
   "icu:payment-event-notification-message-you-label": {
     "messageformat": "Tu pradėjai mokėjimą {receiver}"
   },
@@ -5867,6 +7354,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "Priėmei žinutės užklausą"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "Priėmėte {userProfileName} žinutės užklausą"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "Pranešta apie šlamštą"
   },
@@ -5882,8 +7372,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "Atblokavote grupę"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "Parinktys"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "Užblokuoti arba pranešti…"
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "Sužinoti daugiau"
@@ -5905,15 +7395,6 @@
   },
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "Tavo kontaktai mato tavo vardą ir nuotrauką, ir gali matyti „Mano istorijos“ įrašus, nebent nuo jų paslėpsi"
-  },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "Ištrynimas sinchronizuojamas visuose jūsų įrenginiuose"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "Jei ištrinate žinutes ar pokalbius, jie bus ištrinti iš visų jūsų įrenginių."
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "Supratau"
   },
   "icu:Stories__title": {
     "messageformat": "Istorijos"
@@ -6056,8 +7537,8 @@
   "icu:StoriesSettings__view-receipts--label": {
     "messageformat": "Žiūrėti pranešimus"
   },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "Jei nori pakeisti šį nustatymą, atverk „Signal“ savo mobiliajame įrenginyje, eik į Nustatymus ir pasirink Istorijas"
+  "icu:StoriesSettings__view-receipts--new-description": {
+    "messageformat": "Žiūrėti ir dalintis, kai istorijos peržiūrimos. Jei išjungsi, nematysi, kai žmonės žiūrės tavo istoriją."
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "Kas gali žiūrėti šią istoriją"
@@ -6459,17 +7940,20 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "Redaguota"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "Prisegti pokalbiai"
+  },
   "icu:DraftGifMessageSendModal__Title": {
     "messageformat": "Pridėti žinutę"
   },
   "icu:DraftGifMessageSendModal__SendButtonLabel": {
     "messageformat": "Siųsti"
   },
-  "icu:DraftGifMessageSendModal__CancelButtonLabel": {
-    "messageformat": "Atšaukti"
-  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "Redagavimo istorija"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "Kopijuoti laiko žymą"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "Šio redagavimo nepavyko išsiųsti. Patikrinkite ryšį ir bandykite vėl"
@@ -6633,9 +8117,6 @@
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
     "messageformat": "Ši nuoroda nebeveiks nė vienam ją gavusiam žmogui."
   },
-  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
-    "messageformat": "Atšaukti"
-  },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Ištrinti"
   },
@@ -6690,13 +8171,16 @@
   "icu:ProfileNameWarningModal__description--direct": {
     "messageformat": "Programoje „Signal“ profilių vardus pasirenka paskyros savininkai:"
   },
-  "icu:ProfileNameWarningModal__list--item1--direct": {
-    "messageformat": "Profilių vardai nėra patvirtinti"
+  "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
+    "messageformat": "„Signal“ negali patvirtinti vardų ir nuotraukų"
   },
-  "icu:ProfileNameWarningModal__list--item2--direct": {
+  "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
+    "messageformat": "„Signal“ niekada neprašys jūsų pateikti registracijos kodą, PIN ar atkūrimo raktą"
+  },
+  "icu:ProfileNameWarningModal__warning--be-cautious": {
     "messageformat": "Būkite atidūs – naudotojai gali apsimesti kitais žmonėmis"
   },
-  "icu:ProfileNameWarningModal__list--item3--direct": {
+  "icu:ProfileNameWarningModal__warning--dont-share-info": {
     "messageformat": "Nesidalinkite asmenine informacija su nepažįstamais žmonėmis"
   },
   "icu:ProfileNameWarningModal__description--group": {
@@ -6717,11 +8201,11 @@
   "icu:WhatsNew__modal-title": {
     "messageformat": "Kas naujo"
   },
-  "icu:PreferencesDonations__title": {
-    "messageformat": "Privatumas svarbesnis už pelną"
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "Didžiuojamės būdami ne pelno organizacija"
   },
-  "icu:PreferencesDonations__description": {
-    "messageformat": "Privačios žinutės – jūsų remiama paslauga. Jokių reklamų, jokio sekimo, jokių kompromisų. Skirkite paramą dabar ir palaikykite „Signal“. <readMoreLink>Skaityti daugiau</readMoreLink>"
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "Paremkite privačių žinučių programėlę. Kad „Signal“ išliktų nepriklausoma ir be reklamų. <readMoreLink>Skaityti daugiau</readMoreLink>"
   },
   "icu:PreferencesDonations__donate-button": {
     "messageformat": "Skirti paramą"
@@ -6744,8 +8228,20 @@
   "icu:PreferencesDonations__privacy-modal-title": {
     "messageformat": "Tavo informacija yra privati"
   },
-  "icu:PreferencesDonations__privacy-modal-content": {
-    "messageformat": "<paragraph>„Signal“ nerenka ir nesaugo jokios jūsų asmeninės informacijos, kai skiriate paramą.</paragraph><paragraph>Jūsų paramai gauti kaip mokėjimų tvarkytoją naudojame „Stripe“. Mes nepasiekiame, nelaikome ir neišsaugome jokios jūsų jiems pateiktos informacijos.</paragraph><paragraph>„Signal“ nesusieja ir negali susieti jūsų paramos su jūsų „Signal“ paskyra.</paragraph><paragraph>Dėkojame už jūsų paramą!</paragraph>"
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "Kaip nepriklausoma ne pelno organizacija „Signal“ yra įsipareigojusi užtikrinti žinučių ir skambučių privatumą. Nebrukame reklamų, nesekame ir nestebime. Skirkite paramą šiandien ir palaikykite „Signal“."
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "Parėmę galite pasirinkti, kad jūsų profilyje būtų rodomas ženklelis"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "Jūsų privatumas – mūsų misija"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "„Signal“ yra ne pelno organizacija."
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Širdies piktograma „Signal“ logotipo stiliumi"
   },
   "icu:PreferencesDonations__privacy-modal-ok": {
     "messageformat": "Gerai"
@@ -6837,6 +8333,15 @@
   "icu:DonateFlow__discard-dialog-remove-info": {
     "messageformat": "Pašalinti informaciją"
   },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "Išėjus jūsų parama bus atšaukta."
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "Išeiti"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "Likti puslapyje"
+  },
   "icu:DonateFlow__continue": {
     "messageformat": "Tęsti"
   },
@@ -6857,6 +8362,9 @@
   },
   "icu:DonationReceipt__footer-text": {
     "messageformat": "Dėkojame, kad remiate „Signal“. Jūsų įnašas padeda skatinti misiją apsaugoti žodžio laisvę ir įgalinti saugų bendravimą milijonams žmonių visame pasaulyje dėl atvirojo kodo privatumo technologijos. Jei gyvenate Jungtinėse Valstijose, išsaugokite šį kvitą, kad turėtumėte jį savo mokestinių duomenų reikmėms. „Signal Technology Foundation“ yra Jungtinėse Valstijose įsteigta pelno nesiekianti organizacija, atleista nuo mokesčių pagal Vidaus mokesčių kodekso skirsnį 501c3. Mūsų federalinis mokesčių mokėtojo kodas: 82–4506840."
+  },
+  "icu:DonationReceipt__footer-text-v2": {
+    "messageformat": "Dėkojame, kad remiate „Signal“. Jūsų įnašas padeda skatinti misiją apsaugoti žodžio laisvę ir įgalinti saugų bendravimą milijonams žmonių visame pasaulyje dėl atvirojo kodo privatumo technologijos. Jei gyvenate Jungtinėse Valstijose, išsaugokite šį kvitą, kad turėtumėte jį savo mokestinių duomenų reikmėms. „Signal Technology Foundation“ yra Jungtinėse Valstijose įsteigta pelno nesiekianti organizacija, atleista nuo mokesčių pagal Vidaus mokesčių kodekso skirsnį 501c3. Mūsų federalinis mokesčių mokėtojo kodas: 82–4506840. „Signal“ už šį įnašą neteikė jokių prekių ar paslaugų."
   },
   "icu:Donations__OfflineTooltip": {
     "messageformat": "Esate neprisijungęs. Norėdami užbaigti paramos teikimą, prisijunkite prie interneto."
@@ -6882,8 +8390,14 @@
   "icu:Donations__Toast__ConfirmationNeeded": {
     "messageformat": "Jūsų parama yra apdorojama ir ją reikia patvirtinti."
   },
-  "icu:Donations__Toast__DonationCompletedAndBadgeApplicationFailed": {
-    "messageformat": "Parama suteikta sėkmingai, tačiau nepavyko atnaujinti jūsų ženklelio nustatymų"
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "Jūsų parama yra apdorojama ir ją reikia patvirtinti."
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "„PayPal“ parama atšaukta"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "Apdorojant „PayPal“ paramą įvyko klaida. Pinigai nenuskaičiuoti."
   },
   "icu:Donations__BadgeApplicationFailed__Title": {
     "messageformat": "Parama suteikta sėkmingai, tačiau nepavyko atnaujinti jūsų ženklelio nustatymų"
@@ -6900,11 +8414,41 @@
   "icu:Donations__DonationInterrupted__RetryButton": {
     "messageformat": "Bandykite dar kartą"
   },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "Mokėjimo būdas"
+  },
   "icu:Donations__PaymentMethodDeclined": {
     "messageformat": "Mokėjimo būdas atmestas"
   },
   "icu:Donations__PaymentMethodDeclined__Description": {
     "messageformat": "Bandyk kitą mokėjimo būdą arba kreipkis į savo banką, jei reikia daugiau informacijos."
+  },
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "Mokėjimo kortelės piktograma"
+  },
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "Kredito arba debeto kortelė"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "Užbaigti paramos teikimą"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "„PayPal“ parama atšaukta"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "Pinigai nenuskaičiuoti. Bandykite dar kartą arba naudokite kitą mokėjimo būdą."
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "Apdorojant „PayPal“ paramą įvyko klaida"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "Pinigai nenuskaičiuoti. Bandykite dar kartą arba naudokite kitą mokėjimo būdą."
   },
   "icu:Donations__Failed3dsValidation": {
     "messageformat": "Patvirtinimas nepavyko"
@@ -6966,6 +8510,141 @@
   "icu:Donations__badge-modal--help-text": {
     "messageformat": "Tai galite koreguoti savo mobiliajame įrenginyje, pasirinkę „Nustatymai“ → „Paremti „Signal“ → „Ženkleliai“"
   },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "Kaip praėjo skambutis?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Tai padeda mums tobulinti skambučius „Signal“. Nebus saugoma jokia asmenį identifikuojanti informacija."
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "Buvo problemų"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "Puikiai"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "Kokių problemų kilo?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "Pasirinkite visas tinkamas"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "Problema su garsu"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "Trūkčiojo garsas"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "Girdėjau aidą"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "Kiti girdėjo aidą"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "Nutrūko garsas"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "Problema su vaizdu"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "Neveikė kamera"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "Bloga vaizdo kokybė"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "Prasta vaizdo raiška"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "Skambutis nutrūko"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "Kažkas kita"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "Problemų aprašymas"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "Pateikite visą su problema susijusią informaciją. Viskas, kuo čia pasidalinsite, bus laikoma privačiai ir naudojama tik skambučiams „Signal“ sistemoje tobulinti."
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "Aprašykite savo problemą"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "Tęsti"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "Pasirinkite, jei norite tęsti"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "Padėkite mums tobulėti"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "Pateikus atsiliepimą juo bus dalijamasi kartu su <diagnosticInfoLink>diagnostine informacija apie skambutį</diagnosticInfoLink>. Jei norite, galite pasidalinti derinimo žurnalu, kad padėtumėte mums gerinti skambučių kokybę."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "Bendrinti derinimo žurnalą"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "Žiūrėti"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "Su mumis bendrinama informacija apima žemojo lygmens informaciją apie programėlę ir į ją neįeina jūsų skambučių turinys."
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "Diagnostinė informacija"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "Pateikti"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "Nepavyko pateikti apklausos"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "Bandyti dar kartą"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "Ačiū už atsiliepimą!"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "Išskleiskite šoninę juostą, kad galėtumėte naudotis megafonu"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "Karuselė"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "Skaidrė"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "Perkelti telefono žinučių istoriją į šį kompiuterį?"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "Iš naujo susieję kompiuterį galėsite į jį perkelti telefono žinučių istoriją."
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "Sužinoti daugiau"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "Tai <bold>pakeis</bold> šio kompiuterio žinučių istoriją."
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "Turėsite iš naujo susieti nuskaitydami QR kodą."
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "Jei turite mokamas „Signal“ atsargines kopijas, bus perkelti visi jūsų įrašai. Kitu atveju bus perkeliami paskutinių 45 dienų įrašai."
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "Pervesti"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "Neperkelti"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "Ištrinti visus duomenis?"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "Visi dabartiniai „Signal Desktop“ duomenys bus ištrinti. Tuomet galėsite nuskaityti QR kodą ir perkelti žinučių istoriją iš telefono."
+  },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Šioje versijoje yra daug smulkių patobulinimų ir klaidų ištaisymų, kurie padės Signal sklandžiai veikti.",
     "ignoreUnused": true
@@ -6994,10 +8673,16 @@
     "messageformat": "Smulkūs patobulinimai, klaidų pataisymai ir veikimo pagerinimas. Ačiū, kad naudoji „Signal“!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__7.73": {
-    "messageformat": "Šiuo atnaujinimu pristatomi nauji našumo optimizavimai, padedantys prailginti akumuliatoriaus veikimo laiką."
+  "icu:WhatsNew__8.18--0": {
+    "messageformat": "Dabar apklausas galima kurti ir individualiuose pokalbiuose."
   },
-  "icu:WhatsNew__7.74": {
-    "messageformat": "„Signal Desktop“ dabar palaiko septynis naujus jaustukus."
+  "icu:WhatsNew__8.19--0": {
+    "messageformat": "Nuo šiol grupės administratoriai gali užbaigti pokalbius su naująja parinktimi „Uždaryti grupę“ grupės nustatymuose. Uždarius grupę jos nariai nebegalės siųsti žinučių ir skambinti, be to, bus išjungti ir pakvietimai jungtis prie grupės."
+  },
+  "icu:WhatsNew__8.20--0": {
+    "messageformat": "Pristatome skambučių įvykius: praleisti, išsiunčiamieji ir gauti skambučiai, įvykę jums jau įdiegus ši atnaujinimą, dabar automatiškai dings bet kuriame pokalbyje, kuriame įjungtos dingstančios žinutės."
+  },
+  "icu:WhatsNew__8.20--1": {
+    "messageformat": "Dabar galite pakeisti įdiegtų lipdukų paketų eilės tvarką, kad naujai pamėgti lipdukai nepasimestų eilės gale."
   }
 }

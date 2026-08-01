@@ -1,0 +1,69 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { memo, type JSX } from 'react';
+import { useSelector } from 'react-redux';
+import { noop } from 'lodash';
+
+import { ConversationDetailsMembershipList } from '../../components/conversation/conversation-details/ConversationDetailsMembershipList.dom.tsx';
+import { assertDev } from '../../util/assert.std.ts';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
+import {
+  getCachedConversationMemberColorsSelector,
+  getConversationByIdSelector,
+  getConversationByServiceIdSelector,
+} from '../selectors/conversations.dom.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+
+export type PropsType = {
+  conversationId: string;
+};
+
+export const SmartGV1Members = memo(function SmartGV1Members({
+  conversationId,
+}: PropsType): JSX.Element {
+  const getPreferredBadge = useSelector(getPreferredBadgeSelector);
+  const i18n = useSelector(getIntl);
+  const theme = useSelector(getTheme);
+  const { showContactModal } = useGlobalModalActions();
+
+  const conversationSelector = useSelector(getConversationByIdSelector);
+  const conversationByServiceIdSelector = useSelector(
+    getConversationByServiceIdSelector
+  );
+  const getMemberColors = useSelector(
+    getCachedConversationMemberColorsSelector
+  );
+  const memberColors = getMemberColors(conversationId);
+
+  const conversation = conversationSelector(conversationId);
+  assertDev(
+    conversation,
+    '<SmartPendingInvites> expected a conversation to be found'
+  );
+
+  const { memberships } = getGroupMemberships(
+    conversation,
+    conversationByServiceIdSelector
+  );
+
+  return (
+    <ConversationDetailsMembershipList
+      canAddLabel={false}
+      canAddNewMembers={false}
+      conversationId={conversationId}
+      i18n={i18n}
+      isEditMemberLabelEnabled={false}
+      isTerminated={false}
+      getPreferredBadge={getPreferredBadge}
+      maxShownMemberCount={32}
+      memberColors={memberColors}
+      memberships={memberships}
+      showContactModal={showContactModal}
+      showLabelEditor={noop}
+      theme={theme}
+    />
+  );
+});

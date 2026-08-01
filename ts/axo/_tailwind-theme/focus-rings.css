@@ -1,0 +1,9 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@utility axo-focus-ring {
+  @apply ring-[2.5px] ring-(--axo-color-border-focused-outer);
+  @apply ring-offset-[1.5px] ring-offset-(--axo-color-border-focused-inner);
+}

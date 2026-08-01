@@ -23,7 +23,7 @@
   text-align: center;
   text-wrap: balance;
   @include mixins.font-body-1;
-  color: light-dark(variables.$color-gray-90, variables.$color-gray-05);
+  color: var(--axo-color-label-secondary);
 }
 
 .FunResults__Actions {
@@ -38,14 +38,14 @@
     border-radius: 9999px;
     padding-block: 6px;
     padding-inline: 28px;
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
-    color: light-dark(variables.$color-black, variables.$color-gray-05);
+    background: var(--axo-color-fill-primary);
+    color: var(--axo-color-label-primary);
     @include mixins.font-subtitle;
   }
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }

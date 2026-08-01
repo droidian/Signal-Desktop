@@ -1,0 +1,42 @@
+{
+  "private": true,
+  "name": "@signalapp/windows-ucv",
+  "version": "1.0.1",
+  "description": "Windows User Consent Verification",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "addon.cpp",
+    "dist",
+    "!dist/tsconfig.tsbuildinfo",
+    "README.md",
+    "binding.gyp"
+  ],
+  "scripts": {
+    "watch": "npm run build -- --watch",
+    "preinstall": "npm run build",
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "winrt",
+    "user",
+    "consent",
+    "verification",
+    "windows"
+  ],
+  "author": {
+    "name": "Signal Messenger, LLC",
+    "email": "support@signal.org"
+  },
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "bindings": "1.5.0",
+    "node-addon-api": "8.8.0"
+  },
+  "devDependencies": {
+    "@types/bindings": "1.5.5",
+    "@types/node": "24.12.0",
+    "typescript": "6.0.3"
+  }
+}

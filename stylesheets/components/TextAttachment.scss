@@ -17,7 +17,6 @@
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
-    user-select: none;
 
     height: 1280px;
     max-height: 1280px;
@@ -38,7 +37,6 @@
 
     &__container {
       overflow: hidden;
-      user-select: none;
     }
 
     &__textarea {

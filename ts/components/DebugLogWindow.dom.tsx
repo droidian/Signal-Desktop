@@ -1,0 +1,242 @@
+// Copyright 2015 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { MouseEvent, JSX } from 'react';
+import { useEffect, useState } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import type { AnyToast } from '../types/Toast.dom.tsx';
+import { ToastType } from '../types/Toast.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
+import { ToastManager } from './ToastManager.dom.tsx';
+import { createSupportUrl } from '../util/createSupportUrl.std.ts';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.ts';
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
+
+const log = createLogger('DebugLogWindow');
+
+enum LoadState {
+  NotStarted,
+  Started,
+  Loaded,
+  Submitting,
+}
+
+export type PropsType = {
+  closeWindow: () => unknown;
+  downloadLog: (text: string) => unknown;
+  i18n: LocalizerType;
+  fetchLogs: () => Promise<string>;
+  uploadLogs: (logs: string) => Promise<string>;
+  mode?: 'submit' | 'close';
+};
+
+export function DebugLogWindow({
+  closeWindow,
+  downloadLog,
+  i18n,
+  fetchLogs,
+  uploadLogs,
+  mode = 'submit',
+}: PropsType): JSX.Element {
+  const [loadState, setLoadState] = useState<LoadState>(LoadState.NotStarted);
+  const [logText, setLogText] = useState<string | undefined>();
+  const [publicLogURL, setPublicLogURL] = useState<string | undefined>();
+  const [textAreaValue, setTextAreaValue] = useState<string>(
+    i18n('icu:loading')
+  );
+  const [toast, setToast] = useState<AnyToast | undefined>();
+
+  useEscapeHandling(closeWindow);
+
+  useEffect(() => {
+    setLoadState(LoadState.Started);
+
+    let shouldCancel = false;
+
+    async function doFetchLogs() {
+      const fetchedLogText = await fetchLogs();
+
+      if (shouldCancel) {
+        return;
+      }
+
+      setToast({ toastType: ToastType.LoadingFullLogs });
+      setLogText(fetchedLogText);
+      setLoadState(LoadState.Loaded);
+
+      // This number is somewhat arbitrary; we want to show enough that it's
+      // clear that we need to scroll, but not so many that things get slow.
+      const linesToShow = Math.ceil(Math.min(window.innerHeight, 2000) / 5);
+      const value = fetchedLogText.split(/\n/g, linesToShow).join('\n');
+
+      setTextAreaValue(`${value}\n\n\n${i18n('icu:debugLogLogIsIncomplete')}`);
+      setToast(undefined);
+    }
+
+    void doFetchLogs();
+
+    return () => {
+      shouldCancel = true;
+    };
+  }, [fetchLogs, i18n]);
+
+  const handleSubmit = async (ev: MouseEvent) => {
+    ev.preventDefault();
+
+    const text = logText;
+
+    if (!text || text.length === 0) {
+      return;
+    }
+
+    setLoadState(LoadState.Submitting);
+
+    try {
+      const publishedLogURL = await uploadLogs(text);
+      setPublicLogURL(publishedLogURL);
+    } catch (error) {
+      log.error('Failed to upload logs:', Errors.toLogFormat(error));
+      setLoadState(LoadState.Loaded);
+      setToast({ toastType: ToastType.DebugLogError });
+    }
+  };
+
+  function closeToast() {
+    setToast(undefined);
+  }
+
+  if (publicLogURL) {
+    const copyLog = async (ev: MouseEvent) => {
+      ev.preventDefault();
+      await navigator.clipboard.writeText(publicLogURL);
+      setToast({ toastType: ToastType.LinkCopied });
+    };
+
+    const supportURL = createSupportUrl({
+      locale: window.SignalContext.getI18nLocale(),
+      query: {
+        debugLog: publicLogURL,
+      },
+    });
+
+    return (
+      <div className="DebugLogWindow">
+        <div>
+          <div className="DebugLogWindow__title">
+            {i18n('icu:debugLogSuccess')}
+          </div>
+          <p className="DebugLogWindow__subtitle">
+            {i18n('icu:debugLogSuccessNextSteps')}
+          </p>
+        </div>
+        <div className="DebugLogWindow__container">
+          {/* FIXME */}
+          {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
+          <input
+            className="DebugLogWindow__link"
+            readOnly
+            type="text"
+            dir="auto"
+            value={publicLogURL}
+          />
+        </div>
+        <div className="DebugLogWindow__footer">
+          <Button
+            onClick={() => openLinkInWebBrowser(supportURL)}
+            variant={ButtonVariant.Secondary}
+          >
+            {i18n('icu:reportIssue')}
+          </Button>
+          <Button onClick={copyLog}>{i18n('icu:debugLogCopy')}</Button>
+        </div>
+        <ToastManager
+          changeLocation={shouldNeverBeCalled}
+          OS="unused"
+          hideToast={closeToast}
+          i18n={i18n}
+          onShowDebugLog={shouldNeverBeCalled}
+          onUndoArchive={shouldNeverBeCalled}
+          retryCallQualitySurvey={shouldNeverBeCalled}
+          openFileInFolder={shouldNeverBeCalled}
+          saveHeapSnapshot={shouldNeverBeCalled}
+          setDidResumeDonation={shouldNeverBeCalled}
+          toast={toast}
+          containerWidthBreakpoint={null}
+          expandNarrowLeftPane={shouldNeverBeCalled}
+          isInFullScreenCall={false}
+        />
+      </div>
+    );
+  }
+
+  const canSubmit = Boolean(logText) && loadState !== LoadState.Submitting;
+  const canSave = Boolean(logText);
+  const isLoading =
+    loadState === LoadState.Started || loadState === LoadState.Submitting;
+
+  return (
+    <div className="DebugLogWindow">
+      <div>
+        <div className="DebugLogWindow__title">
+          {i18n('icu:submitDebugLog')}
+        </div>
+        <p className="DebugLogWindow__subtitle">
+          {mode === 'close'
+            ? i18n('icu:debugLogExplanation--close')
+            : i18n('icu:debugLogExplanation')}
+        </p>
+      </div>
+      {isLoading ? (
+        <div className="DebugLogWindow__container">
+          <Spinner svgSize="normal" />
+        </div>
+      ) : (
+        <div className="DebugLogWindow__scroll_area">
+          <pre className="DebugLogWindow__scroll_area__text">
+            {textAreaValue}
+          </pre>
+        </div>
+      )}
+      <div className="DebugLogWindow__footer">
+        <Button
+          disabled={!canSave}
+          onClick={() => {
+            if (logText) {
+              downloadLog(logText);
+            }
+          }}
+          variant={ButtonVariant.Secondary}
+        >
+          {i18n('icu:debugLogSave')}
+        </Button>
+        {mode === 'close' ? (
+          <Button onClick={closeWindow}>{i18n('icu:close')}</Button>
+        ) : (
+          <Button disabled={!canSubmit} onClick={handleSubmit}>
+            {i18n('icu:submit')}
+          </Button>
+        )}
+      </div>
+      <ToastManager
+        changeLocation={shouldNeverBeCalled}
+        OS="unused"
+        hideToast={closeToast}
+        i18n={i18n}
+        onShowDebugLog={shouldNeverBeCalled}
+        onUndoArchive={shouldNeverBeCalled}
+        retryCallQualitySurvey={shouldNeverBeCalled}
+        openFileInFolder={shouldNeverBeCalled}
+        saveHeapSnapshot={shouldNeverBeCalled}
+        setDidResumeDonation={shouldNeverBeCalled}
+        toast={toast}
+        containerWidthBreakpoint={null}
+        expandNarrowLeftPane={shouldNeverBeCalled}
+        isInFullScreenCall={false}
+      />
+    </div>
+  );
+}

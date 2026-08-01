@@ -1,0 +1,1 @@
+signal,üzenet,messenger,hívás,hang,titkosított,privát,biztonságos,adatvédelem,csoport,történetek

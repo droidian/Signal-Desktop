@@ -1,0 +1,10 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@custom-variant dark (&:where(.dark-theme, .dark-theme *));
+@custom-variant keyboard-mode (&:where(.keyboard-mode *));
+
+@custom-variant transparency-safe (@media (prefers-reduced-transparency: no-preference));
+@custom-variant transparency-reduce (@media (prefers-reduced-transparency: reduce));
