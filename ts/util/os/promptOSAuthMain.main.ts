@@ -3,10 +3,6 @@
 
 import { app, systemPreferences } from 'electron';
 import { exec } from 'node:child_process';
-import {
-  checkAvailability as checkAvailabilityWindowsUcv,
-  requestVerification as requestVerificationWindowsUcv,
-} from '@signalapp/windows-ucv';
 
 import { createLogger } from '../../logging/log.std.ts';
 import OS from './osMain.node.ts';
