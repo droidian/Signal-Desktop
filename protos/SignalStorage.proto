@@ -142,7 +142,9 @@ message ContactRecord {
   Name nickname = 22;
   string note = 23;
   optional AvatarColor avatarColor = 24;
-  // Next ID: 25
+  bytes aciBinary = 25; // 16-byte UUID
+  bytes pniBinary = 26; // 16-byte UUID
+  // Next ID: 27
 }
 
 message GroupV1Record {
@@ -172,6 +174,12 @@ message GroupV2Record {
   reserved 9;
   StorySendMode storySendMode = 10;
   optional AvatarColor avatarColor = 11;
+  bytes verifiedNameHash = 12; // SHA-256 of UTF-8 encoded decrypted group title that was last verified
+}
+
+message Payments {
+  bool enabled = 1;
+  bytes entropy = 2;
 }
 
 message AccountRecord {
@@ -186,12 +194,16 @@ message AccountRecord {
     message Contact {
       string serviceId = 1;
       string e164 = 2;
+      bytes serviceIdBinary = 3; // service ID binary (i.e. 16 byte UUID for ACI, 1 byte prefix + 16 byte UUID for PNI)
     }
+
+    message ReleaseNotes {}
 
     oneof identifier {
       Contact contact = 1;
       bytes legacyGroupId = 3;
       bytes groupMasterKey = 4;
+      ReleaseNotes releaseNotes = 5;
     }
   }
 
@@ -224,12 +236,6 @@ message AccountRecord {
     }
   }
 
-  message BackupTierHistory {
-    // See zkgroup for integer particular values. Unset if backups are not enabled.
-    optional uint64 backupTier = 1;
-    optional uint64 endedAtTimestamp = 2;
-  }
-
   message NotificationProfileManualOverride {
     message ManuallyEnabled {
       bytes id = 1;
@@ -259,6 +265,7 @@ message AccountRecord {
   bool unlistedPhoneNumber = 13;
   repeated PinnedConversation pinnedConversations = 14;
   bool preferContactAvatars = 15;
+  Payments payments = 16;
   uint32 universalExpireTimer = 17;
   reserved 18; // primarySendsSms
   reserved 19; // deprecatedE164
@@ -285,13 +292,20 @@ message AccountRecord {
   reserved /*backupsSubscriberId*/ 36;
   reserved /*backupsSubscriberCurrencyCode*/ 37;
   reserved /*backupsSubscriptionManuallyCancelled*/ 38;
-  // Set to true after backups are enabled and one is uploaded.
-  optional bool hasBackup = 39;
+  reserved /*hasBackup*/ 39;
   // See zkgroup for integer particular values. Unset if backups are not enabled.
   optional uint64 backupTier = 40;
   IAPSubscriberData backupSubscriberData = 41;
   optional AvatarColor avatarColor = 42;
+  reserved 43; // backupTierHistory
   NotificationProfileManualOverride notificationProfileManualOverride = 44;
+  bool notificationProfileSyncDisabled = 45;
+  bool automaticKeyVerificationDisabled = 46;
+  bool hasSeenAdminDeleteEducationDialog = 47;
+  optional bool releaseNotesChatArchived = 48;
+  optional uint64 releaseNotesChatMutedUntilTimestamp = 49;
+  optional bool releaseNotesChatBlocked = 50;
+  optional bool releaseNotesChatMarkedUnread = 51;
 }
 
 message StoryDistributionListRecord {
@@ -301,6 +315,7 @@ message StoryDistributionListRecord {
   uint64 deletedAtTimestamp = 4;
   bool allowsReplies = 5;
   bool isBlockList = 6;
+  repeated bytes recipientServiceIdsBinary = 7; // service ID binary (i.e. 16 byte UUID for ACI, 1 byte prefix + 16 byte UUID for PNI)
 }
 
 message StickerPackRecord {
@@ -327,14 +342,15 @@ message StickerPackRecord {
 message CallLinkRecord {
   bytes rootKey = 1; // 16 bytes
   bytes adminPasskey = 2; // Non-empty when the current user is an admin
-  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey`
-                                   // should be cleared
+  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey` should be cleared
+  reserved /*epoch*/ 4;
 }
 
 message Recipient {
   message Contact {
     string serviceId = 1;
     string e164 = 2;
+    bytes serviceIdBinary = 3; // service ID binary (i.e. 16 byte UUID for ACI, 1 byte prefix + 16 byte UUID for PNI)
   }
 
   oneof identifier {
@@ -362,7 +378,7 @@ message ChatFolderRecord {
   FolderType folderType = 8;
   repeated Recipient includedRecipients = 9;
   repeated Recipient excludedRecipients = 10;
-  uint64 deletedAtTimestampMs = 11;   // When non-zero, `position` should be set to -1 and `includedRecipients` should be empty
+  uint64 deletedAtTimestampMs = 11;   // When non-zero, `position` should be set to 4294967295 (2^32-1) and `includedRecipients` should be empty
 }
 
 message NotificationProfile {

@@ -1,0 +1,27 @@
+/**
+ * Copyright 2025 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@import './_tailwind-plugins/animate-enter-exit.css';
+@import './_tailwind-plugins/animate-general.css';
+@import './_tailwind-plugins/container-scroll-state.css';
+@import './_tailwind-plugins/scrollbar.css';
+@import './_tailwind-plugins/superellipse.css';
+
+@import './_tailwind-theme/animations.css';
+@import './_tailwind-theme/blurs.css';
+@import './_tailwind-theme/colors.css';
+@import './_tailwind-theme/easing.css';
+@import './_tailwind-theme/focus-rings.css';
+@import './_tailwind-theme/fonts.css';
+@import './_tailwind-theme/global.css';
+@import './_tailwind-theme/scrollbars.css';
+@import './_tailwind-theme/shadows.css';
+@import './_tailwind-theme/transitions.css';
+@import './_tailwind-theme/variants.css';
+@import './_tailwind-theme/z-index.css';
+
+@import './AxoDragRegions.css';
+@import './AxoSelect.css';
+@import './AxoScrollArea.css';

@@ -1,0 +1,39 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@theme {
+  --default-animation-duration: 120ms;
+  --default-animation-timing-function: var(--ease-out-cubic);
+
+  --animate-*: initial; /* reset defaults */
+  --animate-spinner-v2-rotate: animate-spinner-v2-rotate 2s linear infinite;
+  --animate-spinner-v2-dash: animate-spinner-v2-dash 1.5s ease-in-out infinite;
+}
+
+@layer base {
+  @keyframes animate-spinner-v2-rotate {
+    0% {
+      transform: rotate(-180deg);
+    }
+    100% {
+      transform: rotate(180deg);
+    }
+  }
+
+  @keyframes animate-spinner-v2-dash {
+    0% {
+      stroke-dasharray: 2%, 300%;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 180%, 300%;
+      stroke-dashoffset: -70%;
+    }
+    100% {
+      stroke-dasharray: 180%, 300%;
+      stroke-dashoffset: -248%;
+    }
+  }
+}

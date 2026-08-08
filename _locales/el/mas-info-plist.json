@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Το Signal χρησιμοποιεί την κάμερά σου για βιντεοκλήσεις."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Το Signal χρειάζεται πρόσβαση στο μικρόφωνό σου για να κάνει και λάβει τηλεφωνικές κλήσεις και να ηχογραφήσει ηχητικά μηνύματα."
+  }
+}
