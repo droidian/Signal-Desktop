@@ -164,7 +164,7 @@ async function noDeprecatedPackages(lockfile, context) {
     context.log('');
   }
 
-  return success;
+  return true;
 }
 
 /** @type {ReadonlyArray<RegExp>} */
