@@ -1,43 +1,46 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ReactNode, JSX, RefObject, MouseEvent } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { InputApi } from './CompositionInput.dom.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { ReplyType, StorySendStateType } from '../types/Stories.std.js';
-import { StoryViewTargetType } from '../types/Stories.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { CompositionInput } from './CompositionInput.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import { Emojify } from './conversation/Emojify.dom.js';
-import { Message, TextDirection } from './conversation/Message.dom.js';
-import { MessageTimestamp } from './conversation/MessageTimestamp.dom.js';
-import { Modal } from './Modal.dom.js';
-import { ReactionPicker } from './conversation/ReactionPicker.dom.js';
-import { Tabs } from './Tabs.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import { WidthBreakpoint } from './_util.std.js';
-import { getAvatarColor } from '../types/Colors.std.js';
-import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.js';
-import { ContextMenu } from './ContextMenu.dom.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import type { EmojiSkinTone } from './fun/data/emojis.std.js';
-import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.js';
-import { FunEmojiPickerButton } from './fun/FunButton.dom.js';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.js';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.js';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { InputApi } from './CompositionInput.dom.tsx';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { ReplyType, StorySendStateType } from '../types/Stories.std.ts';
+import { StoryViewTargetType } from '../types/Stories.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { CompositionInput } from './CompositionInput.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import { Emojify } from './conversation/Emojify.dom.tsx';
+import {
+  Message,
+  MessageInteractivity,
+  TextDirection,
+} from './conversation/Message.dom.tsx';
+import { MessageTimestamp } from './conversation/MessageTimestamp.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
+import { ReactionPicker } from './conversation/ReactionPicker.dom.tsx';
+import { Tabs } from './Tabs.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import { WidthBreakpoint } from './_util.std.ts';
+import { getAvatarColor } from '../types/Colors.std.ts';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.ts';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.tsx';
+import { FunEmojiPickerButton } from './fun/FunButton.dom.tsx';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.tsx';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.tsx';
+import { AxoContextMenu } from '../axo/AxoContextMenu.dom.tsx';
+import type { AxoMenuBuilder } from '../axo/AxoMenuBuilder.dom.tsx';
+import { drop } from '../util/drop.std.ts';
+import type { ContactModalStateType } from '../types/globalModals.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
 
 const { noop, orderBy } = lodash;
 
@@ -46,12 +49,16 @@ const { noop, orderBy } = lodash;
 // text messages and reactions.
 const MESSAGE_DEFAULT_PROPS = {
   canDeleteForEveryone: false,
+  canRetryDeleteForEveryone: false,
+  canSendPollVote: false,
+  retryDeleteForEveryone: shouldNeverBeCalled,
   checkForAccount: shouldNeverBeCalled,
   clearTargetedMessage: shouldNeverBeCalled,
   containerWidthBreakpoint: WidthBreakpoint.Medium,
   doubleCheckMissingQuoteReference: shouldNeverBeCalled,
   isBlocked: false,
   isMessageRequestAccepted: true,
+  isPinned: false,
   isSelected: false,
   isSelectMode: false,
   isSMS: false,
@@ -66,6 +73,7 @@ const MESSAGE_DEFAULT_PROPS = {
   previews: [],
   retryMessageSend: shouldNeverBeCalled,
   sendPollVote: shouldNeverBeCalled,
+  endPoll: shouldNeverBeCalled,
   pushPanelForConversation: shouldNeverBeCalled,
   renderAudioAttachment: () => <div />,
   saveAttachment: shouldNeverBeCalled,
@@ -104,7 +112,7 @@ export type PropsType = {
   isInternalUser?: boolean;
   onChangeViewTarget: (target: StoryViewTargetType) => unknown;
   onClose: () => unknown;
-  onReact: (emoji: string) => unknown;
+  onReact: (emoji: Emoji.Variant) => unknown;
   onReply: (
     message: string,
     bodyRanges: DraftBodyRanges,
@@ -113,10 +121,10 @@ export type PropsType = {
   onTextTooLong: () => unknown;
   onSelectEmoji: (emojiSelection: FunEmojiSelection) => unknown;
   ourConversationId: string | undefined;
-  preferredReactionEmoji: ReadonlyArray<string>;
+  preferredReactionEmoji: ReadonlyArray<Emoji.Variant>;
   replies: ReadonlyArray<ReplyType>;
-  showContactModal: (contactId: string, conversationId?: string) => void;
-  emojiSkinToneDefault: EmojiSkinTone | null;
+  showContactModal: (payload: ContactModalStateType) => void;
+  emojiSkinToneDefault: Emoji.SkinTone | null;
   sortedGroupMembers?: ReadonlyArray<ConversationType>;
   views: ReadonlyArray<StorySendStateType>;
   viewTarget: StoryViewTargetType;
@@ -166,7 +174,7 @@ export function StoryViewsNRepliesModal({
   >({});
 
   const containerElementRef = useRef<HTMLDivElement | null>(null);
-  const inputApiRef = useRef<InputApi | undefined>();
+  const inputApiRef = useRef<InputApi | null>(null);
   const shouldScrollToBottomRef = useRef(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [messageBodyText, setMessageBodyText] = useState('');
@@ -213,11 +221,15 @@ export function StoryViewsNRepliesModal({
     }
   }, [currentTab, replies.length]);
 
-  const tryClose = useRef<() => void | undefined>();
+  const tryClose = useRef<(() => void) | null>(null);
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'StoryViewsNRepliesModal',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
   const onTryClose = useCallback(() => {
     confirmDiscardIf(emojiPickerOpen || messageBodyText.length > 0, onClose);
@@ -236,10 +248,10 @@ export function StoryViewsNRepliesModal({
         <ReactionPicker
           i18n={i18n}
           onPick={emoji => {
-            if (!group) {
+            onReact(emoji);
+            if (!group && messageBodyText.length === 0) {
               onClose();
             }
-            onReact(emoji);
           }}
           preferredReactionEmoji={preferredReactionEmoji}
           theme={ThemeType.dark}
@@ -255,6 +267,7 @@ export function StoryViewsNRepliesModal({
               isFormattingEnabled={isFormattingEnabled}
               moduleClassName="StoryViewsNRepliesModal__input"
               onCloseLinkPreview={noop}
+              showRecoveryKeyPasteWarning={false}
               onEditorStateChange={({ messageText }) => {
                 setMessageBodyText(messageText);
               }}
@@ -285,6 +298,9 @@ export function StoryViewsNRepliesModal({
               large={null}
               shouldHidePopovers={null}
               linkPreviewResult={null}
+              showViewOnceButton={false}
+              isViewOnceActive={false}
+              onToggleViewOnce={noop}
             >
               <FunEmojiPicker
                 open={emojiPickerOpen}
@@ -390,7 +406,6 @@ export function StoryViewsNRepliesModal({
                 conversationType="direct"
                 i18n={i18n}
                 profileName={view.recipient.profileName}
-                sharedGroupNames={view.recipient.sharedGroupNames || []}
                 size={AvatarSize.TWENTY_EIGHT}
                 title={view.recipient.title}
               />
@@ -478,49 +493,50 @@ export function StoryViewsNRepliesModal({
           )}
         </div>
       </Modal>
-      {deleteReplyId && (
-        <ConfirmationDialog
-          i18n={i18n}
-          theme={Theme.Dark}
-          dialogName="confirmDialog"
-          actions={[
-            {
-              text: i18n('icu:delete'),
-              action: () => deleteGroupStoryReply(deleteReplyId),
-              style: 'negative',
-            },
-          ]}
-          title={i18n('icu:deleteWarning')}
-          onClose={() => setDeleteReplyId(undefined)}
-          onCancel={() => setDeleteReplyId(undefined)}
-        />
-      )}
-      {deleteForEveryoneReplyId && (
-        <ConfirmationDialog
-          i18n={i18n}
-          theme={Theme.Dark}
-          dialogName="confirmDialog"
-          actions={[
-            {
-              text: i18n('icu:delete'),
-              action: () =>
-                deleteGroupStoryReplyForEveryone(deleteForEveryoneReplyId),
-              style: 'negative',
-            },
-          ]}
-          title={i18n('icu:deleteWarning')}
-          onClose={() => setDeleteForEveryoneReplyId(undefined)}
-          onCancel={() => setDeleteForEveryoneReplyId(undefined)}
+      <AxoConfirmDialog.Root
+        open={deleteReplyId != null}
+        onOpenChange={() => setDeleteReplyId(undefined)}
+        title={i18n('icu:deleteWarning')}
+        // @ts-expect-error ConfirmationDialog migration: Needs description
+        description={null}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(deleteReplyId != null, 'Missing deleteReplyId');
+            deleteGroupStoryReply(deleteReplyId);
+          }}
         >
-          {i18n('icu:deleteForEveryoneWarning')}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+      <AxoConfirmDialog.Root
+        open={deleteForEveryoneReplyId != null}
+        onOpenChange={() => setDeleteForEveryoneReplyId(undefined)}
+        title={i18n('icu:deleteWarning')}
+        description={i18n('icu:deleteForEveryoneWarning')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              deleteForEveryoneReplyId != null,
+              'Missing deleteForEveryoneReplyId'
+            );
+            deleteGroupStoryReplyForEveryone(deleteForEveryoneReplyId);
+          }}
+        >
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     </>
   );
 }
 
 type ReplyOrReactionMessageProps = {
-  containerElementRef: React.RefObject<HTMLElement>;
+  containerElementRef: RefObject<HTMLElement | null>;
   deleteGroupStoryReply: (replyId: string) => void;
   deleteGroupStoryReplyForEveryone: (replyId: string) => void;
   displayLimit: number | undefined;
@@ -530,11 +546,11 @@ type ReplyOrReactionMessageProps = {
   id: string;
   isInternalUser?: boolean;
   isSpoilerExpanded: Record<number, boolean>;
-  onContextMenu?: (ev: React.MouseEvent) => void;
+  onContextMenu?: (ev: MouseEvent) => void;
   reply: ReplyType;
   shouldCollapseAbove: boolean;
   shouldCollapseBelow: boolean;
-  showContactModal: (contactId: string, conversationId?: string) => void;
+  showContactModal: (payload: ContactModalStateType) => void;
   messageExpanded: (messageId: string, displayLimit: number) => void;
   showSpoiler: (messageId: string, data: Record<number, boolean>) => void;
 };
@@ -557,124 +573,136 @@ function ReplyOrReactionMessage({
   showContactModal,
   showSpoiler,
 }: ReplyOrReactionMessageProps) {
-  const renderContent = (onContextMenu?: (ev: React.MouseEvent) => void) => {
-    if (reply.reactionEmoji && !reply.deletedForEveryone) {
+  const handleDeleteReply = useCallback(() => {
+    deleteGroupStoryReply(reply.id);
+  }, [deleteGroupStoryReply, reply.id]);
+
+  const handleDeleteReplyForEveryone = useCallback(() => {
+    deleteGroupStoryReplyForEveryone(reply.id);
+  }, [deleteGroupStoryReplyForEveryone, reply.id]);
+
+  const handleCopyReplyTimestamp = useCallback(() => {
+    drop(window.navigator.clipboard.writeText(String(reply.timestamp)));
+  }, [reply.timestamp]);
+
+  const renderMessageContextMenu = useCallback(
+    (_renderer: AxoMenuBuilder.Renderer, children: ReactNode) => {
       return (
-        <div
-          className="StoryViewsNRepliesModal__reaction"
-          onContextMenu={onContextMenu}
-          data-id={id}
-        >
-          <div className="StoryViewsNRepliesModal__reaction--container">
-            <Avatar
-              avatarUrl={reply.author.avatarUrl}
-              badge={getPreferredBadge(reply.author.badges)}
-              color={getAvatarColor(reply.author.color)}
-              conversationType="direct"
-              i18n={i18n}
-              profileName={reply.author.profileName}
-              sharedGroupNames={reply.author.sharedGroupNames || []}
-              size={AvatarSize.TWENTY_EIGHT}
-              theme={ThemeType.dark}
-              title={reply.author.title}
-            />
-            <div className="StoryViewsNRepliesModal__reaction--body">
-              <div className="StoryViewsNRepliesModal__reply--title">
-                <ContactName
-                  contactNameColor={reply.contactNameColor}
-                  title={
-                    reply.author.isMe ? i18n('icu:you') : reply.author.title
-                  }
-                />
-              </div>
-              {reply.author.isMe
-                ? i18n('icu:StoryViewsNRepliesModal__reacted--you')
-                : i18n('icu:StoryViewsNRepliesModal__reacted--someone-else')}
-              <MessageTimestamp
-                i18n={i18n}
-                isRelativeTime
-                module="StoryViewsNRepliesModal__reply--timestamp"
-                timestamp={reply.timestamp}
+        <AxoContextMenu.Root>
+          <AxoContextMenu.Trigger>{children}</AxoContextMenu.Trigger>
+          <AxoContextMenu.Content>
+            <AxoContextMenu.Item symbol="trash" onSelect={handleDeleteReply}>
+              {i18n('icu:StoryViewsNRepliesModal__delete-reply')}
+            </AxoContextMenu.Item>
+
+            {!reply.deletedForEveryone && (
+              <AxoContextMenu.Item
+                symbol="trash"
+                onSelect={handleDeleteReplyForEveryone}
+              >
+                {i18n('icu:StoryViewsNRepliesModal__delete-reply-for-everyone')}
+              </AxoContextMenu.Item>
+            )}
+
+            {isInternalUser && (
+              <AxoContextMenu.Item
+                symbol="copy"
+                onSelect={handleCopyReplyTimestamp}
+              >
+                {i18n('icu:StoryViewsNRepliesModal__copy-reply-timestamp')}
+              </AxoContextMenu.Item>
+            )}
+          </AxoContextMenu.Content>
+        </AxoContextMenu.Root>
+      );
+    },
+    [
+      i18n,
+      reply,
+      handleDeleteReply,
+      handleDeleteReplyForEveryone,
+      isInternalUser,
+      handleCopyReplyTimestamp,
+    ]
+  );
+
+  if (reply.reactionEmoji && !reply.deletedForEveryone) {
+    return renderMessageContextMenu(
+      'AxoContextMenu',
+      <div className="StoryViewsNRepliesModal__reaction" data-id={id}>
+        <div className="StoryViewsNRepliesModal__reaction--container">
+          <Avatar
+            avatarUrl={reply.author.avatarUrl}
+            badge={getPreferredBadge(reply.author.badges)}
+            color={getAvatarColor(reply.author.color)}
+            conversationType="direct"
+            i18n={i18n}
+            profileName={reply.author.profileName}
+            size={AvatarSize.TWENTY_EIGHT}
+            theme={ThemeType.dark}
+            title={reply.author.title}
+          />
+          <div className="StoryViewsNRepliesModal__reaction--body">
+            <div className="StoryViewsNRepliesModal__reply--title">
+              <ContactName
+                contactNameColor={reply.contactNameColor}
+                title={reply.author.isMe ? i18n('icu:you') : reply.author.title}
               />
             </div>
+            {reply.author.isMe
+              ? i18n('icu:StoryViewsNRepliesModal__reacted--you')
+              : i18n('icu:StoryViewsNRepliesModal__reacted--someone-else')}
+            <MessageTimestamp
+              i18n={i18n}
+              isRelativeTime
+              module="StoryViewsNRepliesModal__reply--timestamp"
+              timestamp={reply.timestamp}
+            />
           </div>
-          <Emojify text={reply.reactionEmoji} />
         </div>
-      );
-    }
-
-    return (
-      <div className="StoryViewsNRepliesModal__reply" data-id={id}>
-        <Message
-          {...MESSAGE_DEFAULT_PROPS}
-          author={reply.author}
-          bodyRanges={reply.bodyRanges}
-          contactNameColor={reply.contactNameColor}
-          containerElementRef={containerElementRef}
-          conversationColor="ultramarine"
-          conversationId={reply.conversationId}
-          conversationTitle={reply.author.title}
-          conversationType="group"
-          deletedForEveryone={reply.deletedForEveryone}
-          direction="incoming"
-          displayLimit={displayLimit}
-          getPreferredBadge={getPreferredBadge}
-          i18n={i18n}
-          platform={platform}
-          id={reply.id}
-          interactionMode="mouse"
-          isSpoilerExpanded={isSpoilerExpanded}
-          messageExpanded={messageExpanded}
-          onContextMenu={onContextMenu}
-          readStatus={reply.readStatus}
-          renderingContext="StoryViewsNRepliesModal"
-          renderMenu={undefined}
-          shouldCollapseAbove={shouldCollapseAbove}
-          shouldCollapseBelow={shouldCollapseBelow}
-          shouldHideMetadata={false}
-          showContactModal={showContactModal}
-          showSpoiler={showSpoiler}
-          text={reply.body}
-          textDirection={TextDirection.Default}
-          timestamp={reply.timestamp}
-        />
+        <Emojify text={reply.reactionEmoji} />
       </div>
     );
-  };
-
-  const menuOptions = [
-    {
-      icon: 'module-message__context--icon module-message__context__delete-message',
-      label: i18n('icu:StoryViewsNRepliesModal__delete-reply'),
-      onClick: () => deleteGroupStoryReply(reply.id),
-    },
-    {
-      icon: 'module-message__context--icon module-message__context__delete-message-for-everyone',
-      label: i18n('icu:StoryViewsNRepliesModal__delete-reply-for-everyone'),
-      onClick: () => deleteGroupStoryReplyForEveryone(reply.id),
-    },
-  ];
-
-  if (isInternalUser) {
-    menuOptions.push({
-      icon: 'module-message__context--icon module-message__context__copy-timestamp',
-      label: i18n('icu:StoryViewsNRepliesModal__copy-reply-timestamp'),
-      onClick: () => {
-        void window.navigator.clipboard.writeText(String(reply.timestamp));
-      },
-    });
   }
 
-  return reply.author.isMe && !reply.deletedForEveryone ? (
-    <ContextMenu i18n={i18n} key={reply.id} menuOptions={menuOptions}>
-      {({ onClick, menuNode }) => (
-        <>
-          {renderContent(onClick)}
-          {menuNode}
-        </>
-      )}
-    </ContextMenu>
-  ) : (
-    renderContent()
+  return (
+    <div className="StoryViewsNRepliesModal__reply" data-id={id}>
+      <Message
+        {...MESSAGE_DEFAULT_PROPS}
+        author={reply.author}
+        bodyRanges={reply.bodyRanges}
+        contactNameColor={reply.contactNameColor}
+        containerElementRef={containerElementRef}
+        conversationColor="ultramarine"
+        conversationId={reply.conversationId}
+        conversationTitle={reply.author.title}
+        conversationType="group"
+        deletedForEveryone={reply.deletedForEveryone}
+        direction="incoming"
+        displayLimit={displayLimit}
+        getPreferredBadge={getPreferredBadge}
+        i18n={i18n}
+        platform={platform}
+        id={reply.id}
+        interactivity={MessageInteractivity.Normal}
+        interactionMode="mouse"
+        isSpoilerExpanded={isSpoilerExpanded}
+        isSignalConversation={false}
+        isVoiceMessagePlayed={false}
+        messageExpanded={messageExpanded}
+        readStatus={reply.readStatus}
+        renderingContext="StoryViewsNRepliesModal"
+        renderMenu={undefined}
+        renderMessageContextMenu={renderMessageContextMenu}
+        shouldCollapseAbove={shouldCollapseAbove}
+        shouldCollapseBelow={shouldCollapseBelow}
+        shouldHideMetadata={false}
+        showContactModal={showContactModal}
+        showSpoiler={showSpoiler}
+        text={reply.body}
+        textDirection={TextDirection.Default}
+        timestamp={reply.timestamp}
+      />
+    </div>
   );
 }

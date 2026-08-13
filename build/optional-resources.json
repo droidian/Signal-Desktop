@@ -1,338 +1,343 @@
 {
+  "emoji-font.woff2": {
+    "digest": "DTFJd7ArQkm7EQfOA7yHq7J89Ehf03g3jzCi7WLCUtYfJANE0nc/CL4NqJsCNrImIJnUGMbLliXBQgmSQupXLg==",
+    "url": "https://updates2.signal.org/static/android/emoji/font/desktop-32-64-v2.0.4.woff2",
+    "size": 8989556
+  },
   "emoji-index-ar.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ar.json",
-    "size": 452904,
-    "digest": "3DVqx9TBLZA7htSWLrI/Du5NsKfWGjUUTGYuBTkbKBEHcf/cw5lDvqDJIC3/VS/LFiiQs5QiXb4WdzKqoT0qnw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ar.json",
+    "size": 450881,
+    "digest": "UcQ5JI1AI/Aut5r/SRcZzQeht9eqmQoEbnV2sQmeyffAt4/3CU6IzrAwyXe8Z40PgTiI4tLR+iMxoy2XKsrMqA=="
   },
   "emoji-index-en.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/en.json",
-    "size": 385819,
-    "digest": "fNoqhOxTKCr0mlriip5i1nnsjOSdFo1oLMpNvPuYJ5MuBz4vD5ENs7cjpPsoOwnFPWpqtMTbYYEqMrfMDmgbpQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/en.json",
+    "size": 387557,
+    "digest": "3bCQkFTnQq7sVDFHvBHpPDGcgcfOOBw5UnAwqmxFWLcnVY19GHb6wlRRKG6mXI56IvM50Ri+b6cVCQ0nbm/YFA=="
   },
   "emoji-index-hu.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/hu.json",
-    "size": 401691,
-    "digest": "sKPS0gWnJPtXKIXgBNaPodToXzngXjx8lNOXdYqs/nq824FXNNPqSghT0QNqEMa5hUmYHR2hY4VukDgMjK1RvA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/hu.json",
+    "size": 405942,
+    "digest": "uP+9SK2kQdsLxBJCw8JDvf7CPz2TLBK00BLWLHtkMW90uveJV7kIes59/snbafiBmOuipOMD6TaDyZOk7VUKDg=="
   },
   "emoji-index-sw.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sw.json",
-    "size": 401116,
-    "digest": "ikbczgXDfUeGhw41MPJPThlFL30L6+ItWL6lM1vgGj54d1ljpqvh+HSoGjTLLV5Eg54dBcbd/I2gnPPyP34Naw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sw.json",
+    "size": 410130,
+    "digest": "KoSAjaCFulJoFmry9wmqs/X/baWMR0MlCy67eJX3Fn0K4r8zdBebx4td8OtLmPdIxLMziwye328KHcZ6MUe2zg=="
   },
   "emoji-index-cs.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/cs.json",
-    "size": 405580,
-    "digest": "MHQHIMTVJ1I75RtbNW/8QwRE3zLD/BiSmO/HWKNv4XB5QBrpkeA7w8iK2VV1yHmwDqhjrSYKtsbgeveiYmA9sw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/cs.json",
+    "size": 409353,
+    "digest": "fmDLq72vkhOrvKjjfcCN9Mm/n9mfiF3iawOrrCVnM4FHHgDpLztjqatw+I32OJ3r9BEgyVKCEnePOf5q+d0Uzw=="
   },
   "emoji-index-hr-HR.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/hr.json",
-    "size": 401810,
-    "digest": "sZ17I5ALcoVuke4zKkFsCFkd9onA/xzKJpPCrC4Ypi8/4kTQvZ49VZPn1nNdC+52aFHooV0ARcY5WovqMo9hAg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/hr.json",
+    "size": 404870,
+    "digest": "cIzfwQ8Zg3bLDblqSe9ZXUVNc3DR0VaslICAcfAuOVxNriTeWDb9YezGWUKAiuZz94R0N591qjoCr6Cfuj6qzQ=="
   },
   "emoji-index-lv-LV.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/lv.json",
-    "size": 412200,
-    "digest": "4YZAwyDwL2Z7toTEB9N/qO58MRgiOs5zv9mGEGrBd3JveikUzRxp/xpe2R5m+Y9VUHk3UZyhydaMGbdxWYoLsQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/lv.json",
+    "size": 415731,
+    "digest": "cevKjCWwv0EfqFGBFDodG53mZZ4yIQnlkUfB4CpM+Jao4p2E7GmW+FQol3Ze/219tyVct+aUppsikuPq04Kl9A=="
   },
   "emoji-index-pt-PT.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/pt.json",
-    "size": 407180,
-    "digest": "67PyekJZrLxDJjvyTTFCTuJSz4ATWnBVDAmeXuUlnuTF6CDgDysRZHUojv+odsdPYrweGuq5L3lftbmYbTcOYQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/pt.json",
+    "size": 410221,
+    "digest": "iDAMePT1S6R7rbKPC7WLw9VO3VWCGrPTbXw+yiuG8OyV02nDdtg5nbbYvPZ/6QY0e+FyR9LpdFRryQuEEndEoQ=="
   },
   "emoji-index-de.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/de.json",
-    "size": 401360,
-    "digest": "auIR9qEr+Zg9+tIwH8hML2hccyZP1I/+tXZiF3c9FWBOS9Tcs4mWeb9dbzXTbp3J02+u1mejCDQeFtpGzWqMeA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/de.json",
+    "size": 403443,
+    "digest": "H8lmM5ZTAWhY8CumDbA1PmwVBgzDFD4HPuLefGLmLv5K92RoxAiXrE8yGF/rw6DGvZe3POWY2n8IoMH2zCB1vQ=="
   },
   "emoji-index-id.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/in.json",
-    "size": 400566,
-    "digest": "MBs9qXeoG4SHOERVFbdSruYNXxXi4Y3zU3jGdI1xoRKv0ShFn6hj/rJBPiiR3RnP6fwsq5GusG1IP0qvBZwBwA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/in.json",
+    "size": 401250,
+    "digest": "NYf8qJSIyg4QA+09GcflHOVFnQz+e6sM2dq0OEXMohORqVXmHhqLg0ksE7DSaDuMpoakOoh+PXn3sLPS5J/aTw=="
   },
   "emoji-index-fa-IR.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/fa.json",
-    "size": 451085,
-    "digest": "McZRTtJqpxBIWPKyFipTwIotW9YkXKYXqJaaj0RWq/VXgOIZm6lGt5ldNxmuSr4I7bPeokRyhTMYgPdCW2dkvQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/fa.json",
+    "size": 451246,
+    "digest": "Z+ZTglc9mpr43naUrKc3UAk8uXLiqQ5KepiYNdqNY/xgvGlQu6DL/xyAKMdCGvjFAu8AQhvCwcJQB/L8silHVQ=="
   },
   "emoji-index-ur.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ur.json",
-    "size": 448440,
-    "digest": "MY6f9GenedZ6y6isEuKF8sRPTaIdW8xsbt15DR62/caY5++5t2yIZ92q3gXKxWVJ9Dxefyth+z/ofJJ8lwVBpg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ur.json",
+    "size": 455622,
+    "digest": "yIL/+6Gr7RHmTf3Y/vJPa++69dPxEwvknfRgoG1EBVt6DcZuFqA+rAA0GGdtCmVtraa3zc/XaHvuCZOYr25f8w=="
   },
   "emoji-index-fr.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/fr.json",
-    "size": 407341,
-    "digest": "CJxx20DkWyTyLNfXF7RMBkAGHsumzCP/Z6NYkyTLSM8jOn/XY6JDZPG2n6HgPayYONz/AXZ60Asu+K0MXoGFcw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/fr.json",
+    "size": 407924,
+    "digest": "iNhX1Tm9MFXAEwjf66ACj4Giep/AAAVy7QT9RYI6MkdQJTavIbxv19tSV/dsEdkE4B2v+sfnMAyH3H88mDh5+A=="
   },
   "emoji-index-gl-ES.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/gl.json",
-    "size": 403951,
-    "digest": "HR2qSzmft0tO3NbCVlXBxF0XYD2S2/gc4ucPMcqMReFaNQf+fvnB/B2XoSv4ZRZzZIIUeG/t/0sxON3k1Yjl/Q=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/gl.json",
+    "size": 408198,
+    "digest": "11Ft4Qd+4p5zDmxsMEZal9OLcxDiWzjvVh2wCmZeWrmgC+NKPxqi03jWcFH2JbCgxeiWjraMgqdobIYU5XcZLg=="
   },
   "emoji-index-da.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/da.json",
-    "size": 391131,
-    "digest": "Fer1YwgJKKfa2tVOvR2xbAvzv7d/rz3l971qC7HabRnszYsNMSeOjaTNKqz3WpcIaQobskNmkxKnMT2sAYNipg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/da.json",
+    "size": 393647,
+    "digest": "NISvK1Dtt+RutbRcOQjJxsmCTE1NR2nTwx5SJkUOwUKHuiDlivSfS5oaydgD8nEN3HjSl5HxUPN2E+T7t9SPxQ=="
   },
   "emoji-index-bs-BA.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/bs.json",
-    "size": 396905,
-    "digest": "OCIdV8T+YMJR1NuZ9pqg1RBt2IvYdDb8HCHwCCM+1EdpKZkmL1114OTtb1wWY48fbRVXU9PO/g5mm/eVLDg7QA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/bs.json",
+    "size": 405306,
+    "digest": "dB7tJdIaUzWN4n4G7x18zbfUkh0s1Qe6zgi9uH1pCqKzQGo35xr5dNDj0SZU17r6sCJ0vT0CRZxqUv6fZfFYDA=="
   },
   "emoji-index-nb.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/nb.json",
-    "size": 390473,
-    "digest": "pCeqh0QV4eIlZCz3MVqOv6DNMvDM4OgQqcg+Bu5Pcpcjq3f0qg7XcWsyv0nqcn6g31RhQwIhkRIjJPVIkNSIZg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/nb.json",
+    "size": 393794,
+    "digest": "FFxY28Tu0nQmD/RW3716O26SM7pgtaZfFK9YdUbp/B1oZI9ztLBpvkS/FZhA0YyDgGvIOchW28jd+dK7ZSsdSg=="
   },
   "emoji-index-tl-PH.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/tl.json",
-    "size": 402906,
-    "digest": "p8LUgk6zV+F9gWEQBFuRnsh4gfaIMIWmELFfBo3q5hJeHqUfOfVyEEOwidrQSVxAyTB5qerWWluiE52rCz8qwA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/tl.json",
+    "size": 407282,
+    "digest": "WHQOxCi7OW810kjdryDnDSZ8sXvNfu+k4HaNq3rdy/kuuN+9AVzHtKvV4XWUywnYF0AwijCHg8oJ7NWAOrFAWg=="
   },
   "emoji-index-tr.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/tr.json",
-    "size": 401039,
-    "digest": "XjqyBRScG0i+3vOMa9gZ0Lkor7ILHtwvsJCEwIvVb8EAgNcMosiLkhI4M5sNDTnrNyrHcHGxE8CyJOqRTcuHVg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/tr.json",
+    "size": 404060,
+    "digest": "JgLwknHBs4i3I+qfC30AjdSoJEHQk3v608hjR6gPkwRuMY+XWbxn1eSt0lkpOZIS5Smb+wmlgUjFlB7jexxveg=="
   },
   "emoji-index-sv.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sv.json",
-    "size": 395186,
-    "digest": "ufQKU9dfhv+0SdXWEBoMYaMuYgywbVsFMcmc5j+FptINvZPGVscjc8qSUXqC6cW+bcVc0w9EbXdxXOIJ8Ism7g=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sv.json",
+    "size": 396092,
+    "digest": "GSIEErrOFEfYS6O/ZGYUG4YOz/k52QZ0pzDTulzaUeuPnax51z4DLH3o2E+cbwHWfsUprhSDQITYTKc5gJslZw=="
   },
   "emoji-index-kk-KZ.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/kk.json",
-    "size": 475973,
-    "digest": "hKgfO1PBw3TNOLsTkVIIqyQ1YOl6IaKlYZU33FB8nnc/Qu7Ivfpd0d6ol0UdQm/Dl9KcjudsO0rY1uGgPfuh+g=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/kk.json",
+    "size": 484645,
+    "digest": "4UoZN2L7EXODOgSOOzlea1alcJeWhCzDSyQlvyah81JCkiRixTlXuF6+XfwZF3XU3cNIoeCH3je5IgpxXsLb2g=="
   },
   "emoji-index-sr.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sr.json",
-    "size": 478824,
-    "digest": "Uggn4WxnKKVGMCJ60YtiR4/W+Jtf6zxr3CB1dD3lWHJ3mmEtaACYUeuH+B0tHw9/OOc3WzMgpstfg/h26CTp2Q=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sr.json",
+    "size": 421555,
+    "digest": "DZ9bDD50W/NgEQLaf20AiII97TrK43K3982GyCpKrFs7XUeAFcWx6gom6KZAJcHwQmsjDeTkXImkgTAec8RMxg=="
   },
   "emoji-index-bg-BG.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/bg.json",
-    "size": 483328,
-    "digest": "YA+1aUsyLhNCSjzhoDp3s5Pj6D/082j7domWjm89+4BlA5qJUg59i+nfa7tqN/2P7iIp3+KCTAKzbuxHtyEFmw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/bg.json",
+    "size": 486860,
+    "digest": "VorRxlPyOVWFBaH66gQ5pdM2f1n0WdSYyjxDxb/dFejBTjP+trIr1snunKiqTLsfELzuAO+9BSPLtwkK561k2w=="
   },
   "emoji-index-ms.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ms.json",
-    "size": 401722,
-    "digest": "r9ynDRT3svoBU2ijtXKgHSS+8k5EH69nHxUPVB860Jf0ZsIcBbJ2Mb2GOHLPBQsjt0SbJxAGXu95Ygp/qBfjEw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ms.json",
+    "size": 403988,
+    "digest": "vS3P0c2Q8TeXkSDn/5mUffg9h1YAyV2ADda9x4ImQBO/jxOBfcPRBa7MboW10PFG73pSZ4mgZWt1EGR103IZMA=="
   },
   "emoji-index-zh-CN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/zh_CN.json",
-    "size": 389885,
-    "digest": "GV+lS0ErkFhX3WNlGPi8OtSmRI3RGQD8cLbYtbtRnn9koWKCQRDc+3oA9b/2DtErQfQDaIoNeztYOQgm/+ZBYA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/zh_CN.json",
+    "size": 386977,
+    "digest": "Skij4d16EDSvEWWucdFb3grR1pJS7EGGk6NL0Q4GbZytB5cz7lLxAhSDlV0DqJXdRaJHMM/ioHTgozmkJEIY+Q=="
   },
   "emoji-index-ca.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ca.json",
-    "size": 400054,
-    "digest": "b9PvjgBRy1eZ+YSEQlm0XWZ8HG36JyR+IdwhSXGg1jXxYmUKC00bRJGYVLxbViYe0xnMql6HhR13d32Hd2D78Q=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ca.json",
+    "size": 403364,
+    "digest": "S4Aj9jq/Y+k4bjR91I/juFy0Afk0F57qn0FlKmzMid9BhAWUogtUdOvpIG353GH01JamPEnxGID3z6xQ/U+tAw=="
   },
   "emoji-index-he.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/iw.json",
-    "size": 457894,
-    "digest": "yZ1CqUe2CSx0YNOIo/XnRCq5doK5DGHKSidGCsOxCPMpfpWHA4slF9kmmD6vG/UvC1rPb8NkRvxdFVx4sLFaUg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/iw.json",
+    "size": 437619,
+    "digest": "649CDeave/oeHzt8S6q5QgO2pveNAkCxm4w5ArgXDkdIaZ5ww1SXK4yQtaDzqsIFZbuw3kLdjKKhL7FTFgpyGA=="
   },
   "emoji-index-el.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/el.json",
-    "size": 494814,
-    "digest": "pttqZWfIkZ6pU2d3IohWvcaGIL3cUeeO77nmXSjzcGXeZOCiykGp2CcIAYsn6B4Yq1wz9Z+rMQiSXurl8wPTtw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/el.json",
+    "size": 504915,
+    "digest": "rOntK3gmlvwF5PVrFwQfz9CGh4ynEhu+FfEpqh0AZFAuSwvg8AMQBh32CmbVQB8Tx+rPMyJ1jUazwbifnsgdHg=="
   },
   "emoji-index-uk-UA.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/uk.json",
-    "size": 494925,
-    "digest": "PkMEUg2NQ9PpD3GnPrwnQbc2AG5LVYNekef92bFRCTLlD2m3xarbne1nocPhyZmGbTXFZEW2QAAFLbmCP0PJiw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/uk.json",
+    "size": 495987,
+    "digest": "cLTzBWBAzBO+lwbIfnj+1IQUkiyn8znUBI17ADQC8U1psZVAkMXaXpsSzq5mpisUncOB+gTmPkSLkVm/vwr3zg=="
   },
   "emoji-index-gu-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/gu.json",
-    "size": 532435,
-    "digest": "mpV9GrxAZhnkHnFZglw5dKN2F8Lzur1L4a8+7KZAfCz9LMqE5QchodbXeNA8GE776brIz5bFjmd68YsazfYTGQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/gu.json",
+    "size": 547223,
+    "digest": "yhRh9mdkvTTZXkSL497Ail5SAEzwqOapuUBJfXD4U7VUFiDFfQ8OwStcvx5NleTxdAzt3L7il76fDn+VZBNFYA=="
   },
   "emoji-index-vi.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/vi.json",
-    "size": 437328,
-    "digest": "D2EgdEnNjxw5tNh2JqXuWU/Y9RQkaxvHp87IVTw7n54KW2kH1F2LtPawFINAE1YMnUFE1vDfTtgVfvtjNLeZ3w=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/vi.json",
+    "size": 427605,
+    "digest": "oLHR+Gq0GfWtCsZEpDT+zQ3zQl9Dvl1iwBxoiIvGwLyyA2WFmKJLoT9yNRrN/ls+MFVOoLQkmhJmgRSEqlUNSw=="
   },
   "emoji-index-my.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/my.json",
-    "size": 593800,
-    "digest": "S5NCBTztu6RltY+QV0/Q7C14WhXygJGL6Vb8EBlgfeyPbhciFjR648vISokxvcIw5cYM3WHVBtuyJoXQOrm0bg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/my.json",
+    "size": 616783,
+    "digest": "kfekfKFM5Ukm8a3KDkgLX1mPbw4EJivTVMZfv/+pcKL18ynt29/Z11C4fCpzvuc7NJAn22qC2e+pZ++2tItjHw=="
   },
   "emoji-index-te-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/te.json",
-    "size": 576868,
-    "digest": "isykRxHRoDFtadmucBDUyysioPf8vM5q94HqaOaNmUtnzzjYWlM2PrZOnGC+4caPjd4wltWv6axVE//Kv4OOYw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/te.json",
+    "size": 586817,
+    "digest": "441hoAOn1WgKDVm+E/SKW3VCzveV8w1IDa1vuRK/CpKwkSKmrS4znqqJ9QVcKkEXoyoxwE/ykD9gXBTLEbGVeg=="
   },
   "emoji-index-af-ZA.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/af.json",
-    "size": 389115,
-    "digest": "S8sImGnyQyDgAKcg0kRB6uUXtxFrBEWjCC2ZLBNEz/1VUQTFoLIPOQ4lj8uOXqtp0O2nkVlhWfMJFcZpgH5DGA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/af.json",
+    "size": 394934,
+    "digest": "MS9TosXJl2gwxZNJO0aAH6EH3ir9VC24EIaWzchxuX3ZCW08jiB4eXE5W9CK/wK9mhbaog+TcTxKvKCvHcgI/w=="
   },
   "emoji-index-ky-KG.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ky.json",
-    "size": 472958,
-    "digest": "AY7O53JJuVhQGxGLsJ4xWVM99DwHzNYabxx4cx+Ie1pG1IJe4R++mYJHrPflo2P1YyIfLctK2D4ubO+VA6+/Ig=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ky.json",
+    "size": 488404,
+    "digest": "T/morlc9cz4Aa3iC1E0YlOR0iynoM96akquLDqfo2C4lYWrfIkpF8z5A5pQnCpZK4dJ4EtisWlQedP6oq4e0Iw=="
   },
   "emoji-index-az-AZ.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/az.json",
-    "size": 403798,
-    "digest": "wJrwxbMEuyoZL8ecsLuqhgR2perDWMx3vnA6SrzxOkpNd5iFfEB1WROO93QLmF0iy8m0tSzX7JI8c1RqFZgOAw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/az.json",
+    "size": 409038,
+    "digest": "2rRldIZJO+53kV28tlheUvYmgQgGYz0tWeIeEhx4RfJuniFB8lkbo4M2GIYYejq3Q8fy6qxc6pt/htFQJGUrCA=="
   },
   "emoji-index-kn-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/kn.json",
-    "size": 569059,
-    "digest": "nfVvynszY9e608P0VP4uFhqkD7ojV3nVQGWh3ZHCOSip9hIvpCtkW20/1YubybLDzc6adwOhyVXJ+B0BsoOM7w=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/kn.json",
+    "size": 574405,
+    "digest": "gYnqxLzV90Y8McvegqVyDfWeUJsUMB9+erjYD8ibAAPl6TveyG5OIGQtqLtfF2oM4cRX5J2TBYGEPXCqJCoEbQ=="
   },
   "emoji-index-ml-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ml.json",
-    "size": 594193,
-    "digest": "v7h2ZoaPoqXZwntcpKy1jlruDST5UGwgWYviJ6PzXQ4ROAArcWA6xT1vdmc8aA+iFxLd539qlHPUJNtb5TwVog=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ml.json",
+    "size": 598840,
+    "digest": "aC9xursSxIpIxyY8O03/HR5tZvTB2qW6dubMkBpt6Fshwi8nq/xVq0zLYyA7nrfhN1kG7wCfZhEn1uNryW2Gvg=="
   },
   "emoji-index-sk-SK.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sk.json",
-    "size": 404721,
-    "digest": "ozFJ5Pt/FGdoR9xfBUk4wRGXrMxmqjhRDxvWLd3yYODoiXL24nKYy4IwTawOJHeZiwqwvvE7gqHrkA/SCwCyoA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sk.json",
+    "size": 408844,
+    "digest": "mh3ryGNtHDjoMlGlR8ZVtC6wMCF/kVJe5rMKHnXsztsNJJmVB+W8hrd06gT6F67vM4SpAkg8S1kIjey/FDLnZQ=="
   },
   "emoji-index-eu.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/eu.json",
-    "size": 407919,
-    "digest": "7sI8NyA08N7B83V4zY7CObaNOjFYastARPqKY3rZj1PVqRPi7KbPQBvcHceN7B+1p7o0Mr7oGmATgAfSLhmi2w=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/eu.json",
+    "size": 410794,
+    "digest": "WgAMCXRFcpTySkZXJNN6PdVXgcvQkACApaAYVln8r/0wikfwRChX02sL9hnJKaTRRDWR2YdWL7um4JfKE30dww=="
   },
   "emoji-index-sl-SI.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sl.json",
-    "size": 400657,
-    "digest": "Qyffd2y+sk4ANLXGkJgwMKDG7IkOEqFxwdfrNCibP1ErMcYvdc755dQqKpbamUbHSByij2Qr7JyIetyVwNNG7Q=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sl.json",
+    "size": 403652,
+    "digest": "Uhznh/CEuGvwipEMnd5g9ju0pcZ6XsXXF0ZyrMBry6jvUBWlsV6XxFFU4SUs/+J6MLY1QNNeJx1RzoGhdPrB2A=="
   },
   "emoji-index-ko.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ko.json",
-    "size": 408883,
-    "digest": "E+7+N7F2+lsRWMB3xpT1nlmFTkAR/hG39dG/Iu8cPWw4E9q+gGNKyT+BI17GoWuABFUEbbzBAyUdq6zB3IqlJw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ko.json",
+    "size": 404565,
+    "digest": "k2ox2JzZprazMg70Tp7Yp7WqVtxdGIR+ItSTfx1pHoZkYMlPeHmXx15zFSpZEL9mR1z+89vavTMnTJQIQc9rGQ=="
   },
   "emoji-index-zh-Hant.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/zh_TW.json",
-    "size": 385650,
-    "digest": "X9uKC4QA4V4a/ipUZ4qzqRVIEgMekqcSTvs0qE+/aYk1cpG7xp2iVlJrAJXkVwt9DKCoygDNe3E4hZEGP02pdA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/zh_TW.json",
+    "size": 387509,
+    "digest": "i7XZjouBt3VjsBmhPtWFxE4iXQhzU2uBs5S0U11jIAW3vckojTEU0CkXWNoBWNG5fsA17HM9FP+imGMzHgX1cw=="
   },
   "emoji-index-mk-MK.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/mk.json",
-    "size": 483294,
-    "digest": "iFFDZvAotINhNyFbgSyIry8vf01iVh6qldflxM7tTFO6ZGCDwe7hgdVx7onc3i7/LiT2Hgvx/mp8TBNUTGV2/w=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/mk.json",
+    "size": 486706,
+    "digest": "qsKPGYAS+FL35kukZj8v1+d+afwjg/GgnZ1F88fFBAf8ta2414lheXoRY7XjUBUIZBvUeSRPmxwKuhp7We368Q=="
   },
   "emoji-index-es.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/es.json",
-    "size": 404572,
-    "digest": "ul3oo9Ocht5K3NPyEbR6Jl3z+T/5AkpvCspqDSlLgnmFG6eszMDjlzr1kCbg50ujrOIsircDf+K8QsFFxMIWgQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/es.json",
+    "size": 410600,
+    "digest": "8Sh3UqmqAXWYRI4rtAVmrsbdV/NnyI1c1HIvc1JcDyTgksoPGOFENoFBVsYujngXqdeLitSJgsdi5bGSGxNZLg=="
   },
   "emoji-index-th.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/th.json",
-    "size": 550138,
-    "digest": "kJf+gJ9Yb6foD6wVcc6Qw8Obw05pR7KKoMnK/HXWpU2vsAf3SHOCiLJzWZgvR0hwOjlOdywKXE0x18JO+YuZUw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/th.json",
+    "size": 550598,
+    "digest": "qfjdH2qWEL8HoXCYiPdh6ZTDXvFD54+JUH1FTfGWVgdofhsHXOneuTwOEHKl8FOaBOWG2kD00wIGYlSq/hrt6Q=="
   },
   "emoji-index-fi.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/fi.json",
-    "size": 402811,
-    "digest": "qxGZ1FOw1o/vzAwbWo2B1jPCYU87uxZ2O1u5TD/9wU+zagR+cluzIOU56EQ0JjMpIoH5fCrWplCLyU3fcxU4FA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/fi.json",
+    "size": 405984,
+    "digest": "KTMcNyfatXv0toztK6DsSnL48nVN/0jGzYqy6aQILImVD6rH/8y/acYTSjo5q5/4Ezhmzvf+4m0gYixgsxpAew=="
   },
   "emoji-index-ug.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ug.json",
-    "size": 462660,
-    "digest": "HWZlo5lin8RA6JyOqlmUA5Fa99Ytaw11ayNjoKzP3FzjYaggfLjpWbQAMLlRhWBPkfeEwD6Kzm4NKA9ik5q6uA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ug.json",
+    "size": 502431,
+    "digest": "63qo74N6LKNnHpdCCbQqUT5f4zrEOWX745fxKEtcjhFjzRFOTjoWDVFZzLowlyjOwTHI63ZiAElXPjCJmsODYg=="
   },
   "emoji-index-sq-AL.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/sq.json",
-    "size": 407235,
-    "digest": "c3QTR9EfEdRwVJUw28gEDLgSu7vETRmuAY6TB7RRbkuYu7b/PZhTVNQvN5YlrxJZKEpJBnV72yUnYGWAZ32x5g=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/sq.json",
+    "size": 409782,
+    "digest": "7j+KYekxxDIqMbFN9DvNLjzrd1R+6aZANrUO2XrwwhfnR5fY6hEQ+qeIhNTHIKT43lYhskMEv9vh7nZQZPwBww=="
   },
   "emoji-index-pa-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/pa.json",
-    "size": 516382,
-    "digest": "k0FV7+rJ8Yrt4WYAelfeYUdMPhlBg7QjJJ92+/KruXLv5r497CuOeA5h5uUPWxX1GMcHFE8XseYO6KrPvU711w=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/pa.json",
+    "size": 535771,
+    "digest": "sFOLcIss1zaCu66ZDjgQA6atYA097HItzhneoogaoNZa1J8bsiXTUWxHgeipYzvi2TP6TtWRl8OUBRLmeYPMzA=="
   },
   "emoji-index-ja.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ja.json",
-    "size": 426016,
-    "digest": "Dqpw/QyfoFys4AOSle5CSYYHQ/JWPEzP2/FMJqe8s1eaJFDmLphhLHO2rqZxwbmFE8SH+ssYNL6Zk3Cv+Tl+dQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ja.json",
+    "size": 416243,
+    "digest": "kZtMb92wkxoEKZwzKSmQiGIwxlx4s8T9NQfDgswp0tcIJ10u/yJpladm4bURVMubJBspHljekTVlfxXzsPi/Nw=="
   },
   "emoji-index-ga-IE.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ga.json",
-    "size": 406448,
-    "digest": "J2jK3VDMglvEJ4Z/9l47azmVULgOIz3XVyH0mM9Lleq0D5gfX59j0Hcto/ARzJgWTO+ZGnzXv8odraJMhoEzRA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ga.json",
+    "size": 418175,
+    "digest": "ppwUt7ktfr3/EoiEtkkD2jgCgZ2tYvXfldiyDYmdoTsdrIlncF0/8SL07jwCy/aXLCzi07i9yCg/xWaKib84Cw=="
   },
   "emoji-index-ro-RO.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ro.json",
-    "size": 405814,
-    "digest": "FiDrbo68Dxj8K2dwCWJTxlIyhHkuThTffJ6MV9wGhrK9P6u0zpWIbul4V/+avt1NjzEPP9k7Aa2Ih+HPuKMnhA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ro.json",
+    "size": 408981,
+    "digest": "tL7mSfzKYpEcdz2xvJDmMFyy0Z7AOMlgfZvWQLCzKJ2EQ/2oBcH8PZciSIwHt9wN5gE7o9nkfJRcg7xrGZ4dQQ=="
   },
   "emoji-index-it.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/it.json",
-    "size": 405664,
-    "digest": "p67ALen9EUau/CjNMi46L9U2//N6cV1JLq9caorH5NEYJzEKh1FnxzyALfsnC11dYgUpt6p2CVLHYraL5tqwxg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/it.json",
+    "size": 407497,
+    "digest": "Bwi0B9L4sxteV1sK5ehAHLQpDozxF4UwGIQqXymILSDloZCj/nw0KpIcFDBIW8TK1oePd0ZL6+/37WrP3pxopA=="
   },
   "emoji-index-hi-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/hi.json",
-    "size": 541932,
-    "digest": "6w8gMR++ZP0zL0tgP5XHByCVP3wiSPTKd+PSfyeKyEoKiA185neVMI+qrqHnubmNELfa6q1C8ldJTYun5teE4Q=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/hi.json",
+    "size": 547233,
+    "digest": "DC1jThbmO1uPrSPMiNxYts9VV9Umbl0X0Kncuh+cpwySLgeZQxJqxzG6t2wPAWszWfZCSyUadT7C95ajpE8lzA=="
   },
   "emoji-index-km-KH.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/km.json",
-    "size": 562706,
-    "digest": "VArdMfuo2NNAGzkO6SI1R5voezyU4GvneUBdFfuP2nBYgTtlMCG58ZP26SZ/g1tkQkt0PSZfDp0sjaHBIi62Eg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/km.json",
+    "size": 572275,
+    "digest": "O/CPYt+xU1q/hbSfsBN+tYLkUKPNbZgH0V16Olt6amr2tmMtvJcK0MyVPg5t4Ae9K5z+jlRCOGX0yj0UdlGu7w=="
   },
   "emoji-index-ka-GE.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ka.json",
-    "size": 583392,
-    "digest": "3SS0e+BEJn/DaN++0ZAaghalkR6dnD9BFQFGAzaplXj7PzNus/ddFfZPXMURTy5WJb0mSTkrTliRvw7K35mj6A=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ka.json",
+    "size": 596599,
+    "digest": "TnjqdVQqdpfatwHlJPDO2cDBle8D+uZjiQYjxXA+297SLrmX/2HCaj26ndxXaVcMkG7QYovxmLgHaTVgi/4ILg=="
   },
   "emoji-index-nl.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/nl.json",
-    "size": 393852,
-    "digest": "nxXyLKKZABso2df4JAfETZW8/PR5TQ7NmdTV9gAxgt7j5fG3HsLwvMezwLaXrdj+pIUms5BlA5AOHY3c5ZSmhQ=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/nl.json",
+    "size": 397290,
+    "digest": "7mUuBjjjBAYIufUFbN+ibtYkWdwviTcv9jgFLJnnDmY91rs+DsIrVEJ24w8BkhnheELcid8tABl0ETnSYrDcBQ=="
   },
   "emoji-index-et-EE.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/et.json",
-    "size": 395115,
-    "digest": "aHiNBcciOk0HYRUyFJ3PwdrIvjjSsC9DuUu0aziNnZ/mBykEIUhL1PloRDc/Ym1mqyCes5EWWKr8FWEAQhyZPw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/et.json",
+    "size": 398044,
+    "digest": "MEt44F8+y0PKlyCFyUJOqTxTE0HuRT1PLKnWq19mtcSinEr2tL1+TPTqAeuSwUbJ9vsHhoOjm+WbvXooWcmSHQ=="
   },
   "emoji-index-zh-HK.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/zh_HK.json",
-    "size": 385609,
-    "digest": "W1XTbi/MV3Hgdmp5enwHhxkg2SM6+9THnlUba/kVrg4ER1fdFtzqD9vewQmrwWk2gRR1DVjmgBbu0rKrIjk3vA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/zh_HK.json",
+    "size": 386480,
+    "digest": "wCjsXnQeNX09BqJoe03veE+1MGhHSxf2Lt+4u797z4hTmzs7CpZhHVwAtxWAmPqCqB4gT/gvMigifH2v0IbzSg=="
   },
   "emoji-index-pl.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/pl.json",
-    "size": 407438,
-    "digest": "lbwJLpDAuA9ATPNk0A+WtaRxD9oFBwZC0EWzwl9CZV5KSw0JguXytcmD2LLm1OMwvFSuwekHtcE4lf6pjpjyYw=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/pl.json",
+    "size": 411669,
+    "digest": "lbXhpFzp2mg/1FOi2zqIxPBQZOup8qs+KtGDL7H2lYuT4gYlP1h9w/G1iW+MmlZgYBcOgUQ88eZ9e4Onu8UEKg=="
   },
   "emoji-index-ru.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ru.json",
-    "size": 492644,
-    "digest": "dQ0uW7xuH4xuh9VGUJQfMnSTCO+w8BUcuYgvYp0KafXyhziWI36XGB3/OhH3BymcqsiQg7BNx7ATZ6fsOviDrg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ru.json",
+    "size": 496667,
+    "digest": "l9v8vOg/xbdsjf9x37ZtxDLYqP4zxAuP/VdW526i+dbk11yE3yjgZKkIZSoKAYLtje/eke46jnFpP2EQG9qMYQ=="
   },
   "emoji-index-pt-BR.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/pt_BR.json",
-    "size": 408023,
-    "digest": "OqCvL+BxwH2GJGJdbFC14GAVifuk6rJ2/PN4vbYD/HbZR7tviOq+qH+010BbVVUjIf44OrMyu+23JbYFGaCDRg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/pt_BR.json",
+    "size": 411220,
+    "digest": "0j4IvLO2zlKTlD+wBxk2W5LIzwZYxUklar+zo6IPNCdHa53rpMLUyFeAlpmROrasOjEDv22TfXKad80E4FwNBg=="
   },
   "emoji-index-ta-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/ta.json",
-    "size": 592175,
-    "digest": "zDb98sx+qk4L2Um3ipwBNOg3nF5YJzWm1HZXHRlB5KLbTjg3ZJWqLUc/l1G9KtNWqDk5rLOhU079RC37HNzWWg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/ta.json",
+    "size": 604896,
+    "digest": "R7G+0Yg/SgmLcY8uSgZ6lEch0OFOUZ2VEfyC/Zv3gBpR1rNsrs4WTKYgpdtuOHtZzqNlupLucR02iu+FUGZNsA=="
   },
   "emoji-index-bn-BD.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/bn.json",
-    "size": 540507,
-    "digest": "oKQ1N/Jdq+TOYprrb5dzGiO4J4/hDuoUDGaAFkXW5onIkVmjcUh5T46pxUWFRfJaS8v0Jk0fo7BTW0QhF9dZCA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/bn.json",
+    "size": 556694,
+    "digest": "A+Hvcw6LGYN4AmqZfSXwI1ALLr0ybBYfPbG0SdwpCYTdp5er+xBubhurbWHy4a4YtuUYGzlxR5pXFYQEoDWjtg=="
   },
   "emoji-index-mr-IN.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/mr.json",
-    "size": 532336,
-    "digest": "lTQJw9ktS1XSUcsJJunGsyVkN5ll9gYfjZdR+b5wXU+lpnO7WvoyvIuX/4B7jMcsw8X5xBFkjYM3/+XsaCsVHg=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/mr.json",
+    "size": 550516,
+    "digest": "NEcXJbmxwgDkoNRKUxWI5ArEhMlhycr4khZgMJj9dU3EGW/AUMFohMIf8WMd4KswEPUtESUxMXsMhQhbD/x2ew=="
   },
   "emoji-index-lt-LT.json": {
-    "url": "https://updates2.signal.org/static/android/emoji/search/15/lt.json",
-    "size": 419490,
-    "digest": "ZFVlUdqaxViv2f9bM6w+nLh5OpMIqKjazbdrP+vv1+V9zUnUGVlxOFOljJGJSmD4npeyITP/2Stvd3tn6WfhpA=="
+    "url": "https://updates2.signal.org/static/android/emoji/search/18/lt.json",
+    "size": 422010,
+    "digest": "cyPz2t/RH7lz2u+JmOCQP9vit2WKL6MY0xs54sPxsaRq6zeKtfU7mLMiVigRBpTefY5JgzaLQdONj4rO1pdLPg=="
   },
   "emoji-sheet-Jumbo_0.proto": {
     "digest": "ykDMJMg2zQ1/l3lfW5pVtKaD52ZDyxY45yxQvUgHwNbfUw8cdhN9awwA8QMOxReLmnevfDVGecKjdFYnPrl4gw==",
@@ -633,5 +638,10 @@
     "digest": "BdMHuS481JdEoe6KBPV/lKPEB4VnG9zW1GehpO/f4mHAYPx5GKtcrHP7VUCeNp5Vouy9ppgPLb24nWJVKg8D2A==",
     "url": "https://updates2.signal.org/static/android/emoji/12/xhdpi/jumbo/Jumbo_59.proto",
     "size": 297274
+  },
+  "calling-dred_weights-1_6_1-f4aed08a.bin": {
+    "digest": "sdfpdb/u3wiTfBr2s0gx1LJX6jii4tquyax/UBThTGWTEXyOCSKjYmYV+9tKQZcO+Q1B1ReoGSW3VbvzeMGKaQ==",
+    "url": "https://updates2.signal.org/static/android/calling/deep_plc-dred_weights-1_6_1-f4aed08a.bin",
+    "size": 1998208
   }
 }

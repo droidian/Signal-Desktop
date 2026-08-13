@@ -1,33 +1,30 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import type { VoiceNotesPlaybackProps } from '../../components/VoiceNotesPlaybackContext.dom.js';
-import { VoiceNotesPlaybackProvider } from '../../components/VoiceNotesPlaybackContext.dom.js';
-import { selectAudioPlayerActive } from '../selectors/audioPlayer.preload.js';
+import type { VoiceNotesPlaybackProps } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import { VoiceNotesPlaybackProvider } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import { selectAudioPlayerActive } from '../selectors/audioPlayer.preload.ts';
 import {
   AudioPlayerContent,
   useAudioPlayerActions,
-} from '../ducks/audioPlayer.preload.js';
-import { globalMessageAudio } from '../../services/globalMessageAudio.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { Sound, SoundType } from '../../util/Sound.std.js';
-import { getConversations } from '../selectors/conversations.dom.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
-import { markViewed } from '../ducks/conversations.preload.js';
-import * as Errors from '../../types/errors.std.js';
-import { usePrevious } from '../../hooks/usePrevious.std.js';
+} from '../ducks/audioPlayer.preload.ts';
+import { globalMessageAudio } from '../../services/globalMessageAudio.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { Sound, SoundType } from '../../util/Sound.std.ts';
+import { getConversations } from '../selectors/conversations.dom.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
+import { markViewed } from '../ducks/conversations.preload.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { usePreviousDeprecated } from '../../hooks/usePrevious.std.ts';
 
 const log = createLogger('VoiceNotesPlaybackProvider');
 
 const stateChangeConfirmDownSound = new Sound({
   soundType: SoundType.VoiceNoteStart,
-});
-const stateChangeConfirmUpSound = new Sound({
-  soundType: SoundType.VoiceNoteEnd,
 });
 
 /**
@@ -38,21 +35,21 @@ export const SmartVoiceNotesPlaybackProvider = memo(
     const active = useSelector(selectAudioPlayerActive);
     const conversations = useSelector(getConversations);
 
-    const previousStartPosition = usePrevious(undefined, active?.startPosition);
+    const previousStartPosition = usePreviousDeprecated(
+      undefined,
+      active?.startPosition
+    );
 
     const content = active?.content;
     let url: undefined | string;
     let messageId: undefined | string;
     let messageIdForLogging: undefined | string;
     let playNextConsecutiveSound = false;
-    let playFinishConsecutiveSound = false;
 
     if (content && AudioPlayerContent.isVoiceNote(content)) {
       ({ url, id: messageId } = content.current);
       messageIdForLogging = content.current.messageIdForLogging;
       playNextConsecutiveSound = content.isConsecutive;
-      playFinishConsecutiveSound =
-        content.isConsecutive && content.queue.length === 0;
     }
     if (content && AudioPlayerContent.isDraft(content)) {
       url = content.url;
@@ -123,7 +120,6 @@ export const SmartVoiceNotesPlaybackProvider = memo(
         messageId,
         messageIdForLogging,
         startPosition: active.startPosition,
-        playFinishConsecutiveSound,
         durationChanged,
         unloadMessageAudio,
         currentTimeUpdated,
@@ -162,7 +158,6 @@ export const SmartVoiceNotesPlaybackProvider = memo(
       messageAudioEnded,
       messageId,
       messageIdForLogging,
-      playFinishConsecutiveSound,
       playNextConsecutiveSound,
       previousStartPosition,
       unloadMessageAudio,
@@ -179,7 +174,6 @@ function loadAudio({
   messageId,
   messageIdForLogging,
   startPosition,
-  playFinishConsecutiveSound,
   durationChanged,
   currentTimeUpdated,
   messageAudioEnded,
@@ -190,7 +184,6 @@ function loadAudio({
   messageId: string | undefined;
   messageIdForLogging: string | undefined;
   startPosition: number;
-  playFinishConsecutiveSound: boolean;
   durationChanged: (value: number | undefined) => void;
   currentTimeUpdated: (value: number) => void;
   messageAudioEnded: () => void;
@@ -225,9 +218,6 @@ function loadAudio({
       currentTimeUpdated(globalMessageAudio.currentTime);
     },
     onEnded() {
-      if (playFinishConsecutiveSound) {
-        drop(stateChangeConfirmUpSound.play());
-      }
       messageAudioEnded();
     },
     onError(error) {

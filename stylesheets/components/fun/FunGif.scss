@@ -35,7 +35,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: light-dark(variables.$color-gray-05, variables.$color-gray-75);
+  background: var(--axo-color-fill-primary);
   border-radius: 8px;
 }
 
@@ -44,7 +44,7 @@
   height: 36px;
   @include mixins.color-svg(
     '../images/icons/v3/error/error-triangle.svg',
-    light-dark(variables.$color-gray-25, variables.$color-gray-45)
+    var(--axo-color-label-secondary)
   );
 }
 

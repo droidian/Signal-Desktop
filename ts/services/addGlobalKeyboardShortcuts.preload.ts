@@ -1,15 +1,17 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as KeyboardLayout from './keyboardLayout.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { PanelType } from '../types/Panels.std.js';
-import { clearConversationDraftAttachments } from '../util/clearConversationDraftAttachments.preload.js';
-import { drop } from '../util/drop.std.js';
-import { matchOrQueryFocusable } from '../util/focusableSelectors.std.js';
-import { getQuotedMessageSelector } from '../state/selectors/composer.preload.js';
-import { removeLinkPreview } from './LinkPreview.preload.js';
-import { ForwardMessagesModalType } from '../components/ForwardMessagesModal.dom.js';
+import * as KeyboardLayout from './keyboardLayout.dom.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { PanelType } from '../types/Panels.std.ts';
+import { clearConversationDraftAttachments } from '../util/clearConversationDraftAttachments.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { matchOrQueryFocusable } from '../util/focusableSelectors.std.ts';
+import { getQuotedMessageSelector } from '../state/selectors/composer.preload.ts';
+import { removeLinkPreview } from './LinkPreview.preload.ts';
+import { ForwardMessagesModalType } from '../components/ForwardMessagesModal.dom.tsx';
+import { getSelectedConversationId } from '../state/selectors/nav.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
 const log = createLogger('addGlobalKeyboardShortcuts');
 
@@ -24,7 +26,7 @@ export function addGlobalKeyboardShortcuts(): void {
     const commandOrCtrl = commandKey || controlKey;
 
     const state = window.reduxStore.getState();
-    const { selectedConversationId } = state.conversations;
+    const selectedConversationId = getSelectedConversationId(state);
     const conversation = window.ConversationController.get(
       selectedConversationId
     );
@@ -95,6 +97,7 @@ export function addGlobalKeyboardShortcuts(): void {
       }
 
       const node = targets[index];
+      strictAssert(node, 'Missing node');
       const firstFocusableElement = matchOrQueryFocusable(node);
 
       if (firstFocusableElement) {
@@ -136,7 +139,7 @@ export function addGlobalKeyboardShortcuts(): void {
       const target = document.activeElement;
 
       // We might want to use NamedNodeMap.getNamedItem('class')
-      /* eslint-disable @typescript-eslint/no-explicit-any */
+      /* oxlint-disable @typescript-eslint/no-explicit-any */
       if (
         target &&
         target.attributes &&
@@ -144,7 +147,7 @@ export function addGlobalKeyboardShortcuts(): void {
         (target.attributes as any).class.value
       ) {
         const className = (target.attributes as any).class.value;
-        /* eslint-enable @typescript-eslint/no-explicit-any */
+        /* oxlint-enable @typescript-eslint/no-explicit-any */
 
         // Search box wants to handle events internally
         if (className.includes('LeftPaneSearchInput__input')) {
@@ -205,7 +208,7 @@ export function addGlobalKeyboardShortcuts(): void {
 
     // Send Escape to active conversation so it can close panels
     if (conversation && key === 'Escape') {
-      window.reduxActions.conversations.popPanelForConversation();
+      window.reduxActions.nav.popPanelForConversation();
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -232,12 +235,13 @@ export function addGlobalKeyboardShortcuts(): void {
       const { x, y, width, height } = button.getBoundingClientRect();
       const mouseEvent = document.createEvent('MouseEvents');
       // Types do not match signature
-      /* eslint-disable @typescript-eslint/no-explicit-any */
       mouseEvent.initMouseEvent(
         'click',
         true, // bubbles
         false, // cancelable
+        // oxlint-disable-next-line typescript/no-explicit-any
         null as any, // view
+        // oxlint-disable-next-line typescript/no-explicit-any
         null as any, // detail
         0, // screenX,
         0, // screenY,
@@ -247,10 +251,10 @@ export function addGlobalKeyboardShortcuts(): void {
         false, // altKey,
         false, // shiftKey,
         false, // metaKey,
+        // oxlint-disable-next-line typescript/no-explicit-any
         false as any, // button,
         document.body
       );
-      /* eslint-enable @typescript-eslint/no-explicit-any */
 
       button.dispatchEvent(mouseEvent);
 
@@ -296,7 +300,7 @@ export function addGlobalKeyboardShortcuts(): void {
       shiftKey &&
       (key === 'm' || key === 'M')
     ) {
-      window.reduxActions.conversations.pushPanelForConversation({
+      window.reduxActions.nav.pushPanelForConversation({
         type: PanelType.AllMedia,
       });
       event.preventDefault();
@@ -394,7 +398,7 @@ export function addGlobalKeyboardShortcuts(): void {
         return;
       }
 
-      window.reduxActions.conversations.pushPanelForConversation({
+      window.reduxActions.nav.pushPanelForConversation({
         type: PanelType.MessageDetails,
         args: {
           messageId: targetedMessage,

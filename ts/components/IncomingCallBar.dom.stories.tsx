@@ -1,13 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './IncomingCallBar.dom.js';
-import { IncomingCallBar } from './IncomingCallBar.dom.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
+import type { PropsType } from './IncomingCallBar.dom.tsx';
+import { IncomingCallBar } from './IncomingCallBar.dom.tsx';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
 
 const { i18n } = window.SignalContext;
 

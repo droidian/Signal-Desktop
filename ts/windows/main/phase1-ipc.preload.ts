@@ -7,28 +7,32 @@ import * as semver from 'semver';
 import lodash, { throttle } from 'lodash';
 
 import type { IPCType } from '../../window.d.ts';
-import { parseIntWithFallback } from '../../util/parseIntWithFallback.std.js';
-import { getSignalConnections } from '../../util/getSignalConnections.preload.js';
-import { ThemeType } from '../../types/Util.std.js';
-import { Environment } from '../../environment.std.js';
-import { SignalContext } from '../context.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { formatCountForLogging } from '../../logging/formatCountForLogging.std.js';
-import * as Errors from '../../types/errors.std.js';
+import { parseIntWithFallback } from '../../util/parseIntWithFallback.std.ts';
+import { getSignalConnections } from '../../util/getSignalConnections.preload.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { Environment } from '../../environment.std.ts';
+import { SignalContext } from '../context.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { formatCountForLogging } from '../../logging/formatCountForLogging.std.ts';
+import * as Errors from '../../types/errors.std.ts';
 
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { explodePromise } from '../../util/explodePromise.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
-import type { WindowsNotificationData } from '../../services/notifications.preload.js';
-import { finish3dsValidation } from '../../services/donations.preload.js';
-import { AggregatedStats } from '../../textsecure/WebsocketResources.preload.js';
-import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager.preload.js';
-import { isProduction } from '../../util/version.std.js';
-import { ToastType } from '../../types/Toast.dom.js';
-import { ConversationController } from '../../ConversationController.preload.js';
-import { isEnabled } from '../../RemoteConfig.dom.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { explodePromise } from '../../util/explodePromise.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import type { WindowsNotificationData } from '../../services/notifications.preload.ts';
+import {
+  approvePaypalPayment,
+  cancelPaypalPayment,
+  finish3dsValidation,
+} from '../../services/donations.preload.ts';
+import { AggregatedStats } from '../../textsecure/WebsocketResources.preload.ts';
+import { UNAUTHENTICATED_CHANNEL_NAME } from '../../textsecure/SocketManager.preload.ts';
+import { isProduction } from '../../util/version.std.ts';
+import { ToastType } from '../../types/Toast.dom.tsx';
+import { ConversationController } from '../../ConversationController.preload.ts';
+import { isEnabled } from '../../RemoteConfig.dom.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 const { mapValues } = lodash;
 
@@ -122,16 +126,32 @@ const IPC: IPCType = {
       connectTime: preloadConnectTime - window.preloadEndTime,
       processedCount,
     }),
-  readyForUpdates: () => ipc.send('ready-for-updates'),
+  readyForUpdates: () => {
+    window.SignalCI?.handleEvent('ready-for-updates', null);
+    ipc.send('ready-for-updates');
+  },
   removeSetupMenuItems: () => ipc.send('remove-setup-menu-items'),
   setAutoHideMenuBar: autoHide => ipc.send('set-auto-hide-menu-bar', autoHide),
   setAutoLaunch: value => ipc.invoke('set-auto-launch', value),
   setBadge: badge => ipc.send('set-badge', badge),
   setMenuBarVisibility: visibility =>
     ipc.send('set-menu-bar-visibility', visibility),
-  showDebugLog: () => {
-    log.info('showDebugLog');
-    ipc.send('show-debug-log');
+  showDebugLog: (options?: { mode?: 'submit' | 'close' }) => {
+    log.info('showDebugLog', options);
+    ipc.send('show-debug-log', options);
+  },
+  showCallDiagnostic: () => {
+    log.info('showCallDiagnostic');
+    ipc.send('show-call-diagnostic');
+  },
+  closeCallDiagnostic: () => {
+    ipc.send('close-call-diagnostic');
+  },
+  closeDebugLog: () => {
+    ipc.send('close-debug-log');
+  },
+  updateCallDiagnosticData: (data: string) => {
+    ipc.send('update-call-diagnostic-data', data);
   },
   showPermissionsPopup: (forCalling, forCamera) =>
     ipc.invoke('show-permissions-popup', forCalling, forCamera),
@@ -201,7 +221,7 @@ window.open = () => null;
 
 // Playwright uses `eval` for `.evaluate()` API
 if (config.ciMode !== 'full' && config.environment !== Environment.Test) {
-  // eslint-disable-next-line no-eval, no-multi-assign
+  // oxlint-disable-next-line no-multi-assign
   window.eval = global.eval = () => null;
 }
 
@@ -229,9 +249,19 @@ ipc.on('additional-log-data-request', async event => {
     statistics = {};
   }
 
-  let networkStatistics: NetworkStatistics = {
-    signalConnectionCount: formatCountForLogging(getSignalConnections().length),
-  };
+  let networkStatistics: NetworkStatistics;
+  try {
+    networkStatistics = {
+      signalConnectionCount: formatCountForLogging(
+        getSignalConnections().length
+      ),
+    };
+  } catch (error) {
+    networkStatistics = {
+      signalConnectionCount: undefined,
+    };
+  }
+
   const unauthorizedStats = AggregatedStats.loadOrCreateEmpty(
     UNAUTHENTICATED_CHANNEL_NAME
   );
@@ -367,11 +397,8 @@ ipc.on('start-call-lobby', (_event, info) => {
   window.Events.startCallingLobbyViaToken(info.token);
 });
 
-ipc.on('start-call-link', (_event, { key, epoch }) => {
-  window.reduxActions?.calling?.startCallLinkLobby({
-    rootKey: key,
-    epoch,
-  });
+ipc.on('start-call-link', (_event, { key }) => {
+  window.reduxActions?.calling?.startCallLinkLobby({ rootKey: key });
 });
 
 ipc.on('show-window', () => {
@@ -386,10 +413,21 @@ ipc.on('donation-validation-complete', (_event, { token }) => {
   drop(finish3dsValidation(token));
 });
 
+ipc.on(
+  'donation-paypal-approved',
+  (_event, { payerId, paymentToken, returnToken }) => {
+    drop(approvePaypalPayment({ payerId, paymentToken, returnToken }));
+  }
+);
+
+ipc.on('donation-paypal-canceled', (_event, { returnToken }) => {
+  drop(cancelPaypalPayment(returnToken));
+});
+
 ipc.on('show-conversation-via-token', (_event, token: string) => {
   const { showConversationViaToken } = window.Events;
   if (showConversationViaToken) {
-    void showConversationViaToken(token);
+    showConversationViaToken(token);
   }
 });
 ipc.on('show-conversation-via-signal.me', (_event, info) => {
@@ -525,7 +563,10 @@ ipc.on(
     {
       manifest,
       stickers,
-    }: { manifest: Uint8Array; stickers: ReadonlyArray<Uint8Array> }
+    }: {
+      manifest: Uint8Array<ArrayBuffer>;
+      stickers: ReadonlyArray<Uint8Array<ArrayBuffer>>;
+    }
   ) => {
     const packId = await window.Events?.uploadStickerPack(manifest, stickers);
 

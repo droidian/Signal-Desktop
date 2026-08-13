@@ -6,14 +6,14 @@ import type { Group, PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, ServiceIdKind, StorageState } from '@signalapp/mock-server';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
+import * as durations from '../../util/durations/index.std.ts';
 import {
   parseAndFormatPhoneNumber,
   PhoneNumberFormat,
-} from '../../util/libphonenumberInstance.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
-import { acceptConversation, expectSystemMessages } from '../helpers.node.js';
+} from '../../util/libphonenumberInstance.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
+import { acceptConversation, expectSystemMessages } from '../helpers.node.ts';
 
 export const debug = createDebug('mock:test:gv2');
 
@@ -34,8 +34,11 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
     await bootstrap.init();
 
     const { phone, contacts, unknownContacts } = bootstrap;
-    const [first, second] = contacts;
-    [unknownContact, unknownPniContact] = unknownContacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
+    [unknownContact, unknownPniContact] = unknownContacts as [
+      PrimaryDevice,
+      PrimaryDevice,
+    ];
 
     group = await first.createGroup({
       title: 'Invited Desktop PNI',
@@ -96,7 +99,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
 
   it('should accept PNI invite and modify the group state', async () => {
     const { phone, contacts, desktop } = bootstrap;
-    const [first, second] = contacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -143,11 +146,8 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
       .locator('.module-message-request-actions button >> "Accept"')
       .waitFor({ state: 'hidden' });
 
-    await window
-      .locator('button.module-ConversationHeader__button--more')
-      .click();
-
-    await window.locator('.react-contextmenu-item >> "Group settings"').click();
+    await window.getByRole('button', { name: 'More Info' }).click();
+    await window.getByRole('menuitem', { name: 'Group settings' }).click();
 
     debug(
       'Checking that we see all members of group, including (previously) unknown contact'
@@ -164,11 +164,12 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
     debug('Leave the group through settings');
 
     await conversationStack
-      .locator('.conversation-details-panel >> "Leave group"')
+      .locator('.conversation-details-panel')
+      .getByRole('button', { name: 'Leave group' })
       .click();
 
     await window
-      .getByTestId('ConfirmationDialog.ConversationDetailsAction.confirmLeave')
+      .getByRole('alertdialog', { name: 'Do you really want to leave?' })
       .getByRole('button', { name: 'Leave' })
       .click();
 
@@ -204,7 +205,10 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
       .click();
 
     debug('waiting for confirmation modal');
-    await window.locator('.module-Modal button >> "Block"').click();
+    await window
+      .getByRole('alertdialog', { name: `Block and Leave ${group.title}?` })
+      .getByRole('button', { name: 'Block' })
+      .click();
 
     group = await phone.waitForGroupUpdate(group);
     assert.strictEqual(group.revision, 2);
@@ -215,10 +219,17 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
     assert(!group.getPendingMemberByServiceId(desktop.pni));
 
     // Verify that sync message was sent.
-    const { syncMessage } = await phone.waitForSyncMessage(entry =>
-      Boolean(entry.syncMessage.sent?.message?.groupV2?.groupChange)
-    );
-    const groupChangeBuffer = syncMessage.sent?.message?.groupV2?.groupChange;
+    const { syncMessage } = await phone.waitForSyncMessage(entry => {
+      if (entry.syncMessage.content?.sent == null) {
+        return false;
+      }
+      return (
+        entry.syncMessage.content.sent.message?.groupV2?.groupChange != null
+      );
+    });
+    assert.ok(syncMessage.content?.sent != null);
+    const groupChangeBuffer =
+      syncMessage.content.sent.message?.groupV2?.groupChange;
     assert.notEqual(groupChangeBuffer, null);
     const groupChange = Proto.GroupChange.decode(
       groupChangeBuffer ?? new Uint8Array(0)
@@ -227,12 +238,12 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
     const actions = Proto.GroupChange.Actions.decode(
       groupChange?.actions ?? new Uint8Array(0)
     );
-    assert.strictEqual(actions.deletePendingMembers.length, 1);
+    assert.strictEqual(actions.deleteMembersPendingProfileKey.length, 1);
   });
 
   it('should accept ACI invite with extra PNI on the invite list', async () => {
     const { phone, contacts, desktop } = bootstrap;
-    const [first, second] = contacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -280,10 +291,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
       .locator('.module-ConversationHeader__header__info__title')
       .click();
     await conversationStack
-      .locator(
-        '.ConversationDetails-panel-row__root--button >> ' +
-          'text=Requests & Invites'
-      )
+      .getByRole('button', { name: 'Requests & Invites' })
       .click();
     await conversationStack
       .locator('.ConversationDetails__tabs__tab >> text=Invites (1)')
@@ -298,7 +306,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
 
   it('should decline ACI invite with extra PNI on the invite list', async () => {
     const { phone, contacts, desktop } = bootstrap;
-    const [, second] = contacts;
+    const [, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -317,7 +325,10 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
       .click();
 
     debug('waiting for confirmation modal');
-    await window.locator('.module-Modal button >> "Block"').click();
+    await window
+      .getByRole('alertdialog', { name: `Block and Leave ${group.title}?` })
+      .getByRole('button', { name: 'Block' })
+      .click();
 
     group = await phone.waitForGroupUpdate(group);
     assert.strictEqual(group.revision, 3);
@@ -331,7 +342,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
   it('should display a single notification for remote PNI accept', async () => {
     const { phone, contacts, desktop } = bootstrap;
 
-    const [first, second] = contacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     debug('Creating new group with Desktop');
     group = await phone.createGroup({
@@ -378,7 +389,7 @@ describe('pnp/accept gv2 invite', function (this: Mocha.Suite) {
   it('should display a e164 for a PNI invite', async () => {
     const { phone, contacts, desktop } = bootstrap;
 
-    const [first] = contacts;
+    const [first] = contacts as [PrimaryDevice];
 
     debug('Creating new group with Desktop');
     group = await phone.createGroup({

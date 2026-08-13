@@ -5,10 +5,12 @@ import type { DropzoneOptions } from 'react-dropzone';
 import { useDropzone } from 'react-dropzone';
 
 export const useStickerDropzone = (
-  onDrop: DropzoneOptions['onDrop']
+  onDrop: NonNullable<DropzoneOptions['onDrop']>,
+  onDropRejected: NonNullable<DropzoneOptions['onDropRejected']>
 ): ReturnType<typeof useDropzone> =>
   useDropzone({
     onDrop,
+    onDropRejected,
     accept: {
       'image/png': ['.png'],
       'image/webp': ['.webp'],

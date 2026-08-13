@@ -4,14 +4,18 @@
 import { assert } from 'chai';
 import { v7 as generateUuid } from 'uuid';
 
-import { DataWriter } from '../../sql/Client.preload.js';
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import { IMAGE_PNG } from '../../types/MIME.std.js';
-import { generateAci, generatePni } from '../../types/ServiceId.std.js';
-import { MessageModel } from '../../models/messages.preload.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import { ConversationModel } from '../../models/conversations.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import { IMAGE_PNG } from '../../types/MIME.std.ts';
+import { MessageModel } from '../../models/messages.preload.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { ConversationModel } from '../../models/conversations.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import {
+  generateAci,
+  generatePni,
+} from '../../test-helpers/serviceIdUtils.std.ts';
 
 describe('Conversations', () => {
   async function resetConversationController(): Promise<void> {
@@ -162,8 +166,8 @@ describe('Conversations', () => {
       ]
     );
 
-    assert.equal(resultWithImage.contentType, 'image/png');
-    assert.equal(resultWithImage.fileName, null);
+    assert.equal(resultWithImage?.contentType, 'image/png');
+    assert.equal(resultWithImage?.fileName, null);
   });
 
   describe('updateExpirationTimer', () => {
@@ -199,5 +203,35 @@ describe('Conversations', () => {
       assert.equal(conversation.getExpireTimerVersion(), 3);
       assert.equal(conversation.get('expireTimer'), DurationInSeconds.DAY);
     });
+  });
+
+  it('setting a duplicate username clears it from existing conversations', async () => {
+    const alice = await window.ConversationController.getOrCreateAndWait(
+      generateAci(),
+      'private',
+      { active_at: 10 }
+    );
+    const bob = await window.ConversationController.getOrCreateAndWait(
+      generateAci(),
+      'private',
+      { active_at: 1 }
+    );
+
+    await alice.updateUsername('username.12');
+    await bob.updateUsername('username.12');
+
+    assert.strictEqual(alice.get('username'), undefined);
+    assert.strictEqual(bob.get('username'), 'username.12');
+
+    await DataWriter.flushUpdateConversationBatcher();
+
+    const aliceInDb = await DataReader.getConversationById(alice.attributes.id);
+    const bobInDb = await DataReader.getConversationById(bob.attributes.id);
+
+    strictAssert(aliceInDb, 'must exist');
+    strictAssert(bobInDb, 'must exist');
+
+    assert.strictEqual(aliceInDb.username, undefined);
+    assert.strictEqual(bobInDb.username, 'username.12');
   });
 });

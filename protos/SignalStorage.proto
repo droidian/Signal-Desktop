@@ -174,6 +174,7 @@ message GroupV2Record {
   reserved 9;
   StorySendMode storySendMode = 10;
   optional AvatarColor avatarColor = 11;
+  bytes verifiedNameHash = 12; // SHA-256 of UTF-8 encoded decrypted group title that was last verified
 }
 
 message Payments {
@@ -196,10 +197,13 @@ message AccountRecord {
       bytes serviceIdBinary = 3; // service ID binary (i.e. 16 byte UUID for ACI, 1 byte prefix + 16 byte UUID for PNI)
     }
 
+    message ReleaseNotes {}
+
     oneof identifier {
       Contact contact = 1;
       bytes legacyGroupId = 3;
       bytes groupMasterKey = 4;
+      ReleaseNotes releaseNotes = 5;
     }
   }
 
@@ -232,12 +236,6 @@ message AccountRecord {
     }
   }
 
-  message BackupTierHistory {
-    // See zkgroup for integer particular values. Unset if backups are not enabled.
-    optional uint64 backupTier = 1;
-    optional uint64 endedAtTimestamp = 2;
-  }
-
   message NotificationProfileManualOverride {
     message ManuallyEnabled {
       bytes id = 1;
@@ -267,6 +265,7 @@ message AccountRecord {
   bool unlistedPhoneNumber = 13;
   repeated PinnedConversation pinnedConversations = 14;
   bool preferContactAvatars = 15;
+  Payments payments = 16;
   uint32 universalExpireTimer = 17;
   reserved 18; // primarySendsSms
   reserved 19; // deprecatedE164
@@ -293,14 +292,20 @@ message AccountRecord {
   reserved /*backupsSubscriberId*/ 36;
   reserved /*backupsSubscriberCurrencyCode*/ 37;
   reserved /*backupsSubscriptionManuallyCancelled*/ 38;
-  // Set to true after backups are enabled and one is uploaded.
-  optional bool hasBackup = 39;
+  reserved /*hasBackup*/ 39;
   // See zkgroup for integer particular values. Unset if backups are not enabled.
   optional uint64 backupTier = 40;
   IAPSubscriberData backupSubscriberData = 41;
   optional AvatarColor avatarColor = 42;
+  reserved 43; // backupTierHistory
   NotificationProfileManualOverride notificationProfileManualOverride = 44;
   bool notificationProfileSyncDisabled = 45;
+  bool automaticKeyVerificationDisabled = 46;
+  bool hasSeenAdminDeleteEducationDialog = 47;
+  optional bool releaseNotesChatArchived = 48;
+  optional uint64 releaseNotesChatMutedUntilTimestamp = 49;
+  optional bool releaseNotesChatBlocked = 50;
+  optional bool releaseNotesChatMarkedUnread = 51;
 }
 
 message StoryDistributionListRecord {
@@ -337,9 +342,8 @@ message StickerPackRecord {
 message CallLinkRecord {
   bytes rootKey = 1; // 16 bytes
   bytes adminPasskey = 2; // Non-empty when the current user is an admin
-  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey`
-                                   // should be cleared
-  optional bytes epoch = 4;
+  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey` should be cleared
+  reserved /*epoch*/ 4;
 }
 
 message Recipient {

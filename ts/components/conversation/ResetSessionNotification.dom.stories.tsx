@@ -1,10 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './ResetSessionNotification.dom.js';
-import { ResetSessionNotification } from './ResetSessionNotification.dom.js';
+import type { Props } from './ResetSessionNotification.dom.tsx';
+import { ResetSessionNotification } from './ResetSessionNotification.dom.tsx';
 
 const { i18n } = window.SignalContext;
 

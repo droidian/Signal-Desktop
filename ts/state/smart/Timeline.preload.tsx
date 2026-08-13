@@ -1,91 +1,49 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import lodash from 'lodash';
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, useRef, useMemo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import type { ReadonlyDeep } from 'type-fest';
-import type { WarningType as TimelineWarningType } from '../../components/conversation/Timeline.dom.js';
-import { Timeline } from '../../components/conversation/Timeline.dom.js';
-import { ContactSpoofingType } from '../../util/contactSpoofing.std.js';
-import { getGroupMemberships } from '../../util/getGroupMemberships.dom.js';
+import { isEqual } from 'lodash';
+
+import { Timeline } from '../../components/conversation/Timeline.dom.tsx';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
 import {
-  dehydrateCollisionsWithConversations,
-  getCollisionsFromMemberships,
-} from '../../util/groupMemberNameCollisions.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import {
-  useConversationsActions,
-  type ConversationType,
-} from '../ducks/conversations.preload.js';
-import type { StateType } from '../reducer.preload.js';
-import { selectAudioPlayerActive } from '../selectors/audioPlayer.preload.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
-import {
-  getConversationByServiceIdSelector,
   getConversationMessagesSelector,
   getConversationSelector,
   getHasContactSpoofingReview,
   getInvitedContactsForNewlyCreatedGroup,
   getMessages,
-  getSafeConversationWithSameTitle,
-  getSelectedConversationId,
   getTargetedMessage,
-} from '../selectors/conversations.dom.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
-import type { PropsType as SmartCollidingAvatarsPropsType } from './CollidingAvatars.dom.js';
-import { SmartCollidingAvatars } from './CollidingAvatars.dom.js';
-import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from './ContactSpoofingReviewDialog.preload.js';
-import { SmartContactSpoofingReviewDialog } from './ContactSpoofingReviewDialog.preload.js';
-import { SmartHeroRow } from './HeroRow.preload.js';
-import { SmartMiniPlayer } from './MiniPlayer.preload.js';
-import {
-  SmartTimelineItem,
-  type SmartTimelineItemProps,
-} from './TimelineItem.preload.js';
-import { SmartTypingBubble } from './TypingBubble.preload.js';
-import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager.preload.js';
-import { isInFullScreenCall as getIsInFullScreenCall } from '../selectors/calling.std.js';
+} from '../selectors/conversations.dom.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
+import { SmartContactSpoofingReviewDialog } from './ContactSpoofingReviewDialog.preload.tsx';
+import { SmartHeroRow } from './HeroRow.preload.tsx';
+import { SmartTimelineItem } from './TimelineItem.preload.tsx';
+import { SmartTypingBubble } from './TypingBubble.preload.tsx';
+import { AttachmentDownloadManager } from '../../jobs/AttachmentDownloadManager.preload.ts';
+import { getActiveCall, getCallSelector } from '../selectors/calling.std.ts';
+import { getMidnight } from '../../types/NotificationProfile.std.ts';
 
-const { isEmpty } = lodash;
+import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from './ContactSpoofingReviewDialog.preload.tsx';
+import type { RenderItemProps } from './TimelineItem.preload.tsx';
+import { getCallHistorySelector } from '../selectors/callHistory.std.ts';
+import { getCallIdFromEra } from '../../util/callDisposition.preload.ts';
+import { mapItemsIntoCollapseSets } from '../../util/CollapseSet.std.ts';
+import type { CollapseSet } from '../../util/CollapseSet.std.ts';
+import { isSignalConversation } from '../../util/isSignalConversation.dom.ts';
+import { getIsInFullScreenCall } from '../selectors/isInFullScreenCall.std.ts';
 
 type ExternalProps = {
   id: string;
 };
 
-function renderItem({
-  containerElementRef,
-  containerWidthBreakpoint,
-  conversationId,
-  isBlocked,
-  isGroup,
-  isOldestTimelineItem,
-  messageId,
-  nextMessageId,
-  previousMessageId,
-  unreadIndicatorPlacement,
-}: SmartTimelineItemProps): JSX.Element {
+function renderItem(props: RenderItemProps): JSX.Element {
   return (
-    <SmartTimelineItem
-      containerElementRef={containerElementRef}
-      containerWidthBreakpoint={containerWidthBreakpoint}
-      conversationId={conversationId}
-      isBlocked={isBlocked}
-      isGroup={isGroup}
-      isOldestTimelineItem={isOldestTimelineItem}
-      messageId={messageId}
-      previousMessageId={previousMessageId}
-      nextMessageId={nextMessageId}
-      unreadIndicatorPlacement={unreadIndicatorPlacement}
-    />
+    <SmartTimelineItem key={props.item.id} {...props} renderItem={renderItem} />
   );
-}
-
-function renderCollidingAvatars(
-  props: SmartCollidingAvatarsPropsType
-): JSX.Element {
-  return <SmartCollidingAvatars {...props} />;
 }
 
 function renderContactSpoofingReviewDialog(
@@ -97,67 +55,13 @@ function renderContactSpoofingReviewDialog(
 function renderHeroRow(id: string): JSX.Element {
   return <SmartHeroRow id={id} />;
 }
-function renderMiniPlayer(options: { shouldFlow: boolean }): JSX.Element {
-  return <SmartMiniPlayer {...options} />;
-}
 function renderTypingBubble(conversationId: string): JSX.Element {
   return <SmartTypingBubble conversationId={conversationId} />;
 }
 
-const getWarning = (
-  conversation: ReadonlyDeep<ConversationType>,
-  state: Readonly<StateType>
-): undefined | TimelineWarningType => {
-  switch (conversation.type) {
-    case 'direct':
-      if (!conversation.acceptedMessageRequest && !conversation.isBlocked) {
-        const safeConversation = getSafeConversationWithSameTitle(state, {
-          possiblyUnsafeConversation: conversation,
-        });
-
-        if (safeConversation) {
-          return {
-            type: ContactSpoofingType.DirectConversationWithSameTitle,
-            safeConversationId: safeConversation.id,
-          };
-        }
-      }
-      return undefined;
-    case 'group': {
-      if (conversation.left || conversation.groupVersion !== 2) {
-        return undefined;
-      }
-
-      const getConversationByServiceId =
-        getConversationByServiceIdSelector(state);
-
-      const { memberships } = getGroupMemberships(
-        conversation,
-        getConversationByServiceId
-      );
-      const groupNameCollisions = getCollisionsFromMemberships(memberships);
-      const hasGroupMembersWithSameName = !isEmpty(groupNameCollisions);
-      if (hasGroupMembersWithSameName) {
-        return {
-          type: ContactSpoofingType.MultipleGroupMembersWithSameTitle,
-          acknowledgedGroupNameCollisions:
-            conversation.acknowledgedGroupNameCollisions,
-          groupNameCollisions:
-            dehydrateCollisionsWithConversations(groupNameCollisions),
-        };
-      }
-
-      return undefined;
-    }
-    default:
-      throw missingCaseError(conversation);
-  }
-};
-
 export const SmartTimeline = memo(function SmartTimeline({
   id,
 }: ExternalProps) {
-  const activeAudioPlayer = useSelector(selectAudioPlayerActive);
   const conversationMessagesSelector = useSelector(
     getConversationMessagesSelector
   );
@@ -175,18 +79,11 @@ export const SmartTimeline = memo(function SmartTimeline({
   const isInFullScreenCall = useSelector(getIsInFullScreenCall);
   const conversation = conversationSelector(id);
   const conversationMessages = conversationMessagesSelector(id);
-
-  const warning = useSelector(
-    useCallback(
-      (state: StateType) => {
-        return getWarning(conversation, state);
-      },
-      [conversation]
-    )
-  );
+  const callHistorySelector = useSelector(getCallHistorySelector);
+  const activeCall = useSelector(getActiveCall);
+  const callSelector = useSelector(getCallSelector);
 
   const {
-    acknowledgeGroupMemberNameCollisions,
     clearInvitedServiceIdsForNewlyCreatedGroup,
     clearTargetedMessage,
     closeContactSpoofingReview,
@@ -195,14 +92,12 @@ export const SmartTimeline = memo(function SmartTimeline({
     loadNewestMessages,
     loadOlderMessages,
     markMessageRead,
-    reviewConversationNameCollision,
     scrollToOldestUnreadMention,
     setCenterMessage,
     setIsNearBottom,
     targetMessage,
   } = useConversationsActions();
-  const { peekGroupCallForTheFirstTime, peekGroupCallIfItHasMembers } =
-    useCallingActions();
+  const { maybePeekGroupCall } = useCallingActions();
 
   const getTimestampForMessage = useCallback(
     (messageId: string): undefined | number => {
@@ -211,11 +106,11 @@ export const SmartTimeline = memo(function SmartTimeline({
     [messages]
   );
 
-  const shouldShowMiniPlayer = activeAudioPlayer != null;
   const {
     acceptedMessageRequest,
     isBlocked = false,
     isGroupV1AndDisabled,
+    terminated: isGroupTerminated = false,
     removalStage,
     typingContactIdTimestamps = {},
     unreadCount,
@@ -235,17 +130,63 @@ export const SmartTimeline = memo(function SmartTimeline({
     totalUnseen,
   } = conversationMessages;
 
+  const previousCollapseSet = useRef<Array<CollapseSet> | undefined>(undefined);
+  const midnightToday = getMidnight(Date.now());
+  const { collapseSets, updatedOldestLastSeenIndex, updatedScrollToIndex } =
+    useMemo(() => {
+      const result = mapItemsIntoCollapseSets({
+        activeCall,
+        allowMultidaySets: false,
+        callHistorySelector,
+        callSelector,
+        getCallIdFromEra,
+        items,
+        messages,
+        midnightToday,
+        oldestUnseenIndex,
+        scrollToIndex,
+      });
+
+      const { resultUnseenIndex, resultScrollToIndex } = result;
+      let { resultSets } = result;
+
+      // Params messages changes a lot, items less often, call selectors possibly a lot.
+      // But we need to massage items based on the values from these params. So, if we
+      // generate the same data, we would like to return the same object.
+      if (
+        previousCollapseSet.current &&
+        isEqual(resultSets, previousCollapseSet.current)
+      ) {
+        resultSets = previousCollapseSet.current;
+      }
+
+      previousCollapseSet.current = resultSets;
+
+      return {
+        collapseSets: resultSets,
+        updatedOldestLastSeenIndex: resultUnseenIndex,
+        updatedScrollToIndex: resultScrollToIndex,
+      };
+    }, [
+      activeCall,
+      callHistorySelector,
+      callSelector,
+      items,
+      messages,
+      midnightToday,
+      oldestUnseenIndex,
+      scrollToIndex,
+    ]);
+
   const isConversationSelected = selectedConversationId === id;
   const isIncomingMessageRequest =
     !acceptedMessageRequest && removalStage !== 'justNotification';
   const isSomeoneTyping = Object.keys(typingContactIdTimestamps).length > 0;
   const targetedMessageId = targetedMessage?.id;
+  const isSignalConvo = isSignalConversation(conversation);
 
   return (
     <Timeline
-      acknowledgeGroupMemberNameCollisions={
-        acknowledgeGroupMemberNameCollisions
-      }
       clearInvitedServiceIdsForNewlyCreatedGroup={
         clearInvitedServiceIdsForNewlyCreatedGroup
       }
@@ -264,43 +205,39 @@ export const SmartTimeline = memo(function SmartTimeline({
       isBlocked={isBlocked}
       isConversationSelected={isConversationSelected}
       isGroupV1AndDisabled={isGroupV1AndDisabled}
+      isGroupTerminated={isGroupTerminated}
       isInFullScreenCall={isInFullScreenCall}
       isIncomingMessageRequest={isIncomingMessageRequest}
       isNearBottom={isNearBottom}
+      isSignalConversation={isSignalConvo}
       isSomeoneTyping={isSomeoneTyping}
-      items={items}
+      items={collapseSets}
       loadNewerMessages={loadNewerMessages}
       loadNewestMessages={loadNewestMessages}
       loadOlderMessages={loadOlderMessages}
       markMessageRead={markMessageRead}
+      maybePeekGroupCall={maybePeekGroupCall}
       messageChangeCounter={messageChangeCounter}
       messageLoadingState={messageLoadingState}
       updateVisibleMessages={
         AttachmentDownloadManager.updateVisibleTimelineMessages
       }
-      oldestUnseenIndex={oldestUnseenIndex}
-      peekGroupCallForTheFirstTime={peekGroupCallForTheFirstTime}
-      peekGroupCallIfItHasMembers={peekGroupCallIfItHasMembers}
-      renderCollidingAvatars={renderCollidingAvatars}
+      oldestUnseenIndex={updatedOldestLastSeenIndex}
       renderContactSpoofingReviewDialog={renderContactSpoofingReviewDialog}
       renderHeroRow={renderHeroRow}
       renderItem={renderItem}
-      renderMiniPlayer={renderMiniPlayer}
       renderTypingBubble={renderTypingBubble}
-      reviewConversationNameCollision={reviewConversationNameCollision}
-      scrollToIndex={scrollToIndex}
+      scrollToIndex={updatedScrollToIndex}
       scrollToIndexCounter={scrollToIndexCounter}
       scrollToOldestUnreadMention={scrollToOldestUnreadMention}
       setCenterMessage={setCenterMessage}
       setIsNearBottom={setIsNearBottom}
-      shouldShowMiniPlayer={shouldShowMiniPlayer}
       targetedMessageId={targetedMessageId}
       targetMessage={targetMessage}
       theme={theme}
       totalUnseen={totalUnseen}
       unreadCount={unreadCount}
       unreadMentionsCount={unreadMentionsCount}
-      warning={warning}
     />
   );
 });

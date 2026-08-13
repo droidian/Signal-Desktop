@@ -1,12 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { type ComponentProps, type JSX, useState, useEffect } from 'react';
 
-import { ProgressBar } from './ProgressBar.dom.js';
-import type { ComponentMeta } from '../storybook/types.std.js';
+import { ProgressBar } from './ProgressBar.dom.tsx';
+import type { ComponentMeta } from '../storybook/types.std.ts';
 
-type Props = React.ComponentProps<typeof ProgressBar>;
+type Props = ComponentProps<typeof ProgressBar>;
 export default {
   title: 'Components/ProgressBar',
   component: ProgressBar,
@@ -42,8 +42,8 @@ export function RTLIncreasing(args: Props): JSX.Element {
 }
 
 function useIncreasingFractionComplete() {
-  const [fractionComplete, setFractionComplete] = React.useState(0);
-  React.useEffect(() => {
+  const [fractionComplete, setFractionComplete] = useState(0);
+  useEffect(() => {
     if (fractionComplete >= 1) {
       return;
     }

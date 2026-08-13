@@ -3,52 +3,49 @@
 
 import lodash from 'lodash';
 import classNames from 'classnames';
-import type { ReactChild, ReactNode, RefObject, UIEvent } from 'react';
-import React from 'react';
+import type { ReactNode, UIEvent, JSX, FocusEvent, KeyboardEvent } from 'react';
+import { Component, createRef } from 'react';
 
-import type { ReadonlyDeep } from 'type-fest';
 import {
   ScrollDownButton,
   ScrollDownButtonVariant,
-} from './ScrollDownButton.dom.js';
+} from './ScrollDownButton.dom.tsx';
 
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { assertDev, strictAssert } from '../../util/assert.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary.std.js';
-import { WidthBreakpoint } from '../_util.std.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { assertDev, strictAssert } from '../../util/assert.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { clearTimeoutIfNecessary } from '../../util/clearTimeoutIfNecessary.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
 
-import { ErrorBoundary } from './ErrorBoundary.dom.js';
-import { I18n } from '../I18n.dom.js';
-import { TimelineWarning } from './TimelineWarning.dom.js';
-import { TimelineWarnings } from './TimelineWarnings.dom.js';
-import { NewlyCreatedGroupInvitedContactsDialog } from '../NewlyCreatedGroupInvitedContactsDialog.dom.js';
-import { ContactSpoofingType } from '../../util/contactSpoofing.std.js';
-import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from '../../state/smart/ContactSpoofingReviewDialog.preload.js';
-import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions.std.js';
-import { hasUnacknowledgedCollisions } from '../../util/groupMemberNameCollisions.std.js';
-import { TimelineFloatingHeader } from './TimelineFloatingHeader.dom.js';
+import { ErrorBoundary } from './ErrorBoundary.dom.tsx';
+import { NewlyCreatedGroupInvitedContactsDialog } from '../NewlyCreatedGroupInvitedContactsDialog.dom.tsx';
+import type { PropsType as SmartContactSpoofingReviewDialogPropsType } from '../../state/smart/ContactSpoofingReviewDialog.preload.tsx';
+import { TimelineFloatingHeader } from './TimelineFloatingHeader.dom.tsx';
 import {
   getScrollAnchorBeforeUpdate,
   getWidthBreakpoint,
   ScrollAnchor,
   TimelineMessageLoadingState,
   UnreadIndicatorPlacement,
-} from '../../util/timelineUtil.std.js';
+} from '../../util/timelineUtil.std.ts';
 import {
   getScrollBottom,
   scrollToBottom,
   setScrollBottom,
-} from '../../util/scrollUtil.std.js';
-import { LastSeenIndicator } from './LastSeenIndicator.dom.js';
-import { MINUTE, SECOND } from '../../util/durations/index.std.js';
-import { SizeObserver } from '../../hooks/useSizeObserver.dom.js';
+} from '../../util/scrollUtil.std.ts';
+import { LastSeenIndicator } from './LastSeenIndicator.dom.tsx';
+import { MINUTE, SECOND } from '../../util/durations/index.std.ts';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
 import {
   createScrollerLock,
   ScrollerLockContext,
-} from '../../hooks/useScrollLock.dom.js';
+} from '../../hooks/useScrollLock.dom.tsx';
+import { MessageInteractivity } from './Message.dom.tsx';
+import type { RenderItemProps } from '../../state/smart/TimelineItem.preload.tsx';
+import type { CollapseSet } from '../../util/CollapseSet.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
 
 const { first, get, isNumber, last, throttle } = lodash;
 
@@ -61,25 +58,13 @@ const LOAD_NEWER_THRESHOLD = 5;
 
 const DELAY_BEFORE_MARKING_READ_AFTER_FOCUS = SECOND;
 
-export type WarningType = ReadonlyDeep<
-  | {
-      type: ContactSpoofingType.DirectConversationWithSameTitle;
-      safeConversationId: string;
-    }
-  | {
-      type: ContactSpoofingType.MultipleGroupMembersWithSameTitle;
-      acknowledgedGroupNameCollisions: GroupNameCollisionsWithIdsByTitle;
-      groupNameCollisions: GroupNameCollisionsWithIdsByTitle;
-    }
->;
-
 export type PropsDataType = {
   haveNewest: boolean;
   haveOldest: boolean;
   messageChangeCounter: number;
   messageLoadingState: TimelineMessageLoadingState | null;
   isNearBottom: boolean | null;
-  items: ReadonlyArray<string>;
+  items: ReadonlyArray<CollapseSet>;
   oldestUnseenIndex: number | null;
   scrollToIndex: number | null;
   scrollToIndexCounter: number;
@@ -91,9 +76,11 @@ type PropsHousekeepingType = {
   isBlocked: boolean;
   isConversationSelected: boolean;
   isGroupV1AndDisabled?: boolean;
+  isGroupTerminated: boolean;
   isInFullScreenCall: boolean;
   isIncomingMessageRequest: boolean;
   isSomeoneTyping: boolean;
+  isSignalConversation: boolean;
   unreadCount?: number;
   unreadMentionsCount?: number;
   conversationType: 'direct' | 'group';
@@ -101,9 +88,7 @@ type PropsHousekeepingType = {
   targetedMessageId?: string;
   invitedContactsForNewlyCreatedGroup: Array<ConversationType>;
   selectedMessageId?: string;
-  shouldShowMiniPlayer: boolean;
 
-  warning?: WarningType;
   hasContactSpoofingReview: boolean | undefined;
 
   discardMessages: (
@@ -121,35 +106,15 @@ type PropsHousekeepingType = {
   theme: ThemeType;
 
   updateVisibleMessages?: (messageIds: Array<string>) => void;
-  renderCollidingAvatars: (_: {
-    conversationIds: ReadonlyArray<string>;
-  }) => JSX.Element;
   renderContactSpoofingReviewDialog: (
     props: SmartContactSpoofingReviewDialogPropsType
   ) => JSX.Element;
   renderHeroRow: (id: string) => JSX.Element;
-  renderItem: (props: {
-    containerElementRef: RefObject<HTMLElement>;
-    containerWidthBreakpoint: WidthBreakpoint;
-    conversationId: string;
-    isBlocked: boolean;
-    isGroup: boolean;
-    isOldestTimelineItem: boolean;
-    messageId: string;
-    nextMessageId: undefined | string;
-    previousMessageId: undefined | string;
-    unreadIndicatorPlacement: undefined | UnreadIndicatorPlacement;
-  }) => JSX.Element;
-  renderMiniPlayer: (options: { shouldFlow: boolean }) => JSX.Element;
+  renderItem: (props: RenderItemProps) => JSX.Element;
   renderTypingBubble: (id: string) => JSX.Element;
 };
 
 export type PropsActionsType = {
-  // From Model
-  acknowledgeGroupMemberNameCollisions: (
-    conversationId: string,
-    groupNameCollisions: ReadonlyDeep<GroupNameCollisionsWithIdsByTitle>
-  ) => void;
   clearInvitedServiceIdsForNewlyCreatedGroup: () => void;
   clearTargetedMessage: () => unknown;
   closeContactSpoofingReview: () => void;
@@ -161,15 +126,13 @@ export type PropsActionsType = {
     setFocus?: boolean
   ) => unknown;
   markMessageRead: (conversationId: string, messageId: string) => unknown;
+  maybePeekGroupCall: (conversationId: string) => unknown;
   targetMessage: (messageId: string, conversationId: string) => unknown;
   setCenterMessage: (
     conversationId: string,
     messageId: string | undefined
   ) => void;
   setIsNearBottom: (conversationId: string, isNearBottom: boolean) => void;
-  peekGroupCallForTheFirstTime: (conversationId: string) => unknown;
-  peekGroupCallIfItHasMembers: (conversationId: string) => unknown;
-  reviewConversationNameCollision: () => void;
   scrollToOldestUnreadMention: (conversationId: string) => unknown;
 };
 
@@ -180,9 +143,7 @@ export type PropsType = PropsDataType &
 type StateType = {
   scrollLocked: boolean;
   scrollLockHeight: number | undefined;
-  hasDismissedDirectContactSpoofingWarning: boolean;
   hasRecentlyScrolled: boolean;
-  lastMeasuredWarningHeight: number;
   newestBottomVisibleMessageId?: string;
   oldestPartiallyVisibleMessageId?: string;
   widthBreakpoint: WidthBreakpoint;
@@ -197,17 +158,14 @@ type SnapshotType =
   | { scrollTop: number }
   | { scrollBottom: number };
 
-export class Timeline extends React.Component<
-  PropsType,
-  StateType,
-  SnapshotType
-> {
-  readonly #containerRef = React.createRef<HTMLDivElement>();
-  readonly #messagesRef = React.createRef<HTMLDivElement>();
-  readonly #atBottomDetectorRef = React.createRef<HTMLDivElement>();
-  readonly #lastSeenIndicatorRef = React.createRef<HTMLDivElement>();
+// oxlint-disable-next-line react/prefer-function-component
+export class Timeline extends Component<PropsType, StateType, SnapshotType> {
+  readonly #containerRef = createRef<HTMLDivElement>();
+  readonly #messagesRef = createRef<HTMLDivElement>();
+  readonly #atBottomDetectorRef = createRef<HTMLDivElement>();
+  readonly #lastSeenIndicatorRef = createRef<HTMLDivElement>();
   #intersectionObserver?: IntersectionObserver;
-  #intersectionRatios: Map<Element, number> = new Map();
+  #intersectionRatios = new Map<Element, number>();
 
   // This is a best guess. It will likely be overridden when the timeline is measured.
   #maxVisibleRows = Math.ceil(window.innerHeight / MIN_ROW_HEIGHT);
@@ -216,19 +174,16 @@ export class Timeline extends React.Component<
   #delayedPeekTimeout?: NodeJS.Timeout;
   #peekInterval?: NodeJS.Timeout;
 
-  // eslint-disable-next-line react/state-in-constructor
+  // oxlint-disable-next-line react/state-in-constructor
   override state: StateType = {
     scrollLocked: false,
     scrollLockHeight: undefined,
     hasRecentlyScrolled: true,
-    hasDismissedDirectContactSpoofingWarning: false,
 
-    // These may be swiftly overridden.
-    lastMeasuredWarningHeight: 0,
     widthBreakpoint: WidthBreakpoint.Wide,
   };
 
-  #onScrollLockChange = (): void => {
+  readonly #onScrollLockChange = (): void => {
     const scrollLocked = this.#scrollerLock.isLocked();
     this.setState(() => {
       // Prevent scroll due to elements shrinking or disappearing (e.g. typing indicators)
@@ -242,9 +197,12 @@ export class Timeline extends React.Component<
     });
   };
 
-  #scrollerLock = createScrollerLock('Timeline', this.#onScrollLockChange);
+  readonly #scrollerLock = createScrollerLock(
+    'Timeline',
+    this.#onScrollLockChange
+  );
 
-  #onScroll = (event: UIEvent): void => {
+  readonly #onScroll = (event: UIEvent): void => {
     // When content is removed from the viewport, such as typing indicators leaving
     // or messages being edited smaller or deleted, scroll events are generated and
     // they are marked as user-generated (isTrusted === true). Actual user generated
@@ -272,6 +230,12 @@ export class Timeline extends React.Component<
     this.#hasRecentlyScrolledTimeout = setTimeout(() => {
       this.setState({ hasRecentlyScrolled: false });
     }, 3000);
+
+    // Because CollapseSets might house many unseen messages, we can't wait for our
+    // intersection observer to tell us that a new item is now fully visible or fully not
+    // visible. We need to check more often to see how many messages are visible within
+    // a given CollapseSet.
+    this.#markNewestBottomVisibleMessageReadAfterDelay();
   };
 
   #scrollToItemIndex(itemIndex: number): void {
@@ -284,7 +248,7 @@ export class Timeline extends React.Component<
       ?.scrollIntoView({ block: 'center' });
   }
 
-  #scrollToBottom = (setFocus?: boolean): void => {
+  readonly #scrollToBottom = (setFocus?: boolean): void => {
     if (this.#scrollerLock.isLocked()) {
       return;
     }
@@ -293,8 +257,9 @@ export class Timeline extends React.Component<
 
     if (setFocus && items && items.length > 0) {
       const lastIndex = items.length - 1;
-      const lastMessageId = items[lastIndex];
-      targetMessage(lastMessageId, id);
+      const lastItem = items[lastIndex];
+      strictAssert(lastItem, 'Missing lastItem');
+      targetMessage(lastItem.id, id);
     } else {
       const containerEl = this.#containerRef.current;
       if (containerEl) {
@@ -303,12 +268,12 @@ export class Timeline extends React.Component<
     }
   };
 
-  #onClickScrollDownButton = (): void => {
+  readonly #onClickScrollDownButton = (): void => {
     this.#scrollerLock.onUserInterrupt('onClickScrollDownButton');
     this.#scrollDown(false);
   };
 
-  #scrollDown = (setFocus?: boolean): void => {
+  readonly #scrollDown = (setFocus?: boolean): void => {
     if (this.#scrollerLock.isLocked()) {
       return;
     }
@@ -336,21 +301,22 @@ export class Timeline extends React.Component<
     if (
       newestBottomVisibleMessageId &&
       isNumber(oldestUnseenIndex) &&
-      items.findIndex(item => item === newestBottomVisibleMessageId) <
+      items.findIndex(item => item.id === newestBottomVisibleMessageId) <
         oldestUnseenIndex
     ) {
       if (setFocus) {
-        const messageId = items[oldestUnseenIndex];
-        targetMessage(messageId, id);
+        const item = items[oldestUnseenIndex];
+        strictAssert(item, 'Missing item at oldestUnseenIndex');
+        targetMessage(item.id, id);
       } else {
-        this.#scrollToItemIndex(oldestUnseenIndex);
+        this.#lastSeenIndicatorRef.current?.scrollIntoView();
       }
     } else if (haveNewest) {
       this.#scrollToBottom(setFocus);
     } else {
-      const lastId = last(items);
-      if (lastId) {
-        loadNewestMessages(id, lastId, setFocus);
+      const lastItem = last(items);
+      if (lastItem) {
+        loadNewestMessages(id, lastItem.id, setFocus);
       }
     }
   };
@@ -427,7 +393,7 @@ export class Timeline extends React.Component<
           if (element === atBottomDetectorEl) {
             newIsNearBottom = true;
           } else {
-            oldestPartiallyVisible = oldestPartiallyVisible || element;
+            oldestPartiallyVisible ??= element;
             newestPartiallyVisible = element;
             if (intersectionRatio === 1) {
               newestFullyVisible = element;
@@ -479,7 +445,17 @@ export class Timeline extends React.Component<
             maxRowIndex >= 0 &&
             rowIndex >= maxRowIndex - LOAD_NEWER_THRESHOLD
           ) {
-            loadNewerMessages(id, newestBottomVisibleMessageId);
+            let targetMessageId = newestBottomVisibleMessageId;
+            const newestItem = items.find(
+              item => item.id === newestBottomVisibleMessageId
+            );
+            if (newestItem && newestItem.type !== 'none') {
+              const lastItem = last(newestItem.messages);
+              strictAssert(lastItem, 'lastItem in newestItem.messages array');
+              targetMessageId = lastItem.id;
+            }
+
+            loadNewerMessages(id, targetMessageId);
           }
         }
 
@@ -487,7 +463,7 @@ export class Timeline extends React.Component<
           !messageLoadingState &&
           !haveOldest &&
           oldestPartiallyVisibleMessageId &&
-          oldestPartiallyVisibleMessageId === items[0]
+          oldestPartiallyVisibleMessageId === items[0]?.id
         ) {
           loadOlderMessages(id, oldestPartiallyVisibleMessageId);
         }
@@ -562,18 +538,97 @@ export class Timeline extends React.Component<
     return centerMessageId;
   }
 
-  #markNewestBottomVisibleMessageRead = throttle((messageId?: string): void => {
-    const { id, markMessageRead } = this.props;
-    const messageIdToMarkRead =
-      messageId ?? this.state.newestBottomVisibleMessageId;
-    if (messageIdToMarkRead) {
-      markMessageRead(id, messageIdToMarkRead);
-    }
-  }, 500);
+  readonly #markNewestBottomVisibleMessageRead = throttle(
+    (itemId?: string): void => {
+      const { id, items, markMessageRead } = this.props;
+      const messageIdToMarkRead =
+        itemId ?? this.state.newestBottomVisibleMessageId;
+
+      if (!messageIdToMarkRead) {
+        return;
+      }
+
+      const lastIndex = items.length - 1;
+      const newestBottomVisibleItemIndex = items.findIndex(
+        item => item.id === messageIdToMarkRead
+      );
+
+      // Mark the newest visible message read if we're at the bottom, or override provided
+      if (
+        messageIdToMarkRead &&
+        (itemId || lastIndex === newestBottomVisibleItemIndex)
+      ) {
+        const item = items[newestBottomVisibleItemIndex];
+        if (!item || item.type === 'none') {
+          markMessageRead(id, messageIdToMarkRead);
+          return;
+        }
+      }
+
+      // We can return early if the newest partially-visible item is not a CollapseSet
+      const newestPartiallyVisibleIndex = Math.min(
+        lastIndex,
+        newestBottomVisibleItemIndex + 1
+      );
+      const newestPartiallyVisibleItem = items[newestPartiallyVisibleIndex];
+      if (
+        newestPartiallyVisibleItem &&
+        newestPartiallyVisibleItem.type === 'none'
+      ) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      // Now we need to figure out which of the CollapseSet's inner messages are visible
+      const collapseSetEl = this.#messagesRef.current?.querySelector(
+        `[data-item-index="${newestPartiallyVisibleIndex}"]`
+      );
+      const containerWindowRect =
+        this.#containerRef.current?.getBoundingClientRect();
+      if (!collapseSetEl || !containerWindowRect) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      const messageEls = collapseSetEl.querySelectorAll('[data-message-id]');
+      const containerWindowBottom =
+        containerWindowRect.y + containerWindowRect.height;
+
+      let newestFullyVisibleMessage;
+      for (let i = messageEls.length - 1; i >= 0; i -= 1) {
+        const messageEl = messageEls[i];
+        strictAssert(messageEl, 'No messageEl at index i');
+
+        // The messages might be rendered, but opacity = 0
+        if (!messageEl.checkVisibility({ opacityProperty: true })) {
+          break;
+        }
+
+        // Make sure the messages are scrolled into view
+        const messageRect = messageEl.getBoundingClientRect();
+        const bottom = messageRect.y + messageRect.height;
+
+        if (bottom <= containerWindowBottom) {
+          newestFullyVisibleMessage = messageEl;
+          break;
+        }
+      }
+
+      if (!newestFullyVisibleMessage) {
+        markMessageRead(id, messageIdToMarkRead);
+        return;
+      }
+
+      const messageId =
+        newestFullyVisibleMessage.getAttribute('data-message-id');
+      markMessageRead(id, messageId || messageIdToMarkRead);
+    },
+    500
+  );
 
   // When the the window becomes active, or when a fullsceen call is ended, we mark read
   // with a delay, to allow users to navigate away quickly without marking messages read
-  #markNewestBottomVisibleMessageReadAfterDelay = throttle(
+  readonly #markNewestBottomVisibleMessageReadAfterDelay = throttle(
     this.#markNewestBottomVisibleMessageRead,
     DELAY_BEFORE_MARKING_READ_AFTER_FOCUS,
     {
@@ -586,15 +641,14 @@ export class Timeline extends React.Component<
     this.#cleanupGroupCallPeekTimeouts();
 
     this.#delayedPeekTimeout = setTimeout(() => {
-      const { id, peekGroupCallForTheFirstTime } = this.props;
+      const { id, maybePeekGroupCall } = this.props;
       this.#delayedPeekTimeout = undefined;
-      peekGroupCallForTheFirstTime(id);
-    }, 500);
+      maybePeekGroupCall(id);
 
-    this.#peekInterval = setInterval(() => {
-      const { id, peekGroupCallIfItHasMembers } = this.props;
-      peekGroupCallIfItHasMembers(id);
-    }, MINUTE);
+      this.#peekInterval = setInterval(() => {
+        maybePeekGroupCall(id);
+      }, MINUTE);
+    }, 500);
   }
 
   #cleanupGroupCallPeekTimeouts(): void {
@@ -613,7 +667,8 @@ export class Timeline extends React.Component<
   public override componentDidMount(): void {
     const containerEl = this.#containerRef.current;
     const messagesEl = this.#messagesRef.current;
-    const { conversationType, isConversationSelected } = this.props;
+    const { conversationType, isConversationSelected, isGroupTerminated } =
+      this.props;
     strictAssert(
       // We don't render anything unless the conversation is selected
       (containerEl && messagesEl) || !isConversationSelected,
@@ -637,7 +692,7 @@ export class Timeline extends React.Component<
       this.#markNewestBottomVisibleMessageReadAfterDelay
     );
 
-    if (conversationType === 'group') {
+    if (conversationType === 'group' && !isGroupTerminated) {
       this.#setupGroupCallPeekTimeouts();
     }
   }
@@ -684,7 +739,6 @@ export class Timeline extends React.Component<
             false,
             '<Timeline> got "scroll to index" scroll anchor, but no index'
           );
-          return null;
         }
         return { scrollToIndex };
       case ScrollAnchor.ScrollToUnreadIndicator:
@@ -718,6 +772,7 @@ export class Timeline extends React.Component<
       items: newItems,
       messageChangeCounter,
       messageLoadingState,
+      oldestUnseenIndex,
     } = this.props;
 
     const containerEl = this.#containerRef.current;
@@ -777,6 +832,7 @@ export class Timeline extends React.Component<
       const numberToKeepAtTop = this.#maxVisibleRows * 5;
       const shouldDiscardNewerMessages: boolean =
         !this.#isAtBottom() &&
+        oldestUnseenIndex == null &&
         loadingStateThatJustFinished ===
           TimelineMessageLoadingState.LoadingOlderMessages &&
         newItems.length > numberToKeepAtTop;
@@ -804,7 +860,7 @@ export class Timeline extends React.Component<
     }
   }
 
-  #handleBlur = (event: React.FocusEvent): void => {
+  readonly #handleBlur = (event: FocusEvent): void => {
     const { clearTargetedMessage } = this.props;
 
     const { currentTarget } = event;
@@ -828,7 +884,7 @@ export class Timeline extends React.Component<
     }, 0);
   };
 
-  #handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+  readonly #handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const { targetMessage, targetedMessageId, items, id } = this.props;
     const commandKey = get(window, 'platform') === 'darwin' && event.metaKey;
     const controlKey = get(window, 'platform') !== 'darwin' && event.ctrlKey;
@@ -841,61 +897,164 @@ export class Timeline extends React.Component<
     if (
       targetedMessageId &&
       !commandOrCtrl &&
-      (event.key === 'ArrowUp' || event.key === 'PageUp')
+      (event.key === 'ArrowUp' || event.key === 'ArrowDown')
     ) {
-      const targetedMessageIndex = items.findIndex(
-        item => item === targetedMessageId
+      const direction = event.key === 'ArrowUp' ? -1 : 1;
+      const currentTargetIndex = items.findIndex(
+        item =>
+          item.id === targetedMessageId ||
+          item.messages?.some(message => message.id === targetedMessageId)
       );
-      if (targetedMessageIndex < 0) {
+      if (currentTargetIndex < 0) {
         return;
       }
 
-      const indexIncrement = event.key === 'PageUp' ? 10 : 1;
-      const targetIndex = targetedMessageIndex - indexIncrement;
-      if (targetIndex < 0) {
+      const currentItem = items[currentTargetIndex];
+      strictAssert(currentItem, 'No item at currentTargetIndex');
+
+      if (currentItem.type !== 'none') {
+        const innerIndex = currentItem.messages.findIndex(
+          message => message.id === targetedMessageId
+        );
+        const targetIndex = innerIndex + direction;
+
+        if (targetIndex >= 0 && targetIndex < currentItem.messages.length) {
+          const targetInnerMessage = currentItem.messages[targetIndex];
+          strictAssert(
+            targetInnerMessage,
+            'No message at targetIndex in items.messages'
+          );
+          targetMessage(targetInnerMessage.id, id);
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          return;
+        }
+      }
+
+      const targetIndex = currentTargetIndex + direction;
+      if (targetIndex < 0 || targetIndex >= items.length) {
         return;
       }
 
-      const messageId = items[targetIndex];
-      targetMessage(messageId, id);
+      const targetItem = items[targetIndex];
+      strictAssert(targetItem, 'Missing item at targetIndex');
+      if (targetItem.type === 'none') {
+        targetMessage(targetItem.id, id);
+
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      const targetInnerMessage =
+        direction === -1
+          ? last(targetItem.messages)
+          : first(targetItem.messages);
+
+      strictAssert(targetInnerMessage, 'Expect to get first/last of target');
+      targetMessage(targetInnerMessage.id, id);
 
       event.preventDefault();
       event.stopPropagation();
-
       return;
     }
 
     if (
       targetedMessageId &&
       !commandOrCtrl &&
-      (event.key === 'ArrowDown' || event.key === 'PageDown')
+      (event.key === 'PageUp' || event.key === 'PageDown')
     ) {
-      const targetedMessageIndex = items.findIndex(
-        item => item === targetedMessageId
+      if (!this.#containerRef.current) {
+        return;
+      }
+
+      const direction = event.key === 'PageUp' ? -1 : 1;
+      const currentTargetIndex = items.findIndex(
+        item =>
+          item.id === targetedMessageId ||
+          item.messages?.some(message => message.id === targetedMessageId)
       );
-      if (targetedMessageIndex < 0) {
+      if (currentTargetIndex < 0) {
         return;
       }
 
-      const indexIncrement = event.key === 'PageDown' ? 10 : 1;
-      const targetIndex = targetedMessageIndex + indexIncrement;
-      if (targetIndex >= items.length) {
+      const currentItem = items[currentTargetIndex];
+      strictAssert(currentItem, 'No item at currentTargetIndex');
+
+      let startingEl = this.#containerRef.current.querySelector(
+        `[data-item-index='${currentTargetIndex}']`
+      );
+      if (currentItem.type !== 'none') {
+        const innerIndex = currentItem.messages.findIndex(
+          message => message.id === targetedMessageId
+        );
+        const message = currentItem.messages[innerIndex];
+        strictAssert(message, 'No message found at innerIndex');
+
+        startingEl = this.#containerRef.current.querySelector(
+          `[data-message-id='${message.id}']`
+        );
+      }
+
+      if (!startingEl) {
+        return;
+      }
+      const allMessageList =
+        this.#containerRef.current.querySelectorAll('[data-message-id]');
+      if (!allMessageList) {
+        return;
+      }
+      const allMessageEls = Array.from(allMessageList);
+      const startingIndex = allMessageEls.findIndex(el => el === startingEl);
+      if (startingIndex < 0) {
         return;
       }
 
-      const messageId = items[targetIndex];
-      targetMessage(messageId, id);
+      const containerRect = this.#containerRef.current.getBoundingClientRect();
+      const startingRect = startingEl.getBoundingClientRect();
+      const targetTop = startingRect.y - containerRect.height;
+      const targetBottom = startingRect.y + containerRect.height;
 
-      event.preventDefault();
-      event.stopPropagation();
+      let index = startingIndex + direction;
+      const max = allMessageEls.length;
 
-      return;
+      while (index >= 0 && index < max) {
+        const currentEl = allMessageEls[index];
+        strictAssert(currentEl, 'No currentEl in allMessageEls at index');
+        const currentMessageId = currentEl.getAttribute('data-message-id');
+        strictAssert(currentMessageId, 'No data-message-id in currentEl');
+        const currentRect = currentEl.getBoundingClientRect();
+        const currentTop = currentRect.y;
+
+        if (direction === -1) {
+          if (currentTop <= targetTop || index === 0) {
+            targetMessage(currentMessageId, id);
+
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        } else {
+          const currentBottom = currentTop + currentRect.height;
+
+          if (currentBottom > targetBottom || index === max - 1) {
+            targetMessage(currentMessageId, id);
+
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        }
+        index += direction;
+      }
     }
 
     if (event.key === 'Home' || (commandOrCtrl && event.key === 'ArrowUp')) {
       const firstMessageId = first(items);
       if (firstMessageId) {
-        targetMessage(firstMessageId, id);
+        targetMessage(firstMessageId.id, id);
         event.preventDefault();
         event.stopPropagation();
       }
@@ -911,7 +1070,6 @@ export class Timeline extends React.Component<
 
   public override render(): JSX.Element | null {
     const {
-      acknowledgeGroupMemberNameCollisions,
       clearInvitedServiceIdsForNewlyCreatedGroup,
       closeContactSpoofingReview,
       conversationType,
@@ -929,15 +1087,11 @@ export class Timeline extends React.Component<
       items,
       messageLoadingState,
       oldestUnseenIndex,
-      renderCollidingAvatars,
       renderContactSpoofingReviewDialog,
       renderHeroRow,
       renderItem,
-      renderMiniPlayer,
       renderTypingBubble,
-      reviewConversationNameCollision,
       scrollToOldestUnreadMention,
-      shouldShowMiniPlayer,
       theme,
       totalUnseen,
       unreadCount,
@@ -947,7 +1101,6 @@ export class Timeline extends React.Component<
       scrollLocked,
       scrollLockHeight,
       hasRecentlyScrolled,
-      lastMeasuredWarningHeight,
       newestBottomVisibleMessageId,
       oldestPartiallyVisibleMessageId,
       widthBreakpoint,
@@ -962,27 +1115,27 @@ export class Timeline extends React.Component<
     const isGroup = conversationType === 'group';
     const areThereAnyMessages = items.length > 0;
     const areAnyMessagesUnread = Boolean(unreadCount);
+    const lastItem = last(items);
     const areAnyMessagesBelowCurrentPosition =
       !haveNewest ||
       Boolean(
         newestBottomVisibleMessageId &&
-          newestBottomVisibleMessageId !== last(items)
+        newestBottomVisibleMessageId !== lastItem?.id
       );
-    const areSomeMessagesBelowCurrentPosition =
+    const areAboveScrollDownButtonThreshold =
       !haveNewest ||
       (newestBottomVisibleMessageId &&
         !items
           .slice(-SCROLL_DOWN_BUTTON_THRESHOLD)
-          .includes(newestBottomVisibleMessageId));
+          .find(item => item.id === newestBottomVisibleMessageId));
 
-    const areUnreadBelowCurrentPosition = Boolean(
+    const areUnreadBelowCurrentPosition =
       areThereAnyMessages &&
-        areAnyMessagesUnread &&
-        areAnyMessagesBelowCurrentPosition
-    );
+      areAnyMessagesUnread &&
+      areAnyMessagesBelowCurrentPosition;
     const shouldShowScrollDownButtons = Boolean(
       areThereAnyMessages &&
-        (areUnreadBelowCurrentPosition || areSomeMessagesBelowCurrentPosition)
+      (areUnreadBelowCurrentPosition || areAboveScrollDownButtonThreshold)
     );
 
     let floatingHeader: ReactNode;
@@ -1001,30 +1154,25 @@ export class Timeline extends React.Component<
         <TimelineFloatingHeader
           i18n={i18n}
           isLoading={isLoadingMessages}
-          style={
-            lastMeasuredWarningHeight
-              ? { marginTop: lastMeasuredWarningHeight }
-              : undefined
-          }
           timestamp={oldestPartiallyVisibleMessageTimestamp}
           visible={
             (hasRecentlyScrolled || isLoadingMessages) &&
-            (!haveOldest || oldestPartiallyVisibleMessageId !== items[0])
+            (!haveOldest || oldestPartiallyVisibleMessageId !== items[0]?.id)
           }
         />
       );
     }
 
-    const messageNodes: Array<ReactChild> = [];
+    const messageNodes: Array<ReactNode> = [];
     for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
       const previousItemIndex = itemIndex - 1;
       const nextItemIndex = itemIndex + 1;
 
-      const previousMessageId: undefined | string = items[previousItemIndex];
-      const nextMessageId: undefined | string = items[nextItemIndex];
-      const messageId = items[itemIndex];
+      const previousItem: CollapseSet | undefined = items[previousItemIndex];
+      const nextItem: CollapseSet | undefined = items[nextItemIndex];
+      const item = items[itemIndex];
 
-      if (!messageId) {
+      if (!item) {
         assertDev(
           false,
           '<Timeline> iterated through items and got an empty message ID'
@@ -1049,7 +1197,7 @@ export class Timeline extends React.Component<
 
       messageNodes.push(
         <div
-          key={messageId}
+          key={item.id}
           className={
             itemIndex === items.length - 1
               ? 'module-timeline__last-message'
@@ -1060,7 +1208,7 @@ export class Timeline extends React.Component<
             (!oldestUnseenIndex && itemIndex === items.length - 1)
           }
           data-item-index={itemIndex}
-          data-message-id={messageId}
+          data-message-id={item.id}
           role="listitem"
         >
           <ErrorBoundary i18n={i18n} showDebugLog={showDebugLog}>
@@ -1069,124 +1217,16 @@ export class Timeline extends React.Component<
               containerWidthBreakpoint: widthBreakpoint,
               conversationId: id,
               isBlocked,
+              interactivity: MessageInteractivity.Normal,
               isGroup,
               isOldestTimelineItem: haveOldest && itemIndex === 0,
-              messageId,
-              nextMessageId,
-              previousMessageId,
+              item,
+              nextMessageId: nextItem?.id,
+              previousMessageId: previousItem?.id,
               unreadIndicatorPlacement,
             })}
           </ErrorBoundary>
         </div>
-      );
-    }
-
-    const warning = Timeline.getWarning(this.props, this.state);
-    let headerElements: ReactNode;
-    if (warning || shouldShowMiniPlayer) {
-      let text: ReactChild | undefined;
-      let icon: ReactChild | undefined;
-      let onClose: () => void;
-      if (warning) {
-        icon = (
-          <TimelineWarning.IconContainer>
-            <TimelineWarning.GenericIcon />
-          </TimelineWarning.IconContainer>
-        );
-        switch (warning.type) {
-          case ContactSpoofingType.DirectConversationWithSameTitle:
-            text = (
-              <I18n
-                i18n={i18n}
-                id="icu:ContactSpoofing__same-name--link"
-                components={{
-                  // This is a render props, not a component
-                  // eslint-disable-next-line react/no-unstable-nested-components
-                  reviewRequestLink: parts => (
-                    <TimelineWarning.Link
-                      onClick={reviewConversationNameCollision}
-                    >
-                      {parts}
-                    </TimelineWarning.Link>
-                  ),
-                }}
-              />
-            );
-            onClose = () => {
-              this.setState({
-                hasDismissedDirectContactSpoofingWarning: true,
-              });
-            };
-            break;
-          case ContactSpoofingType.MultipleGroupMembersWithSameTitle: {
-            const { groupNameCollisions } = warning;
-            const numberOfSharedNames = Object.keys(groupNameCollisions).length;
-            const reviewRequestLink = (
-              parts: Array<string | JSX.Element>
-            ): JSX.Element => (
-              <TimelineWarning.Link onClick={reviewConversationNameCollision}>
-                {parts}
-              </TimelineWarning.Link>
-            );
-            if (numberOfSharedNames === 1) {
-              const [conversationIds] = [...Object.values(groupNameCollisions)];
-              if (conversationIds.length >= 2) {
-                icon = (
-                  <TimelineWarning.CustomInfo>
-                    {renderCollidingAvatars({ conversationIds })}
-                  </TimelineWarning.CustomInfo>
-                );
-              }
-              text = (
-                <I18n
-                  i18n={i18n}
-                  id="icu:ContactSpoofing__same-name-in-group--link"
-                  components={{
-                    count: conversationIds.length,
-                    reviewRequestLink,
-                  }}
-                />
-              );
-            } else {
-              text = (
-                <I18n
-                  i18n={i18n}
-                  id="icu:ContactSpoofing__same-names-in-group--link"
-                  components={{
-                    count: numberOfSharedNames,
-                    reviewRequestLink,
-                  }}
-                />
-              );
-            }
-            onClose = () => {
-              acknowledgeGroupMemberNameCollisions(id, groupNameCollisions);
-            };
-            break;
-          }
-          default:
-            throw missingCaseError(warning);
-        }
-      }
-
-      headerElements = (
-        <SizeObserver
-          onSizeChange={size => {
-            this.setState({ lastMeasuredWarningHeight: size.height });
-          }}
-        >
-          {measureRef => (
-            <TimelineWarnings ref={measureRef}>
-              {renderMiniPlayer({ shouldFlow: true })}
-              {text && (
-                <TimelineWarning i18n={i18n} onClose={onClose}>
-                  {icon}
-                  <TimelineWarning.Text>{text}</TimelineWarning.Text>
-                </TimelineWarning>
-              )}
-            </TimelineWarnings>
-          )}
-        </SizeObserver>
       );
     }
 
@@ -1202,6 +1242,11 @@ export class Timeline extends React.Component<
       <ScrollerLockContext.Provider value={this.#scrollerLock}>
         <SizeObserver
           onSizeChange={size => {
+            if (size.hidden) {
+              // triggered when timeline is hidden via display: none
+              return;
+            }
+
             const { isNearBottom } = this.props;
 
             this.setState({
@@ -1229,8 +1274,6 @@ export class Timeline extends React.Component<
               onKeyDown={this.#handleKeyDown}
               ref={ref}
             >
-              {headerElements}
-
               {floatingHeader}
 
               <main
@@ -1253,17 +1296,15 @@ export class Timeline extends React.Component<
                       : undefined
                   }
                 >
-                  {haveOldest && (
-                    <>
-                      {Timeline.getWarning(this.props, this.state) && (
-                        <div style={{ height: lastMeasuredWarningHeight }} />
-                      )}
-                      {renderHeroRow(id)}
-                    </>
-                  )}
+                  {haveOldest && renderHeroRow(id)}
 
                   {messageNodes}
 
+                  {this.props.isSignalConversation ? (
+                    // Spacer at bottom of conversation to give space for the absolutely-positioned
+                    // official-chat chip to not overlap the last message
+                    <div className={tw('h-16')} />
+                  ) : null}
                   {haveNewest && renderTypingBubble(id)}
 
                   <div
@@ -1296,6 +1337,23 @@ export class Timeline extends React.Component<
           )}
         </SizeObserver>
 
+        {this.props.isSignalConversation ? (
+          <div
+            className={tw(
+              'absolute bottom-5 z-10 flex w-full justify-center pe-3.5'
+            )}
+          >
+            <div
+              className={tw(
+                'rounded-3xl bg-(--axo-color-legacy-signal-conversation-bg) px-4 py-3',
+                'type-body-medium text-primary',
+                'border border-secondary'
+              )}
+            >
+              {i18n('icu:Timeline--signal-official-chat--chip')}
+            </div>
+          </div>
+        ) : null}
         {Boolean(invitedContactsForNewlyCreatedGroup.length) && (
           <NewlyCreatedGroupInvitedContactsDialog
             contacts={invitedContactsForNewlyCreatedGroup}
@@ -1309,31 +1367,6 @@ export class Timeline extends React.Component<
         {contactSpoofingReviewDialog}
       </ScrollerLockContext.Provider>
     );
-  }
-
-  private static getWarning(
-    { warning }: PropsType,
-    state: StateType
-  ): undefined | WarningType {
-    if (!warning) {
-      return undefined;
-    }
-
-    switch (warning.type) {
-      case ContactSpoofingType.DirectConversationWithSameTitle: {
-        const { hasDismissedDirectContactSpoofingWarning } = state;
-        return hasDismissedDirectContactSpoofingWarning ? undefined : warning;
-      }
-      case ContactSpoofingType.MultipleGroupMembersWithSameTitle:
-        return hasUnacknowledgedCollisions(
-          warning.acknowledgedGroupNameCollisions,
-          warning.groupNameCollisions
-        )
-          ? warning
-          : undefined;
-      default:
-        throw missingCaseError(warning);
-    }
   }
 }
 

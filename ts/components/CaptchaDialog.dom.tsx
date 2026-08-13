@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState, type JSX, type MouseEvent } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Modal } from './Modal.dom.js';
-import { Spinner } from './Spinner.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
 
 export type PropsType = Readonly<{
   i18n: LocalizerType;
@@ -26,12 +26,12 @@ export function CaptchaDialog({
 
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  const onCancelClick = (event: React.MouseEvent) => {
+  const onCancelClick = (event: MouseEvent) => {
     event.preventDefault();
     setIsClosing(false);
   };
 
-  const onSkipClick = (event: React.MouseEvent) => {
+  const onSkipClick = (event: MouseEvent) => {
     event.preventDefault();
     onSkip();
   };
@@ -64,7 +64,7 @@ export function CaptchaDialog({
     );
   }
 
-  const onContinueClick = (event: React.MouseEvent) => {
+  const onContinueClick = (event: MouseEvent) => {
     event.preventDefault();
 
     onContinue();

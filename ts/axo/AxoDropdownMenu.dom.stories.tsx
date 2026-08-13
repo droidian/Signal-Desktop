@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { AxoDropdownMenu } from './AxoDropdownMenu.dom.js';
-import { AxoButton } from './AxoButton.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoDropdownMenu } from './AxoDropdownMenu.dom.tsx';
+import { AxoButton } from './AxoButton.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoDropdownMenu',
@@ -28,7 +28,7 @@ export function Basic(): JSX.Element {
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="medium">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>
@@ -114,7 +114,7 @@ export function WithHeader(): JSX.Element {
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="medium">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>
@@ -222,7 +222,7 @@ export function StressTestLongText(): JSX.Element {
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="medium">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>

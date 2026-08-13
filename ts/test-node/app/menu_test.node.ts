@@ -1,17 +1,18 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { join } from 'node:path';
 import { assert } from 'chai';
 import { stub } from 'sinon';
 import type { MenuItemConstructorOptions } from 'electron';
 import type pino from 'pino';
 
-import type { CreateTemplateOptionsType } from '../../../app/menu.std.js';
-import { createTemplate } from '../../../app/menu.std.js';
-import { load as loadLocale } from '../../../app/locale.node.js';
-import type { MenuListType } from '../../types/menu.std.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { HourCyclePreference } from '../../types/I18N.std.js';
+import type { CreateTemplateOptionsType } from '../../../app/menu.std.ts';
+import { createTemplate } from '../../../app/menu.std.ts';
+import { load as loadLocale } from '../../../app/locale.node.ts';
+import type { MenuListType } from '../../types/menu.std.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import { HourCyclePreference } from '../../types/I18N.std.ts';
 
 const forceUpdate = stub();
 const openArtCreator = stub();
@@ -24,7 +25,6 @@ const setupAsNewDevice = stub();
 const setupAsStandalone = stub();
 const showAbout = stub();
 const showDebugLog = stub();
-const showCallingDevTools = stub();
 const showKeyboardShortcuts = stub();
 const showSettings = stub();
 const showWindow = stub();
@@ -74,7 +74,6 @@ const getExpectedViewMenu = (): MenuItemConstructorOptions => ({
     { label: 'Debug Log', click: showDebugLog },
     { type: 'separator' },
     { label: 'Toggle Developer Tools', role: 'toggleDevTools' },
-    { label: 'Open Calling Developer Tools', click: showCallingDevTools },
     { label: 'Force Update', click: forceUpdate },
   ],
 });
@@ -216,6 +215,7 @@ describe('createTemplate', () => {
   };
 
   const { i18n } = loadLocale({
+    rootDir: join(__dirname, '..', '..', '..'),
     hourCyclePreference: HourCyclePreference.UnknownPreference,
     isPackaged: false,
     localeDirectionTestingOverride: null,
@@ -236,7 +236,6 @@ describe('createTemplate', () => {
     setupAsStandalone,
     showAbout,
     showDebugLog,
-    showCallingDevTools,
     showKeyboardShortcuts,
     showSettings,
     showWindow,

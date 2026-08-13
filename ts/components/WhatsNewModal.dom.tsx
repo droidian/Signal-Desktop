@@ -1,14 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 import moment from 'moment';
-
-import { Modal } from './Modal.dom.js';
-import { I18n } from './I18n.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { tw } from '../axo/tw.dom.js';
+import { I18n } from './I18n.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { tw } from '../axo/tw.dom.tsx';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
 
 export type PropsType = {
   hideWhatsNewModal: () => unknown;
@@ -22,22 +19,6 @@ type ReleaseNotesType = {
   features: Array<JSX.Element>;
 };
 
-// Exported so it doesn't get marked unused
-export function ExternalLink(props: {
-  href: string;
-  children: ReactNode;
-}): JSX.Element {
-  return (
-    <a href={props.href} target="_blank" rel="noreferrer">
-      {props.children}
-    </a>
-  );
-}
-
-function Elias6() {
-  return <ExternalLink href="https://github.com/elias6">@elias6</ExternalLink>;
-}
-
 export function WhatsNewModal({
   i18n,
   hideWhatsNewModal,
@@ -47,16 +28,7 @@ export function WhatsNewModal({
   const releaseNotes: ReleaseNotesType = {
     date: new Date(window.getBuildCreation?.() || Date.now()),
     version: window.getVersion?.(),
-    features: [
-      <I18n i18n={i18n} id="icu:WhatsNew__7.77-1" />,
-      <I18n
-        i18n={i18n}
-        id="icu:WhatsNew__7.77-2"
-        components={{
-          elias6: Elias6,
-        }}
-      />,
-    ],
+    features: [<I18n i18n={i18n} id="icu:WhatsNew__bugfixes--3" />],
   };
 
   if (releaseNotes.features.length === 1 && !releaseNotes.header) {
@@ -79,20 +51,23 @@ export function WhatsNewModal({
   }
 
   return (
-    <Modal
-      modalName="WhatsNewModal"
-      hasXButton
-      i18n={i18n}
-      onClose={hideWhatsNewModal}
-      title={i18n('icu:WhatsNew__modal-title')}
-    >
-      <>
-        <span>
-          {moment(releaseNotes.date).format('LL')} &middot;{' '}
-          {releaseNotes.version}
-        </span>
-        {contentNode}
-      </>
-    </Modal>
+    <AxoDialog.Root open onOpenChange={hideWhatsNewModal}>
+      <AxoDialog.Content size="sm" escape="cancel-is-noop">
+        <AxoDialog.Header>
+          <AxoDialog.Title>{i18n('icu:WhatsNew__modal-title')}</AxoDialog.Title>
+          <AxoDialog.Close />
+        </AxoDialog.Header>
+        <AxoDialog.Body>
+          <AxoDialog.Description>
+            <h3>
+              {moment(releaseNotes.date).format('LL')} &middot;{' '}
+              {releaseNotes.version}
+            </h3>
+            {contentNode}
+          </AxoDialog.Description>
+        </AxoDialog.Body>
+        <AxoDialog.Footer />
+      </AxoDialog.Content>
+    </AxoDialog.Root>
   );
 }

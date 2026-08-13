@@ -1,11 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './ProfileNameWarningModal.dom.js';
-import { ProfileNameWarningModal } from './ProfileNameWarningModal.dom.js';
-import { type ComponentMeta } from '../../storybook/types.std.js';
+import type { PropsType } from './ProfileNameWarningModal.dom.tsx';
+import { ProfileNameWarningModal } from './ProfileNameWarningModal.dom.tsx';
+import { type ComponentMeta } from '../../storybook/types.std.ts';
 
 const { i18n } = window.SignalContext;
 

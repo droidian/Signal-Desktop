@@ -1,69 +1,62 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Aci } from '@signalapp/libsignal-client';
-import lodash from 'lodash';
 import {
   groupSendEndorsementsDataSchema,
   toGroupSendToken,
-} from '../types/GroupSendEndorsements.std.js';
+} from '../types/GroupSendEndorsements.std.ts';
 import type {
   GroupSendCombinedEndorsementRecord,
   GroupSendMemberEndorsementRecord,
   GroupSendToken,
   GroupSendEndorsementsData,
-} from '../types/GroupSendEndorsements.std.js';
-import { devDebugger, strictAssert } from './assert.std.js';
+} from '../types/GroupSendEndorsements.std.ts';
+import { strictAssert } from './assert.std.ts';
 import {
   GroupSecretParams,
   GroupSendEndorsement,
   GroupSendEndorsementsResponse,
   ServerPublicParams,
-} from './zkgroup.node.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { fromAciObject } from '../types/ServiceId.std.js';
-import { createLogger } from '../logging/log.std.js';
+} from './zkgroup.node.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { fromAciObject } from '../types/ServiceId.std.ts';
+import { createLogger } from '../logging/log.std.ts';
 import type { GroupV2MemberType } from '../model-types.d.ts';
-import { DurationInSeconds, MINUTE } from './durations/index.std.js';
-import { ToastType } from '../types/Toast.dom.js';
-import * as Errors from '../types/errors.std.js';
-import { isTestOrMockEnvironment } from '../environment.std.js';
-import { isNightly } from './version.std.js';
-import { parseStrict } from './schemas.std.js';
-import { DataReader } from '../sql/Client.preload.js';
-import { maybeUpdateGroup } from '../groups.preload.js';
-import * as Bytes from '../Bytes.std.js';
-import { isGroupV2 } from './whatTypeOfConversation.dom.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
-
-const { throttle } = lodash;
+import { DurationInSeconds } from './durations/index.std.ts';
+import { parseStrict } from './schemas.std.ts';
+import { DataReader } from '../sql/Client.preload.ts';
+import { maybeUpdateGroup } from '../groups.preload.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { isGroupV2 } from './whatTypeOfConversation.dom.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('groupSendEndorsements');
 
-export function decodeGroupSendEndorsementResponse({
+export function decodeGroupSendEndorsementsResponse({
   groupId,
-  groupSendEndorsementResponse,
+  groupSendEndorsementsResponse,
   groupSecretParamsBase64,
   groupMembersV2,
 }: {
   groupId: string;
-  groupSendEndorsementResponse: Uint8Array;
+  groupSendEndorsementsResponse: Uint8Array<ArrayBuffer>;
   groupSecretParamsBase64: string;
   groupMembersV2: ReadonlyArray<GroupV2MemberType>;
 }): GroupSendEndorsementsData {
   const idForLogging = `groupv2(${groupId})`;
 
   strictAssert(
-    groupSendEndorsementResponse != null,
-    'Missing groupSendEndorsementResponse'
+    groupSendEndorsementsResponse != null,
+    'Missing groupSendEndorsementsResponse'
   );
 
   strictAssert(
-    groupSendEndorsementResponse.byteLength > 0,
-    'Received empty groupSendEndorsementResponse'
+    groupSendEndorsementsResponse.byteLength > 0,
+    'Received empty groupSendEndorsementsResponse'
   );
 
   const response = new GroupSendEndorsementsResponse(
-    groupSendEndorsementResponse
+    groupSendEndorsementsResponse
   );
 
   const expiration = response.getExpiration().getTime() / 1000;
@@ -99,7 +92,7 @@ export function decodeGroupSendEndorsementResponse({
   );
 
   log.info(
-    `decodeGroupSendEndorsementResponse: Received endorsements (group: ${idForLogging}, expiration: ${expiration}, members: ${groupMembers.length})`
+    `decodeGroupSendEndorsementsResponse: Received endorsements (group: ${idForLogging}, expiration: ${expiration}, members: ${groupMembers.length})`
   );
 
   return parseStrict(groupSendEndorsementsDataSchema, {
@@ -114,6 +107,7 @@ export function decodeGroupSendEndorsementResponse({
         endorsement != null,
         `Missing endorsement at index ${index}`
       );
+
       return {
         groupId,
         memberAci: fromAciObject(groupMember),
@@ -161,16 +155,19 @@ export function validateGroupSendEndorsementsExpiration(
 }
 
 export class GroupSendEndorsementState {
-  #logId: string;
-  #combinedEndorsement: GroupSendCombinedEndorsementRecord;
-  #memberEndorsements = new Map<
+  readonly #logId: string;
+  readonly #combinedEndorsement: GroupSendCombinedEndorsementRecord;
+  readonly #memberEndorsements = new Map<
     ServiceIdString,
     GroupSendMemberEndorsementRecord
   >();
-  #memberEndorsementsAcis = new Set<ServiceIdString>();
-  #groupSecretParamsBase64: string;
-  #ourAci: ServiceIdString;
-  #endorsementCache = new WeakMap<Uint8Array, GroupSendEndorsement>();
+  readonly #memberEndorsementsAcis = new Set<ServiceIdString>();
+  readonly #groupSecretParamsBase64: string;
+  readonly #ourAci: ServiceIdString;
+  readonly #endorsementCache = new WeakMap<
+    Uint8Array<ArrayBuffer>,
+    GroupSendEndorsement
+  >();
 
   constructor(
     data: GroupSendEndorsementsData,
@@ -194,7 +191,7 @@ export class GroupSendEndorsementState {
     return this.#memberEndorsements.has(serviceId);
   }
 
-  #toEndorsement(contents: Uint8Array): GroupSendEndorsement {
+  #toEndorsement(contents: Uint8Array<ArrayBuffer>): GroupSendEndorsement {
     let endorsement = this.#endorsementCache.get(contents);
     if (endorsement == null) {
       endorsement = new GroupSendEndorsement(contents);
@@ -279,6 +276,7 @@ export class GroupSendEndorsementState {
     // Fast path sending to one person
     if (serviceIds.size === 1) {
       const [serviceId] = serviceIds;
+      strictAssert(serviceId, 'Missing serviceId');
       log.info(`${logId}: using single member endorsement (${serviceId})`);
       return this.#getMemberEndorsement(serviceId);
     }
@@ -316,35 +314,9 @@ export class GroupSendEndorsementState {
     return this.#combineMemberEndorsements(serviceIds);
   }
 
-  buildToken(serviceIds: Set<ServiceIdString>): GroupSendToken | null {
-    try {
-      return this.#toToken(this.#buildToken(new Set(serviceIds)));
-    } catch (error) {
-      onFailedToSendWithEndorsements(error);
-    }
-    return null;
+  buildToken(serviceIds: Set<ServiceIdString>): GroupSendToken {
+    return this.#toToken(this.#buildToken(new Set(serviceIds)));
   }
-}
-
-const showFailedToSendWithEndorsementsToast = throttle(
-  () => {
-    window.reduxActions.toast.showToast({
-      toastType: ToastType.FailedToSendWithEndorsements,
-    });
-  },
-  5 * MINUTE,
-  { trailing: false }
-);
-
-export function onFailedToSendWithEndorsements(error: Error): void {
-  log.error('onFailedToSendWithEndorsements', Errors.toLogFormat(error));
-  if (isTestOrMockEnvironment() || isNightly(window.getVersion())) {
-    showFailedToSendWithEndorsementsToast();
-  }
-  if (window.SignalCI) {
-    window.SignalCI.handleEvent('fatalTestError', error);
-  }
-  devDebugger();
 }
 
 type MaybeCreateGroupSendEndorsementStateResult =
@@ -390,45 +362,51 @@ function validateGroupSendEndorsements(
 
 export async function maybeCreateGroupSendEndorsementState(
   groupId: string,
-  alreadyRefreshedGroupState: boolean
+  alreadyRefreshedGroupState: boolean,
+  alreadyInQueue = false
 ): Promise<MaybeCreateGroupSendEndorsementStateResult> {
   const logId = `maybeCreateGroupSendEndorsementState/groupv2(${groupId})`;
 
   const conversation = window.ConversationController.get(groupId);
-  strictAssert(conversation != null, `${logId}: Convertion not found`);
+  strictAssert(conversation != null, `${logId}: Conversation not found`);
   strictAssert(
     isGroupV2(conversation.attributes),
     `${logId}: Conversation is not groupV2`
   );
 
-  const secretParams = conversation.get('secretParams');
-  const membersV2 = conversation.get('membersV2');
-  strictAssert(secretParams, `${logId}: Must have secret params`);
-  strictAssert(membersV2, `${logId}: Must have members`);
-  const members = new Set(membersV2.map(member => member.aci));
+  async function getEndorsementsState() {
+    strictAssert(conversation != null, `${logId}: Conversation not found`);
 
-  const data = await DataReader.getGroupSendEndorsementsData(groupId);
-  const state =
-    data != null ? new GroupSendEndorsementState(data, secretParams) : null;
+    const secretParams = conversation.get('secretParams');
+    const membersV2 = conversation.get('membersV2');
+    strictAssert(secretParams, `${logId}: Must have secret params`);
+    strictAssert(membersV2, `${logId}: Must have members`);
+
+    const members = new Set(membersV2.map(member => member.aci));
+
+    const data = await DataReader.getGroupSendEndorsementsData(groupId);
+    const state =
+      data != null ? new GroupSendEndorsementState(data, secretParams) : null;
+
+    return { members, state };
+  }
+
+  const { members, state } = await getEndorsementsState();
 
   // Check if we need to refresh the group state.
   const result = validateGroupSendEndorsements(members, state);
   if (!result.valid) {
+    // For terminated groups, the server will not return endorsements so just move on
+    if (conversation.get('terminated')) {
+      log.info(`${logId}: Group terminated, ignoring invalid endorsements`);
+      return { state: null, didRefreshGroupState: false };
+    }
+
     // If we've already refreshed the group state, we should log and move on.
     if (alreadyRefreshedGroupState) {
-      onFailedToSendWithEndorsements(
-        new Error(
-          `${logId}: Endorsements invalid after refreshing group: ${result.reason}`
-        )
-      );
       return { state: null, didRefreshGroupState: false };
     }
     if (conversation.isBlocked()) {
-      onFailedToSendWithEndorsements(
-        new Error(
-          `${logId}: Group is blocked and endorsements are invalid: ${result.reason}`
-        )
-      );
       return { state: null, didRefreshGroupState: false };
     }
 
@@ -440,8 +418,31 @@ export async function maybeCreateGroupSendEndorsementState(
     // the group state to avoid incorrectly processing messages.
     await window.waitForEmptyEventQueue();
 
+    if (alreadyInQueue) {
+      await maybeUpdateGroup({ conversation, force: true });
+      return { state: null, didRefreshGroupState: true };
+    }
+
     // Refresh the group state all allow the caller to try again.
-    await maybeUpdateGroup({ conversation, force: true });
+    await conversation.queueJob(
+      'maybeCreateGroupSendEndorsementState',
+      async () => {
+        // Check again; we might have updated since we queued this job
+        const { members: newMembers, state: newState } =
+          await getEndorsementsState();
+
+        const newResult = validateGroupSendEndorsements(newMembers, newState);
+        if (newResult.valid) {
+          log.info(
+            `${logId}: Endorsements are valid; returning without updating group`
+          );
+          return;
+        }
+
+        await maybeUpdateGroup({ conversation, force: true });
+      }
+    );
+
     return { state: null, didRefreshGroupState: true };
   }
 

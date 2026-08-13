@@ -4,12 +4,12 @@
 import { assert } from 'chai';
 import { Proto } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations/index.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { toAciObject } from '../../util/ServiceId.node.js';
-import { MAX_READ_KEYS } from '../../services/storageConstants.std.js';
-import type { App, Bootstrap } from './fixtures.node.js';
-import { initStorage, debug } from './fixtures.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { toAciObject } from '../../util/ServiceId.node.ts';
+import { MAX_READ_KEYS } from '../../services/storageConstants.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import { initStorage, debug } from './fixtures.node.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const IdentifierType = Proto.ManifestRecord.Identifier.Type;
 
@@ -37,8 +37,10 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('prepare for a slow test');
 
     const { phone, contacts } = bootstrap;
-    const firstContact = contacts[0];
-    const lastContact = contacts[contacts.length - 1];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const firstContact = contacts[0]!;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const lastContact = contacts[contacts.length - 1]!;
 
     const window = await app.getWindow();
 
@@ -59,6 +61,29 @@ describe('storage service', function (this: Mocha.Suite) {
           record: {
             contact: {
               aciBinary: toAciObject(generateAci()).getRawUuidBytes(),
+              e164: null,
+              profileKey: null,
+              identityKey: null,
+              identityState: null,
+              givenName: null,
+              familyName: null,
+              username: null,
+              blocked: null,
+              whitelisted: null,
+              archived: null,
+              markedUnread: null,
+              mutedUntilTimestamp: null,
+              hideStory: null,
+              unregisteredAtTimestamp: null,
+              systemGivenName: null,
+              systemFamilyName: null,
+              systemNickname: null,
+              hidden: null,
+              pniSignatureVerified: null,
+              nickname: null,
+              note: null,
+              avatarColor: null,
+              pniBinary: null,
             },
           },
         });
@@ -83,6 +108,6 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('Verifying the final manifest version');
     const finalState = await phone.expectStorageState('consistency check');
 
-    assert.strictEqual(finalState.version, 2);
+    assert.strictEqual(finalState.version, 2n);
   });
 });

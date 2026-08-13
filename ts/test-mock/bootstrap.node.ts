@@ -21,20 +21,20 @@ import {
   ServiceIdKind,
   loadCertificates,
 } from '@signalapp/mock-server';
-import { MAX_READ_KEYS as MAX_STORAGE_READ_KEYS } from '../services/storageConstants.std.js';
-import { SECOND, MINUTE, WEEK, MONTH } from '../util/durations/index.std.js';
-import { drop } from '../util/drop.std.js';
-import { regress } from '../util/benchmark/stats.std.js';
-import type { RendererConfigType } from '../types/RendererConfig.std.js';
-import type { MIMEType } from '../types/MIME.std.js';
-import { App } from './playwright.node.js';
-import { CONTACT_COUNT } from './benchmarks/fixtures.node.js';
-import { strictAssert } from '../util/assert.std.js';
+import { MAX_READ_KEYS as MAX_STORAGE_READ_KEYS } from '../services/storageConstants.std.ts';
+import { SECOND, MINUTE, WEEK, MONTH } from '../util/durations/index.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { regress } from '../test-helpers/benchmarkStats.std.ts';
+import type { RendererConfigType } from '../types/RendererConfig.std.ts';
+import type { MIMEType } from '../types/MIME.std.ts';
+import { App } from './playwright.node.ts';
+import { CONTACT_COUNT } from './benchmarks/fixtures.node.ts';
+import { strictAssert } from '../util/assert.std.ts';
 import {
   encryptAttachmentV2,
   generateAttachmentKeys,
-} from '../AttachmentCrypto.node.js';
-import { isVideoTypeSupported } from '../util/GoogleChrome.std.js';
+} from '../AttachmentCrypto.node.ts';
+import { isVideoTypeSupported } from '../util/GoogleChrome.std.ts';
 
 export { App };
 
@@ -181,6 +181,20 @@ const DEFAULT_REMOTE_CONFIG = [
   ['global.backups.mediaTierFallbackCdnNumber', { enabled: true, value: '3' }],
   ['global.groupsv2.groupSizeHardLimit', { enabled: true, value: '64' }],
   ['global.groupsv2.maxGroupSize', { enabled: true, value: '32' }],
+  ['global.pinnedChatLimit', { enabled: true, value: '4' }],
+  [
+    'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameHash',
+    { enabled: true },
+  ],
+  [
+    'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameLink.2',
+    { enabled: true },
+  ],
+  [
+    'desktop.libsignalNet.grpc.MessagesAnonymousSendMultiRecipientMessage.2',
+    { enabled: true },
+  ],
+  ['desktop.libsignalNet.grpc.AttachmentsGetUploadForm', { enabled: true }],
 ] as const;
 
 //
@@ -257,7 +271,11 @@ export class Bootstrap {
     assert(totalContactCount <= MAX_CONTACTS);
   }
 
-  public async init(): Promise<void> {
+  public async init({
+    isStandalone,
+  }: {
+    isStandalone?: boolean;
+  } = {}): Promise<void> {
     debug('initializing');
 
     if (this.#options.server === undefined) {
@@ -283,7 +301,7 @@ export class Bootstrap {
           });
 
           for (let i = 0; i < this.#options.linkedDevices; i += 1) {
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.server.createSecondaryDevice(primary);
           }
 
@@ -301,13 +319,15 @@ export class Bootstrap {
       this.#options.unknownContactCount
     );
 
-    this.#privPhone = await this.server.createPrimaryDevice({
-      profileName: 'Myself',
-      contacts: this.contacts,
-      contactsWithoutProfileKey: this.contactsWithoutProfileKey,
-    });
-    if (this.#options.useLegacyStorageEncryption) {
-      this.#privPhone.storageRecordIkm = undefined;
+    if (!isStandalone) {
+      this.#privPhone = await this.server.createPrimaryDevice({
+        profileName: 'Myself',
+        contacts: this.contacts,
+        contactsWithoutProfileKey: this.contactsWithoutProfileKey,
+      });
+      if (this.#options.useLegacyStorageEncryption) {
+        this.#privPhone.storageRecordIkm = undefined;
+      }
     }
 
     this.#storagePath = await fs.mkdtemp(
@@ -386,6 +406,24 @@ export class Bootstrap {
     ]);
   }
 
+  public async prepareForStandaloneRegistration({
+    extraConfig,
+  }: LinkOptionsType = {}): Promise<App> {
+    debug('preparing for standalone registration');
+
+    const app = await this.startApp(extraConfig);
+
+    debug('waiting until app is loaded');
+    await app.waitUntilReadyForUpdates();
+
+    const window = await app.getWindow();
+
+    debug('kicking off standalone registration');
+    await window.evaluate('window.SignalCI.startStandaloneRegistration();');
+
+    return app;
+  }
+
   public async link({
     extraConfig,
     ephemeralBackup,
@@ -412,6 +450,7 @@ export class Bootstrap {
             return;
           }
           await relinkButton.click();
+          await window.getByRole('button', { name: "Don't transfer" }).click();
         } catch {
           // Ignore, provision will fail if QR code was never generated
         }
@@ -448,9 +487,9 @@ export class Bootstrap {
 
     for (const contact of this.allContacts) {
       for (const serviceIdKind of [ServiceIdKind.ACI, ServiceIdKind.PNI]) {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         const contactKey = await this.desktop.popSingleUseKey(serviceIdKind);
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await contact.addSingleUseKey(this.desktop, contactKey, serviceIdKind);
       }
     }
@@ -480,7 +519,7 @@ export class Bootstrap {
 
     debug('starting the app');
 
-    const { port, family } = this.server.address();
+    const { port } = this.server.address();
 
     let startAttempts = 0;
     const MAX_ATTEMPTS = 4;
@@ -493,8 +532,8 @@ export class Bootstrap {
         );
       }
 
-      // eslint-disable-next-line no-await-in-loop
-      const config = await this.#generateConfig(port, family, extraConfig);
+      // oxlint-disable-next-line no-await-in-loop
+      const config = await this.#generateConfig(port, extraConfig);
 
       const startedApp = new App({
         main: ELECTRON,
@@ -503,16 +542,16 @@ export class Bootstrap {
       });
 
       try {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await startedApp.start();
       } catch (error) {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.error(
           `Failed to start the app, attempt ${startAttempts}, retrying`,
           error
         );
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await this.#resetAppStorage();
         continue;
       }
@@ -594,7 +633,7 @@ export class Bootstrap {
       return;
     }
 
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.error(`Saving logs to ${outDir}`);
 
     const { logsDir } = this;
@@ -617,7 +656,7 @@ export class Bootstrap {
     ) => Promise<void>,
     test?: Mocha.Runnable
   ): Promise<(app: App) => Promise<void>> {
-    const snapshots = new Array<{ name: string; data: Buffer }>();
+    const snapshots = new Array<{ name: string; data: Buffer<ArrayBuffer> }>();
     const viewportSize = { width: 1000, height: 2000 } as const;
     const window = await app.getWindow();
     await window.setViewportSize(viewportSize);
@@ -692,9 +731,9 @@ export class Bootstrap {
   }
 
   public async encryptAndStoreAttachmentOnCDN(
-    data: Buffer,
+    data: Buffer<ArrayBuffer>,
     contentType: MIMEType
-  ): Promise<Proto.IAttachmentPointer> {
+  ): Promise<Proto.AttachmentPointer.Params> {
     const cdnKey = uuid();
     const keys = generateAttachmentKeys();
     const cdnNumber = 3;
@@ -716,12 +755,23 @@ export class Bootstrap {
     return {
       size: data.byteLength,
       contentType,
-      cdnKey,
+      attachmentIdentifier: {
+        cdnKey,
+      },
       cdnNumber,
       key: keys,
       digest,
-      chunkSize,
-      incrementalMac,
+      chunkSize: chunkSize ?? null,
+      incrementalMac: incrementalMac ?? null,
+      clientUuid: null,
+      thumbnail: null,
+      fileName: null,
+      flags: null,
+      width: null,
+      height: null,
+      caption: null,
+      blurHash: null,
+      uploadTimestamp: null,
     };
   }
 
@@ -783,7 +833,7 @@ export class Bootstrap {
   async #getArtifactsDir(testName?: string): Promise<string | undefined> {
     const { ARTIFACTS_DIR } = process.env;
     if (!ARTIFACTS_DIR) {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.error(
         'Not saving artifacts. Please set ARTIFACTS_DIR env variable'
       );
@@ -812,7 +862,7 @@ export class Bootstrap {
 
     let result: Result;
     try {
-      result = await pTimeout(fn(bootstrap), timeout);
+      result = await pTimeout(fn(bootstrap), { milliseconds: timeout });
       if (process.env.FORCE_ARTIFACT_SAVE) {
         await bootstrap.saveLogs();
       }
@@ -850,13 +900,13 @@ export class Bootstrap {
           fromValue * (1 - progress) + toValue * progress
         );
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         const data = await Bootstrap.runBenchmark(bootstrap => {
           return fn({ bootstrap, iteration, value });
         }, timeout);
 
         if (data.metrics) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log(`run=${lineNum} info=%j`, data.metrics);
           lineNum += 1;
         }
@@ -866,7 +916,7 @@ export class Bootstrap {
           data,
         });
 
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.log(
           'cycle=%d iteration=%d value=%d data=%j',
           cycle,
@@ -877,7 +927,8 @@ export class Bootstrap {
       }
 
       const result: Record<string, number> = Object.create(null);
-      const keys = Object.keys(samples[0].data).filter(
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const keys = Object.keys(samples[0]!.data).filter(
         (key: string): key is `${string}Duration` => key.endsWith('Duration')
       );
       const human = new Array<string>();
@@ -885,7 +936,8 @@ export class Bootstrap {
       let worstError = 0;
       for (const key of keys) {
         const { yIntercept, slope, confidence, outliers, severeOutliers } =
-          regress(samples.map(s => ({ y: s.value, x: s.data[key] })));
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          regress(samples.map(s => ({ y: s.value, x: s.data[key]! })));
 
         const delay = -yIntercept / slope;
         const perSecond = slope * SECOND;
@@ -906,18 +958,18 @@ export class Bootstrap {
         worstError = Math.max(worstError, error / perSecond);
       }
 
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(human.join('\n'));
 
       if (cycle !== maxCycles - 1 && worstError > maxError) {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.warn(
           `cycle=${cycle} error=${worstError} max=${maxError} continuing`
         );
         continue;
       }
 
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(`run=${lineNum} info=%j`, result);
       break;
     }
@@ -925,16 +977,12 @@ export class Bootstrap {
 
   async #generateConfig(
     port: number,
-    family: string,
     extraConfig?: Partial<RendererConfigType>
   ): Promise<string> {
-    const host = family === 'IPv6' ? '[::1]' : '127.0.0.1';
-
-    const url = `https://${host}:${port}`;
+    const url = `https://localhost:${port}`;
     return JSON.stringify({
       ...(await loadCertificates()),
 
-      forcePreloadBundle: this.#options.benchmark,
       ciMode: 'full',
 
       buildExpiration: Date.now() + MONTH,
@@ -943,7 +991,7 @@ export class Bootstrap {
       serverUrl: url,
       storageUrl: `${url}/storageService`,
       resourcesUrl: `${url}/updates2`,
-      sfuUrl: url,
+      sfuUrl: `${url}/callingService`,
       cdn: {
         '0': url,
         '2': url,

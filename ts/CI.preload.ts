@@ -4,22 +4,29 @@
 import { format } from 'node:util';
 import { ipcRenderer } from 'electron';
 
-import type { IPCResponse as ChallengeResponseType } from './challenge.dom.js';
+import { createLogger } from './logging/log.std.ts';
+import { explodePromise } from './util/explodePromise.std.ts';
+import { AccessType, ipcInvoke } from './sql/channels.preload.ts';
+import { backupsService } from './services/backups/index.preload.ts';
+import { notificationService } from './services/notifications.preload.ts';
+import { challengeHandler } from './services/challengeHandler.preload.ts';
+import { AttachmentBackupManager } from './jobs/AttachmentBackupManager.preload.ts';
+import { migrateAllMessages } from './messages/migrateMessageData.preload.ts';
+import { SECOND } from './util/durations/index.std.ts';
+import { isSignalRoute } from './util/signalRoutes.std.ts';
+import { strictAssert } from './util/assert.std.ts';
+import { MessageModel } from './models/messages.preload.ts';
+import { itemStorage } from './textsecure/Storage.preload.ts';
+import { BackupLevel } from './services/backups/types.std.ts';
+import { fromHex } from './Bytes.std.ts';
+
+import type { IPCResponse as ChallengeResponseType } from './challenge.dom.ts';
 import type { MessageAttributesType } from './model-types.d.ts';
-import { createLogger } from './logging/log.std.js';
-import { explodePromise } from './util/explodePromise.std.js';
-import { AccessType, ipcInvoke } from './sql/channels.preload.js';
-import { backupsService } from './services/backups/index.preload.js';
-import { notificationService } from './services/notifications.preload.js';
-import { challengeHandler } from './services/challengeHandler.preload.js';
-import { AttachmentBackupManager } from './jobs/AttachmentBackupManager.preload.js';
-import { migrateAllMessages } from './messages/migrateMessageData.preload.js';
-import { SECOND } from './util/durations/index.std.js';
-import { isSignalRoute } from './util/signalRoutes.std.js';
-import { strictAssert } from './util/assert.std.js';
-import { MessageModel } from './models/messages.preload.js';
-import type { SocketStatuses } from './textsecure/SocketManager.preload.js';
-import { itemStorage } from './textsecure/Storage.preload.js';
+import type { SocketStatuses } from './textsecure/SocketManager.preload.ts';
+import type {
+  RestoreResponseType,
+  StoreParameters,
+} from './textsecure/WebAPI.preload.ts';
 
 const log = createLogger('CI');
 
@@ -29,9 +36,9 @@ export type CIType = {
   deviceName: string;
   getConversationId: (address: string | null) => string | null;
   createNotificationToken: (address: string) => string | undefined;
-  getMessagesBySentAt(
+  getMessagesBySentAt: (
     sentAt: number
-  ): Promise<ReadonlyArray<MessageAttributesType>>;
+  ) => Promise<ReadonlyArray<MessageAttributesType>>;
   getPendingEventCount: (event: string) => number;
   getSocketStatus: () => SocketStatuses;
   handleEvent: (event: string, data: unknown) => unknown;
@@ -45,16 +52,23 @@ export type CIType = {
       ignorePastEvents?: boolean;
     }
   ) => unknown;
-  openSignalRoute(url: string): Promise<void>;
-  migrateAllMessages(): Promise<void>;
-  exportLocalBackup(backupsBaseDir: string): Promise<string>;
-  stageLocalBackupForImport(snapshotDir: string): Promise<void>;
-  uploadBackup(): Promise<void>;
+  openSignalRoute: (url: string) => Promise<void>;
+  migrateAllMessages: () => Promise<void>;
+  exportLocalBackup: (backupsBaseDir: string) => Promise<string>;
+  stageLocalBackupForImport: (snapshotDir: string) => Promise<void>;
+  uploadBackup: () => Promise<void>;
   unlink: () => void;
   print: (...args: ReadonlyArray<unknown>) => void;
-  resetReleaseNotesFetcher(): void;
+  resetReleaseNoteAndMegaphoneFetcher: () => void;
   forceUnprocessed: boolean;
-  setMediaPermissions(): Promise<void>;
+  setMediaPermissions: () => Promise<void>;
+  maybeUpdateMaxAudioLevel: (level: number) => void;
+  getAndResetMaxAudioLevel: () => number | undefined;
+  startStandaloneRegistration: () => void;
+  saveSVR2RestoreResponse: (response: RestoreResponseType) => void;
+  getSVR2RestoreResponse: () => RestoreResponseType | undefined;
+  saveSVR2StoredData: (parameters: StoreParameters) => void;
+  getSVR2StoredData: () => StoreParameters | undefined;
 };
 
 export type GetCIOptionsType = Readonly<{
@@ -201,8 +215,11 @@ export function getCI({
   }
 
   async function exportLocalBackup(backupsBaseDir: string): Promise<string> {
-    const { snapshotDir } =
-      await backupsService.exportLocalBackup(backupsBaseDir);
+    const { snapshotDir } = await backupsService.exportLocalBackup({
+      backupsBaseDir,
+      onProgress: () => null,
+      abortSignal: new AbortController().signal,
+    });
     return snapshotDir;
   }
 
@@ -210,11 +227,12 @@ export function getCI({
     const { error } =
       await backupsService.stageLocalBackupForImport(snapshotDir);
     if (error) {
-      throw error;
+      throw new Error(error);
     }
   }
 
   async function uploadBackup() {
+    await itemStorage.put('backupTier', BackupLevel.Paid);
     await backupsService.upload();
     await AttachmentBackupManager.waitForIdle();
 
@@ -234,7 +252,7 @@ export function getCI({
     return window.getSocketStatus();
   }
 
-  async function resetReleaseNotesFetcher() {
+  async function resetReleaseNoteAndMegaphoneFetcher() {
     await Promise.all([
       itemStorage.put('releaseNotesVersionWatermark', '7.0.0-alpha.1'),
       itemStorage.put('releaseNotesPreviousManifestHash', ''),
@@ -244,6 +262,54 @@ export function getCI({
 
   async function setMediaPermissions() {
     await window.IPC.setMediaPermissions(true);
+  }
+
+  let maxAudioLevel: number | undefined;
+
+  function maybeUpdateMaxAudioLevel(level: number) {
+    if (maxAudioLevel === undefined || maxAudioLevel < level) {
+      maxAudioLevel = level;
+    }
+  }
+
+  // Tracker for maximum received audio level in a 1:1 call
+  // We get and reset because:
+  // (a) updates are frequent (every 200ms) and
+  // (b) current test use cases want "max since I last asked"
+  function getAndResetMaxAudioLevel(): number | undefined {
+    const level = maxAudioLevel;
+    maxAudioLevel = undefined;
+    return level;
+  }
+
+  function startStandaloneRegistration() {
+    window.reduxActions.app.openStandalone();
+  }
+
+  let svr2RestoreResponse: RestoreResponseType | undefined;
+  function saveSVR2RestoreResponse(response: RestoreResponseType): void {
+    if (response.success) {
+      svr2RestoreResponse = {
+        ...response,
+        // @ts-expect-error We need to get this data through JSON
+        data: fromHex(response.data),
+      };
+
+      return;
+    }
+
+    svr2RestoreResponse = response;
+  }
+  function getSVR2RestoreResponse(): RestoreResponseType | undefined {
+    return svr2RestoreResponse;
+  }
+
+  let svr2StoreParameters: StoreParameters | undefined;
+  function saveSVR2StoredData(parameters: StoreParameters): void {
+    svr2StoreParameters = parameters;
+  }
+  function getSVR2StoredData(): StoreParameters | undefined {
+    return svr2StoreParameters;
   }
 
   return {
@@ -265,8 +331,15 @@ export function getCI({
     unlink,
     getPendingEventCount,
     print,
-    resetReleaseNotesFetcher,
+    resetReleaseNoteAndMegaphoneFetcher,
     forceUnprocessed,
     setMediaPermissions,
+    maybeUpdateMaxAudioLevel,
+    getAndResetMaxAudioLevel,
+    startStandaloneRegistration,
+    saveSVR2RestoreResponse,
+    getSVR2RestoreResponse,
+    saveSVR2StoredData,
+    getSVR2StoredData,
   };
 }

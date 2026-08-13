@@ -1,20 +1,21 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useEffect, useRef, useMemo, useState, type JSX } from 'react';
 import { animated, useSpring } from '@react-spring/web';
 
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import type { ConversationsByDemuxIdType } from '../types/Calling.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { ModalHost } from './ModalHost.dom.js';
-import { drop } from '../util/drop.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import { useReducedMotion } from '../hooks/useReducedMotion.dom.js';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import type { ConversationsByDemuxIdType } from '../types/Calling.std.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ModalHost } from './ModalHost.dom.tsx';
+import { drop } from '../util/drop.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { usePrevious, usePreviousEffect } from '../hooks/usePrevious.std.ts';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
+import { CallingStatusIndicatorHandRaised } from './CallingStatusIndicatorHandRaised.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
 const log = createLogger('CallingRaisedHandsList');
 
@@ -41,9 +42,10 @@ export function CallingRaisedHandsList({
     ? conversationsByDemuxId.get(localDemuxId)?.serviceId
     : undefined;
 
-  const participants = React.useMemo<Array<ConversationType>>(() => {
-    const serviceIds: Set<ServiceIdString> = new Set();
-    const conversations: Array<ConversationType> = [];
+  // Filter by unique serviceId, in case participants are on multiple devices
+  const raisedHandsForDisplay = useMemo<Array<number>>(() => {
+    const serviceIdsSeen = new Set<ServiceIdString>();
+    const resultDemuxIds: Array<number> = [];
     raisedHands.forEach(demuxId => {
       const conversation = conversationsByDemuxId.get(demuxId);
       if (!conversation) {
@@ -55,16 +57,16 @@ export function CallingRaisedHandsList({
 
       const { serviceId } = conversation;
       if (serviceId) {
-        if (serviceIds.has(serviceId)) {
+        if (serviceIdsSeen.has(serviceId)) {
           return;
         }
 
-        serviceIds.add(serviceId);
+        serviceIdsSeen.add(serviceId);
       }
 
-      conversations.push(conversation);
+      resultDemuxIds.push(demuxId);
     });
-    return conversations;
+    return resultDemuxIds;
   }, [raisedHands, conversationsByDemuxId]);
 
   return (
@@ -77,14 +79,8 @@ export function CallingRaisedHandsList({
         <div className="module-calling-participants-list__header">
           <div className="module-calling-participants-list__title">
             {i18n('icu:CallingRaisedHandsList__Title', {
-              count: participants.length,
+              count: raisedHandsForDisplay.length,
             })}
-            {participants.length > 1 ? (
-              <span className="CallingRaisedHandsList__TitleHint">
-                {' '}
-                {i18n('icu:CallingRaisedHandsList__TitleHint')}
-              </span>
-            ) : null}
           </div>
           <button
             type="button"
@@ -95,52 +91,63 @@ export function CallingRaisedHandsList({
           />
         </div>
         <ul className="module-calling-participants-list__list">
-          {participants.map((participant: ConversationType, index: number) => (
-            <li
-              className="module-calling-participants-list__contact"
-              key={participant.serviceId ?? index}
-            >
-              <div className="CallingRaisedHandsList__AvatarAndName module-calling-participants-list__avatar-and-name">
-                <Avatar
-                  avatarPlaceholderGradient={
-                    participant.avatarPlaceholderGradient
-                  }
-                  avatarUrl={participant.avatarUrl}
-                  badge={undefined}
-                  color={participant.color}
-                  conversationType="direct"
-                  hasAvatar={participant.hasAvatar}
-                  i18n={i18n}
-                  profileName={participant.profileName}
-                  title={participant.title}
-                  sharedGroupNames={participant.sharedGroupNames}
-                  size={AvatarSize.THIRTY_TWO}
-                />
-                {ourServiceId && participant.serviceId === ourServiceId ? (
-                  <span className="module-calling-participants-list__name">
-                    {i18n('icu:you')}
-                  </span>
-                ) : (
-                  <ContactName
-                    module="module-calling-participants-list__name"
-                    title={participant.title}
+          {raisedHandsForDisplay.map((demuxId: number, index: number) => {
+            const conversation = conversationsByDemuxId.get(demuxId);
+            if (!conversation) {
+              return null;
+            }
+
+            return (
+              <li
+                className="module-calling-participants-list__contact"
+                key={conversation.serviceId ?? index}
+              >
+                <div className="CallingRaisedHandsList__AvatarAndName module-calling-participants-list__avatar-and-name">
+                  <Avatar
+                    avatarPlaceholderGradient={
+                      conversation.avatarPlaceholderGradient
+                    }
+                    avatarUrl={conversation.avatarUrl}
+                    badge={undefined}
+                    color={conversation.color}
+                    conversationType="direct"
+                    hasAvatar={conversation.hasAvatar}
+                    i18n={i18n}
+                    profileName={conversation.profileName}
+                    title={conversation.title}
+                    size={AvatarSize.THIRTY_SIX}
                   />
-                )}
-              </div>
-              {localHandRaised &&
-                ourServiceId &&
-                participant.serviceId === ourServiceId && (
-                  <button
-                    className="CallingRaisedHandsList__LowerMyHandLink"
-                    type="button"
-                    onClick={onLowerMyHand}
-                  >
-                    {i18n('icu:CallControls__RaiseHands--lower')}
-                  </button>
-                )}
-              <div className="module-calling-participants-list__status-icon CallingRaisedHandsList__NameHandIcon" />
-            </li>
-          ))}
+                  {ourServiceId && conversation.serviceId === ourServiceId ? (
+                    <span className="module-calling-participants-list__name">
+                      {i18n('icu:you')}
+                    </span>
+                  ) : (
+                    <ContactName
+                      module="module-calling-participants-list__name"
+                      title={conversation.title}
+                    />
+                  )}
+                </div>
+                <span className={tw('me-1')} />
+                {localHandRaised &&
+                  ourServiceId &&
+                  conversation.serviceId === ourServiceId && (
+                    <button
+                      className="CallingRaisedHandsList__LowerMyHandLink"
+                      type="button"
+                      onClick={onLowerMyHand}
+                    >
+                      {i18n('icu:CallControls__RaiseHands--lower')}
+                    </button>
+                  )}
+                <CallingStatusIndicatorHandRaised
+                  isOnlyHandRaised={raisedHandsForDisplay.length === 1}
+                  raisedHandOrder={index}
+                />
+                <span className={tw('me-2')} />
+              </li>
+            );
+          })}
         </ul>
       </div>
     </ModalHost>
@@ -176,11 +183,11 @@ export function CallingRaisedHandsListButton({
   raisedHandsCount,
   onClick,
 }: CallingRaisedHandsListButtonPropsType): JSX.Element | null {
-  const [isVisible, setIsVisible] = React.useState(raisedHandsCount > 0);
+  const [isVisible, setIsVisible] = useState(raisedHandsCount > 0);
 
   const reducedMotion = useReducedMotion();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [opacitySpringProps, opacitySpringApi] = useSpring(
     {
       from: { opacity: 0 },
@@ -189,7 +196,7 @@ export function CallingRaisedHandsListButton({
     },
     []
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [scaleSpringProps, scaleSpringApi] = useSpring(
     {
       immediate: reducedMotion,
@@ -200,17 +207,20 @@ export function CallingRaisedHandsListButton({
     []
   );
 
-  const prevRaisedHandsCount = usePrevious(raisedHandsCount, raisedHandsCount);
-  const prevSyncedLocalHandRaised = usePrevious(
+  const prevRaisedHandsCount = usePrevious(raisedHandsCount) ?? 0;
+  const prevSyncedLocalHandRaised = usePreviousEffect(
     syncedLocalHandRaised,
     syncedLocalHandRaised
   );
 
-  React.useEffect(() => {
+  const prevShownRaisedHandsCountRef = useRef<number>(raisedHandsCount);
+  const prevShownSyncedLocalHandRaisedRef = useRef<boolean>(
+    syncedLocalHandRaised
+  );
+
+  // Bouncy effect
+  useEffect(() => {
     if (raisedHandsCount > prevRaisedHandsCount) {
-      setIsVisible(true);
-      opacitySpringApi.stop();
-      drop(Promise.all(opacitySpringApi.start({ opacity: 1 })));
       scaleSpringApi.stop();
       drop(
         Promise.all(
@@ -221,14 +231,33 @@ export function CallingRaisedHandsListButton({
           })
         )
       );
-    } else if (raisedHandsCount === 0) {
-      opacitySpringApi.stop();
+    }
+  }, [raisedHandsCount, prevRaisedHandsCount, scaleSpringApi]);
+
+  useEffect(() => {
+    if (raisedHandsCount === prevRaisedHandsCount) {
+      return;
+    }
+
+    opacitySpringApi.stop();
+    if (raisedHandsCount > 0) {
+      setIsVisible(true);
       drop(
         Promise.all(
           opacitySpringApi.start({
+            from: { opacity: opacitySpringProps.opacity },
+            to: { opacity: 1 },
+          })
+        )
+      );
+    } else {
+      drop(
+        Promise.all(
+          opacitySpringApi.start({
+            from: { opacity: opacitySpringProps.opacity },
             to: { opacity: 0 },
-            onRest: () => {
-              if (!raisedHandsCount) {
+            onResolve: ({ cancelled }) => {
+              if (!cancelled) {
                 setIsVisible(false);
               }
             },
@@ -240,8 +269,20 @@ export function CallingRaisedHandsListButton({
     raisedHandsCount,
     prevRaisedHandsCount,
     opacitySpringApi,
-    scaleSpringApi,
+    opacitySpringProps.opacity,
     setIsVisible,
+  ]);
+
+  useEffect(() => {
+    if (isVisible && raisedHandsCount === 0 && prevRaisedHandsCount > 0) {
+      prevShownRaisedHandsCountRef.current = prevRaisedHandsCount;
+      prevShownSyncedLocalHandRaisedRef.current = prevSyncedLocalHandRaised;
+    }
+  }, [
+    isVisible,
+    prevRaisedHandsCount,
+    prevSyncedLocalHandRaised,
+    raisedHandsCount,
   ]);
 
   if (!isVisible) {
@@ -252,9 +293,14 @@ export function CallingRaisedHandsListButton({
   // abrupt label changes.
   let shownSyncedLocalHandRaised: boolean = syncedLocalHandRaised;
   let shownRaisedHandsCount: number = raisedHandsCount;
-  if (raisedHandsCount === 0 && prevRaisedHandsCount) {
-    shownRaisedHandsCount = prevRaisedHandsCount;
-    shownSyncedLocalHandRaised = prevSyncedLocalHandRaised;
+  if (raisedHandsCount === 0) {
+    if (prevRaisedHandsCount > 0) {
+      shownRaisedHandsCount = prevRaisedHandsCount;
+      shownSyncedLocalHandRaised = prevSyncedLocalHandRaised;
+    } else {
+      shownRaisedHandsCount = prevShownRaisedHandsCountRef.current;
+      shownSyncedLocalHandRaised = prevShownSyncedLocalHandRaisedRef.current;
+    }
   }
 
   return (

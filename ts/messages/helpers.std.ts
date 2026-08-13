@@ -8,7 +8,7 @@ import type {
   ReadonlyMessageAttributesType,
   QuotedAttachmentType,
 } from '../model-types.d.ts';
-import type { AciString } from '../types/ServiceId.std.js';
+import type { AciString } from '../types/ServiceId.std.ts';
 
 export function isIncoming(
   message: Pick<ReadonlyMessageAttributesType, 'type'>
@@ -60,7 +60,7 @@ export const shouldTryToCopyFromQuotedMessage = ({
   quoteAttachment: ReadonlyDeep<QuotedAttachmentType> | undefined;
 }): boolean => {
   // If we've tried and can't find the message, try again.
-  if (referencedMessageNotFound === true) {
+  if (referencedMessageNotFound) {
     return true;
   }
 
@@ -76,3 +76,9 @@ export const shouldTryToCopyFromQuotedMessage = ({
 
   return true;
 };
+
+export function isPoll(
+  message: Pick<ReadonlyMessageAttributesType, 'poll'>
+): boolean {
+  return Boolean(message.poll);
+}

@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { action } from '@storybook/addon-actions';
-import React, { useState } from 'react';
-import { DonateInputCardNumber } from './DonateInputCardNumber.dom.js';
-import type { DonateInputCardNumberProps } from './DonateInputCardNumber.dom.js';
-import type { ComponentMeta } from '../../../storybook/types.std.js';
+import { useState, type JSX } from 'react';
+import { DonateInputCardNumber } from './DonateInputCardNumber.dom.tsx';
+import type { DonateInputCardNumberProps } from './DonateInputCardNumber.dom.tsx';
+import type { ComponentMeta } from '../../../storybook/types.std.ts';
 
 export default {
   component: DonateInputCardNumber,

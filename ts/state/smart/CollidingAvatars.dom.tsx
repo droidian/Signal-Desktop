@@ -1,18 +1,18 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { CollidingAvatars } from '../../components/CollidingAvatars.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import { getConversationSelector } from '../selectors/conversations.dom.js';
+import { CollidingAvatars } from '../../components/CollidingAvatars.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
 
-export type PropsType = Readonly<{
+export type SmartCollidingAvatarsProps = Readonly<{
   conversationIds: ReadonlyArray<string>;
 }>;
 
 export const SmartCollidingAvatars = memo(function SmartCollidingAvatars({
   conversationIds,
-}: PropsType) {
+}: SmartCollidingAvatarsProps) {
   const i18n = useSelector(getIntl);
   const getConversation = useSelector(getConversationSelector);
 

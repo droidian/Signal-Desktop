@@ -99,31 +99,12 @@
     }
   }
 
-  &__send-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: none;
-    border: none;
-    width: 32px;
-    height: 32px;
-    &::after {
-      display: block;
-      content: '';
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      @include mixins.color-svg(
-        '../images/icons/v3/send/send-fill.svg',
-        variables.$color-ultramarine
-      );
-    }
-  }
   &__input {
     flex-grow: 1;
     position: relative;
     margin-block: 0;
     margin-inline: 6px;
+    min-width: 0;
 
     &--large {
       margin: 0;
@@ -152,13 +133,7 @@
       pointer-events: all;
     }
 
-    @include mixins.light-theme() {
-      background-color: variables.$color-white;
-    }
-
-    @include mixins.dark-theme() {
-      background-color: variables.$color-gray-95;
-    }
+    background-color: var(--axo-color-surface-primary);
 
     &__button {
       width: 48px;
@@ -246,46 +221,6 @@
       }
       @include mixins.dark-theme {
         color: variables.$color-gray-05;
-      }
-    }
-  }
-
-  &__attach-file {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    @include mixins.keyboard-mode {
-      &:focus {
-        outline: 2px solid variables.$color-ultramarine;
-      }
-    }
-
-    outline: none;
-
-    &:before {
-      content: '';
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/attach/attach.svg',
-          variables.$color-gray-75
-        );
-      }
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/attach/attach.svg',
-          variables.$color-gray-15
-        );
       }
     }
   }

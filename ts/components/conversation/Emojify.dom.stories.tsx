@@ -1,10 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './Emojify.dom.js';
-import { Emojify } from './Emojify.dom.js';
+import type { Props } from './Emojify.dom.tsx';
+import { Emojify } from './Emojify.dom.tsx';
 
 export default {
   title: 'Components/Conversation/Emojify',

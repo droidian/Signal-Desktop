@@ -1,14 +1,14 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { FormEvent } from 'react';
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Formatter, FormatterToken } from '@signalapp/minimask';
-import { useInputMask } from '../../../hooks/useInputMask.dom.js';
-import type { CurrencyFormatResult } from '../../../util/currency.dom.js';
+import { useInputMask } from '../../../hooks/useInputMask.dom.tsx';
+import type { CurrencyFormatResult } from '../../../util/currency.dom.ts';
 import {
   getCurrencyFormat,
   ZERO_DECIMAL_CURRENCIES,
-} from '../../../util/currency.dom.js';
+} from '../../../util/currency.dom.ts';
 
 export type DonateInputAmountProps = Readonly<{
   className: string;
@@ -248,6 +248,8 @@ export const DonateInputAmount = memo(function DonateInputAmount(
   }, [currencyFormat, onBlur, onValueChange, value]);
 
   return (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label
     <input
       className={props.className}
       ref={inputRef}

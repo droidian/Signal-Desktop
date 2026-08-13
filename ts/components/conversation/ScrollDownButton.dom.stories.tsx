@@ -1,15 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 
-import type { ScrollDownButtonPropsType } from './ScrollDownButton.dom.js';
+import type { ScrollDownButtonPropsType } from './ScrollDownButton.dom.tsx';
 import {
   ScrollDownButton,
   ScrollDownButtonVariant,
-} from './ScrollDownButton.dom.js';
+} from './ScrollDownButton.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -33,7 +32,6 @@ export default {
   },
 } satisfies Meta<ScrollDownButtonPropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<ScrollDownButtonPropsType> = args => (
   <ScrollDownButton {...args} />
 );

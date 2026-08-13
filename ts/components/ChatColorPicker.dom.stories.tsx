@@ -1,12 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './ChatColorPicker.dom.js';
-import { ChatColorPicker } from './ChatColorPicker.dom.js';
-import { ConversationColors } from '../types/Colors.std.js';
+import type { PropsType } from './ChatColorPicker.dom.tsx';
+import { ChatColorPicker } from './ChatColorPicker.dom.tsx';
+import { ConversationColors } from '../types/Colors.std.ts';
 
 const { i18n } = window.SignalContext;
 

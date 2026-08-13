@@ -3,36 +3,39 @@
 
 import { v4 as generateGuid } from 'uuid';
 
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import type { ConversationModel } from '../../models/conversations.preload.js';
-import { GiftBadgeStates } from '../../types/GiftBadgeStates.std.js';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import { GiftBadgeStates } from '../../types/GiftBadgeStates.std.ts';
 
-import { DataWriter } from '../../sql/Client.preload.js';
-import { getRandomBytes } from '../../Crypto.node.js';
-import * as Bytes from '../../Bytes.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
-import { ID_V1_LENGTH } from '../../types/groups.std.js';
-import { DurationInSeconds, WEEK } from '../../util/durations/index.std.js';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import { getRandomBytes } from '../../Crypto.node.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
+import { ID_V1_LENGTH } from '../../types/groups.std.ts';
+import { DurationInSeconds, WEEK } from '../../util/durations/index.std.ts';
 import {
   setupBasics,
   asymmetricRoundtripHarness,
   symmetricRoundtripHarness,
   OUR_ACI,
-} from './helpers.preload.js';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
+} from './helpers.preload.ts';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { IMAGE_PNG, TEXT_ATTACHMENT } from '../../types/MIME.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { generateAttachmentKeys } from '../../AttachmentCrypto.node.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { IMAGE_PNG, TEXT_ATTACHMENT } from '../../types/MIME.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { generateAttachmentKeys } from '../../AttachmentCrypto.node.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { BodyRange } from '../../types/BodyRange.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const CONTACT_A = generateAci();
 const CONTACT_B = generateAci();
 const CONTACT_B_E164 = '+12135550123';
 const GV1_ID = Bytes.toBinary(getRandomBytes(ID_V1_LENGTH));
+const GV2_ID = Bytes.toBase64(getRandomBytes(32));
 
 const BADGE_RECEIPT =
   'AEpyZxbRBT+T5PQw9Wcx1QE2aFvL7LoLir9V4UF09Kk9qiP4SpIlHdlWHrAICy6F' +
@@ -47,6 +50,7 @@ describe('backup/bubble messages', () => {
   let contactA: ConversationModel;
   let contactB: ConversationModel;
   let gv1: ConversationModel;
+  let gv2: ConversationModel;
 
   beforeEach(async () => {
     await DataWriter._removeAllMessages();
@@ -71,6 +75,17 @@ describe('backup/bubble messages', () => {
       'group',
       {
         groupVersion: 1,
+        active_at: 1,
+      }
+    );
+
+    gv2 = await window.ConversationController.getOrCreateAndWait(
+      GV2_ID,
+      'group',
+      {
+        groupVersion: 2,
+        masterKey: Bytes.toBase64(getRandomBytes(32)),
+        name: 'Rock Enthusiasts',
         active_at: 1,
       }
     );
@@ -186,6 +201,105 @@ describe('backup/bubble messages', () => {
     ]);
   });
 
+  it('drops messages with neither text nor attachments', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          timestamp: 3,
+          sourceServiceId: CONTACT_A,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+        },
+      ],
+      []
+    );
+  });
+
+  it('is resilient to ACIs not from known conversations', async () => {
+    const unknownAci = generateAci();
+    await symmetricRoundtripHarness([
+      {
+        conversationId: gv2.id,
+        id: generateGuid(),
+        body: 'body',
+        type: 'incoming',
+        received_at: 3,
+        received_at_ms: 3,
+        sent_at: 3,
+        timestamp: 3,
+        sourceServiceId: unknownAci,
+        readStatus: ReadStatus.Unread,
+        seenStatus: SeenStatus.Unseen,
+        unidentifiedDeliveryReceived: true,
+      },
+    ]);
+  });
+
+  it('drops edited revisions with neither text nor attachments', async () => {
+    const message: MessageAttributesType = {
+      conversationId: contactA.id,
+      id: generateGuid(),
+      type: 'incoming',
+      received_at: 3,
+      received_at_ms: 3,
+      sent_at: 3,
+      timestamp: 3,
+      sourceServiceId: CONTACT_A,
+      body: 'd',
+      readStatus: ReadStatus.Unread,
+      seenStatus: SeenStatus.Unseen,
+      unidentifiedDeliveryReceived: true,
+      editMessageTimestamp: 5,
+      editMessageReceivedAtMs: 5,
+      editHistory: [
+        {
+          body: 'd',
+          timestamp: 5,
+          received_at: 5,
+          received_at_ms: 5,
+          readStatus: ReadStatus.Unread,
+          unidentifiedDeliveryReceived: true,
+        },
+        {
+          timestamp: 4,
+          received_at: 4,
+          received_at_ms: 4,
+          readStatus: ReadStatus.Unread,
+          unidentifiedDeliveryReceived: false,
+        },
+        {
+          body: 'b',
+          timestamp: 3,
+          received_at: 3,
+          received_at_ms: 3,
+          readStatus: ReadStatus.Read,
+          unidentifiedDeliveryReceived: false,
+        },
+      ],
+    };
+    strictAssert(message.editHistory, 'edit history exists');
+    const [currentRevision, , oldestRevision] = message.editHistory;
+    strictAssert(currentRevision, 'current revision exists');
+    strictAssert(oldestRevision, 'oldest revision exists');
+
+    await asymmetricRoundtripHarness(
+      [message],
+      [
+        {
+          ...message,
+          editHistory: [currentRevision, oldestRevision],
+        },
+      ]
+    );
+  });
+
   it('roundtrips unopened gift badge', async () => {
     await symmetricRoundtripHarness([
       {
@@ -271,6 +385,168 @@ describe('backup/bubble messages', () => {
           body: 'hello',
         },
       ]
+    );
+  });
+
+  it('fixes source-missing incoming 1:1 messages', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          timestamp: 3,
+          body: 'hello',
+        },
+      ],
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: CONTACT_A,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          timestamp: 3,
+          body: 'hello',
+        },
+      ]
+    );
+  });
+
+  it('drops source-missing incoming group messages', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: gv2.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          timestamp: 3,
+          body: 'hello',
+        },
+      ],
+      []
+    );
+  });
+
+  it('drops misattributed incoming 1:1 messages', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: CONTACT_B,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          timestamp: 3,
+          body: 'hello',
+        },
+      ],
+      []
+    );
+  });
+
+  it('updates incoming messages authored by self to outgoing', async () => {
+    const ourConversation = window.ConversationController.get(OUR_ACI);
+    strictAssert(ourConversation, 'our conversation exists');
+
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: OUR_ACI,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          timestamp: 3,
+          body: 'hello',
+        },
+      ],
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'outgoing',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          sourceServiceId: OUR_ACI,
+          readStatus: ReadStatus.Read,
+          seenStatus: SeenStatus.Seen,
+          timestamp: 3,
+          body: 'hello',
+          sendStateByConversationId: {
+            [ourConversation.id]: { status: SendStatus.Sent, updatedAt: 3 },
+          },
+        },
+      ]
+    );
+  });
+
+  it('filters out reactions from unknown authors', async () => {
+    const message = {
+      conversationId: contactA.id,
+      id: generateGuid(),
+      type: 'incoming',
+      received_at: 3,
+      received_at_ms: 3,
+      sent_at: 3,
+      sourceServiceId: CONTACT_A,
+      readStatus: ReadStatus.Unread,
+      seenStatus: SeenStatus.Unseen,
+      unidentifiedDeliveryReceived: true,
+      timestamp: 3,
+      reactions: [
+        {
+          emoji: Emoji.ONE,
+          fromId: contactA.id,
+          targetTimestamp: 3,
+          timestamp: 3,
+        },
+        {
+          emoji: Emoji.TWO,
+          fromId: generateGuid(),
+          targetTimestamp: 3,
+          timestamp: 3,
+        },
+        {
+          emoji: Emoji.THREE,
+          fromId: contactB.id,
+          targetTimestamp: 3,
+          timestamp: 3,
+        },
+      ],
+      body: 'hello',
+    } as const;
+    await asymmetricRoundtripHarness(
+      [message],
+      [{ ...message, reactions: [message.reactions[0], message.reactions[2]] }]
     );
   });
 
@@ -603,6 +879,84 @@ describe('backup/bubble messages', () => {
       []
     );
   });
+  it('drops erased messages', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          isErased: true,
+          sent_at: 3,
+          timestamp: 3,
+          sourceServiceId: CONTACT_A,
+          body: 'd',
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+        },
+      ],
+      []
+    );
+  });
+  it('drops invalid body ranges', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          timestamp: 3,
+          sourceServiceId: CONTACT_A,
+          body: 'd',
+          bodyRanges: [
+            {
+              start: 0,
+              length: 1,
+              // @ts-expect-error invalid data
+              style: undefined,
+            },
+            {
+              start: 1,
+              length: 0,
+              style: BodyRange.Style.BOLD,
+            },
+          ],
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+        },
+      ],
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          timestamp: 3,
+          sourceServiceId: CONTACT_A,
+          body: 'd',
+          bodyRanges: [
+            {
+              start: 1,
+              length: 0,
+              style: BodyRange.Style.BOLD,
+            },
+          ],
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+        },
+      ]
+    );
+  });
 
   it('drops messages that expire soon', async () => {
     await asymmetricRoundtripHarness(
@@ -789,7 +1143,7 @@ describe('backup/bubble messages', () => {
           readStatus: ReadStatus.Read,
           seenStatus: SeenStatus.Seen,
           sendStateByConversationId: {
-            [ourConversation.id]: { status: SendStatus.Read, updatedAt: 3 },
+            [ourConversation.id]: { status: SendStatus.Sent, updatedAt: 3 },
           },
           expirationStartTimestamp: Date.now(),
           expireTimer: DurationInSeconds.fromMillis(WEEK),
@@ -829,7 +1183,7 @@ describe('backup/bubble messages', () => {
             {
               ...message,
               sendStateByConversationId: {
-                [ourConversation.id]: { status: SendStatus.Read, updatedAt: 3 },
+                [ourConversation.id]: { status: SendStatus.Sent, updatedAt: 3 },
               },
             },
           ]
@@ -984,14 +1338,11 @@ describe('backup/bubble messages', () => {
         unidentifiedDeliveryReceived: true,
         sourceServiceId: CONTACT_A,
         storyReaction: {
-          emoji: '🤷‍♂️',
+          emoji: Emoji.getDefaultVariant(Emoji.SHRUG),
           targetAuthorAci: OUR_ACI,
           targetTimestamp: 0, // targetTimestamp is not roundtripped
         },
-        storyReplyContext: {
-          authorAci: OUR_ACI,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: OUR_ACI },
       };
 
       const outgoingReply: MessageAttributesType = {
@@ -1000,16 +1351,13 @@ describe('backup/bubble messages', () => {
         type: 'outgoing',
         sourceServiceId: OUR_ACI,
         storyReaction: {
-          emoji: '🤷‍♂️',
+          emoji: Emoji.getDefaultVariant(Emoji.SHRUG),
           targetAuthorAci: CONTACT_A,
           targetTimestamp: 0, // targetTimestamp is not roundtripped
         },
-        storyReplyContext: {
-          authorAci: CONTACT_A,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: CONTACT_A },
         sendStateByConversationId: {
-          [CONTACT_A]: {
+          [contactA.id]: {
             status: SendStatus.Read,
             updatedAt: 3,
           },
@@ -1037,10 +1385,7 @@ describe('backup/bubble messages', () => {
         type: 'incoming',
         unidentifiedDeliveryReceived: true,
         sourceServiceId: CONTACT_A,
-        storyReplyContext: {
-          authorAci: OUR_ACI,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: OUR_ACI },
       };
 
       const outgoingReply: MessageAttributesType = {
@@ -1048,12 +1393,9 @@ describe('backup/bubble messages', () => {
         id: generateGuid(),
         type: 'outgoing',
         sourceServiceId: OUR_ACI,
-        storyReplyContext: {
-          authorAci: CONTACT_A,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: CONTACT_A },
         sendStateByConversationId: {
-          [CONTACT_A]: {
+          [contactA.id]: {
             status: SendStatus.Read,
             updatedAt: 3,
           },
@@ -1061,6 +1403,31 @@ describe('backup/bubble messages', () => {
       };
 
       await symmetricRoundtripHarness([incomingReply, outgoingReply]);
+    });
+
+    it('drops direct story text replies with no body', async () => {
+      strictAssert(ourConversation, 'conversation exists');
+
+      await asymmetricRoundtripHarness(
+        [
+          {
+            conversationId: contactA.id,
+            id: generateGuid(),
+            type: 'incoming',
+            body: '',
+            unidentifiedDeliveryReceived: true,
+            sourceServiceId: CONTACT_A,
+            received_at: 3,
+            received_at_ms: 3,
+            sent_at: 3,
+            timestamp: 3,
+            readStatus: ReadStatus.Read,
+            seenStatus: SeenStatus.Seen,
+            storyReplyContext: { authorAci: OUR_ACI },
+          },
+        ],
+        []
+      );
     });
 
     it('does not export group story replies', async () => {
@@ -1083,10 +1450,7 @@ describe('backup/bubble messages', () => {
         type: 'incoming',
         unidentifiedDeliveryReceived: true,
         sourceServiceId: CONTACT_A,
-        storyReplyContext: {
-          authorAci: OUR_ACI,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: OUR_ACI },
       };
 
       const outgoingReply: MessageAttributesType = {
@@ -1094,10 +1458,7 @@ describe('backup/bubble messages', () => {
         id: generateGuid(),
         type: 'outgoing',
         sourceServiceId: OUR_ACI,
-        storyReplyContext: {
-          authorAci: CONTACT_A,
-          messageId: '',
-        },
+        storyReplyContext: { authorAci: CONTACT_A },
         sendStateByConversationId: {
           [CONTACT_A]: {
             status: SendStatus.Read,
@@ -1180,6 +1541,322 @@ describe('backup/bubble messages', () => {
           },
           unidentifiedDeliveries: [CONTACT_A],
           timestamp: 3,
+        },
+      ]);
+    });
+  });
+
+  describe('polls', () => {
+    const GROUP_ID = Bytes.toBase64(getRandomBytes(32));
+    let group: ConversationModel | undefined;
+
+    let basePollMessage: MessageAttributesType;
+
+    beforeEach(async () => {
+      group = await window.ConversationController.getOrCreateAndWait(
+        GROUP_ID,
+        'group',
+        {
+          groupVersion: 2,
+          masterKey: Bytes.toBase64(getRandomBytes(32)),
+          name: 'Poll Test Group',
+          active_at: 1,
+        }
+      );
+
+      strictAssert(group, 'group must exist');
+
+      basePollMessage = {
+        conversationId: group.id,
+        id: generateGuid(),
+        type: 'incoming',
+        received_at: 3,
+        received_at_ms: 3,
+        sent_at: 3,
+        sourceServiceId: CONTACT_A,
+        readStatus: ReadStatus.Unread,
+        seenStatus: SeenStatus.Unseen,
+        unidentifiedDeliveryReceived: true,
+        timestamp: 3,
+        poll: {
+          question: '',
+          options: [],
+          allowMultiple: false,
+          votes: undefined,
+          terminatedAt: undefined,
+        },
+      };
+    });
+
+    it('roundtrips poll with no votes', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'How do you feel about unit testing?',
+            options: ['yay', 'ok', 'nay'],
+            allowMultiple: false,
+          },
+        },
+      ]);
+    });
+
+    it('roundtrips poll with single vote', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'How do you feel about unit testing?',
+            options: ['yay', 'ok', 'nay'],
+            allowMultiple: false,
+            votes: [
+              {
+                fromConversationId: contactA.id,
+                optionIndexes: [0], // Voted for "yay"
+                voteCount: 1,
+                timestamp: 3,
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
+    it('roundtrips poll with multiple voters', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'Pizza toppings?',
+            options: ['pepperoni', 'mushrooms', 'pineapple'],
+            allowMultiple: false,
+            votes: [
+              {
+                fromConversationId: contactA.id,
+                optionIndexes: [0], // contactA voted for pepperoni
+                voteCount: 2, // Changed their vote twice
+                timestamp: 3,
+              },
+              {
+                fromConversationId: contactB.id,
+                optionIndexes: [2], // contactB voted for pineapple
+                voteCount: 1,
+                timestamp: 3,
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
+    it('roundtrips poll with multiple selections', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'Which features do you want?',
+            options: ['dark mode', 'better search', 'polls', 'voice notes'],
+            allowMultiple: true,
+            votes: [
+              {
+                fromConversationId: contactA.id,
+                optionIndexes: [0, 2, 3], // Selected dark mode, polls, and voice notes
+                voteCount: 1,
+                timestamp: 3,
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
+    it('roundtrips ended poll', async () => {
+      const pollData = {
+        poll: {
+          question: 'This poll is closed',
+          options: ['option1', 'option2'],
+          allowMultiple: false,
+          votes: [
+            {
+              fromConversationId: contactA.id,
+              optionIndexes: [0],
+              voteCount: 1,
+              timestamp: 3,
+            },
+          ],
+        },
+      };
+
+      await asymmetricRoundtripHarness(
+        [
+          {
+            ...basePollMessage,
+            ...pollData,
+            poll: {
+              ...pollData.poll,
+              terminatedAt: 5, // Original termination timestamp
+            },
+          },
+        ],
+        [
+          {
+            ...basePollMessage,
+            ...pollData,
+            poll: {
+              ...pollData.poll,
+              terminatedAt: 3, // After roundtrip, set to message timestamp
+            },
+          },
+        ]
+      );
+    });
+
+    it('roundtrips outgoing poll', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          type: 'outgoing',
+          sourceServiceId: OUR_ACI,
+          readStatus: ReadStatus.Read,
+          seenStatus: SeenStatus.Seen,
+          unidentifiedDeliveryReceived: false, // Outgoing messages default to false
+          sendStateByConversationId: {
+            [contactA.id]: {
+              status: SendStatus.Delivered,
+            },
+          },
+          poll: {
+            question: 'Meeting time?',
+            options: ['10am', '2pm', '4pm'],
+            allowMultiple: false,
+            votes: [
+              {
+                fromConversationId: contactA.id,
+                optionIndexes: [1],
+                voteCount: 1,
+                timestamp: 3,
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
+    it('excludes pending votes from backup', async () => {
+      strictAssert(group, 'group must exist');
+      const ourConversation = window.ConversationController.get(OUR_ACI);
+      strictAssert(ourConversation, 'our conversation must exist');
+
+      await asymmetricRoundtripHarness(
+        [
+          {
+            ...basePollMessage,
+            poll: {
+              question: 'Test question?',
+              options: ['yes', 'no'],
+              allowMultiple: false,
+              votes: [
+                {
+                  fromConversationId: contactA.id,
+                  optionIndexes: [0],
+                  voteCount: 1,
+                  timestamp: 3,
+                  // No sendStateByConversationId - this vote is sent
+                },
+                {
+                  fromConversationId: ourConversation.id,
+                  optionIndexes: [1],
+                  voteCount: 1,
+                  timestamp: 3,
+                  // This vote is still pending, should NOT be in backup
+                  sendStateByConversationId: {
+                    [contactA.id]: {
+                      status: SendStatus.Pending,
+                      updatedAt: 3,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        [
+          {
+            ...basePollMessage,
+            poll: {
+              question: 'Test question?',
+              options: ['yes', 'no'],
+              allowMultiple: false,
+              votes: [
+                {
+                  fromConversationId: contactA.id,
+                  optionIndexes: [0],
+                  voteCount: 1,
+                  timestamp: 3,
+                  // Only the sent vote should remain after roundtrip
+                },
+                // The pending vote should be excluded from the backup
+              ],
+            },
+          },
+        ]
+      );
+    });
+
+    it('roundtrips poll with reactions', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'React to this poll?',
+            options: ['yes', 'no'],
+            allowMultiple: false,
+          },
+          reactions: [
+            {
+              emoji: Emoji.getDefaultVariant(Emoji.THUMBS_UP),
+              fromId: contactA.id,
+              targetTimestamp: 3,
+              timestamp: 3,
+            },
+            {
+              emoji: Emoji.HEART,
+              fromId: contactB.id,
+              targetTimestamp: 3,
+              timestamp: 3,
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('roundtrips quote of poll', async () => {
+      await symmetricRoundtripHarness([
+        {
+          ...basePollMessage,
+          poll: {
+            question: 'Original poll?',
+            options: ['option1', 'option2'],
+            allowMultiple: false,
+          },
+        },
+        {
+          ...basePollMessage,
+          id: generateGuid(), // Generate new ID to avoid duplicate
+          sent_at: 4,
+          timestamp: 4,
+          body: 'Replying to poll',
+          poll: undefined,
+          quote: {
+            id: 3,
+            authorAci: CONTACT_A,
+            text: 'Original poll?',
+            attachments: [],
+            isGiftBadge: false,
+            isPoll: true,
+            isViewOnce: false,
+            referencedMessageNotFound: false,
+          },
         },
       ]);
     });

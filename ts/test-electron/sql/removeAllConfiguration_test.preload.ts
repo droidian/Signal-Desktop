@@ -4,7 +4,7 @@
 import { assert } from 'chai';
 import { v4 as generateGuid } from 'uuid';
 
-import { DataWriter, DataReader } from '../../sql/Client.preload.js';
+import { DataWriter, DataReader } from '../../sql/Client.preload.ts';
 
 describe('Remove all configuration test', () => {
   beforeEach(async () => {
@@ -29,7 +29,8 @@ describe('Remove all configuration test', () => {
         }
       );
 
-    await DataWriter.removeAllConfiguration();
+    const isPrimary = false;
+    await DataWriter.removeAllConfiguration(isPrimary);
 
     const convoAfter = await DataReader.getConversationById(attributes.id);
     assert.strictEqual(convoAfter?.expireTimerVersion, 1);
@@ -41,5 +42,78 @@ describe('Remove all configuration test', () => {
       convoAfter?.name,
       'Name (and all other fields) should be preserved'
     );
+  });
+
+  it('Removes non-preserved storage items', async () => {
+    /** Should be preserved */
+    await DataWriter.createOrUpdateItem({
+      id: 'zoomFactor',
+      value: 1.5,
+    });
+    await DataWriter.createOrUpdateItem({
+      id: 'version',
+      value: 'v1.2.3',
+    });
+    await DataWriter.createOrUpdateItem({
+      id: 'uuid_id',
+      value: 'aci-should-be-retained',
+    });
+
+    /** Should be deleted */
+    await DataWriter.createOrUpdateItem({
+      id: 'blocked',
+      value: '["a", "b", "c"]',
+    });
+    await DataWriter.createOrUpdateItem({
+      id: 'storageFetchComplete',
+      value: true,
+    });
+    await DataWriter.createOrUpdateItem({
+      // @ts-expect-error incorrect key
+      id: 'unknown-key',
+      value: 1.5,
+    });
+
+    const isPrimary = false;
+    await DataWriter.removeAllConfiguration(isPrimary);
+
+    const allItems = await DataReader.getAllItems();
+    assert.deepStrictEqual(allItems, {
+      uuid_id: 'aci-should-be-retained',
+      version: 'v1.2.3',
+      zoomFactor: 1.5,
+    });
+  });
+
+  it('When isPrimary=true, preserves additional configuration', async () => {
+    /** Should be preserved */
+    await DataWriter.createOrUpdateItem({
+      id: 'zoomFactor',
+      value: 1.5,
+    });
+    await DataWriter.createOrUpdateItem({
+      id: 'read-receipt-setting',
+      value: true,
+    });
+
+    /** Should be deleted */
+    await DataWriter.createOrUpdateItem({
+      id: 'storageFetchComplete',
+      value: true,
+    });
+    await DataWriter.createOrUpdateItem({
+      // @ts-expect-error incorrect key
+      id: 'unknown-key',
+      value: 1.5,
+    });
+
+    const isPrimary = true;
+    await DataWriter.removeAllConfiguration(isPrimary);
+
+    const allItems = await DataReader.getAllItems();
+    assert.deepStrictEqual(allItems, {
+      'read-receipt-setting': true,
+      zoomFactor: 1.5,
+    });
   });
 });

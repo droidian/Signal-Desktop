@@ -1,8 +1,8 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback } from 'react';
+import type { ReactNode, JSX, MouseEvent } from 'react';
+import { useCallback } from 'react';
 
 const BASE_CLASS_NAME = 'LeftPaneBanner';
 
@@ -18,7 +18,7 @@ export function LeftPaneBanner({
   onClick,
 }: PropsType): JSX.Element {
   const onClickWrap = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 

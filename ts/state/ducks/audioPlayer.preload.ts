@@ -3,16 +3,17 @@
 
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { setVoiceNotePlaybackRate } from './conversations.preload.js';
-import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.js';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { setVoiceNotePlaybackRate } from './conversations.preload.ts';
+import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.ts';
+import { getUserConversationId } from '../selectors/user.std.ts';
 import type {
   VoiceNoteAndConsecutiveForPlayback,
   VoiceNoteForPlayback,
-} from '../selectors/audioPlayer.preload.js';
+} from '../selectors/audioPlayer.preload.ts';
 
 import type {
   MessagesAddedActionType,
@@ -20,11 +21,19 @@ import type {
   MessageChangedActionType,
   TargetedConversationChangedActionType,
   ConversationsUpdatedActionType,
-} from './conversations.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { isAudio } from '../../util/Attachment.std.js';
-import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.js';
-import { assertDev } from '../../util/assert.std.js';
+} from './conversations.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { isAudio } from '../../util/Attachment.std.ts';
+import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.ts';
+import { assertDev } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import type { RenderingContextType } from '../../types/RenderingContext.d.ts';
+import { Sound, SoundType } from '../../util/Sound.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+
+const stateChangeConfirmUpSound = new Sound({
+  soundType: SoundType.VoiceNoteEnd,
+});
 
 const log = createLogger('audioPlayer');
 
@@ -36,17 +45,14 @@ type AudioPlayerContentDraft = ReadonlyDeep<{
   url: string;
 }>;
 
-/** A voice note, with a queue for consecutive playback */
+/** A voice note consecutive playback */
 export type AudioPlayerContentVoiceNote = ReadonlyDeep<{
   conversationId: string;
-  context: string;
+  context: RenderingContextType;
   current: VoiceNoteForPlayback;
-  queue: ReadonlyArray<VoiceNoteForPlayback>;
-  nextMessageTimestamp: number | undefined;
   // playing because it followed a message
   // false on the first of a consecutive group
   isConsecutive: boolean;
-  ourConversationId: string | undefined;
 }>;
 
 export type ActiveAudioPlayerStateType = ReadonlyDeep<{
@@ -58,7 +64,6 @@ export type ActiveAudioPlayerStateType = ReadonlyDeep<{
   content: AudioPlayerContentVoiceNote | AudioPlayerContentDraft;
 }>;
 
-/* eslint-disable @typescript-eslint/no-namespace */
 export namespace AudioPlayerContent {
   export function isVoiceNote(
     content: ActiveAudioPlayerStateType['content']
@@ -78,6 +83,44 @@ export namespace AudioPlayerContent {
 export type AudioPlayerStateType = ReadonlyDeep<{
   active: ActiveAudioPlayerStateType | undefined;
 }>;
+
+// Helpers
+
+async function getNextVoiceNote({
+  current,
+  conversationId,
+  ourConversationId,
+}: {
+  current: VoiceNoteForPlayback;
+  conversationId: string;
+  ourConversationId: string;
+}): Promise<VoiceNoteForPlayback | undefined> {
+  const results = await DataReader.getSortedMedia({
+    conversationId,
+    limit: 1,
+    messageId: current.id,
+    receivedAt: current.receivedAt,
+    sentAt: current.sentAt,
+    type: 'audio',
+    order: 'newer',
+  });
+
+  if (results.length === 0) {
+    return undefined;
+  }
+
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  const { message, attachment } = results[0]!;
+  return extractVoiceNoteForPlayback(
+    {
+      ...message,
+      attachments: [attachment],
+      sent_at: message.sentAt,
+      received_at: message.receivedAt,
+    },
+    ourConversationId
+  );
+}
 
 // Actions
 
@@ -145,9 +188,67 @@ export const actions = {
   messageAudioEnded,
 };
 
-function messageAudioEnded(): MessageAudioEnded {
-  return {
-    type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+function messageAudioEnded(): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  SetMessageAudioAction | MessageAudioEnded
+> {
+  return async (dispatch, getState) => {
+    const state = getState();
+    const {
+      audioPlayer: { active },
+    } = state;
+    const ourConversationId = getUserConversationId(getState());
+    if (ourConversationId == null || active == null) {
+      dispatch({
+        type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+      });
+      return;
+    }
+
+    const { content, playbackRate } = active;
+    if (content == null || AudioPlayerContent.isDraft(content)) {
+      dispatch({
+        type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+      });
+      return;
+    }
+
+    // No consecutive playback in All Media view
+    if (content.context === 'AllMedia') {
+      dispatch({
+        type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+      });
+      return;
+    }
+
+    const { conversationId, context, current } = content;
+
+    const next = await getNextVoiceNote({
+      current,
+      conversationId,
+      ourConversationId,
+    });
+    if (next == null) {
+      drop(stateChangeConfirmUpSound.play());
+      dispatch({
+        type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+      });
+      return;
+    }
+
+    dispatch({
+      type: 'audioPlayer/SET_MESSAGE_AUDIO',
+      payload: {
+        conversationId,
+        context,
+        current: next,
+        isConsecutive: true,
+        startPosition: 0,
+        playbackRate,
+      },
+    });
   };
 }
 
@@ -218,39 +319,28 @@ function loadVoiceNoteAudio({
   voiceNoteData,
   position,
   context,
-  ourConversationId,
   playbackRate,
 }: {
   voiceNoteData: VoiceNoteAndConsecutiveForPlayback;
   position: number;
-  context: string;
-  ourConversationId: string;
+  context: RenderingContextType;
   playbackRate: number;
 }): SetMessageAudioAction {
-  const {
-    conversationId,
-    voiceNote,
-    consecutiveVoiceNotes,
-    // playbackRate,
-    nextMessageTimestamp,
-  } = voiceNoteData;
+  const { conversationId, voiceNote } = voiceNoteData;
   return {
     type: 'audioPlayer/SET_MESSAGE_AUDIO',
     payload: {
       conversationId,
       context,
       current: voiceNote,
-      queue: consecutiveVoiceNotes,
       isConsecutive: false,
-      nextMessageTimestamp,
-      ourConversationId,
       startPosition: position,
       playbackRate,
     },
   };
 }
 
-export function loadVoiceNoteDraftAudio(
+function loadVoiceNoteDraftAudio(
   content: AudioPlayerContentDraft & {
     playbackRate: number;
     startPosition: number;
@@ -273,11 +363,11 @@ function setIsPlaying(value: boolean): SetIsPlayingAction {
  * alias for callers that just want to pause any voice notes before starting
  * their own playback: story viewer, media viewer, calling
  */
-export function pauseVoiceNotePlayer(): ReturnType<typeof setIsPlaying> {
+function pauseVoiceNotePlayer(): ReturnType<typeof setIsPlaying> {
   return setIsPlaying(false);
 }
 
-export function unloadMessageAudio(): SetMessageAudioAction {
+function unloadMessageAudio(): SetMessageAudioAction {
   return {
     type: 'audioPlayer/SET_MESSAGE_AUDIO',
     payload: undefined,
@@ -394,90 +484,6 @@ export function reducer(
     };
   }
 
-  if (action.type === 'MESSAGES_ADDED') {
-    if (!active) {
-      return state;
-    }
-    const { content } = active;
-
-    if (!content) {
-      return state;
-    }
-
-    if (!AudioPlayerContent.isVoiceNote(content)) {
-      return state;
-    }
-
-    if (content.conversationId !== action.payload.conversationId) {
-      return state;
-    }
-
-    const updatedQueue: Array<VoiceNoteForPlayback> = [...content.queue];
-
-    for (const message of action.payload.messages) {
-      if (message.deletedForEveryone) {
-        continue;
-      }
-      if (message.timestamp < content.current.timestamp) {
-        continue;
-      }
-      // in range of the queue
-      if (
-        content.nextMessageTimestamp === undefined ||
-        message.timestamp < content.nextMessageTimestamp
-      ) {
-        if (message.type !== 'incoming' && message.type !== 'outgoing') {
-          continue;
-        }
-
-        const voiceNote = extractVoiceNoteForPlayback(
-          message,
-          content.ourConversationId
-        );
-
-        // index of the message in the queue after this one
-        const idx = updatedQueue.findIndex(
-          m => m.timestamp > message.timestamp
-        );
-
-        // break up consecutive queue: drop values older than this message
-        if (!voiceNote && idx !== -1) {
-          updatedQueue.splice(idx);
-          continue;
-        }
-        // insert a new voice note
-        if (voiceNote) {
-          if (idx === -1) {
-            log.info(
-              `MESSAGES_ADDED: Adding voice note ${voiceNote.messageIdForLogging} to end of queue`
-            );
-            updatedQueue.push(voiceNote);
-          } else {
-            log.info(
-              `MESSAGES_ADDED: Adding voice note ${voiceNote.messageIdForLogging} to queue at index ${idx}`
-            );
-            updatedQueue.splice(idx, 0, voiceNote);
-          }
-        }
-      }
-    }
-
-    if (updatedQueue.length === content.queue.length) {
-      return state;
-    }
-
-    return {
-      ...state,
-      active: {
-        ...active,
-        content: {
-          ...content,
-          queue: updatedQueue,
-        },
-      },
-    };
-  }
-
   if (action.type === 'audioPlayer/MESSAGE_AUDIO_ENDED') {
     if (!active) {
       return state;
@@ -485,37 +491,6 @@ export function reducer(
     const { content } = active;
     if (!content) {
       return state;
-    }
-
-    if (AudioPlayerContent.isDraft(content)) {
-      log.info('MESSAGE_AUDIO_ENDED: Voice note was draft, stopping playback');
-      return {
-        ...state,
-        active: undefined,
-      };
-    }
-
-    const { queue } = content;
-
-    const [nextVoiceNote, ...newQueue] = queue;
-
-    if (nextVoiceNote) {
-      log.info(
-        `MESSAGE_AUDIO_ENDED: Starting next voice note ${nextVoiceNote.messageIdForLogging}`
-      );
-      return {
-        ...state,
-        active: {
-          ...active,
-          startPosition: 0,
-          content: {
-            ...content,
-            current: nextVoiceNote,
-            queue: newQueue,
-            isConsecutive: true,
-          },
-        },
-      };
     }
 
     log.info('MESSAGE_AUDIO_ENDED: Stopping playback');
@@ -545,57 +520,16 @@ export function reducer(
     // if we deleted the message currently being played
     // move on to the next message
     if (content.current.id === id) {
-      const [next, ...rest] = content.queue;
-
-      if (!next) {
-        log.info(
-          'MESSAGE_DELETED: Removed currently-playing message, stopping playback'
-        );
-        return {
-          ...state,
-          active: undefined,
-        };
-      }
-
-      log.info(
-        'MESSAGE_DELETED: Removed currently-playing message, moving to next in queue'
-      );
       return {
         ...state,
-        active: {
-          ...active,
-          content: {
-            ...content,
-            current: next,
-            queue: rest,
-          },
-        },
-      };
-    }
-
-    // if we deleted a message on the queue
-    // just update the queue
-    const message = content.queue.find(el => el.id === id);
-    if (message) {
-      log.info('MESSAGE_DELETED: Removed message from the queue');
-      return {
-        ...state,
-        active: {
-          ...active,
-          content: {
-            ...content,
-            queue: content.queue.filter(el => el.id !== id),
-          },
-        },
+        active: undefined,
       };
     }
 
     return state;
   }
 
-  // if it's a voice note
-  // and this event is letting us know that it has downloaded
-  // update the url if it's in the queue
+  // Update currently playing message if it just downloaded
   if (action.type === 'MESSAGE_CHANGED') {
     if (!active) {
       return state;
@@ -644,28 +578,6 @@ export function reducer(
               ...content.current,
               url,
             },
-          },
-        },
-      };
-    }
-
-    // if it's in the queue
-    const idx = content.queue.findIndex(v => v.id === id);
-    if (idx !== -1) {
-      log.info('MESSAGE_CHANGED: Adding content url to message in queue');
-      const updatedQueue = [...content.queue];
-      updatedQueue[idx] = {
-        ...updatedQueue[idx],
-        url,
-      };
-
-      return {
-        ...state,
-        active: {
-          ...active,
-          content: {
-            ...content,
-            queue: updatedQueue,
           },
         },
       };

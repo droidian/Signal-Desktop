@@ -1,25 +1,26 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import {
   DraftGifMessageSendModal,
   type DraftGifMessageSendModalProps,
-} from './DraftGifMessageSendModal.dom.js';
-import { ThemeType } from '../types/Util.std.js';
-import { CompositionTextArea } from './CompositionTextArea.dom.js';
-import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea.preload.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
-import { LoadingState } from '../util/loadable.std.js';
-import { VIDEO_MP4 } from '../types/MIME.std.js';
-import { drop } from '../util/drop.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
+} from './DraftGifMessageSendModal.dom.tsx';
+import { ThemeType } from '../types/Util.std.ts';
+import { CompositionTextArea } from './CompositionTextArea.dom.tsx';
+import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea.preload.tsx';
+import { LoadingState } from '../util/loadable.std.ts';
+import { VIDEO_MP4 } from '../types/MIME.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
 const MOCK_GIF_URL =
-  'https://media.tenor.com/ihqN6a3iiYEAAAPo/pikachu-shocked-face-stunned.mp4';
+  'https://media2.giphy.com/media/v1.Y2lkPTZhNGNmY2JhaXFlbXZxcHVjNXlmaGdlYWs1dTlwYnNrb2I5aGttbXViYjh4Z2hqbyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3kzJvEciJa94SMW3hN/giphy.mp4';
+const MOCK_GIF_WIDTH = 480;
+const MOCK_GIF_HEIGHT = 418;
 
 export default {
   title: 'components/DraftGifMessageSendModal',
@@ -38,8 +39,8 @@ function RenderCompositionTextArea(props: SmartCompositionTextAreaProps) {
       onTextTooLong={action('onTextTooLong')}
       ourConversationId="me"
       platform="darwin"
-      emojiSkinToneDefault={EmojiSkinTone.None}
-      conversationSelector={() => getDefaultConversation()}
+      emojiSkinToneDefault={Emoji.SkinTone.None}
+      convertDraftBodyRangesIntoHydrated={() => []}
     />
   );
 }
@@ -87,14 +88,14 @@ export function Default(): JSX.Element {
           title: '',
           description: '',
           previewMedia: {
-            url: '',
-            width: 640,
-            height: 640,
+            url: MOCK_GIF_URL,
+            width: MOCK_GIF_WIDTH,
+            height: MOCK_GIF_HEIGHT,
           },
           attachmentMedia: {
-            url: '',
-            width: 640,
-            height: 640,
+            url: MOCK_GIF_URL,
+            width: MOCK_GIF_WIDTH,
+            height: MOCK_GIF_HEIGHT,
           },
         },
       }}

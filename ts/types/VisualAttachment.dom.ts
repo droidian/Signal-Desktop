@@ -3,16 +3,16 @@
 
 import loadImage from 'blueimp-load-image';
 import { blobToArrayBuffer } from 'blob-util';
-import { toLogFormat } from './errors.std.js';
-import type { MIMEType } from './MIME.std.js';
-import { IMAGE_JPEG, IMAGE_PNG } from './MIME.std.js';
-import type { LoggerType } from './Logging.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { canvasToBlob } from '../util/canvasToBlob.std.js';
-import { KIBIBYTE } from './AttachmentSize.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { createLogger } from '../logging/log.std.js';
+import { toLogFormat } from './errors.std.ts';
+import type { MIMEType } from './MIME.std.ts';
+import { IMAGE_JPEG, IMAGE_PNG } from './MIME.std.ts';
+import type { LoggerType } from './Logging.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { canvasToBlob } from '../util/canvasToBlob.std.ts';
+import { KIBIBYTE } from './AttachmentSize.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { createLogger } from '../logging/log.std.ts';
 
 const logging = createLogger('VisualAttachment');
 
@@ -63,6 +63,7 @@ export function makeImageThumbnail({
   return new Promise((resolve, reject) => {
     const image = document.createElement('img');
 
+    image.crossOrigin = 'anonymous';
     image.addEventListener('load', async () => {
       // using components/blueimp-load-image
 
@@ -120,7 +121,7 @@ const MINIMUM_JPEG_QUALITY = 0.1;
 const ADDITIONAL_QUALITY_DECREASE_PER_ITERATION = 0.1;
 
 export type CreatedThumbnailType = {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
   height: number;
   width: number;
   mimeType: MIMEType;
@@ -134,6 +135,7 @@ export async function makeImageThumbnailForBackup({
   return new Promise((resolve, reject) => {
     const image = document.createElement('img');
 
+    image.crossOrigin = 'anonymous';
     image.addEventListener('load', async () => {
       const start = performance.now();
 
@@ -170,7 +172,7 @@ export async function makeImageThumbnailForBackup({
             (maxSize / blob.size) * jpegQuality -
               ADDITIONAL_QUALITY_DECREASE_PER_ITERATION
           );
-          // eslint-disable-next-line no-await-in-loop
+          // oxlint-disable-next-line no-await-in-loop
           blob = await canvasToBlob(canvas, IMAGE_JPEG, jpegQuality);
           iterations += 1;
         }
@@ -258,6 +260,7 @@ export async function makeVideoScreenshot({
   signal.addEventListener('abort', onAborted);
 
   try {
+    video.crossOrigin = 'anonymous';
     video.src = objectUrl;
     await videoLoadedAndSeeked;
     const blob = await captureScreenshot(video, contentType);
@@ -285,7 +288,7 @@ export async function makeVideoScreenshot({
 }
 
 export function makeObjectUrl(
-  data: Uint8Array | ArrayBuffer,
+  data: Uint8Array<ArrayBuffer> | ArrayBuffer,
   contentType: MIMEType
 ): string {
   const blob = new Blob([data], {

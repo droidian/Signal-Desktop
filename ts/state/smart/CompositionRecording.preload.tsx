@@ -1,14 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { CompositionRecording } from '../../components/CompositionRecording.dom.js';
-import { useAudioRecorderActions } from '../ducks/audioRecorder.preload.js';
-import { useComposerActions } from '../ducks/composer.preload.js';
-import { useToastActions } from '../ducks/toast.preload.js';
-import { getSelectedConversationId } from '../selectors/conversations.dom.js';
-import { getIntl } from '../selectors/user.std.js';
+import { CompositionRecording } from '../../components/CompositionRecording.dom.tsx';
+import { useAudioRecorderActions } from '../ducks/audioRecorder.preload.ts';
+import { useComposerActions } from '../ducks/composer.preload.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import { getRecordingPeaks } from '../selectors/audioRecorder.std.ts';
 
 export const SmartCompositionRecording = memo(
   function SmartCompositionRecording() {
@@ -16,8 +17,9 @@ export const SmartCompositionRecording = memo(
     const selectedConversationId = useSelector(getSelectedConversationId);
     const { errorRecording, cancelRecording, completeRecording } =
       useAudioRecorderActions();
+    const peaks = useSelector(getRecordingPeaks);
 
-    const { sendMultiMediaMessage, addAttachment, saveDraftRecordingIfNeeded } =
+    const { sendMultiMediaMessage, saveDraftRecordingIfNeeded: saveDraft } =
       useComposerActions();
     const { hideToast, showToast } = useToastActions();
 
@@ -34,6 +36,11 @@ export const SmartCompositionRecording = memo(
         });
       }
     }, [selectedConversationId, completeRecording, sendMultiMediaMessage]);
+    const saveDraftRecordingIfNeeded = useCallback(() => {
+      if (selectedConversationId) {
+        saveDraft(selectedConversationId);
+      }
+    }, [saveDraft, selectedConversationId]);
 
     if (!selectedConversationId) {
       return null;
@@ -45,11 +52,10 @@ export const SmartCompositionRecording = memo(
         onCancel={handleCancel}
         onSend={handleSend}
         errorRecording={errorRecording}
-        addAttachment={addAttachment}
-        completeRecording={completeRecording}
         saveDraftRecordingIfNeeded={saveDraftRecordingIfNeeded}
         showToast={showToast}
         hideToast={hideToast}
+        peaks={peaks}
       />
     );
   }

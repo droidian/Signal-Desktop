@@ -19,16 +19,19 @@ import type {
 import type {
   SendStateByConversationId,
   SendState,
-} from '../../messages/MessageSendState.std.js';
+} from '../../messages/MessageSendState.std.ts';
 
-import { backupsService } from '../../services/backups/index.preload.js';
-import { isUnsupportedMessage } from '../../state/selectors/message.preload.js';
-import { generateAci, generatePni } from '../../types/ServiceId.std.js';
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { getRandomBytes } from '../../Crypto.node.js';
-import * as Bytes from '../../Bytes.std.js';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { backupsService } from '../../services/backups/index.preload.ts';
+import { isUnsupportedMessage } from '../../state/selectors/message.preload.ts';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { getRandomBytes } from '../../Crypto.node.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import {
+  generateAci,
+  generatePni,
+} from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { omit, sortBy } = lodash;
 
@@ -79,17 +82,18 @@ function sortAndNormalize(
       preview,
       quote,
       sticker,
+      poll,
 
       // This is not in the backup
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       id: _id,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       received_at: _receivedAt,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       sourceDevice: _sourceDevice,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       editMessageReceivedAt: _editMessageReceivedAt,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       schemaVersion: _schemaVersion,
 
       ...rest
@@ -136,7 +140,7 @@ function sortAndNormalize(
         editHistory: editHistory?.map(history => {
           const {
             sendStateByConversationId: historySendState,
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // oxlint-disable-next-line typescript/no-unused-vars
             received_at: _receivedAtHistory,
             ...restOfHistory
           } = history;
@@ -174,6 +178,18 @@ function sortAndNormalize(
           ? {
               ...sticker,
               data: omit(sticker.data, 'downloadPath'),
+            }
+          : undefined,
+        poll: poll
+          ? {
+              ...poll,
+              votes: poll.votes?.map(vote => ({
+                ...vote,
+                fromConversationId: mapConvoId(vote.fromConversationId),
+                sendStateByConversationId: mapSendState(
+                  vote.sendStateByConversationId
+                ),
+              })),
             }
           : undefined,
 
@@ -227,14 +243,22 @@ export async function asymmetricRoundtripHarness(
       ourAci: OUR_ACI,
       postSaveUpdates,
     });
+    await itemStorage.put('backupTier', options.backupLevel);
 
-    await backupsService.exportToDisk(targetOutputFile, options.backupLevel);
+    await backupsService.exportToDisk(targetOutputFile, {
+      type: 'remote',
+      level: options.backupLevel,
+      abortSignal: new AbortController().signal,
+    });
 
     await updateConvoIdToTitle();
 
     await clearData();
 
-    await backupsService.importBackup(() => createReadStream(targetOutputFile));
+    await backupsService.importBackup(
+      () => createReadStream(targetOutputFile),
+      { type: 'remote' }
+    );
 
     const messagesFromDatabase = await DataReader._getAllMessages();
 
@@ -246,7 +270,8 @@ export async function asymmetricRoundtripHarness(
     if (options.comparator) {
       assert.strictEqual(actual.length, expected.length);
       for (let i = 0; i < actual.length; i += 1) {
-        options.comparator(expected[i], actual[i]);
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        options.comparator(expected[i]!, actual[i]!);
       }
     } else {
       assert.deepEqual(actual, expected);

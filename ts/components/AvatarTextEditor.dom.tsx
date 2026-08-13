@@ -1,40 +1,36 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent, ClipboardEvent } from 'react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ChangeEvent, ClipboardEvent, JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import lodash from 'lodash';
 
-import * as grapheme from '../util/grapheme.std.js';
-import { AvatarColorPicker } from './AvatarColorPicker.dom.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import type { AvatarDataType } from '../types/Avatar.std.js';
-import { AvatarModalButtons } from './AvatarModalButtons.dom.js';
-import { BetterAvatarBubble } from './BetterAvatarBubble.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { avatarDataToBytes } from '../util/avatarDataToBytes.dom.js';
-import { createAvatarData } from '../util/createAvatarData.std.js';
+import * as grapheme from '../util/grapheme.std.ts';
+import { AvatarColorPicker } from './AvatarColorPicker.dom.tsx';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { AvatarDataType } from '../types/Avatar.std.ts';
+import { AvatarModalButtons } from './AvatarModalButtons.dom.tsx';
+import { BetterAvatarBubble } from './BetterAvatarBubble.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { avatarDataToBytes } from '../util/avatarDataToBytes.dom.ts';
+import { createAvatarData } from '../util/createAvatarData.std.ts';
 import {
   getFittedFontSize,
   getFontSizes,
-} from '../util/avatarTextSizeCalculator.std.js';
+} from '../util/avatarTextSizeCalculator.std.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
 
 const { noop } = lodash;
 
 type DoneHandleType = (
-  avatarBuffer: Uint8Array,
+  avatarBuffer: Uint8Array<ArrayBuffer>,
   avatarData: AvatarDataType
 ) => unknown;
 
 export type PropsType = {
   avatarData?: AvatarDataType;
   i18n: LocalizerType;
+  isDisplayedAsPanel: boolean;
   onCancel: () => unknown;
   onDone: DoneHandleType;
 };
@@ -45,6 +41,7 @@ const MAX_LENGTH = 3;
 export function AvatarTextEditor({
   avatarData,
   i18n,
+  isDisplayedAsPanel,
   onCancel,
   onDone,
 }: PropsType): JSX.Element {
@@ -155,43 +152,49 @@ export function AvatarTextEditor({
 
   return (
     <>
-      <div className="AvatarEditor__preview">
-        <BetterAvatarBubble
-          color={selectedColor}
+      <AxoDialog.Body maxHeight={isDisplayedAsPanel ? 9999 : undefined}>
+        <div className="AvatarEditor__preview">
+          <BetterAvatarBubble
+            color={selectedColor}
+            i18n={i18n}
+            onSelect={focusInput}
+            style={{
+              height: BUBBLE_SIZE,
+              width: BUBBLE_SIZE,
+            }}
+          >
+            {/* FIXME */}
+            {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
+            <input
+              className="AvatarTextEditor__input"
+              onChange={handleChange}
+              onPaste={handlePaste}
+              ref={inputRef}
+              style={{ fontSize }}
+              type="text"
+              dir="auto"
+              value={inputText}
+            />
+          </BetterAvatarBubble>
+        </div>
+        <hr className="AvatarEditor__divider" />
+        <AvatarColorPicker
           i18n={i18n}
-          onSelect={focusInput}
-          style={{
-            height: BUBBLE_SIZE,
-            width: BUBBLE_SIZE,
+          onColorSelected={color => {
+            setSelectedColor(color);
+            focusInput();
           }}
-        >
-          <input
-            className="AvatarTextEditor__input"
-            onChange={handleChange}
-            onPaste={handlePaste}
-            ref={inputRef}
-            style={{ fontSize }}
-            type="text"
-            dir="auto"
-            value={inputText}
-          />
-        </BetterAvatarBubble>
-      </div>
-      <hr className="AvatarEditor__divider" />
-      <AvatarColorPicker
-        i18n={i18n}
-        onColorSelected={color => {
-          setSelectedColor(color);
-          focusInput();
-        }}
-        selectedColor={selectedColor}
-      />
-      <AvatarModalButtons
-        hasChanges={hasChanges}
-        i18n={i18n}
-        onCancel={onCancel}
-        onSave={handleDone}
-      />
+          selectedColor={selectedColor}
+        />
+      </AxoDialog.Body>
+      <AxoDialog.Footer>
+        <AvatarModalButtons
+          hasChanges={hasChanges}
+          i18n={i18n}
+          onCancel={onCancel}
+          onSave={handleDone}
+        />
+      </AxoDialog.Footer>
       <div className="AvatarTextEditor__measure" ref={measureElRef}>
         {inputText}
       </div>

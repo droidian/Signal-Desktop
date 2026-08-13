@@ -9,10 +9,11 @@ import {
 } from '@signalapp/libsignal-client/dist/AccountKeys.js';
 import { MessageBackupKey } from '@signalapp/libsignal-client/dist/MessageBackup.js';
 
-import { strictAssert } from '../../util/assert.std.js';
-import type { AciString } from '../../types/ServiceId.std.js';
-import { toAciObject } from '../../util/ServiceId.node.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { toAciObject } from '../../util/ServiceId.node.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { sha256 } from '../../Crypto.node.ts';
 
 const getMemoizedBackupKey = memoizee((accountEntropyPool: string) => {
   return AccountEntropyPool.deriveBackupKey(accountEntropyPool);
@@ -23,6 +24,10 @@ export function getBackupKey(): BackupKey {
   strictAssert(accountEntropyPool, 'Account Entropy Pool not available');
 
   return getMemoizedBackupKey(accountEntropyPool);
+}
+
+export function getBackupKeyHash(backupKey: string): string {
+  return Buffer.from(sha256(Buffer.from(backupKey))).toString('base64');
 }
 
 export function getBackupMediaRootKey(): BackupKey {
@@ -68,8 +73,8 @@ const getMemoizedKeyMaterial = memoizee(
 );
 
 export type BackupKeyMaterialType = Readonly<{
-  macKey: Uint8Array;
-  aesKey: Uint8Array;
+  macKey: Uint8Array<ArrayBuffer>;
+  aesKey: Uint8Array<ArrayBuffer>;
 }>;
 
 export function getKeyMaterial(
@@ -80,8 +85,8 @@ export function getKeyMaterial(
 }
 
 export type BackupMediaKeyMaterialType = Readonly<{
-  macKey: Uint8Array;
-  aesKey: Uint8Array;
+  macKey: Uint8Array<ArrayBuffer>;
+  aesKey: Uint8Array<ArrayBuffer>;
 }>;
 
 const BACKUP_MEDIA_AES_KEY_LEN = 32;
@@ -89,7 +94,7 @@ const BACKUP_MEDIA_MAC_KEY_LEN = 32;
 
 export function deriveBackupMediaKeyMaterial(
   mediaRootKey: BackupKey,
-  mediaId: Uint8Array
+  mediaId: Uint8Array<ArrayBuffer>
 ): BackupMediaKeyMaterialType {
   if (!mediaId.length) {
     throw new Error('deriveBackupMediaKeyMaterial: mediaId missing');
@@ -108,7 +113,7 @@ export function deriveBackupMediaKeyMaterial(
 
 export function deriveBackupThumbnailTransitKeyMaterial(
   mediaRootKey: BackupKey,
-  mediaId: Uint8Array
+  mediaId: Uint8Array<ArrayBuffer>
 ): BackupMediaKeyMaterialType {
   if (!mediaId.length) {
     throw new Error('deriveBackupThumbnailTransitKeyMaterial: mediaId missing');
@@ -125,11 +130,11 @@ export function deriveBackupThumbnailTransitKeyMaterial(
   };
 }
 
-export function getBackupId(): Uint8Array {
+export function getBackupId(): Uint8Array<ArrayBuffer> {
   const aci = itemStorage.user.getCheckedAci();
   return getBackupKey().deriveBackupId(toAciObject(aci));
 }
 
-export function getLocalBackupMetadataKey(): Uint8Array {
+export function getLocalBackupMetadataKey(): Uint8Array<ArrayBuffer> {
   return getBackupKey().deriveLocalBackupMetadataKey();
 }

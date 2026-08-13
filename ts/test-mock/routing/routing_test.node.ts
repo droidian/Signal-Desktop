@@ -1,22 +1,20 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-// `window` use below is actually executed in the browser.
-// eslint-disable-next-line local-rules/file-suffix
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations/index.std.js';
-import type { Bootstrap, App } from '../bootstrap.node.js';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import * as durations from '../../util/durations/index.std.ts';
+import type { Bootstrap, App } from '../bootstrap.node.ts';
 import {
   artAddStickersRoute,
   showConversationRoute,
-} from '../../util/signalRoutes.std.js';
+} from '../../util/signalRoutes.std.ts';
 import {
   initStorage,
   STICKER_PACKS,
   storeStickerPacks,
-} from '../storage/fixtures.node.js';
-import { strictAssert } from '../../util/assert.std.js';
+} from '../storage/fixtures.node.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 
 describe('routing', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -44,20 +42,20 @@ describe('routing', function (this: Mocha.Suite) {
     });
     await app.openSignalRoute(stickerUrl);
     const page = await app.getWindow();
-    const title = page.locator(
-      '.module-sticker-manager__preview-modal__footer--title',
-      { hasText: 'Test Stickerpack' }
-    );
+    const dialog = page.getByRole('dialog', { name: 'Sticker Pack' });
+    const title = dialog.getByRole('heading', { name: 'Test Stickerpack' });
     await title.waitFor();
     assert.isTrue(await title.isVisible());
   });
 
   it('showConversationRoute', async () => {
     const { contacts } = bootstrap;
-    const [friend] = contacts;
+    const [friend] = contacts as [PrimaryDevice];
     const page = await app.getWindow();
     await page.locator('#LeftPane').waitFor();
     const token = await page.evaluate(
+      // FIXME
+      // oxlint-disable-next-line no-undef
       serviceId => window.SignalCI?.createNotificationToken(serviceId),
       friend.device.aci
     );

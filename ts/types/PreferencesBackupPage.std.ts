@@ -1,16 +1,16 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { SettingsPage } from './Nav.std.js';
+import { SettingsPage } from './Nav.std.ts';
 
 // Should be in sync with isBackupPage()
 export type PreferencesBackupPage =
   | SettingsPage.Backups
   | SettingsPage.BackupsDetails
   | SettingsPage.LocalBackups
-  | SettingsPage.LocalBackupsKeyReference
   | SettingsPage.LocalBackupsSetupFolder
-  | SettingsPage.LocalBackupsSetupKey;
+  | SettingsPage.LocalBackupsSetupKey
+  | SettingsPage.LocalBackupsKeyReference;
 
 // Should be in sync with PreferencesBackupPage
 export function isBackupPage(

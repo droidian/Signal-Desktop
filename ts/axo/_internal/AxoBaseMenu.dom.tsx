@@ -1,17 +1,35 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
-import type { ReactNode } from 'react';
-import { tw } from '../tw.dom.js';
-import { AxoSymbol } from '../AxoSymbol.dom.js';
+import type { ReactNode, JSX } from 'react';
+import { tw } from '../tw.dom.tsx';
+import { AxoSymbol } from '../AxoSymbol.dom.tsx';
+import { isTestOrMockEnvironment } from '../../environment.std.ts';
+
+// In the future we should be relying more on insert order of
+// dialogs/popovers/menus into portals
+const LEGACY_CONTEXT_MENU_Z_INDEX = tw('legacy-z-index-context-menu');
 
 export namespace AxoBaseMenu {
+  /**
+   * Horizontal alignment of the menu content relative to the trigger.
+   * - `start`: Aligns the start edges.
+   * - `center`: Centers the content over the trigger.
+   * - `end`: Aligns the end edges.
+   */
+  export type Align = 'center' | 'end' | 'start';
+
+  /**
+   * Preferred side of the trigger to render the menu content against.
+   */
+  export type Side = 'top' | 'right' | 'bottom' | 'left';
+
   // <Content/SubContent>
   const baseContentStyles = tw(
+    LEGACY_CONTEXT_MENU_Z_INDEX,
     'max-w-[300px] min-w-[200px]',
-    'select-none',
-    'rounded-xl bg-elevated-background-tertiary shadow-elevation-3',
-    'data-[state=closed]:animate-fade-out',
+    'curved-xl bg-material-tertiary shadow-elevation-3 backdrop-blur-regular',
+    isTestOrMockEnvironment() ||
+      'animate-opacity-0 data-[state=closed]:animate-exit',
     'forced-colors:border',
     'forced-colors:bg-[Canvas]',
     'forced-colors:text-[CanvasText]'
@@ -33,14 +51,15 @@ export namespace AxoBaseMenu {
   // <Item/RadioItem/CheckboxItem/SubTrigger> (not Label/Separator)
   const navigableItemStyles = tw(
     labeledItemStyles,
-    'rounded-md type-body-medium',
-    'outline-0 data-[highlighted]:bg-fill-secondary-pressed',
-    'data-[disabled]:text-label-disabled',
-    'outline-0 outline-border-focused focused:outline-[2.5px]',
+    'curved-md type-body-medium',
+    'text-primary',
+    'data-highlighted:bg-primary-pressed',
+    'data-disabled:text-disabled',
+    'outline-none keyboard-mode:focus:axo-focus-ring',
     'forced-colors:text-[CanvasText]',
-    'forced-colors:data-[highlighted]:bg-[Highlight]',
-    'forced-colors:data-[highlighted]:text-[HighlightText]',
-    'forced-colors:data-[disabled]:text-[GrayText]',
+    'forced-colors:data-highlighted:bg-[Highlight]',
+    'forced-colors:data-highlighted:text-[HighlightText]',
+    'forced-colors:data-disabled:text-[GrayText]',
     'forced-color-adjust-none'
   );
 
@@ -73,19 +92,31 @@ export namespace AxoBaseMenu {
    */
   type BaseSelectableItemProps = BaseNavigableItemProps &
     Readonly<{
+      /**
+       * Keyboard shortcut hint displayed on the trailing side of the item
+       * (e.g. `"⌘C"`).
+       * Note: Decorative, does not register the shortcut.
+       */
       keyboardShortcut?: string;
+      /**
+       * Called when the item is selected via mouse or keyboard.
+       * Call `event.preventDefault()` to keep the menu open after selection.
+       */
       onSelect?: (event: Event) => void;
     }>;
 
   /**
-   * AxoBaseMenu: Item Slots
-   * -----------------------
+   * <AxoBaseMenu.ItemLeadingSlot>
+   * --------------------------------------------------------------------------
    */
 
   export type ItemLeadingSlotProps = Readonly<{
     children: ReactNode;
   }>;
 
+  /**
+   * First grid column of a menu item row. Holds the icon or check indicator.
+   */
   export function ItemLeadingSlot(props: ItemLeadingSlotProps): JSX.Element {
     return (
       <span
@@ -96,10 +127,18 @@ export namespace AxoBaseMenu {
     );
   }
 
+  /**
+   * <AxoBaseMenu.ItemContentSlot>
+   * --------------------------------------------------------------------------
+   */
+
   export type ItemContentSlotProps = Readonly<{
     children: ReactNode;
   }>;
 
+  /**
+   * Second grid column of a menu item row. Holds the label and keyboard shortcut.
+   */
   export function ItemContentSlot(props: ItemContentSlotProps): JSX.Element {
     return (
       <span className={tw('col-start-2 col-end-2 flex min-w-0 items-center')}>
@@ -109,8 +148,8 @@ export namespace AxoBaseMenu {
   }
 
   /**
-   * AxoBaseMenu: Item Parts
-   * -----------------------
+   * <AxoBaseMenu.ItemText>
+   * --------------------------------------------------------------------------
    */
 
   export const itemTextStyles = tw('flex-auto grow-0 truncate text-start');
@@ -119,34 +158,73 @@ export namespace AxoBaseMenu {
     children: ReactNode;
   }>;
 
+  /**
+   * Truncated label text inside a menu item.
+   */
   export function ItemText(props: ItemTextProps): JSX.Element {
     return <span className={itemTextStyles}>{props.children}</span>;
   }
+
+  /**
+   * <AxoBaseMenu.ItemCheckPlaceholder>
+   * --------------------------------------------------------------------------
+   */
 
   export type ItemCheckPlaceholderProps = Readonly<{
     children: ReactNode;
   }>;
 
+  /**
+   * Fixed-width container for the check indicator. Reserves horizontal space
+   * even when unchecked so item text stays aligned across all items.
+   */
   export function ItemCheckPlaceholder(
     props: ItemCheckPlaceholderProps
   ): JSX.Element {
     return <span className={tw('w-3.5')}>{props.children}</span>;
   }
 
+  /**
+   * <AxoBaseMenu.ItemCheck>
+   * --------------------------------------------------------------------------
+   */
+
+  /**
+   * The checkmark icon rendered inside `ItemCheckPlaceholder` when
+   * a checkbox or radio item is in a checked state.
+   */
   export function ItemCheck(): JSX.Element {
     return <AxoSymbol.Icon size={14} symbol="check" label={null} />;
   }
 
-  export function ItemSymbol(props: {
+  /**
+   * <AxoBaseMenu.ItemSymbol>
+   * --------------------------------------------------------------------------
+   */
+
+  export type ItemSymbolProps = Readonly<{
     symbol: AxoSymbol.IconName;
-  }): JSX.Element {
+  }>;
+
+  /**
+   * An icon rendered in the leading slot of a menu item.
+   */
+  export function ItemSymbol(props: ItemSymbolProps): JSX.Element {
     return <AxoSymbol.Icon size={16} symbol={props.symbol} label={null} />;
   }
+
+  /**
+   * <AxoBaseMenu.ItemKeyboardShortcut>
+   * --------------------------------------------------------------------------
+   */
 
   export type ItemKeyboardShortcutProps = Readonly<{
     keyboardShortcut: string;
   }>;
 
+  /**
+   * Right-aligned keyboard shortcut hint (e.g. `"⌘C"`) inside a menu item.
+   */
   export function ItemKeyboardShortcut(
     props: ItemKeyboardShortcutProps
   ): JSX.Element {
@@ -154,7 +232,7 @@ export namespace AxoBaseMenu {
       <span
         dir="auto"
         className={tw(
-          'ms-auto px-1 type-body-medium text-label-secondary forced-colors:text-[inherit]'
+          'ms-auto px-1 type-body-medium text-secondary forced-colors:text-inherit'
         )}
       >
         {props.keyboardShortcut}
@@ -163,22 +241,32 @@ export namespace AxoBaseMenu {
   }
 
   /**
-   * AxoBaseMenu: Root
-   * -----------------
+   * <AxoBaseMenu.Root>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuRootProps = Readonly<{
+    /**
+     * Note: Radix context menus don't have an `open` prop
+     * so we have to push it down to the dropdown menu props
+     */
+    onOpenChange?: (open: boolean) => void;
+    /**
+     * When `true`, pointer events outside the menu are disabled while it's open.
+     * Defaults to `true` for dropdown menus.
+     */
+    modal?: boolean;
     children: ReactNode;
   }>;
 
   /**
-   * AxoBaseMenu: Trigger
-   * --------------------
+   * <AxoBaseMenu.Trigger>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuTriggerProps = Readonly<{
     /**
-     * When true, the context menu won't open when right-clicking.
+     * When true, the menu won't open when right-clicking.
      * Note that this will also restore the native context menu.
      */
     disabled?: boolean;
@@ -186,35 +274,50 @@ export namespace AxoBaseMenu {
   }>;
 
   /**
-   * AxoBaseMenu: Content
-   * --------------------
+   * <AxoBaseMenu.Content>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuContentProps = Readonly<{
+    /**
+     * Horizontal alignment of the content relative to the trigger.
+     * Only applies to `AxoDropdownMenu`.
+     */
+    align?: Align;
+    /**
+     * Preferred side of the trigger to render the content against.
+     * Only applies to `AxoDropdownMenu`.
+     */
+    side?: Side;
+    /**
+     * Called when focus would be restored after the menu closes.
+     * Call `event.preventDefault()` to suppress auto-focus restoration.
+     */
+    onCloseAutoFocus?: (e: Event) => void;
     children: ReactNode;
   }>;
 
   export const menuContentStyles = tw(
     baseContentStyles,
     baseContentGridStyles,
-    'max-h-(--radix-popper-available-height) overflow-auto [scrollbar-width:none]',
-    'overflow-auto [scrollbar-width:none]'
+    'max-h-(--radix-popper-available-height) scrollbar-width-none overflow-auto',
+    'scrollbar-width-none overflow-auto'
   );
 
   export const selectContentStyles = tw(baseContentStyles);
   export const selectContentViewportStyles = tw(baseContentGridStyles);
 
   /**
-   * AxoBaseMenu: Item
-   * -----------------
+   * <AxoBaseMenu.Item>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuItemProps = BaseSelectableItemProps &
     Readonly<{
       /**
        * Event handler called when the user selects an item (via mouse or
-       * keyboard). Calling event.preventDefault in this handler will prevent the
-       * context menu from closing when selecting that item.
+       * keyboard). Calling `event.preventDefault()` in this handler will
+       * prevent the context menu from closing when selecting that item.
        */
       onSelect: (event: Event) => void;
       children: ReactNode;
@@ -224,8 +327,8 @@ export namespace AxoBaseMenu {
   export const selectItemStyles = tw(selectableItemStyles);
 
   /**
-   * AxoBaseMenu: Group
-   * ------------------
+   * <AxoBaseMenu.Group>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuGroupProps = Readonly<{
@@ -236,8 +339,8 @@ export namespace AxoBaseMenu {
   export const selectGroupStyles = tw(baseGroupStyles);
 
   /**
-   * AxoBaseMenu: Label
-   * ------------------
+   * <AxoBaseMenu.Label>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuLabelProps = Readonly<{
@@ -246,27 +349,28 @@ export namespace AxoBaseMenu {
 
   const baseLabelStyles = tw(
     labeledItemStyles,
-    'type-body-small text-label-secondary'
+    'type-body-small text-secondary'
   );
 
   export const menuLabelStyles = tw(baseLabelStyles);
   export const selectLabelStyles = tw(baseLabelStyles);
 
   /**
-   * AxoBaseMenu: Header
+   * <AxoBaseMenu.Header>
+   * --------------------------------------------------------------------------
    */
 
   export const menuHeaderStyles = tw('col-span-full col-start-1 p-1.5');
   export const menuHeaderLabelStyles = tw(
-    'block truncate type-title-small text-label-primary'
+    'block truncate type-title-small text-primary'
   );
   export const menuHeaderDescriptionStyles = tw(
-    'block truncate type-caption text-label-secondary'
+    'block truncate type-caption text-secondary'
   );
 
   /**
-   * AxoBaseMenu: CheckboxItem
-   * -------------------------
+   * <AxoBaseMenu.CheckboxItem>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuCheckboxItemProps = BaseSelectableItemProps &
@@ -286,8 +390,8 @@ export namespace AxoBaseMenu {
   export const menuCheckboxItemStyles = tw(selectableItemStyles);
 
   /**
-   * AxoBaseMenu: RadioGroup
-   * -----------------------
+   * <AxoBaseMenu.RadioGroup>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuRadioGroupProps = Readonly<{
@@ -295,7 +399,6 @@ export namespace AxoBaseMenu {
      * The value of the selected item in the group.
      */
     value: string | null;
-
     /**
      * Event handler called when the value changes.
      */
@@ -306,12 +409,15 @@ export namespace AxoBaseMenu {
   export const menuRadioGroupStyles = tw(baseGroupStyles);
 
   /**
-   * AxoBaseMenu: RadioItem
-   * ----------------------
+   * <AxoBaseMenu.RadioItem>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuRadioItemProps = BaseSelectableItemProps &
     Readonly<{
+      /**
+       * The value submitted when this item is selected.
+       */
       value: string;
       children: ReactNode;
     }>;
@@ -319,15 +425,11 @@ export namespace AxoBaseMenu {
   export const menuRadioItemStyles = tw(selectableItemStyles);
 
   /**
-   * AxoBaseMenu: Separator
-   * ----------------------
+   * <AxoBaseMenu.Separator>
+   * --------------------------------------------------------------------------
    */
 
-  export type MenuSeparatorProps = Readonly<{
-    // N/A
-  }>;
-
-  const baseSeparatorStyles = tw('my-1 border-t-[0.5px] border-border-primary');
+  const baseSeparatorStyles = tw('my-1 border-t-[0.5px] border-primary');
 
   export const menuSeparatorStyles = tw(
     'col-span-full col-start-1 mx-0.5',
@@ -340,8 +442,8 @@ export namespace AxoBaseMenu {
   export const selectSeperatorStyles = tw(baseItemStyles, baseSeparatorStyles);
 
   /**
-   * AxoBaseMenu: Sub
-   * ----------------
+   * <AxoBaseMenu.Sub>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuSubProps = Readonly<{
@@ -349,8 +451,8 @@ export namespace AxoBaseMenu {
   }>;
 
   /**
-   * AxoBaseMenu: SubTrigger
-   * -----------------------
+   * <AxoBaseMenu.SubTrigger>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuSubTriggerProps = BaseNavigableItemProps &
@@ -360,14 +462,14 @@ export namespace AxoBaseMenu {
 
   export const menuSubTriggerStyles = tw(
     navigableItemStyles,
-    'data-[state=open]:not-data-[highlighted]:bg-fill-secondary',
-    'forced-colors:data-[state=open]:not-data-[highlighted]:bg-[Highlight]',
-    'forced-colors:data-[state=open]:not-data-[highlighted]:text-[HighlightText]'
+    'data-[state=open]:not-data-highlighted:bg-primary',
+    'forced-colors:data-[state=open]:not-data-highlighted:bg-[Highlight]',
+    'forced-colors:data-[state=open]:not-data-highlighted:text-[HighlightText]'
   );
 
   /**
-   * AxoBaseMenu: SubContent
-   * -----------------------
+   * <AxoBaseMenu.SubContent>
+   * --------------------------------------------------------------------------
    */
 
   export type MenuSubContentProps = Readonly<{
@@ -376,7 +478,7 @@ export namespace AxoBaseMenu {
 
   export const menuSubContentStyles = tw(
     baseContentStyles,
-    'max-h-(--radix-popper-available-height) overflow-auto [scrollbar-width:none]',
+    'max-h-(--radix-popper-available-height) scrollbar-width-none overflow-auto',
     baseContentGridStyles
   );
 }

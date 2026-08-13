@@ -1,69 +1,100 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-// `window` use below is actually executed in the browser.
-// eslint-disable-next-line local-rules/file-suffix
-import { Proto } from '@signalapp/mock-server';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import { Proto, EMPTY_DATA_MESSAGE } from '@signalapp/mock-server';
 import { Aci } from '@signalapp/libsignal-client';
 import { assert } from 'chai';
 import createDebug from 'debug';
-import Long from 'long';
 import type { Page } from 'playwright';
+import type { RequireExactlyOne } from 'type-fest';
 
-import type { App } from '../playwright.node.js';
-import * as durations from '../../util/durations/index.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import type { App } from '../playwright.node.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 import {
   RECEIPT_BATCHER_WAIT_MS,
   ReceiptType,
-} from '../../types/Receipt.std.js';
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import { drop } from '../../util/drop.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { IMAGE_GIF } from '../../types/MIME.std.js';
-import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.js';
+} from '../../types/Receipt.std.ts';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { toNumber } from '../../util/toNumber.std.ts';
+import { IMAGE_GIF } from '../../types/MIME.std.ts';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { sleep } from '../../util/sleep.std.js';
+import { sleep } from '../../util/sleep.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 export const debug = createDebug('mock:test:edit');
 
 const ACI_1 = generateAci();
 const ACI_1_BINARY = Aci.parseFromServiceIdString(ACI_1).getRawUuidBytes();
-const UNPROCESSED_ATTACHMENT: Proto.IAttachmentPointer = {
-  cdnId: Long.fromNumber(123),
+const UNPROCESSED_ATTACHMENT: Proto.AttachmentPointer.Params = {
+  attachmentIdentifier: {
+    cdnId: 123n,
+  },
   key: new Uint8Array([1, 2, 3]),
   digest: new Uint8Array([4, 5, 6]),
   contentType: IMAGE_GIF,
   size: 34,
+  clientUuid: null,
+  thumbnail: null,
+  incrementalMac: null,
+  chunkSize: null,
+  fileName: null,
+  flags: null,
+  width: null,
+  height: null,
+  caption: null,
+  blurHash: null,
+  uploadTimestamp: null,
+  cdnNumber: null,
 };
 
 function wrap({
   dataMessage,
   editMessage,
-}: {
-  dataMessage?: Proto.IDataMessage;
-  editMessage?: Proto.IEditMessage;
-}): Proto.IContent {
+}: RequireExactlyOne<{
+  dataMessage?: Proto.DataMessage.Params;
+  editMessage?: Proto.EditMessage.Params;
+}>): Proto.Content.Params {
+  if (dataMessage != null) {
+    return {
+      content: {
+        dataMessage,
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
+  }
   return {
-    dataMessage,
-    editMessage,
+    content: {
+      editMessage,
+    },
+    pniSignatureMessage: null,
+    senderKeyDistributionMessage: null,
   };
 }
 
-function createMessage(body: string): Proto.IDataMessage {
+function createMessage(
+  body: string
+): Proto.DataMessage.Params & { timestamp: bigint } {
   return {
+    ...EMPTY_DATA_MESSAGE,
     body,
-    groupV2: undefined,
-    timestamp: Long.fromNumber(Date.now()),
+    groupV2: null,
+    timestamp: BigInt(Date.now()),
   };
 }
 
-function createMessageWithQuote(body: string): Proto.IDataMessage {
+function createMessageWithQuote(
+  body: string
+): Proto.DataMessage.Params & { timestamp: bigint } {
   return {
+    ...EMPTY_DATA_MESSAGE,
     body,
     quote: {
-      id: Long.fromNumber(1),
+      id: 1n,
       authorAciBinary: ACI_1_BINARY,
       text: 'text',
       attachments: [
@@ -73,25 +104,29 @@ function createMessageWithQuote(body: string): Proto.IDataMessage {
           thumbnail: UNPROCESSED_ATTACHMENT,
         },
       ],
+      bodyRanges: null,
+      type: null,
+      authorAci: null,
     },
-    groupV2: undefined,
-    timestamp: Long.fromNumber(Date.now()),
+    groupV2: null,
+    timestamp: BigInt(Date.now()),
   };
 }
 
 function createEditedMessage(
-  targetSentTimestamp: Long | null | undefined,
+  targetSentTimestamp: bigint | null | undefined,
   body: string,
   timestamp = Date.now()
-): Proto.IEditMessage {
+): Proto.EditMessage.Params {
   strictAssert(targetSentTimestamp, 'timestamp missing');
 
   return {
     targetSentTimestamp,
     dataMessage: {
+      ...EMPTY_DATA_MESSAGE,
       body,
-      groupV2: undefined,
-      timestamp: Long.fromNumber(timestamp),
+      groupV2: null,
+      timestamp: BigInt(timestamp),
     },
   };
 }
@@ -110,8 +145,9 @@ describe('editing', function (this: Mocha.Suite) {
   ) {
     await page
       .getByTestId(`${timestamp}`)
-      .locator('.module-message__buttons__menu')
+      .getByRole('button', { name: 'More actions' })
       .click();
+
     await page.getByRole('menuitem', { name: 'Edit' }).click();
     const input = await waitForEnabledComposer(page);
     await typeIntoInput(input, additionalText, previousText);
@@ -133,7 +169,7 @@ describe('editing', function (this: Mocha.Suite) {
     await bootstrap.teardown();
   });
 
-  describe('online', function (this: Mocha.Suite) {
+  describe('online', () => {
     beforeEach(async () => {
       app = await bootstrap.link();
     });
@@ -145,7 +181,7 @@ describe('editing', function (this: Mocha.Suite) {
 
       const initialMessageBody = 'hey yhere';
       const originalMessage = createMessage(initialMessageBody);
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       debug('sending message');
       {
@@ -165,7 +201,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window
@@ -184,8 +220,8 @@ describe('editing', function (this: Mocha.Suite) {
         originalMessage.timestamp,
         editedMessageBody
       );
-      const editedMessageTimestamp = Number(
-        editedMessage.dataMessage?.timestamp
+      const editedMessageTimestamp = toNumber(
+        editedMessage.dataMessage?.timestamp ?? 0n
       );
       {
         const sendOptions = {
@@ -212,11 +248,11 @@ describe('editing', function (this: Mocha.Suite) {
 
       const window = await app.getWindow();
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       const initialMessageBody = 'hey yhere';
       const originalMessage = createMessage(initialMessageBody);
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       debug('incoming message');
       {
@@ -236,7 +272,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window
@@ -251,7 +287,7 @@ describe('editing', function (this: Mocha.Suite) {
         assert.strictEqual(receiptMessage.type, Proto.ReceiptMessage.Type.READ);
         assert.strictEqual(receiptMessage.timestamp.length, 1);
         assert.strictEqual(
-          Number(receiptMessage.timestamp[0]),
+          toNumber(receiptMessage.timestamp[0]),
           originalMessageTimestamp
         );
       }
@@ -262,8 +298,8 @@ describe('editing', function (this: Mocha.Suite) {
         originalMessage.timestamp,
         editedMessageBody
       );
-      const editedMessageTimestamp = Number(
-        editedMessage.dataMessage?.timestamp
+      const editedMessageTimestamp = toNumber(
+        editedMessage.dataMessage?.timestamp ?? 0n
       );
       {
         const sendOptions = {
@@ -292,7 +328,7 @@ describe('editing', function (this: Mocha.Suite) {
         assert.strictEqual(receiptMessage.type, Proto.ReceiptMessage.Type.READ);
         assert.strictEqual(receiptMessage.timestamp.length, 1);
         assert.strictEqual(
-          Number(receiptMessage.timestamp[0]),
+          toNumber(receiptMessage.timestamp[0]),
           editedMessageTimestamp
         );
       }
@@ -303,7 +339,7 @@ describe('editing', function (this: Mocha.Suite) {
 
       const window = await app.getWindow();
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       debug('incoming message');
       await friend.sendText(desktop, 'hello', {
@@ -316,13 +352,10 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window.locator('.module-message__text >> "hello"').waitFor();
-
-      debug('accepting conversation');
-      await window.getByRole('button', { name: 'Continue' }).click();
 
       const { dataMessage: profileKeyMsg } = await friend.waitForMessage();
       assert(profileKeyMsg.profileKey != null, 'Profile key message');
@@ -342,7 +375,9 @@ describe('editing', function (this: Mocha.Suite) {
 
       await sendEditedMessage(
         window,
-        originalMessage.timestamp?.toNumber() ?? 0,
+        (originalMessage.timestamp == null
+          ? null
+          : toNumber(originalMessage.timestamp)) ?? 0,
         '.2',
         'edit message 1'
       );
@@ -350,36 +385,47 @@ describe('editing', function (this: Mocha.Suite) {
       debug("waiting for friend's edit message");
       const { editMessage: firstEdit } = await friend.waitForEditMessage();
       assert.strictEqual(
-        firstEdit.targetSentTimestamp?.toNumber(),
-        originalMessage.timestamp?.toNumber()
+        firstEdit.targetSentTimestamp == null
+          ? null
+          : toNumber(firstEdit.targetSentTimestamp),
+        originalMessage.timestamp == null
+          ? null
+          : toNumber(originalMessage.timestamp)
       );
       assert.strictEqual(firstEdit.dataMessage?.body, 'edit message 1.2');
 
       await sendEditedMessage(
         window,
-        originalMessage.timestamp?.toNumber() ?? 0,
+        (originalMessage.timestamp == null
+          ? null
+          : toNumber(originalMessage.timestamp)) ?? 0,
         '.3',
         'edit message 1.2'
       );
 
       const { editMessage: secondEdit } = await friend.waitForEditMessage();
       assert.strictEqual(
-        secondEdit.targetSentTimestamp?.toNumber(),
-        firstEdit.dataMessage?.timestamp?.toNumber()
+        secondEdit.targetSentTimestamp == null
+          ? null
+          : toNumber(secondEdit.targetSentTimestamp),
+        firstEdit.dataMessage?.timestamp == null
+          ? null
+          : toNumber(firstEdit.dataMessage?.timestamp)
       );
       assert.strictEqual(secondEdit.dataMessage?.body, 'edit message 1.2.3');
 
       debug('opening edit history');
       const secondEditMessage = window.locator(
-        `.module-message[data-testid="${originalMessage?.timestamp?.toNumber()}"]`
+        `.module-message[data-testid="${originalMessage?.timestamp == null ? null : toNumber(originalMessage?.timestamp)}"]`
       );
       await secondEditMessage
         .locator('.module-message__metadata__edited')
         .click();
 
-      const history = await window.locator(
-        '.EditHistoryMessagesModal .module-message'
-      );
+      const history = window
+        .getByRole('dialog', { name: 'Edit History' })
+        .locator('.module-message');
+
       assert.strictEqual(await history.count(), 3);
 
       assert.isTrue(await history.locator('"edit message 1"').isVisible());
@@ -393,7 +439,7 @@ describe('editing', function (this: Mocha.Suite) {
       const window = await app.getWindow();
 
       const originalMessage = createMessage('v1');
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       const sendOriginalMessage = async () => {
         debug('sending original message', originalMessageTimestamp);
@@ -410,7 +456,7 @@ describe('editing', function (this: Mocha.Suite) {
       debug('sending all messages + edits');
       let targetSentTimestamp = originalMessage.timestamp;
       let editTimestamp = Date.now() + 1;
-      const editedMessages: Array<Proto.IEditMessage> = [
+      const editedMessages: Array<Proto.EditMessage.Params> = [
         'v2',
         'v3',
         'v4',
@@ -421,13 +467,13 @@ describe('editing', function (this: Mocha.Suite) {
           body,
           editTimestamp
         );
-        targetSentTimestamp = Long.fromNumber(editTimestamp);
+        targetSentTimestamp = BigInt(editTimestamp);
         editTimestamp += 1;
         return message;
       });
       {
         const sendEditMessages = editedMessages.map(editMessage => {
-          const timestamp = Number(editMessage.dataMessage?.timestamp);
+          const timestamp = toNumber(editMessage.dataMessage?.timestamp ?? 0n);
           const sendOptions = {
             timestamp,
           };
@@ -449,7 +495,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v5"').waitFor();
@@ -462,17 +508,17 @@ describe('editing', function (this: Mocha.Suite) {
       const { phone, desktop } = bootstrap;
 
       const originalMessage = createMessageWithQuote('v1');
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       debug('sending edit');
       const targetSentTimestamp = originalMessage.timestamp;
       const editTimestamp = Date.now() + 1;
-      const editMessage: Proto.IEditMessage = createEditedMessage(
+      const editMessage: Proto.EditMessage.Params = createEditedMessage(
         targetSentTimestamp,
         'v2',
         editTimestamp
       );
-      const timestamp = Number(editMessage.dataMessage?.timestamp);
+      const timestamp = toNumber(editMessage.dataMessage?.timestamp ?? 0n);
       drop(phone.sendRaw(desktop, wrap({ editMessage }), { timestamp }));
 
       debug('sending original message', originalMessageTimestamp);
@@ -495,7 +541,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v2"').waitFor();
@@ -511,18 +557,20 @@ describe('editing', function (this: Mocha.Suite) {
       ): Promise<MessageAttributesType> {
         await sleep(RECEIPT_BATCHER_WAIT_MS + 20);
         const messages = await page.evaluate(
+          // FIXME
+          // oxlint-disable-next-line no-undef
           timestamp => window.SignalCI?.getMessagesBySentAt(timestamp),
           originalMessageTimestamp
         );
         strictAssert(messages, 'messages does not exist');
-        strictAssert(messages.length === 1, 'message does not exist');
+        strictAssert(messages[0], 'message does not exist');
 
         return messages[0];
       }
 
       const { contacts, desktop } = bootstrap;
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       const page = await app.getWindow();
 
@@ -537,10 +585,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await page.locator('.module-conversation-hero').waitFor();
-
-      debug('accepting conversation');
-      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.getByTestId('conversation-hero').waitFor();
 
       const { dataMessage: profileKeyMsg } = await friend.waitForMessage();
       assert(profileKeyMsg.profileKey != null, 'Profile key message');
@@ -567,11 +612,13 @@ describe('editing', function (this: Mocha.Suite) {
       );
       strictAssert(originalMessage.timestamp, 'timestamp missing');
 
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
       debug('original message', { timestamp: originalMessageTimestamp });
 
       debug("getting friend's conversationId");
       const conversationId = await page.evaluate(
+        // FIXME
+        // oxlint-disable-next-line no-undef
         serviceId => window.SignalCI?.getConversationId(serviceId),
         friend.device.aci
       );
@@ -593,10 +640,14 @@ describe('editing', function (this: Mocha.Suite) {
         await friend.sendRaw(
           desktop,
           {
-            receiptMessage: {
-              type: Proto.ReceiptMessage.Type.DELIVERY,
-              timestamp: [originalMessage.timestamp],
+            content: {
+              receiptMessage: {
+                type: Proto.ReceiptMessage.Type.DELIVERY,
+                timestamp: [originalMessage.timestamp],
+              },
             },
+            pniSignatureMessage: null,
+            senderKeyDistributionMessage: null,
           },
           deliveryReceiptSendOptions
         );
@@ -612,7 +663,7 @@ describe('editing', function (this: Mocha.Suite) {
           'sendStateByConversationId'
         );
         assert.strictEqual(
-          message.sendStateByConversationId[conversationId].status,
+          message.sendStateByConversationId[conversationId]?.status,
           SendStatus.Delivered,
           'send state is delivered for main message'
         );
@@ -638,10 +689,14 @@ describe('editing', function (this: Mocha.Suite) {
         await friend.sendRaw(
           desktop,
           {
-            receiptMessage: {
-              type: Proto.ReceiptMessage.Type.READ,
-              timestamp: [originalMessage.timestamp],
+            content: {
+              receiptMessage: {
+                type: Proto.ReceiptMessage.Type.READ,
+                timestamp: [originalMessage.timestamp],
+              },
             },
+            pniSignatureMessage: null,
+            senderKeyDistributionMessage: null,
           },
           readReceiptSendOptions
         );
@@ -651,15 +706,15 @@ describe('editing', function (this: Mocha.Suite) {
       {
         const message = await getMessageFromApp(originalMessageTimestamp);
         strictAssert(message.editHistory, 'edit history exists');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // oxlint-disable-next-line typescript/no-unused-vars
         const [_v2, v1] = message.editHistory;
         assert.strictEqual(
-          message.sendStateByConversationId?.[conversationId].status,
+          message.sendStateByConversationId?.[conversationId]?.status,
           SendStatus.Sent,
           'send state is reverted back to sent for main message'
         );
         assert.strictEqual(
-          v1.sendStateByConversationId?.[conversationId].status,
+          v1?.sendStateByConversationId?.[conversationId]?.status,
           SendStatus.Read,
           'original message is marked read'
         );
@@ -669,7 +724,7 @@ describe('editing', function (this: Mocha.Suite) {
       const { editMessage: editMessageV2 } = await friend.waitForEditMessage();
       assert.strictEqual(editMessageV2.dataMessage?.body, editMessageV2Text);
       debug('v2 message', {
-        timestamp: Number(editMessageV2.dataMessage?.timestamp),
+        timestamp: toNumber(editMessageV2.dataMessage?.timestamp),
       });
 
       // Sending a v3 edited message targetting v2
@@ -678,7 +733,9 @@ describe('editing', function (this: Mocha.Suite) {
       debug('sending edit message v3 desktop -> friend');
       await sendEditedMessage(
         page,
-        originalMessage?.timestamp?.toNumber() ?? 0,
+        (originalMessage?.timestamp == null
+          ? null
+          : toNumber(originalMessage?.timestamp)) ?? 0,
         '3',
         '12'
       );
@@ -688,7 +745,7 @@ describe('editing', function (this: Mocha.Suite) {
       assert.strictEqual(editMessageV3.dataMessage?.body, editMessageV3Text);
       strictAssert(editMessageV3.dataMessage?.timestamp, 'timestamp missing');
 
-      const editMessageV3Timestamp = Number(
+      const editMessageV3Timestamp = toNumber(
         editMessageV3.dataMessage.timestamp
       );
       debug('v3 message', { timestamp: editMessageV3Timestamp });
@@ -700,7 +757,9 @@ describe('editing', function (this: Mocha.Suite) {
       debug('sending edit message v4 desktop -> friend');
       await sendEditedMessage(
         page,
-        originalMessage?.timestamp?.toNumber() ?? 0,
+        (originalMessage?.timestamp == null
+          ? null
+          : toNumber(originalMessage?.timestamp)) ?? 0,
         '4',
         '123'
       );
@@ -710,7 +769,7 @@ describe('editing', function (this: Mocha.Suite) {
       assert.strictEqual(editMessageV4.dataMessage?.body, editMessageV4Text);
       strictAssert(editMessageV4.dataMessage?.timestamp, 'timestamp missing');
 
-      const editMessageV4Timestamp = Number(
+      const editMessageV4Timestamp = toNumber(
         editMessageV4.dataMessage.timestamp
       );
       debug('v4 message', { timestamp: editMessageV4Timestamp });
@@ -727,10 +786,14 @@ describe('editing', function (this: Mocha.Suite) {
         await friend.sendRaw(
           desktop,
           {
-            receiptMessage: {
-              type: 1,
-              timestamp: [editMessageV3.dataMessage.timestamp],
+            content: {
+              receiptMessage: {
+                type: 1,
+                timestamp: [editMessageV3.dataMessage.timestamp],
+              },
             },
+            pniSignatureMessage: null,
+            senderKeyDistributionMessage: null,
           },
           readReceiptSendOptions
         );
@@ -746,7 +809,7 @@ describe('editing', function (this: Mocha.Suite) {
           'sendStateByConversationId'
         );
         assert.strictEqual(
-          message.sendStateByConversationId[conversationId].status,
+          message.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'original message send state is sent (v4)'
         );
@@ -754,30 +817,30 @@ describe('editing', function (this: Mocha.Suite) {
         strictAssert(message.editHistory, 'edit history exists');
         const [v4, v3, v2, v1] = message.editHistory;
 
-        strictAssert(v1.sendStateByConversationId, 'v1 has send state');
+        strictAssert(v1?.sendStateByConversationId, 'v1 has send state');
         assert.strictEqual(
-          v1.sendStateByConversationId[conversationId].status,
+          v1.sendStateByConversationId[conversationId]?.status,
           SendStatus.Read,
           'send state for first message is read'
         );
 
-        strictAssert(v2.sendStateByConversationId, 'v2 has send state');
+        strictAssert(v2?.sendStateByConversationId, 'v2 has send state');
         assert.strictEqual(
-          v2.sendStateByConversationId[conversationId].status,
+          v2.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'send state for v2 message is sent'
         );
 
-        strictAssert(v3.sendStateByConversationId, 'v3 has send state');
+        strictAssert(v3?.sendStateByConversationId, 'v3 has send state');
         assert.strictEqual(
-          v3.sendStateByConversationId[conversationId].status,
+          v3.sendStateByConversationId[conversationId]?.status,
           SendStatus.Read,
           'send state for v3 message is read'
         );
 
-        strictAssert(v4.sendStateByConversationId, 'v4 has send state');
+        strictAssert(v4?.sendStateByConversationId, 'v4 has send state');
         assert.strictEqual(
-          v4.sendStateByConversationId[conversationId].status,
+          v4.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'send state for v4 message is sent'
         );
@@ -791,7 +854,7 @@ describe('editing', function (this: Mocha.Suite) {
     });
   });
 
-  describe('offline', function (this: Mocha.Suite) {
+  describe('offline', () => {
     beforeEach(async () => {
       await bootstrap.linkAndClose();
     });
@@ -800,17 +863,17 @@ describe('editing', function (this: Mocha.Suite) {
       const { phone, desktop } = bootstrap;
 
       const originalMessage = createMessageWithQuote('v1');
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       debug('sending edit');
       const targetSentTimestamp = originalMessage.timestamp;
       const editTimestamp = Date.now() + 1;
-      const editMessage: Proto.IEditMessage = createEditedMessage(
+      const editMessage: Proto.EditMessage.Params = createEditedMessage(
         targetSentTimestamp,
         'v2',
         editTimestamp
       );
-      const timestamp = Number(editMessage.dataMessage?.timestamp);
+      const timestamp = toNumber(editMessage.dataMessage?.timestamp ?? 0n);
       drop(phone.sendRaw(desktop, wrap({ editMessage }), { timestamp }));
 
       debug('sending original message', originalMessageTimestamp);
@@ -834,7 +897,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v2"').waitFor();
@@ -848,7 +911,7 @@ describe('editing', function (this: Mocha.Suite) {
       const { phone, desktop } = bootstrap;
 
       const originalMessage = createMessage('v1');
-      const originalMessageTimestamp = Number(originalMessage.timestamp);
+      const originalMessageTimestamp = toNumber(originalMessage.timestamp);
 
       const sendOriginalMessage = async () => {
         debug('sending original message', originalMessageTimestamp);
@@ -865,7 +928,7 @@ describe('editing', function (this: Mocha.Suite) {
       debug('sending all messages + edits');
       let targetSentTimestamp = originalMessage.timestamp;
       let editTimestamp = Date.now() + 1;
-      const editedMessages: Array<Proto.IEditMessage> = [
+      const editedMessages: Array<Proto.EditMessage.Params> = [
         'v2',
         'v3',
         'v4',
@@ -876,13 +939,13 @@ describe('editing', function (this: Mocha.Suite) {
           body,
           editTimestamp
         );
-        targetSentTimestamp = Long.fromNumber(editTimestamp);
+        targetSentTimestamp = BigInt(editTimestamp);
         editTimestamp += 1;
         return message;
       });
       {
         const sendEditMessages = editedMessages.map(editMessage => {
-          const timestamp = Number(editMessage.dataMessage?.timestamp);
+          const timestamp = toNumber(editMessage.dataMessage?.timestamp ?? 0n);
           const sendOptions = {
             timestamp,
           };
@@ -906,7 +969,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v5"').waitFor();

@@ -4,21 +4,24 @@
 import lodash, { type Dictionary } from 'lodash';
 import { createSelector } from 'reselect';
 
-import type { RecentStickerType } from '../../types/Stickers.preload.js';
+import type {
+  RecentStickerType,
+  StickerManagerTabType,
+} from '../../types/Stickers.preload.ts';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from '../../util/getLocalAttachmentUrl.std.js';
+} from '../../util/getLocalAttachmentUrl.std.ts';
 import type {
   StickerType as StickerDBType,
   StickerPackType as StickerPackDBType,
-} from '../../sql/Interface.std.js';
-import type { StateType } from '../reducer.preload.js';
+} from '../../sql/Interface.std.ts';
+import type { StateType } from '../reducer.preload.ts';
 import type {
   StickersStateType,
   StickerPackType,
   StickerType,
-} from '../ducks/stickers.preload.js';
+} from '../ducks/stickers.preload.ts';
 
 const { compact, filter, map, orderBy, reject, sortBy, values } = lodash;
 
@@ -137,24 +140,14 @@ export const getInstalledStickerPacks = createSelector(
     packs: Dictionary<StickerPackDBType>,
     blessedPacks: Dictionary<boolean>
   ): Array<StickerPackType> => {
-    return filterAndTransformPacks(
-      packs,
-      pack => pack.status === 'installed',
-      pack => pack.installedAt,
-      blessedPacks
+    const list = filter(packs, pack => pack.status === 'installed');
+    const sorted = orderBy<StickerPackDBType>(
+      list,
+      ['position', 'id'],
+      ['asc', 'asc']
     );
-  }
-);
 
-export const getRecentlyInstalledStickerPack = createSelector(
-  getInstalledStickerPacks,
-  getStickers,
-  (packs, { installedPack: packId }) => {
-    if (!packId) {
-      return null;
-    }
-
-    return packs.find(({ id }) => id === packId) || null;
+    return sorted.map(pack => translatePackFromDB(pack, packs, blessedPacks));
   }
 );
 
@@ -168,7 +161,9 @@ export const getReceivedStickerPacks = createSelector(
     return filterAndTransformPacks(
       packs,
       pack =>
-        (pack.status === 'downloaded' || pack.status === 'pending') &&
+        (pack.status === 'downloaded' ||
+          pack.status === 'pending' ||
+          pack.status === 'installed') &&
         !blessedPacks[pack.id],
       pack => pack.createdAt,
       blessedPacks
@@ -185,7 +180,7 @@ export const getBlessedStickerPacks = createSelector(
   ): Array<StickerPackType> => {
     return filterAndTransformPacks(
       packs,
-      pack => blessedPacks[pack.id] && pack.status !== 'installed',
+      pack => blessedPacks[pack.id] != null,
       pack => pack.createdAt,
       blessedPacks
     );
@@ -206,4 +201,10 @@ export const getKnownStickerPacks = createSelector(
       blessedPacks
     );
   }
+);
+
+export const getStickerManagerTab = createSelector(
+  getStickers,
+  (stickers: StickersStateType): StickerManagerTabType =>
+    stickers.stickerManagerTab
 );

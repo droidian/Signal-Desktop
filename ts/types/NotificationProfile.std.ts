@@ -3,10 +3,11 @@
 
 import lodash from 'lodash';
 
-import { DAY, HOUR, MINUTE } from '../util/durations/index.std.js';
-import { strictAssert } from '../util/assert.std.js';
+import { DAY, HOUR, MINUTE } from '../util/durations/index.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
-import type { StorageServiceFieldsType } from '../sql/Interface.std.js';
+import type { StorageServiceFieldsType } from '../sql/Interface.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 const { isNumber, orderBy } = lodash;
 
@@ -23,7 +24,7 @@ export enum DayOfWeek {
 export type ScheduleDays = { [key in DayOfWeek]: boolean };
 
 // This variable is separate so we aren't forced to add it to ScheduleDays type
-export const DayOfWeekUnknown = 0;
+const DayOfWeekUnknown = 0;
 
 export type NotificationProfileIdString = string & {
   __notification_profile_id: never;
@@ -32,7 +33,7 @@ export type NotificationProfileType = Readonly<{
   id: NotificationProfileIdString;
 
   name: string;
-  emoji: string | undefined;
+  emoji: Emoji.Variant | undefined;
   /* A numeric representation of a color, like 0xAARRGGBB */
   color: number;
 
@@ -97,12 +98,12 @@ export const NOTIFICATION_PROFILE_ID_LENGTH = 16;
 
 export function shouldNotify({
   isCall,
-  isMention,
+  isMentionOrReply,
   conversationId,
   activeProfile,
 }: {
   isCall: boolean;
-  isMention: boolean;
+  isMentionOrReply: boolean;
   conversationId: string;
   activeProfile: NotificationProfileType | undefined;
 }): boolean {
@@ -114,7 +115,7 @@ export function shouldNotify({
     return true;
   }
 
-  if (isMention && activeProfile.allowAllMentions) {
+  if (isMentionOrReply && activeProfile.allowAllMentions) {
     return true;
   }
 
@@ -266,7 +267,7 @@ export function findNextProfileEvent({
 }
 
 // Should this profile be active right now, based on its schedule?
-export function isProfileEnabledBySchedule({
+function isProfileEnabledBySchedule({
   time,
   timeForSchedule,
   profile,
@@ -340,7 +341,7 @@ export function getEndTime(
 }
 
 // Find the profile that should be active right, based on schedules
-export function areAnyProfilesEnabledBySchedule({
+function areAnyProfilesEnabledBySchedule({
   time,
   profiles,
 }: {
@@ -372,7 +373,7 @@ export function areAnyProfilesEnabledBySchedule({
 }
 
 // Find the next time this profile's schedule will tell it to disable
-export function findNextScheduledDisable({
+function findNextScheduledDisable({
   profile,
   time,
 }: {
@@ -419,7 +420,7 @@ export function findNextScheduledDisable({
 }
 
 // Find the next time this profile's schedule will tell it to enable
-export function findNextScheduledEnable({
+function findNextScheduledEnable({
   profile,
   time,
 }: {
@@ -466,7 +467,7 @@ export function findNextScheduledEnable({
 
 // This is specifically about finding a schedule that will enable later. It will not
 // return a schedule enabled right now unless it also has the next scheduled start.
-export function findNextScheduledEnableForAll({
+function findNextScheduledEnableForAll({
   profiles,
   time,
 }: {
@@ -554,7 +555,7 @@ export function loopThroughWeek({
   }
 }
 
-export function getProfileById(
+function getProfileById(
   id: string,
   profiles: ReadonlyArray<NotificationProfileType>
 ): NotificationProfileType {

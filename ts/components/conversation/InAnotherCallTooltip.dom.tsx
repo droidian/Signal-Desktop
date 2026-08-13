@@ -1,16 +1,16 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import { offsetDistanceModifier } from '../../util/popperUtil.std.js';
-import { Tooltip, TooltipPlacement } from '../Tooltip.dom.js';
+import { offsetDistanceModifier } from '../../util/popperUtil.std.ts';
+import { Tooltip, TooltipPlacement } from '../Tooltip.dom.tsx';
 
-import type { LocalizerType } from '../../types/I18N.std.js';
+import type { LocalizerType } from '../../types/I18N.std.ts';
 
 type Props = {
   i18n: LocalizerType;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 export function getTooltipContent(i18n: LocalizerType): string {

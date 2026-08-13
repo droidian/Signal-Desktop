@@ -8,15 +8,15 @@ import {
   _storyIdPredicate,
   getJobsInQueue,
   insertJob,
-} from '../../sql/Server.node.js';
-import type { WritableDB } from '../../sql/Interface.std.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
-import { objectToJSON, sql, sqlJoin } from '../../sql/util.std.js';
-import { BodyRange } from '../../types/BodyRange.std.js';
-import type { AciString } from '../../types/ServiceId.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { createDB, updateToVersion, explain } from './helpers.node.js';
+} from '../../sql/Server.node.ts';
+import type { WritableDB } from '../../sql/Interface.std.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
+import { objectToJSON, sql, sqlJoin } from '../../sql/util.std.ts';
+import { BodyRange } from '../../types/BodyRange.std.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { createDB, updateToVersion, explain } from './helpers.node.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const OUR_UUID = generateGuid();
 
@@ -1837,8 +1837,8 @@ describe('SQL migrations test', () => {
           queueType: 'report spam',
           timestamp: 2,
           data: {
-            serverGuids: [`${MESSAGE_ID_1}`],
-            uuid: `${E164_1}`,
+            serverGuids: [MESSAGE_ID_1],
+            uuid: E164_1,
           },
         },
       ]);
@@ -2457,7 +2457,7 @@ describe('SQL migrations test', () => {
       const payload = db.prepare('SELECT * FROM sendLogPayloads LIMIT 1;').get<{
         contentHint: number;
         timestamp: number;
-        proto: Uint8Array;
+        proto: Uint8Array<ArrayBuffer>;
         urgent: number;
       }>();
 
@@ -3371,35 +3371,22 @@ describe('SQL migrations test', () => {
       return json;
     }
 
-    function addMessages(
-      messages: Array<{
-        mentions?: Array<AciString>;
-        boldRanges?: Array<Array<number>>;
-      }>
-    ) {
-      const formattedMessages = messages.map(composeMessage);
+    function addMessage(message: {
+      mentions?: Array<AciString>;
+      boldRanges?: Array<Array<number>>;
+    }) {
+      const formattedMessage = composeMessage(message);
 
       db.exec(
         `
         INSERT INTO messages
           (id, json)
         VALUES
-          ${formattedMessages
-            .map(message => `('${message.id}', '${objectToJSON(message)}')`)
-            .join(', ')};
+          ('${formattedMessage.id}', '${objectToJSON(formattedMessage)}')
         `
       );
 
-      assert.equal(
-        db
-          .prepare('SELECT COUNT(*) FROM messages;', {
-            pluck: true,
-          })
-          .get(),
-        messages.length
-      );
-
-      return { formattedMessages };
+      return formattedMessage;
     }
 
     function getMentions() {
@@ -3408,17 +3395,24 @@ describe('SQL migrations test', () => {
         .all();
     }
 
+    const userIds = [
+      generateAci(),
+      generateAci(),
+      generateAci(),
+      generateAci(),
+      generateAci(),
+    ] as const;
+
     it('Creates and populates the mentions table with existing mentions', () => {
       updateToVersion(db, schemaVersion - 1);
 
-      const userIds = new Array(5).fill(undefined).map(() => generateAci());
-      const { formattedMessages } = addMessages([
-        { mentions: [userIds[0]] },
-        { mentions: [userIds[1]], boldRanges: [[1, 1]] },
-        { mentions: [userIds[1], userIds[2]] },
-        {},
-        { boldRanges: [[1, 4]] },
-      ]);
+      const formattedMessages = [
+        addMessage({ mentions: [userIds[0]] }),
+        addMessage({ mentions: [userIds[1]], boldRanges: [[1, 1]] }),
+        addMessage({ mentions: [userIds[1], userIds[2]] }),
+        addMessage({}),
+        addMessage({ boldRanges: [[1, 4]] }),
+      ] as const;
 
       // now create mentions table
       updateToVersion(db, schemaVersion);
@@ -3467,14 +3461,13 @@ describe('SQL migrations test', () => {
         0
       );
 
-      const userIds = new Array(5).fill(undefined).map(() => generateAci());
-      const { formattedMessages } = addMessages([
-        { mentions: [userIds[0]] },
-        { mentions: [userIds[1]], boldRanges: [[1, 1]] },
-        { mentions: [userIds[1], userIds[2]] },
-        {},
-        { boldRanges: [[1, 4]] },
-      ]);
+      const formattedMessages = [
+        addMessage({ mentions: [userIds[0]] }),
+        addMessage({ mentions: [userIds[1]], boldRanges: [[1, 1]] }),
+        addMessage({ mentions: [userIds[1], userIds[2]] }),
+        addMessage({}),
+        addMessage({ boldRanges: [[1, 4]] }),
+      ] as const;
 
       // the 4 mentions should be included, with multiple rows for multiple mentions in a
       // message
@@ -3519,11 +3512,13 @@ describe('SQL migrations test', () => {
         0
       );
 
-      const userIds = new Array(5).fill(undefined).map(() => generateAci());
-      const { formattedMessages } = addMessages([
-        { mentions: [userIds[0]] },
-        { mentions: [userIds[1], userIds[2]], boldRanges: [[1, 1]] },
-      ]);
+      const formattedMessages = [
+        addMessage({ mentions: [userIds[0]] }),
+        addMessage({
+          mentions: [userIds[1], userIds[2]],
+          boldRanges: [[1, 1]],
+        }),
+      ] as const;
 
       assert.equal(getMentions().length, 3);
 
@@ -3553,8 +3548,9 @@ describe('SQL migrations test', () => {
         0
       );
 
-      const userIds = new Array(5).fill(undefined).map(() => generateAci());
-      const { formattedMessages } = addMessages([{ mentions: [userIds[0]] }]);
+      const formattedMessages = [
+        addMessage({ mentions: [userIds[0]] }),
+      ] as const;
 
       assert.equal(getMentions().length, 1);
 

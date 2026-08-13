@@ -2,19 +2,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { AttachmentType } from '../types/Attachment.std.js';
+import type { AttachmentType } from '../types/Attachment.std.ts';
 
-export function getFilePathsOwnedByAttachment(attachment: AttachmentType): {
+export function getFilePathsReferencedByAttachment(
+  attachment: AttachmentType
+): {
   externalAttachments: Set<string>;
   externalDownloads: Set<string>;
 } {
   const externalAttachments = new Set<string>();
   const externalDownloads = new Set<string>();
-
-  // Copied attachments weakly reference their paths and do not 'own' them
-  if (attachment.copied) {
-    return { externalAttachments, externalDownloads };
-  }
 
   const { path, thumbnail, screenshot, thumbnailFromBackup, downloadPath } =
     attachment;
@@ -50,8 +47,8 @@ function getFilePathsForVersionOfMessage(
 } {
   const externalAttachments = new Set<string>();
   const externalDownloads = new Set<string>();
-  function addFilePathsOwnedByAttachment(attachment: AttachmentType) {
-    const result = getFilePathsOwnedByAttachment(attachment);
+  function addFilePathsReferencedByAttachment(attachment: AttachmentType) {
+    const result = getFilePathsReferencedByAttachment(attachment);
     result.externalAttachments.forEach(path => externalAttachments.add(path));
     result.externalDownloads.forEach(path => externalDownloads.add(path));
   }
@@ -59,16 +56,16 @@ function getFilePathsForVersionOfMessage(
   const { attachments, bodyAttachment, contact, quote, preview, sticker } =
     rootOrEditHistoryMessage;
 
-  attachments?.forEach(addFilePathsOwnedByAttachment);
+  attachments?.forEach(addFilePathsReferencedByAttachment);
 
   if (bodyAttachment) {
-    addFilePathsOwnedByAttachment(bodyAttachment);
+    addFilePathsReferencedByAttachment(bodyAttachment);
   }
 
   if (quote?.attachments) {
     quote.attachments.forEach(attachment => {
       if (attachment.thumbnail) {
-        addFilePathsOwnedByAttachment(attachment.thumbnail);
+        addFilePathsReferencedByAttachment(attachment.thumbnail);
       }
     });
   }
@@ -76,7 +73,7 @@ function getFilePathsForVersionOfMessage(
   if (contact) {
     contact.forEach(item => {
       if (item.avatar?.avatar) {
-        addFilePathsOwnedByAttachment(item.avatar.avatar);
+        addFilePathsReferencedByAttachment(item.avatar.avatar);
       }
     });
   }
@@ -84,18 +81,20 @@ function getFilePathsForVersionOfMessage(
   if (preview) {
     preview.forEach(item => {
       if (item.image) {
-        addFilePathsOwnedByAttachment(item.image);
+        addFilePathsReferencedByAttachment(item.image);
       }
     });
   }
 
   if (sticker?.data) {
-    addFilePathsOwnedByAttachment(sticker.data);
+    addFilePathsReferencedByAttachment(sticker.data);
   }
   return { externalAttachments, externalDownloads };
 }
 
-export function getFilePathsOwnedByMessage(message: MessageAttributesType): {
+export function getFilePathsReferencedByMessage(
+  message: MessageAttributesType
+): {
   externalAttachments: Array<string>;
   externalDownloads: Array<string>;
 } {

@@ -1,45 +1,58 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import classNames from 'classnames';
-import type { ReactNode, RefObject } from 'react';
-import React, { memo, useRef, useState } from 'react';
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  MenuItem,
-  SubMenu,
-} from 'react-contextmenu';
-import { createPortal } from 'react-dom';
-import type { BadgeType } from '../../badges/types.std.js';
+import type { RefObject, JSX, ReactNode } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import type { ReadonlyDeep } from 'type-fest';
+import type { BadgeType } from '../../badges/types.std.ts';
 import {
   useKeyboardShortcuts,
   useStartCallShortcuts,
-} from '../../hooks/useKeyboardShortcuts.dom.js';
-import { SizeObserver } from '../../hooks/useSizeObserver.dom.js';
-import type { ConversationTypeType } from '../../state/ducks/conversations.preload.js';
-import type { HasStories } from '../../types/Stories.std.js';
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import * as expirationTimer from '../../util/expirationTimer.std.js';
-import { getMuteOptions } from '../../util/getMuteOptions.std.js';
-import { isConversationMuted } from '../../util/isConversationMuted.std.js';
-import { isInSystemContacts } from '../../util/isInSystemContacts.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { Alert } from '../Alert.dom.js';
-import { Avatar, AvatarSize } from '../Avatar.dom.js';
-import { ConfirmationDialog } from '../ConfirmationDialog.dom.js';
-import { DisappearingTimeDialog } from '../DisappearingTimeDialog.dom.js';
-import { InContactsIcon } from '../InContactsIcon.dom.js';
-import { UserText } from '../UserText.dom.js';
-import type { ContactNameData } from './ContactName.dom.js';
+} from '../../hooks/useKeyboardShortcuts.dom.tsx';
+import type { ConversationTypeType } from '../../state/ducks/conversations.preload.ts';
+import type { HasStories } from '../../types/Stories.std.ts';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
+import * as expirationTimer from '../../util/expirationTimer.std.ts';
+import { getMuteOptions } from '../../util/getMuteOptions.std.ts';
+import { isConversationMuted } from '../../util/isConversationMuted.std.ts';
+import { isInSystemContacts } from '../../util/isInSystemContacts.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { DisappearingTimeDialog } from '../DisappearingTimeDialog.dom.tsx';
+import { InContactsIcon } from '../InContactsIcon.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import type { ContactNameData } from './ContactName.dom.tsx';
 import {
   MessageRequestActionsConfirmation,
   MessageRequestState,
-} from './MessageRequestActionsConfirmation.dom.js';
-import type { MinimalConversation } from '../../hooks/useMinimalConversation.std.js';
-import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.js';
-import { DeleteMessagesConfirmationDialog } from '../DeleteMessagesConfirmationDialog.dom.js';
+} from './MessageRequestActionsConfirmation.dom.tsx';
+import type { MinimalConversation } from '../../hooks/useMinimalConversation.std.ts';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.tsx';
+import { DeleteMessagesConfirmationDialog } from '../DeleteMessagesConfirmationDialog.dom.tsx';
+import { AxoDropdownMenu } from '../../axo/AxoDropdownMenu.dom.tsx';
+import { strictAssert } from '../../util/assert.std.ts';
+import {
+  TimelineWarning,
+  TimelineWarningCustomInfo,
+  TimelineWarningLink,
+} from './TimelineWarning.dom.tsx';
+import { ContactSpoofingType } from '../../util/contactSpoofing.std.ts';
+import type { GroupNameCollisionsWithIdsByTitle } from '../../util/groupMemberNameCollisions.std.ts';
+import { hasUnacknowledgedCollisions } from '../../util/groupMemberNameCollisions.std.ts';
+import type { I18nComponentParts } from '../I18n.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
+import type { SmartCollidingAvatarsProps } from '../../state/smart/CollidingAvatars.dom.tsx';
+import type {
+  ContactSpoofingWarning,
+  MultipleGroupMembersWithSameTitleContactSpoofingWarning,
+} from '../../state/selectors/timeline.preload.ts';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoDragRegion } from '../../axo/AxoDragRegion.dom.tsx';
+import { OfficialChatInlineBadge } from './OfficialChatInlineBadge.dom.tsx';
+import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
+import { AxoButton } from '../../axo/AxoButton.dom.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
 
 function HeaderInfoTitle({
   name,
@@ -56,13 +69,14 @@ function HeaderInfoTitle({
   i18n: LocalizerType;
   isMe: boolean;
   isSignalConversation: boolean;
-  headerRef: React.RefObject<HTMLDivElement>;
+  headerRef: RefObject<HTMLDivElement | null>;
 }) {
   if (isSignalConversation) {
     return (
       <div className="module-ConversationHeader__header__info__title">
         <UserText text={title} />
-        <span className="ContactModal__official-badge" />
+        &nbsp;
+        <OfficialChatInlineBadge />
       </div>
     );
   }
@@ -71,7 +85,8 @@ function HeaderInfoTitle({
     return (
       <div className="module-ConversationHeader__header__info__title">
         {i18n('icu:noteToSelf')}
-        <span className="ContactModal__official-badge" />
+        &nbsp;
+        <OfficialChatInlineBadge />
       </div>
     );
   }
@@ -97,6 +112,22 @@ export enum OutgoingCallButtonStyle {
   Join,
 }
 
+export type RenderCollidingAvatars = (
+  props: SmartCollidingAvatarsProps
+) => JSX.Element;
+
+export type RenderMiniPlayer = (options: {
+  shouldFlow: boolean;
+}) => JSX.Element;
+export type RenderPinnedMessagesBar = () => JSX.Element;
+
+export type AcknowledgeGroupMemberNameCollisions = (
+  conversationId: string,
+  groupNameCollisions: ReadonlyDeep<GroupNameCollisionsWithIdsByTitle>
+) => void;
+
+export type ReviewConversationNameCollission = () => void;
+
 export type PropsDataType = {
   addedByName: ContactNameData | null;
   badge?: BadgeType;
@@ -106,19 +137,23 @@ export type PropsDataType = {
   hasPanelShowing?: boolean;
   hasStories?: HasStories;
   hasActiveCall?: boolean;
-  localDeleteWarningShown: boolean;
   isMissingMandatoryProfileSharing?: boolean;
   isSelectMode: boolean;
   isSignalConversation?: boolean;
   isSmsOnlyOrUnregistered?: boolean;
   outgoingCallButtonStyle: OutgoingCallButtonStyle;
-  sharedGroupNames: ReadonlyArray<string>;
   theme: ThemeType;
+
+  contactSpoofingWarning: ContactSpoofingWarning | null;
+  renderCollidingAvatars: RenderCollidingAvatars;
+
+  shouldShowMiniPlayer: boolean;
+  renderMiniPlayer: RenderMiniPlayer;
+
+  renderPinnedMessagesBar: RenderPinnedMessagesBar;
 };
 
 export type PropsActionsType = {
-  setLocalDeleteWarningShown: () => void;
-
   onConversationAccept: () => void;
   onConversationArchive: () => void;
   onConversationBlock: () => void;
@@ -143,6 +178,9 @@ export type PropsActionsType = {
   onViewAllMedia: () => void;
   onViewConversationDetails: () => void;
   onViewUserStories: () => void;
+
+  acknowledgeGroupMemberNameCollisions: AcknowledgeGroupMemberNameCollisions;
+  reviewConversationNameCollision: ReviewConversationNameCollission;
 };
 
 export type PropsHousekeepingType = {
@@ -152,8 +190,6 @@ export type PropsHousekeepingType = {
 export type PropsType = PropsDataType &
   PropsActionsType &
   PropsHousekeepingType;
-
-const TIMER_ITEM_CLASS = 'module-ConversationHeader__disappearing-timer__item';
 
 export const ConversationHeader = memo(function ConversationHeader({
   addedByName,
@@ -169,7 +205,6 @@ export const ConversationHeader = memo(function ConversationHeader({
   isSelectMode,
   isSignalConversation,
   isSmsOnlyOrUnregistered,
-  localDeleteWarningShown,
   onConversationAccept,
   onConversationArchive,
   onConversationBlock,
@@ -193,13 +228,19 @@ export const ConversationHeader = memo(function ConversationHeader({
   onViewConversationDetails,
   onViewUserStories,
   outgoingCallButtonStyle,
-  setLocalDeleteWarningShown,
-  sharedGroupNames,
   theme,
+
+  contactSpoofingWarning,
+  acknowledgeGroupMemberNameCollisions,
+  reviewConversationNameCollision,
+  renderCollidingAvatars,
+
+  shouldShowMiniPlayer,
+  renderMiniPlayer,
+
+  renderPinnedMessagesBar,
 }: PropsType): JSX.Element | null {
   // Comes from a third-party dependency
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const menuTriggerRef = useRef<any>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   const [
@@ -214,12 +255,14 @@ export const ConversationHeader = memo(function ConversationHeader({
     hasCannotLeaveGroupBecauseYouAreLastAdminAlert,
     setHasCannotLeaveGroupBecauseYouAreLastAdminAlert,
   ] = useState(false);
-  const [isNarrow, setIsNarrow] = useState(false);
   const [messageRequestState, setMessageRequestState] = useState(
     MessageRequestState.default
   );
 
-  const triggerId = `conversation-${conversation.id}`;
+  const isTerminated = Boolean(conversation.terminated);
+  const areWeMember =
+    conversation.type === 'group' && !isTerminated && !conversation.left;
+  const isMuted = isConversationMuted(conversation);
 
   if (hasPanelShowing) {
     return null;
@@ -243,7 +286,6 @@ export const ConversationHeader = memo(function ConversationHeader({
       {hasDeleteMessagesConfirmation && (
         <DeleteMessagesConfirmationDialog
           i18n={i18n}
-          localDeleteWarningShown={localDeleteWarningShown}
           onDestroyMessages={() => {
             setHasDeleteMessagesConfirmation(false);
             onConversationDeleteMessages();
@@ -251,7 +293,7 @@ export const ConversationHeader = memo(function ConversationHeader({
           onClose={() => {
             setHasDeleteMessagesConfirmation(false);
           }}
-          setLocalDeleteWarningShown={setLocalDeleteWarningShown}
+          areWeMember={areWeMember}
         />
       )}
       {hasLeaveGroupConfirmation && (
@@ -280,138 +322,159 @@ export const ConversationHeader = memo(function ConversationHeader({
           }}
         />
       )}
-      <SizeObserver
-        onSizeChange={size => {
-          setIsNarrow(size.width < 500);
-        }}
+
+      <div
+        className={tw(
+          '@container flex flex-col shadow-elevation-1 shadow-no-outline'
+        )}
       >
-        {measureRef => (
-          <div
-            className={classNames('module-ConversationHeader', {
-              'module-ConversationHeader--narrow': isNarrow,
-            })}
-            ref={measureRef}
-          >
+        <AxoDragRegion.Root>
+          <div className="module-ConversationHeader">
             <HeaderContent
               conversation={conversation}
               badge={badge ?? null}
               hasStories={hasStories ?? null}
               headerRef={headerRef}
               i18n={i18n}
-              sharedGroupNames={sharedGroupNames}
               theme={theme}
               onViewUserStories={onViewUserStories}
               onViewConversationDetails={onViewConversationDetails}
               isSignalConversation={isSignalConversation ?? false}
             />
-            {!isSmsOnlyOrUnregistered && !isSignalConversation && (
-              <OutgoingCallButtons
-                conversation={conversation}
-                hasActiveCall={hasActiveCall}
-                i18n={i18n}
-                isNarrow={isNarrow}
-                onOutgoingAudioCall={onOutgoingAudioCall}
-                onOutgoingVideoCall={onOutgoingVideoCall}
-                outgoingCallButtonStyle={outgoingCallButtonStyle}
-              />
-            )}
-            <button
-              type="button"
-              onClick={onSearchInConversation}
-              className={classNames(
-                'module-ConversationHeader__button',
-                'module-ConversationHeader__button--search'
-              )}
-              aria-label={i18n('icu:search')}
-            />
-            <ContextMenuTrigger
-              id={triggerId}
-              ref={menuTriggerRef}
-              disable={isSelectMode}
-            >
-              <button
-                type="button"
-                onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-                  menuTriggerRef.current?.handleContextClick(event);
-                }}
-                className={classNames(
-                  'module-ConversationHeader__button',
-                  'module-ConversationHeader__button--more'
+            <div className={tw(`flex flex-row gap-1 px-4 @min-[500px]:gap-3`)}>
+              {!isSmsOnlyOrUnregistered &&
+                !isSignalConversation &&
+                !isTerminated && (
+                  <OutgoingCallButtons
+                    conversation={conversation}
+                    hasActiveCall={hasActiveCall}
+                    i18n={i18n}
+                    onOutgoingAudioCall={onOutgoingAudioCall}
+                    onOutgoingVideoCall={onOutgoingVideoCall}
+                    outgoingCallButtonStyle={outgoingCallButtonStyle}
+                  />
                 )}
-                aria-label={i18n('icu:moreInfo')}
-                disabled={isSelectMode}
+              {isSignalConversation ? (
+                <AxoIconButton.Root
+                  symbol={isMuted ? 'bell-slash' : 'bell'}
+                  size="md"
+                  iconWeight={300}
+                  variant="implied-secondary"
+                  onClick={() =>
+                    onConversationMuteExpirationChange(
+                      isMuted ? 0 : Number.MAX_SAFE_INTEGER
+                    )
+                  }
+                  label={isMuted ? i18n('icu:unmute') : i18n('icu:mute')}
+                />
+              ) : null}
+              <AxoIconButton.Root
+                symbol="search"
+                size="md"
+                iconWeight={300}
+                onClick={onSearchInConversation}
+                label={i18n('icu:search')}
+                variant="implied-secondary"
               />
-            </ContextMenuTrigger>
-            <HeaderMenu
-              i18n={i18n}
-              conversation={conversation}
-              isMissingMandatoryProfileSharing={
-                isMissingMandatoryProfileSharing ?? false
-              }
-              isSelectMode={isSelectMode}
-              isSignalConversation={isSignalConversation ?? false}
-              onChangeDisappearingMessages={
-                onConversationDisappearingMessagesChange
-              }
-              onChangeMuteExpiration={onConversationMuteExpirationChange}
-              onConversationAccept={onConversationAccept}
-              onConversationArchive={onConversationArchive}
-              onConversationBlock={() => {
-                setMessageRequestState(MessageRequestState.blocking);
-              }}
-              onConversationDelete={() => {
-                setMessageRequestState(MessageRequestState.deleting);
-              }}
-              onConversationDeleteMessages={() => {
-                setHasDeleteMessagesConfirmation(true);
-              }}
-              onConversationLeaveGroup={() => {
-                if (cannotLeaveBecauseYouAreLastAdmin) {
-                  setHasCannotLeaveGroupBecauseYouAreLastAdminAlert(true);
-                } else {
-                  setHasLeaveGroupConfirmation(true);
-                }
-              }}
-              onConversationMarkUnread={onConversationMarkUnread}
-              onConversationPin={onConversationPin}
-              onConversationReportAndMaybeBlock={() => {
-                setMessageRequestState(
-                  MessageRequestState.reportingAndMaybeBlocking
-                );
-              }}
-              onConversationUnarchive={onConversationUnarchive}
-              onConversationUnblock={() => {
-                setMessageRequestState(MessageRequestState.unblocking);
-              }}
-              onConversationUnpin={onConversationUnpin}
-              onSelectModeEnter={onSelectModeEnter}
-              onSetupCustomDisappearingTimeout={() => {
-                setHasCustomDisappearingTimeoutModal(true);
-              }}
-              onShowMembers={onShowMembers}
-              onViewAllMedia={onViewAllMedia}
-              onViewConversationDetails={onViewConversationDetails}
-              triggerId={triggerId}
-            />
-            <MessageRequestActionsConfirmation
-              i18n={i18n}
-              conversationId={conversation.id}
-              conversationType={conversation.type}
-              addedByName={addedByName}
-              conversationName={conversationName}
-              isBlocked={conversation.isBlocked ?? false}
-              isReported={conversation.isReported ?? false}
-              state={messageRequestState}
-              acceptConversation={onConversationAccept}
-              blockAndReportSpam={onConversationBlockAndReportSpam}
-              blockConversation={onConversationBlock}
-              reportSpam={onConversationReportSpam}
-              deleteConversation={onConversationDelete}
-              onChangeState={setMessageRequestState}
-            />
+
+              <AxoDropdownMenu.Root>
+                <AxoDropdownMenu.Trigger disabled={isSelectMode}>
+                  <AxoIconButton.Root
+                    size="md"
+                    iconWeight={300}
+                    onClick={onSearchInConversation}
+                    symbol="more"
+                    label={i18n('icu:moreInfo')}
+                    variant="implied-secondary"
+                  />
+                </AxoDropdownMenu.Trigger>
+                <HeaderDropdownMenuContent
+                  i18n={i18n}
+                  conversation={conversation}
+                  isTerminated={isTerminated}
+                  isMissingMandatoryProfileSharing={
+                    isMissingMandatoryProfileSharing ?? false
+                  }
+                  isSelectMode={isSelectMode}
+                  isSignalConversation={isSignalConversation ?? false}
+                  onChangeDisappearingMessages={
+                    onConversationDisappearingMessagesChange
+                  }
+                  onChangeMuteExpiration={onConversationMuteExpirationChange}
+                  onConversationAccept={onConversationAccept}
+                  onConversationArchive={onConversationArchive}
+                  onConversationBlock={() => {
+                    setMessageRequestState(MessageRequestState.blocking);
+                  }}
+                  onConversationDelete={() => {
+                    setMessageRequestState(MessageRequestState.deleting);
+                  }}
+                  onConversationDeleteMessages={() => {
+                    setHasDeleteMessagesConfirmation(true);
+                  }}
+                  onConversationLeaveGroup={() => {
+                    if (cannotLeaveBecauseYouAreLastAdmin) {
+                      setHasCannotLeaveGroupBecauseYouAreLastAdminAlert(true);
+                    } else {
+                      setHasLeaveGroupConfirmation(true);
+                    }
+                  }}
+                  onConversationMarkUnread={onConversationMarkUnread}
+                  onConversationPin={onConversationPin}
+                  onConversationReportAndMaybeBlock={() => {
+                    setMessageRequestState(
+                      MessageRequestState.reportingAndMaybeBlocking
+                    );
+                  }}
+                  onConversationUnarchive={onConversationUnarchive}
+                  onConversationUnblock={() => {
+                    setMessageRequestState(MessageRequestState.unblocking);
+                  }}
+                  onConversationUnpin={onConversationUnpin}
+                  onSelectModeEnter={onSelectModeEnter}
+                  onSetupCustomDisappearingTimeout={() => {
+                    setHasCustomDisappearingTimeoutModal(true);
+                  }}
+                  onShowMembers={onShowMembers}
+                  onViewAllMedia={onViewAllMedia}
+                  onViewConversationDetails={onViewConversationDetails}
+                />
+              </AxoDropdownMenu.Root>
+            </div>
           </div>
-        )}
-      </SizeObserver>
+        </AxoDragRegion.Root>
+
+        <MessageRequestActionsConfirmation
+          i18n={i18n}
+          conversationId={conversation.id}
+          conversationType={conversation.type}
+          addedByName={addedByName}
+          conversationName={conversationName}
+          isBlocked={conversation.isBlocked ?? false}
+          isReported={conversation.isReported ?? false}
+          state={messageRequestState}
+          acceptConversation={onConversationAccept}
+          blockAndReportSpam={onConversationBlockAndReportSpam}
+          blockConversation={onConversationBlock}
+          reportSpam={onConversationReportSpam}
+          deleteConversation={onConversationDelete}
+          onChangeState={setMessageRequestState}
+        />
+
+        <ConversationSubheader
+          i18n={i18n}
+          contactSpoofingWarning={contactSpoofingWarning}
+          conversationId={conversation.id}
+          acknowledgeGroupMemberNameCollisions={
+            acknowledgeGroupMemberNameCollisions
+          }
+          reviewConversationNameCollision={reviewConversationNameCollision}
+          renderCollidingAvatars={renderCollidingAvatars}
+          shouldShowMiniPlayer={shouldShowMiniPlayer}
+          renderMiniPlayer={renderMiniPlayer}
+          renderPinnedMessagesBar={renderPinnedMessagesBar}
+        />
+      </div>
     </>
   );
 });
@@ -422,7 +485,6 @@ function HeaderContent({
   hasStories,
   headerRef,
   i18n,
-  sharedGroupNames,
   theme,
   isSignalConversation,
   onViewUserStories,
@@ -431,9 +493,8 @@ function HeaderContent({
   conversation: MinimalConversation;
   badge: BadgeType | null;
   hasStories: HasStories | null;
-  headerRef: RefObject<HTMLDivElement>;
+  headerRef: RefObject<HTMLDivElement | null>;
   i18n: LocalizerType;
-  sharedGroupNames: ReadonlyArray<string>;
   theme: ThemeType;
   isSignalConversation: boolean;
   onViewUserStories: () => void;
@@ -472,7 +533,6 @@ function HeaderContent({
         onClick={hasStories ? onViewUserStories : onClick}
         phoneNumber={conversation.phoneNumber ?? undefined}
         profileName={conversation.profileName ?? undefined}
-        sharedGroupNames={sharedGroupNames}
         size={AvatarSize.THIRTY_TWO}
         // user may have stories, but we don't show that on Note to Self conversation
         storyRing={conversation.isMe ? undefined : (hasStories ?? undefined)}
@@ -481,6 +541,8 @@ function HeaderContent({
       />
     </span>
   );
+
+  const isOfficialChat = isSignalConversation || conversation.isMe;
 
   const contents = (
     <div className="module-ConversationHeader__header__info">
@@ -493,15 +555,24 @@ function HeaderContent({
         isSignalConversation={isSignalConversation}
         headerRef={headerRef}
       />
-      {(conversation.expireTimer != null || conversation.isVerified) && (
+      {(isOfficialChat ||
+        conversation.expireTimer != null ||
+        conversation.isVerified) && (
         <div className="module-ConversationHeader__header__info__subtitle">
+          {isOfficialChat ? (
+            <div>
+              {i18n('icu:ConversationHero--signal-official-chat-title')}
+            </div>
+          ) : null}
+
           {conversation.expireTimer != null &&
             conversation.expireTimer !== 0 && (
               <div className="module-ConversationHeader__header__info__subtitle__expiration">
                 {expirationTimer.format(i18n, conversation.expireTimer)}
               </div>
             )}
-          {conversation.isVerified && (
+
+          {!isOfficialChat && conversation.isVerified && (
             <div className="module-ConversationHeader__header__info__subtitle__verified">
               {i18n('icu:verified')}
             </div>
@@ -536,12 +607,13 @@ function HeaderContent({
   );
 }
 
-function HeaderMenu({
+function HeaderDropdownMenuContent({
   conversation,
   i18n,
   isMissingMandatoryProfileSharing,
   isSelectMode,
   isSignalConversation,
+  isTerminated,
   onChangeDisappearingMessages,
   onChangeMuteExpiration,
   onConversationAccept,
@@ -561,13 +633,13 @@ function HeaderMenu({
   onShowMembers,
   onViewAllMedia,
   onViewConversationDetails,
-  triggerId,
 }: {
   conversation: MinimalConversation;
   i18n: LocalizerType;
   isMissingMandatoryProfileSharing: boolean;
   isSelectMode: boolean;
   isSignalConversation: boolean;
+  isTerminated: boolean;
   onChangeDisappearingMessages: (seconds: DurationInSeconds) => void;
   onChangeMuteExpiration: (seconds: number) => void;
   onConversationAccept: () => void;
@@ -587,32 +659,41 @@ function HeaderMenu({
   onShowMembers: () => void;
   onViewAllMedia: () => void;
   onViewConversationDetails: () => void;
-  triggerId: string;
 }) {
-  const isRTL = i18n.getLocaleDirection() === 'rtl';
   const muteOptions = getMuteOptions(conversation.muteExpiresAt, i18n);
   const isGroup = conversation.type === 'group';
-  const disableTimerChanges = Boolean(
+  const disableTimerChanges =
     !conversation.canChangeTimer ||
-      !conversation.acceptedMessageRequest ||
-      conversation.left ||
-      isMissingMandatoryProfileSharing
-  );
+    !conversation.acceptedMessageRequest ||
+    conversation.left ||
+    isMissingMandatoryProfileSharing;
   const hasGV2AdminEnabled = isGroup && conversation.groupVersion === 2;
 
-  const isActiveExpireTimer = (value: number): boolean => {
-    if (!conversation.expireTimer) {
-      return value === 0;
+  const disappearingMessagesValue = useMemo(() => {
+    const { expireTimer } = conversation;
+    if (expireTimer == null) {
+      return '0';
     }
 
-    // Custom time...
-    if (value === -1) {
-      return !expirationTimer.DEFAULT_DURATIONS_SET.has(
-        conversation.expireTimer
-      );
+    if (expirationTimer.DEFAULT_DURATIONS_IN_SECONDS.includes(expireTimer)) {
+      return `${expireTimer}`;
     }
-    return value === conversation.expireTimer;
-  };
+
+    return 'custom';
+  }, [conversation]);
+
+  const onDisappearingMessagesValueChange = useCallback(
+    (value: string) => {
+      if (value === 'custom') {
+        return;
+      }
+
+      const seconds = Number(value);
+      strictAssert(Number.isFinite(seconds), 'Invalid value in radio item');
+      onChangeDisappearingMessages(seconds as DurationInSeconds);
+    },
+    [onChangeDisappearingMessages]
+  );
 
   if (isSelectMode) {
     return null;
@@ -622,217 +703,246 @@ function HeaderMenu({
   const disappearingTitle = <span>{i18n('icu:disappearingMessages')}</span>;
 
   if (isSignalConversation) {
-    const isMuted =
-      conversation.muteExpiresAt && isConversationMuted(conversation);
-
     return (
-      <ContextMenu id={triggerId} rtl={isRTL}>
-        <SubMenu hoverDelay={1} title={muteTitle} rtl={!isRTL}>
-          {isMuted ? (
-            <MenuItem
-              onClick={() => {
-                onChangeMuteExpiration(0);
-              }}
-            >
-              {i18n('icu:unmute')}
-            </MenuItem>
-          ) : (
-            <MenuItem
-              onClick={() => {
-                onChangeMuteExpiration(Number.MAX_SAFE_INTEGER);
-              }}
-            >
-              {i18n('icu:muteAlways')}
-            </MenuItem>
-          )}
-        </SubMenu>
+      <AxoDropdownMenu.Content>
         {conversation.isArchived ? (
-          <MenuItem onClick={onConversationUnarchive}>
+          <AxoDropdownMenu.Item
+            symbol="archive-up"
+            onSelect={onConversationUnarchive}
+          >
             {i18n('icu:moveConversationToInbox')}
-          </MenuItem>
+          </AxoDropdownMenu.Item>
         ) : (
-          <MenuItem onClick={onConversationArchive}>
+          <AxoDropdownMenu.Item
+            symbol="archive"
+            onSelect={onConversationArchive}
+          >
             {i18n('icu:archiveConversation')}
-          </MenuItem>
+          </AxoDropdownMenu.Item>
         )}
-
-        <MenuItem onClick={onConversationDeleteMessages}>
+        <AxoDropdownMenu.Item
+          symbol="trash"
+          onSelect={onConversationDeleteMessages}
+        >
           {i18n('icu:deleteConversation')}
-        </MenuItem>
-      </ContextMenu>
+        </AxoDropdownMenu.Item>
+      </AxoDropdownMenu.Content>
     );
   }
 
   if (isGroup && conversation.groupVersion !== 2) {
     return (
-      <ContextMenu id={triggerId}>
-        <MenuItem onClick={onShowMembers}>{i18n('icu:showMembers')}</MenuItem>
-        <MenuItem onClick={onViewAllMedia}>
+      <AxoDropdownMenu.Content>
+        <AxoDropdownMenu.Item symbol="group" onSelect={onShowMembers}>
+          {i18n('icu:showMembers')}
+        </AxoDropdownMenu.Item>
+        <AxoDropdownMenu.Item symbol="album" onSelect={onViewAllMedia}>
           {i18n('icu:allMediaMenuItem')}
-        </MenuItem>
-        <MenuItem divider />
+        </AxoDropdownMenu.Item>
+        <AxoDropdownMenu.Separator />
         {conversation.isArchived ? (
-          <MenuItem onClick={onConversationUnarchive}>
+          <AxoDropdownMenu.Item
+            symbol="archive-up"
+            onSelect={onConversationUnarchive}
+          >
             {i18n('icu:moveConversationToInbox')}
-          </MenuItem>
+          </AxoDropdownMenu.Item>
         ) : (
-          <MenuItem onClick={onConversationArchive}>
+          <AxoDropdownMenu.Item
+            symbol="archive"
+            onSelect={onConversationArchive}
+          >
             {i18n('icu:archiveConversation')}
-          </MenuItem>
+          </AxoDropdownMenu.Item>
         )}
-
-        <MenuItem onClick={onConversationDeleteMessages}>
+        <AxoDropdownMenu.Item
+          symbol="trash"
+          onSelect={onConversationDeleteMessages}
+        >
           {i18n('icu:deleteConversation')}
-        </MenuItem>
-      </ContextMenu>
+        </AxoDropdownMenu.Item>
+      </AxoDropdownMenu.Content>
     );
   }
 
-  const expireDurations: ReadonlyArray<ReactNode> = [
-    ...expirationTimer.DEFAULT_DURATIONS_IN_SECONDS,
-    DurationInSeconds.fromSeconds(-1),
-  ].map(seconds => {
-    let text: string;
-
-    if (seconds === -1) {
-      text = i18n('icu:customDisappearingTimeOption');
-    } else {
-      text = expirationTimer.format(i18n, seconds, {
-        capitalizeOff: true,
-      });
-    }
-
-    const onDurationClick = () => {
-      if (seconds === -1) {
-        onSetupCustomDisappearingTimeout();
-      } else {
-        onChangeDisappearingMessages(seconds);
-      }
-    };
-
-    return (
-      <MenuItem key={seconds} onClick={onDurationClick}>
-        <div
-          className={classNames(
-            TIMER_ITEM_CLASS,
-            isActiveExpireTimer(seconds) && `${TIMER_ITEM_CLASS}--active`
-          )}
-        >
-          {text}
-        </div>
-      </MenuItem>
-    );
-  });
-
-  return createPortal(
-    <ContextMenu id={triggerId} rtl={isRTL}>
+  return (
+    <AxoDropdownMenu.Content>
       {!conversation.acceptedMessageRequest && (
         <>
           {!conversation.isBlocked && (
-            <MenuItem onClick={onConversationBlock}>
+            <AxoDropdownMenu.Item symbol="block" onSelect={onConversationBlock}>
               {i18n('icu:ConversationHeader__MenuItem--Block')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
           {conversation.isBlocked && (
-            <MenuItem onClick={onConversationUnblock}>
+            <AxoDropdownMenu.Item
+              symbol="message-thread"
+              onSelect={onConversationUnblock}
+            >
               {i18n('icu:ConversationHeader__MenuItem--Unblock')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
           {!conversation.isBlocked && (
-            <MenuItem onClick={onConversationAccept}>
+            <AxoDropdownMenu.Item
+              symbol="message-thread"
+              onSelect={onConversationAccept}
+            >
               {i18n('icu:ConversationHeader__MenuItem--Accept')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
-          <MenuItem onClick={onConversationReportAndMaybeBlock}>
+          <AxoDropdownMenu.Item
+            symbol="error-octagon"
+            onSelect={onConversationReportAndMaybeBlock}
+          >
             {i18n('icu:ConversationHeader__MenuItem--ReportSpam')}
-          </MenuItem>
-          <MenuItem onClick={onConversationDelete}>
+          </AxoDropdownMenu.Item>
+          <AxoDropdownMenu.Item symbol="trash" onSelect={onConversationDelete}>
             {i18n('icu:ConversationHeader__MenuItem--DeleteChat')}
-          </MenuItem>
+          </AxoDropdownMenu.Item>
         </>
       )}
       {conversation.acceptedMessageRequest && (
         <>
           {disableTimerChanges ? null : (
-            <SubMenu hoverDelay={1} title={disappearingTitle} rtl={!isRTL}>
-              {expireDurations}
-            </SubMenu>
+            <AxoDropdownMenu.Sub>
+              <AxoDropdownMenu.SubTrigger symbol="timer">
+                <span data-testid="ConversationHeader__ContextMenu__DisappearingTimer">
+                  {disappearingTitle}
+                </span>
+              </AxoDropdownMenu.SubTrigger>
+              <AxoDropdownMenu.SubContent>
+                <AxoDropdownMenu.RadioGroup
+                  value={disappearingMessagesValue}
+                  onValueChange={onDisappearingMessagesValueChange}
+                >
+                  {expirationTimer.DEFAULT_DURATIONS_IN_SECONDS.map(seconds => {
+                    return (
+                      <AxoDropdownMenu.RadioItem
+                        key={seconds}
+                        value={`${seconds}`}
+                      >
+                        {expirationTimer.format(i18n, seconds, {
+                          capitalizeOff: true,
+                        })}
+                      </AxoDropdownMenu.RadioItem>
+                    );
+                  })}
+                  <AxoDropdownMenu.RadioItem
+                    value="custom"
+                    onSelect={onSetupCustomDisappearingTimeout}
+                  >
+                    {i18n('icu:customDisappearingTimeOption')}
+                  </AxoDropdownMenu.RadioItem>
+                </AxoDropdownMenu.RadioGroup>
+              </AxoDropdownMenu.SubContent>
+            </AxoDropdownMenu.Sub>
           )}
-          <SubMenu hoverDelay={1} title={muteTitle} rtl={!isRTL}>
-            {muteOptions.map(item => (
-              <MenuItem
-                key={item.name}
-                disabled={item.disabled}
-                onClick={() => {
-                  onChangeMuteExpiration(item.value);
-                }}
-              >
-                {item.name}
-              </MenuItem>
-            ))}
-          </SubMenu>
+          <AxoDropdownMenu.Sub>
+            <AxoDropdownMenu.SubTrigger symbol="bell-slash">
+              {muteTitle}
+            </AxoDropdownMenu.SubTrigger>
+            <AxoDropdownMenu.SubContent>
+              {muteOptions.map(item => (
+                <AxoDropdownMenu.Item
+                  key={item.name}
+                  disabled={item.disabled}
+                  onSelect={() => {
+                    onChangeMuteExpiration(item.value);
+                  }}
+                >
+                  {item.name}
+                </AxoDropdownMenu.Item>
+              ))}
+            </AxoDropdownMenu.SubContent>
+          </AxoDropdownMenu.Sub>
           {!isGroup || hasGV2AdminEnabled ? (
-            <MenuItem onClick={onViewConversationDetails}>
+            <AxoDropdownMenu.Item
+              symbol="settings"
+              onSelect={onViewConversationDetails}
+            >
               {isGroup
                 ? i18n('icu:showConversationDetails')
                 : i18n('icu:showConversationDetails--direct')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           ) : null}
-          <MenuItem onClick={onViewAllMedia}>
+          <AxoDropdownMenu.Item symbol="album" onSelect={onViewAllMedia}>
             {i18n('icu:allMediaMenuItem')}
-          </MenuItem>
-          <MenuItem divider />
-          <MenuItem onClick={onSelectModeEnter}>
+          </AxoDropdownMenu.Item>
+          <AxoDropdownMenu.Separator />
+          <AxoDropdownMenu.Item
+            symbol="check-circle"
+            onSelect={onSelectModeEnter}
+          >
             {i18n('icu:ConversationHeader__menu__selectMessages')}
-          </MenuItem>
-          <MenuItem divider />
+          </AxoDropdownMenu.Item>
+          <AxoDropdownMenu.Separator />
           {!conversation.markedUnread ? (
-            <MenuItem onClick={onConversationMarkUnread}>
+            <AxoDropdownMenu.Item
+              symbol="message-badge"
+              onSelect={onConversationMarkUnread}
+            >
               {i18n('icu:markUnread')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           ) : null}
           {conversation.isPinned ? (
-            <MenuItem onClick={onConversationUnpin}>
+            <AxoDropdownMenu.Item
+              symbol="pin-slash"
+              onSelect={onConversationUnpin}
+            >
               {i18n('icu:unpinConversation')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           ) : (
-            <MenuItem onClick={onConversationPin}>
+            <AxoDropdownMenu.Item symbol="pin" onSelect={onConversationPin}>
               {i18n('icu:pinConversation')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
           {conversation.isArchived ? (
-            <MenuItem onClick={onConversationUnarchive}>
+            <AxoDropdownMenu.Item
+              symbol="archive-up"
+              onSelect={onConversationUnarchive}
+            >
               {i18n('icu:moveConversationToInbox')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           ) : (
-            <MenuItem onClick={onConversationArchive}>
+            <AxoDropdownMenu.Item
+              symbol="archive"
+              onSelect={onConversationArchive}
+            >
               {i18n('icu:archiveConversation')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
-          {!conversation.isBlocked && (
-            <MenuItem onClick={onConversationBlock}>
+          {!conversation.isBlocked && !isTerminated && (
+            <AxoDropdownMenu.Item symbol="block" onSelect={onConversationBlock}>
               {i18n('icu:ConversationHeader__MenuItem--Block')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
-          {conversation.isBlocked && (
-            <MenuItem onClick={onConversationUnblock}>
+          {conversation.isBlocked && !isTerminated && (
+            <AxoDropdownMenu.Item
+              symbol="message-thread"
+              onSelect={onConversationUnblock}
+            >
               {i18n('icu:ConversationHeader__MenuItem--Unblock')}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
-          <MenuItem onClick={onConversationDeleteMessages}>
+          <AxoDropdownMenu.Item
+            symbol="trash"
+            onSelect={onConversationDeleteMessages}
+          >
             {i18n('icu:deleteConversation')}
-          </MenuItem>
-          {isGroup && (
-            <MenuItem onClick={onConversationLeaveGroup}>
+          </AxoDropdownMenu.Item>
+          {isGroup && !isTerminated && (
+            <AxoDropdownMenu.Item
+              symbol="leave"
+              onSelect={onConversationLeaveGroup}
+            >
               {i18n(
                 'icu:ConversationHeader__ContextMenu__LeaveGroupAction__title'
               )}
-            </MenuItem>
+            </AxoDropdownMenu.Item>
           )}
         </>
       )}
-    </ContextMenu>,
-    document.body
+    </AxoDropdownMenu.Content>
   );
 }
 
@@ -840,11 +950,10 @@ function OutgoingCallButtons({
   conversation,
   hasActiveCall,
   i18n,
-  isNarrow,
   onOutgoingAudioCall,
   onOutgoingVideoCall,
   outgoingCallButtonStyle,
-}: { isNarrow: boolean } & Pick<
+}: Pick<
   PropsType,
   | 'i18n'
   | 'conversation'
@@ -855,26 +964,27 @@ function OutgoingCallButtons({
 >): JSX.Element | null {
   const disabled =
     conversation.type === 'group' &&
-    conversation.announcementsOnly &&
-    !conversation.areWeAdmin;
+    ((conversation.announcementsOnly && !conversation.areWeAdmin) ||
+      conversation.terminated);
   const inAnotherCall = !disabled && hasActiveCall;
 
   const videoButton = (
-    <button
-      aria-label={i18n('icu:makeOutgoingVideoCall')}
-      className={classNames(
-        'module-ConversationHeader__button',
-        'module-ConversationHeader__button--video',
-        disabled
-          ? 'module-ConversationHeader__button--show-disabled'
-          : undefined,
-        inAnotherCall
-          ? 'module-ConversationHeader__button--in-another-call'
-          : undefined
-      )}
-      onClick={onOutgoingVideoCall}
-      type="button"
-    />
+    <div
+      className={
+        inAnotherCall || disabled ? tw('opacity-50 dark:opacity-40') : undefined
+      }
+    >
+      <AxoIconButton.Root
+        symbol="videocamera"
+        iconWeight={300}
+        size="md"
+        onClick={onOutgoingVideoCall}
+        label={i18n('icu:makeOutgoingVideoCall')}
+        // A separate tooltip is shown if we are inAnotherCall
+        tooltip={!inAnotherCall}
+        variant="implied-secondary"
+      />
+    </div>
   );
   const videoElement = inAnotherCall ? (
     <InAnotherCallTooltip i18n={i18n}>{videoButton}</InAnotherCallTooltip>
@@ -894,20 +1004,24 @@ function OutgoingCallButtons({
     case OutgoingCallButtonStyle.JustVideo:
       return videoElement;
     case OutgoingCallButtonStyle.Both:
-      // eslint-disable-next-line no-case-declarations
+      // oxlint-disable-next-line no-case-declarations
       const audioButton = (
-        <button
-          type="button"
-          onClick={onOutgoingAudioCall}
-          className={classNames(
-            'module-ConversationHeader__button',
-            'module-ConversationHeader__button--audio',
-            inAnotherCall
-              ? 'module-ConversationHeader__button--in-another-call'
-              : undefined
-          )}
-          aria-label={i18n('icu:makeOutgoingCall')}
-        />
+        <div
+          className={
+            inAnotherCall ? tw('opacity-50 dark:opacity-40') : undefined
+          }
+        >
+          <AxoIconButton.Root
+            symbol="phone"
+            iconWeight={300}
+            size="md"
+            onClick={onOutgoingAudioCall}
+            label={i18n('icu:makeOutgoingCall')}
+            // A separate tooltip is shown if we are inAnotherCall
+            tooltip={!inAnotherCall}
+            variant="implied-secondary"
+          />
+        </div>
       );
 
       return (
@@ -923,25 +1037,29 @@ function OutgoingCallButtons({
         </>
       );
     case OutgoingCallButtonStyle.Join:
-      // eslint-disable-next-line no-case-declarations
+      // oxlint-disable-next-line no-case-declarations
       const joinButton = (
-        <button
-          aria-label={i18n('icu:joinOngoingCall')}
-          className={classNames(
-            'module-ConversationHeader__button',
-            'module-ConversationHeader__button--join-call',
-            disabled
-              ? 'module-ConversationHeader__button--show-disabled'
-              : undefined,
-            inAnotherCall
-              ? 'module-ConversationHeader__button--in-another-call'
-              : undefined
-          )}
-          onClick={onOutgoingVideoCall}
-          type="button"
-        >
-          {isNarrow ? null : i18n('icu:joinOngoingCall')}
-        </button>
+        <>
+          <div className={tw('@min-[500px]:hidden')}>
+            <AxoIconButton.Root
+              symbol="videocamera-fill"
+              size="md"
+              label={i18n('icu:joinOngoingCall')}
+              onClick={onOutgoingVideoCall}
+              variant="strong-affirmative"
+            />
+          </div>
+          <div className={tw('hidden @min-[500px]:block')}>
+            <AxoButton.Root
+              size="md"
+              symbol="videocamera-fill"
+              onClick={onOutgoingVideoCall}
+              variant="strong-affirmative"
+            >
+              {i18n('icu:joinOngoingCall')}
+            </AxoButton.Root>
+          </div>
+        </>
       );
       return inAnotherCall ? (
         <InAnotherCallTooltip i18n={i18n}>{joinButton}</InAnotherCallTooltip>
@@ -965,41 +1083,251 @@ function LeaveGroupConfirmationDialog({
   onClose: () => void;
 }) {
   return (
-    <ConfirmationDialog
-      dialogName="ConversationHeader.leaveGroup"
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={onClose}
       title={i18n('icu:ConversationHeader__LeaveGroupConfirmation__title')}
-      actions={[
-        {
-          disabled: cannotLeaveBecauseYouAreLastAdmin,
-          action: onLeaveGroup,
-          style: 'negative',
-          text: i18n(
-            'icu:ConversationHeader__LeaveGroupConfirmation__confirmButton'
-          ),
-        },
-      ]}
-      i18n={i18n}
-      onClose={onClose}
+      description={i18n(
+        'icu:ConversationHeader__LeaveGroupConfirmation__description'
+      )}
     >
-      {i18n('icu:ConversationHeader__LeaveGroupConfirmation__description')}
-    </ConfirmationDialog>
+      <AxoConfirmDialog.Cancel />
+      <AxoConfirmDialog.Action
+        variant="strong-destructive"
+        onClick={onLeaveGroup}
+        disabled={cannotLeaveBecauseYouAreLastAdmin}
+      >
+        {i18n('icu:ConversationHeader__LeaveGroupConfirmation__confirmButton')}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }
 
-function CannotLeaveGroupBecauseYouAreLastAdminAlert({
-  i18n,
-  onClose,
-}: {
+/** @testexport */
+export function CannotLeaveGroupBecauseYouAreLastAdminAlert(props: {
   i18n: LocalizerType;
   onClose: () => void;
-}) {
+}): ReactNode {
+  const { i18n } = props;
   return (
-    <Alert
-      i18n={i18n}
-      body={i18n(
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={props.onClose}
+      // @ts-expect-error ConfirmationDialog migration: Needs title
+      title={null}
+      description={i18n(
         'icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description'
       )}
-      onClose={onClose}
-    />
+    >
+      <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+    </AxoConfirmDialog.Root>
+  );
+}
+
+function ConversationSubheader(props: {
+  i18n: LocalizerType;
+
+  conversationId: string;
+
+  contactSpoofingWarning: ContactSpoofingWarning | null;
+  reviewConversationNameCollision: ReviewConversationNameCollission;
+  acknowledgeGroupMemberNameCollisions: AcknowledgeGroupMemberNameCollisions;
+  renderCollidingAvatars: RenderCollidingAvatars;
+
+  shouldShowMiniPlayer: boolean;
+  renderMiniPlayer: RenderMiniPlayer;
+  renderPinnedMessagesBar: RenderPinnedMessagesBar;
+}) {
+  const { i18n } = props;
+  const [
+    hasDismissedDirectContactSpoofingWarning,
+    setHasDismissedDirectContactSpoofingWarning,
+  ] = useState(false);
+
+  const renderableContactSpoofingWarning = getRenderableContactSpoofingWarning(
+    props.contactSpoofingWarning,
+    hasDismissedDirectContactSpoofingWarning
+  );
+
+  const handleDismissDirectContactSpoofingWarning = useCallback(() => {
+    setHasDismissedDirectContactSpoofingWarning(true);
+  }, []);
+
+  return (
+    <>
+      {renderableContactSpoofingWarning != null && (
+        <>
+          {renderableContactSpoofingWarning.type ===
+            ContactSpoofingType.DirectConversationWithSameTitle && (
+            <DirectConversationWithSameTitleWarning
+              i18n={i18n}
+              reviewConversationNameCollision={
+                props.reviewConversationNameCollision
+              }
+              onDismissDirectContactSpoofingWarning={
+                handleDismissDirectContactSpoofingWarning
+              }
+            />
+          )}
+          {renderableContactSpoofingWarning.type ===
+            ContactSpoofingType.MultipleGroupMembersWithSameTitle && (
+            <MultipleGroupMembersWithSameTitleWarning
+              i18n={i18n}
+              conversationId={props.conversationId}
+              contactSpoofingWarning={renderableContactSpoofingWarning}
+              acknowledgeGroupMemberNameCollisions={
+                props.acknowledgeGroupMemberNameCollisions
+              }
+              reviewConversationNameCollision={
+                props.reviewConversationNameCollision
+              }
+              renderCollidingAvatars={props.renderCollidingAvatars}
+            />
+          )}
+        </>
+      )}
+      {props.shouldShowMiniPlayer &&
+        props.renderMiniPlayer({ shouldFlow: true })}
+      {!props.shouldShowMiniPlayer && props.renderPinnedMessagesBar()}
+    </>
+  );
+}
+
+function getRenderableContactSpoofingWarning(
+  contactSpoofingWarning: ContactSpoofingWarning | null,
+  hasDismissedDirectContactSpoofingWarning: boolean
+): ContactSpoofingWarning | null {
+  if (contactSpoofingWarning == null) {
+    return null;
+  }
+
+  if (
+    contactSpoofingWarning.type ===
+    ContactSpoofingType.DirectConversationWithSameTitle
+  ) {
+    const shouldRender = !hasDismissedDirectContactSpoofingWarning;
+    return shouldRender ? contactSpoofingWarning : null;
+  }
+
+  if (
+    contactSpoofingWarning.type ===
+    ContactSpoofingType.MultipleGroupMembersWithSameTitle
+  ) {
+    const shouldRender = hasUnacknowledgedCollisions(
+      contactSpoofingWarning.acknowledgedGroupNameCollisions,
+      contactSpoofingWarning.groupNameCollisions
+    );
+
+    return shouldRender ? contactSpoofingWarning : null;
+  }
+
+  throw missingCaseError(contactSpoofingWarning);
+}
+
+function DirectConversationWithSameTitleWarning(props: {
+  i18n: LocalizerType;
+  reviewConversationNameCollision: ReviewConversationNameCollission;
+  onDismissDirectContactSpoofingWarning: () => void;
+}) {
+  const { i18n } = props;
+
+  return (
+    <TimelineWarning
+      i18n={i18n}
+      onClose={props.onDismissDirectContactSpoofingWarning}
+    >
+      <I18n
+        i18n={i18n}
+        id="icu:ContactSpoofing__same-name--link"
+        components={{
+          reviewRequestLink: parts => (
+            <TimelineWarningLink
+              onClick={props.reviewConversationNameCollision}
+            >
+              {parts}
+            </TimelineWarningLink>
+          ),
+        }}
+      />
+    </TimelineWarning>
+  );
+}
+
+function MultipleGroupMembersWithSameTitleWarning(props: {
+  i18n: LocalizerType;
+  conversationId: string;
+  contactSpoofingWarning: MultipleGroupMembersWithSameTitleContactSpoofingWarning;
+  acknowledgeGroupMemberNameCollisions: AcknowledgeGroupMemberNameCollisions;
+  reviewConversationNameCollision: ReviewConversationNameCollission;
+  renderCollidingAvatars: RenderCollidingAvatars;
+}) {
+  const {
+    i18n,
+    conversationId,
+    contactSpoofingWarning,
+    acknowledgeGroupMemberNameCollisions,
+    reviewConversationNameCollision,
+    renderCollidingAvatars,
+  } = props;
+  const { groupNameCollisions } = contactSpoofingWarning;
+
+  const numberOfSharedNames = Object.keys(groupNameCollisions).length;
+  const conversationIds = Object.values(groupNameCollisions).flat(1);
+
+  const handleClose = useCallback(() => {
+    acknowledgeGroupMemberNameCollisions(conversationId, groupNameCollisions);
+  }, [
+    acknowledgeGroupMemberNameCollisions,
+    conversationId,
+    groupNameCollisions,
+  ]);
+
+  const reviewRequestLink = useCallback(
+    (parts: I18nComponentParts) => {
+      return (
+        <TimelineWarningLink onClick={reviewConversationNameCollision}>
+          {parts}
+        </TimelineWarningLink>
+      );
+    },
+    [reviewConversationNameCollision]
+  );
+
+  if (numberOfSharedNames === 1) {
+    return (
+      <TimelineWarning
+        i18n={i18n}
+        onClose={handleClose}
+        customInfo={
+          conversationIds.length >= 2 ? (
+            <TimelineWarningCustomInfo>
+              {renderCollidingAvatars({ conversationIds })}
+            </TimelineWarningCustomInfo>
+          ) : null
+        }
+      >
+        <I18n
+          i18n={i18n}
+          id="icu:ContactSpoofing__same-name-in-group--link"
+          components={{
+            count: conversationIds.length,
+            reviewRequestLink,
+          }}
+        />
+      </TimelineWarning>
+    );
+  }
+
+  return (
+    <TimelineWarning i18n={i18n} onClose={handleClose}>
+      <I18n
+        i18n={i18n}
+        id="icu:ContactSpoofing__same-names-in-group--link"
+        components={{
+          count: numberOfSharedNames,
+          reviewRequestLink,
+        }}
+      />
+    </TimelineWarning>
   );
 }

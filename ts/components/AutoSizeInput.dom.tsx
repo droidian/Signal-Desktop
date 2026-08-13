@@ -1,12 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent, KeyboardEvent } from 'react';
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import type { ChangeEvent, KeyboardEvent, JSX } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
 
 export type PropsType = Readonly<{
   disableSpellcheck?: boolean;
@@ -68,6 +68,8 @@ export function AutoSizeInput({
 
   return (
     <div className={getClassName('__container')}>
+      {/* FIXME */}
+      {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
       <input
         type="text"
         className={getClassName('__input')}

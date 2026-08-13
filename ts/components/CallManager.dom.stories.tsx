@@ -1,40 +1,50 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './CallManager.dom.js';
-import { CallManager } from './CallManager.dom.js';
+import type { PropsType } from './CallManager.dom.tsx';
+import { CallManager } from './CallManager.dom.tsx';
 import {
   CallEndedReason,
   CallState,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../types/Calling.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
+} from '../types/Calling.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
 import type {
   ActiveGroupCallType,
   GroupCallRemoteParticipantType,
-} from '../types/Calling.std.js';
+} from '../types/Calling.std.ts';
 import type {
   ConversationType,
   ConversationTypeType,
-} from '../state/ducks/conversations.preload.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.js';
-import { StorySendMode } from '../types/Stories.std.js';
+} from '../state/ducks/conversations.preload.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.ts';
+import { StorySendMode } from '../types/Stories.std.ts';
 import {
   FAKE_CALL_LINK,
   FAKE_CALL_LINK_WITH_ADMIN_KEY,
   getDefaultCallLinkConversation,
-} from '../test-helpers/fakeCallLink.std.js';
-import { allRemoteParticipants } from './CallScreen.dom.stories.js';
+} from '../test-helpers/fakeCallLink.std.ts';
+import { allRemoteParticipants } from './CallScreen.dom.stories.tsx';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+import { renderCallingParticipantMenu } from './CallingParticipantMenu.dom.stories.tsx';
 
 const { i18n } = window.SignalContext;
+
+const [participant1, participant2, participant3, participant4] =
+  allRemoteParticipants as [
+    GroupCallRemoteParticipantType,
+    GroupCallRemoteParticipantType,
+    GroupCallRemoteParticipantType,
+    GroupCallRemoteParticipantType,
+  ];
 
 const getConversation = () =>
   getDefaultConversation({
@@ -57,7 +67,6 @@ const placeHolderContact: ConversationType = {
   type: 'direct',
   title: i18n('icu:unknownContact'),
   isMe: false,
-  sharedGroupNames: [],
 };
 
 const getUnknownContact = (): ConversationType => ({
@@ -72,9 +81,10 @@ const getUnknownParticipant = (): GroupCallRemoteParticipantType => ({
   demuxId: Math.round(10000 * Math.random()),
   hasRemoteAudio: true,
   hasRemoteVideo: true,
-  isHandRaised: false,
+  isOnlyHandRaised: false,
   mediaKeysReceived: false,
   presenting: false,
+  raisedHandOrder: undefined,
   sharingScreen: false,
   videoAspectRatio: 1,
 });
@@ -127,18 +137,16 @@ const createProps = (storyProps: Partial<PropsType> = {}): PropsType => ({
   notifyForCall: action('notify-for-call'),
   openSystemPreferencesAction: action('open-system-preferences-action'),
   playRingtone: action('play-ringtone'),
-  removeClient: action('remove-client'),
-  blockClient: action('block-client'),
   cancelPresenting: action('cancel-presenting'),
   renderDeviceSelection: () => <div />,
   renderReactionPicker: () => <div />,
+  renderCallingParticipantMenu,
   sendGroupCallRaiseHand: action('send-group-call-raise-hand'),
   sendGroupCallReaction: action('send-group-call-reaction'),
   selectPresentingSource: action('select-presenting-source'),
   setGroupCallVideoRequest: action('set-group-call-video-request'),
   setIsCallActive: action('set-is-call-active'),
   setLocalAudio: action('set-local-audio'),
-  setLocalAudioRemoteMuted: action('set-local-audio-remote-muted'),
   setLocalPreviewContainer: action('set-local-preview-container'),
   setLocalVideo: action('set-local-video'),
   setRendererCanvas: action('set-renderer-canvas'),
@@ -347,7 +355,7 @@ export function CallLinkLobbyParticipants1Known1Unknown(): JSX.Element {
     <CallManager
       {...createProps({
         activeCall: getActiveCallForCallLink({
-          peekedParticipants: [allRemoteParticipants[0], getUnknownContact()],
+          peekedParticipants: [participant1, getUnknownContact()],
         }),
         callLink: FAKE_CALL_LINK,
       })}
@@ -362,7 +370,7 @@ export function CallLinkLobbyParticipants1Known2Unknown(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           peekedParticipants: [
             getUnknownContact(),
-            allRemoteParticipants[0],
+            participant1,
             getUnknownContact(),
           ],
         }),
@@ -373,9 +381,7 @@ export function CallLinkLobbyParticipants1Known2Unknown(): JSX.Element {
 }
 
 export function CallLinkLobbyParticipants1Known12Unknown(): JSX.Element {
-  const peekedParticipants: Array<ConversationType> = [
-    allRemoteParticipants[0],
-  ];
+  const peekedParticipants: Array<ConversationType> = [participant1];
   for (let n = 12; n > 0; n -= 1) {
     peekedParticipants.push(getUnknownContact());
   }
@@ -415,8 +421,8 @@ export function CallLinkWithJoinRequestsOne(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
-          pendingParticipants: [allRemoteParticipants[1]],
+          peekedParticipants: [participant1],
+          pendingParticipants: [participant2],
           showParticipantsList: false,
         }),
         callLink: FAKE_CALL_LINK_WITH_ADMIN_KEY,
@@ -432,7 +438,7 @@ export function CallLinkWithJoinRequestsTwo(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: allRemoteParticipants.slice(1, 3),
           showParticipantsList: false,
         }),
@@ -449,7 +455,7 @@ export function CallLinkWithJoinRequestsMany(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: allRemoteParticipants.slice(1, 11),
           showParticipantsList: false,
         }),
@@ -466,11 +472,11 @@ export function CallLinkWithJoinRequestUnknownContact(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: [
             getUnknownContact(),
-            allRemoteParticipants[1],
-            allRemoteParticipants[2],
+            participant2,
+            participant3,
           ],
           showParticipantsList: false,
         }),
@@ -487,9 +493,9 @@ export function CallLinkWithJoinRequestsSystemContact(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: [
-            { ...allRemoteParticipants[1], name: 'My System Contact Friend' },
+            { ...participant2, name: 'My System Contact Friend' },
           ],
           showParticipantsList: false,
         }),
@@ -506,11 +512,11 @@ export function CallLinkWithJoinRequestsSystemContactMany(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: [
-            { ...allRemoteParticipants[1], name: 'My System Contact Friend' },
-            allRemoteParticipants[2],
-            allRemoteParticipants[3],
+            { ...participant2, name: 'My System Contact Friend' },
+            participant3,
+            participant4,
           ],
           showParticipantsList: false,
         }),
@@ -527,7 +533,7 @@ export function CallLinkWithJoinRequestsParticipantsOpen(): JSX.Element {
         activeCall: getActiveCallForCallLink({
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
-          peekedParticipants: [allRemoteParticipants[0]],
+          peekedParticipants: [participant1],
           pendingParticipants: allRemoteParticipants.slice(1, 4),
         }),
         callLink: FAKE_CALL_LINK_WITH_ADMIN_KEY,
@@ -544,7 +550,7 @@ export function CallLinkWithUnknownContacts(): JSX.Element {
           connectionState: GroupCallConnectionState.Connected,
           joinState: GroupCallJoinState.Joined,
           remoteParticipants: [
-            allRemoteParticipants[0],
+            participant1,
             getUnknownParticipant(),
             getUnknownParticipant(),
           ],

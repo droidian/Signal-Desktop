@@ -6,18 +6,19 @@ import lodash from 'lodash';
 import EventEmitter from 'node:events';
 import { v4 as getGuid } from 'uuid';
 
-import { Sound, SoundType } from '../util/Sound.std.js';
-import { shouldHideExpiringMessageBody } from '../types/Settings.std.js';
-import { itemStorage as fallbackStorage } from '../textsecure/Storage.preload.js';
-import OS from '../util/os/osMain.node.js';
-import { createLogger } from '../logging/log.std.js';
-import { makeEnumParser } from '../util/enum.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { toLogFormat } from '../types/errors.std.js';
+import { Sound, SoundType } from '../util/Sound.std.ts';
+import { shouldHideExpiringMessageBody } from '../types/Settings.std.ts';
+import { itemStorage as fallbackStorage } from '../textsecure/Storage.preload.ts';
+import OS from '../util/os/osMain.node.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { makeEnumParser } from '../util/enum.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
 import type { StorageInterface } from '../types/Storage.d.ts';
-import type { LocalizerType } from '../types/Util.std.js';
-import { NotificationType } from '../types/notifications.std.js';
-import { drop } from '../util/drop.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { NotificationType } from '../types/notifications.std.ts';
+import { drop } from '../util/drop.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 const { debounce } = lodash;
 
@@ -31,7 +32,12 @@ type NotificationDataType = Readonly<{
   notificationIconUrl?: undefined | string;
   notificationIconAbsolutePath?: undefined | string;
   reaction?: {
-    emoji: string;
+    emoji: Emoji.Variant;
+    targetAuthorAci: string;
+    targetTimestamp: number;
+  };
+  pollVote?: {
+    voterConversationId: string;
     targetAuthorAci: string;
     targetTimestamp: number;
   };
@@ -93,7 +99,7 @@ class NotificationService extends EventEmitter {
   //   to manually close them. This introduces a minimum amount of time between calls,
   //   and batches up the quick successive update() calls we get from an incoming
   //   read sync, which might have a number of messages referenced inside of it.
-  #update: () => unknown;
+  readonly #update: () => unknown;
 
   constructor() {
     super();
@@ -244,20 +250,29 @@ class NotificationService extends EventEmitter {
   // Remove the last notification if both conditions hold:
   //
   // 1. Either `conversationId` or `messageId` matches (if present)
-  // 2. `emoji`, `targetAuthorAci`, `targetTimestamp` matches (if present)
-  public removeBy({
-    conversationId,
-    messageId,
-    emoji,
-    targetAuthorAci,
-    targetTimestamp,
-  }: Readonly<{
-    conversationId?: string;
-    messageId?: string;
-    emoji?: string;
-    targetAuthorAci?: string;
-    targetTimestamp?: number;
-  }>): void {
+  // 2. Reaction: `emoji`, `targetAuthorAci`, `targetTimestamp` matches
+  // 3. Poll vote: `onlyRemoveAssociatedPollVotes` flag is true
+  public removeBy(
+    options: Readonly<
+      {
+        emoji?: Emoji.Variant;
+        targetAuthorAci?: string;
+        targetTimestamp?: number;
+        onlyRemoveAssociatedPollVotes?: boolean;
+      } & (
+        | { conversationId: string; messageId?: string }
+        | { messageId: string; conversationId?: string }
+      )
+    >
+  ): void {
+    const {
+      conversationId,
+      messageId,
+      emoji,
+      targetAuthorAci,
+      targetTimestamp,
+      onlyRemoveAssociatedPollVotes,
+    } = options;
     if (!this.#notificationData) {
       log.info('NotificationService#removeBy: no notification data');
       return;
@@ -280,17 +295,38 @@ class NotificationService extends EventEmitter {
       return;
     }
 
+    // If reaction filters are provided, only remove reaction notifications that match
     const { reaction } = this.#notificationData;
-    if (
-      reaction &&
-      emoji &&
-      targetAuthorAci &&
-      targetTimestamp &&
-      (reaction.emoji !== emoji ||
+    const hasReactionFilters = Boolean(
+      emoji && targetAuthorAci && targetTimestamp
+    );
+    if (hasReactionFilters) {
+      if (!reaction) {
+        // Looking for reactions but this isn't one
+        return;
+      }
+      if (
+        reaction.emoji !== emoji ||
         reaction.targetAuthorAci !== targetAuthorAci ||
-        reaction.targetTimestamp !== targetTimestamp)
-    ) {
-      return;
+        reaction.targetTimestamp !== targetTimestamp
+      ) {
+        // Reaction doesn't match the filter
+        return;
+      }
+    }
+
+    // If onlyRemoveAssociatedPollVotes is true, only remove poll vote notifications
+    // that match the targetAuthorAci and targetTimestamp
+    if (onlyRemoveAssociatedPollVotes && targetAuthorAci && targetTimestamp) {
+      const { pollVote } = this.#notificationData;
+      if (
+        !pollVote ||
+        pollVote.targetAuthorAci !== targetAuthorAci ||
+        pollVote.targetTimestamp !== targetTimestamp
+      ) {
+        // Looking for poll votes but this isn't one
+        return;
+      }
     }
 
     this.clear();
@@ -360,6 +396,7 @@ class NotificationService extends EventEmitter {
       message,
       messageId,
       reaction,
+      pollVote,
       senderTitle,
       storyId,
       sentAt,
@@ -401,6 +438,11 @@ class NotificationService extends EventEmitter {
             sender: senderTitle,
             emoji: reaction.emoji,
             message,
+          });
+        } else if (pollVote) {
+          notificationMessage = i18n('icu:notificationPollVoteMessage', {
+            sender: senderTitle,
+            pollQuestion: message,
           });
         } else {
           notificationMessage = message;

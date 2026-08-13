@@ -3,25 +3,26 @@
 
 import { assert } from 'chai';
 
-import * as Bytes from '../../Bytes.std.js';
+import * as Bytes from '../../Bytes.std.ts';
 import {
   trimForDisplay,
   getRandomBytes,
   decryptProfileName,
   decryptProfile,
-} from '../../Crypto.node.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { encryptProfileData } from '../../util/encryptProfileData.preload.js';
+} from '../../Crypto.node.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { encryptProfileData } from '../../util/encryptProfileData.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 describe('encryptProfileData', () => {
-  let keyBuffer: Uint8Array;
+  let keyBuffer: Uint8Array<ArrayBuffer>;
   let conversation: ConversationType;
 
   beforeEach(() => {
     keyBuffer = getRandomBytes(32);
     conversation = {
-      aboutEmoji: '🐢',
+      aboutEmoji: Emoji.TURTLE,
       aboutText: 'I like turtles',
       familyName: 'Kid',
       firstName: 'Zombie',
@@ -33,7 +34,6 @@ describe('encryptProfileData', () => {
       badges: [],
       id: '',
       isMe: true,
-      sharedGroupNames: [],
       title: '',
       type: 'direct' as const,
     };
@@ -80,7 +80,7 @@ describe('encryptProfileData', () => {
     }
 
     if (encrypted.aboutEmoji) {
-      const decryptedAboutEmojiBytes = await decryptProfile(
+      const decryptedAboutEmojiBytes = decryptProfile(
         Bytes.fromBase64(encrypted.aboutEmoji),
         keyBuffer
       );

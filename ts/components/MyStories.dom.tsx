@@ -1,27 +1,28 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
-import type { MyStoryType, StoryViewType } from '../types/Stories.std.js';
+import { useState, type JSX } from 'react';
+import type { MyStoryType, StoryViewType } from '../types/Stories.std.ts';
 import {
   ResolvedSendStatus,
   StoryViewTargetType,
   StoryViewModeType,
-} from '../types/Stories.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import type { ViewStoryActionCreatorType } from '../state/ducks/stories.preload.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { ContextMenu } from './ContextMenu.dom.js';
-import { MessageTimestamp } from './conversation/MessageTimestamp.dom.js';
-import { StoryDistributionListName } from './StoryDistributionListName.dom.js';
-import { StoryImage } from './StoryImage.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { resolveStorySendStatus } from '../util/resolveStorySendStatus.std.js';
-import { useRetryStorySend } from '../hooks/useRetryStorySend.dom.js';
-import { NavSidebar } from './NavSidebar.dom.js';
-import type { WidthBreakpoint } from './_util.std.js';
-import type { UnreadStats } from '../util/countUnreadStats.std.js';
+} from '../types/Stories.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import type { ViewStoryActionCreatorType } from '../state/ducks/stories.preload.ts';
+import { ContextMenu } from './ContextMenu.dom.tsx';
+import { MessageTimestamp } from './conversation/MessageTimestamp.dom.tsx';
+import { StoryDistributionListName } from './StoryDistributionListName.dom.tsx';
+import { StoryImage } from './StoryImage.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { resolveStorySendStatus } from '../util/resolveStorySendStatus.std.ts';
+import { useRetryStorySend } from '../hooks/useRetryStorySend.dom.tsx';
+import { NavSidebar } from './NavSidebar.dom.tsx';
+import type { WidthBreakpoint } from './_util.std.ts';
+import type { UnreadStats } from '../util/countUnreadStats.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
 
 export type PropsType = {
   i18n: LocalizerType;
@@ -76,22 +77,27 @@ export function MyStories({
 
   return (
     <>
-      {confirmDeleteStory && (
-        <ConfirmationDialog
-          dialogName="MyStories.delete"
-          actions={[
-            {
-              text: i18n('icu:delete'),
-              action: () => onDelete(confirmDeleteStory),
-              style: 'negative',
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => setConfirmDeleteStory(undefined)}
+      <AxoConfirmDialog.Root
+        open={confirmDeleteStory != null}
+        onOpenChange={() => setConfirmDeleteStory(undefined)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:MyStories__delete')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmDeleteStory != null,
+              'Missing confirmDeleteStory'
+            );
+            onDelete(confirmDeleteStory);
+          }}
         >
-          {i18n('icu:MyStories__delete')}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
       <NavSidebar
         i18n={i18n}
         title={i18n('icu:MyStories__title')}

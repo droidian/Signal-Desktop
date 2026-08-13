@@ -1,11 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { CSSProperties, ReactNode } from 'react';
-import React from 'react';
+import type { CSSProperties, ReactNode, JSX } from 'react';
 import { FocusScope } from 'react-aria';
 import classNames from 'classnames';
 import { Button, Dialog, Header, Popover } from 'react-aria-components';
-import { FunScrollerSection } from './FunScroller.dom.js';
+import { FunScrollerSection } from './FunScroller.dom.tsx';
 
 /**
  * Grid Container

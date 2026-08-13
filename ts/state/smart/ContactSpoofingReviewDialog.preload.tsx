@@ -1,29 +1,30 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { memo, useCallback } from 'react';
+import { useSelector, useStore } from 'react-redux';
 import lodash from 'lodash';
-import type { StateType } from '../reducer.preload.js';
-import { ContactSpoofingReviewDialog } from '../../components/conversation/ContactSpoofingReviewDialog.dom.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+import type { StateType } from '../reducer.preload.ts';
+import { ContactSpoofingReviewDialog } from '../../components/conversation/ContactSpoofingReviewDialog.dom.tsx';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 import {
   getConversationSelector,
   getConversationByServiceIdSelector,
   getSafeConversationWithSameTitle,
-} from '../selectors/conversations.dom.js';
-import { getOwn } from '../../util/getOwn.std.js';
-import { assertDev } from '../../util/assert.std.js';
-import { ContactSpoofingType } from '../../util/contactSpoofing.std.js';
-import { getGroupMemberships } from '../../util/getGroupMemberships.dom.js';
-import { isSignalConnection } from '../../util/getSignalConnections.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getSharedGroupNames } from '../../util/sharedGroupNames.dom.ts';
+import { getOwn } from '../../util/getOwn.std.ts';
+import { assertDev } from '../../util/assert.std.ts';
+import { ContactSpoofingType } from '../../util/contactSpoofing.std.ts';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
+import { isSignalConnection } from '../../util/getSignalConnections.preload.ts';
 import {
   getCollisionsFromMemberships,
   invertIdsByTitle,
-} from '../../util/groupMemberNameCollisions.std.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
+} from '../../util/groupMemberNameCollisions.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
 
 const { mapValues } = lodash;
 
@@ -45,7 +46,6 @@ export const SmartContactSpoofingReviewDialog = memo(
       blockConversation,
       deleteConversation,
       removeMember,
-      updateSharedGroups,
     } = useConversationsActions();
     const { showContactModal, toggleSignalConnectionsModal } =
       useGlobalModalActions();
@@ -56,6 +56,14 @@ export const SmartContactSpoofingReviewDialog = memo(
       getConversationByServiceIdSelector
     );
     const conversation = getConversation(conversationId);
+
+    const store = useStore<StateType>();
+    const getSharedGroupNamesForId = useCallback(
+      (convId: string) => {
+        return getSharedGroupNames(store.getState(), convId);
+      },
+      [store]
+    );
 
     // Just binding the options argument
     const safeConversationSelector = useCallback(
@@ -78,7 +86,6 @@ export const SmartContactSpoofingReviewDialog = memo(
       getPreferredBadge,
       i18n,
       removeMember,
-      updateSharedGroups,
       showContactModal,
       toggleSignalConnectionsModal,
       theme,
@@ -100,6 +107,7 @@ export const SmartContactSpoofingReviewDialog = memo(
           conversation: collision,
           isSignalConnection: isSignalConnection(collision),
           oldName: getOwn(previouslyAcknowledgedTitlesById, collision.id),
+          sharedGroupNames: getSharedGroupNamesForId(collision.id),
         }))
       );
 
@@ -127,10 +135,12 @@ export const SmartContactSpoofingReviewDialog = memo(
     const possiblyUnsafe = {
       conversation: possiblyUnsafeConvo,
       isSignalConnection: isSignalConnection(possiblyUnsafeConvo),
+      sharedGroupNames: getSharedGroupNamesForId(possiblyUnsafeConvo.id),
     };
     const safe = {
       conversation: safeConvo,
       isSignalConnection: isSignalConnection(safeConvo),
+      sharedGroupNames: getSharedGroupNamesForId(safeConvo.id),
     };
 
     return (

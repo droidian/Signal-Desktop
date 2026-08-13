@@ -5,21 +5,23 @@ import lodash from 'lodash';
 import { v4 as getGuid } from 'uuid';
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import * as storageShim from '../../shims/storage.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import { drop } from '../../util/drop.std.js';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import * as storageShim from '../../shims/storage.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { drop } from '../../util/drop.std.ts';
 import type {
   ConversationColorType,
   CustomColorType,
-} from '../../types/Colors.std.js';
-import { ConversationColors } from '../../types/Colors.std.js';
-import { reloadSelectedConversation } from '../../shims/reloadSelectedConversation.dom.js';
+} from '../../types/Colors.std.ts';
+import { ConversationColors } from '../../types/Colors.std.ts';
+import { reloadSelectedConversation } from '../../shims/reloadSelectedConversation.dom.ts';
 import type { StorageAccessType } from '../../types/Storage.d.ts';
-import { actions as conversationActions } from './conversations.preload.js';
-import type { ConfigMapType as RemoteConfigType } from '../../RemoteConfig.dom.js';
-import type { EmojiSkinTone } from '../../components/fun/data/emojis.std.js';
+import { actions as conversationActions } from './conversations.preload.ts';
+import type { ConfigMapType as RemoteConfigType } from '../../RemoteConfig.dom.ts';
+import type { StateThunk } from '../types.std.ts';
+import { storageServiceUploadJob } from '../../services/storage.preload.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { omit } = lodash;
 
@@ -81,6 +83,7 @@ export const actions = {
   setGlobalDefaultConversationColor,
   toggleNavTabsCollapse,
   setEmojiSkinToneDefault,
+  onSeenAdminDeleteEducationDialog,
   putItem,
   putItemExternal,
   removeItem,
@@ -106,7 +109,7 @@ function putItem<K extends keyof StorageAccessType>(
 }
 
 function setEmojiSkinToneDefault(
-  emojiSkinToneDefault: EmojiSkinTone
+  emojiSkinToneDefault: Emoji.SkinTone
 ): ThunkAction<void, RootStateType, unknown, ItemPutAction> {
   return putItem('emojiSkinToneDefault', emojiSkinToneDefault);
 }
@@ -284,6 +287,13 @@ function toggleNavTabsCollapse(
 ): ThunkAction<void, RootStateType, unknown, ItemPutAction> {
   return dispatch => {
     dispatch(putItem('navTabsCollapsed', navTabsCollapsed));
+  };
+}
+
+function onSeenAdminDeleteEducationDialog(): StateThunk<ItemPutAction> {
+  return dispatch => {
+    dispatch(putItem('hasSeenAdminDeleteEducationDialog', true));
+    storageServiceUploadJob({ reason: 'onSeenAdminDeleteEducationDialog' });
   };
 }
 

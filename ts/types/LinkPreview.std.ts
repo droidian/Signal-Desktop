@@ -4,22 +4,21 @@
 import lodash from 'lodash';
 // This file gets imported into renderer that does not have access to Node.js
 // builtins, use an `npm` package.
-// eslint-disable-next-line import/enforce-node-protocol-usage
+// oxlint-disable-next-line unicorn/prefer-node-protocol
 import nodeUrl from 'url';
 import LinkifyIt from 'linkify-it';
 
-import { maybeParseUrl } from '../util/url.std.js';
-import { replaceEmojiWithSpaces } from '../util/emoji.std.js';
-import { count } from '../util/grapheme.std.js';
+import { maybeParseUrl } from '../util/url.std.ts';
 
-import type { AttachmentWithHydratedData } from './Attachment.std.js';
+import type { AttachmentWithHydratedData } from './Attachment.std.ts';
 import {
   artAddStickersRoute,
   groupInvitesRoute,
   linkCallRoute,
-} from '../util/signalRoutes.std.js';
-import type { Backups } from '../protobuf/index.std.js';
-import type { LinkPreviewType } from './message/LinkPreviews.std.js';
+} from '../util/signalRoutes.std.ts';
+import type { Backups } from '../protobuf/index.std.ts';
+import type { LinkPreviewType } from './message/LinkPreviews.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { isNumber, compact, isEmpty, range } = lodash;
 
@@ -32,10 +31,6 @@ export type LinkPreviewResult = {
   description: string | null;
   date: number | null;
 };
-
-export type LinkPreviewWithDomain = {
-  domain: string;
-} & LinkPreviewResult;
 
 export enum LinkPreviewSourceType {
   Composer,
@@ -73,15 +68,15 @@ export function shouldPreviewHref(href: string): boolean {
   const url = maybeParseUrl(href);
   return Boolean(
     url &&
-      url.protocol === 'https:' &&
-      !isDomainExcluded(url) &&
-      !isLinkSneaky(href)
+    url.protocol === 'https:' &&
+    !isDomainExcluded(url) &&
+    isLinkSneaky(href) === false
   );
 }
 
 export function isValidLinkPreview(
   urlsInBody: Array<string>,
-  preview: LinkPreviewType | Backups.ILinkPreview,
+  preview: LinkPreviewType | Backups.LinkPreview.Params,
   { isStory }: { isStory: boolean }
 ): boolean {
   const { url } = preview;
@@ -164,9 +159,11 @@ export function findLinks(text: string, caretLocation?: number): Array<string> {
   }
 
   const haveCaretLocation = isNumber(caretLocation);
-  const textLength = count(text || '');
+  const textWithoutEmoji = Emoji.replaceEmojiWithOneSpace(text);
+  const textLength = textWithoutEmoji.length;
 
-  const matches = linkify.match(text ? replaceEmojiWithSpaces(text) : '') || [];
+  const matches = linkify.match(textWithoutEmoji) ?? [];
+
   return compact(
     matches.map(match => {
       if (!haveCaretLocation) {
@@ -208,65 +205,72 @@ export function getDomain(href: string): string {
 }
 
 // See <https://tools.ietf.org/html/rfc3986>.
-const VALID_URI_CHARACTERS = new Set([
-  '%',
-  // "gen-delims"
-  ':',
-  '/',
-  '?',
-  '#',
-  '[',
-  ']',
-  '@',
-  // "sub-delims"
-  '!',
-  '$',
-  '&',
-  "'",
-  '(',
-  ')',
-  '*',
-  '+',
-  ',',
-  ';',
-  '=',
-  // unreserved
-  ...String.fromCharCode(...range(65, 91), ...range(97, 123)),
-  ...range(10).map(String),
-  '-',
-  '.',
-  '_',
-  '~',
-]);
+const VALID_URI_CHARACTERS = new RegExp(
+  '^(' +
+    [
+      '%',
+      // "gen-delims"
+      ':',
+      '/',
+      '?',
+      '#',
+      '[',
+      ']',
+      '@',
+      // "sub-delims"
+      '!',
+      '$',
+      '&',
+      "'",
+      '(',
+      ')',
+      '*',
+      '+',
+      ',',
+      ';',
+      '=',
+      // unreserved
+      // oxlint-disable-next-line typescript/no-misused-spread
+      ...String.fromCharCode(...range(65, 91), ...range(97, 123)),
+      ...range(10).map(String),
+      '-',
+      '.',
+      '_',
+      '~',
+    ]
+      .map(ch => RegExp.escape(ch))
+      .join('|') +
+    ')*$'
+);
 const ASCII_PATTERN = /[\u0020-\u007F]/g;
 const MAX_HREF_LENGTH = 2 ** 12;
 
-export function isLinkSneaky(href: string): boolean {
+export function isLinkSneaky(href: string): 'yes' | 'maybe' | false {
   // This helps users avoid extremely long links (which could be hiding something
   //   sketchy) and also sidesteps the performance implications of extremely long hrefs.
   if (href.length > MAX_HREF_LENGTH) {
-    return true;
+    return 'yes';
   }
 
   if (UNICODE_DRAWING.test(href)) {
-    return true;
+    return 'yes';
   }
 
   const url = maybeParseUrl(href);
 
   // If we can't parse it, it's sneaky.
   if (!url) {
-    return true;
+    return 'yes';
   }
 
   // Any links which contain auth are considered sneaky
   if (url.username || url.password) {
-    return true;
+    return 'yes';
   }
 
   // If the domain is falsy, something fishy is going on
   if (!url.hostname) {
-    return true;
+    return 'yes';
   }
 
   // To quote [RFC 1034][0]: "the total number of octets that represent a
@@ -275,18 +279,18 @@ export function isLinkSneaky(href: string): boolean {
   //   which isn't exactly the same thing as the number of octets.)
   // [0]: https://tools.ietf.org/html/rfc1034
   if (url.hostname.length > 2048) {
-    return true;
+    return 'yes';
   }
 
   // Domains cannot contain encoded characters
   if (url.hostname.includes('%')) {
-    return true;
+    return 'yes';
   }
 
   // There must be at least 2 domain labels, and none of them can be empty.
   const labels = url.hostname.split('.');
   if (labels.length < 2 || labels.some(isEmpty)) {
-    return true;
+    return 'yes';
   }
 
   // This is necessary because getDomain returns domains in punycode form.
@@ -301,7 +305,7 @@ export function isLinkSneaky(href: string): boolean {
 
   const isMixed = hasASCII && withoutASCII.length > 0;
   if (isMixed) {
-    return true;
+    return 'yes';
   }
 
   // We can't use `url.pathname` (and so on) because it automatically encodes strings.
@@ -309,7 +313,9 @@ export function isLinkSneaky(href: string): boolean {
   const startOfPathAndHash = href.indexOf('/', url.protocol.length + 4);
   const pathAndHash =
     startOfPathAndHash === -1 ? '' : href.substr(startOfPathAndHash);
-  return [...pathAndHash].some(
-    character => !VALID_URI_CHARACTERS.has(character)
-  );
+  if (!VALID_URI_CHARACTERS.test(pathAndHash)) {
+    return 'maybe';
+  }
+
+  return false;
 }

@@ -14,13 +14,13 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
-import { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { BootstrapOptions } from '../bootstrap.node.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { artAddStickersRoute } from '../../util/signalRoutes.std.js';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.node.js';
+import { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { BootstrapOptions } from '../bootstrap.node.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { artAddStickersRoute } from '../../util/signalRoutes.std.ts';
+import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.node.ts';
 
 const { range } = lodash;
 
@@ -61,7 +61,7 @@ export async function initStorage(
     // Populate storage service
     const { contacts, phone } = bootstrap;
 
-    const [firstContact] = contacts;
+    const [firstContact] = contacts as [PrimaryDevice];
 
     const members = [...contacts].slice(0, GROUP_SIZE);
 
@@ -104,6 +104,8 @@ export async function initStorage(
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+          deletedAtTimestamp: null,
+          recipientServiceIdsBinary: null,
         },
       },
     });
@@ -120,6 +122,9 @@ export async function initStorage(
           includeAllIndividualChats: true,
           includeAllGroupChats: true,
           folderType: Proto.ChatFolderRecord.FolderType.ALL,
+          includedRecipients: null,
+          excludedRecipients: null,
+          deletedAtTimestampMs: null,
         },
       },
     });
@@ -132,12 +137,12 @@ export async function initStorage(
     const { desktop } = bootstrap;
 
     // Send a message to the group and the first contact
-    const contactSend = contacts[0].sendText(desktop, 'hello from contact', {
+    const contactSend = contacts[0]?.sendText(desktop, 'hello from contact', {
       timestamp: bootstrap.getTimestamp(),
       sealed: true,
     });
 
-    const groupSend = members[0].sendText(desktop, 'hello in group', {
+    const groupSend = members[0]?.sendText(desktop, 'hello in group', {
       timestamp: bootstrap.getTimestamp(),
       sealed: true,
       group,
@@ -157,12 +162,12 @@ export const FIXTURES = path.join(__dirname, '..', '..', '..', 'fixtures');
 export const EMPTY = new Uint8Array(0);
 
 export type StickerPackType = Readonly<{
-  id: Buffer;
-  key: Buffer;
+  id: Buffer<ArrayBuffer>;
+  key: Buffer<ArrayBuffer>;
   stickerCount: number;
 }>;
 
-export const STICKER_PACKS: ReadonlyArray<StickerPackType> = [
+export const STICKER_PACKS = [
   {
     id: Buffer.from('c40ed069cdc2b91eccfccf25e6bcddfc', 'hex'),
     key: Buffer.from(
@@ -179,7 +184,7 @@ export const STICKER_PACKS: ReadonlyArray<StickerPackType> = [
     ),
     stickerCount: 1,
   },
-];
+] as const satisfies ReadonlyArray<StickerPackType>;
 
 export function getStickerPackLink(pack: StickerPackType): string {
   return artAddStickersRoute
@@ -190,14 +195,22 @@ export function getStickerPackLink(pack: StickerPackType): string {
     .toString();
 }
 
+type StickerRecord = StorageStateRecord<{
+  stickerPack: Proto.StickerPackRecord.Params;
+}>;
+
 export function getStickerPackRecordPredicate(
   pack: StickerPackType
-): (record: StorageStateRecord) => boolean {
-  return ({ type, record }: StorageStateRecord): boolean => {
+): (record: StorageStateRecord) => record is StickerRecord {
+  return (stateRecord: StorageStateRecord): stateRecord is StickerRecord => {
+    const { type, record } = stateRecord;
+    if (record.stickerPack == null) {
+      return false;
+    }
     if (type !== IdentifierType.STICKER_PACK) {
       return false;
     }
-    return pack.id.equals(record.stickerPack?.packId ?? EMPTY);
+    return pack.id.equals(record.stickerPack.packId ?? EMPTY);
   };
 }
 
@@ -226,11 +239,20 @@ export async function storeStickerPacks(
   );
 }
 
+type CallLinkRecord = StorageStateRecord<{
+  callLink: Proto.CallLinkRecord.Params;
+}>;
+
 export function getCallLinkRecordPredicate(
   roomId: string
-): (record: StorageStateRecord) => boolean {
-  return ({ type, record }: StorageStateRecord): boolean => {
-    const rootKeyBytes = record.callLink?.rootKey;
+): (record: StorageStateRecord) => record is CallLinkRecord {
+  return (stateRecord: StorageStateRecord): stateRecord is CallLinkRecord => {
+    const { type, record } = stateRecord;
+    if (record.callLink == null) {
+      return false;
+    }
+
+    const rootKeyBytes = record.callLink.rootKey;
     if (type !== IdentifierType.CALL_LINK || rootKeyBytes == null) {
       return false;
     }
@@ -240,20 +262,28 @@ export function getCallLinkRecordPredicate(
   };
 }
 
+type ChatFolderRecord = StorageStateRecord<{
+  chatFolder: Proto.ChatFolderRecord.Params;
+}>;
+
 export function getChatFolderRecordPredicate(
   folderType: keyof typeof Proto.ChatFolderRecord.FolderType,
   name: string,
   deleted: boolean
-): (record: StorageStateRecord) => boolean {
-  return ({ type, record }) => {
+): (record: StorageStateRecord) => record is ChatFolderRecord {
+  return (stateRecord): stateRecord is ChatFolderRecord => {
+    const { type, record } = stateRecord;
+    if (record.chatFolder == null) {
+      return false;
+    }
+
     const { chatFolder } = record;
     if (type !== IdentifierType.CHAT_FOLDER || chatFolder == null) {
       return false;
     }
 
-    const deletedAtTimestampMs =
-      chatFolder.deletedAtTimestampMs?.toNumber() ?? 0;
-    const isDeleted = deletedAtTimestampMs > 0;
+    const deletedAtTimestampMs = chatFolder.deletedAtTimestampMs ?? 0n;
+    const isDeleted = deletedAtTimestampMs > 0n;
 
     return (
       chatFolder.folderType === Proto.ChatFolderRecord.FolderType[folderType] &&

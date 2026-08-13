@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode, ErrorInfo } from 'react';
-import React from 'react';
+import { PureComponent } from 'react';
 
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { ToastType } from '../types/Toast.dom.js';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { ToastType } from '../types/Toast.dom.tsx';
 
 const log = createLogger('ErrorBoundary');
 
@@ -20,7 +20,7 @@ export type State = {
   error?: Error;
 };
 
-export class ErrorBoundary extends React.PureComponent<Props, State> {
+export class ErrorBoundary extends PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 

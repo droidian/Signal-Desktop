@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { useSelector } from 'react-redux';
-import type { PropsType as GroupV2JoinDialogPropsType } from '../../components/GroupV2JoinDialog.dom.js';
-import { GroupV2JoinDialog } from '../../components/GroupV2JoinDialog.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import { getPreJoinConversation } from '../selectors/conversations.dom.js';
+import type { PropsType as GroupV2JoinDialogPropsType } from '../../components/GroupV2JoinDialog.dom.tsx';
+import { GroupV2JoinDialog } from '../../components/GroupV2JoinDialog.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getPreJoinConversation } from '../selectors/conversations.dom.ts';
 
 export type SmartGroupV2JoinDialogProps = Pick<
   GroupV2JoinDialogPropsType,

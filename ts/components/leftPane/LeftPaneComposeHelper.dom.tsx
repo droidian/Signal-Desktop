@@ -1,24 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild, ChangeEvent } from 'react';
-import React from 'react';
+import type { ReactNode, ChangeEvent } from 'react';
 
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { ContactListItemConversationType } from '../conversationList/ContactListItem.dom.js';
-import { SearchInput } from '../SearchInput.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.js';
-import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.js';
-import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.js';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { ContactListItemConversationType } from '../conversationList/ContactListItem.dom.tsx';
+import { SearchInput } from '../SearchInput.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.ts';
+import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.ts';
+import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.ts';
 import {
   isFetchingByUsername,
   isFetchingByE164,
-} from '../../util/uuidFetchState.std.js';
-import type { GroupListItemConversationType } from '../conversationList/GroupListItem.dom.js';
-import { isProbablyAUsername } from '../../util/Username.dom.js';
+} from '../../util/uuidFetchState.std.ts';
+import type { GroupListItemConversationType } from '../conversationList/GroupListItem.dom.tsx';
+import { isProbablyAUsername } from '../../util/Username.dom.ts';
 
 export type LeftPaneComposePropsType = {
   composeContacts: ReadonlyArray<ContactListItemConversationType>;
@@ -35,6 +34,7 @@ enum TopButtons {
   Visible = 'Visible',
 }
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneComposeHelper extends LeftPaneHelper<LeftPaneComposePropsType> {
   readonly #composeContacts: ReadonlyArray<ContactListItemConversationType>;
   readonly #composeGroups: ReadonlyArray<GroupListItemConversationType>;
@@ -82,7 +82,7 @@ export class LeftPaneComposeHelper extends LeftPaneHelper<LeftPaneComposePropsTy
   }: Readonly<{
     i18n: LocalizerType;
     showInbox: () => void;
-  }>): ReactChild {
+  }>): ReactNode {
     return (
       <div className="module-left-pane__header__contents">
         <button
@@ -111,7 +111,7 @@ export class LeftPaneComposeHelper extends LeftPaneHelper<LeftPaneComposePropsTy
     onChangeComposeSearchTerm: (
       event: ChangeEvent<HTMLInputElement>
     ) => unknown;
-  }>): ReactChild {
+  }>): ReactNode {
     return (
       <SearchInput
         i18n={i18n}
@@ -128,7 +128,7 @@ export class LeftPaneComposeHelper extends LeftPaneHelper<LeftPaneComposePropsTy
     i18n,
   }: Readonly<{
     i18n: LocalizerType;
-  }>): ReactChild | null {
+  }>): ReactNode | null {
     return this.getRowCount() ? null : (
       <div className="module-left-pane__compose-no-contacts">
         {i18n('icu:noConversationsFound')}

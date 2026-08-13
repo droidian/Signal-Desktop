@@ -1,16 +1,16 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
-import type { TypingBubblePropsType } from './TypingBubble.dom.js';
-import { TypingBubble } from './TypingBubble.dom.js';
-import { AvatarColors } from '../../types/Colors.std.js';
-import { getFakeBadge } from '../../test-helpers/getFakeBadge.std.js';
-import { ThemeType } from '../../types/Util.std.js';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import type { TypingBubblePropsType } from './TypingBubble.dom.tsx';
+import { TypingBubble } from './TypingBubble.dom.tsx';
+import { AvatarColors } from '../../types/Colors.std.ts';
+import { getFakeBadge } from '../../test-helpers/getFakeBadge.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
 
 const { times } = lodash;
 
@@ -34,7 +34,6 @@ const CONTACTS = times(10, index => {
     phoneNumber: '(202) 555-0001',
     profileName: `${letter} ${letter}`,
     isMe: false,
-    sharedGroupNames: [],
     title: `${letter} ${letter}`,
   });
 });

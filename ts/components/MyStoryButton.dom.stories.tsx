@@ -1,18 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { Meta, ReactRenderer, StoryFn } from '@storybook/react';
-import type { PlayFunction } from '@storybook/csf';
-import React from 'react';
+import type { Meta, StoryFn } from '@storybook/react';
 import { expect, fn, within, userEvent } from '@storybook/test';
-
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './MyStoryButton.dom.js';
-import { MyStoryButton } from './MyStoryButton.dom.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { getFakeMyStory } from '../test-helpers/getFakeStory.dom.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
-import { ResolvedSendStatus } from '../types/Stories.std.js';
+import type { PropsType } from './MyStoryButton.dom.tsx';
+import { MyStoryButton } from './MyStoryButton.dom.tsx';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { getFakeMyStory } from '../test-helpers/getFakeStory.dom.tsx';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
+import { ResolvedSendStatus } from '../types/Stories.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -30,10 +27,9 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => <MyStoryButton {...args} />;
 
-const interactionTest: PlayFunction<ReactRenderer, PropsType> = async ({
+const interactionTest: StoryFn<PropsType>['play'] = async ({
   args,
   canvasElement,
 }) => {

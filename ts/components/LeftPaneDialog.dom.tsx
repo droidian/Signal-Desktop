@@ -1,11 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild, ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX, MouseEvent, KeyboardEvent } from 'react';
 import classNames from 'classnames';
-import { Tooltip, TooltipPlacement } from './Tooltip.dom.js';
-import { WidthBreakpoint } from './_util.std.js';
+import { Tooltip, TooltipPlacement } from './Tooltip.dom.tsx';
+import { WidthBreakpoint } from './_util.std.ts';
 
 const BASE_CLASS_NAME = 'LeftPaneDialog';
 const TOOLTIP_CLASS_NAME = `${BASE_CLASS_NAME}__tooltip`;
@@ -59,14 +58,14 @@ export function LeftPaneDialog({
   onClose,
   closeLabel,
 }: PropsType): JSX.Element {
-  const onClickWrap = (e: React.MouseEvent) => {
+  const onClickWrap = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     onClick?.();
   };
 
-  const onKeyDownWrap = (e: React.KeyboardEvent) => {
+  const onKeyDownWrap = (e: KeyboardEvent) => {
     if (e.key !== 'Enter' && e.key !== ' ') {
       return;
     }
@@ -77,7 +76,7 @@ export function LeftPaneDialog({
     onClick?.();
   };
 
-  const onCloseWrap = (e: React.MouseEvent) => {
+  const onCloseWrap = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -151,7 +150,7 @@ export function LeftPaneDialog({
     </>
   );
 
-  let dialogNode: ReactChild;
+  let dialogNode: ReactNode;
   if (onClick) {
     dialogNode = (
       <div
@@ -209,7 +208,7 @@ export function LeftPaneDialogIconBackground({
   children,
 }: {
   type?: 'warning';
-  children: React.ReactNode;
+  children: ReactNode;
 }): JSX.Element {
   return (
     <div

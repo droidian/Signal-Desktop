@@ -1,9 +1,9 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { PanelType } from '../types/Panels.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { PanelType } from '../types/Panels.std.ts';
 
 const log = createLogger('getConversationTitleForPanelType');
 
@@ -16,7 +16,7 @@ export function getConversationTitleForPanelType(
   }
 
   if (panelType === PanelType.AllMedia) {
-    return i18n('icu:allMedia');
+    return undefined;
   }
 
   if (panelType === PanelType.ChatColorEditor) {
@@ -24,15 +24,19 @@ export function getConversationTitleForPanelType(
   }
 
   if (panelType === PanelType.ContactDetails) {
-    return '';
+    return undefined;
   }
 
   if (panelType === PanelType.ConversationDetails) {
-    return '';
+    return undefined;
   }
 
   if (panelType === PanelType.GroupInvites) {
     return i18n('icu:ConversationDetails--requests-and-invites');
+  }
+
+  if (panelType === PanelType.GroupMemberLabelEditor) {
+    return i18n('icu:ConversationDetails--member-label');
   }
 
   if (panelType === PanelType.GroupLinkManagement) {
@@ -47,8 +51,12 @@ export function getConversationTitleForPanelType(
     return i18n('icu:ConversationDetails--notifications');
   }
 
+  if (panelType === PanelType.PinnedMessages) {
+    return i18n('icu:PinnedMessagesPanel__Title');
+  }
+
   if (panelType === PanelType.StickerManager) {
-    return '';
+    return undefined;
   }
 
   if (

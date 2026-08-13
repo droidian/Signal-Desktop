@@ -1,10 +1,10 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { memo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ShortcutGuide } from './ShortcutGuide.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ShortcutGuide } from './ShortcutGuide.dom.tsx';
 
 export type PropsType = {
   platform: string;
@@ -12,13 +12,13 @@ export type PropsType = {
   readonly i18n: LocalizerType;
 };
 
-export const ShortcutGuideModal = React.memo(function ShortcutGuideModalInner(
+export const ShortcutGuideModal = memo(function ShortcutGuideModalInner(
   props: PropsType
 ) {
   const { i18n, closeShortcutGuideModal, platform } = props;
-  const [root, setRoot] = React.useState<HTMLElement | null>(null);
+  const [root, setRoot] = useState<HTMLElement | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const div = document.createElement('div');
     document.body.appendChild(div);
     setRoot(div);

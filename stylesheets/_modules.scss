@@ -21,7 +21,6 @@
 }
 
 .module-title-bar-drag-area {
-  -webkit-app-region: drag;
   height: var(--title-bar-drag-area-height);
   inset-inline-start: 0;
   position: fixed;
@@ -41,18 +40,10 @@
   margin-block: 24px;
   margin-inline: 0;
 
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/signal-logo.svg',
-      variables.$color-ultramarine-logo
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/signal-logo.svg',
-      variables.$color-white
-    );
-  }
+  @include mixins.color-svg(
+    '../images/signal-logo.svg',
+    light-dark(variables.$color-ultramarine-logo, variables.$color-white)
+  );
 
   &.module-splash-screen__logo--128 {
     height: 128px;
@@ -160,7 +151,8 @@
   opacity: 0;
 }
 
-.module-message:hover .module-message__buttons {
+.module-message:hover .module-message__buttons,
+.module-message__buttons:has([data-axo-contextmenu-state='open']) {
   opacity: 1;
 }
 
@@ -463,25 +455,14 @@ $message-padding-horizontal: 12px;
 }
 
 .module-message__container--outgoing {
-  @include mixins.light-theme {
-    background-color: variables.$color-ultramarine;
-    color: variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-ultramarine;
-    color: variables.$color-gray-05;
-  }
+  background: var(--axo-color-surface-message-outgoing);
+  color: var(--axo-color-label-primary-oncolor);
 }
 
 // In case the color gets messed up
 .module-message__container--incoming {
-  background-color: variables.$color-gray-05;
-  color: variables.$color-gray-90;
-
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-75;
-    color: variables.$color-gray-05;
-  }
+  background: var(--axo-color-surface-message-incoming);
+  color: var(--axo-color-label-primary);
 }
 
 @each $color, $value in variables.$conversation-colors {
@@ -526,8 +507,6 @@ $message-padding-horizontal: 12px;
 }
 
 .module-message__attachment-too-big {
-  user-select: none;
-
   margin-inline: -$message-padding-horizontal;
   margin-top: -$message-padding-vertical;
   margin-bottom: -$message-padding-vertical;
@@ -675,7 +654,6 @@ $message-padding-horizontal: 12px;
   @include mixins.button-reset;
 
   & {
-    user-select: none;
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -709,7 +687,6 @@ $message-padding-horizontal: 12px;
 .module-message__simple-attachment__icon__extension {
   @include mixins.font-subtitle;
   text-transform: lowercase;
-  user-select: none;
 
   // Along with flow layout in parent item, centers text
   text-align: center;
@@ -740,7 +717,6 @@ $message-padding-horizontal: 12px;
   @include mixins.font-body-1-bold;
 
   margin-top: 2px;
-  user-select: none;
   font-weight: 500;
 
   // Handling really long filenames - cut them off
@@ -795,7 +771,6 @@ $message-padding-horizontal: 12px;
   @include mixins.font-body-small;
 
   margin-top: 2px;
-  user-select: none;
   white-space: no-wrap;
 
   @include mixins.light-theme {
@@ -991,14 +966,12 @@ $message-padding-horizontal: 12px;
   }
 }
 
-.module-message__link-preview__icon_container {
-  margin: -2px;
-  margin-inline-end: 8px;
-  display: inline-block;
-}
+.module-message__link-preview__text {
+  min-width: 0;
 
-.module-message__link-preview__text--with-icon {
-  margin-top: 5px;
+  &--with-icon {
+    margin-top: 5px;
+  }
 }
 
 .module-message__link-preview__title {
@@ -1026,8 +999,7 @@ $message-padding-horizontal: 12px;
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
+  word-break: auto-phrase;
 
   @include mixins.light-theme {
     color: variables.$color-gray-90;
@@ -1069,24 +1041,17 @@ $message-padding-horizontal: 12px;
 }
 
 .module-message__author {
-  @include mixins.font-body-2-bold;
+  @include mixins.font-body-small-bold;
 
-  height: 18px;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
-  user-select: none;
+  margin-bottom: 3px;
 }
 
 .module-message__author_with_sticker {
-  @include mixins.font-body-2-bold;
+  @include mixins.font-body-small-bold;
 
-  height: 18px;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  min-height: 18px;
 
   // Stickers are pretty narrow, so we allow this one element of a sticker
   //   message to go wider than normal.
@@ -1102,14 +1067,18 @@ $message-padding-horizontal: 12px;
   }
 }
 
+.module-message__author--with-quote {
+  margin-bottom: 3px;
+}
+
 .module-message__text {
   @include mixins.font-body-1;
 
   text-align: start;
   overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
+  word-break: auto-phrase;
   white-space: pre-wrap;
+  user-select: text;
 
   @include mixins.light-theme {
     color: variables.$color-white-alpha-90;
@@ -1181,23 +1150,33 @@ $message-padding-horizontal: 12px;
   @include mixins.font-body-1-italic;
 }
 .module-message__text--delete-for-everyone {
-  user-select: none;
-
-  @include mixins.light-theme {
-    color: variables.$color-gray-90;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-05;
-  }
+  color: light-dark(variables.$color-gray-60, variables.$color-gray-25);
 }
 
 .module-message__metadata {
+  @include mixins.font-caption;
+
   align-items: center;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
   margin-top: 3px;
   font-style: normal;
+  white-space: nowrap;
+  color: var(--axo-color-label-secondary);
+
+  &--outgoing {
+    color: var(--axo-color-label-secondary-oncolor);
+  }
+
+  &--outline-only-bubble,
+  &--sticker {
+    color: light-dark(variables.$color-gray-60, variables.$color-gray-25);
+  }
+
+  &--with-image-no-caption {
+    color: light-dark(variables.$color-white, variables.$color-white-alpha-80);
+  }
 
   &--inline {
     float: inline-end;
@@ -1210,43 +1189,14 @@ $message-padding-horizontal: 12px;
 .module-message__metadata__edited {
   @include mixins.button-reset;
   & {
-    @include mixins.font-caption;
-    color: variables.$color-gray-60;
     cursor: pointer;
     margin-inline-end: 6px;
     z-index: variables.$z-index-base;
   }
-
-  @include mixins.dark-theme {
-    color: variables.$color-gray-25;
-  }
 }
 
 .module-message__metadata__sms {
-  width: 12px;
-  height: 12px;
-  display: inline-block;
   margin-inline-start: 6px;
-  // High margin to leave space for the increase when we go to two checks
-  margin-bottom: 2px;
-
-  @include mixins.color-svg(
-    '../images/icons/v2/lock-unlock-outline-12.svg',
-    variables.$color-white
-  );
-}
-
-.module-message__metadata__sms--incoming {
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-25;
-  }
-}
-
-.module-message__container--outgoing .module-message__metadata__edited {
-  color: variables.$color-white-alpha-80;
 }
 
 // With an image and no caption, this section needs to be on top of the image overlay
@@ -1264,61 +1214,8 @@ $message-padding-horizontal: 12px;
   pointer-events: none;
 }
 
-.module-message__metadata--outline-only-bubble {
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-25;
-  }
-}
-
-.module-message__metadata__date {
-  @include mixins.font-caption;
-  user-select: none;
-  white-space: nowrap;
-
-  @include mixins.light-theme {
-    color: variables.$color-white-alpha-80;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-white-alpha-80;
-  }
-}
 .module-message__metadata__tapable {
   @include mixins.button-reset;
-}
-.module-message__metadata__date--incoming {
-  color: variables.$color-white-alpha-80;
-
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-25;
-  }
-}
-.module-message__metadata__date--with-image-no-caption {
-  @include mixins.light-theme {
-    color: variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-white-alpha-80;
-  }
-}
-.module-message__metadata__date--outline-only-bubble {
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-25;
-  }
-}
-
-.module-message__metadata__date--with-sticker {
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-  }
 }
 
 .module-message__metadata__status-icon {
@@ -1337,41 +1234,25 @@ $message-padding-horizontal: 12px;
   }
   @include mixins.color-svg(
     '../images/icons/v3/message_status/messagestatus-sending.svg',
-    variables.$color-white
+    currentColor
   );
 }
 
 .module-message__metadata__status-icon--sent {
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-sent.svg',
-      variables.$color-white-alpha-80
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-sent.svg',
-      variables.$color-white-alpha-80
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/message_status/messagestatus-sent.svg',
+    currentColor
+  );
 }
 .module-message__metadata__status-icon--delivered {
   // We reduce the margin size to keep the overall width the same
   margin-inline-end: 0px;
   width: 18px;
 
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-delivered.svg',
-      variables.$color-white-alpha-80
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-delivered.svg',
-      variables.$color-white-alpha-80
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/message_status/messagestatus-delivered.svg',
+    currentColor
+  );
 }
 .module-message__metadata__status-icon--read,
 .module-message__metadata__status-icon--viewed {
@@ -1379,42 +1260,15 @@ $message-padding-horizontal: 12px;
   margin-inline-end: 0px;
   width: 18px;
 
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-read.svg',
-      variables.$color-white-alpha-80
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/message_status/messagestatus-read.svg',
-      variables.$color-white-alpha-80
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/message_status/messagestatus-read.svg',
+    currentColor
+  );
 }
 
 // When status indicators are overlaid on top of an image, they use different colors
 .module-message__metadata__status-icon--with-image-no-caption {
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-02;
-  }
-  @include mixins.light-theme {
-    background-color: variables.$color-white;
-  }
-}
-.module-message__metadata__status-icon--with-sticker {
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-}
-
-.module-message__metadata__status-icon--outline-only-bubble {
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-25;
-  }
+  color: light-dark(variables.$color-white, variables.$color-gray-02);
 }
 
 .module-message__metadata__spinner-container {
@@ -1565,7 +1419,6 @@ $message-padding-horizontal: 12px;
 
   &__container {
     cursor: default;
-    user-select: none;
   }
 
   &__ribbon-horizontal {
@@ -1635,10 +1488,6 @@ $message-padding-horizontal: 12px;
 .module-message__redeemed-gift-badge {
   display: flex;
   flex-direction: row;
-
-  &__container {
-    user-select: none;
-  }
 
   &__badge {
     height: 64px;
@@ -1848,7 +1697,6 @@ $message-padding-horizontal: 12px;
   z-index: variables.$z-index-above-base;
   height: 22px;
   display: flex;
-  user-select: none;
 
   &--incoming {
     align-self: flex-end;
@@ -1976,81 +1824,17 @@ $message-padding-horizontal: 12px;
   display: inline-block;
   margin-inline-start: 6px;
   margin-bottom: 2px;
-
-  & {
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/message_timer/messagetimer-60.svg',
-        variables.$color-white-alpha-80
-      );
-    }
-  }
-  & {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/message_timer/messagetimer-60.svg',
-        variables.$color-white-alpha-80
-      );
-    }
-  }
 }
 
-$timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
-  '00';
+$timer-icons:
+  '60', '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05', '00';
 
 @each $timer-icon in $timer-icons {
   .module-expire-timer--#{$timer-icon} {
-    & {
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/message_timer/messagetimer-#{$timer-icon}.svg',
-          variables.$color-white-alpha-80
-        );
-      }
-    }
-    & {
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/message_timer/messagetimer-#{$timer-icon}.svg',
-          variables.$color-white-alpha-80
-        );
-      }
-    }
-  }
-}
-
-.module-expire-timer--incoming {
-  background-color: variables.$color-white-alpha-80;
-
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-25;
-  }
-}
-.module-expire-timer--with-sticker {
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-}
-
-// When status indicators are overlaid on top of an image, they use different colors
-.module-expire-timer--with-image-no-caption {
-  @include mixins.light-theme {
-    background-color: variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-02;
-  }
-}
-
-.module-expire-timer--outline-only-bubble {
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-25;
+    @include mixins.color-svg(
+      '../images/icons/v3/message_timer/messagetimer-#{$timer-icon}.svg',
+      currentColor
+    );
   }
 }
 
@@ -2321,6 +2105,7 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
 
 .module-inline-notification-wrapper {
   outline: none;
+  position: relative;
 
   &:focus {
     @include mixins.keyboard-mode {
@@ -2335,10 +2120,6 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
 // Module: Group Notification
 
 .module-group-notification__contact {
-  font-weight: bold;
-}
-
-.module-safety-number__bold-name {
   font-weight: bold;
 }
 
@@ -2451,7 +2232,6 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
   max-width: 750px;
   margin-block: 0;
   margin-inline: auto;
-  user-select: none;
 
   @at-root .conversation #{&} {
     overflow-y: auto;
@@ -2463,73 +2243,11 @@ button.ConversationDetails__action-button {
   margin-inline-start: 16px;
 }
 
-// Module: Media Gallery
-
-.module-media-gallery {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  width: 100%;
-  height: 100%;
-  outline: none;
-}
-
-.module-media-gallery__content {
-  display: flex;
-  flex-grow: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px;
-}
-
-.module-media-gallery__scroll-observer {
-  position: absolute;
-  bottom: 0;
-  height: 30px;
-  width: 100%;
-
-  &::after {
-    content: '';
-    height: 1px; // Always show the element to not mess with the height of the scroll area
-    display: block;
-  }
-}
-
-.module-media-gallery__sections {
-  min-width: 0;
-
-  display: flex;
-  flex-grow: 1;
-  flex-direction: column;
-}
-
-/* Module: Empty State*/
-
-.module-empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-grow: 1;
-
-  @include mixins.font-title-1;
-
-  color: variables.$color-gray-45;
-}
-
 // Module: Message Request Actions
 
 .module-message-request-actions {
   padding-block: 8px 12px;
   padding-inline: 16px;
-
-  @include mixins.light-theme {
-    background: variables.$color-white;
-  }
-
-  @include mixins.dark-theme {
-    background: variables.$color-gray-95;
-  }
 
   &__message {
     @include mixins.font-body-2;
@@ -2550,20 +2268,6 @@ button.ConversationDetails__action-button {
 
     &__learn-more {
       text-decoration: none;
-    }
-  }
-
-  &__buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-
-    .module-Button {
-      min-width: 80px;
-
-      &:not(:last-of-type) {
-        margin-inline-end: 8px;
-      }
     }
   }
 }
@@ -2795,7 +2499,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/play/play-fill.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .module-image__stop-icon {
@@ -2806,7 +2510,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/stop/stop-fill.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .module-image__download-icon {
@@ -2816,7 +2520,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/arrow/arrow-down.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .module-image__undownloadable-icon {
@@ -2826,7 +2530,7 @@ button.module-image__border-overlay:focus {
   width: 24px;
   @include mixins.color-svg(
     '../images/icons/v3/photo/photo-slash-compact.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }
 
@@ -2861,14 +2565,10 @@ button.module-image__border-overlay:focus {
     );
   }
 
-  & {
-    background-image: url('../images/icons/v3/x/x-compact.svg');
-    filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.6));
-  }
-
-  @include mixins.keyboard-mode {
-    &:focus {
-      outline: 2px solid variables.$color-ultramarine;
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -2884,22 +2584,39 @@ button.module-image__border-overlay:focus {
   gap: 1px;
 }
 
-.module-image-grid__download-pill {
-  @include mixins.position-absolute-center;
+.module-image-grid__download-overlay {
   @include mixins.button-reset;
 
   & {
-    background-color: variables.$color-black-alpha-80;
-    color: variables.$color-white;
-    backdrop-filter: blur(10px);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline: 0;
+    z-index: variables.$z-index-above-above-base;
 
-    height: 44px;
-    border-radius: 44px;
-
-    display: inline-flex;
-    flex-direction: row;
+    display: flex;
     align-items: center;
+    justify-content: center;
   }
+
+  @include mixins.keyboard-mode {
+    &:focus .module-image-grid__download-pill {
+      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
+    }
+  }
+}
+
+.module-image-grid__download-pill {
+  background-color: variables.$color-black-alpha-80;
+  color: variables.$color-white;
+  backdrop-filter: blur(10px);
+
+  height: 44px;
+  border-radius: 44px;
+
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
 }
 .module-image-grid__download_pill__icon-wrapper {
   position: relative;
@@ -3182,7 +2899,11 @@ button.module-image__border-overlay:focus {
 
   @include mixins.staged-attachment-close-button;
 
-  & {
+  &::before {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
     @include mixins.light-theme {
       @include mixins.color-svg(
         '../images/icons/v3/x/x-compact.svg',
@@ -3194,6 +2915,13 @@ button.module-image__border-overlay:focus {
         '../images/icons/v3/x/x-compact.svg',
         variables.$color-gray-45
       );
+    }
+  }
+
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -3232,11 +2960,6 @@ button.module-image__border-overlay:focus {
         background: variables.$color-gray-05;
       }
     }
-    @include mixins.keyboard-mode {
-      &:focus {
-        box-shadow: inset 0 0 0 2px variables.$color-ultramarine;
-      }
-    }
   }
 
   @include mixins.dark-theme {
@@ -3246,9 +2969,11 @@ button.module-image__border-overlay:focus {
       background: variables.$color-gray-75;
     }
   }
-  @include mixins.dark-keyboard-mode {
-    &:focus {
-      box-shadow: inset 0 0 0 2px variables.$color-ultramarine;
+
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -3507,15 +3232,9 @@ button.module-image__border-overlay:focus {
   & {
     @include mixins.light-theme() {
       background: variables.$color-white;
-      ::-webkit-scrollbar-thumb {
-        border-color: variables.$color-white;
-      }
     }
     @include mixins.dark-theme {
       background: variables.$color-gray-75;
-      ::-webkit-scrollbar-thumb {
-        border-color: variables.$color-gray-75;
-      }
     }
   }
 
@@ -3711,7 +3430,6 @@ button.module-image__border-overlay:focus {
     justify-content: center;
     text-align: center;
     transition: opacity 100ms ease-out;
-    user-select: none;
     z-index: variables.$z-index-base;
 
     &::before {
@@ -3783,9 +3501,8 @@ button.module-image__border-overlay:focus {
 }
 .module-ongoing-call {
   &__remote-video-enabled {
-    // TODO: DESKTOP-8537 remove this; we want blurred avatar not all-black letterboxing
-    height: 100%;
-    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
     position: relative;
     &--reconnecting {
       filter: blur(15px);
@@ -3855,6 +3572,7 @@ button.module-image__border-overlay:focus {
 
   &__direct-call-ringing-spacer {
     flex: 1;
+    z-index: -1;
   }
 
   &__direct-call-speaking-indicator {
@@ -3935,12 +3653,7 @@ button.module-image__border-overlay:focus {
         width: 100%;
         max-height: 100%;
         overflow-y: scroll;
-
-        &::-webkit-scrollbar,
-        &::-webkit-scrollbar-thumb {
-          width: 0;
-          background: transparent;
-        }
+        scrollbar-width: none;
       }
 
       & .module-ongoing-call__group-call-remote-participant {
@@ -4224,7 +3937,6 @@ button.module-image__border-overlay:focus {
       height: 60px;
       padding-block: 0 10px;
       padding-inline: 12px;
-      user-select: none;
       width: 100%;
       z-index: variables.$z-index-above-base;
     }
@@ -4237,9 +3949,8 @@ button.module-image__border-overlay:focus {
       max-width: 100%;
 
       &__contact-name {
+        @include mixins.font-body-2-medium;
         flex-grow: 1;
-        font-size: 13px;
-        line-height: 18px;
         color: variables.$color-white;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -4251,6 +3962,11 @@ button.module-image__border-overlay:focus {
       &--clickable {
         @include mixins.button-reset;
       }
+    }
+
+    &__dropdown button {
+      // Matches CallingAudioIndicator
+      background: rgba(variables.$color-gray-80, 0.7);
     }
 
     &--hand-raised &__footer {
@@ -4265,6 +3981,10 @@ button.module-image__border-overlay:focus {
         display: none;
         color: variables.$color-black;
         margin-inline-end: 12px;
+      }
+
+      &:has(.CallingStatusIndicator--NextHandRaised) {
+        background: variables.$color-next-raised-hand;
       }
     }
 
@@ -4323,6 +4043,8 @@ button.module-image__border-overlay:focus {
     position: absolute;
 
     display: flex;
+
+    // 960x720 = 1.333 aspect ratio
     height: 80px;
     width: variables.$calling-local-preview-normal-width;
 
@@ -4340,8 +4062,10 @@ button.module-image__border-overlay:focus {
 
     &--expanded {
       bottom: 112px;
-      height: 200px;
+
+      // 960x720 = 1.333 aspect ratio
       width: 312px;
+      height: 234px;
     }
 
     &--controls-hidden {
@@ -4400,25 +4124,6 @@ button.module-image__border-overlay:focus {
   }
 }
 
-.module-calling-tools {
-  position: absolute;
-  top: calc(32px + var(--title-bar-drag-area-height));
-  inset-inline-end: 0;
-  display: flex;
-
-  &__button {
-    margin-inline-end: 12px;
-  }
-
-  &__button:last-child {
-    margin-inline-end: 24px;
-  }
-  .ContextMenu__container {
-    background: none;
-    text-wrap: nowrap;
-  }
-}
-
 .module-calling-pip {
   backface-visibility: hidden;
   background-color: variables.$color-gray-95;
@@ -4457,7 +4162,6 @@ button.module-image__border-overlay:focus {
       // The avatar image can be dragged on Windows.
       .module-Avatar img {
         -webkit-user-drag: none;
-        -webkit-user-select: none;
       }
 
       .module-calling__background--no-avatar {
@@ -4472,7 +4176,7 @@ button.module-image__border-overlay:focus {
       inset-inline-start: 8px;
       // These are the normal widths; the size will change based on whether the window
       // is large, like the overall pip.
-      height: 54px;
+      height: 60px;
       width: 80px;
 
       border-radius: 12px;
@@ -4482,7 +4186,7 @@ button.module-image__border-overlay:focus {
       video {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
       }
     }
 
@@ -4493,14 +4197,18 @@ button.module-image__border-overlay:focus {
 
   &__full-size-local-preview {
     width: 100%;
+    height: 100%;
+    object-fit: contain;
     position: relative;
 
     video {
       width: 100%;
+      height: 100%;
       transform: rotateY(180deg);
+      object-fit: contain;
     }
 
-    &--presenting {
+    &--presenting video {
       transform: none;
     }
   }
@@ -4705,15 +4413,6 @@ button.module-image__border-overlay:focus {
     margin: 0;
     padding-block: 0;
     padding-inline: 0;
-
-    &::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    &::-webkit-scrollbar-corner,
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
   }
 
   &__contact {
@@ -4731,11 +4430,11 @@ button.module-image__border-overlay:focus {
       border-radius: 6px;
       cursor: auto;
     }
-    &:hover {
-      background-color: variables.$color-gray-62;
+    &.module-calling-participants-list__clickable {
+      cursor: pointer;
     }
-    &[disabled] {
-      cursor: auto;
+    &:not(.module-calling-participants-list__me):hover {
+      background-color: variables.$color-gray-62;
     }
   }
 
@@ -4747,13 +4446,8 @@ button.module-image__border-overlay:focus {
   }
 
   &__name {
-    display: inline-block;
     font-size: 13px;
     margin-inline-start: 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: middle;
-    white-space: nowrap;
   }
 
   &__header {
@@ -4826,9 +4520,10 @@ button.module-image__border-overlay:focus {
     );
   }
 
-  &__remove {
+  &__menu-icon {
+    display: none;
     @include mixins.color-svg(
-      '../images/icons/v3/minus/minus-circle-compact.svg',
+      '../images/icons/v3/more/more.svg',
       variables.$color-white
     );
   }
@@ -4876,21 +4571,16 @@ button.module-calling-participants-list__contact {
 .module-conversation-list {
   $normal-row-height: 72px;
 
-  @include mixins.NavTabs__Scroller;
-  padding-inline-start: 10px;
-  padding-inline-end: 1px; /* leaving room for scrollbar */
+  scrollbar-gutter: stable;
+  padding-inline-start: 11px;
+  padding-inline-end: calc(11px - var(--axo-scrollbar-gutter-thin-vertical));
+
+  @include mixins.scrollbar-on-hover;
 
   // list tiles in choose-group-members and compose extend to the edge
   .module-left-pane--mode-choose-group-members &,
   .module-left-pane--mode-compose & {
     padding-inline: 0;
-  }
-
-  // Center chat list icons in narrow mode by reserving scrollbar space, preventing
-  // scrollbar from pushing content
-  &--width-narrow {
-    padding-inline: 10px 1px;
-    scrollbar-gutter: stable;
   }
 
   &--has-dialog-padding {
@@ -4927,6 +4617,13 @@ button.module-calling-participants-list__contact {
           &:focus {
             background-color: variables.$color-gray-75;
           }
+        }
+      }
+
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
 
@@ -5007,8 +4704,10 @@ button.module-calling-participants-list__contact {
         margin-inline: 0;
         padding-block: 8px;
         padding-inline: 14px;
-        user-select: none;
         width: 100%;
+
+        --conversation-item-bg: transparent;
+        background: var(--conversation-item-bg);
       }
 
       #{$unread-indicator} {
@@ -5021,16 +4720,12 @@ button.module-calling-participants-list__contact {
         justify-content: center;
         align-items: center;
 
+        background: var(--axo-color-fill-accent);
+
         .module-conversation-list--width-narrow & {
           display: none;
         }
 
-        @include mixins.light-theme {
-          background-color: variables.$color-ultramarine;
-        }
-        @include mixins.dark-theme {
-          background-color: variables.$color-ultramarine-dawn;
-        }
         &--unread-messages,
         &--marked-unread {
           @include mixins.font-caption-bold;
@@ -5038,13 +4733,13 @@ button.module-calling-participants-list__contact {
           word-break: normal;
           padding-inline: 4px;
           line-height: 100%;
-          color: variables.$color-white;
+          color: var(--axo-color-label-primary-oncolor);
           font-weight: 500;
         }
         &--unread-mentions__icon {
           @include mixins.color-svg(
             '../images/icons/v3/at/at.svg',
-            variables.$color-white
+            var(--axo-color-label-primary-oncolor)
           );
           & {
             width: 12px;
@@ -5059,6 +4754,10 @@ button.module-calling-participants-list__contact {
         &:disabled {
           cursor: inherit;
         }
+
+        &:focus {
+          outline: none;
+        }
       }
 
       &--is-checkbox {
@@ -5070,97 +4769,48 @@ button.module-calling-participants-list__contact {
       }
 
       &:hover:not(:disabled, &--disabled, &--is-selected),
-      &[data-state='open'] {
-        background-color: light-dark(
-          variables.$color-gray-05,
-          variables.$color-gray-75
-        );
-        #{$unread-indicator} {
-          border-color: light-dark(
-            variables.$color-gray-05,
-            variables.$color-gray-75
-          );
-        }
+      &[data-axo-contextmenu-state='open'] {
+        --conversation-item-bg: var(--axo-color-fill-primary);
       }
 
       @include mixins.keyboard-mode {
-        &:focus:not(:disabled, &--disabled, &--is-selected) {
-          background-color: light-dark(
-            variables.$color-gray-05,
-            variables.$color-gray-75
-          );
-          #{$unread-indicator} {
-            border-color: light-dark(
-              variables.$color-gray-05,
-              variables.$color-gray-75
-            );
-          }
+        &:focus:not(:disabled, &--disabled) {
+          @include mixins.axo-focus-ring-inset;
         }
       }
 
       &--is-selected {
-        @include mixins.light-theme {
-          background-color: variables.$color-gray-15;
-        }
-        @include mixins.dark-theme {
-          background-color: variables.$color-gray-65;
-        }
-      }
-
-      &--is-selected &__avatar-container {
-        @include mixins.light-theme {
-          #{$unread-indicator} {
-            border-color: variables.$color-gray-15;
-          }
-        }
-        @include mixins.dark-theme {
-          #{$unread-indicator} {
-            border-color: variables.$color-gray-65;
-          }
-        }
+        --conversation-item-bg: var(--axo-color-fill-primary-pressed);
       }
 
       &__avatar-container {
         position: relative;
 
         #{$unread-indicator} {
-          $border-width: 3px;
-          $size: 21px + $border-width;
+          $size: 18px;
 
           @include mixins.rounded-corners;
-          border: $border-width solid transparent;
           height: $size;
           margin: 0;
           min-width: $size;
           position: absolute;
-          top: -(1px + $border-width);
+          top: -1px;
           display: none;
 
           .module-conversation-list--width-narrow & {
             display: flex;
           }
 
-          @include mixins.light-theme {
-            border-color: variables.$color-gray-02;
-          }
-          @include mixins.dark-theme {
-            border-color: variables.$color-gray-80;
-          }
+          box-shadow:
+            0 0 0 3px var(--conversation-item-bg),
+            0 0 0 3px var(--axo-color-surface-secondary);
 
           &--unread-messages,
           &--marked-unread {
-            inset-inline-end: -(5px + $border-width);
+            inset-inline-end: -5px;
           }
           &--unread-mentions {
-            inset-inline-start: -(5px + $border-width);
-          }
-          &--is-selected {
-            @include mixins.light-theme {
-              border-color: variables.$color-gray-15;
-            }
-            @include mixins.dark-theme {
-              border-color: variables.$color-gray-65;
-            }
+            inset-inline-start: -5px;
           }
         }
       }
@@ -5284,6 +4934,7 @@ button.module-calling-participants-list__contact {
             overflow: hidden;
             text-overflow: ellipsis;
             text-align: start;
+            white-space-collapse: preserve;
 
             @include mixins.light-theme {
               color: variables.$color-gray-60;
@@ -5550,7 +5201,6 @@ button.module-calling-participants-list__contact {
       padding-bottom: 8px;
       padding-inline-start: 16px;
       text-overflow: ellipsis;
-      user-select: none;
       white-space: nowrap;
 
       @include mixins.dark-theme {
@@ -5653,7 +5303,6 @@ button.module-calling-participants-list__contact {
 .module-left-pane__header {
   flex-grow: 0;
   flex-shrink: 0;
-  user-select: none;
 
   &__contents {
     width: 100%;
@@ -5826,12 +5475,17 @@ button.module-calling-participants-list__contact {
   }
 }
 
+.module-left-pane__dialogs {
+  & + .module-left-pane__chatFolders {
+    margin-top: 8px;
+  }
+}
+
 .module-left-pane__archive-helper-text {
   @include mixins.font-body-2;
 
   flex-grow: 0;
   flex-shrink: 0;
-  user-select: none;
 
   padding: 1em;
 
@@ -5953,9 +5607,10 @@ button.module-calling-participants-list__contact {
 .module-timeline__messages__container {
   flex: 1 1;
   overflow-x: hidden;
-  overflow-y: overlay;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  scrollbar-width: auto;
 
   // Unset this for buttons in the timeline so that it doesn't prevent the higher z-index
   // ConversationHeader from being draggable
@@ -6017,12 +5672,59 @@ button.module-calling-participants-list__contact {
   outline: none;
 }
 
+.CollapseSet__height-container {
+  overflow: hidden;
+  height: 0px;
+  display: none;
+  /* stylelint-disable-next-line property-no-unknown */
+  interpolate-size: allow-keywords;
+  transition-property: display, height;
+  transition-behavior: allow-discrete;
+  transition-duration: 200ms;
+  transition-timing-function: linear(
+    0,
+    0.024 1.7%,
+    0.097 3.7%,
+    0.55 12%,
+    0.75 16.6%,
+    0.887 21.4%,
+    0.935 24%,
+    0.97 26.8%,
+    1.002 31.5%,
+    1.013 37.5%,
+    1.001 62.7%,
+    1
+  );
+}
+
+.CollapseSet__height-container--expanded {
+  display: block;
+  height: auto;
+
+  @starting-style {
+    height: 0;
+  }
+}
+
+.CollapseSet__transparency-container {
+  opacity: 0;
+  transition: opacity 25ms linear;
+}
+
+.CollapseSet__transparency-container--expanded {
+  transition-duration: 120ms;
+  transition-delay: 200ms;
+  opacity: 1;
+  @starting-style {
+    opacity: 0;
+  }
+}
+
 // Module: Last Seen Indicator
 
 .module-last-seen-indicator {
   padding-top: 25px;
   padding-bottom: 35px;
-  user-select: none;
 }
 
 .module-last-seen-indicator__bar {
@@ -6199,6 +5901,12 @@ button.module-calling-participants-list__contact {
     @include mixins.light-theme {
       color: variables.$color-gray-60;
       background-color: variables.$color-gray-05;
+    }
+  }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -6386,15 +6094,6 @@ button.module-calling-participants-list__contact {
   z-index: variables.$z-index-popup-overlay;
 }
 
-// Module: Error Modal
-
-.module-error-modal__button-container {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-}
-
 .module-button {
   &__small {
     @include mixins.font-body-2;
@@ -6427,14 +6126,6 @@ button.module-calling-participants-list__contact {
       padding-inline: 12px;
     }
   }
-}
-
-.module-background-color {
-  &__default {
-    background-color: variables.$color-black-alpha-40;
-  }
-
-  @include mixins.avatar-colors();
 }
 
 .module-tooltip {
@@ -6555,169 +6246,6 @@ button.module-calling-participants-list__contact {
   margin-bottom: 3px;
 }
 
-/* Third-party module: react-contextmenu*/
-
-.react-contextmenu {
-  @include mixins.popper-shadow();
-
-  & {
-    outline: none;
-    border-radius: 4px;
-    min-width: 220px;
-    padding-block: 6px;
-    padding-inline: 0;
-    opacity: 0;
-    user-select: none;
-    visibility: hidden;
-  }
-
-  // style a menu with only one option
-  &:not(:has(:nth-child(2))) {
-    padding-block: 0;
-    .react-contextmenu-item {
-      padding-block: 9px;
-      border-radius: 4px;
-    }
-  }
-  & {
-    @include mixins.light-theme {
-      background-color: variables.$color-white;
-    }
-    @include mixins.dark-theme {
-      background-color: variables.$color-gray-75;
-    }
-  }
-}
-
-.react-contextmenu--visible {
-  opacity: 1;
-  visibility: visible;
-  z-index: variables.$z-index-context-menu;
-  -webkit-app-region: no-drag;
-}
-
-.react-contextmenu-item {
-  outline: none;
-  cursor: pointer;
-  white-space: nowrap;
-  display: flex;
-  width: 100%;
-  align-items: center;
-
-  @include mixins.font-body-2;
-
-  padding-block: 7px;
-
-  padding-inline: 12px;
-
-  @include mixins.light-theme {
-    color: variables.$color-gray-90;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-02;
-  }
-
-  &--divider {
-    height: 1px;
-    margin-block: 6px;
-    margin-inline: 0;
-    padding: 0;
-
-    @include mixins.light-theme {
-      background-color: variables.$color-gray-15;
-    }
-    @include mixins.dark-theme {
-      background-color: variables.$color-gray-60;
-    }
-  }
-}
-
-.react-contextmenu-item--checked:before {
-  content: '✓';
-  display: inline-block;
-  position: absolute;
-  inset-inline-end: 7px;
-
-  @include mixins.light-theme {
-    color: variables.$color-gray-90;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-02;
-  }
-}
-
-.react-contextmenu-item.react-contextmenu-submenu {
-  padding: 0;
-}
-
-.react-contextmenu-item.react-contextmenu-submenu > .react-contextmenu-item {
-  padding-inline-end: 36px;
-}
-
-.react-contextmenu-item.react-contextmenu-submenu
-  > .react-contextmenu-item:after {
-  content: ' ';
-  display: inline-block;
-  height: 18px;
-  position: absolute;
-  inset-inline-end: 7px;
-  width: 12px;
-
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/chevron/chevron-right.svg',
-      variables.$color-gray-75
-    );
-    & {
-      color: variables.$color-gray-90;
-    }
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/chevron/chevron-right.svg',
-      variables.$color-gray-15
-    );
-    & {
-      color: variables.$color-gray-02;
-    }
-  }
-}
-
-.react-contextmenu-item.react-contextmenu-item--active,
-.react-contextmenu-item.react-contextmenu-item--selected {
-  color: variables.$color-black;
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-15;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-60;
-    color: variables.$color-white;
-  }
-}
-
-.react-contextmenu-item--disabled.react-contextmenu-item--selected {
-  background-color: inherit;
-  cursor: inherit;
-}
-
-.react-contextmenu-item.react-contextmenu-item--active.react-contextmenu-item--checked:before,
-.react-contextmenu-item.react-contextmenu-item--selected.react-contextmenu-item--checked:before {
-  color: variables.$color-black;
-  @include mixins.dark-theme {
-    color: variables.$color-white;
-  }
-}
-
-.react-contextmenu-item.react-contextmenu-submenu
-  > .react-contextmenu-item.react-contextmenu-item--active:after,
-.react-contextmenu-item.react-contextmenu-submenu
-  > .react-contextmenu-item.react-contextmenu-item--selected:after {
-  color: variables.$color-black;
-  @include mixins.dark-theme {
-    color: variables.$color-white;
-  }
-}
-
 // To limit messages with things forcing them wider, like long attachment names
 .module-message__container {
   max-width: 100%;
@@ -6733,10 +6261,10 @@ button.module-calling-participants-list__contact {
   &--with-reactions {
     margin-bottom: -6px;
   }
+}
 
-  &--deleted-for-everyone {
-    font-style: italic;
-  }
+.module-message__container--sticker-like {
+  overflow: initial;
 }
 
 .module-message__context {
@@ -6747,151 +6275,6 @@ button.module-calling-participants-list__contact {
     margin-inline-end: 8px;
     width: 16px;
     vertical-align: middle;
-  }
-
-  &__download::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/save/save-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/save/save-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__reply::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/reply/reply-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/reply/reply-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__react::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/heart/heart-plus-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/heart/heart-plus-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__more-info::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/info/info-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/info/info-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__select::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/check/check-circle-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/check/check-circle-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__retry-send::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/send/send.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/send/send.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__forward-message::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/forward/forward-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/forward/forward-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__edit-message::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/edit/edit-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/edit/edit-compact.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  &__delete-message::before,
-  &__delete-message-for-everyone::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/trash/trash-compact.svg',
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/trash/trash-compact.svg',
-        variables.$color-gray-15
-      );
-    }
   }
 
   &__copy-timestamp::before {

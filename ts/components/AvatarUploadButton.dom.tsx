@@ -1,19 +1,19 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEventHandler } from 'react';
-import React, { useEffect, useRef, useState } from 'react';
+import type { ChangeEventHandler, JSX } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import lodash from 'lodash';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { processImageFile } from '../util/processImageFile.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { processImageFile } from '../util/processImageFile.dom.ts';
 
 const { noop } = lodash;
 
 export type PropsType = {
   className: string;
   i18n: LocalizerType;
-  onChange: (avatar: Uint8Array) => unknown;
+  onChange: (avatar: Uint8Array<ArrayBuffer>) => unknown;
 };
 
 export function AvatarUploadButton({
@@ -33,7 +33,7 @@ export function AvatarUploadButton({
     let shouldCancel = false;
 
     void (async () => {
-      let newAvatar: Uint8Array;
+      let newAvatar: Uint8Array<ArrayBuffer>;
       try {
         newAvatar = await processImageFile(processingFile);
       } catch (err) {
@@ -77,6 +77,8 @@ export function AvatarUploadButton({
       >
         {i18n('icu:photo')}
       </button>
+      {/* FIXME */}
+      {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
       <input
         accept=".gif,.jpg,.jpeg,.png,.webp,image/gif,image/jpeg,image/png,image/webp"
         hidden

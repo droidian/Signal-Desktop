@@ -6,30 +6,31 @@ import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import os from 'node:os';
 import createDebug from 'debug';
+import type { PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, StorageState } from '@signalapp/mock-server';
 import { assert } from 'chai';
 import { expect } from 'playwright/test';
-import Long from 'long';
 
-import * as Bytes from '../../Bytes.std.js';
-import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { generateBackup } from '../../test-helpers/generateBackup.node.js';
-import { IMAGE_JPEG } from '../../types/MIME.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import * as durations from '../../util/durations/index.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap, type LinkOptionsType } from '../bootstrap.node.js';
+import * as Bytes from '../../Bytes.std.ts';
+import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { generateBackup } from '../../test-helpers/generateBackup.node.ts';
+import { IMAGE_JPEG } from '../../types/MIME.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap, type LinkOptionsType } from '../bootstrap.node.ts';
 import {
   getMessageInTimelineByTimestamp,
   sendTextMessage,
   sendReaction,
-} from '../helpers.node.js';
-import { toBase64 } from '../../Bytes.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { BackupLevel } from '../../services/backups/types.std.js';
-import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.js';
+} from '../helpers.node.ts';
+import { toBase64 } from '../../Bytes.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { BackupLevel } from '../../services/backups/types.std.ts';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 export const debug = createDebug('mock:test:backups');
 
@@ -69,20 +70,20 @@ describe('backups', function (this: Mocha.Suite) {
 
   async function generateTestDataThenRestoreBackup(
     thisVal: Mocha.Context,
-    exportBackupFn: () => void,
+    exportBackupFn: () => Promise<void>,
     getBootstrapLinkParams: () => LinkOptionsType
   ) {
     let state = StorageState.getEmpty();
 
     const { phone, contacts } = bootstrap;
-    const [friend, pinned] = contacts;
+    const [friend, pinned] = contacts as [PrimaryDevice, PrimaryDevice];
 
     state = state.updateAccount({
       profileKey: phone.profileKey.serialize(),
       givenName: phone.profileName,
       readReceipts: true,
       hasCompletedUsernameOnboarding: true,
-      backupTier: Long.fromNumber(BackupLevel.Paid),
+      backupTier: BigInt(BackupLevel.Paid),
     });
 
     state = state.addContact(friend, {
@@ -108,6 +109,7 @@ describe('backups', function (this: Mocha.Suite) {
           isBlockList: true,
           name: MY_STORY_ID,
           recipientServiceIdsBinary: [pinned.device.aciBinary],
+          deletedAtTimestamp: null,
         },
       },
     });
@@ -121,6 +123,7 @@ describe('backups', function (this: Mocha.Suite) {
           isBlockList: false,
           name: 'friend',
           recipientServiceIdsBinary: [friend.device.aciBinary],
+          deletedAtTimestamp: null,
         },
       },
     });
@@ -134,8 +137,16 @@ describe('backups', function (this: Mocha.Suite) {
           id: Bytes.fromHex(generateNotificationProfileId()),
           name: notificationProfileName1,
           color: 0xffff0000,
-          createdAtMs: Long.fromNumber(now),
+          createdAtMs: BigInt(now),
           allowAllCalls: true,
+          emoji: null,
+          allowAllMentions: null,
+          allowedMembers: null,
+          scheduleEnabled: null,
+          scheduleStartTime: null,
+          scheduleEndTime: null,
+          scheduleDaysEnabled: null,
+          deletedAtTimestampMs: null,
         },
       },
     });
@@ -148,8 +159,16 @@ describe('backups', function (this: Mocha.Suite) {
           id: Bytes.fromHex(generateNotificationProfileId()),
           name: notificationProfileName2,
           color: 0xff00ff00,
-          createdAtMs: Long.fromNumber(now + 1),
+          createdAtMs: BigInt(now + 1),
           allowAllMentions: true,
+          emoji: null,
+          allowAllCalls: null,
+          allowedMembers: null,
+          scheduleEnabled: null,
+          scheduleStartTime: null,
+          scheduleEndTime: null,
+          scheduleDaysEnabled: null,
+          deletedAtTimestampMs: null,
         },
       },
     });
@@ -173,15 +192,13 @@ describe('backups', function (this: Mocha.Suite) {
       debug('setting bubble color');
       const conversationStack = window.locator('.Inbox__conversation-stack');
       await conversationStack
-        .locator('button.module-ConversationHeader__button--more')
+        .getByRole('button', { name: 'More Info' })
         .click();
 
-      await window
-        .locator('.react-contextmenu-item >> "Chat settings"')
-        .click();
+      await window.getByRole('menuitem', { name: 'Chat settings' }).click();
 
       await conversationStack
-        .locator('.ConversationDetails__chat-color')
+        .getByRole('button', { name: 'Chat color' })
         .click();
       await conversationStack
         .locator('.ChatColorPicker__bubble--infrared')
@@ -242,7 +259,7 @@ describe('backups', function (this: Mocha.Suite) {
           targetMessageTimestamp: ourTimestamp,
           reactionTimestamp,
           desktop,
-          emoji: '👍',
+          emoji: Emoji.getDefaultVariant(Emoji.THUMBS_UP),
         })
       );
     }
@@ -274,7 +291,7 @@ describe('backups', function (this: Mocha.Suite) {
         .waitFor();
 
       const [catMessage] = await app.getMessagesBySentAt(catTimestamp);
-      const [image] = catMessage.attachments ?? [];
+      const [image] = catMessage?.attachments ?? [];
       strictAssert(image.plaintextHash, 'plaintextHash was calculated');
       strictAssert(image.digest, 'digest was calculated at download time');
       strictAssert(
@@ -308,7 +325,7 @@ describe('backups', function (this: Mocha.Suite) {
         await snapshot('styled bubbles');
 
         debug('Waiting for unread count');
-        const unreadCount = await leftPane
+        const unreadCount = leftPane
           .locator(
             '.module-conversation-list__item--contact-or-conversation__unread-indicator.module-conversation-list__item--contact-or-conversation__unread-indicator--unread-messages'
           )
@@ -380,7 +397,7 @@ describe('backups', function (this: Mocha.Suite) {
 
     {
       const [catMessage] = await app.getMessagesBySentAt(catTimestamp);
-      const [image] = catMessage.attachments ?? [];
+      const [image] = catMessage?.attachments ?? [];
       if (!bootstrapLinkParams.localBackup) {
         strictAssert(
           image.digest,
@@ -423,7 +440,7 @@ describe('backups', function (this: Mocha.Suite) {
     );
   });
 
-  it('imports ephemeral backup', async function () {
+  it('imports ephemeral backup', async () => {
     const ephemeralBackupKey = randomBytes(32);
     const cdnKey = randomBytes(16).toString('hex');
 
@@ -472,7 +489,7 @@ describe('backups', function (this: Mocha.Suite) {
     await window.locator('.module-message >> "Message 33"').waitFor();
   });
 
-  it('handles remote ephemeral backup cancellation', async function () {
+  it('handles remote ephemeral backup cancellation', async () => {
     const ephemeralBackupKey = randomBytes(32);
 
     const { phone, server } = bootstrap;
@@ -486,9 +503,9 @@ describe('backups', function (this: Mocha.Suite) {
     });
 
     const window = await app.getWindow();
-    const modal = window.getByTestId(
-      'ConfirmationDialog.InstallScreenBackupImportStep.error'
-    );
+    const modal = window.getByRole('alertdialog', {
+      name: 'Error transferring your messages',
+    });
 
     await modal.waitFor();
 

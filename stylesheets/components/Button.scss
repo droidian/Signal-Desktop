@@ -6,49 +6,20 @@
 @use '../variables';
 
 .module-Button {
-  @mixin focus-box-shadow($inner-color, $outer-color) {
-    &:focus {
-      box-shadow:
-        0 0 0 1px $inner-color,
-        0 0 0 4px $outer-color;
-    }
-  }
-
-  @mixin hover-and-active-states($background-color, $mix-color) {
-    &:hover {
-      @include mixins.not-disabled {
-        background: color.mix($background-color, $mix-color, 85%);
-      }
-    }
-    &:active {
-      @include mixins.not-disabled {
-        background: color.mix($background-color, $mix-color, 75%);
-      }
-    }
-  }
-
   @include mixins.button-reset;
   & {
     border-radius: 4px;
     padding-block: 8px;
     padding-inline: 16px;
     text-align: center;
-    user-select: none;
     -webkit-app-region: no-drag;
   }
 
-  @include mixins.keyboard-mode {
-    @include focus-box-shadow(
-      variables.$color-white,
-      variables.$color-ultramarine
-    );
-  }
-
-  @include mixins.dark-keyboard-mode {
-    @include focus-box-shadow(
-      variables.$color-black,
-      variables.$color-ultramarine
-    );
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
+    }
   }
 
   @include mixins.disabled {
@@ -72,220 +43,99 @@
   }
 
   &--primary {
-    $color: variables.$color-white;
-    $background-color: variables.$color-ultramarine;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-accent);
 
-    color: $color;
-    background: $background-color;
-
-    @include mixins.disabled {
-      color: color.adjust($color, $alpha: -0.4);
-      background: color.adjust($background-color, $alpha: -0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-accent-pressed);
     }
 
+    &[disabled],
     &--discouraged {
-      @include mixins.light-theme {
-        opacity: 0.4;
-      }
-      @include mixins.dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include mixins.light-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-white
-      );
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--secondary {
-    @include mixins.light-theme {
-      $color: variables.$color-gray-90;
-      $background-color: variables.$color-gray-05;
+    background: var(--axo-color-fill-secondary);
+    color: var(--axo-color-label-primary);
 
-      color: $color;
-      background: $background-color;
-
-      @include mixins.disabled {
-        color: variables.$color-black-alpha-40;
-        background: color.adjust($background-color, $alpha: -0.6);
-      }
-
-      &--affirmative {
-        color: variables.$color-ultramarine;
-      }
-      &--affirmative--discouraged {
-        color: color.adjust(variables.$color-ultramarine, $alpha: -0.5);
-      }
-
-      &--destructive {
-        color: variables.$color-accent-red;
-      }
-      &--destructive--discouraged {
-        color: color.adjust(variables.$color-ultramarine, $alpha: -0.5);
-      }
-
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-black
-      );
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-secondary-pressed);
     }
 
-    @include mixins.dark-theme {
-      $color: variables.$color-gray-05;
-      $background-color: variables.$color-gray-65;
+    &[disabled],
+    &--discouraged {
+      color: var(--axo-color-label-disabled-oncolor);
+    }
 
-      color: $color;
-      background: $background-color;
+    &--affirmative {
+      color: var(--axo-color-label-accent);
 
-      @include mixins.disabled {
-        color: variables.$color-white-alpha-20;
-        background: color.adjust($background-color, $alpha: -0.6);
+      &[disabled],
+      &--discouraged {
+        color: var(--axo-color-label-accent-disabled);
       }
+    }
 
-      &--affirmative {
-        color: variables.$color-ultramarine-light;
-      }
-      &--affirmative--discouraged {
-        color: color.adjust(variables.$color-ultramarine-light, $alpha: -0.5);
-      }
+    &--destructive {
+      color: var(--axo-color-label-destructive);
 
-      &--destructive {
-        color: variables.$color-accent-red;
+      &[disabled],
+      &--discouraged {
+        color: var(--axo-color-label-destructive-disabled);
       }
-      &--destructive--discouraged {
-        color: color.adjust(variables.$color-accent-red, $alpha: -0.5);
-      }
-
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-white
-      );
     }
   }
 
   &--destructive {
-    $color: variables.$color-white;
-    $background-color: variables.$color-accent-red;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-destructive);
 
-    color: $color;
-    background: $background-color;
-
-    @include mixins.disabled {
-      color: color.adjust($color, $alpha: -0.4);
-      background: color.adjust($background-color, $alpha: -0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-destructive-pressed);
     }
 
-    @include mixins.light-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-white
-      );
+    &[disabled],
+    &--discouraged {
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--calling {
-    $color: variables.$color-white;
-    $background-color: variables.$color-accent-green;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-affirmative);
 
-    @include mixins.rounded-corners;
-    color: $color;
-    background: $background-color;
-
-    @include mixins.disabled {
-      color: color.adjust($color, $alpha: -0.4);
-      background: color.adjust($background-color, $alpha: -0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-affirmative-pressed);
     }
 
+    &[disabled],
     &--discouraged {
-      @include mixins.light-theme {
-        opacity: 0.4;
-      }
-      @include mixins.dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include mixins.light-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-white
-      );
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--system-message {
+    background: var(--axo-color-fill-primary);
+    color: var(--axo-color-label-accent);
     @include mixins.rounded-corners;
+
+    &:not(:disabled, &--discouraged) {
+      &:active {
+        background: var(--axo-color-fill-primary-pressed);
+      }
+    }
+
+    &:disabled,
+    &--discouraged {
+      color: var(--axo-color-label-accent-disabled);
+    }
 
     &.module-Button--small {
       padding-top: 5px;
       padding-bottom: 5px;
       font-weight: 500;
-    }
-
-    @include mixins.light-theme {
-      $color: variables.$color-ultramarine;
-      $background-color: variables.$color-gray-02;
-
-      color: $color;
-      background: $background-color;
-
-      @include mixins.disabled {
-        color: color.adjust($color, $alpha: -0.4);
-        background: color.adjust($background-color, $alpha: -0.6);
-      }
-      &--discouraged {
-        color: color.adjust($color, $alpha: -0.5);
-      }
-
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-black
-      );
-    }
-
-    @include mixins.dark-theme {
-      $color: variables.$color-white;
-      $background-color: variables.$color-gray-65;
-
-      color: $color;
-      background: $background-color;
-
-      @include mixins.disabled {
-        color: color.adjust($color, $alpha: -0.4);
-        background: color.adjust($background-color, $alpha: -0.6);
-      }
-      &--discouraged {
-        color: color.adjust($color, $alpha: -0.5);
-      }
-
-      @include hover-and-active-states(
-        $background-color,
-        variables.$color-white
-      );
     }
   }
 
@@ -301,28 +151,22 @@
     min-width: 68px;
     padding: 8px;
 
+    background: var(--axo-color-fill-secondary);
+    color: var(--axo-color-label-primary);
+
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-secondary-pressed);
+    }
+
+    &[disabled],
     &--discouraged {
-      @include mixins.light-theme {
-        opacity: 0.4;
-      }
-      @include mixins.dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include mixins.light-theme {
-      background-color: variables.$color-gray-05;
-      color: variables.$color-black;
-    }
-
-    @include mixins.dark-theme {
-      background-color: variables.$color-gray-65;
-      color: variables.$color-gray-05;
+      color: var(--axo-color-label-disabled);
     }
 
     &:focus {
+      outline: none;
       @include mixins.keyboard-mode {
-        box-shadow: 0 0 0 2px variables.$color-ultramarine;
+        @include mixins.axo-focus-ring;
       }
     }
 
@@ -337,13 +181,7 @@
       display: block;
       height: 18px;
       width: 18px;
-
-      @include mixins.light-theme {
-        @include mixins.color-svg($icon, variables.$color-black);
-      }
-      @include mixins.dark-theme {
-        @include mixins.color-svg($icon, variables.$color-gray-05);
-      }
+      @include mixins.color-svg($icon, currentColor);
     }
 
     &--audio::before {

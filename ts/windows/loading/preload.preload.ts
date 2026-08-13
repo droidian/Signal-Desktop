@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { contextBridge } from 'electron';
-import { config } from '../../context/config.preload.js';
-import { localeMessages } from '../../context/localeMessages.preload.js';
+import { MinimalSignalContext } from '../minimalContext.preload.ts';
 
-contextBridge.exposeInMainWorld('SignalContext', {
-  getI18nLocale: () => config.resolvedTranslationsLocale,
-  getI18nLocaleMessages: () => localeMessages,
-});
+contextBridge.exposeInMainWorld('SignalContext', MinimalSignalContext);

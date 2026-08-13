@@ -2,30 +2,33 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { v4 as generateGuid } from 'uuid';
-import Long from 'long';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 
-import { getRandomBytes } from '../../Crypto.node.js';
-import * as Bytes from '../../Bytes.std.js';
-import { SignalService as Proto, Backups } from '../../protobuf/index.std.js';
-import { DataWriter } from '../../sql/Client.preload.js';
-import { APPLICATION_OCTET_STREAM } from '../../types/MIME.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { PaymentEventKind } from '../../types/Payment.std.js';
-import { ContactFormType } from '../../types/EmbeddedContact.std.js';
-import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.std.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
+import { getRandomBytes } from '../../Crypto.node.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { SignalService as Proto, Backups } from '../../protobuf/index.std.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import { APPLICATION_OCTET_STREAM } from '../../types/MIME.std.ts';
+import { PaymentEventKind } from '../../types/Payment.std.ts';
+import { ContactFormType } from '../../types/EmbeddedContact.std.ts';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent.std.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
 import {
   setupBasics,
   asymmetricRoundtripHarness,
   symmetricRoundtripHarness,
   OUR_ACI,
-} from './helpers.preload.js';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from './helpers.preload.ts';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import {
+  generateAci,
+  generatePni,
+} from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const CONTACT_A = generateAci();
 const GROUP_ID = Bytes.toBase64(getRandomBytes(32));
@@ -199,6 +202,37 @@ describe('backup/non-bubble messages', () => {
     ]);
   });
 
+  it('drops IDENTITY_VERIFIED simple update for PNI-only contact', async () => {
+    const pni = generatePni();
+    const pniContact = await window.ConversationController.getOrCreateAndWait(
+      pni,
+      'private',
+      {
+        systemGivenName: 'PNI_CONTACT',
+        active_at: 1,
+      }
+    );
+
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: pniContact.id,
+          id: generateGuid(),
+          type: 'verified-change',
+          verifiedChanged: pniContact.id,
+          verified: true,
+          received_at: 1,
+          sent_at: 1,
+          timestamp: 1,
+          readStatus: ReadStatus.Read,
+          seenStatus: SeenStatus.Seen,
+          sourceServiceId: pni,
+        },
+      ],
+      []
+    );
+  });
+
   it('roundtrips CHANGE_NUMBER simple update', async () => {
     await symmetricRoundtripHarness([
       {
@@ -258,12 +292,11 @@ describe('backup/non-bubble messages', () => {
           kind: PaymentEventKind.Activation,
         },
         received_at: 1,
-        received_at_ms: 1,
         sent_at: 1,
         timestamp: 1,
-        readStatus: ReadStatus.Unread,
-        seenStatus: SeenStatus.Unseen,
-        unidentifiedDeliveryReceived: true,
+        readStatus: ReadStatus.Read,
+        seenStatus: SeenStatus.Seen,
+        unidentifiedDeliveryReceived: false,
       },
     ]);
   });
@@ -279,12 +312,11 @@ describe('backup/non-bubble messages', () => {
           kind: PaymentEventKind.ActivationRequest,
         },
         received_at: 1,
-        received_at_ms: 1,
         sent_at: 1,
         timestamp: 1,
-        readStatus: ReadStatus.Unread,
-        seenStatus: SeenStatus.Unseen,
-        unidentifiedDeliveryReceived: true,
+        readStatus: ReadStatus.Read,
+        seenStatus: SeenStatus.Seen,
+        unidentifiedDeliveryReceived: false,
       },
     ]);
   });
@@ -334,10 +366,18 @@ describe('backup/non-bubble messages', () => {
           feeMob: '0.01',
           transactionDetailsBase64: Bytes.toBase64(
             Backups.PaymentNotification.TransactionDetails.encode({
-              transaction: {
-                timestamp: Long.fromNumber(Date.now()),
+              payment: {
+                transaction: {
+                  timestamp: BigInt(Date.now()),
+                  status: null,
+                  mobileCoinIdentification: null,
+                  blockIndex: null,
+                  blockTimestamp: null,
+                  transaction: null,
+                  receipt: null,
+                },
               },
-            }).finish()
+            })
           ),
         },
       },
@@ -376,7 +416,7 @@ describe('backup/non-bubble messages', () => {
         ],
         reactions: [
           {
-            emoji: '👍',
+            emoji: Emoji.getDefaultVariant(Emoji.THUMBS_UP),
             fromId: contactA.id,
             targetTimestamp: 1,
             timestamp: 1,
@@ -384,6 +424,57 @@ describe('backup/non-bubble messages', () => {
         ],
       },
     ]);
+  });
+
+  it('drops empty embedded contact name on export', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 1,
+          received_at_ms: 1,
+          sent_at: 1,
+          timestamp: 1,
+          sourceServiceId: CONTACT_A,
+          sourceDevice: 1,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          contact: [
+            {
+              name: {
+                givenName: '',
+                familyName: undefined,
+              },
+              organization: 'Signal',
+            },
+          ],
+        },
+      ],
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 1,
+          received_at_ms: 1,
+          sent_at: 1,
+          timestamp: 1,
+          sourceServiceId: CONTACT_A,
+          sourceDevice: 1,
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          contact: [
+            {
+              organization: 'Signal',
+            },
+          ],
+        },
+      ]
+    );
   });
 
   it('roundtrips sticker', async () => {
@@ -403,7 +494,7 @@ describe('backup/non-bubble messages', () => {
         unidentifiedDeliveryReceived: true,
         // TODO (DESKTOP-6845): properly handle data FilePointer
         sticker: {
-          emoji: '👍',
+          emoji: Emoji.getDefaultVariant(Emoji.THUMBS_UP),
           packId: Bytes.toHex(getRandomBytes(16)),
           stickerId: 1,
           packKey: Bytes.toBase64(getRandomBytes(32)),
@@ -415,7 +506,7 @@ describe('backup/non-bubble messages', () => {
         },
         reactions: [
           {
-            emoji: '👍',
+            emoji: Emoji.getDefaultVariant(Emoji.THUMBS_UP),
             fromId: contactA.id,
             targetTimestamp: 1,
             timestamp: 1,
@@ -512,6 +603,30 @@ describe('backup/non-bubble messages', () => {
     ]);
   });
 
+  it('drops title transition notification without username or e164', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'title-transition-notification',
+          received_at: 1,
+          sent_at: 1,
+          timestamp: 1,
+          readStatus: ReadStatus.Read,
+          seenStatus: SeenStatus.Seen,
+          sourceServiceId: CONTACT_A,
+          titleTransition: {
+            renderInfo: {
+              type: 'private',
+            },
+          },
+        },
+      ],
+      []
+    );
+  });
+
   it('roundtrips thread merge', async () => {
     await symmetricRoundtripHarness([
       {
@@ -566,8 +681,29 @@ describe('backup/non-bubble messages', () => {
         timestamp: 1,
         readStatus: ReadStatus.Read,
         seenStatus: SeenStatus.Seen,
-        supportedVersionAtReceive: 5,
-        requiredProtocolVersion: 6,
+        supportedVersionAtReceive:
+          Proto.DataMessage.ProtocolVersion.CURRENT - 2,
+        requiredProtocolVersion: Proto.DataMessage.ProtocolVersion.CURRENT - 1,
+      },
+    ]);
+  });
+
+  it('roundtrips poll terminate notification with pollTimestamp', async () => {
+    await symmetricRoundtripHarness([
+      {
+        conversationId: contactA.id,
+        id: generateGuid(),
+        type: 'poll-terminate',
+        received_at: 2,
+        sent_at: 2,
+        timestamp: 2,
+        sourceServiceId: CONTACT_A,
+        readStatus: ReadStatus.Read,
+        seenStatus: SeenStatus.Seen,
+        pollTerminateNotification: {
+          question: 'Question?',
+          pollTimestamp: 12345,
+        },
       },
     ]);
   });

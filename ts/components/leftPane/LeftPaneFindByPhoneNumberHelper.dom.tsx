@@ -1,25 +1,24 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild } from 'react';
-import React from 'react';
+import type { ReactNode, ChangeEvent } from 'react';
 
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import { SearchInput } from '../SearchInput.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { ShowConversationType } from '../../state/ducks/conversations.preload.js';
-import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.js';
-import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.js';
-import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.js';
-import type { CountryDataType } from '../../util/getCountryData.dom.js';
-import { isFetchingByE164 } from '../../util/uuidFetchState.std.js';
-import { drop } from '../../util/drop.std.js';
-import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.js';
-import { Spinner } from '../Spinner.dom.js';
-import { Button } from '../Button.dom.js';
-import { CountryCodeSelect } from '../CountryCodeSelect.dom.js';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import { SearchInput } from '../SearchInput.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.ts';
+import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.ts';
+import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.ts';
+import type { CountryDataType } from '../../util/getCountryData.dom.ts';
+import { isFetchingByE164 } from '../../util/uuidFetchState.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import { Spinner } from '../Spinner.dom.tsx';
+import { Button } from '../Button.dom.tsx';
+import { CountryCodeSelect } from '../CountryCodeSelect.dom.tsx';
 
 export type LeftPaneFindByPhoneNumberPropsType = {
   searchTerm: string;
@@ -35,6 +34,7 @@ type DoLookupActionsType = Readonly<{
 }> &
   LookupConversationWithoutServiceIdActionsType;
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneFindByPhoneNumberHelper extends LeftPaneHelper<LeftPaneFindByPhoneNumberPropsType> {
   readonly #searchTerm: string;
   readonly #phoneNumber: ParsedE164Type | undefined;
@@ -70,7 +70,7 @@ export class LeftPaneFindByPhoneNumberHelper extends LeftPaneHelper<LeftPaneFind
   }: Readonly<{
     i18n: LocalizerType;
     startComposing: () => void;
-  }>): ReactChild {
+  }>): ReactNode {
     const backButtonLabel = i18n('icu:setGroupMetadata__back-button');
 
     return (
@@ -106,11 +106,11 @@ export class LeftPaneFindByPhoneNumberHelper extends LeftPaneHelper<LeftPaneFind
   }: Readonly<{
     i18n: LocalizerType;
     onChangeComposeSearchTerm: (
-      event: React.ChangeEvent<HTMLInputElement>
+      event: ChangeEvent<HTMLInputElement>
     ) => unknown;
     onChangeComposeSelectedRegion: (newRegion: string) => void;
   }> &
-    DoLookupActionsType): ReactChild {
+    DoLookupActionsType): ReactNode {
     const placeholder = i18n(
       'icu:LeftPaneFindByHelper__placeholder--findByPhoneNumber'
     );
@@ -149,7 +149,7 @@ export class LeftPaneFindByPhoneNumberHelper extends LeftPaneHelper<LeftPaneFind
   }: Readonly<{
     i18n: LocalizerType;
   }> &
-    DoLookupActionsType): ReactChild {
+    DoLookupActionsType): ReactNode {
     return (
       <Button
         disabled={this.#isLookupDisabled()}

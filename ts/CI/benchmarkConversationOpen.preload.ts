@@ -3,22 +3,23 @@
 
 import { v4 as uuid } from 'uuid';
 
-import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
-import { DataWriter } from '../sql/Client.preload.js';
-import { BodyRange } from '../types/BodyRange.std.js';
-import { CURRENT_SCHEMA_VERSION } from '../types/Message2.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { MINUTE } from '../util/durations/index.std.js';
-import { isOlderThan } from '../util/timestamp.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { stats } from '../util/benchmark/stats.std.js';
-import type { StatsType } from '../util/benchmark/stats.std.js';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { BodyRange } from '../types/BodyRange.std.ts';
+import { CURRENT_SCHEMA_VERSION } from '../types/Message2.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { MINUTE } from '../util/durations/index.std.ts';
+import { isOlderThan } from '../util/timestamp.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { stats } from '../test-helpers/benchmarkStats.std.ts';
+import type { StatsType } from '../test-helpers/benchmarkStats.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import { createLogger } from '../logging/log.std.js';
-import { postSaveUpdates } from '../util/cleanup.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import { createLogger } from '../logging/log.std.ts';
+import { postSaveUpdates } from '../util/cleanup.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { getSelectedConversationId } from '../state/selectors/nav.std.ts';
 
 const log = createLogger('benchmarkConversationOpen');
 
@@ -34,7 +35,7 @@ type PopulateConversationArgsType = {
   ) => MessageAttributesType;
 };
 
-export async function populateConversationWithMessages({
+async function populateConversationWithMessages({
   conversationId,
   messageCount,
   unreadCount = 0,
@@ -121,10 +122,8 @@ export async function benchmarkConversationOpen({
     'CI not enabled; ensure this is a staging build'
   );
 
-  // eslint-disable-next-line no-param-reassign
-  conversationId =
-    conversationId ||
-    window.reduxStore.getState().conversations.selectedConversationId;
+  // oxlint-disable-next-line no-param-reassign
+  conversationId ??= getSelectedConversationId(window.reduxStore.getState());
 
   strictAssert(conversationId, 'Must open a conversation for benchmarking');
 
@@ -150,12 +149,12 @@ export async function benchmarkConversationOpen({
   const durations: Array<number> = [];
   for (let i = 0; i < runCount; i += 1) {
     // Give some buffer between tests
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await sleep(BUFFER_DELAY_MS);
 
     log.info(`${logId}: running open test run ${i + 1}/${runCount}`);
 
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const duration = await timeConversationOpen(conversationId);
 
     if (i >= runCountToSkip) {
@@ -184,7 +183,7 @@ async function waitForSelector(
       return element;
     }
 
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await sleep(BUFFER_DELAY_MS);
   }
 
@@ -224,7 +223,7 @@ async function showEmptyInbox() {
     window.SignalCI,
     'CI not enabled; ensure this is a staging build'
   );
-  if (!window.reduxStore.getState().conversations.selectedConversationId) {
+  if (!getSelectedConversationId(window.reduxStore.getState())) {
     return;
   }
   const promise = window.SignalCI.waitForEvent('empty-inbox:rendered', {

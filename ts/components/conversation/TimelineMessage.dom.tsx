@@ -3,53 +3,43 @@
 
 import classNames from 'classnames';
 import lodash from 'lodash';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import type { Ref } from 'react';
-import { ContextMenuTrigger } from 'react-contextmenu';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode, ComponentProps, JSX, MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Manager, Popper, Reference } from 'react-popper';
 import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow.js';
-import { isDownloaded } from '../../util/Attachment.std.js';
-import type { LocalizerType } from '../../types/I18N.std.js';
-import { handleOutsideClick } from '../../util/handleOutsideClick.dom.js';
-import { offsetDistanceModifier } from '../../util/popperUtil.std.js';
-import { StopPropagation } from '../StopPropagation.dom.js';
-import { WidthBreakpoint } from '../_util.std.js';
-import { Message } from './Message.dom.js';
-import type { SmartReactionPicker } from '../../state/smart/ReactionPicker.dom.js';
+import { isDownloaded } from '../../util/Attachment.std.ts';
+import type { LocalizerType } from '../../types/I18N.std.ts';
+import { handleOutsideClick } from '../../util/handleOutsideClick.dom.ts';
+import { offsetDistanceModifier } from '../../util/popperUtil.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+import { Message, MessageInteractivity } from './Message.dom.tsx';
+import type { SmartReactionPicker } from '../../state/smart/ReactionPicker.dom.tsx';
 import type {
   Props as MessageProps,
   PropsActions as MessagePropsActions,
   PropsData as MessagePropsData,
   PropsHousekeeping,
-} from './Message.dom.js';
-import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.js';
-import { doesMessageBodyOverflow } from './MessageBodyReadMore.dom.js';
-import {
-  useKeyboardShortcutsConditionally,
-  useOpenContextMenu,
-  useToggleReactionPicker,
-} from '../../hooks/useKeyboardShortcuts.dom.js';
-import { PanelType } from '../../types/Panels.std.js';
+} from './Message.dom.tsx';
+import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.ts';
+import { doesMessageBodyOverflow } from './MessageBodyReadMore.dom.tsx';
+import { useToggleReactionPicker } from '../../hooks/useKeyboardShortcuts.dom.tsx';
+import { PanelType } from '../../types/Panels.std.ts';
 import type {
   DeleteMessagesPropsType,
   ForwardMessagesPayload,
-} from '../../state/ducks/globalModals.preload.js';
-import { useScrollerLock } from '../../hooks/useScrollLock.dom.js';
-import {
-  type ContextMenuTriggerType,
-  MessageContextMenu,
-  useHandleMessageContextMenu,
-} from './MessageContextMenu.dom.js';
-import { ForwardMessagesModalType } from '../ForwardMessagesModal.dom.js';
-import { useGroupedAndOrderedReactions } from '../../util/groupAndOrderReactions.dom.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
+} from '../../state/ducks/globalModals.preload.ts';
+import { useScrollerLock } from '../../hooks/useScrollLock.dom.tsx';
+import { MessageContextMenu } from './MessageContextMenu.dom.tsx';
+import { ForwardMessagesModalType } from '../ForwardMessagesModal.dom.tsx';
+import { useGroupedAndOrderedReactions } from '../../util/groupAndOrderReactions.std.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
+import type { AxoMenuBuilder } from '../../axo/AxoMenuBuilder.dom.tsx';
+import { AxoContextMenu } from '../../axo/AxoContextMenu.dom.tsx';
+import { useDocumentKeyDown } from '../../hooks/useDocumentKeyDown.dom.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
+
+const { useAxoContextMenuOutsideKeyboardTrigger } = AxoContextMenu;
 
 const { noop } = lodash;
 
@@ -57,22 +47,27 @@ export type PropsData = {
   canDownload: boolean;
   canCopy: boolean;
   canEditMessage: boolean;
+  canEndPoll: boolean;
   canForward: boolean;
   canRetry: boolean;
   canRetryDeleteForEveryone: boolean;
   canReact: boolean;
   canReply: boolean;
-  selectedReaction?: string;
+  canPinMessage: boolean;
+  selectedReaction?: Emoji.Variant;
   isTargeted?: boolean;
+  isSignalConversation: boolean;
 } & Omit<MessagePropsData, 'renderingContext' | 'menu'>;
 
 export type PropsActions = {
+  onPinnedMessageRemove: (messageId: string) => void;
   pushPanelForConversation: PushPanelForConversationActionType;
   toggleDeleteMessagesModal: (props: DeleteMessagesPropsType) => void;
   toggleForwardMessagesModal: (payload: ForwardMessagesPayload) => void;
+  endPoll: (id: string) => void;
   reactToMessage: (
     id: string,
-    { emoji, remove }: { emoji: string; remove: boolean }
+    { emoji, remove }: { emoji: Emoji.Variant; remove: boolean }
   ) => void;
   retryMessageSend: (id: string) => void;
   sendPollVote: (params: {
@@ -89,13 +84,18 @@ export type PropsActions = {
     shift: boolean,
     selected: boolean
   ) => void;
+  showPinMessageDialog: (
+    messageId: string,
+    isPinningDisappearingMessage: boolean
+  ) => void;
+  handleDebugMessage: () => void;
 } & Omit<MessagePropsActions, 'onToggleSelect' | 'onReplyToMessage'>;
 
 export type Props = PropsData &
   PropsActions &
   Omit<PropsHousekeeping, 'isAttachmentPending'> & {
     renderReactionPicker: (
-      props: React.ComponentProps<typeof SmartReactionPicker>
+      props: ComponentProps<typeof SmartReactionPicker>
     ) => JSX.Element;
   };
 
@@ -105,24 +105,32 @@ export type Props = PropsData &
 export function TimelineMessage(props: Props): JSX.Element {
   const {
     attachments,
-    author,
     canDownload,
     canCopy,
     canEditMessage,
+    canEndPoll,
     canForward,
     canReact,
     canReply,
     canRetry,
     canRetryDeleteForEveryone,
+    canPinMessage,
     containerElementRef,
     containerWidthBreakpoint,
     conversationId,
     direction,
     i18n,
     id,
+    interactivity,
+    isPinned,
+    isSignalConversation,
     isTargeted,
     kickOffAttachmentDownload,
     copyMessageText,
+    endPoll,
+    expirationLength,
+    handleDebugMessage,
+    onPinnedMessageRemove,
     pushPanelForConversation,
     reactToMessage,
     renderReactionPicker,
@@ -131,6 +139,7 @@ export function TimelineMessage(props: Props): JSX.Element {
     saveAttachment,
     saveAttachments,
     showAttachmentDownloadStillInProgressToast,
+    showPinMessageDialog,
     selectedReaction,
     setQuoteByMessageId,
     setMessageToEdit,
@@ -144,7 +153,6 @@ export function TimelineMessage(props: Props): JSX.Element {
   const [reactionPickerRoot, setReactionPickerRoot] = useState<
     HTMLDivElement | undefined
   >(undefined);
-  const menuTriggerRef = useRef<ContextMenuTriggerType | null>(null);
 
   const isWindowWidthNotNarrow =
     containerWidthBreakpoint !== WidthBreakpoint.Narrow;
@@ -165,10 +173,6 @@ export function TimelineMessage(props: Props): JSX.Element {
         },
       };
     }, [containerElementRef]);
-
-  // This id is what connects our triple-dot click with our associated pop-up menu.
-  //   It needs to be unique.
-  const triggerId = String(id || `${author.id}-${timestamp}`);
 
   const toggleReactionPicker = useCallback(
     (onlyRemove = false): void => {
@@ -222,7 +226,7 @@ export function TimelineMessage(props: Props): JSX.Element {
   });
 
   const openGenericAttachment = useCallback(
-    (event?: React.MouseEvent): void => {
+    (event?: MouseEvent): void => {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -249,7 +253,8 @@ export function TimelineMessage(props: Props): JSX.Element {
       if (attachments.length !== 1) {
         saveAttachments(attachments, timestamp);
       } else {
-        saveAttachment(attachments[0], timestamp);
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        saveAttachment(attachments[0]!, timestamp);
       }
     },
     [
@@ -263,12 +268,12 @@ export function TimelineMessage(props: Props): JSX.Element {
     ]
   );
 
-  const handleContextMenu = useHandleMessageContextMenu(menuTriggerRef);
-
   const shouldShowAdditional =
     doesMessageBodyOverflow(text || '') || !isWindowWidthNotNarrow;
 
-  const handleDownload = canDownload ? openGenericAttachment : undefined;
+  const canSelect = interactivity === MessageInteractivity.Normal;
+
+  const handleDownload = canDownload ? openGenericAttachment : null;
 
   const handleReplyToMessage = useCallback(() => {
     if (!canReply) {
@@ -283,44 +288,137 @@ export function TimelineMessage(props: Props): JSX.Element {
     }
   }, [canReact, toggleReactionPicker]);
 
+  const isDisappearingMessage = expirationLength != null;
+
+  const handleOpenPinMessageDialog = useCallback(() => {
+    showPinMessageDialog(id, isDisappearingMessage);
+  }, [showPinMessageDialog, id, isDisappearingMessage]);
+
+  const handleUnpinMessage = useCallback(() => {
+    onPinnedMessageRemove(id);
+  }, [onPinnedMessageRemove, id]);
+
   const toggleReactionPickerKeyboard = useToggleReactionPicker(
     handleReact || noop
   );
 
-  const openContextMenuKeyboard = useOpenContextMenu(handleContextMenu);
-
-  useKeyboardShortcutsConditionally(
-    Boolean(isTargeted),
-    openContextMenuKeyboard,
-    toggleReactionPickerKeyboard
-  );
+  useDocumentKeyDown(event => {
+    if (isTargeted) {
+      toggleReactionPickerKeyboard(event);
+    }
+  });
 
   const groupedReactions = useGroupedAndOrderedReactions(
     props.reactions,
-    'variantKey'
+    'variant'
   );
 
   const messageEmojis = useMemo(() => {
     return groupedReactions
       .map(groupedReaction => {
-        return groupedReaction?.[0]?.variantKey;
+        return groupedReaction?.[0]?.variant;
       })
       .filter(isNotNil);
   }, [groupedReactions]);
+
+  const renderMessageContextMenu = useCallback(
+    (renderer: AxoMenuBuilder.Renderer, children: ReactNode): JSX.Element => {
+      return (
+        <MessageContextMenu
+          i18n={i18n}
+          renderer={renderer}
+          shouldShowAdditional={shouldShowAdditional}
+          onDownload={handleDownload}
+          onEdit={
+            canEditMessage ? () => setMessageToEdit(conversationId, id) : null
+          }
+          onReplyToMessage={handleReplyToMessage}
+          onReact={handleReact}
+          onEndPoll={canEndPoll ? () => endPoll(id) : null}
+          onRetryMessageSend={canRetry ? () => retryMessageSend(id) : null}
+          onRetryDeleteForEveryone={
+            canRetryDeleteForEveryone ? () => retryDeleteForEveryone(id) : null
+          }
+          onCopy={canCopy ? () => copyMessageText(id) : null}
+          onSelect={
+            canSelect
+              ? () => toggleSelectMessage(conversationId, id, false, true)
+              : null
+          }
+          onForward={
+            canForward
+              ? () =>
+                  toggleForwardMessagesModal({
+                    type: ForwardMessagesModalType.Forward,
+                    messageIds: [id],
+                  })
+              : null
+          }
+          onDeleteMessage={() => {
+            toggleDeleteMessagesModal({
+              conversationId,
+              messageIds: [id],
+            });
+          }}
+          onPinMessage={
+            canPinMessage && !isPinned ? handleOpenPinMessageDialog : null
+          }
+          onUnpinMessage={canPinMessage && isPinned ? handleUnpinMessage : null}
+          onMoreInfo={() =>
+            pushPanelForConversation({
+              type: PanelType.MessageDetails,
+              args: { messageId: id },
+            })
+          }
+          onDebugMessage={handleDebugMessage}
+        >
+          {children}
+        </MessageContextMenu>
+      );
+    },
+    [
+      canCopy,
+      canEditMessage,
+      canForward,
+      canPinMessage,
+      canRetry,
+      canSelect,
+      canEndPoll,
+      canRetryDeleteForEveryone,
+      conversationId,
+      copyMessageText,
+      handleDebugMessage,
+      handleDownload,
+      handleReact,
+      handleOpenPinMessageDialog,
+      handleUnpinMessage,
+      endPoll,
+      handleReplyToMessage,
+      i18n,
+      id,
+      isPinned,
+      pushPanelForConversation,
+      retryDeleteForEveryone,
+      retryMessageSend,
+      setMessageToEdit,
+      shouldShowAdditional,
+      toggleDeleteMessagesModal,
+      toggleForwardMessagesModal,
+      toggleSelectMessage,
+    ]
+  );
 
   const renderMenu = useCallback(() => {
     return (
       <Manager>
         <MessageMenu
           i18n={i18n}
-          triggerId={triggerId}
           isWindowWidthNotNarrow={isWindowWidthNotNarrow}
           direction={direction}
-          menuTriggerRef={menuTriggerRef}
-          showMenu={handleContextMenu}
           onDownload={handleDownload}
-          onReplyToMessage={canReply ? handleReplyToMessage : undefined}
-          onReact={canReact ? handleReact : undefined}
+          onReplyToMessage={canReply ? handleReplyToMessage : null}
+          onReact={canReact ? handleReact : null}
+          renderMessageContextMenu={renderMessageContextMenu}
         />
         {reactionPickerRoot &&
           createPortal(
@@ -354,13 +452,10 @@ export function TimelineMessage(props: Props): JSX.Element {
     );
   }, [
     i18n,
-    triggerId,
     isWindowWidthNotNarrow,
     direction,
-    menuTriggerRef,
     canReply,
     canReact,
-    handleContextMenu,
     handleDownload,
     handleReplyToMessage,
     handleReact,
@@ -372,130 +467,47 @@ export function TimelineMessage(props: Props): JSX.Element {
     toggleReactionPicker,
     id,
     messageEmojis,
+    renderMessageContextMenu,
   ]);
 
-  return (
-    <>
-      <Message
-        {...props}
-        renderingContext="conversation/TimelineItem"
-        onContextMenu={handleContextMenu}
-        renderMenu={renderMenu}
-        onToggleSelect={(selected, shift) => {
-          toggleSelectMessage(conversationId, id, shift, selected);
-        }}
-        onReplyToMessage={handleReplyToMessage}
-      />
+  const handleWrapperKeyDown = useAxoContextMenuOutsideKeyboardTrigger();
 
-      <MessageContextMenu
-        i18n={i18n}
-        triggerId={triggerId}
-        shouldShowAdditional={shouldShowAdditional}
-        interactionMode={props.interactionMode}
-        onDownload={handleDownload}
-        onEdit={
-          canEditMessage
-            ? () => setMessageToEdit(conversationId, id)
-            : undefined
-        }
-        onReplyToMessage={handleReplyToMessage}
-        onReact={handleReact}
-        onRetryMessageSend={canRetry ? () => retryMessageSend(id) : undefined}
-        onRetryDeleteForEveryone={
-          canRetryDeleteForEveryone
-            ? () => retryDeleteForEveryone(id)
-            : undefined
-        }
-        onCopy={canCopy ? () => copyMessageText(id) : undefined}
-        onSelect={() => toggleSelectMessage(conversationId, id, false, true)}
-        onForward={
-          canForward
-            ? () =>
-                toggleForwardMessagesModal({
-                  type: ForwardMessagesModalType.Forward,
-                  messageIds: [id],
-                })
-            : undefined
-        }
-        onDeleteMessage={() => {
-          toggleDeleteMessagesModal({
-            conversationId,
-            messageIds: [id],
-          });
-        }}
-        onMoreInfo={() =>
-          pushPanelForConversation({
-            type: PanelType.MessageDetails,
-            args: { messageId: id },
-          })
-        }
-      />
-    </>
+  return (
+    <Message
+      {...props}
+      renderingContext="conversation/TimelineItem"
+      renderMenu={isSignalConversation ? undefined : renderMenu}
+      renderMessageContextMenu={renderMessageContextMenu}
+      onToggleSelect={(selected, shift) => {
+        toggleSelectMessage(conversationId, id, shift, selected);
+      }}
+      onReplyToMessage={handleReplyToMessage}
+      onWrapperKeyDown={handleWrapperKeyDown}
+    />
   );
 }
 
 type MessageMenuProps = {
   i18n: LocalizerType;
-  triggerId: string;
   isWindowWidthNotNarrow: boolean;
-  menuTriggerRef: Ref<ContextMenuTriggerType>;
-  showMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
-  onDownload: (() => void) | undefined;
-  onReplyToMessage: (() => void) | undefined;
-  onReact: (() => void) | undefined;
+  onDownload: (() => void) | null;
+  onReplyToMessage: (() => void) | null;
+  onReact: (() => void) | null;
+  renderMessageContextMenu: (
+    renderer: AxoMenuBuilder.Renderer,
+    children: ReactNode
+  ) => ReactNode;
 } & Pick<MessageProps, 'i18n' | 'direction'>;
 
 function MessageMenu({
   i18n,
-  triggerId,
   direction,
   isWindowWidthNotNarrow,
-  menuTriggerRef,
-  showMenu,
   onDownload,
   onReplyToMessage,
   onReact,
+  renderMessageContextMenu,
 }: MessageMenuProps) {
-  // This a menu meant for mouse use only
-  /* eslint-disable jsx-a11y/interactive-supports-focus */
-  /* eslint-disable jsx-a11y/click-events-have-key-events */
-  const menuButton = (
-    <Reference>
-      {({ ref: popperRef }) => {
-        // Only attach the popper reference to the collapsed menu button if the reaction
-        //   button is not visible (it is hidden when the timeline is narrow)
-        const maybePopperRef = !isWindowWidthNotNarrow ? popperRef : undefined;
-
-        return (
-          <StopPropagation className="module-message__buttons__menu--container">
-            <ContextMenuTrigger
-              id={triggerId}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ref={menuTriggerRef as any}
-            >
-              <div
-                ref={maybePopperRef}
-                role="button"
-                onClick={showMenu}
-                aria-label={i18n('icu:messageContextMenuButton')}
-                className={classNames(
-                  'module-message__buttons__menu',
-                  `module-message__buttons__download--${direction}`
-                )}
-                onDoubleClick={ev => {
-                  // Prevent double click from triggering the replyToMessage action
-                  ev.stopPropagation();
-                }}
-              />
-            </ContextMenuTrigger>
-          </StopPropagation>
-        );
-      }}
-    </Reference>
-  );
-  /* eslint-enable jsx-a11y/interactive-supports-focus */
-  /* eslint-enable jsx-a11y/click-events-have-key-events */
-
   return (
     <div
       className={classNames(
@@ -515,12 +527,11 @@ function MessageMenu({
                   : undefined;
 
                 return (
-                  // This a menu meant for mouse use only
-                  // eslint-disable-next-line max-len
-                  // eslint-disable-next-line jsx-a11y/interactive-supports-focus, jsx-a11y/click-events-have-key-events
+                  // FIXME: Menus should be keyboard accessible
+                  // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
                   <div
                     ref={maybePopperRef}
-                    onClick={(event: React.MouseEvent) => {
+                    onClick={(event: MouseEvent) => {
                       event.stopPropagation();
                       event.preventDefault();
 
@@ -540,9 +551,8 @@ function MessageMenu({
           )}
 
           {onDownload && (
-            // This a menu meant for mouse use only
-            // eslint-disable-next-line max-len
-            // eslint-disable-next-line jsx-a11y/interactive-supports-focus, jsx-a11y/click-events-have-key-events
+            // FIXME: Menus should be keyboard accessible
+            // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
             <div
               onClick={onDownload}
               role="button"
@@ -559,17 +569,15 @@ function MessageMenu({
           )}
 
           {onReplyToMessage && (
-            // This a menu meant for mouse use only
-            // eslint-disable-next-line max-len
-            // eslint-disable-next-line jsx-a11y/interactive-supports-focus, jsx-a11y/click-events-have-key-events
+            // FIXME: Menus should be keyboard accessible
+            // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
             <div
-              onClick={(event: React.MouseEvent) => {
+              onClick={(event: MouseEvent) => {
                 event.stopPropagation();
                 event.preventDefault();
 
                 onReplyToMessage();
               }}
-              // This a menu meant for mouse use only
               role="button"
               aria-label={i18n('icu:replyToMessage')}
               className={classNames(
@@ -584,7 +592,33 @@ function MessageMenu({
           )}
         </>
       )}
-      {menuButton}
+      <Reference>
+        {({ ref: popperRef }) => {
+          // Only attach the popper reference to the collapsed menu button if
+          //   the reaction button is not visible (it is hidden when the
+          //   timeline is narrow)
+          const maybePopperRef = !isWindowWidthNotNarrow
+            ? popperRef
+            : undefined;
+
+          return renderMessageContextMenu(
+            'AxoDropdownMenu',
+            <button
+              ref={maybePopperRef}
+              type="button"
+              aria-label={i18n('icu:messageContextMenuButton')}
+              className={classNames(
+                'module-message__buttons__menu',
+                `module-message__buttons__download--${direction}`
+              )}
+              onDoubleClick={ev => {
+                // Prevent double click from triggering the replyToMessage action
+                ev.stopPropagation();
+              }}
+            />
+          );
+        }}
+      </Reference>
     </div>
   );
 }

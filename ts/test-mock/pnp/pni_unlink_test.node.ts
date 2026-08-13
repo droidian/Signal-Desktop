@@ -11,10 +11,10 @@ import {
 } from '@signalapp/libsignal-client';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { generatePni } from '../../types/ServiceId.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
+import { generatePni } from '../../test-helpers/serviceIdUtils.std.ts';
 
 export const debug = createDebug('mock:test:pni-unlink');
 
@@ -87,9 +87,19 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
       phone.sendRaw(
         desktop,
         {
-          syncMessage: {
-            pniChangeNumber,
+          content: {
+            syncMessage: {
+              content: {
+                pniChangeNumber,
+              },
+              read: null,
+              stickerPackOperation: null,
+              viewed: null,
+              padding: null,
+            },
           },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
         },
         {
           timestamp: bootstrap.getTimestamp(),
@@ -101,9 +111,19 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
       phone.sendRaw(
         desktop,
         {
-          syncMessage: {
-            pniChangeNumber,
+          content: {
+            syncMessage: {
+              content: {
+                pniChangeNumber,
+              },
+              read: null,
+              stickerPackOperation: null,
+              viewed: null,
+              padding: null,
+            },
           },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
         },
         {
           timestamp: bootstrap.getTimestamp(),

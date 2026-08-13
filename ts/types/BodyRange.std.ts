@@ -1,26 +1,21 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable @typescript-eslint/no-namespace */
-
 import lodash from 'lodash';
+import * as z from 'zod';
 
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { isNotNil } from '../util/isNotNil.std.js';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
 import {
   SNIPPET_LEFT_PLACEHOLDER,
   SNIPPET_RIGHT_PLACEHOLDER,
   SNIPPET_TRUNCATION_PLACEHOLDER,
-} from '../util/search.std.js';
-import { assertDev } from '../util/assert.std.js';
-import type { AciString } from './ServiceId.std.js';
-import { normalizeAci } from '../util/normalizeAci.std.js';
+} from '../util/search.std.ts';
+import { assertDev, strictAssert } from '../util/assert.std.ts';
+import { aciSchema, type AciString } from './ServiceId.std.ts';
+import { signalservice } from '../protobuf/compiled.std.js';
 
-const { isEqual, isNumber, omit, orderBy, partition } = lodash;
-
-const log = createLogger('BodyRange');
+const { isEqual, isNumber, orderBy, partition } = lodash;
 
 // Cold storage of body ranges
 
@@ -36,7 +31,6 @@ export enum DisplayStyle {
   SearchKeywordHighlight = 'SearchKeywordHighlight',
 }
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export namespace BodyRange {
   // re-export for convenience
   export type Style = Proto.BodyRange.Style;
@@ -128,235 +122,6 @@ type HydratedMention = BodyRange.Mention & {
   replacementText: string;
 };
 
-/**
- * A range that can contain other nested ranges
- * Inner range start fields are relative to the start of the containing range
- */
-export type RangeNode = BodyRange<
-  (
-    | HydratedMention
-    | BodyRange.Link
-    | BodyRange.Formatting
-    | BodyRange.DisplayOnly
-  ) & {
-    ranges: ReadonlyArray<RangeNode>;
-  }
->;
-
-const { BOLD, ITALIC, MONOSPACE, SPOILER, STRIKETHROUGH, NONE } =
-  BodyRange.Style;
-const MAX_PER_TYPE = 250;
-const MENTION_NAME = 'mention';
-
-// We drop unknown bodyRanges and remove extra stuff so they serialize properly
-export function filterAndClean(
-  ranges: ReadonlyArray<Proto.IBodyRange | RawBodyRange> | undefined | null
-): ReadonlyArray<RawBodyRange> | undefined {
-  if (!ranges) {
-    return undefined;
-  }
-
-  const countByTypeRecord: Record<
-    BodyRange.Style | typeof MENTION_NAME,
-    number
-  > = {
-    [MENTION_NAME]: 0,
-    [BOLD]: 0,
-    [ITALIC]: 0,
-    [MONOSPACE]: 0,
-    [SPOILER]: 0,
-    [STRIKETHROUGH]: 0,
-    [NONE]: 0,
-  };
-
-  return ranges
-    .map(range => {
-      const { start: startFromRange, length, ...restOfRange } = range;
-
-      const start = startFromRange ?? 0;
-      if (!isNumber(length)) {
-        log.warn('filterAndClean: Dropping bodyRange with non-number length');
-        return undefined;
-      }
-
-      let mentionAci: AciString | undefined;
-      if ('mentionAci' in range && range.mentionAci) {
-        mentionAci = normalizeAci(range.mentionAci, 'BodyRange.mentionAci');
-      }
-
-      if (mentionAci) {
-        countByTypeRecord[MENTION_NAME] += 1;
-        if (countByTypeRecord[MENTION_NAME] > MAX_PER_TYPE) {
-          return undefined;
-        }
-
-        return {
-          ...restOfRange,
-          start,
-          length,
-          mentionAci,
-        };
-      }
-      if ('style' in range && range.style) {
-        countByTypeRecord[range.style] += 1;
-        if (countByTypeRecord[range.style] > MAX_PER_TYPE) {
-          return undefined;
-        }
-        return {
-          ...restOfRange,
-          start,
-          length,
-          style: range.style,
-        };
-      }
-
-      log.warn('filterAndClean: Dropping unknown bodyRange');
-      return undefined;
-    })
-    .filter(isNotNil);
-}
-
-export function hydrateRanges(
-  ranges: ReadonlyArray<BodyRange<object>> | undefined,
-  conversationSelector: (id: string) => { id: string; title: string }
-): Array<HydratedBodyRangeType> | undefined {
-  if (!ranges) {
-    return undefined;
-  }
-
-  return filterAndClean(ranges)?.map(range => {
-    if (BodyRange.isMention(range)) {
-      const conversation = conversationSelector(range.mentionAci);
-
-      return {
-        ...range,
-        conversationID: conversation.id,
-        replacementText: conversation.title,
-      };
-    }
-
-    return range;
-  });
-}
-
-/**
- * Insert a range into an existing range tree, splitting up the range if it intersects
- * with an existing range
- *
- * @param range The range to insert the tree
- * @param rangeTree A list of nested non-intersecting range nodes, these starting ranges
- *  will not be split up
- */
-export function insertRange(
-  range: BodyRange<
-    | HydratedMention
-    | BodyRange.Link
-    | BodyRange.Formatting
-    | BodyRange.DisplayOnly
-  >,
-  rangeTree: ReadonlyArray<RangeNode>
-): ReadonlyArray<RangeNode> {
-  const [current, ...rest] = rangeTree;
-
-  if (!current) {
-    return [{ ...range, ranges: [] }];
-  }
-  const rangeEnd = range.start + range.length;
-  const currentEnd = current.start + current.length;
-
-  // ends before current starts
-  if (rangeEnd <= current.start) {
-    return [{ ...range, ranges: [] }, current, ...rest];
-  }
-
-  // starts after current one ends
-  if (range.start >= currentEnd) {
-    return [current, ...insertRange(range, rest)];
-  }
-
-  // range is contained by first
-  if (range.start >= current.start && rangeEnd <= currentEnd) {
-    return [
-      {
-        ...current,
-        ranges: insertRange(
-          { ...range, start: range.start - current.start },
-          current.ranges
-        ),
-      },
-      ...rest,
-    ];
-  }
-
-  // range contains first (but might contain more)
-  // split range into 3
-  if (range.start < current.start && rangeEnd > currentEnd) {
-    return [
-      { ...range, length: current.start - range.start, ranges: [] },
-      {
-        ...current,
-        ranges: insertRange(
-          { ...range, start: 0, length: current.length },
-          current.ranges
-        ),
-      },
-      ...insertRange(
-        { ...range, start: currentEnd, length: rangeEnd - currentEnd },
-        rest
-      ),
-    ];
-  }
-
-  // range intersects beginning
-  // split range into 2
-  if (range.start < current.start && rangeEnd <= currentEnd) {
-    return [
-      { ...range, length: current.start - range.start, ranges: [] },
-      {
-        ...current,
-        ranges: insertRange(
-          {
-            ...range,
-            start: 0,
-            length: range.length - (current.start - range.start),
-          },
-          current.ranges
-        ),
-      },
-      ...rest,
-    ];
-  }
-
-  // range intersects ending
-  // split range into 2
-  if (range.start >= current.start && rangeEnd > currentEnd) {
-    return [
-      {
-        ...current,
-        ranges: insertRange(
-          {
-            ...range,
-            start: range.start - current.start,
-            length: currentEnd - range.start,
-          },
-          current.ranges
-        ),
-      },
-      ...insertRange(
-        {
-          ...range,
-          start: currentEnd,
-          length: range.length - (currentEnd - range.start),
-        },
-        rest
-      ),
-    ];
-  }
-
-  log.error(`MessageTextRenderer: unhandled range ${range}`);
-  throw new Error('unhandled range');
-}
-
 // A flat list, ready for display
 
 export type DisplayNode = {
@@ -382,120 +147,159 @@ export type DisplayNode = {
   spoilerId?: number;
   spoilerChildren?: ReadonlyArray<DisplayNode>;
 };
-type PartialDisplayNode = Omit<
-  DisplayNode,
-  'mentions' | 'text' | 'start' | 'length'
->;
 
-function rangeToPartialNode(
-  range: BodyRange<
-    BodyRange.Link | BodyRange.Formatting | BodyRange.DisplayOnly
+type SimpleStyle =
+  | 'isBold'
+  | 'isItalic'
+  | 'isMonospace'
+  | 'isStrikethrough'
+  | 'isKeywordHighlight';
+
+type SpoilerSpan = { spoilerId?: number };
+type LinkSpan = { url: string };
+
+type BoundaryEvents = {
+  boolStart: Array<SimpleStyle>;
+  boolEnd: Array<SimpleStyle>;
+  spoilerStart?: SpoilerSpan;
+  spoilerEnd?: true;
+  linkStart?: LinkSpan;
+  linkEnd?: true;
+};
+
+const STYLE_FLAG: Partial<Record<BodyRange.Style, SimpleStyle>> = {
+  [BodyRange.Style.BOLD]: 'isBold',
+  [BodyRange.Style.ITALIC]: 'isItalic',
+  [BodyRange.Style.MONOSPACE]: 'isMonospace',
+  [BodyRange.Style.STRIKETHROUGH]: 'isStrikethrough',
+};
+
+export function collapseRangesToDisplayNodes(
+  text: string,
+  ranges: ReadonlyArray<
+    BodyRange<
+      | HydratedMention
+      | BodyRange.Link
+      | BodyRange.Formatting
+      | BodyRange.DisplayOnly
+    >
   >
-): PartialDisplayNode {
-  if (BodyRange.isFormatting(range)) {
-    if (range.style === BodyRange.Style.BOLD) {
-      return { isBold: true };
-    }
-    if (range.style === BodyRange.Style.ITALIC) {
-      return { isItalic: true };
-    }
-    if (range.style === BodyRange.Style.MONOSPACE) {
-      return { isMonospace: true };
-    }
-    if (range.style === BodyRange.Style.SPOILER) {
-      return { isSpoiler: true, spoilerId: range.spoilerId };
-    }
-    if (range.style === BodyRange.Style.STRIKETHROUGH) {
-      return { isStrikethrough: true };
-    }
-    if (range.style === BodyRange.Style.NONE) {
-      return {};
-    }
-    return {};
-  }
-  if (BodyRange.isLink(range)) {
-    return {
-      url: range.url,
-    };
-  }
-  if (BodyRange.isDisplayOnly(range)) {
-    if (range.displayStyle === DisplayStyle.SearchKeywordHighlight) {
-      return { isKeywordHighlight: true };
-    }
-    throw missingCaseError(range.displayStyle);
+): ReadonlyArray<DisplayNode> {
+  if (text.length === 0) {
+    return [];
   }
 
-  throw missingCaseError(range);
-}
+  const mentions: Array<BodyRange<HydratedMention>> = [];
+  const boundaries = new Set<number>([0, text.length]);
+  const eventsByPoint = new Map<number, BoundaryEvents>();
+  const eventsAt = (point: number): BoundaryEvents => {
+    let events = eventsByPoint.get(point);
+    if (events == null) {
+      events = { boolStart: [], boolEnd: [] };
+      eventsByPoint.set(point, events);
+    }
+    return events;
+  };
 
-/**
- * Turns a range tree into a flat list that can be rendered, with a walk across the tree.
- *
- *  * @param rangeTree A list of nested non-intersecting ranges.
- */
-export function collapseRangeTree({
-  parentData,
-  parentOffset = 0,
-  text,
-  tree,
-}: {
-  parentData?: PartialDisplayNode;
-  parentOffset?: number;
-  text: string;
-  tree: ReadonlyArray<RangeNode>;
-}): ReadonlyArray<DisplayNode> {
-  let collapsed: Array<DisplayNode> = [];
-
-  let offset = 0;
-  let mentions: Array<HydratedBodyRangeMention> = [];
-
-  tree.forEach(range => {
+  // Classify each range into boundary events
+  for (const range of ranges) {
     if (BodyRange.isMention(range)) {
-      mentions.push({
-        ...omit(range, ['ranges']),
-        start: range.start - offset,
-      });
-      return;
+      mentions.push(range);
+      continue;
     }
-
-    // Empty space between start of current
-    if (range.start > offset) {
-      collapsed.push({
-        ...parentData,
-        text: text.slice(offset, range.start),
-        start: offset + parentOffset,
-        length: range.start - offset,
-        mentions,
-      });
-      mentions = [];
+    const start = Math.max(0, Math.min(range.start, text.length));
+    const end = Math.max(0, Math.min(range.start + range.length, text.length));
+    if (end <= start) {
+      continue;
     }
+    boundaries.add(start);
+    boundaries.add(end);
 
-    // What sub-breaks can we make within this node?
-    const partialNode = { ...parentData, ...rangeToPartialNode(range) };
-    collapsed = collapsed.concat(
-      collapseRangeTree({
-        parentData: partialNode,
-        parentOffset: range.start + parentOffset,
-        text: text.slice(range.start, range.start + range.length),
-        tree: range.ranges,
-      })
-    );
-
-    offset = range.start + range.length;
-  });
-
-  // Empty space after the last range
-  if (text.length > offset) {
-    collapsed.push({
-      ...parentData,
-      text: text.slice(offset, text.length),
-      start: offset + parentOffset,
-      length: text.length - offset,
-      mentions,
-    });
+    if (BodyRange.isLink(range)) {
+      eventsAt(start).linkStart = { url: range.url };
+      eventsAt(end).linkEnd = true;
+    } else if (BodyRange.isDisplayOnly(range)) {
+      if (range.displayStyle === DisplayStyle.SearchKeywordHighlight) {
+        eventsAt(start).boolStart.push('isKeywordHighlight');
+        eventsAt(end).boolEnd.push('isKeywordHighlight');
+      }
+    } else if (range.style === BodyRange.Style.SPOILER) {
+      eventsAt(start).spoilerStart = { spoilerId: range.spoilerId };
+      eventsAt(end).spoilerEnd = true;
+    } else {
+      const kind = STYLE_FLAG[range.style];
+      if (kind != null) {
+        eventsAt(start).boolStart.push(kind);
+        eventsAt(end).boolEnd.push(kind);
+      }
+    }
   }
 
-  return collapsed;
+  const points = Array.from(boundaries).sort((a, b) => a - b);
+
+  const count: Record<SimpleStyle, number> = {
+    isBold: 0,
+    isItalic: 0,
+    isMonospace: 0,
+    isStrikethrough: 0,
+    isKeywordHighlight: 0,
+  };
+
+  let currentSpoiler: SpoilerSpan | undefined;
+  let currentLink: LinkSpan | undefined;
+  const nodes: Array<DisplayNode> = [];
+
+  // sort mentions descending so pop() returns them ascending
+  mentions.sort((a, b) => b.start - a.start);
+  let nextMention = mentions.pop();
+
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const start = points[i];
+    const end = points[i + 1];
+    strictAssert(start != null && end != null, 'boundary must exist');
+
+    const events = eventsByPoint.get(start);
+    if (events != null) {
+      for (const kind of events.boolEnd) {
+        count[kind] -= 1;
+      }
+      for (const kind of events.boolStart) {
+        count[kind] += 1;
+      }
+      currentSpoiler =
+        events.spoilerStart ?? (events.spoilerEnd ? undefined : currentSpoiler);
+      currentLink =
+        events.linkStart ?? (events.linkEnd ? undefined : currentLink);
+    }
+
+    const nodeMentions: Array<BodyRange<HydratedMention>> = [];
+    while (nextMention && nextMention.start < end) {
+      nodeMentions.push({ ...nextMention, start: nextMention.start - start });
+      nextMention = mentions.pop();
+    }
+
+    const node: DisplayNode = {
+      text: text.slice(start, end),
+      start,
+      length: end - start,
+      mentions: nodeMentions,
+      isBold: count.isBold > 0,
+      isItalic: count.isItalic > 0,
+      isMonospace: count.isMonospace > 0,
+      isStrikethrough: count.isStrikethrough > 0,
+      isKeywordHighlight: count.isKeywordHighlight > 0,
+      url: currentLink?.url,
+    };
+
+    if (currentSpoiler != null) {
+      node.isSpoiler = true;
+      node.spoilerId = currentSpoiler.spoilerId;
+    }
+
+    nodes.push(node);
+  }
+
+  return nodes;
 }
 
 export function groupContiguousSpoilers(
@@ -605,6 +409,9 @@ export function processBodyRangesForSearchResult({
 
   // To format the matches identified by FTS, we create synthetic BodyRanges to mix in
   // with all the other formatting embedded in this message.
+  type HighlightMatch = RegExpExecArray & {
+    indices: Record<0 | 1, [number, number]>;
+  };
   const highlightMatches = snippet.matchAll(
     new RegExp(
       `${SNIPPET_LEFT_PLACEHOLDER}(.*?)${SNIPPET_RIGHT_PLACEHOLDER}`,
@@ -615,9 +422,7 @@ export function processBodyRangesForSearchResult({
   let placeholderCharsSkipped = 0;
   for (const highlightMatch of highlightMatches) {
     // TS < 5 does not have types for RegExpIndicesArray
-    const { indices } = highlightMatch as RegExpMatchArray & {
-      indices: Array<Array<number>>;
-    };
+    const { indices } = highlightMatch as HighlightMatch;
     const [wholeMatchStartIdx] = indices[0];
     const [matchedWordStartIdx, matchedWordEndIdx] = indices[1];
     adjustedBodyRanges.push({
@@ -640,7 +445,7 @@ export function processBodyRangesForSearchResult({
   };
 }
 
-export const SPOILER_REPLACEMENT = '■■■■';
+const SPOILER_REPLACEMENT = '■■■■';
 
 /**
  * Replace text in a string at a given range, returning the new string. The
@@ -835,7 +640,10 @@ export function applyRangesToText(
 
   if (options.replaceSpoilers) {
     state = _applyRangeOfType(state, bodyRange => {
-      return BodyRange.isFormatting(bodyRange) && bodyRange.style === SPOILER;
+      return (
+        BodyRange.isFormatting(bodyRange) &&
+        bodyRange.style === BodyRange.Style.SPOILER
+      );
     });
   }
 
@@ -963,3 +771,20 @@ export function areBodyRangesEqual(
 
   return isEqual(normalizedLeft, sortedRight);
 }
+
+const bodyRangeOffsetSchema = z.number().int().min(0);
+const bodyRangeStyleSchema = z.nativeEnum(signalservice.BodyRange.Style);
+
+export const bodyRangeSchema = z.union([
+  z.object({
+    start: bodyRangeOffsetSchema,
+    length: bodyRangeOffsetSchema,
+    mentionAci: aciSchema,
+  }),
+  z.object({
+    start: bodyRangeOffsetSchema,
+    length: bodyRangeOffsetSchema,
+    style: bodyRangeStyleSchema,
+    spoilerId: z.number().optional(),
+  }),
+]);

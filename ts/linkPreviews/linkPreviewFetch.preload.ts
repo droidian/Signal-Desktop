@@ -4,7 +4,7 @@
 import type { RequestInit, Response } from 'node-fetch';
 import { blobToArrayBuffer } from 'blob-util';
 
-import type { MIMEType } from '../types/MIME.std.js';
+import type { MIMEType } from '../types/MIME.std.ts';
 import {
   IMAGE_GIF,
   IMAGE_ICO,
@@ -12,10 +12,11 @@ import {
   IMAGE_PNG,
   IMAGE_WEBP,
   stringToMIMEType,
-} from '../types/MIME.std.js';
-import type { LoggerType } from '../types/Logging.std.js';
-import { scaleImageToLevel } from '../util/scaleImageToLevel.preload.js';
-import { createLogger } from '../logging/log.std.js';
+} from '../types/MIME.std.ts';
+import type { LoggerType } from '../types/Logging.std.ts';
+import { scaleImageToLevel } from '../util/scaleImageToLevel.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { shouldPreviewHref } from '../types/LinkPreview.std.ts';
 
 const log = createLogger('linkPreviewFetch');
 
@@ -35,6 +36,8 @@ const MAX_CONTENT_TYPE_LENGTH_TO_PARSE = 100;
 //   this, we won't waste space.
 const MAX_HTML_BYTES_TO_LOAD = 1000 * 1024;
 
+const MAX_IMAGE_BYTES_TO_LOAD = 1024 * 1024;
+
 // `<title>x` is 8 bytes. Nothing else (meta tags, etc) will even fit, so we can ignore
 //   it. This is mostly to protect us against empty response bodies.
 const MIN_HTML_CONTENT_LENGTH = 8;
@@ -42,8 +45,7 @@ const MIN_HTML_CONTENT_LENGTH = 8;
 // Similar to the above. We don't want to show tiny images (even though the more likely
 //   case is that the Content-Length is 0).
 const MIN_IMAGE_CONTENT_LENGTH = 8;
-const MAX_IMAGE_CONTENT_LENGTH = 1024 * 1024;
-const VALID_IMAGE_MIME_TYPES: Set<MIMEType> = new Set([
+const VALID_IMAGE_MIME_TYPES = new Set<MIMEType>([
   IMAGE_GIF,
   IMAGE_ICO,
   IMAGE_JPEG,
@@ -68,7 +70,7 @@ export type LinkPreviewMetadata = {
 };
 
 export type LinkPreviewImage = {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
   contentType: MIMEType;
 };
 
@@ -94,7 +96,7 @@ async function fetchWithRedirects(
     urlsSeen.add(nextHrefToLoad);
 
     // This `await` is deliberately inside of a loop.
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const response = await fetchFn(nextHrefToLoad, {
       ...options,
       redirect: 'manual',
@@ -113,9 +115,9 @@ async function fetchWithRedirects(
     }
 
     const newUrl = maybeParseUrl(location, nextHrefToLoad);
-    if (newUrl?.protocol !== 'https:') {
+    if (!newUrl || !shouldPreviewHref(newUrl.href)) {
       logger.warn(
-        'fetchWithRedirects: got a redirect status code and an invalid Location header'
+        'fetchWithRedirects: got a redirect status code and an invalid or disallowed Location header'
       );
       throw new Error('invalid location');
     }
@@ -159,8 +161,7 @@ const parseContentType = (headerValue: string | null): ParsedContentType => {
   }
 
   let charset: null | string = null;
-  for (let i = 0; i < rawParameters.length; i += 1) {
-    const rawParameter = rawParameters[i];
+  for (const rawParameter of rawParameters) {
     const parsed = new URLSearchParams(rawParameter);
     const parsedCharset = parsed.get('charset')?.trim();
     if (parsedCharset) {
@@ -227,7 +228,7 @@ const emptyHtmlDocument = (): HTMLDocument =>
 //   (This fallback could, perhaps, be smarter based on user locale.)
 // [0]: https://www.w3.org/International/questions/qa-html-encoding-declarations.en
 const parseHtmlBytes = (
-  bytes: Readonly<Uint8Array>,
+  bytes: Readonly<Uint8Array<ArrayBuffer>>,
   httpCharset: string | null
 ): HTMLDocument => {
   const hasBom = bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
@@ -287,7 +288,7 @@ const parseHtmlBytes = (
 };
 
 const getHtmlDocument = async (
-  body: AsyncIterable<string | Uint8Array>,
+  body: AsyncIterable<string | Uint8Array<ArrayBuffer>>,
   httpCharset: string | null,
   abortSignal: AbortSignal,
   logger: Pick<LoggerType, 'warn'> = log
@@ -338,8 +339,7 @@ const getOpenGraphContent = (
   document: HTMLDocument,
   properties: ReadonlyArray<string>
 ): string | null => {
-  for (let i = 0; i < properties.length; i += 1) {
-    const property = properties[i];
+  for (const property of properties) {
     const content = document
       .querySelector(`meta[property="${property}"]`)
       ?.getAttribute('content')
@@ -355,8 +355,7 @@ const getLinkHrefAttribute = (
   document: HTMLDocument,
   rels: ReadonlyArray<string>
 ): string | null => {
-  for (let i = 0; i < rels.length; i += 1) {
-    const rel = rels[i];
+  for (const rel of rels) {
     const href = document
       .querySelector(`link[rel="${rel}"]`)
       ?.getAttribute('href')
@@ -455,6 +454,7 @@ export async function fetchLinkPreviewMetadata(
           'User-Agent': USER_AGENT,
         },
         signal: abortSignal,
+        size: Math.max(MAX_HTML_BYTES_TO_LOAD, MAX_IMAGE_BYTES_TO_LOAD),
       },
       logger
     );
@@ -520,6 +520,7 @@ export async function fetchLinkPreviewMetadata(
   }
 
   const document = await getHtmlDocument(
+    // @ts-expect-error ReadableStream should actually be giving us ArrayBuffers
     response.body,
     contentType.charset,
     abortSignal,
@@ -533,7 +534,7 @@ export async function fetchLinkPreviewMetadata(
   // [0]: https://nodejs.org/docs/latest-v12.x/api/stream.html#stream_readable_symbol_asynciterator
   // [1]: https://nodejs.org/docs/latest-v12.x/api/stream.html#stream_readable_destroy_error
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     (response.body as any).destroy();
   } catch (err) {
     // Ignored.
@@ -567,7 +568,7 @@ export async function fetchLinkPreviewImage(
         headers: {
           'User-Agent': USER_AGENT,
         },
-        size: MAX_IMAGE_CONTENT_LENGTH,
+        size: MAX_IMAGE_BYTES_TO_LOAD,
         signal: abortSignal,
       },
       logger
@@ -603,12 +604,6 @@ async function processImageResponse(
     logger.warn('fetchLinkPreviewImage: Content-Length is too short; bailing');
     return null;
   }
-  if (contentLength > MAX_IMAGE_CONTENT_LENGTH) {
-    logger.warn(
-      'fetchLinkPreviewImage: Content-Length is too large or is unset; bailing'
-    );
-    return null;
-  }
 
   const { type: contentType } = parseContentType(
     response.headers.get('Content-Type')
@@ -618,9 +613,9 @@ async function processImageResponse(
     return null;
   }
 
-  let data: Uint8Array;
+  let data: Uint8Array<ArrayBuffer>;
   try {
-    data = await response.buffer();
+    data = new Uint8Array(await response.arrayBuffer());
   } catch (err) {
     logger.warn('fetchLinkPreviewImage: failed to read body; bailing');
     return null;

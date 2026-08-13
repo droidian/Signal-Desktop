@@ -6,6 +6,7 @@ import lodash from 'lodash';
 import { z } from 'zod';
 import { EventEmitter } from 'node:events';
 
+import type { Aci } from '@signalapp/libsignal-client';
 import {
   Direction,
   IdentityChange,
@@ -19,15 +20,15 @@ import {
   SignedPreKeyRecord,
 } from '@signalapp/libsignal-client';
 
-import { DataReader, DataWriter } from './sql/Client.preload.js';
-import type { ItemType, KyberPreKeyTripleType } from './sql/Interface.std.js';
-import * as Bytes from './Bytes.std.js';
-import { constantTimeEqual, sha256 } from './Crypto.node.js';
-import { assertDev, strictAssert } from './util/assert.std.js';
-import { isNotNil } from './util/isNotNil.std.js';
-import { drop } from './util/drop.std.js';
-import { Zone } from './util/Zone.std.js';
-import { isMoreRecentThan } from './util/timestamp.std.js';
+import { DataReader, DataWriter } from './sql/Client.preload.ts';
+import type { ItemType, KyberPreKeyTripleType } from './sql/Interface.std.ts';
+import * as Bytes from './Bytes.std.ts';
+import { constantTimeEqual, sha256 } from './Crypto.node.ts';
+import { assertDev, strictAssert } from './util/assert.std.ts';
+import { isNotNil } from './util/isNotNil.std.ts';
+import { drop } from './util/drop.std.ts';
+import { Zone } from './util/Zone.std.ts';
+import { isMoreRecentThan } from './util/timestamp.std.ts';
 import type {
   DeviceType,
   IdentityKeyType,
@@ -53,21 +54,27 @@ import type {
   ServiceIdString,
   PniString,
   AciString,
-} from './types/ServiceId.std.js';
-import { isServiceIdString, ServiceIdKind } from './types/ServiceId.std.js';
-import type { Address } from './types/Address.std.js';
-import type { QualifiedAddressStringType } from './types/QualifiedAddress.std.js';
-import { QualifiedAddress } from './types/QualifiedAddress.std.js';
-import { createLogger } from './logging/log.std.js';
-import * as Errors from './types/errors.std.js';
-import { MINUTE } from './util/durations/index.std.js';
+} from './types/ServiceId.std.ts';
+import {
+  isServiceIdString,
+  ServiceIdKind,
+  fromAciObject,
+} from './types/ServiceId.std.ts';
+import type { Address } from './types/Address.std.ts';
+import type { QualifiedAddressStringType } from './types/QualifiedAddress.std.ts';
+import { QualifiedAddress } from './types/QualifiedAddress.std.ts';
+import { createLogger } from './logging/log.std.ts';
+import * as Errors from './types/errors.std.ts';
+import { MINUTE } from './util/durations/index.std.ts';
 import {
   KYBER_KEY_ID_KEY,
   SIGNED_PRE_KEY_ID_KEY,
-} from './textsecure/AccountManager.preload.js';
-import { formatGroups, groupWhile } from './util/groupWhile.std.js';
-import { parseUnknown } from './util/schemas.std.js';
-import { itemStorage } from './textsecure/Storage.preload.js';
+} from './textsecure/AccountManager.preload.ts';
+import { formatGroups, groupWhile } from './util/groupWhile.std.ts';
+import { parseUnknown } from './util/schemas.std.ts';
+import { wrappingAdd24 } from './util/wrappingAdd.std.ts';
+import { itemStorage } from './textsecure/Storage.preload.ts';
+import { getRequirePqRatio } from './util/getRequirePqRatio.dom.ts';
 
 const { omit } = lodash;
 
@@ -115,6 +122,7 @@ function validateIdentityKey(attrs: unknown): attrs is IdentityKeyType {
  */
 function formatKeys(keys: Array<number>): string {
   return formatGroups(
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     groupWhile(keys.sort(), (a, b) => a + 1 === b).slice(0, 10),
     '-',
     ', ',
@@ -152,7 +160,7 @@ export type SaveIdentityOptions = Readonly<{
 export type VerifyAlternateIdentityOptionsType = Readonly<{
   aci: AciString;
   pni: PniString;
-  signature: Uint8Array;
+  signature: Uint8Array<ArrayBuffer>;
 }>;
 
 export type SetVerifiedExtra = Readonly<{
@@ -170,8 +178,7 @@ async function _fillCaches<ID, T extends HasIdType<ID>, HydratedType>(
   const items = await itemsPromise;
 
   const cache = new Map<ID, CacheEntryType<T, HydratedType>>();
-  for (let i = 0, max = items.length; i < max; i += 1) {
-    const fromDB = items[i];
+  for (const fromDB of items) {
     const { id } = fromDB;
 
     cache.set(id, {
@@ -181,22 +188,19 @@ async function _fillCaches<ID, T extends HasIdType<ID>, HydratedType>(
   }
 
   log.info(`Finished caching ${field} data`);
-  // eslint-disable-next-line no-param-reassign, @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line no-param-reassign, typescript/no-explicit-any
   object[field] = cache as any;
 }
 
-export function hydrateSession(session: SessionType): SessionRecord {
+function hydrateSession(session: SessionType): SessionRecord {
   return SessionRecord.deserialize(session.record);
 }
-export function hydratePublicKey(identityKey: IdentityKeyType): PublicKey {
-  return PublicKey.deserialize(identityKey.publicKey);
-}
-export function hydratePreKey(preKey: PreKeyType): PreKeyRecord {
+function hydratePreKey(preKey: PreKeyType): PreKeyRecord {
   const publicKey = PublicKey.deserialize(preKey.publicKey);
   const privateKey = PrivateKey.deserialize(preKey.privateKey);
   return PreKeyRecord.new(preKey.keyId, publicKey, privateKey);
 }
-export function hydrateSignedPreKey(
+function hydrateSignedPreKey(
   signedPreKey: SignedPreKeyType
 ): SignedPreKeyRecord {
   const createdAt = signedPreKey.created_at;
@@ -231,7 +235,7 @@ type SenderKeyCacheEntry = CacheEntryType<SenderKeyType, SenderKeyRecord>;
 
 type ZoneQueueEntryType = Readonly<{
   zone: Zone;
-  callback(): void;
+  callback: () => void;
 }>;
 
 export class SignalProtocolStore extends EventEmitter {
@@ -241,9 +245,9 @@ export class SignalProtocolStore extends EventEmitter {
 
   // Cached values
 
-  #ourIdentityKeys = new Map<ServiceIdString, KeyPairType>();
+  readonly #ourIdentityKeys = new Map<ServiceIdString, KeyPairType>();
 
-  #ourRegistrationIds = new Map<ServiceIdString, number>();
+  readonly #ourRegistrationIds = new Map<ServiceIdString, number>();
   #cachedPniSignatureMessage: PniSignatureMessageType | undefined;
 
   identityKeys?: Map<
@@ -298,12 +302,12 @@ export class SignalProtocolStore extends EventEmitter {
           return;
         }
 
-        for (const serviceId of Object.keys(map.value)) {
+        for (const [serviceId, keyPair] of Object.entries(map.value)) {
           strictAssert(
             isServiceIdString(serviceId),
             'Invalid identity key serviceId'
           );
-          const { privKey, pubKey } = map.value[serviceId];
+          const { privKey, pubKey } = keyPair;
           const privateKey = PrivateKey.deserialize(privKey);
           const publicKey = PublicKey.deserialize(pubKey);
           this.#ourIdentityKeys.set(
@@ -321,12 +325,12 @@ export class SignalProtocolStore extends EventEmitter {
           return;
         }
 
-        for (const serviceId of Object.keys(map.value)) {
+        for (const [serviceId, registrationId] of Object.entries(map.value)) {
           strictAssert(
             isServiceIdString(serviceId),
             'Invalid registration id serviceId'
           );
-          this.#ourRegistrationIds.set(serviceId, map.value[serviceId]);
+          this.#ourRegistrationIds.set(serviceId, registrationId);
         }
       })(),
       (async () => {
@@ -922,7 +926,6 @@ export class SignalProtocolStore extends EventEmitter {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
-      throwOnTimeout: true,
     });
   }
 
@@ -1091,7 +1094,6 @@ export class SignalProtocolStore extends EventEmitter {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
-      throwOnTimeout: true,
     });
   }
 
@@ -1112,7 +1114,6 @@ export class SignalProtocolStore extends EventEmitter {
     return new PQueue({
       concurrency: 1,
       timeout: MINUTE * 30,
-      throwOnTimeout: true,
     });
   }
 
@@ -1554,7 +1555,7 @@ export class SignalProtocolStore extends EventEmitter {
           entries.map(async entry => {
             if (entry.hydrated) {
               const record = entry.item;
-              if (record.hasCurrentState()) {
+              if (record.hasCurrentState(getRequirePqRatio())) {
                 return { record, entry };
               }
 
@@ -1562,7 +1563,7 @@ export class SignalProtocolStore extends EventEmitter {
             }
 
             const record = hydrateSession(entry.fromDB);
-            if (record.hasCurrentState()) {
+            if (record.hasCurrentState(getRequirePqRatio())) {
               return { record, entry };
             }
 
@@ -1664,10 +1665,7 @@ export class SignalProtocolStore extends EventEmitter {
           `removeSessionsByConversation: Conversation not found: ${identifier}`
         );
 
-        const entries = Array.from(this.sessions.values());
-
-        for (let i = 0, max = entries.length; i < max; i += 1) {
-          const entry = entries[i];
+        for (const entry of this.sessions.values()) {
           if (entry.fromDB.conversationId === id) {
             this.sessions.delete(entry.fromDB.id);
             this.#pendingSessions.delete(entry.fromDB.id);
@@ -1689,10 +1687,7 @@ export class SignalProtocolStore extends EventEmitter {
 
       log.info('removeSessionsByServiceId: deleting sessions for', serviceId);
 
-      const entries = Array.from(this.sessions.values());
-
-      for (let i = 0, max = entries.length; i < max; i += 1) {
-        const entry = entries[i];
+      for (const entry of this.sessions.values()) {
         if (entry.fromDB.serviceId === serviceId) {
           this.sessions.delete(entry.fromDB.id);
           this.#pendingSessions.delete(entry.fromDB.id);
@@ -1715,7 +1710,7 @@ export class SignalProtocolStore extends EventEmitter {
       async () => {
         const item = entry.hydrated ? entry.item : hydrateSession(entry.fromDB);
 
-        if (!item.hasCurrentState()) {
+        if (!item.hasCurrentState(getRequirePqRatio())) {
           return;
         }
 
@@ -1934,7 +1929,7 @@ export class SignalProtocolStore extends EventEmitter {
   // https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/crypto/storage/SignalBaseIdentityKeyStore.java#L128
   async isTrustedIdentity(
     encodedAddress: Address,
-    publicKey: Uint8Array,
+    publicKey: Uint8Array<ArrayBuffer>,
     direction: number
   ): Promise<boolean> {
     if (!this.identityKeys) {
@@ -1979,7 +1974,7 @@ export class SignalProtocolStore extends EventEmitter {
   // https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/crypto/storage/SignalBaseIdentityKeyStore.java#L233
   isTrustedForSending(
     serviceId: ServiceIdString,
-    publicKey: Uint8Array,
+    publicKey: Uint8Array<ArrayBuffer>,
     identityRecord?: IdentityKeyType
   ): boolean {
     if (!identityRecord) {
@@ -2030,7 +2025,7 @@ export class SignalProtocolStore extends EventEmitter {
 
   async loadIdentityKey(
     serviceId: ServiceIdString
-  ): Promise<Uint8Array | undefined> {
+  ): Promise<Uint8Array<ArrayBuffer> | undefined> {
     if (serviceId == null) {
       throw new Error('loadIdentityKey: serviceId was undefined/null');
     }
@@ -2079,7 +2074,7 @@ export class SignalProtocolStore extends EventEmitter {
   // https://github.com/signalapp/Signal-Android/blob/fc3db538bcaa38dc149712a483d3032c9c1f3998/app/src/main/java/org/thoughtcrime/securesms/crypto/storage/SignalBaseIdentityKeyStore.java#L69
   async saveIdentity(
     encodedAddress: Address,
-    publicKey: Uint8Array,
+    publicKey: Uint8Array<ArrayBuffer>,
     nonblockingApproval = false,
     { zone = GLOBAL_ZONE, noOverwrite = false }: SaveIdentityOptions = {}
   ): Promise<IdentityChange> {
@@ -2091,14 +2086,15 @@ export class SignalProtocolStore extends EventEmitter {
       throw new Error('saveIdentity: encodedAddress was undefined/null');
     }
     if (!(publicKey instanceof Uint8Array)) {
-      // eslint-disable-next-line no-param-reassign
+      // oxlint-disable-next-line no-param-reassign
       publicKey = Bytes.fromBinary(publicKey);
     }
     if (typeof nonblockingApproval !== 'boolean') {
-      // eslint-disable-next-line no-param-reassign
+      // oxlint-disable-next-line no-param-reassign
       nonblockingApproval = false;
     }
 
+    strictAssert(publicKey.length > 0, 'Empty public key');
     return this.#_runOnIdentityQueue(
       encodedAddress.serviceId,
       zone,
@@ -2350,7 +2346,7 @@ export class SignalProtocolStore extends EventEmitter {
   //   the same!
   checkPreviousKey(
     serviceId: ServiceIdString,
-    publicKey: Uint8Array,
+    publicKey: Uint8Array<ArrayBuffer>,
     context: string
   ): void {
     const conversation = window.ConversationController.get(serviceId);
@@ -2383,7 +2379,7 @@ export class SignalProtocolStore extends EventEmitter {
   async updateIdentityAfterSync(
     serviceId: ServiceIdString,
     verifiedStatus: number,
-    publicKey: Uint8Array
+    publicKey: Uint8Array<ArrayBuffer>
   ): Promise<{ shouldAddVerifiedChangedMessage: boolean }> {
     strictAssert(
       validateVerifiedStatus(verifiedStatus),
@@ -2399,7 +2395,7 @@ export class SignalProtocolStore extends EventEmitter {
         const hadEntry = identityRecord !== undefined;
         const keyMatches = Boolean(
           identityRecord?.publicKey &&
-            constantTimeEqual(publicKey, identityRecord.publicKey)
+          constantTimeEqual(publicKey, identityRecord.publicKey)
         );
         const statusMatches =
           keyMatches && verifiedStatus === identityRecord?.verified;
@@ -2636,18 +2632,18 @@ export class SignalProtocolStore extends EventEmitter {
     // Update database
     await Promise.all<void>([
       itemStorage.put('identityKeyMap', {
-        ...(itemStorage.get('identityKeyMap') || {}),
+        ...itemStorage.get('identityKeyMap'),
         [pni]: {
           pubKey: pniPublicKey,
           privKey: pniPrivateKey,
         },
       }),
       itemStorage.put('registrationIdMap', {
-        ...(itemStorage.get('registrationIdMap') || {}),
+        ...itemStorage.get('registrationIdMap'),
         [pni]: registrationId,
       }),
       (async () => {
-        const newId = signedPreKey.id() + 1;
+        const newId = Math.max(1, wrappingAdd24(signedPreKey.id(), 1));
         log.warn(`${logId}: Updating next signed pre key id to ${newId}`);
         await itemStorage.put(SIGNED_PRE_KEY_ID_KEY[ServiceIdKind.PNI], newId);
       })(),
@@ -2665,7 +2661,7 @@ export class SignalProtocolStore extends EventEmitter {
         if (!lastResortKyberPreKey) {
           return;
         }
-        const newId = lastResortKyberPreKey.id() + 1;
+        const newId = Math.max(1, wrappingAdd24(lastResortKyberPreKey.id(), 1));
         log.warn(`${logId}: Updating next kyber pre key id to ${newId}`);
         await itemStorage.put(KYBER_KEY_ID_KEY[ServiceIdKind.PNI], newId);
       })(),
@@ -2697,7 +2693,7 @@ export class SignalProtocolStore extends EventEmitter {
     this.emit('removeAllData');
   }
 
-  async removeAllConfiguration(): Promise<void> {
+  async removeAllConfiguration(isPrimary: boolean): Promise<void> {
     // Conversations. These properties are not present in redux.
     window.ConversationController.getAll().forEach(conversation => {
       conversation.set({
@@ -2708,7 +2704,7 @@ export class SignalProtocolStore extends EventEmitter {
       });
     });
 
-    await DataWriter.removeAllConfiguration();
+    await DataWriter.removeAllConfiguration(isPrimary);
 
     await this.hydrateCaches();
 
@@ -2796,6 +2792,38 @@ export class SignalProtocolStore extends EventEmitter {
     }
   }
 
+  // Key Transparency
+
+  getLastDistinguishedTreeHead(): Uint8Array<ArrayBuffer> | null {
+    return itemStorage.get('lastDistinguishedTreeHead') ?? null;
+  }
+
+  async setLastDistinguishedTreeHead(
+    bytes: Readonly<Uint8Array<ArrayBuffer>> | null
+  ): Promise<void> {
+    if (bytes == null) {
+      await itemStorage.remove('lastDistinguishedTreeHead');
+    } else {
+      await itemStorage.put('lastDistinguishedTreeHead', bytes);
+    }
+  }
+
+  async getKTAccountData(
+    aciObject: Aci
+  ): Promise<Uint8Array<ArrayBuffer> | null> {
+    const aci = fromAciObject(aciObject);
+    const data = await DataReader.getKTAccountData(aci);
+    return data ?? null;
+  }
+
+  async setKTAccountData(
+    aciObject: Aci,
+    bytes: Readonly<Uint8Array<ArrayBuffer>>
+  ): Promise<void> {
+    const aci = fromAciObject(aciObject);
+    return DataWriter.setKTAccountData(aci, bytes);
+  }
+
   //
   // EventEmitter types
   //
@@ -2819,7 +2847,7 @@ export class SignalProtocolStore extends EventEmitter {
 
   public override on(
     eventName: string | symbol,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     listener: (...args: Array<any>) => void
   ): this {
     return super.on(eventName, listener);
@@ -2845,7 +2873,7 @@ export class SignalProtocolStore extends EventEmitter {
 
   public override emit(
     eventName: string | symbol,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     ...args: Array<any>
   ): boolean {
     return super.emit(eventName, ...args);

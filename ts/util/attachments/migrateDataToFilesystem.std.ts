@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import type {
-  AttachmentType,
-  LocalAttachmentV2Type,
-} from '../../types/Attachment.std.js';
-import type { LoggerType } from '../../types/Logging.std.js';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import type { ContextType } from '../../types/Message2.preload.ts';
 
 const { isFunction, isTypedArray, isUndefined, omit } = lodash;
 
@@ -14,13 +11,16 @@ export async function migrateDataToFileSystem(
   attachment: AttachmentType,
   {
     writeNewAttachmentData,
+    getExistingAttachmentDataForReuse,
+    getPlaintextHashForInMemoryAttachment,
     logger,
-  }: {
-    writeNewAttachmentData: (
-      data: Uint8Array
-    ) => Promise<LocalAttachmentV2Type>;
-    logger: LoggerType;
-  }
+  }: Pick<
+    ContextType,
+    | 'writeNewAttachmentData'
+    | 'getExistingAttachmentDataForReuse'
+    | 'getPlaintextHashForInMemoryAttachment'
+    | 'logger'
+  >
 ): Promise<AttachmentType> {
   if (!isFunction(writeNewAttachmentData)) {
     throw new TypeError("'writeNewAttachmentData' must be a function");
@@ -42,8 +42,23 @@ export async function migrateDataToFileSystem(
     return omit({ ...attachment }, ['data']);
   }
 
-  const local = await writeNewAttachmentData(data);
+  const plaintextHash = getPlaintextHashForInMemoryAttachment(data);
 
-  const attachmentWithoutData = omit({ ...attachment, ...local }, ['data']);
-  return attachmentWithoutData;
+  const existingData = await getExistingAttachmentDataForReuse({
+    plaintextHash,
+    contentType: attachment.contentType,
+    logId: 'migrateDataToFileSystem',
+  });
+  const attachmentWithoutData = omit(attachment, ['data']);
+
+  if (existingData) {
+    return {
+      ...attachmentWithoutData,
+      plaintextHash,
+      ...existingData,
+    };
+  }
+
+  const newAttachmentData = await writeNewAttachmentData(data);
+  return { ...attachmentWithoutData, ...newAttachmentData };
 }

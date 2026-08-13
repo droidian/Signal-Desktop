@@ -1,50 +1,51 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import type { JSX } from 'react';
 
-import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './AttachmentSection.dom.js';
-import { AttachmentSection } from './AttachmentSection.dom.js';
+import type { Props } from './AttachmentSection.dom.tsx';
+import { AttachmentSection } from './AttachmentSection.dom.tsx';
 import {
   createRandomDocuments,
   createRandomMedia,
+  createRandomLinks,
+  createRandomAudio,
   days,
-} from './utils/mocks.std.js';
-
-const { i18n } = window.SignalContext;
+} from '../../../test-helpers/mediaGalleryMocks.std.ts';
+import { MediaItem } from '../../../test-helpers/mediaGalleryStorybook.dom.tsx';
 
 export default {
   title: 'Components/Conversation/MediaGallery/AttachmentSection',
   component: AttachmentSection,
   argTypes: {
     header: { control: { type: 'text' } },
-    type: {
-      control: {
-        type: 'select',
-        options: ['media', 'documents'],
-      },
-    },
   },
   args: {
-    i18n,
     header: 'Today',
-    type: 'media',
     mediaItems: [],
+    renderMediaItem: props => <MediaItem {...props} />,
     onItemClick: action('onItemClick'),
   },
 } satisfies Meta<Props>;
 
-export function Documents(args: Props) {
+export function Documents(args: Props): JSX.Element {
   const mediaItems = createRandomDocuments(Date.now(), days(1));
-  return (
-    <AttachmentSection {...args} type="documents" mediaItems={mediaItems} />
-  );
+  return <AttachmentSection {...args} mediaItems={mediaItems} />;
 }
 
-export function Media(args: Props) {
+export function Media(args: Props): JSX.Element {
   const mediaItems = createRandomMedia(Date.now(), days(1));
-  return <AttachmentSection {...args} type="media" mediaItems={mediaItems} />;
+  return <AttachmentSection {...args} mediaItems={mediaItems} />;
+}
+
+export function Audio(args: Props): JSX.Element {
+  const mediaItems = createRandomAudio(Date.now(), days(1));
+  return <AttachmentSection {...args} mediaItems={mediaItems} />;
+}
+
+export function Links(args: Props): JSX.Element {
+  const mediaItems = createRandomLinks(Date.now(), days(1));
+  return <AttachmentSection {...args} mediaItems={mediaItems} />;
 }

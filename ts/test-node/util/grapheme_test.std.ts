@@ -3,31 +3,9 @@
 
 import { assert } from 'chai';
 
-import {
-  getGraphemes,
-  count,
-  hasAtMostGraphemes,
-  isSingleGrapheme,
-} from '../../util/grapheme.std.js';
+import { count, hasAtMostGraphemes } from '../../util/grapheme.std.ts';
 
 describe('grapheme utilities', () => {
-  describe('getGraphemes', () => {
-    it('returns extended graphemes in a string', () => {
-      assert.deepEqual([...getGraphemes('')], []);
-      assert.deepEqual([...getGraphemes('hello')], [...'hello']);
-      assert.deepEqual(
-        [...getGraphemes('Bokmål')],
-        ['B', 'o', 'k', 'm', 'å', 'l']
-      );
-
-      assert.deepEqual([...getGraphemes('💩💩💩')], ['💩', '💩', '💩']);
-      assert.deepEqual([...getGraphemes('👩‍❤️‍👩')], ['👩‍❤️‍👩']);
-      assert.deepEqual([...getGraphemes('👌🏽👌🏾👌🏿')], ['👌🏽', '👌🏾', '👌🏿']);
-
-      assert.deepEqual([...getGraphemes('L̷̳͔̲͝Ģ̵̮̯̤̩̙͍̬̟͉̹̘̹͍͈̮̦̰̣͟͝O̶̴̮̻̮̗͘͡!̴̷̟͓͓')], ['L̷̳͔̲͝', 'Ģ̵̮̯̤̩̙͍̬̟͉̹̘̹͍͈̮̦̰̣͟͝', 'O̶̴̮̻̮̗͘͡', '!̴̷̟͓͓']);
-    });
-  });
-
   describe('count', () => {
     it('returns the number of extended graphemes in a string (not necessarily the length)', () => {
       // These tests modified [from iOS][0].
@@ -66,22 +44,6 @@ describe('grapheme utilities', () => {
       assert.strictEqual(count('Z͑ͫ̓ͪ̂ͫ̽͏̴̙̤̞͉͚̯̞̠͍A̴̵̜̰͔ͫ͗͢L̠ͨͧͩ͘G̴̻͈͍͔̹̑͗̎̅͛́Ǫ̵̹̻̝̳͂̌̌͘'), 5);
       assert.strictEqual(count('H҉̸̧͘͠A͢͞V̛̛I̴̸N͏̕͏G҉̵͜͏͢ ̧̧́T̶̛͘͡R̸̵̨̢̀O̷̡U͡҉B̶̛͢͞L̸̸͘͢͟É̸ ̸̛͘͏R͟È͠͞A̸͝Ḑ̕͘͜I̵͘҉͜͞N̷̡̢͠G̴͘͠ ͟͞T͏̢́͡È̀X̕҉̢̀T̢͠?̕͏̢͘͢'), 28);
       assert.strictEqual(count('L̷̳͔̲͝Ģ̵̮̯̤̩̙͍̬̟͉̹̘̹͍͈̮̦̰̣͟͝O̶̴̮̻̮̗͘͡!̴̷̟͓͓'), 4);
-    });
-  });
-
-  describe('isSingleGrapheme', () => {
-    it('returns false for the empty string', () => {
-      assert.isFalse(isSingleGrapheme(''));
-    });
-    it('returns true for single graphemes', () => {
-      assert.isTrue(isSingleGrapheme('a'));
-      assert.isTrue(isSingleGrapheme('å'));
-      assert.isTrue(isSingleGrapheme('😍'));
-    });
-    it('returns false for multiple graphemes', () => {
-      assert.isFalse(isSingleGrapheme('ab'));
-      assert.isFalse(isSingleGrapheme('a😍'));
-      assert.isFalse(isSingleGrapheme('😍a'));
     });
   });
 

@@ -1,13 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CallingMessage } from '@signalapp/ringrtc';
+import type { AnswerMessage, CallingMessage } from '@signalapp/ringrtc';
 import { CallMessageUrgency } from '@signalapp/ringrtc';
-import Long from 'long';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { toLogFormat } from '../types/errors.std.js';
-import { missingCaseError } from './missingCaseError.std.js';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import { missingCaseError } from './missingCaseError.std.ts';
 
 const log = createLogger('callingMessageToProto');
 
@@ -22,17 +21,19 @@ export function callingMessageToProto(
     opaque,
   }: CallingMessage,
   urgency?: CallMessageUrgency
-): Proto.ICallMessage {
-  let opaqueField: undefined | Proto.CallMessage.IOpaque;
+): Proto.CallMessage.Params {
+  let opaqueField: undefined | Proto.CallMessage.Opaque.Params;
   if (opaque) {
     opaqueField = {
+      // oxlint-disable-next-line typescript/no-misused-spread
       ...opaque,
-      data: opaque.data,
+      urgency: null,
+      data: opaque.data != null ? opaqueToBytes(opaque.data) : null,
     };
   }
   if (urgency !== undefined) {
     opaqueField = {
-      ...(opaqueField ?? {}),
+      ...(opaqueField ?? { data: null, urgency: null }),
       urgency: urgencyToProto(urgency),
     };
   }
@@ -40,44 +41,56 @@ export function callingMessageToProto(
   return {
     offer: offer
       ? {
+          // oxlint-disable-next-line typescript/no-misused-spread
           ...offer,
-          id: Long.fromValue(offer.callId),
+          id: offer.callId,
           type: offer.type as number,
-          opaque: offer.opaque,
+          opaque: opaqueToBytes(offer.opaque),
         }
-      : undefined,
+      : null,
     answer: answer
       ? {
+          // oxlint-disable-next-line typescript/no-misused-spread
           ...answer,
-          id: Long.fromValue(answer.callId),
-          opaque: answer.opaque,
+          id: answer.callId,
+          opaque: opaqueToBytes(answer.opaque),
         }
-      : undefined,
+      : null,
     iceUpdate: iceCandidates
-      ? iceCandidates.map((candidate): Proto.CallMessage.IIceUpdate => {
+      ? iceCandidates.map((candidate): Proto.CallMessage.IceUpdate.Params => {
           return {
+            // oxlint-disable-next-line typescript/no-misused-spread
             ...candidate,
-            id: Long.fromValue(candidate.callId),
-            opaque: candidate.opaque,
+            id: candidate.callId,
+            opaque: opaqueToBytes(candidate.opaque),
           };
         })
-      : undefined,
+      : null,
     busy: busy
       ? {
+          // oxlint-disable-next-line typescript/no-misused-spread
           ...busy,
-          id: Long.fromValue(busy.callId),
+          id: busy.callId,
         }
-      : undefined,
+      : null,
     hangup: hangup
       ? {
+          // oxlint-disable-next-line typescript/no-misused-spread
           ...hangup,
-          id: Long.fromValue(hangup.callId),
+          id: hangup.callId,
           type: hangup.type as number,
         }
-      : undefined,
-    destinationDeviceId,
-    opaque: opaqueField,
+      : null,
+    destinationDeviceId: destinationDeviceId ?? null,
+    opaque: opaqueField ?? null,
   };
+}
+
+function opaqueToBytes(
+  opaque: AnswerMessage['opaque']
+): Uint8Array<ArrayBuffer> {
+  const bytes: Uint8Array<ArrayBuffer> = opaque;
+  return bytes;
 }
 
 function urgencyToProto(

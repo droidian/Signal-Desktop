@@ -1,13 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { CRITICAL_IDLE_PRIMARY_DEVICE_SUPPORT_PAGE } from './CriticalIdlePrimaryDeviceDialog.dom.js';
-import { I18n } from './I18n.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Modal } from './Modal.dom.tsx';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { CRITICAL_IDLE_PRIMARY_DEVICE_SUPPORT_PAGE } from './CriticalIdlePrimaryDeviceDialog.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
 
 type PropsType = Readonly<{
   i18n: LocalizerType;

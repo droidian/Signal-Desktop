@@ -9,53 +9,52 @@ import PQueue from 'p-queue';
 import { IdentityChange } from '@signalapp/libsignal-client';
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { ConversationModel } from '../models/conversations.preload.js';
+import type { ConversationModel } from '../models/conversations.preload.ts';
 import type { CapabilitiesType } from '../types/Capabilities.d.ts';
-import type { ProfileType } from '../textsecure/WebAPI.preload.js';
+import type { ProfileType } from '../textsecure/WebAPI.preload.ts';
 import {
   checkAccountExistence,
   getProfile,
   getProfileUnauth,
-} from '../textsecure/WebAPI.preload.js';
-import { MessageSender } from '../textsecure/SendMessage.preload.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { DataWriter } from '../sql/Client.preload.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { isRecord } from '../util/isRecord.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { MINUTE, SECOND } from '../util/durations/index.std.js';
+} from '../textsecure/WebAPI.preload.ts';
+import { MessageSender } from '../textsecure/SendMessage.preload.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { isRecord } from '../util/isRecord.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { MINUTE, SECOND } from '../util/durations/index.std.ts';
 import {
   generateProfileKeyCredentialRequest,
   getClientZkProfileOperations,
   handleProfileKeyCredential,
-} from '../util/zkgroup.node.js';
-import { isMe } from '../util/whatTypeOfConversation.dom.js';
-import { parseBadgesFromServer } from '../badges/parseBadgesFromServer.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { drop } from '../util/drop.std.js';
-import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.std.js';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.js';
-import { SEALED_SENDER } from '../types/SealedSender.std.js';
-import { HTTPError } from '../types/HTTPError.std.js';
-import { Address } from '../types/Address.std.js';
-import { QualifiedAddress } from '../types/QualifiedAddress.std.js';
+} from '../util/zkgroup.node.ts';
+import { isMe } from '../util/whatTypeOfConversation.dom.ts';
+import { parseBadgesFromServer } from '../badges/parseBadgesFromServer.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.std.ts';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.ts';
+import { SEALED_SENDER } from '../types/SealedSender.std.ts';
+import { HTTPError } from '../types/HTTPError.std.ts';
+import { Address } from '../types/Address.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
 import {
   trimForDisplay,
   verifyAccessKey,
   decryptProfile,
-} from '../Crypto.node.js';
+} from '../Crypto.node.ts';
 import type { ConversationLastProfileType } from '../model-types.d.ts';
-import type { GroupSendToken } from '../types/GroupSendEndorsements.std.js';
-import {
-  maybeCreateGroupSendEndorsementState,
-  onFailedToSendWithEndorsements,
-} from '../util/groupSendEndorsements.preload.js';
-import { ProfileDecryptError } from '../types/errors.std.js';
-import { signalProtocolStore } from '../SignalProtocolStore.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.std.ts';
+import { maybeCreateGroupSendEndorsementState } from '../util/groupSendEndorsements.preload.ts';
+import { ProfileDecryptError } from '../types/errors.std.ts';
+import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { runMegaphoneCheck } from './megaphone.preload.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const log = createLogger('profiles');
 
@@ -84,19 +83,22 @@ type JobType = {
 
 const OBSERVED_CAPABILITY_KEYS = Object.keys({
   attachmentBackfill: true,
+  usernameChangeSyncMessage: true,
 } satisfies CapabilitiesType) as ReadonlyArray<keyof CapabilitiesType>;
 
 const PROFILE_FETCH_CONCURRENCY = 30;
 
 export class ProfileService {
-  #jobQueue: PQueue;
-  #jobsByConversationId: Map<string, JobType> = new Map();
+  readonly #fetchProfile: typeof doGetProfile;
+  readonly #jobQueue: PQueue;
+  readonly #jobsByConversationId = new Map<string, JobType>();
   #isPaused = false;
 
   constructor(
-    private fetchProfile = doGetProfile,
+    fetchProfile = doGetProfile,
     concurrency = PROFILE_FETCH_CONCURRENCY
   ) {
+    this.#fetchProfile = fetchProfile;
     this.#jobQueue = new PQueue({
       concurrency,
       timeout: MINUTE * 2,
@@ -123,9 +125,10 @@ export class ProfileService {
     }
 
     if (this.#isPaused) {
-      throw new Error(
+      log.error(
         `ProfileService.get: Cannot add job to paused queue for conversation ${preCheckConversation.idForLogging()}`
       );
+      return;
     }
 
     const existing = this.#jobsByConversationId.get(conversationId);
@@ -150,7 +153,7 @@ export class ProfileService {
       }
 
       try {
-        await this.fetchProfile(conversation, groupId);
+        await this.#fetchProfile(conversation, groupId);
         resolve();
       } catch (error) {
         resolve();
@@ -217,9 +220,8 @@ export class ProfileService {
       this.#jobQueue.pause();
 
       this.#jobsByConversationId.forEach(job => {
-        job.reject(
-          new Error(`ProfileService.clearAll: job canceled because '${reason}'`)
-        );
+        log.error(`ProfileService.clearAll: job canceled because '${reason}'`);
+        job.resolve();
       });
 
       this.#jobsByConversationId.clear();
@@ -255,7 +257,6 @@ export class ProfileService {
 
 export const profileService = new ProfileService();
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 namespace ProfileFetchOptions {
   type WithVersioned = ReadonlyDeep<{
     profileKey: string;
@@ -457,11 +458,14 @@ async function buildProfileFetchOptions({
   };
 }
 
-function decryptField(field: string, decryptionKey: Uint8Array): Uint8Array {
+function decryptField(
+  field: string,
+  decryptionKey: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return decryptProfile(Bytes.fromBase64(field), decryptionKey);
 }
 
-function formatTextField(decrypted: Uint8Array): string {
+function formatTextField(decrypted: Uint8Array<ArrayBuffer>): string {
   return Bytes.toString(trimForDisplay(decrypted));
 }
 
@@ -552,10 +556,6 @@ async function doGetProfile(
 
       // Unauthorized/Forbidden
       if (error.code === 401 || error.code === 403) {
-        if (request.groupSendToken != null) {
-          onFailedToSendWithEndorsements(error);
-        }
-
         // Step #: Retries for unauthorized access keys and group send tokens
         if (!isMe(c.attributes)) {
           // Fallback from failed unauth (access key) request
@@ -679,7 +679,11 @@ async function doGetProfile(
   if (isFieldDefined(profile.aboutEmoji)) {
     if (updatedDecryptionKey != null) {
       const decrypted = decryptField(profile.aboutEmoji, updatedDecryptionKey);
-      c.set({ aboutEmoji: formatTextField(decrypted) });
+      c.set({
+        aboutEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant(
+          formatTextField(decrypted)
+        ),
+      });
     }
   } else {
     c.set({ aboutEmoji: undefined });
@@ -739,7 +743,9 @@ async function doGetProfile(
     }
 
     await itemStorage.put('observedCapabilities', observedCapabilities);
-    if (hasChanged) {
+    if (hasChanged && !window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(`${logId}: We have no other devices; not sending fetch profile`);
+    } else if (hasChanged) {
       log.info(
         'getProfile: detected a capability flip, sending fetch profile',
         newKeys
@@ -765,6 +771,11 @@ async function doGetProfile(
           : {}),
       })),
     });
+
+    // Refresh visible megaphones, since badges may affect conditionals
+    if (isMe(c.attributes)) {
+      drop(runMegaphoneCheck());
+    }
   } else {
     c.set({ badges: undefined });
   }
@@ -808,12 +819,6 @@ async function doGetProfile(
     } else {
       log.warn(`${logId}: No key to decrypt 'name' field; skipping`);
     }
-  } else {
-    log.warn(`${logId}: 'name' field missing; clearing profile name`);
-    c.set({
-      profileName: undefined,
-      profileFamilyName: undefined,
-    });
   }
 
   try {
@@ -861,7 +866,7 @@ export type UpdateIdentityKeyOptionsType = Readonly<{
 }>;
 
 export async function updateIdentityKey(
-  identityKey: Uint8Array,
+  identityKey: Uint8Array<ArrayBuffer>,
   serviceId: ServiceIdString,
   { noOverwrite = false }: UpdateIdentityKeyOptionsType = {}
 ): Promise<boolean> {

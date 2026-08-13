@@ -1,19 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentProps } from 'react';
-import React from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
 import {
   getFakeBadge,
   getFakeBadges,
-} from '../test-helpers/getFakeBadge.std.js';
-import { repeat, zipObject } from '../util/iterables.std.js';
-import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.js';
-import type { PropsType } from './BadgeDialog.dom.js';
-import { BadgeDialog } from './BadgeDialog.dom.js';
+} from '../test-helpers/getFakeBadge.std.ts';
+import { repeat, zipObject } from '../util/iterables.std.ts';
+import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.ts';
+import type { PropsType } from './BadgeDialog.dom.tsx';
+import { BadgeDialog } from './BadgeDialog.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -27,6 +26,7 @@ const defaultProps: ComponentProps<typeof BadgeDialog> = {
   firstName: 'Alice',
   i18n,
   onClose: action('onClose'),
+  onDonate: action('onDonate'),
   title: 'Alice Levine',
 };
 

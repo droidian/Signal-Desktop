@@ -10,8 +10,8 @@ import fsExtra from 'fs-extra';
 import { assert } from 'chai';
 import lodash from 'lodash';
 
-import * as Bytes from '../Bytes.std.js';
-import * as Curve from '../Curve.node.js';
+import * as Bytes from '../Bytes.std.ts';
+import * as Curve from '../Curve.node.ts';
 import {
   PaddedLengths,
   encryptProfileItemWithPadding,
@@ -38,7 +38,9 @@ import {
   decryptAttachmentV1,
   padAndEncryptAttachment,
   CipherType,
-} from '../Crypto.node.js';
+  encryptDeviceCreatedAt,
+  decryptDeviceCreatedAt,
+} from '../Crypto.node.ts';
 import {
   _generateAttachmentIv,
   decryptAttachmentV2,
@@ -47,17 +49,17 @@ import {
   generateAttachmentKeys,
   type DecryptedAttachmentV2,
   decryptAttachmentV2ToSink,
-} from '../AttachmentCrypto.node.js';
-import type { AciString, PniString } from '../types/ServiceId.std.js';
-import { getAbsoluteAttachmentPath } from '../util/migrations.preload.js';
-import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes.std.js';
+} from '../AttachmentCrypto.node.ts';
+import type { AciString, PniString } from '../types/ServiceId.std.ts';
+import { getAbsoluteAttachmentPath } from '../util/migrations.preload.ts';
+import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes.std.ts';
 import {
   getAesCbcCiphertextSize,
   getAttachmentCiphertextSize,
-} from '../util/AttachmentCrypto.std.js';
-import { getPath } from '../windows/main/attachments.preload.js';
-import { MediaTier } from '../types/AttachmentDownload.std.js';
-import { deriveAccessKeyFromProfileKey } from '../util/zkgroup.node.js';
+} from '../util/AttachmentCrypto.std.ts';
+import { getAttachmentsPath } from '../../app/attachments.node.ts';
+import { MediaTier } from '../types/AttachmentDownload.std.ts';
+import { deriveAccessKeyFromProfileKey } from '../util/zkgroup.node.ts';
 
 const { emptyDir } = fsExtra;
 
@@ -303,7 +305,8 @@ describe('Crypto', () => {
       const key = getRandomBytes(32);
 
       const encrypted = encryptSymmetric(key, plaintext);
-      encrypted[2] += 2;
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      encrypted[2]! += 2;
 
       try {
         decryptSymmetric(key, encrypted);
@@ -324,7 +327,8 @@ describe('Crypto', () => {
       const key = getRandomBytes(32);
 
       const encrypted = encryptSymmetric(key, plaintext);
-      encrypted[encrypted.length - 3] += 2;
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      encrypted[encrypted.length - 3]! += 2;
 
       try {
         decryptSymmetric(key, encrypted);
@@ -345,7 +349,8 @@ describe('Crypto', () => {
       const key = getRandomBytes(32);
 
       const encrypted = encryptSymmetric(key, plaintext);
-      encrypted[35] += 9;
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      encrypted[35]! += 9;
 
       try {
         decryptSymmetric(key, encrypted);
@@ -386,6 +391,30 @@ describe('Crypto', () => {
           'decryptDeviceName: synthetic IV did not match'
         );
       }
+    });
+  });
+
+  describe('encrypted device createdAt', () => {
+    it('roundtrips', () => {
+      const deviceId = 2;
+      const registrationId = 123;
+      const identityKey = Curve.generateKeyPair();
+      const createdAt = new Date().getTime();
+
+      const encrypted = encryptDeviceCreatedAt(
+        createdAt,
+        deviceId,
+        registrationId,
+        identityKey.publicKey
+      );
+      const decrypted = decryptDeviceCreatedAt(
+        encrypted,
+        deviceId,
+        registrationId,
+        identityKey.privateKey
+      );
+
+      assert.strictEqual(decrypted, createdAt);
     });
   });
 
@@ -619,7 +648,9 @@ describe('Crypto', () => {
 
     describe('decryptAttachmentV2ToSink', () => {
       afterEach(async () => {
-        await emptyDir(getPath(window.SignalContext.config.userDataPath));
+        await emptyDir(
+          getAttachmentsPath(window.SignalContext.config.userDataPath)
+        );
       });
 
       it('throws if digest is wrong', async () => {
@@ -697,9 +728,9 @@ describe('Crypto', () => {
         overrideSize,
       }: {
         path?: string;
-        data: Uint8Array;
-        plaintextHash?: Uint8Array;
-        encryptionKeys?: Uint8Array;
+        data: Uint8Array<ArrayBuffer>;
+        plaintextHash?: Uint8Array<ArrayBuffer>;
+        encryptionKeys?: Uint8Array<ArrayBuffer>;
         modifyIncrementalMac?: boolean;
         overrideSize?: number;
       }): Promise<DecryptedAttachmentV2> {
@@ -723,7 +754,8 @@ describe('Crypto', () => {
             isNumber(macLength) &&
             encryptedAttachment.incrementalMac
           ) {
-            encryptedAttachment.incrementalMac[macLength / 2] += 1;
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            encryptedAttachment.incrementalMac[macLength / 2]! += 1;
           }
 
           // Decrypt it via plaintextHash first
@@ -954,8 +986,8 @@ describe('Crypto', () => {
         outerKeys,
       }: {
         plaintextAbsolutePath: string;
-        innerKeys: Uint8Array;
-        outerKeys: Uint8Array;
+        innerKeys: Uint8Array<ArrayBuffer>;
+        outerKeys: Uint8Array<ArrayBuffer>;
       }) {
         let innerCiphertextPath;
         let outerCiphertextPath;

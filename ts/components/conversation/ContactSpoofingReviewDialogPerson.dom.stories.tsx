@@ -1,15 +1,14 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';
-import { ThemeType } from '../../types/Util.std.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
+import { ThemeType } from '../../types/Util.std.ts';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
 
-import type { PropsType } from './ContactSpoofingReviewDialogPerson.dom.js';
-import { ContactSpoofingReviewDialogPerson } from './ContactSpoofingReviewDialogPerson.dom.js';
+import type { PropsType } from './ContactSpoofingReviewDialogPerson.dom.tsx';
+import { ContactSpoofingReviewDialogPerson } from './ContactSpoofingReviewDialogPerson.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -24,7 +23,7 @@ export default {
     i18n,
     onClick: action('onClick'),
     toggleSignalConnectionsModal: action('toggleSignalConnectionsModal'),
-    updateSharedGroups: action('updateSharedGroups'),
+    sharedGroupNames: [],
     getPreferredBadge: () => undefined,
     conversation: getDefaultConversation(),
     theme: ThemeType.light,
@@ -33,7 +32,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => {
   return <ContactSpoofingReviewDialogPerson {...args} />;
 };
@@ -52,7 +50,5 @@ ProfileNameChanged.args = {
 
 export const WithSharedGroups = Template.bind({});
 WithSharedGroups.args = {
-  conversation: getDefaultConversation({
-    sharedGroupNames: ['A', 'B', 'C'],
-  }),
+  sharedGroupNames: ['A', 'B', 'C'],
 };

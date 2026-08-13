@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactElement } from 'react';
-import React from 'react';
-import type { AvatarSize } from './Avatar.dom.js';
+import type { AvatarSize } from './Avatar.dom.tsx';
 
 export function AvatarSpacer({
   size,

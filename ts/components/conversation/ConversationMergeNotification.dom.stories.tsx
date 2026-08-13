@@ -1,10 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './ConversationMergeNotification.dom.js';
-import { ConversationMergeNotification } from './ConversationMergeNotification.dom.js';
+import type { PropsType } from './ConversationMergeNotification.dom.tsx';
+import { ConversationMergeNotification } from './ConversationMergeNotification.dom.tsx';
 
 const { i18n } = window.SignalContext;
 

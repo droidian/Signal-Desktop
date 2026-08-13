@@ -1,7 +1,7 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { type JSX } from 'react';
 import { useLoaderData, Outlet } from 'react-router-dom';
 
 import { type LoadLocaleResult } from '../util/i18n';

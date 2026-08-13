@@ -1,15 +1,16 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './CallingParticipantsList.dom.js';
-import { CallingParticipantsList } from './CallingParticipantsList.dom.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import { createCallParticipant } from '../test-helpers/createCallParticipant.std.js';
+import type { PropsType } from './CallingParticipantsList.dom.tsx';
+import { CallingParticipantsList } from './CallingParticipantsList.dom.tsx';
+import { createCallParticipant } from '../test-helpers/createCallParticipant.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+import { renderCallingParticipantMenu } from './CallingParticipantMenu.dom.stories.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -20,6 +21,7 @@ const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   ourServiceId: generateAci(),
   participants: overrideProps.participants || [],
   showContactModal: action('show-contact-modal'),
+  renderCallingParticipantMenu,
 });
 
 export default {
@@ -66,13 +68,13 @@ export function ManyParticipants(): JSX.Element {
         title: 'Goku Black',
       }),
       createCallParticipant({
-        isHandRaised: true,
+        isOnlyHandRaised: true,
         title: 'Supreme Kai Zamasu',
       }),
       createCallParticipant({
         hasRemoteAudio: false,
         hasRemoteVideo: true,
-        isHandRaised: true,
+        isOnlyHandRaised: true,
         title: 'Chi Chi',
       }),
       createCallParticipant({

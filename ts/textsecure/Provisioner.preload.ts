@@ -2,36 +2,33 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import pTimeout, { TimeoutError as PTimeoutError } from 'p-timeout';
+import type { LibSignalError } from '@signalapp/libsignal-client';
+import type { ProvisioningConnection } from '@signalapp/libsignal-client/dist/net/Chat.js';
 
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
-import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { drop } from '../util/drop.std.js';
-import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.preload.js';
-import { normalizeDeviceName } from '../util/normalizeDeviceName.std.js';
-import { linkDeviceRoute } from '../util/signalRoutes.std.js';
-import { sleep } from '../util/sleep.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.preload.ts';
+import { normalizeDeviceName } from '../util/normalizeDeviceName.std.ts';
+import { linkDeviceRoute } from '../util/signalRoutes.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 
 import {
   type CreateLinkedDeviceOptionsType,
   AccountType,
-} from './AccountManager.preload.js';
+} from './AccountManager.preload.ts';
 import ProvisioningCipher, {
   type ProvisionDecryptResult,
-} from './ProvisioningCipher.node.js';
-import {
-  type IWebSocketResource,
-  type IncomingWebSocketRequest,
-  ServerRequestType,
-} from './WebsocketResources.preload.js';
-import { ConnectTimeoutError } from './Errors.std.js';
-import type { getProvisioningResource } from './WebAPI.preload.js';
+} from './ProvisioningCipher.node.ts';
+import { ConnectTimeoutError } from './Errors.std.ts';
+import type { getProvisioningConnection } from './WebAPI.preload.ts';
 
 const log = createLogger('Provisioner');
 
@@ -45,7 +42,7 @@ export enum EventKind {
 }
 
 export type ProvisionerOptionsType = Readonly<{
-  server: { getProvisioningResource: typeof getProvisioningResource };
+  server: { getProvisioningConnection: typeof getProvisioningConnection };
 }>;
 
 export type EnvelopeType = ProvisionDecryptResult;
@@ -79,7 +76,7 @@ export type EventType = Readonly<
 
 export type SubscribeNotifierType = (event: EventType) => void;
 
-export type UnsubscribeFunctionType = () => void;
+export type UnsubscribeFunctionType = () => Promise<void>;
 
 export type SubscriberType = Readonly<{
   notify: SubscribeNotifierType;
@@ -102,14 +99,21 @@ const MAX_ROTATIONS = 6;
 
 const TIMEOUT_ERROR = new PTimeoutError();
 
-const QR_CODE_TIMEOUTS = [10 * SECOND, 20 * SECOND, 30 * SECOND, 60 * SECOND];
+const QR_CODE_TIMEOUTS = [
+  10 * SECOND,
+  20 * SECOND,
+  30 * SECOND,
+  60 * SECOND,
+] as const;
 
 export class Provisioner {
   readonly #subscribers = new Set<SubscriberType>();
-  readonly #server: { getProvisioningResource: typeof getProvisioningResource };
+  readonly #server: {
+    getProvisioningConnection: typeof getProvisioningConnection;
+  };
   readonly #retryBackOff = new BackOff(FIBONACCI_TIMEOUTS);
 
-  #sockets: Array<IWebSocketResource> = [];
+  readonly #sockets: Array<ProvisioningConnection> = [];
   #abortController: AbortController | undefined;
   #attemptCount = 0;
   #isRunning = false;
@@ -126,7 +130,7 @@ export class Provisioner {
       this.#start();
     }
 
-    return () => {
+    return async () => {
       this.#subscribers.delete(subscriber);
       if (this.#subscribers.size === 0) {
         this.#stop('Cancel, no subscribers');
@@ -217,11 +221,10 @@ export class Provisioner {
       return;
     }
     log.info(`stopping, reason=${reason}`);
+    this.#isRunning = false;
 
-    this.#sockets = [];
     this.#abortController?.abort();
     this.#abortController = undefined;
-    this.#isRunning = false;
   }
 
   async #loop(signal: AbortSignal): Promise<void> {
@@ -237,15 +240,17 @@ export class Provisioner {
         });
 
         this.#stop('Max rotations reached');
+
         break;
       }
 
       let delay: number;
 
       try {
-        const sleepMs = QR_CODE_TIMEOUTS[this.#attemptCount];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const sleepMs = QR_CODE_TIMEOUTS[this.#attemptCount]!;
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await this.#connect(signal, sleepMs);
 
         // Successful connect, sleep until rotation time
@@ -282,6 +287,7 @@ export class Provisioner {
           }
 
           this.#subscribers.clear();
+
           this.#stop('Only socket failed');
 
           break;
@@ -299,7 +305,7 @@ export class Provisioner {
       }
 
       try {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await sleep(delay, signal);
       } catch (error) {
         // New loop is running
@@ -326,60 +332,43 @@ export class Provisioner {
 
     const timeoutAt = Date.now() + timeout;
 
-    const resource = await this.#server.getProvisioningResource(
+    const connection = await this.#server.getProvisioningConnection(
       {
-        handleRequest: (request: IncomingWebSocketRequest) => {
-          const { requestType, body } = request;
-          if (!body) {
-            log.warn('connect: no request body');
-            request.respond(400, 'Missing body');
+        onReceivedAddress: (address, ack) => {
+          if (state !== SocketState.WaitingForUuid) {
+            log.error('onReceivedAddress: duplicate uuid');
+            drop(connection.disconnect());
             return;
           }
 
-          try {
-            if (requestType === ServerRequestType.ProvisioningAddress) {
-              strictAssert(
-                state === SocketState.WaitingForUuid,
-                'Provisioner.connect: duplicate uuid'
-              );
-
-              const proto = Proto.ProvisioningAddress.decode(body);
-              strictAssert(
-                proto.address,
-                'Provisioner.connect: expected a UUID'
-              );
-
-              state = SocketState.WaitingForEnvelope;
-              uuidPromise.resolve(proto.address);
-              request.respond(200, 'OK');
-            } else if (requestType === ServerRequestType.ProvisioningMessage) {
-              strictAssert(
-                state === SocketState.WaitingForEnvelope,
-                'Provisioner.connect: duplicate envelope or not ready'
-              );
-
-              const ciphertext = Proto.ProvisionEnvelope.decode(body);
-              const envelope = cipher.decrypt(ciphertext);
-
-              state = SocketState.Done;
-              this.#notify({
-                kind: EventKind.Envelope,
-                envelope,
-                isLinkAndSync:
-                  isLinkAndSyncEnabled() &&
-                  Bytes.isNotEmpty(envelope.ephemeralBackupKey),
-              });
-            } else {
-              log.warn('connect: unsupported request type', requestType);
-              request.respond(404, 'Unsupported');
-            }
-          } catch (error) {
-            log.error('connect: error', Errors.toLogFormat(error));
-            resource.close();
-          }
+          state = SocketState.WaitingForEnvelope;
+          uuidPromise.resolve(address);
+          ack.send(200);
         },
-        handleDisconnect() {
-          // No-op
+        onReceivedEnvelope: (body, ack) => {
+          if (state !== SocketState.WaitingForEnvelope) {
+            log.error('onReceivedEnvelope: duplicate envelope or not ready');
+            drop(connection.disconnect());
+            return;
+          }
+
+          const ciphertext = Proto.ProvisionEnvelope.decode(body);
+          const envelope = cipher.decrypt(ciphertext);
+
+          state = SocketState.Done;
+          this.#notify({
+            kind: EventKind.Envelope,
+            envelope,
+            isLinkAndSync:
+              isLinkAndSyncEnabled() &&
+              Bytes.isNotEmpty(envelope.ephemeralBackupKey),
+          });
+          ack.send(200);
+        },
+
+        onConnectionInterrupted: (cause: LibSignalError | null) => {
+          signal.removeEventListener('abort', onAbort);
+          this.#handleClose(connection, state, cause);
         },
       },
       timeout
@@ -392,56 +381,50 @@ export class Provisioner {
     // Setup listeners on the socket
 
     const onAbort = () => {
-      resource.close();
+      drop(connection.disconnect());
       uuidPromise.reject(new Error('aborted'));
     };
     signal.addEventListener('abort', onAbort);
 
-    resource.addEventListener('close', ({ code, reason }) => {
-      signal.removeEventListener('abort', onAbort);
-      this.#handleClose(resource, state, code, reason);
-    });
-
     // But only register it once we get the uuid from server back.
 
-    const uuid = await pTimeout(
-      uuidPromise.promise,
-      Math.max(0, timeoutAt - Date.now()),
-      TIMEOUT_ERROR
-    );
+    const uuid = await pTimeout(uuidPromise.promise, {
+      milliseconds: Math.max(0, timeoutAt - Date.now()),
+      message: TIMEOUT_ERROR,
+    });
 
     const url = linkDeviceRoute
       .toAppUrl({
         uuid,
         pubKey: Bytes.toBase64(cipher.getPublicKey().serialize()),
-        capabilities: isLinkAndSyncEnabled() ? ['backup4', 'backup5'] : [],
+        capabilities: isLinkAndSyncEnabled() ? ['backup5'] : [],
       })
       .toString();
 
     this.#notify({ kind: EventKind.URL, url });
 
-    this.#sockets.push(resource);
+    this.#sockets.push(connection);
 
     while (this.#sockets.length > MAX_OPEN_SOCKETS) {
       log.info('closing extra socket');
-      this.#sockets.shift()?.close();
+      drop(this.#sockets.shift()?.disconnect());
     }
   }
 
   #handleClose(
-    resource: IWebSocketResource,
+    connection: ProvisioningConnection,
     state: SocketState,
-    code: number,
-    reason: string
+    cause: LibSignalError | null
   ): void {
-    const index = this.#sockets.indexOf(resource);
+    const reason = cause && Errors.toLogFormat(cause);
+    const index = this.#sockets.indexOf(connection);
     if (index === -1) {
-      log.info(`ignoring socket closed, code=${code}, reason=${reason}`);
+      log.info(`ignoring socket closed, reason=${reason}`);
       return;
     }
 
-    const logId = `Provisioner.#handleClose(${index})`;
-    log.info(`${logId}: closed, code=${code}, reason=${reason}`);
+    const logId = `Provisioner.#handleClose(${index}): reason=${reason}`;
+    log.info(`${logId}: closed`);
 
     // Is URL from the socket displayed as a QR code?
     const isActive = index === this.#sockets.length - 1;
@@ -460,9 +443,7 @@ export class Provisioner {
           state === SocketState.WaitingForUuid
             ? EventKind.ConnectError
             : EventKind.EnvelopeError,
-        error: new Error(
-          `Socket ${index} closed, code=${code}, reason=${reason}`
-        ),
+        error: new Error(`Socket ${index} closed, reason=${reason}`),
       });
     }
   }

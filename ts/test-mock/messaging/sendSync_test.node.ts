@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import createDebug from 'debug';
-import Long from 'long';
-import { StorageState } from '@signalapp/mock-server';
+import { StorageState, EMPTY_DATA_MESSAGE } from '@signalapp/mock-server';
+import type { Proto } from '@signalapp/mock-server';
 
-import type { App } from '../playwright.node.js';
-import * as durations from '../../util/durations/index.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import type { App } from '../playwright.node.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 
 export const debug = createDebug('mock:test:sendSync');
 
@@ -54,25 +54,48 @@ describe('sendSync', function (this: Mocha.Suite) {
     debug('Send a group sync sent message from phone');
     const messageBody = 'Hi everybody!';
     const timestamp = bootstrap.getTimestamp();
-    const originalDataMessage = {
+    const originalDataMessage: Proto.DataMessage.Params = {
+      ...EMPTY_DATA_MESSAGE,
       body: messageBody,
-      timestamp: Long.fromNumber(timestamp),
+      timestamp: BigInt(timestamp),
       groupV2: {
         masterKey: group.masterKey,
         revision: group.revision,
+        groupChange: null,
       },
     };
-    const content = {
-      syncMessage: {
-        sent: {
-          timestamp: Long.fromNumber(timestamp),
-          message: originalDataMessage,
-          unidentifiedStatus: members.map(member => ({
-            destinationServiceIdBinary: member.device.aciBinary,
-            destination: member.device.number,
-          })),
+    const content: Proto.Content.Params = {
+      content: {
+        syncMessage: {
+          content: {
+            sent: {
+              timestamp: BigInt(timestamp),
+              message: originalDataMessage,
+              unidentifiedStatus: members.map(member => ({
+                destinationServiceIdBinary: member.device.aciBinary,
+                destination: member.device.number,
+                unidentified: null,
+                destinationPniIdentityKey: null,
+                destinationServiceId: null,
+              })),
+              destinationE164: null,
+              expirationStartTimestamp: null,
+              isRecipientUpdate: null,
+              storyMessage: null,
+              storyMessageRecipients: null,
+              editMessage: null,
+              destinationServiceIdBinary: null,
+              destinationServiceId: null,
+            },
+          },
+          read: null,
+          stickerPackOperation: null,
+          viewed: null,
+          padding: null,
         },
       },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
     };
     const sendOptions = {
       timestamp,

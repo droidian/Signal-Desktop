@@ -1,19 +1,20 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { v4 as uuid } from 'uuid';
 import { action } from '@storybook/addon-actions';
 import lodash from 'lodash';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './StoryImage.dom.js';
-import { StoryImage } from './StoryImage.dom.js';
+import type { PropsType } from './StoryImage.dom.tsx';
+import { StoryImage } from './StoryImage.dom.tsx';
 import {
   fakeAttachment,
   fakeThumbnail,
-} from '../test-helpers/fakeAttachment.std.js';
-import { VIDEO_MP4 } from '../types/MIME.std.js';
+} from '../test-helpers/fakeAttachment.std.ts';
+import { VIDEO_MP4 } from '../types/MIME.std.ts';
 
 const { noop } = lodash;
 

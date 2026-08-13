@@ -4,15 +4,15 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-
-import type { ReactionType } from '../../types/Reactions.std.js';
-import { ReactionReadStatus } from '../../types/Reactions.std.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import type { ReactionType } from '../../types/Reactions.std.ts';
+import { ReactionReadStatus } from '../../types/Reactions.std.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { _getAllReactions, _getAllMessages, getTotalUnreadForConversation } =
   DataReader;
@@ -160,12 +160,12 @@ describe('sql/markRead', () => {
 
     // Sorted in descending order
     assert.strictEqual(
-      markedRead[0].id,
+      markedRead[0]?.id,
       unread.id,
       'no stories/first should be "unread" message'
     );
     assert.strictEqual(
-      markedRead[1].id,
+      markedRead[1]?.id,
       oldestUnread.id,
       'no stories/second should be oldestUnread'
     );
@@ -180,12 +180,12 @@ describe('sql/markRead', () => {
     assert.lengthOf(markedRead2, 2, 'with stories/two messages marked read');
 
     assert.strictEqual(
-      markedRead2[0].id,
+      markedRead2[0]?.id,
       newestUnread.id,
       'with stories/should be newestUnread'
     );
     assert.strictEqual(
-      markedRead2[1].id,
+      markedRead2[1]?.id,
       unreadStoryReply.id,
       'with stories/should be unreadStoryReply'
     );
@@ -310,17 +310,17 @@ describe('sql/markRead', () => {
 
     // Sorted in descending order
     assert.strictEqual(
-      markedRead[0].id,
+      markedRead[0]?.id,
       message7.id,
       'first should be message7'
     );
     assert.strictEqual(
-      markedRead[1].id,
+      markedRead[1]?.id,
       message4.id,
       'first should be message4'
     );
     assert.strictEqual(
-      markedRead[2].id,
+      markedRead[2]?.id,
       message2.id,
       'second should be message2'
     );
@@ -330,7 +330,7 @@ describe('sql/markRead', () => {
     const now = Date.now();
     assert.lengthOf(await _getAllMessages(), 0);
 
-    const start = Date.now();
+    const start = now;
     const readAt = start + 20;
     const conversationId = generateUuid();
     const expireTimer = DurationInSeconds.fromSeconds(15);
@@ -345,7 +345,7 @@ describe('sql/markRead', () => {
       received_at: start + 1,
       timestamp: start + 1,
       expireTimer,
-      expirationStartTimestamp: start + 1,
+      expirationStartTimestamp: start + 100,
       readStatus: ReadStatus.Read,
     };
     const message2: MessageAttributesType = {
@@ -418,7 +418,7 @@ describe('sql/markRead', () => {
 
     assert.lengthOf(markedRead, 1, 'one message marked read');
     assert.strictEqual(
-      markedRead[0].id,
+      markedRead[0]?.id,
       message4.id,
       'first should be message4'
     );
@@ -436,16 +436,23 @@ describe('sql/markRead', () => {
       (left, right) => left.timestamp - right.timestamp
     );
 
-    assert.strictEqual(sorted[1].id, message2.id, 'checking message 2');
-    assert.isAtMost(
-      sorted[1].expirationStartTimestamp ?? Infinity,
+    assert.strictEqual(sorted[0]?.id, message1.id, 'checking message 1');
+    assert.strictEqual(
+      sorted[0]?.expirationStartTimestamp,
+      now,
+      "message1's expirationStartTimestamp was moved earlier"
+    );
+
+    assert.strictEqual(sorted[1]?.id, message2.id, 'checking message 2');
+    assert.strictEqual(
+      sorted[1]?.expirationStartTimestamp,
       now,
       'checking message 2 expirationStartTimestamp'
     );
 
-    assert.strictEqual(sorted[3].id, message4.id, 'checking message 4');
-    assert.isAtMost(
-      sorted[3].expirationStartTimestamp ?? Infinity,
+    assert.strictEqual(sorted[3]?.id, message4.id, 'checking message 4');
+    assert.strictEqual(
+      sorted[3]?.expirationStartTimestamp,
       now,
       'checking message 4 expirationStartTimestamp'
     );
@@ -529,7 +536,7 @@ describe('sql/markRead', () => {
 
     const reaction1: ReactionType = {
       conversationId,
-      emoji: '🎉',
+      emoji: Emoji.TADA,
       fromId: generateUuid(),
       messageId: message1.id,
       messageReceivedAt: message1.received_at,
@@ -539,7 +546,7 @@ describe('sql/markRead', () => {
     };
     const reaction2: ReactionType = {
       conversationId,
-      emoji: '🚀',
+      emoji: Emoji.ROCKET,
       fromId: generateUuid(),
       messageId: message2.id,
       messageReceivedAt: message2.received_at,
@@ -549,7 +556,7 @@ describe('sql/markRead', () => {
     };
     const reaction3: ReactionType = {
       conversationId: generateUuid(),
-      emoji: '☀️',
+      emoji: Emoji.SUNNY,
       fromId: generateUuid(),
       messageId: message3.id,
       messageReceivedAt: message3.received_at,
@@ -559,7 +566,7 @@ describe('sql/markRead', () => {
     };
     const reaction4: ReactionType = {
       conversationId,
-      emoji: '❤️‍🔥',
+      emoji: Emoji.HEART_ON_FIRE,
       fromId: generateUuid(),
       messageId: message4.id,
       messageReceivedAt: message4.received_at,
@@ -569,7 +576,7 @@ describe('sql/markRead', () => {
     };
     const reaction5: ReactionType = {
       conversationId,
-      emoji: '🆒',
+      emoji: Emoji.COOL,
       fromId: generateUuid(),
       messageId: message5.id,
       messageReceivedAt: message5.received_at,
@@ -591,17 +598,9 @@ describe('sql/markRead', () => {
     });
 
     assert.lengthOf(markedRead, 2, 'two reactions marked read');
-
-    // Sorted in descending order
-    assert.strictEqual(
-      markedRead[0].messageId,
-      reaction4.messageId,
-      'first should be reaction4'
-    );
-    assert.strictEqual(
-      markedRead[1].messageId,
-      reaction1.messageId,
-      'second should be reaction1'
+    assert.sameMembers(
+      markedRead.map(read => read.messageId),
+      [reaction4.messageId, reaction1.messageId]
     );
 
     const markedRead2 = await getUnreadReactionsAndMarkRead({
@@ -611,7 +610,7 @@ describe('sql/markRead', () => {
 
     assert.lengthOf(markedRead2, 1);
     assert.strictEqual(
-      markedRead2[0].messageId,
+      markedRead2[0]?.messageId,
       reaction5.messageId,
       'should be reaction5'
     );
@@ -684,7 +683,7 @@ describe('sql/markRead', () => {
 
     const reaction1: ReactionType = {
       conversationId,
-      emoji: '🎉',
+      emoji: Emoji.TADA,
       fromId: generateUuid(),
       messageId: message1.id,
       messageReceivedAt: message1.received_at,
@@ -694,7 +693,7 @@ describe('sql/markRead', () => {
     };
     const reaction2: ReactionType = {
       conversationId,
-      emoji: '🚀',
+      emoji: Emoji.ROCKET,
       fromId: generateUuid(),
       messageId: message2.id,
       messageReceivedAt: message2.received_at,
@@ -704,7 +703,7 @@ describe('sql/markRead', () => {
     };
     const reaction3: ReactionType = {
       conversationId: generateUuid(),
-      emoji: '☀️',
+      emoji: Emoji.SUNNY,
       fromId: generateUuid(),
       messageId: message3.id,
       messageReceivedAt: message3.received_at,
@@ -714,7 +713,7 @@ describe('sql/markRead', () => {
     };
     const reaction4: ReactionType = {
       conversationId,
-      emoji: '❤️‍🔥',
+      emoji: Emoji.HEART_ON_FIRE,
       fromId: generateUuid(),
       messageId: message4.id,
       messageReceivedAt: message4.received_at,
@@ -724,7 +723,7 @@ describe('sql/markRead', () => {
     };
     const reaction5: ReactionType = {
       conversationId,
-      emoji: '🆒',
+      emoji: Emoji.COOL,
       fromId: generateUuid(),
       messageId: message5.id,
       messageReceivedAt: message5.received_at,
@@ -748,16 +747,9 @@ describe('sql/markRead', () => {
 
     assert.lengthOf(markedRead, 2, 'two reactions marked read');
 
-    // Sorted in descending order
-    assert.strictEqual(
-      markedRead[0].messageId,
-      reaction4.messageId,
-      'first should be reaction4'
-    );
-    assert.strictEqual(
-      markedRead[1].messageId,
-      reaction1.messageId,
-      'second should be reaction1'
+    assert.sameMembers(
+      markedRead.map(read => read.messageId),
+      [reaction4.messageId, reaction1.messageId]
     );
 
     const markedRead2 = await getUnreadReactionsAndMarkRead({
@@ -768,7 +760,7 @@ describe('sql/markRead', () => {
 
     assert.lengthOf(markedRead2, 1);
     assert.strictEqual(
-      markedRead2[0].messageId,
+      markedRead2[0]?.messageId,
       reaction5.messageId,
       'should be reaction5'
     );
@@ -845,7 +837,7 @@ describe('sql/markRead', () => {
 
     // Sorted in descending order
     assert.strictEqual(
-      markedRead[0].id,
+      markedRead[0]?.id,
       message3.id,
       'first should be message3'
     );

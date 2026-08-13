@@ -1,19 +1,19 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, useEffect, Fragment, type JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
 import {
   getMidnight,
   type NotificationProfileIdString,
   type NotificationProfileOverride,
   type NotificationProfileType,
-} from '../types/NotificationProfile.std.js';
-import { DAY, HOUR, SECOND } from '../util/durations/index.std.js';
-import { formatTimestamp } from '../util/formatTimestamp.dom.js';
-import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.js';
-import { ProfileAvatar } from './PreferencesNotificationProfiles.dom.js';
+} from '../types/NotificationProfile.std.ts';
+import { DAY, HOUR, SECOND } from '../util/durations/index.std.ts';
+import { formatTimestamp } from '../util/formatTimestamp.dom.ts';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.tsx';
+import { ProfileAvatar } from './PreferencesNotificationProfiles.dom.tsx';
 
 export type Props = Readonly<{
   activeProfileId: NotificationProfileIdString | undefined;
@@ -52,12 +52,12 @@ export function NotificationProfilesMenu({
   setProfileOverride,
 }: Props): JSX.Element {
   const enabledOverrideEndTime = currentOverride?.enabled?.endsAtMs;
-  const [now, setNow] = React.useState(Date.now());
-  const [cachedProfiles, setCachedProfiles] = React.useState<
+  const [now, setNow] = useState(Date.now());
+  const [cachedProfiles, setCachedProfiles] = useState<
     ReadonlyArray<NotificationProfileType>
   >([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loading) {
       setCachedProfiles(allProfiles);
     }
@@ -92,7 +92,7 @@ export function NotificationProfilesMenu({
     targetTime = eightAmTomorrow;
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setNow(Date.now());
     }, 30 * SECOND);
@@ -113,7 +113,7 @@ export function NotificationProfilesMenu({
         const isActive = activeProfileId && profile.id === activeProfileId;
 
         return (
-          <React.Fragment key={profile.id}>
+          <Fragment key={profile.id}>
             {index > 0 && <AxoDropdownMenu.ContentSeparator />}
             <AxoDropdownMenu.CustomItem
               key={profile.id}
@@ -157,7 +157,7 @@ export function NotificationProfilesMenu({
                 })}
               </AxoDropdownMenu.Item>
             ) : null}
-          </React.Fragment>
+          </Fragment>
         );
       })}
       <AxoDropdownMenu.Separator />

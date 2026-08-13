@@ -3,22 +3,26 @@
 
 import { timingSafeEqual } from 'node:crypto';
 import { assert } from 'chai';
-import { ServiceIdKind, Proto, StorageState } from '@signalapp/mock-server';
+import {
+  ServiceIdKind,
+  Proto,
+  StorageState,
+  EMPTY_DATA_MESSAGE,
+} from '@signalapp/mock-server';
 import type { PrimaryDevice } from '@signalapp/mock-server';
 import createDebug from 'debug';
-import Long from 'long';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { generateConfigMatrix } from '../../util/generateConfigMatrix.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { generateConfigMatrix } from '../../test-helpers/generateConfigMatrix.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 import {
   expectSystemMessages,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers.node.js';
+} from '../helpers.node.ts';
 
 export const debug = createDebug('mock:test:merge');
 
@@ -30,8 +34,8 @@ describe('pnp/merge', function (this: Mocha.Suite) {
   let bootstrap: Bootstrap;
   let app: App;
   let pniContact: PrimaryDevice;
-  let pniIdentityKey: Uint8Array;
-  let aciIdentityKey: Uint8Array;
+  let pniIdentityKey: Uint8Array<ArrayBuffer>;
+  let aciIdentityKey: Uint8Array<ArrayBuffer>;
 
   beforeEach(async () => {
     bootstrap = new Bootstrap({ contactCount: 0 });
@@ -87,6 +91,8 @@ describe('pnp/merge', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+          deletedAtTimestamp: null,
+          recipientServiceIdsBinary: null,
         },
       },
     });
@@ -114,7 +120,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       `${pniSignatureVerified ? 'with' : 'without'} pniSignatureVerified ` +
       `(${finalContact})`;
 
-    // eslint-disable-next-line no-loop-func
+    // oxlint-disable-next-line no-loop-func
     it(testName, async () => {
       const { phone } = bootstrap;
 
@@ -126,7 +132,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
         .locator(`[data-testid="${pniContact.device.aci}"]`)
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('Send message to ACI');
       {
@@ -142,7 +148,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
         .first()
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('Verify starting state');
       {
@@ -169,7 +175,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
           .locator(`[data-testid="${pniContact.device.aci}"]`)
           .click();
 
-        await window.locator('.module-conversation-hero').waitFor();
+        await window.getByTestId('conversation-hero').waitFor();
       }
 
       debug(
@@ -229,11 +235,11 @@ describe('pnp/merge', function (this: Mocha.Suite) {
   }
 
   for (const withPniContact of [false, true]) {
-    const testName =
-      'accepts storage service contact splitting ' +
-      `${withPniContact ? 'with PNI contact' : 'without PNI contact'}`;
+    const testName = `accepts storage service contact splitting ${
+      withPniContact ? 'with PNI contact' : 'without PNI contact'
+    }`;
 
-    // eslint-disable-next-line no-loop-func
+    // oxlint-disable-next-line no-loop-func
     it(testName, async () => {
       const { phone } = bootstrap;
 
@@ -266,7 +272,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
         )
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('Send message to merged contact');
       {
@@ -283,7 +289,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
         state = state.updateContact(pniContact, {
           pniBinary: undefined,
           e164: undefined,
-          unregisteredAtTimestamp: Long.fromNumber(bootstrap.getTimestamp()),
+          unregisteredAtTimestamp: BigInt(bootstrap.getTimestamp()),
         });
 
         if (withPniContact) {
@@ -371,7 +377,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       )
       .click();
 
-    await window.locator('.module-conversation-hero').waitFor();
+    await window.getByTestId('conversation-hero').waitFor();
 
     debug('Unregistering ACI');
     server.unregister(pniContact);
@@ -397,10 +403,10 @@ describe('pnp/merge', function (this: Mocha.Suite) {
 
       let pniContacts = 0;
       let aciContacts = 0;
-      for (const { contact } of added) {
-        if (!contact) {
-          throw new Error('Invalid record');
-        }
+      for (const record of added) {
+        assert.ok(record.contact != null);
+
+        const { contact } = record;
 
         const { aciBinary, e164, pniBinary } = contact;
         if (
@@ -421,13 +427,14 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       }
       assert.strictEqual(aciContacts, 1);
       assert.strictEqual(pniContacts, 1);
+      assert.ok(removed[0]?.contact != null);
 
       assert.deepEqual(
-        removed[0].contact?.pniBinary,
+        removed[0].contact.pniBinary,
         pniContact.device.pniRawUuid
       );
       assert.deepEqual(
-        removed[0].contact?.aciBinary,
+        removed[0].contact.aciBinary,
         pniContact.device.aciRawUuid
       );
 
@@ -453,7 +460,8 @@ describe('pnp/merge', function (this: Mocha.Suite) {
 
     debug('Wait for ACI conversation to go away');
     await window
-      .locator(`.module-conversation-hero >> "${pniContact.profileName}"`)
+      .getByTestId('conversation-hero')
+      .getByText(pniContact.profileName)
       .waitFor({
         state: 'hidden',
       });
@@ -515,7 +523,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       )
       .click();
 
-    await window.locator('.module-conversation-hero').waitFor();
+    await window.getByTestId('conversation-hero').waitFor();
 
     debug('Verify that the message is in the ACI conversation');
     {
@@ -534,7 +542,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
 
     await typeIntoInput(searchBox, aciContact.device.number, '');
 
-    const firstSearchResult = await window.locator(
+    const firstSearchResult = window.locator(
       '.module-left-pane__no-search-results'
     );
     const firstSearchResultText = await firstSearchResult.innerText();
@@ -553,31 +561,50 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       const timestamp = bootstrap.getTimestamp();
       const destinationServiceIdBinary = pniContact.device[`${key}Binary`];
       const destination = key === 'pni' ? pniContact.device.number : undefined;
-      const content = {
-        syncMessage: {
-          sent: {
-            destinationServiceIdBinary,
-            destination,
-            timestamp: Long.fromNumber(timestamp),
-            message: {
-              timestamp: Long.fromNumber(timestamp),
-              flags: Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE,
-              expireTimer: key === 'pni' ? 90 * 24 * 3600 : 60 * 24 * 3600,
-              expireTimerVersion: key === 'pni' ? 3 : 4,
-            },
-            unidentifiedStatus: [
-              {
+      const content: Proto.Content.Params = {
+        content: {
+          syncMessage: {
+            content: {
+              sent: {
                 destinationServiceIdBinary,
-                destination,
+                destinationE164: destination ?? null,
+                timestamp: BigInt(timestamp),
+                message: {
+                  ...EMPTY_DATA_MESSAGE,
+                  timestamp: BigInt(timestamp),
+                  flags: Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE,
+                  expireTimer: key === 'pni' ? 90 * 24 * 3600 : 60 * 24 * 3600,
+                  expireTimerVersion: key === 'pni' ? 3 : 4,
+                },
+                unidentifiedStatus: [
+                  {
+                    destinationServiceIdBinary,
+                    unidentified: null,
+                    destinationPniIdentityKey: null,
+                    destinationServiceId: null,
+                  },
+                ],
+                expirationStartTimestamp: null,
+                isRecipientUpdate: null,
+                storyMessage: null,
+                storyMessageRecipients: null,
+                editMessage: null,
+                destinationServiceId: null,
               },
-            ],
+            },
+            read: null,
+            stickerPackOperation: null,
+            viewed: null,
+            padding: null,
           },
         },
+        pniSignatureMessage: null,
+        senderKeyDistributionMessage: null,
       };
       const sendOptions = {
         timestamp,
       };
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await phone.sendRaw(desktop, content, sendOptions);
     }
 
@@ -612,7 +639,7 @@ describe('pnp/merge', function (this: Mocha.Suite) {
       )
       .click();
 
-    await window.locator('.module-conversation-hero').waitFor();
+    await window.getByTestId('conversation-hero').waitFor();
 
     debug('Send message to merged contact');
     {

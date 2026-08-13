@@ -1,20 +1,22 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect, type JSX } from 'react';
 import classNames from 'classnames';
-import type { SetRendererCanvasType } from '../state/ducks/calling.preload.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { CallBackgroundBlur } from './CallBackgroundBlur.dom.js';
+import type { SetRendererCanvasType } from '../state/ducks/calling.preload.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { CallBackgroundBlur } from './CallBackgroundBlur.dom.tsx';
+import type { SizeCallbackType } from '../calling/VideoSupport.preload.ts';
 
 type PropsType = {
   conversation: ConversationType;
   hasRemoteVideo: boolean;
   i18n: LocalizerType;
   isReconnecting: boolean;
+  handleSize: SizeCallbackType;
   setRendererCanvas: (_: SetRendererCanvasType) => void;
 };
 
@@ -24,17 +26,20 @@ export function DirectCallRemoteParticipant({
   i18n,
   isReconnecting,
   setRendererCanvas,
+  handleSize,
 }: PropsType): JSX.Element {
   const remoteVideoRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    setRendererCanvas({ element: remoteVideoRef });
+    setRendererCanvas({ element: remoteVideoRef, sizeCallback: handleSize });
     return () => {
-      setRendererCanvas({ element: undefined });
+      setRendererCanvas({ element: undefined, sizeCallback: undefined });
     };
-  }, [setRendererCanvas]);
+  }, [handleSize, setRendererCanvas]);
 
   return hasRemoteVideo ? (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label
     <canvas
       className={classNames(
         'module-ongoing-call__remote-video-enabled',
@@ -57,7 +62,6 @@ function renderAvatar(
     hasAvatar,
     phoneNumber,
     profileName,
-    sharedGroupNames,
     title,
   }: Pick<
     ConversationType,
@@ -69,7 +73,6 @@ function renderAvatar(
     | 'isMe'
     | 'phoneNumber'
     | 'profileName'
-    | 'sharedGroupNames'
     | 'title'
   >
 ): JSX.Element {
@@ -88,8 +91,7 @@ function renderAvatar(
           phoneNumber={phoneNumber}
           profileName={profileName}
           title={title}
-          sharedGroupNames={sharedGroupNames}
-          size={AvatarSize.EIGHTY}
+          size={AvatarSize.NINETY_SIX}
         />
       </CallBackgroundBlur>
     </div>

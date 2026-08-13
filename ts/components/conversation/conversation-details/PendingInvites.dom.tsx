@@ -1,24 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, type JSX } from 'react';
 import _ from 'lodash';
 
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.js';
-import type { AciString } from '../../../types/ServiceId.std.js';
-import { Avatar, AvatarSize } from '../../Avatar.dom.js';
-import { ConfirmationDialog } from '../../ConfirmationDialog.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { PanelRow } from './PanelRow.dom.js';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { AciString } from '../../../types/ServiceId.std.ts';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { PanelRow } from './PanelRow.dom.tsx';
 import {
   ConversationDetailsIcon,
   IconType,
-} from './ConversationDetailsIcon.dom.js';
-import { isAccessControlEnabled } from '../../../groups/util.std.js';
-import { Tabs } from '../../Tabs.dom.js';
-import { assertDev } from '../../../util/assert.std.js';
+} from './ConversationDetailsIcon.dom.tsx';
+import { isAccessControlEnabled } from '../../../groups/util.std.ts';
+import { Tabs } from '../../Tabs.dom.tsx';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
 
 export type PropsDataType = {
   readonly conversation?: ConversationType;
@@ -86,7 +85,7 @@ export function PendingInvites({
   }
 
   const [stagedMemberships, setStagedMemberships] =
-    React.useState<Array<StagedMembershipType> | null>(null);
+    useState<Array<StagedMembershipType> | null>(null);
 
   return (
     <div className="conversation-details-panel">
@@ -197,11 +196,13 @@ function MembershipActionConfirmation({
     }
     approvePendingMembershipFromGroupV2(
       conversation.id,
-      stagedMemberships[0].membership.member.id
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      stagedMemberships[0]!.membership.member.id
     );
   };
 
-  const membershipType = stagedMemberships[0].type;
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  const membershipType = stagedMemberships[0]!.type;
 
   const modalAction =
     membershipType === StageType.APPROVE_REQUEST
@@ -219,26 +220,24 @@ function MembershipActionConfirmation({
   }
 
   return (
-    <ConfirmationDialog
-      dialogName="PendingInvites.actionConfirmation"
-      actions={[
-        {
-          action: modalAction,
-          style: 'affirmative',
-          text: modalActionText,
-        },
-      ]}
-      i18n={i18n}
-      onClose={onClose}
-    >
-      {getConfirmationMessage({
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={onClose}
+      // @ts-expect-error ConfirmationDialog migration: Needs title
+      title={null}
+      description={getConfirmationMessage({
         conversation,
         i18n,
         members,
         ourAci,
         stagedMemberships,
       })}
-    </ConfirmationDialog>
+    >
+      <AxoConfirmDialog.Cancel />
+      <AxoConfirmDialog.Action variant="strong-primary" onClick={modalAction}>
+        {modalActionText}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }
 
@@ -255,12 +254,13 @@ function getConfirmationMessage({
   ourAci: AciString;
   stagedMemberships: ReadonlyArray<StagedMembershipType>;
 }>): string {
-  if (!stagedMemberships || !stagedMemberships.length) {
+  const [stagedMembership] = stagedMemberships;
+  if (stagedMembership == null) {
     return '';
   }
 
-  const membershipType = stagedMemberships[0].type;
-  const firstMembership = stagedMemberships[0].membership;
+  const membershipType = stagedMembership.type;
+  const firstMembership = stagedMembership.membership;
 
   // Requesting a membership since they weren't added by anyone
   if (membershipType === StageType.DENY_REQUEST) {
@@ -419,19 +419,23 @@ function MembersPendingProfileKey({
   const { [ourAci]: ourPendingMemberships, ...otherPendingMembershipGroups } =
     groupedPendingMemberships;
 
-  const otherPendingMemberships = Object.keys(otherPendingMembershipGroups)
-    .map(id => members.find(member => member.serviceId === id))
-    .filter((member): member is ConversationType => member !== undefined)
-    .map(member => {
-      assertDev(
-        member.serviceId,
-        'We just verified that member has serviceId above'
-      );
-      return {
-        member,
-        pendingMemberships: otherPendingMembershipGroups[member.serviceId],
-      };
+  const otherPendingMemberships: Array<{
+    member: ConversationType;
+    pendingMemberships: Array<GroupV2PendingMembership>;
+  }> = [];
+
+  for (const [id, pendingMemberships] of Object.entries(
+    otherPendingMembershipGroups
+  )) {
+    const member = members.find(m => m.serviceId === id);
+    if (member == null) {
+      continue;
+    }
+    otherPendingMemberships.push({
+      member,
+      pendingMemberships,
     });
+  }
 
   return (
     <PanelSection>

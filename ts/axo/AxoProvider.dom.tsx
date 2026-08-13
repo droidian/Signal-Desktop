@@ -1,17 +1,45 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { FC, ReactNode } from 'react';
-import React, { memo } from 'react';
-import { Direction } from 'radix-ui';
+import { memo, useInsertionEffect } from 'react';
+import { Direction, Tooltip } from 'radix-ui';
+import { createScrollbarGutterCssProperties } from './_internal/scrollbars.dom.tsx';
+import { AxoIntl } from './_internal/AxoIntl.dom.tsx';
 
-type AxoProviderProps = Readonly<{
-  dir: 'ltr' | 'rtl';
+export type AxoProviderProps = Readonly<{
+  /** Text direction for the application. */
+  dir: AxoIntl.Direction;
+  /** Localized strings used by Axo components. */
+  messages: AxoIntl.Messages;
   children: ReactNode;
 }>;
 
+let runOnceGlobally = false;
+
+/**
+ * Root provider for all Axo components.
+ */
 export const AxoProvider: FC<AxoProviderProps> = memo(props => {
+  useInsertionEffect(() => {
+    if (runOnceGlobally) {
+      return;
+    }
+    runOnceGlobally = true;
+
+    const unsubscribe = createScrollbarGutterCssProperties();
+
+    return () => {
+      unsubscribe();
+      runOnceGlobally = false;
+    };
+  });
+
   return (
-    <Direction.Provider dir={props.dir}>{props.children}</Direction.Provider>
+    <AxoIntl.Provider messages={props.messages}>
+      <Direction.Provider dir={props.dir}>
+        <Tooltip.Provider>{props.children}</Tooltip.Provider>
+      </Direction.Provider>
+    </AxoIntl.Provider>
   );
 });
 

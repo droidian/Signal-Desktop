@@ -1,25 +1,25 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { KeyboardEvent, MouseEvent } from 'react';
-import React, { useRef, useState } from 'react';
+import type { MouseEvent, ReactNode, JSX } from 'react';
+import { useCallback, useState } from 'react';
 import classNames from 'classnames';
-import { ContextMenu, ContextMenuTrigger, MenuItem } from 'react-contextmenu';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { CustomColorEditor } from './CustomColorEditor.dom.js';
-import { Modal } from './Modal.dom.js';
+import { CustomColorEditor } from './CustomColorEditor.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
 import type {
   ConversationColorType,
   CustomColorType,
-} from '../types/Colors.std.js';
-import { ConversationColors } from '../types/Colors.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { SampleMessageBubbles } from './SampleMessageBubbles.dom.js';
-import { PanelRow } from './conversation/conversation-details/PanelRow.dom.js';
-import { getCustomColorStyle } from '../util/getCustomColorStyle.dom.js';
-
-import { useDelayedRestoreFocus } from '../hooks/useRestoreFocus.dom.js';
+} from '../types/Colors.std.ts';
+import { ConversationColors } from '../types/Colors.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { SampleMessageBubbles } from './SampleMessageBubbles.dom.tsx';
+import { PanelRow } from './conversation/conversation-details/PanelRow.dom.tsx';
+import { getCustomColorStyle } from '../util/getCustomColorStyle.dom.ts';
+import { useDelayedRestoreFocus } from '../hooks/useRestoreFocus.dom.ts';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 type CustomColorDataType = {
   id?: string;
@@ -49,8 +49,8 @@ type PropsActionType = {
   editCustomColor: (colorId: string, color: CustomColorType) => unknown;
   removeCustomColor: (colorId: string) => unknown;
   removeCustomColorOnConversations: (colorId: string) => unknown;
-  resetAllChatColors: () => unknown;
-  resetDefaultChatColor: () => unknown;
+  resetAllChatColors: () => void;
+  resetDefaultChatColor: () => void;
   setGlobalDefaultConversationColor: (
     color: ConversationColorType,
     customColorData?: {
@@ -124,52 +124,43 @@ export function ChatColorPicker({
   return (
     <div className="ChatColorPicker__container">
       {customColorToEdit ? renderCustomColorEditorWrapper() : null}
-      {confirmResetWhat ? (
-        <ConfirmationDialog
-          dialogName="ChatColorPicker.confirmReset"
-          actions={[
-            {
-              action: resetDefaultChatColor,
-              style: 'affirmative',
-              text: i18n('icu:ChatColorPicker__confirm-reset-default'),
-            },
-            {
-              action: () => {
-                resetDefaultChatColor();
-                resetAllChatColors();
-              },
-              style: 'affirmative',
-              text: i18n('icu:ChatColorPicker__resetAll'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmResetWhat(false);
-          }}
-          title={i18n('icu:ChatColorPicker__resetDefault')}
+      <AxoConfirmDialog.Root
+        open={confirmResetWhat}
+        onOpenChange={setConfirmResetWhat}
+        title={i18n('icu:ChatColorPicker__resetDefault')}
+        description={i18n('icu:ChatColorPicker__confirm-reset-message')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-primary"
+          onClick={resetDefaultChatColor}
         >
-          {i18n('icu:ChatColorPicker__confirm-reset-message')}
-        </ConfirmationDialog>
-      ) : null}
-      {confirmResetAll ? (
-        <ConfirmationDialog
-          dialogName="ChatColorPicker.confirmResetAll"
-          actions={[
-            {
-              action: resetAllChatColors,
-              style: 'affirmative',
-              text: i18n('icu:ChatColorPicker__confirm-reset'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmResetAll(false);
+          {i18n('icu:ChatColorPicker__confirm-reset-default')}
+        </AxoConfirmDialog.Action>
+        <AxoConfirmDialog.Action
+          variant="strong-primary"
+          onClick={() => {
+            resetDefaultChatColor();
+            resetAllChatColors();
           }}
-          title={i18n('icu:ChatColorPicker__resetAll')}
         >
-          {i18n('icu:ChatColorPicker__confirm-reset-message')}
-        </ConfirmationDialog>
-      ) : null}
+          {i18n('icu:ChatColorPicker__resetAll')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+      <AxoConfirmDialog.Root
+        open={confirmResetAll}
+        onOpenChange={setConfirmResetAll}
+        title={i18n('icu:ChatColorPicker__resetAll')}
+        description={i18n('icu:ChatColorPicker__confirm-reset-message')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-primary"
+          onClick={resetAllChatColors}
+        >
+          {i18n('icu:ChatColorPicker__confirm-reset')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
       <SampleMessageBubbles
         backgroundStyle={getCustomColorStyle(selectedCustomColor.value)}
         color={selectedColor}
@@ -177,73 +168,65 @@ export function ChatColorPicker({
       />
       <hr />
       <div className="ChatColorPicker__bubbles">
-        {ConversationColors.map((color, i) => (
-          <div
-            aria-label={color}
-            aria-selected={color === selectedColor}
-            className={classNames(
-              `ChatColorPicker__bubble ChatColorPicker__bubble--${color}`,
-              {
-                'ChatColorPicker__bubble--selected': color === selectedColor,
-              }
-            )}
-            key={color}
-            onClick={() => onSelectColor(color)}
-            onKeyDown={(ev: KeyboardEvent) => {
-              if (ev.key === 'Enter') {
-                onSelectColor(color);
-              }
-            }}
-            role="option"
-            tabIndex={0}
-            ref={i === 0 ? focusRef : undefined}
-          />
-        ))}
-        {Object.keys(customColors).map(colorId => {
-          const colorValues = customColors[colorId];
-          return (
-            <CustomColorBubble
-              color={colorValues}
-              colorId={colorId}
-              getConversationsWithCustomColor={getConversationsWithCustomColor}
-              key={colorId}
-              i18n={i18n}
-              isSelected={colorId === selectedCustomColor.id}
-              onChoose={() => {
-                onSelectColor('custom', {
-                  id: colorId,
-                  value: colorValues,
-                });
-              }}
-              onDelete={() => {
-                removeCustomColor(colorId);
-                removeCustomColorOnConversations(colorId);
-              }}
-              onDupe={() => {
-                addCustomColor(colorValues, conversationId);
-              }}
-              onEdit={() => {
-                setCustomColorToEdit({ id: colorId, value: colorValues });
-              }}
+        <div role="listbox" className={tw('contents')}>
+          {ConversationColors.map((color, i) => (
+            <button
+              type="button"
+              role="option"
+              aria-label={color}
+              aria-selected={color === selectedColor}
+              className={classNames(
+                `ChatColorPicker__bubble ChatColorPicker__bubble--${color}`,
+                {
+                  'ChatColorPicker__bubble--selected': color === selectedColor,
+                }
+              )}
+              key={color}
+              onClick={() => onSelectColor(color)}
+              ref={i === 0 ? focusRef : undefined}
             />
-          );
-        })}
-        <div
+          ))}
+          {Object.entries(customColors).map(([colorId, colorValues]) => {
+            return (
+              <CustomColorBubble
+                color={colorValues}
+                colorId={colorId}
+                getConversationsWithCustomColor={
+                  getConversationsWithCustomColor
+                }
+                key={colorId}
+                i18n={i18n}
+                isSelected={colorId === selectedCustomColor.id}
+                onChoose={() => {
+                  onSelectColor('custom', {
+                    id: colorId,
+                    value: colorValues,
+                  });
+                }}
+                onDelete={() => {
+                  removeCustomColor(colorId);
+                  removeCustomColorOnConversations(colorId);
+                }}
+                onDupe={() => {
+                  addCustomColor(colorValues, conversationId);
+                }}
+                onEdit={() => {
+                  setCustomColorToEdit({ id: colorId, value: colorValues });
+                }}
+              />
+            );
+          })}
+        </div>
+        <button
+          type="button"
           aria-label={i18n('icu:ChatColorPicker__custom-color--label')}
           className="ChatColorPicker__bubble ChatColorPicker__bubble--custom"
-          onClick={() =>
-            setCustomColorToEdit({ id: undefined, value: undefined })
-          }
-          onKeyDown={(ev: KeyboardEvent) => {
-            if (ev.key === 'Enter') {
-              setCustomColorToEdit({ id: undefined, value: undefined });
-            }
+          onClick={() => {
+            setCustomColorToEdit({ id: undefined, value: undefined });
           }}
-          role="button"
-          tabIndex={0}
         >
           <i className="ChatColorPicker__add-icon" />
-        </div>
+        </button>
       </div>
       <hr />
       {conversationId ? (
@@ -274,7 +257,7 @@ type CustomColorBubblePropsType = {
   getConversationsWithCustomColor: (colorId: string) => Array<ConversationType>;
   i18n: LocalizerType;
   isSelected: boolean;
-  onDelete: () => unknown;
+  onDelete: () => void;
   onDupe: () => unknown;
   onEdit: () => unknown;
   onChoose: () => unknown;
@@ -291,123 +274,107 @@ function CustomColorBubble({
   onEdit,
   onChoose,
 }: CustomColorBubblePropsType): JSX.Element {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const menuRef = useRef<any | null>(null);
   const [confirmDeleteCount, setConfirmDeleteCount] = useState<
     number | undefined
   >(undefined);
 
-  const handleClick = (ev: KeyboardEvent | MouseEvent) => {
-    if (!isSelected) {
-      onChoose();
-      return;
-    }
-
-    if (menuRef && menuRef.current) {
-      menuRef.current.handleContextClick(ev);
-    }
-  };
-
-  const bubble = (
-    <div
-      aria-label={colorId}
-      aria-selected={isSelected}
-      className={classNames({
-        ChatColorPicker__bubble: true,
-        'ChatColorPicker__bubble--custom-selected': isSelected,
-        'ChatColorPicker__bubble--selected': isSelected,
-      })}
-      onClick={handleClick}
-      onKeyDown={(ev: KeyboardEvent) => {
-        if (ev.key === 'Enter') {
-          handleClick(ev);
-        }
-      }}
-      role="option"
-      tabIndex={0}
-      style={{
-        ...getCustomColorStyle(color),
-      }}
-    />
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (!isSelected) {
+        onChoose();
+        event.currentTarget.focus();
+      }
+    },
+    [isSelected, onChoose]
   );
+
+  const handleDelete = useCallback(() => {
+    const conversations = getConversationsWithCustomColor(colorId);
+    if (!conversations.length) {
+      onDelete();
+    } else {
+      setConfirmDeleteCount(conversations.length);
+    }
+  }, [getConversationsWithCustomColor, colorId, onDelete]);
 
   return (
     <>
-      {confirmDeleteCount ? (
-        <ConfirmationDialog
-          dialogName="ChatColorPicker.confirmDelete"
-          actions={[
-            {
-              action: onDelete,
-              style: 'negative',
-              text: i18n('icu:ChatColorPicker__context--delete'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmDeleteCount(undefined);
-          }}
-          title={i18n('icu:ChatColorPicker__delete--title')}
-        >
-          {i18n('icu:ChatColorPicker__delete--message', {
-            num: confirmDeleteCount,
-          })}
-        </ConfirmationDialog>
-      ) : null}
-      {isSelected ? (
-        <ContextMenuTrigger id={colorId} ref={menuRef}>
-          {bubble}
-        </ContextMenuTrigger>
-      ) : (
-        bubble
-      )}
-      <ContextMenu id={colorId}>
-        <MenuItem
-          attributes={{
-            className: 'ChatColorPicker__context--edit',
-          }}
-          onClick={(event: MouseEvent) => {
-            event.stopPropagation();
-            event.preventDefault();
-
-            onEdit();
-          }}
-        >
-          {i18n('icu:ChatColorPicker__context--edit')}
-        </MenuItem>
-        <MenuItem
-          attributes={{
-            className: 'ChatColorPicker__context--duplicate',
-          }}
-          onClick={(event: MouseEvent) => {
-            event.stopPropagation();
-            event.preventDefault();
-
-            onDupe();
-          }}
-        >
-          {i18n('icu:ChatColorPicker__context--duplicate')}
-        </MenuItem>
-        <MenuItem
-          attributes={{
-            className: 'ChatColorPicker__context--delete',
-          }}
-          onClick={(event: MouseEvent) => {
-            event.stopPropagation();
-            event.preventDefault();
-
-            const conversations = getConversationsWithCustomColor(colorId);
-            if (!conversations.length) {
-              onDelete();
-            } else {
-              setConfirmDeleteCount(conversations.length);
-            }
-          }}
+      <AxoConfirmDialog.Root
+        open={confirmDeleteCount != null}
+        onOpenChange={() => setConfirmDeleteCount(undefined)}
+        title={i18n('icu:ChatColorPicker__delete--title')}
+        description={i18n('icu:ChatColorPicker__delete--message', {
+          num: confirmDeleteCount ?? 0,
+        })}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={onDelete}
         >
           {i18n('icu:ChatColorPicker__context--delete')}
-        </MenuItem>
-      </ContextMenu>
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+      <CustomColorBubbleDropdownMenu
+        i18n={i18n}
+        onEdit={onEdit}
+        onDupe={onDupe}
+        onDelete={handleDelete}
+        disabled={!isSelected}
+      >
+        <button
+          type="button"
+          role="option"
+          aria-label={colorId}
+          aria-selected={isSelected}
+          className={classNames({
+            ChatColorPicker__bubble: true,
+            'ChatColorPicker__bubble--custom-selected': isSelected,
+            'ChatColorPicker__bubble--selected': isSelected,
+          })}
+          onClick={handleClick}
+          style={getCustomColorStyle(color)}
+        />
+      </CustomColorBubbleDropdownMenu>
     </>
+  );
+}
+
+function CustomColorBubbleDropdownMenu(props: {
+  i18n: LocalizerType;
+  disabled: boolean;
+  onEdit: () => void;
+  onDupe: () => void;
+  onDelete: () => void;
+  children: ReactNode;
+}): JSX.Element {
+  const { i18n, disabled } = props;
+  const [open, setOpen] = useState(false);
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!disabled) {
+        setOpen(nextOpen);
+      }
+    },
+    [disabled]
+  );
+
+  return (
+    <AxoDropdownMenu.Root open={open} onOpenChange={handleOpenChange}>
+      <AxoDropdownMenu.Trigger>{props.children}</AxoDropdownMenu.Trigger>
+      <AxoDropdownMenu.Content>
+        <AxoDropdownMenu.Item onSelect={props.onEdit}>
+          {i18n('icu:ChatColorPicker__context--edit')}
+        </AxoDropdownMenu.Item>
+        <AxoDropdownMenu.Item onSelect={props.onDupe}>
+          {i18n('icu:ChatColorPicker__context--duplicate')}
+        </AxoDropdownMenu.Item>
+        <AxoDropdownMenu.Item onSelect={props.onDelete}>
+          {i18n('icu:ChatColorPicker__context--delete')}
+        </AxoDropdownMenu.Item>
+      </AxoDropdownMenu.Content>
+    </AxoDropdownMenu.Root>
   );
 }
 

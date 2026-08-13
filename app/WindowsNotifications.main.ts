@@ -9,44 +9,47 @@ import {
   sendDummyKeystroke,
 } from '@indutny/simple-windows-notifications';
 
-import { createLogger } from '../ts/logging/log.std.js';
-import { AUMID } from './startup_config.main.js';
-import type { WindowsNotificationData } from '../ts/services/notifications.preload.js';
-// eslint-disable-next-line local-rules/file-suffix
-import { renderWindowsToast } from './renderWindowsToast.dom.js';
-
-const log = createLogger('WindowsNotifications');
+import { createLogger } from '../ts/logging/log.std.ts';
+import { AUMID } from './startup_config.main.ts';
+import type { WindowsNotificationData } from '../ts/services/notifications.preload.ts';
+import OS from '../ts/util/os/osMain.node.ts';
+import { renderWindowsToast } from './renderWindowsToast.std.tsx';
 
 export { sendDummyKeystroke };
 
-const notifier = new Notifier(AUMID);
+const log = createLogger('WindowsNotifications');
 
-const NOTIFICATION_ID = {
-  group: 'group',
-  tag: 'tag',
-};
+if (OS.isWindows()) {
+  const notifier = new Notifier(AUMID);
 
-ipc.handle(
-  'windows-notifications:show',
-  (_event: IpcMainInvokeEvent, data: WindowsNotificationData) => {
+  const NOTIFICATION_ID = {
+    group: 'group',
+    tag: 'tag',
+  };
+
+  ipc.handle(
+    'windows-notifications:show',
+    (_event: IpcMainInvokeEvent, data: WindowsNotificationData) => {
+      try {
+        // First, clear all previous notifications - we want just one
+        // notification at a time
+        notifier.remove(NOTIFICATION_ID);
+        notifier.show(renderWindowsToast(data), NOTIFICATION_ID);
+      } catch (error) {
+        log.error(
+          `Windows Notifications: Failed to show notification: ${error.stack}`
+        );
+      }
+    }
+  );
+
+  ipc.handle('windows-notifications:clear-all', () => {
     try {
-      // First, clear all previous notifications - we want just one notification at a time
       notifier.remove(NOTIFICATION_ID);
-      notifier.show(renderWindowsToast(data), NOTIFICATION_ID);
     } catch (error) {
       log.error(
-        `Windows Notifications: Failed to show notification: ${error.stack}`
+        `Windows Notifications: Failed to clear notifications: ${error.stack}`
       );
     }
-  }
-);
-
-ipc.handle('windows-notifications:clear-all', () => {
-  try {
-    notifier.remove(NOTIFICATION_ID);
-  } catch (error) {
-    log.error(
-      `Windows Notifications: Failed to clear notifications: ${error.stack}`
-    );
-  }
-});
+  });
+}

@@ -1,35 +1,35 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactElement, ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactElement, ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { createLogger } from '../../logging/log.std.js';
-import { I18n } from '../I18n.dom.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { I18n } from '../I18n.dom.tsx';
 import type {
   LocalizerType,
   ICUJSXMessageParamsByKeyType,
-} from '../../types/Util.std.js';
+} from '../../types/Util.std.ts';
 import type {
   AciString,
   PniString,
   ServiceIdString,
-} from '../../types/ServiceId.std.js';
-import { GroupDescriptionText } from '../GroupDescriptionText.dom.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
-import { SystemMessage } from './SystemMessage.dom.js';
+} from '../../types/ServiceId.std.ts';
+import { GroupDescriptionText } from '../GroupDescriptionText.dom.tsx';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
+import { SystemMessage } from './SystemMessage.dom.tsx';
 
 import type {
   GroupV2ChangeType,
   GroupV2ChangeDetailType,
-} from '../../types/groups.std.js';
+} from '../../types/groups.std.ts';
 
-import type { SmartContactRendererType } from '../../groupChange.std.js';
-import { renderChange } from '../../groupChange.std.js';
-import { Modal } from '../Modal.dom.js';
-import { ConfirmationDialog } from '../ConfirmationDialog.dom.js';
+import type { SmartContactRendererType } from '../../groupChange.std.ts';
+import { renderChange } from '../../groupChange.std.ts';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
 
 const { get } = lodash;
 
@@ -89,41 +89,48 @@ type GroupIconType =
   | 'group-edit'
   | 'group-summary'
   | 'group-leave'
-  | 'group-remove';
+  | 'group-remove'
+  // TODO: DESKTOP-9894
+  | 'group-terminate';
 
-const changeToIconMap = new Map<string, GroupIconType>([
-  ['access-attributes', 'group-access'],
-  ['access-invite-link', 'group-access'],
-  ['access-members', 'group-access'],
-  ['admin-approval-add-one', 'group-add'],
-  ['admin-approval-remove-one', 'group-decline'],
-  ['admin-approval-bounce', 'group-decline'],
-  ['announcements-only', 'group-access'],
-  ['avatar', 'group-avatar'],
-  ['description', 'group-edit'],
-  ['group-link-add', 'group-access'],
-  ['group-link-remove', 'group-access'],
-  ['group-link-reset', 'group-access'],
-  ['member-add', 'group-add'],
-  ['member-add-from-admin-approval', 'group-approved'],
-  ['member-add-from-invite', 'group-add'],
-  ['member-add-from-link', 'group-add'],
-  ['member-privilege', 'group-access'],
-  ['member-remove', 'group-remove'],
-  ['pending-add-many', 'group-add'],
-  ['pending-add-one', 'group-add'],
-  ['pending-remove-many', 'group-decline'],
-  ['pending-remove-one', 'group-decline'],
-  ['title', 'group-edit'],
-]);
-
+const changeToIconMap: Record<GroupV2ChangeDetailType['type'], GroupIconType> =
+  {
+    'access-attributes': 'group-access',
+    'access-invite-link': 'group-access',
+    'access-member-label': 'group-access',
+    'access-members': 'group-access',
+    'admin-approval-add-one': 'group-add',
+    'admin-approval-bounce': 'group-decline',
+    'admin-approval-remove-one': 'group-decline',
+    'announcements-only': 'group-access',
+    avatar: 'group-avatar',
+    create: 'group',
+    description: 'group-edit',
+    'group-link-add': 'group-access',
+    'group-link-remove': 'group-access',
+    'group-link-reset': 'group-access',
+    'member-add': 'group-add',
+    'member-add-from-admin-approval': 'group-approved',
+    'member-add-from-invite': 'group-add',
+    'member-add-from-link': 'group-add',
+    'member-privilege': 'group-access',
+    'member-remove': 'group-remove',
+    'pending-add-many': 'group-add',
+    'pending-add-one': 'group-add',
+    'pending-remove-many': 'group-decline',
+    'pending-remove-one': 'group-decline',
+    summary: 'group-summary',
+    title: 'group-edit',
+    // TODO: DESKTOP-9894
+    terminated: 'group-terminate',
+  };
 function getIcon(
   detail: GroupV2ChangeDetailType,
   isLastText = true,
   fromId?: ServiceIdString
 ): GroupIconType {
   const changeType = detail.type;
-  let possibleIcon = changeToIconMap.get(changeType);
+  let possibleIcon: GroupIconType | undefined = changeToIconMap[changeType];
   const isSameId = fromId === get(detail, 'aci', null);
   if (isSameId) {
     if (changeType === 'member-remove') {
@@ -138,9 +145,7 @@ function getIcon(
   if (changeType === 'admin-approval-bounce' && isLastText) {
     possibleIcon = undefined;
   }
-  if (changeType === 'summary') {
-    possibleIcon = 'group-summary';
-  }
+
   return possibleIcon || 'group';
 }
 
@@ -199,15 +204,23 @@ function GroupV2Detail({
       }
 
       modalNode = (
-        <Modal
-          modalName="GroupV2Change.ViewingGroupDescription"
-          hasXButton
-          i18n={i18n}
-          title={groupName}
-          onClose={() => setModalState(ModalState.None)}
+        <AxoDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
         >
-          <GroupDescriptionText text={detail.description} />
-        </Modal>
+          <AxoDialog.Content size="md" escape="cancel-is-noop">
+            <AxoDialog.Header>
+              <AxoDialog.Title>{groupName}</AxoDialog.Title>
+              <AxoDialog.Close />
+            </AxoDialog.Header>
+            <AxoDialog.Body>
+              <AxoDialog.Description>
+                <GroupDescriptionText text={detail.description} />
+              </AxoDialog.Description>
+            </AxoDialog.Body>
+            <AxoDialog.Footer />
+          </AxoDialog.Content>
+        </AxoDialog.Root>
       );
       break;
     case ModalState.ConfirmingblockGroupLinkRequests:
@@ -224,27 +237,28 @@ function GroupV2Detail({
       }
 
       modalNode = (
-        <ConfirmationDialog
-          dialogName="GroupV2Change.confirmBlockLinkRequests"
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
           title={i18n('icu:PendingRequests--block--title')}
-          actions={[
-            {
-              action: () => blockGroupLinkRequests(conversationId, detail.aci),
-              text: i18n('icu:PendingRequests--block--confirm'),
-              style: 'affirmative',
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => setModalState(ModalState.None)}
+          description={
+            <I18n
+              id="icu:PendingRequests--block--contents"
+              i18n={i18n}
+              components={{
+                name: renderContact(detail.aci),
+              }}
+            />
+          }
         >
-          <I18n
-            id="icu:PendingRequests--block--contents"
-            i18n={i18n}
-            components={{
-              name: renderContact(detail.aci),
-            }}
-          />
-        </ConfirmationDialog>
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => blockGroupLinkRequests(conversationId, detail.aci)}
+          >
+            {i18n('icu:PendingRequests--block--confirm')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       );
       break;
     default: {
@@ -333,7 +347,7 @@ export function GroupV2Change(props: PropsType): ReactElement {
             groupName={groupName}
             i18n={i18n}
             // Difficult to find a unique key for this type
-            // eslint-disable-next-line react/no-array-index-key
+            // oxlint-disable-next-line react/no-array-index-key
             key={index}
             ourAci={ourAci}
             renderContact={renderContact}

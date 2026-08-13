@@ -1,16 +1,19 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 import { Button } from 'react-aria-components';
 import { action } from '@storybook/addon-actions';
-import { type ComponentMeta } from '../../storybook/types.std.js';
-import type { FunEmojiPickerProps } from './FunEmojiPicker.dom.js';
-import { FunEmojiPicker } from './FunEmojiPicker.dom.js';
-import { MOCK_RECENT_EMOJIS, MOCK_THIS_MESSAGE_EMOJIS } from './mocks.dom.js';
-import { FunProvider } from './FunProvider.dom.js';
-import { packs, recentStickers } from '../stickers/mocks.std.js';
-import { EmojiSkinTone } from './data/emojis.std.js';
-import { Select } from '../Select.dom.js';
+import { type ComponentMeta } from '../../storybook/types.std.ts';
+import type { FunEmojiPickerProps } from './FunEmojiPicker.dom.tsx';
+import { FunEmojiPicker } from './FunEmojiPicker.dom.tsx';
+import {
+  MOCK_RECENT_EMOJIS,
+  MOCK_THIS_MESSAGE_EMOJIS,
+} from '../../test-helpers/funPickerMocks.dom.tsx';
+import { FunProvider } from './FunProvider.dom.tsx';
+import { packs, recentStickers } from '../../test-helpers/stickersMocks.std.ts';
+import { Select } from '../Select.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -20,24 +23,24 @@ type TemplateProps = Omit<
 >;
 
 const skinToneOptions = [
-  { value: EmojiSkinTone.None, text: 'Default' },
-  { value: EmojiSkinTone.Type1, text: 'Light Skin Tone' },
-  { value: EmojiSkinTone.Type2, text: 'Medium-Light Skin Tone' },
-  { value: EmojiSkinTone.Type3, text: 'Medium Skin Tone' },
-  { value: EmojiSkinTone.Type4, text: 'Medium-Dark Skin Tone' },
-  { value: EmojiSkinTone.Type5, text: 'Dark Skin Tone' },
+  { value: Emoji.SkinTone.None, text: 'Default' },
+  { value: Emoji.SkinTone.Type1, text: 'Light Skin Tone' },
+  { value: Emoji.SkinTone.Type2, text: 'Medium-Light Skin Tone' },
+  { value: Emoji.SkinTone.Type3, text: 'Medium Skin Tone' },
+  { value: Emoji.SkinTone.Type4, text: 'Medium-Dark Skin Tone' },
+  { value: Emoji.SkinTone.Type5, text: 'Dark Skin Tone' },
 ];
 
 function Template(props: TemplateProps): JSX.Element {
   const [open, setOpen] = useState(true);
-  const [skinTone, setSkinTone] = useState(EmojiSkinTone.None);
+  const [skinTone, setSkinTone] = useState(Emoji.SkinTone.None);
 
   const handleOpenChange = useCallback((openState: boolean) => {
     setOpen(openState);
   }, []);
 
   const handleSkinToneChange = useCallback((value: string) => {
-    setSkinTone(value as EmojiSkinTone);
+    setSkinTone(value as Emoji.SkinTone);
   }, []);
 
   return (
@@ -53,14 +56,16 @@ function Template(props: TemplateProps): JSX.Element {
       onOpenCustomizePreferredReactionsModal={() => null}
       onSelectEmoji={action('onSelectEmoji')}
       // Stickers
+      isStickerReplySendEnabled
       installedStickerPacks={packs}
       showStickerPickerHint={false}
       onClearStickerPickerHint={() => null}
       onSelectSticker={() => null}
       // Gifs
-      fetchGifsSearch={() => Promise.reject()}
-      fetchGifsFeatured={() => Promise.reject()}
-      fetchGif={() => Promise.reject()}
+      fetchGiphySearch={() => Promise.reject()}
+      fetchGiphyTrending={() => Promise.reject()}
+      fetchGiphyFile={() => Promise.reject()}
+      onRemoveRecentGif={() => null}
       onSelectGif={() => null}
     >
       <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>

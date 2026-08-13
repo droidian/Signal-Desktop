@@ -10,22 +10,19 @@ import {
   ComparableBackup,
   Purpose,
 } from '@signalapp/libsignal-client/dist/MessageBackup.js';
-import { assert } from 'chai';
+import assert from 'node:assert/strict';
 
-import { clearData } from './helpers.preload.js';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.js';
-import {
-  backupsService,
-  BackupType,
-} from '../../services/backups/index.preload.js';
-import { initialize as initializeExpiringMessageService } from '../../services/expiringMessagesDeletion.preload.js';
-import { MemoryStream } from '../../util/MemoryStream.node.js';
+import { clearData } from './helpers.preload.ts';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
+import { initialize as initializeExpiringMessageService } from '../../services/expiringMessagesDeletion.preload.ts';
+import { MemoryStream } from '../../util/MemoryStream.node.ts';
 
 const { BACKUP_INTEGRATION_DIR } = process.env;
 
 describe('backup/integration', () => {
   before(async () => {
-    await initializeExpiringMessageService();
+    initializeExpiringMessageService();
   });
 
   beforeEach(async () => {
@@ -56,13 +53,14 @@ describe('backup/integration', () => {
       const expectedBuffer = await readFile(fullPath);
 
       await backupsService.importBackup(() => Readable.from([expectedBuffer]), {
-        backupType: BackupType.TestOnlyPlaintext,
+        type: 'cross-client-integration-test',
       });
 
-      const { data: exported } = await backupsService.exportBackupData(
-        BackupLevel.Paid,
-        BackupType.TestOnlyPlaintext
-      );
+      const { data: exported } = await backupsService.exportBackupData({
+        type: 'cross-client-integration-test',
+        level: BackupLevel.Paid,
+        abortSignal: new AbortController().signal,
+      });
 
       const actualStream = new MemoryStream(Buffer.from(exported));
       const expectedStream = new MemoryStream(expectedBuffer);
@@ -81,17 +79,18 @@ describe('backup/integration', () => {
       const actualString = actual.comparableString();
       const expectedString = expected.comparableString();
 
-      if (
-        expectedString.includes('ReleaseChannelDonationRequest') ||
-        // TODO (DESKTOP-8025) roundtrip these frames
-        fullPath.includes('chat_folder')
-      ) {
+      if (expectedString.includes('ReleaseChannelDonationRequest')) {
         // Skip the unsupported tests
         return;
       }
 
-      // We need "deep*" for fancy diffs
-      assert.deepStrictEqual(actualString, expectedString);
+      if (actualString !== expectedString) {
+        const actualJson = JSON.parse(actualString);
+        const expectedJson = JSON.parse(expectedString);
+
+        // parsing as json produces a more detailed diff
+        assert.deepEqual(actualJson, expectedJson);
+      }
     });
   }
 });

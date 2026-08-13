@@ -1,19 +1,20 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './AvatarTextEditor.dom.js';
-import { AvatarTextEditor } from './AvatarTextEditor.dom.js';
-import { AvatarColors } from '../types/Colors.std.js';
+import type { PropsType } from './AvatarTextEditor.dom.tsx';
+import { AvatarTextEditor } from './AvatarTextEditor.dom.tsx';
+import { AvatarColors } from '../types/Colors.std.ts';
 
 const { i18n } = window.SignalContext;
 
 const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   avatarData: overrideProps.avatarData,
   i18n,
+  isDisplayedAsPanel: false,
   onCancel: action('onCancel'),
   onDone: action('onDone'),
 });

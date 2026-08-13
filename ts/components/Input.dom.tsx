@@ -2,20 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 
-import * as grapheme from '../util/grapheme.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
-import { useRefMerger } from '../hooks/useRefMerger.std.js';
-import { byteLength } from '../Bytes.std.js';
+import * as grapheme from '../util/grapheme.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
+import { useRefMerger } from '../hooks/useRefMerger.std.ts';
+import { byteLength } from '../Bytes.std.ts';
+import { truncateString } from '../util/truncateString.std.ts';
 
 export type PropsType = {
   autoFocus?: boolean;
@@ -35,13 +30,16 @@ export type PropsType = {
   onChange: (value: string) => unknown;
   onBlur?: () => unknown;
   onFocus?: () => unknown;
-  onEnter?: () => unknown;
+  onEnter?: (event: KeyboardEvent) => unknown;
   placeholder: string;
   readOnly?: boolean;
+  shouldShowClearButton?: boolean;
   value?: string;
   whenToShowRemainingCount?: number;
   whenToWarnRemainingCount?: number;
   children?: ReactNode;
+  'aria-invalid'?: boolean | 'true' | 'false';
+  'aria-errormessage'?: string;
 };
 
 /**
@@ -86,10 +84,13 @@ export const Input = forwardRef<
     onEnter,
     placeholder,
     readOnly,
+    shouldShowClearButton,
     value = '',
     whenToShowRemainingCount = Infinity,
     whenToWarnRemainingCount = Infinity,
     children,
+    'aria-invalid': ariaInvalid,
+    'aria-errormessage': ariaErrorMessage,
   },
   ref
 ) {
@@ -120,7 +121,7 @@ export const Input = forwardRef<
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (onEnter && event.key === 'Enter') {
-        onEnter();
+        onEnter(event);
       }
 
       const inputEl = innerRef.current;
@@ -166,7 +167,7 @@ export const Input = forwardRef<
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const inputEl = innerRef.current;
-      if (!inputEl || !maxLengthCount || !maxByteCount) {
+      if (!inputEl || (!maxLengthCount && !maxByteCount)) {
         return;
       }
 
@@ -177,17 +178,38 @@ export const Input = forwardRef<
 
       const pastedText = event.clipboardData.getData('Text');
 
+      const pastedLength = countLength(pastedText);
       const newLengthCount =
         countLength(textBeforeSelection) +
-        countLength(pastedText) +
+        pastedLength +
         countLength(textAfterSelection);
+      const pastedBytes = countBytes(pastedText);
       const newByteCount =
         countBytes(textBeforeSelection) +
-        countBytes(pastedText) +
+        pastedBytes +
         countBytes(textAfterSelection);
 
-      if (newLengthCount > maxLengthCount || newByteCount > maxByteCount) {
+      const lengthDelta =
+        maxLengthCount > 0 ? newLengthCount - maxLengthCount : 0;
+      const byteDelta = maxByteCount > 0 ? newByteCount - maxByteCount : 0;
+
+      if (lengthDelta > 0 || byteDelta > 0) {
         event.preventDefault();
+
+        const newPastedLength =
+          lengthDelta > 0 ? pastedLength - lengthDelta : pastedLength;
+        const newPastedBytes =
+          byteDelta > 0 ? pastedBytes - byteDelta : pastedBytes;
+
+        const truncatedPaste = truncateString(pastedText, {
+          byteLimit: newPastedBytes,
+          graphemeLimit: newPastedLength,
+        });
+
+        const newValue =
+          textBeforeSelection + truncatedPaste + textAfterSelection;
+        inputEl.value = newValue;
+        onChange(newValue);
       }
 
       maybeSetLarge();
@@ -198,6 +220,7 @@ export const Input = forwardRef<
       maxLengthCount,
       maxByteCount,
       maybeSetLarge,
+      onChange,
       value,
     ]
   );
@@ -215,7 +238,7 @@ export const Input = forwardRef<
     autoFocus,
     className: classNames(
       getClassName('__input'),
-      icon && getClassName('__input--with-icon'),
+      icon != null && getClassName('__input--with-icon'),
       isLarge && getClassName('__input--large'),
       isTextarea && getClassName('__input--textarea')
     ),
@@ -235,10 +258,12 @@ export const Input = forwardRef<
     ),
     type: 'text',
     value,
+    'aria-invalid': ariaInvalid,
+    'aria-errormessage': ariaErrorMessage,
   };
 
   const clearButtonElement =
-    hasClearButton && value ? (
+    hasClearButton && (shouldShowClearButton || value) ? (
       <button
         tabIndex={-1}
         className={getClassName('__clear-icon')}

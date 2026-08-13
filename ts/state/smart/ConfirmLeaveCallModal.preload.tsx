@@ -1,13 +1,13 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import { memo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { getIntl } from '../selectors/user.std.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getConfirmLeaveCallModalState } from '../selectors/globalModals.std.js';
-import { ConfirmLeaveCallModal } from '../../components/ConfirmLeaveCallModal.dom.js';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getConfirmLeaveCallModalState } from '../selectors/globalModals.std.ts';
+import { ConfirmLeaveCallModal } from '../../components/ConfirmLeaveCallModal.dom.tsx';
 
 export const SmartConfirmLeaveCallModal = memo(
   function SmartConfirmLeaveCallModal(): JSX.Element | null {

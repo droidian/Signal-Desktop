@@ -3,59 +3,61 @@
 
 import lodash from 'lodash';
 
-import type { AciString } from '../types/ServiceId.std.js';
+import type { AciString } from '../types/ServiceId.std.ts';
 import type {
   MessageAttributesType,
   MessageReactionType,
   ReadonlyMessageAttributesType,
 } from '../model-types.d.ts';
-import { MessageModel } from '../models/messages.preload.js';
-import { ReactionSource } from '../reactions/ReactionSource.std.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
+import { MessageModel } from '../models/messages.preload.ts';
+import { ReactionSource } from '../reactions/ReactionSource.std.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
 import {
   isIncoming,
   isIncomingStory,
   isOutgoing,
   isOutgoingStory,
-} from '../messages/helpers.std.js';
-import { getAuthor } from '../messages/sources.preload.js';
-import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet.std.js';
+} from '../messages/helpers.std.ts';
+import { getAuthor } from '../messages/sources.preload.ts';
+import { getMessageSentTimestampSet } from '../util/getMessageSentTimestampSet.std.ts';
 import {
   isDirectConversation,
   isMe,
-} from '../util/whatTypeOfConversation.dom.js';
+} from '../util/whatTypeOfConversation.dom.ts';
 import {
   getMessagePropStatus,
   hasErrors,
   isStory,
-} from '../state/selectors/message.preload.js';
-import { getPropForTimestamp } from '../util/editHelpers.std.js';
-import { isSent } from '../messages/MessageSendState.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { repeat, zipObject } from '../util/iterables.std.js';
-import { getMessageIdForLogging } from '../util/idForLogging.preload.js';
-import { hydrateStoryContext } from '../util/hydrateStoryContext.preload.js';
-import { drop } from '../util/drop.std.js';
-import * as reactionUtil from '../reactions/util.std.js';
-import { isNewReactionReplacingPrevious } from '../reactions/util.std.js';
-import { notificationService } from '../services/notifications.preload.js';
-import { ReactionReadStatus } from '../types/Reactions.std.js';
-import type { ConversationQueueJobData } from '../jobs/conversationJobQueue.preload.js';
+} from '../state/selectors/message.preload.ts';
+import { getPropForTimestamp } from '../util/editHelpers.std.ts';
+import { isSent } from '../messages/MessageSendState.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { repeat, zipObject } from '../util/iterables.std.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { getStoryReplyContext } from '../util/getStoryReplyContext.std.ts';
+import { drop } from '../util/drop.std.ts';
+import * as reactionUtil from '../reactions/util.std.ts';
+import { isNewReactionReplacingPrevious } from '../reactions/util.std.ts';
+import { notificationService } from '../services/notifications.preload.ts';
+import { ReactionReadStatus } from '../types/Reactions.std.ts';
+import type { ConversationQueueJobData } from '../jobs/conversationJobQueue.preload.ts';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue.preload.js';
-import { maybeNotify } from '../messages/maybeNotify.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../jobs/conversationJobQueue.preload.ts';
+import { maybeNotify } from '../messages/maybeNotify.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { isValidSenderAciForConversation } from './helpers/isValidSenderAciForConversation.preload.ts';
 
 const { maxBy } = lodash;
 
 const log = createLogger('Reactions');
 
 export type ReactionAttributesType = {
-  emoji: string;
+  emoji: Emoji.Variant;
   envelopeId: string;
   fromId: string;
   remove?: boolean;
@@ -178,6 +180,38 @@ export function isMessageAMatchForReaction({
     return true;
   }
 
+  const messageConversation = window.ConversationController.get(
+    message.conversationId
+  );
+
+  if (!messageConversation) {
+    return false;
+  }
+
+  if (
+    messageConversation.isBlocked() ||
+    reactionSenderConversation.isBlocked()
+  ) {
+    return false;
+  }
+
+  // Stories sent to a distribution list are stored in our own conversation (see
+  //   sendStoryMessage), which would never report one of their recipients as a member.
+  const isOutgoingDistributionListStory =
+    isOutgoingStory(message, ourAci) && message.storyDistributionListId != null;
+
+  const reactionSenderAci = reactionSenderConversation.getAci();
+  if (!reactionSenderAci) {
+    return false;
+  }
+
+  if (
+    !isValidSenderAciForConversation(messageConversation, reactionSenderAci) &&
+    !isOutgoingDistributionListStory
+  ) {
+    return false;
+  }
+
   if (isOutgoing(message) || isOutgoingStory(message, ourAci)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
@@ -201,24 +235,8 @@ export function isMessageAMatchForReaction({
     return isSent(sendState.status);
   }
 
-  if (isIncoming(message) || isIncomingStory(message, ourAci)) {
-    const messageConversation = window.ConversationController.get(
-      message.conversationId
-    );
-
-    if (!messageConversation) {
-      return false;
-    }
-
-    const reactionSenderServiceId = reactionSenderConversation.getServiceId();
-    return (
-      reactionSenderServiceId != null &&
-      messageConversation.hasMember(reactionSenderServiceId)
-    );
-  }
-
   // Only incoming, outgoing, and story messages can be reacted to
-  return false;
+  return isIncoming(message) || isIncomingStory(message, ourAci);
 }
 
 export async function onReaction(
@@ -228,43 +246,40 @@ export async function onReaction(
 
   const logId = `Reactions.onReaction(timestamp=${reaction.timestamp};target=${reaction.targetTimestamp})`;
 
-  try {
-    const matchingMessage = await findMessageForReaction({
-      targetTimestamp: reaction.targetTimestamp,
-      targetAuthorAci: reaction.targetAuthorAci,
-      reactionSenderConversationId: reaction.fromId,
-      logId,
-    });
+  const matchingMessage = await findMessageForReaction({
+    targetTimestamp: reaction.targetTimestamp,
+    targetAuthorAci: reaction.targetAuthorAci,
+    reactionSenderConversationId: reaction.fromId,
+    logId,
+  });
 
-    if (!matchingMessage) {
-      log.info(
-        `${logId}: No message for reaction`,
-        'targeting',
-        reaction.targetAuthorAci
-      );
-      return;
-    }
-
-    const matchingMessageConversation = window.ConversationController.get(
-      matchingMessage.conversationId
+  if (!matchingMessage) {
+    log.info(
+      `${logId}: No message for reaction`,
+      'targeting',
+      reaction.targetAuthorAci
     );
+    return;
+  }
 
-    if (!matchingMessageConversation) {
-      log.info(
-        `${logId}: No target conversation for reaction`,
-        reaction.targetAuthorAci,
-        reaction.targetTimestamp
-      );
-      remove(reaction);
-      return undefined;
-    }
+  const matchingMessageConversation = window.ConversationController.get(
+    matchingMessage.conversationId
+  );
 
-    // awaiting is safe since `onReaction` is never called from inside the queue
-    await matchingMessageConversation.queueJob(
-      'Reactions.onReaction',
-      async () => {
-        log.info(`${logId}: handling`);
+  if (!matchingMessageConversation) {
+    log.info(
+      `${logId}: No target conversation for reaction`,
+      reaction.targetAuthorAci,
+      reaction.targetTimestamp
+    );
+    remove(reaction);
+    return undefined;
+  }
 
+  drop(
+    matchingMessageConversation.queueJob('Reactions.onReaction', async () => {
+      log.info(`${logId}: handling`);
+      try {
         // Message is fetched inside the conversation queue so we have the
         // most recent data
         const targetMessage = await findMessageForReaction({
@@ -302,12 +317,12 @@ export async function onReaction(
         }
 
         remove(reaction);
+      } catch (error) {
+        remove(reaction);
+        log.error(`${logId} error:`, Errors.toLogFormat(error));
       }
-    );
-  } catch (error) {
-    remove(reaction);
-    log.error(`${logId} error:`, Errors.toLogFormat(error));
-  }
+    })
+  );
 }
 
 export async function handleReaction(
@@ -405,6 +420,7 @@ export async function handleReaction(
           ? targetConversation.get('expireTimer')
           : undefined,
         storyId: storyMessage.id,
+        storyReplyContext: getStoryReplyContext(storyMessage),
         storyReaction: {
           emoji: reaction.emoji,
           targetAuthorAci: reaction.targetAuthorAci,
@@ -412,9 +428,6 @@ export async function handleReaction(
         },
       });
 
-      await hydrateStoryContext(generatedMessage.id, storyMessage, {
-        shouldSave: false,
-      });
       // Note: generatedMessage comes with an id, so we have to force this save
       await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,
@@ -441,6 +454,7 @@ export async function handleReaction(
       if (isFromSomeoneElse) {
         drop(
           maybeNotify({
+            kind: 'normalMessage',
             message: generatedMessage.attributes,
             conversation: targetConversation,
           })
@@ -519,6 +533,7 @@ export async function handleReaction(
         if (isOutgoing(message.attributes) && isFromSomeoneElse) {
           drop(
             maybeNotify({
+              kind: 'reaction',
               targetMessage: message.attributes,
               conversation,
               reaction,
@@ -577,8 +592,8 @@ export async function handleReaction(
         'Story reactions must provide storyReactionmessage'
       );
 
-      await hydrateStoryContext(generatedMessage.id, message.attributes, {
-        shouldSave: false,
+      generatedMessage.set({
+        storyReplyContext: getStoryReplyContext(message.attributes),
       });
       await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,

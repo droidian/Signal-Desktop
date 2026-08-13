@@ -26,9 +26,9 @@ function isWrapped(element: Readonly<null | HTMLElement>): boolean {
 
   return Boolean(
     firstChild &&
-      lastChild &&
-      firstChild !== lastChild &&
-      getBottom(firstChild) <= getTop(lastChild)
+    lastChild &&
+    firstChild !== lastChild &&
+    getBottom(firstChild) <= getTop(lastChild)
   );
 }
 
@@ -46,6 +46,8 @@ export function useHasWrapped<T extends HTMLElement>(): [Ref<T>, boolean] {
       return noop;
     }
 
+    // FIXME
+    // oxlint-disable-next-line no-undef
     const observer = new ResizeObserver(() => {
       setHasWrapped(isWrapped(element));
     });

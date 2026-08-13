@@ -1,11 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './ConversationNotificationsSettings.dom.js';
-import { ConversationNotificationsSettings } from './ConversationNotificationsSettings.dom.js';
+import type { PropsType } from './ConversationNotificationsSettings.dom.tsx';
+import { ConversationNotificationsSettings } from './ConversationNotificationsSettings.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -21,7 +22,7 @@ const getCommonProps = () => ({
   dontNotifyForMentionsIfMuted: false,
   i18n,
   setDontNotifyForMentionsIfMuted: action('setDontNotifyForMentionsIfMuted'),
-  setMuteExpiration: action('setMuteExpiration'),
+  setMuteDuration: action('setMuteDuration'),
 });
 
 export function GroupConversationAllDefault(): JSX.Element {

@@ -1,63 +1,62 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable more/no-then */
-/* eslint-disable no-param-reassign */
-
-import lodash from 'lodash';
-
 import { z } from 'zod';
-import type {
-  CiphertextMessage,
-  PlaintextContent,
-} from '@signalapp/libsignal-client';
+import type { CiphertextMessage } from '@signalapp/libsignal-client';
 import {
   ErrorCode,
   LibSignalErrorBase,
   CiphertextMessageType,
+  PlaintextContent,
   ProtocolAddress,
   sealedSenderEncrypt,
   SenderCertificate,
   signalEncrypt,
   UnidentifiedSenderMessageContent,
 } from '@signalapp/libsignal-client';
+import { GroupSendFullToken } from '@signalapp/libsignal-client/zkgroup.js';
 
 import {
-  sendMessages,
-  sendMessagesUnauth,
+  sendMessagesLegacy,
+  sendMessagesUnauthLegacy,
   getKeysForServiceId as doGetKeysForServiceId,
   getKeysForServiceIdUnauth,
-} from './WebAPI.preload.js';
-import type { MessageType } from './WebAPI.preload.js';
+  sendUnsealedMessage,
+  sendSealedSenderMessage,
+  type SealedSenderAuthType,
+} from './WebAPI.preload.ts';
 import type {
   SendMetadataType,
   SendOptionsType,
-} from './SendMessage.preload.js';
+} from './SendMessage.preload.ts';
 import {
   OutgoingIdentityKeyError,
+  MismatchedDevicesError,
+  UnauthorizedMessageSendError,
   OutgoingMessageError,
-  SendMessageNetworkError,
-  SendMessageChallengeError,
-  UnregisteredUserError,
-} from './Errors.std.js';
+} from './Errors.std.ts';
 import type { CallbackResultType, CustomError } from './Types.d.ts';
-import { Address } from '../types/Address.std.js';
-import * as Errors from '../types/errors.std.js';
-import { HTTPError } from '../types/HTTPError.std.js';
-import { QualifiedAddress } from '../types/QualifiedAddress.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { Sessions, IdentityKeys } from '../LibSignalStores.preload.js';
-import { getKeysForServiceId } from './getKeysForServiceId.preload.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { createLogger } from '../logging/log.std.js';
-import type { GroupSendToken } from '../types/GroupSendEndorsements.std.js';
-import { isSignalServiceId } from '../util/isSignalConversation.dom.js';
-import * as Bytes from '../Bytes.std.js';
-import { signalProtocolStore } from '../SignalProtocolStore.preload.js';
-import { itemStorage } from './Storage.preload.js';
-
-const { reject } = lodash;
+import { Address } from '../types/Address.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { Sessions, IdentityKeys } from '../LibSignalStores.node.ts';
+import { getKeysForServiceId } from './getKeysForServiceId.preload.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.std.ts';
+import { isSignalServiceId } from '../types/SignalConversation.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
+import { itemStorage } from './Storage.preload.ts';
+import { isFeaturedEnabledNoRedux } from '../util/isFeatureEnabled.dom.ts';
+import {
+  type SingleOutboundSealedSenderMessage,
+  type SingleOutboundUnsealedMessage,
+} from '@signalapp/libsignal-client/dist/net/chat/SingleOutboundMessage';
+import { handleMismatchedDevicesError } from '../util/handleMismatchedDevicesError.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import { ZERO_ACCESS_KEY } from '../types/SealedSender.std.ts';
 
 const log = createLogger('OutgoingMessage');
 
@@ -66,9 +65,18 @@ export const enum SenderCertificateMode {
   WithoutE164,
 }
 
+type SealedSenderAuth =
+  | Readonly<{ accessKey: string; groupSendToken?: never }>
+  | Readonly<{ accessKey?: never; groupSendToken: GroupSendToken }>;
+
+type SealedSenderAuthAndCert = SealedSenderAuth &
+  Readonly<{
+    senderCertificate: SerializedCertificateType;
+  }>;
+
 export type SendLogCallbackType = (options: {
   serviceId: ServiceIdString;
-  deviceIds: Array<number>;
+  deviceIds: ReadonlyArray<number>;
 }) => Promise<void>;
 
 export const serializedCertificateSchema = z.object({
@@ -79,6 +87,19 @@ export const serializedCertificateSchema = z.object({
 export type SerializedCertificateType = z.infer<
   typeof serializedCertificateSchema
 >;
+
+// TODO: DESKTOP-10214 type can be excluded
+type OutgoingUnsealedMessageType = {
+  type: Exclude<Proto.Envelope.Type, Proto.Envelope.Type.UNIDENTIFIED_SENDER>;
+} & SingleOutboundUnsealedMessage;
+
+type OutgoingSealedSenderMessageType = {
+  type: Proto.Envelope.Type.UNIDENTIFIED_SENDER;
+} & SingleOutboundSealedSenderMessage;
+
+export type OutgoingMessageType =
+  | OutgoingUnsealedMessageType
+  | OutgoingSealedSenderMessageType;
 
 type OutgoingMessageOptionsType = SendOptionsType & {
   online?: boolean;
@@ -114,7 +135,9 @@ function getPaddedMessageLength(messageLength: number): number {
   return messagePartCount * PADDING_BLOCK;
 }
 
-export function padMessage(messageBuffer: Uint8Array): Uint8Array {
+export function padMessage(
+  messageBuffer: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const plaintext = new Uint8Array(
     getPaddedMessageLength(messageBuffer.byteLength + 1) - 1
   );
@@ -129,11 +152,11 @@ export default class OutgoingMessage {
 
   serviceIds: ReadonlyArray<ServiceIdString>;
 
-  message: Proto.Content | PlaintextContent;
+  message: Proto.Content.Params | PlaintextContent;
 
   callback: (result: CallbackResultType) => void;
 
-  plaintext?: Uint8Array;
+  plaintext?: Uint8Array<ArrayBuffer>;
 
   serviceIdsCompleted: number;
 
@@ -157,7 +180,7 @@ export default class OutgoingMessage {
 
   story?: boolean;
 
-  recipients: Record<string, Array<number>>;
+  recipients: Record<string, ReadonlyArray<number>>;
 
   sendLogCallback?: SendLogCallbackType;
 
@@ -177,20 +200,14 @@ export default class OutgoingMessage {
     contentHint: number;
     groupId: string | undefined;
     serviceIds: ReadonlyArray<ServiceIdString>;
-    message: Proto.Content | Proto.DataMessage | PlaintextContent;
+    message: Proto.Content.Params | PlaintextContent;
     options?: OutgoingMessageOptionsType;
     sendLogCallback?: SendLogCallbackType;
     story?: boolean;
     timestamp: number;
     urgent: boolean;
   }) {
-    if (message instanceof Proto.DataMessage) {
-      const content = new Proto.Content();
-      content.dataMessage = message;
-      this.message = content;
-    } else {
-      this.message = message;
-    }
+    this.message = message;
 
     this.timestamp = timestamp;
     this.serviceIds = serviceIds;
@@ -218,21 +235,17 @@ export default class OutgoingMessage {
       const proto = this.message;
       const contentProto = this.getContentProtoBytes();
       const { timestamp, contentHint, recipients, urgent } = this;
-      let dataMessage: Uint8Array | undefined;
-      let editMessage: Uint8Array | undefined;
+      let dataMessage: Uint8Array<ArrayBuffer> | undefined;
+      let editMessage: Uint8Array<ArrayBuffer> | undefined;
       let hasPniSignatureMessage = false;
 
-      if (proto instanceof Proto.Content) {
-        if (proto.dataMessage) {
-          dataMessage = Proto.DataMessage.encode(proto.dataMessage).finish();
-        } else if (proto.editMessage) {
-          editMessage = Proto.EditMessage.encode(proto.editMessage).finish();
+      if (!(proto instanceof PlaintextContent)) {
+        if (proto.content?.dataMessage) {
+          dataMessage = Proto.DataMessage.encode(proto.content.dataMessage);
+        } else if (proto.content?.editMessage) {
+          editMessage = Proto.EditMessage.encode(proto.content.editMessage);
         }
         hasPniSignatureMessage = Boolean(proto.pniSignatureMessage);
-      } else if (proto instanceof Proto.DataMessage) {
-        dataMessage = Proto.DataMessage.encode(proto).finish();
-      } else if (proto instanceof Proto.EditMessage) {
-        editMessage = Proto.EditMessage.encode(proto).finish();
       }
 
       this.callback({
@@ -258,15 +271,8 @@ export default class OutgoingMessage {
     reason: string,
     providedError?: Error
   ): void {
-    let error = providedError;
-
-    if (!error || (error instanceof HTTPError && error.code !== 404)) {
-      if (error && error.code === 428) {
-        error = new SendMessageChallengeError(serviceId, error);
-      } else {
-        error = new OutgoingMessageError(serviceId, null, null, error);
-      }
-    }
+    const error =
+      providedError ?? new OutgoingMessageError(serviceId, providedError);
 
     error.cause = reason;
 
@@ -274,16 +280,67 @@ export default class OutgoingMessage {
     this.numberCompleted();
   }
 
+  #getSealedSenderAuthAndCert(
+    serviceId: ServiceIdString
+  ): SealedSenderAuthAndCert | null {
+    const { sendMetadata } = this;
+    const data = sendMetadata?.[serviceId];
+    if (data == null) {
+      return null;
+    }
+    const { accessKey, senderCertificate, groupSendToken } = data;
+
+    if (accessKey != null && senderCertificate == null) {
+      log.warn(
+        'doSendMessage: accessKey was provided, but senderCertificate was not'
+      );
+    }
+    if (senderCertificate == null) {
+      return null;
+    }
+    if (accessKey != null) {
+      return { accessKey, senderCertificate };
+    }
+    if (groupSendToken != null) {
+      return { groupSendToken, senderCertificate };
+    }
+    return null;
+  }
+
+  async #getDeviceIds(
+    serviceId: ServiceIdString
+  ): Promise<ReadonlyArray<number>> {
+    const ourAci = itemStorage.user.getCheckedAci();
+    const ourNumber = itemStorage.user.getNumber();
+
+    const deviceIds = await signalProtocolStore.getDeviceIds({
+      ourServiceId: ourAci,
+      serviceId,
+    });
+
+    const isOurServiceId = serviceId === ourNumber || serviceId === ourAci;
+    if (!isOurServiceId) {
+      return deviceIds;
+    }
+
+    const sealedSenderAuthAndCert = this.#getSealedSenderAuthAndCert(serviceId);
+    if (sealedSenderAuthAndCert != null) {
+      return deviceIds;
+    }
+
+    const ourDeviceId = itemStorage.user.getCheckedDeviceId();
+
+    return deviceIds.filter(deviceId => {
+      return deviceId !== ourDeviceId;
+    });
+  }
+
   reloadDevicesAndSend(
     serviceId: ServiceIdString,
     recurse?: boolean
   ): () => Promise<void> {
     return async () => {
-      const ourAci = itemStorage.user.getCheckedAci();
-      const deviceIds = await signalProtocolStore.getDeviceIds({
-        ourServiceId: ourAci,
-        serviceId,
-      });
+      const deviceIds = await this.#getDeviceIds(serviceId);
       if (deviceIds.length === 0) {
         this.registerError(
           serviceId,
@@ -319,270 +376,291 @@ export default class OutgoingMessage {
     }
   }
 
-  async transmitMessage(
+  async transmitSealedSenderMessage(
     serviceId: ServiceIdString,
-    jsonData: ReadonlyArray<MessageType>,
+    messages: ReadonlyArray<OutgoingSealedSenderMessageType>,
     timestamp: number,
-    {
-      accessKey,
-      groupSendToken,
-    }: {
-      accessKey: string | null;
-      groupSendToken: GroupSendToken | null;
-    } = { accessKey: null, groupSendToken: null }
+    sealedSenderAuth: SealedSenderAuth
   ): Promise<void> {
-    let promise;
+    const useLibsignal = isFeaturedEnabledNoRedux({
+      betaKey: 'desktop.sendMessageViaLibsignal.beta',
+      prodKey: 'desktop.sendMessageViaLibsignal.prod',
+    });
 
-    if (accessKey != null || groupSendToken != null) {
-      promise = sendMessagesUnauth(serviceId, jsonData, timestamp, {
-        accessKey,
-        groupSendToken,
+    if (useLibsignal) {
+      let auth: SealedSenderAuthType;
+      if (this.story) {
+        auth = 'story';
+      } else if (sealedSenderAuth.groupSendToken) {
+        auth = new GroupSendFullToken(sealedSenderAuth.groupSendToken);
+      } else if (sealedSenderAuth.accessKey) {
+        if (sealedSenderAuth.accessKey === ZERO_ACCESS_KEY) {
+          auth = 'unrestricted';
+        } else {
+          auth = { accessKey: Bytes.fromBase64(sealedSenderAuth.accessKey) };
+        }
+      } else {
+        auth = 'unrestricted';
+      }
+
+      return sendSealedSenderMessage(serviceId, messages, timestamp, auth, {
         online: this.online,
-        story: this.story,
-        urgent: this.urgent,
-      });
-    } else {
-      promise = sendMessages(serviceId, jsonData, timestamp, {
-        online: this.online,
-        story: this.story,
         urgent: this.urgent,
       });
     }
 
-    return promise.catch(e => {
-      if (e instanceof HTTPError && e.code !== 409 && e.code !== 410) {
-        // 409 and 410 should bubble and be handled by doSendMessage
-        // 404 should throw UnregisteredUserError
-        // 428 should throw SendMessageChallengeError
-        // all other network errors can be retried later.
-        if (e.code === 404) {
-          throw new UnregisteredUserError(serviceId, e);
-        }
-        if (e.code === 428) {
-          throw new SendMessageChallengeError(serviceId, e);
-        }
-        throw new SendMessageNetworkError(serviceId, jsonData, e);
-      }
-      throw e;
+    return sendMessagesUnauthLegacy(serviceId, messages, timestamp, {
+      accessKey: sealedSenderAuth.accessKey ?? null,
+      groupSendToken: sealedSenderAuth.groupSendToken ?? null,
+      online: this.online,
+      story: this.story,
+      urgent: this.urgent,
     });
   }
 
-  getPlaintext(): Uint8Array {
+  async transmitUnsealedMessage(
+    serviceId: ServiceIdString,
+    messages: ReadonlyArray<OutgoingUnsealedMessageType>,
+    timestamp: number
+  ): Promise<void> {
+    const useLibsignal = isFeaturedEnabledNoRedux({
+      betaKey: 'desktop.sendMessageViaLibsignal.beta',
+      prodKey: 'desktop.sendMessageViaLibsignal.prod',
+    });
+
+    if (useLibsignal) {
+      return sendUnsealedMessage(serviceId, messages, timestamp, {
+        online: this.online,
+        urgent: this.urgent,
+        ourAci: itemStorage.user.getCheckedAci(),
+      });
+    }
+
+    return sendMessagesLegacy(serviceId, messages, timestamp, {
+      online: this.online,
+      story: this.story,
+      urgent: this.urgent,
+    });
+  }
+
+  getPlaintext(): Uint8Array<ArrayBuffer> {
     if (!this.plaintext) {
       const { message } = this;
 
-      if (message instanceof Proto.Content) {
-        this.plaintext = padMessage(Proto.Content.encode(message).finish());
-      } else {
+      if (message instanceof PlaintextContent) {
         this.plaintext = message.serialize();
+      } else {
+        this.plaintext = padMessage(Proto.Content.encode(message));
       }
     }
     return this.plaintext;
   }
 
-  getContentProtoBytes(): Uint8Array | undefined {
-    if (this.message instanceof Proto.Content) {
-      return new Uint8Array(Proto.Content.encode(this.message).finish());
+  getContentProtoBytes(): Uint8Array<ArrayBuffer> | undefined {
+    if (this.message instanceof PlaintextContent) {
+      return undefined;
     }
 
-    return undefined;
+    return Proto.Content.encode(this.message);
   }
 
   async getCiphertextMessage({
     identityKeyStore,
-    protocolAddress,
+    destinationAddress,
+    localAddress,
     sessionStore,
   }: {
     identityKeyStore: IdentityKeys;
-    protocolAddress: ProtocolAddress;
+    destinationAddress: ProtocolAddress;
+    localAddress: ProtocolAddress;
     sessionStore: Sessions;
   }): Promise<CiphertextMessage> {
     const { message } = this;
 
-    if (message instanceof Proto.Content) {
-      return signalEncrypt(
-        this.getPlaintext(),
-        protocolAddress,
-        sessionStore,
-        identityKeyStore
-      );
+    if (message instanceof PlaintextContent) {
+      return message.asCiphertextMessage();
     }
 
-    return message.asCiphertextMessage();
+    return signalEncrypt(
+      this.getPlaintext(),
+      destinationAddress,
+      localAddress,
+      sessionStore,
+      identityKeyStore
+    );
   }
 
   async doSendMessage(
     serviceId: ServiceIdString,
-    deviceIds: Array<number>,
+    deviceIds: ReadonlyArray<number>,
     recurse?: boolean
   ): Promise<void> {
-    const { sendMetadata } = this;
-    const {
-      accessKey = null,
-      groupSendToken = null,
-      senderCertificate,
-    } = sendMetadata?.[serviceId] || {};
+    const sealedSenderAuthAndCert = this.#getSealedSenderAuthAndCert(serviceId);
 
-    if (accessKey && !senderCertificate) {
-      log.warn(
-        'doSendMessage: accessKey was provided, but senderCertificate was not'
-      );
-    }
-
-    const sealedSender =
-      (accessKey != null || groupSendToken != null) &&
-      senderCertificate != null;
-
-    // We don't send to ourselves unless sealedSender is enabled
-    const ourNumber = itemStorage.user.getNumber();
     const ourAci = itemStorage.user.getCheckedAci();
-    const ourDeviceId = itemStorage.user.getDeviceId();
-    if ((serviceId === ourNumber || serviceId === ourAci) && !sealedSender) {
-      deviceIds = reject(
-        deviceIds,
-        deviceId =>
-          // because we store our own device ID as a string at least sometimes
-          deviceId === ourDeviceId ||
-          (typeof ourDeviceId === 'string' &&
-            deviceId === parseInt(ourDeviceId, 10))
-      );
-    }
+    const ourDeviceId = itemStorage.user.getCheckedDeviceId();
 
-    const sessionStore = new Sessions({ ourServiceId: ourAci });
-    const identityKeyStore = new IdentityKeys({ ourServiceId: ourAci });
+    const sessionStore = new Sessions({
+      signalProtocolStore,
+      ourServiceId: ourAci,
+    });
+    const identityKeyStore = new IdentityKeys({
+      signalProtocolStore,
+      ourServiceId: ourAci,
+    });
+    const localAddress = ProtocolAddress.new(ourAci, ourDeviceId);
 
-    return Promise.all(
-      deviceIds.map(async destinationDeviceId => {
-        const address = new QualifiedAddress(
-          ourAci,
-          new Address(serviceId, destinationDeviceId)
-        );
+    return (
+      Promise.all(
+        deviceIds.map(async deviceId => {
+          const address = new QualifiedAddress(
+            ourAci,
+            new Address(serviceId, deviceId)
+          );
 
-        return signalProtocolStore.enqueueSessionJob<MessageType>(
-          address,
-          async () => {
-            const protocolAddress = ProtocolAddress.new(
-              serviceId,
-              destinationDeviceId
-            );
-
-            const activeSession =
-              await sessionStore.getSession(protocolAddress);
-            if (!activeSession) {
-              throw new Error(
-                'OutgoingMessage.doSendMessage: No active session!'
+          return signalProtocolStore.enqueueSessionJob<OutgoingMessageType>(
+            address,
+            async () => {
+              const destinationAddress = ProtocolAddress.new(
+                serviceId,
+                deviceId
               );
-            }
 
-            const destinationRegistrationId =
-              activeSession.remoteRegistrationId();
+              const activeSession =
+                await sessionStore.getSession(destinationAddress);
+              if (!activeSession) {
+                throw new Error(
+                  'OutgoingMessage.doSendMessage: No active session!'
+                );
+              }
 
-            if (sealedSender && senderCertificate) {
+              const registrationId = activeSession.remoteRegistrationId();
+
+              if (sealedSenderAuthAndCert != null) {
+                const ciphertextMessage = await this.getCiphertextMessage({
+                  identityKeyStore,
+                  destinationAddress,
+                  localAddress,
+                  sessionStore,
+                });
+
+                const certificate = SenderCertificate.deserialize(
+                  sealedSenderAuthAndCert.senderCertificate.serialized
+                );
+                const groupIdBuffer = this.groupId
+                  ? Bytes.fromBase64(this.groupId)
+                  : null;
+
+                const content = UnidentifiedSenderMessageContent.new(
+                  ciphertextMessage,
+                  certificate,
+                  this.contentHint,
+                  groupIdBuffer
+                );
+
+                const buffer = await sealedSenderEncrypt(
+                  content,
+                  destinationAddress,
+                  identityKeyStore
+                );
+
+                return {
+                  type: Proto.Envelope.Type.UNIDENTIFIED_SENDER,
+                  deviceId,
+                  registrationId,
+                  contents: buffer,
+                };
+              }
+
               const ciphertextMessage = await this.getCiphertextMessage({
                 identityKeyStore,
-                protocolAddress,
+                destinationAddress,
+                localAddress,
                 sessionStore,
               });
-
-              const certificate = SenderCertificate.deserialize(
-                senderCertificate.serialized
-              );
-              const groupIdBuffer = this.groupId
-                ? Bytes.fromBase64(this.groupId)
-                : null;
-
-              const content = UnidentifiedSenderMessageContent.new(
-                ciphertextMessage,
-                certificate,
-                this.contentHint,
-                groupIdBuffer
-              );
-
-              const buffer = await sealedSenderEncrypt(
-                content,
-                protocolAddress,
-                identityKeyStore
+              const type = ciphertextMessageTypeToEnvelopeType(
+                ciphertextMessage.type()
               );
 
               return {
-                type: Proto.Envelope.Type.UNIDENTIFIED_SENDER,
-                destinationDeviceId,
-                destinationRegistrationId,
-                content: Bytes.toBase64(buffer),
+                type,
+                deviceId,
+                registrationId,
+                contents: ciphertextMessage,
               };
             }
-
-            const ciphertextMessage = await this.getCiphertextMessage({
-              identityKeyStore,
-              protocolAddress,
-              sessionStore,
-            });
-            const type = ciphertextMessageTypeToEnvelopeType(
-              ciphertextMessage.type()
-            );
-
-            const content = Bytes.toBase64(ciphertextMessage.serialize());
-
-            return {
-              type,
-              destinationDeviceId,
-              destinationRegistrationId,
-              content,
-            };
-          }
-        );
-      })
-    )
-      .then(async (jsonData: Array<MessageType>) => {
-        if (sealedSender) {
-          return this.transmitMessage(serviceId, jsonData, this.timestamp, {
-            accessKey,
-            groupSendToken,
-          }).then(
-            () => {
-              this.recipients[serviceId] = deviceIds;
-              this.unidentifiedDeliveries.push(serviceId);
-              this.successfulServiceIds.push(serviceId);
-              this.numberCompleted();
-
-              if (this.sendLogCallback) {
-                void this.sendLogCallback({
-                  serviceId,
-                  deviceIds,
-                });
-              } else if (this.successfulServiceIds.length > 1) {
-                log.warn(
-                  `doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
-                );
-              }
-            },
-            async (error: Error) => {
-              if (
-                error instanceof SendMessageNetworkError &&
-                (error.code === 401 || error.code === 403)
-              ) {
-                log.warn(
-                  `doSendMessage: Failing over to unsealed send for serviceId ${serviceId}`
-                );
-                if (this.failoverServiceIds.indexOf(serviceId) === -1) {
-                  this.failoverServiceIds.push(serviceId);
-                }
-
-                // This ensures that we don't hit this codepath the next time through
-                if (sendMetadata) {
-                  delete sendMetadata[serviceId];
-                }
-
-                return this.doSendMessage(serviceId, deviceIds, recurse);
-              }
-
-              throw error;
-            }
           );
-        }
+        })
+      )
+        // oxlint-disable-next-line promise/prefer-await-to-then, signal-desktop/no-then
+        .then(async (ciphertextMessages: Array<OutgoingMessageType>) => {
+          if (sealedSenderAuthAndCert != null) {
+            strictAssert(
+              ciphertextMessages.every(
+                message =>
+                  message.type === Proto.Envelope.Type.UNIDENTIFIED_SENDER
+              ),
+              'must be sealed sender envelopes'
+            );
+            return this.transmitSealedSenderMessage(
+              serviceId,
+              ciphertextMessages,
+              this.timestamp,
+              sealedSenderAuthAndCert
+              // oxlint-disable-next-line signal-desktop/no-then
+            ).then(
+              () => {
+                this.recipients[serviceId] = deviceIds;
+                this.unidentifiedDeliveries.push(serviceId);
+                this.successfulServiceIds.push(serviceId);
+                this.numberCompleted();
 
-        return this.transmitMessage(serviceId, jsonData, this.timestamp).then(
-          () => {
+                if (this.sendLogCallback) {
+                  void this.sendLogCallback({
+                    serviceId,
+                    deviceIds,
+                  });
+                } else if (this.successfulServiceIds.length > 1) {
+                  log.warn(
+                    `doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
+                  );
+                }
+              },
+              async (error: Error) => {
+                if (error instanceof UnauthorizedMessageSendError) {
+                  log.warn(
+                    `doSendMessage: Failing over to unsealed send for serviceId ${serviceId}`
+                  );
+                  if (!this.failoverServiceIds.includes(serviceId)) {
+                    this.failoverServiceIds.push(serviceId);
+                  }
+
+                  // This ensures that we don't hit this codepath the next time through
+                  if (this.sendMetadata != null) {
+                    delete this.sendMetadata[serviceId];
+                  }
+
+                  return this.doSendMessage(serviceId, deviceIds, recurse);
+                }
+
+                throw error;
+              }
+            );
+          }
+
+          strictAssert(
+            ciphertextMessages.every(
+              message =>
+                message.type !== Proto.Envelope.Type.UNIDENTIFIED_SENDER
+            ),
+            'cannot be sealed sender'
+          );
+          return this.transmitUnsealedMessage(
+            serviceId,
+            ciphertextMessages,
+            this.timestamp
+            // oxlint-disable-next-line signal-desktop/no-then
+          ).then(() => {
             this.successfulServiceIds.push(serviceId);
             this.recipients[serviceId] = deviceIds;
             this.numberCompleted();
@@ -597,92 +675,72 @@ export default class OutgoingMessage {
                 `doSendMessage: no sendLogCallback provided for message ${this.timestamp}, but multiple recipients`
               );
             }
-          }
-        );
-      })
-      .catch(async error => {
-        if (
-          error instanceof HTTPError &&
-          (error.code === 410 || error.code === 409)
-        ) {
-          if (!recurse) {
-            this.registerError(
-              serviceId,
-              'Hit retry limit attempting to reload device list',
-              error
-            );
-            return undefined;
-          }
-
-          const response = error.response as {
-            extraDevices?: Array<number>;
-            staleDevices?: Array<number>;
-            missingDevices?: Array<number>;
-          };
-          let p: Promise<any> = Promise.resolve();
-          if (error.code === 409) {
-            p = this.removeDeviceIdsForServiceId(
-              serviceId,
-              response.extraDevices || []
-            );
-          } else {
-            p = Promise.all(
-              (response.staleDevices || []).map(async (deviceId: number) => {
-                await signalProtocolStore.archiveSession(
-                  new QualifiedAddress(ourAci, new Address(serviceId, deviceId))
-                );
-              })
-            );
-          }
-
-          return p.then(async () => {
-            const resetDevices =
-              error.code === 410
-                ? (response.staleDevices ?? null)
-                : (response.missingDevices ?? null);
-            return this.getKeysForServiceId(serviceId, resetDevices).then(
-              // We continue to retry as long as the error code was 409; the assumption is
-              //   that we'll request new device info and the next request will succeed.
-              this.reloadDevicesAndSend(serviceId, error.code === 409)
-            );
           });
-        }
-
-        let newError = error;
-        if (
-          error instanceof LibSignalErrorBase &&
-          error.code === ErrorCode.UntrustedIdentity
-        ) {
-          newError = new OutgoingIdentityKeyError(serviceId, error);
-          log.error(
-            'UntrustedIdentityKeyError from decrypt!',
-            serviceId,
-            deviceIds
-          );
-
-          log.info('closing all sessions for', serviceId);
-          signalProtocolStore.archiveAllSessions(serviceId).then(
-            () => {
-              throw error;
-            },
-            innerError => {
-              log.error(
-                'doSendMessage: Error closing sessions: ' +
-                  `${Errors.toLogFormat(innerError)}`
+        })
+        // oxlint-disable-next-line promise/prefer-await-to-then
+        .catch(async error => {
+          if (error instanceof MismatchedDevicesError) {
+            if (!recurse) {
+              this.registerError(
+                serviceId,
+                'Hit retry limit attempting to reload device list',
+                error
               );
-              throw error;
+              return undefined;
             }
+
+            await handleMismatchedDevicesError(error, {
+              fetchKeysForServiceId: this.getKeysForServiceId.bind(this),
+              log,
+              ourAci,
+            });
+
+            const entry = error.entries.at(0);
+
+            // if we only have stale devices, we try only once more
+            const shouldRecurse =
+              Boolean(entry?.extraDevices?.length) ||
+              Boolean(entry?.missingDevices?.length);
+
+            return this.reloadDevicesAndSend(serviceId, shouldRecurse)();
+          }
+
+          let newError = error;
+          if (
+            error instanceof LibSignalErrorBase &&
+            error.is(ErrorCode.UntrustedIdentity)
+          ) {
+            newError = new OutgoingIdentityKeyError(serviceId, error);
+            log.error(
+              'UntrustedIdentityKeyError from decrypt!',
+              serviceId,
+              deviceIds
+            );
+
+            log.info('closing all sessions for', serviceId);
+            // oxlint-disable-next-line promise/prefer-await-to-then, signal-desktop/no-then
+            signalProtocolStore.archiveAllSessions(serviceId).then(
+              () => {
+                throw error;
+              },
+              innerError => {
+                log.error(
+                  `doSendMessage: Error closing sessions: ${toLogFormat(innerError)}`
+                );
+                throw error;
+              }
+            );
+          }
+
+          this.registerError(
+            serviceId,
+            'Failed to create or send message',
+            newError
           );
-        }
 
-        this.registerError(
-          serviceId,
-          'Failed to create or send message',
-          newError
-        );
-
-        return undefined;
-      });
+          return undefined;
+        })
+    );
   }
 
   async removeDeviceIdsForServiceId(
@@ -711,19 +769,15 @@ export default class OutgoingMessage {
     }
 
     try {
-      const ourAci = itemStorage.user.getCheckedAci();
-      const deviceIds = await signalProtocolStore.getDeviceIds({
-        ourServiceId: ourAci,
-        serviceId,
-      });
-      if (deviceIds.length === 0) {
+      const filteredDeviceIds = await this.#getDeviceIds(serviceId);
+      if (filteredDeviceIds.length === 0) {
         await this.getKeysForServiceId(serviceId, null);
       }
       await this.reloadDevicesAndSend(serviceId, true)();
     } catch (error) {
       if (
         error instanceof LibSignalErrorBase &&
-        error.code === ErrorCode.UntrustedIdentity
+        error.is(ErrorCode.UntrustedIdentity)
       ) {
         const newError = new OutgoingIdentityKeyError(serviceId, error);
         this.registerError(serviceId, 'Untrusted identity', newError);

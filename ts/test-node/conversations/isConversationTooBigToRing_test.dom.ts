@@ -3,10 +3,10 @@
 
 import { assert } from 'chai';
 import lodash from 'lodash';
-import { updateRemoteConfig } from '../../test-helpers/RemoteConfigStub.dom.js';
-import { generateAci } from '../../types/ServiceId.std.js';
+import { updateRemoteConfig } from '../../test-helpers/RemoteConfigStub.dom.ts';
 
-import { isConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.dom.js';
+import { isConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.dom.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { times } = lodash;
 
@@ -14,9 +14,15 @@ const CONFIG_KEY = 'global.calling.maxGroupCallRingSize';
 
 describe('isConversationTooBigToRing', () => {
   const fakeMemberships = (count: number) =>
-    times(count, () => ({ aci: generateAci(), isAdmin: false }));
+    times(count, () => ({
+      aci: generateAci(),
+      isAdmin: false,
+      labelEmoji: undefined,
+      labelString: undefined,
+    }));
 
-  it('returns false if there are no memberships (i.e., for a direct conversation)', () => {
+  it('returns false if there are no memberships (i.e., for a direct conversation)', async () => {
+    await updateRemoteConfig([]);
     assert.isFalse(isConversationTooBigToRing({}));
     assert.isFalse(isConversationTooBigToRing({ memberships: [] }));
   });

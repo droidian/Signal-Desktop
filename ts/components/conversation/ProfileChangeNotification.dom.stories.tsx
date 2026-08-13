@@ -1,12 +1,13 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
-import type { PropsType } from './ProfileChangeNotification.dom.js';
-import { ProfileChangeNotification } from './ProfileChangeNotification.dom.js';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import type { PropsType } from './ProfileChangeNotification.dom.tsx';
+import { ProfileChangeNotification } from './ProfileChangeNotification.dom.tsx';
 
 const { i18n } = window.SignalContext;
 

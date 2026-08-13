@@ -1,32 +1,25 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { CSSProperties, PointerEvent } from 'react';
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { CSSProperties, PointerEvent, JSX } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VisuallyHidden } from 'react-aria';
 import type {
   StickerPackType,
   StickerType,
-} from '../../../state/ducks/stickers.preload.js';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
+} from '../../../state/ducks/stickers.preload.ts';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
 import type {
   FunStickersPackSection,
   FunStickersSection,
   FunTimeStickerStyle,
-} from '../constants.dom.js';
+} from '../constants.dom.tsx';
 import {
   FunSectionCommon,
   FunStickersSectionBase,
   FunTimeStickerStylesOrder,
   toFunStickersPackSection,
-} from '../constants.dom.js';
+} from '../constants.dom.tsx';
 import {
   FunGridCell,
   FunGridContainer,
@@ -35,16 +28,16 @@ import {
   FunGridRow,
   FunGridRowGroup,
   FunGridScrollerSection,
-} from '../base/FunGrid.dom.js';
-import { FunItemButton } from '../base/FunItem.dom.js';
+} from '../base/FunGrid.dom.tsx';
+import { FunItemButton } from '../base/FunItem.dom.tsx';
 import {
   FunPanel,
   FunPanelBody,
   FunPanelFooter,
   FunPanelHeader,
-} from '../base/FunPanel.dom.js';
-import { FunScroller } from '../base/FunScroller.dom.js';
-import { FunSearch } from '../base/FunSearch.dom.js';
+} from '../base/FunPanel.dom.tsx';
+import { FunScroller } from '../base/FunScroller.dom.tsx';
+import { FunSearch } from '../base/FunSearch.dom.tsx';
 import {
   FunSubNav,
   FunSubNavButton,
@@ -54,37 +47,30 @@ import {
   FunSubNavListBox,
   FunSubNavListBoxItem,
   FunSubNavScroller,
-} from '../base/FunSubNav.dom.js';
-import {
-  EMOJI_VARIANT_KEY_CONSTANTS,
-  type EmojiParentKey,
-  getEmojiParentKeyByValue,
-  getEmojiVariantByKey,
-  isEmojiParentValue,
-} from '../data/emojis.std.js';
-import { FunKeyboard } from '../keyboard/FunKeyboard.dom.js';
-import type { GridKeyboardState } from '../keyboard/GridKeyboardDelegate.dom.js';
-import { GridKeyboardDelegate } from '../keyboard/GridKeyboardDelegate.dom.js';
+} from '../base/FunSubNav.dom.tsx';
+import { FunKeyboard } from '../keyboard/FunKeyboard.dom.tsx';
+import type { GridKeyboardState } from '../keyboard/GridKeyboardDelegate.dom.tsx';
+import { GridKeyboardDelegate } from '../keyboard/GridKeyboardDelegate.dom.tsx';
 import type {
   CellKey,
   CellLayoutNode,
   GridSectionNode,
-} from '../virtual/useFunVirtualGrid.dom.js';
-import { useFunVirtualGrid } from '../virtual/useFunVirtualGrid.dom.js';
-import { useFunContext } from '../FunProvider.dom.js';
-import { FunResults, FunResultsHeader } from '../base/FunResults.dom.js';
-import { FunStaticEmoji } from '../FunEmoji.dom.js';
+} from '../virtual/useFunVirtualGrid.dom.tsx';
+import { useFunVirtualGrid } from '../virtual/useFunVirtualGrid.dom.tsx';
+import { useFunContext } from '../FunProvider.dom.tsx';
+import { FunResults, FunResultsHeader } from '../base/FunResults.dom.tsx';
+import { FunStaticEmoji } from '../FunEmoji.dom.tsx';
 import {
   FunLightboxPortal,
   FunLightboxBackdrop,
   FunLightboxDialog,
   FunLightboxProvider,
   useFunLightboxKey,
-} from '../base/FunLightbox.dom.js';
-import { FunSticker } from '../FunSticker.dom.js';
-import { getAnalogTime } from '../../../util/getAnalogTime.std.js';
-import { getDateTimeFormatter } from '../../../util/formatTimestamp.dom.js';
-import { useFunEmojiSearch } from '../useFunEmojiSearch.dom.js';
+} from '../base/FunLightbox.dom.tsx';
+import { FunSticker } from '../FunSticker.dom.tsx';
+import { getAnalogTime } from '../../../util/getAnalogTime.std.ts';
+import { getDateTimeFormatter } from '../../../util/formatTimestamp.dom.ts';
+import { Emoji } from '../../../axo/emoji.std.ts';
 
 const STICKER_GRID_COLUMNS = 4;
 const STICKER_GRID_CELL_WIDTH = 80;
@@ -188,6 +174,7 @@ export type FunStickerSelection = Readonly<{
 }>;
 
 export type FunPanelStickersProps = Readonly<{
+  isReply: boolean;
   showTimeStickers: boolean;
   onSelectTimeSticker?: (style: FunTimeStickerStyle) => void;
   onSelectSticker: (stickerSelection: FunStickerSelection) => void;
@@ -196,6 +183,7 @@ export type FunPanelStickersProps = Readonly<{
 }>;
 
 export function FunPanelStickers({
+  isReply,
   showTimeStickers,
   onSelectTimeSticker,
   onSelectSticker,
@@ -210,6 +198,7 @@ export function FunPanelStickers({
     recentStickers,
     installedStickerPacks,
     onSelectSticker: onFunSelectSticker,
+    onStageStickerReply,
   } = fun;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -253,26 +242,19 @@ export function FunPanelStickers({
     );
   });
 
-  const searchEmojis = useFunEmojiSearch();
-
   const sections = useMemo(() => {
     if (searchQuery !== '') {
-      const emojiKeys = new Set<EmojiParentKey>();
-
-      for (const result of searchEmojis(searchQuery)) {
-        emojiKeys.add(result.parentKey);
-      }
+      const emojis = new Set<Emoji.Parent>(Emoji.search(searchQuery));
 
       const allStickers = installedStickerPacks.flatMap(pack => pack.stickers);
       const matchingStickers = allStickers.filter(sticker => {
         if (sticker.emoji == null) {
           return false;
         }
-        if (!isEmojiParentValue(sticker.emoji)) {
+        if (!Emoji.isParent(sticker.emoji)) {
           return false;
         }
-        const parentKey = getEmojiParentKeyByValue(sticker.emoji);
-        return emojiKeys.has(parentKey);
+        return emojis.has(sticker.emoji);
       });
 
       return [
@@ -311,13 +293,7 @@ export function FunPanelStickers({
     }
 
     return result;
-  }, [
-    showTimeStickers,
-    recentStickers,
-    installedStickerPacks,
-    searchEmojis,
-    searchQuery,
-  ]);
+  }, [showTimeStickers, recentStickers, installedStickerPacks, searchQuery]);
 
   const [virtualizer, layout] = useFunVirtualGrid({
     scrollerRef,
@@ -385,6 +361,11 @@ export function FunPanelStickers({
 
   const handleClickSticker = useCallback(
     (event: PointerEvent, stickerSelection: FunStickerSelection) => {
+      if (isReply) {
+        onStageStickerReply(stickerSelection);
+        return;
+      }
+
       onFunSelectSticker(stickerSelection);
       onSelectSticker(stickerSelection);
       if (!(event.ctrlKey || event.metaKey)) {
@@ -392,7 +373,7 @@ export function FunPanelStickers({
         onClose();
       }
     },
-    [onFunSelectSticker, onSelectSticker, onClose]
+    [isReply, onFunSelectSticker, onSelectSticker, onStageStickerReply, onClose]
   );
 
   const handleClickTimeSticker = useCallback(
@@ -404,6 +385,13 @@ export function FunPanelStickers({
     },
     [onSelectTimeSticker, onClose]
   );
+
+  const showAddStickerPackButton = onAddStickerPack != null;
+  const handleAddStickerPack = useCallback(() => {
+    strictAssert(onAddStickerPack, 'Missing onAddStickerPack');
+    onAddStickerPack();
+    onClose();
+  }, [onAddStickerPack, onClose]);
 
   return (
     <FunPanel>
@@ -454,9 +442,9 @@ export function FunPanelStickers({
                 </FunSubNavListBox>
               )}
             </FunSubNavScroller>
-            {onAddStickerPack != null && (
+            {showAddStickerPackButton && (
               <FunSubNavButtons>
-                <FunSubNavButton onClick={onAddStickerPack}>
+                <FunSubNavButton onClick={handleAddStickerPack}>
                   <VisuallyHidden>
                     {i18n('icu:FunPanelStickers__SubNavButton--AddStickerPack')}
                   </VisuallyHidden>
@@ -480,9 +468,7 @@ export function FunPanelStickers({
                 <FunStaticEmoji
                   size={16}
                   role="presentation"
-                  emoji={getEmojiVariantByKey(
-                    EMOJI_VARIANT_KEY_CONSTANTS.SLIGHTLY_FROWNING_FACE
-                  )}
+                  emoji={Emoji.SLIGHTLY_FROWNING_FACE}
                 />
               </FunResultsHeader>
             </FunResults>
@@ -605,6 +591,7 @@ const Cell = memo(function Cell(props: {
 }): JSX.Element {
   const { onClickSticker, onClickTimeSticker } = props;
   const stickerLookupItem = props.stickerLookup[props.value];
+  strictAssert(stickerLookupItem, 'Missing stickerLookupItem');
 
   const handleClick = useCallback(
     (event: PointerEvent) => {

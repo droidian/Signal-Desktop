@@ -3,35 +3,35 @@
 
 import type { ReadonlyDeep } from 'type-fest';
 
-import type { RawBodyRange } from '../types/BodyRange.std.js';
+import type { RawBodyRange } from '../types/BodyRange.std.ts';
 import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
-import type { ICUStringMessageParamsByKeyType } from '../types/Util.std.js';
-import * as Attachment from './Attachment.std.js';
-import * as EmbeddedContact from '../types/EmbeddedContact.std.js';
-import * as GroupChange from '../groupChange.std.js';
-import * as MIME from '../types/MIME.std.js';
-import * as Stickers from '../types/Stickers.preload.js';
-import * as expirationTimer from './expirationTimer.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { GiftBadgeStates } from '../types/GiftBadgeStates.std.js';
-import { dropNull } from './dropNull.std.js';
-import { getCallHistorySelector } from '../state/selectors/callHistory.std.js';
+import type { ICUStringMessageParamsByKeyType } from '../types/Util.std.ts';
+import * as Attachment from './Attachment.std.ts';
+import * as EmbeddedContact from '../types/EmbeddedContact.std.ts';
+import * as GroupChange from '../groupChange.std.ts';
+import * as MIME from '../types/MIME.std.ts';
+import * as Stickers from '../types/Stickers.preload.ts';
+import * as expirationTimer from './expirationTimer.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { GiftBadgeStates } from '../types/GiftBadgeStates.std.ts';
+import { dropNull } from './dropNull.std.ts';
+import { getCallHistorySelector } from '../state/selectors/callHistory.std.ts';
 import {
   getCallSelector,
   getActiveCall,
-} from '../state/selectors/calling.std.js';
-import { getCallingNotificationText } from './callingNotification.std.js';
+} from '../state/selectors/calling.std.ts';
+import { getCallingNotificationText } from './callingNotification.std.ts';
 import {
   getConversationSelector,
   getSelectedMessageIds,
   getTargetedMessage,
-} from '../state/selectors/conversations.dom.js';
-import { getStringForConversationMerge } from './getStringForConversationMerge.std.js';
-import { getStringForProfileChange } from './getStringForProfileChange.std.js';
-import { getTitleNoDefault, getNumber } from './getTitle.preload.js';
-import { findAndFormatContact } from './findAndFormatContact.preload.js';
-import { isGroup, isMe } from './whatTypeOfConversation.dom.js';
-import { strictAssert } from './assert.std.js';
+} from '../state/selectors/conversations.dom.ts';
+import { getStringForConversationMerge } from './getStringForConversationMerge.std.ts';
+import { getStringForProfileChange } from './getStringForProfileChange.std.ts';
+import { getTitleNoDefault, getNumber } from './getTitle.preload.ts';
+import { findAndFormatContact } from './findAndFormatContact.preload.ts';
+import { isGroup, isMe } from './whatTypeOfConversation.dom.ts';
+import { strictAssert } from './assert.std.ts';
 import {
   getPropsForCallHistory,
   hasErrors,
@@ -51,16 +51,18 @@ import {
   isUnsupportedMessage,
   isConversationMerge,
   isMessageRequestResponse,
-} from '../state/selectors/message.preload.js';
-import { getAuthor } from '../messages/sources.preload.js';
+  isPinnedMessageNotification,
+} from '../state/selectors/message.preload.ts';
+import { getAuthor } from '../messages/sources.preload.ts';
 import {
   messageHasPaymentEvent,
   getPaymentEventNotificationText,
-} from '../messages/payments.std.js';
-import { MessageRequestResponseEvent } from '../types/MessageRequestResponseEvent.std.js';
-import { missingCaseError } from './missingCaseError.std.js';
-import { getUserConversationId } from '../state/selectors/user.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../messages/payments.std.ts';
+import { MessageRequestResponseEvent } from '../types/MessageRequestResponseEvent.std.ts';
+import { missingCaseError } from './missingCaseError.std.ts';
+import { getUserConversationId } from '../state/selectors/user.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const log = createLogger('getNotificationDataForMessage');
 const { i18n } = window.SignalContext;
@@ -77,12 +79,12 @@ export function getNotificationDataForMessage(
   attributes: ReadonlyMessageAttributesType
 ): {
   bodyRanges?: ReadonlyArray<ReadonlyDeep<RawBodyRange>>;
-  emoji?: string;
+  emoji?: Emoji.Variant;
   text: string;
 } {
   if (isDeliveryIssue(attributes)) {
     return {
-      emoji: '⚠️',
+      emoji: Emoji.WARNING,
       text: i18n('icu:DeliveryIssue--preview'),
     };
   }
@@ -116,7 +118,7 @@ export function getNotificationDataForMessage(
 
   if (isChatSessionRefreshed(attributes)) {
     return {
-      emoji: '🔁',
+      emoji: Emoji.REPEAT,
       text: i18n('icu:ChatRefresh--notification'),
     };
   }
@@ -167,7 +169,7 @@ export function getNotificationDataForMessage(
         _i18n: unknown,
         components: ICUStringMessageParamsByKeyType[Key]
       ) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         return i18n(key, components as any);
       },
     });
@@ -186,7 +188,7 @@ export function getNotificationDataForMessage(
         sender.isMe,
         i18n
       ),
-      emoji: '💳',
+      emoji: Emoji.CREDIT_CARD,
     };
   }
 
@@ -248,18 +250,18 @@ export function getNotificationDataForMessage(
     if (Attachment.isImage(attachments)) {
       return {
         text: i18n('icu:message--getDescription--disappearing-photo'),
-        emoji: '📷',
+        emoji: Emoji.CAMERA,
       };
     }
     if (Attachment.isVideo(attachments)) {
       return {
         text: i18n('icu:message--getDescription--disappearing-video'),
-        emoji: '🎥',
+        emoji: Emoji.MOVIE_CAMERA,
       };
     }
     // There should be an image or video attachment, but we have a fallback just in
     //   case.
-    return { text: i18n('icu:mediaMessage'), emoji: '📎' };
+    return { text: i18n('icu:mediaMessage'), emoji: Emoji.PAPERCLIP };
   }
 
   if (isGroupUpdate(attributes)) {
@@ -317,7 +319,8 @@ export function getNotificationDataForMessage(
         }
       } else {
         const joinedContact = window.ConversationController.getOrCreate(
-          groupUpdate.joined[0],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          groupUpdate.joined[0]!,
           'private'
         );
         if (isMe(joinedContact.attributes)) {
@@ -325,7 +328,8 @@ export function getNotificationDataForMessage(
         } else {
           messages.push(
             i18n('icu:joinedTheGroup', {
-              name: joinedContacts[0].getTitle(),
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              name: joinedContacts[0]!.getTitle(),
             })
           );
         }
@@ -365,7 +369,7 @@ export function getNotificationDataForMessage(
     ).length;
     if (tooBigAttachmentCount === attachments.length) {
       return {
-        emoji: '📎',
+        emoji: Emoji.PAPERCLIP,
         text: i18n('icu:message--attachmentTooBig--one'),
       };
     }
@@ -373,35 +377,35 @@ export function getNotificationDataForMessage(
     if (contentType === MIME.IMAGE_GIF || Attachment.isGIF(attachments)) {
       return {
         bodyRanges,
-        emoji: '🎡',
+        emoji: Emoji.FERRIS_WHEEL,
         text: body || i18n('icu:message--getNotificationText--gif'),
       };
     }
     if (Attachment.isImage(attachments)) {
       return {
         bodyRanges,
-        emoji: '📷',
+        emoji: Emoji.CAMERA,
         text: body || i18n('icu:message--getNotificationText--photo'),
       };
     }
     if (Attachment.isVideo(attachments)) {
       return {
         bodyRanges,
-        emoji: '🎥',
+        emoji: Emoji.MOVIE_CAMERA,
         text: body || i18n('icu:message--getNotificationText--video'),
       };
     }
     if (Attachment.isVoiceMessage(attachment)) {
       return {
         bodyRanges,
-        emoji: '🎤',
+        emoji: Emoji.MICROPHONE,
         text: body || i18n('icu:message--getNotificationText--voice-message'),
       };
     }
     if (Attachment.isAudio(attachments)) {
       return {
         bodyRanges,
-        emoji: '🔈',
+        emoji: Emoji.SPEAKER,
         text: body || i18n('icu:message--getNotificationText--audio-message'),
       };
     }
@@ -409,7 +413,7 @@ export function getNotificationDataForMessage(
     return {
       bodyRanges,
       text: body || i18n('icu:message--getNotificationText--file'),
-      emoji: '📎',
+      emoji: Emoji.PAPERCLIP,
     };
   }
 
@@ -475,14 +479,15 @@ export function getNotificationDataForMessage(
   const { contact: contacts } = attributes;
   if (contacts && contacts.length) {
     return {
-      text: EmbeddedContact.getName(contacts[0]) || i18n('icu:unknownContact'),
-      emoji: '👤',
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      text: EmbeddedContact.getName(contacts[0]!) || i18n('icu:unknownContact'),
+      emoji: Emoji.BUST_IN_SILHOUETTE,
     };
   }
 
   const { giftBadge } = attributes;
   if (giftBadge) {
-    const emoji = '✨';
+    const emoji = Emoji.SPARKLES;
 
     if (isOutgoing(attributes)) {
       const toContact = window.ConversationController.get(
@@ -507,6 +512,54 @@ export function getNotificationDataForMessage(
               sender,
             })
           : i18n('icu:message--donation--preview--redeemed'),
+    };
+  }
+
+  if (isPinnedMessageNotification(attributes)) {
+    const { sourceServiceId } = attributes;
+    const ourAci = itemStorage.user.getCheckedAci();
+
+    let text: string;
+    if (sourceServiceId === ourAci) {
+      text = i18n('icu:message--pinned--preview--sent');
+    } else {
+      const sender = findAndFormatContact(sourceServiceId).title;
+      text = i18n('icu:message--pinned--preview--received', { sender });
+    }
+
+    return {
+      emoji: Emoji.PUSHPIN,
+      text,
+    };
+  }
+
+  const { poll } = attributes;
+  if (poll) {
+    return {
+      emoji: Emoji.BAR_CHART,
+      text: i18n('icu:Poll--preview', {
+        pollQuestion: poll.question,
+      }),
+      bodyRanges,
+    };
+  }
+
+  const { pollTerminateNotification } = attributes;
+  if (pollTerminateNotification) {
+    const sender = findAndFormatContact(attributes.sourceServiceId);
+
+    const text = sender.isMe
+      ? i18n('icu:PollTerminate--you', {
+          poll: pollTerminateNotification.question,
+        })
+      : i18n('icu:PollTerminate--other', {
+          name: sender.title,
+          poll: pollTerminateNotification.question,
+        });
+
+    return {
+      emoji: Emoji.BAR_CHART,
+      text,
     };
   }
 

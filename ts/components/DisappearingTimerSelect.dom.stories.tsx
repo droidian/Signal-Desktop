@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { Props } from './DisappearingTimerSelect.dom.js';
-import { DisappearingTimerSelect } from './DisappearingTimerSelect.dom.js';
-import { DurationInSeconds } from '../util/durations/index.std.js';
+import type { Props } from './DisappearingTimerSelect.dom.tsx';
+import { DisappearingTimerSelect } from './DisappearingTimerSelect.dom.tsx';
+import { DurationInSeconds } from '../util/durations/index.std.ts';
 
 export default {
   title: 'Components/DisappearingTimerSelect',

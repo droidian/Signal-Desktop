@@ -1,21 +1,21 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import lodash from 'lodash';
-import { createLogger } from '../logging/log.std.js';
-import * as Bytes from '../Bytes.std.js';
-import type { MessageAttachmentType } from '../types/AttachmentDownload.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import type { MessageAttachmentType } from '../types/AttachmentDownload.std.ts';
 
-import type { AttachmentType } from '../types/Attachment.std.js';
+import type { AttachmentType } from '../types/Attachment.std.ts';
 import {
   doAttachmentsOnSameMessageMatch,
   isDownloaded,
-} from '../util/Attachment.std.js';
+} from '../util/Attachment.std.ts';
 import {
   loadAttachmentData,
-  deleteAttachmentData,
-} from '../util/migrations.preload.js';
-import { getMessageById } from '../messages/getMessageById.preload.js';
-import { trimMessageWhitespace } from '../types/BodyRange.std.js';
+  maybeDeleteAttachmentFile,
+} from '../util/migrations.preload.ts';
+import { getMessageById } from '../messages/getMessageById.preload.ts';
+import { trimMessageWhitespace } from '../types/BodyRange.std.ts';
 
 const { omit } = lodash;
 
@@ -69,6 +69,15 @@ export async function markAttachmentAsCorrupted(
   });
 }
 
+export class AttachmentNotNeededForMessageError extends Error {
+  public readonly attachment: AttachmentType;
+
+  constructor(attachment: AttachmentType) {
+    super('AttachmentNotNeededForMessageError');
+    this.attachment = attachment;
+  }
+}
+
 export async function addAttachmentToMessage(
   messageId: string,
   attachment: AttachmentType,
@@ -84,7 +93,7 @@ export async function addAttachmentToMessage(
 
   if (type === 'long-message') {
     let handledAnywhere = false;
-    let attachmentData: Uint8Array | undefined;
+    let attachmentData: Uint8Array<ArrayBuffer> | undefined;
 
     try {
       if (attachment.path) {
@@ -164,16 +173,17 @@ export async function addAttachmentToMessage(
       });
     } finally {
       if (attachment.path) {
-        await deleteAttachmentData(attachment.path);
+        await maybeDeleteAttachmentFile(attachment.path);
       }
       if (!handledAnywhere) {
-        log.warn(
-          `${logPrefix}: Long message attachment found no matching place to apply`
-        );
+        // oxlint-disable-next-line no-unsafe-finally
+        throw new AttachmentNotNeededForMessageError(attachment);
       }
     }
     return;
   }
+
+  let foundPlaceForAttachment = false;
 
   const maybeReplaceAttachment = (existing: AttachmentType): AttachmentType => {
     if (isDownloaded(existing)) {
@@ -184,13 +194,13 @@ export async function addAttachmentToMessage(
       return existing;
     }
 
+    foundPlaceForAttachment = true;
     return attachment;
   };
 
   if (type === 'attachment') {
     const attachments = message.get('attachments');
 
-    let handledAnywhere = false;
     let handledInEditHistory = false;
 
     const editHistory = message.get('editHistory');
@@ -207,7 +217,6 @@ export async function addAttachmentToMessage(
           attachments: edit.attachments.map(item => {
             const newItem = maybeReplaceAttachment(item);
             handledInEditHistory ||= item !== newItem;
-            handledAnywhere ||= handledInEditHistory;
             return newItem;
           }),
         };
@@ -220,18 +229,12 @@ export async function addAttachmentToMessage(
 
     if (attachments) {
       message.set({
-        attachments: attachments.map(item => {
-          const newItem = maybeReplaceAttachment(item);
-          handledAnywhere ||= item !== newItem;
-          return newItem;
-        }),
+        attachments: attachments.map(maybeReplaceAttachment),
       });
     }
 
-    if (!handledAnywhere) {
-      log.warn(
-        `${logPrefix}: 'attachment' type found no matching place to apply`
-      );
+    if (!foundPlaceForAttachment) {
+      throw new AttachmentNotNeededForMessageError(attachment);
     }
 
     return;
@@ -243,7 +246,7 @@ export async function addAttachmentToMessage(
     let handledInEditHistory = false;
 
     const editHistory = message.get('editHistory');
-    if (preview && editHistory) {
+    if (editHistory) {
       const newEditHistory = editHistory.map(edit => {
         if (!edit.preview) {
           return edit;
@@ -282,6 +285,10 @@ export async function addAttachmentToMessage(
       });
     }
 
+    if (!foundPlaceForAttachment) {
+      throw new AttachmentNotNeededForMessageError(attachment);
+    }
+
     return;
   }
 
@@ -290,7 +297,6 @@ export async function addAttachmentToMessage(
     if (!contacts?.length) {
       throw new Error(`${logPrefix}: no contacts, cannot add attachment!`);
     }
-    let handled = false;
 
     const newContacts = contacts.map(contact => {
       if (!contact.avatar?.avatar) {
@@ -301,7 +307,6 @@ export async function addAttachmentToMessage(
 
       const newAttachment = maybeReplaceAttachment(existingAttachment);
       if (existingAttachment !== newAttachment) {
-        handled = true;
         return {
           ...contact,
           avatar: { ...contact.avatar, avatar: newAttachment },
@@ -310,10 +315,8 @@ export async function addAttachmentToMessage(
       return contact;
     });
 
-    if (!handled) {
-      throw new Error(
-        `${logPrefix}: Couldn't find matching contact with avatar attachment for message`
-      );
+    if (!foundPlaceForAttachment) {
+      throw new AttachmentNotNeededForMessageError(attachment);
     }
 
     message.set({ contact: newContacts });
@@ -374,6 +377,10 @@ export async function addAttachmentToMessage(
       message.set({ quote: newQuote });
     }
 
+    if (!foundPlaceForAttachment) {
+      throw new AttachmentNotNeededForMessageError(attachment);
+    }
+
     return;
   }
 
@@ -389,6 +396,11 @@ export async function addAttachmentToMessage(
         data: sticker.data ? maybeReplaceAttachment(sticker.data) : attachment,
       },
     });
+
+    if (!foundPlaceForAttachment) {
+      throw new AttachmentNotNeededForMessageError(attachment);
+    }
+
     return;
   }
 

@@ -1,20 +1,28 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import React, { createContext, useEffect, useState } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, JSX } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  forwardRef,
+} from 'react';
 import classNames from 'classnames';
 import { useMove } from 'react-aria';
-import { NavTabsToggle } from './NavTabs.dom.js';
-import type { LocalizerType } from '../types/I18N.std.js';
+import { NavTabsToggle } from './NavTabs.dom.tsx';
+import type { LocalizerType } from '../types/I18N.std.ts';
 import {
   MAX_WIDTH,
   MIN_FULL_WIDTH,
   MIN_WIDTH,
   getWidthFromPreferredWidth,
-} from '../util/leftPaneWidth.std.js';
-import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util.std.js';
-import type { UnreadStats } from '../util/countUnreadStats.std.js';
+} from '../util/leftPaneWidth.std.ts';
+import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util.std.ts';
+import type { UnreadStats } from '../util/countUnreadStats.std.ts';
+import type { SmartPropsType as SmartToastManagerPropsType } from '../state/smart/ToastManager.preload.tsx';
+import { AxoDragRegion } from '../axo/AxoDragRegion.dom.tsx';
 
 export const NavSidebarWidthBreakpointContext =
   createContext<WidthBreakpoint | null>(null);
@@ -25,7 +33,7 @@ type NavSidebarActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     label: ReactNode;
   }>;
 
-export const NavSidebarActionButton = React.forwardRef<
+export const NavSidebarActionButton = forwardRef<
   HTMLButtonElement,
   NavSidebarActionButtonProps
 >(function NavSidebarActionButtonInner(
@@ -54,15 +62,13 @@ export type NavSidebarProps = Readonly<{
   hideHeader?: boolean;
   navTabsCollapsed: boolean;
   onBack?: (() => void) | null;
-  onToggleNavTabsCollapse(navTabsCollapsed: boolean): void;
+  onToggleNavTabsCollapse: (navTabsCollapsed: boolean) => void;
   preferredLeftPaneWidth: number;
   requiresFullWidth: boolean;
   savePreferredLeftPaneWidth: (width: number) => void;
   title: string;
   otherTabsUnreadStats: UnreadStats;
-  renderToastManager: (_: {
-    containerWidthBreakpoint: WidthBreakpoint;
-  }) => JSX.Element;
+  renderToastManager: (_: SmartToastManagerPropsType) => JSX.Element;
 }>;
 
 enum DragState {
@@ -102,6 +108,13 @@ export function NavSidebar({
   });
 
   const widthBreakpoint = getNavSidebarWidthBreakpoint(width);
+
+  const expandNarrowLeftPane = useCallback(() => {
+    if (preferredWidth < MIN_FULL_WIDTH) {
+      setPreferredWidth(MIN_FULL_WIDTH);
+      savePreferredLeftPaneWidth(MIN_FULL_WIDTH);
+    }
+  }, [preferredWidth, savePreferredLeftPaneWidth]);
 
   // `useMove` gives us keyboard and mouse dragging support.
   const { moveProps } = useMove({
@@ -168,48 +181,51 @@ export function NavSidebar({
         style={{ width }}
       >
         {!hideHeader && (
-          <div className="NavSidebar__Header">
-            {onBack == null && navTabsCollapsed && (
-              <NavTabsToggle
-                i18n={i18n}
-                navTabsCollapsed={navTabsCollapsed}
-                onToggleNavTabsCollapse={onToggleNavTabsCollapse}
-                hasFailedStorySends={hasFailedStorySends}
-                hasPendingUpdate={hasPendingUpdate}
-                otherTabsUnreadStats={otherTabsUnreadStats}
-              />
-            )}
-            <div
-              className={classNames('NavSidebar__HeaderContent', {
-                'NavSidebar__HeaderContent--navTabsCollapsed': navTabsCollapsed,
-                'NavSidebar__HeaderContent--withBackButton': onBack != null,
-              })}
-            >
-              {onBack != null && (
-                <button
-                  type="button"
-                  role="link"
-                  onClick={onBack}
-                  className="NavSidebar__BackButton"
-                >
-                  <span className="NavSidebar__BackButtonLabel">
-                    {i18n('icu:NavSidebar__BackButtonLabel')}
-                  </span>
-                </button>
+          <AxoDragRegion.Root>
+            <div className="NavSidebar__Header">
+              {onBack == null && navTabsCollapsed && (
+                <NavTabsToggle
+                  i18n={i18n}
+                  navTabsCollapsed={navTabsCollapsed}
+                  onToggleNavTabsCollapse={onToggleNavTabsCollapse}
+                  hasFailedStorySends={hasFailedStorySends}
+                  hasPendingUpdate={hasPendingUpdate}
+                  otherTabsUnreadStats={otherTabsUnreadStats}
+                />
               )}
-              <h1
-                className={classNames('NavSidebar__HeaderTitle', {
-                  'NavSidebar__HeaderTitle--withBackButton': onBack != null,
+              <div
+                className={classNames('NavSidebar__HeaderContent', {
+                  'NavSidebar__HeaderContent--navTabsCollapsed':
+                    navTabsCollapsed,
+                  'NavSidebar__HeaderContent--withBackButton': onBack != null,
                 })}
-                aria-live="assertive"
               >
-                {title}
-              </h1>
-              {actions && (
-                <div className="NavSidebar__HeaderActions">{actions}</div>
-              )}
+                {onBack != null && (
+                  <button
+                    type="button"
+                    role="link"
+                    onClick={onBack}
+                    className="NavSidebar__BackButton"
+                  >
+                    <span className="NavSidebar__BackButtonLabel">
+                      {i18n('icu:NavSidebar__BackButtonLabel')}
+                    </span>
+                  </button>
+                )}
+                <h1
+                  className={classNames('NavSidebar__HeaderTitle', {
+                    'NavSidebar__HeaderTitle--withBackButton': onBack != null,
+                  })}
+                  aria-live="assertive"
+                >
+                  {title}
+                </h1>
+                {actions && (
+                  <div className="NavSidebar__HeaderActions">{actions}</div>
+                )}
+              </div>
             </div>
-          </div>
+          </AxoDragRegion.Root>
         )}
 
         <div className="NavSidebar__Content">{children}</div>
@@ -224,12 +240,14 @@ export function NavSidebar({
           aria-valuemin={MIN_WIDTH}
           aria-valuemax={preferredLeftPaneWidth}
           aria-valuenow={MAX_WIDTH}
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/separator_role#focusable_separator
           tabIndex={0}
           {...moveProps}
         />
 
-        {renderToastManager({ containerWidthBreakpoint: widthBreakpoint })}
+        {renderToastManager({
+          containerWidthBreakpoint: widthBreakpoint,
+          expandNarrowLeftPane,
+        })}
       </div>
     </NavSidebarWidthBreakpointContext.Provider>
   );

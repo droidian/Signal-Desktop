@@ -1,25 +1,25 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild, ReactNode } from 'react';
-import React, { useState } from 'react';
-
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
 import {
   MessageRequestActionsConfirmation,
   MessageRequestState,
-} from './MessageRequestActionsConfirmation.dom.js';
-import { ContactSpoofingType } from '../../util/contactSpoofing.std.js';
-
-import { Modal } from '../Modal.dom.js';
-import { RemoveGroupMemberConfirmationDialog } from './RemoveGroupMemberConfirmationDialog.dom.js';
-import { ContactSpoofingReviewDialogPerson } from './ContactSpoofingReviewDialogPerson.dom.js';
-import { Button, ButtonVariant } from '../Button.dom.js';
-import { assertDev } from '../../util/assert.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { isInSystemContacts } from '../../util/isInSystemContacts.std.js';
+} from './MessageRequestActionsConfirmation.dom.tsx';
+import { ContactSpoofingType } from '../../util/contactSpoofing.std.ts';
+import { RemoveGroupMemberConfirmationDialog } from './RemoveGroupMemberConfirmationDialog.dom.tsx';
+import { ContactSpoofingReviewDialogPerson } from './ContactSpoofingReviewDialogPerson.dom.tsx';
+import { assertDev } from '../../util/assert.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { isInSystemContacts } from '../../util/isInSystemContacts.std.ts';
+import type { ContactModalStateType } from '../../types/globalModals.std.ts';
+import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoButton } from '../../axo/AxoButton.dom.tsx';
 
 export type ReviewPropsType = Readonly<
   | {
@@ -27,10 +27,12 @@ export type ReviewPropsType = Readonly<
       possiblyUnsafe: {
         conversation: ConversationType;
         isSignalConnection: boolean;
+        sharedGroupNames: ReadonlyArray<string>;
       };
       safe: {
         conversation: ConversationType;
         isSignalConnection: boolean;
+        sharedGroupNames: ReadonlyArray<string>;
       };
     }
   | {
@@ -42,6 +44,7 @@ export type ReviewPropsType = Readonly<
           oldName?: string;
           isSignalConnection: boolean;
           conversation: ConversationType;
+          sharedGroupNames: ReadonlyArray<string>;
         }>
       >;
     }
@@ -49,17 +52,16 @@ export type ReviewPropsType = Readonly<
 
 export type PropsType = {
   conversationId: string;
-  acceptConversation: (conversationId: string) => unknown;
-  reportSpam: (conversationId: string) => unknown;
-  blockAndReportSpam: (conversationId: string) => unknown;
-  blockConversation: (conversationId: string) => unknown;
-  deleteConversation: (conversationId: string) => unknown;
+  acceptConversation: (conversationId: string) => void;
+  reportSpam: (conversationId: string) => void;
+  blockAndReportSpam: (conversationId: string) => void;
+  blockConversation: (conversationId: string) => void;
+  deleteConversation: (conversationId: string) => void;
   toggleSignalConnectionsModal: () => void;
-  updateSharedGroups: (conversationId: string) => void;
   getPreferredBadge: PreferredBadgeSelectorType;
   i18n: LocalizerType;
   onClose: () => void;
-  showContactModal: (contactId: string, conversationId?: string) => unknown;
+  showContactModal: (payload: ContactModalStateType) => void;
   removeMember: (
     conversationId: string,
     memberConversationId: string
@@ -82,7 +84,6 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
     conversationId,
     deleteConversation,
     toggleSignalConnectionsModal,
-    updateSharedGroups,
     getPreferredBadge,
     i18n,
     onClose,
@@ -185,7 +186,7 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
   }
 
   let title: string;
-  let contents: ReactChild;
+  let contents: ReactNode;
 
   switch (props.type) {
     case ContactSpoofingType.DirectConversationWithSameTitle: {
@@ -202,23 +203,28 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
       title = i18n('icu:ContactSpoofingReviewDialog__title');
       contents = (
         <>
-          <p>{i18n('icu:ContactSpoofingReviewDialog__description')}</p>
-          <h2>
+          <div className={tw('mb-2.5 type-body-medium text-secondary')}>
+            <AxoDialog.Description>
+              {i18n('icu:ContactSpoofingReviewDialog__description')}
+            </AxoDialog.Description>
+          </div>
+          <h2 className={tw('type-title-small text-primary')}>
             {i18n('icu:ContactSpoofingReviewDialog__possibly-unsafe-title')}
           </h2>
           <ContactSpoofingReviewDialogPerson
             conversation={possiblyUnsafe.conversation}
             getPreferredBadge={getPreferredBadge}
             toggleSignalConnectionsModal={toggleSignalConnectionsModal}
-            updateSharedGroups={updateSharedGroups}
+            sharedGroupNames={possiblyUnsafe.sharedGroupNames}
             i18n={i18n}
             theme={theme}
             isSignalConnection={possiblyUnsafe.isSignalConnection}
             oldName={undefined}
           >
-            <div className="module-ContactSpoofingReviewDialog__buttons">
-              <Button
-                variant={ButtonVariant.SecondaryDestructive}
+            <div className={tw('flex gap-2')}>
+              <AxoButton.Root
+                size="md"
+                variant="subtle-destructive"
                 onClick={() => {
                   setConfirmationState({
                     type: ConfirmationStateType.ConfirmingDelete,
@@ -227,9 +233,10 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                 }}
               >
                 {i18n('icu:MessageRequests--delete')}
-              </Button>
-              <Button
-                variant={ButtonVariant.SecondaryDestructive}
+              </AxoButton.Root>
+              <AxoButton.Root
+                size="md"
+                variant="subtle-destructive"
                 onClick={() => {
                   setConfirmationState({
                     type: ConfirmationStateType.ConfirmingBlock,
@@ -238,19 +245,21 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                 }}
               >
                 {i18n('icu:MessageRequests--block')}
-              </Button>
+              </AxoButton.Root>
             </div>
           </ContactSpoofingReviewDialogPerson>
-          <hr />
-          <h2>{i18n('icu:ContactSpoofingReviewDialog__safe-title')}</h2>
+          <hr className={tw('my-2.5 border-0 border-t border-t-secondary')} />
+          <h2 className={tw('type-title-small text-primary')}>
+            {i18n('icu:ContactSpoofingReviewDialog__safe-title')}
+          </h2>
           <ContactSpoofingReviewDialogPerson
             conversation={safe.conversation}
             getPreferredBadge={getPreferredBadge}
             toggleSignalConnectionsModal={toggleSignalConnectionsModal}
-            updateSharedGroups={updateSharedGroups}
+            sharedGroupNames={safe.sharedGroupNames}
             i18n={i18n}
             onClick={() => {
-              showContactModal(safe.conversation.id);
+              showContactModal({ contactId: safe.conversation.id });
             }}
             theme={theme}
             isSignalConnection={safe.isSignalConnection}
@@ -272,18 +281,20 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
       title = i18n('icu:ContactSpoofingReviewDialog__group__title');
       contents = (
         <>
-          <p className="module-ContactSpoofingReviewDialog__description">
-            {numSharedTitles > 1
-              ? i18n(
-                  'icu:ContactSpoofingReviewDialog__group__multiple-conflicts__description',
-                  {
-                    count: numSharedTitles,
-                  }
-                )
-              : i18n('icu:ContactSpoofingReviewDialog__group__description', {
-                  count: totalConversations,
-                })}
-          </p>
+          <div className={tw('mb-2.5 type-body-medium text-secondary')}>
+            <AxoDialog.Description>
+              {numSharedTitles > 1
+                ? i18n(
+                    'icu:ContactSpoofingReviewDialog__group__multiple-conflicts__description',
+                    {
+                      count: numSharedTitles,
+                    }
+                  )
+                : i18n('icu:ContactSpoofingReviewDialog__group__description', {
+                    count: totalConversations,
+                  })}
+            </AxoDialog.Description>
+          </div>
 
           {Object.values(collisionInfoByTitle)
             .map((conversationInfos, titleIdx) =>
@@ -291,8 +302,9 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                 let button: ReactNode;
                 if (group.areWeAdmin) {
                   button = (
-                    <Button
-                      variant={ButtonVariant.SecondaryAffirmative}
+                    <AxoButton.Root
+                      size="md"
+                      variant="subtle-destructive"
                       onClick={() => {
                         setConfirmationState({
                           type: ConfirmationStateType.ConfirmingGroupRemoval,
@@ -302,23 +314,25 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                       }}
                     >
                       {i18n('icu:RemoveGroupMemberConfirmation__remove-button')}
-                    </Button>
+                    </AxoButton.Root>
                   );
                 } else if (conversationInfo.conversation.isBlocked) {
                   button = (
-                    <Button
-                      variant={ButtonVariant.SecondaryAffirmative}
+                    <AxoButton.Root
+                      size="md"
+                      variant="subtle-affirmative"
                       onClick={() => {
                         acceptConversation(conversationInfo.conversation.id);
                       }}
                     >
                       {i18n('icu:MessageRequests--unblock')}
-                    </Button>
+                    </AxoButton.Root>
                   );
                 } else if (!isInSystemContacts(conversationInfo.conversation)) {
                   button = (
-                    <Button
-                      variant={ButtonVariant.SecondaryDestructive}
+                    <AxoButton.Root
+                      size="md"
+                      variant="subtle-destructive"
                       onClick={() => {
                         setConfirmationState({
                           type: ConfirmationStateType.ConfirmingBlock,
@@ -327,7 +341,7 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                       }}
                     >
                       {i18n('icu:MessageRequests--block')}
-                    </Button>
+                    </AxoButton.Root>
                   );
                 }
 
@@ -341,11 +355,16 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                       toggleSignalConnectionsModal={
                         toggleSignalConnectionsModal
                       }
-                      updateSharedGroups={updateSharedGroups}
+                      sharedGroupNames={conversationInfo.sharedGroupNames}
                       getPreferredBadge={getPreferredBadge}
                       i18n={i18n}
                       theme={theme}
                       oldName={oldName}
+                      onClick={() => {
+                        showContactModal({
+                          contactId: conversationInfo.conversation.id,
+                        });
+                      }}
                       isSignalConnection={isSignalConnection}
                     >
                       {button && (
@@ -356,7 +375,11 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
                     </ContactSpoofingReviewDialogPerson>
                     {titleIdx < sharedTitles.length - 1 ||
                     conversationIdx < conversationInfos.length - 1 ? (
-                      <hr />
+                      <hr
+                        className={tw(
+                          'my-2.5 border-0 border-t border-t-secondary'
+                        )}
+                      />
                     ) : null}
                   </>
                 );
@@ -372,15 +395,15 @@ export function ContactSpoofingReviewDialog(props: PropsType): JSX.Element {
   }
 
   return (
-    <Modal
-      modalName="ContactSpoofingReviewDialog"
-      hasXButton
-      i18n={i18n}
-      moduleClassName="module-ContactSpoofingReviewDialog"
-      onClose={onClose}
-      title={title}
-    >
-      {contents}
-    </Modal>
+    <AxoDialog.Root open onOpenChange={onClose}>
+      <AxoDialog.Content size="md" escape="cancel-is-noop">
+        <AxoDialog.Header>
+          <AxoDialog.Title>{title}</AxoDialog.Title>
+          <AxoDialog.Close />
+        </AxoDialog.Header>
+        <AxoDialog.Body>{contents}</AxoDialog.Body>
+        <AxoDialog.Footer />
+      </AxoDialog.Content>
+    </AxoDialog.Root>
   );
 }

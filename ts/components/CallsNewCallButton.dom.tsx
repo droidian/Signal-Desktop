@@ -1,29 +1,29 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent } from 'react';
-import React, { useCallback, useMemo, useState } from 'react';
+import type { ChangeEvent, JSX, ReactNode } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import lodash from 'lodash';
 import type { ListRowProps } from 'react-virtualized';
 import { List } from 'react-virtualized';
 import classNames from 'classnames';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { SearchInput } from './SearchInput.dom.js';
-import { filterAndSortConversations } from '../util/filterAndSortConversations.std.js';
-import { NavSidebarSearchHeader } from './NavSidebar.dom.js';
-import { ListTile } from './ListTile.dom.js';
-import { strictAssert } from '../util/assert.std.js';
-import { UserText } from './UserText.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { I18n } from './I18n.dom.js';
-import { SizeObserver } from '../hooks/useSizeObserver.dom.js';
-import { CallType } from '../types/CallDisposition.std.js';
-import type { CallsTabSelectedView } from './CallsTab.preload.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { SearchInput } from './SearchInput.dom.tsx';
+import { filterAndSortConversations } from '../util/filterAndSortConversations.std.ts';
+import { NavSidebarSearchHeader } from './NavSidebar.dom.tsx';
+import { ListTile } from './ListTile.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
+import { UserText } from './UserText.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import { SizeObserver } from '../hooks/useSizeObserver.dom.tsx';
+import { CallType } from '../types/CallDisposition.std.ts';
+import type { CallsTabSelectedView } from './CallsTab.dom.tsx';
 import {
   InAnotherCallTooltip,
   getTooltipContent,
-} from './conversation/InAnotherCallTooltip.dom.js';
+} from './conversation/InAnotherCallTooltip.dom.tsx';
 
 const { partition } = lodash;
 
@@ -56,7 +56,7 @@ export function CallsNewCallButton({
   i18n: LocalizerType;
   onClick: () => void;
 }): JSX.Element {
-  let innerContent: React.ReactNode | string;
+  let innerContent: ReactNode | string;
   let inAnotherCallTooltipContent = '';
   if (!isEnabled) {
     inAnotherCallTooltipContent = getTooltipContent(i18n);
@@ -226,7 +226,6 @@ export function CallsNewCall({
                 conversationType="group"
                 i18n={i18n}
                 title={item.conversation.title}
-                sharedGroupNames={[]}
                 size={AvatarSize.THIRTY_TWO}
                 badge={undefined}
               />
@@ -315,7 +314,7 @@ export function CallsNewCall({
           {(ref, size) => {
             return (
               <div ref={ref} className="CallsNewCall__ListContainer">
-                {size != null && (
+                {size != null && !size.hidden && (
                   <List
                     className="CallsNewCall__List"
                     width={size.width}

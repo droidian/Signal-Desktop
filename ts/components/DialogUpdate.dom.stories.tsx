@@ -1,15 +1,15 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DialogUpdate.dom.js';
-import { DialogUpdate } from './DialogUpdate.dom.js';
-import { DialogType } from '../types/Dialogs.std.js';
-import { WidthBreakpoint } from './_util.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { FakeLeftPaneContainer } from '../test-helpers/FakeLeftPaneContainer.dom.js';
+import type { PropsType } from './DialogUpdate.dom.tsx';
+import { DialogUpdate } from './DialogUpdate.dom.tsx';
+import { DialogType } from '../types/Dialogs.std.ts';
+import { WidthBreakpoint } from './_util.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { FakeLeftPaneContainer } from '../test-helpers/FakeLeftPaneContainer.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -102,11 +102,11 @@ export function FullDownloadReadyWide(): JSX.Element {
 }
 
 export function DownloadingWide(): JSX.Element {
-  const [downloadedSize, setDownloadedSize] = React.useState(0);
+  const [downloadedSize, setDownloadedSize] = useState(0);
 
   const { downloadSize } = defaultProps;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setDownloadedSize(x => {
         const newValue = x + 0.25 * downloadSize;
@@ -206,6 +206,19 @@ export function UnsupportedOSWide(): JSX.Element {
         containerWidthBreakpoint={WidthBreakpoint.Wide}
         currentVersion="5.24.0"
         dialogType={DialogType.UnsupportedOS}
+      />
+    </FakeLeftPaneContainer>
+  );
+}
+
+export function MASUpdate(): JSX.Element {
+  return (
+    <FakeLeftPaneContainer containerWidthBreakpoint={WidthBreakpoint.Wide}>
+      <DialogUpdate
+        {...defaultProps}
+        containerWidthBreakpoint={WidthBreakpoint.Wide}
+        currentVersion="5.24.0"
+        dialogType={DialogType.MASUpdate}
       />
     </FakeLeftPaneContainer>
   );
@@ -351,6 +364,19 @@ export function UnsupportedOSNarrow(): JSX.Element {
         containerWidthBreakpoint={WidthBreakpoint.Narrow}
         currentVersion="5.24.0"
         dialogType={DialogType.UnsupportedOS}
+      />
+    </FakeLeftPaneContainer>
+  );
+}
+
+export function MASUpdateNarrow(): JSX.Element {
+  return (
+    <FakeLeftPaneContainer containerWidthBreakpoint={WidthBreakpoint.Narrow}>
+      <DialogUpdate
+        {...defaultProps}
+        containerWidthBreakpoint={WidthBreakpoint.Narrow}
+        currentVersion="5.24.0"
+        dialogType={DialogType.MASUpdate}
       />
     </FakeLeftPaneContainer>
   );

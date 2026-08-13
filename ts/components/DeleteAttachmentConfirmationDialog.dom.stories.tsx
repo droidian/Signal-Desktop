@@ -1,0 +1,24 @@
+// Copyright 2026 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+import type { Meta } from '@storybook/react';
+import { useState, type JSX } from 'react';
+import { action } from '@storybook/addon-actions';
+import { DeleteAttachmentConfirmationDialog } from './DeleteAttachmentConfirmationDialog.dom.tsx';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  title: 'Components/DeleteAttachmentConfirmationDialog',
+} satisfies Meta;
+
+export function Default(): JSX.Element {
+  const [open, setOpen] = useState(true);
+  return (
+    <DeleteAttachmentConfirmationDialog
+      i18n={i18n}
+      open={open}
+      onOpenChange={setOpen}
+      onDestroyAttachment={action('onDestroyAttachment')}
+    />
+  );
+}

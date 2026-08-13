@@ -38,7 +38,7 @@
 
   &__error {
     @include mixins.color-svg(
-      '../images/full-screen-flow/alert-outline.svg',
+      '../images/alert-outline.svg',
       variables.$color-white
     );
     & {

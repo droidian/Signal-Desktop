@@ -71,7 +71,7 @@
     @include mixins.position-absolute-center;
   }
   @include mixins.light-theme {
-    @include all-audio-icons(var(--color-label-primary));
+    @include all-audio-icons(var(--axo-color-label-primary));
 
     &--context-incoming {
       &.PlaybackButton--variant-message {
@@ -87,7 +87,7 @@
   }
 
   @include mixins.dark-theme {
-    @include all-audio-icons(var(--color-label-primary));
+    @include all-audio-icons(var(--axo-color-label-primary));
 
     &--context-incoming {
       &.PlaybackButton--variant-message {
@@ -112,12 +112,12 @@
         background: variables.$color-white-alpha-40;
       }
     }
-    @include all-audio-icons(var(--color-label-primary-on-color));
+    @include all-audio-icons(var(--axo-color-label-primary-oncolor));
   }
 
   @include mixins.dark-theme {
     &--context-outgoing {
-      @include all-audio-icons(var(--color-label-primary-on-color));
+      @include all-audio-icons(var(--axo-color-label-primary-oncolor));
     }
   }
 }

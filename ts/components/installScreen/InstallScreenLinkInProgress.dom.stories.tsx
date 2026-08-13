@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './InstallScreenLinkInProgressStep.dom.js';
-import { InstallScreenLinkInProgressStep } from './InstallScreenLinkInProgressStep.dom.js';
+import type { Props } from './InstallScreenLinkInProgressStep.dom.tsx';
+import { InstallScreenLinkInProgressStep } from './InstallScreenLinkInProgressStep.dom.tsx';
 
 const { i18n } = window.SignalContext;
 

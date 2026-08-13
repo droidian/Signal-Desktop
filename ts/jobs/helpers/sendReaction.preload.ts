@@ -4,45 +4,43 @@
 import lodash from 'lodash';
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import * as Errors from '../../types/errors.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { repeat, zipObject } from '../../util/iterables.std.js';
+import * as Errors from '../../types/errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { repeat, zipObject } from '../../util/iterables.std.ts';
 import type { CallbackResultType } from '../../textsecure/Types.d.ts';
-import { MessageModel } from '../../models/messages.preload.js';
+import { MessageModel } from '../../models/messages.preload.ts';
 import type { MessageReactionType } from '../../model-types.d.ts';
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 
-import * as reactionUtil from '../../reactions/util.std.js';
-import { isSent, SendStatus } from '../../messages/MessageSendState.std.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { isIncoming } from '../../messages/helpers.std.js';
+import * as reactionUtil from '../../reactions/util.std.ts';
+import { isSent, SendStatus } from '../../messages/MessageSendState.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { isIncoming } from '../../messages/helpers.std.ts';
 import {
-  isMe,
   isDirectConversation,
   isGroupV2,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
-import { canReact, isStory } from '../../state/selectors/message.preload.js';
-import { findAndFormatContact } from '../../util/findAndFormatContact.preload.js';
-import type { AciString, ServiceIdString } from '../../types/ServiceId.std.js';
-import { isAciString } from '../../util/isAciString.std.js';
-import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.js';
-import { incrementMessageCounter } from '../../util/incrementMessageCounter.preload.js';
-import { generateMessageId } from '../../util/generateMessageId.node.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { canReact, isStory } from '../../state/selectors/message.preload.ts';
+import { findAndFormatContact } from '../../util/findAndFormatContact.preload.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.ts';
+import { incrementMessageCounter } from '../../util/incrementMessageCounter.preload.ts';
+import { generateMessageId } from '../../util/generateMessageId.node.ts';
 
 import type {
   ConversationQueueJobBundle,
   ReactionJobData,
-} from '../conversationJobQueue.preload.js';
-import { isConversationAccepted } from '../../util/isConversationAccepted.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { sendToGroup } from '../../util/sendToGroup.preload.js';
-import { hydrateStoryContext } from '../../util/hydrateStoryContext.preload.js';
-import { send, sendSyncMessageOnly } from '../../messages/send.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../conversationJobQueue.preload.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { getStoryReplyContext } from '../../util/getStoryReplyContext.std.ts';
+import { send, sendSyncMessageOnly } from '../../messages/send.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { getSendRecipientLists } from './getSendRecipientLists.dom.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
 
 const { isNumber } = lodash;
 
@@ -123,11 +121,18 @@ export async function sendReaction(
     }
 
     const expireTimer = messageConversation.get('expireTimer');
+    const unsentConversationIds = Array.from(
+      reactionUtil.getUnsentConversationIds(pendingReaction)
+    );
     const {
       allRecipientServiceIds,
       recipientServiceIdsWithoutMe,
       untrustedServiceIds,
-    } = getRecipients(log, pendingReaction, conversation);
+    } = getSendRecipientLists({
+      log,
+      conversationIds: unsentConversationIds,
+      conversation,
+    });
 
     if (untrustedServiceIds.length) {
       window.reduxActions.conversations.conversationStoppedByMissingVerification(
@@ -190,6 +195,13 @@ export async function sendReaction(
     const successfulConversationIds = new Set<string>();
 
     if (recipientServiceIdsWithoutMe.length === 0) {
+      if (!window.ConversationController.doWeHaveOtherDevices()) {
+        log.info(
+          'sendReaction: We have no other devices; not sending sync message'
+        );
+        return;
+      }
+
       log.info('sending sync reaction message only');
       const dataMessage = await messaging.getDataOrEditMessage({
         attachments: [],
@@ -213,57 +225,40 @@ export async function sendReaction(
       didFullySend = true;
       successfulConversationIds.add(ourConversationId);
     } else {
-      const sendOptions = await getSendOptions(conversation.attributes);
-
       let promise: Promise<CallbackResultType>;
       if (isDirectConversation(conversation.attributes)) {
-        if (!isConversationAccepted(conversation.attributes)) {
-          log.info(
-            `conversation ${conversation.idForLogging()} is not accepted; refusing to send`
-          );
-          markReactionFailed(message, pendingReaction);
-          return;
-        }
-        if (isConversationUnregistered(conversation.attributes)) {
-          log.info(
-            `conversation ${conversation.idForLogging()} is unregistered; refusing to send`
-          );
-          markReactionFailed(message, pendingReaction);
-          return;
-        }
-        if (conversation.isBlocked()) {
-          log.info(
-            `conversation ${conversation.idForLogging()} is blocked; refusing to send`
-          );
+        const [ok, refusal] = shouldSendToDirectConversation(conversation);
+        if (!ok) {
+          log.info(refusal.logLine);
           markReactionFailed(message, pendingReaction);
           return;
         }
 
         log.info('sending direct reaction message');
-        promise = messaging.sendMessageToServiceId({
-          serviceId: recipientServiceIdsWithoutMe[0],
-          messageText: undefined,
-          attachments: [],
-          quote: undefined,
-          preview: [],
-          sticker: undefined,
-          reaction: reactionForSend,
-          deletedForEveryoneTimestamp: undefined,
-          timestamp: pendingReaction.timestamp,
-          expireTimer,
-          expireTimerVersion: conversation.getExpireTimerVersion(),
-          contentHint: ContentHint.Resendable,
-          groupId: undefined,
-          profileKey,
-          options: sendOptions,
-          urgent: true,
-          includePniSignatureMessage: true,
+        promise = conversation.queueJob('sendRection/direct', async () => {
+          const sendOptions = await getSendOptions(conversation.attributes);
+          return messaging.sendMessageToServiceId({
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            serviceId: recipientServiceIdsWithoutMe[0]!,
+            messageOptions: {
+              reaction: reactionForSend,
+              timestamp: pendingReaction.timestamp,
+              expireTimer,
+              expireTimerVersion: conversation.getExpireTimerVersion(),
+              profileKey,
+            },
+            groupId: undefined,
+            contentHint: ContentHint.Resendable,
+            options: sendOptions,
+            urgent: true,
+            includePniSignatureMessage: true,
+          });
         });
       } else {
         log.info('sending group reaction message');
         promise = conversation.queueJob(
           'conversationQueue/sendReaction',
-          abortSignal => {
+          async abortSignal => {
             // Note: this will happen for all old jobs queued before 5.32.x
             if (isGroupV2(conversation.attributes) && !isNumber(revision)) {
               log.error('No revision provided, but conversation is GroupV2');
@@ -272,10 +267,11 @@ export async function sendReaction(
             const groupV2Info = conversation.getGroupV2Info({
               members: recipientServiceIdsWithoutMe,
             });
-            if (groupV2Info && isNumber(revision)) {
+            strictAssert(groupV2Info, 'Missing groupV2Info');
+            if (isNumber(revision)) {
               groupV2Info.revision = revision;
             }
-
+            const sendOptions = await getSendOptions(conversation.attributes);
             return sendToGroup({
               abortSignal,
               contentHint: ContentHint.Resendable,
@@ -338,8 +334,8 @@ export async function sendReaction(
       if (!ephemeralMessageForReactionSend.doNotSave) {
         const reactionMessage = ephemeralMessageForReactionSend;
 
-        await hydrateStoryContext(reactionMessage.id, message.attributes, {
-          shouldSave: false,
+        reactionMessage.set({
+          storyReplyContext: getStoryReplyContext(message.attributes),
         });
         await window.MessageCache.saveMessage(reactionMessage.attributes, {
           forceSave: true,
@@ -392,68 +388,6 @@ const setReactions = (
     message.set({ reactions: undefined });
   }
 };
-
-function getRecipients(
-  log: LoggerType,
-  reaction: Readonly<MessageReactionType>,
-  conversation: ConversationModel
-): {
-  allRecipientServiceIds: Array<ServiceIdString>;
-  recipientServiceIdsWithoutMe: Array<ServiceIdString>;
-  untrustedServiceIds: Array<ServiceIdString>;
-} {
-  const allRecipientServiceIds: Array<ServiceIdString> = [];
-  const recipientServiceIdsWithoutMe: Array<ServiceIdString> = [];
-  const untrustedServiceIds: Array<ServiceIdString> = [];
-
-  const currentConversationRecipients = conversation.getMemberConversationIds();
-
-  for (const id of reactionUtil.getUnsentConversationIds(reaction)) {
-    const recipient = window.ConversationController.get(id);
-    if (!recipient) {
-      continue;
-    }
-
-    const recipientIdentifier = recipient.getSendTarget();
-    const isRecipientMe = isMe(recipient.attributes);
-
-    if (
-      !recipientIdentifier ||
-      (!currentConversationRecipients.has(id) && !isRecipientMe)
-    ) {
-      continue;
-    }
-
-    if (recipient.isUntrusted()) {
-      const serviceId = recipient.getServiceId();
-      if (!serviceId) {
-        log.error(
-          `getRecipients: Untrusted conversation ${recipient.idForLogging()} missing serviceId.`
-        );
-        continue;
-      }
-      untrustedServiceIds.push(serviceId);
-      continue;
-    }
-    if (recipient.isUnregistered()) {
-      continue;
-    }
-    if (recipient.isBlocked()) {
-      continue;
-    }
-
-    allRecipientServiceIds.push(recipientIdentifier);
-    if (!isRecipientMe) {
-      recipientServiceIdsWithoutMe.push(recipientIdentifier);
-    }
-  }
-
-  return {
-    allRecipientServiceIds,
-    recipientServiceIdsWithoutMe,
-    untrustedServiceIds,
-  };
-}
 
 function markReactionFailed(
   message: MessageModel,

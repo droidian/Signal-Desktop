@@ -1,30 +1,34 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { assert } from 'chai';
-import Long from 'long';
 import * as sinon from 'sinon';
 import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
+import { emptyDir, ensureFile } from 'fs-extra';
 
-import { Backups } from '../../protobuf/index.std.js';
+import type { Backups } from '../../protobuf/index.std.ts';
 
 import {
   getFilePointerForAttachment,
   convertFilePointerToAttachment,
-} from '../../services/backups/util/filePointers.preload.js';
-import { IMAGE_PNG } from '../../types/MIME.std.js';
-import * as Bytes from '../../Bytes.std.js';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import { MASTER_KEY, MEDIA_ROOT_KEY } from './helpers.preload.js';
-import { generateKeys } from '../../AttachmentCrypto.node.js';
-import type { GetBackupCdnInfoType } from '../../services/backups/util/mediaId.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { isValidAttachmentKey } from '../../types/Crypto.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../services/backups/util/filePointers.preload.ts';
+import { IMAGE_PNG } from '../../types/MIME.std.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import { MASTER_KEY, MEDIA_ROOT_KEY } from './helpers.preload.ts';
+import { generateKeys } from '../../AttachmentCrypto.node.ts';
+import type { GetBackupCdnInfoType } from '../../services/backups/util/mediaId.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { isValidAttachmentKey } from '../../types/Crypto.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.ts';
+import { getAttachmentsPath } from '../../../app/attachments.node.ts';
+import { sha256 } from '../../Crypto.node.ts';
 
 describe('convertFilePointerToAttachment', () => {
   const commonFilePointerProps = {
+    $unknown: [],
     contentType: 'image/png',
     width: 100,
     height: 100,
@@ -33,6 +37,7 @@ describe('convertFilePointerToAttachment', () => {
     caption: 'caption',
     incrementalMac: Bytes.fromString('incrementalMac'),
     incrementalMacChunkSize: 1000,
+    locatorInfo: null,
   };
   const commonAttachmentProps = {
     contentType: IMAGE_PNG,
@@ -48,10 +53,11 @@ describe('convertFilePointerToAttachment', () => {
   describe('locatorInfo', () => {
     it('processes filepointer with empty locatorInfo', () => {
       const result = convertFilePointerToAttachment(
-        new Backups.FilePointer({
+        {
           ...commonFilePointerProps,
-          locatorInfo: {},
-        }),
+          locatorInfo: null,
+        },
+        { type: 'remote' },
         { _createName: () => 'downloadPath' }
       );
 
@@ -64,7 +70,8 @@ describe('convertFilePointerToAttachment', () => {
     });
     it('processes filepointer with missing locatorInfo', () => {
       const result = convertFilePointerToAttachment(
-        new Backups.FilePointer(commonFilePointerProps),
+        commonFilePointerProps,
+        { type: 'remote' },
         { _createName: () => 'downloadPath' }
       );
 
@@ -78,18 +85,23 @@ describe('convertFilePointerToAttachment', () => {
 
     it('processes locatorInfo with plaintextHash', () => {
       const result = convertFilePointerToAttachment(
-        new Backups.FilePointer({
+        {
           ...commonFilePointerProps,
           locatorInfo: {
+            $unknown: [],
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 42,
             size: 128,
-            transitTierUploadTimestamp: Long.fromNumber(12345),
+            transitTierUploadTimestamp: 12345n,
             key: Bytes.fromString('key'),
-            plaintextHash: Bytes.fromString('plaintextHash'),
+            integrityCheck: {
+              plaintextHash: Bytes.fromString('plaintextHash'),
+            },
             mediaTierCdnNumber: 43,
+            localKey: null,
           },
-        }),
+        },
+        { type: 'remote' },
         { _createName: () => 'downloadPath' }
       );
 
@@ -110,30 +122,35 @@ describe('convertFilePointerToAttachment', () => {
     });
     it('processes locatorInfo with localKey', () => {
       const result = convertFilePointerToAttachment(
-        new Backups.FilePointer({
+        {
           ...commonFilePointerProps,
           locatorInfo: {
+            $unknown: [],
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 42,
             size: 128,
-            transitTierUploadTimestamp: Long.fromNumber(12345),
+            transitTierUploadTimestamp: 12345n,
             key: Bytes.fromString('key'),
-            plaintextHash: Bytes.fromString('plaintextHash'),
+            integrityCheck: {
+              plaintextHash: Bytes.fromString('plaintextHash'),
+            },
             mediaTierCdnNumber: 43,
             localKey: Bytes.fromString('localKey'),
           },
-        }),
+        },
+        { type: 'local-encrypted', localBackupSnapshotDir: '/root/backups' },
         {
           _createName: () => 'downloadPath',
-          localBackupSnapshotDir: '/root/backups',
         }
       );
 
       const mediaName = Bytes.toHex(
-        Bytes.concatenate([
-          Bytes.fromString('plaintextHash'),
-          Bytes.fromString('key'),
-        ])
+        sha256(
+          Bytes.concatenate([
+            Bytes.fromString('plaintextHash'),
+            Bytes.fromString('localKey'),
+          ])
+        )
       );
       assert.deepStrictEqual(result, {
         ...commonAttachmentProps,
@@ -188,7 +205,7 @@ const defaultMediaName = Bytes.toHex(
   ])
 );
 
-const defaultFilePointer = new Backups.FilePointer({
+const defaultFilePointer: Backups.FilePointer.Params = {
   contentType: IMAGE_PNG,
   width: 100,
   height: 100,
@@ -197,9 +214,8 @@ const defaultFilePointer = new Backups.FilePointer({
   caption: 'caption',
   incrementalMac: Bytes.fromBase64('incrementalMac'),
   incrementalMacChunkSize: 1000,
-});
-const { FilePointer } = Backups;
-const { LocatorInfo } = FilePointer;
+  locatorInfo: null,
+};
 
 const notInBackupCdn: GetBackupCdnInfoType = async () => {
   return { isInBackupTier: false };
@@ -207,7 +223,7 @@ const notInBackupCdn: GetBackupCdnInfoType = async () => {
 describe('getFilePointerForAttachment', () => {
   let sandbox: sinon.SinonSandbox;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     sandbox = sinon.createSandbox();
     sandbox.stub(itemStorage, 'get').callsFake(key => {
       if (key === 'masterKey') {
@@ -218,16 +234,24 @@ describe('getFilePointerForAttachment', () => {
       }
       return undefined;
     });
+    await ensureFile(getAbsoluteAttachmentPath(defaultAttachment.path));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
+    await emptyDir(
+      getAttachmentsPath(window.SignalContext.config.userDataPath)
+    );
   });
 
   it('if missing key, generates a new one and removes transit info & digest', async () => {
     const { filePointer } = await getFilePointerForAttachment({
       attachment: { ...defaultAttachment, key: undefined },
-      backupLevel: BackupLevel.Paid,
+      backupOptions: {
+        type: 'remote',
+        level: BackupLevel.Paid,
+        abortSignal: new AbortController().signal,
+      },
       getBackupCdnInfo: notInBackupCdn,
       messageReceivedAt: 100,
     });
@@ -237,39 +261,51 @@ describe('getFilePointerForAttachment', () => {
     strictAssert(key, 'key exists');
     assert.isTrue(isValidAttachmentKey(Bytes.toBase64(key)));
 
-    assert.deepStrictEqual(
-      filePointer,
-      new FilePointer({
-        ...defaultFilePointer,
-        locatorInfo: new LocatorInfo({
-          size: 100,
+    assert.deepStrictEqual(filePointer, {
+      ...defaultFilePointer,
+      locatorInfo: {
+        size: 100,
+        integrityCheck: {
           plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
-          key: filePointer.locatorInfo?.key,
-        }),
-      })
-    );
+        },
+        key: filePointer.locatorInfo?.key ?? null,
+        transitCdnKey: null,
+        transitCdnNumber: null,
+        transitTierUploadTimestamp: null,
+        mediaTierCdnNumber: null,
+        localKey: null,
+      },
+    });
   });
 
   it('includes transit cdn info', async () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
         attachment: { ...defaultAttachment, plaintextHash: undefined },
-        backupLevel: BackupLevel.Paid,
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Paid,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            encryptedDigest: Bytes.fromBase64(defaultAttachment.digest),
+          locatorInfo: {
+            integrityCheck: {
+              encryptedDigest: Bytes.fromBase64(defaultAttachment.digest),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 2,
-            transitTierUploadTimestamp: Long.fromNumber(1234),
-          }),
-        }),
+            transitTierUploadTimestamp: 1234n,
+            mediaTierCdnNumber: null,
+            localKey: null,
+          },
+        },
         backupJob: undefined,
       }
     );
@@ -278,23 +314,30 @@ describe('getFilePointerForAttachment', () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
         attachment: defaultAttachment,
-        backupLevel: BackupLevel.Free,
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Free,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+          locatorInfo: {
+            integrityCheck: {
+              plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 2,
-            transitTierUploadTimestamp: Long.fromNumber(1234),
-            mediaTierCdnNumber: 42,
-          }),
-        }),
+            transitTierUploadTimestamp: 1234n,
+            mediaTierCdnNumber: null,
+            localKey: null,
+          },
+        },
         backupJob: undefined,
       }
     );
@@ -304,23 +347,30 @@ describe('getFilePointerForAttachment', () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
         attachment: { ...defaultAttachment, digest: undefined },
-        backupLevel: BackupLevel.Free,
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Free,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+          locatorInfo: {
+            integrityCheck: {
+              plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 2,
-            transitTierUploadTimestamp: Long.fromNumber(1234),
-            mediaTierCdnNumber: 42,
-          }),
-        }),
+            transitTierUploadTimestamp: 1234n,
+            mediaTierCdnNumber: null,
+            localKey: null,
+          },
+        },
         backupJob: undefined,
       }
     );
@@ -330,20 +380,30 @@ describe('getFilePointerForAttachment', () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
         attachment: { ...defaultAttachment, cdnKey: undefined },
-        backupLevel: BackupLevel.Free,
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Free,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+          locatorInfo: {
+            integrityCheck: {
+              plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
-            mediaTierCdnNumber: 42,
-          }),
-        }),
+            transitCdnKey: null,
+            transitCdnNumber: null,
+            transitTierUploadTimestamp: null,
+            mediaTierCdnNumber: null,
+            localKey: null,
+          },
+        },
         backupJob: undefined,
       }
     );
@@ -352,23 +412,30 @@ describe('getFilePointerForAttachment', () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
         attachment: defaultAttachment,
-        backupLevel: BackupLevel.Paid,
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Paid,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+          locatorInfo: {
+            integrityCheck: {
+              plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 2,
-            transitTierUploadTimestamp: Long.fromNumber(1234),
-            mediaTierCdnNumber: 42,
-          }),
-        }),
+            transitTierUploadTimestamp: 1234n,
+            mediaTierCdnNumber: null,
+            localKey: null,
+          },
+        },
         backupJob: {
           data: {
             contentType: defaultAttachment.contentType,
@@ -390,38 +457,120 @@ describe('getFilePointerForAttachment', () => {
       }
     );
   });
-  it('if local backup includes local backup job', async () => {
+  it('does not include backup job if file does not exist', async () => {
     assert.deepEqual(
       await getFilePointerForAttachment({
-        attachment: defaultAttachment,
-        backupLevel: BackupLevel.Paid,
+        attachment: { ...defaultAttachment, path: 'not/here' },
+        backupOptions: {
+          type: 'remote',
+          level: BackupLevel.Paid,
+          abortSignal: new AbortController().signal,
+        },
         getBackupCdnInfo: notInBackupCdn,
         messageReceivedAt: 100,
-        isLocalBackup: true,
       }),
       {
-        filePointer: new FilePointer({
+        filePointer: {
           ...defaultFilePointer,
-          locatorInfo: new LocatorInfo({
-            plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+          locatorInfo: {
+            integrityCheck: {
+              plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+            },
             key: Bytes.fromBase64(defaultAttachment.key),
             size: 100,
             transitCdnKey: 'cdnKey',
             transitCdnNumber: 2,
-            transitTierUploadTimestamp: Long.fromNumber(1234),
-            mediaTierCdnNumber: 42,
-          }),
-        }),
-        backupJob: {
-          data: {
-            localKey: defaultAttachment.localKey,
-            path: defaultAttachment.path,
-            size: 100,
+            transitTierUploadTimestamp: 1234n,
+            mediaTierCdnNumber: null,
+            localKey: null,
           },
-          mediaName: defaultMediaName,
-          type: 'local',
         },
+        backupJob: undefined,
       }
     );
+  });
+  describe('local backups', () => {
+    const defaultLocalMediaName = Bytes.toHex(
+      sha256(
+        Bytes.concatenate([
+          Bytes.fromHex(defaultAttachment.plaintextHash),
+          Bytes.fromBase64(defaultAttachment.localKey),
+        ])
+      )
+    );
+
+    it('generates local backup locatorInfo and a local backup job', async () => {
+      assert.deepEqual(
+        await getFilePointerForAttachment({
+          attachment: defaultAttachment,
+          backupOptions: {
+            type: 'local-encrypted',
+            abortSignal: new AbortController().signal,
+          },
+          getBackupCdnInfo: notInBackupCdn,
+          messageReceivedAt: 100,
+        }),
+        {
+          filePointer: {
+            ...defaultFilePointer,
+            locatorInfo: {
+              integrityCheck: {
+                plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+              },
+              localKey: Bytes.fromBase64(defaultAttachment.localKey),
+              key: Bytes.fromBase64(defaultAttachment.key),
+              size: 100,
+              transitCdnKey: 'cdnKey',
+              transitCdnNumber: 2,
+              transitTierUploadTimestamp: 1234n,
+              mediaTierCdnNumber: null,
+            },
+          },
+          backupJob: {
+            isPlaintextExport: false,
+            data: {
+              contentType: defaultAttachment.contentType,
+              fileName: defaultAttachment.fileName,
+              localKey: defaultAttachment.localKey,
+              path: defaultAttachment.path,
+              size: defaultAttachment.size,
+            },
+            mediaName: defaultLocalMediaName,
+            type: 'local',
+          },
+        }
+      );
+    });
+    it('if file does not exist, does not include localKey or backup job', async () => {
+      assert.deepEqual(
+        await getFilePointerForAttachment({
+          attachment: { ...defaultAttachment, path: 'no/file/here' },
+          backupOptions: {
+            type: 'local-encrypted',
+            abortSignal: new AbortController().signal,
+          },
+          getBackupCdnInfo: notInBackupCdn,
+          messageReceivedAt: 100,
+        }),
+        {
+          filePointer: {
+            ...defaultFilePointer,
+            locatorInfo: {
+              integrityCheck: {
+                plaintextHash: Bytes.fromHex(defaultAttachment.plaintextHash),
+              },
+              key: Bytes.fromBase64(defaultAttachment.key),
+              size: 100,
+              transitCdnKey: 'cdnKey',
+              transitCdnNumber: 2,
+              transitTierUploadTimestamp: 1234n,
+              mediaTierCdnNumber: null,
+              localKey: null,
+            },
+          },
+          backupJob: undefined,
+        }
+      );
+    });
   });
 });

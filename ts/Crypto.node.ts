@@ -1,25 +1,24 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import Long from 'long';
 import lodash from 'lodash';
 import { Aci, Pni, hkdf } from '@signalapp/libsignal-client';
 import type { PublicKey, PrivateKey } from '@signalapp/libsignal-client';
 import { AccountEntropyPool } from '@signalapp/libsignal-client/dist/AccountKeys.js';
 
-import * as Bytes from './Bytes.std.js';
-import { Crypto } from './context/Crypto.node.js';
-import { calculateAgreement, generateKeyPair } from './Curve.node.js';
-import { HashType, CipherType } from './types/Crypto.std.js';
-import { AVATAR_COLOR_COUNT, AvatarColors } from './types/Colors.std.js';
-import { ProfileDecryptError } from './types/errors.std.js';
-import { getBytesSubarray } from './util/uuidToBytes.std.js';
-import { logPadSize } from './util/logPadSize.std.js';
-import { Environment, getEnvironment } from './environment.std.js';
-import { toWebSafeBase64 } from './util/webSafeBase64.std.js';
+import * as Bytes from './Bytes.std.ts';
+import { Crypto } from './context/Crypto.node.ts';
+import { calculateAgreement, generateKeyPair } from './Curve.node.ts';
+import { HashType, CipherType } from './types/Crypto.std.ts';
+import { AVATAR_COLOR_COUNT, AvatarColors } from './types/Colors.std.ts';
+import { ProfileDecryptError } from './types/errors.std.ts';
+import { getBytesSubarray } from './util/uuidToBytes.std.ts';
+import { logPadSize } from './util/logPadSize.std.ts';
+import { Environment, getEnvironment } from './environment.std.ts';
+import { toWebSafeBase64 } from './util/webSafeBase64.std.ts';
 
-import type { AciString, PniString } from './types/ServiceId.std.js';
-import type { AvatarColorType } from './types/Colors.std.js';
+import type { AciString, PniString } from './types/ServiceId.std.ts';
+import type { AvatarColorType } from './types/Colors.std.ts';
 
 const { sample } = lodash;
 
@@ -37,8 +36,8 @@ export const PaddedLengths = {
 };
 
 export type EncryptedAttachment = {
-  ciphertext: Uint8Array;
-  digest: Uint8Array;
+  ciphertext: Uint8Array<ArrayBuffer>;
+  digest: Uint8Array<ArrayBuffer>;
   plaintextHash: string;
 };
 
@@ -46,7 +45,9 @@ export function generateRegistrationId(): number {
   return randomInt(1, 16383);
 }
 
-export function deriveStickerPackKey(packKey: Uint8Array): Uint8Array {
+export function deriveStickerPackKey(
+  packKey: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const salt = getZeroes(32);
   const info = Bytes.fromString('Sticker Pack');
 
@@ -56,10 +57,10 @@ export function deriveStickerPackKey(packKey: Uint8Array): Uint8Array {
 }
 
 export function deriveSecrets(
-  input: Uint8Array,
-  salt: Uint8Array,
-  info: Uint8Array
-): [Uint8Array, Uint8Array, Uint8Array] {
+  input: Uint8Array<ArrayBuffer>,
+  salt: Uint8Array<ArrayBuffer>,
+  info: Uint8Array<ArrayBuffer>
+): [Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>] {
   const output = hkdf(3 * 32, input, info, salt);
   return [
     output.subarray(0, 32),
@@ -68,7 +69,9 @@ export function deriveSecrets(
   ];
 }
 
-export function deriveMasterKeyFromGroupV1(groupV1Id: Uint8Array): Uint8Array {
+export function deriveMasterKeyFromGroupV1(
+  groupV1Id: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const salt = getZeroes(32);
   const info = Bytes.fromString('GV2 Migration');
 
@@ -97,7 +100,7 @@ export function hashProfileKey(
   return webSafe.slice(-3);
 }
 
-export function computeHash(data: Uint8Array): string {
+export function computeHash(data: Uint8Array<ArrayBuffer>): string {
   return Bytes.toBase64(hash(HashType.size512, data));
 }
 
@@ -105,8 +108,8 @@ export function computeHash(data: Uint8Array): string {
 
 export type EncryptedDeviceName = {
   ephemeralPublic: PublicKey;
-  syntheticIv: Uint8Array;
-  ciphertext: Uint8Array;
+  syntheticIv: Uint8Array<ArrayBuffer>;
+  ciphertext: Uint8Array<ArrayBuffer>;
 };
 
 export function encryptDeviceName(
@@ -158,18 +161,77 @@ export function decryptDeviceName(
   return Bytes.toString(plaintext);
 }
 
-export function deriveMasterKey(accountEntropyPool: string): Uint8Array {
+// For testing
+export function encryptDeviceCreatedAt(
+  createdAt: number,
+  deviceId: number,
+  registrationId: number,
+  identityPublic: PublicKey
+): Uint8Array<ArrayBuffer> {
+  const createdAtBuffer = new ArrayBuffer(8);
+  const dataView = new DataView(createdAtBuffer);
+  dataView.setBigUint64(0, BigInt(createdAt), false);
+  const createdAtBytes = new Uint8Array(createdAtBuffer);
+
+  const associatedData = getAssociatedDataForDeviceCreatedAt(
+    deviceId,
+    registrationId
+  );
+
+  return identityPublic.seal(createdAtBytes, 'deviceCreatedAt', associatedData);
+}
+
+// createdAtCiphertext is an Int64, encrypted using the identity key
+// PrivateKey with 5 bytes of associated data (deviceId || registrationId).
+export function decryptDeviceCreatedAt(
+  createdAtCiphertext: Uint8Array<ArrayBuffer>,
+  deviceId: number,
+  registrationId: number,
+  identityPrivate: PrivateKey
+): number {
+  const associatedData = getAssociatedDataForDeviceCreatedAt(
+    deviceId,
+    registrationId
+  );
+  const createdAtData = identityPrivate.open(
+    createdAtCiphertext,
+    'deviceCreatedAt',
+    associatedData
+  );
+  return Number(Bytes.readBigUint64BE(createdAtData));
+}
+
+function getAssociatedDataForDeviceCreatedAt(
+  deviceId: number,
+  registrationId: number
+): Uint8Array<ArrayBuffer> {
+  if (deviceId > 255) {
+    throw new Error('deviceId above 255, must be 1 byte');
+  }
+
+  const associatedDataBuffer = new ArrayBuffer(5);
+  const dataView = new DataView(associatedDataBuffer);
+  dataView.setUint8(0, deviceId);
+  dataView.setUint32(1, registrationId, false);
+  return new Uint8Array(associatedDataBuffer);
+}
+
+export function deriveMasterKey(
+  accountEntropyPool: string
+): Uint8Array<ArrayBuffer> {
   return AccountEntropyPool.deriveSvrKey(accountEntropyPool);
 }
 
-export function deriveStorageServiceKey(masterKey: Uint8Array): Uint8Array {
+export function deriveStorageServiceKey(
+  masterKey: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return hmacSha256(masterKey, Bytes.fromString('Storage Service Encryption'));
 }
 
 export function deriveStorageManifestKey(
-  storageServiceKey: Uint8Array,
-  version: Long = Long.fromNumber(0)
-): Uint8Array {
+  storageServiceKey: Uint8Array<ArrayBuffer>,
+  version = 0n
+): Uint8Array<ArrayBuffer> {
   return hmacSha256(storageServiceKey, Bytes.fromString(`Manifest_${version}`));
 }
 
@@ -178,16 +240,16 @@ const STORAGE_SERVICE_ITEM_KEY_INFO_PREFIX =
 const STORAGE_SERVICE_ITEM_KEY_LEN = 32;
 
 export type DeriveStorageItemKeyOptionsType = Readonly<{
-  storageServiceKey: Uint8Array;
-  recordIkm: Uint8Array | undefined;
-  key: Uint8Array;
+  storageServiceKey: Uint8Array<ArrayBuffer>;
+  recordIkm: Uint8Array<ArrayBuffer> | undefined;
+  key: Uint8Array<ArrayBuffer>;
 }>;
 
 export function deriveStorageItemKey({
   storageServiceKey,
   recordIkm,
   key,
-}: DeriveStorageItemKeyOptionsType): Uint8Array {
+}: DeriveStorageItemKeyOptionsType): Uint8Array<ArrayBuffer> {
   if (recordIkm == null) {
     const itemID = Bytes.toBase64(key);
     return hmacSha256(storageServiceKey, Bytes.fromString(`Item_${itemID}`));
@@ -204,15 +266,17 @@ export function deriveStorageItemKey({
   );
 }
 
-export function getAccessKeyVerifier(accessKey: Uint8Array): Uint8Array {
+export function getAccessKeyVerifier(
+  accessKey: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const plaintext = getZeroes(32);
 
   return hmacSha256(accessKey, plaintext);
 }
 
 export function verifyAccessKey(
-  accessKey: Uint8Array,
-  theirVerifier: Uint8Array
+  accessKey: Uint8Array<ArrayBuffer>,
+  theirVerifier: Uint8Array<ArrayBuffer>
 ): boolean {
   const ourVerifier = getAccessKeyVerifier(accessKey);
 
@@ -227,10 +291,11 @@ const IV_LENGTH = 16;
 const NONCE_LENGTH = 16;
 const SYMMETRIC_MAC_LENGTH = 16;
 
+/** @testexport */
 export function encryptSymmetric(
-  key: Uint8Array,
-  plaintext: Uint8Array
-): Uint8Array {
+  key: Uint8Array<ArrayBuffer>,
+  plaintext: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const iv = getZeroes(IV_LENGTH);
   const nonce = getRandomBytes(NONCE_LENGTH);
 
@@ -246,10 +311,11 @@ export function encryptSymmetric(
   return Bytes.concatenate([nonce, ciphertext, mac]);
 }
 
+/** @testexport */
 export function decryptSymmetric(
-  key: Uint8Array,
-  data: Uint8Array
-): Uint8Array {
+  key: Uint8Array<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const iv = getZeroes(IV_LENGTH);
 
   const nonce = getFirstBytes(data, NONCE_LENGTH);
@@ -282,7 +348,10 @@ export function decryptSymmetric(
 
 // Encryption
 
-export function hmacSha256(key: Uint8Array, plaintext: Uint8Array): Uint8Array {
+export function hmacSha256(
+  key: Uint8Array<ArrayBuffer>,
+  plaintext: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return sign(key, plaintext);
 }
 
@@ -290,9 +359,9 @@ export function hmacSha256(key: Uint8Array, plaintext: Uint8Array): Uint8Array {
 //   to be longer than the passed-in length. This allows easy comparisons against
 //   arbitrary MAC lengths.
 export function verifyHmacSha256(
-  plaintext: Uint8Array,
-  key: Uint8Array,
-  theirMac: Uint8Array,
+  plaintext: Uint8Array<ArrayBuffer>,
+  key: Uint8Array<ArrayBuffer>,
+  theirMac: Uint8Array<ArrayBuffer>,
   length: number
 ): void {
   const ourMac = hmacSha256(key, plaintext);
@@ -303,19 +372,19 @@ export function verifyHmacSha256(
   let result = 0;
 
   for (let i = 0; i < theirMac.byteLength; i += 1) {
-    // eslint-disable-next-line no-bitwise
-    result |= ourMac[i] ^ theirMac[i];
+    // oxlint-disable-next-line no-bitwise, typescript/no-non-null-assertion
+    result |= ourMac[i]! ^ theirMac[i]!;
   }
   if (result !== 0) {
     throw new Error('Bad MAC');
   }
 }
 
-export function encryptAes256CbcPkcsPadding(
-  key: Uint8Array,
-  plaintext: Uint8Array,
-  iv: Uint8Array
-): Uint8Array {
+function encryptAes256CbcPkcsPadding(
+  key: Uint8Array<ArrayBuffer>,
+  plaintext: Uint8Array<ArrayBuffer>,
+  iv: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return encrypt(CipherType.AES256CBC, {
     key,
     plaintext,
@@ -324,10 +393,10 @@ export function encryptAes256CbcPkcsPadding(
 }
 
 export function decryptAes256CbcPkcsPadding(
-  key: Uint8Array,
-  ciphertext: Uint8Array,
-  iv: Uint8Array
-): Uint8Array {
+  key: Uint8Array<ArrayBuffer>,
+  ciphertext: Uint8Array<ArrayBuffer>,
+  iv: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return decrypt(CipherType.AES256CBC, {
     key,
     ciphertext,
@@ -336,10 +405,10 @@ export function decryptAes256CbcPkcsPadding(
 }
 
 export function encryptAesCtr(
-  key: Uint8Array,
-  plaintext: Uint8Array,
-  counter: Uint8Array
-): Uint8Array {
+  key: Uint8Array<ArrayBuffer>,
+  plaintext: Uint8Array<ArrayBuffer>,
+  counter: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return encrypt(CipherType.AES256CTR, {
     key,
     plaintext,
@@ -348,10 +417,10 @@ export function encryptAesCtr(
 }
 
 export function decryptAesCtr(
-  key: Uint8Array,
-  ciphertext: Uint8Array,
-  counter: Uint8Array
-): Uint8Array {
+  key: Uint8Array<ArrayBuffer>,
+  ciphertext: Uint8Array<ArrayBuffer>,
+  counter: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return decrypt(CipherType.AES256CTR, {
     key,
     ciphertext,
@@ -359,12 +428,12 @@ export function decryptAesCtr(
   });
 }
 
-export function encryptAesGcm(
-  key: Uint8Array,
-  iv: Uint8Array,
-  plaintext: Uint8Array,
-  aad?: Uint8Array
-): Uint8Array {
+function encryptAesGcm(
+  key: Uint8Array<ArrayBuffer>,
+  iv: Uint8Array<ArrayBuffer>,
+  plaintext: Uint8Array<ArrayBuffer>,
+  aad?: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return encrypt(CipherType.AES256GCM, {
     key,
     plaintext,
@@ -373,11 +442,11 @@ export function encryptAesGcm(
   });
 }
 
-export function decryptAesGcm(
-  key: Uint8Array,
-  iv: Uint8Array,
-  ciphertext: Uint8Array
-): Uint8Array {
+function decryptAesGcm(
+  key: Uint8Array<ArrayBuffer>,
+  iv: Uint8Array<ArrayBuffer>,
+  ciphertext: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return decrypt(CipherType.AES256GCM, {
     key,
     ciphertext,
@@ -387,34 +456,26 @@ export function decryptAesGcm(
 
 // Hashing
 
-export function sha256(data: Uint8Array): Uint8Array {
+export function sha256(data: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
   return hash(HashType.size256, data);
 }
 
 // Utility
 
-export function getZeroes(n: number): Uint8Array {
+function getZeroes(n: number): Uint8Array<ArrayBuffer> {
   return new Uint8Array(n);
 }
 
-export function highBitsToInt(byte: number): number {
-  // eslint-disable-next-line no-bitwise
-  return (byte & 0xff) >> 4;
-}
-
-export function intsToByteHighAndLow(
-  highValue: number,
-  lowValue: number
-): number {
-  // eslint-disable-next-line no-bitwise
-  return ((highValue << 4) | lowValue) & 0xff;
-}
-
-export function getFirstBytes(data: Uint8Array, n: number): Uint8Array {
+function getFirstBytes(
+  data: Uint8Array<ArrayBuffer>,
+  n: number
+): Uint8Array<ArrayBuffer> {
   return data.subarray(0, n);
 }
 
-export function trimForDisplay(padded: Uint8Array): Uint8Array {
+export function trimForDisplay(
+  padded: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   let paddingEnd = 0;
   for (paddingEnd; paddingEnd < padded.length; paddingEnd += 1) {
     if (padded[paddingEnd] === 0x00) {
@@ -424,12 +485,15 @@ export function trimForDisplay(padded: Uint8Array): Uint8Array {
   return padded.subarray(0, paddingEnd);
 }
 
-function verifyDigest(data: Uint8Array, theirDigest: Uint8Array): void {
+function verifyDigest(
+  data: Uint8Array<ArrayBuffer>,
+  theirDigest: Uint8Array<ArrayBuffer>
+): void {
   const ourDigest = sha256(data);
   let result = 0;
   for (let i = 0; i < theirDigest.byteLength; i += 1) {
-    // eslint-disable-next-line no-bitwise
-    result |= ourDigest[i] ^ theirDigest[i];
+    // oxlint-disable-next-line no-bitwise, typescript/no-non-null-assertion
+    result |= ourDigest[i]! ^ theirDigest[i]!;
   }
   if (result !== 0) {
     throw new Error('Bad digest');
@@ -437,10 +501,10 @@ function verifyDigest(data: Uint8Array, theirDigest: Uint8Array): void {
 }
 
 export function decryptAttachmentV1(
-  encryptedBin: Uint8Array,
-  keys: Uint8Array,
-  theirDigest?: Uint8Array
-): Uint8Array {
+  encryptedBin: Uint8Array<ArrayBuffer>,
+  keys: Uint8Array<ArrayBuffer>,
+  theirDigest?: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   if (keys.byteLength !== 64) {
     throw new Error('Got invalid length attachment keys');
   }
@@ -476,9 +540,9 @@ export function encryptAttachment({
   keys,
   dangerousTestOnlyIv,
 }: {
-  plaintext: Readonly<Uint8Array>;
-  keys: Readonly<Uint8Array>;
-  dangerousTestOnlyIv?: Readonly<Uint8Array>;
+  plaintext: Readonly<Uint8Array<ArrayBuffer>>;
+  keys: Readonly<Uint8Array<ArrayBuffer>>;
+  dangerousTestOnlyIv?: Readonly<Uint8Array<ArrayBuffer>>;
 }): Omit<EncryptedAttachment, 'plaintextHash'> {
   const logId = 'encryptAttachment';
   if (!(plaintext instanceof Uint8Array)) {
@@ -514,14 +578,15 @@ export function encryptAttachment({
   };
 }
 
+/** @testexport */
 export function padAndEncryptAttachment({
   plaintext,
   keys,
   dangerousTestOnlyIv,
 }: {
-  plaintext: Readonly<Uint8Array>;
-  keys: Readonly<Uint8Array>;
-  dangerousTestOnlyIv?: Readonly<Uint8Array>;
+  plaintext: Readonly<Uint8Array<ArrayBuffer>>;
+  keys: Readonly<Uint8Array<ArrayBuffer>>;
+  dangerousTestOnlyIv?: Readonly<Uint8Array<ArrayBuffer>>;
 }): EncryptedAttachment {
   const size = plaintext.byteLength;
   const paddedSize = logPadSize(size);
@@ -540,7 +605,10 @@ export function padAndEncryptAttachment({
   };
 }
 
-export function encryptProfile(data: Uint8Array, key: Uint8Array): Uint8Array {
+export function encryptProfile(
+  data: Uint8Array<ArrayBuffer>,
+  key: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   const iv = getRandomBytes(PROFILE_IV_LENGTH);
   if (key.byteLength !== PROFILE_KEY_LENGTH) {
     throw new Error('Got invalid length profile key');
@@ -552,7 +620,10 @@ export function encryptProfile(data: Uint8Array, key: Uint8Array): Uint8Array {
   return Bytes.concatenate([iv, ciphertext]);
 }
 
-export function decryptProfile(data: Uint8Array, key: Uint8Array): Uint8Array {
+export function decryptProfile(
+  data: Uint8Array<ArrayBuffer>,
+  key: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   if (data.byteLength < 12 + 16 + 1) {
     throw new Error(`Got too short input: ${data.byteLength}`);
   }
@@ -576,10 +647,10 @@ export function decryptProfile(data: Uint8Array, key: Uint8Array): Uint8Array {
 }
 
 export function encryptProfileItemWithPadding(
-  item: Uint8Array,
-  profileKey: Uint8Array,
+  item: Uint8Array<ArrayBuffer>,
+  profileKey: Uint8Array<ArrayBuffer>,
   paddedLengths: (typeof PaddedLengths)[keyof typeof PaddedLengths]
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const paddedLength = paddedLengths.find(
     (length: number) => item.byteLength <= length
   );
@@ -593,8 +664,8 @@ export function encryptProfileItemWithPadding(
 
 export function decryptProfileName(
   encryptedProfileName: string,
-  key: Uint8Array
-): { given: Uint8Array; family: Uint8Array | null } {
+  key: Uint8Array<ArrayBuffer>
+): { given: Uint8Array<ArrayBuffer>; family: Uint8Array<ArrayBuffer> | null } {
   const data = Bytes.fromBase64(encryptedProfileName);
   const padded = decryptProfile(data, key);
 
@@ -627,23 +698,29 @@ export function decryptProfileName(
 
 const crypto = globalThis.window?.SignalContext.crypto || new Crypto();
 
-export function sign(key: Uint8Array, data: Uint8Array): Uint8Array {
+export function sign(
+  key: Uint8Array<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return crypto.sign(key, data);
 }
 
-export function hash(type: HashType, data: Uint8Array): Uint8Array {
+export function hash(
+  type: HashType,
+  data: Uint8Array<ArrayBuffer>
+): Uint8Array<ArrayBuffer> {
   return crypto.hash(type, data);
 }
 
 export function encrypt(
   ...args: Parameters<typeof crypto.encrypt>
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   return crypto.encrypt(...args);
 }
 
 export function decrypt(
   ...args: Parameters<typeof crypto.decrypt>
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   return crypto.decrypt(...args);
 }
 
@@ -654,13 +731,13 @@ export function randomInt(min: number, max: number): number {
   return crypto.randomInt(min, max + 1);
 }
 
-export function getRandomBytes(size: number): Uint8Array {
+export function getRandomBytes(size: number): Uint8Array<ArrayBuffer> {
   return crypto.getRandomBytes(size);
 }
 
 export function constantTimeEqual(
-  left: Uint8Array,
-  right: Uint8Array
+  left: Uint8Array<ArrayBuffer>,
+  right: Uint8Array<ArrayBuffer>
 ): boolean {
   return crypto.constantTimeEqual(left, right);
 }
@@ -676,7 +753,7 @@ export function getIdentifierHash({
   pni: PniString | undefined;
   groupId: string | undefined;
 }): number | null {
-  let identifier: Uint8Array;
+  let identifier: Uint8Array<ArrayBuffer>;
   if (aci != null) {
     identifier = Aci.parseFromServiceIdString(aci).getServiceIdBinary();
   } else if (e164 != null) {
@@ -690,7 +767,8 @@ export function getIdentifierHash({
   }
 
   const digest = hash(HashType.size256, identifier);
-  return digest[0];
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return digest[0]!;
 }
 
 export function generateAvatarColor({
@@ -707,8 +785,10 @@ export function generateAvatarColor({
   const hashValue = getIdentifierHash({ aci, e164, pni, groupId });
 
   if (hashValue == null) {
-    return sample(AvatarColors) || AvatarColors[0];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    return sample(AvatarColors) || AvatarColors[0]!;
   }
 
-  return AvatarColors[hashValue % AVATAR_COLOR_COUNT];
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return AvatarColors[hashValue % AVATAR_COLOR_COUNT]!;
 }

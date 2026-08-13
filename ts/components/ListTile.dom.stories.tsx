@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
-import { ListTile } from './ListTile.dom.js';
-import type { Props } from './ListTile.dom.js';
-import { CircleCheckbox } from './CircleCheckbox.dom.js';
-import { UserText } from './UserText.dom.js';
+import { ListTile } from './ListTile.dom.tsx';
+import type { Props } from './ListTile.dom.tsx';
+import { CircleCheckbox } from './CircleCheckbox.dom.tsx';
+import { UserText } from './UserText.dom.tsx';
 
 export default {
   title: 'Components/ListTile',
@@ -16,8 +15,8 @@ export default {
 const lorem =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam feugiat quam vitae semper facilisis. Praesent eu efficitur dui. Donec semper mattis nisl non hendrerit.';
 
+// oxlint-disable-next-line react/display-name
 function TemplateList(width: number): StoryFn<Props> {
-  // eslint-disable-next-line react/display-name
   return args => {
     return (
       <div

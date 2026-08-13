@@ -1,34 +1,35 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {
+import {
   useCallback,
   useMemo,
   type FocusEvent,
   type ReactNode,
+  type JSX,
 } from 'react';
 import {
   ChatFolderType,
   type ChatFolder,
   type ChatFolderId,
-} from '../../types/ChatFolder.std.js';
-import type { LocalizerType } from '../../types/I18N.std.js';
-import { ExperimentalAxoSegmentedControl } from '../../axo/AxoSegmentedControl.dom.js';
-import { tw } from '../../axo/tw.dom.js';
+} from '../../types/ChatFolder.std.ts';
+import type { LocalizerType } from '../../types/I18N.std.ts';
+import { ExperimentalAxoSegmentedControl } from '../../axo/AxoSegmentedControl.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
 import type {
   AllChatFoldersUnreadStats,
   UnreadStats,
-} from '../../util/countUnreadStats.std.js';
-import { WidthBreakpoint } from '../_util.std.js';
-import { AxoSelect } from '../../axo/AxoSelect.dom.js';
-import { AxoContextMenu } from '../../axo/AxoContextMenu.dom.js';
-import { getMuteValuesOptions } from '../../util/getMuteOptions.std.js';
+} from '../../util/countUnreadStats.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+import { AxoSelect } from '../../axo/AxoSelect.dom.tsx';
+import { AxoContextMenu } from '../../axo/AxoContextMenu.dom.tsx';
+import { getMuteValuesOptions } from '../../util/getMuteOptions.std.ts';
 import type {
   AllChatFoldersMutedStats,
   MutedStats,
-} from '../../util/countMutedStats.std.js';
-import type { AxoSymbol } from '../../axo/AxoSymbol.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.js';
+} from '../../util/countMutedStats.std.ts';
+import type { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.ts';
 
 export type LeftPaneChatFoldersProps = Readonly<{
   i18n: LocalizerType;
@@ -43,9 +44,7 @@ export type LeftPaneChatFoldersProps = Readonly<{
   onChatFolderOpenSettings: (chatFolderId: ChatFolderId) => void;
 }>;
 
-function getBadgeValue(
-  unreadStats: UnreadStats | null
-): ExperimentalAxoSegmentedControl.ExperimentalItemBadgeProps['value'] | null {
+function getBadgeValue(unreadStats: UnreadStats | null): number | null {
   if (unreadStats == null) {
     return null;
   }
@@ -85,6 +84,9 @@ function getChatFolderIconName(
   return chatFolder.folderType === ChatFolderType.ALL ? 'message' : 'folder';
 }
 
+// Needed to conditionally apply margin after network warning/update available
+const LEFT_PANE_CHAT_FOLDERS_CLASS_NAME = 'module-left-pane__chatFolders';
+
 export function LeftPaneChatFolders(
   props: LeftPaneChatFoldersProps
 ): JSX.Element | null {
@@ -116,13 +118,13 @@ export function LeftPaneChatFolders(
 
   if (props.navSidebarWidthBreakpoint === WidthBreakpoint.Narrow) {
     return (
-      <div className={tw('px-2')}>
+      <div className={tw(LEFT_PANE_CHAT_FOLDERS_CLASS_NAME, 'px-2')}>
         <AxoSelect.Root
           value={props.selectedChatFolder?.id ?? null}
           onValueChange={handleValueChange}
         >
           <AxoSelect.Trigger
-            variant="floating"
+            variant="elevated"
             width="full"
             placeholder=""
             chevron="on-hover"
@@ -149,7 +151,7 @@ export function LeftPaneChatFolders(
   return (
     <div
       className={tw(
-        'scroll-px-[20%] overflow-x-auto overflow-y-clip px-4 py-2 [scrollbar-width:none]'
+        'scroll-px-[20%] scrollbar-width-none overflow-x-auto overflow-y-clip px-4 py-2'
       )}
       onFocus={handleFocus}
     >
@@ -206,16 +208,14 @@ function ChatFolderSelectItem(props: {
         {getChatFolderLabel(i18n, props.chatFolder, true)}
       </AxoSelect.ItemText>
       {badgeValue != null && (
-        <AxoSelect.ExperimentalItemBadge
+        <AxoSelect.ItemBadge
+          variant="primary"
           value={badgeValue}
           max={UNREAD_BADGE_MAX_COUNT}
-          maxDisplay={i18n(
-            'icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount',
-            {
-              maxCount: UNREAD_BADGE_MAX_COUNT,
-            }
+          label={i18n(
+            'icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel',
+            { count: badgeValue }
           )}
-          aria-label={null}
         />
       )}
     </AxoSelect.Item>
@@ -252,14 +252,14 @@ function ChatFolderSegmentedControlItem(props: {
           {getChatFolderLabel(i18n, props.chatFolder, false)}
         </ExperimentalAxoSegmentedControl.ItemText>
         {badgeValue != null && (
-          <ExperimentalAxoSegmentedControl.ExperimentalItemBadge
+          <ExperimentalAxoSegmentedControl.ItemBadge
+            variant="primary"
             value={badgeValue}
             max={UNREAD_BADGE_MAX_COUNT}
-            maxDisplay={i18n(
-              'icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount',
-              { maxCount: UNREAD_BADGE_MAX_COUNT }
+            label={i18n(
+              'icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel',
+              { count: badgeValue }
             )}
-            aria-label={null}
           />
         )}
       </ExperimentalAxoSegmentedControl.Item>

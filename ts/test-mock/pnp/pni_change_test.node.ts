@@ -7,16 +7,16 @@ import { ServiceIdKind, StorageState, Proto } from '@signalapp/mock-server';
 import type { PrimaryDevice } from '@signalapp/mock-server';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { generatePni } from '../../types/ServiceId.std.js';
-import { toPniObject } from '../../util/ServiceId.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { toPniObject } from '../../util/ServiceId.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 import {
   expectSystemMessages,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers.node.js';
+} from '../helpers.node.ts';
+import { generatePni } from '../../test-helpers/serviceIdUtils.std.ts';
 
 export const debug = createDebug('mock:test:pni-change');
 
@@ -93,7 +93,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
         )
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
     }
 
     debug('Verify starting state');
@@ -138,7 +138,10 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       const updated = await phone.setStorageState(
         state
           .removeRecord(item => {
-            return item.record.contact?.pniBinary?.length
+            if (item.record.contact == null) {
+              return false;
+            }
+            return item.record.contact.pniBinary?.length
               ? timingSafeEqual(
                   item.record.contact.pniBinary,
                   contactA.device.pniRawUuid
@@ -195,7 +198,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
         )
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
     }
 
     debug('Verify starting state');
@@ -239,7 +242,10 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       const updated = await phone.setStorageState(
         state
           .removeRecord(item => {
-            return item.record.contact?.pniBinary?.length
+            if (item.record.contact == null) {
+              return false;
+            }
+            return item.record.contact.pniBinary?.length
               ? timingSafeEqual(
                   item.record.contact.pniBinary,
                   contactA.device.pniRawUuid
@@ -279,7 +285,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       // Two notifications - the safety number change and PhoneNumberDiscovery
       await expectSystemMessages(window, [
         /.* belongs to ContactA/,
-        /Safety Number has changed/,
+        /Safety Number with ContactA/,
       ]);
     }
   });
@@ -301,7 +307,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
         )
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
     }
 
     debug('Verify starting state');
@@ -345,7 +351,10 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       const updated = await phone.setStorageState(
         state
           .removeRecord(item => {
-            return item.record.contact?.pniBinary?.length
+            if (item.record.contact == null) {
+              return false;
+            }
+            return item.record.contact.pniBinary?.length
               ? timingSafeEqual(
                   item.record.contact.pniBinary,
                   contactA.device.pniRawUuid
@@ -384,10 +393,9 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
 
       // We get a safety number change warning, because we get a different identity key!
       await window
-        .locator('.module-SafetyNumberChangeDialog__confirm-dialog')
-        .waitFor();
-
-      await window.locator('.module-Button--primary').click();
+        .getByRole('alertdialog', { name: 'Safety Number Changes' })
+        .getByRole('button', { name: 'Send anyway' })
+        .click();
     }
 
     debug('Wait for the message to contactB');
@@ -415,7 +423,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       // Three notifications - accepted, the safety number change and PhoneNumberDiscovery
       await expectSystemMessages(window, [
         /.* belongs to ContactA/,
-        /Safety Number has changed/,
+        /Safety Number with ContactA/,
       ]);
     }
   });
@@ -437,7 +445,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
         )
         .click();
 
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
     }
 
     debug('Verify starting state');
@@ -480,7 +488,10 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       const updated = await phone.setStorageState(
         state
           .removeRecord(item => {
-            return item.record.contact?.pniBinary?.length
+            if (item.record.contact == null) {
+              return false;
+            }
+            return item.record.contact.pniBinary?.length
               ? timingSafeEqual(
                   item.record.contact.pniBinary,
                   contactA.device.pniRawUuid
@@ -516,7 +527,10 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       const updated = await phone.setStorageState(
         state
           .removeRecord(item => {
-            return item.record.contact?.pniBinary?.length
+            if (item.record.contact == null) {
+              return false;
+            }
+            return item.record.contact.pniBinary?.length
               ? timingSafeEqual(
                   item.record.contact.pniBinary,
                   contactB.device.pniRawUuid

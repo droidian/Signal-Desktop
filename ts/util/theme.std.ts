@@ -1,13 +1,17 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { missingCaseError } from './missingCaseError.std.js';
-import { ThemeType } from '../types/Util.std.js';
+import { z } from 'zod';
+import { missingCaseError } from './missingCaseError.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
 
 export enum Theme {
   Light,
   Dark,
 }
+
+export const themeSettingSchema = z.enum(['system', 'light', 'dark']);
+export type ThemeSettingType = z.infer<typeof themeSettingSchema>;
 
 export function themeClassName(theme: Theme): string {
   switch (theme) {

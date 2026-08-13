@@ -42,12 +42,10 @@
       // make child text invisible
       color: transparent;
 
-      // fix outline
-      outline: none;
-
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0 0 0px 1px variables.$color-ultramarine;
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
     }
@@ -68,7 +66,8 @@
 
     // The left pane
     &--spoiler-ConversationList,
-    &--spoiler-SearchResult {
+    &--spoiler-SearchResult,
+    &--spoiler-PinnedMessagesBar {
       @include mixins.light-theme {
         background-color: variables.$color-gray-60;
       }

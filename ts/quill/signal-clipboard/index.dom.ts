@@ -8,12 +8,15 @@ import { deleteRange } from '@signalapp/quill-cjs/modules/keyboard.js';
 import {
   FormattingMenu,
   QuillFormattingStyle,
-} from '../formatting/menu.dom.js';
-import { insertEmojiOps } from '../util.dom.js';
-import { createEventHandler } from './util.dom.js';
+} from '../formatting/menu.dom.tsx';
+import { insertEmojiOps } from '../util.dom.ts';
+import { createEventHandler } from './util.dom.ts';
 
 type ClipboardOptions = Readonly<{
   isDisabled: boolean;
+  pasteHandlers?: Array<
+    (text: string, onAllowPaste: () => void) => { isHandlingPaste: boolean }
+  >;
 }>;
 
 export class SignalClipboard {
@@ -80,51 +83,67 @@ export class SignalClipboard {
     }
 
     const { ops } = this.quill.getContents(selection.index, selection.length);
-    // Only enable formatting on the pasted text if the entire selection has it enabled!
-    const formats =
-      selection.length === 0
-        ? this.quill.getFormat(selection.index)
-        : {
-            [QuillFormattingStyle.bold]: FormattingMenu.isStyleEnabledForOps(
-              ops,
-              QuillFormattingStyle.bold
-            ),
-            [QuillFormattingStyle.italic]: FormattingMenu.isStyleEnabledForOps(
-              ops,
-              QuillFormattingStyle.italic
-            ),
-            [QuillFormattingStyle.monospace]:
-              FormattingMenu.isStyleEnabledForOps(
-                ops,
-                QuillFormattingStyle.monospace
-              ),
-            [QuillFormattingStyle.spoiler]: FormattingMenu.isStyleEnabledForOps(
-              ops,
-              QuillFormattingStyle.spoiler
-            ),
-            [QuillFormattingStyle.strike]: FormattingMenu.isStyleEnabledForOps(
-              ops,
-              QuillFormattingStyle.strike
-            ),
-          };
+
+    // Check if we're selecting all content
+    const totalLength = this.quill.getLength();
+    const isSelectingAll = selection.length >= totalLength - 1;
+
+    let formats: Record<string, unknown>;
+    if (selection.length === 0) {
+      formats = this.quill.getFormat(selection.index);
+    } else if (isSelectingAll) {
+      // No formatting for select-all
+      formats = {};
+    } else {
+      formats = {
+        [QuillFormattingStyle.bold]: FormattingMenu.isStyleEnabledForOps(
+          ops,
+          QuillFormattingStyle.bold
+        ),
+        [QuillFormattingStyle.italic]: FormattingMenu.isStyleEnabledForOps(
+          ops,
+          QuillFormattingStyle.italic
+        ),
+        [QuillFormattingStyle.monospace]: FormattingMenu.isStyleEnabledForOps(
+          ops,
+          QuillFormattingStyle.monospace
+        ),
+        [QuillFormattingStyle.spoiler]: FormattingMenu.isStyleEnabledForOps(
+          ops,
+          QuillFormattingStyle.spoiler
+        ),
+        [QuillFormattingStyle.strike]: FormattingMenu.isStyleEnabledForOps(
+          ops,
+          QuillFormattingStyle.strike
+        ),
+      };
+    }
     const clipboardDelta = signal
       ? clipboard.convert({ html: signal }, formats)
       : new Delta(insertEmojiOps(clipboard.convert({ text }, formats).ops, {}));
 
     this.quill.selection.update('silent');
 
-    if (selection) {
-      setTimeout(() => {
-        const delta = new Delta()
-          .retain(selection.index)
-          .delete(selection.length)
-          .concat(clipboardDelta);
-        this.quill.updateContents(delta, 'user');
-        this.quill.setSelection(delta.length() - selection.length, 0, 'silent');
-        this.quill.scrollSelectionIntoView();
+    const performPaste = () => {
+      const delta = new Delta()
+        .retain(selection.index)
+        .delete(selection.length)
+        .concat(clipboardDelta);
+      this.quill.updateContents(delta, 'user');
+      this.quill.setSelection(delta.length() - selection.length, 0, 'silent');
+      this.quill.scrollSelectionIntoView();
 
-        this.quill.focus();
-      }, 1);
+      this.quill.focus();
+    };
+
+    for (const pasteHandler of this.options.pasteHandlers ?? []) {
+      if (
+        pasteHandler(text, () => setTimeout(performPaste, 1)).isHandlingPaste
+      ) {
+        return;
+      }
     }
+
+    setTimeout(performPaste, 1);
   }
 }

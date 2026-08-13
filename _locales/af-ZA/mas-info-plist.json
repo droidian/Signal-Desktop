@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal gebruik jou kamera vir video-oproepe."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal benodig toegang tot jou mikrofoon om telefoonoproepe te ontvang en stemboodskappe op te neem."
+  }
+}

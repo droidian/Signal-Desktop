@@ -1,225 +1,54 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-/* eslint-disable max-classes-per-file */
 
-import { existsSync } from 'node:fs';
-import { PassThrough } from 'node:stream';
-import { constants as FS_CONSTANTS, copyFile, mkdir } from 'node:fs/promises';
+import { createWriteStream, existsSync } from 'node:fs';
+import { extname } from 'node:path';
+import {
+  constants as FS_CONSTANTS,
+  copyFile,
+  mkdir,
+  rename,
+} from 'node:fs/promises';
+import { exists } from 'fs-extra';
 
-import * as durations from '../util/durations/index.std.js';
-import { createLogger } from '../logging/log.std.js';
-
-import * as Errors from '../types/errors.std.js';
-import { redactGenericText } from '../util/privacy.node.js';
+import { getAbsoluteAttachmentPath as doGetAbsoluteAttachmentPath } from '../util/migrations.preload.ts';
 import {
-  getAbsoluteAttachmentPath,
-  getAbsoluteAttachmentPath as doGetAbsoluteAttachmentPath,
-} from '../util/migrations.preload.js';
-import {
-  JobManager,
-  type JobManagerParamsType,
-  type JobManagerJobResultType,
-} from './JobManager.std.js';
-import {
-  type BackupsService,
-  backupsService,
-} from '../services/backups/index.preload.js';
-import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.node.js';
-import {
-  type AttachmentLocalBackupJobType,
-  type CoreAttachmentLocalBackupJobType,
-} from '../types/AttachmentBackup.std.js';
-import { isInCall as isInCallSelector } from '../state/selectors/calling.std.js';
-import { encryptAndUploadAttachment } from '../util/uploadAttachment.preload.js';
-import { backupMediaBatch as doBackupMediaBatch } from '../textsecure/WebAPI.preload.js';
+  decryptAttachmentV2ToSink,
+  safeUnlink,
+} from '../AttachmentCrypto.node.ts';
 import {
   getLocalBackupDirectoryForMediaName,
   getLocalBackupPathForMediaName,
-} from '../services/backups/util/localBackup.node.js';
+} from '../services/backups/util/localBackup.node.ts';
+import { redactGenericText } from '../util/privacy.node.ts';
+import { getRandomBytes } from '../Crypto.node.ts';
+import * as Bytes from '../Bytes.std.ts';
 
-const log = createLogger('AttachmentLocalBackupManager');
+import type { CoreAttachmentLocalBackupJobType } from '../types/AttachmentBackup.std.ts';
 
-const MAX_CONCURRENT_JOBS = 3;
-const RETRY_CONFIG = {
-  maxAttempts: 3,
-  backoffConfig: {
-    // 1 minute, 5 minutes, 25 minutes, every hour
-    multiplier: 3,
-    firstBackoffs: [10 * durations.SECOND],
-    maxBackoffTime: durations.MINUTE,
-  },
-};
-
-export class AttachmentLocalBackupManager extends JobManager<CoreAttachmentLocalBackupJobType> {
-  static #instance: AttachmentLocalBackupManager | undefined;
-  readonly #jobsByMediaName = new Map<string, AttachmentLocalBackupJobType>();
-
-  static defaultParams: JobManagerParamsType<CoreAttachmentLocalBackupJobType> =
-    {
-      markAllJobsInactive: AttachmentLocalBackupManager.markAllJobsInactive,
-      saveJob: AttachmentLocalBackupManager.saveJob,
-      removeJob: AttachmentLocalBackupManager.removeJob,
-      getNextJobs: AttachmentLocalBackupManager.getNextJobs,
-      runJob: runAttachmentBackupJob,
-      shouldHoldOffOnStartingQueuedJobs: () => {
-        const reduxState = window.reduxStore?.getState();
-        if (reduxState) {
-          return isInCallSelector(reduxState);
-        }
-        return false;
-      },
-      getJobId,
-      getJobIdForLogging,
-      getRetryConfig: () => RETRY_CONFIG,
-      maxConcurrentJobs: MAX_CONCURRENT_JOBS,
-    };
-
-  override logPrefix = 'AttachmentLocalBackupManager';
-
-  static get instance(): AttachmentLocalBackupManager {
-    if (!AttachmentLocalBackupManager.#instance) {
-      AttachmentLocalBackupManager.#instance = new AttachmentLocalBackupManager(
-        AttachmentLocalBackupManager.defaultParams
-      );
-    }
-    return AttachmentLocalBackupManager.#instance;
-  }
-
-  static get jobs(): Map<string, AttachmentLocalBackupJobType> {
-    return AttachmentLocalBackupManager.instance.#jobsByMediaName;
-  }
-
-  static async start(): Promise<void> {
-    log.info('starting');
-    await AttachmentLocalBackupManager.instance.start();
-  }
-
-  static async stop(): Promise<void> {
-    log.info('stopping');
-    return AttachmentLocalBackupManager.#instance?.stop();
-  }
-
-  static async addJob(newJob: CoreAttachmentLocalBackupJobType): Promise<void> {
-    return AttachmentLocalBackupManager.instance.addJob(newJob);
-  }
-
-  static async waitForIdle(): Promise<void> {
-    return AttachmentLocalBackupManager.instance.waitForIdle();
-  }
-
-  static async markAllJobsInactive(): Promise<void> {
-    for (const [mediaName, job] of AttachmentLocalBackupManager.jobs) {
-      AttachmentLocalBackupManager.jobs.set(mediaName, {
-        ...job,
-        active: false,
-      });
-    }
-  }
-
-  static async saveJob(job: AttachmentLocalBackupJobType): Promise<void> {
-    AttachmentLocalBackupManager.jobs.set(job.mediaName, job);
-  }
-
-  static async removeJob(
-    job: Pick<AttachmentLocalBackupJobType, 'mediaName'>
-  ): Promise<void> {
-    AttachmentLocalBackupManager.jobs.delete(job.mediaName);
-  }
-
-  static clearAllJobs(): void {
-    AttachmentLocalBackupManager.jobs.clear();
-  }
-
-  static async getNextJobs({
-    limit,
-    timestamp,
-  }: {
-    limit: number;
-    timestamp: number;
-  }): Promise<Array<AttachmentLocalBackupJobType>> {
-    let countRemaining = limit;
-    const nextJobs: Array<AttachmentLocalBackupJobType> = [];
-    for (const job of AttachmentLocalBackupManager.jobs.values()) {
-      if (job.active || (job.retryAfter && job.retryAfter > timestamp)) {
-        continue;
-      }
-
-      nextJobs.push(job);
-      countRemaining -= 1;
-      if (countRemaining <= 0) {
-        break;
-      }
-    }
-    return nextJobs;
-  }
-}
-
-function getJobId(job: CoreAttachmentLocalBackupJobType): string {
-  return job.mediaName;
-}
-
-function getJobIdForLogging(job: CoreAttachmentLocalBackupJobType): string {
-  return `${redactGenericText(job.mediaName)}`;
-}
-
-/**
- * Backup-specific methods
- */
-class AttachmentPermanentlyMissingError extends Error {}
+export class AttachmentPermanentlyMissingError extends Error {}
 
 type RunAttachmentBackupJobDependenciesType = {
   getAbsoluteAttachmentPath: typeof doGetAbsoluteAttachmentPath;
-  backupMediaBatch?: typeof doBackupMediaBatch;
-  backupsService: BackupsService;
-  encryptAndUploadAttachment: typeof encryptAndUploadAttachment;
   decryptAttachmentV2ToSink: typeof decryptAttachmentV2ToSink;
 };
 
-export async function runAttachmentBackupJob(
-  job: AttachmentLocalBackupJobType,
-  _options: {
-    isLastAttempt: boolean;
-    abortSignal: AbortSignal;
-  },
-  dependencies: RunAttachmentBackupJobDependenciesType = {
-    getAbsoluteAttachmentPath: doGetAbsoluteAttachmentPath,
-    backupsService,
-    backupMediaBatch: doBackupMediaBatch,
-    encryptAndUploadAttachment,
-    decryptAttachmentV2ToSink,
-  }
-): Promise<JobManagerJobResultType<CoreAttachmentLocalBackupJobType>> {
-  const jobIdForLogging = getJobIdForLogging(job);
-  const logId = `AttachmentLocalBackupManager/runAttachmentBackupJob/${jobIdForLogging}`;
-  try {
-    await runAttachmentBackupJobInner(job, dependencies);
-    return { status: 'finished' };
-  } catch (error) {
-    log.error(
-      `${logId}: Failed to backup attachment, attempt ${job.attempts}`,
-      Errors.toLogFormat(error)
-    );
-
-    if (error instanceof AttachmentPermanentlyMissingError) {
-      log.error(`${logId}: Attachment unable to be found, giving up on job`);
-      return { status: 'finished' };
-    }
-
-    return { status: 'retry' };
-  }
+export function getJobIdForLogging(
+  job: CoreAttachmentLocalBackupJobType
+): string {
+  return redactGenericText(job.mediaName);
 }
 
-async function runAttachmentBackupJobInner(
-  job: AttachmentLocalBackupJobType,
-  dependencies: RunAttachmentBackupJobDependenciesType
+export async function runAttachmentBackupJob(
+  job: CoreAttachmentLocalBackupJobType,
+  backupsBaseDir: string,
+  dependencies: RunAttachmentBackupJobDependenciesType = {
+    getAbsoluteAttachmentPath: doGetAbsoluteAttachmentPath,
+    decryptAttachmentV2ToSink,
+  }
 ): Promise<void> {
-  const jobIdForLogging = getJobIdForLogging(job);
-  const logId = `AttachmentLocalBackupManager.runAttachmentBackupJobInner(${jobIdForLogging})`;
-
-  log.info(`${logId}: starting`);
-
-  const { backupsBaseDir, mediaName } = job;
-  const { localKey, path, size } = job.data;
+  const { isPlaintextExport, mediaName } = job;
+  const { contentType, fileName, localKey, path, size } = job.data;
 
   if (!path) {
     throw new AttachmentPermanentlyMissingError('No path property');
@@ -230,45 +59,115 @@ async function runAttachmentBackupJobInner(
     throw new AttachmentPermanentlyMissingError('No file at provided path');
   }
 
-  if (!localKey) {
-    throw new Error('No localKey property, required for test decryption');
-  }
-
   const localBackupFileDir = getLocalBackupDirectoryForMediaName({
     backupsBaseDir,
     mediaName,
   });
+
   await mkdir(localBackupFileDir, { recursive: true });
 
-  const localBackupFilePath = getLocalBackupPathForMediaName({
+  const sourceAttachmentPath = dependencies.getAbsoluteAttachmentPath(path);
+  const destinationLocalBackupFilePath = getLocalBackupPathForMediaName({
     backupsBaseDir,
     mediaName,
   });
 
-  // TODO: Add check in local FS to prevent double backup
+  if (isPlaintextExport) {
+    const extension = getExtension(contentType, fileName);
+    const outPath = extension
+      ? `${destinationLocalBackupFilePath}.${extension}`
+      : destinationLocalBackupFilePath;
+    const outFileStream = createWriteStream(outPath);
+    await dependencies.decryptAttachmentV2ToSink(
+      {
+        ciphertextPath: sourceAttachmentPath,
+        idForLogging: 'AttachmentLocalBackupManager',
+        keysBase64: localKey,
+        size,
+        type: 'local',
+      },
+      outFileStream
+    );
+  } else {
+    if (await exists(destinationLocalBackupFilePath)) {
+      // File already backed up
+      return;
+    }
 
-  // File is already encrypted with localKey, so we just have to copy it to the backup dir
-  const attachmentPath = getAbsoluteAttachmentPath(path);
+    // File is already encrypted with localKey, so we just copy it to the backup dir.
+    // The temp file must be a sibling of the destination so that rename stays on the
+    // same filesystem — the backup dir may be on a different partition than the app's
+    // temp dir, and rename only works within a single filesystem.
+    const tempPath = `${destinationLocalBackupFilePath}.tmp-${Bytes.toHex(getRandomBytes(8))}`;
 
-  // Set COPYFILE_FICLONE for Copy on Write (OS dependent, gracefully falls back to copy)
-  await copyFile(
-    attachmentPath,
-    localBackupFilePath,
-    FS_CONSTANTS.COPYFILE_FICLONE
-  );
+    try {
+      // Set COPYFILE_FICLONE for Copy on Write (OS dependent, graceful fallback to copy)
+      await copyFile(
+        sourceAttachmentPath,
+        tempPath,
+        FS_CONSTANTS.COPYFILE_FICLONE
+      );
+      await rename(tempPath, destinationLocalBackupFilePath);
+    } catch (error) {
+      await safeUnlink(tempPath);
+      throw error;
+    }
+  }
+}
 
-  // TODO: Optimize this check -- it can be expensive to test decrypt on every export
-  log.info(`${logId}: Verifying file in local backup`);
-  const sink = new PassThrough();
-  sink.resume();
-  await decryptAttachmentV2ToSink(
-    {
-      ciphertextPath: localBackupFilePath,
-      idForLogging: 'AttachmentLocalBackupManager',
-      keysBase64: localKey,
-      size,
-      type: 'local',
-    },
-    sink
-  );
+/** @testexport */
+export function getExtension(
+  contentType: string | undefined,
+  fileName: string | undefined
+): string | undefined {
+  if (fileName) {
+    const extension = extname(fileName).replace(/^./, '');
+
+    if (isValidExtension(extension)) {
+      return extension;
+    }
+  }
+
+  if (!contentType) {
+    return undefined;
+  }
+
+  if (contentType.startsWith('application/x-')) {
+    return normalizeExtension(contentType.replace('application/x-', ''));
+  }
+
+  if (contentType.startsWith('application/')) {
+    return normalizeExtension(contentType.replace('application/', ''));
+  }
+
+  if (contentType.startsWith('audio/')) {
+    return normalizeExtension(contentType.replace('audio/', ''));
+  }
+
+  if (contentType.startsWith('image/')) {
+    return normalizeExtension(contentType.replace('image/', ''));
+  }
+
+  if (contentType === 'text/x-signal-plain') {
+    return 'txt';
+  }
+  if (contentType.startsWith('text/x-')) {
+    return normalizeExtension(contentType.replace('text/x-', ''));
+  }
+
+  if (contentType.startsWith('video/')) {
+    return normalizeExtension(contentType.replace('video/', ''));
+  }
+
+  return undefined;
+}
+
+const VALID_EXTENSION_REGEXP = /^[A-Za-z\d](?:[\w+.-]{0,30}[A-Za-z\d])?$/;
+
+function isValidExtension(extension: string): boolean {
+  return VALID_EXTENSION_REGEXP.test(extension);
+}
+
+function normalizeExtension(extension: string): string | undefined {
+  return isValidExtension(extension) ? extension : undefined;
 }

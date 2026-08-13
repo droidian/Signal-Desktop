@@ -1,10 +1,11 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './SystemMessage.dom.js';
-import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.js';
+import type { PropsType } from './SystemMessage.dom.tsx';
+import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.tsx';
 
 export default {
   title: 'Components/Conversation/SystemMessage',

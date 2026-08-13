@@ -1,11 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import { WidthBreakpoint } from '../components/_util.std.js';
+import type { ReactNode, JSX } from 'react';
+
+import { WidthBreakpoint } from '../components/_util.std.ts';
 
 type PropsType = {
-  children?: React.ReactNode;
+  children?: ReactNode;
   containerWidthBreakpoint: WidthBreakpoint;
 };
 

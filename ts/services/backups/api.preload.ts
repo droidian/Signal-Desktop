@@ -15,27 +15,27 @@ import {
   getSubscription,
   getTransferArchive as doGetTransferArchive,
   refreshBackup,
-} from '../../textsecure/WebAPI.preload.js';
+} from '../../textsecure/WebAPI.preload.ts';
 import type {
-  AttachmentUploadFormResponseType,
+  AttachmentUploadFormType,
   GetBackupInfoResponseType,
   BackupMediaItemType,
   BackupMediaBatchResponseType,
   BackupListMediaResponseType,
   TransferArchiveType,
   SubscriptionResponseType,
-} from '../../textsecure/WebAPI.preload.js';
-import type { BackupCredentials } from './credentials.preload.js';
+} from '../../textsecure/WebAPI.preload.ts';
+import type { BackupCredentials } from './credentials.preload.ts';
 import {
   BackupCredentialType,
   type BackupsSubscriptionType,
   type SubscriptionCostType,
-} from '../../types/backups.node.js';
-import { uploadFile } from '../../util/uploadAttachment.preload.js';
-import { HTTPError } from '../../types/HTTPError.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { toLogFormat } from '../../types/errors.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../types/backups.node.ts';
+import { uploadFile } from '../../util/uploadAttachment.preload.ts';
+import { HTTPError } from '../../types/HTTPError.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { toLogFormat } from '../../types/errors.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 const log = createLogger('api');
 
@@ -54,27 +54,34 @@ export type EphemeralDownloadOptionsType = Readonly<{
   DownloadOptionsType;
 
 export class BackupAPI {
-  #cachedBackupInfo = new Map<
+  readonly #credentials: BackupCredentials;
+  readonly #cachedBackupInfo = new Map<
     BackupCredentialType,
     GetBackupInfoResponseType
   >();
 
-  constructor(private readonly credentials: BackupCredentials) {}
+  constructor(credentials: BackupCredentials) {
+    this.#credentials = credentials;
+  }
 
   public async refresh(): Promise<void> {
-    const headers = await Promise.all(
+    await Promise.all(
       [BackupCredentialType.Messages, BackupCredentialType.Media].map(type =>
-        this.credentials.getHeadersForToday(type)
+        this.#refreshType(type)
       )
     );
-    await Promise.all(headers.map(h => refreshBackup(h)));
+  }
+
+  async #refreshType(type: BackupCredentialType): Promise<void> {
+    const auth = (await this.#credentials.getForToday(type)).backupAuth;
+    return refreshBackup({ auth });
   }
 
   public async getInfo(
     credentialType: BackupCredentialType
   ): Promise<GetBackupInfoResponseType> {
     const backupInfo = await getBackupInfo(
-      await this.credentials.getHeadersForToday(credentialType)
+      await this.#credentials.getHeadersForToday(credentialType)
     );
     this.#cachedBackupInfo.set(credentialType, backupInfo);
     return backupInfo;
@@ -100,9 +107,14 @@ export class BackupAPI {
   }
 
   public async upload(filePath: string, fileSize: number): Promise<void> {
-    const form = await getBackupUploadForm(
-      await this.credentials.getHeadersForToday(BackupCredentialType.Messages)
+    const { backupAuth } = await this.#credentials.getForToday(
+      BackupCredentialType.Messages
     );
+
+    const form = await getBackupUploadForm({
+      auth: backupAuth,
+      uploadSize: fileSize,
+    });
 
     await uploadFile({
       absoluteCiphertextPath: filePath,
@@ -119,7 +131,7 @@ export class BackupAPI {
     const { cdn, backupDir, backupName } = await this.getInfo(
       BackupCredentialType.Messages
     );
-    const { headers } = await this.credentials.getCDNReadCredentials(
+    const { headers } = await this.#credentials.getCDNReadCredentials(
       cdn,
       BackupCredentialType.Messages
     );
@@ -142,7 +154,7 @@ export class BackupAPI {
     const { cdn, backupDir, backupName } = await this.#getCachedInfo(
       BackupCredentialType.Messages
     );
-    const { headers } = await this.credentials.getCDNReadCredentials(
+    const { headers } = await this.#credentials.getCDNReadCredentials(
       cdn,
       BackupCredentialType.Messages
     );
@@ -157,7 +169,7 @@ export class BackupAPI {
       return { backupExists: true, size, createdAt };
     } catch (error) {
       if (error instanceof HTTPError && error.code === 401) {
-        this.credentials.onCdnCredentialError();
+        this.#credentials.onCdnCredentialError();
       } else if (error instanceof HTTPError && error.code === 404) {
         return { backupExists: false };
       }
@@ -188,9 +200,9 @@ export class BackupAPI {
     });
   }
 
-  public async getMediaUploadForm(): Promise<AttachmentUploadFormResponseType> {
+  public async getMediaUploadForm(): Promise<AttachmentUploadFormType> {
     return getBackupMediaUploadForm(
-      await this.credentials.getHeadersForToday(BackupCredentialType.Media)
+      await this.#credentials.getHeadersForToday(BackupCredentialType.Media)
     );
   }
 
@@ -198,7 +210,7 @@ export class BackupAPI {
     items: ReadonlyArray<BackupMediaItemType>
   ): Promise<BackupMediaBatchResponseType> {
     return doBackupMediaBatch({
-      headers: await this.credentials.getHeadersForToday(
+      headers: await this.#credentials.getHeadersForToday(
         BackupCredentialType.Media
       ),
       items,
@@ -213,7 +225,7 @@ export class BackupAPI {
     limit: number;
   }): Promise<BackupListMediaResponseType> {
     return backupListMedia({
-      headers: await this.credentials.getHeadersForToday(
+      headers: await this.#credentials.getHeadersForToday(
         BackupCredentialType.Media
       ),
       cursor,

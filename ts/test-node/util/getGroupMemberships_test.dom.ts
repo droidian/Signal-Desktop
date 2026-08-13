@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { normalizeAci } from '../../util/normalizeAci.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import { getDefaultConversationWithServiceId } from '../../test-helpers/getDefaultConversation.std.js';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { normalizeAci } from '../../util/normalizeAci.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { getDefaultConversationWithServiceId } from '../../test-helpers/getDefaultConversation.std.ts';
 
-import { getGroupMemberships } from '../../util/getGroupMemberships.dom.js';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 describe('getGroupMemberships', () => {
   const normalConversation1 = getDefaultConversationWithServiceId();
@@ -56,6 +57,8 @@ describe('getGroupMemberships', () => {
           {
             aci: generateAci(),
             isAdmin: true,
+            labelEmoji: undefined,
+            labelString: undefined,
           },
         ],
       };
@@ -74,6 +77,8 @@ describe('getGroupMemberships', () => {
           {
             aci: normalizeAci(unregisteredConversation.serviceId, 'test'),
             isAdmin: true,
+            labelEmoji: undefined,
+            labelString: 'Task Wrangler',
           },
         ],
       };
@@ -87,19 +92,25 @@ describe('getGroupMemberships', () => {
       assert.deepEqual(result[0], {
         isAdmin: true,
         member: unregisteredConversation,
+        labelEmoji: undefined,
+        labelString: 'Task Wrangler',
       });
     });
 
     it('hydrates memberships', () => {
-      const conversation = {
+      const conversation: Pick<ConversationType, 'memberships'> = {
         memberships: [
           {
             aci: normalizeAci(normalConversation2.serviceId, 'test'),
             isAdmin: false,
+            labelEmoji: undefined,
+            labelString: undefined,
           },
           {
             aci: normalizeAci(normalConversation1.serviceId, 'test'),
             isAdmin: true,
+            labelEmoji: Emoji.CHECKMARK,
+            labelString: 'Task Wrangler',
           },
         ],
       };
@@ -113,10 +124,14 @@ describe('getGroupMemberships', () => {
       assert.deepEqual(result[0], {
         isAdmin: false,
         member: normalConversation2,
+        labelEmoji: undefined,
+        labelString: undefined,
       });
       assert.deepEqual(result[1], {
         isAdmin: true,
         member: normalConversation1,
+        labelEmoji: Emoji.CHECKMARK,
+        labelString: 'Task Wrangler',
       });
     });
   });

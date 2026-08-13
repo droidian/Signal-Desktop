@@ -4,30 +4,30 @@
 import lodash from 'lodash';
 
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { DataWriter } from '../sql/Client.preload.js';
-import { hasErrors } from '../state/selectors/message.preload.js';
-import { readSyncJobQueue } from '../jobs/readSyncJobQueue.preload.js';
-import { notificationService } from '../services/notifications.preload.js';
-import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.preload.js';
-import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.preload.js';
-import { isGroup, isDirectConversation } from './whatTypeOfConversation.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { getConversationIdForLogging } from './idForLogging.preload.js';
-import { drop } from './drop.std.js';
-import { isNotNil } from './isNotNil.std.js';
-import { assertDev } from './assert.std.js';
-import { isConversationAccepted } from './isConversationAccepted.preload.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { hasErrors } from '../state/selectors/message.preload.ts';
+import { readSyncJobQueue } from '../jobs/readSyncJobQueue.preload.ts';
+import { notificationService } from '../services/notifications.preload.ts';
+import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.preload.ts';
+import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.preload.ts';
+import { isGroup, isDirectConversation } from './whatTypeOfConversation.dom.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { getConversationIdForLogging } from './idForLogging.preload.ts';
+import { drop } from './drop.std.ts';
+import { isNotNil } from './isNotNil.std.ts';
+import { assertDev } from './assert.std.ts';
+import { isConversationAccepted } from './isConversationAccepted.preload.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue.preload.js';
-import { ReceiptType } from '../types/Receipt.std.js';
-import type { AciString } from '../types/ServiceId.std.js';
-import { isAciString } from './isAciString.std.js';
-import type { MessageModel } from '../models/messages.preload.js';
-import { postSaveUpdates } from './cleanup.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../jobs/conversationJobQueue.preload.ts';
+import { ReceiptType } from '../types/Receipt.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { isAciString } from './isAciString.std.ts';
+import type { MessageModel } from '../models/messages.preload.ts';
+import { postSaveUpdates } from './cleanup.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const { isNumber, pick } = lodash;
 
@@ -45,23 +45,36 @@ export async function markConversationRead(
 ): Promise<boolean> {
   const { id: conversationId } = conversationAttrs;
 
-  const [unreadMessages, unreadEditedMessages, unreadReactions] =
-    await Promise.all([
-      DataWriter.getUnreadByConversationAndMarkRead({
-        conversationId,
-        readMessageReceivedAt: readMessage.received_at,
-        readAt: options.readAt,
-        includeStoryReplies: !isGroup(conversationAttrs),
-      }),
-      DataWriter.getUnreadEditedMessagesAndMarkRead({
-        conversationId,
-        readMessageReceivedAt: readMessage.received_at,
-      }),
-      DataWriter.getUnreadReactionsAndMarkRead({
-        conversationId,
-        readMessageReceivedAt: readMessage.received_at,
-      }),
-    ]);
+  const [
+    unreadMessages,
+    unreadEditedMessages,
+    unreadReactions,
+    unreadPollVotes,
+    lastUnreadCallId,
+  ] = await Promise.all([
+    DataWriter.getUnreadByConversationAndMarkRead({
+      conversationId,
+      readMessageReceivedAt: readMessage.received_at,
+      readAt: options.readAt,
+      includeStoryReplies: !isGroup(conversationAttrs),
+    }),
+    DataWriter.getUnreadEditedMessagesAndMarkRead({
+      conversationId,
+      readMessageReceivedAt: readMessage.received_at,
+    }),
+    DataWriter.getUnreadReactionsAndMarkRead({
+      conversationId,
+      readMessageReceivedAt: readMessage.received_at,
+    }),
+    DataWriter.getUnreadPollVotesAndMarkRead({
+      conversationId,
+      readMessageReceivedAt: readMessage.received_at,
+    }),
+    DataReader.getPrevUnreadCallIdInConversation(
+      conversationId,
+      readMessage.received_at
+    ),
+  ]);
 
   const convoId = getConversationIdForLogging(conversationAttrs);
   const logId = `(${convoId})`;
@@ -72,34 +85,39 @@ export async function markConversationRead(
       receivedAt: readMessage.received_at,
     },
     unreadMessages: unreadMessages.length,
+    unreadEditedMessages: unreadEditedMessages.length,
     unreadReactions: unreadReactions.length,
+    unreadPollVotes: unreadPollVotes.length,
   });
 
   if (
     !unreadMessages.length &&
     !unreadEditedMessages.length &&
-    !unreadReactions.length
+    !unreadReactions.length &&
+    !unreadPollVotes.length &&
+    lastUnreadCallId == null
   ) {
     return false;
   }
 
   notificationService.removeBy({ conversationId });
 
-  const unreadReactionSyncData = new Map<
+  const unreadReadSyncData = new Map<
     string,
     {
       messageId?: string;
-      senderAci?: AciString;
-      senderE164?: string;
       timestamp: number;
-    }
+    } & (
+      | { senderAci: AciString; senderE164?: string }
+      | { senderE164: string; senderAci?: AciString }
+    )
   >();
   unreadReactions.forEach(reaction => {
     const targetKey = `${reaction.targetAuthorAci}/${reaction.targetTimestamp}`;
-    if (unreadReactionSyncData.has(targetKey)) {
+    if (unreadReadSyncData.has(targetKey)) {
       return;
     }
-    unreadReactionSyncData.set(targetKey, {
+    unreadReadSyncData.set(targetKey, {
       messageId: reaction.messageId,
       senderE164: undefined,
       senderAci: reaction.targetAuthorAci,
@@ -107,9 +125,38 @@ export async function markConversationRead(
     });
   });
 
+  unreadPollVotes.forEach(pollVote => {
+    if (pollVote.type !== 'outgoing') {
+      log.warn(
+        'Found a message with unread poll votes that is not outgoing, not sending read sync'
+      );
+      return;
+    }
+    const targetAuthorAci = itemStorage.user.getCheckedAci();
+    const targetKey = `${targetAuthorAci}/${pollVote.targetTimestamp}`;
+    if (unreadReadSyncData.has(targetKey)) {
+      return;
+    }
+    unreadReadSyncData.set(targetKey, {
+      messageId: pollVote.id,
+      senderE164: undefined,
+      senderAci: targetAuthorAci,
+      timestamp: pollVote.targetTimestamp,
+    });
+  });
+
   const allUnreadMessages = [...unreadMessages, ...unreadEditedMessages];
 
   const updatedMessages: Array<MessageModel> = [];
+
+  // Update in-memory MessageModels for poll votes
+  unreadPollVotes.forEach(pollVote => {
+    const message = window.MessageCache.getById(pollVote.id);
+    if (message) {
+      message.set({ hasUnreadPollVotes: false });
+      updatedMessages.push(message);
+    }
+  });
   const allReadMessagesSync = allUnreadMessages
     .map(messageSyncData => {
       const message = window.MessageCache.getById(messageSyncData.id);
@@ -141,11 +188,9 @@ export async function markConversationRead(
         return undefined;
       }
 
+      // This is expected for directionless messages which are inserted as Read but Unseen
+      // (e.g. keyChange)
       if (!isAciString(senderAci)) {
-        log.warn(
-          `${logId}: message sourceServiceId timestamp is not aci` +
-            `type=${messageSyncData.type}`
-        );
         return undefined;
       }
 
@@ -200,14 +245,14 @@ export async function markConversationRead(
     senderId?: string;
     timestamp: number;
     hasErrors?: string;
-  }> = [...unreadMessagesSyncData, ...unreadReactionSyncData.values()];
+  }> = [...unreadMessagesSyncData, ...unreadReadSyncData.values()];
 
   if (readSyncs.length && options.sendReadReceipts) {
     log.info(logId, `Sending ${readSyncs.length} read syncs`);
     // Because syncReadMessages sends to our other devices, and sendReadReceipts goes
     //   to a contact, we need accessKeys for both.
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.warn(logId, 'We are primary device; not sending read syncs');
+    if (!window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(logId, 'We have no other devices; not sending read syncs');
     } else {
       drop(readSyncJobQueue.add({ readSyncs }));
     }
@@ -222,8 +267,14 @@ export async function markConversationRead(
     }
   }
 
-  void updateExpiringMessagesService();
-  void tapToViewMessagesDeletionService.update();
+  if (lastUnreadCallId != null) {
+    window.reduxActions.callHistory.markCallHistoryReadInConversation(
+      lastUnreadCallId
+    );
+  }
+
+  updateExpiringMessagesService();
+  tapToViewMessagesDeletionService.update();
 
   return true;
 }

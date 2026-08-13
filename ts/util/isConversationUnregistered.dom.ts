@@ -1,10 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { isMoreRecentThan, isOlderThan } from './timestamp.std.js';
-import { HOUR } from './durations/index.std.js';
-import { getMessageQueueTime } from './getMessageQueueTime.dom.js';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { isMoreRecentThan, isOlderThan } from './timestamp.std.ts';
+import { HOUR } from './durations/index.std.ts';
+import { getMessageQueueTime } from './getMessageQueueTime.dom.ts';
 
 const SIX_HOURS = 6 * HOUR;
 
@@ -29,7 +29,7 @@ export function isConversationUnregistered({
     !serviceId ||
     Boolean(
       discoveredUnregisteredAt &&
-        isMoreRecentThan(discoveredUnregisteredAt, SIX_HOURS)
+      isMoreRecentThan(discoveredUnregisteredAt, SIX_HOURS)
     )
   );
 }
@@ -47,6 +47,6 @@ export function isConversationUnregisteredAndStale({
 
   return Boolean(
     firstUnregisteredAt &&
-      isOlderThan(firstUnregisteredAt, getMessageQueueTime())
+    isOlderThan(firstUnregisteredAt, getMessageQueueTime())
   );
 }

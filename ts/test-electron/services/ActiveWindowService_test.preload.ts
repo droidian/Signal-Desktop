@@ -5,7 +5,7 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { EventEmitter } from 'node:events';
 
-import { getActiveWindowService } from '../../services/ActiveWindowService.std.js';
+import { getActiveWindowService } from '../../services/ActiveWindowService.std.ts';
 
 describe('ActiveWindowService', () => {
   const fakeIpcEvent = {};
@@ -65,14 +65,14 @@ describe('ActiveWindowService', () => {
           const service = getActiveWindowService(fakeDocument, fakeIpc);
 
           fakeIpc.emit('set-window-focus', fakeIpcEvent, false);
-
+          this.clock.tick(1);
           fakeDocument.dispatchEvent(new Event(eventName));
           assert.isTrue(service.isActive());
           this.clock.tick(1001);
           assert.isFalse(service.isActive());
         });
       } else {
-        it(`is inactive even in the face of ${eventName} events if unfocused`, function (this: Mocha.Context) {
+        it(`is inactive even in the face of ${eventName} events if unfocused`, () => {
           const fakeDocument = createFakeDocument();
           const fakeIpc = new EventEmitter();
           const service = getActiveWindowService(fakeDocument, fakeIpc);
@@ -104,6 +104,21 @@ describe('ActiveWindowService', () => {
       });
     }
   );
+
+  it('is inactive immediately after a blur event, despite any previous events', () => {
+    const fakeDocument = createFakeDocument();
+    const fakeIpc = new EventEmitter();
+    const service = getActiveWindowService(fakeDocument, fakeIpc);
+
+    fakeIpc.emit('set-window-focus', fakeIpcEvent, true);
+
+    fakeDocument.dispatchEvent(new Event('click'));
+    // Important to also test a non-focusing event
+    fakeDocument.dispatchEvent(new Event('wheel'));
+    fakeIpc.emit('set-window-focus', fakeIpcEvent, false);
+
+    assert.isFalse(service.isActive());
+  });
 
   it('calls callbacks when going from unfocused to focused', () => {
     const fakeIpc = new EventEmitter();

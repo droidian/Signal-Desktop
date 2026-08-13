@@ -9,33 +9,31 @@ import type { ReadonlyDeep } from 'type-fest';
 // Note: nothing imported here can come back and require Client.ts, and that includes
 // their imports too. That circularity causes problems. Anything that would do that needs
 // to be passed in, like cleanupMessages below.
-import * as Bytes from '../Bytes.std.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
+import * as Bytes from '../Bytes.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
 
-import { deleteExternalFiles } from '../types/Conversation.node.js';
-import { createBatcher } from '../util/batcher.std.js';
-import { assertDev, softAssert } from '../util/assert.std.js';
-import { mapObjectWithSpec } from '../util/mapObjectWithSpec.std.js';
-import { deleteAttachmentData } from '../util/migrations.preload.js';
-import { cleanDataForIpc } from './cleanDataForIpc.std.js';
-import createTaskWithTimeout from '../textsecure/TaskWithTimeout.std.js';
-import { isValidUuid, isValidUuidV7 } from '../util/isValidUuid.std.js';
-import { formatJobForInsert } from '../jobs/formatJobForInsert.std.js';
+import { createBatcher } from '../util/batcher.std.ts';
+import { assertDev, softAssert } from '../util/assert.std.ts';
+import { mapObjectWithSpec } from '../util/mapObjectWithSpec.std.ts';
+import { cleanDataForIpc } from './cleanDataForIpc.std.ts';
+import { runTaskWithTimeout } from '../textsecure/TaskWithTimeout.std.ts';
+import { isValidUuid, isValidUuidV7 } from '../util/isValidUuid.std.ts';
+import { formatJobForInsert } from '../jobs/formatJobForInsert.std.ts';
 import {
   AccessType,
   ipcInvoke,
   doShutdown,
   removeDB,
-} from './channels.preload.js';
-import { getMessageIdForLogging } from '../util/idForLogging.preload.js';
-import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.js';
-import { generateSnippetAroundMention } from '../util/search.std.js';
-import { drop } from '../util/drop.std.js';
+} from './channels.preload.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.ts';
+import { generateSnippetAroundMention } from '../util/search.std.ts';
+import { drop } from '../util/drop.std.ts';
 
-import type { ObjectMappingSpecType } from '../util/mapObjectWithSpec.std.js';
-import type { AciString, ServiceIdString } from '../types/ServiceId.std.js';
-import type { StoredJob } from '../jobs/types.std.js';
+import type { ObjectMappingSpecType } from '../util/mapObjectWithSpec.std.ts';
+import type { AciString, ServiceIdString } from '../types/ServiceId.std.ts';
+import type { StoredJob } from '../jobs/types.std.ts';
 import type {
   ClientInterfaceWrap,
   AdjacentMessagesByConversationOptionsType,
@@ -66,14 +64,15 @@ import type {
   StoredKyberPreKeyType,
   ClientOnlyReadableInterface,
   ClientOnlyWritableInterface,
-} from './Interface.std.js';
-import { AttachmentDownloadSource } from './Interface.std.js';
+  RemoveMessageOptions,
+} from './Interface.std.ts';
+import { AttachmentDownloadSource } from './Interface.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { AttachmentDownloadJobType } from '../types/AttachmentDownload.std.js';
+import type { AttachmentDownloadJobType } from '../types/AttachmentDownload.std.ts';
 import {
   throttledUpdateBackupMediaDownloadProgress,
   updateBackupMediaDownloadProgress,
-} from '../util/updateBackupMediaDownloadProgress.preload.js';
+} from '../util/updateBackupMediaDownloadProgress.preload.ts';
 
 const { groupBy, isTypedArray, last, map, omit } = lodash;
 
@@ -130,10 +129,9 @@ const clientOnlyWritable: ClientOnlyWritableInterface = {
   createOrUpdateItem,
 
   updateConversation,
-  removeConversation,
 
-  removeMessage,
-  removeMessages,
+  removeMessageById,
+  removeMessagesById,
 
   saveMessage,
   saveMessages,
@@ -300,7 +298,7 @@ function specToBytes<Input, Output>(
   spec: ObjectMappingSpecType,
   data: Input
 ): Output {
-  return mapObjectWithSpec<string, Uint8Array>(spec, data, x =>
+  return mapObjectWithSpec<string, Uint8Array<ArrayBuffer>>(spec, data, x =>
     Bytes.fromBase64(x)
   );
 }
@@ -309,7 +307,7 @@ function specFromBytes<Input, Output>(
   spec: ObjectMappingSpecType,
   data: Input
 ): Output {
-  return mapObjectWithSpec<Uint8Array, string>(spec, data, x =>
+  return mapObjectWithSpec<Uint8Array<ArrayBuffer>, string>(spec, data, x =>
     Bytes.toBase64(x)
   );
 }
@@ -457,6 +455,8 @@ const ITEM_SPECS: Partial<Record<ItemKeyType, ObjectMappingSpecType>> = {
   backupMediaRootKey: ['value'],
   manifestRecordIkm: ['value'],
   usernameLink: ['value.entropy', 'value.serverId'],
+  lastDistinguishedTreeHead: ['value'],
+  payments: ['value.entropy'],
 };
 async function createOrUpdateItem<K extends ItemKeyType>(
   data: ItemType<K>
@@ -482,7 +482,9 @@ async function getItemById<K extends ItemKeyType>(
   const data = await readableChannel.getItemById(id);
 
   try {
-    return spec ? specToBytes(spec, data) : (data as unknown as ItemType<K>);
+    return spec
+      ? await specToBytes(spec, data)
+      : (data as unknown as ItemType<K>);
   } catch (error) {
     log.warn(`getItemById(${id}): Failed to parse item from spec`, error);
     return undefined;
@@ -549,19 +551,6 @@ async function updateConversations(
     `Paths were cleaned: ${JSON.stringify(pathsChanged)}`
   );
   await writableChannel.updateConversations(cleaned);
-}
-
-async function removeConversation(id: string): Promise<void> {
-  const existing = await readableChannel.getConversationById(id);
-
-  // Note: It's important to have a fully database-hydrated model to delete here because
-  //   it needs to delete all associated on-disk files along with the database delete.
-  if (existing) {
-    await writableChannel.removeConversation(id);
-    await deleteExternalFiles(existing, {
-      deleteAttachmentData,
-    });
-  }
 }
 
 function handleSearchMessageJSON(
@@ -690,67 +679,30 @@ async function saveMessagesIndividually(
   return result;
 }
 
-async function removeMessage(
-  id: string,
-  options: {
-    cleanupMessages: (
-      messages: ReadonlyArray<MessageAttributesType>,
-      options: { fromSync?: boolean }
-    ) => Promise<void>;
-    fromSync?: boolean;
-  }
-): Promise<void> {
-  const message = await readableChannel.getMessageById(id);
-
-  // Note: It's important to have a fully database-hydrated model to delete here because
-  //   it needs to delete all associated on-disk files along with the database delete.
-  if (message) {
-    await writableChannel.removeMessage(id);
-    await options.cleanupMessages([message], {
-      fromSync: options.fromSync,
-    });
-  }
+async function removeMessageById(
+  messageId: string,
+  options: RemoveMessageOptions
+) {
+  return removeMessagesById([messageId], options);
 }
 
-export async function deleteAndCleanup(
-  messages: Array<MessageAttributesType>,
-  logId: string,
-  options: {
-    fromSync?: boolean;
-    cleanupMessages: (
-      messages: ReadonlyArray<MessageAttributesType>,
-      options: { fromSync?: boolean }
-    ) => Promise<void>;
-  }
+async function removeMessagesById(
+  messageIds: ReadonlyArray<string>,
+  options: RemoveMessageOptions
 ): Promise<void> {
-  const ids = messages.map(message => message.id);
-
-  log.info(`deleteAndCleanup/${logId}: Deleting ${ids.length} messages...`);
-  await writableChannel.removeMessages(ids);
-
-  log.info(`deleteAndCleanup/${logId}: Cleanup for ${ids.length} messages...`);
-  await options.cleanupMessages(messages, {
-    fromSync: Boolean(options.fromSync),
-  });
-
-  log.info(`deleteAndCleanup/${logId}: Complete`);
+  const messages = await readableChannel.getMessagesById(messageIds);
+  return removeMessages(messages, options);
 }
 
 async function removeMessages(
-  messageIds: ReadonlyArray<string>,
-  options: {
-    fromSync?: boolean;
-    cleanupMessages: (
-      messages: ReadonlyArray<MessageAttributesType>,
-      options: { fromSync?: boolean }
-    ) => Promise<void>;
-  }
+  messages: ReadonlyArray<MessageAttributesType>,
+  options: RemoveMessageOptions
 ): Promise<void> {
-  const messages = await readableChannel.getMessagesById(messageIds);
+  const messageIds = messages.map(msg => msg.id);
+  await writableChannel.removeMessages(messageIds);
   await options.cleanupMessages(messages, {
     fromSync: Boolean(options.fromSync),
   });
-  await writableChannel.removeMessages(messageIds);
 }
 
 async function getNewerMessagesByConversation(
@@ -817,7 +769,7 @@ async function removeMessagesInConversation(
     );
     // Yes, we really want the await in the loop. We're deleting a chunk at a
     //   time so we don't use too much memory.
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     messages = await getOlderMessagesByConversation({
       conversationId,
       limit: chunkSize,
@@ -830,8 +782,8 @@ async function removeMessagesInConversation(
       return;
     }
 
-    // eslint-disable-next-line no-await-in-loop
-    await deleteAndCleanup(messages, logId, { fromSync, cleanupMessages });
+    // oxlint-disable-next-line no-await-in-loop
+    await removeMessages(messages, { fromSync, cleanupMessages });
   } while (messages.length > 0);
 }
 
@@ -939,10 +891,10 @@ async function invokeWithTimeout(
   name: string,
   ...args: Array<unknown>
 ): Promise<void> {
-  return createTaskWithTimeout(
+  return runTaskWithTimeout(
     () => ipc.invoke(name, ...args),
     `callChannel call to ${name}`
-  )();
+  );
 }
 
 export function pauseWriteAccess(): Promise<void> {

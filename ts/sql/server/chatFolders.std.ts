@@ -5,14 +5,14 @@ import {
   type ChatFolderId,
   type ChatFolder,
   CHAT_FOLDER_DELETED_POSITION,
-  CHAT_FOLDER_DEFAULTS,
   ChatFolderType,
-} from '../../types/ChatFolder.std.js';
-import type { ReadableDB, WritableDB } from '../Interface.std.js';
-import { sql } from '../util.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.js';
-import { isCurrentChatFolder } from '../../types/CurrentChatFolders.std.js';
+  ALL_CHATS_FOLDER_REQUIRED_PARAMS,
+} from '../../types/ChatFolder.std.ts';
+import type { ReadableDB, WritableDB } from '../Interface.std.ts';
+import { sql } from '../util.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.ts';
+import { isCurrentChatFolder } from '../../types/CurrentChatFolders.std.ts';
 
 export type ChatFolderRow = Readonly<
   Omit<
@@ -171,9 +171,8 @@ export function hasAllChatsChatFolder(db: ReadableDB): boolean {
 export function createAllChatsChatFolder(db: WritableDB): ChatFolder {
   return db.transaction(() => {
     const allChatsChatFolder: ChatFolder = {
-      ...CHAT_FOLDER_DEFAULTS,
       id: generateUuid() as ChatFolderId,
-      folderType: ChatFolderType.ALL,
+      ...ALL_CHATS_FOLDER_REQUIRED_PARAMS,
       position: 0,
       deletedAtTimestampMs: 0,
       storageID: null,

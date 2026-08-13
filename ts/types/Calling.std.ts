@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { AudioDevice, Reaction as CallReaction } from '@signalapp/ringrtc';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { AciString, ServiceIdString } from './ServiceId.std.js';
-import type { CallLinkConversationType } from './CallLink.std.js';
-import type { CallMode } from './CallDisposition.std.js';
+import type { AudioDevice } from '@signalapp/ringrtc';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { AciString, ServiceIdString } from './ServiceId.std.ts';
+import type { CallLinkConversationType } from './CallLink.std.ts';
+import type { CallMode } from './CallDisposition.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 export const MAX_CALLING_REACTIONS = 5;
 export const CALLING_REACTIONS_LIFETIME = 4000;
@@ -38,8 +39,10 @@ export type PresentedSource = {
 // };
 
 export type ActiveCallReaction = {
+  demuxId: number;
+  value: Emoji.Variant;
   timestamp: number;
-} & CallReaction;
+};
 
 export type ActiveCallReactionsType = ReadonlyArray<ActiveCallReaction>;
 
@@ -124,7 +127,6 @@ export enum CallState {
   Ended = 'ended',
 }
 
-// Must be kept in sync with RingRTC.CallEndedReason
 export enum CallEndedReason {
   LocalHangup = 'LocalHangup',
   RemoteHangup = 'RemoteHangup',
@@ -144,6 +146,7 @@ export enum CallEndedReason {
   AcceptedOnAnotherDevice = 'AcceptedOnAnotherDevice',
   DeclinedOnAnotherDevice = 'DeclinedOnAnotherDevice',
   BusyOnAnotherDevice = 'BusyOnAnotherDevice',
+  UnexpectedReason = 'UnexpectedReason',
 }
 
 // Must be kept in sync with RingRTC's ConnectionState
@@ -168,9 +171,10 @@ export type GroupCallRemoteParticipantType = ConversationType & {
   demuxId: number;
   hasRemoteAudio: boolean;
   hasRemoteVideo: boolean;
-  isHandRaised: boolean;
+  isOnlyHandRaised: boolean;
   mediaKeysReceived: boolean;
   presenting: boolean;
+  raisedHandOrder: number | undefined;
   sharingScreen: boolean;
   speakerTime?: number;
   videoAspectRatio: number;
@@ -229,3 +233,7 @@ export type IceServerCacheType = {
   iceServers: Array<IceServerType>;
   expirationTimestamp: number;
 };
+
+export type RemoveClientType = ReadonlyDeep<{
+  demuxId: number;
+}>;

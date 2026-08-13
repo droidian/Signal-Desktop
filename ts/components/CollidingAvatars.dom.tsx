@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { v4 as uuid } from 'uuid';
-import React, { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, type JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
 
 export type PropsType = Readonly<{
   i18n: LocalizerType;

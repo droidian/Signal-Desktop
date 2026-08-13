@@ -1,26 +1,26 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
+} from './handleMultipleSendErrors.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   SavedProtoJobData,
-} from '../conversationJobQueue.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
+} from '../conversationJobQueue.preload.ts';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
 import {
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import * as Bytes from '../../Bytes.std.js';
+} from '../../textsecure/Errors.std.ts';
+import * as Bytes from '../../Bytes.std.ts';
 
 export async function sendSavedProto(
   conversation: ConversationModel,
@@ -74,27 +74,32 @@ export async function sendSavedProto(
     timestamp: originalTimestamp,
     urgent,
   } = data;
-  const sendOptions = await getSendOptions(conversation.attributes, { story });
   const sendType = 'resendFromLog';
 
   try {
-    const proto = Proto.Content.decode(Bytes.fromBase64(protoBase64));
-    await handleMessageSend(
-      messaging.sendMessageProtoAndWait({
-        contentHint,
+    await conversation.queueJob('sendSavedProto', async () => {
+      const proto = Proto.Content.decode(Bytes.fromBase64(protoBase64));
+      const sendOptions = await getSendOptions(conversation.attributes, {
         groupId,
-        options: sendOptions,
-        proto,
-        recipients: [serviceId],
-        timestamp: originalTimestamp,
-        urgent,
         story,
-      }),
-      {
-        messageIds: [],
-        sendType,
-      }
-    );
+      });
+      await handleMessageSend(
+        messaging.sendMessageProtoAndWait({
+          contentHint,
+          groupId,
+          options: sendOptions,
+          proto,
+          recipients: [serviceId],
+          timestamp: originalTimestamp,
+          urgent,
+          story,
+        }),
+        {
+          messageIds: [],
+          sendType,
+        }
+      );
+    });
   } catch (error: unknown) {
     if (
       error instanceof OutgoingIdentityKeyError ||

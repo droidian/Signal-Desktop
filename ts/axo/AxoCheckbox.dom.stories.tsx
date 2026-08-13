@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import { AxoCheckbox } from './AxoCheckbox.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoCheckbox } from './AxoCheckbox.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoCheckbox',
@@ -11,6 +11,7 @@ export default {
 
 function Template(props: {
   label: string;
+  variant: AxoCheckbox.Variant;
   defaultChecked: boolean;
   disabled?: boolean;
 }): JSX.Element {
@@ -18,6 +19,7 @@ function Template(props: {
   return (
     <label className={tw('my-2 flex items-center gap-2')}>
       <AxoCheckbox.Root
+        variant={props.variant}
         checked={checked}
         onCheckedChange={setChecked}
         disabled={props.disabled}
@@ -31,10 +33,30 @@ export function Basic(): JSX.Element {
   return (
     <>
       <h1 className={tw('type-title-large')}>AxoCheckbox</h1>
-      <Template label="Unchecked" defaultChecked={false} />
-      <Template label="Checked" defaultChecked />
-      <Template label="Unchecked+Disabled" defaultChecked={false} disabled />
-      <Template label="Checked+Disabled" defaultChecked disabled />
+      {AxoCheckbox._getAllVariants().map(variant => {
+        return (
+          <section>
+            <Template
+              variant={variant}
+              label="Unchecked"
+              defaultChecked={false}
+            />
+            <Template variant={variant} label="Checked" defaultChecked />
+            <Template
+              variant={variant}
+              label="Unchecked+Disabled"
+              defaultChecked={false}
+              disabled
+            />
+            <Template
+              variant={variant}
+              label="Checked+Disabled"
+              defaultChecked
+              disabled
+            />
+          </section>
+        );
+      })}
     </>
   );
 }

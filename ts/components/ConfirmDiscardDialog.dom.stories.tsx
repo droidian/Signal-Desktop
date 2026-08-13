@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { ConfirmDialogProps } from './ConfirmDiscardDialog.dom.js';
-import { ConfirmDiscardDialog } from './ConfirmDiscardDialog.dom.js';
+import type { ConfirmDialogProps } from './ConfirmDiscardDialog.dom.tsx';
+import { ConfirmDiscardDialog } from './ConfirmDiscardDialog.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -18,8 +18,11 @@ const createProps = ({
   discardText?: string;
 } = {}): ConfirmDialogProps => ({
   i18n,
-  bodyText,
-  discardText,
+  // @ts-expect-error ConfirmationDialog migration: Needs title
+  title: null,
+  // @ts-expect-error ConfirmationDialog migration: Needs description
+  description: bodyText,
+  discardLabel: discardText,
   onClose: action('onClose'),
   onDiscard: action('onDiscard'),
 });

@@ -1,12 +1,8 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import protobufjs from 'protobufjs';
-
-const { Reader } = protobufjs;
-
 type MessageWithUnknownFields = {
-  $unknownFields?: ReadonlyArray<Uint8Array>;
+  $unknown?: ReadonlyArray<Uint8Array<ArrayBuffer>>;
 };
 
 /**
@@ -38,11 +34,20 @@ export function inspectUnknownFieldTags(
   message: MessageWithUnknownFields
 ): Array<number> {
   return (
-    message.$unknownFields?.map(field => {
+    message.$unknown?.map(field => {
       // https://protobuf.dev/programming-guides/encoding/
       // The first byte of a field is a varint encoding the tag bit-shifted << 3
-      // eslint-disable-next-line no-bitwise
-      return new Reader(field).uint32() >>> 3;
+      let tag = 0;
+      for (const [i, b] of field.entries()) {
+        // oxlint-disable-next-line no-bitwise
+        tag |= (b & 0x7f) << (7 * i);
+        // oxlint-disable-next-line no-bitwise
+        if ((b & 0x80) === 0) {
+          break;
+        }
+      }
+      // oxlint-disable-next-line no-bitwise
+      return tag >>> 3;
     }) ?? []
   );
 }

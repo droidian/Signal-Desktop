@@ -1,9 +1,10 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { LocalizerType } from '../types/Util.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
+import type { JSX } from 'react';
+
+import type { LocalizerType } from '../types/Util.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
 
 export type PropsType = {
   callMode: CallMode.Group | CallMode.Adhoc;

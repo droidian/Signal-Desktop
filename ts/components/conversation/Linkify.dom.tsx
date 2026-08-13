@@ -1,17 +1,17 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import LinkifyIt from 'linkify-it';
+import LinkifyIt, { type Match as LinkifyItMatch } from 'linkify-it';
 
-import type { RenderTextCallbackType } from '../../types/Util.std.js';
+import type { RenderTextCallbackType } from '../../types/Util.std.ts';
 import {
   isLinkSneaky,
   shouldLinkifyMessage,
-} from '../../types/LinkPreview.std.js';
-import { splitByEmoji } from '../../util/emoji.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
+} from '../../types/LinkPreview.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 export const linkify = new LinkifyIt()
   // This is all TLDs in place in 2010, according to [IANA's root zone database][0]
@@ -326,6 +326,11 @@ export const SUPPORTED_PROTOCOLS = /^(http|https):/i;
 
 const defaultRenderNonLink: RenderTextCallbackType = ({ text }) => text;
 
+type ChunkDataItem = Readonly<{
+  chunk: string;
+  matchData: ReadonlyArray<LinkifyItMatch>;
+}>;
+
 export function Linkify(props: Props): JSX.Element {
   const { text, renderNonLink = defaultRenderNonLink } = props;
 
@@ -333,19 +338,20 @@ export function Linkify(props: Props): JSX.Element {
     return <>{renderNonLink({ text, key: 1 })}</>;
   }
 
-  const chunkData: Array<{
-    chunk: string;
-    matchData: ReadonlyArray<LinkifyIt.Match>;
-  }> = splitByEmoji(text).map(({ type, value: chunk }) => {
-    if (type === 'text') {
+  const segments = Array.from(Emoji.getSegments(text));
+
+  const chunkData = segments.map((segment): ChunkDataItem => {
+    const chunk = segment.value;
+
+    if (segment.kind === 'text') {
       return { chunk, matchData: linkify.match(chunk) || [] };
     }
 
-    if (type === 'emoji') {
+    if (segment.kind === 'emoji') {
       return { chunk, matchData: [] };
     }
 
-    throw missingCaseError(type);
+    throw missingCaseError(segment);
   });
 
   const results: Array<JSX.Element | string> = [];
@@ -368,7 +374,7 @@ export function Linkify(props: Props): JSX.Element {
 
       const { url, text: originalText } = match;
       count += 1;
-      if (SUPPORTED_PROTOCOLS.test(url) && !isLinkSneaky(url)) {
+      if (SUPPORTED_PROTOCOLS.test(url) && isLinkSneaky(url) !== 'yes') {
         results.push(
           <a key={count} href={url}>
             {originalText}

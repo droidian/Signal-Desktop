@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './Input.dom.js';
-import { Input } from './Input.dom.js';
+import type { PropsType } from './Input.dom.tsx';
+import { Input } from './Input.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -25,6 +25,7 @@ const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   maxLengthCount: overrideProps.maxLengthCount,
   onChange: action('onChange'),
   placeholder: overrideProps.placeholder ?? 'Enter some text here',
+  shouldShowClearButton: overrideProps.shouldShowClearButton ?? false,
   value: overrideProps.value ?? '',
   whenToShowRemainingCount: overrideProps.whenToShowRemainingCount,
 });
@@ -45,6 +46,17 @@ export function HasClearButton(): JSX.Element {
     <Controller
       {...createProps({
         hasClearButton: true,
+      })}
+    />
+  );
+}
+
+export function ClearButtonForcedWithNoData(): JSX.Element {
+  return (
+    <Controller
+      {...createProps({
+        hasClearButton: true,
+        shouldShowClearButton: true,
       })}
     />
   );

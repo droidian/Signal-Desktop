@@ -4,8 +4,8 @@
 import { ReceiptType } from '@signalapp/mock-server';
 import lodash from 'lodash';
 
-import { debug, Bootstrap, MAX_CYCLES } from './fixtures.node.js';
-import { type RegressionSample } from '../bootstrap.node.js';
+import { debug, Bootstrap, MAX_CYCLES } from './fixtures.node.ts';
+import { type RegressionSample } from '../bootstrap.node.ts';
 
 const { omit } = lodash;
 
@@ -21,11 +21,12 @@ Bootstrap.regressionBenchmark(
     const { server, contacts, phone, desktop } = bootstrap;
 
     // Generate messages
-    const messagePromises = new Array<Promise<Buffer>>();
+    const messagePromises = new Array<Promise<Buffer<ArrayBuffer>>>();
     debug('started generating messages');
 
     for (let i = 0; i < messageCount; i += 1) {
-      const contact = contacts[Math.floor(i / 2) % contacts.length];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const contact = contacts[Math.floor(i / 2) % contacts.length]!;
       const direction = i % 2 ? 'message' : 'reply';
 
       const messageTimestamp = bootstrap.getTimestamp();

@@ -3,22 +3,22 @@
 
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { isGroup } from '../../util/whatTypeOfConversation.dom.js';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { isGroup } from '../../util/whatTypeOfConversation.dom.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
+} from './handleMultipleSendErrors.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   GroupCallUpdateJobData,
-} from '../conversationJobQueue.preload.js';
-import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.js';
-import { sendToGroup } from '../../util/sendToGroup.preload.js';
-import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.js';
-import { getValidRecipients } from './getValidRecipients.dom.js';
+} from '../conversationJobQueue.preload.ts';
+import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.ts';
+import { getValidRecipients } from './getValidRecipients.dom.ts';
 
 export async function sendGroupCallUpdate(
   conversation: ConversationModel,
@@ -67,20 +67,22 @@ export async function sendGroupCallUpdate(
   }
 
   const sendType = 'callingMessage';
-  const groupV2 = conversation.getGroupV2Info();
-  const sendOptions = await getSendOptions(conversation.attributes);
-  if (!groupV2) {
-    log.error(`${logId}: Conversation lacks groupV2 info!`);
-    return;
-  }
 
-  try {
-    await wrapWithSyncMessageSend({
-      conversation,
-      logId,
-      messageIds: [],
-      send: () =>
-        conversation.queueJob(logId, () =>
+  await conversation.queueJob('sendGroupCallUpdate', async () => {
+    const groupV2 = conversation.getGroupV2Info();
+    if (!groupV2) {
+      log.error(`${logId}: Conversation lacks groupV2 info!`);
+      return;
+    }
+
+    const sendOptions = await getSendOptions(conversation.attributes);
+
+    try {
+      await wrapWithSyncMessageSend({
+        conversation,
+        logId,
+        messageIds: [],
+        send: () =>
           sendToGroup({
             contentHint: ContentHint.Default,
             groupSendOptions: {
@@ -93,18 +95,19 @@ export async function sendGroupCallUpdate(
             sendTarget: conversation.toSenderKeyTarget(),
             sendType,
             urgent,
-          })
-        ),
-      sendType,
-      timestamp,
-    });
-  } catch (error: unknown) {
-    await handleMultipleSendErrors({
-      errors: maybeExpandErrors(error),
-      isFinalAttempt,
-      log,
-      timeRemaining,
-      toThrow: error,
-    });
-  }
+          }),
+        sendType,
+        timestamp,
+        expirationStartTimestamp: null,
+      });
+    } catch (error: unknown) {
+      await handleMultipleSendErrors({
+        errors: maybeExpandErrors(error),
+        isFinalAttempt,
+        log,
+        timeRemaining,
+        toThrow: error,
+      });
+    }
+  });
 }

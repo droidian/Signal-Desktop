@@ -26,14 +26,8 @@ $NavTabs__ProfileAvatar__size: 28px;
   height: 100%;
   padding-top: var(--title-bar-drag-area-height);
   padding-bottom: 8px;
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-04;
-    border-inline-end: 1px solid variables.$color-black-alpha-16;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-80;
-    border-inline-end: 1px solid variables.$color-white-alpha-16;
-  }
+  background: var(--axo-color-surface-secondary);
+  border-inline-end: 1px solid var(--axo-color-border-primary);
 }
 
 .NavTabs--collapsed {
@@ -70,27 +64,17 @@ $NavTabs__ProfileAvatar__size: 28px;
   border-radius: 8px;
   .NavTabs__Item:hover &,
   .NavTabs__Item:focus & {
-    @include mixins.light-theme {
-      background-color: variables.$color-black-alpha-06;
-    }
-    @include mixins.dark-theme {
-      background-color: variables.$color-white-alpha-06;
-    }
+    background: var(--axo-color-fill-primary);
   }
   .NavTabs__Item:focus & {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
   .NavTabs__Item:active &,
   .NavTabs__Item[aria-selected='true'] & {
-    @include mixins.light-theme {
-      background: variables.$color-gray-20;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-gray-62;
-    }
+    background: var(--axo-color-fill-primary-pressed);
   }
 
   .NavTabs__Toggle & {
@@ -121,8 +105,8 @@ $NavTabs__ProfileAvatar__size: 28px;
 .NavTabs__ItemUnreadBadge {
   @include mixins.rounded-corners;
   align-items: center;
-  background-color: variables.$color-accent-red;
-  color: variables.$color-white;
+  background-color: var(--axo-color-label-destructive);
+  color: var(--axo-color-label-primary-oncolor);
   display: flex;
   font-size: 10px;
   height: 16px;
@@ -134,25 +118,19 @@ $NavTabs__ProfileAvatar__size: 28px;
   position: absolute;
   inset-inline-end: -6px;
   top: -4px;
-  user-select: none;
   z-index: variables.$z-index-base;
   word-break: keep-all;
 }
 
 .NavTabs__ItemUpdateBadge {
-  background: variables.$color-ultramarine;
+  background: var(--axo-color-label-accent);
   border-radius: 100%;
   height: 8px;
   width: 8px;
   position: absolute;
   top: 0;
   inset-inline-end: 0;
-  @include mixins.light-theme {
-    border: 1px solid variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    border: 1px solid variables.$color-gray-80;
-  }
+  border: 1px solid var(--axo-color-surface-secondary);
 }
 
 .NavTabs__ItemIcon {
@@ -162,12 +140,7 @@ $NavTabs__ProfileAvatar__size: 28px;
 }
 
 @mixin NavTabs__Icon($icon) {
-  @include mixins.light-theme {
-    @include mixins.color-svg($icon, variables.$color-black);
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg($icon, variables.$color-gray-15);
-  }
+  @include mixins.color-svg($icon, var(--axo-color-label-primary));
 }
 
 .NavTabs__ItemIcon--Menu {
@@ -248,34 +221,4 @@ $NavTabs__ProfileAvatar__size: 28px;
   display: flex;
   flex: 1;
   min-width: 0;
-}
-
-.NavTabs__ContextMenuIcon--Settings {
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/settings/settings.svg',
-      variables.$color-white
-    );
-  }
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/settings/settings.svg',
-      variables.$color-black
-    );
-  }
-}
-
-.NavTabs__ContextMenuIcon--Update {
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/refresh/refresh.svg',
-      variables.$color-white
-    );
-  }
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/refresh/refresh.svg',
-      variables.$color-black
-    );
-  }
 }

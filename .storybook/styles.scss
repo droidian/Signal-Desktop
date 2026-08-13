@@ -21,3 +21,61 @@
   background-color: variables.$color-gray-95;
   color: variables.$color-gray-05;
 }
+
+.background-checkerboard {
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--axo-color-fill-secondary) 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      -45deg,
+      var(--axo-color-fill-secondary) 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 75%,
+      var(--axo-color-fill-secondary) 75%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 75%,
+      var(--axo-color-fill-secondary) 75%
+    );
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0px;
+}
+
+.background-wallpaper {
+  background-image: url(https://picsum.photos/id/434/1920/1080);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.background-scrolling {
+  background-image: light-dark(
+    url(./fixtures/storybook-preview-background-messages-light.png),
+    url(./fixtures/storybook-preview-background-messages-dark.png)
+  );
+  background-size: calc(1520px / 2) calc(3894px / 2);
+  background-position: center;
+  background-repeat: repeat-y;
+  animation: background-scrolling 60s linear infinite;
+  background-color: var(--axo-color-surface-primary);
+}
+
+@keyframes background-scrolling {
+  from {
+    background-position-y: 0%;
+  }
+  to {
+    background-position-y: calc(100% - 100vh);
+  }
+}

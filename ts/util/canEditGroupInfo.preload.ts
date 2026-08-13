@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { isGroupV2 } from './whatTypeOfConversation.dom.js';
-import { areWeAdmin } from './areWeAdmin.preload.js';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { isGroupV2 } from './whatTypeOfConversation.dom.ts';
+import { areWeAdmin } from './areWeAdmin.preload.ts';
 
 export function canEditGroupInfo(
   conversationAttrs: ConversationAttributesType
@@ -17,9 +17,16 @@ export function canEditGroupInfo(
     return false;
   }
 
+  if (conversationAttrs.terminated) {
+    return false;
+  }
+
+  if (areWeAdmin(conversationAttrs)) {
+    return true;
+  }
+
   return (
-    areWeAdmin(conversationAttrs) ||
     conversationAttrs.accessControl?.attributes ===
-      Proto.AccessControl.AccessRequired.MEMBER
+    Proto.AccessControl.AccessRequired.MEMBER
   );
 }

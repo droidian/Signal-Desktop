@@ -1,71 +1,84 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from 'react';
-import type { ReactNode, MouseEvent, FC } from 'react';
-import { useLayoutEffect } from '@react-aria/utils';
-import { tw } from './tw.dom.js';
-import { assert } from './_internal/assert.dom.js';
-
-const Namespace = 'AriaClickable';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode, MouseEvent, FC, Ref, CSSProperties } from 'react';
+import { useLayoutEffect, mergeRefs } from '@react-aria/utils';
+import { computeAccessibleName } from 'dom-accessibility-api';
+import { Slot } from 'radix-ui';
+import { tw } from './tw.dom.tsx';
+import { assert } from './_internal/assert.std.tsx';
+import {
+  createStrictContext,
+  useStrictContext,
+} from './_internal/StrictContext.dom.tsx';
+import { isTestOrMockEnvironment } from '../environment.std.ts';
+import { forwardExtraPropsForRadix } from './_internal/props.dom.tsx';
 
 /**
+ * Makes an arbitrary region clickable as a single accessible button, while
+ * allowing nested interactive widgets (buttons, links) to remain independently
+ * focusable and clickable.
+ *
+ * The `HiddenTrigger` is an invisible full-area `<button>` that sits below
+ * any `SubWidget` children. It propagates hover/press/focus state as
+ * `data-hovered`, `data-pressed`, and `data-focused` attributes on `Root`
+ * so the containing element can style itself accordingly.
+ *
  * @example Anatomy
  * ```tsx
- * export default () => (
- *   <AriaClickable.Root>
- *     <h3>Card Title</h3>
- *     <p>
- *       Lorem ipsum dolor sit amet consectetur adipisicing elit...
- *       <span id="see-more-1">See more</span>
- *       <AriaClickable.HiddenTrigger aria-labelledby="see-more-1"/>
- *     </p>
- *     <AriaClickable.SubWidget>
- *       <AxoButton.Root>Delete</AxoButton.Root>
- *     </AriaClickable.SubWidget>
- *     <AriaClickable.SubWidget>
- *       <AxoLink>Edit</AxoLink>
- *     </AriaClickable.SubWidget>
- *   </AriaClickable.Root>
- * );
+ * <AriaClickable.Root>
+ *   <h3>Card Title</h3>
+ *   <p>
+ *     Lorem ipsum dolor sit amet consectetur adipisicing elit...
+ *     <span id="see-more-1">See more</span>
+ *     <AriaClickable.HiddenTrigger labelledby="see-more-1" onClick={onOpen} />
+ *   </p>
+ *   <AriaClickable.SubWidget>
+ *     <AxoButton.Root variant="subtle-destructive" size="sm" onClick={onDelete}>Delete</AxoButton.Root>
+ *   </AriaClickable.SubWidget>
+ * </AriaClickable.Root>
  * ```
  */
 export namespace AriaClickable {
+  /** @internal */
   type TriggerState = Readonly<{
     hovered: boolean;
     pressed: boolean;
     focused: boolean;
   }>;
 
+  /** @internal */
   const INITIAL_TRIGGER_STATE: TriggerState = {
     hovered: false,
     pressed: false,
     focused: false,
   };
 
+  /** @internal */
   type TriggerStateUpdate = (state: TriggerState) => void;
 
-  const TriggerStateUpdateContext = createContext<TriggerStateUpdate | null>(
-    null
-  );
+  /** @internal */
+  const TriggerStateUpdateContext =
+    createStrictContext<TriggerStateUpdate>('AriaClickable.Root');
 
   /**
-   * Component: <AriaClickable.Root>
-   * -------------------------------
+   * <AriaClickable.Root>
+   * --------------------------------------------------------------------------
    */
 
   export type RootProps = Readonly<{
+    asChild?: boolean;
+    /** Additional CSS classes applied to the container `<div>`. */
     className?: string;
     children: ReactNode;
   }>;
 
+  /**
+   * A `position: relative` container that exposes `data-hovered`, `data-pressed`,
+   * and `data-focused` attributes driven by the `HiddenTrigger` state.
+   */
   export const Root: FC<RootProps> = memo(props => {
+    const Comp = props.asChild ? Slot.Root : 'div';
     const [hovered, setHovered] = useState(INITIAL_TRIGGER_STATE.hovered);
     const [pressed, setPressed] = useState(INITIAL_TRIGGER_STATE.pressed);
     const [focused, setFocused] = useState(INITIAL_TRIGGER_STATE.focused);
@@ -78,25 +91,25 @@ export namespace AriaClickable {
 
     return (
       <TriggerStateUpdateContext.Provider value={handleTriggerStateUpdate}>
-        <div
-          // eslint-disable-next-line better-tailwindcss/no-restricted-classes
-          className={tw('relative!', props.className)}
+        <Comp
+          data-aria-clickable-root
+          className={props.className}
           // For styling based on the HiddenTrigger state.
           data-hovered={hovered ? true : null}
           data-focused={focused ? true : null}
           data-pressed={pressed ? true : null}
         >
           {props.children}
-        </div>
+        </Comp>
       </TriggerStateUpdateContext.Provider>
     );
   });
 
-  Root.displayName = `${Namespace}.Root`;
+  Root.displayName = 'AriaClickable.Root';
 
   /**
-   * Component: <AriaClickable.SubAction>
-   * ------------------------------------
+   * <AriaClickable.SubWidget>
+   * --------------------------------------------------------------------------
    */
 
   export type SubWidgetProps = Readonly<{
@@ -110,7 +123,27 @@ export namespace AriaClickable {
   export const SubWidget: FC<SubWidgetProps> = memo(props => {
     return (
       <div
-        // eslint-disable-next-line better-tailwindcss/no-restricted-classes
+        // Here we use `display: contents` so that components don't need to
+        // deal with an extra element affecting layout.
+        //
+        // However, we need to apply `z-index: 20` to all of the children in
+        // order to force them above the HiddenTrigger.
+        //
+        // In order to get `z-index` to work, the child also needs to have a
+        // `position` other than `static`.
+        //
+        // But if that doesn't work (like if you have an absolutely positioned
+        // element that is breaking because of the `position: relative`
+        // establishing a new containing block) you can set the child back to
+        // `position: static` and do either:
+        //
+        // 1. Add z-index's further down where you need them.
+        // 2. Wrap the children with a flex container to get z-index working.
+        //
+        // [css-position-3: Painting Order and Stacking Contexts]: https://drafts.csswg.org/css-position-3/#stacking
+        // [css-flexbox-1: Flex Item Z-Ordering]: https://drafts.csswg.org/css-flexbox-1/#painting
+        //
+        // oxlint-disable-next-line better-tailwindcss/no-restricted-classes
         className={tw('contents *:relative *:z-20')}
       >
         {props.children}
@@ -118,10 +151,16 @@ export namespace AriaClickable {
     );
   });
 
-  SubWidget.displayName = `${Namespace}.SubWidget`;
+  SubWidget.displayName = 'AriaClickable.SubWidget';
+
+  /**
+   * <AriaClickable.DeadArea>
+   * --------------------------------------------------------------------------
+   */
 
   export type DeadAreaProps = Readonly<{
     className?: string;
+    style?: CSSProperties;
     children: ReactNode;
   }>;
 
@@ -133,22 +172,32 @@ export namespace AriaClickable {
    * more nested widgets.
    */
   export const DeadArea: FC<DeadAreaProps> = memo(props => {
+    const { className, style, children, ...rest } = props;
     return (
-      // eslint-disable-next-line better-tailwindcss/no-restricted-classes
-      <div className={tw('relative! z-20!', props.className)}>
-        {props.children}
+      <div
+        data-aria-clickable-root
+        className={className}
+        style={style}
+        {...forwardExtraPropsForRadix(rest)}
+      >
+        {children}
       </div>
     );
   });
 
-  DeadArea.displayName = `${Namespace}.DeadArea`;
+  DeadArea.displayName = 'AriaClickable.DeadArea';
 
   /**
-   * Component: <AriaClickable.HiddenTrigger>
-   * ------------------------------------
+   * <AriaClickable.HiddenTrigger>
+   * --------------------------------------------------------------------------
    */
 
   export type HiddenTriggerProps = Readonly<{
+    /** Ref to the underlying `<button>` element. */
+    ref?: Ref<HTMLButtonElement>;
+
+    /** Describe the action to be taken `onClick` */
+    label?: string;
     /**
      * This should reference the ID of an element that describes the action that
      * will be taken `onClick`, not the entire clickable root.
@@ -156,11 +205,13 @@ export namespace AriaClickable {
      * @example
      * ```tsx
      * <span id="see-more-1">See more</span>
-     * <HiddenTrigger aria-labelledby="see-more-1"/>
+     * <HiddenTrigger labelledby="see-more-1"/>
      * ```
      */
-    'aria-labelledby': string;
-    onClick: (event: MouseEvent) => void;
+    labelledby?: string;
+
+    /** Called when the button is clicked. */
+    onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   }>;
 
   /**
@@ -173,14 +224,10 @@ export namespace AriaClickable {
    *   before any <AriaClickable.SubWidget>.
    */
   export const HiddenTrigger: FC<HiddenTriggerProps> = memo(props => {
-    const ref = useRef<HTMLButtonElement>(null);
-    const onTriggerStateUpdate = useContext(TriggerStateUpdateContext);
+    const { onClick } = props;
 
-    if (onTriggerStateUpdate == null) {
-      throw new Error(
-        `<${Namespace}.HiddenTrigger> must be wrapped with <${Namespace}.Root>`
-      );
-    }
+    const innerRef = useRef<HTMLButtonElement>(null);
+    const onTriggerStateUpdate = useStrictContext(TriggerStateUpdateContext);
 
     const onTriggerStateUpdateRef = useRef(onTriggerStateUpdate);
     useLayoutEffect(() => {
@@ -188,7 +235,7 @@ export namespace AriaClickable {
     }, [onTriggerStateUpdate]);
 
     useLayoutEffect(() => {
-      const button = assert(ref.current, 'Missing ref');
+      const button = assert(innerRef.current, 'Missing ref');
       let timer: ReturnType<typeof setTimeout>;
 
       function update() {
@@ -230,16 +277,34 @@ export namespace AriaClickable {
       };
     }, []);
 
+    useEffect(() => {
+      if (isTestOrMockEnvironment()) {
+        assert(
+          computeAccessibleName(assert(innerRef.current)) !== '',
+          'AriaClickable.HiddenTrigger child must have an accessible name'
+        );
+      }
+    });
+
+    const handleClick = useCallback(
+      (event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        onClick(event);
+      },
+      [onClick]
+    );
+
     return (
       <button
-        ref={ref}
+        ref={mergeRefs(props.ref, innerRef)}
         type="button"
-        className={tw('absolute inset-0 z-10 outline-0')}
-        aria-labelledby={props['aria-labelledby']}
-        onClick={props.onClick}
+        aria-label={props.label}
+        aria-labelledby={props.labelledby}
+        onClick={handleClick}
+        className={tw('absolute inset-0 z-10 outline-none')}
       />
     );
   });
 
-  HiddenTrigger.displayName = `${Namespace}.HiddenTrigger`;
+  HiddenTrigger.displayName = 'AriaClickable.HiddenTrigger';
 }

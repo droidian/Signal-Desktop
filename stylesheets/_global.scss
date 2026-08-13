@@ -4,55 +4,12 @@
 @use 'mixins';
 @use 'variables';
 
-html {
-  height: 100%;
-  cursor: inherit;
-  // Legacy style from sanitize.css:
-  overflow-wrap: break-word;
+body.is-resizing-left-pane {
+  cursor: col-resize;
 }
 
-.light-theme {
-  color-scheme: light;
-}
-
-.dark-theme {
-  color-scheme: dark;
-}
-
-body {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-
-  color: variables.$color-gray-90;
-
-  @include mixins.font-family;
-  @include mixins.font-body-1;
-
-  &.light-theme {
-    background-color: variables.$color-white;
-    color: variables.$color-gray-90;
-  }
-  &.dark-theme {
-    background-color: variables.$color-gray-95;
-    color: variables.$color-gray-05;
-  }
-
-  &.is-resizing-left-pane {
-    cursor: col-resize;
-  }
-}
-
-input,
-button,
-select,
-optgroup,
-textarea {
-  font-family: inherit;
-}
-
-[contenteditable] {
+[contenteditable]:not([contenteditable='false']) {
+  /* stylelint-disable-next-line property-no-deprecated */
   -webkit-user-modify: read-write-plaintext-only;
 }
 
@@ -82,48 +39,6 @@ textarea {
   }
 }
 
-::-webkit-scrollbar {
-  // For vertical scrollbars
-  width: variables.$scrollbar_width;
-  // For horizontal scrollbars
-  height: variables.$scrollbar_height;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-
-  @include mixins.light-theme {
-    background: variables.$color-gray-25;
-    border: 2px solid variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    background: variables.$color-gray-45;
-    border: 2px solid variables.$color-gray-90;
-  }
-
-  &:hover {
-    @include mixins.light-theme {
-      background: variables.$color-gray-45;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-gray-25;
-    }
-  }
-}
-
-::-webkit-scrollbar-corner {
-  @include mixins.light-theme {
-    background: variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    background: variables.$color-black;
-  }
-}
-
 audio {
   max-width: 100%;
 }
@@ -140,6 +55,7 @@ audio {
   @include mixins.light-theme {
     background-color: variables.$color-black;
   }
+
   @include mixins.dark-theme {
     background-color: variables.$color-gray-95;
   }
@@ -161,100 +77,8 @@ audio {
 button {
   -webkit-app-region: no-drag;
 }
-button:not(:disabled) {
+button:not(:disabled, [aria-disabled='true']) {
   cursor: pointer;
-}
-
-button.grey {
-  border-radius: 5px;
-  border: solid 1px variables.$color-gray-25;
-  cursor: pointer;
-  margin-block: 1em;
-  margin-inline: auto;
-  padding: 1em;
-  font-family: inherit;
-
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-    background: variables.$color-gray-02;
-    box-shadow: 0 0 10px -5px variables.$color-black-alpha-40;
-  }
-  @include mixins.dark-theme {
-    border: solid 1px variables.$color-gray-25;
-    color: variables.$color-gray-60;
-    background: variables.$color-gray-02;
-    box-shadow: 0 0 10px -5px variables.$color-white-alpha-60;
-  }
-
-  &:hover {
-    @include mixins.light-theme {
-      box-shadow: 0 0 10px -3px variables.$color-black-alpha-60;
-    }
-    @include mixins.dark-theme {
-      box-shadow: 0 0 10px -3px variables.$color-white-alpha-80;
-    }
-  }
-
-  &[disabled='disabled'] {
-    &,
-    &:hover {
-      opacity: 0.5;
-      box-shadow: none;
-      cursor: default;
-    }
-  }
-}
-
-a {
-  @include mixins.light-theme {
-    color: variables.$color-ultramarine;
-  }
-
-  @include mixins.dark-theme {
-    color: variables.$color-gray-05;
-  }
-}
-
-$loading-height: 16px;
-
-.loading {
-  position: relative;
-  &::before {
-    display: block;
-    margin-block: 0px;
-    margin-inline: auto;
-    content: ' ';
-    height: $loading-height;
-    width: $loading-height;
-    border-radius: 2 * $loading-height;
-    animation: rotate 1s linear infinite;
-
-    border: solid 3px;
-    border-color: variables.$color-ios-blue-tint variables.$color-ios-blue-tint
-      variables.$color-gray-02 variables.$color-gray-02 !important;
-  }
-}
-
-.x {
-  display: inline-block;
-  float: inline-end;
-  cursor: pointer;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  padding: 3px;
-  background: variables.$color-gray-60;
-
-  &:before {
-    content: '';
-    display: block;
-    width: 100%;
-    height: 100%;
-    @include mixins.color-svg(
-      '../images/icons/v3/x/x.svg',
-      variables.$color-white
-    );
-  }
 }
 
 @keyframes loading {
@@ -290,23 +114,10 @@ $loading-height: 16px;
   padding-block: 0;
   padding-inline: 16px;
 
-  /* Note: background-color is intentionally transparent until body has the
-   *       theme class.
-   */
-  @include mixins.explicit-light-theme {
-    background-color: variables.$color-white;
-    color: variables.$color-black-alpha-80;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-95;
-    color: variables.$color-white-alpha-80;
-  }
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  user-select: none;
 
   .dot-container {
     display: flex;
@@ -323,12 +134,8 @@ $loading-height: 16px;
       margin-block: 0;
       margin-inline: 6px;
       transform: scale(0);
-      @include mixins.light-theme {
-        border-color: variables.$color-black;
-      }
-      @include mixins.dark-theme {
-        border-color: variables.$color-white;
-      }
+
+      border-color: var(--axo-color-label-primary);
 
       & {
         animation: loading 1500ms ease infinite 0ms;
@@ -341,321 +148,12 @@ $loading-height: 16px;
       }
     }
   }
-
-  &__progress {
-    &--container {
-      animation: fade-in 150ms ease 1 0ms;
-      border-radius: 2px;
-      height: 4px;
-      max-width: 400px;
-      overflow: hidden;
-      width: 100%;
-      margin-block: 12px 26px;
-      margin-inline: 0;
-      @include mixins.light-theme {
-        background: variables.$color-black-alpha-20;
-      }
-      @include mixins.dark-theme {
-        background: variables.$color-white-alpha-20;
-      }
-    }
-
-    &--bar {
-      border-radius: 2px;
-      display: block;
-      height: 100%;
-      width: 100%;
-      &:dir(ltr) {
-        // stylelint-disable-next-line declaration-property-value-disallowed-list
-        transform: translateX(-100%);
-      }
-      &:dir(rtl) {
-        // stylelint-disable-next-line declaration-property-value-disallowed-list
-        transform: translateX(100%);
-      }
-      transition: transform 500ms linear;
-
-      @include mixins.light-theme {
-        background: variables.$color-black;
-      }
-      @include mixins.dark-theme {
-        background: variables.$color-white;
-      }
-    }
-  }
   .message {
     animation: fade-in 150ms ease 1 0ms;
     max-width: 35em;
   }
   .message-placeholder {
     height: 20px;
-  }
-}
-
-.full-screen-flow {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  bottom: 0;
-
-  &.overlay {
-    z-index: variables.$z-index-popup-overlay;
-  }
-
-  color: variables.$color-black;
-  a {
-    color: variables.$color-ultramarine;
-  }
-  background: linear-gradient(
-    to bottom,
-    /* (1 - 0.41) * 255 + 0.41 * 213*/ rgb(238, 238, 238) 0%,
-    /* (1 - 0.19) * 255 + 0.19 * 191*/ rgb(243, 243, 243) 12%,
-    rgb(255, 255, 255) 27%,
-    rgb(255, 255, 255) 60%,
-    /* (1 - 0.19) * 255 + 0.19 * 222*/ rgb(249, 249, 249) 85%,
-    /* (1 - 0.27) * 255 + 0.27 * 98 */ rgb(213, 213, 213) 100%
-  );
-  display: flex;
-  align-items: center;
-  text-align: center;
-
-  font-size: 10pt;
-  input {
-    font-size: 12pt;
-    border: 2px solid variables.$color-ultramarine;
-    padding: 0.5em;
-    text-align: center;
-  }
-
-  .phone-input .number {
-    margin-top: 1em;
-    width: 20em;
-  }
-
-  @media (min-height: 750px) and (min-width: 700px) {
-    font-size: 14pt;
-
-    input {
-      font-size: 16pt;
-    }
-  }
-
-  .header {
-    font-weight: normal;
-    line-height: 1em;
-    margin-bottom: 1.5em;
-
-    font-size: 20pt;
-
-    @media (min-height: 750px) and (min-width: 700px) {
-      font-size: 28pt;
-    }
-  }
-
-  .body-text {
-    max-width: 22em;
-    text-align: start;
-    margin-inline: auto;
-  }
-  .body-text-wide {
-    max-width: 30em;
-    text-align: start;
-    margin-inline: auto;
-  }
-
-  form {
-    height: 100%;
-    width: 100%;
-  }
-  .step {
-    height: 100%;
-    width: 100%;
-    padding-block: 70px 50px;
-    padding-inline: 0;
-  }
-  .step-body {
-    margin-inline: auto;
-    max-width: 35em;
-  }
-
-  .inner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .banner-image {
-    margin: 1em;
-    display: none;
-
-    @media (min-height: 550px) {
-      display: inline-block;
-      height: 10em;
-      width: 10em;
-    }
-  }
-
-  .banner-icon {
-    display: none;
-    margin: 1em;
-
-    // 640px by 338px is the smallest the window can go
-    @media (min-height: 550px) {
-      display: inline-block;
-      height: 10em;
-      width: 10em;
-    }
-
-    // generic
-    &.check-circle-outline {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/check-circle-outline.svg',
-        variables.$color-gray-15
-      );
-    }
-    &.alert-outline {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/alert-outline.svg',
-        variables.$color-gray-15
-      );
-    }
-
-    // import and export
-    &.folder-outline {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/folder-outline.svg',
-        variables.$color-gray-15
-      );
-    }
-    &.import {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/import.svg',
-        variables.$color-gray-15
-      );
-    }
-
-    // registration process
-    &.lead-pencil {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/lead-pencil.svg',
-        variables.$color-gray-15
-      );
-    }
-    &.sync {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/sync.svg',
-        variables.$color-gray-15
-      );
-    }
-
-    // delete
-    &.alert-outline-red {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/alert-outline.svg',
-        variables.$color-accent-red
-      );
-    }
-    &.delete {
-      @include mixins.color-svg(
-        '../images/full-screen-flow/delete.svg',
-        variables.$color-gray-15
-      );
-    }
-  }
-
-  .button {
-    cursor: pointer;
-    display: inline-block;
-    border: none;
-    min-width: 300px;
-    padding: 0.75em;
-    margin-top: 1em;
-    margin-inline: 0.5em;
-    color: variables.$color-white;
-    background: variables.$color-ultramarine;
-    box-shadow: 2px 2px 4px variables.$color-black-alpha-40;
-
-    font-size: 12pt;
-
-    &.neutral {
-      color: variables.$color-black;
-      background: variables.$color-gray-15;
-    }
-    &.destructive {
-      background: variables.$color-accent-red;
-    }
-
-    @media (min-height: 750px) and (min-width: 700px) {
-      font-size: 20pt;
-    }
-
-    &:disabled {
-      background-color: variables.$color-gray-20;
-      cursor: auto;
-    }
-  }
-
-  button.link {
-    @include mixins.button-reset;
-
-    & {
-      display: block;
-      margin-block: 0.5em;
-      margin-inline: auto;
-      text-align: center;
-      text-decoration: underline;
-      color: variables.$color-ultramarine;
-    }
-
-    &:disabled {
-      color: variables.$color-gray-20;
-      cursor: auto;
-    }
-  }
-
-  a.link {
-    display: block;
-    cursor: pointer;
-    text-decoration: underline;
-    margin: 0.5em;
-    color: variables.$color-ultramarine;
-  }
-
-  .nav {
-    width: 100%;
-    bottom: 50px;
-    margin-top: auto;
-    padding-bottom: 2em;
-    padding-inline: 20px;
-
-    .instructions {
-      text-align: start;
-      margin-inline: auto;
-      margin-bottom: 2em;
-      margin-top: 2em;
-      max-width: 30em;
-    }
-    .instructions:after {
-      clear: both;
-    }
-    .android {
-      float: inline-start;
-    }
-    .apple {
-      float: inline-end;
-    }
-    .label {
-      float: inline-start;
-    }
-    .body {
-      float: inline-start;
-    }
-  }
-
-  .StandaloneRegistration__error {
-    color: variables.$color-accent-red;
   }
 }
 

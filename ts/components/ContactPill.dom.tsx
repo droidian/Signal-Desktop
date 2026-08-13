@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
 
 export type PropsType = {
   i18n: LocalizerType;
@@ -23,7 +23,6 @@ export type PropsType = {
   | 'isMe'
   | 'phoneNumber'
   | 'profileName'
-  | 'sharedGroupNames'
   | 'title'
 >;
 
@@ -37,7 +36,6 @@ export function ContactPill({
   id,
   phoneNumber,
   profileName,
-  sharedGroupNames,
   title,
   onClickRemove,
 }: PropsType): JSX.Element {
@@ -57,7 +55,6 @@ export function ContactPill({
         phoneNumber={phoneNumber}
         profileName={profileName}
         title={title}
-        sharedGroupNames={sharedGroupNames}
         size={AvatarSize.TWENTY}
       />
       <ContactName

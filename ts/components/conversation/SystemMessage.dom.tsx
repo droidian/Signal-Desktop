@@ -2,8 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import classNames from 'classnames';
+import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import type { AxoSymbolIconName } from '../../axo/_internal/AxoSymbolDefs.generated.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
+import { ExpireTimer } from './ExpireTimer.dom.tsx';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.std.ts';
+import { DurationInSeconds } from '../../util/durations/duration-in-seconds.std.ts';
 
 export enum SystemMessageKind {
   Normal = 'Normal',
@@ -11,50 +17,73 @@ export enum SystemMessageKind {
   Error = 'Error',
 }
 
-export type PropsType = {
-  icon:
-    | 'audio-incoming'
-    | 'audio-missed'
-    | 'audio-outgoing'
-    | 'block'
-    | 'group'
-    | 'group-access'
-    | 'group-add'
-    | 'group-approved'
-    | 'group-avatar'
-    | 'group-decline'
-    | 'group-edit'
-    | 'group-leave'
-    | 'group-remove'
-    | 'group-summary'
-    | 'info'
-    | 'phone'
-    | 'profile'
-    | 'safety-number'
-    | 'spam'
-    | 'session-refresh'
-    | 'thread'
-    | 'timer'
-    | 'timer-disabled'
-    | 'unsupported'
-    | 'unsupported--can-process'
-    | 'verified'
-    | 'verified-not'
-    | 'video'
-    | 'video-incoming'
-    | 'video-missed'
-    | 'video-outgoing'
-    | 'warning'
-    | 'payment-event'
-    | 'merge';
+type SystemMessageBaseProps = {
   contents: ReactNode;
   button?: ReactNode;
   kind?: SystemMessageKind;
+  expireTimer?: DurationInSeconds | null;
+  expirationStartTimestamp?: number | null;
 };
+
+export type PropsType = SystemMessageBaseProps &
+  (
+    | {
+        /** @deprecated Use symbol instead */
+        icon:
+          | 'audio-incoming'
+          | 'audio-missed'
+          | 'audio-outgoing'
+          | 'block'
+          | 'group'
+          | 'group-access'
+          | 'group-add'
+          | 'group-approved'
+          | 'group-avatar'
+          | 'group-decline'
+          | 'group-edit'
+          | 'group-leave'
+          | 'group-remove'
+          | 'group-summary'
+          | 'group-terminate'
+          | 'info'
+          | 'phone'
+          | 'profile'
+          | 'safety-number'
+          | 'spam'
+          | 'session-refresh'
+          | 'thread'
+          | 'timer'
+          | 'timer-disabled'
+          | 'unsupported'
+          | 'unsupported--can-process'
+          | 'verified'
+          | 'verified-not'
+          | 'video'
+          | 'video-incoming'
+          | 'video-missed'
+          | 'video-outgoing'
+          | 'warning'
+          | 'payment-event'
+          | 'merge';
+        symbol?: never;
+      }
+    | {
+        icon?: never;
+        symbol: AxoSymbolIconName;
+      }
+  );
 
 export const SystemMessage = forwardRef<HTMLDivElement, PropsType>(
   function SystemMessageInner(
-    { icon, contents, button, kind = SystemMessageKind.Normal },
+    {
+      icon,
+      symbol,
+      contents,
+      button,
+      kind = SystemMessageKind.Normal,
+      expireTimer,
+      expirationStartTimestamp,
+    },
     ref
   ) {
     return (
@@ -69,10 +98,25 @@ export const SystemMessage = forwardRef<HTMLDivElement, PropsType>(
         <div
           className={classNames(
             'SystemMessage__contents',
-            `SystemMessage__contents--icon-${icon}`
+            icon && 'SystemMessage__contents--has-icon',
+            icon && `SystemMessage__contents--icon-${icon}`
           )}
         >
+          {symbol && (
+            <span className={tw('me-2 inline-block')}>
+              <AxoSymbol.Icon size={16} symbol={symbol} label={null} />
+            </span>
+          )}
           {contents}
+          {expireTimer != null && expirationStartTimestamp != null && (
+            <ExpireTimer
+              expirationLength={DurationInSeconds.toMillis(expireTimer)}
+              expirationTimestamp={calculateExpirationTimestamp({
+                expireTimer,
+                expirationStartTimestamp,
+              })}
+            />
+          )}
         </div>
         {button && (
           <div className="SystemMessage__button-container">{button}</div>

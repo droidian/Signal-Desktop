@@ -1,8 +1,5 @@
 // Copyright 2015 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { assert } from 'chai';
 import lodash from 'lodash';
 import {
@@ -14,40 +11,45 @@ import {
 } from '@signalapp/libsignal-client';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
 import { signal } from '../protobuf/compiled.std.js';
-import { sessionStructureToBytes } from '../util/sessionTranslation.node.js';
-import * as durations from '../util/durations/index.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { Zone } from '../util/Zone.std.js';
+import { sessionStructureToBytes } from '../util/sessionTranslation.node.ts';
+import * as durations from '../util/durations/index.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { Zone } from '../util/Zone.std.ts';
 
-import * as Bytes from '../Bytes.std.js';
-import { getRandomBytes, constantTimeEqual } from '../Crypto.node.js';
+import * as Bytes from '../Bytes.std.ts';
+import { getRandomBytes, constantTimeEqual } from '../Crypto.node.ts';
 import {
   clampPrivateKey,
   setPublicKeyTypeByte,
   generateSignedPreKey,
   generateKyberPreKey,
-} from '../Curve.node.js';
-import type { SignalProtocolStore } from '../SignalProtocolStore.preload.js';
+} from '../Curve.node.ts';
+import type { SignalProtocolStore } from '../SignalProtocolStore.preload.ts';
 import {
   GLOBAL_ZONE,
   signalProtocolStore,
-} from '../SignalProtocolStore.preload.js';
-import { Address } from '../types/Address.std.js';
-import { QualifiedAddress } from '../types/QualifiedAddress.std.js';
-import { generateAci, generatePni } from '../types/ServiceId.std.js';
-import type { IdentityKeyType, KeyPairType } from '../textsecure/Types.d.ts';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../SignalProtocolStore.preload.ts';
+import { Address } from '../types/Address.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
+import type {
+  IdentityKeyType,
+  KeyPairType,
+  UnprocessedType,
+} from '../textsecure/Types.d.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import {
+  generateAci,
+  generatePni,
+} from '../test-helpers/serviceIdUtils.std.ts';
+import {
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
 
 const { clone } = lodash;
-
-const {
-  RecordStructure,
-  SessionStructure,
-  SenderKeyRecordStructure,
-  SenderKeyStateStructure,
-} = signal.proto.storage;
 
 const ZERO = new Uint8Array(0);
 
@@ -61,7 +63,7 @@ describe('SignalProtocolStore', () => {
 
   const NOW = Date.now();
 
-  const unprocessedDefaults = {
+  const unprocessedDefaults: Omit<UnprocessedType, 'id' | 'receivedAtDate'> = {
     type: 1,
     messageAgeSec: 1,
     source: undefined,
@@ -75,33 +77,43 @@ describe('SignalProtocolStore', () => {
     urgent: false,
     receivedAtCounter: 0,
     serverGuid: generateUuid(),
-    serverTimestamp: 1,
+    serverTimestamp: ServerTimestampMs.fromNumber(1),
     attempts: 0,
 
     isEncrypted: true,
     content: Buffer.from('content'),
-    timestamp: NOW,
+    timestamp: SentTimestampMs.fromNumber(NOW),
   };
 
   function getSessionRecord(isOpen?: boolean): SessionRecord {
-    const proto = new RecordStructure();
-
-    proto.previousSessions = [];
+    const proto: signal.proto.storage.RecordStructure.Params = {
+      previousSessions: [],
+      currentSession: null,
+    };
 
     if (isOpen) {
-      proto.currentSession = new SessionStructure();
+      proto.currentSession = {
+        aliceBaseKey: getPublicKey(),
+        localIdentityPublic: getPublicKey(),
+        localRegistrationId: 435,
 
-      proto.currentSession.aliceBaseKey = getPublicKey();
-      proto.currentSession.localIdentityPublic = getPublicKey();
-      proto.currentSession.localRegistrationId = 435;
+        previousCounter: 1,
+        remoteIdentityPublic: getPublicKey(),
+        remoteRegistrationId: 243,
 
-      proto.currentSession.previousCounter = 1;
-      proto.currentSession.remoteIdentityPublic = getPublicKey();
-      proto.currentSession.remoteRegistrationId = 243;
+        rootKey: getPrivateKey(),
+        sessionVersion: 3,
+        senderChain: {
+          senderRatchetKey: null,
+          senderRatchetKeyPrivate: null,
+          chainKey: null,
+          messageKeys: null,
+        },
 
-      proto.currentSession.rootKey = getPrivateKey();
-      proto.currentSession.sessionVersion = 3;
-      proto.currentSession.senderChain = {};
+        receiverChains: null,
+        pendingPreKey: null,
+        needsRefresh: null,
+      };
     }
 
     return SessionRecord.deserialize(
@@ -110,37 +122,30 @@ describe('SignalProtocolStore', () => {
   }
 
   function getSenderKeyRecord(): SenderKeyRecord {
-    const proto = new SenderKeyRecordStructure();
-
-    const state = new SenderKeyStateStructure();
-
-    state.senderKeyId = 4;
-
-    const senderChainKey = new SenderKeyStateStructure.SenderChainKey();
-
-    senderChainKey.iteration = 10;
-    senderChainKey.seed = getPublicKey();
-    state.senderChainKey = senderChainKey;
-
-    const senderSigningKey = new SenderKeyStateStructure.SenderSigningKey();
-    senderSigningKey.public = getPublicKey();
-    senderSigningKey.private = getPrivateKey();
-
-    state.senderSigningKey = senderSigningKey;
-
-    state.senderMessageKeys = [];
-    const messageKey = new SenderKeyStateStructure.SenderMessageKey();
-    messageKey.iteration = 234;
-    messageKey.seed = getPublicKey();
-    state.senderMessageKeys.push(messageKey);
-
-    proto.senderKeyStates = [];
-    proto.senderKeyStates.push(state);
+    const proto: signal.proto.storage.SenderKeyRecordStructure.Params = {
+      senderKeyStates: [
+        {
+          senderKeyId: 4,
+          senderChainKey: {
+            iteration: 10,
+            seed: getPublicKey(),
+          },
+          senderSigningKey: {
+            public: getPublicKey(),
+            private: getPrivateKey(),
+          },
+          senderMessageKeys: [
+            {
+              iteration: 234,
+              seed: getPublicKey(),
+            },
+          ],
+        },
+      ],
+    };
 
     return SenderKeyRecord.deserialize(
-      Buffer.from(
-        signal.proto.storage.SenderKeyRecordStructure.encode(proto).finish()
-      )
+      Buffer.from(signal.proto.storage.SenderKeyRecordStructure.encode(proto))
     );
   }
 
@@ -319,6 +324,8 @@ describe('SignalProtocolStore', () => {
         store.saveIdentity(identifier, newIdentity, false, {
           zone: GLOBAL_ZONE,
         }),
+        // FIXME
+        // oxlint-disable-next-line typescript/await-thenable
         resolve(),
       ]);
     });
@@ -608,22 +615,27 @@ describe('SignalProtocolStore', () => {
       }
 
       it('rejects an invalid publicKey', async () => {
+        // oxlint-disable-next-line typescript/no-explicit-any
         attributes.publicKey = 'a string' as any;
         await testInvalidAttributes();
       });
       it('rejects invalid firstUse', async () => {
+        // oxlint-disable-next-line typescript/no-explicit-any
         attributes.firstUse = 0 as any;
         await testInvalidAttributes();
       });
       it('rejects invalid timestamp', async () => {
+        // oxlint-disable-next-line typescript/no-explicit-any
         attributes.timestamp = NaN as any;
         await testInvalidAttributes();
       });
       it('rejects invalid verified', async () => {
+        // oxlint-disable-next-line typescript/no-explicit-any
         attributes.verified = null as any;
         await testInvalidAttributes();
       });
       it('rejects invalid nonblockingApproval', async () => {
+        // oxlint-disable-next-line typescript/no-explicit-any
         attributes.nonblockingApproval = 0 as any;
         await testInvalidAttributes();
       });
@@ -802,7 +814,7 @@ describe('SignalProtocolStore', () => {
       });
 
       await store.hydrateCaches();
-      const untrusted = await store.isUntrusted(theirAci);
+      const untrusted = store.isUntrusted(theirAci);
       assert.strictEqual(untrusted, false);
     });
 
@@ -817,7 +829,7 @@ describe('SignalProtocolStore', () => {
       });
       await store.hydrateCaches();
 
-      const untrusted = await store.isUntrusted(theirAci);
+      const untrusted = store.isUntrusted(theirAci);
       assert.strictEqual(untrusted, false);
     });
 
@@ -832,7 +844,7 @@ describe('SignalProtocolStore', () => {
       });
       await store.hydrateCaches();
 
-      const untrusted = await store.isUntrusted(theirAci);
+      const untrusted = store.isUntrusted(theirAci);
       assert.strictEqual(untrusted, false);
     });
 
@@ -847,7 +859,7 @@ describe('SignalProtocolStore', () => {
       });
       await store.hydrateCaches();
 
-      const untrusted = await store.isUntrusted(theirAci);
+      const untrusted = store.isUntrusted(theirAci);
       assert.strictEqual(untrusted, true);
     });
   });
@@ -870,6 +882,7 @@ describe('SignalProtocolStore', () => {
           store.isTrustedIdentity(
             identifier,
             testKey.publicKey.serialize(),
+            // oxlint-disable-next-line typescript/no-explicit-any
             'dir' as any
           )
         );
@@ -1298,7 +1311,7 @@ describe('SignalProtocolStore', () => {
             id: '2-two',
 
             content: Buffer.from('second'),
-            receivedAtDate: Date.now() + 2,
+            receivedAtDate: ReceivedTimestampMs.fromNumber(Date.now() + 2),
           },
           { zone }
         );
@@ -1356,7 +1369,7 @@ describe('SignalProtocolStore', () => {
               id: '2-two',
 
               content: Buffer.from('second'),
-              receivedAtDate: 2,
+              receivedAtDate: ReceivedTimestampMs.fromNumber(2),
             },
             { zone }
           );
@@ -1496,7 +1509,9 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('old envelope'),
           receivedAtCounter: -1,
-          receivedAtDate: NOW - 2 * durations.MONTH,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(
+            NOW - 2 * durations.MONTH
+          ),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1504,7 +1519,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('second'),
           receivedAtCounter: 1,
-          receivedAtDate: NOW + 2,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 2),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1512,7 +1527,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('third'),
           receivedAtCounter: 2,
-          receivedAtDate: NOW + 3,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 3),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1520,7 +1535,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('first'),
           receivedAtCounter: 0,
-          receivedAtDate: NOW + 1,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
         }),
       ]);
 
@@ -1531,9 +1546,9 @@ describe('SignalProtocolStore', () => {
 
       // they are in the proper order because the collection comparator is
       // 'receivedAtCounter'
-      assert.strictEqual(Bytes.toString(items[0].content || ZERO), 'first');
-      assert.strictEqual(Bytes.toString(items[1].content || ZERO), 'second');
-      assert.strictEqual(Bytes.toString(items[2].content || ZERO), 'third');
+      assert.strictEqual(Bytes.toString(items[0]?.content || ZERO), 'first');
+      assert.strictEqual(Bytes.toString(items[1]?.content || ZERO), 'second');
+      assert.strictEqual(Bytes.toString(items[2]?.content || ZERO), 'third');
     });
 
     it('removeUnprocessed successfully deletes item', async () => {
@@ -1543,7 +1558,7 @@ describe('SignalProtocolStore', () => {
 
         id,
 
-        receivedAtDate: NOW + 1,
+        receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
       });
       await store.removeUnprocessed(id);
 
@@ -1560,7 +1575,7 @@ describe('SignalProtocolStore', () => {
         id: '1-one',
 
         attempts: 10,
-        receivedAtDate: NOW + 1,
+        receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
       });
 
       const items = await store.getUnprocessedByIdsAndIncrementAttempts(

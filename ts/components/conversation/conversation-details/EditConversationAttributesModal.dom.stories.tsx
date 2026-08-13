@@ -1,12 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentProps } from 'react';
-import React from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { EditConversationAttributesModal } from './EditConversationAttributesModal.dom.js';
-import { RequestState } from './util.std.js';
+import { EditConversationAttributesModal } from './EditConversationAttributesModal.dom.tsx';
+import { RequestState } from './util.std.ts';
 
 const { i18n } = window.SignalContext;
 

@@ -1,72 +1,77 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useEffect, useState, useCallback } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import classNames from 'classnames';
 
-import { Button, ButtonIconType, ButtonVariant } from '../../Button.dom.js';
+import { Button, ButtonIconType, ButtonVariant } from '../../Button.dom.tsx';
 import type {
   ConversationType,
   PushPanelForConversationActionType,
   ShowConversationType,
-} from '../../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.js';
-import type { SmartChooseGroupMembersModalPropsType } from '../../../state/smart/ChooseGroupMembersModal.preload.js';
-import type { SmartConfirmAdditionsModalPropsType } from '../../../state/smart/ConfirmAdditionsModal.dom.js';
-import { assertDev } from '../../../util/assert.std.js';
-import { getMutedUntilText } from '../../../util/getMutedUntilText.std.js';
+  UpdateGroupAttributesType,
+} from '../../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { SmartChooseGroupMembersModalPropsType } from '../../../state/smart/ChooseGroupMembersModal.preload.tsx';
+import type { SmartConfirmAdditionsModalPropsType } from '../../../state/smart/ConfirmAdditionsModal.dom.tsx';
+import { getMutedUntilText } from '../../../util/getMutedUntilText.std.ts';
 
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import type { BadgeType } from '../../../badges/types.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { DurationInSeconds } from '../../../util/durations/index.std.js';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { BadgeType } from '../../../badges/types.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { DurationInSeconds } from '../../../util/durations/index.std.ts';
 
-import { DisappearingTimerSelect } from '../../DisappearingTimerSelect.dom.js';
+import { DisappearingTimerSelect } from '../../DisappearingTimerSelect.dom.tsx';
 
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { AddGroupMembersModal } from './AddGroupMembersModal.dom.js';
-import { ConversationDetailsActions } from './ConversationDetailsActions.dom.js';
-import { ConversationDetailsHeader } from './ConversationDetailsHeader.dom.js';
+import { PanelRow } from './PanelRow.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { AddGroupMembersModal } from './AddGroupMembersModal.dom.tsx';
+import { ConversationDetailsActions } from './ConversationDetailsActions.dom.tsx';
+import { ConversationDetailsHeader } from './ConversationDetailsHeader.dom.tsx';
 import {
   ConversationDetailsIcon,
   IconType,
-} from './ConversationDetailsIcon.dom.js';
-import type { GroupV2Membership } from './ConversationDetailsMembershipList.dom.js';
-import { ConversationDetailsMembershipList } from './ConversationDetailsMembershipList.dom.js';
+} from './ConversationDetailsIcon.dom.tsx';
+import type { GroupV2Membership } from './ConversationDetailsMembershipList.dom.tsx';
+import { ConversationDetailsMembershipList } from './ConversationDetailsMembershipList.dom.tsx';
 import type {
   GroupV2PendingMembership,
   GroupV2RequestingMembership,
-} from './PendingInvites.dom.js';
-import { EditConversationAttributesModal } from './EditConversationAttributesModal.dom.js';
-import { RequestState } from './util.std.js';
-import { getCustomColorStyle } from '../../../util/getCustomColorStyle.dom.js';
-import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.js';
-import { ConfirmationDialog } from '../../ConfirmationDialog.dom.js';
-import { ConversationNotificationsModal } from './ConversationNotificationsModal.dom.js';
+} from './PendingInvites.dom.tsx';
+import { EditConversationAttributesModal } from './EditConversationAttributesModal.dom.tsx';
+import { RequestState } from './util.std.ts';
+import { getCustomColorStyle } from '../../../util/getCustomColorStyle.dom.ts';
+import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.ts';
+import { ConversationNotificationsModal } from './ConversationNotificationsModal.dom.tsx';
 import type {
   AvatarDataType,
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../../../types/Avatar.std.js';
-import { isConversationMuted } from '../../../util/isConversationMuted.std.js';
-import { ConversationDetailsGroups } from './ConversationDetailsGroups.dom.js';
-import { PanelType } from '../../../types/Panels.std.js';
-import { type CallHistoryGroup } from '../../../types/CallDisposition.std.js';
-import { NavTab } from '../../../types/Nav.std.js';
-import { ContextMenu } from '../../ContextMenu.dom.js';
-import { canHaveNicknameAndNote } from '../../../util/nicknames.dom.js';
-import { CallHistoryGroupPanelSection } from './CallHistoryGroupPanelSection.dom.js';
+} from '../../../types/Avatar.std.ts';
+import { isConversationMuted } from '../../../util/isConversationMuted.std.ts';
+import { ConversationDetailsGroups } from './ConversationDetailsGroups.dom.tsx';
+import { PanelType } from '../../../types/Panels.std.ts';
+import { type CallHistoryGroup } from '../../../types/CallDisposition.std.ts';
+import { NavTab } from '../../../types/Nav.std.ts';
+import { ContextMenu } from '../../ContextMenu.dom.tsx';
+import { canHaveNicknameAndNote } from '../../../util/nicknames.dom.ts';
+import { CallHistoryGroupPanelSection } from './CallHistoryGroupPanelSection.dom.tsx';
 import {
   InAnotherCallTooltip,
   getTooltipContent,
-} from '../InAnotherCallTooltip.dom.js';
-import { BadgeSustainerInstructionsDialog } from '../../BadgeSustainerInstructionsDialog.dom.js';
+} from '../InAnotherCallTooltip.dom.tsx';
+import type { ContactModalStateType } from '../../../types/globalModals.std.ts';
+import type { ShowToastAction } from '../../../state/ducks/toast.preload.ts';
+import { ToastType } from '../../../types/Toast.dom.tsx';
+import type { ContactNameColorType } from '../../../types/Colors.std.ts';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
+import { canConversationOnlyBeMutedAlways } from '../../../conversations/canConversationOnlyBeMutedAlways.dom.ts';
+import { CONTACT_SUPPORT_URL } from '../../../util/contactSupport.dom.tsx';
 
 enum ModalState {
   AddingGroupMembers,
-  BecomeSustainer,
   ConfirmDeleteNicknameAndNote,
   EditingGroupDescription,
   EditingGroupTitle,
@@ -80,6 +85,7 @@ export type StateProps = {
   badges?: ReadonlyArray<BadgeType>;
   callHistoryGroup?: CallHistoryGroup | null;
   canEditGroupInfo: boolean;
+  canAddLabel: boolean;
   canAddNewMembers: boolean;
   conversation?: ConversationType;
   hasGroupLink: boolean;
@@ -88,15 +94,19 @@ export type StateProps = {
   hasActiveCall: boolean;
   i18n: LocalizerType;
   isAdmin: boolean;
+  isEditMemberLabelEnabled: boolean;
   isGroup: boolean;
   isSignalConversation: boolean;
+  isTerminateGroupEnabled: boolean;
   groupsInCommon: ReadonlyArray<ConversationType>;
   maxGroupSize: number;
   maxRecommendedGroupSize: number;
   memberships: ReadonlyArray<GroupV2Membership>;
+  memberColors: Map<string, ContactNameColorType>;
   pendingApprovalMemberships: ReadonlyArray<GroupV2RequestingMembership>;
   pendingAvatarDownload?: boolean;
   pendingMemberships: ReadonlyArray<GroupV2PendingMembership>;
+  showToast: ShowToastAction;
   selectedNavTab: NavTab;
   startAvatarDownload: () => void;
   theme: ThemeType;
@@ -120,37 +130,31 @@ type ActionProps = {
     }
   ) => unknown;
   blockConversation: (id: string) => void;
-
   deleteAvatarFromDisk: DeleteAvatarFromDiskActionType;
   getProfilesForConversation: (id: string) => unknown;
   leaveGroup: (conversationId: string) => void;
+  onConversationArchive: () => void;
+  onConversationDeleteMessages: () => void;
+  onConversationUnarchive: () => void;
   onDeleteNicknameAndNote: () => void;
+  onNavigateToDonate: () => void;
   onOpenEditNicknameAndNoteModal: () => void;
   onOutgoingAudioCallInConversation: (conversationId: string) => unknown;
   onOutgoingVideoCallInConversation: (conversationId: string) => unknown;
   pushPanelForConversation: PushPanelForConversationActionType;
   replaceAvatar: ReplaceAvatarActionType;
+  reportSpam: (id: string) => void;
   saveAvatarToDisk: SaveAvatarToDiskActionType;
   searchInConversation: (id: string) => unknown;
   setDisappearingMessages: (id: string, seconds: DurationInSeconds) => void;
-  setMuteExpiration: (id: string, muteExpiresAt: undefined | number) => unknown;
-  showContactModal: (contactId: string, conversationId?: string) => void;
+  setMuteDuration: (id: string, muteDuration: undefined | number) => unknown;
+  showContactModal: (payload: ContactModalStateType) => void;
   showConversation: ShowConversationType;
-  toggleAboutContactModal: (contactId: string) => void;
+  terminateGroup: (conversationId: string) => void;
+  toggleAboutContactModal: (options: ContactModalStateType) => void;
   toggleAddUserToAnotherGroupModal: (contactId?: string) => void;
   toggleSafetyNumberModal: (conversationId: string) => unknown;
-  updateGroupAttributes: (
-    conversationId: string,
-    _: Readonly<{
-      avatar?: undefined | Uint8Array;
-      description?: string;
-      title?: string;
-    }>,
-    opts: {
-      onSuccess?: () => unknown;
-      onFailure?: () => unknown;
-    }
-  ) => unknown;
+  updateGroupAttributes: UpdateGroupAttributesType;
 };
 
 export type Props = StateProps & ActionProps;
@@ -177,6 +181,7 @@ export function ConversationDetails({
   blockConversation,
   callHistoryGroup,
   canEditGroupInfo,
+  canAddLabel,
   canAddNewMembers,
   conversation,
   deleteAvatarFromDisk,
@@ -188,13 +193,20 @@ export function ConversationDetails({
   hasActiveCall,
   i18n,
   isAdmin,
+  isEditMemberLabelEnabled,
   isGroup,
   isSignalConversation,
+  isTerminateGroupEnabled,
   leaveGroup,
   memberships,
+  memberColors,
   maxGroupSize,
   maxRecommendedGroupSize,
+  onConversationArchive,
+  onConversationDeleteMessages,
+  onConversationUnarchive,
   onDeleteNicknameAndNote,
+  onNavigateToDonate,
   onOpenEditNicknameAndNoteModal,
   onOutgoingAudioCallInConversation,
   onOutgoingVideoCallInConversation,
@@ -205,14 +217,17 @@ export function ConversationDetails({
   renderChooseGroupMembersModal,
   renderConfirmAdditionsModal,
   replaceAvatar,
+  reportSpam,
   saveAvatarToDisk,
   searchInConversation,
   selectedNavTab,
   setDisappearingMessages,
-  setMuteExpiration,
+  setMuteDuration,
   showContactModal,
   showConversation,
+  showToast,
   startAvatarDownload,
+  terminateGroup,
   theme,
   toggleAboutContactModal,
   toggleSafetyNumberModal,
@@ -242,6 +257,12 @@ export function ConversationDetails({
   const cannotLeaveBecauseYouAreLastAdmin =
     getCannotLeaveBecauseYouAreLastAdmin(memberships, isAdmin);
 
+  const isGroupTerminated = Boolean(conversation.terminated);
+  const canTerminateGroup =
+    isTerminateGroupEnabled && !isGroupTerminated && isAdmin;
+
+  const areWeMember = memberships.some(({ member }) => member.isMe);
+
   const onCloseModal = useCallback(() => {
     setModalState(ModalState.NothingOpen);
     setEditGroupAttributesRequestState(RequestState.Inactive);
@@ -251,11 +272,6 @@ export function ConversationDetails({
   switch (modalState) {
     case ModalState.NothingOpen:
       modalNode = undefined;
-      break;
-    case ModalState.BecomeSustainer:
-      modalNode = (
-        <BadgeSustainerInstructionsDialog i18n={i18n} onClose={onCloseModal} />
-      );
       break;
     case ModalState.EditingGroupDescription:
     case ModalState.EditingGroupTitle:
@@ -271,7 +287,7 @@ export function ConversationDetails({
           }
           makeRequest={async (
             options: Readonly<{
-              avatar?: undefined | Uint8Array;
+              avatar?: undefined | Uint8Array<ArrayBuffer>;
               description?: string;
               title?: string;
             }>
@@ -306,12 +322,12 @@ export function ConversationDetails({
           renderChooseGroupMembersModal={renderChooseGroupMembersModal}
           renderConfirmAdditionsModal={renderConfirmAdditionsModal}
           clearRequestError={() => {
+            // This is called on close of the dialog, both on 'add member' and 'cancel'
             setAddGroupMembersRequestState(oldRequestState => {
-              assertDev(
-                oldRequestState !== RequestState.Active,
-                'Should not be clearing an active request state'
-              );
-              return RequestState.Inactive;
+              if (oldRequestState === RequestState.InactiveWithError) {
+                return RequestState.Inactive;
+              }
+              return oldRequestState;
             });
           }}
           conversationIdsAlreadyInGroup={
@@ -341,26 +357,24 @@ export function ConversationDetails({
       break;
     case ModalState.ConfirmDeleteNicknameAndNote:
       modalNode = (
-        <ConfirmationDialog
-          dialogName="ConversationDetails.ConfirmDeleteNicknameAndNote"
-          actions={[
-            {
-              action: onDeleteNicknameAndNote,
-              style: 'negative',
-              text: i18n('icu:delete'),
-            },
-          ]}
-          hasXButton
-          i18n={i18n}
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={onCloseModal}
           title={i18n(
             'icu:ConversationDetails__ConfirmDeleteNicknameAndNote__Title'
           )}
-          onClose={onCloseModal}
-        >
-          {i18n(
+          description={i18n(
             'icu:ConversationDetails__ConfirmDeleteNicknameAndNote__Description'
           )}
-        </ConfirmationDialog>
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={onDeleteNicknameAndNote}
+          >
+            {i18n('icu:delete')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       );
       break;
     case ModalState.MuteNotifications:
@@ -370,28 +384,29 @@ export function ConversationDetails({
           id={conversation.id}
           muteExpiresAt={conversation.muteExpiresAt}
           onClose={onCloseModal}
-          setMuteExpiration={setMuteExpiration}
+          setMuteDuration={setMuteDuration}
         />
       );
       break;
     case ModalState.UnmuteNotifications:
       modalNode = (
-        <ConfirmationDialog
-          dialogName="ConversationDetails.unmuteNotifications"
-          actions={[
-            {
-              action: () => setMuteExpiration(conversation.id, 0),
-              style: 'affirmative',
-              text: i18n('icu:unmute'),
-            },
-          ]}
-          hasXButton
-          i18n={i18n}
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={onCloseModal}
           title={i18n('icu:ConversationDetails__unmute--title')}
-          onClose={onCloseModal}
+          description={getMutedUntilText(
+            Number(conversation.muteExpiresAt),
+            i18n
+          )}
         >
-          {getMutedUntilText(Number(conversation.muteExpiresAt), i18n)}
-        </ConfirmationDialog>
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-primary"
+            onClick={() => setMuteDuration(conversation.id, 0)}
+          >
+            {i18n('icu:unmute')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       );
       break;
 
@@ -413,6 +428,7 @@ export function ConversationDetails({
         isGroup={isGroup}
         isSignalConversation={isSignalConversation}
         membersCount={conversation.membersCount ?? null}
+        onNavigateToDonate={onNavigateToDonate}
         pendingAvatarDownload={pendingAvatarDownload ?? false}
         startAvatarDownload={startAvatarDownload}
         startEditing={(isGroupTitle: boolean) => {
@@ -443,12 +459,16 @@ export function ConversationDetails({
         )}
         {!conversation.isMe && !isSignalConversation && (
           <>
-            <ConversationDetailsCallButton
-              hasActiveCall={hasActiveCall}
-              i18n={i18n}
-              onClick={() => onOutgoingVideoCallInConversation(conversation.id)}
-              type="video"
-            />
+            {!conversation.terminated && (
+              <ConversationDetailsCallButton
+                hasActiveCall={hasActiveCall}
+                i18n={i18n}
+                onClick={() =>
+                  onOutgoingVideoCallInConversation(conversation.id)
+                }
+                type="video"
+              />
+            )}
             {!isGroup && (
               <ConversationDetailsCallButton
                 hasActiveCall={hasActiveCall}
@@ -464,6 +484,15 @@ export function ConversationDetails({
         <Button
           icon={isMuted ? ButtonIconType.muted : ButtonIconType.unmuted}
           onClick={() => {
+            if (canConversationOnlyBeMutedAlways(conversation)) {
+              if (isMuted) {
+                setMuteDuration(conversation.id, 0);
+              } else {
+                setMuteDuration(conversation.id, Number.MAX_SAFE_INTEGER);
+              }
+              return;
+            }
+
             if (isMuted) {
               setModalState(ModalState.UnmuteNotifications);
             } else {
@@ -532,9 +561,7 @@ export function ConversationDetails({
               }
               label={i18n('icu:contactUs')}
               onClick={() => {
-                openLinkInWebBrowser(
-                  'https://support.signal.org/hc/requests/new?desktop'
-                );
+                openLinkInWebBrowser(CONTACT_SUPPORT_URL);
               }}
             />
             <PanelRow
@@ -545,7 +572,7 @@ export function ConversationDetails({
                 />
               }
               label={i18n('icu:BadgeDialog__become-a-sustainer-button')}
-              onClick={() => setModalState(ModalState.BecomeSustainer)}
+              onClick={onNavigateToDonate}
             />
           </PanelSection>
         </>
@@ -560,7 +587,7 @@ export function ConversationDetails({
 
       {!isSignalConversation && (
         <PanelSection>
-          {!isGroup || canEditGroupInfo ? (
+          {!isGroup || canEditGroupInfo || conversation.expireTimer != null ? (
             <PanelRow
               icon={
                 <ConversationDetailsIcon
@@ -586,6 +613,9 @@ export function ConversationDetails({
                 <DisappearingTimerSelect
                   i18n={i18n}
                   value={conversation.expireTimer || DurationInSeconds.ZERO}
+                  disabled={
+                    isGroup && (!canEditGroupInfo || conversation.terminated)
+                  }
                   onChange={value =>
                     setDisappearingMessages(conversation.id, value)
                   }
@@ -727,12 +757,21 @@ export function ConversationDetails({
       )}
       {isGroup && (
         <ConversationDetailsMembershipList
+          canAddLabel={canAddLabel}
           canAddNewMembers={canAddNewMembers}
           conversationId={conversation.id}
           getPreferredBadge={getPreferredBadge}
           i18n={i18n}
+          isEditMemberLabelEnabled={isEditMemberLabelEnabled}
+          isTerminated={isGroupTerminated}
           memberships={memberships}
+          memberColors={memberColors}
           showContactModal={showContactModal}
+          showLabelEditor={() => {
+            pushPanelForConversation({
+              type: PanelType.GroupMemberLabelEditor,
+            });
+          }}
           startAddingNewMembers={() => {
             setModalState(ModalState.AddingGroupMembers);
           }}
@@ -740,7 +779,7 @@ export function ConversationDetails({
         />
       )}
 
-      {isGroup && (
+      {isGroup && !isGroupTerminated && (
         <PanelSection>
           {isAdmin || hasGroupLink ? (
             <PanelRow
@@ -757,6 +796,38 @@ export function ConversationDetails({
                 })
               }
               right={hasGroupLink ? i18n('icu:on') : i18n('icu:off')}
+            />
+          ) : null}
+          {isEditMemberLabelEnabled && areWeMember ? (
+            <PanelRow
+              icon={
+                <ConversationDetailsIcon
+                  ariaLabel={i18n('icu:ConversationDetails--member-label')}
+                  icon={IconType.tag}
+                  disabled={!canAddLabel}
+                />
+              }
+              label={
+                <div
+                  className={classNames(
+                    !canAddLabel
+                      ? 'ConversationDetails__MemberLabel--disabled'
+                      : null
+                  )}
+                >
+                  {i18n('icu:ConversationDetails--member-label')}
+                </div>
+              }
+              onClick={() => {
+                if (!canAddLabel) {
+                  showToast({ toastType: ToastType.CannotAddMemberLabel });
+                  return;
+                }
+
+                pushPanelForConversation({
+                  type: PanelType.GroupMemberLabelEditor,
+                });
+              }}
             />
           ) : null}
           <PanelRow
@@ -810,13 +881,26 @@ export function ConversationDetails({
           acceptConversation={acceptConversation}
           blockConversation={blockConversation}
           cannotLeaveBecauseYouAreLastAdmin={cannotLeaveBecauseYouAreLastAdmin}
+          canTerminateGroup={canTerminateGroup}
           conversationId={conversation.id}
           conversationTitle={conversation.title}
           i18n={i18n}
+          isArchived={Boolean(conversation.isArchived)}
           isBlocked={Boolean(conversation.isBlocked)}
           isGroup={isGroup}
+          isGroupTerminated={isGroupTerminated}
+          isSignalConversation={isSignalConversation}
           left={Boolean(conversation.left)}
+          onArchive={onConversationArchive}
+          onDelete={onConversationDeleteMessages}
+          onUnarchive={onConversationUnarchive}
           onLeave={() => leaveGroup(conversation.id)}
+          onReportSpam={() => reportSpam(conversation.id)}
+          onReportSpamAndBlock={() => {
+            reportSpam(conversation.id);
+            blockConversation(conversation.id);
+          }}
+          onTerminateGroup={() => terminateGroup(conversation.id)}
         />
       )}
 

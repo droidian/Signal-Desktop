@@ -2,47 +2,59 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import React, { memo, useCallback, useState, useEffect } from 'react';
+import { memo, useCallback, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { ConversationDetails } from '../../components/conversation/conversation-details/ConversationDetails.dom.js';
+import { ConversationDetails } from '../../components/conversation/conversation-details/ConversationDetails.dom.tsx';
 import {
   getGroupSizeHardLimit,
   getGroupSizeRecommendedLimit,
-} from '../../groups/limits.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
-import type { CallHistoryGroup } from '../../types/CallDisposition.std.js';
-import { assertDev } from '../../util/assert.std.js';
-import { getConversationColorAttributes } from '../../util/getConversationColorAttributes.std.js';
-import { getGroupMemberships } from '../../util/getGroupMemberships.dom.js';
+} from '../../groups/limits.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
+import type { CallHistoryGroup } from '../../types/CallDisposition.std.ts';
+import { assertDev } from '../../util/assert.std.ts';
+import { getConversationColorAttributes } from '../../util/getConversationColorAttributes.std.ts';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
 import {
   getBadgesSelector,
   getPreferredBadgeSelector,
-} from '../selectors/badges.preload.js';
-import { getActiveCallState } from '../selectors/calling.std.js';
+} from '../selectors/badges.preload.ts';
+import { getActiveCallState } from '../selectors/calling.std.ts';
 import {
   getAllComposableConversations,
+  getCachedConversationMemberColorsSelector,
   getConversationByIdSelector,
   getConversationByServiceIdSelector,
   getPendingAvatarDownloadSelector,
-} from '../selectors/conversations.dom.js';
+} from '../selectors/conversations.dom.ts';
 import {
   getAreWeASubscriber,
   getDefaultConversationColor,
-} from '../selectors/items.dom.js';
-import { getSelectedNavTab } from '../selectors/nav.preload.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
-import type { SmartChooseGroupMembersModalPropsType } from './ChooseGroupMembersModal.preload.js';
-import { SmartChooseGroupMembersModal } from './ChooseGroupMembersModal.preload.js';
-import type { SmartConfirmAdditionsModalPropsType } from './ConfirmAdditionsModal.dom.js';
-import { SmartConfirmAdditionsModal } from './ConfirmAdditionsModal.dom.js';
-import type { ConversationType } from '../ducks/conversations.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { useSearchActions } from '../ducks/search.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { isSignalConversation } from '../../util/isSignalConversation.dom.js';
-import { drop } from '../../util/drop.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
+  getItems,
+} from '../selectors/items.dom.ts';
+import { getSelectedNavTab } from '../selectors/nav.std.ts';
+import {
+  getIntl,
+  getTheme,
+  getUserACI,
+  getVersion,
+} from '../selectors/user.std.ts';
+import type { SmartChooseGroupMembersModalPropsType } from './ChooseGroupMembersModal.preload.tsx';
+import { SmartChooseGroupMembersModal } from './ChooseGroupMembersModal.preload.tsx';
+import type { SmartConfirmAdditionsModalPropsType } from './ConfirmAdditionsModal.dom.tsx';
+import { SmartConfirmAdditionsModal } from './ConfirmAdditionsModal.dom.tsx';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { useSearchActions } from '../ducks/search.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { isSignalConversation } from '../../util/isSignalConversation.dom.ts';
+import { drop } from '../../util/drop.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
+import { getCanAddLabel } from '../../types/GroupMemberLabels.std.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
 
 const { sortBy } = lodash;
 
@@ -92,7 +104,10 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
 }: SmartConversationDetailsProps) {
   const i18n = useSelector(getIntl);
   const theme = useSelector(getTheme);
+  const ourAci = useSelector(getUserACI);
   const activeCall = useSelector(getActiveCallState);
+  const version = useSelector(getVersion);
+  const items = useSelector(getItems);
   const allComposableConversations = useSelector(getAllComposableConversations);
   const areWeASubscriber = useSelector(getAreWeASubscriber);
   const badgesSelector = useSelector(getBadgesSelector);
@@ -104,24 +119,32 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
   const getPreferredBadge = useSelector(getPreferredBadgeSelector);
   const isPendingAvatarDownload = useSelector(getPendingAvatarDownloadSelector);
   const selectedNavTab = useSelector(getSelectedNavTab);
+  const getCachedConversationMemberColors = useSelector(
+    getCachedConversationMemberColorsSelector
+  );
 
   const {
     acceptConversation,
     addMembersToGroup,
     blockConversation,
     deleteAvatarFromDisk,
+    destroyMessages,
     getProfilesForConversation,
     leaveGroup,
-    pushPanelForConversation,
+    onArchive,
+    onMoveToInbox,
     replaceAvatar,
+    reportSpam,
     saveAvatarToDisk,
     setDisappearingMessages,
-    setMuteExpiration,
+    setMuteDuration,
     showConversation,
     startAvatarDownload,
+    terminateGroup,
     updateGroupAttributes,
     updateNicknameAndNote,
   } = useConversationsActions();
+  const { pushPanelForConversation, changeLocation } = useNavActions();
   const {
     onOutgoingAudioCallInConversation,
     onOutgoingVideoCallInConversation,
@@ -134,6 +157,7 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
     toggleEditNicknameAndNoteModal,
     toggleSafetyNumberModal,
   } = useGlobalModalActions();
+  const { showToast } = useToastActions();
 
   const conversation = conversationSelector(conversationId);
   assertDev(
@@ -155,6 +179,19 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
   const badges = badgesSelector(conversation.badges);
   const canAddNewMembers = conversation.canAddNewMembers ?? false;
   const canEditGroupInfo = conversation.canEditGroupInfo ?? false;
+  const isEditMemberLabelEnabled = isFeaturedEnabledSelector({
+    betaKey: 'desktop.groupMemberLabels.edit.beta',
+    currentVersion: version,
+    remoteConfig: items.remoteConfig,
+    prodKey: 'desktop.groupMemberLabels.edit.prod',
+  });
+  const isTerminateGroupEnabled = isFeaturedEnabledSelector({
+    betaKey: 'desktop.groupTerminate.send.beta',
+    currentVersion: version,
+    remoteConfig: items.remoteConfig,
+    prodKey: 'desktop.groupTerminate.send.prod',
+  });
+
   const groupsInCommon = getGroupsInCommonSorted(
     conversation,
     allComposableConversations
@@ -169,6 +206,12 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
   const maxGroupSize = getGroupSizeHardLimit(1001);
   const maxRecommendedGroupSize = getGroupSizeRecommendedLimit(151);
   const userAvatarData = conversation.avatars ?? [];
+  const memberColors = getCachedConversationMemberColors(conversationId);
+
+  const ourMembership = conversation.memberships?.find(
+    membership => membership?.aci === ourAci
+  );
+  const canAddLabel = getCanAddLabel(conversation, ourMembership);
 
   const handleDeleteNicknameAndNote = useCallback(() => {
     updateNicknameAndNote(conversationId, { nickname: null, note: null });
@@ -177,6 +220,27 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
   const handleOpenEditNicknameAndNoteModal = useCallback(() => {
     toggleEditNicknameAndNoteModal({ conversationId });
   }, [conversationId, toggleEditNicknameAndNoteModal]);
+
+  const onConversationArchive = useCallback(() => {
+    onArchive(conversationId);
+  }, [onArchive, conversationId]);
+
+  const onConversationUnarchive = useCallback(() => {
+    onMoveToInbox(conversationId);
+  }, [onMoveToInbox, conversationId]);
+
+  const onConversationDeleteMessages = useCallback(() => {
+    destroyMessages(conversationId);
+  }, [destroyMessages, conversationId]);
+
+  const onNavigateToDonate = useCallback(() => {
+    changeLocation({
+      tab: NavTab.Settings,
+      details: {
+        page: SettingsPage.DonationsDonateFlow,
+      },
+    });
+  }, [changeLocation]);
 
   const [hasMedia, setHasMedia] = useState(false);
 
@@ -206,6 +270,7 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
       badges={badges}
       blockConversation={blockConversation}
       callHistoryGroup={callHistoryGroup}
+      canAddLabel={canAddLabel}
       canAddNewMembers={canAddNewMembers}
       canEditGroupInfo={canEditGroupInfo}
       conversation={conversationWithColorAttributes}
@@ -217,14 +282,21 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
       hasGroupLink={hasGroupLink}
       i18n={i18n}
       isAdmin={isAdmin}
+      isEditMemberLabelEnabled={isEditMemberLabelEnabled}
       isGroup={isGroup}
       isSignalConversation={isSignalConversation(conversation)}
+      isTerminateGroupEnabled={isTerminateGroupEnabled}
       leaveGroup={leaveGroup}
       hasMedia={hasMedia}
       maxGroupSize={maxGroupSize}
       maxRecommendedGroupSize={maxRecommendedGroupSize}
+      memberColors={memberColors}
       memberships={memberships}
+      onConversationArchive={onConversationArchive}
+      onConversationDeleteMessages={onConversationDeleteMessages}
+      onConversationUnarchive={onConversationUnarchive}
       onDeleteNicknameAndNote={handleDeleteNicknameAndNote}
+      onNavigateToDonate={onNavigateToDonate}
       onOpenEditNicknameAndNoteModal={handleOpenEditNicknameAndNoteModal}
       onOutgoingAudioCallInConversation={onOutgoingAudioCallInConversation}
       onOutgoingVideoCallInConversation={onOutgoingVideoCallInConversation}
@@ -235,14 +307,17 @@ export const SmartConversationDetails = memo(function SmartConversationDetails({
       renderChooseGroupMembersModal={renderChooseGroupMembersModal}
       renderConfirmAdditionsModal={renderConfirmAdditionsModal}
       replaceAvatar={replaceAvatar}
+      reportSpam={reportSpam}
       saveAvatarToDisk={saveAvatarToDisk}
       searchInConversation={searchInConversation}
       selectedNavTab={selectedNavTab}
       setDisappearingMessages={setDisappearingMessages}
-      setMuteExpiration={setMuteExpiration}
+      setMuteDuration={setMuteDuration}
       showContactModal={showContactModal}
       showConversation={showConversation}
+      showToast={showToast}
       startAvatarDownload={() => startAvatarDownload(conversationId)}
+      terminateGroup={terminateGroup}
       theme={theme}
       toggleAboutContactModal={toggleAboutContactModal}
       toggleAddUserToAnotherGroupModal={toggleAddUserToAnotherGroupModal}

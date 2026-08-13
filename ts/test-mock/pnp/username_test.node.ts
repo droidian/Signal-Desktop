@@ -7,17 +7,17 @@ import type { PrimaryDevice } from '@signalapp/mock-server';
 import { usernames } from '@signalapp/libsignal-client';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 import {
   bufferToUuid,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers.node.js';
-import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.std.js';
+} from '../helpers.node.ts';
+import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.std.ts';
 
 export const debug = createDebug('mock:test:username');
 
@@ -67,6 +67,8 @@ describe('pnp/username', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+          deletedAtTimestamp: null,
+          recipientServiceIdsBinary: null,
         },
       },
     });
@@ -83,7 +85,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
   });
 
   for (const type of ['profile', 'system']) {
-    // eslint-disable-next-line no-loop-func
+    // oxlint-disable-next-line no-loop-func
     it(`drops username when contact's ${type} name becomes known`, async () => {
       const { phone } = bootstrap;
 
@@ -145,17 +147,19 @@ describe('pnp/username', function (this: Mocha.Suite) {
           'only one record must be removed'
         );
 
+        assert.ok(added[0]?.contact != null);
         assert.deepEqual(
-          added[0].contact?.aciBinary,
+          added[0].contact.aciBinary,
           usernameContact.device.aciRawUuid
         );
-        assert.strictEqual(added[0].contact?.username, '');
+        assert.strictEqual(added[0].contact.username, '');
 
+        assert.ok(removed[0]?.contact != null);
         assert.deepEqual(
-          removed[0].contact?.aciBinary,
+          removed[0].contact.aciBinary,
           usernameContact.device.aciRawUuid
         );
-        assert.strictEqual(removed[0].contact?.username, USERNAME);
+        assert.strictEqual(removed[0].contact.username, USERNAME);
       }
 
       if (type === 'system') {
@@ -176,7 +180,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
           'notification count'
         );
 
-        const first = await notifications.first();
+        const first = notifications.first();
         assert.strictEqual(
           await first.innerText(),
           `You started this chat with ${USERNAME}`
@@ -195,7 +199,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('opening username editor');
     const profileEditor = window.locator('.ProfileEditor');
-    await profileEditor.locator('.ProfileEditor__row >> "Username"').click();
+    await profileEditor.getByRole('button', { name: 'Username' }).click();
 
     debug('entering new username');
     const usernameField = profileEditor.locator('.Input__input');
@@ -218,9 +222,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('checking the username is saved');
     {
-      await profileEditor
-        .locator(`.ProfileEditor__row >> "${username}"`)
-        .waitFor();
+      await profileEditor.getByRole('button', { name: username }).waitFor();
 
       const uuid = await server.lookupByUsername(username);
       assert.strictEqual(uuid, phone.device.aci);
@@ -233,8 +235,9 @@ describe('pnp/username', function (this: Mocha.Suite) {
       assert.strictEqual(added.length, 1, 'only one record must be added');
       assert.strictEqual(removed.length, 1, 'only one record must be removed');
 
-      assert.strictEqual(added[0]?.account?.username, username);
-      const usernameLink = added[0]?.account?.usernameLink;
+      assert.ok(added[0]?.account != null);
+      assert.strictEqual(added[0].account.username, username);
+      const { usernameLink } = added[0].account;
       if (!usernameLink) {
         throw new Error('No username link in AccountRecord');
       }
@@ -267,9 +270,20 @@ describe('pnp/username', function (this: Mocha.Suite) {
       .click();
     await profileEditor.locator('button[aria-label="Delete"]').click();
     await window
-      .locator('.module-Modal .module-Modal__button-footer button >> "Delete"')
+      .getByRole('alertdialog')
+      .filter({
+        has: window.getByText(
+          `This will remove your username and disable your QR code and link. “${username}” will be available for others to claim. Are you sure?`
+        ),
+      })
+      .getByRole('button', { name: 'Delete' })
       .click();
-    await profileEditor.locator('.ProfileEditor__row >> "Username"').waitFor();
+    await profileEditor.getByRole('button', { name: 'Username' }).waitFor();
+
+    // Make sure we get a sync message
+    await phone.waitForSyncMessage(entry => {
+      return entry.syncMessage.content?.usernameChange != null;
+    });
 
     debug('confirming username deletion');
     {
@@ -284,14 +298,15 @@ describe('pnp/username', function (this: Mocha.Suite) {
       assert.strictEqual(added.length, 1, 'only one record must be added');
       assert.strictEqual(removed.length, 1, 'only one record must be removed');
 
-      assert.strictEqual(added[0]?.account?.username, '', 'clears username');
+      assert.ok(added[0]?.account != null, 'expected updated account');
+      assert.strictEqual(added[0].account.username, '', 'clears username');
       assert.strictEqual(
-        added[0]?.account?.usernameLink?.entropy?.length ?? 0,
+        added[0].account.usernameLink?.entropy?.length ?? 0,
         0,
         'clears usernameLink.entropy'
       );
       assert.strictEqual(
-        added[0]?.account?.usernameLink?.serverId?.length ?? 0,
+        added[0].account.usernameLink?.serverId?.length ?? 0,
         0,
         'clears usernameLink.serverId'
       );
@@ -377,7 +392,8 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('waiting for conversation to open');
     await window
-      .locator(`.module-conversation-hero >> "${CARL_USERNAME}"`)
+      .getByTestId('conversation-hero')
+      .getByText(CARL_USERNAME)
       .waitFor();
 
     debug('sending a message');

@@ -5,20 +5,21 @@ import lodash from 'lodash';
 import type { ThunkAction } from 'redux-thunk';
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import type { StoryDistributionWithMembersType } from '../../sql/Interface.std.js';
-import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.js';
-import { deleteStoryForEveryone } from '../../util/deleteStoryForEveryone.preload.js';
-import { replaceIndex } from '../../util/replaceIndex.std.js';
-import { storageServiceUploadJob } from '../../services/storage.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import type { StoryDistributionWithMembersType } from '../../sql/Interface.std.ts';
+import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.ts';
+import { deleteStoryForEveryone } from '../../util/deleteStoryForEveryone.preload.ts';
+import { replaceIndex } from '../../util/replaceIndex.std.ts';
+import { storageServiceUploadJob } from '../../services/storage.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 
 const { omit } = lodash;
 
@@ -189,10 +190,10 @@ function createDistributionList(
     dispatch({
       type: CREATE_LIST,
       payload: {
-        allowsReplies: Boolean(storyDistribution.allowsReplies),
+        allowsReplies: storyDistribution.allowsReplies,
         deletedAtTimestamp: storyDistribution.deletedAtTimestamp,
         id: storyDistribution.id,
-        isBlockList: Boolean(storyDistribution.isBlockList),
+        isBlockList: storyDistribution.isBlockList,
         memberServiceIds,
         name: storyDistribution.name,
       },
@@ -530,9 +531,11 @@ function replaceDistributionListData(
     return;
   }
 
+  const list = distributionLists[listIndex];
+  strictAssert(list, 'Missing list');
   return replaceIndex(distributionLists, listIndex, {
-    ...distributionLists[listIndex],
-    ...getNextDistributionListData(distributionLists[listIndex]),
+    ...list,
+    ...getNextDistributionListData(list),
   });
 }
 
@@ -551,6 +554,11 @@ export function reducer(
     );
     if (listIndex >= 0) {
       const existingDistributionList = state.distributionLists[listIndex];
+      strictAssert(
+        existingDistributionList,
+        'Missing existingDistributionList'
+      );
+
       const memberServiceIds = new Set<ServiceIdString>(
         existingDistributionList.memberServiceIds
       );

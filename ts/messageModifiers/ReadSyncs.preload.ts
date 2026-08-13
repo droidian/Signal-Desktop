@@ -4,22 +4,27 @@
 import { z } from 'zod';
 
 import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { StartupQueue } from '../util/StartupQueue.std.js';
-import { drop } from '../util/drop.std.js';
-import { getMessageIdForLogging } from '../util/idForLogging.preload.js';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.js';
-import { isIncoming } from '../state/selectors/message.preload.js';
-import { isMessageUnread } from '../util/isMessageUnread.std.js';
-import { notificationService } from '../services/notifications.preload.js';
-import { queueUpdateMessage } from '../util/messageBatcher.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { isAciString } from '../util/isAciString.std.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { markRead } from '../services/MessageUpdater.preload.js';
-import { MessageModel } from '../models/messages.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { StartupQueue } from '../util/StartupQueue.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.ts';
+import {
+  isIncoming,
+  isPollTerminate,
+} from '../state/selectors/message.preload.ts';
+import { isMessageUnread } from '../util/isMessageUnread.std.ts';
+import { notificationService } from '../services/notifications.preload.ts';
+import { queueUpdateMessage } from '../util/messageBatcher.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { isAciString } from '../util/isAciString.std.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { markRead } from '../services/MessageUpdater.preload.ts';
+import { MessageModel } from '../models/messages.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { getMessageById } from '../messages/getMessageById.preload.ts';
+import { getSourceServiceId } from '../messages/sources.preload.ts';
 
 const log = createLogger('ReadSyncs');
 
@@ -52,13 +57,13 @@ async function remove(sync: ReadSyncAttributesType): Promise<void> {
 
 async function maybeItIsAReactionReadSync(
   sync: ReadSyncAttributesType
-): Promise<void> {
+): Promise<boolean> {
   const { readSync } = sync;
   const logId = `ReadSyncs.onSync(timestamp=${readSync.timestamp})`;
 
   const readReaction = await DataWriter.markReactionAsRead(
     readSync.senderAci,
-    Number(readSync.timestamp)
+    readSync.timestamp
   );
 
   if (
@@ -71,7 +76,7 @@ async function maybeItIsAReactionReadSync(
       readSync.sender,
       readSync.senderAci
     );
-    return;
+    return false;
   }
 
   log.info(
@@ -82,14 +87,47 @@ async function maybeItIsAReactionReadSync(
     readSync.senderAci
   );
 
-  await remove(sync);
-
   notificationService.removeBy({
     conversationId: readReaction.conversationId,
     emoji: readReaction.emoji,
     targetAuthorAci: readReaction.targetAuthorAci,
     targetTimestamp: readReaction.targetTimestamp,
   });
+
+  return true;
+}
+
+async function maybeItIsAPollVoteReadSync(
+  sync: ReadSyncAttributesType
+): Promise<boolean> {
+  const { readSync } = sync;
+  const logId = `ReadSyncs.onSync(timestamp=${readSync.timestamp})`;
+
+  const pollMessage = await DataWriter.markPollVoteAsRead(readSync.timestamp);
+
+  if (!pollMessage) {
+    log.info(`${logId} poll vote read sync not found`);
+    return false;
+  }
+
+  const pollMessageModel = await getMessageById(pollMessage.id);
+  if (!pollMessageModel) {
+    log.warn(
+      `${logId} found message for poll, but could not get the message model`
+    );
+    return false;
+  }
+  pollMessageModel.set({ hasUnreadPollVotes: false });
+  drop(queueUpdateMessage(pollMessageModel.attributes));
+
+  notificationService.removeBy({
+    conversationId: pollMessage.conversationId,
+    targetAuthorAci: getSourceServiceId(pollMessageModel.attributes),
+    targetTimestamp: pollMessage.sent_at,
+    onlyRemoveAssociatedPollVotes: true,
+  });
+
+  return true;
 }
 
 export async function forMessage(
@@ -140,12 +178,20 @@ export async function onSync(sync: ReadSyncAttributesType): Promise<void> {
         serviceId: item.sourceServiceId,
         reason: logId,
       });
-
-      return isIncoming(item) && sender?.id === readSync.senderId;
+      return (
+        (isIncoming(item) || isPollTerminate(item)) &&
+        sender?.id === readSync.senderId
+      );
     });
 
     if (!found) {
-      await maybeItIsAReactionReadSync(sync);
+      const foundReaction = await maybeItIsAReactionReadSync(sync);
+
+      const foundPollVote = await maybeItIsAPollVoteReadSync(sync);
+
+      if (foundReaction || foundPollVote) {
+        await remove(sync);
+      }
       return;
     }
 

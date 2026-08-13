@@ -3,9 +3,10 @@
 
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations/index.std.js';
-import type { App, Bootstrap } from './fixtures.node.js';
-import { initStorage, debug } from './fixtures.node.js';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import { initStorage, debug } from './fixtures.node.ts';
 
 describe('storage service', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -29,7 +30,7 @@ describe('storage service', function (this: Mocha.Suite) {
 
   it('should archive/unarchive contacts', async () => {
     const { phone, contacts } = bootstrap;
-    const [firstContact] = contacts;
+    const [firstContact] = contacts as [PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -92,21 +93,21 @@ describe('storage service', function (this: Mocha.Suite) {
         .locator(`[data-testid="${firstContact.device.aci}"]`)
         .click();
 
-      const moreButton = conversationStack.locator(
-        'button.module-ConversationHeader__button--more'
-      );
+      const moreButton = conversationStack.getByRole('button', {
+        name: 'More Info',
+      });
       await moreButton.click();
 
-      const archiveButton = window.locator(
-        '.react-contextmenu-item >> "Archive"'
-      );
+      const archiveButton = window.getByRole('menuitem', {
+        name: 'Archive',
+      });
       await archiveButton.click();
 
       const newState = await phone.waitForStorageState({
         after: state,
       });
-      assert.ok(!(await newState.isPinned(firstContact)), 'contact not pinned');
-      const record = await newState.getContact(firstContact);
+      assert.ok(!newState.isPinned(firstContact), 'contact not pinned');
+      const record = newState.getContact(firstContact);
       assert.ok(record, 'contact record not found');
       assert.ok(record?.archived, 'contact archived');
 
@@ -119,6 +120,6 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('Verifying the final manifest version');
     const finalState = await phone.expectStorageState('consistency check');
 
-    assert.strictEqual(finalState.version, 4);
+    assert.strictEqual(finalState.version, 4n);
   });
 });

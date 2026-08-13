@@ -7,12 +7,12 @@ import type {
   MouseEventHandler,
   ReactNode,
 } from 'react';
-import React from 'react';
+import { forwardRef } from 'react';
 import classNames from 'classnames';
 
-import type { Theme } from '../util/theme.std.js';
-import { assertDev } from '../util/assert.std.js';
-import { themeClassName } from '../util/theme.std.js';
+import type { Theme } from '../util/theme.std.ts';
+import { assertDev } from '../util/assert.std.ts';
+import { themeClassName } from '../util/theme.std.ts';
 
 export enum ButtonSize {
   Large,
@@ -101,7 +101,7 @@ const VARIANT_CLASS_NAMES = new Map<ButtonVariant, string>([
   [ButtonVariant.Details, 'module-Button--details'],
 ]);
 
-export const Button = React.forwardRef<HTMLButtonElement, PropsType>(
+export const Button = forwardRef<HTMLButtonElement, PropsType>(
   function ButtonInner(props, ref) {
     const {
       children,
@@ -160,7 +160,7 @@ export const Button = React.forwardRef<HTMLButtonElement, PropsType>(
         style={style}
         tabIndex={tabIndex}
         // The `type` should either be "button" or "submit", which is effectively static.
-        // eslint-disable-next-line react/button-has-type
+        // oxlint-disable-next-line react/button-has-type
         type={type}
       >
         {children}

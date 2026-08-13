@@ -6,13 +6,13 @@ import { LRUCache } from 'lru-cache';
 import type {
   AddressableAttachmentType,
   LocalAttachmentV2Type,
-} from '../types/Attachment.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { DataWriter } from '../sql/Client.preload.js';
-import { AttachmentDisposition } from './getLocalAttachmentUrl.std.js';
-import { drop } from './drop.std.js';
-import { MINUTE } from './durations/index.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../types/Attachment.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { AttachmentDisposition } from './getLocalAttachmentUrl.std.ts';
+import { drop } from './drop.std.ts';
+import { MINUTE } from './durations/index.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('encryptLegacyAttachment');
 
@@ -32,8 +32,10 @@ export type EncryptLegacyAttachmentOptionsType = Readonly<{
   disposition?: AttachmentDisposition;
   readAttachmentData: (
     attachment: Partial<AddressableAttachmentType>
-  ) => Promise<Uint8Array>;
-  writeNewAttachmentData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
+  ) => Promise<Uint8Array<ArrayBuffer>>;
+  writeNewAttachmentData: (
+    data: Uint8Array<ArrayBuffer>
+  ) => Promise<LocalAttachmentV2Type>;
 }>;
 
 export async function encryptLegacyAttachment<

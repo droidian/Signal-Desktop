@@ -1,40 +1,43 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useEffect, useState, useCallback } from 'react';
+import { memo, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import type { MutableRefObject } from 'react';
 
-import { getIntl, getTheme, getUserNumber } from '../selectors/user.std.js';
-import { getMe } from '../selectors/conversations.dom.js';
-import { PreferencesDonations } from '../../components/PreferencesDonations.dom.js';
-import type { SettingsLocation } from '../../types/Nav.std.js';
-import { useDonationsActions } from '../ducks/donations.preload.js';
-import type { StateType } from '../reducer.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { generateDonationReceiptBlob } from '../../util/generateDonationReceipt.dom.js';
-import { useToastActions } from '../ducks/toast.preload.js';
+import { getIntl, getTheme, getUserNumber } from '../selectors/user.std.ts';
+import { getMe } from '../selectors/conversations.dom.ts';
+import { PreferencesDonations } from '../../components/PreferencesDonations.dom.tsx';
+import type { SettingsLocation } from '../../types/Nav.std.ts';
+import { useDonationsActions } from '../ducks/donations.preload.ts';
+import type { StateType } from '../reducer.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { generateDonationReceiptBlob } from '../../util/generateDonationReceipt.dom.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
 import {
-  getDonationHumanAmounts,
   getCachedSubscriptionConfiguration,
-} from '../../util/subscriptionConfiguration.preload.js';
-import { drop } from '../../util/drop.std.js';
-import { saveAttachmentToDisk } from '../../util/migrations.preload.js';
-import type { OneTimeDonationHumanAmounts } from '../../types/Donations.std.js';
+  maybeHydrateDonationConfigCache,
+} from '../../util/subscriptionConfiguration.preload.ts';
+import { drop } from '../../util/drop.std.ts';
+import { saveAttachmentToDisk } from '../../util/migrations.preload.ts';
 import {
   ONE_TIME_DONATION_CONFIG_ID,
   BOOST_ID,
-} from '../../types/Donations.std.js';
-import { phoneNumberToCurrencyCode } from '../../services/donations.preload.js';
+} from '../../types/Donations.std.ts';
+import { phoneNumberToCurrencyCode } from '../../services/donations.preload.ts';
 import {
   getPreferredBadgeSelector,
   getBadgesById,
-} from '../selectors/badges.preload.js';
-import { parseBoostBadgeListFromServer } from '../../badges/parseBadgesFromServer.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { useBadgesActions } from '../ducks/badges.preload.js';
-import { getNetworkIsOnline } from '../selectors/network.preload.js';
+} from '../selectors/badges.preload.ts';
+import { parseBoostBadgeListFromServer } from '../../badges/parseBadgesFromServer.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { useBadgesActions } from '../ducks/badges.preload.ts';
+import { getNetworkIsOnline } from '../selectors/network.preload.ts';
+import {
+  getDonationConfigCache,
+  getDonationsState,
+} from '../selectors/donations.std.ts';
 
 const log = createLogger('SmartPreferencesDonations');
 
@@ -48,19 +51,19 @@ export const SmartPreferencesDonations = memo(
     settingsLocation: SettingsLocation;
     setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   }) {
-    const [validCurrencies, setValidCurrencies] = useState<
-      ReadonlyArray<string>
-    >([]);
-    const [donationAmountsConfig, setDonationAmountsConfig] =
-      useState<OneTimeDonationHumanAmounts>();
-
     const getPreferredBadge = useSelector(getPreferredBadgeSelector);
 
     const isOnline = useSelector(getNetworkIsOnline);
     const i18n = useSelector(getIntl);
     const theme = useSelector(getTheme);
 
-    const donationsState = useSelector((state: StateType) => state.donations);
+    const donationsState = useSelector(getDonationsState);
+    const donationAmountsConfig = useSelector(getDonationConfigCache);
+    const validCurrencies = useMemo(
+      () => (donationAmountsConfig ? Object.keys(donationAmountsConfig) : []),
+      [donationAmountsConfig]
+    );
+
     const {
       applyDonationBadge,
       clearWorkflow,
@@ -74,7 +77,7 @@ export const SmartPreferencesDonations = memo(
     const ourNumber = useSelector(getUserNumber);
     const me = useSelector(getMe);
     const { badges, color, firstName, profileAvatarUrl } = me;
-    const badge = getPreferredBadge(badges);
+    const myBadge = getPreferredBadge(badges);
 
     const { showToast } = useToastActions();
     const donationReceipts = useSelector(
@@ -106,13 +109,7 @@ export const SmartPreferencesDonations = memo(
     // Eagerly load donation config from API when entering Donations Home so the
     // Amount picker loads instantly
     useEffect(() => {
-      async function loadDonationAmounts() {
-        const amounts = await getDonationHumanAmounts();
-        setDonationAmountsConfig(amounts);
-        const currencies = Object.keys(amounts);
-        setValidCurrencies(currencies);
-      }
-      drop(loadDonationAmounts());
+      drop(maybeHydrateDonationConfigCache());
     }, []);
 
     const currencyFromPhone = ourNumber
@@ -129,7 +126,7 @@ export const SmartPreferencesDonations = memo(
     return (
       <PreferencesDonations
         i18n={i18n}
-        badge={badge}
+        myBadge={myBadge}
         color={color}
         firstName={firstName}
         profileAvatarUrl={profileAvatarUrl}

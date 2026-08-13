@@ -1,44 +1,34 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, FC } from 'react';
+import { memo } from 'react';
 import lodash from 'lodash';
-import { ContextMenuTrigger } from 'react-contextmenu';
 
-import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
-import { MessageTimestamp } from './MessageTimestamp.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.tsx';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import {
   CallMode,
   CallDirection,
   CallType,
   DirectCallStatus,
   GroupCallStatus,
-} from '../../types/CallDisposition.std.js';
-import type { CallingNotificationType } from '../../util/callingNotification.std.js';
+} from '../../types/CallDisposition.std.ts';
+import type { CallingNotificationType } from '../../util/callingNotification.std.ts';
 import {
   getCallingIcon,
   getCallingNotificationText,
-} from '../../util/callingNotification.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { Tooltip, TooltipPlacement } from '../Tooltip.dom.js';
-import { createLogger } from '../../logging/log.std.js';
-import {
-  type ContextMenuTriggerType,
-  MessageContextMenu,
-  useHandleMessageContextMenu,
-} from './MessageContextMenu.dom.js';
-import type { DeleteMessagesPropsType } from '../../state/ducks/globalModals.preload.js';
-import {
-  useKeyboardShortcutsConditionally,
-  useOpenContextMenu,
-} from '../../hooks/useKeyboardShortcuts.dom.js';
-import { MINUTE } from '../../util/durations/index.std.js';
-import { isMoreRecentThan } from '../../util/timestamp.std.js';
-import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.js';
-import type { InteractionModeType } from '../../state/ducks/conversations.preload.js';
+} from '../../util/callingNotification.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { Tooltip, TooltipPlacement } from '../Tooltip.dom.tsx';
+import { createLogger } from '../../logging/log.std.ts';
+import { MessageContextMenu } from './MessageContextMenu.dom.tsx';
+import type { DeleteMessagesPropsType } from '../../state/ducks/globalModals.preload.ts';
+import { MINUTE } from '../../util/durations/index.std.ts';
+import { isMoreRecentThan } from '../../util/timestamp.std.ts';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.tsx';
 
 const { noop } = lodash;
 
@@ -55,7 +45,6 @@ type PropsHousekeeping = {
   i18n: LocalizerType;
   id: string;
   conversationId: string;
-  interactionMode: InteractionModeType;
   isNextItemCallingNotification: boolean;
 };
 
@@ -63,15 +52,8 @@ export type PropsType = CallingNotificationType &
   PropsActionsType &
   PropsHousekeeping;
 
-export const CallingNotification: React.FC<PropsType> = React.memo(
+export const CallingNotification: FC<PropsType> = memo(
   function CallingNotificationInner(props) {
-    const menuTriggerRef = React.useRef<ContextMenuTriggerType | null>(null);
-    const handleContextMenu = useHandleMessageContextMenu(menuTriggerRef);
-    const openContextMenuKeyboard = useOpenContextMenu(handleContextMenu);
-    useKeyboardShortcutsConditionally(
-      !props.isSelectMode && props.isTargeted,
-      openContextMenuKeyboard
-    );
     const { i18n } = props;
     if (props.callHistory == null) {
       return null;
@@ -80,72 +62,62 @@ export const CallingNotification: React.FC<PropsType> = React.memo(
     const { type, direction, status, timestamp } = props.callHistory;
     const icon = getCallingIcon(type, direction, status);
     return (
-      <>
-        <ContextMenuTrigger
-          id={props.id}
-          // react-contextmenu's typings are incorrect here
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ref={menuTriggerRef as any}
-          disable={props.isSelectMode}
-          // Immediately hide the context menu on outside click.
-          // This is a bug in react-contextmenu trying to handle touch events.
-          holdToDisplay={-1}
-        >
-          <div
-            // @ts-expect-error -- React/TS doesn't know about inert
-            // eslint-disable-next-line react/no-unknown-property
-            inert={props.isSelectMode ? '' : undefined}
-          >
-            <SystemMessage
-              button={renderCallingNotificationButton(props)}
-              contents={
-                <>
-                  {getCallingNotificationText(props, i18n)} &middot;{' '}
-                  <MessageTimestamp
-                    direction="outgoing"
-                    i18n={i18n}
-                    timestamp={timestamp}
-                    withImageNoCaption={false}
-                    withSticker={false}
-                    withTapToViewExpired={false}
-                  />
-                </>
-              }
-              icon={icon}
-              kind={
-                status === DirectCallStatus.Missed ||
-                status === GroupCallStatus.Missed ||
-                status === DirectCallStatus.Declined ||
-                status === GroupCallStatus.Declined
-                  ? SystemMessageKind.Danger
-                  : SystemMessageKind.Normal
-              }
-            />
-          </div>
-        </ContextMenuTrigger>
-        <MessageContextMenu
-          i18n={i18n}
-          triggerId={props.id}
-          interactionMode={props.interactionMode}
-          onDeleteMessage={() => {
-            props.toggleDeleteMessagesModal({
-              conversationId: props.conversationId,
-              messageIds: [props.id],
-            });
-          }}
-          shouldShowAdditional={false}
-          onDownload={undefined}
-          onEdit={undefined}
-          onReplyToMessage={undefined}
-          onReact={undefined}
-          onRetryMessageSend={undefined}
-          onRetryDeleteForEveryone={undefined}
-          onCopy={undefined}
-          onSelect={undefined}
-          onForward={undefined}
-          onMoreInfo={undefined}
-        />
-      </>
+      <MessageContextMenu
+        renderer="AxoContextMenu"
+        disabled={props.isSelectMode}
+        i18n={i18n}
+        onDeleteMessage={() => {
+          props.toggleDeleteMessagesModal({
+            conversationId: props.conversationId,
+            messageIds: [props.id],
+          });
+        }}
+        shouldShowAdditional={false}
+        onDebugMessage={null}
+        onDownload={null}
+        onEdit={null}
+        onReplyToMessage={null}
+        onReact={null}
+        onEndPoll={null}
+        onRetryMessageSend={null}
+        onRetryDeleteForEveryone={null}
+        onCopy={null}
+        onSelect={null}
+        onForward={null}
+        onMoreInfo={null}
+        onPinMessage={null}
+        onUnpinMessage={null}
+      >
+        <div inert={props.isSelectMode}>
+          <SystemMessage
+            button={renderCallingNotificationButton(props)}
+            expireTimer={props.expireTimer}
+            expirationStartTimestamp={props.expirationStartTimestamp}
+            contents={
+              <>
+                {getCallingNotificationText(props, i18n)} &middot;{' '}
+                <MessageTimestamp
+                  direction="outgoing"
+                  i18n={i18n}
+                  timestamp={timestamp}
+                  withImageNoCaption={false}
+                  withSticker={false}
+                  withTapToViewExpired={false}
+                />
+              </>
+            }
+            icon={icon}
+            kind={
+              status === DirectCallStatus.Missed ||
+              status === GroupCallStatus.Missed ||
+              status === DirectCallStatus.Declined ||
+              status === GroupCallStatus.Declined
+                ? SystemMessageKind.Danger
+                : SystemMessageKind.Normal
+            }
+          />
+        </div>
+      </MessageContextMenu>
     );
   }
 );
@@ -172,7 +144,7 @@ function renderCallingNotificationButton(
 
   const inThisCall = Boolean(
     props.activeConversationId &&
-      props.activeConversationId === props.conversationId
+    props.activeConversationId === props.conversationId
   );
 
   if (props.callHistory == null) {
@@ -251,8 +223,8 @@ function renderCallingNotificationButton(
   const disabled = Boolean(disabledTooltipText);
   const inAnotherCall = Boolean(
     !disabled &&
-      props.activeConversationId &&
-      props.activeConversationId !== props.conversationId
+    props.activeConversationId &&
+    props.activeConversationId !== props.conversationId
   );
   const button = (
     <Button

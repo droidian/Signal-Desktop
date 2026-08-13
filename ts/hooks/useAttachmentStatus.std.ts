@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentForUIType } from '../types/Attachment.std.js';
-import { getUrl } from '../util/Attachment.std.js';
-import { MediaTier } from '../types/AttachmentDownload.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { getAttachmentCiphertextSize } from '../util/AttachmentCrypto.std.js';
-import { useDelayedValue } from './useDelayedValue.std.js';
+import type { AttachmentForUIType } from '../types/Attachment.std.ts';
+import { getUrl } from '../util/Attachment.std.ts';
+import { MediaTier } from '../types/AttachmentDownload.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { getAttachmentCiphertextSize } from '../util/AttachmentCrypto.std.ts';
+import { useDelayedValue } from './useDelayedValue.std.ts';
 
 const TRANSITION_DELAY = 200;
 
@@ -28,11 +28,20 @@ export type AttachmentStatusType = Readonly<
 
 export function useAttachmentStatus(
   attachment: AttachmentForUIType
-): AttachmentStatusType {
-  const isAttachmentNotAvailable =
-    attachment.isPermanentlyUndownloadable && !attachment.wasTooBig;
+): AttachmentStatusType;
 
-  const url = getUrl(attachment);
+export function useAttachmentStatus(
+  attachment: AttachmentForUIType | undefined
+): AttachmentStatusType | undefined;
+
+export function useAttachmentStatus(
+  attachment: AttachmentForUIType | undefined
+): AttachmentStatusType | undefined {
+  const isAttachmentNotAvailable =
+    attachment == null ||
+    (attachment.isPermanentlyUndownloadable && !attachment.wasTooBig);
+
+  const url = attachment == null ? undefined : getUrl(attachment);
 
   let nextState: InternalState = 'ReadyToShow';
   if (attachment && isAttachmentNotAvailable) {
@@ -44,6 +53,10 @@ export function useAttachmentStatus(
   }
 
   const state = useDelayedValue(nextState, TRANSITION_DELAY);
+
+  if (attachment == null) {
+    return undefined;
+  }
 
   // Idle
   if (state === 'NeedsDownload' && nextState === state) {

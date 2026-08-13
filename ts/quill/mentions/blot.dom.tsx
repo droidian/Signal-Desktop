@@ -1,18 +1,15 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { StrictMode } from 'react';
 import EmbedBlot from '@signalapp/quill-cjs/blots/embed.js';
 import { createRoot } from 'react-dom/client';
 
-import { Emojify } from '../../components/conversation/Emojify.dom.js';
-import { normalizeAci } from '../../util/normalizeAci.std.js';
-import type { MentionBlotValue } from '../util.dom.js';
-import { FunEmojiLocalizationProvider } from '../../components/fun/FunEmojiLocalizationProvider.dom.js';
-import { AxoProvider } from '../../axo/AxoProvider.dom.js';
+import { Emojify } from '../../components/conversation/Emojify.dom.tsx';
+import { normalizeAci } from '../../util/normalizeAci.std.ts';
+import type { MentionBlotValue } from '../util.dom.ts';
+import { AppProvider } from '../../windows/AppProvider.dom.tsx';
 
-const { i18n } = window.SignalContext;
-
+// oxlint-disable-next-line react/prefer-function-component
 export class MentionBlot extends EmbedBlot {
   static override blotName = 'mention';
 
@@ -50,18 +47,14 @@ export class MentionBlot extends EmbedBlot {
     const mentionSpan = document.createElement('span');
 
     createRoot(mentionSpan).render(
-      <StrictMode>
-        <AxoProvider dir={i18n.getLocaleDirection()}>
-          <FunEmojiLocalizationProvider i18n={i18n}>
-            <span className="module-composition-input__at-mention">
-              <bdi>
-                @
-                <Emojify text={mention.title} />
-              </bdi>
-            </span>
-          </FunEmojiLocalizationProvider>
-        </AxoProvider>
-      </StrictMode>
+      <AppProvider>
+        <span className="module-composition-input__at-mention">
+          <bdi>
+            @
+            <Emojify text={mention.title} />
+          </bdi>
+        </span>
+      </AppProvider>
     );
 
     node.appendChild(mentionSpan);

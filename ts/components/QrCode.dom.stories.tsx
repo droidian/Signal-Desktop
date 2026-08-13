@@ -1,10 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './QrCode.dom.js';
-import { QrCode } from './QrCode.dom.js';
+import type { PropsType } from './QrCode.dom.tsx';
+import { QrCode } from './QrCode.dom.tsx';
 
 export default {
   title: 'Components/QrCode',

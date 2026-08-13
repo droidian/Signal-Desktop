@@ -7,28 +7,23 @@ import {
   getUserACI,
   getUserConversationId,
   getUserNumber,
-} from './user.std.js';
-import {
-  getMessagePropStatus,
-  getSource,
-  getSourceServiceId,
-} from './message.preload.js';
+} from './user.std.ts';
+import { getSource, getSourceServiceId } from './message.preload.ts';
 import {
   getConversationByIdSelector,
   getConversations,
   getConversationSelector,
-  getSelectedConversationId,
-} from './conversations.dom.js';
-import type { StateType } from '../reducer.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.js';
-import type { MessageWithUIFieldsType } from '../ducks/conversations.preload.js';
+} from './conversations.dom.ts';
+import type { StateType } from '../reducer.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.ts';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
-import { getMessageIdForLogging } from '../../util/idForLogging.preload.js';
-import * as Attachment from '../../util/Attachment.std.js';
-import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.js';
-import { isPlayed } from '../../util/Attachment.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
+import { getMessageIdForLogging } from '../../util/idForLogging.preload.ts';
+import * as Attachment from '../../util/Attachment.std.ts';
+import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.ts';
+import { isVoiceMessagePlayed } from '../../util/isVoiceMessagePlayed.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { getSelectedConversationId } from './nav.std.ts';
 
 const log = createLogger('audioPlayer');
 
@@ -41,11 +36,8 @@ export type VoiceNoteForPlayback = {
   sourceServiceId: ServiceIdString | undefined;
   isPlayed: boolean;
   messageIdForLogging: string;
-  timestamp: number;
-};
-
-export const isPaused = (state: StateType): boolean => {
-  return state.audioPlayer.active === undefined;
+  sentAt: number;
+  receivedAt: number;
 };
 
 export const selectAudioPlayerActive = (
@@ -81,7 +73,21 @@ export const selectVoiceNoteTitle = createSelector(
 );
 
 export function extractVoiceNoteForPlayback(
-  message: ReadonlyMessageAttributesType,
+  message: Pick<
+    ReadonlyMessageAttributesType,
+    | 'id'
+    | 'conversationId'
+    | 'type'
+    | 'attachments'
+    | 'isErased'
+    | 'errors'
+    | 'readStatus'
+    | 'sendStateByConversationId'
+    | 'sent_at'
+    | 'received_at'
+    | 'source'
+    | 'sourceServiceId'
+  >,
   ourConversationId: string | undefined
 ): VoiceNoteForPlayback | undefined {
   const { type } = message;
@@ -98,15 +104,15 @@ export function extractVoiceNoteForPlayback(
   const voiceNoteUrl = attachment.path
     ? getLocalAttachmentUrl(attachment)
     : undefined;
-  const status = getMessagePropStatus(message, ourConversationId);
 
   return {
     id: message.id,
     url: voiceNoteUrl,
     type,
-    isPlayed: isPlayed(type, status, message.readStatus),
+    isPlayed: isVoiceMessagePlayed(message, ourConversationId),
     messageIdForLogging: getMessageIdForLogging(message),
-    timestamp: message.timestamp,
+    sentAt: message.sent_at,
+    receivedAt: message.received_at,
     source: message.source,
     sourceServiceId: message.sourceServiceId,
   };
@@ -116,11 +122,7 @@ export function extractVoiceNoteForPlayback(
 export type VoiceNoteAndConsecutiveForPlayback = {
   conversationId: string;
   voiceNote: VoiceNoteForPlayback;
-  previousMessageId: string | undefined;
-  consecutiveVoiceNotes: ReadonlyArray<VoiceNoteForPlayback>;
   playbackRate: number;
-  // timestamp of the message after all the once in the queue
-  nextMessageTimestamp: number | undefined;
 };
 export const selectVoiceNoteAndConsecutive = createSelector(
   getConversations,
@@ -160,57 +162,12 @@ export const selectVoiceNoteAndConsecutive = createSelector(
         return undefined;
       }
 
-      const conversationMessages =
-        conversations.messagesByConversation[selectedConversationId];
-
-      if (!conversationMessages) {
-        log.warn('selectedVoiceNote: no conversation messages', {
-          message: messageId,
-        });
-        return;
-      }
-
-      let idx = conversationMessages.messageIds.indexOf(messageId);
-
-      // useful if inserting into an active queue
-      const previousMessageId = conversationMessages.messageIds[idx - 1];
-
-      const consecutiveVoiceNotes: Array<VoiceNoteForPlayback> = [];
-      let nextMessageId: string;
-      let nextMessage: MessageWithUIFieldsType | undefined;
-      let nextVoiceNote: VoiceNoteForPlayback | undefined;
-      do {
-        idx += 1;
-        nextMessageId = conversationMessages.messageIds[idx];
-        if (!nextMessageId) {
-          nextMessage = undefined;
-          break;
-        }
-        nextMessage = conversations.messagesLookup[nextMessageId];
-        if (!nextMessage) {
-          break;
-        }
-        if (nextMessage.deletedForEveryone) {
-          continue;
-        }
-        nextVoiceNote = extractVoiceNoteForPlayback(
-          nextMessage,
-          ourConversationId
-        );
-        if (nextVoiceNote) {
-          consecutiveVoiceNotes.push(nextVoiceNote);
-        }
-      } while (nextVoiceNote);
-
       const conversation = getConversationById(selectedConversationId);
 
       return {
         conversationId: selectedConversationId,
         voiceNote,
-        consecutiveVoiceNotes,
         playbackRate: conversation?.voiceNotePlaybackRate ?? 1,
-        previousMessageId,
-        nextMessageTimestamp: nextMessage?.timestamp,
       };
     };
   }

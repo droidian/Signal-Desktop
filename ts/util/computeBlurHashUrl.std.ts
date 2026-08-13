@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { decode } from 'blurhash';
-import * as Bytes from '../Bytes.std.js';
+import * as Bytes from '../Bytes.std.ts';
 
 const BITMAP_HEADER = new Uint8Array([
   // Header
@@ -46,16 +46,25 @@ const BITMAP_HEADER = new Uint8Array([
 ]);
 
 const PIXEL_COUNT = 32 * 32;
+const MIN_DIMENSION = 4;
 
-/* eslint-disable no-bitwise */
-function writeUInt32LE(bytes: Uint8Array, value: number, position: number) {
-  // eslint-disable-next-line no-param-reassign
+// width * height = PIXEL_COUNT, so aspect_ratio = PIXEL_COUNT / (height * height), which is
+// maximized when height is small
+const MAX_ASPECT_RATIO = PIXEL_COUNT / (MIN_DIMENSION * MIN_DIMENSION); // 64
+const MIN_ASPECT_RATIO = 1 / MAX_ASPECT_RATIO;
+
+function writeUInt32LE(
+  bytes: Uint8Array<ArrayBuffer>,
+  value: number,
+  position: number
+) {
+  // oxlint-disable-next-line no-param-reassign, no-bitwise
   bytes[position + 0] = (value >>> 0) & 0xff;
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign, no-bitwise
   bytes[position + 1] = (value >>> 8) & 0xff;
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign, no-bitwise
   bytes[position + 2] = (value >>> 16) & 0xff;
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign, no-bitwise
   bytes[position + 3] = (value >>> 24) & 0xff;
 }
 
@@ -65,7 +74,13 @@ export function computeBlurHashUrl(
   desiredWidth = 1,
   desiredHeight = 1
 ): string {
-  const invAspect = Math.abs(desiredHeight) / (Math.abs(desiredWidth) + 1e-23);
+  const rawInvAspect =
+    (Math.abs(desiredHeight) + 1e-23) / (Math.abs(desiredWidth) + 1e-23);
+
+  const invAspect = Math.min(
+    MAX_ASPECT_RATIO,
+    Math.max(MIN_ASPECT_RATIO, rawInvAspect)
+  );
 
   // Calculate width and height that roughly satisfy the desired PIXEL_COUNT
   //
@@ -76,17 +91,17 @@ export function computeBlurHashUrl(
 
   // Width has to be a multiple of DWORD size (4) for BMP to render image
   // correctly
+  // oxlint-disable-next-line no-bitwise
   width >>= 2;
+  // oxlint-disable-next-line no-bitwise
   width <<= 2;
 
-  // Give at least two pixels of width to show gradients
-  width = Math.max(2, width);
+  width = Math.max(MIN_DIMENSION, width);
 
   let height = width * invAspect;
   height = Math.round(height);
 
-  // Minimum two pixels of height for gradients
-  height = Math.max(2, height);
+  height = Math.max(MIN_DIMENSION, height);
 
   const rgba = decode(blurHash, width, height);
   const bgrSize = (rgba.byteLength / 4) * 3;
@@ -111,11 +126,13 @@ export function computeBlurHashUrl(
     i += 4, j += 3
   ) {
     // BMP uses BGR ordering
-    bitmap[j + 2] = rgba[i];
-    bitmap[j + 1] = rgba[i + 1];
-    bitmap[j] = rgba[i + 2];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    bitmap[j + 2] = rgba[i]!;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    bitmap[j + 1] = rgba[i + 1]!;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    bitmap[j] = rgba[i + 2]!;
   }
 
   return `data:image/bmp;base64,${Bytes.toBase64(bitmap)}`;
 }
-/* eslint-enable no-bitwise */

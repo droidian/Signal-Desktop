@@ -1,36 +1,38 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import classNames from 'classnames';
-import type { CSSProperties } from 'react';
-import React, { useMemo } from 'react';
+import type { CSSProperties, JSX } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import MANIFEST from '../../../build/jumbomoji.json';
-import type { EmojiVariantData } from './data/emojis.std.js';
-import type { FunImageAriaProps } from './types.dom.js';
+import type { FunImageAriaProps } from './types.dom.tsx';
+import { createLogger } from '../../logging/log.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+
+const log = createLogger('FunEmoji');
 
 export const FUN_STATIC_EMOJI_CLASS = 'FunStaticEmoji';
-export const FUN_INLINE_EMOJI_CLASS = 'FunInlineEmoji';
-
-const FUN_STATIC_JUMBO_EMOJI_CLASS = 'FunStaticEmoji--has-jumbo';
-const FUN_INLINE_JUMBO_EMOJI_CLASS = 'FunInlineEmoji--has-jumbo';
+const FUN_INLINE_EMOJI_CLASS = 'FunInlineEmoji';
+const FUN_STATIC_EMOJI_TEXT_CLASS = 'FunStaticEmoji__Text';
 
 const KNOWN_JUMBOMOJI = new Set<string>(Object.values(MANIFEST).flat());
 const MIN_JUMBOMOJI_SIZE = 33;
 
-function getEmojiJumboBackground(
-  emoji: EmojiVariantData,
+function getEmojiJumboUrl(
+  emoji: Emoji.Variant,
   size: number | undefined
 ): string | null {
   if (size != null && size < MIN_JUMBOMOJI_SIZE) {
     return null;
   }
-  if (KNOWN_JUMBOMOJI.has(emoji.value)) {
-    return `url(emoji://jumbo?emoji=${encodeURIComponent(emoji.value)})`;
+  if (KNOWN_JUMBOMOJI.has(emoji)) {
+    return `emoji://jumbo?emoji=${encodeURIComponent(emoji)}`;
   }
   return null;
 }
 
 export type FunStaticEmojiSize =
   | 12
+  | 14
   | 16
   | 18
   | 20
@@ -54,6 +56,7 @@ export enum FunJumboEmojiSize {
 
 const funStaticEmojiSizeClasses = {
   12: 'FunStaticEmoji--Size12',
+  14: 'FunStaticEmoji--Size14',
   16: 'FunStaticEmoji--Size16',
   18: 'FunStaticEmoji--Size18',
   20: 'FunStaticEmoji--Size20',
@@ -71,124 +74,179 @@ const funStaticEmojiSizeClasses = {
 export type FunStaticEmojiProps = FunImageAriaProps &
   Readonly<{
     size: FunStaticEmojiSize;
-    emoji: EmojiVariantData;
+    emoji: Emoji.Variant;
   }>;
 
 export function FunStaticEmoji(props: FunStaticEmojiProps): JSX.Element {
-  const jumboImage = getEmojiJumboBackground(props.emoji, props.size);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const onLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
+  const jumboImage = getEmojiJumboUrl(props.emoji, props.size);
+  let img: JSX.Element | undefined;
+  if (jumboImage != null) {
+    img = (
+      <img
+        width={props.size}
+        height={props.size}
+        role={props.role}
+        aria-label={props['aria-label']}
+        data-emoji={props.emoji}
+        className={classNames(
+          FUN_STATIC_EMOJI_CLASS,
+          funStaticEmojiSizeClasses[props.size]
+        )}
+        style={{ display: isLoaded ? undefined : 'none' }}
+        src={jumboImage}
+        onLoad={onLoad}
+      />
+    );
+  }
   return (
-    <div
-      role={props.role}
-      aria-label={props['aria-label']}
-      data-emoji-key={props.emoji.key}
-      data-emoji-value={props.emoji.value}
-      className={classNames(
-        FUN_STATIC_EMOJI_CLASS,
-        jumboImage != null && FUN_STATIC_JUMBO_EMOJI_CLASS,
-        funStaticEmojiSizeClasses[props.size]
+    <>
+      {img}
+      {!isLoaded && (
+        <span
+          role={props.role}
+          aria-label={props['aria-label']}
+          data-emoji={props.emoji}
+          className={classNames(
+            FUN_STATIC_EMOJI_CLASS,
+            FUN_STATIC_EMOJI_TEXT_CLASS,
+            funStaticEmojiSizeClasses[props.size]
+          )}
+          style={
+            {
+              '--fun-emoji-jumbo-image': jumboImage,
+            } as CSSProperties
+          }
+        >
+          {props.emoji}
+        </span>
       )}
-      style={
-        {
-          '--fun-emoji-sheet-x': props.emoji.sheetX,
-          '--fun-emoji-sheet-y': props.emoji.sheetY,
-          '--fun-emoji-jumbo-image': jumboImage,
-        } as CSSProperties
-      }
-    />
+    </>
   );
 }
 
 export type StaticEmojiBlotProps = FunStaticEmojiProps;
 
-const TRANSPARENT_PIXEL =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E";
-
 /**
  * This is for Quill. It should stay in sync with <FunStaticEmoji> as much as possible.
- *
- * The biggest difference between them is that the emoji blot uses an `<img>`
- * tag with a single transparent pixel in order to render the selection cursor
- * correctly in the browser when using `contenteditable`
- *
- * We need to use the `<img>` bec ause
  */
 export function createStaticEmojiBlot(
-  node: HTMLImageElement,
+  nodeParam: HTMLSpanElement,
   props: StaticEmojiBlotProps
 ): void {
-  const jumboImage = getEmojiJumboBackground(props.emoji, props.size);
-  // eslint-disable-next-line no-param-reassign
-  node.src = TRANSPARENT_PIXEL;
-  // eslint-disable-next-line no-param-reassign
+  const node = nodeParam;
+
   node.role = props.role;
   node.classList.add(FUN_STATIC_EMOJI_CLASS);
-  if (jumboImage != null) {
-    node.classList.add(FUN_STATIC_JUMBO_EMOJI_CLASS);
-  }
   node.classList.add(funStaticEmojiSizeClasses[props.size]);
+  node.classList.add(FUN_STATIC_EMOJI_TEXT_CLASS);
   node.classList.add('FunStaticEmoji--Blot');
   if (props['aria-label'] != null) {
     node.setAttribute('aria-label', props['aria-label']);
   }
-  node.style.setProperty('--fun-emoji-sheet-x', `${props.emoji.sheetX}`);
-  node.style.setProperty('--fun-emoji-sheet-y', `${props.emoji.sheetY}`);
-  node.style.setProperty('--fun-emoji-jumbo-image', jumboImage);
+
+  node.innerText = props.emoji;
 }
 
 export type FunInlineEmojiProps = FunImageAriaProps &
   Readonly<{
     size?: number | null;
-    emoji: EmojiVariantData;
+    emoji: Emoji.Variant;
+    style?: CSSProperties;
   }>;
 
 export function FunInlineEmoji(props: FunInlineEmojiProps): JSX.Element {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const onLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
   const jumboImage = useMemo(() => {
     // Note: we don't pass size here because appearance of jumbomoji is decided
-    // in cass based on the parent svg container size.
-    return getEmojiJumboBackground(props.emoji, undefined);
+    // in css based on the parent svg container size.
+    return getEmojiJumboUrl(props.emoji, undefined);
   }, [props.emoji]);
+
+  let img: JSX.Element | undefined;
+  if (jumboImage) {
+    img = (
+      <img
+        className={classNames(
+          'FunInlineEmoji__Image',
+          isLoaded && 'FunInlineEmoji__Image--loaded'
+        )}
+        aria-hidden
+        alt=""
+        loading="lazy"
+        src={jumboImage}
+        onLoad={onLoad}
+      />
+    );
+  }
+
   return (
-    <svg
-      role="none"
+    <span
       className={FUN_INLINE_EMOJI_CLASS}
-      width={64}
-      height={64}
-      viewBox="0 0 64 64"
-      data-emoji-key={props.emoji.key}
-      data-emoji-value={props.emoji.value}
+      aria-label={props['aria-label']}
+      // Needed to lookup emoji value in `matchEmojiBlot`
+      data-emoji={props.emoji}
       style={
         {
           '--fun-inline-emoji-size':
             props.size != null ? `${props.size}px` : null,
+          ...props.style,
         } as CSSProperties
       }
     >
-      {/*
-        <foreignObject> is used to embed HTML+CSS within SVG, the HTML+CSS gets
-        rendered at a normal size then scaled by the SVG. This allows us to make
-        use of CSS features that are not supported by SVG while still using SVG's
-        ability to scale relative to the parent's font-size.
-       */}
-      <foreignObject x={0} y={0} width={64} height={64}>
-        <span aria-hidden className="FunEmojiSelectionText">
-          {props.emoji.value}
+      <span
+        className={classNames(
+          'FunInlineEmoji__Small',
+          isLoaded && 'FunInlineEmoji__Small--Hidden'
+        )}
+      >
+        {props.emoji}
+      </span>
+      {img != null && (
+        <span className="FunInlineEmoji__Jumbo" aria-hidden>
+          {img}
         </span>
-        <span
-          role={props.role}
-          aria-label={props['aria-label']}
-          className={classNames(
-            'FunInlineEmoji__Image',
-            jumboImage != null && FUN_INLINE_JUMBO_EMOJI_CLASS
-          )}
-          style={
-            {
-              '--fun-emoji-sheet-x': props.emoji.sheetX,
-              '--fun-emoji-sheet-y': props.emoji.sheetY,
-              '--fun-emoji-jumbo-image': jumboImage,
-            } as CSSProperties
-          }
-        />
-      </foreignObject>
-    </svg>
+      )}
+    </span>
   );
+}
+
+function isFunEmojiElement(element: HTMLElement): boolean {
+  return (
+    element.classList.contains(FUN_INLINE_EMOJI_CLASS) ||
+    element.classList.contains(FUN_STATIC_EMOJI_CLASS)
+  );
+}
+
+export function getFunEmojiElementValue(
+  element: HTMLElement
+): Emoji.Variant | null {
+  if (!isFunEmojiElement(element)) {
+    return null;
+  }
+
+  const value = element.dataset.emoji;
+  if (value == null) {
+    log.error('Missing a data-emoji attribute on emoji element');
+    return null;
+  }
+
+  if (!Emoji.isEmoji(value)) {
+    log.error(
+      `Expected a valid emoji variant value, got ${Emoji.getDebugLabel(value)}`
+    );
+    return null;
+  }
+
+  return Emoji.ignorePreferredSkinTone(value);
 }

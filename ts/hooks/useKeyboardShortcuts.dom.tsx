@@ -1,14 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import lodash from 'lodash';
 import { useSelector } from 'react-redux';
-import * as KeyboardLayout from '../services/keyboardLayout.dom.js';
-import { getHasPanelOpen } from '../state/selectors/conversations.dom.js';
-import { isInFullScreenCall } from '../state/selectors/calling.std.js';
-import { isShowingAnyModal } from '../state/selectors/globalModals.std.js';
-import type { ContextMenuTriggerType } from '../components/conversation/MessageContextMenu.dom.js';
+import * as KeyboardLayout from '../services/keyboardLayout.dom.ts';
+import { getHasPanelOpen } from '../state/selectors/nav.std.ts';
+import { isShowingAnyModal } from '../state/selectors/globalModals.std.ts';
+import { getIsInFullScreenCall } from '../state/selectors/isInFullScreenCall.std.ts';
 
 const { get } = lodash;
 
@@ -90,7 +89,7 @@ function useHasGlobalModal(): boolean {
 }
 
 function useHasCalling(): boolean {
-  return useSelector(isInFullScreenCall);
+  return useSelector(getIsInFullScreenCall);
 }
 
 function useHasAnyOverlay(): boolean {
@@ -295,8 +294,8 @@ export function useToggleReactionPicker(
   );
 }
 
-export function useOpenContextMenu(
-  openContextMenu: ContextMenuTriggerType['handleContextClick'] | undefined
+export function useEditLastMessageSent(
+  maybeEditMessage: () => boolean
 ): KeyboardShortcutHandlerType {
   const hasOverlay = useHasAnyOverlay();
 
@@ -306,36 +305,9 @@ export function useOpenContextMenu(
         return false;
       }
 
-      const { shiftKey } = ev;
-      const key = KeyboardLayout.lookup(ev);
-
-      const isMacOS = get(window, 'platform') === 'darwin';
-
-      if (
-        (!isMacOS && shiftKey && key === 'F10') ||
-        (isMacOS && isCmdOrCtrl(ev) && key === 'F12')
-      ) {
-        ev.preventDefault();
-        ev.stopPropagation();
-
-        openContextMenu?.(new MouseEvent('click'));
-        return true;
-      }
-
-      return false;
-    },
-    [hasOverlay, openContextMenu]
-  );
-}
-
-export function useEditLastMessageSent(
-  maybeEditMessage: () => boolean
-): KeyboardShortcutHandlerType {
-  const hasOverlay = useHasAnyOverlay();
-
-  return useCallback(
-    ev => {
-      if (hasOverlay) {
+      // Ignore keys that are part of an active IME composition (e.g. when
+      // navigating the Japanese transliteration candidate menu with ArrowUp).
+      if (ev.isComposing) {
         return false;
       }
 
@@ -365,34 +337,46 @@ export function useEditLastMessageSent(
 export function useKeyboardShortcuts(
   ...eventHandlers: Array<KeyboardShortcutHandlerType>
 ): void {
+  const handlersRef = useRef(eventHandlers);
+  handlersRef.current = eventHandlers;
+
   useEffect(() => {
     function handleKeydown(ev: KeyboardEvent): void {
-      eventHandlers.some(eventHandler => eventHandler(ev));
+      handlersRef.current.some(eventHandler => eventHandler(ev));
     }
 
     document.addEventListener('keydown', handleKeydown);
     return () => {
       document.removeEventListener('keydown', handleKeydown);
     };
-  }, [eventHandlers]);
+  }, []);
 }
 
-export function useKeyboardShortcutsConditionally(
-  condition: boolean,
-  ...eventHandlers: Array<KeyboardShortcutHandlerType>
-): void {
-  useEffect(() => {
-    if (!condition) {
-      return;
+/** `key` is matched case-insensitively. */
+export function makeKeyboardShortcutHandler(
+  key: string,
+  strictMods: Partial<Mods>,
+  callback: () => unknown
+): KeyboardShortcutHandlerType {
+  return ev => {
+    const keyPressed = KeyboardLayout.lookup(ev);
+
+    if (
+      hasExactModifiers(ev, {
+        controlOrMeta: false,
+        shift: false,
+        alt: false,
+        ...strictMods,
+      }) &&
+      keyPressed?.toLowerCase() === key.toLowerCase()
+    ) {
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      callback();
+      return true;
     }
 
-    function handleKeydown(ev: KeyboardEvent): void {
-      eventHandlers.some(eventHandler => eventHandler(ev));
-    }
-
-    document.addEventListener('keydown', handleKeydown);
-    return () => {
-      document.removeEventListener('keydown', handleKeydown);
-    };
-  }, [condition, eventHandlers]);
+    return false;
+  };
 }
