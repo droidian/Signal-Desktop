@@ -1,0 +1,589 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { videoPixelFormatToEnum } from '@signalapp/ringrtc';
+import type { VideoFrameSender, VideoFrameSource } from '@signalapp/ringrtc';
+import type { RefObject } from 'react';
+import { createLogger } from '../logging/log.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+
+const log = createLogger('VideoSupport');
+
+export class GumVideoCaptureOptions {
+  maxWidth = 640;
+  maxHeight = 480;
+  maxFramerate = 30;
+  preferredDeviceId?: string;
+  screenShareSourceId?: string;
+  mediaStream?: MediaStream;
+  onEnded?: () => void;
+}
+
+// oxlint-disable-next-line typescript/consistent-type-definitions
+interface GumTrackConstraints extends MediaTrackConstraints {
+  mandatory?: GumTrackConstraintSet;
+}
+
+type GumTrackConstraintSet = {
+  chromeMediaSource: string;
+  chromeMediaSourceId?: string;
+  maxWidth: number;
+  maxHeight: number;
+  minFrameRate: number;
+  maxFrameRate: number;
+};
+
+export type SizeCallbackType = (options: {
+  width: number;
+  height: number;
+}) => unknown;
+
+export type SetLocalPreviewType = {
+  localPreview: HTMLVideoElement | undefined;
+  sizeCallback: SizeCallbackType | undefined;
+};
+
+// oxlint-disable-next-line max-classes-per-file
+export class GumVideoCapturer {
+  private localPreview?: HTMLVideoElement;
+  private sizeCallback?: SizeCallbackType;
+  private captureOptions?: GumVideoCaptureOptions;
+  private sender?: VideoFrameSender;
+  private mediaStream?: MediaStream;
+  private spawnedSenderRunning = false;
+  private preferredDeviceId?: string;
+  private readonly reportVideoSizeCallback = this.reportVideoSize.bind(this);
+
+  capturing(): boolean {
+    return this.captureOptions !== undefined;
+  }
+
+  setLocalPreview(options: SetLocalPreviewType): void {
+    const oldLocalPreview = this.localPreview;
+
+    if (oldLocalPreview !== options.localPreview) {
+      if (oldLocalPreview) {
+        oldLocalPreview.srcObject = null;
+        oldLocalPreview.removeEventListener(
+          'resize',
+          this.reportVideoSizeCallback
+        );
+      }
+
+      this.localPreview = options.localPreview;
+
+      if (this.localPreview) {
+        this.localPreview.addEventListener(
+          'resize',
+          this.reportVideoSizeCallback
+        );
+      }
+      this.updateLocalPreviewSourceObject();
+    }
+
+    this.sizeCallback = options.sizeCallback;
+    this.reportVideoSize();
+  }
+
+  reportVideoSize(): void {
+    if (!this.mediaStream || !this.sizeCallback) {
+      return;
+    }
+
+    const settings = this.mediaStream.getVideoTracks()?.[0]?.getSettings();
+    if (!settings?.width || !settings?.height) {
+      return;
+    }
+
+    const size = {
+      width: settings.width,
+      height: settings.height,
+    };
+    this.sizeCallback(size);
+  }
+
+  async enableCapture(options: GumVideoCaptureOptions): Promise<void> {
+    return this.startCapturing(options);
+  }
+
+  async enableCaptureAndSend(
+    sender: VideoFrameSender | undefined,
+    options: GumVideoCaptureOptions
+  ): Promise<void> {
+    const startCapturingPromise = this.startCapturing(options);
+    if (sender) {
+      this.startSending(sender);
+    }
+    // Bubble up the error.
+    return startCapturingPromise;
+  }
+
+  disable(): void {
+    this.stopCapturing();
+    this.stopSending();
+  }
+
+  async setPreferredDevice(deviceId: string): Promise<void> {
+    this.preferredDeviceId = deviceId;
+
+    if (this.captureOptions) {
+      const { captureOptions, sender } = this;
+
+      this.disable();
+      // Bubble up the error if starting video failed.
+      return this.enableCaptureAndSend(sender, captureOptions);
+    }
+  }
+
+  async enumerateDevices(): Promise<Array<MediaDeviceInfo>> {
+    const devices = await window.navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => d.kind === 'videoinput');
+    return cameras;
+  }
+
+  private async getUserMedia(
+    options: GumVideoCaptureOptions
+  ): Promise<MediaStream> {
+    // Return provided media stream
+    if (options.mediaStream) {
+      return options.mediaStream;
+    }
+
+    if (options.screenShareSourceId !== undefined) {
+      const screenshareConstraints: GumTrackConstraints = {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: options.screenShareSourceId,
+          maxWidth: options.maxWidth,
+          maxHeight: options.maxHeight,
+          minFrameRate: 1,
+          maxFrameRate: options.maxFramerate,
+        },
+      };
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: screenshareConstraints,
+      });
+    }
+
+    const preferredDeviceId =
+      options.preferredDeviceId ?? this.preferredDeviceId;
+    const videoConstraints: GumTrackConstraints = {
+      deviceId: {
+        exact: preferredDeviceId,
+      },
+      width: {
+        max: options.maxWidth,
+        ideal: options.maxWidth,
+      },
+      height: {
+        max: options.maxHeight,
+        ideal: options.maxHeight,
+      },
+      frameRate: {
+        max: options.maxFramerate,
+        ideal: options.maxFramerate,
+      },
+    };
+
+    try {
+      const exactStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: videoConstraints,
+      });
+      if (exactStream) {
+        return exactStream;
+      }
+    } catch (e) {
+      log.warn(
+        `getUserMedia(): Failed with exact constraints: ${e}. Falling back to loose constraints.`
+      );
+    }
+
+    return navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        ...videoConstraints,
+        deviceId: preferredDeviceId,
+      },
+    });
+  }
+
+  private async startCapturing(options: GumVideoCaptureOptions): Promise<void> {
+    if (this.capturing()) {
+      log.warn('startCapturing(): already capturing');
+      return;
+    }
+    log.info(
+      `startCapturing(): ${options.maxWidth}x${options.maxHeight}@${options.maxFramerate}`
+    );
+    this.captureOptions = options;
+    try {
+      // If we start/stop/start, we may have concurrent calls to getUserMedia,
+      // which is what we want if we're switching from camera to screenshare.
+      // But we need to make sure we deal with the fact that things might be
+      // different after the await here.
+      const mediaStream = await this.getUserMedia(options);
+      // It's possible video was disabled, switched to screenshare, or
+      // switched to a different camera while awaiting a response, in
+      // which case we need to disable the camera we just accessed.
+      if (this.captureOptions !== options) {
+        log.warn('startCapturing(): different state after getUserMedia()');
+        for (const track of mediaStream.getVideoTracks()) {
+          // Make the light turn off faster
+          track.stop();
+        }
+        return;
+      }
+
+      if (
+        this.mediaStream !== undefined &&
+        this.mediaStream.getVideoTracks().length > 0
+      ) {
+        // We have a stream and track for the requested camera already. Stop
+        // the duplicate track that we just started.
+        log.warn('startCapturing(): dropping duplicate call to startCapturing');
+        for (const track of mediaStream.getVideoTracks()) {
+          track.stop();
+        }
+        return;
+      }
+
+      this.mediaStream = mediaStream;
+      if (
+        !this.spawnedSenderRunning &&
+        this.mediaStream !== undefined &&
+        this.sender !== undefined
+      ) {
+        this.spawnSender(this.mediaStream, this.sender);
+      }
+
+      this.updateLocalPreviewSourceObject();
+    } catch (e) {
+      log.error(`startCapturing(): ${toLogFormat(e)}`);
+
+      // It's possible video was disabled, switched to screenshare, or
+      // switched to a different camera while awaiting a response, in
+      // which case we should reset the captureOptions if we set them.
+      if (this.captureOptions === options) {
+        // We couldn't open the camera.  Oh well.
+        this.captureOptions = undefined;
+      }
+      // Re-raise so that callers can surface this condition to the user.
+      throw e;
+    }
+  }
+
+  private stopCapturing(): void {
+    if (!this.capturing()) {
+      log.warn('stopCapturing(): not capturing');
+      return;
+    }
+    log.info('stopCapturing()');
+    this.captureOptions = undefined;
+    if (this.mediaStream) {
+      for (const track of this.mediaStream.getVideoTracks()) {
+        // Make the light turn off faster
+        track.stop();
+      }
+      this.mediaStream = undefined;
+    }
+
+    this.updateLocalPreviewSourceObject();
+  }
+
+  private startSending(sender: VideoFrameSender): void {
+    if (this.sender === sender) {
+      return;
+    }
+    if (this.sender) {
+      // If we're replacing an existing sender, make sure we stop the
+      // current setInterval loop before starting another one.
+      this.stopSending();
+    }
+    this.sender = sender;
+
+    if (!this.spawnedSenderRunning && this.mediaStream !== undefined) {
+      this.spawnSender(this.mediaStream, this.sender);
+    }
+  }
+
+  private spawnSender(mediaStream: MediaStream, sender: VideoFrameSender) {
+    const track = mediaStream.getVideoTracks()[0];
+    if (track === undefined || this.spawnedSenderRunning) {
+      return;
+    }
+
+    const { onEnded } = this.captureOptions || {};
+
+    if (track.readyState === 'ended') {
+      this.stopCapturing();
+      log.warn('spawnSender(): Video track ended before spawning sender');
+      return;
+    }
+
+    const reader = new MediaStreamTrackProcessor({
+      track,
+    }).readable.getReader();
+    const buffer = new Uint8Array(MAX_VIDEO_CAPTURE_BUFFER_SIZE);
+    this.spawnedSenderRunning = true;
+    // oxlint-disable-next-line typescript/no-floating-promises
+    (async () => {
+      try {
+        while (mediaStream === this.mediaStream) {
+          // oxlint-disable-next-line no-await-in-loop
+          const { done, value: frame } = await reader.read();
+          if (done) {
+            break;
+          }
+          if (!frame) {
+            continue;
+          }
+          try {
+            const format = videoPixelFormatToEnum(frame.format ?? 'I420');
+            if (format === undefined) {
+              log.warn(`Unsupported video frame format: ${frame.format}`);
+              break;
+            }
+
+            const { width, height } = frame.visibleRect || {};
+            if (!width || !height) {
+              continue;
+            }
+
+            // oxlint-disable-next-line no-await-in-loop
+            await frame.copyTo(buffer);
+            if (sender !== this.sender) {
+              break;
+            }
+
+            sender.sendVideoFrame(width, height, format, buffer);
+          } catch (e) {
+            log.error(`sendVideoFrame(): ${e}`);
+          } finally {
+            // This must be called for more frames to come.
+            frame.close();
+          }
+        }
+      } catch (e) {
+        log.error(`spawnSender(): ${e}`);
+      } finally {
+        reader.releaseLock();
+        onEnded?.();
+      }
+      this.spawnedSenderRunning = false;
+    })();
+  }
+
+  private stopSending(): void {
+    // The spawned sender should stop
+    this.sender = undefined;
+  }
+
+  private updateLocalPreviewSourceObject(): void {
+    const { localPreview } = this;
+    if (!localPreview) {
+      log.warn('No local preview to update');
+      return;
+    }
+
+    const { mediaStream = null } = this;
+
+    if (localPreview.srcObject === mediaStream) {
+      return;
+    }
+
+    if (mediaStream && this.captureOptions) {
+      log.warn('Enabling local preview');
+      localPreview.srcObject = mediaStream;
+      if (localPreview.width === 0) {
+        localPreview.width = this.captureOptions.maxWidth;
+      }
+      if (localPreview.height === 0) {
+        localPreview.height = this.captureOptions.maxHeight;
+      }
+    } else {
+      log.warn('Disabling local preview');
+      localPreview.srcObject = null;
+    }
+  }
+}
+
+const MAX_VIDEO_CAPTURE_WIDTH = 2880;
+const MAX_VIDEO_CAPTURE_HEIGHT = 1800;
+const MAX_VIDEO_CAPTURE_AREA =
+  MAX_VIDEO_CAPTURE_WIDTH * MAX_VIDEO_CAPTURE_HEIGHT;
+const MAX_VIDEO_CAPTURE_BUFFER_SIZE = MAX_VIDEO_CAPTURE_AREA * 4;
+
+export class CanvasVideoRenderer {
+  private canvas?: RefObject<HTMLCanvasElement | null>;
+  private sizeCallback?: SizeCallbackType;
+  private readonly buffer: Uint8Array<ArrayBuffer>;
+  private imageData?: ImageData;
+  private source?: VideoFrameSource;
+  private rafId?: ReturnType<typeof requestAnimationFrame>;
+
+  private lastCanvas: HTMLCanvasElement | undefined;
+  private lastCanvasWidth: number | undefined;
+  private lastCanvasHeight: number | undefined;
+  private lastCanvasStyle: string | undefined;
+
+  constructor() {
+    this.buffer = new Uint8Array(MAX_VIDEO_CAPTURE_BUFFER_SIZE);
+  }
+
+  setCanvas(canvas: RefObject<HTMLCanvasElement | null> | undefined): void {
+    this.canvas = canvas;
+  }
+  setSizer(callback: SizeCallbackType | undefined): void {
+    this.sizeCallback = callback;
+
+    if (this.imageData) {
+      this.sizeCallback?.({
+        width: this.imageData.width,
+        height: this.imageData.height,
+      });
+    }
+  }
+
+  enable(source: VideoFrameSource): void {
+    if (this.source === source) {
+      return;
+    }
+    if (this.source) {
+      // If we're replacing an existing source, make sure we stop the
+      // current rAF loop before starting another one.
+      if (this.rafId) {
+        window.cancelAnimationFrame(this.rafId);
+      }
+    }
+    this.source = source;
+    this.requestAnimationFrameCallback();
+  }
+
+  disable(): void {
+    this.renderBlack();
+    this.source = undefined;
+    if (this.rafId) {
+      window.cancelAnimationFrame(this.rafId);
+    }
+  }
+
+  private requestAnimationFrameCallback() {
+    this.renderVideoFrame();
+    this.rafId = window.requestAnimationFrame(
+      this.requestAnimationFrameCallback.bind(this)
+    );
+  }
+
+  private renderBlack() {
+    if (!this.canvas) {
+      return;
+    }
+    const canvas = this.canvas.current;
+    if (!canvas) {
+      return;
+    }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  private renderVideoFrame() {
+    if (!this.source || !this.canvas) {
+      return;
+    }
+    const canvas = this.canvas.current;
+    if (!canvas) {
+      this.lastCanvas = undefined;
+      return;
+    }
+    if (canvas !== this.lastCanvas) {
+      this.lastCanvas = canvas;
+      this.lastCanvasHeight = canvas.height;
+      this.lastCanvasWidth = canvas.width;
+      this.lastCanvasStyle = canvas.getAttribute('style') ?? undefined;
+    }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+
+    const frame = this.source.receiveVideoFrame(
+      this.buffer,
+      MAX_VIDEO_CAPTURE_WIDTH,
+      MAX_VIDEO_CAPTURE_HEIGHT
+    );
+    if (!frame) {
+      return;
+    }
+    const [width, height] = frame;
+
+    if (
+      width <= 2 ||
+      height <= 2 ||
+      width > MAX_VIDEO_CAPTURE_WIDTH ||
+      height > MAX_VIDEO_CAPTURE_HEIGHT ||
+      canvas.clientWidth <= 0 ||
+      canvas.clientHeight <= 0
+    ) {
+      return;
+    }
+
+    const aspectRatio = width / height;
+
+    const { parentElement } = canvas;
+    let parentAspectRatio = 1;
+
+    if (parentElement) {
+      parentAspectRatio =
+        parentElement.clientWidth / parentElement.clientHeight;
+    }
+
+    let style;
+    if (aspectRatio >= 1) {
+      // landscape
+      style = 'width: 100%';
+    } else {
+      // portrait
+      style = 'height: 100%';
+    }
+    // container is more landscape than video
+    if (aspectRatio > 1 && parentAspectRatio > aspectRatio) {
+      style = 'height: 100%';
+    }
+    // container is more portait than video
+    if (aspectRatio < 1 && parentAspectRatio < aspectRatio) {
+      style = 'width: 100%';
+    }
+
+    if (this.lastCanvasWidth !== width) {
+      canvas.width = width;
+      this.lastCanvasWidth = width;
+    }
+    if (this.lastCanvasHeight !== height) {
+      canvas.height = height;
+      this.lastCanvasHeight = height;
+    }
+    if (this.lastCanvasStyle !== style) {
+      canvas.setAttribute('style', style);
+      this.lastCanvasStyle = style;
+    }
+
+    const sizeChanged =
+      this.imageData?.width !== width || this.imageData?.height !== height;
+
+    if (!this.imageData || sizeChanged) {
+      this.imageData = new ImageData(width, height);
+    }
+    this.imageData.data.set(this.buffer.subarray(0, width * height * 4));
+    context.putImageData(this.imageData, 0, 0);
+
+    if (sizeChanged) {
+      this.sizeCallback?.({ width, height });
+    }
+  }
+}

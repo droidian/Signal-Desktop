@@ -45,10 +45,7 @@
   flex: 1;
   @include mixins.font-body-2;
   font-weight: 600;
-  color: light-dark(
-    variables.$color-black-alpha-50,
-    variables.$color-white-alpha-50
-  );
+  color: var(--axo-color-label-secondary);
 }
 
 .FunGrid__HeaderButton {
@@ -64,14 +61,13 @@
 
   &:hover,
   &:focus {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
+    background: var(--axo-color-fill-primary);
   }
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 }
@@ -82,10 +78,7 @@
 }
 
 @mixin icon($svg) {
-  @include mixins.color-svg(
-    $svg,
-    light-dark(variables.$color-black-alpha-50, variables.$color-white-alpha-50)
-  );
+  @include mixins.color-svg($svg, var(--axo-color-label-secondary));
 }
 
 .FunGrid__HeaderIcon--More {
@@ -99,7 +92,7 @@ $popover-margin: 12px;
   border-radius: 8px;
   box-shadow: 0 7px 18px variables.$color-black-alpha-30;
   background: FunConstants.$Fun__BgColor;
-  user-select: none;
+  backdrop-filter: FunConstants.$Fun__BgFilter;
   overflow: clip;
   padding: 16px;
   display: flex;
@@ -110,15 +103,14 @@ $popover-margin: 12px;
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 }
 
 .FunGrid__HeaderPopoverHeader {
   @include mixins.font-body-2;
-  color: light-dark(variables.$color-gray-90, variables.$color-gray-05);
+  color: var(--axo-color-label-secondary);
 }
 
 .FunGrid__RowGroup {

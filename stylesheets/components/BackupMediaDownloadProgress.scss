@@ -46,13 +46,13 @@
     height: 24px;
     @include mixins.light-theme {
       @include mixins.color-svg(
-        '../images/icons/v3/backup/backup-bold.svg',
+        '../images/icons/v3/signal_backups/signal_backups.svg',
         variables.$color-ultramarine
       );
     }
     @include mixins.dark-theme {
       @include mixins.color-svg(
-        '../images/icons/v3/backup/backup-bold.svg',
+        '../images/icons/v3/signal_backups/signal_backups.svg',
         variables.$color-ultramarine-light
       );
     }
@@ -67,6 +67,12 @@ button.BackupMediaDownloadProgress__button {
     }
     @include mixins.dark-theme {
       color: variables.$color-ultramarine-light;
+    }
+  }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -96,6 +102,12 @@ button.BackupMediaDownloadProgress__button-more {
       );
     }
   }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
+    }
+  }
 }
 button.BackupMediaDownloadProgress__button-close {
   @include mixins.button-reset;
@@ -122,6 +134,12 @@ button.BackupMediaDownloadProgress__button-close {
       );
     }
   }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
+    }
+  }
 }
 
 .BackupMediaDownloadProgress__description {
@@ -134,8 +152,4 @@ button.BackupMediaDownloadProgress__button-close {
   @include mixins.dark-theme {
     color: variables.$color-gray-25;
   }
-}
-
-.BackupMediaDownloadCancelConfirmation {
-  min-width: 440px;
 }

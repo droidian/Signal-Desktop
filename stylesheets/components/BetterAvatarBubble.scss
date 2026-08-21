@@ -33,10 +33,10 @@
     }
   }
 
-  @include mixins.keyboard-mode {
-    &:focus {
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
       border-color: variables.$color-ultramarine;
-      outline: none;
     }
   }
 

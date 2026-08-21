@@ -1,0 +1,78 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { ChangeEventHandler } from 'react';
+import { forwardRef } from 'react';
+
+import type { AttachmentDraftType } from '../types/Attachment.std.ts';
+import {
+  isVideoAttachment,
+  isImageAttachment,
+} from '../util/Attachment.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+
+import {
+  getSupportedImageTypes,
+  getSupportedVideoTypes,
+} from '../util/GoogleChrome.std.ts';
+
+export type PropsType = {
+  conversationId: string;
+  draftAttachments: ReadonlyArray<AttachmentDraftType>;
+  i18n: LocalizerType;
+  processAttachments: (options: {
+    conversationId: string;
+    files: ReadonlyArray<File>;
+    flags: number | null;
+  }) => unknown;
+  acceptMediaOnly?: boolean;
+  testId?: string;
+};
+
+export const CompositionUpload = forwardRef<HTMLInputElement, PropsType>(
+  function CompositionUploadInner(
+    {
+      conversationId,
+      draftAttachments,
+      processAttachments,
+      acceptMediaOnly,
+      testId,
+    },
+    ref
+  ) {
+    const onFileInputChange: ChangeEventHandler<
+      HTMLInputElement
+    > = async event => {
+      const files = event.target.files || [];
+
+      await processAttachments({
+        conversationId,
+        files: Array.from(files),
+        flags: null,
+      });
+    };
+
+    const anyVideoOrImageAttachments = draftAttachments.some(attachment => {
+      return isImageAttachment(attachment) || isVideoAttachment(attachment);
+    });
+
+    const acceptContentTypes =
+      acceptMediaOnly || anyVideoOrImageAttachments
+        ? [...getSupportedImageTypes(), ...getSupportedVideoTypes()]
+        : null;
+
+    return (
+      // FIXME
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label
+      <input
+        data-testid={testId ?? 'attachfile-input'}
+        hidden
+        multiple
+        onChange={onFileInputChange}
+        ref={ref}
+        type="file"
+        accept={acceptContentTypes?.join(',')}
+      />
+    );
+  }
+);

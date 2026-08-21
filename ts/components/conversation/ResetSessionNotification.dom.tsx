@@ -1,0 +1,17 @@
+// Copyright 2018 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { JSX } from 'react';
+
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+
+export type Props = {
+  i18n: LocalizerType;
+};
+
+export function ResetSessionNotification({ i18n }: Props): JSX.Element {
+  return (
+    <SystemMessage contents={i18n('icu:sessionEnded')} icon="session-refresh" />
+  );
+}

@@ -8,7 +8,6 @@
   max-width: 750px;
   margin-block: 0;
   margin-inline: auto;
-  user-select: none;
 }
 
 .CallLinkDetails__Header {
@@ -43,14 +42,6 @@
   @include mixins.dark-theme {
     color: variables.$color-gray-25;
   }
-}
-
-.CallLinkDetails__HeaderButton {
-  font-weight: 600;
-}
-
-.CallLinkDetails__HeaderButton--active-call {
-  @include mixins.button-active-call;
 }
 
 .CallLinkDetails__DeleteLink {

@@ -1,4 +1,25 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "Čaká na spracovanie"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "Späť"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "Zatvoriť"
+  },
+  "icu:AxoPasswordField.Reveal": {
+    "messageformat": "Zobraziť heslo"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "Zmazať"
+  },
+  "icu:AxoBadge.MaxOverflow": {
+    "messageformat": "{max,number}+"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "Pridať do skupiny"
   },
@@ -41,6 +62,9 @@
   "icu:Preferences__sent-media-quality__description": {
     "messageformat": "Odosielanie médií vo vysokej kvalite využije viac dát."
   },
+  "icu:Preferences__DonateTitle": {
+    "messageformat": "Prispieť na Signal"
+  },
   "icu:sentMediaQualityStandard": {
     "messageformat": "Štandardná"
   },
@@ -67,6 +91,9 @@
   },
   "icu:unknownContact": {
     "messageformat": "Neznámy kontakt"
+  },
+  "icu:deletedAccount": {
+    "messageformat": "Vymazaný účet"
   },
   "icu:unknownContactShort": {
     "messageformat": "Neznáme"
@@ -100,6 +127,15 @@
   },
   "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
     "messageformat": "Nie je možné získať prístup k šifrovaciemu kľúču databázy, pretože koncová časť šifrovacieho zväzku operačného systému sa zmenila z {previousBackend} na {currentBackend}. Môže k tomu dôjsť, ak sa zmení prostredie pracovnej plochy, napríklad medzi GNOME a KDE.\n\nPrepnite na predchádzajúce prostredie pracovnej plochy alebo skúste spustiť Signal v príkazovom riadku s frázou --password-store=\"{previousBackendFlag}\""
+  },
+  "icu:systemEncryptionError": {
+    "messageformat": "System encryption error"
+  },
+  "icu:systemEncryptionError__linuxSafeStorageDecryptionError": {
+    "messageformat": "Unable to decrypt the database encryption key using the OS encryption keyring. This can occur in certain containerized environments such as Flatpak.\n\nWe recommend quitting and checking your OS encryption backend such as gnome-libsecret or kwallet, then trying again.\n\nYou may choose to continue anyway, however the database key will be stored in plaintext on the filesystem and other apps may be able to access it."
+  },
+  "icu:systemEncryptionError__continueWithPlaintextKey": {
+    "messageformat": "Continue with plaintext key"
   },
   "icu:mainMenuFile": {
     "messageformat": "&Súbor"
@@ -194,14 +230,14 @@
   "icu:viewMenuToggleDevTools": {
     "messageformat": "Nástroje pre vývojárov"
   },
-  "icu:viewMenuOpenCallingDevTools": {
-    "messageformat": "Otvoriť nástroje pre vývojárov na hovory"
-  },
   "icu:menuSetupAsNewDevice": {
     "messageformat": "Nastaviť ako Nové Zariadenie"
   },
   "icu:menuSetupAsStandalone": {
     "messageformat": "Nastaviť ako Samostatné Zariadenie"
+  },
+  "icu:menuStageLocalBackupForImport": {
+    "messageformat": "Stage Local Backup for Import…"
   },
   "icu:messageContextMenuButton": {
     "messageformat": "Viac akcií"
@@ -226,6 +262,12 @@
   },
   "icu:archivedConversations": {
     "messageformat": "Archivované čety"
+  },
+  "icu:LeftPane__MoreActionsMenu__AddChatFolder": {
+    "messageformat": "Pridať priečinok četov"
+  },
+  "icu:LeftPane__MoreActionsMenu__FolderSettings": {
+    "messageformat": "Nastavenia priečinka"
   },
   "icu:LeftPane--pinned": {
     "messageformat": "Pripnuté"
@@ -266,6 +308,45 @@
   "icu:LeftPaneFindByHelper__description--findByUsername": {
     "messageformat": "Zadajte používateľské meno, za ním bodku a sadu čísel."
   },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder": {
+    "messageformat": "Žiadne čety na zobrazenie"
+  },
+  "icu:LeftPane__EmptyView--WithSelectedChatFolder__FolderSettings": {
+    "messageformat": "Nastavenia priečinka"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All--Short": {
+    "messageformat": "Všetky"
+  },
+  "icu:LeftPaneChatFolders__ItemLabel--All": {
+    "messageformat": "Všetky čety"
+  },
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel": {
+    "messageformat": "{count, plural, one {{count,number} neprečítaná správa} few {{count,number} neprečítané správy} many {{count,number} neprečítaných správ} other {{count,number} neprečítaných správ}}"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
+    "messageformat": "Označiť všetko ako prečítané"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications": {
+    "messageformat": "Stlmiť upozornenia"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll": {
+    "messageformat": "Zrušiť stlmenie pre všetky"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll": {
+    "messageformat": "Zrušiť stlmenie pre všetky"
+  },
+  "icu:LeftPaneChatFolders__Item__ContextMenu__EditFolder": {
+    "messageformat": "Upraviť priečinok"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsItem": {
+    "messageformat": "Pridať do priečinka"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderToggleChatsMenu__CreateFolderItem": {
+    "messageformat": "Vytvoriť priečinok"
+  },
+  "icu:LeftPane__ConversationListItem__ContextMenu__ChatFolderRemoveChatItem": {
+    "messageformat": "Odstrániť z priečinka"
+  },
   "icu:CountryCodeSelect__placeholder": {
     "messageformat": "Kód krajiny"
   },
@@ -299,12 +380,6 @@
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "Nastavenia"
   },
-  "icu:NavTabs__ItemLabel--Update": {
-    "messageformat": "Aktualizovať Signal"
-  },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "Profil"
-  },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "Späť"
   },
@@ -319,6 +394,9 @@
   },
   "icu:markUnread": {
     "messageformat": "Označ ako neprečítané"
+  },
+  "icu:markRead": {
+    "messageformat": "Označiť ako prečítané"
   },
   "icu:ConversationHeader__menu__selectMessages": {
     "messageformat": "Vybrať správy"
@@ -380,17 +458,8 @@
   "icu:unpinConversation": {
     "messageformat": "Odopnúť čet"
   },
-  "icu:pinnedConversationsFull": {
-    "messageformat": "Môžete pripnúť najviac 4 čety"
-  },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, one {Načítavajú sa správy spred 1 dňa…} few {Načítavajú sa správy spred {daysAgo,number} dní…} many {Načítavajú sa správy spred {daysAgo,number} dňa…} other {Načítavajú sa správy spred {daysAgo,number} dní…}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "Načítavajú sa správy zo včera…"
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "Načítavajú sa dnešné správy…"
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, one {Môžete pripnúť maximálne {maxPinnedConversations,number} čet} few {Môžete pripnúť maximálne {maxPinnedConversations,number} čety} many {Môžete pripnúť maximálne {maxPinnedConversations,number} četu} other {Môžete pripnúť maximálne {maxPinnedConversations,number} četov}}"
   },
   "icu:view": {
     "messageformat": "Zobraziť"
@@ -479,6 +548,9 @@
   "icu:debugLogExplanation": {
     "messageformat": "Keď kliknete na Odoslať, váš záznam bude zverejnený online na 30 dní na jedinečnej, nepublikovanej adrese URL. Najprv ho môžete uložiť lokálne."
   },
+  "icu:debugLogExplanation--close": {
+    "messageformat": "Tento denník bude zverejnený online, aby ho mohli prispievatelia vidieť. Pred odoslaním si ho môžete stiahnuť."
+  },
   "icu:debugLogError": {
     "messageformat": "Pri nahrávaní sa niečo pokazilo! Pošlite e-mail na adresu support@signal.org a priložte svoj denník ako textový súbor."
   },
@@ -512,16 +584,82 @@
   "icu:SafetyNumberViewer__clearVerification": {
     "messageformat": "Zrušiť overenie"
   },
-  "icu:SafetyNumberViewer__hint": {
-    "messageformat": "Ak chcete overiť end-to-end šifrovanie s používateľom {name}, porovnajte vyššie uvedené čísla s ich zariadením. Môžu tiež naskenovať váš kód pomocou svojho zariadenia."
+  "icu:SafetyNumberViewer__hint-v2": {
+    "messageformat": "Ak chcete overiť end-to-end šifrovanie s používateľom {name}, porovnajte vyššie uvedené čísla s ich zariadením. Môžu tiež naskenovať váš kód na svojom zariadení."
   },
   "icu:SafetyNumberViewer__learn_more": {
     "messageformat": "Zistiť viac"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__title": {
+    "messageformat": "Automatické overenie kľúča"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--idle": {
+    "messageformat": "Automatické overenie"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--running": {
+    "messageformat": "Overuje sa šifrovanie…"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--ok": {
+    "messageformat": "Šifrovanie bolo overené"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__button--fail": {
+    "messageformat": "Automatické overenie nie je k dispozícii"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__hint": {
+    "messageformat": "Automatické overenie nie je k dispozícii pre všetky čety."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__learn_more": {
+    "messageformat": "Zistiť viac"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
+    "messageformat": "Šifrovanie pre tento čet bolo automaticky overené "
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "V prípade ľudí, s ktorými ste prepojení prostredníctvom telefónneho čísla, dokáže Signal automaticky overiť, či je pripojenie bezpečné, prostredníctvom procesu nazývaného transparentnosť kľúča. Pre zvýšenie bezpečnosti overte end-to-end šifrovanie manuálne porovnaním čísel na predchádzajúcej obrazovke alebo naskenovaním kódu na zariadení používateľa."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "Automatické overenie nie je pre tento čet k dispozícii"
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "Signal nedokáže automaticky overiť šifrovanie tohto četu. Je to pravdepodobne preto, že používateľ {name} zmenil svoje telefónne číslo alebo nastavenia súkromia tohto čísla. Overte end-to-end šifrovanie manuálne porovnaním čísel na predchádzajúcej obrazovke alebo naskenovaním kódu na zariadení používateľa."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
+    "messageformat": "Signal dokáže automaticky overiť šifrovanie iba v četoch, v ktorých ste s niekým spojení prostredníctvom telefónneho čísla. Ak bol čet spustený s používateľským menom alebo spoločnou skupinou, overte end-to-end šifrovanie porovnaním čísel na predchádzajúcej obrazovke alebo naskenovaním kódu na zariadení používateľa."
+  },
+  "icu:SafetyNumberViewer__KeyTransparency__popup__okay": {
+    "messageformat": "OK"
   },
   "icu:SafetyNumberNotReady__body": {
     "messageformat": "Po výmene správ s touto osobou sa vytvorí bezpečnostné číslo."
   },
   "icu:SafetyNumberNotReady__learn-more": {
+    "messageformat": "Zistiť viac"
+  },
+  "icu:KeyTransparencyErrorDialog__Title": {
+    "messageformat": "Automatické overenie kľúča momentálne nie je pre vaše zariadenie k dispozícii. Odoslať protokol ladenia?"
+  },
+  "icu:KeyTransparencyErrorDialog__Description": {
+    "messageformat": "Protokoly ladenia nám pomáhajú určiť a odstrániť problém a neobsahujú identifikačné údaje."
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__Label": {
+    "messageformat": "Zdieľať protokol ladenia"
+  },
+  "icu:KeyTransparencyErrorDialog__ShareDebugLog__ViewButton": {
+    "messageformat": "Zobraziť"
+  },
+  "icu:KeyTransparencyErrorDialog__Submit": {
+    "messageformat": "Odoslať"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Title": {
+    "messageformat": "Signal teraz dokáže automaticky overiť šifrovanie"
+  },
+  "icu:KeyTransparencyOnboardingDialog__Description": {
+    "messageformat": "V prípade kontaktov, s ktorými ste prepojení prostredníctvom telefónneho čísla, dokáže Signal automaticky overiť, či je pripojenie bezpečné, prostredníctvom procesu nazývaného transparentnosť kľúča. Pre vyššiu bezpečnosť môžete pripojenie overiť aj manuálne pomocou QR kódu alebo porovnaním bezpečnostných čísel."
+  },
+  "icu:KeyTransparencyOnboardingDialog__Continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:KeyTransparencyOnboardingDialog__LearnMore": {
     "messageformat": "Zistiť viac"
   },
   "icu:verified": {
@@ -535,18 +673,6 @@
   },
   "icu:media": {
     "messageformat": "Médiá"
-  },
-  "icu:mediaEmptyState": {
-    "messageformat": "V tomto čete nie sú žiadne médiá"
-  },
-  "icu:allMedia": {
-    "messageformat": "Všetky médiá"
-  },
-  "icu:documents": {
-    "messageformat": "Dokumenty"
-  },
-  "icu:documentsEmptyState": {
-    "messageformat": "V tomto čete nie sú žiadne dokumenty"
   },
   "icu:today": {
     "messageformat": "Dnes"
@@ -587,14 +713,29 @@
   "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Odoslať denník"
   },
-  "icu:Toast--FailedToSendWithEndorsements": {
-    "messageformat": "Failed to send message with endorsements"
+  "icu:Toast--SQLError": {
+    "messageformat": "Chyba databázy: zdieľajte svoje denníky ladenia."
   },
   "icu:Toast--InvalidStorageServiceHeaders": {
     "messageformat": "Bola prijatá neplatná odpoveď zo služby cloudového úložiska. Zdieľajte svoje denníky ladenia."
   },
   "icu:Toast--FailedToImportBackup": {
     "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
+  "icu:Toast--ReceiptSaved": {
+    "messageformat": "Potvrdenie bolo uložené"
+  },
+  "icu:Toast--ReceiptSaveFailed": {
+    "messageformat": "Pri ukladaní potvrdenia sa vyskytla chyba. Skúste to znova."
+  },
+  "icu:Toast--ChatFolderAddedChat": {
+    "messageformat": "Pridané do priečinka „{chatFolderName}“"
+  },
+  "icu:Toast--ChatFolderRemovedChat": {
+    "messageformat": "Odstránené z priečinka „{chatFolderName}“"
+  },
+  "icu:Toast--ChatFolderCreated": {
+    "messageformat": "Bol pridaný priečinok {chatFolderName}"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Fotografie a videá nie je možné vybrať spolu so súbormi."
@@ -607,6 +748,15 @@
   },
   "icu:fileSizeWarning": {
     "messageformat": "Ospravedlňujeme sa, vybraný súbor prekročil limit pre veľkosť správy. {limit,number} {units}"
+  },
+  "icu:videoFileSizeWarning": {
+    "messageformat": "Ospravedlňujeme sa, vybraný video súbor prekročil limit veľkosti správy. {limit,number} {units}"
+  },
+  "icu:fileTooLargeWarning": {
+    "messageformat": "Súbor nie je možné odoslať, pretože je príliš veľký. Môžete odosielať súbory do veľkosti {limit,number} {units}."
+  },
+  "icu:videoFileTooLargeWarning": {
+    "messageformat": "Video nie je možné odoslať, pretože je príliš veľké. Môžete odosielať videá do veľkosti {limit,number} {units}."
   },
   "icu:unableToLoadAttachment": {
     "messageformat": "Zvolenú prílohu sa nepodarilo načítať."
@@ -628,6 +778,9 @@
   },
   "icu:checkNetworkConnection": {
     "messageformat": "Skontrolujte svoje sieťové pripojenie."
+  },
+  "icu:clockSkewDetected": {
+    "messageformat": "Dátum vášho zariadenia je nepresný. Upravte si hodiny a skúste to znova. Dátum a čas vášho zariadenia je:"
   },
   "icu:submitDebugLog": {
     "messageformat": "Ladiaci log"
@@ -656,9 +809,6 @@
   "icu:joinTheBeta": {
     "messageformat": "Vyskúšať Beta verziu"
   },
-  "icu:signalDesktopPreferences": {
-    "messageformat": "Nastavenia Signal Desktop"
-  },
   "icu:signalDesktopStickerCreator": {
     "messageformat": "Nástroj na vytváranie nálepiek"
   },
@@ -667,12 +817,6 @@
   },
   "icu:screenShareWindow": {
     "messageformat": "Zdieľaná obrazovka"
-  },
-  "icu:callingDeveloperTools": {
-    "messageformat": "Nástroje pre vývojárov na hovory"
-  },
-  "icu:callingDeveloperToolsDescription": {
-    "messageformat": "Toto okno sa používa počas vývoja na zobrazenie diagnostiky z prebiehajúcich hovorov."
   },
   "icu:speech": {
     "messageformat": "Reč"
@@ -745,6 +889,9 @@
   },
   "icu:whatsNew": {
     "messageformat": "Pozrite sa na {whatsNew} v tejto aktualizácii"
+  },
+  "icu:signalNonProfit": {
+    "messageformat": "Signal je nezisková organizácia"
   },
   "icu:viewReleaseNotes": {
     "messageformat": "čo je nové"
@@ -971,6 +1118,12 @@
   "icu:AboutContactModal__system-contact": {
     "messageformat": "{name} je vo vašich systémových kontaktoch"
   },
+  "icu:AboutContactModal__add-member-label": {
+    "messageformat": "Pridať rolu používateľa"
+  },
+  "icu:AboutContactModal__your-qr-code": {
+    "messageformat": "Váš QR kód"
+  },
   "icu:NotePreviewModal__Title": {
     "messageformat": "Poznámka"
   },
@@ -1022,17 +1175,104 @@
   "icu:MessageContextMenu__info": {
     "messageformat": "Info"
   },
+  "icu:MessageContextMenu__PinMessage": {
+    "messageformat": "Pripnúť"
+  },
+  "icu:MessageContextMenu__UnpinMessage": {
+    "messageformat": "Odopnúť"
+  },
+  "icu:Poll__end-poll": {
+    "messageformat": "Ukončiť anketu"
+  },
+  "icu:PollMessage--SelectOne": {
+    "messageformat": "Anketa · Vyberte jednu možnosť"
+  },
+  "icu:PollMessage--SelectMultiple": {
+    "messageformat": "Anketa · Vyberte jednu alebo viacero možností"
+  },
+  "icu:PollMessage--FinalResults": {
+    "messageformat": "Anketa · Konečné výsledky"
+  },
+  "icu:PollMessage__ViewVotesButton": {
+    "messageformat": "Zobraziť hlasy"
+  },
+  "icu:PollMessage--YouVoted": {
+    "messageformat": "Hlasovali ste"
+  },
+  "icu:PollTerminate--you": {
+    "messageformat": "Ukončili ste anketu: {poll}"
+  },
+  "icu:PollTerminate--other": {
+    "messageformat": "Používateľ {name} ukončil anketu: {poll}"
+  },
+  "icu:PollTerminate__view-poll": {
+    "messageformat": "Zobraziť anketu"
+  },
+  "icu:PollVotesModal__title": {
+    "messageformat": "Podrobnosti o ankete"
+  },
+  "icu:PollVotesModal__questionLabel": {
+    "messageformat": "Otázka"
+  },
+  "icu:PollVotesModal__voteCount": {
+    "messageformat": "{count, plural, one {{count,number} hlas} few {{count,number} hlasy} many {{count,number} hlasu} other {{count,number} hlasov}}"
+  },
+  "icu:PollVotesModal__noVotes": {
+    "messageformat": "Žiadne hlasy"
+  },
+  "icu:PollVotesModal__winningOption": {
+    "messageformat": "Možnosť s najväčším počtom hlasov"
+  },
+  "icu:Toast--PinnedMessageNotFound": {
+    "messageformat": "Pripnutá správa sa nenašla"
+  },
+  "icu:Toast--PollNotFound": {
+    "messageformat": "Anketa sa nenašla"
+  },
+  "icu:PollCreateModal__title": {
+    "messageformat": "Nová anketa"
+  },
+  "icu:PollCreateModal__questionLabel": {
+    "messageformat": "Otázka"
+  },
+  "icu:PollCreateModal__questionPlaceholder": {
+    "messageformat": "Položte otázku"
+  },
+  "icu:PollCreateModal__optionsLabel": {
+    "messageformat": "Možnosti"
+  },
+  "icu:PollCreateModal__optionPlaceholder": {
+    "messageformat": "Možnosť {number}"
+  },
+  "icu:PollCreateModal__allowMultipleVotes": {
+    "messageformat": "Povoliť viacero hlasov"
+  },
+  "icu:PollCreateModal__sendButton": {
+    "messageformat": "Odoslať"
+  },
+  "icu:PollCreateModal__Error--RequiresQuestion": {
+    "messageformat": "Otázka v ankete je povinná"
+  },
+  "icu:PollCreateModal__Error--RequiresTwoOptions": {
+    "messageformat": "Anketa vyžaduje aspoň 2 možnosti"
+  },
+  "icu:PollCreateModal__Error--QuestionTooLong": {
+    "messageformat": "Otázka je príliš dlhá"
+  },
+  "icu:PollCreateModal__Error--OptionTooLong": {
+    "messageformat": "Možnosť je príliš dlhá"
+  },
   "icu:deleteConversation": {
     "messageformat": "Vymazať"
   },
   "icu:ConversationHeader__DeleteConversationConfirmation__title": {
     "messageformat": "Vymazať čet?"
   },
-  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
-    "messageformat": "Všetky správy v tomto čete budú vymazané z tohto zariadenia."
-  },
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "Všetky správy v tomto čete budú vymazané zo všetkých vašich zariadení."
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync--still-member": {
+    "messageformat": "Všetky správy v tomto čete budú vymazané zo všetkých vašich zariadení. Stále budete členom tejto skupiny."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Opustiť skupinu"
@@ -1048,6 +1288,132 @@
   },
   "icu:ConversationHeader__CannotLeaveGroupBecauseYouAreLastAdminAlert__description": {
     "messageformat": "Pred tým, než opustíte túto skupinu, musíte pre ňu vybrať aspoň jedného nového administrátora."
+  },
+  "icu:PinnedMessageNotification__Message--You": {
+    "messageformat": "Pripli ste správu"
+  },
+  "icu:PinnedMessageNotification__Message--SomeoneElse": {
+    "messageformat": "Používateľ {sender} pripol správu"
+  },
+  "icu:PinnedMessageNotification__Button": {
+    "messageformat": "Prejsť na správu"
+  },
+  "icu:PinMessageDialog__Title": {
+    "messageformat": "Pripnúť správu…"
+  },
+  "icu:PinMessageDialog__Option--TIME_24_HOURS": {
+    "messageformat": "24 hodín"
+  },
+  "icu:PinMessageDialog__Option--TIME_7_DAYS": {
+    "messageformat": "7 dní"
+  },
+  "icu:PinMessageDialog__Option--TIME_30_DAYS": {
+    "messageformat": "30 dní"
+  },
+  "icu:PinMessageDialog__Option--FOREVER": {
+    "messageformat": "Navždy"
+  },
+  "icu:PinMessageDialog__Cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:PinMessageDialog__Pin": {
+    "messageformat": "Pripnúť"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Title": {
+    "messageformat": "Nahradiť najstaršiu pripnutú správu?"
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
+    "messageformat": "Pripnutím tejto správy sa nahradí tá najstaršia."
+  },
+  "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Title": {
+    "messageformat": "Pripnutie miznúcich správ"
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Description": {
+    "messageformat": "Miznúce správy sa po uplynutí nastaveného času odopnú a správa sa odstráni z četu."
+  },
+  "icu:PinMessageDisappearingMessagesWarningDialog__Okay": {
+    "messageformat": "OK"
+  },
+  "icu:PinnedMessagesBar__AccessibilityLabel": {
+    "messageformat": "{pinsCount, plural, one {Pripnutá správa} few {Pripnuté správy} many {Pripnutej správy} other {Pripnutých správ}}"
+  },
+  "icu:PinnedMessagesBar__Tab__AccessibilityLabel": {
+    "messageformat": "Prejsť na pripnutie {pinNumber,number}"
+  },
+  "icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel": {
+    "messageformat": "Prejsť na správu"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__Button__AccessibilityLabel": {
+    "messageformat": "Viac akcií"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__UnpinMessage": {
+    "messageformat": "Odopnúť"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__GoToMessage": {
+    "messageformat": "Prejsť na správu"
+  },
+  "icu:PinnedMessagesBar__ActionsMenu__SeeAllMessages": {
+    "messageformat": "Zobraziť všetky správy"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--VoiceMessage": {
+    "messageformat": "Hlasová správa"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--File": {
+    "messageformat": "Súbor"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Payment": {
+    "messageformat": "Platba"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Poll": {
+    "messageformat": "Anketa"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--Sticker": {
+    "messageformat": "Nálepka"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__SymbolLabel--ViewOnceMedia": {
+    "messageformat": "Médiá na jedno zobrazenie"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Photo": {
+    "messageformat": "Fotka"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Video": {
+    "messageformat": "Video"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--VoiceMessage": {
+    "messageformat": "Hlasová správa"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Gif": {
+    "messageformat": "GIF"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Payment": {
+    "messageformat": "Platba"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--Sticker": {
+    "messageformat": "Nálepka"
+  },
+  "icu:PinnedMessagesBar__MessagePreview__Text--ViewOnceMedia": {
+    "messageformat": "Médiá na jedno zobrazenie"
+  },
+  "icu:PinnedMessagesPanel__Title": {
+    "messageformat": "Pripnuté správy"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages": {
+    "messageformat": "Odopnúť všetky správy"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Title": {
+    "messageformat": "Odopnúť všetky správy?"
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
+    "messageformat": "Správy budú odopnuté pre členov tohto četu."
+  },
+  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
+    "messageformat": "Odopnúť"
   },
   "icu:sessionEnded": {
     "messageformat": "Zabezpečené spojenie bolo obnovené"
@@ -1166,36 +1532,6 @@
   "icu:attachmentNotAvailable__tapToViewCannotDownload": {
     "messageformat": "Médium na jedno pozretie sa nepodarilo stiahnuť"
   },
-  "icu:AttachmentNotAvailableModal__title--file": {
-    "messageformat": "Súbor nie je k dispozícii"
-  },
-  "icu:AttachmentNotAvailableModal__title--long-text": {
-    "messageformat": "Celá správa nie je k dispozícii"
-  },
-  "icu:AttachmentNotAvailableModal__title--media": {
-    "messageformat": "Médium nie je k dispozícii"
-  },
-  "icu:AttachmentNotAvailableModal__title--sticker": {
-    "messageformat": "Nálepka nie je k dispozícii"
-  },
-  "icu:AttachmentNotAvailableModal__title--voice-message": {
-    "messageformat": "Hlasová správa nie je k dispozícii"
-  },
-  "icu:AttachmentNotAvailableModal__body--file": {
-    "messageformat": "Tento súbor nebol po prepojení zariadenia prenesený z vášho telefónu. Médiá a súbory, ktoré sú v čase prepojenia zariadenia staršie ako 45 dní, nie je možné synchronizovať."
-  },
-  "icu:AttachmentNotAvailableModal__body--long-text": {
-    "messageformat": "Po prepojení zariadenia nebol z vášho telefónu prenesený celý text tejto správy. Dlhé textové správy, ktoré sú v čase prepojenia zariadenia staršie ako 45 dní, nie je možné synchronizovať."
-  },
-  "icu:AttachmentNotAvailableModal__body--media": {
-    "messageformat": "Toto médium nebolo po prepojení zariadenia prenesené z vášho telefónu. Médiá, ktoré sú v čase prepojenia zariadenia staršie ako 45 dní, nie je možné synchronizovať."
-  },
-  "icu:AttachmentNotAvailableModal__body--sticker": {
-    "messageformat": "Táto nálepka nebola po prepojení zariadenia prenesená z vášho telefónu. Médiá a súbory, ktoré sú v čase prepojenia zariadenia staršie ako 45 dní, nie je možné synchronizovať."
-  },
-  "icu:AttachmentNotAvailableModal__body--voice-message": {
-    "messageformat": "Táto hlasová správa nebola po prepojení zariadenia prenesená z vášho telefónu. Médiá a súbory, ktoré sú v čase prepojenia zariadenia staršie ako 45 dní, nie je možné synchronizovať."
-  },
   "icu:TapToViewNotAvailableModal__body--expired": {
     "messageformat": "Toto médium na jedno pozretie už nie je k dispozícii na stiahnutie. Požiadajte používateľa {name}, aby vám ho poslal znova."
   },
@@ -1262,6 +1598,18 @@
   "icu:Install__support-link": {
     "messageformat": "Potrebujete pomôcť?"
   },
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "Vymazať všetky dáta?"
+  },
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "Pokúšate sa s týmto počítačom prepojiť iný Signal účet. Ak budete pokračovať, všetky údaje, ktoré sa aktuálne nachádzajú v aplikácii Signal Desktop, budú vymazané."
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:Preferences--header": {
+    "messageformat": "Nastavenia"
+  },
   "icu:Preferences--phone-number": {
     "messageformat": "Telefónne číslo"
   },
@@ -1273,6 +1621,198 @@
   },
   "icu:Preferences__EmojiSkinToneDefaultSetting__Label": {
     "messageformat": "Tón pleti pre emoji"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__Title": {
+    "messageformat": "Priečinky četov"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title": {
+    "messageformat": "Pridať priečinok četov"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Title--WithChatFolders": {
+    "messageformat": "Pridať alebo upraviť priečinky"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description": {
+    "messageformat": "Usporiadajte si čety do priečinkov a rýchlo medzi nimi prepínajte v zozname četov."
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Description--WithChatFolders": {
+    "messageformat": "{chatFoldersCount, plural, one {{chatFoldersCount,number} priečinok} few {{chatFoldersCount,number} priečinky} many {{chatFoldersCount,number} priečinka} other {{chatFoldersCount,number} priečinkov}}"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button": {
+    "messageformat": "Nastaviť"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__AddChatFolderItem__Button--WithChatFolders": {
+    "messageformat": "Spravovať"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__EditFolder": {
+    "messageformat": "Upraviť priečinok"
+  },
+  "icu:Preferences__ChatsPage__ChatFoldersSection__ChatFolderItem__ContextMenu__DeleteFolder": {
+    "messageformat": "Vymazať"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Vymazať priečinok?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Chcete vymazať priečinok „{chatFolderTitle}“?"
+  },
+  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Vymazať"
+  },
+  "icu:Preferences__ChatFoldersPage__Title": {
+    "messageformat": "Priečinky četov"
+  },
+  "icu:Preferences__ChatFoldersPage__Description": {
+    "messageformat": "Usporiadajte si čety do priečinkov a rýchlo medzi nimi prepínajte v zozname četov"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__Title": {
+    "messageformat": "Priečinky"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__AllChatsFolder__Title": {
+    "messageformat": "Všetky čety"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__CreateAFolderButton": {
+    "messageformat": "Vytvoriť priečinok"
+  },
+  "icu:Preferences__ChatFoldersPage__FoldersSection__DragHandle__Label": {
+    "messageformat": "Potiahnite a presuňte priečinok četov"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__Title": {
+    "messageformat": "Odporúčané priečinky"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__AddButton": {
+    "messageformat": "Pridať"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Title": {
+    "messageformat": "Neprečítané"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__UnreadFolder__Description": {
+    "messageformat": "Neprečítané správy zo všetkých četov"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Title": {
+    "messageformat": "Čety 1:1"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__DirectChatsFolder__Description": {
+    "messageformat": "Iba správy z priamych četov"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Title": {
+    "messageformat": "Skupiny"
+  },
+  "icu:Preferences__ChatFoldersPage__SuggestedFoldersSection__GroupChatsFolder__Description": {
+    "messageformat": "Iba správy zo skupinových četov"
+  },
+  "icu:Preferences__EditChatFolderPage__Title": {
+    "messageformat": "Vytvoriť priečinok"
+  },
+  "icu:Preferences__EditChatFolderPage__Title--EditingExistingChatFolder": {
+    "messageformat": "Upraviť priečinok"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Label": {
+    "messageformat": "Názov priečinka"
+  },
+  "icu:Preferences__EditChatFolderPage__FolderNameField__Placeholder": {
+    "messageformat": "Názov priečinka (povinné)"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Title": {
+    "messageformat": "Zahrnuté čety"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__Help": {
+    "messageformat": "Vyberte čety, ktoré sa majú zobrazovať v tomto priečinku"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__DirectChats": {
+    "messageformat": "Čety 1:1"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__GroupChats": {
+    "messageformat": "Skupinové čety"
+  },
+  "icu:Preferences__EditChatFolderPage__IncludedChatsSection__AddChatsButton": {
+    "messageformat": "Pridať čety"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--IncludedChats__Title": {
+    "messageformat": "Zahrnuté čety"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog--ExcludedChats__Title": {
+    "messageformat": "Vylúčené čety"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__Search__Placeholder": {
+    "messageformat": "Hľadať"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__Title": {
+    "messageformat": "Typy četu"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__DirectChats": {
+    "messageformat": "Čety 1:1"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__ChatTypesSection__GroupChats": {
+    "messageformat": "Skupiny"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__RecentChats__Title": {
+    "messageformat": "Nedávne čety"
+  },
+  "icu:Preferences__EditChatFolderPage__SelectChatsDialog__DoneButton": {
+    "messageformat": "Hotovo"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Title": {
+    "messageformat": "Výnimky"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__Help": {
+    "messageformat": "Vyberte čety, ktoré nechcete zobrazovať v tomto priečinku"
+  },
+  "icu:Preferences__EditChatFolderPage__ExceptionsSection__ExcludeChatsButton": {
+    "messageformat": "Vylúčiť čety"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Label": {
+    "messageformat": "Zobraziť iba neprečítané čety"
+  },
+  "icu:Preferences__EditChatFolderPage__OnlyShowUnreadChatsCheckbox__Description": {
+    "messageformat": "V tomto priečinku sa zobrazia iba čety s neprečítanými správami."
+  },
+  "icu:Preferences__EditChatFolderPage__IncludeMutedChatsCheckbox__Label": {
+    "messageformat": "Zahrnúť stlmené čety"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteFolderButton": {
+    "messageformat": "Vymazať priečinok"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Title": {
+    "messageformat": "Vymazať tento priečinok četov?"
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description": {
+    "messageformat": "Tento priečinok bude odstránený z vášho zoznamu četov."
+  },
+  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
+    "messageformat": "Vymazať"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
+    "messageformat": "Uložiť zmeny?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description": {
+    "messageformat": "Chcete uložiť zmeny, ktoré ste vykonali v tomto priečinku četov?"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton": {
+    "messageformat": "Uložiť"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton": {
+    "messageformat": "Zahodiť"
+  },
+  "icu:Preferences__EditChatFolderPage__SaveButton": {
+    "messageformat": "Uložiť"
+  },
+  "icu:Preferences__EditChatFolderPage__CancelButton": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
+    "messageformat": "Zobraziť stavovú ikonu"
+  },
+  "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
+    "messageformat": "Keď boli doručené pomocou zapečateného odosielateľa, zobrazí sa ikona v detailoch správy."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
+    "messageformat": "Automatické overenie kľúča"
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__Description": {
+    "messageformat": "Keď je táto funkcia povolená, Signal sa pokúsi automaticky overiť šifrovanie 1:1 četov."
+  },
+  "icu:Preferences__PrivacyPage__KeyTransparency__LearnMore": {
+    "messageformat": "Zistiť viac"
   },
   "icu:initialSync": {
     "messageformat": "Synchronizácia kontaktov a skupín"
@@ -1355,6 +1895,12 @@
   "icu:calling__removed-from-call-title": {
     "messageformat": "Odstránenie z hovoru"
   },
+  "icu:calling__has-max-devices": {
+    "messageformat": "Bol dosiahnutý maximálny počet účastníkov pre tento hovor. Skúste to znovu neskôr."
+  },
+  "icu:calling__has-max-devices--title": {
+    "messageformat": "Hovor je plne obsadený"
+  },
   "icu:CallingLobby__CallLinkNotice": {
     "messageformat": "Každý, kto sa pripojí k tomuto hovoru prostredníctvom odkazu, uvidí vaše meno a fotku."
   },
@@ -1418,6 +1964,27 @@
   "icu:CallingButton--more-options": {
     "messageformat": "Viac možností"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "Stlmiť zvuk"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "Zrušiť stlmenie zvuku"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "Zobraziť profil"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "Prejsť na čet"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "Odstrániť z hovoru"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "Viac akcií"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "Prezentuje"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
     "messageformat": "Schváliť žiadosť o pripojenie"
   },
@@ -1456,9 +2023,6 @@
   },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, one {{count,number} používateľ zdvihol ruku} few {{count,number} používatelia zdvihli ruku} many {{count,number} používateľa zdvihlo ruku} other {{count,number} používateľov zdvihlo ruku}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "(od prvého do posledného)"
   },
   "icu:CallingReactions--me": {
     "messageformat": "Vy"
@@ -1649,6 +2213,21 @@
   "icu:deleteAllDataProgress": {
     "messageformat": "Prebieha odpojenie a odstraňovanie všetkých údajov…"
   },
+  "icu:deleteAccountHeader": {
+    "messageformat": "Vymazať účet"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "Týmto sa vymažú informácie o vašom účte, profil a všetky vaše správy. Taktiež vás to odstráni zo všetkých Signal skupín."
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "Vymazať účet"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "Vymazať účet?"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "Týmto sa vymažú informácie o vašom účte, profil a všetky vaše správy. Taktiež vás to odstráni zo všetkých Signal skupín. Po dokončení tohto procesu sa aplikácia zatvorí."
+  },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "Toto zariadenie obsahuje staré dáta z predošlej inštalácie Signalu. Ak budete pokračovať, zmažú sa a začnete s čistým štítom."
   },
@@ -1673,11 +2252,26 @@
   "icu:notificationReactionMessage": {
     "messageformat": "{sender} reagoval/a {emoji} na: {message}"
   },
+  "icu:notificationPollVoteMessage": {
+    "messageformat": "Používateľ {sender} hlasoval v ankete: „{pollQuestion}“"
+  },
   "icu:sendFailed": {
     "messageformat": "Odoslanie zlyhalo"
   },
   "icu:deleteFailed": {
     "messageformat": "Odstránenie zlyhalo"
+  },
+  "icu:deleteFailedClickForDetails": {
+    "messageformat": "Vymazanie zlyhalo, kliknite pre podrobnosti"
+  },
+  "icu:retryDeleteForEveryone--title": {
+    "messageformat": "Skúsiť vymazať znovu?"
+  },
+  "icu:retryDeleteForEveryone--body": {
+    "messageformat": "Správu sa nepodarilo vymazať. Skontrolujte svoje pripojenie a skúste to znovu."
+  },
+  "icu:retryDeleteForEveryone--tryAgain": {
+    "messageformat": "Skúsiť znova"
   },
   "icu:editFailed": {
     "messageformat": "Úprava zlyhala, kliknutím zobrazíte podrobnosti"
@@ -1688,8 +2282,8 @@
   "icu:partiallySent": {
     "messageformat": "Čiastočne odoslané, kliknite pre detaily"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "Čiastočne odstránená, kliknutím to skúsite znova"
+  "icu:partiallyDeleted--clickForDetails": {
+    "messageformat": "Čiastočne vymazané, kliknite pre podrobnosti"
   },
   "icu:expiredWarning": {
     "messageformat": "Táto verzia aplikácie Signal Desktop je zastaralá. Pre pokračovanie ju prosím aktualizujte na najnovšiu verziu."
@@ -1708,9 +2302,6 @@
   },
   "icu:syncNow": {
     "messageformat": "Importovať teraz"
-  },
-  "icu:syncing": {
-    "messageformat": "Importuje sa…"
   },
   "icu:syncFailed": {
     "messageformat": "Import zlyhal. Uistite sa, že váš počítač a mobilný telefón majú prístup k internetu."
@@ -1826,6 +2417,9 @@
   "icu:ConversationDetails--support-center": {
     "messageformat": "Centrum technickej podpory"
   },
+  "icu:ConversationDetails__GroupTerminatedBanner": {
+    "messageformat": "Táto skupina bola ukončená"
+  },
   "icu:SafetyNumberNotification__viewSafetyNumber": {
     "messageformat": "Zobraziť bezpečnostné číslo"
   },
@@ -1889,11 +2483,26 @@
   "icu:Toast--download-failed": {
     "messageformat": "Sťahovanie zlyhalo"
   },
+  "icu:Toast--unable-download-from-backup-tier": {
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
+  },
+  "icu:ToastManager__CannotAddMemberLabel": {
+    "messageformat": "Iba administrátori môžu pridávať role používateľov v tejto skupine."
+  },
+  "icu:Toast--viewOnceEnabled": {
+    "messageformat": "Režim jedného pozretia je zapnutý"
+  },
+  "icu:Toast--viewOnceDisabled": {
+    "messageformat": "Režim jedného pozretia je vypnutý"
+  },
   "icu:ToastManager__CannotEditMessage_24": {
     "messageformat": "Úpravy je možné vykonať len do 24 hodín od odoslania tejto správy."
   },
   "icu:startConversation--username-not-found": {
     "messageformat": "{atUsername} nepoužíva Signal. Uistite sa, že ste zadali celé používateľské meno."
+  },
+  "icu:startConversation--username-not-valid": {
+    "messageformat": "{atUsername} nie je platné používateľské meno. Uistite sa, že ste zadali celé používateľské meno a za ním súpravu číslic."
   },
   "icu:startConversation--phone-number-not-found": {
     "messageformat": "Užívateľ nenájdený. „{phoneNumber}“ nie je používateľom Signal."
@@ -1958,6 +2567,12 @@
   "icu:unlinked": {
     "messageformat": "Odpojené"
   },
+  "icu:unregisteredWarning": {
+    "messageformat": "Kliknutím sa znova registrujete, aby ste mohli posielať správy. Signal Desktop je nezaregistrovaný zrejme preto, lebo ste si svoje telefónne číslo registrovali so Signalom na inom zariadení."
+  },
+  "icu:unregistered": {
+    "messageformat": "Zariadenie už nie je registrované"
+  },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "Dostupná aktualizácia"
   },
@@ -1990,6 +2605,27 @@
   },
   "icu:youUpdatedTheGroup": {
     "messageformat": "Aktualizovali ste skupinu."
+  },
+  "icu:collapsedGroupUpdates": {
+    "messageformat": "{count, plural, one {{count,number} aktualizácia skupiny} few {{count,number} aktualizácie skupiny} many {{count,number} aktualizácie skupiny} other {{count,number} aktualizácií skupiny}}"
+  },
+  "icu:multidayCollapse__container": {
+    "messageformat": "{containerDescription} · {dayCountSummary}"
+  },
+  "icu:multidayCollapse__dayCountSummary": {
+    "messageformat": "{dayCount, plural, one {{dayCount,number} deň} few {{dayCount,number} dni} many {{dayCount,number} dní} other {{dayCount,number} dní}}"
+  },
+  "icu:collapsedChatUpdates": {
+    "messageformat": "{count, plural, one {{count,number} aktualizácia četu} few {{count,number} aktualizácie četu} many {{count,number} aktualizácie četu} other {{count,number} aktualizácií četu}}"
+  },
+  "icu:collapsedTimerChanges": {
+    "messageformat": "{count, plural, one {{count,number} zmena časovača miznúcich správ · {endingState}} few {{count,number} zmeny časovača miznúcich správ · {endingState}} many {{count,number} zmeny časovača miznúcich správ · {endingState}} other {{count,number} zmien časovača miznúcich správ · {endingState}}}"
+  },
+  "icu:collapsedTimerChanges--disabled": {
+    "messageformat": "{count, plural, one {{count,number} zmena časovača miznúcich správ · Vypnuté} few {{count,number} zmeny časovača miznúcich správ · Vypnuté} many {{count,number} zmeny časovača miznúcich správ · Vypnuté} other {{count,number} zmien časovača miznúcich správ · Vypnuté}}"
+  },
+  "icu:collapsedCallEvents": {
+    "messageformat": "{count, plural, one {{count,number} volanie} few {{count,number} volania} many {{count,number} volania} other {{count,number} volaní}}"
   },
   "icu:updatedGroupAvatar": {
     "messageformat": "Obrázok skupiny bol aktualizovaný."
@@ -2048,6 +2684,9 @@
   "icu:message--getNotificationText--stickers": {
     "messageformat": "Správa s nálepkou"
   },
+  "icu:Poll--preview": {
+    "messageformat": "Anketa: {pollQuestion}"
+  },
   "icu:message--getNotificationText--text-with-emoji": {
     "messageformat": "{emoji} {text}"
   },
@@ -2063,8 +2702,17 @@
   "icu:message--getDescription--disappearing-video": {
     "messageformat": "Video na jedno zobrazenie"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "Táto správa bola odstránená."
+  "icu:message--getDescription--gif": {
+    "messageformat": "GIF"
+  },
+  "icu:message--deletedByAdmin": {
+    "messageformat": "Administrátor {admin} vymazal túto správu"
+  },
+  "icu:message--deletedForEveryone--incoming": {
+    "messageformat": "Používateľ {name} vymazal túto správu"
+  },
+  "icu:message--deletedForEveryone--outgoing": {
+    "messageformat": "Vymazali ste túto správu"
   },
   "icu:message--attachmentTooBig--one": {
     "messageformat": "Príloha je príliš veľká, nie je možné ju zobraziť."
@@ -2101,6 +2749,12 @@
   },
   "icu:message--donation--preview--sent": {
     "messageformat": "Poslali ste príspevok za používateľa {recipient}"
+  },
+  "icu:message--pinned--preview--received": {
+    "messageformat": "Používateľ {sender} pripol správu"
+  },
+  "icu:message--pinned--preview--sent": {
+    "messageformat": "Pripli ste správu"
   },
   "icu:message--donation": {
     "messageformat": "Príspevok"
@@ -2141,14 +2795,11 @@
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "Nepodarilo sa nainštalovať balík nálepiek"
   },
-  "icu:stickers--StickerManager--Available": {
-    "messageformat": "Dostupné"
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "Žiadne balíčky nálepiek, pridajte nálepky a pošlite ich priateľom."
   },
-  "icu:stickers--StickerManager--InstalledPacks": {
-    "messageformat": "Nainštalované"
-  },
-  "icu:stickers--StickerManager--InstalledPacks--Empty": {
-    "messageformat": "Žiadne nainštalované nálepky"
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "Pridať nálepky"
   },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "Zbierka od výtvarníkov Signalu"
@@ -2156,14 +2807,17 @@
   "icu:stickers--StickerManager--BlessedPacks--Empty": {
     "messageformat": "Nie sú k dispozícii žiadne nálepky Signal Artist"
   },
-  "icu:stickers--StickerManager--ReceivedPacks": {
-    "messageformat": "Prijaté nálepky"
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "Zdieľané s vami"
   },
-  "icu:stickers--StickerManager--ReceivedPacks--Empty": {
-    "messageformat": "Tu uvidíte nálepky z prichádzajúcich správ"
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "Keď od niekoho dostanete nálepku, daný balíček nálepiek sa zobrazí tu."
   },
   "icu:stickers--StickerManager--Install": {
     "messageformat": "Inštalovať"
+  },
+  "icu:stickers--StickerManager--Installed": {
+    "messageformat": "Nainštalované"
   },
   "icu:stickers--StickerManager--Uninstall": {
     "messageformat": "Odinštalovať"
@@ -2171,56 +2825,29 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "Ak viac nemáte zdrojovú správu, možno nebudete môcť preinštalovať balík nálepiek."
   },
-  "icu:stickers--StickerManager--Introduction--Image": {
-    "messageformat": "Predstavujeme nálepky: Mačka Bandit"
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "Všetky"
   },
-  "icu:stickers--StickerManager--Introduction--Title": {
-    "messageformat": "Predstavujeme nálepky"
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "Moje nálepky"
   },
-  "icu:stickers--StickerManager--Introduction--Body": {
-    "messageformat": "Prečo používať slová, keď môžete používať nálepky?"
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "Pridať"
   },
-  "icu:stickers--StickerPicker--Open": {
-    "messageformat": "Otvoriť výber nálepiek"
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "Odstrániť"
   },
-  "icu:stickers--StickerPicker--AddPack": {
-    "messageformat": "Pridať balík nálepiek"
+  "icu:stickers--StickerManagerPackDragHandle--Label": {
+    "messageformat": "Potiahnutím usporiadajte balíček nálepiek"
   },
-  "icu:stickers--StickerPicker--NextPage": {
-    "messageformat": "Ďalšia strana"
+  "icu:stickers--StickerManagerBlessedPacksList--Label": {
+    "messageformat": "Balíčky nálepiek zo zbierky od výtvarníkov Signalu"
   },
-  "icu:stickers--StickerPicker--PrevPage": {
-    "messageformat": "Predošlá strana"
+  "icu:stickers--StickerManagerReceivedPacksList--Label": {
+    "messageformat": "Prijaté balíčky nálepiek"
   },
-  "icu:stickers--StickerPicker--Recents": {
-    "messageformat": "Nedávne nálepky"
-  },
-  "icu:stickers--StickerPicker--DownloadError": {
-    "messageformat": "Niektoré nálepky sa nepodarilo stiahnuť."
-  },
-  "icu:stickers--StickerPicker--DownloadPending": {
-    "messageformat": "Inštaluje sa balík nálepiek…"
-  },
-  "icu:stickers--StickerPicker--Empty": {
-    "messageformat": "Nenašli sa žiadne nálepky"
-  },
-  "icu:stickers--StickerPicker--Hint": {
-    "messageformat": "Nové balíky nálepiek z vašich správ sú k dispozícii na inštaláciu"
-  },
-  "icu:stickers--StickerPicker--NoPacks": {
-    "messageformat": "Nenašli sa žiadne balíky nálepiek"
-  },
-  "icu:stickers--StickerPicker--NoRecents": {
-    "messageformat": "Tu sa objavia nedávno použité nálepky."
-  },
-  "icu:stickers__StickerPicker__recent": {
-    "messageformat": "Nedávno použité"
-  },
-  "icu:stickers__StickerPicker__featured": {
-    "messageformat": "Odporúčané"
-  },
-  "icu:stickers__StickerPicker__analog-time": {
-    "messageformat": "Analógový čas"
+  "icu:stickers--StickerManagerInstalledPacksList--Label": {
+    "messageformat": "Nainštalované balíčky nálepiek"
   },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "Balík nálepiek"
@@ -2228,44 +2855,29 @@
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "Chyba pri otváraní balíka nálepiek. Skontrolujte svoje internetové pripojenie a skúste znova."
   },
-  "icu:EmojiPicker--empty": {
-    "messageformat": "Nenašli sa žiadne emoji"
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "Pridať nálepky"
   },
-  "icu:EmojiPicker--search-close": {
-    "messageformat": "Zavrieť vyhľadávanie emotikonov"
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "Odstrániť"
   },
-  "icu:EmojiPicker--search-placeholder": {
-    "messageformat": "Hľadať emoji"
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "Odkaz"
   },
-  "icu:EmojiPicker--skin-tone": {
-    "messageformat": "Farba pleti {tone}"
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "Odkaz skopírovaný"
   },
-  "icu:EmojiPicker__button--recents": {
-    "messageformat": "Nedávno použité"
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, one {{count,number} nálepka} few {{count,number} nálepky} many {{count,number} nálepky} other {{count,number} nálepiek}}"
   },
-  "icu:EmojiPicker__button--emoji": {
-    "messageformat": "Emotikony"
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "Nálepka bez emoji"
   },
-  "icu:EmojiPicker__button--animal": {
-    "messageformat": "Zviera"
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "Balíček nálepiek od {author}"
   },
-  "icu:EmojiPicker__button--food": {
-    "messageformat": "Jedlo"
-  },
-  "icu:EmojiPicker__button--activity": {
-    "messageformat": "Aktivita"
-  },
-  "icu:EmojiPicker__button--travel": {
-    "messageformat": "Cestovanie"
-  },
-  "icu:EmojiPicker__button--object": {
-    "messageformat": "Objekt"
-  },
-  "icu:EmojiPicker__button--symbol": {
-    "messageformat": "Symbol"
-  },
-  "icu:EmojiPicker__button--flag": {
-    "messageformat": "Vlajka"
+  "icu:stickers--ViewPack": {
+    "messageformat": "Zobraziť balíček"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "Emotikony"
@@ -2330,6 +2942,9 @@
   "icu:FunPanelEmojis__SectionTitle--SearchResults": {
     "messageformat": "Výsledky vyhľadávania"
   },
+  "icu:FunPanelEmojis__SectionTitle--ThisMessage": {
+    "messageformat": "Táto správa"
+  },
   "icu:FunPanelEmojis__SectionTitle--Recents": {
     "messageformat": "Nedávno použité"
   },
@@ -2372,6 +2987,9 @@
   "icu:FunPanelStickers__SubNavCategoryLabel--Recents": {
     "messageformat": "Nedávno použité"
   },
+  "icu:FunPanelStickers__SubNavButton--AddStickerPack": {
+    "messageformat": "Pridať balík nálepiek"
+  },
   "icu:FunPanelStickers__SectionTitle--SearchResults": {
     "messageformat": "Výsledky vyhľadávania"
   },
@@ -2387,11 +3005,11 @@
   "icu:FunPanelStickers__LightboxDialog__Label": {
     "messageformat": "Ukážka nálepky"
   },
-  "icu:FunPanelGifs__SearchLabel--Tenor": {
-    "messageformat": "Vyhľadať GIFy v službe Tenor"
+  "icu:FunPanelGifs__SearchLabel": {
+    "messageformat": "Hľadať GIFy"
   },
-  "icu:FunPanelGifs__SearchPlaceholder--Tenor": {
-    "messageformat": "Vyhľadať v službe Tenor"
+  "icu:FunPanelGifs__SearchPlaceholder": {
+    "messageformat": "Hľadať GIFy"
   },
   "icu:FunPanelGifs__SubNavLabel": {
     "messageformat": "Kategórie GIF"
@@ -2438,6 +3056,9 @@
   "icu:FunPanelGifs__LightboxDialog__Label": {
     "messageformat": "Ukážka GIF"
   },
+  "icu:FunPanelGifs__GiphyAttribution__AccessibilityLabel": {
+    "messageformat": "Používa vyhľadávač GIPHY"
+  },
   "icu:FunSearch__ClearButtonLabel": {
     "messageformat": "Vymazať vyhľadávanie"
   },
@@ -2470,6 +3091,18 @@
   },
   "icu:FunButton__Label--StickerPicker": {
     "messageformat": "Pridajte nálepku"
+  },
+  "icu:FunPicker__Label--StickerReply": {
+    "messageformat": "Odpovedať"
+  },
+  "icu:FunPicker__Label--SendStickerReply": {
+    "messageformat": "Odoslať"
+  },
+  "icu:FunPicker__Label--CancelStickerReply": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:FunPicker__Label--Sticker": {
+    "messageformat": "Nálepka"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "Zrušiť"
@@ -2516,8 +3149,8 @@
   "icu:Message--tap-to-view--incoming--expired-toast": {
     "messageformat": "Túto správu ste už videli."
   },
-  "icu:Message--tap-to-view--outgoing--expired-toast": {
-    "messageformat": "Správy na jedno pozretie sa neukladajú do histórie četu."
+  "icu:Message--tap-to-view--outgoing--expired-toast-2": {
+    "messageformat": "Médiá na jedno pozretie sa po odoslaní vymažú"
   },
   "icu:Message--tap-to-view--video": {
     "messageformat": "Video na jedno pozretie"
@@ -2589,7 +3222,7 @@
     "messageformat": "Otvoriť galériu nálepiek"
   },
   "icu:Keyboard--open-gif-chooser": {
-    "messageformat": "Open GIF chooser"
+    "messageformat": "Otvoriť ponuku GIFov"
   },
   "icu:Keyboard--begin-recording-voice-note": {
     "messageformat": "Začať nahrávať hlasovú správu"
@@ -2726,6 +3359,9 @@
   "icu:Keyboard--toggle-preview": {
     "messageformat": "Zapnúť/Vypnúť rozšírený náhľad"
   },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "Zdvihnúť alebo položiť ruku (len skupinové hovory)"
+  },
   "icu:Keyboard--accept-video-call": {
     "messageformat": "Prijať hovor s videom (iba videohovory)"
   },
@@ -2783,17 +3419,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "Všetko"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "Bezpečnostné tipy"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "Buďte opatrní pri prijímaní žiadostí o správy od ľudí, ktorých nepoznáte. Dávajte si pozor na:"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "Neodpovedajte na správy od Signalu"
   },
-  "icu:SafetyTipsModal__TipTitle--Fake": {
-    "messageformat": "Falošné mená a účty"
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "Signal vám nikdy nepošle správu s požiadavkou o poskytnutie registračného kódu, PIN kódu ani kľúča na obnovenie. Nikdy neodpovedajte na správu, ktorá sa vydáva za Signal."
   },
-  "icu:SafetyTipsModal__TipDescription--Fake": {
-    "messageformat": "Signal vás nikdy nebude kontaktovať s požiadavkou o poskytnutie registračného kódu alebo PIN kódu. Buďte obozretní pri žiadostiach, ktoré sa vydávajú za iných ľudí. Názvy profilov vyberá majiteľ účtu a nie sú overené."
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "Skontrolujte mená a fotky"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "Ak sa vám zobrazí upozornenie „Meno nebolo overené“, zbystrite. V Signale si každý nastavuje svoj názov profilu sám."
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "Pozor na podvody"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "Vyhýbajte sa nejasným správam, ktoré sa vás snažia prinútiť odpovedať. Dávajte si pozor na finančné tipy a podozrivé webové odkazy."
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "Neodpovedajte na správy od Signalu"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "Signal vám nikdy nepošle správu s požiadavkou o poskytnutie registračného kódu, PIN kódu ani kľúča na obnovenie. Neodpovedajte na správy, ktoré sa vydávajú za Signal alebo podporu Signal. Podvodníci si zakladajú falošné účty, aby sa pokúsili prevziať kontrolu nad vaším účtom."
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "Skontrolujte mená a fotky"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "Ak sa vám zobrazí upozornenie „Meno nebolo overené“, zbystrite. V Signale si každý nastavuje svoj názov profilu a fotku sám. Ak si nie ste istí, od koho nová žiadosť pochádza, radšej ju ignorujte."
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "Peňažné podvody alebo podvody s kryptomenou"
@@ -2807,11 +3464,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "Spameri často začínajú konverzáciu jednoduchou správou, ako napríklad „Ahoj“, aby zaujali vašu pozornosť. Ak odpoviete, môžu v komunikácii pokračovať."
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "Správy obsahujúce odkazy"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "Dávajte si pozor na správy od ľudí, ktorých nepoznáte a ktoré obsahujú odkazy na webové stránky. Nikdy neklikajte na odkazy od ľudí, ktorým nedôverujete."
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "Správy obsahujúce webové odkazy"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "Falošné firmy a inštitúcie"
@@ -2819,17 +3476,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "Zbystrite, ak vás oslovia firmy alebo vládne agentúry. V prípade správ odkazujúcich na daňové úrady, kuriérov a pod. môže ísť o spam."
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "Prejsť na stránku {page,number}"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "Predchádzajúci tip"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "Ďalší tip"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "Hotovo"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "Zobraziť viac"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "Povoliť používateľovi {name}, aby vám posielal správy a zdieľať s ním vaše meno a fotku? Kým s tým nebudete súhlasiť, nebude vedieť, že ste jeho správu videli."
@@ -2927,11 +3575,11 @@
   "icu:MessageRequests--accept": {
     "messageformat": "Potvrdiť"
   },
-  "icu:MessageRequests--accept-confirm-title": {
+  "icu:MessageRequests--accept-confirm-title-v2": {
     "messageformat": "Prijať žiadosť?"
   },
-  "icu:MessageRequests--accept-confirm-body": {
-    "messageformat": "Žiadosti dôkladne overte. Názvy profilov vyberá majiteľ účtu a nie sú overené."
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "Prijímajte žiadosti iba od ľudí, ktorým dôverujete. <bold>Signal vám nikdy</bold> nepošle správu s požiadavkou o poskytnutie registračného kódu, PIN kódu ani kľúča na obnovenie."
   },
   "icu:MessageRequests--continue": {
     "messageformat": "Pokračovať"
@@ -2975,17 +3623,26 @@
   "icu:ConversationHero--group-members-other-and-you": {
     "messageformat": "{remainingCount, plural, one {{member1}, {member2}, {member3} a <clickable>{remainingCount,number} ďalší</clickable>} few {{member1}, {member2}, {member3} a <clickable>{remainingCount,number} ďalší</clickable>} many {{member1}, {member2}, {member3} a <clickable>{remainingCount,number} ďalšieho</clickable>} other {{member1}, {member2}, {member3} a <clickable>{remainingCount,number} ďalších</clickable>}}"
   },
-  "icu:ConversationHero--review-carefully": {
-    "messageformat": "Dôkladne skontrolujte"
-  },
   "icu:ConversationHero--group-names": {
     "messageformat": "<clickable>Názvy skupín</clickable> nie sú overené"
   },
   "icu:ConversationHero--profile-names": {
     "messageformat": "<clickable>Názvy profilov</clickable> nie sú overené"
   },
+  "icu:ConversationHero--name-not-verified": {
+    "messageformat": "Meno nebolo overené"
+  },
   "icu:ConversationHero--signal-official-chat": {
     "messageformat": "Toto je oficiálny a jediný čet od aplikácie Signal."
+  },
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "Oficiálny čet"
+  },
+  "icu:ConversationHero--signal-official-account--description": {
+    "messageformat": "Jediný oficiálny čet od aplikácie Signal. Buďte informovaní o novinkách a poznámkach k vydaniu."
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "Jediný oficiálny čet od aplikácie Signal."
   },
   "icu:ConversationHero--release-notes": {
     "messageformat": "Buďte informovaní o novinkách a poznámkach k vydaniu."
@@ -3137,6 +3794,18 @@
   "icu:CallControls__MutedToast--unmuted": {
     "messageformat": "Mikrofón zapnutý"
   },
+  "icu:CallControls__MutedBySomeoneToast": {
+    "messageformat": "Používateľ {otherName} vám stlmil zvuk."
+  },
+  "icu:CallControls__SomeoneMutedSomeoneToast": {
+    "messageformat": "Používateľ {name} stlmil zvuk používateľa {otherName}."
+  },
+  "icu:CallControls__YouMutedSomeoneToast": {
+    "messageformat": "Stlmili ste zvuk používateľa {otherName}."
+  },
+  "icu:CallControls__YouMutedYourselfToast": {
+    "messageformat": "Stlmili ste si zvuk na inom zariadení."
+  },
   "icu:CallControls__LowerHandSuggestionToast": {
     "messageformat": "Znížiť ruku?"
   },
@@ -3230,6 +3899,18 @@
   "icu:calling__view_mode--updated": {
     "messageformat": "Zobrazenie aktualizované"
   },
+  "icu:calling__change-layout": {
+    "messageformat": "Zmeniť rozloženie"
+  },
+  "icu:calling__layout--paginated": {
+    "messageformat": "Mriežka"
+  },
+  "icu:calling__layout--overflow": {
+    "messageformat": "Bočný panel"
+  },
+  "icu:calling__layout--speaker": {
+    "messageformat": "Hovoriaca osoba"
+  },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "Zdieľať svoju obrazovku"
   },
@@ -3245,17 +3926,11 @@
   "icu:calling__SelectPresentingSourcesModal--window": {
     "messageformat": "Okno"
   },
-  "icu:calling__ParticipantInfoButton": {
-    "messageformat": "Viac informácií o tomto kontakte"
-  },
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "Skopírovať odkaz na hovor"
   },
   "icu:CallingAdhocCallInfo__ShareViaSignal": {
     "messageformat": "Zdieľať odkaz na hovor cez Signal"
-  },
-  "icu:CallingAdhocCallInfo__RemoveClient": {
-    "messageformat": "Odstrániť tohto používateľa z hovoru"
   },
   "icu:CallingAdhocCallInfo__RemoveClientDialogBody": {
     "messageformat": "Odstrániť používateľa {name} z hovoru?"
@@ -3277,9 +3952,6 @@
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
     "messageformat": "Pred pripojením k hovoru môžete vidieť iba mená telefónnych kontaktov, ľudí, s ktorými ste v skupine, alebo ľudí, s ktorými ste četovali 1:1. Po pripojení k hovoru uvidíte všetky mená a fotografie."
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "Rozumiem"
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "Video"
@@ -3326,14 +3998,20 @@
   "icu:muteExpirationLabel": {
     "messageformat": "Stlmené do {duration}"
   },
-  "icu:EmojiButton__label": {
-    "messageformat": "Emotikony"
-  },
   "icu:ErrorModal--title": {
     "messageformat": "Niekde sa stala chyba!"
   },
   "icu:ErrorModal--description": {
     "messageformat": "Prosím, skúste znovu alebo kontaktujte podporu."
+  },
+  "icu:DebugLogErrorModal__UnexpectedError": {
+    "messageformat": "Vyskytla sa neočakávaná chyba"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog": {
+    "messageformat": "Odoslať ladiaci záznam"
+  },
+  "icu:DebugLogErrorModal__SubmitDebugLog__Cancel": {
+    "messageformat": "Nie, ďakujem"
   },
   "icu:Confirmation--confirm": {
     "messageformat": "OK"
@@ -3384,7 +4062,7 @@
     "messageformat": "Nie je možné pridať sa do skupiny"
   },
   "icu:GroupV2--join--link-forbidden": {
-    "messageformat": "K tejto skupine sa nemôžete pripojiť prostredníctvom odkazu na skupinu, pretože vás odstránil jej správca."
+    "messageformat": "K tejto skupine sa nemôžete pripojiť prostredníctvom odkazu na skupinu, pretože vás odstránil jej správca. Ak sa chcete opäť pridať do skupiny, kontaktujte jej správcu."
   },
   "icu:GroupV2--join--prompt-with-approval": {
     "messageformat": "Administrátor tejto skupiny musí schváliť vašu požiadavku, než budete môcť vstúpiť do tejto skupiny. Keď požiadate o vstup, vaše meno a fotka budú zdieľané s jej členmi."
@@ -3413,11 +4091,23 @@
   "icu:GroupV2--join--requested": {
     "messageformat": "Vaša žiadosť o členstvo bola odoslaná administrátorovi skupiny. Keď na ňu zareaguje, dostanete oznámenie."
   },
+  "icu:GroupV2--join--group-terminated": {
+    "messageformat": "K tejto skupine sa nedá pripojiť."
+  },
   "icu:GroupV2--join--general-join-failure--title": {
     "messageformat": "Chyba odkazu"
   },
   "icu:GroupV2--join--general-join-failure": {
     "messageformat": "Nepodarilo sa pripojiť k skupine. Skúste to znova neskôr."
+  },
+  "icu:GroupV2--terminate-group-in-progress": {
+    "messageformat": "Prebieha ukončenie skupiny…"
+  },
+  "icu:TerminateGroupFailedModal__description": {
+    "messageformat": "Skupinu sa nepodarilo ukončiť. Skontrolujte svoje pripojenie a skúste to znova."
+  },
+  "icu:TerminateGroupFailedModal__try-again": {
+    "messageformat": "Skúsiť znova"
   },
   "icu:GroupV2--admin": {
     "messageformat": "Admin"
@@ -3494,23 +4184,41 @@
   "icu:GroupV2--access-attributes--all--unknown": {
     "messageformat": "Administrátor zmenil, kto môže upravovať informácie o skupine na \"Všetci členovia\"."
   },
-  "icu:GroupV2--access-members--admins--other": {
-    "messageformat": "{adminName} zmenil/a, kto môže upraviť členstvo v skupine na \"Iba administrátori\"."
-  },
   "icu:GroupV2--access-members--admins--you": {
     "messageformat": "Zmenili ste, kto môže upraviť členstvo v skupine na \"Iba administrátori\"."
+  },
+  "icu:GroupV2--access-members--admins--other": {
+    "messageformat": "{adminName} zmenil/a, kto môže upraviť členstvo v skupine na \"Iba administrátori\"."
   },
   "icu:GroupV2--access-members--admins--unknown": {
     "messageformat": "Administrátor zmenil, kto môže upraviť členstvo v skupine na \"Iba administrátori\"."
   },
-  "icu:GroupV2--access-members--all--other": {
-    "messageformat": "{adminName} zmenil/a, kto môže upraviť členstvo v skupine na \"Všetci členovia\"."
-  },
   "icu:GroupV2--access-members--all--you": {
     "messageformat": "Zmenili ste, kto môže upraviť členstvo v skupine na \"Všetci členovia\"."
   },
+  "icu:GroupV2--access-members--all--other": {
+    "messageformat": "{adminName} zmenil/a, kto môže upraviť členstvo v skupine na \"Všetci členovia\"."
+  },
   "icu:GroupV2--access-members--all--unknown": {
     "messageformat": "Administrátor zmenil, kto môže upraviť členstvo v skupine na \"Všetci členovia\"."
+  },
+  "icu:GroupV2--access-member-label--admins--you": {
+    "messageformat": "Zmenili ste, kto môže pridávať role používateľov na „Iba administrátori“."
+  },
+  "icu:GroupV2--access-member-label--admins--other": {
+    "messageformat": "Používateľ {adminName} zmenil, kto môže pridávať role používateľov na „Iba administrátori“."
+  },
+  "icu:GroupV2--access-member-label--admins--unknown": {
+    "messageformat": "Administrátor zmenil, kto môže pridávať role používateľov na „Iba administrátori“."
+  },
+  "icu:GroupV2--access-member-label--all--you": {
+    "messageformat": "Zmenili ste, kto môže pridávať role používateľov na „Všetci členovia“."
+  },
+  "icu:GroupV2--access-member-label--all--other": {
+    "messageformat": "Používateľ {adminName} zmenil, kto môže pridávať role používateľov na „Všetci členovia“."
+  },
+  "icu:GroupV2--access-member-label--all--unknown": {
+    "messageformat": "Administrátor zmenil, kto môže pridávať role používateľov na „Všetci členovia“."
   },
   "icu:GroupV2--access-invite-link--disabled--you": {
     "messageformat": "Zakázali ste schválenie správcom pre odkaz na skupinu."
@@ -3842,6 +4550,15 @@
   "icu:GroupV2--summary": {
     "messageformat": "Členovia alebo nastavenia tejto skupiny sa zmenili."
   },
+  "icu:GroupV2--terminated--you": {
+    "messageformat": "Ukončili ste skupinu"
+  },
+  "icu:GroupV2--terminated--other": {
+    "messageformat": "Používateľ {memberName} ukončil skupinu"
+  },
+  "icu:GroupV2--terminated--unknown": {
+    "messageformat": "Táto skupina bola ukončená"
+  },
   "icu:GroupV1--Migration--disabled--link": {
     "messageformat": "Upgradnite túto skupinu na aktiváciu nových funkcií ako @tagy a administrátori. Členovia, ktorí so skupinou nezdieľajú svoje meno alebo fotku budú pozvaní pridať sa. <learnMoreLink>Zistiť viac.</learnMoreLink>"
   },
@@ -3926,23 +4643,23 @@
   "icu:ClearingData__description": {
     "messageformat": "Môže to trvať pár minút"
   },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "Opúšťajú sa skupiny..."
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "V závislosti od počtu skupín, v ktorých ste, to môže trvať niekoľko minút"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "Vymazáva sa účet a všetky údaje..."
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "Odstránenie používateľských údajov a resetovanie aplikácie"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "Prispieť na Signal"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "Prispieť na Signal"
-  },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "Signal poháňajú ľudia ako vy. Prispejte a získajte odznak."
-  },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "Otvorte Signal na svojom telefóne"
-  },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "Ťuknite na svoju profilovú fotku v ľavom hornom rohu pre otvorenie Nastavení"
-  },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "Ťuknite na „Prispieť na Signal“ a prihláste sa na odber"
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} podporuje Signal"
   },
   "icu:BackupImportScreen__title": {
     "messageformat": "Synchronizácia správ"
@@ -3993,10 +4710,10 @@
     "messageformat": "Skúsiť znovu"
   },
   "icu:BackupMediaDownloadProgress__title-in-progress": {
-    "messageformat": "Obnovujú sa médiá"
+    "messageformat": "Synchronizujú sa médiá"
   },
   "icu:BackupMediaDownloadProgress__title-paused": {
-    "messageformat": "Obnovovanie bolo pozastavené"
+    "messageformat": "Synchronizácia bola pozastavená"
   },
   "icu:BackupMediaDownloadProgress__title-idle": {
     "messageformat": "Obnovené: {currentSize} z {totalSize}"
@@ -4011,13 +4728,13 @@
     "messageformat": "Čaká sa na internetové pripojenie…"
   },
   "icu:BackupMediaDownloadProgress__button-pause": {
-    "messageformat": "Pozastaviť prenos"
+    "messageformat": "Pozastaviť"
   },
   "icu:BackupMediaDownloadProgress__button-resume": {
-    "messageformat": "Obnoviť prenos"
+    "messageformat": "Pokračovať"
   },
   "icu:BackupMediaDownloadProgress__button-cancel": {
-    "messageformat": "Zrušiť prenos"
+    "messageformat": "Zrušiť synchronizáciu"
   },
   "icu:BackupMediaDownloadProgress__button-more": {
     "messageformat": "Viac možností"
@@ -4029,16 +4746,31 @@
     "messageformat": "{currentSize} z {totalSize}"
   },
   "icu:BackupMediaDownloadCancelConfirmation__title": {
-    "messageformat": "Zrušiť prenos médií?"
+    "messageformat": "Zrušiť synchronizáciu médií?"
   },
   "icu:BackupMediaDownloadCancelConfirmation__description": {
-    "messageformat": "Obnovenie vašich správ a médií sa nedokončilo. Ak sa rozhodnete prenos zrušiť, môžete ho znova začať v Nastaveniach."
-  },
-  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "Pokračovať v prenose"
+    "messageformat": "Synchronizácia vašich médií sa nedokončila. Ak sa rozhodnete synchronizáciu zrušiť, môžete ju znova spustiť opätovným prepojením tohto zariadenia. <learnMoreLink>Zistiť viac</learnMoreLink>."
   },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
-    "messageformat": "Zrušiť prenos"
+    "messageformat": "Zrušiť synchronizáciu"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--title": {
+    "messageformat": "Synchronizácia bola pozastavená"
+  },
+  "icu:BackupMediaDownloadProgressSettings__paused--description": {
+    "messageformat": "Ak chcete obnoviť synchronizáciu, kliknite na „{resumeButtonText}“"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-resume": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:BackupMediaDownloadProgressSettings__button-pause": {
+    "messageformat": "Pozastaviť"
+  },
+  "icu:BackupMediaDownloadProgressSettings__title-in-progress": {
+    "messageformat": "Synchronizujú sa médiá"
+  },
+  "icu:BackupMediaDownloadProgressSettings__progressbar-hint": {
+    "messageformat": "{currentSize} z {totalSize} ({fractionComplete,number,percent})…"
   },
   "icu:CriticalIdlePrimaryDeviceModal__title": {
     "messageformat": "Vyžaduje sa akcia účtu"
@@ -4055,8 +4787,17 @@
   "icu:CompositionArea--expand": {
     "messageformat": "Rozbaliť"
   },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "Pripojiť súbor"
+  "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
+    "messageformat": "Fotky a videá"
+  },
+  "icu:CompositionArea__AttachMenu__File": {
+    "messageformat": "Súbor"
+  },
+  "icu:CompositionArea__AttachMenu__Poll": {
+    "messageformat": "Anketa"
+  },
+  "icu:CompositionArea--attach-plus": {
+    "messageformat": "Pridať prílohu alebo anketu"
   },
   "icu:CompositionArea--sms-only__title": {
     "messageformat": "Táto osoba nepoužíva Signal"
@@ -4082,6 +4823,15 @@
   "icu:CompositionArea__ConfirmGifSelection__ReplaceButton": {
     "messageformat": "Nahradiť"
   },
+  "icu:CompositionArea--group-terminated": {
+    "messageformat": "Nemôžete posielať správy, pretože skupina bola ukončená."
+  },
+  "icu:CompositionArea--viewOnceToggle": {
+    "messageformat": "Pozrieť raz"
+  },
+  "icu:CompositionArea--viewOnceMediaPlaceholder": {
+    "messageformat": "Médiá na jedno pozretie"
+  },
   "icu:CompositionInput__editing-message": {
     "messageformat": "Upraviť správu"
   },
@@ -4093,6 +4843,9 @@
   },
   "icu:ContactModal--rm-admin": {
     "messageformat": "Odstrániť ako admina"
+  },
+  "icu:ContactModal--rm-admin--clear-label": {
+    "messageformat": "Týmto sa tiež vymaže ich rola používateľa."
   },
   "icu:ContactModal--make-admin": {
     "messageformat": "Spraviť administrátorom"
@@ -4112,6 +4865,30 @@
   "icu:ContactModal--voice": {
     "messageformat": "Hlas"
   },
+  "icu:ContactModal--mute-audio": {
+    "messageformat": "Stlmiť zvuk"
+  },
+  "icu:ContactModal--confirm-mute-body": {
+    "messageformat": "Naozaj chcete stlmiť používateľa {contact}?"
+  },
+  "icu:ContactModal--confirm-mute-primary-button": {
+    "messageformat": "Stlmiť"
+  },
+  "icu:ContactModal--remove-from-call": {
+    "messageformat": "Odstrániť z hovoru"
+  },
+  "icu:GroupMemberLabelInfoModal--title": {
+    "messageformat": "Role používateľa"
+  },
+  "icu:GroupMemberLabelInfoModal--description": {
+    "messageformat": "Použite rolu používateľa, ktorá opíše vás alebo vašu úlohu v tejto skupine. Role používateľov sú viditeľné iba v rámci tejto skupiny."
+  },
+  "icu:GroupMemberLabelInfoModal--add-label": {
+    "messageformat": "Nastaviť rolu"
+  },
+  "icu:GroupMemberLabelInfoModal--edit-label": {
+    "messageformat": "Upraviť rolu"
+  },
   "icu:showChatColorEditor": {
     "messageformat": "Farba četu"
   },
@@ -4126,6 +4903,36 @@
   },
   "icu:ConversationDetails--group-link": {
     "messageformat": "Odkaz do skupiny"
+  },
+  "icu:ConversationDetails--member-label": {
+    "messageformat": "Rola používateľa"
+  },
+  "icu:ConversationDetails--member-label--placeholder": {
+    "messageformat": "Zadajte rolu používateľa"
+  },
+  "icu:ConversationDetails--member-label--description": {
+    "messageformat": "Nastavte rolu používateľa, ktorá opíše vás alebo vašu úlohu v tejto skupine. Role používateľov sú viditeľné iba v rámci tejto skupiny."
+  },
+  "icu:ConversationDetails--member-label--preview": {
+    "messageformat": "Náhľad"
+  },
+  "icu:ConversationDetails--member-label--hello": {
+    "messageformat": "Ahoj!"
+  },
+  "icu:ConversationDetails--member-label--list-header": {
+    "messageformat": "Členovia skupiny s rolami"
+  },
+  "icu:ConversationDetails--member-label--no-members": {
+    "messageformat": "Žiadni iní členovia nemajú role"
+  },
+  "icu:ConversationDetails--member-label--error-title": {
+    "messageformat": "Nepodarilo sa uložiť rolu používateľa"
+  },
+  "icu:ConversationDetails--member-label--error-generic": {
+    "messageformat": "Skontrolujte svoje pripojenie a skúste to znovu."
+  },
+  "icu:ConversationDetails--member-label--error-permissions": {
+    "messageformat": "Iba administrátori môžu nastaviť role používateľov v tejto skupine."
   },
   "icu:ConversationDetails--disappearing-messages-label": {
     "messageformat": "Miznúce správy"
@@ -4157,8 +4964,8 @@
   "icu:ConversationDetails--group-info-label": {
     "messageformat": "Kto môže upravovať informácie o skupine"
   },
-  "icu:ConversationDetails--group-info-info": {
-    "messageformat": "Vyberte, kto môže upraviť názov skupiny, fotografiu, popis a časovač miznúcich správ."
+  "icu:ConversationDetails--group-info-info-v2": {
+    "messageformat": "Vyberte, kto môže upraviť názov skupiny, fotografiu, popis, časovač miznúcich správ a pripnuté správy."
   },
   "icu:ConversationDetails--add-members-label": {
     "messageformat": "Kto môže pridávať členov"
@@ -4172,17 +4979,47 @@
   "icu:ConversationDetails--announcement-info": {
     "messageformat": "Vyberte, kto môže v skupine posielať správy."
   },
+  "icu:ConversationDetails--member-label--label": {
+    "messageformat": "Kto môže pridávať role používateľov"
+  },
+  "icu:ConversationDetails--member-label--info": {
+    "messageformat": "Vyberte, kto môže pridávať role používateľov v tejto skupine."
+  },
+  "icu:ConversationDetails--label-clear-warning--title": {
+    "messageformat": "Role používateľov budú vymazané"
+  },
+  "icu:ConversationDetails--label-clear-warning--description": {
+    "messageformat": "Zmenou tohto povolenia na „Iba administrátori“ sa vymažú role používateľov nastavené používateľmi, ktorí nie sú administrátori v tejto skupine."
+  },
+  "icu:ConversationDetails--label-clear-warning--continue": {
+    "messageformat": "Pokračovať"
+  },
   "icu:ConversationDetails--requests-and-invites": {
     "messageformat": "Žiadosti a pozvánky"
   },
   "icu:ConversationDetailsActions--leave-group": {
     "messageformat": "Opustiť skupinu"
   },
+  "icu:ConversationDetailsActions--terminate-group": {
+    "messageformat": "Ukončiť skupinu"
+  },
   "icu:ConversationDetailsActions--block-group": {
     "messageformat": "Blokovať skupinu"
   },
   "icu:ConversationDetailsActions--unblock-group": {
     "messageformat": "Odblokovať skupinu"
+  },
+  "icu:ConversationDetailsActions--report-spam": {
+    "messageformat": "Nahlásiť spam"
+  },
+  "icu:ConversationDetailsActions--archive": {
+    "messageformat": "Archivovať čet"
+  },
+  "icu:ConversationDetailsActions--unarchive": {
+    "messageformat": "Odarchivovať čet"
+  },
+  "icu:ConversationDetailsActions--delete": {
+    "messageformat": "Vymazať čet"
   },
   "icu:ConversationDetailsActions--leave-group-must-choose-new-admin": {
     "messageformat": "Pred tým, než opustíte túto skupinu, musíte pre ňu vybrať aspoň jedného nového administrátora."
@@ -4196,6 +5033,18 @@
   "icu:ConversationDetailsActions--leave-group-modal-confirm": {
     "messageformat": "Opustiť"
   },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-title": {
+    "messageformat": "Ukončiť „{groupName}“?"
+  },
+  "icu:ConversationDetailsActions--prompt-terminate-group-modal-content": {
+    "messageformat": "Členovia už nebudú môcť v skupine posielať správy ani uskutočňovať hovory. Dostanú upozornenie, že ste skupinu ukončili, a stále budú mať prístup k histórii správ."
+  },
+  "icu:ConversationDetailsActions--terminate-group-modal-confirm": {
+    "messageformat": "Ukončiť skupinu"
+  },
+  "icu:ConversationDetailsActions--confirm-terminate-group-confirm-modal-content": {
+    "messageformat": "Týmto sa skupina natrvalo ukončí. Naozaj chcete pokračovať?"
+  },
   "icu:ConversationDetailsActions--unblock-group-modal-title": {
     "messageformat": "Odblokovať skupinu „{groupName}“?"
   },
@@ -4208,29 +5057,47 @@
   "icu:ConversationDetailsActions--block-group-modal-confirm": {
     "messageformat": "Blokovať"
   },
-  "icu:ConversationDetailsActions--unblock-group-modal-content": {
+  "icu:ConversationDetailsActions--unblock-group-modal-body": {
     "messageformat": "Vaše kontakty vás budú môcť pridať do tejto skupiny."
   },
   "icu:ConversationDetailsActions--unblock-group-modal-confirm": {
     "messageformat": "Odblokovať"
   },
+  "icu:ConversationDetailsActions--report-spam-modal-content-direct": {
+    "messageformat": "Signal bude upozornený na to, že tento používateľ môže rozposielať spam. Signal nevidí obsah žiadneho četu."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-content-group": {
+    "messageformat": "Signal bude upozornený na to, že používateľ, ktorý vás pozval do tejto skupiny, môže rozposielať spam. Signal nevidí obsah žiadneho četu."
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-spam": {
+    "messageformat": "Nahlásiť spam"
+  },
+  "icu:ConversationDetailsActions--report-spam-modal-report-and-block": {
+    "messageformat": "Nahlásiť a zablokovať"
+  },
   "icu:ConversationDetailsHeader--members": {
     "messageformat": "{number, plural, one {{number,number} člen} few {{number,number} členovia} many {{number,number} člena} other {{number,number} členov}}"
   },
-  "icu:ConversationDetailsMediaList--shared-media": {
-    "messageformat": "Zdieľané médiá"
-  },
-  "icu:ConversationDetailsMediaList--show-all": {
-    "messageformat": "Pozrieť všetky"
+  "icu:ConversationDetailsMediaList--title": {
+    "messageformat": "Médiá, odkazy a súbory"
   },
   "icu:ConversationDetailsMembershipList--title": {
     "messageformat": "{number, plural, one {{number,number} člen} few {{number,number} členovia} many {{number,number} člena} other {{number,number} členov}}"
   },
+  "icu:ConversationDetailsMembershipList--terminated-title": {
+    "messageformat": "{number, plural, one {{number,number} bývalý člen} few {{number,number} bývalí členovia} many {{number,number} bývalého člena} other {{number,number} bývalých členov}}"
+  },
   "icu:ConversationDetailsMembershipList--add-members": {
     "messageformat": "Pridať členov"
   },
+  "icu:ConversationDetailsMembershipList--add-member-label": {
+    "messageformat": "Pridať rolu používateľa"
+  },
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "Pozrieť všetky"
+  },
+  "icu:ConversationDetailsMembershipList__Search__AccessibilityLabel": {
+    "messageformat": "Hľadať"
   },
   "icu:ConversationDetailsGroups--title": {
     "messageformat": "{count, plural, one {{count,number} spoločná skupina} few {{count,number} spoločné skupiny} many {{count,number} spoločnej skupiny} other {{count,number} spoločných skupín}}"
@@ -4300,6 +5167,51 @@
   },
   "icu:GroupLinkManagement__CopyGroupLinkButtonLabel": {
     "messageformat": "Skopírovať odkaz signal.group do schránky"
+  },
+  "icu:GroupMembersSearchDialog__DialogTitle": {
+    "messageformat": "Vyhľadať členov"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder": {
+    "messageformat": "Hľadať"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder--FilteringByAdmins": {
+    "messageformat": "Vyhľadať administrátorov"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder--FilteringBySystemContacts": {
+    "messageformat": "Vyhľadať kontakty"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__Label": {
+    "messageformat": "Filtrovať"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__AllMembers": {
+    "messageformat": "Všetci členovia"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__Admins": {
+    "messageformat": "Administrátori"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__SystemContacts": {
+    "messageformat": "Kontakty"
+  },
+  "icu:GroupMembersSearchDialog__EmptyState__NoResults--WithoutSearchQuery": {
+    "messageformat": "Žiadne výsledky"
+  },
+  "icu:GroupMembersSearchDialog__EmptyState__NoResults--WithSearchQuery": {
+    "messageformat": "Žiadne výsledky pre „{searchQuery}“"
+  },
+  "icu:GroupMembersSearchDialog__MemberItem__Admin": {
+    "messageformat": "Administrátor"
+  },
+  "icu:GroupMembersSearchDialog__SearchResults__Title": {
+    "messageformat": "Výsledky vyhľadávania"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__AddMember": {
+    "messageformat": "Pridať člena"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__AddMembers": {
+    "messageformat": "Add members"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__InviteViaGroupLink": {
+    "messageformat": "Pozvať cez odkaz na skupinu"
   },
   "icu:PendingInvites--tab-requests": {
     "messageformat": "Žiadosti ({count,number})"
@@ -4373,14 +5285,11 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "Preposlať vybrané správy"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, one {Vymazať {count,number} správu?} few {Vymazať {count,number} správy?} many {Vymazať {count,number} správy?} other {Vymazať {count,number} správ?}}"
+  "icu:DeleteMessagesModal--title-2": {
+    "messageformat": "{count, plural, one {Vymazať vybranú správu?} few {Vymazať {count,number} vybrané správy?} many {Vymazať {count,number} vybranej správy?} other {Vymazať {count,number} vybraných správ?}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, one {Pre koho by ste chceli túto správu vymazať?} few {Pre koho by ste chceli tieto správy vymazať?} many {Pre koho by ste chceli tieto správy vymazať?} other {Pre koho by ste chceli tieto správy vymazať?}}"
-  },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, one {Z ktorých zariadení by ste chceli túto správu odstrániť?} few {Z ktorých zariadení by ste chceli tieto správy odstrániť?} many {Z ktorých zariadení by ste chceli tieto správy odstrániť?} other {Z ktorých zariadení by ste chceli tieto správy odstrániť?}}"
   },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
     "messageformat": "{count, plural, one {Táto správa bude vymazaná zo všetkých vašich zariadení.} few {Tieto správy budú vymazané zo všetkých vašich zariadení.} many {Tieto správy budú vymazané zo všetkých vašich zariadení.} other {Tieto správy budú vymazané zo všetkých vašich zariadení.}}"
@@ -4388,20 +5297,42 @@
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "Vymazať pre mňa"
   },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "Vymazať z tohto zariadenia"
-  },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "Vymazať pre všetkých"
   },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "Vymazať zo všetkých zariadení"
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--title": {
+    "messageformat": "Vymazať pre všetkých?"
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description": {
+    "messageformat": "{count, plural, one {Členovia skupiny uvidia, že ste túto správu vymazali z pozície administrátora.} few {Členovia skupiny uvidia, že ste tieto správy vymazali z pozície administrátora.} many {Členovia skupiny uvidia, že ste tieto správy vymazali z pozície administrátora.} other {Členovia skupiny uvidia, že ste tieto správy vymazali z pozície administrátora.}}",
+    "ignoreUnused": true
+  },
+  "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
+    "messageformat": "{count, plural, one {Členovia skupiny v najnovších verziách Signalu uvidia, že ste túto správu vymazali.} few {Členovia skupiny v najnovších verziách Signalu uvidia, že ste tieto správy vymazali.} many {Členovia skupiny v najnovších verziách Signalu uvidia, že ste tieto správy vymazali.} other {Členovia skupiny v najnovších verziách Signalu uvidia, že ste tieto správy vymazali.}}"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
     "messageformat": "Vymazať"
   },
   "icu:DeleteMessagesModal__toast--TooManyMessagesToDeleteForEveryone": {
     "messageformat": "{count, plural, one {Môžete vybrať maximálne {count,number} správu, ktorá sa vymaže pre všetkých} few {Môžete vybrať maximálne {count,number} správy, ktoré sa vymažú pre všetkých} many {Môžete vybrať maximálne {count,number} správy, ktorá sa vymaže pre všetkých} other {Môžete vybrať maximálne {count,number} správ, ktoré sa vymažú pre všetkých}}"
+  },
+  "icu:DiscardDraftDialog__title": {
+    "messageformat": "Zahodiť koncept?"
+  },
+  "icu:DiscardDraftDialog__description": {
+    "messageformat": "Túto akciu nie je možné vrátiť späť."
+  },
+  "icu:DeleteAttachmentModal__Title": {
+    "messageformat": "Vymazať položku?"
+  },
+  "icu:DeleteAttachmentModal__Body": {
+    "messageformat": "Týmto natrvalo vymažete položku. Vymaže sa aj akýkoľvek text správy spojený s touto položkou."
+  },
+  "icu:DeleteAttachmentModal__Delete": {
+    "messageformat": "Vymazať"
+  },
+  "icu:DeleteAttachmentModal__Cancel": {
+    "messageformat": "Zrušiť"
   },
   "icu:SelectModeActions__toast--TooManyMessagesToForward": {
     "messageformat": "Preposlať môžete maximálne 30 správ"
@@ -4505,7 +5436,10 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "Na pripojenie k Signal hovoru použite tento odkaz: {url}"
   },
-  "icu:MessageRequestWarning__safety-tips": {
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "Požiadavky pozorne overte"
+  },
+  "icu:MessageRequestWarning__safety-tips-v2": {
     "messageformat": "Bezpečnostné tipy"
   },
   "icu:ContactSpoofing__same-name--link": {
@@ -4715,6 +5649,84 @@
   "icu:ConversationDetailsHeader--add-group-description": {
     "messageformat": "Pridať popis skupiny…"
   },
+  "icu:AudioListItem__subtitle--voice-message": {
+    "messageformat": "Hlasová správa"
+  },
+  "icu:AudioListItem__subtitle--audio": {
+    "messageformat": "Audio"
+  },
+  "icu:ContactListItem__subtitle": {
+    "messageformat": "Kontakt"
+  },
+  "icu:LinkPreviewItem__alt": {
+    "messageformat": "Otvoriť odkaz v prehliadači"
+  },
+  "icu:ListItem__show-message": {
+    "messageformat": "Zobraziť správu v konverzácii"
+  },
+  "icu:MediaGallery__tab__audio": {
+    "messageformat": "Audio"
+  },
+  "icu:MediaGallery__tab__files": {
+    "messageformat": "Súbory"
+  },
+  "icu:MediaGallery__tab__links": {
+    "messageformat": "Odkazy"
+  },
+  "icu:MediaGallery__sort": {
+    "messageformat": "Zoradiť podľa"
+  },
+  "icu:MediaGallery__sort--header": {
+    "messageformat": "Zoradiť podľa"
+  },
+  "icu:MediaGallery__sort__date": {
+    "messageformat": "Dátumu"
+  },
+  "icu:MediaGallery__sort__size": {
+    "messageformat": "Veľkosti"
+  },
+  "icu:MediaGallery__EmptyState__title--media": {
+    "messageformat": "Žiadne médiá"
+  },
+  "icu:MediaGallery__EmptyState__description--media": {
+    "messageformat": "Tu sa zobrazia fotky, videá a súbory GIF, ktoré odošlete a prijmete"
+  },
+  "icu:MediaGallery__EmptyState__title--audio": {
+    "messageformat": "Žiadny zvukový súbor"
+  },
+  "icu:MediaGallery__EmptyState__description--audio": {
+    "messageformat": "Tu sa zobrazia hlasové správy a zvukové súbory, ktoré odošlete a prijmete"
+  },
+  "icu:MediaGallery__EmptyState__title--links": {
+    "messageformat": "Žiadne odkazy"
+  },
+  "icu:MediaGallery__EmptyState__description--links-2": {
+    "messageformat": "Tu sa zobrazia odkazy, ktoré odošlete a prijmete"
+  },
+  "icu:MediaGallery__EmptyState__title--documents": {
+    "messageformat": "Žiadne súbory"
+  },
+  "icu:MediaGallery__EmptyState__description--documents-2": {
+    "messageformat": "Tu sa zobrazia súbory, ktoré odošlete a prijmete"
+  },
+  "icu:MediaGallery__ContextMenu__ViewInChat": {
+    "messageformat": "Zobraziť v čete"
+  },
+  "icu:MediaGallery__ContextMenu__Forward": {
+    "messageformat": "Preposlať"
+  },
+  "icu:MediaGallery__ContextMenu__Save": {
+    "messageformat": "Uložiť"
+  },
+  "icu:MediaGallery__ContextMenu__Send": {
+    "messageformat": "Poslať správu"
+  },
+  "icu:MediaGallery__ContextMenu__Copy": {
+    "messageformat": "Skopírovať odkaz"
+  },
+  "icu:MediaGallery__ContextMenu__Delete": {
+    "messageformat": "Vymazať"
+  },
   "icu:MediaQualitySelector--button": {
     "messageformat": "Zvoliť kvalitu médií"
   },
@@ -4777,6 +5789,12 @@
   },
   "icu:ProfileEditor__username-link__error-icon": {
     "messageformat": "Odkaz na používateľské meno je potrebné resetovať"
+  },
+  "icu:ProfileEditor__open": {
+    "messageformat": "Otvoriť obrazovku s odkazom na používateľské meno"
+  },
+  "icu:ProfileEditor__username-link__open": {
+    "messageformat": "Otvoriť obrazovku s odkazom na používateľské meno"
   },
   "icu:ProfileEditor__username-link__tooltip__title": {
     "messageformat": "Zdieľajte svoje používateľské meno"
@@ -4910,6 +5928,9 @@
   "icu:ProfileEditorModal--error": {
     "messageformat": "Váš profil sa nepodarilo aktualizovať. Prosím skúste to znova."
   },
+  "icu:ProfileEditorModal--sharing": {
+    "messageformat": "Zdieľanie"
+  },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Pošlite správu správcovi"
   },
@@ -4918,6 +5939,10 @@
   },
   "icu:AnnouncementsOnlyGroupBanner--admins": {
     "messageformat": "administrátori"
+  },
+  "icu:Avatar__View": {
+    "messageformat": "Pozrieť",
+    "limit": 7
   },
   "icu:AvatarEditor--choose": {
     "messageformat": "Vyberte profilový obrázok"
@@ -4942,6 +5967,9 @@
   },
   "icu:Preferences__button--general": {
     "messageformat": "Všeobecné"
+  },
+  "icu:Preferences__button--donate": {
+    "messageformat": "Prispieť na Signal"
   },
   "icu:Preferences__button--appearance": {
     "messageformat": "Vzhľad"
@@ -4985,20 +6013,14 @@
   "icu:Preferences__button--internal": {
     "messageformat": "Pokročilé"
   },
-  "icu:Preferences__internal__local-backups": {
-    "messageformat": "Local backups"
+  "icu:Preferences__button--manage": {
+    "messageformat": "Spravovať"
   },
-  "icu:Preferences__internal__export-local-backup": {
-    "messageformat": "Export…"
+  "icu:Preferences__button--choose-folder": {
+    "messageformat": "Zvoľte priečinok"
   },
-  "icu:Preferences__internal__export-local-backup--description": {
-    "messageformat": "Export local encrypted backup to a folder and validate it"
-  },
-  "icu:Preferences__internal__import-local-backup": {
-    "messageformat": "Import…"
-  },
-  "icu:Preferences__internal__import-local-backup--description": {
-    "messageformat": "Stage a local encrypted backup for import on link"
+  "icu:Preferences__button--set-up": {
+    "messageformat": "Nastaviť"
   },
   "icu:Preferences__internal__validate-backup--description": {
     "messageformat": "Exportujte šifrovanú zálohu do pamäte a spustite na nej testovaciu súpravu"
@@ -5018,8 +6040,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "Generovať náhľady stránok"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "Ak chcete toto nastavenie zmeniť, otvorte na svojom mobilnom zariadení aplikáciu Signal a prejdite na Nastavenia > Čety"
+  "icu:Preferences__link-previews--new-description": {
+    "messageformat": "Získať náhľady stránok priamo z webových prepojení pre správy, ktoré odošlete."
+  },
+  "icu:Preferences__address-book-photos--title": {
+    "messageformat": "Použiť fotky zo zoznamu kontaktov"
+  },
+  "icu:Preferences__address-book-photos--description": {
+    "messageformat": "Zobrazí fotky zo zoznamu kontaktov, ak sú dostupné."
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "Premeniť napísané emotikony na emoji"
@@ -5027,14 +6055,386 @@
   "icu:Preferences__auto-convert-emoji--description": {
     "messageformat": "Napríklad :-) sa zmení na <emojify>🙂</emojify>"
   },
+  "icu:Preferences__keep-muted-chats-archived--title": {
+    "messageformat": "Ponechať stlmené čety archivované"
+  },
+  "icu:Preferences__keep-muted-chats-archived--description": {
+    "messageformat": "Stlmené čety, ktoré sú archivované, zostanú archivované, keď príde nová správa."
+  },
   "icu:Preferences--advanced": {
     "messageformat": "Pokročilé"
   },
   "icu:Preferences--notification-content": {
     "messageformat": "Obsah oznámenia"
   },
+  "icu:PlaintextExport--PreferencesRow--Header": {
+    "messageformat": "Exportovať históriu četov"
+  },
+  "icu:PlaintextExport--PreferencesRow--Description": {
+    "messageformat": "Exportujte strojovo čitateľnú kópiu JSON všetkých vašich četov. Miznúce správy nebudú exportované."
+  },
+  "icu:PlaintextExport--ActionButton": {
+    "messageformat": "Exportovať"
+  },
+  "icu:PlaintextExport--Confirmation--Header": {
+    "messageformat": "Exportovať históriu četov?"
+  },
+  "icu:PlaintextExport--Confirmation--Description": {
+    "messageformat": "<bold>POZOR!</bold> Tento súbor s nikým NEZDIEĽAJTE. História četov sa uloží do vášho počítača a ostatné aplikácie k nej môžu mať prístup v závislosti od nastavených povolení počítača."
+  },
+  "icu:PlaintextExport--Confirmation--IncludeMedia": {
+    "messageformat": "Zahrnúť médiá <secondary>(väčšia veľkosť súboru)</secondary>"
+  },
+  "icu:PlaintextExport--Confirmation--ContinueButton": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:PlaintextExport--OSPrompt--Mac": {
+    "messageformat": "exportovať históriu četov"
+  },
+  "icu:PlaintextExport--OSPrompt--Windows": {
+    "messageformat": "Ak chcete exportovať históriu četov, overte svoju totožnosť."
+  },
+  "icu:PlaintextExport--OSPrompt--description--Linux": {
+    "messageformat": "Exportovať"
+  },
+  "icu:PlaintextExport--OSPrompt--message--Linux": {
+    "messageformat": "Na exportovanie histórie četov je potrebné overenie."
+  },
+  "icu:PlaintextExport--ProgressDialog--Header": {
+    "messageformat": "Exportuje sa história četov"
+  },
+  "icu:PlaintextExport--ProgressDialog--Progress": {
+    "messageformat": "Exportuje sa {currentBytes} z {totalBytes} ({percentage,number,percent})…"
+  },
+  "icu:PlaintextExport--ProgressDialog--TimeWarning": {
+    "messageformat": "Môže to trvať pár minút"
+  },
+  "icu:PlaintextExport--CompleteDialog--Header": {
+    "messageformat": "Export bol úspešne dokončený"
+  },
+  "icu:PlaintextExport--CompleteDialog--Description": {
+    "messageformat": "<bold>DÁVAJTE POZOR</bold>, kde ukladáte exportovaný súbor s četmi a s nikým ho nezdieľate. V závislosti od nastavených povolení počítača môžu mať k nemu prístup iné aplikácie vo vašom počítači. "
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Mac": {
+    "messageformat": "Zobraziť vo Finderi"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Linux": {
+    "messageformat": "Zobraziť v priečinku"
+  },
+  "icu:PlaintextExport--CompleteDialog--ShowFiles--Windows": {
+    "messageformat": "Zobraziť v priečinku"
+  },
+  "icu:PlaintextExport--Error--General--Title": {
+    "messageformat": "Históriu četov sa nepodarilo exportovať"
+  },
+  "icu:PlaintextExport--Error--General--Description": {
+    "messageformat": "Vyskytla sa chyba a históriu četov sa nepodarilo exportovať."
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Title": {
+    "messageformat": "Nedostatok úložného priestoru"
+  },
+  "icu:PlaintextExport--Error--NotEnoughStorage--Detail": {
+    "messageformat": "Históriu četov sa nepodarilo exportovať, pretože váš počítač nemá dostatok voľného úložného priestoru. Uvoľnite {bytes} miesta a potom to skúste znova."
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Title": {
+    "messageformat": "Históriu četov sa nepodarilo exportovať"
+  },
+  "icu:PlaintextExport--Error--RanOutOfStorage--Detail": {
+    "messageformat": "Históriu četov nebolo možné exportovať, pretože váš počítač nemá dostatok voľného úložného priestoru. Uvoľnite {bytes} miesta a potom to skúste znova."
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Title": {
+    "messageformat": "Históriu četov sa nepodarilo exportovať"
+  },
+  "icu:PlaintextExport--Error--DiskPermssions--Detail": {
+    "messageformat": "Históriu četov sa nepodarilo exportovať, pretože Signal nemá povolenie na zapisovanie súborov na disk. Skúste zmeniť povolenia disku alebo aktualizovať systémové nastavenia a potom exportujte znova."
+  },
+  "icu:LocalBackupExport--ProgressDialog--Header": {
+    "messageformat": "Exportuje sa záloha"
+  },
+  "icu:LocalBackupExport--CompleteDialog--Header": {
+    "messageformat": "Export zálohy bol úspešne dokončený"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsHeader": {
+    "messageformat": "Ak chcete obnoviť túto zálohu:"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer": {
+    "messageformat": "Preneste priečinok so zálohou do úložiska telefónu"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsInstall": {
+    "messageformat": "Nainštalujte si novú kópiu aplikácie Signal do telefónu"
+  },
+  "icu:LocalBackupExport--CompleteDialog--RestoreInstructionsRestore": {
+    "messageformat": "Ťuknite na „Obnoviť alebo preniesť“ a vyberte „Záloha na zariadení“"
+  },
+  "icu:NotificationProfile--moon-icon": {
+    "messageformat": "Ikona mesiaca"
+  },
+  "icu:NotificationProfile--copy-label": {
+    "messageformat": "Kópia {profileName}"
+  },
+  "icu:NotificationProfile--am": {
+    "messageformat": "AM"
+  },
+  "icu:NotificationProfile--pm": {
+    "messageformat": "PM"
+  },
+  "icu:NotificationProfile--time-separator": {
+    "messageformat": ":"
+  },
+  "icu:NotificationProfileMenuItem": {
+    "messageformat": "Profil upozornení"
+  },
+  "icu:NotificationProfileMenu--header": {
+    "messageformat": "Profil upozornení"
+  },
+  "icu:NotificationProfileMenu--on": {
+    "messageformat": "Zap."
+  },
+  "icu:NotificationProfileMenu--on-with-end": {
+    "messageformat": "Až do {endTime}"
+  },
+  "icu:NotificationProfileMenu--for-one-hour": {
+    "messageformat": "Na jednu hodinu"
+  },
+  "icu:NotificationProfileMenu--until-time": {
+    "messageformat": "Do {time}"
+  },
+  "icu:NotificationProfileMenu--settings": {
+    "messageformat": "Nastavenia"
+  },
+  "icu:NotificationProfilesToast--enabled": {
+    "messageformat": "„ {name}“ zapnuté"
+  },
+  "icu:NotificationProfilesToast--disabled": {
+    "messageformat": "„ {name}“ vypnuté"
+  },
+  "icu:NotificationProfilesToast--enabled--label": {
+    "messageformat": "Profil upozornení je teraz povolený"
+  },
+  "icu:NotificationProfilesToast--disabled--label": {
+    "messageformat": "Profil upozornení je teraz deaktivovaný"
+  },
+  "icu:NotificationProfiles--setting": {
+    "messageformat": "Profily pre upozornenia"
+  },
+  "icu:NotificationProfiles--setup": {
+    "messageformat": "Nastaviť"
+  },
+  "icu:NotificationProfiles--title": {
+    "messageformat": "Profily pre upozornenia"
+  },
+  "icu:NotificationProfiles--setup-description": {
+    "messageformat": "Vytvorte si profil, aby ste dostávali upozornenia iba od ľudí a skupín, ktoré si vyberiete"
+  },
+  "icu:NotificationProfiles--setup-continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:NotificationProfiles--manage-description": {
+    "messageformat": "Pridať alebo upraviť profily upozornení"
+  },
+  "icu:NotificationProfiles--manage-profiles": {
+    "messageformat": "{profileCount, plural, one {Jeden profil} few {{profileCount,number} profily} many {{profileCount,number} profilu} other {{profileCount,number} profilov}}"
+  },
+  "icu:NotificationProfiles--create": {
+    "messageformat": "Vytvoriť profil"
+  },
+  "icu:NotificationProfiles--name-title": {
+    "messageformat": "Pomenujte svoj profil"
+  },
+  "icu:NotificationProfiles--name-title--editing": {
+    "messageformat": "Názov"
+  },
+  "icu:NotificationProfiles--name-placeholder": {
+    "messageformat": "Názov profilu"
+  },
+  "icu:NotificationProfiles--sample-name__work": {
+    "messageformat": "Práca"
+  },
+  "icu:NotificationProfiles--sample-name__sleep": {
+    "messageformat": "Spánok"
+  },
+  "icu:NotificationProfiles--sample-name__driving": {
+    "messageformat": "Šoférovanie"
+  },
+  "icu:NotificationProfiles--sample-name__downtime": {
+    "messageformat": "Odpočinok"
+  },
+  "icu:NotificationProfiles--sample-name__focus": {
+    "messageformat": "Sústredenie"
+  },
+  "icu:NotificationProfiles--allowed-title": {
+    "messageformat": "Povolené upozornenia"
+  },
+  "icu:NotificationProfiles--allowed-description": {
+    "messageformat": "Pridajte ľudí a skupiny, od ktorých chcete dostávať upozornenia, keď je tento profil zapnutý"
+  },
+  "icu:NotificationProfiles--allowed-add-label": {
+    "messageformat": "Pridať ľudí alebo skupiny"
+  },
+  "icu:NotificationProfiles--exceptions": {
+    "messageformat": "Výnimky"
+  },
+  "icu:NotificationProfiles--exceptions--allow-all-calls": {
+    "messageformat": "Povoliť všetky hovory"
+  },
+  "icu:NotificationProfiles--exceptions--notify-for-mentions": {
+    "messageformat": "Upozorniť na všetky zmienky"
+  },
+  "icu:NotificationProfiles--schedule-title": {
+    "messageformat": "Pridajte rozvrh"
+  },
+  "icu:NotificationProfiles--schedule-title--editing": {
+    "messageformat": "Rozvrh"
+  },
+  "icu:NotificationProfiles--schedule-description": {
+    "messageformat": "Povoľte a upravte svoj rozvrh na automatizáciu profilu upozornení."
+  },
+  "icu:NotificationProfiles--schedule-enable": {
+    "messageformat": "Automaticky zapnúť"
+  },
+  "icu:NotificationProfiles--schedule": {
+    "messageformat": "Rozvrh"
+  },
+  "icu:NotificationProfiles--schedule-from": {
+    "messageformat": "Od"
+  },
+  "icu:NotificationProfiles--schedule-until": {
+    "messageformat": "Do"
+  },
+  "icu:NotificationProfiles--open-time-picker": {
+    "messageformat": "Otvoriť výber času"
+  },
+  "icu:NotificationProfiles--schedule-sunday": {
+    "messageformat": "Nedeľa"
+  },
+  "icu:NotificationProfiles--schedule-monday": {
+    "messageformat": "Pondelok"
+  },
+  "icu:NotificationProfiles--schedule-tuesday": {
+    "messageformat": "Utorok"
+  },
+  "icu:NotificationProfiles--schedule-wednesday": {
+    "messageformat": "Streda"
+  },
+  "icu:NotificationProfiles--schedule-thursday": {
+    "messageformat": "Štvrtok"
+  },
+  "icu:NotificationProfiles--schedule-friday": {
+    "messageformat": "Piatok"
+  },
+  "icu:NotificationProfiles--schedule-saturday": {
+    "messageformat": "Sobota"
+  },
+  "icu:NotificationProfiles--done-title": {
+    "messageformat": "Profil bol vytvorený"
+  },
+  "icu:NotificationProfiles--done-description": {
+    "messageformat": "Ak ste pridali rozvrh, váš profil sa bude automaticky zapínať a vypínať. Môžete tiež kliknúť na ikonu ··· v hornej časti zoznamu četov a manuálne ho zapnúť alebo vypnúť."
+  },
+  "icu:NotificationProfiles--schedule-sunday-short": {
+    "messageformat": "Ne"
+  },
+  "icu:NotificationProfiles--schedule-monday-short": {
+    "messageformat": "Po"
+  },
+  "icu:NotificationProfiles--schedule-tuesday-short": {
+    "messageformat": "Ut"
+  },
+  "icu:NotificationProfiles--schedule-wednesday-short": {
+    "messageformat": "St"
+  },
+  "icu:NotificationProfiles--schedule-thursday-short": {
+    "messageformat": "Št"
+  },
+  "icu:NotificationProfiles--schedule-friday-short": {
+    "messageformat": "Pi"
+  },
+  "icu:NotificationProfiles--schedule-saturday-short": {
+    "messageformat": "So"
+  },
+  "icu:NotificationProfiles--schedule-weekdays": {
+    "messageformat": "Pracovné dni"
+  },
+  "icu:NotificationProfiles--schedule-weekends": {
+    "messageformat": "Víkendy"
+  },
+  "icu:NotificationProfiles--schedule-daily": {
+    "messageformat": "Denne"
+  },
+  "icu:NotificationProfiles--schedule-separator": {
+    "messageformat": ", "
+  },
+  "icu:NotificationProfiles--list--header": {
+    "messageformat": "Profily"
+  },
+  "icu:NotificationProfiles--list--sync": {
+    "messageformat": "Synchronizácia medzi zariadeniami"
+  },
+  "icu:NotificationProfiles--list--sync--description": {
+    "messageformat": "Vaše profily budú synchronizované na všetkých vašich zariadeniach. Zapnutím profilu na jednom zariadení sa zapne aj na ostatných."
+  },
+  "icu:NotificationProfiles--delete": {
+    "messageformat": "Vymazať profil"
+  },
+  "icu:NotificationProfiles--delete-confirmation": {
+    "messageformat": "Natrvalo vymazať tento profil upozornení?"
+  },
+  "icu:NotificationProfiles--delete-button": {
+    "messageformat": "Vymazať"
+  },
+  "icu:NotificationProfiles--edit--is-active": {
+    "messageformat": "Zap."
+  },
+  "icu:NotificationProfiles--edit--is-not-active": {
+    "messageformat": "Vyp."
+  },
+  "icu:NotificationProfiles--edit--edit-name-label": {
+    "messageformat": "Upraviť názov tohto profilu"
+  },
+  "icu:NotificationProfiles--edit--allowed": {
+    "messageformat": "Povolené upozornenia"
+  },
+  "icu:NotificationProfiles--edit--schedule-timing": {
+    "messageformat": "{startTime} do {endTime}"
+  },
+  "icu:NotificationProfiles--edit--schedule-enabled": {
+    "messageformat": "Zap."
+  },
+  "icu:NotificationProfiles--edit--schedule-disabled": {
+    "messageformat": "Vyp."
+  },
   "icu:Preferences--blocked": {
     "messageformat": "Blokované"
+  },
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { Žiadni používatelia alebo skupiny } one {{num,number} používateľ alebo skupina} few {{num,number} používatelia alebo skupiny} many {{num,number} používateľov alebo skupín} other {{num,number} používateľov alebo skupín}}"
+  },
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { Žiadni používatelia } one {{num,number} používateľ} few {{num,number} používatelia} many {{num,number} používateľov} other {{num,number} používateľov}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { Žiadne skupiny } one {{num,number} skupina} few {{num,number} skupiny} many {{num,number} skupín} other {{num,number} skupín}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "Blokovaní používatelia vám nebudú môcť volať ani posielať správy"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "Blokovaní používatelia"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "Blokované skupiny"
+  },
+  "icu:Preferences--blocked--blocked-on": {
+    "messageformat": "Zablokovaný {blockedAt}"
+  },
+  "icu:Preferences--signal-backups": {
+    "messageformat": "Bezpečné Zálohy Signal"
+  },
+  "icu:Preferences--signal-backups-off-description": {
+    "messageformat": "Automatické zálohovanie pomocou zabezpečeného úložiska Signal chráneného end-to-end šifrovaním. Začnite na svojom telefóne. <learnMoreLink>Zistiť viac</learnMoreLink>."
+  },
+  "icu:Preferences--backup-section-description": {
+    "messageformat": "Zálohujte si históriu správ, aby ste pri výmene telefónu alebo opätovnom nainštalovaní Signalu už nikdy neprišli o dáta."
   },
   "icu:Preferences--backup-details__header": {
     "messageformat": "Podrobnosti o zálohe"
@@ -5043,7 +6443,10 @@
     "messageformat": "Zálohovanie všetkých správ a médií"
   },
   "icu:Preferences--backup-plan-not-found__description": {
-    "messageformat": "Predplatné sa nenašlo. Obnovte ho, aby ste mohli Zálohy Signal používať aj naďalej."
+    "messageformat": "Predplatné sa nenašlo. Skontrolujte si telefón a pozrite si podrobnosti o zálohe."
+  },
+  "icu:Preferences--backup-subscription-monthly-cost": {
+    "messageformat": "{cost}/mesiac"
   },
   "icu:Preferences--backup-messages-plan__description": {
     "messageformat": "{mediaDayCount, plural, one {Zálohovanie všetkých správ + médiá za posledný{mediaDayCount,number} deň} few {Zálohovanie všetkých správ + médiá za posledné {mediaDayCount,number} dni} many {Zálohovanie všetkých správ + médiá za posledných {mediaDayCount,number} dní} other {Zálohovanie všetkých správ + médiá za posledných {mediaDayCount,number} dní}}"
@@ -5061,13 +6464,13 @@
     "messageformat": "Predplatné bolo zrušené"
   },
   "icu:Preferences--backup-media-plan__note": {
-    "messageformat": "Predplatné Záloh Signal môžete spravovať alebo zrušiť vo svojom telefóne."
+    "messageformat": "Predplatné Bezpečných záloh Signal môžete spravovať alebo zrušiť vo svojom telefóne."
   },
   "icu:Preferences--backup-messages-plan__note": {
-    "messageformat": "Zálohy Signal môžete spravovať alebo upgradovať vo svojom telefóne."
+    "messageformat": "Bezpečné zálohy Signal môžete spravovať alebo upgradovať vo svojom telefóne."
   },
   "icu:Preferences--backup-plan__not-found__note": {
-    "messageformat": "Predplatné Záloh Signal môžete spravovať alebo obnoviť vo svojom telefóne."
+    "messageformat": "Predplatné Bezpečných záloh Signal môžete spravovať alebo obnoviť vo svojom telefóne."
   },
   "icu:Preferences--backup-created-at__label": {
     "messageformat": "Posledná záloha"
@@ -5075,14 +6478,155 @@
   "icu:Preferences--backup-created-by-phone": {
     "messageformat": "Váš telefón"
   },
-  "icu:Preferences--backup-size__label": {
-    "messageformat": "Veľkosť zálohy"
+  "icu:Preferences__local-backups": {
+    "messageformat": "Zálohy počítača"
   },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, one {{num,number} kontakt} few {{num,number} kontakty} many {{num,number} kontaktu} other {{num,number} kontaktov}}"
+  "icu:Preferences__local-backups-section__description": {
+    "messageformat": "Vaša záloha je chránená end-to-end šifrovaním a uložená vo vašom počítači."
   },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "Ak chcete tieto nastavenia zmeniť, otvorte na svojom mobilnom zariadení aplikáciu Signal a prejdite na Nastavenia> Ochrana osobných údajov"
+  "icu:Preferences--local-backups-off-description": {
+    "messageformat": "Vytvorte si zálohu s end-to-end šifrovaním, ktorú môžete obnoviť na telefóne. "
+  },
+  "icu:Preferences--local-backups-restore-info": {
+    "messageformat": "Pre obnovenie zálohy si nainštalujte novú kópiu Signalu vo svojom telefóne. Otvorte aplikáciu a ťuknite na „Obnoviť alebo preniesť“. <learnMoreLink>Zistiť viac.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-setup-folder": {
+    "messageformat": "Vyberte priečinok"
+  },
+  "icu:Preferences--local-backups-setup-folder-description": {
+    "messageformat": "Vyberte priečinok v úložisku počítača, kde bude uložená vaša záloha chránená end-to-end šifrovaním."
+  },
+  "icu:Preferences--local-backups-setup-next": {
+    "messageformat": "Ďalej"
+  },
+  "icu:Preferences--local-backups-view-backup-key-done": {
+    "messageformat": "Hotovo"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--mac": {
+    "messageformat": "zobraziť kľúč na obnovenie"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt--windows": {
+    "messageformat": "Ak chcete zobraziť kľúč na obnovenie, overte svoju totožnosť."
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-description--linux": {
+    "messageformat": "Zobraziť kľúč na obnovenie"
+  },
+  "icu:Preferences--local-backups--view-recovery-key--os-prompt-message--linux": {
+    "messageformat": "Na zobrazenie kľúča na obnovenie je potrebné overenie."
+  },
+  "icu:Preferences--local-backups-recovery-key-text-box": {
+    "messageformat": "Kľúč na obnovenie"
+  },
+  "icu:Preferences--local-backups-enter-backup-key": {
+    "messageformat": "Zadajte kód kľúča"
+  },
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "Váš kľúč na obnovenie"
+  },
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "Tento kľúč je potrebný na obnovenie vášho účtu a údajov. Uschovajte si ho na bezpečnom mieste a nikdy ho s nikým nezdieľajte. Signal vám nikdy nepošle správu s požiadavkou o poskytnutie kľúča na obnovenie. <learnMoreLink>Zistiť viac.</learnMoreLink>"
+  },
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "Nezdieľajte kľúč na obnovenie"
+  },
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "Rozumiem"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "Zdieľať kľúč"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "Nezdieľať kľúč"
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "Nezdieľajte svoj kľúč na obnovenie s nikým. V opačnom prípade umožníte iným prevziať kontrolu nad vaším účtom. <strong>Signal vám nikdy nepošle správu</strong> s požiadavkou o poskytnutie kľúča na obnovenie. Nikdy neodpovedajte na správy, ktoré sa vydávajú za Signal. <learnMoreLink>Zistiť viac.</learnMoreLink>"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key": {
+    "messageformat": "Potvrďte kľúč na obnovenie"
+  },
+  "icu:Preferences--local-backups-confirm-recovery-key-description": {
+    "messageformat": "Zadajte kľúč na obnovenie, ktorý ste si práve zaznamenali"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-title": {
+    "messageformat": "Uchovajte svoj kľúč v bezpečí"
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-body": {
+    "messageformat": "Signal vám nebude môcť pomôcť obnoviť zálohu, ak stratíte kľúč. Uschovajte ho na bezpečnom mieste a s nikým ho nezdieľajte."
+  },
+  "icu:Preferences__local-backups-confirm-key-modal-continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:Preferences--local-backups-see-backup-key-again": {
+    "messageformat": "Pozrieť si kľúč znova"
+  },
+  "icu:Preferences__local-backups-last-backup": {
+    "messageformat": "Posledná záloha"
+  },
+  "icu:Preferences__local-backups-last-backup-never": {
+    "messageformat": "Nikdy"
+  },
+  "icu:Preferences__local-backups-backup-now": {
+    "messageformat": "Zálohovať teraz"
+  },
+  "icu:Preferences__local-backups-folder": {
+    "messageformat": "Priečinok pre zálohy"
+  },
+  "icu:Preferences__local-backups-turn-off": {
+    "messageformat": "Vypnúť zálohy"
+  },
+  "icu:Preferences__local-backups-turn-off-action": {
+    "messageformat": "Vypnúť"
+  },
+  "icu:Preferences__local-backups-turn-off-confirmation": {
+    "messageformat": "Bez opätovného povolenia už nebudete môcť na tomto počítači vytvárať zálohy."
+  },
+  "icu:Preferences__local-backups-turn-off-delete": {
+    "messageformat": "Vymazať zálohu z tohto počítača"
+  },
+  "icu:Preferences__local-backups-copy-key": {
+    "messageformat": "Skopírovať"
+  },
+  "icu:Preferences__local-backups-copied-recovery-key": {
+    "messageformat": "Kľúč na obnovenie bol skopírovaný"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--mac": {
+    "messageformat": "Povoliť zálohovanie"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt--windows": {
+    "messageformat": "Ak chcete povoliť zálohovanie, overte svoju totožnosť."
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-description--linux": {
+    "messageformat": "Povoliť zálohovanie"
+  },
+  "icu:Preferences__local-backups--enable--os-prompt-message--linux": {
+    "messageformat": "Na povolenie zálohovania je potrebné overenie."
+  },
+  "icu:Preferences__local-backups-auth-error--unauthorized": {
+    "messageformat": "Túto akciu nebolo možné dokončiť, pretože overenie systému zlyhalo. Skúste to znova alebo otvorte aplikáciu Signal na svojom mobilnom zariadení a prejdite do nastavení zálohovania, kde nájdete svoj kľúč na obnovenie."
+  },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "Pri žiadaní o systémové overenie pre túto akciu došlo k chybe."
+  },
+  "icu:Preferences__view-key": {
+    "messageformat": "Zobraziť kľúč"
+  },
+  "icu:Preferences__recovery-key": {
+    "messageformat": "Kľúč na obnovenie"
+  },
+  "icu:Preferences__recovery-key-description": {
+    "messageformat": "Váš kľúč na obnovenie je 64-miestny kód, ktorý sa používa na obnovenie zálohy"
+  },
+  "icu:Preferences__backup-other-ways": {
+    "messageformat": "Iné spôsoby zálohovania"
+  },
+  "icu:Preferences__recovery-key-updated__title": {
+    "messageformat": "Váš kľúč na obnovenie bol zmenený"
+  },
+  "icu:Preferences__recovery-key-updated__description": {
+    "messageformat": "Váš kľúč na obnovenie bol aktualizovaný. Akékoľvek nové zálohy, ktoré vytvoríte, je možné obnoviť iba pomocou nového kľúča na obnovenie."
+  },
+  "icu:Preferences__recovery-key-updated__view-key": {
+    "messageformat": "Zobraziť nový kľúč"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "Telefónne číslo"
@@ -5141,8 +6685,14 @@
   "icu:Preferences--read-receipts": {
     "messageformat": "Potvrdenia o prečítaní"
   },
+  "icu:Preferences--read-receipts--description": {
+    "messageformat": "Ak je táto možnosť vypnutá, neuvidíte potvrdenia o prečítaní od ostatných."
+  },
   "icu:Preferences--typing-indicators": {
     "messageformat": "Indikátory písania"
+  },
+  "icu:Preferences--typing-indicators--description": {
+    "messageformat": "Ak je táto možnosť vypnutá, neuvidíte indikátory písania od ostatných."
   },
   "icu:Preferences--updates": {
     "messageformat": "Aktualizácie"
@@ -5196,22 +6746,22 @@
     "messageformat": "Reštartovať"
   },
   "icu:Preferences__Privacy__Application": {
-    "messageformat": "Application"
+    "messageformat": "Aplikácia"
   },
   "icu:Preferences__content-protection--label": {
-    "messageformat": "Screen security"
+    "messageformat": "Zabezpečenie obrazovky"
   },
   "icu:Preferences__content-protection--description": {
-    "messageformat": "Prevent screenshots of Signal on this computer for added privacy."
+    "messageformat": "Pre zvýšenie súkromia zabráni snímaniu obrazovky Signalu na tomto počítači."
   },
   "icu:Preferences__content-protection__modal--title": {
-    "messageformat": "Disable screen security?"
+    "messageformat": "Vypnúť zabezpečenie obrazovky?"
   },
   "icu:Preferences__content-protection__modal--body": {
-    "messageformat": "If disabled, this may allow Microsoft Windows to capture screenshots of Signal and use them for features that may not be private."
+    "messageformat": "Ak je táto možnosť vypnutá, systém Microsoft Windows môže zachytiť snímky obrazovky zo Signalu a použiť ich pre funkcie, ktoré nemusia byť súkromné."
   },
   "icu:Preferences__content-protection__modal--disable": {
-    "messageformat": "Disable"
+    "messageformat": "Vypnúť"
   },
   "icu:DialogUpdate--version-available": {
     "messageformat": "Aktualizácia na verziu {version} je k dispozícii"
@@ -5221,6 +6771,12 @@
   },
   "icu:DialogUpdate__downloaded": {
     "messageformat": "Aktualizácia bola stiahnutá"
+  },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "Kliknutím prejdete do App Store"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "Kliknutím prejdete do App Store"
   },
   "icu:CriticalIdlePrimaryDevice__title": {
     "messageformat": "Otvorte Signal na svojom telefóne"
@@ -5260,6 +6816,411 @@
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Signal Desktop sa nepodarilo aktualizovať, k dispozícii je však nová verzia. Nainštalujte novú verziu manuálne z {downloadUrl} a následne kontaktujte podporu alebo nahláste tento problém."
+  },
+  "icu:StandaloneRegistration--signal-logo": {
+    "messageformat": "Logo Signal"
+  },
+  "icu:StandaloneRegistration--back": {
+    "messageformat": "Späť"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--header": {
+    "messageformat": "Telefónne číslo"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-1": {
+    "messageformat": "Zadajte svoje telefónne číslo na overenie účtu."
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-2": {
+    "messageformat": "Môžu sa účtovať poplatky operátora."
+  },
+  "icu:StandaloneRegistration--PhoneNumber--waiting": {
+    "messageformat": "Skúste to znova o {duration}"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--placeholder": {
+    "messageformat": "Telefónne číslo"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--button": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--description": {
+    "messageformat": "Je vaše telefónne číslo uvedené vyššie správne?"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--cancel": {
+    "messageformat": "Upraviť číslo"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--confirm": {
+    "messageformat": "Áno"
+  },
+  "icu:StandaloneRegistration--Captcha--header": {
+    "messageformat": "Ak chcete pokračovať, overte, že ste človek"
+  },
+  "icu:StandaloneRegistration--Captcha--description": {
+    "messageformat": "Na zabránenie spamu v aplikácii Signal dokončite prosím overenie. Po overení môžete pokračovať v registrácii."
+  },
+  "icu:StandaloneRegistration--Captcha--retry-button": {
+    "messageformat": "Zopakovať overenie"
+  },
+  "icu:StandaloneRegistration--Captcha--button": {
+    "messageformat": "Overiť v prehliadači"
+  },
+  "icu:StandaloneRegistration--Captcha--button--wait": {
+    "messageformat": "Overiť o {duration}"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--header": {
+    "messageformat": "Vyžaduje sa dodatočné overenie"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--description": {
+    "messageformat": "Ak chcete pokračovať v registrácii, dokončite ďalšie overenie."
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--retry": {
+    "messageformat": "Zopakovať overenie"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--aria-title": {
+    "messageformat": "Skúste to znova neskôr"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-1": {
+    "messageformat": "Momentálne nie je možné dokončiť overenie."
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-2": {
+    "messageformat": "Skúste to znovu za {duration}"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--header": {
+    "messageformat": "Chyba overenia"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--description": {
+    "messageformat": "Skúste zopakovať overenie, aby ste mohli pokračovať v registrácii."
+  },
+  "icu:StandaloneRegistration--Captcha--Error--try-again": {
+    "messageformat": "Skúsiť znova"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--VerificationCode--header": {
+    "messageformat": "Overovací kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--description": {
+    "messageformat": "Zadajte kód, ktorý sme odoslali na {phoneNumber}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--button": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms": {
+    "messageformat": "Znovu odoslať kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms--duration": {
+    "messageformat": "Znovu odoslať kód o {duration}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me": {
+    "messageformat": "Zavolajte mi"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me--duration": {
+    "messageformat": "Zavolajte mi o {duration}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--wrong-number": {
+    "messageformat": "Zlé číslo?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--having-trouble": {
+    "messageformat": "Máte problém s registráciou?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--aria-title": {
+    "messageformat": "Nesprávny kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--description": {
+    "messageformat": "Zadaný kód nie je správny. Skontrolujte 6-miestny kód a skúste to znova."
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--aria-title": {
+    "messageformat": "Neplatný kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--description": {
+    "messageformat": "Zadaný kód je neplatný. Požiadajte prosím o opätovné zaslanie kódu a skúste to znova."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--resend-button": {
+    "messageformat": "Znovu odoslať kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--edit-number-button": {
+    "messageformat": "Upraviť číslo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--aria-title": {
+    "messageformat": "Nepodarilo sa odoslať SMS"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--description": {
+    "messageformat": "Nepodarilo sa nám poslať vám overovací kód prostredníctvom SMS. Skúste prijať kód prostredníctvom hlasového hovoru."
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--confirm": {
+    "messageformat": "Hlasový hovor"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--aria-title": {
+    "messageformat": "Skúste to znova neskôr"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--description": {
+    "messageformat": "Urobili ste príliš veľa pokusov na zadanie kódu. Skúste to znova o {duration}."
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--aria-title": {
+    "messageformat": "Príliš veľa pokusov"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--description": {
+    "messageformat": "Urobili ste príliš veľa pokusov na zadanie kódu. Požiadajte prosím o opätovné zaslanie kódu a skúste to znova."
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--resend-button": {
+    "messageformat": "Znovu odoslať kód"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--edit-number-button": {
+    "messageformat": "Upraviť číslo"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--aria-title": {
+    "messageformat": "Nepodarilo sa uskutočniť hovor"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--description": {
+    "messageformat": "Nepodarilo sa nám zavolať na zadané telefónne číslo. Uistite sa, že je správne, a skúste to znova."
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--aria-title": {
+    "messageformat": "Kód sa nedá odoslať"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--description": {
+    "messageformat": "Overovací kód nie je možné odoslať na zadané telefónne číslo. Uistite sa, že je správne, alebo skúste zadať iné číslo."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--aria-title": {
+    "messageformat": "Skúste to znova neskôr"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--description": {
+    "messageformat": "Vyskytla sa chyba a overovací kód sa nepodarilo odoslať. Skúste to znova o {duration}."
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--header": {
+    "messageformat": "Nastavte si svoj profil"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--description": {
+    "messageformat": "Profily sa zobrazia ľuďom, ktorým posielate správy, kontaktom a skupinám."
+  },
+  "icu:StandaloneRegistration--ProfileEntry--learn-more": {
+    "messageformat": "Zistiť viac"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--add-photo": {
+    "messageformat": "Pridať fotku"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--first-name": {
+    "messageformat": "Meno (povinné)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--last-name": {
+    "messageformat": "Priezvisko (povinné)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability": {
+    "messageformat": "Kto ma môže nájsť podľa telefónneho čísla"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--change-button": {
+    "messageformat": "Zmeniť"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--done-button": {
+    "messageformat": "Hotovo"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--AvatarModal--header": {
+    "messageformat": "Váš avatar"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--header": {
+    "messageformat": "Zadajte svoj PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--description": {
+    "messageformat": "Zadajte PIN, ktorý ste si pre váš účet vytvorili. Nie je to to isté ako SMS overovací kód. <needHelp>Potrebujete pomôcť?</needHelp>"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--placeholder": {
+    "messageformat": "Zadajte svoj PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin": {
+    "messageformat": "Nesprávny PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin--with-count": {
+    "messageformat": "{triesRemaining, plural, one {Nesprávny PIN kód. Zostáva {triesRemaining,number} pokus.} few {Nesprávny PIN kód. Zostávajú {triesRemaining,number} pokusy.} many {Nesprávny PIN kód. Zostáva {triesRemaining,number} pokusov.} other {Nesprávny PIN kód. Zostáva {triesRemaining,number} pokusov.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--just-count": {
+    "messageformat": "{triesRemaining, plural, one {Zostáva {triesRemaining,number} pokus.} few {Zostávajú {triesRemaining,number} pokusy.} many {Zostáva {triesRemaining,number} pokusov.} other {Zostáva {triesRemaining,number} pokusov.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--header": {
+    "messageformat": "Potrebujete pomôcť?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--no-reglock": {
+    "messageformat": "Váš PIN kód je 4 alebo viacmiestny kód, ktorý ste si vytvorili, a môže pozostávať z číselných alebo alfanumerických znakov. Ak si nepamätáte svoj PIN kód, môžete si vytvoriť nový. Môžete sa zaregistrovať a používať svoj účet, ale prídete o niektoré uložené nastavenia, ako sú informácie o vašom profile. <learnMore>Zistiť viac</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--reglock": {
+    "messageformat": "Váš PIN kód je 4 alebo viacmiestny kód, ktorý ste si vytvorili, a môže pozostávať z číselných alebo alfanumerických znakov. Ak si naň nespomeniete, budete musieť počkať 7 dní na opätovnú registráciu vášho účtu. <learnMore>Zistiť viac</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--skip-button--no-reglock": {
+    "messageformat": "Preskočiť a vytvoriť nový PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--contact-support-button": {
+    "messageformat": "Kontaktovať zákaznícku podporu"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--header": {
+    "messageformat": "Nesprávny PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--no-reglock": {
+    "messageformat": "{triesRemaining, plural, one {Zostáva vám {triesRemaining,number} pokus. Ak sa vám minú pokusy, môžete si vytvoriť nový PIN. Môžete sa zaregistrovať a používať svoj účet, ale stratíte niektoré uložené nastavenia, ako napríklad informácie o vašom profile. <learnMore>Zistiť viac</learnMore>.} few {Zostávajú vám {triesRemaining,number} pokusy. Ak sa vám minú pokusy, môžete si vytvoriť nový PIN. Môžete sa zaregistrovať a používať svoj účet, ale stratíte niektoré uložené nastavenia, ako napríklad informácie o vašom profile. <learnMore>Zistiť viac</learnMore>.} many {Zostáva vám {triesRemaining,number} pokusu. Ak sa vám minú pokusy, môžete si vytvoriť nový PIN. Môžete sa zaregistrovať a používať svoj účet, ale stratíte niektoré uložené nastavenia, ako napríklad informácie o vašom profile. <learnMore>Zistiť viac</learnMore>.} other {Zostáva vám {triesRemaining,number} pokusov. Ak sa vám minú pokusy, môžete si vytvoriť nový PIN. Môžete sa zaregistrovať a používať svoj účet, ale stratíte niektoré uložené nastavenia, ako napríklad informácie o vašom profile. <learnMore>Zistiť viac</learnMore>.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--reglock": {
+    "messageformat": "{triesRemaining, plural, one {Zostáva vám {triesRemaining,number} pokus. Ak sa vám minú pokusy, váš účet bude zablokovaný na 7 dní. Po 7 dňoch nečinnosti sa budete môcť znova registrovať bez vášho PIN kódu. Všetok obsah sa vymaže. <learnMore>Zistiť viac</learnMore>.} few {Zostávajú vám {triesRemaining,number} pokusy. Ak sa vám minú pokusy, váš účet bude zablokovaný na 7 dní. Po 7 dňoch nečinnosti sa budete môcť znova registrovať bez vášho PIN kódu. Všetok obsah sa vymaže. <learnMore>Zistiť viac</learnMore>.} many {Zostáva vám {triesRemaining,number} pokusu. Ak sa vám minú pokusy, váš účet bude zablokovaný na 7 dní. Po 7 dňoch nečinnosti sa budete môcť znova registrovať bez vášho PIN kódu. Všetok obsah sa vymaže. <learnMore>Zistiť viac</learnMore>.} other {Zostáva vám {triesRemaining,number} pokusov. Ak sa vám minú pokusy, váš účet bude zablokovaný na 7 dní. Po 7 dňoch nečinnosti sa budete môcť znova registrovať bez vášho PIN kódu. Všetok obsah sa vymaže. <learnMore>Zistiť viac</learnMore>.}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--header": {
+    "messageformat": "Nesprávny PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--description": {
+    "messageformat": "Pokusy na uhádnutie PIN kódu ste si vyčerpali, ale ešte stále môžete získať prístup k vášmu účtu Signal, ak si vytvoríte nový PIN. Kvôli vášmu súkromiu a vašej bezpečnosti sa váš účet obnoví bez akýchkoľvek uložených informácií o profile či nastavení."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--create-new-pin": {
+    "messageformat": "Vytvoriť nový PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--learn-more": {
+    "messageformat": "Zistiť viac o PINoch"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--open-menu": {
+    "messageformat": "Otvoriť ponuku"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--menu--skip-pin": {
+    "messageformat": "Preskočiť PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--header": {
+    "messageformat": "Preskočiť zadávanie PIN?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--description": {
+    "messageformat": "Ak si nepamätáte svoj PIN kód, môžete si vytvoriť nový. Môžete sa zaregistrovať a používať svoj účet, ale prídete o niektoré uložené nastavenia, ako sú informácie o vašom profile. <learnMore>Zistiť viac</learnMore>."
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--skip-button": {
+    "messageformat": "Preskočiť a vytvoriť nový PIN"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--cancel-button": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--CreatePIN--header": {
+    "messageformat": "Vytvorte si PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--description": {
+    "messageformat": "PIN kódy vám pomôžu obnoviť váš účet a uchovať vaše údaje šifrované v aplikácii Signal. <learnMore>Zistiť viac</learnMore>"
+  },
+  "icu:StandaloneRegistration--CreatePIN--placeholder": {
+    "messageformat": "Vytvorte si PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--helper-text": {
+    "messageformat": "PIN musí mať aspoň 4 znaky"
+  },
+  "icu:StandaloneRegistration--CreatePIN--continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:StandaloneRegistration--CreatePIN--open-menu": {
+    "messageformat": "Otvoriť ponuku"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--more-about": {
+    "messageformat": "Viac o PIN kódoch"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--disable": {
+    "messageformat": "Vypnúť PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--header": {
+    "messageformat": "Varovanie"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--description": {
+    "messageformat": "Ak vypnete PIN, pri opätovnej registrácii Signalu stratíte všetky údaje. Kým bude PIN vypnutý, nebudete môcť zapnúť registračný zámok."
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--disable-button": {
+    "messageformat": "Vypnúť PIN"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--header": {
+    "messageformat": "Signal PIN kódy"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--description": {
+    "messageformat": "PIN kódy udržiavajú údaje uložené v aplikácii Signal zašifrované, aby ste k nim mali prístup iba vy. Váš profil, nastavenia a kontakty sa po preinštalovaní aplikácie obnovia."
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--learn-more-button": {
+    "messageformat": "Zistiť viac"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--ok-button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--header": {
+    "messageformat": "Potvrďte svoj PIN kód"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--description": {
+    "messageformat": "Znovu zadajte PIN kód, ktorý ste práve vytvorili."
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--placeholder": {
+    "messageformat": "Zadajte svoj PIN"
+  },
+  "icu:StandaloneRegistration--AccountLocked--header": {
+    "messageformat": "Účet sa uzamkol"
+  },
+  "icu:StandaloneRegistration--AccountLocked--description": {
+    "messageformat": "Váš účet bol zamknutý z dôvodu ochrany vášho súkromia a zabezpečenia. Po 7 dňoch nečinnosti vo vašom účte budete môcť opätovne zaregistrovať toto telefónne číslo bez potreby PIN kódu. Všetok obsah sa vymaže."
+  },
+  "icu:StandaloneRegistration--AccountLocked--start-over-button": {
+    "messageformat": "Použiť iné číslo"
+  },
+  "icu:StandaloneRegistration--AccountLocked--help-button": {
+    "messageformat": "Zistiť viac o zamknutých účtoch"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--header": {
+    "messageformat": "Vyžaduje sa aktualizácia"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--description": {
+    "messageformat": "Ak chcete pokračovať v registrácii, aktualizujte Signal na najnovšiu verziu."
+  },
+  "icu:StandaloneRegistration--UpdateRequired--update": {
+    "messageformat": "Aktualizovať"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--header": {
+    "messageformat": "Skontrolujte pripojenie"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--description": {
+    "messageformat": "Ak chcete pokračovať, skontrolujte pripojenie k internetu na vašom počítači a skúste to znova."
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--button": {
+    "messageformat": "OK"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--header": {
+    "messageformat": "Registráciu nie je možné dokončiť"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--description": {
+    "messageformat": "Vyskytla sa chyba a registráciu nie je možné dokončiť. Ak tento problém pretrváva, kontaktujte podporu."
+  },
+  "icu:StandaloneRegistration--UnexpectedError--try-again-button": {
+    "messageformat": "Skúsiť znova"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--contact-support-button": {
+    "messageformat": "Kontaktovať podporu"
   },
   "icu:NSIS__retry-dialog--first-line": {
     "messageformat": "Signal nie je možné zatvoriť.",
@@ -5429,6 +7390,9 @@
   "icu:MyStories__delete": {
     "messageformat": "Vymazať tento príbeh? Bude tiež vymazaný pre každého, kto ho dostal."
   },
+  "icu:MyStories__delete-group-story-for-me": {
+    "messageformat": "Vymazať tento príbeh? Vymaže sa iba pre vás, pretože skupina bola ukončená."
+  },
   "icu:payment-event-notification-message-you-label": {
     "messageformat": "Zadali ste platbu príjemcovi {receiver}"
   },
@@ -5462,6 +7426,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "Prijali ste žiadosť o správu"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "Prijali ste žiadosť o správu od používateľa {userProfileName}"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "Nahlásené ako spam"
   },
@@ -5477,8 +7444,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "Odblokovali ste skupinu"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "Možnosti"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "Zablokovať alebo nahlásiť..."
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "Zistiť viac"
@@ -5500,15 +7467,6 @@
   },
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "Vaše kontakty môžu vidieť vaše meno a fotografiu, ako aj príspevky v časti „Môj príbeh“, pokiaľ ich pred nimi neskryjete"
-  },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "Vymazávanie je synchronizované na vašich zariadeniach"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "Keď vymažete správy alebo čety, vymažú sa zo všetkých vašich zariadení."
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "Rozumiem"
   },
   "icu:Stories__title": {
     "messageformat": "Príbehy"
@@ -5651,8 +7609,8 @@
   "icu:StoriesSettings__view-receipts--label": {
     "messageformat": "Potvrdenia o pozretí"
   },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "Ak chcete zmeniť toto nastavenie, otvorte na svojom mobilnom zariadení aplikáciu Signal a prejdite na Nastavenia -> Príbehy"
+  "icu:StoriesSettings__view-receipts--new-description": {
+    "messageformat": "Majte prehľad o tom, keď si ostatní pozrú vaše príbehy. Ak je táto možnosť vypnutá, neuvidíte informácie o pozretiach."
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "Kto môže vidieť tento príbeh"
@@ -5985,9 +7943,6 @@
   "icu:UsernameLinkModalBody__reset": {
     "messageformat": "Resetovať"
   },
-  "icu:UsernameLinkModalBody__done": {
-    "messageformat": "Hotovo"
-  },
   "icu:UsernameLinkModalBody__color__radio": {
     "messageformat": "Farba odkazu používateľského mena, {index,number} z {total,number}"
   },
@@ -6057,17 +8012,20 @@
   "icu:MessageMetadata__edited": {
     "messageformat": "Upravené"
   },
+  "icu:MessageMetadata__pinned": {
+    "messageformat": "Pripnuté"
+  },
   "icu:DraftGifMessageSendModal__Title": {
     "messageformat": "Pridajte správu"
   },
   "icu:DraftGifMessageSendModal__SendButtonLabel": {
     "messageformat": "Odoslať"
   },
-  "icu:DraftGifMessageSendModal__CancelButtonLabel": {
-    "messageformat": "Zrušiť"
-  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "História úprav"
+  },
+  "icu:EditHistoryMessagesModal__Message__ContextMenu__CopyTimestamp": {
+    "messageformat": "Kopírovať časovú značku"
   },
   "icu:ResendMessageEdit__body": {
     "messageformat": "Túto úpravu sa nepodarilo odoslať. Skontrolujte pripojenie a skúste to znova"
@@ -6231,9 +8189,6 @@
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
     "messageformat": "Tento odkaz už nebude fungovať pre nikoho, kto má k nemu prístup."
   },
-  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
-    "messageformat": "Zrušiť"
-  },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "Vymazať"
   },
@@ -6288,13 +8243,16 @@
   "icu:ProfileNameWarningModal__description--direct": {
     "messageformat": "Názvy profilov si v aplikácii Signal vyberá majiteľ účtu:"
   },
-  "icu:ProfileNameWarningModal__list--item1--direct": {
-    "messageformat": "Názvy profilov nie sú overené"
+  "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
+    "messageformat": "Signal nedokáže overiť mená a fotky"
   },
-  "icu:ProfileNameWarningModal__list--item2--direct": {
+  "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
+    "messageformat": "Signal vás nikdy nebude kontaktovať s požiadavkou o poskytnutie registračného kódu, PIN kódu ani kľúča na obnovenie"
+  },
+  "icu:ProfileNameWarningModal__warning--be-cautious": {
     "messageformat": "Dávajte si pozor na účty, ktoré sa vydávajú za iných ľudí"
   },
-  "icu:ProfileNameWarningModal__list--item3--direct": {
+  "icu:ProfileNameWarningModal__warning--dont-share-info": {
     "messageformat": "Nezdieľajte osobné údaje s ľuďmi, ktorých nepoznáte"
   },
   "icu:ProfileNameWarningModal__description--group": {
@@ -6309,8 +8267,455 @@
   "icu:ProfileNameWarningModal__list--item3--group": {
     "messageformat": "Nezdieľajte osobné údaje s ľuďmi, ktorých nepoznáte"
   },
+  "icu:SaveMultiDialog__title": {
+    "messageformat": "Uložiť prílohy"
+  },
   "icu:WhatsNew__modal-title": {
     "messageformat": "Čo je nové"
+  },
+  "icu:PreferencesDonations__title-v2": {
+    "messageformat": "Sme hrdí, že sme neziskovou organizáciou"
+  },
+  "icu:PreferencesDonations__description-v2": {
+    "messageformat": "Prispejte a podporte posielanie súkromných správ. Pomôžte nám k tomu, aby bol Signal aj naďalej nezávislou aplikáciou bez reklám. <readMoreLink>Viac informácii</readMoreLink>"
+  },
+  "icu:PreferencesDonations__donate-button": {
+    "messageformat": "Prispieť"
+  },
+  "icu:PreferencesDonations__my-support": {
+    "messageformat": "Moja podpora"
+  },
+  "icu:PreferencesDonations__badge-label-one-time": {
+    "messageformat": "{formattedCurrencyAmount} jednorazovo"
+  },
+  "icu:PreferencesDonations__badge-processing-donation": {
+    "messageformat": "Spracováva sa príspevok…"
+  },
+  "icu:PreferencesDonations__donate-button-with-amount": {
+    "messageformat": "Prispieť {formattedCurrencyAmount}"
+  },
+  "icu:PreferencesDonations__mobile-info": {
+    "messageformat": "Odznaky a mesačné príspevky môžete spravovať na svojom mobilnom zariadení."
+  },
+  "icu:PreferencesDonations__privacy-modal-title": {
+    "messageformat": "Vaše údaje sú súkromné"
+  },
+  "icu:PreferencesDonations__privacy-modal-intro": {
+    "messageformat": "Ako nezávislá nezisková organizácia Signal zaisťuje maximálne súkromie pre správy a hovory. Žiadne reklamy, žiadne sledovače, žiadne monitorovanie. Prispejte ešte dnes a podporte Signal."
+  },
+  "icu:PreferencesDonations__privacy-modal-list-1": {
+    "messageformat": "Prispejte a získajte odznak na svojom profile"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-2": {
+    "messageformat": "Záleží nám na vašom súkromí"
+  },
+  "icu:PreferencesDonations__privacy-modal-list-3": {
+    "messageformat": "Signal je nezisková organizácia."
+  },
+  "icu:PreferencesDonations__privacy-modal-icon-accessibility-label": {
+    "messageformat": "Ikona srdca v štýle loga Signal"
+  },
+  "icu:PreferencesDonations__privacy-modal-ok": {
+    "messageformat": "OK"
+  },
+  "icu:PreferencesDonations__receipts": {
+    "messageformat": "Potvrdenia"
+  },
+  "icu:PreferencesDonations__receipt-details-button-aria": {
+    "messageformat": "Zobraziť podrobnosti o potvrdení"
+  },
+  "icu:PreferencesDonations__faqs": {
+    "messageformat": "Často kladené otázky prispievateľov"
+  },
+  "icu:PreferencesDonations--receiptList__info": {
+    "messageformat": "Potvrdenia sa nesynchronizujú medzi zariadeniami. Ak ste preinštalovali Signal, potvrdenia o predchádzajúcich príspevkoch nebudú k dispozícii."
+  },
+  "icu:PreferencesDonations--receiptList__empty-title": {
+    "messageformat": "Žiadne potvrdenia"
+  },
+  "icu:PreferencesDonations__ReceiptModal--download": {
+    "messageformat": "Stiahnuť potvrdenie"
+  },
+  "icu:PreferencesDonations__ReceiptModal--type-label": {
+    "messageformat": "Typ"
+  },
+  "icu:PreferencesDonations__ReceiptModal--date-paid-label": {
+    "messageformat": "Dátum zaplatenia"
+  },
+  "icu:DonateFlow__make-a-one-time-donation": {
+    "messageformat": "Prispejte jednorazovo"
+  },
+  "icu:DonateFlow__desktop-one-time-only-notice": {
+    "messageformat": "Na počítači môžete spracovať iba jednorazové príspevky. Mesačné príspevky je možné posielať cez mobilné zariadenie."
+  },
+  "icu:DonateFlow__having-issues-contact-support": {
+    "messageformat": "Máte problémy? <contactSupportLink>Kontaktujte podporu</contactSupportLink>"
+  },
+  "icu:DonateFlow__amount-picker-custom-amount-placeholder": {
+    "messageformat": "Zadajte vlastnú čiastku"
+  },
+  "icu:DonateFlow__credit-or-debit-card": {
+    "messageformat": "Kreditná alebo debetná karta"
+  },
+  "icu:DonateFlow__card-form-instructions": {
+    "messageformat": "Zadajte údaje zo svojej kreditnej alebo debetnej karty. Signal nezhromažďuje ani neukladá vaše osobné údaje. <learnMoreLink>Zistiť viac</learnMoreLink>"
+  },
+  "icu:DonateFlow__card-form-card-number": {
+    "messageformat": "Číslo karty"
+  },
+  "icu:DonateFlow__card-form-expiration-date": {
+    "messageformat": "Dátum exspirácie"
+  },
+  "icu:DonateFlow__card-form-expiration-date-placeholder": {
+    "messageformat": "MM/RR"
+  },
+  "icu:DonateFlow__card-form-title-donate-with-amount": {
+    "messageformat": "Prispieť {formattedCurrencyAmount} na Signal"
+  },
+  "icu:DonateFlow__card-form-error-invalid-card-number": {
+    "messageformat": "Neplatné číslo karty"
+  },
+  "icu:DonateFlow__card-form-error-expiration-expired": {
+    "messageformat": "Platnosť karty vypršala"
+  },
+  "icu:DonateFlow__card-form-error-year-missing": {
+    "messageformat": "Vyžaduje sa rok"
+  },
+  "icu:DonateFlow__card-form-error-invalid": {
+    "messageformat": "Neplatné"
+  },
+  "icu:DonateFlow__card-form-error-cvc-too-short": {
+    "messageformat": "Kód je príliš krátky"
+  },
+  "icu:DonateFlow__one-time-donation-boost-badge-info": {
+    "messageformat": "Získajte odznak Signal Boost na 30 dní"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-error": {
+    "messageformat": "Minimálna výška príspevku je {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-below-minimum-tooltip": {
+    "messageformat": "Minimálna suma, ktorú môžete darovať, je {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__custom-amount-above-maximum-error": {
+    "messageformat": "Maximálna výška príspevku je {formattedCurrencyAmount}"
+  },
+  "icu:DonateFlow__discard-dialog-body": {
+    "messageformat": "Opustením tejto stránky sa odstránia informácie o vašej kreditnej karte. Chcete pokračovať?"
+  },
+  "icu:DonateFlow__discard-dialog-remove-info": {
+    "messageformat": "Odstrániť informácie"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-body": {
+    "messageformat": "Opustením tejto stránky zrušíte prispenie."
+  },
+  "icu:DonateFlow__discard-paypal-dialog-discard": {
+    "messageformat": "Opustiť"
+  },
+  "icu:DonateFlow__discard-paypal-dialog-cancel": {
+    "messageformat": "Zostať na stránke"
+  },
+  "icu:DonateFlow__continue": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:DonationReceipt__title": {
+    "messageformat": "Potvrdenie o príspevku"
+  },
+  "icu:DonationReceipt__amount-label": {
+    "messageformat": "Suma"
+  },
+  "icu:DonationReceipt__type-label": {
+    "messageformat": "Typ"
+  },
+  "icu:DonationReceipt__date-paid-label": {
+    "messageformat": "Dátum zaplatenia"
+  },
+  "icu:DonationReceipt__type-value--one-time": {
+    "messageformat": "Raz"
+  },
+  "icu:DonationReceipt__footer-text": {
+    "messageformat": "Ďakujeme, že podporujete Signal. Váš príspevok pomáha napĺňať naše poslanie chrániť slobodu prejavu a umožňovať bezpečnú globálnu komunikáciu pre milióny ľudí na celom svete prostredníctvom technológie ochrany súkromia s otvoreným zdrojovým kódom. Ak ste občanom Spojených štátov, uchovajte si toto potvrdenie pre svoju daňovú evidenciu. Signal Technology Foundation je nezisková organizácia oslobodená od platenia daní v Spojených štátoch, podľa sekcie 501c3 zákona Internal Revenue Code (IRC, zákon o vnútroštátnych výnosoch). Naše federálne daňové ID je 82-4506840."
+  },
+  "icu:DonationReceipt__footer-text-v2": {
+    "messageformat": "Ďakujeme, že podporujete Signal. Váš príspevok pomáha napĺňať naše poslanie chrániť slobodu prejavu a umožňovať bezpečnú globálnu komunikáciu pre milióny ľudí na celom svete prostredníctvom technológie ochrany súkromia s otvoreným zdrojovým kódom. Ak ste občanom Spojených štátov, uchovajte si toto potvrdenie pre svoju daňovú evidenciu. Signal Technology Foundation je nezisková organizácia oslobodená od platenia daní v Spojených štátoch, podľa sekcie 501c3 zákona Internal Revenue Code (IRC, zákon o vnútroštátnych výnosoch). Naše federálne daňové ID je 82-4506840. Signal vám za tento príspevok neposkytol žiadny tovar ani služby."
+  },
+  "icu:Donations__OfflineTooltip": {
+    "messageformat": "Ste offline. Ak chcete odoslať príspevok, pripojte sa na internet."
+  },
+  "icu:Donations__Toast__Canceled": {
+    "messageformat": "Prispenie bolo zrušené"
+  },
+  "icu:Donations__Toast__Completed": {
+    "messageformat": "Prispeli ste na Signal"
+  },
+  "icu:Donations__Toast__Error": {
+    "messageformat": "Chyba pri spracovaní príspevku"
+  },
+  "icu:Donations__Toast__Processing": {
+    "messageformat": "Spracúva sa príspevok"
+  },
+  "icu:Donations__Toast__VerificationFailed": {
+    "messageformat": "Verifikácia zlyhala"
+  },
+  "icu:Donations__Toast__VerificationNeeded": {
+    "messageformat": "Prebieha spracovanie príspevku, ktoré si vyžaduje dodatočné overenie."
+  },
+  "icu:Donations__Toast__ConfirmationNeeded": {
+    "messageformat": "Prebieha spracovanie príspevku, ktoré si vyžaduje potvrdenie."
+  },
+  "icu:Donations__Toast__PaypalConfirmationNeeded": {
+    "messageformat": "Prebieha spracovanie príspevku, ktoré si vyžaduje potvrdenie."
+  },
+  "icu:Donations__Toast__PaypalCanceled": {
+    "messageformat": "Prispenie cez PayPal bol zrušené"
+  },
+  "icu:Donations__Toast__PaypalError": {
+    "messageformat": "Chyba pri spracovaní príspevku cez PayPal. Neboli vám účtované žiadne poplatky."
+  },
+  "icu:Donations__BadgeApplicationFailed__Title": {
+    "messageformat": "Prispenie bolo úspešné, nepodarilo sa nám však aktualizovať nastavenia vášho odznaku"
+  },
+  "icu:Donations__BadgeApplicationFailed__Description": {
+    "messageformat": "Ak chcete aktualizovať nastavenia svojho odznaku na mobilnom zariadení, prejdite na Nastavenia → Prispieť na Signal → Odznaky."
+  },
+  "icu:Donations__DonationInterrupted": {
+    "messageformat": "Prispenie bolo prerušené"
+  },
+  "icu:Donations__DonationInterrupted__Description": {
+    "messageformat": "Poplatok z vašej karty nebol zaúčtovaný. Chcete skúsiť prispieť znova?"
+  },
+  "icu:Donations__DonationInterrupted__RetryButton": {
+    "messageformat": "Skúsiť znova"
+  },
+  "icu:Donations__PaymentMethod": {
+    "messageformat": "Spôsob platby"
+  },
+  "icu:Donations__PaymentMethodDeclined": {
+    "messageformat": "Spôsob platby bol zamietnutý"
+  },
+  "icu:Donations__PaymentMethodDeclined__Description": {
+    "messageformat": "Skúste iný spôsob platby alebo kontaktujte svoju banku a požiadajte o viac informácií."
+  },
+  "icu:DonateFlow__PaymentCardIcon__AccessibilityLabel": {
+    "messageformat": "Ikona platobnej karty"
+  },
+  "icu:DonateFlow__CreditOrDebitCard": {
+    "messageformat": "Kreditná alebo debetná karta"
+  },
+  "icu:DonateFlow__Paypal__AccessibilityLabel": {
+    "messageformat": "PayPal"
+  },
+  "icu:DonateFlow__Paypal__Cancel": {
+    "messageformat": "Zrušiť"
+  },
+  "icu:DonateFlow__Paypal__CompleteDonation": {
+    "messageformat": "Dokončiť prispenie"
+  },
+  "icu:Donations__PaypalCanceled": {
+    "messageformat": "Prispenie cez PayPal bol zrušené"
+  },
+  "icu:Donations__PaypalCanceled__Description": {
+    "messageformat": "Neboli vám účtované žiadne poplatky. Skúste to znova alebo použite iný spôsob platby."
+  },
+  "icu:Donations__PaypalError": {
+    "messageformat": "Chyba pri spracovaní príspevku cez PayPal"
+  },
+  "icu:Donations__PaypalError__Description": {
+    "messageformat": "Neboli vám účtované žiadne poplatky. Skúste to znova alebo použite iný spôsob platby."
+  },
+  "icu:Donations__Failed3dsValidation": {
+    "messageformat": "Verifikácia zlyhala"
+  },
+  "icu:Donations__Failed3dsValidation__Description": {
+    "messageformat": "Dodatočný krok overenia zlyhal. Skúste to znova."
+  },
+  "icu:Donations__GenericError": {
+    "messageformat": "Počas prispievania sa vyskytla chyba"
+  },
+  "icu:Donations__GenericError__Description": {
+    "messageformat": "Váš príspevok pravdepodobne nebol spracovaný. Skontrolujte svoje potvrdenia kliknutím na „Prispieť na Signal“ a potom na „Potvrdenia o prispení“."
+  },
+  "icu:DonationsErrorBoundary__DonationUnexpectedError": {
+    "messageformat": "Skúste to znova alebo odošlite ladiaci záznam podpore, ktorá vám pomôže odoslať príspevok. Ladiace záznamy nám pomáhajú určiť a odstrániť problém a neobsahujú identifikačné údaje."
+  },
+  "icu:Donations__Processing": {
+    "messageformat": "Spracováva sa príspevok…"
+  },
+  "icu:Donations__StillProcessing": {
+    "messageformat": "Príspevok sa stále spracováva"
+  },
+  "icu:Donations__StillProcessing__Description": {
+    "messageformat": "Váš príspevok sa stále spracováva. Môže to trvať pár minút."
+  },
+  "icu:Donations__TimedOut": {
+    "messageformat": "Prispenie bolo zrušené"
+  },
+  "icu:Donations__TimedOut__Description": {
+    "messageformat": "Od začiatku procesu prispievania prešlo príliš veľa času. Začnite odznova."
+  },
+  "icu:Donations__3dsValidationNeeded": {
+    "messageformat": "Vyžaduje sa dodatočné overenie"
+  },
+  "icu:Donations__3dsValidationNeeded--waiting": {
+    "messageformat": "Čaká sa na overenie"
+  },
+  "icu:Donations__3dsValidationNeeded__Description": {
+    "messageformat": "Vydavateľ vašej kreditnej karty vyžaduje dodatočný krok overenia vo webovom prehliadači."
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser": {
+    "messageformat": "Otvoriť prehliadač"
+  },
+  "icu:Donations__3dsValidationNeeded__OpenBrowser--opened": {
+    "messageformat": "Znovu otvoriť prehliadač"
+  },
+  "icu:Donations__3dsValidationNeeded__CancelDonation": {
+    "messageformat": "Zrušiť prispenie"
+  },
+  "icu:Donations__badge-modal--title": {
+    "messageformat": "Ďakujeme za vašu podporu!"
+  },
+  "icu:Donations__badge-modal--description": {
+    "messageformat": "Získali ste odznak prispievateľa od Signalu! Ukážte ho vo svojom profile a dajte tak najavo svoju podporu."
+  },
+  "icu:Donations__badge-modal--display-on-profile": {
+    "messageformat": "Zobraziť v profile"
+  },
+  "icu:Donations__badge-modal--help-text": {
+    "messageformat": "Túto možnosť si môžete upraviť na svojom mobilnom zariadení v časti Nastavenia → Prispieť na Signal → Odznaky"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
+    "messageformat": "Aká bola kvalita vášho hovoru?"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__PageDescription": {
+    "messageformat": "Vaša spätná väzba nám pomáha zlepšiť kvalitu hovorov v Signale. Vaše osobné údaje nebudú uložené."
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__HadIssues": {
+    "messageformat": "Mal/a som problémy"
+  },
+  "icu:CallQualitySurvey__HowWasYourCall__Response__Great": {
+    "messageformat": "Výborná"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__PageTitle": {
+    "messageformat": "O aký problém išlo?"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__IssuesList__Heading": {
+    "messageformat": "Vyberte všetky relevantné možnosti"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO": {
+    "messageformat": "Problém so zvukom"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_STUTTERING": {
+    "messageformat": "Zasekávanie zvuku"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_LOCAL_ECHO": {
+    "messageformat": "Počul/a som ozvenu"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_REMOTE_ECHO": {
+    "messageformat": "Iní počuli ozvenu"
+  },
+  "icu:CallQualitySurvey__Issue--AUDIO_DROP": {
+    "messageformat": "Výpadok zvuku"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO": {
+    "messageformat": "Problém s videom"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_NO_CAMERA": {
+    "messageformat": "Kamera nefungovala"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_QUALITY": {
+    "messageformat": "Slabá kvalita videa"
+  },
+  "icu:CallQualitySurvey__Issue--VIDEO_LOW_RESOLUTION": {
+    "messageformat": "Nízke rozlíšenie"
+  },
+  "icu:CallQualitySurvey__Issue--CALL_DROPPED": {
+    "messageformat": "Hovor prerušený"
+  },
+  "icu:CallQualitySurvey__Issue--OTHER": {
+    "messageformat": "Niečo iné"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__AccessibilityLabel": {
+    "messageformat": "Popis problémov"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__HelpText": {
+    "messageformat": "Popíšte svoj problém čo najdetailnejšie. Všetky vami poskytnuté informácie zostanú súkromné a budú použité len na účely zlepšenia kvality hovorov v Signale."
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__SomethingElse__TextArea__ErrorText": {
+    "messageformat": "Popíšte problém"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton": {
+    "messageformat": "Pokračovať"
+  },
+  "icu:CallQualitySurvey__WhatIssuesDidYouHave__ContinueButton__DisabledTooltip": {
+    "messageformat": "Ak chcete pokračovať, vyberte možnosť"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageTitle": {
+    "messageformat": "Pomôžte nám zlepšovať sa"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PageDescriptionWithDiagnosticLink": {
+    "messageformat": "Odoslaním sa vaša spätná väzba zdieľa spolu s <diagnosticInfoLink>diagnostickými údajmi o vašom hovore</diagnosticInfoLink>. Môžete tiež zdieľať protokol ladenia, ktorý nám pomôže zlepšiť kvalitu hovoru."
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__Label": {
+    "messageformat": "Zdieľať protokol ladenia"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__ShareDebugLog__ViewButton": {
+    "messageformat": "Zobraziť"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__PrivacyNote": {
+    "messageformat": "Informácie, ktoré s nami zdieľate, obsahujú informácie o aplikácii na nízkej úrovni a nezahŕňajú obsah vašich hovorov."
+  },
+  "icu:CallDiagnosticWindow__title": {
+    "messageformat": "Diagnostické údaje"
+  },
+  "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
+    "messageformat": "Odoslať"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed": {
+    "messageformat": "Odoslanie prieskumu zlyhalo"
+  },
+  "icu:CallQualitySurvey__SubmissionFailed__Retry": {
+    "messageformat": "Skúsiť znovu"
+  },
+  "icu:CallQualitySurvey__SubmissionSuccess": {
+    "messageformat": "Ďakujeme za vašu spätnú väzbu!"
+  },
+  "icu:Megaphone__ExpandNarrowSidebar": {
+    "messageformat": "Rozbaľte bočný panel pre interakciu s megafónom"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "Karusel"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "Slajd"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "Preniesť históriu správ z telefónu do tohto počítača?"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "Keď tento počítač znova prepojíte, môžete doň preniesť históriu správ z telefónu."
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "Zistiť viac"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "<bold>Nahradí</bold> sa tým história správ na tomto počítači."
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "Budete musieť znova prepojiť zariadenie naskenovaním QR kódu."
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "Ak ste si predplatili bezpečné zálohy Signal, všetky vaše médiá budú prenesené. V opačnom prípade budú zahrnuté médiá za posledných 45 dní."
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "Preniesť"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "Nepreniesť"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "Vymazať všetky dáta?"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "Všetky aktuálne údaje v aplikácii Signal Desktop budú vymazané. Následne môžete naskenovať QR kód a preniesť históriu správ z telefónu."
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "Táto verzia obsahuje množstvo drobných vylepšení a opráv chýb, ktoré zaisťujú bezproblémový chod systému Signal.",
@@ -6340,19 +8745,16 @@
     "messageformat": "Malé úpravy, opravy chýb a vylepšenia výkonu. Ďakujeme, že používate Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.51--0": {
-    "messageformat": "Teraz môžete vyhľadávať animované súbory GIF aj v aplikácii Signal Desktop."
+  "icu:WhatsNew__8.20--0": {
+    "messageformat": "Predstavujeme miznúce hovory: Zmeškané, odchádzajúce a prijaté hovory, ktoré sa uskutočnia po tom, ako nainštalujete túto aktualizáciu, teraz automaticky zmiznú v každom čete, v ktorom sú zapnuté miznúce správy."
   },
-  "icu:WhatsNew__v7.51--1": {
-    "messageformat": "Zmenili sme tiež veľkosť okna Obraz v obraze a pridali sme nové šikovné skratky pri minimalizovanom hovore."
+  "icu:WhatsNew__8.20--1": {
+    "messageformat": "Teraz si môžete usporiadať nainštalované balíčky nálepiek, aby sa vaše nové obľúbené nestratili kdesi na konci zoznamu."
   },
-  "icu:WhatsNew__v7.54--0": {
-    "messageformat": "Pridali sme skratky pre emoji v ďalších jazykoch."
+  "icu:WhatsNew__8.24--1": {
+    "messageformat": "Uľahčili sme vyhľadávanie členov v nastaveniach skupiny."
   },
-  "icu:WhatsNew__v7.55--0": {
-    "messageformat": "Keyboard shortcuts for emoji and stickers are back! These shortcuts also save even more time because now you won't need to write in and tell us that they're broken anymore."
-  },
-  "icu:WhatsNew__v7.55--1": {
-    "messageformat": "We also fixed a crash on Linux distributions that don't support GTK4 yet."
+  "icu:WhatsNew__8.25--0": {
+    "messageformat": "We added two new zoom levels in the appearance settings, so even with very little effort you can still give your messages 110% (or 90%)."
   }
 }

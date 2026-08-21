@@ -5,6 +5,12 @@
 @use '../variables';
 
 .AvatarEditor {
+  &__top-buttons__container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   &__top-buttons {
     display: flex;
   }
@@ -62,14 +68,17 @@
     }
 
     &:focus {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
+      }
     }
   }
 
   &__avatars {
     display: flex;
     flex-wrap: wrap;
-    gap: 9px;
+    gap: 7px;
   }
 
   &__divider {

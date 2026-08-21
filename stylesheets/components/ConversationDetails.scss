@@ -13,41 +13,77 @@
   &-groups {
     &__add-members-icon,
     &__add-to-group-icon {
-      @mixin plus-icon($color) {
-        @include mixins.color-svg(
-          '../images/icons/v3/plus/plus-compact.svg',
-          $color
-        );
-        & {
-          content: '';
-          display: block;
-          height: 18px;
-          width: 18px;
-        }
-      }
-
       align-items: center;
       border-radius: 100%;
       display: flex;
       height: 32px;
       justify-content: center;
       width: 32px;
+      background: var(--axo-color-fill-primary);
 
-      background: light-dark(
-        variables.$color-gray-02,
-        variables.$color-gray-90
-      );
       &::before {
-        @include plus-icon(
-          light-dark(variables.$color-black, variables.$color-gray-15)
+        content: '';
+        display: block;
+        height: 18px;
+        width: 18px;
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus-compact.svg',
+          var(--axo-color-label-primary)
         );
       }
     }
   }
 
-  &__block-group {
+  &-membership-list__member-label {
+    @include mixins.font-body-small;
+  }
+
+  &-membership-list__member-label-button {
+    @include mixins.font-body-small;
+    @include mixins.button-focus-outline;
+
+    @include mixins.mouse-mode {
+      &:hover {
+        background-color: light-dark(
+          variables.$color-gray-02,
+          variables.$color-gray-90
+        );
+      }
+    }
+
+    margin-inline-start: -5px;
+    padding-inline-start: 5px;
+    font-weight: 500;
+    outline: none;
+    border-radius: 5px;
+
+    display: flex;
+    align-items: center;
+    color: light-dark(
+      rgba(variables.$color-black, 0.55),
+      rgba(variables.$color-white, 0.55)
+    );
+
+    &__chevron-icon {
+      height: 16px;
+      width: 16px;
+      margin-bottom: 1px;
+
+      @include mixins.color-svg-themed(
+        '../images/icons/v3/chevron/chevron-right.svg',
+        rgba(variables.$color-black, 0.55),
+        rgba(variables.$color-white, 0.55)
+      );
+    }
+  }
+
+  &__block-group,
+  &__report-spam,
+  &__terminate-group,
+  &__delete {
     color: variables.$color-accent-red;
   }
+
   &__unblock-group {
     color: variables.$color-accent-blue;
   }
@@ -131,6 +167,12 @@
         }
       }
 
+      &--media {
+        &::after {
+          @include details-icon('../images/icons/v3/album/album-tilt.svg');
+        }
+      }
+
       &--mention {
         &::after {
           @include details-icon('../images/icons/v3/at/at.svg');
@@ -140,6 +182,12 @@
       &--lock {
         &::after {
           @include details-icon('../images/icons/v3/key/key.svg');
+        }
+      }
+
+      &--archive {
+        &::after {
+          @include details-icon('../images/icons/v3/archive/archive.svg');
         }
       }
 
@@ -187,6 +235,16 @@
         }
       }
 
+      &--delete {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/trash/trash.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
+        }
+      }
+
       &--invites {
         &::after {
           @include details-icon('../images/icons/v3/group/group.svg');
@@ -207,10 +265,7 @@
 
       &--down {
         border-radius: 18px;
-        background-color: light-dark(
-          variables.$color-gray-02,
-          variables.$color-gray-90
-        );
+        background-color: var(--axo-color-fill-primary);
 
         &::after {
           width: 18px;
@@ -279,71 +334,54 @@
           @include details-icon('../images/icons/v3/heart/heart.svg');
         }
       }
-    }
-  }
 
-  &-media-list {
-    &__root {
-      display: flex;
-      justify-content: center;
-      padding-block: 0;
-      padding-inline: 20px;
-      padding-bottom: 24px;
-
-      .module-media-grid-item {
-        border-radius: 4px;
-        height: auto;
-        margin-block: 0;
-        margin-inline: 4px;
-        max-height: 94px;
-        overflow: hidden;
-        width: calc(100% / 6);
-
-        .module-media-grid-item__icon {
-          &::before {
-            content: '';
-            display: block;
-            padding-top: 100%;
-          }
+      &--tag {
+        &::after {
+          @include details-icon('../images/icons/v3/tag/tag.svg');
         }
 
-        .module-media-grid-item__image-container,
-        img {
-          margin: 0;
+        &--disabled {
+          opacity: 0.5;
         }
       }
-    }
 
-    &__show-all {
-      background: none;
-      border: none;
-      padding: 0;
-      color: light-dark(variables.$color-gray-95, variables.$color-gray-05);
+      &--spam {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/spam/spam.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
+        }
+      }
+
+      &--terminate {
+        &::after {
+          @include details-icon(
+            '../images/icons/v3/x/x-circle.svg',
+            variables.$color-accent-red,
+            variables.$color-accent-red
+          );
+        }
+      }
     }
   }
 
   &-panel-row {
     $row-root-selector: '#{&}__root';
     &__root {
-      align-items: center;
       border-radius: 5px;
       border: 2px solid transparent;
-      display: flex;
       padding-block: 8px;
       padding-inline: 24px;
-      user-select: none;
-      width: 100%;
       @include mixins.font-body-2;
 
       &--button {
         color: inherit;
         background: none;
 
-        &:hover:not(:disabled) {
-          background-color: light-dark(
-            variables.$color-gray-02,
-            variables.$color-gray-90
-          );
+        &[data-hovered]:not(:disabled) {
+          background: var(--axo-color-fill-primary);
 
           & .ConversationDetails-panel-row__actions {
             opacity: 1;
@@ -351,22 +389,19 @@
         }
       }
 
-      &:focus {
+      &:focus,
+      &[data-focused='true'] {
         outline: none;
-      }
-
-      @mixin keyboard-focus-state($color) {
-        &:focus {
-          border-color: $color;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
+    }
 
-      @include mixins.keyboard-mode {
-        @include keyboard-focus-state(variables.$color-ultramarine);
-      }
-      @include mixins.dark-keyboard-mode {
-        @include keyboard-focus-state(variables.$color-ultramarine-light);
-      }
+    &__inner {
+      align-items: center;
+      display: flex;
+      width: 100%;
     }
 
     &__icon {
@@ -378,6 +413,7 @@
       flex-grow: 1;
       text-align: start;
       margin-inline-end: 12px;
+      min-width: 0;
     }
 
     &__info {
@@ -395,10 +431,10 @@
     &__right {
       position: relative;
       color: variables.$color-gray-45;
-      min-width: 143px;
     }
 
     &__actions {
+      position: static;
       margin-inline-start: 12px;
       overflow: hidden;
       opacity: 0;
@@ -438,6 +474,7 @@
     &__header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding-block: 18px 12px;
       padding-inline: 24px;
 
@@ -452,14 +489,7 @@
   }
 
   &__header-buttons {
-    display: flex;
-    justify-content: center;
     margin-bottom: 24px;
-
-    .module-Button {
-      margin-block: 0;
-      margin-inline: 8px;
-    }
   }
 
   &__radio {
@@ -472,6 +502,10 @@
 
 .ConversationDetails__MemberName {
   user-select: text;
+}
+
+.ConversationDetails__MemberLabel--disabled {
+  opacity: 0.5;
 }
 
 .ConversationDetails__CallHistoryGroup__List {
@@ -517,7 +551,13 @@
 }
 
 .ConversationDetails__CallHistoryGroup__ItemLabel {
+  display: flex;
+  align-items: center;
   flex: 1;
+
+  .module-expire-timer {
+    margin-bottom: 0;
+  }
 }
 
 .ConversationDetails__CallHistoryGroup__ItemTimestamp {
@@ -553,4 +593,9 @@
     '../images/icons/v3/trash/trash.svg',
     light-dark(variables.$color-black, variables.$color-white)
   );
+}
+
+.Input__input--textarea.GroupMemberLabelEditor__input--textarea {
+  line-height: 32px;
+  margin-top: 0px;
 }
