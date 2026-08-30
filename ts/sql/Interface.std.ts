@@ -79,6 +79,12 @@ import type {
 } from '../types/Megaphone.std.ts';
 import { sqlFragment, sqlId, sqlJoin } from './util.std.ts';
 import type { MIMEType } from '../types/MIME.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import type {
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
 
 export type ReadableDB = Database & { __readable_db: never };
 export type WritableDB = ReadableDB & { __writable_db: never };
@@ -115,10 +121,6 @@ export type ConversationMetricsType = {
   totalUnseen: number;
 };
 export type ConversationType = ConversationAttributesType;
-export type EmojiType = {
-  shortName: string;
-  lastUsage: number;
-};
 
 export type IdentityKeyType = {
   firstUse: boolean;
@@ -296,7 +298,7 @@ export type SentProtoDBType = {
 export type SentProtoWithMessageIdsType = SentProtoType & {
   messageIds: Array<string>;
 };
-export type SentRecipientsType = Record<ServiceIdString, Array<number>>;
+export type SentRecipientsType = Record<ServiceIdString, ReadonlyArray<number>>;
 export type SentMessagesType = Array<string>;
 
 // These two are for test only
@@ -354,7 +356,7 @@ export type StickerType = Readonly<{
   id: number;
   packId: string;
 
-  emoji?: string;
+  emoji?: Emoji.Variant;
   isCoverOnly: boolean;
   lastUsed?: number;
   path: string;
@@ -422,6 +424,22 @@ export type StickerPackType = InstalledStickerPackType &
     title: string;
   }>;
 
+export const STICKER_PACK_DEFAULTS: StickerPackType = {
+  id: '',
+  key: '',
+
+  author: '',
+  coverStickerId: 0,
+  createdAt: 0,
+  downloadAttempts: 0,
+  status: 'ephemeral',
+  stickerCount: 0,
+  stickers: {},
+  title: '',
+
+  storageNeedsSync: false,
+};
+
 export type StickerPackRefType = Readonly<{
   packId: string;
   messageId: string;
@@ -431,12 +449,12 @@ export type StickerPackRefType = Readonly<{
 
 export type UnprocessedType = {
   id: string;
-  timestamp: number;
+  timestamp: SentTimestampMs;
   /*
    * A client generated date used for removing old envelopes from the table
    * on startup.
    */
-  receivedAtDate: number;
+  receivedAtDate: ReceivedTimestampMs;
   receivedAtCounter: number;
   attempts: number;
   type: number;
@@ -450,7 +468,7 @@ export type UnprocessedType = {
   destinationServiceId: ServiceIdString;
   updatedPni: PniString | undefined;
   serverGuid: string;
-  serverTimestamp: number;
+  serverTimestamp: ServerTimestampMs;
   urgent: boolean;
   story: boolean;
   reportingToken: Uint8Array<ArrayBuffer> | undefined;
@@ -523,6 +541,15 @@ export type GetUnreadByConversationAndMarkReadResultType = Array<
     | 'seenStatus'
     | 'expirationStartTimestamp'
   >
+>;
+
+export type GetUnreadCallMessagesAndMarkReadResult = Pick<
+  MessageType,
+  | 'id'
+  | 'conversationId'
+  | 'readStatus'
+  | 'seenStatus'
+  | 'expirationStartTimestamp'
 >;
 
 export type GetConversationRangeCenteredOnMessageResultType<Message> =
@@ -908,13 +935,13 @@ type ReadableInterface = {
       includeStoryReplies: boolean;
     }
   ) => number;
-  getOldestUnreadMentionOfMeForConversation(
+  getOldestUnreadMentionOfMeForConversation: (
     conversationId: string,
     options: {
       storyId?: string;
       includeStoryReplies: boolean;
     }
-  ): MessageMetricsType | undefined;
+  ) => MessageMetricsType | undefined;
 
   getReactionByTimestamp: (
     fromId: string,
@@ -967,37 +994,42 @@ type ReadableInterface = {
     conversationId: string;
     includeStoryReplies: boolean;
   }) => ConversationMessageStatsType;
-  getLastConversationMessage(options: {
+  getLastConversationMessage: (options: {
     conversationId: string;
-  }): MessageType | undefined;
+  }) => MessageType | undefined;
   getAllCallHistory: () => ReadonlyArray<CallHistoryDetails>;
-  getCallHistoryUnreadCount(): number;
-  getCallHistoryMessageByCallId(options: {
+  getCallHistoryUnreadCallConversationIds: () => ReadonlyArray<string>;
+  getCallHistoryUnreadCount: () => number;
+  getCallHistoryMessageByCallId: (options: {
     conversationId: string;
     callId: string;
-  }): MessageType | undefined;
-  getCallHistory(
+  }) => MessageType | undefined;
+  getCallHistory: (
     callId: string,
     peerId: ServiceIdString | string
-  ): CallHistoryDetails | undefined;
-  getCallHistoryGroupsCount(filter: CallHistoryFilter): number;
-  getCallHistoryGroups(
+  ) => CallHistoryDetails | undefined;
+  getCallHistoryGroupsCount: (filter: CallHistoryFilter) => number;
+  getCallHistoryGroups: (
     filter: CallHistoryFilter,
     pagination: CallHistoryPagination
-  ): Array<CallHistoryGroup>;
+  ) => Array<CallHistoryGroup>;
   hasGroupCallHistoryMessage: (
     conversationId: string,
     eraId: string
   ) => boolean;
-  callLinkExists(roomId: string): boolean;
-  defunctCallLinkExists(roomId: string): boolean;
+  getPrevUnreadCallIdInConversation: (
+    conversationId: string,
+    receivedAt: number
+  ) => string | null;
+  callLinkExists: (roomId: string) => boolean;
+  defunctCallLinkExists: (roomId: string) => boolean;
   getAllCallLinks: () => ReadonlyArray<CallLinkType>;
   getCallLinkByRoomId: (roomId: string) => CallLinkType | undefined;
   getCallLinkRecordByRoomId: (roomId: string) => CallLinkRecord | undefined;
-  getAllAdminCallLinks(): ReadonlyArray<CallLinkType>;
-  getAllCallLinkRecordsWithAdminKey(): ReadonlyArray<CallLinkRecord>;
-  getAllDefunctCallLinksWithAdminKey(): ReadonlyArray<DefunctCallLinkType>;
-  getAllMarkedDeletedCallLinkRoomIds(): ReadonlyArray<string>;
+  getAllAdminCallLinks: () => ReadonlyArray<CallLinkType>;
+  getAllCallLinkRecordsWithAdminKey: () => ReadonlyArray<CallLinkRecord>;
+  getAllDefunctCallLinksWithAdminKey: () => ReadonlyArray<DefunctCallLinkType>;
+  getAllMarkedDeletedCallLinkRoomIds: () => ReadonlyArray<string>;
   getMessagesBetween: (
     conversationId: string,
     options: GetMessagesBetweenOptions
@@ -1018,12 +1050,12 @@ type ReadableInterface = {
   getUnprocessedCount: () => number;
 
   // Test-only
-  _getAttachmentDownloadJob(
+  _getAttachmentDownloadJob: (
     job: Pick<
       AttachmentDownloadJobType,
       'messageId' | 'attachmentType' | 'attachmentSignature'
     >
-  ): AttachmentDownloadJobType | undefined;
+  ) => AttachmentDownloadJobType | undefined;
 
   getBackupCdnObjectMetadata: (
     mediaId: string
@@ -1037,31 +1069,33 @@ type ReadableInterface = {
   getAllStickers: () => Array<StickerType>;
   getRecentStickers: (options?: { limit?: number }) => Array<StickerType>;
 
-  getRecentEmojis: (limit?: number) => Array<EmojiType>;
+  getRecentEmojis: (limit: number) => ReadonlyArray<Emoji.Parent>;
   getRecentGifs: (limit: number) => ReadonlyArray<GifType>;
 
-  getAllBadges(): Array<BadgeType>;
+  getAllBadges: () => Array<BadgeType>;
 
-  _getAllStoryDistributions(): Array<StoryDistributionType>;
-  _getAllStoryDistributionMembers(): Array<StoryDistributionMemberType>;
-  getAllStoryDistributionsWithMembers(): Array<StoryDistributionWithMembersType>;
-  getStoryDistributionWithMembers(
+  _getAllStoryDistributions: () => Array<StoryDistributionType>;
+  _getAllStoryDistributionMembers: () => Array<StoryDistributionMemberType>;
+  getAllStoryDistributionsWithMembers: () => Array<StoryDistributionWithMembersType>;
+  getStoryDistributionWithMembers: (
     id: string
-  ): StoryDistributionWithMembersType | undefined;
+  ) => StoryDistributionWithMembersType | undefined;
 
-  _getAllStoryReads(): Array<StoryReadType>;
-  getLastStoryReadsForAuthor(options: {
+  _getAllStoryReads: () => Array<StoryReadType>;
+  getLastStoryReadsForAuthor: (options: {
     authorId: ServiceIdString;
     conversationId?: string;
     limit?: number;
-  }): Array<StoryReadType>;
-  countStoryReadsByConversation(conversationId: string): number;
+  }) => Array<StoryReadType>;
+  countStoryReadsByConversation: (conversationId: string) => number;
 
-  getAllNotificationProfiles(): Array<NotificationProfileType>;
-  getNotificationProfileById(id: string): NotificationProfileType | undefined;
+  getAllNotificationProfiles: () => Array<NotificationProfileType>;
+  getNotificationProfileById: (
+    id: string
+  ) => NotificationProfileType | undefined;
 
-  getAllDonationReceipts(): Array<DonationReceipt>;
-  getDonationReceiptById(id: string): DonationReceipt | undefined;
+  getAllDonationReceipts: () => Array<DonationReceipt>;
+  getDonationReceiptById: (id: string) => DonationReceipt | undefined;
 
   getAllChatFolders: () => ReadonlyArray<ChatFolder>;
   getCurrentChatFolders: () => ReadonlyArray<CurrentChatFolder>;
@@ -1091,14 +1125,14 @@ type ReadableInterface = {
     sourceServiceId?: string
   ) => Array<string>;
 
-  getJobsInQueue(queueType: string): Array<StoredJob>;
+  getJobsInQueue: (queueType: string) => Array<StoredJob>;
 
-  wasGroupCallRingPreviouslyCanceled(ringId: bigint): boolean;
+  wasGroupCallRingPreviouslyCanceled: (ringId: bigint) => boolean;
 
-  getMaxMessageCounter(): number | undefined;
+  getMaxMessageCounter: () => number | undefined;
 
-  getStatisticsForLogging(): Record<string, string>;
-  getBackupAttachmentDownloadProgress(): BackupAttachmentDownloadProgress;
+  getStatisticsForLogging: () => Record<string, string>;
+  getBackupAttachmentDownloadProgress: () => BackupAttachmentDownloadProgress;
   getAttachmentReferencesForMessages: (
     messageIds: Array<string>
   ) => Array<MessageAttachmentDBType>;
@@ -1165,7 +1199,7 @@ type WritableInterface = {
   insertProtoRecipients: (options: {
     id: number;
     recipientServiceId: ServiceIdString;
-    deviceIds: Array<number>;
+    deviceIds: ReadonlyArray<number>;
   }) => void;
   deleteSentProtoRecipient: (
     options:
@@ -1176,14 +1210,14 @@ type WritableInterface = {
 
   createOrUpdateSession: (data: SessionType) => void;
   createOrUpdateSessions: (array: Array<SessionType>) => void;
-  commitDecryptResult(options: {
+  commitDecryptResult: (options: {
     kyberPreKeysToRemove: Array<PreKeyIdType>;
     preKeysToRemove: Array<PreKeyIdType>;
     senderKeys: Array<SenderKeyType>;
     sessions: Array<SessionType>;
     unprocessed: Array<UnprocessedType>;
     kyberTriples: Array<KyberPreKeyTripleType>;
-  }): void;
+  }) => void;
   removeSessionById: (id: SessionIdType) => number;
   removeSessionsByConversation: (conversationId: string) => void;
   removeSessionsByServiceId: (serviceId: ServiceIdString) => void;
@@ -1237,7 +1271,7 @@ type WritableInterface = {
     targetTimestamp: number
   ) => MessageAttributesType | undefined;
   removeReactionFromConversation: (reaction: {
-    emoji: string;
+    emoji: Emoji.Variant;
     fromId: string;
     targetAuthorServiceId: ServiceIdString;
     targetTimestamp: number;
@@ -1259,30 +1293,41 @@ type WritableInterface = {
   _removeAllCallHistory: () => void;
   markCallHistoryDeleted: (callId: string) => void;
   cleanupCallHistoryMessages: () => void;
-  markCallHistoryRead(callId: string): void;
-  markAllCallHistoryRead(target: CallLogEventTarget): number;
-  markAllCallHistoryReadInConversation(target: CallLogEventTarget): number;
-  saveCallHistory(callHistory: CallHistoryDetails): void;
-  markCallHistoryMissed(callIds: ReadonlyArray<string>): void;
-  getRecentStaleRingsAndMarkOlderMissed(): ReadonlyArray<MaybeStaleCallHistory>;
-  insertCallLink(callLink: CallLinkType): void;
-  insertOrUpdateCallLinkFromSync(
+  getUnreadCallMessagesAndMarkRead: (
+    target: CallLogEventTarget,
+    readAt: number,
+    activeCallIds: Set<string>
+  ) => ReadonlyArray<GetUnreadCallMessagesAndMarkReadResult>;
+  getUnreadCallMessageAndMarkRead: (
+    callId: string,
+    readAt: number
+  ) => GetUnreadCallMessagesAndMarkReadResult | null;
+  getUnreadCallMessagesInConversationAndMarkRead: (
+    target: CallLogEventTarget,
+    readAt: number,
+    activeCallIds: Set<string>
+  ) => ReadonlyArray<GetUnreadCallMessagesAndMarkReadResult>;
+  saveCallHistory: (callHistory: CallHistoryDetails) => void;
+  markCallHistoryMissed: (callIds: ReadonlyArray<string>) => void;
+  getRecentStaleRingsAndMarkOlderMissed: () => ReadonlyArray<MaybeStaleCallHistory>;
+  insertCallLink: (callLink: CallLinkType) => void;
+  insertOrUpdateCallLinkFromSync: (
     callLink: CallLinkType
-  ): InsertOrUpdateCallLinkFromSyncResult;
-  updateCallLink(callLink: CallLinkType): void;
-  updateCallLinkState(
+  ) => InsertOrUpdateCallLinkFromSyncResult;
+  updateCallLink: (callLink: CallLinkType) => void;
+  updateCallLinkState: (
     roomId: string,
     callLinkState: CallLinkStateType
-  ): CallLinkType;
-  beginDeleteAllCallLinks(): boolean;
-  beginDeleteCallLink(roomId: string): boolean;
-  deleteCallHistoryByRoomId(roomid: string): void;
-  deleteCallLinkAndHistory(roomId: string): void;
-  finalizeDeleteCallLink(roomId: string): void;
-  _removeAllCallLinks(): void;
-  insertDefunctCallLink(defunctCallLink: DefunctCallLinkType): void;
-  updateDefunctCallLink(defunctCallLink: DefunctCallLinkType): void;
-  deleteCallLinkFromSync(roomId: string): void;
+  ) => CallLinkType;
+  beginDeleteAllCallLinks: () => boolean;
+  beginDeleteCallLink: (roomId: string) => boolean;
+  deleteCallHistoryByRoomId: (roomid: string) => void;
+  deleteCallLinkAndHistory: (roomId: string) => void;
+  finalizeDeleteCallLink: (roomId: string) => void;
+  _removeAllCallLinks: () => void;
+  insertDefunctCallLink: (defunctCallLink: DefunctCallLinkType) => void;
+  updateDefunctCallLink: (defunctCallLink: DefunctCallLinkType) => void;
+  deleteCallLinkFromSync: (roomId: string) => void;
   migrateConversationMessages: (obsoleteId: string, currentId: string) => void;
   saveEditedMessage: (
     mainMessage: ReadonlyDeep<MessageType>,
@@ -1350,12 +1395,15 @@ type WritableInterface = {
   createOrUpdateStickerPack: (pack: StickerPackType) => void;
   createOrUpdateStickerPacks: (packs: ReadonlyArray<StickerPackType>) => void;
   // Returns previous sticker pack status
-  updateStickerPackStatus: (
+  updateStickerPackStatusAndPosition: (
     id: string,
     status: StickerPackStatusType,
-    options?: { timestamp: number }
+    options?: { timestamp?: number; position?: number }
   ) => StickerPackStatusType | null;
   updateStickerPackInfo: (info: StickerPackInfoType) => void;
+  updateStickerPacksPositions: (
+    packIdsAndPositions: ReadonlyArray<{ id: string; position: number }>
+  ) => void;
   createOrUpdateSticker: (sticker: StickerType) => void;
   createOrUpdateStickers: (sticker: ReadonlyArray<StickerType>) => void;
   updateStickerLastUsed: (
@@ -1375,53 +1423,58 @@ type WritableInterface = {
   addUninstalledStickerPacks: (
     pack: ReadonlyArray<UninstalledStickerPackType>
   ) => void;
-  // Returns `true` if sticker pack was previously uninstalled
-  installStickerPack: (packId: string, timestamp: number) => boolean;
+  // Returns wasPreviouslyUninstalled: `true` if sticker pack was previously uninstalled
+  installStickerPack: (
+    packId: string,
+    timestamp: number,
+    position?: number
+  ) => { wasPreviouslyUninstalled: boolean; position?: number };
   // Returns `true` if sticker pack was not previously uninstalled
   uninstallStickerPack: (packId: string, timestamp: number) => boolean;
+  removeUninstalledStickerPack: (packId: string) => void;
   clearAllErrorStickerPackAttempts: () => void;
 
-  updateEmojiUsage: (shortName: string, timeUsed?: number) => void;
+  updateEmojiUsage: (emoji: Emoji.Parent, lastUsedAt: number) => void;
 
   addRecentGif: (gif: GifType, lastUsedAt: number, maxRecents: number) => void;
   removeRecentGif: (gif: GifType['id']) => void;
 
-  updateOrCreateBadges(badges: ReadonlyArray<BadgeType>): void;
-  badgeImageFileDownloaded(url: string, localPath: string): void;
+  updateOrCreateBadges: (badges: ReadonlyArray<BadgeType>) => void;
+  badgeImageFileDownloaded: (url: string, localPath: string) => void;
 
-  _deleteAllStoryDistributions(): void;
-  createNewStoryDistribution(
+  _deleteAllStoryDistributions: () => void;
+  createNewStoryDistribution: (
     distribution: StoryDistributionWithMembersType
-  ): void;
-  modifyStoryDistribution(distribution: StoryDistributionType): void;
-  modifyStoryDistributionMembers(
+  ) => void;
+  modifyStoryDistribution: (distribution: StoryDistributionType) => void;
+  modifyStoryDistributionMembers: (
     listId: string,
     options: {
       toAdd: Array<ServiceIdString>;
       toRemove: Array<ServiceIdString>;
     }
-  ): void;
-  modifyStoryDistributionWithMembers(
+  ) => void;
+  modifyStoryDistributionWithMembers: (
     distribution: StoryDistributionType,
     options: {
       toAdd: Array<ServiceIdString>;
       toRemove: Array<ServiceIdString>;
     }
-  ): void;
-  deleteStoryDistribution(id: StoryDistributionIdString): void;
+  ) => void;
+  deleteStoryDistribution: (id: StoryDistributionIdString) => void;
 
-  _deleteAllStoryReads(): void;
-  addNewStoryRead(read: StoryReadType): void;
+  _deleteAllStoryReads: () => void;
+  addNewStoryRead: (read: StoryReadType) => void;
 
-  _deleteAllNotificationProfiles(): void;
-  deleteNotificationProfileById(id: string): void;
-  markNotificationProfileDeleted(id: string): number | undefined;
-  createNotificationProfile(profile: NotificationProfileType): void;
-  updateNotificationProfile(profile: NotificationProfileType): void;
+  _deleteAllNotificationProfiles: () => void;
+  deleteNotificationProfileById: (id: string) => void;
+  markNotificationProfileDeleted: (id: string) => number | undefined;
+  createNotificationProfile: (profile: NotificationProfileType) => void;
+  updateNotificationProfile: (profile: NotificationProfileType) => void;
 
-  _deleteAllDonationReceipts(): void;
-  deleteDonationReceiptById(id: string): void;
-  createDonationReceipt(profile: DonationReceipt): void;
+  _deleteAllDonationReceipts: () => void;
+  deleteDonationReceiptById: (id: string) => void;
+  createDonationReceipt: (profile: DonationReceipt) => void;
 
   createChatFolder: (chatFolder: ChatFolder) => void;
   createAllChatsChatFolder: () => ChatFolder;
@@ -1469,40 +1522,32 @@ type WritableInterface = {
     plaintextHash,
     version,
     contentType,
-    messageId,
   }: {
     plaintextHash: string;
     version: number;
     contentType: MIMEType;
-    messageId: string;
-  }) => ExistingAttachmentData | undefined;
-  _protectAttachmentPathFromDeletion: ({
-    path,
-    messageId,
-  }: {
-    path: string;
-    messageId: string;
-  }) => void;
+  }) => (ExistingAttachmentData & { reuseToken: string }) | undefined;
+  _protectAttachmentPathFromDeletion: ({ path }: { path: string }) => string;
   resetProtectedAttachmentPaths: () => void;
 
   removeAll: () => void;
   removeAllConfiguration: (isPrimary: boolean) => void;
   eraseStorageServiceState: () => void;
 
-  insertJob(job: Readonly<StoredJob>): void;
-  deleteJob(id: string): void;
+  insertJob: (job: Readonly<StoredJob>) => void;
+  deleteJob: (id: string) => void;
 
-  disableMessageInsertTriggers(): void;
-  enableMessageInsertTriggersAndBackfill(): void;
-  ensureMessageInsertTriggersAreEnabled(): void;
+  disableMessageInsertTriggers: () => void;
+  enableMessageInsertTriggersAndBackfill: () => void;
+  ensureMessageInsertTriggersAreEnabled: () => void;
 
-  disableFSync(): void;
-  enableFSyncAndCheckpoint(): void;
+  disableFSync: () => void;
+  enableFSyncAndCheckpoint: () => void;
 
-  processGroupCallRingCancellation(ringId: bigint): void;
-  cleanExpiredGroupCallRingCancellations(): void;
+  processGroupCallRingCancellation: (ringId: bigint) => void;
+  cleanExpiredGroupCallRingCancellations: () => void;
 
-  _testOnlyRemoveMessageAttachments(timestamp: number): void;
+  _testOnlyRemoveMessageAttachments: (timestamp: number) => void;
 };
 
 // Adds a database argument
@@ -1526,10 +1571,10 @@ export type ServerReadableDirectInterface = ReadableInterface & {
     contactServiceIdsMatchingQuery?: Array<ServiceIdString>;
   }) => Array<ServerSearchResultMessageType>;
 
-  getRecentStoryReplies(
+  getRecentStoryReplies: (
     storyId: string,
     options?: GetRecentStoryRepliesOptionsType
-  ): Array<MessageType>;
+  ) => Array<MessageType>;
   getOlderMessagesByConversation: (
     options: AdjacentMessagesByConversationOptionsType
   ) => Array<MessageType>;
@@ -1556,7 +1601,7 @@ export type ServerReadableDirectInterface = ReadableInterface & {
   ) => StoredSignedPreKeyType | undefined;
   getAllSignedPreKeys: () => Array<StoredSignedPreKeyType>;
 
-  getItemById<K extends ItemKeyType>(id: K): StoredItemType<K> | undefined;
+  getItemById: <K extends ItemKeyType>(id: K) => StoredItemType<K> | undefined;
   getAllItems: () => StoredAllItemsType;
 
   // Server-only
@@ -1623,7 +1668,7 @@ export type ServerWritableDirectInterface = WritableInterface & {
   createOrUpdateSignedPreKey: (data: StoredSignedPreKeyType) => void;
   bulkAddSignedPreKeys: (array: Array<StoredSignedPreKeyType>) => void;
 
-  createOrUpdateItem<K extends ItemKeyType>(data: StoredItemType<K>): void;
+  createOrUpdateItem: <K extends ItemKeyType>(data: StoredItemType<K>) => void;
 
   // Server-only
 
@@ -1659,10 +1704,10 @@ export type ClientOnlyReadableInterface = ClientInterfaceWrap<{
     contactServiceIdsMatchingQuery?: Array<ServiceIdString>;
   }) => Array<ClientSearchResultMessageType>;
 
-  getRecentStoryReplies(
+  getRecentStoryReplies: (
     storyId: string,
     options?: GetRecentStoryRepliesOptionsType
-  ): Array<MessageType>;
+  ) => Array<MessageType>;
   getOlderMessagesByConversation: (
     options: AdjacentMessagesByConversationOptionsType
   ) => Array<MessageType>;
@@ -1685,7 +1730,7 @@ export type ClientOnlyReadableInterface = ClientInterfaceWrap<{
   getSignedPreKeyById: (id: SignedPreKeyIdType) => SignedPreKeyType | undefined;
   getAllSignedPreKeys: () => Array<SignedPreKeyType>;
 
-  getItemById<K extends ItemKeyType>(id: K): ItemType<K> | undefined;
+  getItemById: <K extends ItemKeyType>(id: K) => ItemType<K> | undefined;
   getAllItems: () => AllItemsType;
 }>;
 
@@ -1739,7 +1784,7 @@ export type ClientOnlyWritableInterface = ClientInterfaceWrap<{
   createOrUpdateSignedPreKey: (data: SignedPreKeyType) => void;
   bulkAddSignedPreKeys: (array: Array<SignedPreKeyType>) => void;
 
-  createOrUpdateItem<K extends ItemKeyType>(data: ItemType<K>): void;
+  createOrUpdateItem: <K extends ItemKeyType>(data: ItemType<K>) => void;
 
   // Client-side only
 

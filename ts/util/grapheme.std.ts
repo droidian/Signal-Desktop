@@ -5,12 +5,9 @@ import memoizee from 'memoizee';
 
 import { map, size, take, join } from './iterables.std.ts';
 
-const getSegmenter = memoizee((): Intl.Segmenter => new Intl.Segmenter());
-
-export function getGraphemes(str: string): Iterable<string> {
-  const segments = getSegmenter().segment(str);
-  return map(segments, s => s.segment);
-}
+export const getSegmenter = memoizee(
+  (): Intl.Segmenter => new Intl.Segmenter()
+);
 
 export function count(str: string): number {
   const segments = getSegmenter().segment(str);

@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { AxoDropdownMenu } from './AxoDropdownMenu.dom.tsx';
@@ -20,7 +20,7 @@ function Container(props: { children: ReactNode }) {
   );
 }
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   const [showBookmarks, setShowBookmarks] = useState(true);
   const [showFullUrls, setShowFullUrls] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState('jamie');
@@ -28,7 +28,7 @@ export function Basic(): React.JSX.Element {
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="md">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>
@@ -109,12 +109,12 @@ export function Basic(): React.JSX.Element {
   );
 }
 
-export function WithHeader(): React.JSX.Element {
+export function WithHeader(): JSX.Element {
   return (
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="md">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>
@@ -153,7 +153,7 @@ export function WithHeader(): React.JSX.Element {
 const LONG_TEXT =
   'Lorem ipsum dolor sit amet consectetur adipisicing elit. Cum nostrum, inventore quia tenetur sunt non ab fuga explicabo ullam tempore.';
 
-export function StressTestLongText(): React.JSX.Element {
+export function StressTestLongText(): JSX.Element {
   const items = (
     <>
       <AxoDropdownMenu.Item onSelect={action('onSelect')}>
@@ -222,7 +222,7 @@ export function StressTestLongText(): React.JSX.Element {
     <Container>
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
-          <AxoButton.Root variant="secondary" size="md">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         </AxoDropdownMenu.Trigger>

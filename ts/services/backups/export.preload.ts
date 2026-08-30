@@ -174,7 +174,7 @@ import {
   isTestOrMockEnvironment,
 } from '../../environment.std.ts';
 import { calculateLightness } from '../../util/getHSL.std.ts';
-import { isSignalServiceId } from '../../util/isSignalConversation.dom.ts';
+import { isSignalServiceId } from '../../types/SignalConversation.std.ts';
 import { isValidE164 } from '../../util/isValidE164.std.ts';
 import { toDayOfWeekArray } from '../../types/NotificationProfile.std.ts';
 import {
@@ -191,6 +191,7 @@ import { MAX_VALUE as LONG_MAX_VALUE } from '../../util/long.std.ts';
 import { encodeDelimited } from '../../util/encodeDelimited.std.ts';
 import { safeParseStrict } from '../../util/schemas.std.ts';
 import type { WithRequiredProperties } from '../../types/Util.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { isNumber } = lodash;
 
@@ -734,6 +735,26 @@ export class BackupExportStream extends Readable {
       this.#stats.adHocCalls += 1;
     }
 
+    const callHistory = await DataReader.getAllCallHistory();
+    const callHistoryByCallId = makeLookup(callHistory, 'callId');
+
+    const pinnedMessages = await DataReader.getAllPinnedMessages();
+    const pinnedMessagesByMessageId = makeLookup(pinnedMessages, 'messageId');
+
+    const me = window.ConversationController.getOurConversationOrThrow();
+    const serviceId = me.get('serviceId');
+    const aci = isAciString(serviceId) ? serviceId : undefined;
+    strictAssert(aci, 'We must have our own ACI');
+    const aboutMe = {
+      aci,
+      pni: me.get('pni'),
+    };
+
+    const selfRecipientId = this.#getRecipientByServiceId(
+      aboutMe.aci,
+      'getting self'
+    );
+
     const allNotificationProfiles =
       await DataReader.getAllNotificationProfiles();
 
@@ -760,7 +781,14 @@ export class BackupExportStream extends Readable {
             'notificationProfile.allowedMembers'
           )
         )
-        .filter(isNotNil);
+        .filter(isNotNil)
+        .filter(recipientId => {
+          if (recipientId === selfRecipientId) {
+            log.warn('Excluding self from notification profile');
+            return false;
+          }
+          return true;
+        });
 
       this.#pushFrame({
         notificationProfile: {
@@ -829,21 +857,6 @@ export class BackupExportStream extends Readable {
       await this.#flush();
       this.#stats.chatFolders += 1;
     }
-
-    const callHistory = await DataReader.getAllCallHistory();
-    const callHistoryByCallId = makeLookup(callHistory, 'callId');
-
-    const pinnedMessages = await DataReader.getAllPinnedMessages();
-    const pinnedMessagesByMessageId = makeLookup(pinnedMessages, 'messageId');
-
-    const me = window.ConversationController.getOurConversationOrThrow();
-    const serviceId = me.get('serviceId');
-    const aci = isAciString(serviceId) ? serviceId : undefined;
-    strictAssert(aci, 'We must have our own ACI');
-    const aboutMe = {
-      aci,
-      pni: me.get('pni'),
-    };
 
     const FLUSH_EVERY = 10000;
 
@@ -976,7 +989,7 @@ export class BackupExportStream extends Readable {
 
     const rawPreferredReactionEmoji = itemStorage.get('preferredReactionEmoji');
 
-    let preferredReactionEmoji: Array<string> | undefined;
+    let preferredReactionEmoji: Array<Emoji.Variant> | undefined;
     if (canPreferredReactionEmojiBeSynced(rawPreferredReactionEmoji)) {
       preferredReactionEmoji = rawPreferredReactionEmoji;
     }
@@ -1013,10 +1026,6 @@ export class BackupExportStream extends Readable {
     const themeSetting = await window.Events.getThemeSetting();
     const appTheme = toAppTheme(themeSetting);
 
-    const keyTransparencyData = await DataReader.getKTAccountData(
-      me.getCheckedAci('Backup export: key transparency data')
-    );
-
     return {
       profileKey: itemStorage.get('profileKey') ?? null,
       username: me.get('username') || null,
@@ -1046,7 +1055,6 @@ export class BackupExportStream extends Readable {
       svrPin: itemStorage.get('svrPin') ?? null,
       bioText: me.get('about') ?? null,
       bioEmoji: me.get('aboutEmoji') ?? null,
-      keyTransparencyData: keyTransparencyData ?? null,
       // Test only values
       androidSpecificSettings: isTestOrMockEnvironment()
         ? (itemStorage.get('androidSpecificSettings') ?? null)
@@ -1316,6 +1324,10 @@ export class BackupExportStream extends Readable {
 
       strictAssert(recipientId != null, 'recipientId must exist');
 
+      const blockedItem = convo.serviceId
+        ? itemStorage.blocked.getBlockedServiceIds().get(convo.serviceId)
+        : undefined;
+
       return {
         id: recipientId,
         destination: {
@@ -1324,8 +1336,9 @@ export class BackupExportStream extends Readable {
             pni,
             e164,
             username: convo.username || null,
-            blocked: convo.serviceId
-              ? itemStorage.blocked.isServiceIdBlocked(convo.serviceId)
+            blocked: Boolean(blockedItem),
+            blockedAtTimestamp: blockedItem?.blockedAt
+              ? BigInt(blockedItem.blockedAt)
               : null,
             visibility,
             registration: convo.discoveredUnregisteredAt
@@ -1391,6 +1404,11 @@ export class BackupExportStream extends Readable {
       const recipientId = this.#getNewRecipientId({
         id: convo.id,
       });
+
+      const blockedItem = convo.groupId
+        ? itemStorage.blocked.getBlockedGroups().get(convo.groupId)
+        : undefined;
+
       return {
         id: recipientId,
         destination: {
@@ -1399,9 +1417,10 @@ export class BackupExportStream extends Readable {
             whitelisted: convo.profileSharing ?? null,
             hideStory: convo.hideStory === true,
             storySendMode,
-            blocked: convo.groupId
-              ? itemStorage.blocked.isGroupBlocked(convo.groupId)
-              : false,
+            blocked: Boolean(blockedItem),
+            blockedAtTimestamp: blockedItem?.blockedAt
+              ? BigInt(blockedItem.blockedAt)
+              : null,
             avatarColor: toAvatarColor(convo.color) ?? null,
             snapshot: {
               title: {
@@ -1830,19 +1849,32 @@ export class BackupExportStream extends Readable {
     } else if (contact && contact[0]) {
       const [contactDetails] = contact;
 
+      const { name } = contactDetails;
+      const hasName =
+        name != null &&
+        Boolean(
+          name.givenName ||
+          name.familyName ||
+          name.prefix ||
+          name.suffix ||
+          name.middleName ||
+          name.nickname
+        );
+
       item = {
         contactMessage: {
           contact: {
-            name: contactDetails.name
-              ? {
-                  givenName: contactDetails.name.givenName ?? null,
-                  familyName: contactDetails.name.familyName ?? null,
-                  prefix: contactDetails.name.prefix ?? null,
-                  suffix: contactDetails.name.suffix ?? null,
-                  middleName: contactDetails.name.middleName ?? null,
-                  nickname: contactDetails.name.nickname ?? null,
-                }
-              : null,
+            name:
+              hasName && name != null
+                ? {
+                    givenName: name.givenName ?? null,
+                    familyName: name.familyName ?? null,
+                    prefix: name.prefix ?? null,
+                    suffix: name.suffix ?? null,
+                    middleName: name.middleName ?? null,
+                    nickname: name.nickname ?? null,
+                  }
+                : null,
             number:
               contactDetails.number?.map(number => ({
                 value: number.value,
@@ -2451,6 +2483,20 @@ export class BackupExportStream extends Readable {
         );
       }
 
+      const verifiedChangedContact = window.ConversationController.get(
+        message.verifiedChanged
+      );
+      if (
+        verifiedChangedContact &&
+        !isAciString(verifiedChangedContact.get('serviceId')) &&
+        !verifiedChangedContact.get('e164')
+      ) {
+        log.warn(
+          `${logId}: Dropping verified change for contact without ACI or E164`
+        );
+        return { kind: NonBubbleResultKind.Drop };
+      }
+
       updateMessage.update = {
         simpleUpdate: {
           type: message.verified
@@ -2503,16 +2549,17 @@ export class BackupExportStream extends Readable {
             previousName: { e164: BigInt(renderInfo.e164) },
           },
         };
-      } else {
-        strictAssert(
-          renderInfo.username,
-          'Title transition must have username or e164'
-        );
+      } else if (renderInfo.username) {
         updateMessage.update = {
           learnedProfileChange: {
             previousName: { username: renderInfo.username },
           },
         };
+      } else {
+        log.warn(
+          `${logId}: Dropping title transition without username or e164`
+        );
+        return { kind: NonBubbleResultKind.Drop };
       }
 
       return { kind: NonBubbleResultKind.Directionless, patch };
@@ -3465,7 +3512,6 @@ export class BackupExportStream extends Readable {
       }
 
       // Filter out our conversationId from non-"Note-to-Self" messages
-      // TODO: DESKTOP-8089
       strictAssert(this.#ourConversation?.id, 'our conversation must exist');
       if (
         id === this.#ourConversation.id &&
@@ -3483,6 +3529,18 @@ export class BackupExportStream extends Readable {
       const sealedSender = serviceId
         ? sealedSenderServiceIds.has(serviceId)
         : false;
+
+      // For note-to-self, we export our own sendStatus as read. Otherwise, we exclude it.
+      if (id === this.#ourConversation.id) {
+        if (conversationId === this.#ourConversation.id) {
+          sendStatuses.push({
+            recipientId,
+            timestamp,
+            deliveryStatus: { read: { sealedSender } },
+          });
+        }
+        continue;
+      }
 
       let deliveryStatus: Backups.SendStatus.Params['deliveryStatus'];
       switch (entry.status) {
@@ -3915,9 +3973,14 @@ export class BackupExportStream extends Readable {
       );
 
       const index = this.#customColorIdByUuid.get(customColorId);
-      strictAssert(index != null, 'Missing custom color');
-
-      bubbleColor = { customColorId: index };
+      if (index != null) {
+        bubbleColor = { customColorId: index };
+      } else {
+        log.warn(
+          `toChatStyle: chat style referenced unknown custom color ${customColorId}`
+        );
+        bubbleColor = { autoBubbleColor: {} };
+      }
     } else {
       const { BubbleColorPreset } = Backups.ChatStyle;
 

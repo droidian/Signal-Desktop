@@ -33,12 +33,21 @@ import {
 } from '../SignalProtocolStore.preload.ts';
 import { Address } from '../types/Address.std.ts';
 import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
-import type { IdentityKeyType, KeyPairType } from '../textsecure/Types.d.ts';
+import type {
+  IdentityKeyType,
+  KeyPairType,
+  UnprocessedType,
+} from '../textsecure/Types.d.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 import {
   generateAci,
   generatePni,
 } from '../test-helpers/serviceIdUtils.std.ts';
+import {
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
 
 const { clone } = lodash;
 
@@ -54,7 +63,7 @@ describe('SignalProtocolStore', () => {
 
   const NOW = Date.now();
 
-  const unprocessedDefaults = {
+  const unprocessedDefaults: Omit<UnprocessedType, 'id' | 'receivedAtDate'> = {
     type: 1,
     messageAgeSec: 1,
     source: undefined,
@@ -68,12 +77,12 @@ describe('SignalProtocolStore', () => {
     urgent: false,
     receivedAtCounter: 0,
     serverGuid: generateUuid(),
-    serverTimestamp: 1,
+    serverTimestamp: ServerTimestampMs.fromNumber(1),
     attempts: 0,
 
     isEncrypted: true,
     content: Buffer.from('content'),
-    timestamp: NOW,
+    timestamp: SentTimestampMs.fromNumber(NOW),
   };
 
   function getSessionRecord(isOpen?: boolean): SessionRecord {
@@ -93,7 +102,7 @@ describe('SignalProtocolStore', () => {
         remoteRegistrationId: 243,
 
         rootKey: getPrivateKey(),
-        sessionVersion: 3,
+        sessionVersion: 4,
         senderChain: {
           senderRatchetKey: null,
           senderRatchetKeyPrivate: null,
@@ -104,6 +113,7 @@ describe('SignalProtocolStore', () => {
         receiverChains: null,
         pendingPreKey: null,
         needsRefresh: null,
+        pqRatchetState: getRandomBytes(32),
       };
     }
 
@@ -315,6 +325,8 @@ describe('SignalProtocolStore', () => {
         store.saveIdentity(identifier, newIdentity, false, {
           zone: GLOBAL_ZONE,
         }),
+        // FIXME
+        // oxlint-disable-next-line typescript/await-thenable
         resolve(),
       ]);
     });
@@ -1300,7 +1312,7 @@ describe('SignalProtocolStore', () => {
             id: '2-two',
 
             content: Buffer.from('second'),
-            receivedAtDate: Date.now() + 2,
+            receivedAtDate: ReceivedTimestampMs.fromNumber(Date.now() + 2),
           },
           { zone }
         );
@@ -1358,7 +1370,7 @@ describe('SignalProtocolStore', () => {
               id: '2-two',
 
               content: Buffer.from('second'),
-              receivedAtDate: 2,
+              receivedAtDate: ReceivedTimestampMs.fromNumber(2),
             },
             { zone }
           );
@@ -1498,7 +1510,9 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('old envelope'),
           receivedAtCounter: -1,
-          receivedAtDate: NOW - 2 * durations.MONTH,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(
+            NOW - 2 * durations.MONTH
+          ),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1506,7 +1520,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('second'),
           receivedAtCounter: 1,
-          receivedAtDate: NOW + 2,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 2),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1514,7 +1528,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('third'),
           receivedAtCounter: 2,
-          receivedAtDate: NOW + 3,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 3),
         }),
         store.addUnprocessed({
           ...unprocessedDefaults,
@@ -1522,7 +1536,7 @@ describe('SignalProtocolStore', () => {
 
           content: Buffer.from('first'),
           receivedAtCounter: 0,
-          receivedAtDate: NOW + 1,
+          receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
         }),
       ]);
 
@@ -1545,7 +1559,7 @@ describe('SignalProtocolStore', () => {
 
         id,
 
-        receivedAtDate: NOW + 1,
+        receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
       });
       await store.removeUnprocessed(id);
 
@@ -1562,7 +1576,7 @@ describe('SignalProtocolStore', () => {
         id: '1-one',
 
         attempts: 10,
-        receivedAtDate: NOW + 1,
+        receivedAtDate: ReceivedTimestampMs.fromNumber(NOW + 1),
       });
 
       const items = await store.getUnprocessedByIdsAndIncrementAttempts(

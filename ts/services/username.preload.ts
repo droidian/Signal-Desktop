@@ -34,7 +34,7 @@ import type { ResolveUsernameByLinkOptionsType } from '../textsecure/WebAPI.prel
 import { HTTPError } from '../types/HTTPError.std.ts';
 import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.std.ts';
 import * as Bytes from '../Bytes.std.ts';
-import { storageServiceUploadJob } from './storage.preload.ts';
+import { runStorageServiceUploadJob } from './storage.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('username');
@@ -222,7 +222,7 @@ async function updateUsernameAndSyncProfile(
     return;
   }
 
-  // then tell our other devices about profile update
+  // then tell our other devices about profile update, username
   try {
     await singleProtoJobQueue.add(
       MessageSender.getFetchLocalProfileSyncMessage()
@@ -359,7 +359,7 @@ export async function resetLink(username: string): Promise<void> {
   await itemStorage.remove('usernameLinkCorrupted');
 
   me.captureChange('usernameLink');
-  storageServiceUploadJob({ reason: 'resetLink' });
+  runStorageServiceUploadJob({ reason: 'resetLink' });
 }
 
 const USERNAME_LINK_ENTROPY_SIZE = 32;
@@ -393,4 +393,21 @@ async function resolveUsernameByLink(
     }
     throw error;
   }
+}
+
+export function hasUsernameChangeSyncCapability(): boolean {
+  const ourConversation =
+    window.ConversationController.getOurConversationOrThrow();
+
+  return (
+    ourConversation.get('capabilities')?.usernameChangeSyncMessage === true
+  );
+}
+
+export async function sendUsernameChangeSyncMessage(): Promise<void> {
+  if (!hasUsernameChangeSyncCapability()) {
+    return;
+  }
+
+  await singleProtoJobQueue.add(MessageSender.getUsernameChangeSyncMessage());
 }

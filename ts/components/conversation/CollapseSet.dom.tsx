@@ -1,16 +1,10 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 
-import type { RefObject } from 'react';
+import type { RefObject, JSX } from 'react';
 
 import { MessageInteractivity } from './Message.dom.tsx';
 import { format } from '../../util/expirationTimer.std.ts';
@@ -40,7 +34,7 @@ export type Props = CollapseSet & {
   isGroup: boolean;
   isSelectMode: boolean;
   isSelected: boolean;
-  renderItem: (props: RenderItemProps) => React.JSX.Element;
+  renderItem: (props: RenderItemProps) => JSX.Element;
   targetedMessage: TargetedMessageType | undefined;
   toggleDeleteMessagesModal: (props: DeleteMessagesPropsType) => void;
   toggleSelectMessage: (
@@ -51,7 +45,7 @@ export type Props = CollapseSet & {
   ) => void;
 };
 
-export function CollapseSetViewer(props: Props): React.JSX.Element {
+export function CollapseSetViewer(props: Props): JSX.Element {
   strictAssert(
     props.type !== 'none',
     "CollapseSetViewer should never render a 'none' set"
@@ -313,7 +307,7 @@ function CollapseSetButton(
     onDelete: () => unknown;
     onSelect: () => unknown;
   }
-): React.JSX.Element {
+): JSX.Element {
   const {
     count,
     dayCount,
@@ -331,7 +325,7 @@ function CollapseSetButton(
     "CollapseSetButton should never render a 'none' set"
   );
 
-  let symbol: AxoSymbol.InlineGlyphName;
+  let symbol: AxoSymbol.Name;
   let text: string;
 
   // Note: no need for labels for these icons, since they have full text descriptions
@@ -408,11 +402,11 @@ function CollapseSetButton(
     >
       <AxoButton.Root
         size="md"
-        variant="secondary"
+        variant="subtle-secondary"
         arrow={arrow}
         symbol={symbol}
-        aria-expanded={ariaExpanded}
-        aria-controls={disclosureContentId}
+        expanded={ariaExpanded}
+        controls={disclosureContentId}
         onClick={onClick}
       >
         {text}

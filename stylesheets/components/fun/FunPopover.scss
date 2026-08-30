@@ -12,20 +12,24 @@
   // do that
   display: flex;
   color: red;
+
+  // Modal dialogs disable pointer events outside the dialog content.
+  // Fun overlays are portaled to the body, so they need to opt back in.
+  pointer-events: auto;
 }
 
 .FunPopover__Dialog {
   border-radius: 8px;
   box-shadow: 0 8px 20px variables.$color-black-alpha-30;
   background: FunConstants.$Fun__BgColor;
-  user-select: none;
+  backdrop-filter: FunConstants.$Fun__BgFilter;
   overflow: clip;
   -webkit-app-region: no-drag;
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }

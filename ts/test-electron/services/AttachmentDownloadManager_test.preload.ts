@@ -23,6 +23,7 @@ import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 import { DAY, MINUTE, MONTH } from '../../util/durations/index.std.ts';
 import {
   type AttachmentType,
+  AttachmentUndownloadableFromTransitTierError,
   AttachmentVariant,
 } from '../../types/Attachment.std.ts';
 import { strictAssert } from '../../util/assert.std.ts';
@@ -214,7 +215,7 @@ describe('AttachmentDownloadManager', () => {
         forceSave: true,
       }
     );
-    await downloadManager?.addJob({
+    return downloadManager?.addJob({
       urgency,
       ...job,
       isManualDownload: Boolean(job.isManualDownload),
@@ -301,17 +302,19 @@ describe('AttachmentDownloadManager', () => {
     });
   }
 
-  it('runs 3 jobs at a time in descending receivedAt order', async () => {
-    const jobs = await addJobs(5);
+  it('runs 6 jobs at a time in descending receivedAt order', async () => {
+    const jobs = await addJobs(7);
     // Confirm they are saved to DB
     const allJobs = await DataWriter.getNextAttachmentDownloadJobs({
       limit: 100,
     });
 
-    assert.strictEqual(allJobs.length, 5);
+    assert.strictEqual(allJobs.length, 7);
     assert.strictEqual(
       JSON.stringify(allJobs.map(job => job.messageId)),
       JSON.stringify([
+        'message-6',
+        'message-5',
         'message-4',
         'message-3',
         'message-2',
@@ -321,18 +324,23 @@ describe('AttachmentDownloadManager', () => {
     );
 
     await downloadManager?.start();
-    await waitForJobToBeStarted(assertAt(jobs, 2));
+    await waitForJobToBeStarted(assertAt(jobs, 1));
 
-    assert.strictEqual(runJob.callCount, 3);
+    assert.strictEqual(runJob.callCount, 6);
     assertRunJobCalledWith([
+      assertAt(jobs, 6),
+      assertAt(jobs, 5),
       assertAt(jobs, 4),
       assertAt(jobs, 3),
       assertAt(jobs, 2),
+      assertAt(jobs, 1),
     ]);
 
     await waitForJobToBeStarted(assertAt(jobs, 0));
-    assert.strictEqual(runJob.callCount, 5);
+    assert.strictEqual(runJob.callCount, 7);
     assertRunJobCalledWith([
+      assertAt(jobs, 6),
+      assertAt(jobs, 5),
       assertAt(jobs, 4),
       assertAt(jobs, 3),
       assertAt(jobs, 2),
@@ -342,7 +350,7 @@ describe('AttachmentDownloadManager', () => {
   });
 
   it('runs a job immediately if urgency is IMMEDIATE', async () => {
-    const jobs = await addJobs(6);
+    const jobs = await addJobs(7);
     await downloadManager?.start();
 
     const urgentJobForOldMessage = composeJob({
@@ -354,47 +362,57 @@ describe('AttachmentDownloadManager', () => {
 
     await waitForJobToBeStarted(urgentJobForOldMessage);
 
-    assert.strictEqual(runJob.callCount, 4);
+    assert.strictEqual(runJob.callCount, 7);
     assertRunJobCalledWith([
+      assertAt(jobs, 6),
       assertAt(jobs, 5),
       assertAt(jobs, 4),
       assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
       urgentJobForOldMessage,
     ]);
 
     await waitForJobToBeStarted(assertAt(jobs, 0));
-    assert.strictEqual(runJob.callCount, 7);
+    assert.strictEqual(runJob.callCount, 8);
     assertRunJobCalledWith([
+      assertAt(jobs, 6),
       assertAt(jobs, 5),
       assertAt(jobs, 4),
       assertAt(jobs, 3),
-      urgentJobForOldMessage,
       assertAt(jobs, 2),
       assertAt(jobs, 1),
+      urgentJobForOldMessage,
       assertAt(jobs, 0),
     ]);
   });
 
   it('prefers jobs for visible messages', async () => {
-    const jobs = await addJobs(5);
+    const jobs = await addJobs(8);
 
     downloadManager?.updateVisibleTimelineMessages(['message-0', 'message-1']);
 
     await downloadManager?.start();
 
     await waitForJobToBeStarted(assertAt(jobs, 4));
-    assert.strictEqual(runJob.callCount, 3);
+    assert.strictEqual(runJob.callCount, 6);
     assertRunJobCalledWith([
       assertAt(jobs, 0),
       assertAt(jobs, 1),
+      assertAt(jobs, 7),
+      assertAt(jobs, 6),
+      assertAt(jobs, 5),
       assertAt(jobs, 4),
     ]);
 
     await waitForJobToBeStarted(assertAt(jobs, 2));
-    assert.strictEqual(runJob.callCount, 5);
+    assert.strictEqual(runJob.callCount, 8);
     assertRunJobCalledWith([
       assertAt(jobs, 0),
       assertAt(jobs, 1),
+      assertAt(jobs, 7),
+      assertAt(jobs, 6),
+      assertAt(jobs, 5),
       assertAt(jobs, 4),
       assertAt(jobs, 3),
       assertAt(jobs, 2),
@@ -411,9 +429,9 @@ describe('AttachmentDownloadManager', () => {
     assert.strictEqual(runJob.callCount, 0);
 
     isInCall.callsFake(() => false);
-
+    const jobStartPromise = waitForJobToBeStarted(assertAt(jobs, 0));
     await advanceTime(2 * MINUTE);
-    await waitForJobToBeStarted(assertAt(jobs, 0));
+    await jobStartPromise;
     assert.strictEqual(runJob.callCount, 5);
   });
 
@@ -824,6 +842,96 @@ describe('AttachmentDownloadManager', () => {
       assert.strictEqual(savedJobs.length, 0);
     });
   });
+
+  describe('attachments with no download information', () => {
+    // An attachment with no key/digest/cdn/localKey info (e.g. an imported errored
+    // attachment) is not downloadable from any tier and can't be reliably identified
+    // via addAttachmentToMessage, so addJob should request backfill immediately rather
+    // than queueing a job that could never succeed.
+    const noInfoOverrides: Partial<AttachmentType> = {
+      key: undefined,
+      plaintextHash: undefined,
+      digest: undefined,
+      cdnKey: undefined,
+      cdnNumber: undefined,
+      localKey: undefined,
+      path: undefined,
+    };
+
+    beforeEach(() => {
+      sandbox
+        .stub(window.ConversationController, 'areWePrimaryDevice')
+        .returns(false);
+    });
+
+    it('requests backfill and skips queueing for manual downloads', async () => {
+      const requestBackfill = sandbox
+        .stub(AttachmentDownloadManager, 'requestBackfill')
+        .resolves();
+      const job = composeJob({
+        messageId: 'messageId',
+        receivedAt: Date.now(),
+        attachmentOverrides: noInfoOverrides,
+        jobOverrides: { isManualDownload: true },
+      });
+
+      const result = await addJob(job, AttachmentDownloadUrgency.STANDARD);
+
+      assert.strictEqual(requestBackfill.callCount, 1);
+      assert.strictEqual(requestBackfill.getCall(0).args[0].id, job.messageId);
+      // Returned attachment is marked pending so the caller can reflect the
+      // in-flight backfill on the message.
+      assert.strictEqual(result?.pending, true);
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 0);
+    });
+
+    it('does not request backfill for automatic downloads', async () => {
+      const requestBackfill = sandbox
+        .stub(AttachmentDownloadManager, 'requestBackfill')
+        .resolves();
+      const job = composeJob({
+        messageId: 'messageId',
+        receivedAt: Date.now(),
+        attachmentOverrides: noInfoOverrides,
+        jobOverrides: { isManualDownload: false },
+      });
+
+      await addJob(job, AttachmentDownloadUrgency.STANDARD);
+
+      assert.strictEqual(requestBackfill.callCount, 0);
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 1);
+    });
+
+    it('does not request backfill or queue when not backfillable', async () => {
+      const requestBackfill = sandbox
+        .stub(AttachmentDownloadManager, 'requestBackfill')
+        .resolves();
+      const job = composeJob({
+        messageId: 'messageId',
+        receivedAt: Date.now(),
+        attachmentOverrides: { ...noInfoOverrides, backfillError: true },
+        jobOverrides: { isManualDownload: true },
+      });
+
+      const result = await addJob(job, AttachmentDownloadUrgency.STANDARD);
+
+      assert.strictEqual(requestBackfill.callCount, 0);
+      assert.notStrictEqual(result?.pending, true);
+
+      const savedJobs = await DataWriter.getNextAttachmentDownloadJobs({
+        limit: 100,
+      });
+      assert.strictEqual(savedJobs.length, 0);
+    });
+  });
 });
 describe('AttachmentDownloadManager.runDownloadAttachmentJob', () => {
   let sandbox: sinon.SinonSandbox;
@@ -859,7 +967,86 @@ describe('AttachmentDownloadManager.runDownloadAttachmentJob', () => {
 
   afterEach(async () => {
     sandbox.restore();
+    await DataWriter.removeAll();
+    MessageCache.install();
   });
+
+  async function saveMessageForJob(
+    job: AttachmentDownloadJobType,
+    overrides: Partial<MessageAttributesType> = {}
+  ) {
+    await window.MessageCache.saveMessage(
+      {
+        id: job.messageId,
+        type: 'incoming',
+        sent_at: job.sentAt,
+        timestamp: job.sentAt,
+        received_at: job.receivedAt,
+        conversationId: 'convoId',
+        attachments: [job.attachment],
+        ...overrides,
+      },
+      {
+        forceSave: true,
+      }
+    );
+  }
+
+  function getSavedAttachment(messageId: string): AttachmentType {
+    const message = window.MessageCache.getById(messageId);
+    strictAssert(message != null, 'message should exist');
+    const attachment = message.attributes.attachments?.[0];
+    strictAssert(attachment != null, 'attachment should exist');
+    return attachment;
+  }
+
+  async function runJobWithError({
+    job,
+    error,
+    hasMediaBackups = false,
+    isLastAttempt = false,
+  }: {
+    job: AttachmentDownloadJobType;
+    error: Error;
+    hasMediaBackups?: boolean;
+    isLastAttempt?: boolean;
+  }) {
+    const abortController = new AbortController();
+
+    return runDownloadAttachmentJob({
+      job,
+      isLastAttempt,
+      options: {
+        isForCurrentlyVisibleMessage: false,
+        abortSignal: abortController.signal,
+        maxAttachmentSize,
+        maxTextAttachmentSize,
+        hasMediaBackups,
+      },
+      dependencies: {
+        downloadAttachment,
+        maybeDeleteAttachmentFile,
+        cleanupAttachmentFiles,
+        deleteDownloadFile,
+        processNewAttachment,
+        runDownloadAttachmentJobInner: sandbox.stub().throws(error),
+      },
+    });
+  }
+
+  async function runJobWithTransitTierError({
+    job,
+    hasMediaBackups = false,
+  }: {
+    job: AttachmentDownloadJobType;
+    hasMediaBackups?: boolean;
+  }) {
+    return runJobWithError({
+      job,
+      hasMediaBackups,
+      error: new AttachmentUndownloadableFromTransitTierError('missing'),
+    });
+  }
 
   it('will delete attachment files if attachment not found on message', async () => {
     const messageId = 'messageId';
@@ -932,6 +1119,237 @@ describe('AttachmentDownloadManager.runDownloadAttachmentJob', () => {
       },
     });
   });
+
+  it('requests backfill for manual downloads that are missing from transit tier', async () => {
+    sandbox
+      .stub(window.ConversationController, 'areWePrimaryDevice')
+      .returns(false);
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 1);
+    assert.strictEqual(requestBackfill.getCall(0).args[0].id, job.messageId);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      error: true,
+      pending: true,
+    });
+  });
+
+  it('does not request backfill for automatic downloads missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('finishes backfill jobs missing from transit tier without requesting another backfill', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+        source: AttachmentDownloadSource.BACKFILL,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('does not request backfill for story attachments missing from transit tier', async () => {
+    sandbox
+      .stub(window.ConversationController, 'areWePrimaryDevice')
+      .returns(false);
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: true,
+      },
+    });
+    await saveMessageForJob(job, { type: 'story' });
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('retries backup-tier attachments missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({
+      job,
+      hasMediaBackups: true,
+    });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('retries local-backup attachments missing from transit tier', async () => {
+    const requestBackfill = sandbox
+      .stub(AttachmentDownloadManager, 'requestBackfill')
+      .resolves();
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        cdnKey: 'cdnKey',
+        cdnNumber: 2,
+        id: 3,
+        localBackupPath: 'localBackupPath',
+        localKey: toBase64(generateAttachmentKeys()),
+      },
+      jobOverrides: {
+        isManualDownload: false,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithTransitTierError({ job });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.strictEqual(requestBackfill.callCount, 0);
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...omit(job.attachment, ['cdnKey', 'cdnNumber', 'id']),
+      pending: false,
+      error: true,
+    });
+  });
+
+  it('finishes generic failures on the last attempt', async () => {
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        pending: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithError({
+      job,
+      error: new Error('network error'),
+      isLastAttempt: true,
+    });
+
+    assert.strictEqual(result.status, 'finished');
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...job.attachment,
+      pending: false,
+    });
+  });
+
+  it('retries generic failures before the last attempt', async () => {
+    const job = composeJob({
+      messageId: 'messageId',
+      receivedAt: Date.now(),
+      attachmentOverrides: {
+        pending: true,
+      },
+    });
+    await saveMessageForJob(job);
+
+    const result = await runJobWithError({
+      job,
+      error: new Error('network error'),
+    });
+
+    assert.strictEqual(result.status, 'retry');
+    assert.deepStrictEqual(getSavedAttachment(job.messageId), {
+      ...job.attachment,
+      pending: false,
+    });
+  });
 });
 
 describe('AttachmentDownloadManager.runDownloadAttachmentJobInner', () => {
@@ -974,6 +1392,8 @@ describe('AttachmentDownloadManager.runDownloadAttachmentJobInner', () => {
 
   afterEach(async () => {
     sandbox.restore();
+    await DataWriter.removeAll();
+    await itemStorage.fetch();
   });
 
   describe('attachment size errors', () => {

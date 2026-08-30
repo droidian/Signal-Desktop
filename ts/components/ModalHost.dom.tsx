@@ -1,7 +1,14 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useContext, useEffect } from 'react';
+import {
+  useContext,
+  useEffect,
+  createContext,
+  memo,
+  useRef,
+  type ReactElement,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { SpringValues } from '@react-spring/web';
 import { animated } from '@react-spring/web';
@@ -14,7 +21,7 @@ import { assertDev } from '../util/assert.std.ts';
 import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
 import { themeClassName } from '../util/theme.std.ts';
 import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
-import { usePrevious } from '../hooks/usePrevious.std.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
 import { handleOutsideClick } from '../util/handleOutsideClick.dom.ts';
 import { createLogger } from '../logging/log.std.ts';
 
@@ -22,12 +29,10 @@ const { noop } = lodash;
 
 const log = createLogger('ModalHost');
 
-export const ModalContainerContext = React.createContext<HTMLElement | null>(
-  null
-);
+export const ModalContainerContext = createContext<HTMLElement | null>(null);
 
 export type PropsType = Readonly<{
-  children: React.ReactElement;
+  children: ReactElement;
   modalName: string;
   moduleClassName?: string;
   noEscapeClose?: boolean;
@@ -39,7 +44,7 @@ export type PropsType = Readonly<{
   theme?: Theme;
 }>;
 
-export const ModalHost = React.memo(function ModalHostInner({
+export const ModalHost = memo(function ModalHostInner({
   children,
   modalName,
   moduleClassName,
@@ -51,8 +56,8 @@ export const ModalHost = React.memo(function ModalHostInner({
   overlayStyles,
   theme,
 }: PropsType) {
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const previousModalName = usePrevious(modalName, modalName);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const previousModalName = usePreviousDeprecated(modalName, modalName);
   const modalContainer = useContext(ModalContainerContext) ?? document.body;
 
   if (previousModalName !== modalName) {

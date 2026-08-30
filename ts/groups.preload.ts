@@ -138,6 +138,7 @@ import Actions = Proto.GroupChange.Actions;
 import AccessRequired = Proto.AccessControl.AccessRequired;
 import MemberRole = Proto.Member.Role;
 import { computeGroupNameHash } from './util/Conversation.preload.ts';
+import { Emoji } from './axo/emoji.std.ts';
 
 const { compact, difference, flatten, fromPairs, isNumber, omit, values } =
   lodash;
@@ -1325,7 +1326,7 @@ export function buildModifyMemberLabelChange({
 }: {
   serviceId: ServiceIdString;
   group: ConversationAttributesType;
-  labelEmoji: string | undefined;
+  labelEmoji: Emoji.Variant | undefined;
   labelString: string | undefined;
 }): Actions.Params {
   const logId = `buildModifyMemberLabelChange(${getConversationIdForLogging(group)})`;
@@ -2517,7 +2518,7 @@ export async function initiateMigrationToGroupV2(
       });
 
       if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
-        await itemStorage.blocked.addBlockedGroup(groupId);
+        await itemStorage.blocked.addBlockedGroup(groupId, undefined);
       }
 
       // Save these most recent updates to conversation
@@ -2861,7 +2862,7 @@ export async function respondToGroupV2Migration({
           );
 
           if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
-            await itemStorage.blocked.addBlockedGroup(groupId);
+            await itemStorage.blocked.addBlockedGroup(groupId, undefined);
           }
 
           if (wereWePreviouslyAMember) {
@@ -3000,7 +3001,7 @@ export async function respondToGroupV2Migration({
   });
 
   if (itemStorage.blocked.isGroupBlocked(previousGroupV1Id)) {
-    await itemStorage.blocked.addBlockedGroup(groupId);
+    await itemStorage.blocked.addBlockedGroup(groupId, undefined);
   }
 
   // Save these most recent updates to conversation
@@ -3222,9 +3223,9 @@ async function updateGroup(
     };
   });
 
-  const contactsWithoutProfileKey = new Array<ConversationModel>();
+  const contactsNeedingFetch = new Array<ConversationModel>();
 
-  // Capture profile key for each member in the group, if we don't have it yet
+  // Update profile key for each member, if self-updated or we have no profileKey for them
   for (const [aci, profileKey] of newProfileKeys) {
     const contact = window.ConversationController.getOrCreate(aci, 'private');
 
@@ -3234,20 +3235,20 @@ async function updateGroup(
       profileKey.length > 0 &&
       contact.get('profileKey') !== profileKey
     ) {
-      contactsWithoutProfileKey.push(contact);
+      contactsNeedingFetch.push(contact);
       drop(contact.setProfileKey(profileKey, { reason: 'updateGroup' }));
     }
   }
 
   let profileFetches: Promise<Array<void>> | undefined;
-  if (contactsWithoutProfileKey.length !== 0) {
+  if (contactsNeedingFetch.length !== 0) {
     log.info(
       `updateGroup/${logId}: fetching ` +
-        `${contactsWithoutProfileKey.length} missing profiles`
+        `${contactsNeedingFetch.length} missing profiles`
     );
 
     profileFetches = Promise.all(
-      contactsWithoutProfileKey.map(contact => {
+      contactsNeedingFetch.map(contact => {
         return getProfile({
           serviceId: contact.getServiceId() ?? null,
           e164: contact.get('e164') ?? null,
@@ -3325,10 +3326,10 @@ async function updateGroup(
   //   the group updates happen on the model.
   if (changeMessagesToSave.length > 0) {
     try {
-      if (contactsWithoutProfileKey && contactsWithoutProfileKey.length > 0) {
+      if (contactsNeedingFetch && contactsNeedingFetch.length > 0) {
         await Promise.race([profileFetches, sleep(30 * SECOND)]);
         log.info(
-          `updateGroup/${logId}: timed out or finished fetching ${contactsWithoutProfileKey.length} profiles`
+          `updateGroup/${logId}: timed out or finished fetching ${contactsNeedingFetch.length} profiles`
         );
       }
     } catch (error) {
@@ -3343,6 +3344,10 @@ async function updateGroup(
   conversation.set({
     ...omit(newAttributes, FIELDS_UNRELATED_TO_GROUP_STATE),
     active_at: activeAt,
+
+    // Reset `needsGroupUpdate` so that group can be synced to storage service
+    // after the first fetch.
+    needsGroupUpdate: undefined,
   });
 
   if (idChanged) {
@@ -5647,7 +5652,7 @@ async function applyGroupChange({
       const { added } = addMemberPendingAdminApproval;
       if (!added) {
         throw new Error(
-          'applyGroupChange: modifyMemberProfileKey had a missing value'
+          'applyGroupChange: addMemberPendingAdminApproval had a missing value'
         );
       }
 
@@ -6050,8 +6055,8 @@ async function applyGroupState({
   const ourAci = itemStorage.user.getCheckedAci();
 
   // members
-  const wasPreviouslyAMember = (result.membersV2 || []).some(
-    item => item.aci !== ourAci
+  const wasPreviouslyAMember = (group.membersV2 || []).some(
+    item => item.aci === ourAci
   );
   if (groupState.members) {
     result.membersV2 = groupState.members.map(member => {
@@ -6332,7 +6337,7 @@ function normalizeTimestamp(timestamp: bigint | null | undefined): number {
 
 type DecryptedModifyMemberLabelAction = {
   userId: AciString;
-  labelEmoji?: string;
+  labelEmoji?: Emoji.Variant;
   labelString?: string;
 };
 
@@ -7127,11 +7132,11 @@ function decryptModifyMemberLabelAction(
   }
 
   // labelEmoji
-  let decryptedLabelEmoji: string | undefined;
+  let decryptedLabelEmoji: Emoji.Variant | undefined;
   if (Bytes.isNotEmpty(labelEmoji)) {
     try {
-      decryptedLabelEmoji = Bytes.toString(
-        decryptGroupBlob(clientZkGroupCipher, labelEmoji)
+      decryptedLabelEmoji = Emoji.unsafeCastMaybeInvalidStringToVariant(
+        Bytes.toString(decryptGroupBlob(clientZkGroupCipher, labelEmoji))
       );
     } catch (error) {
       log.warn(
@@ -7364,7 +7369,7 @@ type DecryptedMember = Readonly<{
   profileKey: Uint8Array<ArrayBuffer>;
   role: MemberRole;
   joinedAtVersion: number;
-  labelEmoji?: string;
+  labelEmoji?: Emoji.Variant;
   labelString?: string;
 }>;
 
@@ -7413,11 +7418,11 @@ function decryptMember(
   }
 
   // labelEmoji
-  let decryptedLabelEmoji: string | undefined;
+  let decryptedLabelEmoji: Emoji.Variant | undefined;
   if (Bytes.isNotEmpty(member.labelEmoji)) {
     try {
-      decryptedLabelEmoji = Bytes.toString(
-        decryptGroupBlob(clientZkGroupCipher, member.labelEmoji)
+      decryptedLabelEmoji = Emoji.unsafeCastMaybeInvalidStringToVariant(
+        Bytes.toString(decryptGroupBlob(clientZkGroupCipher, member.labelEmoji))
       );
     } catch (error) {
       log.warn(

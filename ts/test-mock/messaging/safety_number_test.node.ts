@@ -113,21 +113,21 @@ describe('safety number', function (this: Mocha.Suite) {
     await changeIdentityKey();
 
     await expectSystemMessages(window, [
-      /Safety Number has changed/, // Bob's key from storage service
+      /Safety Number with Alice/, // Alice's key from storage service
     ]);
 
     debug('Sending message');
     await input.press('Enter');
 
     debug('Waiting for safety number dialog');
-    const dialog = window.locator(
-      '[data-testid="ConfirmationDialog.SafetyNumberChangeDialog.reviewing"]'
-    );
+    const dialog = window.getByRole('alertdialog', {
+      name: 'Safety Number Changes',
+    });
     await dialog.locator(`"${alice.profileName}"`).waitFor();
 
     await expectSystemMessages(window, [
-      /Safety Number has changed/, // Bob's key from storage service
-      /Safety Number has changed/, // Fixed Alice's key from backend
+      /Safety Number with/, // One is a fixed Alice's key from backend
+      /Safety Number with/, // Other is Bob's key from storage service
     ]);
 
     debug('Confirming send');
@@ -181,9 +181,9 @@ describe('safety number', function (this: Mocha.Suite) {
     await window.locator('button.SendStoryModal__send').click();
 
     debug('Waiting for safety number dialog');
-    const dialog = window.locator(
-      '[data-testid="ConfirmationDialog.SafetyNumberChangeDialog.reviewing"]'
-    );
+    const dialog = window.getByRole('alertdialog', {
+      name: 'Safety Number Changes',
+    });
     await dialog.locator(`"${alice.profileName}"`).waitFor();
 
     debug('Confirming send');

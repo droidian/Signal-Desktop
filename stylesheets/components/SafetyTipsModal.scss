@@ -42,18 +42,10 @@
   }
 
   &:focus {
+    outline: none;
     @include mixins.keyboard-mode {
       &::before {
-        box-shadow:
-          0 0 0 2px variables.$color-white,
-          0 0 0 4px variables.$color-accent-blue;
-      }
-    }
-    @include mixins.dark-keyboard-mode {
-      &::before {
-        box-shadow:
-          0 0 0 2px variables.$color-gray-80,
-          0 0 0 4px variables.$color-accent-blue;
+        @include mixins.axo-focus-ring;
       }
     }
   }

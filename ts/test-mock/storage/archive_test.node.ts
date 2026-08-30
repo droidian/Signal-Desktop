@@ -105,11 +105,13 @@ describe('storage service', function (this: Mocha.Suite) {
 
       const newState = await phone.waitForStorageState({
         after: state,
+        predicate: storageState => {
+          return (
+            !storageState.isPinned(firstContact) &&
+            storageState.getContact(firstContact)?.archived === true
+          );
+        },
       });
-      assert.ok(!newState.isPinned(firstContact), 'contact not pinned');
-      const record = newState.getContact(firstContact);
-      assert.ok(record, 'contact record not found');
-      assert.ok(record?.archived, 'contact archived');
 
       // AccountRecord + ContactRecord
       const { added, removed } = newState.diff(state);

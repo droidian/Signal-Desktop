@@ -50,7 +50,13 @@ export async function saveAndNotify(
 
     drop(conversation.onNewMessage(message));
 
-    drop(maybeNotify({ message: message.attributes, conversation }));
+    drop(
+      maybeNotify({
+        kind: 'normalMessage',
+        message: message.attributes,
+        conversation,
+      })
+    );
 
     // Increment the sent message count if this is an outgoing message
     if (message.get('type') === 'outgoing') {

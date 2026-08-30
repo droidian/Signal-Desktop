@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import classNames from 'classnames';
 
 import type {
@@ -32,18 +32,25 @@ import {
   renderSubscriptionDetails,
 } from './PreferencesBackupDetails.dom.tsx';
 import type { LocalBackupExportMetadata } from '../types/LocalExport.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import { AxoAlertDialog } from '../axo/AxoAlertDialog.dom.tsx';
 
 export const SIGNAL_BACKUPS_LEARN_MORE_URL =
   'https://support.signal.org/hc/articles/360007059752-Backup-and-Restore-Messages';
 
 const LOCAL_BACKUPS_PAGES = new Set([
   SettingsPage.LocalBackups,
+  SettingsPage.LocalBackupsSetupKey,
+  SettingsPage.LocalBackupsSetupFolder,
   SettingsPage.LocalBackupsKeyReference,
 ]);
 
 function isLocalBackupsPage(page: SettingsPage) {
   return LOCAL_BACKUPS_PAGES.has(page);
 }
+
+const logger = createLogger('PreferencesBackups');
 
 export function PreferencesBackups({
   backupKey,
@@ -109,8 +116,9 @@ export function PreferencesBackups({
   setSettingsLocation: (settingsLocation: SettingsLocation) => void;
   showToast: ShowToastAction;
   startLocalBackupExport: () => void;
-}): React.JSX.Element | null {
+}): JSX.Element | null {
   const [isAuthPending, setIsAuthPending] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<boolean>(false);
 
   useEffect(() => {
     if (settingsLocation.page === SettingsPage.Backups) {
@@ -179,7 +187,7 @@ export function PreferencesBackups({
     );
   }
 
-  const learnMoreLink = (parts: Array<string | React.JSX.Element>) => (
+  const learnMoreLink = (parts: Array<string | JSX.Element>) => (
     <a href={SIGNAL_BACKUPS_LEARN_MORE_URL} rel="noreferrer" target="_blank">
       {parts}
     </a>
@@ -245,7 +253,7 @@ export function PreferencesBackups({
                 )}
               >
                 <AxoButton.Root
-                  variant="secondary"
+                  variant="strong-secondary"
                   size="lg"
                   onClick={() =>
                     setSettingsLocation({ page: SettingsPage.BackupsDetails })
@@ -286,19 +294,37 @@ export function PreferencesBackups({
             )}
           >
             <AxoButton.Root
-              variant="secondary"
+              variant="strong-secondary"
               size="lg"
               disabled={isAuthPending}
               onClick={async () => {
                 if (isLocalBackupsSetup) {
-                  setSettingsLocation({ page: SettingsPage.LocalBackups });
+                  setSettingsLocation({
+                    page: SettingsPage.LocalBackups,
+                  });
                 } else {
                   try {
                     setIsAuthPending(true);
                     const result = await promptOSAuth('enable-backups');
                     if (result === 'success' || result === 'unsupported') {
-                      setSettingsLocation({ page: SettingsPage.LocalBackups });
+                      setSettingsLocation({
+                        page: SettingsPage.LocalBackupsSetupFolder,
+                      });
                     }
+
+                    if (result === 'error') {
+                      logger.error(
+                        'Error returned when requesting OS auth for enabling backups'
+                      );
+                      setAuthError(true);
+                    }
+                    // We don't show an error when result is unauthorized
+                  } catch (e) {
+                    logger.error(
+                      'Error thrown when requesting OS auth for enabling backups',
+                      toLogFormat(e)
+                    );
+                    setAuthError(true);
                   } finally {
                     setIsAuthPending(false);
                   }
@@ -324,6 +350,32 @@ export function PreferencesBackups({
       </div>
       {renderRemoteBackups()}
       {isLocalBackupsEnabled ? renderLocalBackups() : null}
+      {authError ? (
+        <AxoAlertDialog.Root
+          open
+          onOpenChange={open => {
+            if (!open) {
+              setAuthError(false);
+            }
+          }}
+        >
+          <AxoAlertDialog.Content escape="cancel-is-noop">
+            <AxoAlertDialog.Title screenReaderOnly>
+              {i18n('icu:Toast--error')}
+            </AxoAlertDialog.Title>
+            <AxoAlertDialog.Body>
+              <AxoAlertDialog.Description>
+                {i18n(
+                  'icu:Preferences__local-backups-auth-error--unknown-error'
+                )}
+              </AxoAlertDialog.Description>
+            </AxoAlertDialog.Body>
+            <AxoAlertDialog.Footer>
+              <AxoAlertDialog.Cancel>{i18n('icu:ok')}</AxoAlertDialog.Cancel>
+            </AxoAlertDialog.Footer>
+          </AxoAlertDialog.Content>
+        </AxoAlertDialog.Root>
+      ) : null}
     </>
   );
 }
@@ -336,7 +388,7 @@ function renderPaidBackupsSummary({
   locale: string;
   subscriptionStatus: BackupsSubscriptionType;
   i18n: LocalizerType;
-}): React.JSX.Element | null {
+}): JSX.Element | null {
   return (
     <div className="Preferences--backups-summary__status-container">
       <div>
@@ -357,7 +409,7 @@ function renderFreeBackupsSummary({
 }: {
   backupFreeMediaDays: number;
   i18n: LocalizerType;
-}): React.JSX.Element | null {
+}): JSX.Element | null {
   return (
     <div className="Preferences--backups-summary__status-container">
       <div>

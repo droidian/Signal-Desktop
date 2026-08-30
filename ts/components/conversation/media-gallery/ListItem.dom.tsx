@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, type ReactNode } from 'react';
+import { useCallback, type ReactNode, type JSX, type MouseEvent } from 'react';
 import type { ReadonlyDeep } from 'type-fest';
 
 import moment from 'moment';
@@ -22,16 +22,16 @@ import {
 export type Props = Readonly<{
   i18n: LocalizerType;
   mediaItem: GenericMediaItemType;
-  thumbnail: React.ReactNode;
+  thumbnail: ReactNode;
   title: string;
-  subtitle: React.ReactNode;
+  subtitle: ReactNode;
   readyLabel: string;
   onClick: (status: AttachmentStatusType['state']) => void;
   showMessage: () => void;
   renderContextMenu: (
     mediaItem: ReadonlyDeep<GenericMediaItemType>,
     children: ReactNode
-  ) => React.JSX.Element;
+  ) => JSX.Element;
 }>;
 
 export function ListItem({
@@ -44,7 +44,7 @@ export function ListItem({
   onClick,
   showMessage,
   renderContextMenu,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const { message } = mediaItem;
   let attachment: AttachmentForUIType | undefined;
 
@@ -63,7 +63,7 @@ export function ListItem({
   const status = useAttachmentStatus(attachment);
 
   const handleClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
       ev.stopPropagation();
       onClick(status?.state || 'ReadyToShow');
@@ -72,7 +72,7 @@ export function ListItem({
   );
 
   const handleDateClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
       ev.stopPropagation();
       showMessage();
@@ -90,7 +90,7 @@ export function ListItem({
     throw missingCaseError(status);
   }
 
-  let button: React.JSX.Element | undefined;
+  let button: JSX.Element | undefined;
   if (
     status != null &&
     status.state !== 'ReadyToShow' &&
@@ -99,7 +99,7 @@ export function ListItem({
     button = (
       <div
         className={tw(
-          'relative -ms-1 size-7 shrink-0 rounded-full bg-fill-secondary',
+          'relative -ms-1 size-7 shrink-0 rounded-full bg-primary',
           'flex items-center justify-center'
         )}
       >
@@ -116,7 +116,7 @@ export function ListItem({
         )}
         <div
           className={tw(
-            'absolute flex items-center justify-center text-label-primary'
+            'absolute flex items-center justify-center text-primary'
           )}
         >
           <AxoSymbol.Icon
@@ -133,9 +133,9 @@ export function ListItem({
     <AriaClickable.Root
       className={tw(
         'mx-2.5 flex flex-row gap-3 rounded-lg px-3.5 py-2',
-        'data-hovered:bg-fill-secondary',
-        'data-focused:bg-fill-secondary',
-        'data-pressed:bg-fill-secondary-pressed',
+        'data-hovered:bg-primary',
+        'data-focused:bg-primary',
+        'data-pressed:bg-primary-pressed',
         mediaItem.type === 'link' ? undefined : 'items-center'
       )}
     >
@@ -144,13 +144,13 @@ export function ListItem({
         <h3 className={tw('truncate')}>
           <UserText text={title} />
         </h3>
-        <div className={tw('type-body-small leading-4 text-label-secondary')}>
+        <div className={tw('type-body-small leading-4 text-secondary')}>
           {subtitle}
         </div>
       </div>
       {renderContextMenu(
         mediaItem,
-        <AriaClickable.HiddenTrigger aria-label={label} onClick={handleClick} />
+        <AriaClickable.HiddenTrigger label={label} onClick={handleClick} />
       )}
       <AriaClickable.SubWidget>
         <button
@@ -158,7 +158,7 @@ export function ListItem({
           className={tw(
             'shrink-0 self-stretch',
             mediaItem.type === 'link' ? undefined : 'flex items-center',
-            'type-body-small text-label-secondary'
+            'type-body-small text-secondary'
           )}
           aria-label={i18n('icu:ListItem__show-message')}
           onClick={handleDateClick}

@@ -102,7 +102,6 @@ import type { ChatFolder } from '../types/ChatFolder.std.ts';
 import { isCurrentAllChatFolder } from '../types/CurrentChatFolders.std.ts';
 import type { NotificationProfileType } from '../types/NotificationProfile.std.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
-
 import { toNumber } from '../util/toNumber.std.ts';
 
 const { debounce, isNumber, chunk } = lodash;
@@ -123,6 +122,7 @@ const {
 const uploadBucket: Array<number> = [];
 
 const ITEM_TYPE = Proto.ManifestRecord.Identifier.Type;
+const RECORD_IKM_LENGTH = 32;
 
 // Note: when updating this, update the switch downfile in mergeRecord()
 const validRecordTypes = new Set([
@@ -193,6 +193,7 @@ type GeneratedManifestType = {
   recordsByID: Map<string, GeneratedItemType | RemoteRecord>;
   insertKeys: Set<string>;
   deleteKeys: Set<string>;
+  clearAll?: boolean;
 };
 
 async function generateManifest(
@@ -269,25 +270,68 @@ async function generateManifest(
     };
   }
 
+  const ourConversation =
+    window.ConversationController.getOurConversationOrThrow();
+  const signalConversation =
+    await window.ConversationController.getOrCreateSignalConversation();
+
+  const accountRecord = {
+    record: {
+      account: toAccountRecord({
+        ourConversation,
+        signalConversation,
+        notificationProfileSyncDisabled,
+      }),
+    },
+  };
+
+  const {
+    isNewItem: isAccountRecordNewItem,
+    storageID: accountRecordStorageID,
+  } = processStorageRecord({
+    conversation: ourConversation,
+    currentStorageID: ourConversation.get('storageID'),
+    currentStorageVersion: ourConversation.get('storageVersion'),
+    identifierType: ITEM_TYPE.ACCOUNT,
+    storageNeedsSync: Boolean(
+      ourConversation.get('needsStorageServiceSync') ||
+      signalConversation.get('needsStorageServiceSync')
+    ),
+    storageRecord: accountRecord,
+  });
+
+  if (isAccountRecordNewItem) {
+    postUploadUpdateFunctions.push(() => {
+      ourConversation.set({
+        needsStorageServiceSync: false,
+        storageVersion: version,
+        storageID: accountRecordStorageID,
+      });
+      signalConversation.set({
+        needsStorageServiceSync: false,
+        storageVersion: version,
+        storageID: accountRecordStorageID,
+      });
+      drop(updateConversation(ourConversation.attributes));
+      drop(updateConversation(signalConversation.attributes));
+    });
+  }
+
   for (const conversation of window.ConversationController.getAll()) {
     let identifierType;
     let storageRecord: Proto.StorageRecord.Params | undefined;
 
-    if (isSignalConversation(conversation.attributes)) {
+    const conversationType = typeofConversation(conversation.attributes);
+
+    // Metadata for the Signal (release notes) and self conversation is included in AccountRecord
+    if (
+      isSignalConversation(conversation.attributes) ||
+      conversationType === ConversationTypes.Me
+    ) {
       continue;
     }
 
-    const conversationType = typeofConversation(conversation.attributes);
-    if (conversationType === ConversationTypes.Me) {
-      storageRecord = {
-        record: {
-          account: toAccountRecord(conversation, {
-            notificationProfileSyncDisabled,
-          }),
-        },
-      };
-      identifierType = ITEM_TYPE.ACCOUNT;
-    } else if (conversationType === ConversationTypes.Direct) {
+    if (conversationType === ConversationTypes.Direct) {
       // Contacts must have UUID
       if (!conversation.getServiceId()) {
         continue;
@@ -338,6 +382,16 @@ async function generateManifest(
       };
       identifierType = ITEM_TYPE.CONTACT;
     } else if (conversationType === ConversationTypes.GroupV2) {
+      // Group just added via an incoming message, get updates from the server
+      // first before syncing it to storage service.
+      if (conversation.get('needsGroupUpdate') === true) {
+        log.warn(
+          `upload(${version}): ` +
+            `dropping group=${conversation.idForLogging()} until it is updated`
+        );
+        continue;
+      }
+
       storageRecord = {
         record: {
           groupV2: toGroupV2Record(conversation),
@@ -539,6 +593,34 @@ async function generateManifest(
     };
 
     uninstalledStickerPackIds.add(stickerPack.id);
+
+    if (
+      stickerPack.uninstalledAt !== 0 &&
+      isOlderThan(stickerPack.uninstalledAt, getMessageQueueTime())
+    ) {
+      const droppedID = stickerPack.storageID;
+      const droppedVersion = stickerPack.storageVersion;
+      if (droppedID) {
+        const recordID = redactStorageID(droppedID, droppedVersion);
+
+        log.info(
+          `generateManifest(${version}): ` +
+            `dropping stickerPack=${recordID} ` +
+            `due to expired deleted timestamp=${stickerPack.uninstalledAt}`
+        );
+        deleteKeys.add(droppedID);
+      } else {
+        log.info(
+          `generateManifest(${version}): ` +
+            `dropping never uploaded stickerPack=${stickerPack.id}` +
+            `due to expired deleted timestamp=${stickerPack.uninstalledAt}`
+        );
+      }
+
+      const { id } = stickerPack;
+      drop(DataWriter.removeUninstalledStickerPack(id));
+      return;
+    }
 
     const { isNewItem, storageID } = processStorageRecord({
       currentStorageID: stickerPack.storageID,
@@ -1035,15 +1117,7 @@ async function encryptManifest(
     recordIkm: recordIkm ?? null,
   };
 
-  const storageKeyBase64 = itemStorage.get('storageKey');
-  if (!storageKeyBase64) {
-    throw new Error('No storage key');
-  }
-  const storageKey = Bytes.fromBase64(storageKeyBase64);
-  const storageManifestKey = deriveStorageManifestKey(
-    storageKey,
-    BigInt(version)
-  );
+  const storageManifestKey = getStorageManifestKey(version);
   const encryptedManifest = encryptProfile(
     Proto.ManifestRecord.encode(manifestRecord),
     storageManifestKey
@@ -1058,14 +1132,26 @@ async function encryptManifest(
   };
 }
 
+function getStorageManifestKey(version: number) {
+  const storageKeyBase64 = itemStorage.get('storageKey');
+  if (!storageKeyBase64) {
+    throw new Error('No storage key');
+  }
+  const storageKey = Bytes.fromBase64(storageKeyBase64);
+  return deriveStorageManifestKey(storageKey, BigInt(version));
+}
+
 async function uploadManifest(
   version: number,
-  { postUploadUpdateFunctions, deleteKeys }: GeneratedManifestType,
+  {
+    postUploadUpdateFunctions,
+    deleteKeys,
+    clearAll = false,
+  }: GeneratedManifestType,
   { newItems, storageManifest }: EncryptedManifestType
 ): Promise<void> {
   if (newItems.size === 0 && deleteKeys.size === 0) {
-    log.info(`upload(${version}): nothing to upload`);
-    return;
+    log.warn(`upload(${version}): nothing to upload`);
   }
 
   const credentials = itemStorage.get('storageCredentials');
@@ -1081,7 +1167,7 @@ async function uploadManifest(
       deleteKey: Array.from(deleteKeys).map(storageID =>
         Bytes.fromBase64(storageID)
       ),
-      clearAll: false,
+      clearAll,
     });
 
     await modifyStorageRecords(writeOperation, {
@@ -1128,7 +1214,10 @@ async function uploadManifest(
 async function stopStorageServiceSync(reason: Error) {
   log.warn('stopStorageServiceSync', Errors.toLogFormat(reason));
 
-  await itemStorage.remove('storageKey');
+  if (!window.ConversationController.areWePrimaryDevice()) {
+    log.warn('stopStorageServiceSync: removing storageKey');
+    await itemStorage.remove('storageKey');
+  }
 
   if (backOff.isFull()) {
     log.warn('stopStorageServiceSync: too many consecutive stops');
@@ -1136,20 +1225,31 @@ async function stopStorageServiceSync(reason: Error) {
   }
 
   await sleep(backOff.getAndIncrement());
+
+  if (window.ConversationController.areWePrimaryDevice()) {
+    log.info(
+      'stopStorageServiceSync: We are primary device; not sending key sync request'
+    );
+    return;
+  }
+
   log.info('stopStorageServiceSync: requesting new keys');
   setTimeout(async () => {
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.info(
-        'stopStorageServiceSync: We are primary device; not sending key sync request'
-      );
-      return;
-    }
     await singleProtoJobQueue.add(MessageSender.getRequestKeySyncMessage());
   });
 }
 
 async function createNewManifest() {
   log.info('createNewManifest: creating new manifest');
+
+  const existingRecordIkm = itemStorage.get('manifestRecordIkm');
+  if (Bytes.isEmpty(existingRecordIkm)) {
+    log.info('createNewManifest: generating new recordIkm');
+    await itemStorage.put(
+      'manifestRecordIkm',
+      getRandomBytes(RECORD_IKM_LENGTH)
+    );
+  }
 
   const version = itemStorage.get('manifestVersion', 0);
 
@@ -1166,6 +1266,132 @@ async function createNewManifest() {
     },
     encryptedManifest
   );
+}
+
+export async function resetWithNewKey(): Promise<void> {
+  const startingVersion = itemStorage.get('manifestVersion', 0);
+
+  const logId = `resetWithNewManifest(startingVersion=${startingVersion})`;
+  log.info(`${logId}: Queueing...`);
+
+  await storageJobQueue(async () => {
+    log.info(`${logId}: Starting...`);
+
+    const temporaryKey = itemStorage.get('temporaryRegistrationMasterKey');
+    if (!temporaryKey) {
+      throw new Error(`${logId}: No temporary key!`);
+    }
+
+    const existingManifest = await sync({ reason: logId });
+    if (!existingManifest) {
+      log.warn('No existing data in storage service, returning');
+      return;
+    }
+
+    const currentVersion = toNumber(existingManifest.version) ?? 0;
+    const newVersion = currentVersion + 1;
+
+    log.info(`${logId}: Fetched manifest with version ${currentVersion}`);
+
+    // if we have a recordIkm, we can just re-upload the existing manifest
+    if (Bytes.isNotEmpty(existingManifest.recordIkm)) {
+      log.info(
+        `${logId}: We have recordIkm, we will re-upload existing manifest ${currentVersion}`
+      );
+
+      try {
+        log.info(`${logId}: Clearing temporary master key`);
+        await itemStorage.put('temporaryRegistrationMasterKey', undefined);
+
+        await maybeFixStorageKey(logId);
+
+        const storageManifestKey = getStorageManifestKey(newVersion);
+        const encryptedManifest = encryptProfile(
+          Proto.ManifestRecord.encode(existingManifest),
+          storageManifestKey
+        );
+
+        log.info(
+          `${logId}: Uploading copy of manifest with version ${newVersion}`
+        );
+        await uploadManifest(
+          newVersion,
+          {
+            postUploadUpdateFunctions: [],
+            recordIkm: existingManifest.recordIkm,
+            recordsByID: new Map(),
+            insertKeys: new Set(),
+            deleteKeys: new Set(),
+          },
+          {
+            newItems: new Set(),
+            storageManifest: {
+              version: BigInt(newVersion),
+              value: encryptedManifest,
+            },
+          }
+        );
+
+        await itemStorage.put('manifestVersion', newVersion);
+
+        log.info(`${logId}: Complete!`);
+        return;
+      } catch (error) {
+        log.warn(`${logId}: Ran into error; restoring temporary master key`);
+
+        await itemStorage.put('temporaryRegistrationMasterKey', temporaryKey);
+        throw error;
+      }
+    }
+
+    try {
+      log.info(`${logId}: Clearing temporary master key`);
+      await itemStorage.put('temporaryRegistrationMasterKey', undefined);
+
+      await maybeFixStorageKey(logId);
+
+      log.info(
+        `${logId}: Generating fresh manifest with version ${newVersion}`
+      );
+      const generatedManifest = await generateManifest(
+        newVersion,
+        undefined,
+        true
+      );
+      log.info(
+        `${logId}: Generated manifest with ${generatedManifest.insertKeys.size} insertKeys`
+      );
+
+      const encryptedManifest = await encryptManifest(
+        newVersion,
+        generatedManifest
+      );
+
+      log.info(
+        `${logId}: Uploading manifest with version ${newVersion} and clearAll=true`
+      );
+      await uploadManifest(
+        newVersion,
+        {
+          ...generatedManifest,
+          clearAll: true,
+        },
+        encryptedManifest
+      );
+
+      await itemStorage.put('manifestVersion', newVersion);
+      if (Bytes.isNotEmpty(generatedManifest.recordIkm)) {
+        await itemStorage.put('manifestRecordIkm', generatedManifest.recordIkm);
+      } else {
+        await itemStorage.remove('manifestRecordIkm');
+      }
+    } catch (error) {
+      log.warn(`${logId}: Ran into error; restoring temporary master key`);
+      await itemStorage.put('temporaryRegistrationMasterKey', temporaryKey);
+
+      throw error;
+    }
+  });
 }
 
 async function decryptManifest(
@@ -1426,6 +1652,8 @@ async function getNonConversationRecords(): Promise<NonConversationRecordsResult
     DataReader.getAllCallLinkRecordsWithAdminKey(),
     DataReader.getAllDefunctCallLinksWithAdminKey(),
     DataReader.getAllNotificationProfiles(),
+    // FIXME
+    // oxlint-disable-next-line typescript/await-thenable
     callLinkRefreshJobQueue.getPendingAdminCallLinks(),
     DataReader.getAllStoryDistributionsWithMembers(),
     DataReader.getUninstalledStickerPacks(),
@@ -2238,26 +2466,56 @@ async function processRemoteRecords(
   }
 }
 
+async function maybeFixStorageKey(reason: string) {
+  const temporaryKey = itemStorage.get('temporaryRegistrationMasterKey');
+  const masterKeyBase64 = temporaryKey || itemStorage.get('masterKey');
+  const existingStorageKey = itemStorage.get('storageKey');
+
+  const logId = `maybeFixStorageKey(${reason}, temporaryKey=${Boolean(temporaryKey)})`;
+
+  if (!masterKeyBase64) {
+    throw new Error(`${logId}: No masterKey, cannot sync!`);
+  }
+
+  const masterKey = Bytes.fromBase64(masterKeyBase64);
+  const newStorageKeyBase64 = Bytes.toBase64(
+    deriveStorageServiceKey(masterKey)
+  );
+
+  if (!existingStorageKey || newStorageKeyBase64 !== existingStorageKey) {
+    await itemStorage.put('storageKey', newStorageKeyBase64);
+    log.warn(`${logId}: fixed storage key`);
+  }
+}
+
 async function sync({
   reason,
 }: {
   reason: string;
 }): Promise<Proto.ManifestRecord | undefined> {
-  if (!itemStorage.get('storageKey')) {
-    const masterKeyBase64 = itemStorage.get('masterKey');
-    if (!masterKeyBase64) {
-      log.error(`sync(${reason}): Cannot start; no storage or master key!`);
-      return;
-    }
+  const temporaryKey = itemStorage.get('temporaryRegistrationMasterKey');
+  const logId = `maybeFixStorageKey(${reason}, temporaryKey=${Boolean(temporaryKey)})`;
 
-    const masterKey = Bytes.fromBase64(masterKeyBase64);
-    const storageKeyBase64 = Bytes.toBase64(deriveStorageServiceKey(masterKey));
-    await itemStorage.put('storageKey', storageKeyBase64);
-
-    log.warn('sync: fixed storage key');
+  if (!isRegistrationDone()) {
+    log.warn(`${logId}: unlinked; cancelling storage service sync`);
+    return;
   }
 
-  log.info(`sync: starting... reason=${reason}`);
+  if (
+    !itemStorage.get('storageKey') &&
+    !window.ConversationController.areWePrimaryDevice()
+  ) {
+    // When we get new keys we'll re-run this sync.
+    backOff.reset();
+
+    log.info(`${logId}: no storageKey, requesting new keys`);
+    await singleProtoJobQueue.add(MessageSender.getRequestKeySyncMessage());
+
+    return;
+  }
+
+  log.info(`${logId}: starting...`);
+  await maybeFixStorageKey(`sync/${reason}`);
 
   let manifest: Proto.ManifestRecord | undefined;
   try {
@@ -2281,7 +2539,10 @@ async function sync({
 
     strictAssert(manifest.version != null, 'Manifest without version');
     const version = toNumber(manifest.version) ?? 0;
-    if (version <= localManifestVersion) {
+    if (
+      version <= localManifestVersion &&
+      (version !== 0 || localManifestVersion !== 0)
+    ) {
       log.error(
         'sync: remote manifest version mismatch ' +
           `${version} <= ${localManifestVersion}`
@@ -2332,7 +2593,29 @@ async function upload({
   fromSync?: boolean;
   reason: string;
 }): Promise<void> {
-  const logId = `storageService.upload/${reason}`;
+  const temporaryKey = itemStorage.get('temporaryRegistrationMasterKey');
+  const logId = `storageService.upload(${reason}, temporaryKey=${Boolean(temporaryKey)})`;
+
+  if (!isRegistrationDone()) {
+    log.warn(`${logId}: unlinked; cancelling storage service upload`);
+    return;
+  }
+
+  if (
+    !itemStorage.get('storageKey') &&
+    !window.ConversationController.areWePrimaryDevice()
+  ) {
+    // When we get new keys we'll fix any remaining conflict and get up to date.
+    backOff.reset();
+
+    log.info(`${logId}: no storageKey, requesting new keys`);
+    await singleProtoJobQueue.add(MessageSender.getRequestKeySyncMessage());
+
+    return;
+  }
+
+  log.info(`${logId}: starting...`);
+  await maybeFixStorageKey(logId);
 
   // Rate limit uploads coming from syncing
   if (fromSync) {
@@ -2347,27 +2630,6 @@ async function upload({
 
       uploadBucket.shift();
     }
-  }
-
-  if (!itemStorage.get('storageKey')) {
-    // requesting new keys runs the sync job which will detect the conflict
-    // and re-run the upload job once we're merged and up-to-date.
-    backOff.reset();
-
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.info(`${logId}: We are primary device; not sending key sync request`);
-      return;
-    }
-
-    if (!isRegistrationDone()) {
-      log.warn(`${logId}: no storageKey, unlinked`);
-      return;
-    }
-
-    log.info(`${logId}: no storageKey, requesting new keys`);
-    await singleProtoJobQueue.add(MessageSender.getRequestKeySyncMessage());
-
-    return;
   }
 
   let previousManifest: Proto.ManifestRecord | undefined;
@@ -2392,7 +2654,14 @@ async function upload({
       false
     );
     const encryptedManifest = await encryptManifest(version, generatedManifest);
-    await uploadManifest(version, generatedManifest, encryptedManifest);
+
+    const { insertKeys, deleteKeys } = generatedManifest;
+
+    if (insertKeys.size > 0 || deleteKeys.size > 0) {
+      await uploadManifest(version, generatedManifest, encryptedManifest);
+    } else {
+      log.info(`${logId}/${version}: no changes; skipping upload`);
+    }
 
     // Clear pending delete keys after successful upload
     await itemStorage.put('storage-service-pending-deletes', []);
@@ -2424,10 +2693,40 @@ export function enableStorageService(): void {
   log.info('enableStorageService');
 
   if (storageServiceNeedsUploadAfterEnabled) {
-    storageServiceUploadJob({
+    runStorageServiceUploadJob({
       reason: 'storageServiceNeedsUploadAfterEnabled',
     });
   }
+}
+
+export async function syncAfterNewKey(reason: string): Promise<void> {
+  const logId = `syncAfterNewKey/${reason}`;
+
+  const existingStorageKey = itemStorage.get('storageKey');
+  await maybeFixStorageKey(logId);
+  const newStorageKey = itemStorage.get('storageKey');
+
+  if (existingStorageKey === newStorageKey) {
+    log.info(
+      `${logId}: storage service key didn't change, fetching manifest anyway`
+    );
+  } else {
+    log.info(
+      `${logId}: updated storage service key, erasing state and fetching`
+    );
+    try {
+      await eraseAllStorageServiceState({
+        keepUnknownFields: true,
+      });
+    } catch (error) {
+      log.info(
+        'syncAfterNewKey: Failed to erase storage service data, starting sync anyway',
+        Errors.toLogFormat(error)
+      );
+    }
+  }
+
+  runStorageServiceSyncJob({ reason });
 }
 
 export function disableStorageService(reason: string): void {
@@ -2536,13 +2835,13 @@ export async function reprocessUnknownFields(): Promise<void> {
   );
 }
 
-export function storageServiceUploadJobAfterEnabled({
+export function runStorageServiceUploadJobAfterEnabled({
   reason,
 }: {
   reason: string;
 }): void {
   if (storageServiceEnabled) {
-    return storageServiceUploadJob({ reason });
+    return runStorageServiceUploadJob({ reason });
   }
   log.info(
     `storageServiceNeedsUploadAfterEnabled(${reason}): waiting until enabled`
@@ -2550,16 +2849,18 @@ export function storageServiceUploadJobAfterEnabled({
   storageServiceNeedsUploadAfterEnabled = true;
 }
 
-export const storageServiceUploadJob = debounce(
+export const runStorageServiceUploadJob = debounce(
   ({ reason }: { reason: string }) => {
     if (!storageServiceEnabled) {
-      log.info(`storageServiceUploadJob(${reason}): called before enabled `);
+      log.info(`runStorageServiceUploadJob(${reason}): called before enabled `);
       return;
     }
 
     void storageJobQueue(
       async () => {
-        await upload({ reason: `storageServiceUploadJob/${reason}` });
+        await upload({
+          reason: `runStorageServiceUploadJob/${reason}`,
+        });
       },
       `upload v${itemStorage.get('manifestVersion')}`
     );

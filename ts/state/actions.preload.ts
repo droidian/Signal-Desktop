@@ -30,6 +30,7 @@ import { actions as network } from './ducks/network.dom.ts';
 import { actions as notificationProfiles } from './ducks/notificationProfiles.preload.ts';
 import { actions as safetyNumber } from './ducks/safetyNumber.preload.ts';
 import { actions as search } from './ducks/search.preload.ts';
+import { actions as standaloneInstaller } from './ducks/standaloneInstaller.preload.ts';
 import { actions as stickers } from './ducks/stickers.preload.ts';
 import { actions as stories } from './ducks/stories.preload.ts';
 import { actions as storyDistributionLists } from './ducks/storyDistributionLists.preload.ts';
@@ -69,6 +70,7 @@ export const actionCreators: ReduxActions = {
   notificationProfiles,
   safetyNumber,
   search,
+  standaloneInstaller,
   stickers,
   stories,
   storyDistributionLists,

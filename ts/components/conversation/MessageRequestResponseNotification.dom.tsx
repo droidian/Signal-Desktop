@@ -1,6 +1,6 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { type JSX, useState } from 'react';
+import { type JSX, useState } from 'react';
 import type { LocalizerType } from '../../types/I18N.std.ts';
 import { SystemMessage } from './SystemMessage.dom.tsx';
 import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
@@ -18,7 +18,9 @@ export type MessageRequestResponseNotificationProps =
     i18n: LocalizerType;
     isBlocked: boolean;
     isGroup: boolean;
-    onOpenMessageRequestActionsConfirmation(state: MessageRequestState): void;
+    onOpenMessageRequestActionsConfirmation: (
+      state: MessageRequestState
+    ) => void;
     renderedContact: JSX.Element | null;
   };
 
@@ -29,7 +31,7 @@ export function MessageRequestResponseNotification({
   messageRequestResponseEvent: event,
   onOpenMessageRequestActionsConfirmation,
   renderedContact,
-}: MessageRequestResponseNotificationProps): React.JSX.Element | null {
+}: MessageRequestResponseNotificationProps): JSX.Element | null {
   const [isSafetyTipsModalOpen, setIsSafetyTipsModalOpen] = useState(false);
 
   return (

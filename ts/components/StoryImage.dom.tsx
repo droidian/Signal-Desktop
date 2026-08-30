@@ -1,8 +1,8 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useEffect, useRef, useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { Blurhash } from 'react-blurhash';
 
@@ -57,7 +57,7 @@ export function StoryImage({
   queueStoryDownload,
   storyId,
   onMediaPlaybackStart,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const shouldDownloadAttachment =
     (!isDownloaded(attachment) && !isDownloading(attachment)) ||
     hasNotResolved(attachment);
@@ -105,7 +105,7 @@ export function StoryImage({
 
   const getClassName = getClassNamesFor('StoryImage', moduleClassName);
 
-  let storyElement: React.JSX.Element;
+  let storyElement: JSX.Element;
   if (attachment.textAttachment) {
     storyElement = (
       <TextAttachment
@@ -126,6 +126,8 @@ export function StoryImage({
     const shouldLoop = isGIF(attachment ? [attachment] : undefined);
 
     storyElement = (
+      // FIXME
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label
       <video
         autoPlay={!isPaused}
         className={getClassName('__image')}
@@ -153,7 +155,7 @@ export function StoryImage({
     );
   }
 
-  let overlay: React.JSX.Element | undefined;
+  let overlay: JSX.Element | undefined;
   if (isPending) {
     overlay = (
       <div className="StoryImage__overlay-container">

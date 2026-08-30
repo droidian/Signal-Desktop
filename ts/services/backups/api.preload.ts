@@ -17,7 +17,7 @@ import {
   refreshBackup,
 } from '../../textsecure/WebAPI.preload.ts';
 import type {
-  AttachmentUploadFormResponseType,
+  AttachmentUploadFormType,
   GetBackupInfoResponseType,
   BackupMediaItemType,
   BackupMediaBatchResponseType,
@@ -65,12 +65,16 @@ export class BackupAPI {
   }
 
   public async refresh(): Promise<void> {
-    const headers = await Promise.all(
+    await Promise.all(
       [BackupCredentialType.Messages, BackupCredentialType.Media].map(type =>
-        this.#credentials.getHeadersForToday(type)
+        this.#refreshType(type)
       )
     );
-    await Promise.all(headers.map(h => refreshBackup(h)));
+  }
+
+  async #refreshType(type: BackupCredentialType): Promise<void> {
+    const auth = (await this.#credentials.getForToday(type)).backupAuth;
+    return refreshBackup({ auth });
   }
 
   public async getInfo(
@@ -103,9 +107,14 @@ export class BackupAPI {
   }
 
   public async upload(filePath: string, fileSize: number): Promise<void> {
-    const form = await getBackupUploadForm(
-      await this.#credentials.getHeadersForToday(BackupCredentialType.Messages)
+    const { backupAuth } = await this.#credentials.getForToday(
+      BackupCredentialType.Messages
     );
+
+    const form = await getBackupUploadForm({
+      auth: backupAuth,
+      uploadSize: fileSize,
+    });
 
     await uploadFile({
       absoluteCiphertextPath: filePath,
@@ -191,7 +200,7 @@ export class BackupAPI {
     });
   }
 
-  public async getMediaUploadForm(): Promise<AttachmentUploadFormResponseType> {
+  public async getMediaUploadForm(): Promise<AttachmentUploadFormType> {
     return getBackupMediaUploadForm(
       await this.#credentials.getHeadersForToday(BackupCredentialType.Media)
     );

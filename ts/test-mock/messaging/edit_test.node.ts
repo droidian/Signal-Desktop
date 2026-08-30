@@ -24,6 +24,7 @@ import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
 import { sleep } from '../../util/sleep.std.ts';
 import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { expect } from 'playwright/test';
 
 export const debug = createDebug('mock:test:edit');
 
@@ -169,7 +170,7 @@ describe('editing', function (this: Mocha.Suite) {
     await bootstrap.teardown();
   });
 
-  describe('online', function (this: Mocha.Suite) {
+  describe('online', () => {
     beforeEach(async () => {
       app = await bootstrap.link();
     });
@@ -422,9 +423,10 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-message__metadata__edited')
         .click();
 
-      const history = window.locator(
-        '.EditHistoryMessagesModal .module-message'
-      );
+      const history = window
+        .getByRole('dialog', { name: 'Edit History' })
+        .locator('.module-message');
+
       assert.strictEqual(await history.count(), 3);
 
       assert.isTrue(await history.locator('"edit message 1"').isVisible());
@@ -556,7 +558,8 @@ describe('editing', function (this: Mocha.Suite) {
       ): Promise<MessageAttributesType> {
         await sleep(RECEIPT_BATCHER_WAIT_MS + 20);
         const messages = await page.evaluate(
-          // oxlint-disable-next-line no-undef FIXME
+          // FIXME
+          // oxlint-disable-next-line no-undef
           timestamp => window.SignalCI?.getMessagesBySentAt(timestamp),
           originalMessageTimestamp
         );
@@ -615,7 +618,8 @@ describe('editing', function (this: Mocha.Suite) {
 
       debug("getting friend's conversationId");
       const conversationId = await page.evaluate(
-        // oxlint-disable-next-line no-undef FIXME
+        // FIXME
+        // oxlint-disable-next-line no-undef
         serviceId => window.SignalCI?.getConversationId(serviceId),
         friend.device.aci
       );
@@ -797,8 +801,8 @@ describe('editing', function (this: Mocha.Suite) {
       }
 
       debug("testing v4's send state");
-      {
-        debug('getting edited message from app (v4)');
+      // We allow retries here to wait for the read sync to be processed
+      await expect(async () => {
         const message = await getMessageFromApp(originalMessageTimestamp);
 
         strictAssert(
@@ -847,11 +851,11 @@ describe('editing', function (this: Mocha.Suite) {
           message.body,
           'body is same for v4 and main message'
         );
-      }
+      }).toPass();
     });
   });
 
-  describe('offline', function (this: Mocha.Suite) {
+  describe('offline', () => {
     beforeEach(async () => {
       await bootstrap.linkAndClose();
     });

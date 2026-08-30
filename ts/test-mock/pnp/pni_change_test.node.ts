@@ -285,7 +285,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       // Two notifications - the safety number change and PhoneNumberDiscovery
       await expectSystemMessages(window, [
         /.* belongs to ContactA/,
-        /Safety Number has changed/,
+        /Safety Number with ContactA/,
       ]);
     }
   });
@@ -393,10 +393,9 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
 
       // We get a safety number change warning, because we get a different identity key!
       await window
-        .locator('.module-SafetyNumberChangeDialog__confirm-dialog')
-        .waitFor();
-
-      await window.locator('.module-Button--primary').click();
+        .getByRole('alertdialog', { name: 'Safety Number Changes' })
+        .getByRole('button', { name: 'Send anyway' })
+        .click();
     }
 
     debug('Wait for the message to contactB');
@@ -424,7 +423,7 @@ describe('pnp/PNI Change', function (this: Mocha.Suite) {
       // Three notifications - accepted, the safety number change and PhoneNumberDiscovery
       await expectSystemMessages(window, [
         /.* belongs to ContactA/,
-        /Safety Number has changed/,
+        /Safety Number with ContactA/,
       ]);
     }
   });

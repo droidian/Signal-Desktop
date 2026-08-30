@@ -84,6 +84,7 @@ import { ReceiptType } from '../../types/Receipt.std.ts';
 import { cleanupMessages } from '../../util/cleanup.preload.ts';
 import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.std.ts';
 import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { isEqual, pick } = lodash;
 
@@ -532,10 +533,6 @@ function queueStoryDownload(
     const message = await getMessageById(storyId);
 
     if (message) {
-      // We want to ensure that we re-hydrate the story reply context with the
-      // completed attachment download.
-      message.set({ storyReplyContext: undefined });
-
       dispatch({
         type: QUEUE_STORY_DOWNLOAD,
         payload: storyId,
@@ -557,7 +554,7 @@ function queueStoryDownload(
 }
 
 function reactToStory(
-  nextReaction: string,
+  nextReaction: Emoji.Variant,
   messageId: string
 ): ThunkAction<
   void,

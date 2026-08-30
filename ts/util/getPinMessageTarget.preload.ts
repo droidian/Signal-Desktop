@@ -1,6 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { SentTimestampMs } from '@signalapp/types';
 import { createLogger } from '../logging/log.std.ts';
 import { isIncoming } from '../messages/helpers.std.ts';
 import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
@@ -17,7 +18,7 @@ export type PinnedMessageTarget = Readonly<{
   conversationId: string;
   targetMessageId: string;
   targetAuthorAci: AciString;
-  targetSentTimestamp: number;
+  targetSentTimestamp: SentTimestampMs;
 }>;
 
 function getMessageAuthorAci(
@@ -44,9 +45,11 @@ export async function getPinnedMessageTarget(
     conversationId: message.conversationId,
     targetMessageId: message.id,
     targetAuthorAci: getMessageAuthorAci(message),
-    targetSentTimestamp: getMessageSentTimestamp(message, {
-      includeEdits: true,
-      log,
-    }),
+    targetSentTimestamp: SentTimestampMs.fromNumber(
+      getMessageSentTimestamp(message, {
+        includeEdits: true,
+        log,
+      })
+    ),
   };
 }

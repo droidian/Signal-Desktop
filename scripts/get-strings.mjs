@@ -57,28 +57,14 @@ const headers = await authenticate({
   userSecret: SMARTLING_SECRET,
 });
 
-const statusURL = new URL(
-  `./files-api/v2/projects/${PROJECT_ID}/file/status`,
-  API_BASE
-);
-statusURL.searchParams.set('fileUri', '_locales/en/messages.json');
-
-console.log('Getting list of locales...');
-const statusRes = await fetch(statusURL, {
-  headers,
-});
-
-if (!statusRes.ok) {
-  throw new Error('Failed to fetch the status');
-}
-if (!statusRes.body) {
-  throw new Error('Missing body');
-}
-const {
-  response: {
-    data: { items: locales },
-  },
-} = StatusSchema.parse(await statusRes.json());
+const FILES = [
+  '_locales/en/messages.json',
+  'mas-title.txt',
+  'mas-subtitle.txt',
+  'mas-description.txt',
+  'mas-keywords.txt',
+  'mas-info-plist.json',
+];
 
 console.log('Cleaning _locales directory...');
 const dirEntries = await fastGlob(['_locales/*', '!_locales/en'], {
@@ -90,19 +76,49 @@ await Promise.all(
   dirEntries.map(dirEntry => rm(dirEntry, { recursive: true }))
 );
 
-console.log('Getting latest strings');
+console.log('Getting latest strings statuses');
+
+const fileLocalePairs = (await Promise.all(FILES.map(async (file) => {
+  const statusURL = new URL(
+    `./files-api/v2/projects/${PROJECT_ID}/file/status`,
+    API_BASE
+  );
+  statusURL.searchParams.set('fileUri', file);
+
+  const statusRes = await fetch(statusURL, {
+    headers,
+  });
+
+  if (!statusRes.ok) {
+    throw new Error('Failed to fetch the status');
+  }
+  if (!statusRes.body) {
+    throw new Error('Missing body');
+  }
+  const {
+    response: {
+      data: { items: locales },
+    },
+  } = StatusSchema.parse(await statusRes.json());
+
+  return locales.map(({ localeId }) => {
+    return { file, localeId };
+  });
+}))).flat();
 
 const prettierConfig = await prettier.resolveConfig('_locales');
 
+console.log('Downloading strings');
+
 await pMap(
-  locales,
-  async ({ localeId }) => {
+  fileLocalePairs,
+  async ({ file, localeId }) => {
     const fileURL = new URL(
       `./files-api/v2/projects/${PROJECT_ID}/` +
         `locales/${encodeURIComponent(localeId)}/file`,
       API_BASE
     );
-    fileURL.searchParams.set('fileUri', '_locales/en/messages.json');
+    fileURL.searchParams.set('fileUri', file);
     fileURL.searchParams.set('retrievalType', 'published');
     fileURL.searchParams.set('includeOriginalStrings', 'true');
 
@@ -121,23 +137,29 @@ await pMap(
     const targetDir = path.join('_locales', targetLocale);
 
     try {
-      await mkdir(targetDir);
+      await mkdir(targetDir, { recursive: true });
     } catch (error) {
       console.error(error);
     }
 
-    const targetFile = path.join(targetDir, 'messages.json');
-    console.log('Writing', targetLocale);
-    const json = await fileRes.json();
-    for (const value of Object.values(json)) {
-      const typedValue = /** @type {{ description?: string }} */ (value);
-      delete typedValue.description;
+    const targetFile = path.join(targetDir, path.basename(file));
+    console.log('Writing', targetLocale, path.basename(file));
+
+    let output;
+    if (file.endsWith('.json')) {
+      const json = await fileRes.json();
+      for (const value of Object.values(json)) {
+        const typedValue = /** @type {{ description?: string }} */ (value);
+        delete typedValue.description;
+      }
+      delete json.smartling;
+      output = await prettier.format(JSON.stringify(json, null, 2), {
+        ...prettierConfig,
+        filepath: targetFile,
+      });
+    } else {
+      output = await fileRes.text();
     }
-    delete json.smartling;
-    const output = await prettier.format(JSON.stringify(json, null, 2), {
-      ...prettierConfig,
-      filepath: targetFile,
-    });
     await writeFile(targetFile, output);
   },
   { concurrency: 20 }

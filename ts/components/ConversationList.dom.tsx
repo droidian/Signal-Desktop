@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useCallback } from 'react';
 import type { ListRowRenderer } from 'react-virtualized';
 import classNames from 'classnames';
 import lodash from 'lodash';
@@ -219,6 +219,7 @@ export type PropsType = {
   scrollBehavior?: ScrollBehavior;
   scrollToRowIndex?: number;
   shouldRecomputeRowHeights: boolean;
+  resetShouldRecomputeRowHeights: () => void;
   scrollable?: boolean;
   hasDialogPadding?: boolean;
 
@@ -238,10 +239,10 @@ export type PropsType = {
   onOutgoingAudioCallInConversation: (conversationId: string) => void;
   onOutgoingVideoCallInConversation: (conversationId: string) => void;
   removeConversation: (conversationId: string) => void;
-  renderMessageSearchResult?: (id: string) => React.JSX.Element;
+  renderMessageSearchResult?: (id: string) => JSX.Element;
   renderConversationListItemContextMenu?: (
     props: RenderConversationListItemContextMenuProps
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   showChooseGroupMembers: () => void;
   showFindByUsername: () => void;
   showFindByPhoneNumber: () => void;
@@ -269,6 +270,7 @@ export function ConversationList({
   removeConversation,
   renderMessageSearchResult,
   renderConversationListItemContextMenu,
+  resetShouldRecomputeRowHeights,
   rowCount,
   scrollBehavior = ScrollBehavior.Default,
   scrollToRowIndex,
@@ -283,7 +285,7 @@ export function ConversationList({
   setIsFetchingUUID,
   showConversation,
   theme,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const calculateRowHeight = useCallback(
     (index: number): number => {
       const row = getRow(index);
@@ -690,6 +692,7 @@ export function ConversationList({
       rowRenderer={renderRow}
       scrollToIndex={scrollToRowIndex}
       shouldRecomputeRowHeights={shouldRecomputeRowHeights}
+      resetShouldRecomputeRowHeights={resetShouldRecomputeRowHeights}
       scrollable={scrollable}
       scrollBehavior={scrollBehavior}
     />

@@ -3,6 +3,12 @@
 
 import { z } from 'zod';
 import type PQueue from 'p-queue';
+import {
+  DurationSecs,
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  TimestampMs,
+} from '@signalapp/types';
 import { createLogger } from '../logging/log.std.ts';
 
 import * as durations from '../util/durations/index.std.ts';
@@ -207,9 +213,9 @@ const pinMessageJobDataSchema = z.object({
   conversationId: z.string(),
   targetMessageId: z.string(),
   targetAuthorAci: aciSchema,
-  targetSentTimestamp: z.number(),
-  pinDurationSeconds: z.number().nullable(),
-  pinnedAt: z.number(),
+  targetSentTimestamp: SentTimestampMs.Schema,
+  pinDurationSeconds: z.nullable(DurationSecs.Schema),
+  pinnedAt: TimestampMs.Schema,
 });
 export type PinMessageJobData = z.infer<typeof pinMessageJobDataSchema>;
 
@@ -239,10 +245,10 @@ const resendRequestJobDataSchema = z.object({
   groupId: z.string().optional(),
   plaintext: z.string(),
   receivedAtCounter: z.number(),
-  receivedAtDate: z.number(),
+  receivedAtDate: ReceivedTimestampMs.Schema,
   senderAci: aciSchema,
   senderDevice: z.number(),
-  timestamp: z.number(),
+  timestamp: SentTimestampMs.Schema,
 });
 export type ResendRequestJobData = z.infer<typeof resendRequestJobDataSchema>;
 
@@ -290,8 +296,8 @@ const unpinMessageJobDataSchema = z.object({
   conversationId: z.string(),
   targetMessageId: z.string(),
   targetAuthorAci: aciSchema,
-  targetSentTimestamp: z.number(),
-  unpinnedAt: z.number(),
+  targetSentTimestamp: SentTimestampMs.Schema,
+  unpinnedAt: TimestampMs.Schema,
   isSyncOnly: z.boolean(),
 });
 export type UnpinMessageJobData = z.infer<typeof unpinMessageJobDataSchema>;

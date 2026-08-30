@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { VoiceNotesPlaybackProps } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
 import { VoiceNotesPlaybackProvider } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
@@ -19,7 +19,7 @@ import { getConversations } from '../selectors/conversations.dom.ts';
 import { SeenStatus } from '../../MessageSeenStatus.std.ts';
 import { markViewed } from '../ducks/conversations.preload.ts';
 import * as Errors from '../../types/errors.std.ts';
-import { usePrevious } from '../../hooks/usePrevious.std.ts';
+import { usePreviousDeprecated } from '../../hooks/usePrevious.std.ts';
 
 const log = createLogger('VoiceNotesPlaybackProvider');
 
@@ -35,7 +35,10 @@ export const SmartVoiceNotesPlaybackProvider = memo(
     const active = useSelector(selectAudioPlayerActive);
     const conversations = useSelector(getConversations);
 
-    const previousStartPosition = usePrevious(undefined, active?.startPosition);
+    const previousStartPosition = usePreviousDeprecated(
+      undefined,
+      active?.startPosition
+    );
 
     const content = active?.content;
     let url: undefined | string;

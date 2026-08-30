@@ -24,6 +24,7 @@ import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
 import { drop } from '../util/drop.std.ts';
 import { maybeNotify } from '../messages/maybeNotify.preload.ts';
 import type { DurationInSeconds } from '../util/durations/duration-in-seconds.std.ts';
+import { isValidSenderAciForConversation } from './helpers/isValidSenderAciForConversation.preload.ts';
 
 const log = createLogger('Polls');
 
@@ -115,6 +116,26 @@ function doesVoteModifierMatchMessage({
     return true;
   }
 
+  const messageConversation = window.ConversationController.get(
+    message.conversationId
+  );
+  if (!messageConversation) {
+    return false;
+  }
+
+  if (messageConversation.isBlocked() || voteSenderConversation.isBlocked()) {
+    return false;
+  }
+
+  const voteSenderAci = voteSenderConversation.getAci();
+  if (!voteSenderAci) {
+    return false;
+  }
+
+  if (!isValidSenderAciForConversation(messageConversation, voteSenderAci)) {
+    return false;
+  }
+
   if (isOutgoing(message)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
@@ -127,22 +148,7 @@ function doesVoteModifierMatchMessage({
     return !!sendState && isSent(sendState.status);
   }
 
-  if (isIncoming(message)) {
-    const messageConversation = window.ConversationController.get(
-      message.conversationId
-    );
-    if (!messageConversation) {
-      return false;
-    }
-
-    const voteSenderServiceId = voteSenderConversation.getServiceId();
-    return (
-      voteSenderServiceId != null &&
-      messageConversation.hasMember(voteSenderServiceId)
-    );
-  }
-
-  return false;
+  return isIncoming(message);
 }
 
 async function findPollMessage({
@@ -365,6 +371,12 @@ export async function handlePollVote(
     log.warn('handlePollVote: Invalid option indexes found, dropping');
     return;
   }
+  const hasDupeIndexes =
+    new Set(vote.optionIndexes).size !== vote.optionIndexes.length;
+  if (hasDupeIndexes) {
+    log.warn('handlePollVote: Duplicate optionIndexes detected, dropping');
+    return;
+  }
 
   // Check multiple choice constraint
   if (!poll.allowMultiple && vote.optionIndexes.length > 1) {
@@ -484,6 +496,7 @@ export async function handlePollVote(
   if (shouldMarkAsUnread) {
     drop(
       maybeNotify({
+        kind: 'pollVote',
         pollVote: vote,
         targetMessage: message.attributes,
         conversation: conversationContainingThisPoll,
@@ -576,6 +589,7 @@ export async function handlePollTerminate(
   await conversation.addPollTerminateNotification({
     pollQuestion: poll.question,
     pollTimestamp: message.attributes.timestamp,
+    pollSource: terminate.source,
     terminatorId: terminate.fromConversationId,
     timestamp: terminate.timestamp,
     isMeTerminating: isMe(author.attributes),

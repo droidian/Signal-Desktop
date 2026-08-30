@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 
 import type { ToFindType } from './LeftPaneHelper.dom.tsx';
 import type {
@@ -40,6 +39,7 @@ export type LeftPaneInboxPropsType = {
   filterByUnread: boolean;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> {
   readonly #conversations: ReadonlyArray<ConversationListItemPropsType>;
   readonly #archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
@@ -142,7 +142,7 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
   override getPreRowsNode({
     renderLeftPaneChatFolders,
   }: Readonly<{
-    renderLeftPaneChatFolders: () => React.JSX.Element;
+    renderLeftPaneChatFolders: () => JSX.Element;
   }>): ReactNode {
     return renderLeftPaneChatFolders();
   }
@@ -162,11 +162,11 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
       if (selectedChatFolder?.folderType === ChatFolderType.CUSTOM) {
         return (
           <EmptyView>
-            <h3 className={tw('type-body-large text-label-primary')}>
+            <h3 className={tw('type-body-large text-primary')}>
               {i18n('icu:LeftPane__EmptyView--WithSelectedChatFolder')}
             </h3>
             <AxoButton.Root
-              variant="floating-secondary"
+              variant="elevated-secondary"
               size="md"
               onClick={() => {
                 changeLocation({
@@ -190,10 +190,10 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
 
       return (
         <EmptyView>
-          <h3 className={tw('type-title-medium text-label-secondary')}>
+          <h3 className={tw('type-title-medium text-secondary')}>
             {i18n('icu:emptyInbox__title')}
           </h3>
-          <p className={tw('type-body-medium text-label-secondary')}>
+          <p className={tw('type-body-medium text-secondary')}>
             {i18n('icu:emptyInbox__subtitle')}
           </p>
         </EmptyView>

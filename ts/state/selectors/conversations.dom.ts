@@ -95,6 +95,7 @@ import { getSelectedConversationId, getSelectedNavTab } from './nav.std.ts';
 import { getCallHistoryUnreadCount } from './callHistory.std.ts';
 import { NavTab } from '../../types/Nav.std.ts';
 import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { isNumber, pick } = lodash;
 
@@ -447,6 +448,7 @@ export const _getLeftPaneLists = ({
   const conversations: Array<ConversationType> = [];
   const archivedConversations: Array<ConversationType> = [];
   const pinnedConversations: Array<ConversationType> = [];
+  const pinnedConversationIdsSet = new Set(pinnedConversationIds);
 
   for (let conversation of Object.values(conversationLookup)) {
     if (
@@ -467,7 +469,10 @@ export const _getLeftPaneLists = ({
     }
 
     // We always show pinned conversations
-    if (conversation.isPinned) {
+    if (
+      conversation.isPinned &&
+      pinnedConversationIdsSet.has(conversation.id)
+    ) {
       pinnedConversations.push(conversation);
       continue;
     }
@@ -726,6 +731,11 @@ export const getAllComposableConversations = createSelector(
         conversation.titleNoDefault &&
         hasDisplayInfo(conversation)
     )
+);
+
+export const getAllConversationsForNotificationProfiles = createSelector(
+  getAllComposableConversations,
+  conversations => conversations.filter(convo => !convo.isMe)
 );
 
 export const getAllGroupsWithInviteAccess = createSelector(
@@ -1356,7 +1366,7 @@ export function isMissingRequiredProfileSharing(
 
 export type AdminMembershipType = {
   member: ConversationType;
-  labelEmoji: string | undefined;
+  labelEmoji: Emoji.Variant | undefined;
   labelString: string | undefined;
 };
 export const getGroupAdminsSelector = createSelector(

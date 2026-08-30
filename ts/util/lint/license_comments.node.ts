@@ -11,6 +11,7 @@ import * as fs from 'node:fs';
 import { promisify, styleText } from 'node:util';
 import * as childProcess from 'node:child_process';
 import pMap from 'p-map';
+import micromatch from 'micromatch';
 
 const exec = promisify(childProcess.exec);
 
@@ -32,23 +33,17 @@ const EXTENSIONS_TO_CHECK = new Set([
   '.md',
   '.plist',
 ]);
-const FILES_TO_IGNORE = new Set(
-  [
-    '.github/ISSUE_TEMPLATE/bug_report.md',
-    '.github/PULL_REQUEST_TEMPLATE.md',
-    '.smartling-source.sh',
-    'packages/mute-state-change/dist/acknowledgments.md',
-    'components/mp3lameencoder/lib/Mp3LameEncoder.js',
-    'components/webaudiorecorder/lib/WebAudioRecorder.js',
-    'components/webaudiorecorder/lib/WebAudioRecorderMp3.js',
-    'js/Mp3LameEncoder.min.js',
-    'sticker-creator/src/util/protos.d.ts',
-    'sticker-creator/src/util/protos.js',
-  ].map(
-    // This makes sure the files are correct on Windows.
-    path.normalize
-  )
-);
+const FILES_TO_IGNORE = [
+  '.changeset/*.md',
+  'packages/*/CHANGELOG.md',
+  '.github/ISSUE_TEMPLATE/bug_report.md',
+  '.github/PULL_REQUEST_TEMPLATE.md',
+  '.smartling-source.sh',
+  'packages/mute-state-change/dist/acknowledgments.md',
+  'packages/lame/dist/acknowledgments.md',
+  'sticker-creator/src/util/protos.d.ts',
+  'sticker-creator/src/util/protos.js',
+];
 
 // This is not technically the real extension.
 export function getExtension(file: string): string {
@@ -73,7 +68,8 @@ export async function forEachRelevantFile(
     gitFiles,
     async (file: string) => {
       const repoPath = path.relative(rootPath, file);
-      if (FILES_TO_IGNORE.has(repoPath)) {
+
+      if (micromatch.isMatch(repoPath, FILES_TO_IGNORE)) {
         return;
       }
 

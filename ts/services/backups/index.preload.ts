@@ -108,6 +108,7 @@ import {
   unlink as unlinkAccount,
 } from '../../textsecure/WebAPI.preload.ts';
 import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { addSensitivePath } from '../../util/privacy.node.ts';
 import { LOCAL_BACKUP_VERSION } from './constants.std.ts';
 import { getTimestampForFolder } from '../../util/timestamp.std.ts';
 import { MEBIBYTE } from '../../types/AttachmentSize.std.ts';
@@ -117,7 +118,6 @@ import {
   StoragePermissionsError,
 } from '../../types/LocalExport.std.ts';
 import { getFreeDiskSpace } from '../../util/getFreeDiskSpace.node.ts';
-import { isFeaturedEnabledNoRedux } from '../../util/isFeatureEnabled.dom.ts';
 
 const { ensureFile, exists } = fsExtra;
 
@@ -660,14 +660,6 @@ export class BackupsService {
       exportDir = join(targetPath, `signal-export-${getTimestampForFolder()}`);
 
       await mkdir(exportDir, { recursive: true });
-
-      strictAssert(
-        isFeaturedEnabledNoRedux({
-          betaKey: 'desktop.plaintextExport.beta',
-          prodKey: 'desktop.plaintextExport.prod',
-        }),
-        'Plaintext export must be enabled'
-      );
 
       if (isOnline()) {
         await this.#waitForEmptyQueues('backups.exportPlaintext');
@@ -1455,6 +1447,7 @@ export class BackupsService {
     await mkdir(localBackupsBaseDir, { recursive: true });
 
     await itemStorage.put('localBackupFolder', localBackupsBaseDir);
+    addSensitivePath(localBackupsBaseDir);
     return localBackupsBaseDir;
   }
 
@@ -1495,3 +1488,10 @@ export class BackupsService {
 }
 
 export const backupsService = new BackupsService();
+
+itemStorage.onready(() => {
+  const localBackupFolder = itemStorage.get('localBackupFolder');
+  if (localBackupFolder) {
+    addSensitivePath(localBackupFolder);
+  }
+});

@@ -1,25 +1,25 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useEffect } from 'react';
-
+import { useState, useEffect, type JSX } from 'react';
 import type { LocalizerType } from '../types/Util.std.ts';
-import { Alert } from '../components/Alert.dom.tsx';
 import { ResolvedSendStatus } from '../types/Stories.std.ts';
-import { usePrevious } from './usePrevious.std.ts';
+import { usePreviousDeprecated } from './usePrevious.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 export function useRetryStorySend(
   i18n: LocalizerType,
   sendStatus: ResolvedSendStatus | undefined
 ): {
-  renderAlert: () => React.JSX.Element | null;
+  hasAlert: boolean;
+  renderAlert: () => JSX.Element | null;
   setWasManuallyRetried: (value: boolean) => unknown;
   wasManuallyRetried: boolean;
 } {
   const [hasSendFailedAlert, setHasSendFailedAlert] = useState(false);
   const [wasManuallyRetried, setWasManuallyRetried] = useState(false);
 
-  const previousSendStatus = usePrevious(sendStatus, sendStatus);
+  const previousSendStatus = usePreviousDeprecated(sendStatus, sendStatus);
 
   useEffect(() => {
     if (!wasManuallyRetried) {
@@ -38,15 +38,24 @@ export function useRetryStorySend(
     }
   }, [previousSendStatus, sendStatus, wasManuallyRetried]);
 
-  function renderAlert(): React.JSX.Element | null {
-    return hasSendFailedAlert ? (
-      <Alert
-        body={i18n('icu:Stories__failed-send')}
-        i18n={i18n}
-        onClose={() => setHasSendFailedAlert(false)}
-      />
-    ) : null;
+  function renderAlert(): JSX.Element | null {
+    return (
+      <AxoConfirmDialog.Root
+        open={hasSendFailedAlert}
+        onOpenChange={() => setHasSendFailedAlert(false)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:Stories__failed-send')}
+      >
+        <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
+    );
   }
 
-  return { renderAlert, setWasManuallyRetried, wasManuallyRetried };
+  return {
+    hasAlert: hasSendFailedAlert,
+    renderAlert,
+    setWasManuallyRetried,
+    wasManuallyRetried,
+  };
 }

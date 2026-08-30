@@ -27,8 +27,10 @@ import type { NotificationProfileOverride } from './NotificationProfile.std.ts';
 import type { PhoneNumberSharingMode } from './PhoneNumberSharingMode.std.ts';
 import type { LocalBackupExportMetadata } from './LocalExport.std.ts';
 import type { ServerAlertsType } from './ServerAlert.std.ts';
-import type { EmojiSkinTone } from './emoji.std.ts';
 import type { AssertSameMembers } from './Util.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import type { PartialRegistrationType } from './StandaloneRegistration.std.ts';
+import type { RegistrationQueueJobState } from '../jobs/registrationJobQueue.preload.ts';
 
 export type AutoDownloadAttachmentType = {
   photos: boolean;
@@ -57,6 +59,19 @@ export type IdentityKeyMap = Record<
   }
 >;
 
+export type BlockedGroup = {
+  blockedAt: number | undefined;
+  groupId: string;
+};
+export type BlockedServiceId = {
+  blockedAt: number | undefined;
+  serviceId: ServiceIdString;
+};
+export type BlockedNumber = {
+  blockedAt: number | undefined;
+  e164: string;
+};
+
 export type StorageAccessType = {
   'always-relay-calls': boolean;
   'audio-notification': boolean;
@@ -64,8 +79,8 @@ export type StorageAccessType = {
   'auto-download-attachment': AutoDownloadAttachmentType;
   autoConvertEmoji: boolean;
   'badge-count-muted-conversations': boolean;
-  'blocked-groups': ReadonlyArray<string>;
-  'blocked-uuids': ReadonlyArray<ServiceIdString>;
+  'blocked-groups': ReadonlyArray<BlockedGroup>;
+  'blocked-uuids': ReadonlyArray<BlockedServiceId>;
   'call-ringtone-notification': boolean;
   'call-system-notification': boolean;
   lastCallQualitySurveyTime: number;
@@ -80,7 +95,7 @@ export type StorageAccessType = {
   audioMessage: boolean;
   attachmentMigration_isComplete: boolean;
   attachmentMigration_lastProcessedIndex: number;
-  blocked: ReadonlyArray<string>;
+  blocked: ReadonlyArray<BlockedNumber>;
   defaultConversationColor: DefaultConversationColorType;
 
   customColors: CustomColorsItemType;
@@ -135,6 +150,7 @@ export type StorageAccessType = {
   linkPreviews: boolean;
   universalExpireTimer: number;
   retryPlaceholders: ReadonlyArray<RetryItemType>;
+  donationPermits: string;
   donationWorkflow: string;
   chromiumRegistrationDoneEver: '';
   chromiumRegistrationDone: '';
@@ -174,8 +190,8 @@ export type StorageAccessType = {
   setBackupMessagesSignatureKey: boolean;
   setBackupMediaSignatureKey: boolean;
   lastReceivedAtCounter: number;
-  preferredReactionEmoji: ReadonlyArray<string>;
-  emojiSkinToneDefault: EmojiSkinTone;
+  preferredReactionEmoji: ReadonlyArray<Emoji.Variant>;
+  emojiSkinToneDefault: Emoji.SkinTone;
   unreadCount: number;
   'challenge:conversations': ReadonlyArray<RegisteredChallengeType>;
 
@@ -208,7 +224,6 @@ export type StorageAccessType = {
   };
   serverAlerts: ServerAlertsType;
   needOrphanedAttachmentCheck: boolean;
-  needProfileMovedModal: boolean;
   notificationProfileOverride: NotificationProfileOverride | undefined;
   notificationProfileOverrideFromPrimary:
     | NotificationProfileOverride
@@ -216,6 +231,7 @@ export type StorageAccessType = {
   notificationProfileSyncDisabled: boolean;
   observedCapabilities: {
     attachmentBackfill?: true;
+    usernameChangeSyncMessage?: true;
 
     // Note: Upon capability deprecation - change the value type to `never` and
     // remove it in `ts/background.ts`
@@ -225,6 +241,8 @@ export type StorageAccessType = {
   releaseNotesNextFetchTime: number;
   releaseNotesVersionWatermark: string;
   releaseNotesPreviousManifestHash: string;
+  releaseNotesChatBlocked: boolean;
+  releaseNotesChatBlockedAt: number | undefined;
 
   // If present - we are downloading backup
   backupDownloadPath: string;
@@ -253,8 +271,10 @@ export type StorageAccessType = {
   // The `firstAppVersion` present on an BackupInfo from an imported backup.
   restoredBackupFirstAppVersion: string;
 
-  // Stored solely for pesistance during import/export sequence
+  // When Desktop is standalone, we use these. Otherwise, only used for backup.
   svrPin: string;
+
+  // Stored solely for persistence during import/export sequence
   optimizeOnDeviceStorage: boolean;
   pinReminders: boolean | undefined;
   screenLockTimeoutMinutes: number | undefined;
@@ -271,10 +291,19 @@ export type StorageAccessType = {
   allowSealedSenderFromAnyone: unknown;
 
   postRegistrationSyncsStatus: 'incomplete' | 'complete';
+  standaloneRegistrationPartialState: PartialRegistrationType | undefined;
+  registrationJobQueueState: RegistrationQueueJobState | undefined; // base64
+  temporaryRegistrationMasterKey: string | undefined;
 
   avatarsHaveBeenMigrated: boolean;
 
   blockedMessageMigrationVersion: number | undefined;
+
+  // From AccountRecord.payments
+  payments: {
+    enabled: boolean | null;
+    entropy: Uint8Array<ArrayBuffer> | null;
+  } | null;
 
   // Key Transparency
   lastDistinguishedTreeHead: Uint8Array<ArrayBuffer>;
@@ -417,13 +446,14 @@ export const STORAGE_KEYS_TO_PRESERVE_WHEN_PRIMARY = [
   'blocked-uuids',
   'read-receipt-setting',
   'blocked',
+  'releaseNotesChatBlocked',
+  'releaseNotesChatBlockedAt',
   'device_name',
   'seenPinMessageDisappearingMessagesWarningCount',
   'usernameLastIntegrityCheck',
   'usernameCorrupted',
   'usernameLinkCorrupted',
   'usernameLink',
-  'needProfileMovedModal',
   'notificationProfileOverride',
   'notificationProfileOverrideFromPrimary',
   'notificationProfileSyncDisabled',
@@ -464,6 +494,7 @@ const STORAGE_KEYS_TO_REMOVE_AFTER_UNLINK = [
   'useRingrtcAdm',
   'linkPreviews',
   'retryPlaceholders',
+  'donationPermits',
   'donationWorkflow',
   'chromiumRegistrationDone',
   'typingIndicators',
@@ -518,6 +549,9 @@ const STORAGE_KEYS_TO_REMOVE_AFTER_UNLINK = [
   'backupSubscriptionStatus',
   'isRestoredFromBackup',
   'postRegistrationSyncsStatus',
+  'standaloneRegistrationPartialState',
+  'registrationJobQueueState',
+  'temporaryRegistrationMasterKey',
   'avatarsHaveBeenMigrated',
   'lastDistinguishedTreeHead',
   'keyTransparencySelfHealth',
@@ -544,6 +578,7 @@ const STORAGE_KEYS_TO_REMOVE_AFTER_UNLINK = [
   'sfuUrl',
   'svrPin',
   'backupKeyViewed',
+  'payments',
 ] as const satisfies ReadonlyArray<keyof StorageAccessType>;
 
 // Ensure every storage key is explicitly marked to be preserved or removed on unlink.

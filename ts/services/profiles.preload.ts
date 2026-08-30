@@ -49,14 +49,12 @@ import {
 } from '../Crypto.node.ts';
 import type { ConversationLastProfileType } from '../model-types.d.ts';
 import type { GroupSendToken } from '../types/GroupSendEndorsements.std.ts';
-import {
-  maybeCreateGroupSendEndorsementState,
-  onFailedToSendWithEndorsements,
-} from '../util/groupSendEndorsements.preload.ts';
+import { maybeCreateGroupSendEndorsementState } from '../util/groupSendEndorsements.preload.ts';
 import { ProfileDecryptError } from '../types/errors.std.ts';
 import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 import { runMegaphoneCheck } from './megaphone.preload.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const log = createLogger('profiles');
 
@@ -85,6 +83,7 @@ type JobType = {
 
 const OBSERVED_CAPABILITY_KEYS = Object.keys({
   attachmentBackfill: true,
+  usernameChangeSyncMessage: true,
 } satisfies CapabilitiesType) as ReadonlyArray<keyof CapabilitiesType>;
 
 const PROFILE_FETCH_CONCURRENCY = 30;
@@ -126,9 +125,10 @@ export class ProfileService {
     }
 
     if (this.#isPaused) {
-      throw new Error(
+      log.error(
         `ProfileService.get: Cannot add job to paused queue for conversation ${preCheckConversation.idForLogging()}`
       );
+      return;
     }
 
     const existing = this.#jobsByConversationId.get(conversationId);
@@ -220,9 +220,8 @@ export class ProfileService {
       this.#jobQueue.pause();
 
       this.#jobsByConversationId.forEach(job => {
-        job.reject(
-          new Error(`ProfileService.clearAll: job canceled because '${reason}'`)
-        );
+        log.error(`ProfileService.clearAll: job canceled because '${reason}'`);
+        job.resolve();
       });
 
       this.#jobsByConversationId.clear();
@@ -557,10 +556,6 @@ async function doGetProfile(
 
       // Unauthorized/Forbidden
       if (error.code === 401 || error.code === 403) {
-        if (request.groupSendToken != null) {
-          onFailedToSendWithEndorsements(error);
-        }
-
         // Step #: Retries for unauthorized access keys and group send tokens
         if (!isMe(c.attributes)) {
           // Fallback from failed unauth (access key) request
@@ -684,7 +679,11 @@ async function doGetProfile(
   if (isFieldDefined(profile.aboutEmoji)) {
     if (updatedDecryptionKey != null) {
       const decrypted = decryptField(profile.aboutEmoji, updatedDecryptionKey);
-      c.set({ aboutEmoji: formatTextField(decrypted) });
+      c.set({
+        aboutEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant(
+          formatTextField(decrypted)
+        ),
+      });
     }
   } else {
     c.set({ aboutEmoji: undefined });

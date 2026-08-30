@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
+import { Base64 } from '@signalapp/types';
 import type { DeviceNameChangeSyncEvent } from '../textsecure/messageReceiverEvents.std.ts';
 import { getDevices } from '../textsecure/WebAPI.preload.ts';
 import { MINUTE } from './durations/index.std.ts';
@@ -57,7 +58,7 @@ export async function maybeQueueDeviceInfoFetch(): Promise<void> {
 }
 
 async function fetchAndUpdateDeviceInfo() {
-  const { devices } = await getDevices();
+  const devices = await getDevices();
   const localDeviceId = parseIntOrThrow(
     itemStorage.user.getDeviceId(),
     'fetchAndUpdateDeviceInfo: localDeviceId'
@@ -70,15 +71,16 @@ async function fetchAndUpdateDeviceInfo() {
     localDeviceId
   );
 
-  const newNameEncrypted = ourDevice.name;
-  if (!newNameEncrypted) {
+  if (ourDevice.encryptedName.length === 0) {
     log.error('fetchAndUpdateDeviceInfo: device had empty name');
     return;
   }
 
   let newName: string;
   try {
-    newName = await accountManager.decryptDeviceName(newNameEncrypted);
+    newName = await accountManager.decryptDeviceName(
+      Base64.fromBytes(ourDevice.encryptedName)
+    );
   } catch (e) {
     const deviceNameWasEncrypted = itemStorage.user.getDeviceNameEncrypted();
     log.error(
@@ -101,7 +103,7 @@ async function fetchAndUpdateDeviceInfo() {
 }
 
 async function maybeUpdateDeviceCreatedAt(
-  createdAtCiphertext: string,
+  createdAtCiphertext: Uint8Array<ArrayBuffer>,
   deviceId: number
 ): Promise<void> {
   const existingCreatedAt = itemStorage.user.getDeviceCreatedAt();
@@ -109,11 +111,10 @@ async function maybeUpdateDeviceCreatedAt(
     return;
   }
 
-  const createdAtEncrypted = createdAtCiphertext;
   let createdAt: number | undefined;
   try {
     createdAt = await accountManager.decryptDeviceCreatedAt(
-      createdAtEncrypted,
+      Base64.fromBytes(createdAtCiphertext),
       deviceId
     );
   } catch (e) {

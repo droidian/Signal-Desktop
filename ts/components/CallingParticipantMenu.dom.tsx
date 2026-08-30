@@ -1,17 +1,21 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { type ReactNode } from 'react';
+import { useState, type JSX, type ReactNode } from 'react';
 import type { LocalizerType } from '../types/I18N.std.ts';
 import { AxoMenuBuilder } from '../axo/AxoMenuBuilder.dom.tsx';
 import { AxoTheme } from '../axo/AxoTheme.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 export type CallingParticipantMenuProps = Readonly<{
-  align: AxoMenuBuilder.Align;
-  side: AxoMenuBuilder.Side;
+  align?: AxoMenuBuilder.Align;
+  side?: AxoMenuBuilder.Side;
   i18n: LocalizerType;
   renderer: AxoMenuBuilder.Renderer;
   isMuteAudioDisabled: boolean;
+  participantTitle: string | undefined;
+  onBlockFromCall: (() => void) | null;
   onMuteAudio: (() => void) | null;
   onUnmuteAudio: (() => void) | null;
   onViewProfile: (() => void) | null;
@@ -26,13 +30,18 @@ export function CallingParticipantMenu({
   i18n,
   renderer,
   isMuteAudioDisabled,
+  onBlockFromCall,
   onMuteAudio,
   onUnmuteAudio,
   onViewProfile,
   onGoToChat,
   onRemoveFromCall,
+  participantTitle,
   children,
-}: CallingParticipantMenuProps): React.JSX.Element {
+}: CallingParticipantMenuProps): JSX.Element {
+  const [removeFromCallModalVisible, setRemoveFromCallModalVisible] =
+    useState(false);
+
   return (
     <AxoTheme.Override theme="force-dark">
       <AxoMenuBuilder.Root
@@ -74,16 +83,45 @@ export function CallingParticipantMenu({
               {i18n('icu:CallingParticipantMenu__GoToChat')}
             </AxoMenuBuilder.Item>
           )}
-          {onRemoveFromCall && (
+          {onBlockFromCall && onRemoveFromCall && (
             <AxoMenuBuilder.Item
               symbol="minus-circle"
-              onSelect={onRemoveFromCall}
+              onSelect={() => setRemoveFromCallModalVisible(true)}
             >
               {i18n('icu:CallingParticipantMenu__RemoveFromCall')}
             </AxoMenuBuilder.Item>
           )}
         </AxoMenuBuilder.Content>
       </AxoMenuBuilder.Root>
+      <AxoConfirmDialog.Root
+        open={removeFromCallModalVisible}
+        onOpenChange={setRemoveFromCallModalVisible}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:CallingAdhocCallInfo__RemoveClientDialogBody', {
+          name: participantTitle ?? '',
+        })}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(onBlockFromCall, 'onBlockFromCall prop is required');
+            onBlockFromCall();
+          }}
+        >
+          {i18n('icu:CallingAdhocCallInfo__RemoveClientDialogButton--block')}
+        </AxoConfirmDialog.Action>
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(onRemoveFromCall, 'onRemoveFromCall prop is required');
+            onRemoveFromCall();
+          }}
+        >
+          {i18n('icu:CallingAdhocCallInfo__RemoveClientDialogButton--remove')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     </AxoTheme.Override>
   );
 }

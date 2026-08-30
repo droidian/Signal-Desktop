@@ -1,13 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createReadStream } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { protocol } from 'electron';
 
 import type { OptionalResourceService } from './OptionalResourceService.main.ts';
 import { getAppRootDir } from '../ts/util/appRootDir.main.ts';
-import { toWebStream } from '../ts/util/toWebStream.node.ts';
 import * as Errors from '../ts/types/errors.std.ts';
 import { createLogger } from '../ts/logging/log.std.ts';
 
@@ -27,13 +26,15 @@ const LOCAL_ASSETS = new Set([
   'fonts/inter-v3.19/Inter-Italic.woff2',
   'fonts/inter-v3.19/Inter-SemiBoldItalic.woff2',
   'fonts/mono-special/MonoSpecial-Regular.woff2',
-  'fonts/emoji.woff2',
 ]);
 
 // pathname to optional resource name
-const OPTIONAL_ASSETS = new Map([
-  ['optional-fonts/emoji-large.woff2', 'emoji-font.woff2'],
-]);
+const OPTIONAL_ASSETS = new Map<string, string>([]);
+
+if (!process.mas) {
+  LOCAL_ASSETS.add('fonts/emoji.woff2');
+  OPTIONAL_ASSETS.set('optional-fonts/emoji-large.woff2', 'emoji-font.woff2');
+}
 
 export class AssetService {
   readonly #resourceService: OptionalResourceService;
@@ -65,10 +66,8 @@ export class AssetService {
     const path = pathname.slice(1);
 
     if (LOCAL_ASSETS.has(path)) {
-      const stream = createReadStream(
-        join(getAppRootDir(), ...path.split('/'))
-      );
-      return new Response(toWebStream(stream), {
+      const content = await readFile(join(getAppRootDir(), ...path.split('/')));
+      return new Response(content, {
         status: 200,
         headers: {
           'cache-control': 'public, max-age=2592000, immutable',

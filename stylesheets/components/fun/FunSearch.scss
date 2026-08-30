@@ -28,7 +28,7 @@ $input-padding-inline: 12px;
 
   @include mixins.color-svg(
     '../images/icons/v3/search/search.svg',
-    light-dark(variables.$color-black-alpha-50, variables.$color-white-alpha-50)
+    var(--axo-color-label-secondary)
   );
 }
 
@@ -43,13 +43,13 @@ $input-padding-inline: 12px;
     $input-padding-inline + $icon-actual-size + $icon-margin-inline-start
   );
   @include mixins.font-body-1;
-  color: light-dark(variables.$color-black, variables.$color-white);
-  background: light-dark(variables.$color-gray-05, variables.$color-gray-80);
+  color: var(--axo-color-label-primary);
+  background: var(--axo-color-fill-primary);
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -77,19 +77,16 @@ $input-padding-inline: 12px;
   width: $clear-button-size;
   height: $clear-button-size;
   border-radius: 9999px;
-  color: light-dark(
-    variables.$color-black-alpha-50,
-    variables.$color-white-alpha-50
-  );
+  color: var(--axo-color-label-secondary);
 
   .FunSearch__Clear:hover &,
   .FunSearch__Clear:focus & {
-    color: light-dark(variables.$color-gray-75, variables.$color-gray-25);
+    color: var(--axo-color-label-primary);
   }
 
   .FunSearch__Clear:focus & {
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ChangeEventHandler } from 'react';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 import type { AttachmentDraftType } from '../types/Attachment.std.ts';
 import {
@@ -62,6 +62,8 @@ export const CompositionUpload = forwardRef<HTMLInputElement, PropsType>(
         : null;
 
     return (
+      // FIXME
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label
       <input
         data-testid={testId ?? 'attachfile-input'}
         hidden

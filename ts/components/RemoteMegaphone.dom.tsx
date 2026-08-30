@@ -1,7 +1,8 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { RemoteActionableMegaphoneType } from '../types/Megaphone.std.ts';
 import { tw } from '../axo/tw.dom.tsx';
 import { AxoButton } from '../axo/AxoButton.dom.tsx';
@@ -28,18 +29,19 @@ export function RemoteMegaphone({
   isFullSize,
   onClickNarrowMegaphone,
   onInteractWithMegaphone,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const isRTL = i18n.getLocaleDirection() === 'rtl';
 
   // We need to provide this to <Tooltip> to render correctly
   const wrapperClassName = tw(
     '@container flex flex-col',
     'max-w-[500px] curved-3xl p-3',
-    'bg-elevated-background-primary dark:bg-elevated-background-tertiary',
+    'bg-material-primary dark:bg-material-tertiary',
+    'backdrop-blur-thick',
     'shadow-elevation-1',
     isFullSize ? '' : 'size-[76px]'
   );
-  const image: React.JSX.Element = (
+  const image: JSX.Element = (
     <div
       className={tw(
         'size-[48px] shrink-0',
@@ -69,16 +71,12 @@ export function RemoteMegaphone({
           <div className={tw('w-full')}>
             <h2
               className={tw(
-                'mt-[2px] type-body-medium font-semibold text-label-primary select-none'
+                'mt-[2px] type-body-medium font-semibold text-primary'
               )}
             >
               {title}
             </h2>
-            <p
-              className={tw(
-                'mt-[2px] type-body-small text-label-secondary select-none'
-              )}
-            >
+            <p className={tw('mt-[2px] type-body-small text-secondary')}>
               {body}
             </p>
           </div>
@@ -88,7 +86,7 @@ export function RemoteMegaphone({
             {secondaryCtaId && (
               <AxoButton.Root
                 size="md"
-                variant="secondary"
+                variant="strong-secondary"
                 onClick={() =>
                   onInteractWithMegaphone(remoteMegaphoneId, secondaryCtaId)
                 }
@@ -100,7 +98,7 @@ export function RemoteMegaphone({
             {primaryCtaId && (
               <AxoButton.Root
                 size="md"
-                variant="primary"
+                variant="strong-primary"
                 onClick={() =>
                   onInteractWithMegaphone(remoteMegaphoneId, primaryCtaId)
                 }
@@ -116,8 +114,8 @@ export function RemoteMegaphone({
   }
 
   // Narrow collapsed sidebar
-  const tooltipContent: React.JSX.Element = (
-    <div className={tw('text-start text-label-primary')}>
+  const tooltipContent: JSX.Element = (
+    <div className={tw('text-start text-primary')}>
       <h2 className={tw('mt-1 type-body-medium font-semibold')}>{title}</h2>
       <p className={tw('mt-1 mb-2 type-body-medium')}>{body}</p>
     </div>

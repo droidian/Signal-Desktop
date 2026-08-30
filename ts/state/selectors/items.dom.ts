@@ -18,12 +18,9 @@ import { DurationInSeconds } from '../../util/durations/index.std.ts';
 import * as Bytes from '../../Bytes.std.ts';
 import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.std.ts';
 import { isNotUpdatable } from '../../util/version.std.ts';
-import {
-  EmojiSkinTone,
-  isValidEmojiSkinTone,
-} from '../../components/fun/data/emojis.std.ts';
 import { BackupLevel } from '../../services/backups/types.std.ts';
 import type { StateSelector } from '../types.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const DEFAULT_PREFERRED_LEFT_PANE_WIDTH = 320;
 
@@ -33,12 +30,6 @@ export const getAreWeASubscriber = createSelector(
   getItems,
   ({ areWeASubscriber }: Readonly<ItemsStateType>): boolean =>
     Boolean(areWeASubscriber)
-);
-
-export const getProfileMovedModalNeeded = createSelector(
-  getItems,
-  ({ needProfileMovedModal }: Readonly<ItemsStateType>): boolean =>
-    Boolean(needProfileMovedModal)
 );
 
 export const getPinnedConversationIds = createSelector(
@@ -159,11 +150,10 @@ export const getCustomColors = createSelector(
     state.customColors?.colors
 );
 
-export const getEmojiSkinToneDefault = createSelector(
-  getItems,
-  ({ emojiSkinToneDefault }: Readonly<ItemsStateType>): EmojiSkinTone | null =>
-    isValidEmojiSkinTone(emojiSkinToneDefault) ? emojiSkinToneDefault : null
-);
+export const getEmojiSkinToneDefault: StateSelector<Emoji.SkinTone | null> =
+  createSelector(getItems, ({ emojiSkinToneDefault }) => {
+    return emojiSkinToneDefault ?? null;
+  });
 
 export const getPreferredLeftPaneWidth = createSelector(
   getItems,
@@ -179,11 +169,11 @@ export const getPreferredReactionEmoji = createSelector(
   getEmojiSkinToneDefault,
   (
     state: Readonly<ItemsStateType>,
-    emojiSkinToneDefault: EmojiSkinTone | null
-  ): Array<string> =>
+    emojiSkinToneDefault: Emoji.SkinTone | null
+  ): Array<Emoji.Variant> =>
     getPreferredReactionEmojiFromStoredValue(
       state.preferredReactionEmoji,
-      emojiSkinToneDefault ?? EmojiSkinTone.None
+      emojiSkinToneDefault ?? Emoji.SkinTone.None
     )
 );
 
@@ -275,6 +265,11 @@ export const getBackupMediaDownloadProgress = createSelector(
 export const getBackupKey = createSelector(
   getItems,
   (state: ItemsStateType) => state.accountEntropyPool
+);
+
+export const getHasMediaBackups = createSelector(
+  getItems,
+  (state: ItemsStateType): boolean => state.backupTier === BackupLevel.Paid
 );
 
 export const getServerAlerts = createSelector(

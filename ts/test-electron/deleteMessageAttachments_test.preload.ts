@@ -304,7 +304,6 @@ describe('deleteMessageAttachments', () => {
     it('is not safe to delete if the file is protected, even if no references', async () => {
       await DataWriter._protectAttachmentPathFromDeletion({
         path: 'attachment0',
-        messageId: 'messageId',
       });
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment0'));
@@ -333,9 +332,6 @@ describe('deleteMessageAttachments', () => {
         conversationId: 'convoId',
         attachments: [attachment1],
       };
-      const message2 = { ...message1, id: generateUuid() };
-      const message3 = { ...message1, id: generateUuid() };
-
       assert.isTrue(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
       await DataWriter.saveMessage(message1, {
@@ -345,20 +341,43 @@ describe('deleteMessageAttachments', () => {
       });
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
-      // Protect it twice
-      await DataWriter.getAndProtectExistingAttachmentPath({
-        plaintextHash: attachment1.plaintextHash,
-        version: 2,
-        contentType: IMAGE_JPEG,
-        messageId: message2.id,
-      });
+      // Protect it twice, once for each message that will reuse the file
+      const existingDataForMessage2 =
+        await DataWriter.getAndProtectExistingAttachmentPath({
+          plaintextHash: attachment1.plaintextHash,
+          version: 2,
+          contentType: IMAGE_JPEG,
+        });
+      strictAssert(existingDataForMessage2, 'existing attachment data exists');
 
-      await DataWriter.getAndProtectExistingAttachmentPath({
-        plaintextHash: attachment1.plaintextHash,
-        version: 2,
-        contentType: IMAGE_JPEG,
-        messageId: message3.id,
-      });
+      const existingDataForMessage3 =
+        await DataWriter.getAndProtectExistingAttachmentPath({
+          plaintextHash: attachment1.plaintextHash,
+          version: 2,
+          contentType: IMAGE_JPEG,
+        });
+      strictAssert(existingDataForMessage3, 'existing attachment data exists');
+
+      const message2: MessageAttributesType = {
+        ...message1,
+        id: generateUuid(),
+        attachments: [
+          {
+            ...attachment1,
+            ...existingDataForMessage2,
+          },
+        ],
+      };
+      const message3: MessageAttributesType = {
+        ...message1,
+        id: generateUuid(),
+        attachments: [
+          {
+            ...attachment1,
+            ...existingDataForMessage3,
+          },
+        ],
+      };
 
       // Delete the original message
       await DataWriter.removeMessageById(message1.id, {
@@ -366,7 +385,7 @@ describe('deleteMessageAttachments', () => {
       });
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
-      // Save message2
+      // Save message2; this releases message2's dedupe protection
       await DataWriter.saveMessage(message2, {
         forceSave: true,
         ourAci: generateAci(),
@@ -380,7 +399,7 @@ describe('deleteMessageAttachments', () => {
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
-      // Save message3
+      // Save message3; this releases message3's dedupe protection
       await DataWriter.saveMessage(message3, {
         forceSave: true,
         ourAci: generateAci(),
@@ -494,7 +513,6 @@ describe('deleteMessageAttachments', () => {
           plaintextHash: attachment1.plaintextHash,
           version: attachment1.version,
           contentType: attachment1.contentType,
-          messageId: 'newmessage',
         });
 
       assert.strictEqual(existingAttachment?.path, attachment1.path);
@@ -604,7 +622,6 @@ describe('deleteMessageAttachments', () => {
 
       await DataWriter._protectAttachmentPathFromDeletion({
         path: 'attachment0',
-        messageId: 'messageId',
       });
       await cleanupAttachmentFiles(attachment);
       assert.sameDeepMembers(listFiles('attachment'), [

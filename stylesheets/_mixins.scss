@@ -21,6 +21,8 @@
   &:lang(fa) {
     font-family:
       'Vazirmatn',
+      Inter,
+      'Noto Sans Arabic',
       'Signal Emoji Large',
       'Signal Emoji Small',
       -apple-system,
@@ -28,7 +30,6 @@
       BlinkMacSystemFont,
       'Segoe UI',
       Tahoma,
-      'Noto Sans Arabic',
       Helvetica,
       Arial,
       sans-serif;
@@ -371,7 +372,6 @@ $rtl-icon-map: (
     margin: 0;
     font: inherit;
     cursor: pointer;
-    outline: inherit;
     text-align: inherit;
   }
 
@@ -409,14 +409,9 @@ $rtl-icon-map: (
 
 // Individual traits
 
-@mixin button-focus-outline($width: 3px) {
+@mixin button-focus-outline {
   &:focus {
-    @include keyboard-mode {
-      box-shadow: 0px 0px 0px $width variables.$color-ultramarine;
-    }
-    @include dark-keyboard-mode {
-      box-shadow: 0px 0px 0px $width variables.$color-ultramarine-light;
-    }
+    @include axo-focus-ring;
   }
 }
 
@@ -773,16 +768,10 @@ $rtl-icon-map: (
     width: 95%;
     display: flex;
     flex-direction: column;
-  }
 
-  @include light-theme() {
-    background: variables.$color-white;
-    color: variables.$color-gray-90;
-  }
-
-  @include dark-theme() {
-    background: variables.$color-gray-95;
-    color: variables.$color-gray-05;
+    color: var(--axo-color-label-primary);
+    background: var(--axo-color-material-dialog);
+    backdrop-filter: blur(24px);
   }
 }
 
@@ -915,7 +904,6 @@ $rtl-icon-map: (
   height: 100vh;
   justify-content: center;
   line-height: 30px;
-  user-select: none;
 
   @include light-theme {
     background: variables.$color-gray-02;
@@ -1118,7 +1106,6 @@ $rtl-icon-map: (
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  user-select: none;
 
   &:before {
     $icon-size: 16px;
@@ -1157,8 +1144,6 @@ $rtl-icon-map: (
   border-radius: 4px;
   margin-bottom: 6px;
   z-index: variables.$z-index-context-menu;
-  user-select: none;
-  overflow: hidden;
 
   @include popper-shadow();
 
@@ -1171,4 +1156,16 @@ $rtl-icon-map: (
       background: variables.$color-gray-75;
     }
   }
+}
+
+@mixin axo-focus-ring {
+  box-shadow:
+    0 0 0 1.5px var(--axo-color-border-focused-inner),
+    0 0 0 4px var(--axo-color-border-focused-outer);
+}
+
+@mixin axo-focus-ring-inset {
+  box-shadow:
+    inset 0 0 0 2.5px var(--axo-color-border-focused-outer),
+    inset 0 0 0 4px var(--axo-color-border-focused-inner);
 }

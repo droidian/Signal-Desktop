@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CSSProperties } from 'react';
-import React, { useEffect, useState } from 'react';
+import type { CSSProperties, JSX, KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import lodash from 'lodash';
 
 import { createLogger } from '../logging/log.std.ts';
@@ -57,7 +57,7 @@ export function AvatarPreview({
   onClick,
   showUploadButton,
   style = {},
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [avatarPreview, setAvatarPreview] = useState<
     Uint8Array<ArrayBuffer> | undefined
   >();
@@ -152,7 +152,7 @@ export function AvatarPreview({
         role: 'button',
         onClick,
         tabIndex: 0,
-        onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === 'Enter' || event.key === ' ') {
             onClick();
           }
@@ -167,7 +167,8 @@ export function AvatarPreview({
   }
 
   if (imageStatus === ImageStatus.Nothing) {
-    let content: React.JSX.Element | string | undefined;
+    let content: JSX.Element | string | undefined;
+    const initials = getInitials(conversationTitle);
     if (isGroup) {
       content = (
         <div
@@ -180,8 +181,14 @@ export function AvatarPreview({
           className={`BetterAvatarBubble--${avatarColor}--icon AvatarPreview__note_to_self`}
         />
       );
+    } else if (initials) {
+      content = initials;
     } else {
-      content = getInitials(conversationTitle);
+      content = (
+        <div
+          className={`BetterAvatarBubble--${avatarColor}--icon AvatarPreview__contact`}
+        />
+      );
     }
 
     return (
@@ -236,7 +243,6 @@ export function AvatarPreview({
             aria-label={i18n('icu:delete')}
             className="AvatarPreview__clear"
             onClick={onClear}
-            tabIndex={-1}
             type="button"
           />
         )}

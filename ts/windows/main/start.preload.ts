@@ -21,7 +21,15 @@ import type {
   CdsLookupOptionsType,
   GetIceServersResultType,
 } from '../../textsecure/WebAPI.preload.ts';
-import { cdsLookup, getSocketStatus } from '../../textsecure/WebAPI.preload.ts';
+import {
+  cdsLookup,
+  deleteFromSVR2,
+  disableRegistrationLock,
+  getSocketStatus,
+  restoreFromSVR2,
+  setupRegistrationLock,
+  storeWithSVR2,
+} from '../../textsecure/WebAPI.preload.ts';
 import type { FeatureFlagType } from '../../window.d.ts';
 import type { StorageAccessType } from '../../types/Storage.d.ts';
 import { calling } from '../../services/calling.preload.ts';
@@ -30,6 +38,8 @@ import { isProduction } from '../../util/version.std.ts';
 import { benchmarkConversationOpen } from '../../CI/benchmarkConversationOpen.preload.ts';
 import { itemStorage } from '../../textsecure/Storage.preload.ts';
 import { getSelectedConversationId } from '../../state/selectors/nav.std.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { getRegistrationLockString } from '../../jobs/registrationJobQueue.preload.ts';
 
 const log = createLogger('start');
 
@@ -56,7 +66,35 @@ if (
   !isProduction(window.SignalContext.getVersion()) ||
   window.SignalContext.config.devTools
 ) {
+  const testKey = 'p10bLPYMs6SjewuhrdWUK2hoqR0Jc/+56GuA/+VBZRg=';
+
   const SignalDebug = {
+    async setupRegistrationLock() {
+      await setupRegistrationLock(getRegistrationLockString());
+    },
+    async disableRegistrationLock() {
+      await disableRegistrationLock();
+    },
+    restoreFromSVR2: async (pin: string, expectedKey = testKey) => {
+      const result = await restoreFromSVR2({ pin });
+
+      if (result.success) {
+        const inBase64 = Bytes.toBase64(result.data);
+        const match = inBase64 === expectedKey;
+        return { ...result, match };
+      }
+
+      return result;
+    },
+    deleteFromSVR2: async () => {
+      return deleteFromSVR2();
+    },
+    storeWithSVR2: async (pin: string, key = testKey) => {
+      return storeWithSVR2({
+        pin,
+        data: Bytes.fromBase64(key),
+      });
+    },
     cdsLookup: (options: CdsLookupOptionsType) => cdsLookup(options),
     getSelectedConversation: () => {
       const conversationId = getSelectedConversationId(

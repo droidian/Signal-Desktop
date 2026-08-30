@@ -1,8 +1,8 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactElement, ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactElement, ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
@@ -28,8 +28,8 @@ import type {
 
 import type { SmartContactRendererType } from '../../groupChange.std.ts';
 import { renderChange } from '../../groupChange.std.ts';
-import { Modal } from '../Modal.dom.tsx';
-import { ConfirmationDialog } from '../ConfirmationDialog.dom.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
 
 const { get } = lodash;
 
@@ -58,7 +58,7 @@ export type PropsActionsType = {
 
 export type PropsHousekeepingType = {
   i18n: LocalizerType;
-  renderContact: SmartContactRendererType<React.JSX.Element>;
+  renderContact: SmartContactRendererType<JSX.Element>;
 };
 
 export type PropsType = PropsDataType &
@@ -69,7 +69,7 @@ function renderStringToIntl<Key extends keyof ICUJSXMessageParamsByKeyType>(
   id: Key,
   i18n: LocalizerType,
   components: ICUJSXMessageParamsByKeyType[Key]
-): React.JSX.Element {
+): JSX.Element {
   return <I18n id={id} i18n={i18n} components={components} />;
 }
 
@@ -181,9 +181,9 @@ function GroupV2Detail({
   i18n: LocalizerType;
   fromId?: ServiceIdString;
   ourAci: AciString | undefined;
-  renderContact: SmartContactRendererType<React.JSX.Element>;
+  renderContact: SmartContactRendererType<JSX.Element>;
   text: ReactNode;
-}): React.JSX.Element {
+}): JSX.Element {
   const icon = getIcon(detail, isLastText, fromId);
   let buttonNode: ReactNode;
 
@@ -204,15 +204,23 @@ function GroupV2Detail({
       }
 
       modalNode = (
-        <Modal
-          modalName="GroupV2Change.ViewingGroupDescription"
-          hasXButton
-          i18n={i18n}
-          title={groupName}
-          onClose={() => setModalState(ModalState.None)}
+        <AxoDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
         >
-          <GroupDescriptionText text={detail.description} />
-        </Modal>
+          <AxoDialog.Content size="md" escape="cancel-is-noop">
+            <AxoDialog.Header>
+              <AxoDialog.Title>{groupName}</AxoDialog.Title>
+              <AxoDialog.Close />
+            </AxoDialog.Header>
+            <AxoDialog.Body>
+              <AxoDialog.Description>
+                <GroupDescriptionText text={detail.description} />
+              </AxoDialog.Description>
+            </AxoDialog.Body>
+            <AxoDialog.Footer />
+          </AxoDialog.Content>
+        </AxoDialog.Root>
       );
       break;
     case ModalState.ConfirmingblockGroupLinkRequests:
@@ -229,27 +237,28 @@ function GroupV2Detail({
       }
 
       modalNode = (
-        <ConfirmationDialog
-          dialogName="GroupV2Change.confirmBlockLinkRequests"
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setModalState(ModalState.None)}
           title={i18n('icu:PendingRequests--block--title')}
-          actions={[
-            {
-              action: () => blockGroupLinkRequests(conversationId, detail.aci),
-              text: i18n('icu:PendingRequests--block--confirm'),
-              style: 'affirmative',
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => setModalState(ModalState.None)}
+          description={
+            <I18n
+              id="icu:PendingRequests--block--contents"
+              i18n={i18n}
+              components={{
+                name: renderContact(detail.aci),
+              }}
+            />
+          }
         >
-          <I18n
-            id="icu:PendingRequests--block--contents"
-            i18n={i18n}
-            components={{
-              name: renderContact(detail.aci),
-            }}
-          />
-        </ConfirmationDialog>
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => blockGroupLinkRequests(conversationId, detail.aci)}
+          >
+            {i18n('icu:PendingRequests--block--confirm')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       );
       break;
     default: {
@@ -318,7 +327,7 @@ export function GroupV2Change(props: PropsType): ReactElement {
 
   return (
     <>
-      {renderChange<React.JSX.Element>(change, {
+      {renderChange<JSX.Element>(change, {
         i18n,
         ourAci,
         ourPni,

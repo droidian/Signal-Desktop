@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import type { MutableRefObject } from 'react';
@@ -77,7 +77,7 @@ export const SmartPreferencesDonations = memo(
     const ourNumber = useSelector(getUserNumber);
     const me = useSelector(getMe);
     const { badges, color, firstName, profileAvatarUrl } = me;
-    const badge = getPreferredBadge(badges);
+    const myBadge = getPreferredBadge(badges);
 
     const { showToast } = useToastActions();
     const donationReceipts = useSelector(
@@ -126,7 +126,7 @@ export const SmartPreferencesDonations = memo(
     return (
       <PreferencesDonations
         i18n={i18n}
-        badge={badge}
+        myBadge={myBadge}
         color={color}
         firstName={firstName}
         profileAvatarUrl={profileAvatarUrl}

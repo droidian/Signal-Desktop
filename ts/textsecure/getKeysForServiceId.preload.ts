@@ -28,7 +28,6 @@ import { createLogger } from '../logging/log.std.ts';
 import { isRecord } from '../util/isRecord.std.ts';
 import type { GroupSendToken } from '../types/GroupSendEndorsements.std.ts';
 import { HTTPError } from '../types/HTTPError.std.ts';
-import { onFailedToSendWithEndorsements } from '../util/groupSendEndorsements.preload.ts';
 import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
 import { itemStorage } from './Storage.preload.ts';
 
@@ -115,8 +114,6 @@ async function getServerKeys(
     } catch (error) {
       if (!isUnauthorizedError(error)) {
         throw error;
-      } else {
-        onFailedToSendWithEndorsements(error);
       }
     }
   }
@@ -133,6 +130,7 @@ async function handleServerKeys(
   devicesToUpdate: Array<number> | null
 ): Promise<void> {
   const ourAci = itemStorage.user.getCheckedAci();
+  const ourDeviceId = itemStorage.user.getCheckedDeviceId();
   const sessionStore = new Sessions({
     signalProtocolStore,
     ourServiceId: ourAci,
@@ -166,6 +164,7 @@ async function handleServerKeys(
         );
       }
       const protocolAddress = ProtocolAddress.new(serviceId, deviceId);
+      const localAddress = ProtocolAddress.new(ourAci, ourDeviceId);
       const preKeyId = preKey?.keyId || null;
       const preKeyObject = preKey
         ? PublicKey.deserialize(preKey.publicKey)
@@ -200,6 +199,7 @@ async function handleServerKeys(
           processPreKeyBundle(
             preKeyBundle,
             protocolAddress,
+            localAddress,
             sessionStore,
             identityKeyStore
           )
@@ -207,7 +207,7 @@ async function handleServerKeys(
       } catch (error) {
         if (
           error instanceof LibSignalErrorBase &&
-          error.code === ErrorCode.UntrustedIdentity
+          error.is(ErrorCode.UntrustedIdentity)
         ) {
           throw new OutgoingIdentityKeyError(serviceId, error);
         }

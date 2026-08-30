@@ -1,6 +1,6 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useId } from 'react';
+import { useId, useState, type JSX } from 'react';
 import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
 import type { LocalizerType } from '../../../types/Util.std.ts';
 import { getAccessControlOptions } from '../../../util/getAccessControlOptions.std.ts';
@@ -31,11 +31,11 @@ export function GroupV2Permissions({
   setAccessControlMembersSetting,
   setAccessControlMemberLabelSetting,
   setAnnouncementsOnly,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const AccessControlEnum = Proto.AccessControl.AccessRequired;
 
   const [isWarningAboutClearingLabels, setIsWarningAboutClearingLabels] =
-    React.useState(false);
+    useState(false);
   const addMembersSelectId = useId();
   const groupInfoSelectId = useId();
   const announcementSelectId = useId();
@@ -170,7 +170,7 @@ export function GroupV2Permissions({
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
             <AxoAlertDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={() => {
                 setIsWarningAboutClearingLabels(false);
               }}
@@ -178,7 +178,7 @@ export function GroupV2Permissions({
               {i18n('icu:cancel')}
             </AxoAlertDialog.Action>
             <AxoAlertDialog.Action
-              variant="primary"
+              variant="strong-primary"
               onClick={() => {
                 setAccessControlMemberLabelSetting(
                   conversation.id,

@@ -1,15 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { FormEventHandler } from 'react';
-import React, { useCallback, useRef, useState } from 'react';
-
+import type { JSX, SubmitEvent } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { LocalizerType } from '../../../types/Util.std.ts';
-import { Modal } from '../../Modal.dom.tsx';
 import { AvatarEditor } from '../../AvatarEditor.dom.tsx';
 import { AvatarPreview } from '../../AvatarPreview.dom.tsx';
-import { Button, ButtonVariant } from '../../Button.dom.tsx';
-import { Spinner } from '../../Spinner.dom.tsx';
 import { GroupDescriptionInput } from '../../GroupDescriptionInput.dom.tsx';
 import { GroupTitleInput } from '../../GroupTitleInput.dom.tsx';
 import { RequestState } from './util.std.ts';
@@ -21,6 +17,7 @@ import type {
 } from '../../../types/Avatar.std.ts';
 import type { AvatarColorType } from '../../../types/Colors.std.ts';
 import { useConfirmDiscard } from '../../../hooks/useConfirmDiscard.dom.tsx';
+import { AxoDialog } from '../../../axo/AxoDialog.dom.tsx';
 
 type PropsType = {
   avatarColor?: AvatarColorType;
@@ -60,7 +57,8 @@ export function EditConversationAttributesModal({
   replaceAvatar,
   saveAvatarToDisk,
   userAvatarData,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
+  const formRef = useRef<HTMLFormElement>(null);
   const focusDescriptionRef = useRef<undefined | boolean>(
     initiallyFocusDescription
   );
@@ -85,6 +83,10 @@ export function EditConversationAttributesModal({
     i18n,
     name: 'EditConversationAttributesModal',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
 
   const focusRef = (el: null | HTMLElement) => {
@@ -131,7 +133,11 @@ export function EditConversationAttributesModal({
   ]);
   tryClose.current = onTryClose;
 
-  const onSubmit: FormEventHandler<HTMLFormElement> = event => {
+  function onRequestSubmit() {
+    formRef.current?.requestSubmit();
+  }
+
+  function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const request: {
@@ -149,11 +155,11 @@ export function EditConversationAttributesModal({
       request.description = trimmedDescription;
     }
     makeRequest(request);
-  };
+  }
 
   const avatarUrlForPreview = hasAvatarChanged ? undefined : externalAvatarUrl;
 
-  let content: React.JSX.Element;
+  let content: JSX.Element;
   if (editingAvatar) {
     content = (
       <AvatarEditor
@@ -163,6 +169,7 @@ export function EditConversationAttributesModal({
         conversationId={conversationId}
         deleteAvatarFromDisk={deleteAvatarFromDisk}
         i18n={i18n}
+        isDisplayedAsPanel={false}
         isGroup
         onCancel={() => {
           setHasAvatarChanged(false);
@@ -181,7 +188,7 @@ export function EditConversationAttributesModal({
   } else {
     content = (
       <form
-        id="edit-conversation-form"
+        ref={formRef}
         onSubmit={onSubmit}
         className="module-EditConversationAttributesModal"
       >
@@ -231,46 +238,46 @@ export function EditConversationAttributesModal({
     );
   }
 
-  // AvatarEditor brings its own footer with it so no need to duplicate it.
-  const modalFooter = editingAvatar ? undefined : (
-    <>
-      <Button
-        disabled={isRequestActive}
-        onClick={onClose}
-        variant={ButtonVariant.Secondary}
-      >
-        {i18n('icu:cancel')}
-      </Button>
-
-      <Button
-        type="submit"
-        form="edit-conversation-form"
-        variant={ButtonVariant.Primary}
-        disabled={!canSubmit}
-      >
-        {isRequestActive ? (
-          <Spinner size="20px" svgSize="small" direction="on-avatar" />
-        ) : (
-          i18n('icu:save')
-        )}
-      </Button>
-    </>
-  );
-
   if (confirmDiscardModal) {
     return confirmDiscardModal;
   }
 
   return (
-    <Modal
-      modalName="EditConversationAttributesModal"
-      hasXButton
-      i18n={i18n}
-      onClose={onTryClose}
-      title={i18n('icu:updateGroupAttributes__title')}
-      modalFooter={modalFooter}
-    >
-      {content}
-    </Modal>
+    <AxoDialog.Root open onOpenChange={onTryClose}>
+      <AxoDialog.Content size="md" escape="cancel-is-destructive">
+        <AxoDialog.Header>
+          <AxoDialog.Title>
+            {i18n('icu:updateGroupAttributes__title')}
+          </AxoDialog.Title>
+        </AxoDialog.Header>
+        {/* AvatarEditor brings its own Body and Footer; no need to duplicate. */}
+        {editingAvatar ? (
+          content
+        ) : (
+          <>
+            <AxoDialog.Body>{content}</AxoDialog.Body>
+            <AxoDialog.Footer>
+              <AxoDialog.Actions>
+                <AxoDialog.Action
+                  variant="strong-secondary"
+                  onClick={onClose}
+                  disabled={isRequestActive}
+                >
+                  {i18n('icu:cancel')}
+                </AxoDialog.Action>
+                <AxoDialog.Action
+                  variant="strong-primary"
+                  onClick={onRequestSubmit}
+                  disabled={!canSubmit}
+                  pending={isRequestActive}
+                >
+                  {i18n('icu:save')}
+                </AxoDialog.Action>
+              </AxoDialog.Actions>
+            </AxoDialog.Footer>
+          </>
+        )}
+      </AxoDialog.Content>
+    </AxoDialog.Root>
   );
 }

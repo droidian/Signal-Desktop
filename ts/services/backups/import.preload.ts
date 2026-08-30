@@ -168,6 +168,8 @@ import type { PinnedMessageParams } from '../../types/PinnedMessage.std.ts';
 import type { ThemeType } from '../../util/preload.preload.ts';
 import { toNumber } from '../../util/toNumber.std.ts';
 import { isKnownProtoEnumMember } from '../../util/isKnownProtoEnumMember.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+import { TimestampMs } from '@signalapp/types';
 
 const { isNumber } = lodash;
 
@@ -782,7 +784,6 @@ export class BackupImportStream extends Writable {
     androidSpecificSettings,
     bioText,
     bioEmoji,
-    keyTransparencyData,
   }: Backups.AccountData): Promise<void> {
     strictAssert(this.#ourConversation === undefined, 'Duplicate AccountData');
     const me = {
@@ -827,16 +828,7 @@ export class BackupImportStream extends Writable {
       me.about = bioText;
     }
     if (bioEmoji != null) {
-      me.aboutEmoji = bioEmoji;
-    }
-    if (Bytes.isNotEmpty(keyTransparencyData)) {
-      const ourAci = this.#ourConversation?.serviceId;
-      strictAssert(
-        isAciString(ourAci),
-        'Must have our aci for Key Transparency data'
-      );
-
-      await DataWriter.setKTAccountData(ourAci, keyTransparencyData);
+      me.aboutEmoji = Emoji.unsafeCastMaybeInvalidStringToVariant(bioEmoji);
     }
     if (avatarUrlPath != null) {
       await itemStorage.put('avatarUrl', avatarUrlPath);
@@ -936,7 +928,9 @@ export class BackupImportStream extends Writable {
     );
     await itemStorage.put(
       'preferredReactionEmoji',
-      accountSettings?.preferredReactionEmoji || []
+      accountSettings?.preferredReactionEmoji?.map(emoji => {
+        return Emoji.unsafeCastMaybeInvalidStringToVariant(emoji);
+      }) ?? []
     );
     if (svrPin) {
       await itemStorage.put('svrPin', svrPin);
@@ -1177,10 +1171,20 @@ export class BackupImportStream extends Writable {
 
     if (contact.blocked) {
       if (serviceId) {
-        await itemStorage.blocked.addBlockedServiceId(serviceId);
+        await itemStorage.blocked.addBlockedServiceId(
+          serviceId,
+          contact.blockedAtTimestamp
+            ? getCheckedTimestampFromLong(contact.blockedAtTimestamp)
+            : undefined
+        );
       }
       if (e164) {
-        await itemStorage.blocked.addBlockedNumber(e164);
+        await itemStorage.blocked.addBlockedNumber(
+          e164,
+          contact.blockedAtTimestamp
+            ? getCheckedTimestampFromLong(contact.blockedAtTimestamp)
+            : undefined
+        );
       }
     }
 
@@ -1287,7 +1291,10 @@ export class BackupImportStream extends Writable {
           return {
             aci: fromAciObject(Aci.fromUuidBytes(userId)),
             joinedAtVersion: dropNull(joinedAtVersion) ?? 0,
-            labelEmoji: dropNull(labelEmoji),
+            labelEmoji:
+              labelEmoji != null
+                ? Emoji.unsafeCastMaybeInvalidStringToVariant(labelEmoji)
+                : undefined,
             labelString: dropNull(labelString),
             role: parseGroupMemberRole(role),
           };
@@ -1358,7 +1365,12 @@ export class BackupImportStream extends Writable {
     };
 
     if (group.blocked) {
-      await itemStorage.blocked.addBlockedGroup(groupId);
+      await itemStorage.blocked.addBlockedGroup(
+        groupId,
+        group.blockedAtTimestamp
+          ? getCheckedTimestampFromLong(group.blockedAtTimestamp)
+          : undefined
+      );
     }
 
     return attrs;
@@ -1860,11 +1872,11 @@ export class BackupImportStream extends Writable {
       strictAssert(pinnedAtTimestamp, 'Missing PinDetails.pinnedAtTimestamp');
       strictAssert(pinExpiry, 'Missing PinDetails.pinExpiry');
 
-      const pinnedAt = toNumber(pinnedAtTimestamp);
+      const pinnedAt = TimestampMs.fromBigInt(pinnedAtTimestamp);
 
-      let expiresAt: number | null;
+      let expiresAt: TimestampMs | null;
       if (pinExpiry.pinExpiresAtTimestamp != null) {
-        expiresAt = toNumber(pinExpiry.pinExpiresAtTimestamp);
+        expiresAt = TimestampMs.fromBigInt(pinExpiry.pinExpiresAtTimestamp);
       } else {
         strictAssert(
           pinExpiry.pinNeverExpires,
@@ -1901,16 +1913,12 @@ export class BackupImportStream extends Writable {
       const errors = new Array<CustomError>();
 
       let sendStatuses: Array<Backups.SendStatus | Backups.SendStatus.Params> =
-        outgoing.sendStatus;
-      if (!sendStatuses?.length) {
-        // TODO: DESKTOP-8089
-        // If this outgoing message was not sent to anyone, we add ourselves to
-        // sendStateByConversationId and mark read. This is to match existing desktop
-        // behavior.
+        outgoing.sendStatus ?? [];
+      if (!sendStatuses.length) {
         sendStatuses = [
           {
             recipientId: item.authorId,
-            deliveryStatus: { read: { sealedSender: null } },
+            deliveryStatus: { sent: { sealedSender: null } },
             timestamp: item.dateSent,
           },
         ];
@@ -2285,7 +2293,6 @@ export class BackupImportStream extends Writable {
       reactions: this.#fromReactions(reactions),
       storyReplyContext: {
         authorAci: storyAuthorAci,
-        messageId: '', // stories are never imported
       },
     };
 
@@ -2297,7 +2304,7 @@ export class BackupImportStream extends Writable {
         : undefined;
     } else if (emoji) {
       result.storyReaction = {
-        emoji,
+        emoji: Emoji.unsafeCastMaybeInvalidStringToVariant(emoji),
         targetAuthorAci: storyAuthorAci,
         targetTimestamp: 0, // stories are never imported
       };
@@ -2519,7 +2526,6 @@ export class BackupImportStream extends Writable {
         return 0;
       })
       .map(({ emoji, authorId, sentTimestamp }) => {
-        strictAssert(emoji != null, 'reaction must have an emoji');
         strictAssert(authorId != null, 'reaction must have authorId');
         strictAssert(
           sentTimestamp != null,
@@ -2533,7 +2539,7 @@ export class BackupImportStream extends Writable {
         );
 
         return {
-          emoji,
+          emoji: Emoji.unsafeCastMaybeInvalidStringToVariant(emoji),
           fromId: authorConvo.id,
           targetTimestamp: getCheckedTimestampFromLong(sentTimestamp),
           timestamp: getCheckedTimestampFromLong(sentTimestamp),
@@ -2711,7 +2717,10 @@ export class BackupImportStream extends Writable {
       return {
         message: {
           sticker: {
-            emoji: dropNull(emoji),
+            emoji:
+              emoji != null
+                ? Emoji.unsafeCastMaybeInvalidStringToVariant(emoji)
+                : undefined,
             packId: Bytes.toHex(packId),
             packKey: Bytes.toBase64(packKey),
             stickerId,
@@ -3593,10 +3602,10 @@ export class BackupImportStream extends Writable {
         });
       }
       if (update.groupV2MigrationUpdate) {
-        migrationMessage = migrationMessage || getDefaultMigrationMessage();
+        migrationMessage ??= getDefaultMigrationMessage();
       }
       if (update.groupV2MigrationSelfInvitedUpdate) {
-        migrationMessage = migrationMessage || getDefaultMigrationMessage();
+        migrationMessage ??= getDefaultMigrationMessage();
         const { groupMigration } = migrationMessage;
         if (!groupMigration) {
           throw new Error(
@@ -3606,7 +3615,7 @@ export class BackupImportStream extends Writable {
         groupMigration.areWeInvited = true;
       }
       if (update.groupV2MigrationInvitedMembersUpdate) {
-        migrationMessage = migrationMessage || getDefaultMigrationMessage();
+        migrationMessage ??= getDefaultMigrationMessage();
         const { groupMigration } = migrationMessage;
         if (!groupMigration) {
           throw new Error(
@@ -3623,7 +3632,7 @@ export class BackupImportStream extends Writable {
         groupMigration.invitedMemberCount = invitedMembersCount;
       }
       if (update.groupV2MigrationDroppedMembersUpdate) {
-        migrationMessage = migrationMessage || getDefaultMigrationMessage();
+        migrationMessage ??= getDefaultMigrationMessage();
         const { groupMigration } = migrationMessage;
         if (!groupMigration) {
           throw new Error(
@@ -3946,13 +3955,16 @@ export class BackupImportStream extends Writable {
     const profile: NotificationProfileType = {
       id: normalizeNotificationProfileId(Bytes.toHex(id), 'import', log),
       name,
-      emoji: dropNull(emoji),
+      emoji:
+        emoji != null
+          ? Emoji.unsafeCastMaybeInvalidStringToVariant(emoji)
+          : undefined,
       color: dropNull(color) ?? DEFAULT_PROFILE_COLOR,
       createdAtMs: getCheckedTimestampOrUndefinedFromLong(createdAtMs) ?? 0,
       allowAllCalls,
       allowAllMentions,
       allowedMembers: new Set(allowedMemberConversationIds ?? []),
-      scheduleEnabled: scheduleEnabled,
+      scheduleEnabled,
       scheduleStartTime: dropNull(scheduleStartTime),
       scheduleEndTime: dropNull(scheduleEndTime),
       scheduleDaysEnabled: parseScheduleDaysEnabled(scheduleDaysEnabled),

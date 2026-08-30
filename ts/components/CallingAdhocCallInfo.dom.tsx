@@ -1,9 +1,8 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useCallback, useState, useMemo, type JSX, type Key } from 'react';
 import classNames from 'classnames';
-
 import lodash from 'lodash';
 import { Avatar, AvatarSize } from './Avatar.dom.tsx';
 import type { CallLinkType } from '../types/CallLink.std.ts';
@@ -11,14 +10,12 @@ import type { LocalizerType } from '../types/Util.std.ts';
 import { sortByTitle } from '../util/sortByTitle.std.ts';
 import { ModalHost } from './ModalHost.dom.tsx';
 import { AVATAR_COLOR_COUNT, AvatarColors } from '../types/Colors.std.ts';
-import { Button } from './Button.dom.tsx';
-import { Modal } from './Modal.dom.tsx';
-import { Theme } from '../util/theme.std.ts';
 import { CallingParticipantListItem } from './CallingParticipantListItem.dom.tsx';
 import type {
   CallingParticipantType,
   PropsType as CallingParticipantsListPropsType,
 } from './CallingParticipantsList.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const { partition } = lodash;
 
@@ -43,15 +40,15 @@ function UnknownContacts({
   isInAdditionToKnownContacts,
   participants,
   showUnknownContactDialog,
-}: UnknownContactsPropsType): React.JSX.Element {
-  const renderUnknownAvatar = React.useCallback(
+}: UnknownContactsPropsType): JSX.Element {
+  const renderUnknownAvatar = useCallback(
     ({
       participant,
       key,
       size,
     }: {
       participant: CallingParticipantType;
-      key: React.Key;
+      key: Key;
       size: AvatarSize;
     }) => {
       const colorIndex = participant.serviceId
@@ -133,37 +130,28 @@ export function CallingAdhocCallInfo({
   onShareCallLinkViaSignal,
   showContactModal,
   renderCallingParticipantMenu,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const [isUnknownContactDialogVisible, setIsUnknownContactDialogVisible] =
-    React.useState(false);
+    useState(false);
 
-  const hideUnknownContactDialog = React.useCallback(
-    () => setIsUnknownContactDialogVisible(false),
-    [setIsUnknownContactDialogVisible]
-  );
-  const onClickShareCallLinkViaSignal = React.useCallback(() => {
+  const onClickShareCallLinkViaSignal = useCallback(() => {
     onClose();
     onShareCallLinkViaSignal();
   }, [onClose, onShareCallLinkViaSignal]);
 
-  const [visibleParticipants, unknownParticipants] = React.useMemo<
-    [Array<CallingParticipantType>, Array<CallingParticipantType>]
-  >(
-    () =>
-      partition(
-        participants,
-        (participant: CallingParticipantType) =>
-          isUnknownContactDiscrete || Boolean(participant.titleNoDefault)
-      ),
-    [isUnknownContactDiscrete, participants]
-  );
-  const sortedParticipants = React.useMemo<Array<CallingParticipantType>>(
+  const [visibleParticipants, unknownParticipants] = useMemo(() => {
+    return partition(participants, (participant: CallingParticipantType) => {
+      return isUnknownContactDiscrete || Boolean(participant.titleNoDefault);
+    });
+  }, [isUnknownContactDiscrete, participants]);
+
+  const sortedParticipants = useMemo<Array<CallingParticipantType>>(
     () => sortByTitle(visibleParticipants),
     [visibleParticipants]
   );
 
-  const renderParticipant = React.useCallback(
-    (participant: CallingParticipantType, key: React.Key) => (
+  const renderParticipant = useCallback(
+    (participant: CallingParticipantType, key: Key) => (
       <CallingParticipantListItem
         callConversationId={undefined}
         i18n={i18n}
@@ -186,22 +174,18 @@ export function CallingAdhocCallInfo({
 
   return (
     <>
-      {isUnknownContactDialogVisible ? (
-        <Modal
-          modalName="CallingAdhocCallInfo.UnknownContactInfo"
-          moduleClassName="CallingAdhocCallInfo__UnknownContactInfoDialog"
-          i18n={i18n}
-          modalFooter={
-            <Button onClick={hideUnknownContactDialog}>
-              {i18n('icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk')}
-            </Button>
-          }
-          onClose={hideUnknownContactDialog}
-          theme={Theme.Dark}
-        >
-          {i18n('icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody')}
-        </Modal>
-      ) : null}
+      <AxoConfirmDialog.Root
+        open={isUnknownContactDialogVisible}
+        onOpenChange={setIsUnknownContactDialogVisible}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n(
+          'icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody'
+        )}
+      >
+        <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
+
       <ModalHost
         modalName="CallingAdhocCallInfo"
         moduleClassName="CallingAdhocCallInfo"

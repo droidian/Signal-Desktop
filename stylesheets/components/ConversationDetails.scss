@@ -13,33 +13,22 @@
   &-groups {
     &__add-members-icon,
     &__add-to-group-icon {
-      @mixin plus-icon($color) {
-        @include mixins.color-svg(
-          '../images/icons/v3/plus/plus-compact.svg',
-          $color
-        );
-        & {
-          content: '';
-          display: block;
-          height: 18px;
-          width: 18px;
-        }
-      }
-
       align-items: center;
       border-radius: 100%;
       display: flex;
       height: 32px;
       justify-content: center;
       width: 32px;
+      background: var(--axo-color-fill-primary);
 
-      background: light-dark(
-        variables.$color-gray-02,
-        variables.$color-gray-90
-      );
       &::before {
-        @include plus-icon(
-          light-dark(variables.$color-black, variables.$color-gray-15)
+        content: '';
+        display: block;
+        height: 18px;
+        width: 18px;
+        @include mixins.color-svg(
+          '../images/icons/v3/plus/plus-compact.svg',
+          var(--axo-color-label-primary)
         );
       }
     }
@@ -51,7 +40,7 @@
 
   &-membership-list__member-label-button {
     @include mixins.font-body-small;
-    @include mixins.button-focus-outline(2px);
+    @include mixins.button-focus-outline;
 
     @include mixins.mouse-mode {
       &:hover {
@@ -276,10 +265,7 @@
 
       &--down {
         border-radius: 18px;
-        background-color: light-dark(
-          variables.$color-gray-02,
-          variables.$color-gray-90
-        );
+        background-color: var(--axo-color-fill-primary);
 
         &::after {
           width: 18px;
@@ -388,7 +374,6 @@
       border: 2px solid transparent;
       padding-block: 8px;
       padding-inline: 24px;
-      user-select: none;
       @include mixins.font-body-2;
 
       &--button {
@@ -396,10 +381,7 @@
         background: none;
 
         &[data-hovered]:not(:disabled) {
-          background-color: light-dark(
-            variables.$color-gray-02,
-            variables.$color-gray-90
-          );
+          background: var(--axo-color-fill-primary);
 
           & .ConversationDetails-panel-row__actions {
             opacity: 1;
@@ -407,21 +389,12 @@
         }
       }
 
-      &:focus {
+      &:focus,
+      &[data-focused='true'] {
         outline: none;
-      }
-
-      @mixin keyboard-focus-state($color) {
-        &[data-focused='true'] {
-          border-color: $color;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
-      }
-
-      @include mixins.keyboard-mode {
-        @include keyboard-focus-state(variables.$color-ultramarine);
-      }
-      @include mixins.dark-keyboard-mode {
-        @include keyboard-focus-state(variables.$color-ultramarine-light);
       }
     }
 
@@ -501,6 +474,7 @@
     &__header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding-block: 18px 12px;
       padding-inline: 24px;
 
@@ -515,14 +489,7 @@
   }
 
   &__header-buttons {
-    display: flex;
-    justify-content: center;
     margin-bottom: 24px;
-
-    .module-Button {
-      margin-block: 0;
-      margin-inline: 8px;
-    }
   }
 
   &__radio {
@@ -584,7 +551,13 @@
 }
 
 .ConversationDetails__CallHistoryGroup__ItemLabel {
+  display: flex;
+  align-items: center;
   flex: 1;
+
+  .module-expire-timer {
+    margin-bottom: 0;
+  }
 }
 
 .ConversationDetails__CallHistoryGroup__ItemTimestamp {

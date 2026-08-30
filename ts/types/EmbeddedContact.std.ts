@@ -249,7 +249,7 @@ export function parseAndWriteAvatar(
             ...contact,
             avatar: {
               ...avatar,
-              avatar: await upgradeAttachment(avatar.avatar, context, message),
+              avatar: await upgradeAttachment(avatar.avatar, context),
             },
           }
         : omit(contact, ['avatar']);

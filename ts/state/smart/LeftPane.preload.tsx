@@ -1,7 +1,7 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, type JSX } from 'react';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild.dom.tsx';
@@ -76,6 +76,7 @@ import {
 import {
   getChallengeStatus,
   hasNetworkDialog as getHasNetworkDialog,
+  getIsClockSkewTooMuch,
   getNetworkIsOnline,
 } from '../selectors/network.preload.ts';
 import {
@@ -104,7 +105,7 @@ import { SmartCaptchaDialog } from './CaptchaDialog.preload.tsx';
 import { SmartCrashReportDialog } from './CrashReportDialog.preload.tsx';
 import { SmartMessageSearchResult } from './MessageSearchResult.preload.tsx';
 import { SmartNetworkStatus } from './NetworkStatus.preload.tsx';
-import { SmartRelinkDialog } from './RelinkDialog.dom.tsx';
+import { SmartRelinkDialog } from './RelinkDialog.preload.tsx';
 import {
   renderToastManagerWithoutMegaphone,
   SmartToastManager,
@@ -119,6 +120,7 @@ import {
   pauseBackupMediaDownload,
   resumeBackupMediaDownload,
 } from '../../util/backupMediaDownload.preload.ts';
+import OS from '../../util/os/osPreload.preload.ts';
 import { useNavActions } from '../ducks/nav.std.ts';
 import { SmartLeftPaneChatFolders } from './LeftPaneChatFolders.preload.tsx';
 import { SmartLeftPaneConversationListItemContextMenu } from './LeftPaneConversationListItemContextMenu.preload.tsx';
@@ -131,60 +133,63 @@ import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
 import { SmartNotificationProfilesMenu } from './NotificationProfilesMenu.preload.tsx';
 import { getActiveProfile } from '../selectors/notificationProfiles.dom.ts';
 import type { StateSelector } from '../types.std.ts';
+import {
+  DialogClockSkew,
+  type PropsType as DialogClockSkewPropsType,
+} from '../../components/DialogClockSkew.dom.tsx';
 
-function renderMessageSearchResult(id: string): React.JSX.Element {
+function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
 }
 function renderConversationListItemContextMenu(
   props: RenderConversationListItemContextMenuProps
-): React.JSX.Element {
+): JSX.Element {
   return <SmartLeftPaneConversationListItemContextMenu {...props} />;
 }
 function renderNetworkStatus(
   props: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-): React.JSX.Element {
+): JSX.Element {
   return <SmartNetworkStatus {...props} />;
 }
 function renderRelinkDialog(
   props: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-): React.JSX.Element {
+): JSX.Element {
   return <SmartRelinkDialog {...props} />;
 }
 function renderUpdateDialog(
   props: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-): React.JSX.Element {
+): JSX.Element {
   return <SmartUpdateDialog {...props} />;
 }
-function renderCaptchaDialog({
-  onSkip,
-}: {
-  onSkip(): void;
-}): React.JSX.Element {
+function renderClockSkewDialog(props: DialogClockSkewPropsType): JSX.Element {
+  return <DialogClockSkew {...props} />;
+}
+function renderCaptchaDialog({ onSkip }: { onSkip: () => void }): JSX.Element {
   return <SmartCaptchaDialog onSkip={onSkip} />;
 }
-function renderCrashReportDialog(): React.JSX.Element {
+function renderCrashReportDialog(): JSX.Element {
   return <SmartCrashReportDialog />;
 }
 function renderExpiredBuildDialog(
   props: DialogExpiredBuildPropsType
-): React.JSX.Element {
+): JSX.Element {
   return <DialogExpiredBuild {...props} />;
 }
-function renderLeftPaneChatFolders(): React.JSX.Element {
+function renderLeftPaneChatFolders(): JSX.Element {
   return <SmartLeftPaneChatFolders />;
 }
 function renderUnsupportedOSDialog(
   props: Readonly<SmartUnsupportedOSDialogPropsType>
-): React.JSX.Element {
+): JSX.Element {
   return <SmartUnsupportedOSDialog {...props} />;
 }
 function renderToastManagerWithMegaphone(
   props: Readonly<SmartToastManagerPropsType>
-): React.JSX.Element {
+): JSX.Element {
   return <SmartToastManager {...props} />;
 }
 
-function renderNotificationProfilesMenu(): React.JSX.Element {
+function renderNotificationProfilesMenu(): JSX.Element {
   return <SmartNotificationProfilesMenu />;
 }
 
@@ -321,6 +326,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const hasAnyCurrentCustomChatFolders = useSelector(
     getHasAnyCurrentCustomChatFolders
   );
+  const hasClockSkewDialog = useSelector(getIsClockSkewTooMuch);
   const hasNetworkDialog = useSelector(getHasNetworkDialog);
   const hasSearchQuery = useSelector(getHasSearchQuery);
   const hasUnsupportedOS = useSelector(isOSUnsupported);
@@ -462,6 +468,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       getPreferredBadge={getPreferredBadge}
       getServerAlertToShow={getServerAlertToShow}
       hasAnyCurrentCustomChatFolders={hasAnyCurrentCustomChatFolders}
+      hasClockSkewDialog={hasClockSkewDialog}
       hasExpiredDialog={hasExpiredDialog}
       hasFailedStorySends={hasFailedStorySends}
       hasNetworkDialog={hasNetworkDialog}
@@ -470,6 +477,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       hasUpdateDialog={hasUpdateDialog}
       i18n={i18n}
       isMacOS={isMacOS}
+      isMAS={OS.isMAS()}
       isOnline={isOnline}
       isNotificationProfileActive={isNotificationProfileActive}
       isUpdateDownloaded={isUpdateDownloaded}
@@ -487,6 +495,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       removeConversation={removeConversation}
       renderCaptchaDialog={renderCaptchaDialog}
       renderCrashReportDialog={renderCrashReportDialog}
+      renderClockSkewDialog={renderClockSkewDialog}
       renderExpiredBuildDialog={renderExpiredBuildDialog}
       renderLeftPaneChatFolders={renderLeftPaneChatFolders}
       renderMessageSearchResult={renderMessageSearchResult}

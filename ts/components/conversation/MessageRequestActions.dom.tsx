@@ -1,7 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useState, type JSX } from 'react';
 import { ContactName } from './ContactName.dom.tsx';
 import type { MessageRequestActionsConfirmationProps } from './MessageRequestActionsConfirmation.dom.tsx';
 import {
@@ -44,8 +44,8 @@ export function MessageRequestActions({
   blockConversation,
   reportSpam,
   deleteConversation,
-}: Props): React.JSX.Element {
-  const [mrState, setMrState] = React.useState(MessageRequestState.default);
+}: Props): JSX.Element {
+  const [mrState, setMrState] = useState(MessageRequestState.default);
   const sharedGroupNames = useSharedGroupNamesOnMount(
     conversationId,
     getSharedGroupNames
@@ -54,7 +54,7 @@ export function MessageRequestActions({
   const nameValue =
     conversationType === 'direct' ? conversationName : addedByName;
 
-  let message: React.JSX.Element | undefined;
+  let message: JSX.Element | undefined;
   if (conversationType === 'direct') {
     strictAssert(nameValue != null, 'nameValue is null');
     const name = (
@@ -125,7 +125,7 @@ export function MessageRequestActions({
         <div
           className={tw(
             // oxlint-disable-next-line better-tailwindcss/no-restricted-classes
-            'mb-2 text-center type-body-medium text-[#C84118] select-none'
+            'mb-2 text-center type-body-medium text-[#C84118]'
           )}
         >
           <AxoSymbol.InlineGlyph symbol="error-triangle" label={null} />
@@ -136,7 +136,7 @@ export function MessageRequestActions({
         <FlexWrapDetector>
           <div
             className={tw(
-              'flex flex-wrap justify-center gap-2',
+              'flex flex-wrap justify-center gap-2 p-1',
               '[&>button]:min-w-24',
               'container-scrollable:[&>button]:w-full'
             )}
@@ -180,7 +180,7 @@ export function MessageRequestActions({
                   setMrState(MessageRequestState.unblocking);
                 }}
                 size="md"
-                variant="secondary"
+                variant="subtle-secondary"
               >
                 {i18n('icu:MessageRequests--unblock')}
               </AxoButton.Root>
@@ -198,7 +198,7 @@ export function MessageRequestActions({
                   }
                 }}
                 size="md"
-                variant="secondary"
+                variant="subtle-secondary"
               >
                 {i18n('icu:MessageRequests--accept')}
               </AxoButton.Root>

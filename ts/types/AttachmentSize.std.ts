@@ -23,9 +23,6 @@ export const getMaximumOutgoingVideoSize = (
       'getMaximumOutgoingVideoSize'
     );
   } catch (error) {
-    log.warn(
-      'Failed to parse integer out of global.videoAttachments.transcodeTargetBytes feature flag'
-    );
     return 100 * MEBIBYTE;
   }
 };
@@ -57,6 +54,23 @@ export const getMaximumIncomingAttachmentSize = (
   } catch (_error) {
     // TODO: DESKTOP-5913. We're not gonna log until the new flag is fully deployed
     return getMaximumOutgoingAttachmentSize(getValue) * 1.25;
+  }
+};
+
+export const getMaximumAutoDownloadSize = (
+  getValue: typeof RemoteConfig.getValue
+): number => {
+  try {
+    return parseIntOrThrow(
+      getValue('global.attachments.maxAutoDownloadSizeBytes'),
+      'getMaximumAutoDownloadSize'
+    );
+  } catch (error) {
+    log.warn(
+      'Failed to parse integer out of ' +
+        'global.attachments.maxAutoDownloadSizeBytes feature flag'
+    );
+    return 200 * MEBIBYTE;
   }
 };
 

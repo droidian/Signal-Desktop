@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { type ReactNode } from 'react';
+import { type ReactNode, type JSX } from 'react';
 
 import {
   LocalExportErrors,
@@ -17,7 +17,6 @@ import { ProgressBar } from './ProgressBar.dom.tsx';
 import { missingCaseError } from '../util/missingCaseError.std.ts';
 import { tw } from '../axo/tw.dom.tsx';
 import { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
-import type { AxoSymbolIconName } from '../axo/_internal/AxoSymbolDefs.generated.std.ts';
 
 export type PropsType = {
   cancelWorkflow: () => void;
@@ -35,7 +34,7 @@ export function LocalBackupExportWorkflow({
   openFileInFolder,
   osName,
   workflow,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const { step } = workflow;
 
   if (
@@ -94,14 +93,10 @@ export function LocalBackupExportWorkflow({
               </div>
             </AxoDialog.Title>
           </AxoDialog.Header>
-          <AxoDialog.Body padding="normal">
+          <AxoDialog.Body>
             <div className={tw('mx-auto my-[29px] w-[331px]')}>
               {progressElements}
-              <div
-                className={tw(
-                  'text-center type-body-small text-label-secondary'
-                )}
-              >
+              <div className={tw('text-center type-body-small text-secondary')}>
                 {i18n('icu:PlaintextExport--ProgressDialog--TimeWarning')}
               </div>
             </div>
@@ -115,7 +110,10 @@ export function LocalBackupExportWorkflow({
                 'items-center gap-x-2 gap-y-3'
               )}
             >
-              <AxoDialog.Action variant="secondary" onClick={cancelWorkflow}>
+              <AxoDialog.Action
+                variant="strong-secondary"
+                onClick={cancelWorkflow}
+              >
                 {i18n('icu:cancel')}
               </AxoDialog.Action>
             </div>
@@ -164,7 +162,7 @@ export function LocalBackupExportWorkflow({
                 )}
                 <ol className={tw('flex flex-col gap-5')}>
                   <ListItemWithIcon
-                    iconName="sort-vertical"
+                    iconName="arrow-up-down"
                     content={i18n(
                       'icu:LocalBackupExport--CompleteDialog--RestoreInstructionsTransfer'
                     )}
@@ -187,7 +185,7 @@ export function LocalBackupExportWorkflow({
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
             <AxoAlertDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={() => {
                 openFileInFolder(workflow.localBackupFolder);
                 clearWorkflow();
@@ -195,7 +193,10 @@ export function LocalBackupExportWorkflow({
             >
               {showInFolderText}
             </AxoAlertDialog.Action>
-            <AxoAlertDialog.Action variant="primary" onClick={clearWorkflow}>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={clearWorkflow}
+            >
               {i18n('icu:ok')}
             </AxoAlertDialog.Action>
           </AxoAlertDialog.Footer>
@@ -237,7 +238,10 @@ export function LocalBackupExportWorkflow({
             <AxoAlertDialog.Description>{detail}</AxoAlertDialog.Description>
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
-            <AxoAlertDialog.Action variant="primary" onClick={clearWorkflow}>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={clearWorkflow}
+            >
               {i18n('icu:ok')}
             </AxoAlertDialog.Action>
           </AxoAlertDialog.Footer>
@@ -253,14 +257,14 @@ function ListItemWithIcon({
   iconName,
   content,
 }: {
-  iconName: AxoSymbolIconName;
+  iconName: AxoSymbol.Name;
   content: ReactNode;
 }): ReactNode {
   return (
     <li className={tw('flex items-center gap-2')}>
       <div
         className={tw(
-          'flex size-8 shrink-0 items-center justify-center rounded-full bg-fill-secondary'
+          'flex size-8 shrink-0 items-center justify-center rounded-full bg-primary'
         )}
       >
         <AxoSymbol.Icon size={20} symbol={iconName} label={null} />

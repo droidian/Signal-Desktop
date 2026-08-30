@@ -1,7 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 
 import type { LocalizerType } from '../types/Util.std.ts';
 import { tw } from '../axo/tw.dom.tsx';
@@ -18,7 +18,7 @@ export function CallDiagnosticWindow({
   closeWindow,
   i18n,
   diagnosticData,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   useEscapeHandling(closeWindow);
 
   const formattedData = useMemo(() => {
@@ -39,7 +39,7 @@ export function CallDiagnosticWindow({
   return (
     <div
       className={tw(
-        'flex h-screen flex-col bg-background-primary p-4 text-label-primary'
+        'flex h-screen flex-col bg-surface-primary p-4 text-primary'
       )}
     >
       <div className={tw('mb-4')}>
@@ -49,19 +49,23 @@ export function CallDiagnosticWindow({
       </div>
       <div
         className={tw(
-          'min-h-0 flex-1 overflow-auto border border-border-secondary bg-background-secondary p-4'
+          'min-h-0 flex-1 overflow-auto border border-secondary bg-surface-secondary p-4'
         )}
       >
         <pre
           className={tw(
-            'font-mono type-body-small whitespace-pre-wrap text-label-primary'
+            'font-mono type-body-small whitespace-pre-wrap text-primary'
           )}
         >
           {formattedData}
         </pre>
       </div>
       <div className={tw('mt-4 flex justify-end')}>
-        <AxoButton.Root onClick={closeWindow} variant="primary" size="md">
+        <AxoButton.Root
+          onClick={closeWindow}
+          variant="strong-primary"
+          size="md"
+        >
           {i18n('icu:close')}
         </AxoButton.Root>
       </div>

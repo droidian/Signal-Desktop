@@ -24,29 +24,56 @@ import {
 import { shouldStoryReplyNotifyUser } from '../util/shouldStoryReplyNotifyUser.preload.ts';
 import { ReactionSource } from '../reactions/ReactionSource.std.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 
 const log = createLogger('maybeNotify');
 
+type ReactionNotifyData = Readonly<{
+  kind: 'reaction';
+  reaction: Readonly<ReactionAttributesType>;
+  targetMessage: Readonly<MessageAttributesType>;
+}>;
+
+type PollVoteNotifyData = Readonly<{
+  kind: 'pollVote';
+  pollVote: Readonly<PollVoteAttributesType>;
+  targetMessage: Readonly<MessageAttributesType>;
+}>;
+
+type PollTerminateNotifyData = Readonly<{
+  kind: 'pollTerminate';
+  pollSource: PollSource;
+  pollTerminatorId: string;
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type DeliveryIssueNotifyData = Readonly<{
+  kind: 'deliveryIssue';
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type NormalMessageNotifyData = Readonly<{
+  kind: 'normalMessage';
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type NotifyData =
+  | ReactionNotifyData
+  | PollVoteNotifyData
+  | PollTerminateNotifyData
+  | DeliveryIssueNotifyData
+  | NormalMessageNotifyData;
+
 type MaybeNotifyArgs = {
   conversation: ConversationModel;
-} & (
-  | {
-      reaction: Readonly<ReactionAttributesType>;
-      targetMessage: Readonly<MessageAttributesType>;
-    }
-  | {
-      pollVote: Readonly<PollVoteAttributesType>;
-      targetMessage: Readonly<MessageAttributesType>;
-    }
-  | {
-      message: Readonly<MessageAttributesType>;
-      reaction?: never;
-      pollVote?: never;
-    }
-);
+} & NotifyData;
 
 function isMentionOrReply(args: MaybeNotifyArgs): boolean {
-  if ('reaction' in args || 'pollVote' in args) {
+  if (
+    args.kind === 'reaction' ||
+    args.kind === 'pollVote' ||
+    args.kind === 'pollTerminate'
+  ) {
     return false;
   }
 
@@ -70,25 +97,34 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
   const { i18n } = window.SignalContext;
 
   const { conversation } = args;
-  const reaction = 'reaction' in args ? args.reaction : undefined;
-  const pollVote = 'pollVote' in args ? args.pollVote : undefined;
 
   let warrantsNotification: boolean;
-  if ('reaction' in args && 'targetMessage' in args) {
+  if (args.kind === 'reaction') {
     warrantsNotification = doesReactionWarrantNotification({
       reaction: args.reaction,
       targetMessage: args.targetMessage,
     });
-  } else if ('pollVote' in args && 'targetMessage' in args) {
+  } else if (args.kind === 'pollVote') {
     warrantsNotification = doesPollVoteWarrantNotification({
       pollVote: args.pollVote,
       targetMessage: args.targetMessage,
     });
-  } else {
+  } else if (args.kind === 'pollTerminate') {
+    warrantsNotification = doesPollTerminateWarrantNotification({
+      pollSource: args.pollSource,
+    });
+  } else if (args.kind === 'deliveryIssue') {
     warrantsNotification = await doesMessageWarrantNotification({
       message: args.message,
       conversation,
     });
+  } else if (args.kind === 'normalMessage') {
+    warrantsNotification = await doesMessageWarrantNotification({
+      message: args.message,
+      conversation,
+    });
+  } else {
+    throw missingCaseError(args);
   }
 
   if (!warrantsNotification) {
@@ -114,20 +150,35 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
   }
 
   const conversationId = conversation.get('id');
-  const messageForNotification =
-    'targetMessage' in args ? args.targetMessage : args.message;
+
   const isMessageInDirectConversation = isDirectConversation(
     conversation.attributes
   );
 
   let sender: ConversationModel | undefined;
-  if (reaction) {
-    sender = window.ConversationController.get(reaction.fromId);
-  } else if (pollVote) {
-    sender = window.ConversationController.get(pollVote.fromConversationId);
-  } else if ('message' in args) {
+  let messageForNotification: MessageAttributesType | undefined;
+
+  if (args.kind === 'reaction') {
+    sender = window.ConversationController.get(args.reaction.fromId);
+    messageForNotification = args.targetMessage;
+  } else if (args.kind === 'pollVote') {
+    sender = window.ConversationController.get(
+      args.pollVote.fromConversationId
+    );
+    messageForNotification = args.targetMessage;
+  } else if (args.kind === 'pollTerminate') {
+    sender = window.ConversationController.get(args.pollTerminatorId);
+    messageForNotification = args.message;
+  } else if (args.kind === 'deliveryIssue') {
     sender = getAuthor(args.message);
+    messageForNotification = args.message;
+  } else if (args.kind === 'normalMessage') {
+    sender = getAuthor(args.message);
+    messageForNotification = args.message;
+  } else {
+    throw missingCaseError(args);
   }
+
   const senderName = sender ? sender.getTitle() : i18n('icu:unknownContact');
   const senderTitle = isMessageInDirectConversation
     ? senderName
@@ -151,22 +202,27 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
     isExpiringMessage: isExpiringMessage(messageForNotification),
     message: getNotificationTextForMessage(messageForNotification),
     messageId,
-    reaction: reaction
-      ? {
-          emoji: reaction.emoji,
-          targetAuthorAci: reaction.targetAuthorAci,
-          targetTimestamp: reaction.targetTimestamp,
-        }
-      : undefined,
-    pollVote: pollVote
-      ? {
-          voterConversationId: pollVote.fromConversationId,
-          targetAuthorAci: pollVote.targetAuthorAci,
-          targetTimestamp: pollVote.targetTimestamp,
-        }
-      : undefined,
+    reaction:
+      args.kind === 'reaction'
+        ? {
+            emoji: args.reaction.emoji,
+            targetAuthorAci: args.reaction.targetAuthorAci,
+            targetTimestamp: args.reaction.targetTimestamp,
+          }
+        : undefined,
+    pollVote:
+      args.kind === 'pollVote'
+        ? {
+            voterConversationId: args.pollVote.fromConversationId,
+            targetAuthorAci: args.pollVote.targetAuthorAci,
+            targetTimestamp: args.pollVote.targetTimestamp,
+          }
+        : undefined,
     sentAt: messageForNotification.timestamp,
-    type: reaction ? NotificationType.Reaction : NotificationType.Message,
+    type:
+      args.kind === 'reaction'
+        ? NotificationType.Reaction
+        : NotificationType.Message,
   });
 }
 
@@ -195,6 +251,14 @@ function doesPollVoteWarrantNotification({
   );
 }
 
+function doesPollTerminateWarrantNotification({
+  pollSource,
+}: {
+  pollSource: Readonly<PollSource>;
+}): boolean {
+  return pollSource === PollSource.FromSomeoneElse;
+}
+
 async function doesMessageWarrantNotification({
   message,
   conversation,
@@ -202,7 +266,7 @@ async function doesMessageWarrantNotification({
   message: MessageAttributesType;
   conversation: ConversationModel;
 }): Promise<boolean> {
-  if (!(message.type === 'incoming' || message.type === 'poll-terminate')) {
+  if (message.type !== 'incoming') {
     return false;
   }
 

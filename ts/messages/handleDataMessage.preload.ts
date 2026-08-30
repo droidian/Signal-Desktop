@@ -6,9 +6,8 @@ import type { z } from 'zod';
 
 import { createLogger } from '../logging/log.std.ts';
 import * as Errors from '../types/errors.std.ts';
-import * as LinkPreview from '../types/LinkPreview.std.ts';
 
-import { isStory } from './helpers.std.ts';
+import { isIncomingStory, isStory } from './helpers.std.ts';
 import { getAuthor } from './sources.preload.ts';
 import { messageHasPaymentEvent } from './payments.std.ts';
 import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
@@ -48,11 +47,11 @@ import { strictAssert } from '../util/assert.std.ts';
 import { isAciString } from '../util/isAciString.std.ts';
 import { copyFromQuotedMessage } from './copyQuote.preload.ts';
 import { findStoryMessage } from '../util/findStoryMessage.preload.ts';
-import { getRoomIdFromCallLink } from '../util/callLinksRingrtc.node.ts';
-import { isNotNil } from '../util/isNotNil.std.ts';
+import { getValidLinkPreviews } from '../util/getValidLinkPreviews.node.ts';
+import { getStoryExpirationStartTimestamp } from '../util/expirationTimer.std.ts';
 import { normalizeServiceId } from '../types/ServiceId.std.ts';
 import { BodyRange, trimMessageWhitespace } from '../types/BodyRange.std.ts';
-import { hydrateStoryContext } from '../util/hydrateStoryContext.preload.ts';
+import { getStoryReplyContext } from '../util/getStoryReplyContext.std.ts';
 import { isMessageEmpty } from '../util/isMessageEmpty.preload.ts';
 import { isValidTapToView } from '../util/isValidTapToView.std.ts';
 import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.preload.ts';
@@ -78,7 +77,6 @@ import type {
   ProcessedUnidentifiedDeliveryStatus,
 } from '../textsecure/Types.d.ts';
 import type { ServiceIdString } from '../types/ServiceId.std.ts';
-import type { LinkPreviewType } from '../types/message/LinkPreviews.std.ts';
 import { getCachedSubscriptionConfiguration } from '../util/subscriptionConfiguration.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 
@@ -325,7 +323,7 @@ export async function handleDataMessage(
     // Drop an incoming GroupV2 message if we or the sender are not part of the group
     //   after applying the message's associated group changes.
     if (
-      type === 'incoming' &&
+      (type === 'incoming' || isIncomingStory(message.attributes, ourAci)) &&
       !isDirectConversation(conversation.attributes) &&
       hasGroupV2Prop &&
       (!areWeMember ||
@@ -509,35 +507,17 @@ export async function handleDataMessage(
 
     try {
       const now = new Date().getTime();
-
-      const urls = LinkPreview.findLinks(dataMessage.body || '');
       const incomingPreview = dataMessage.preview || [];
-      const preview = incomingPreview
-        .map((item: LinkPreviewType) => {
-          if (LinkPreview.isCallLink(item.url)) {
-            return {
-              ...item,
-              isCallLink: true,
-              callLinkRoomId: getRoomIdFromCallLink(item.url),
-            };
-          }
 
-          if (
-            !LinkPreview.isValidLinkPreview(urls, item, {
-              isStory: isStory(message.attributes),
-            })
-          ) {
-            return null;
-          }
+      const preview = getValidLinkPreviews(incomingPreview, dataMessage.body, {
+        isStory: isStory(message.attributes),
+      });
 
-          return item;
-        })
-        .filter(isNotNil);
       if (preview.length < incomingPreview.length) {
-        log.info(
+        log.warn(
           `${getMessageIdForLogging(message.attributes)}: Eliminated ${
             incomingPreview.length - preview.length
-          } previews with invalid urls'`
+          } previews with invalid urls`
         );
       }
 
@@ -597,13 +577,10 @@ export async function handleDataMessage(
             }
           : undefined,
         storyId: dataMessage.storyId,
+        storyReplyContext: storyQuote
+          ? getStoryReplyContext(storyQuote)
+          : undefined,
       });
-
-      if (storyQuote) {
-        await hydrateStoryContext(message.id, storyQuote, {
-          shouldSave: true,
-        });
-      }
 
       const isSupported = !isUnsupportedMessage(message.attributes);
       if (!isSupported) {
@@ -646,7 +623,10 @@ export async function handleDataMessage(
           if (isStory(message.attributes)) {
             log.info(`${idLog}: Starting story expiration`);
             message.set({
-              expirationStartTimestamp: dataMessage.timestamp,
+              expirationStartTimestamp: getStoryExpirationStartTimestamp({
+                timestamp: dataMessage.timestamp,
+                serverTimestamp: dataMessage.serverTimestamp,
+              }),
             });
           }
         }

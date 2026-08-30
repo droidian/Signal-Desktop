@@ -5,8 +5,11 @@ import PQueue from 'p-queue';
 import { batch } from 'react-redux';
 import { pick } from 'lodash';
 
-import type { MessageAttributesType } from '../model-types.d.ts';
-import { MessageModel } from '../models/messages.preload.ts';
+import type {
+  ConversationAttributesType,
+  MessageAttributesType,
+} from '../model-types.d.ts';
+import type { MessageModel } from '../models/messages.preload.ts';
 
 import * as Errors from '../types/errors.std.ts';
 import { createLogger } from '../logging/log.std.ts';
@@ -31,15 +34,24 @@ import {
   getFilePathsReferencedByMessage,
 } from './messageFilePaths.std.ts';
 import {
+  deleteAvatar,
   deleteDownloadFile,
+  deleteDraftFile,
   maybeDeleteAttachmentFile,
 } from './migrations.preload.ts';
-import { hydrateStoryContext } from './hydrateStoryContext.preload.ts';
 import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.preload.ts';
 import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.preload.ts';
 import { throttledUpdateBackupMediaDownloadProgress } from './updateBackupMediaDownloadProgress.preload.ts';
-import { messageAttrsToPreserveAfterErase } from '../types/Message.std.ts';
+import {
+  getMessageAttrsToPreserveAfterErase,
+  type EraseMessageReasonType,
+} from '../types/Message.std.ts';
 import type { AttachmentType } from '../types/Attachment.std.ts';
+import {
+  getExternalDraftFilesForConversation,
+  getExternalAvatarFilesForConversation,
+  getExternalAvatarDraftsForConversation,
+} from './conversationFilePaths.std.ts';
 
 const log = createLogger('cleanup');
 
@@ -50,13 +62,7 @@ export async function postSaveUpdates(): Promise<void> {
 
 export async function eraseMessageContents(
   message: MessageModel,
-  reason:
-    | 'view-once-viewed'
-    | 'view-once-invalid'
-    | 'view-once-expired'
-    | 'view-once-sent'
-    | 'unsupported-message'
-    | 'delete-for-everyone',
+  reason: EraseMessageReasonType,
   additionalProperties: Partial<MessageAttributesType> = {}
 ): Promise<void> {
   log.info(
@@ -69,7 +75,7 @@ export async function eraseMessageContents(
   const originalAttributes = message.attributes;
   const preservedAttributes = pick(
     message.attributes,
-    ...messageAttrsToPreserveAfterErase
+    ...getMessageAttrsToPreserveAfterErase(reason)
   );
 
   message.resetAllAttributes({
@@ -177,9 +183,14 @@ async function cleanupStoryReplies(
     parentConversation && !isDirectConversation(parentConversation.attributes)
   );
 
+  // 1:1 story replies stay in the timeline
+  if (!isGroupConversation) {
+    return;
+  }
+
   const replies = await DataReader.getRecentStoryReplies(storyId, pagination);
 
-  const logId = `cleanupStoryReplies(${storyId}/isGroup=${isGroupConversation})`;
+  const logId = `cleanupStoryReplies(${storyId})`;
   const lastMessage = replies[replies.length - 1];
   const lastMessageId = lastMessage?.id;
   const lastReceivedAt = lastMessage?.received_at;
@@ -199,25 +210,11 @@ async function cleanupStoryReplies(
     return;
   }
 
-  if (isGroupConversation) {
-    // Delete all group replies
-    await DataWriter.removeMessagesById(
-      replies.map(reply => reply.id),
-      { cleanupMessages }
-    );
-  } else {
-    // Clean out the storyReplyContext data for 1:1 conversations; these remain in the
-    // 1:1 timeline with a "story not found" message
-    await Promise.all(
-      replies.map(async reply => {
-        const model = window.MessageCache.register(new MessageModel(reply));
-        await hydrateStoryContext(model.id, story, {
-          shouldSave: true,
-          isStoryErased: true,
-        });
-      })
-    );
-  }
+  // Delete all group replies
+  await DataWriter.removeMessagesById(
+    replies.map(reply => reply.id),
+    { cleanupMessages }
+  );
 
   return cleanupStoryReplies(story, {
     // oxlint-disable-next-line typescript/no-non-null-assertion
@@ -314,3 +311,150 @@ export async function cleanupAttachmentFiles(
   );
   await Promise.all([...result.externalDownloads].map(deleteDownloadFile));
 }
+
+export async function safeCleanupDraftFiles(
+  conversation: ConversationAttributesType
+): Promise<void> {
+  const result = getExternalDraftFilesForConversation(conversation);
+  await Promise.all(
+    result.map(async (relativeFile, index) => {
+      try {
+        await deleteDraftFile(relativeFile);
+      } catch (error) {
+        log.error(
+          `safeCleanupDraftFiles: Failed to delete draft at index ${index}`,
+          Errors.toLogFormat(error)
+        );
+      }
+    })
+  );
+}
+
+export async function safeCleanupAvatarFiles(
+  conversation: ConversationAttributesType
+): Promise<void> {
+  const result = getExternalAvatarFilesForConversation(conversation);
+  await Promise.all(result.map(maybeDeleteAttachmentFile));
+}
+
+export async function safeCleanupAvatarDraftFiles(
+  conversation: ConversationAttributesType
+): Promise<void> {
+  const result = getExternalAvatarDraftsForConversation(conversation);
+  await Promise.all(
+    result.map(async (relativeFile, index) => {
+      try {
+        await deleteAvatar(relativeFile);
+      } catch (error) {
+        log.error(
+          `safeCleanupAvatarDraftFiles: Failed to delete avatar draft at index ${index}`,
+          Errors.toLogFormat(error)
+        );
+      }
+    })
+  );
+}
+
+export const GENERIC_CLEANUP_FIELDS: Partial<ConversationAttributesType> = {
+  draftChanged: undefined,
+  draftAttachments: undefined,
+  draftBodyRanges: undefined,
+  draftIsViewOnce: undefined,
+  draftTimestamp: undefined,
+
+  inbox_position: undefined,
+
+  lastMessageDeletedForEveryone: undefined,
+  lastMessageDeletedForEveryoneByAdminAci: undefined,
+  lastMessageAuthorAci: undefined,
+  lastMessage: undefined,
+  lastMessageBodyRanges: undefined,
+  lastMessagePrefix: undefined,
+  lastMessageAuthor: undefined,
+  lastMessageStatus: undefined,
+  lastMessageReceivedAt: undefined,
+  lastMessageReceivedAtMs: undefined,
+
+  markedUnread: undefined,
+  messageCount: undefined,
+  messageCountBeforeMessageRequests: undefined,
+
+  messagesDeleted: true,
+
+  quotedMessageId: undefined,
+
+  sentMessageCount: undefined,
+
+  timestamp: undefined,
+  unreadCount: undefined,
+  unreadMentionsCount: undefined,
+
+  active_at: undefined,
+  draft: undefined,
+  draftEditMessage: undefined,
+
+  isArchived: undefined,
+
+  pendingUniversalTimer: undefined,
+
+  avatars: undefined,
+};
+
+export const GROUP_CLEANUP_FIELDS: Partial<ConversationAttributesType> = {
+  addedBy: undefined,
+
+  color: undefined,
+  colorFromPrimary: undefined,
+  conversationColor: undefined,
+  customColor: undefined,
+  customColorId: undefined,
+
+  wallpaperPhotoPointerBase64: undefined,
+  wallpaperPreset: undefined,
+  dimWallpaperInDarkMode: undefined,
+  autoBubbleColor: undefined,
+
+  hideStory: undefined,
+
+  isReported: undefined,
+  name: undefined,
+
+  pendingUniversalTimer: undefined,
+  pendingRemovedContactNotification: undefined,
+  reportingToken: undefined,
+
+  left: undefined,
+  storySendMode: undefined,
+  groupVerifiedNameHash: undefined,
+
+  members: undefined,
+  derivedGroupV2Id: undefined,
+
+  secretParams: undefined,
+  publicParams: undefined,
+  revision: undefined,
+  senderKeyInfo: undefined,
+
+  accessControl: undefined,
+  announcementsOnly: undefined,
+  avatar: undefined,
+  avatars: undefined,
+  description: undefined,
+  expireTimer: undefined,
+  expireTimerVersion: 1,
+  membersV2: undefined,
+  pendingMembersV2: undefined,
+  pendingAdminApprovalV2: undefined,
+  bannedMembersV2: undefined,
+  groupInviteLinkPassword: undefined,
+  previousGroupV1Id: undefined,
+  previousGroupV1Members: undefined,
+  acknowledgedGroupNameCollisions: undefined,
+
+  isTemporary: undefined,
+  temporaryMemberCount: undefined,
+
+  unblurredAvatarPath: undefined,
+
+  remoteAvatarUrl: undefined,
+};

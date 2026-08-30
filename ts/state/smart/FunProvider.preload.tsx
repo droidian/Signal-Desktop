@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { FunProvider } from '../../components/fun/FunProvider.dom.tsx';
-import { getIntl } from '../selectors/user.std.ts';
+import { getIntl, getVersion } from '../selectors/user.std.ts';
 import { selectRecentEmojis } from '../selectors/emojis.std.ts';
 import type { FunGifSelection } from '../../components/fun/panels/FunPanelGifs.dom.tsx';
 import {
@@ -13,13 +13,9 @@ import {
   getRecentStickers,
 } from '../selectors/stickers.std.ts';
 import { strictAssert } from '../../util/assert.std.ts';
-import type { EmojiSkinTone } from '../../components/fun/data/emojis.std.ts';
-import {
-  getEmojiParentKeyByEnglishShortName,
-  isEmojiEnglishShortName,
-} from '../../components/fun/data/emojis.std.ts';
 import {
   getEmojiSkinToneDefault,
+  getItems,
   getShowStickerPickerHint,
 } from '../selectors/items.dom.ts';
 import { useItemsActions } from '../ducks/items.preload.ts';
@@ -35,6 +31,8 @@ import { useStickersActions } from '../ducks/stickers.preload.ts';
 import type { FunStickerSelection } from '../../components/fun/panels/FunPanelStickers.dom.tsx';
 import type { FunEmojiSelection } from '../../components/fun/panels/FunPanelEmojis.dom.tsx';
 import { getRecentGifs } from '../selectors/gifs.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
 
 export type SmartFunProviderProps = Readonly<{
   children: ReactNode;
@@ -58,19 +56,26 @@ export const SmartFunProvider = memo(function SmartFunProvider(
   const { useSticker: onUseSticker } = useStickersActions();
   const { onAddRecentGif, onRemoveRecentGif } = useGifsActions();
 
+  const items = useSelector(getItems);
+  const version = useSelector(getVersion);
+
+  const isStickerReplySendEnabled = isFeaturedEnabledSelector({
+    betaKey: 'desktop.stickerReply.send.beta',
+    prodKey: 'desktop.stickerReply.send.prod',
+    currentVersion: version,
+    remoteConfig: items.remoteConfig,
+  });
+
   // Translate recent emojis to keys
   const recentEmojisKeys = useMemo(() => {
-    return recentEmojis.map(emojiShortName => {
-      strictAssert(
-        isEmojiEnglishShortName(emojiShortName),
-        `Invalid short name: ${emojiShortName}`
-      );
-      return getEmojiParentKeyByEnglishShortName(emojiShortName);
+    return recentEmojis.map(emoji => {
+      strictAssert(Emoji.isParent(emoji), `Invalid emoji parent: ${emoji}`);
+      return emoji;
     });
   }, [recentEmojis]);
 
   const handleEmojiSkinToneDefaultChange = useCallback(
-    (emojiSkinTone: EmojiSkinTone) => {
+    (emojiSkinTone: Emoji.SkinTone) => {
       setEmojiSkinToneDefault(emojiSkinTone);
     },
     [setEmojiSkinToneDefault]
@@ -123,6 +128,7 @@ export const SmartFunProvider = memo(function SmartFunProvider(
       }
       onSelectEmoji={handleSelectEmoji}
       // Stickers
+      isStickerReplySendEnabled={isStickerReplySendEnabled}
       installedStickerPacks={installedStickerPacks}
       showStickerPickerHint={showStickerPickerHint}
       onClearStickerPickerHint={handleClearStickerPickerHint}

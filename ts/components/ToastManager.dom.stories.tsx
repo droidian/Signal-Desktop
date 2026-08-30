@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
 import { ToastManager } from './ToastManager.dom.tsx';
@@ -110,6 +109,8 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.CopiedBackupKey };
     case ToastType.CopiedCallLink:
       return { toastType: ToastType.CopiedCallLink };
+    case ToastType.CopiedStickerPackLink:
+      return { toastType: ToastType.CopiedStickerPackLink };
     case ToastType.CopiedUsername:
       return { toastType: ToastType.CopiedUsername };
     case ToastType.CopiedUsernameLink:
@@ -160,8 +161,6 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.FailedToFetchPhoneNumber };
     case ToastType.FailedToFetchUsername:
       return { toastType: ToastType.FailedToFetchUsername };
-    case ToastType.FailedToSendWithEndorsements:
-      return { toastType: ToastType.FailedToSendWithEndorsements };
     case ToastType.FailedToImportBackup:
       return { toastType: ToastType.FailedToImportBackup };
     case ToastType.FileSaved:
@@ -211,7 +210,10 @@ function getToast(toastType: ToastType): AnyToast {
     case ToastType.OriginalMessageNotFound:
       return { toastType: ToastType.OriginalMessageNotFound };
     case ToastType.PinnedConversationsFull:
-      return { toastType: ToastType.PinnedConversationsFull };
+      return {
+        toastType: ToastType.PinnedConversationsFull,
+        maxPinnedConversations: 4,
+      };
     case ToastType.PinnedMessageNotFound:
       return { toastType: ToastType.PinnedMessageNotFound };
     case ToastType.PollNotFound:
@@ -225,6 +227,13 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.ReceiptSaveFailed:
       return { toastType: ToastType.ReceiptSaveFailed };
+    case ToastType.RemoteConfigChanged:
+      return {
+        toastType: ToastType.RemoteConfigChanged,
+        changes: [
+          { name: 'desktop.example.value', from: '1.0.0', to: '2.0.0' },
+        ],
+      };
     case ToastType.ReportedSpam:
       return { toastType: ToastType.ReportedSpam };
     case ToastType.ReportedSpamAndBlocked:

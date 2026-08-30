@@ -4,7 +4,6 @@
 import lodash from 'lodash';
 import { createSelector } from 'reselect';
 import { direction as getDirection } from 'direction';
-import emojiRegex from 'emoji-regex';
 import LinkifyIt from 'linkify-it';
 import type { ReadonlyDeep } from 'type-fest';
 
@@ -74,6 +73,7 @@ import {
   isIncremental,
   defaultBlurHash,
   isDownloadable,
+  isDownloaded,
 } from '../../util/Attachment.std.ts';
 import type { MessageAttachmentType } from '../../types/AttachmentDownload.std.ts';
 import type {
@@ -101,11 +101,11 @@ import {
   AttachmentDisposition,
 } from '../../util/getLocalAttachmentUrl.std.ts';
 import { isVoiceMessagePlayed } from '../../util/isVoiceMessagePlayed.std.ts';
-import { isPermanentlyUndownloadable } from '../../jobs/helpers/attachmentBackfill.preload.ts';
 
 import { getAccountSelector } from './accounts.std.ts';
 import {
   getDefaultConversationColor,
+  getHasMediaBackups,
   getHasUnidentifiedDeliveryIndicators,
 } from './items.dom.ts';
 import {
@@ -117,6 +117,7 @@ import {
   getCachedConversationMemberColorsSelector,
   getContactNameColor,
   getPinnedMessagesMessageIds,
+  getStoriesState,
 } from './conversations.dom.ts';
 import {
   getIntl,
@@ -142,10 +143,11 @@ import {
   isRead,
   isSent,
   isViewed,
-  isMessageJustForMe,
+  isNoteToSelf,
   someRecipientSendStatus,
   getHighestSuccessfulRecipientStatus,
   someSendStatus,
+  isMessageJustForMe,
 } from '../../messages/MessageSendState.std.ts';
 import { createLogger } from '../../logging/log.std.ts';
 import { getConversationColorAttributes } from '../../util/getConversationColorAttributes.std.ts';
@@ -181,6 +183,8 @@ import { LONG_MESSAGE } from '../../types/MIME.std.ts';
 import type { MessageRequestResponseNotificationData } from '../../components/conversation/MessageRequestResponseNotification.dom.tsx';
 import type { PinnedMessageNotificationData } from '../../components/conversation/pinned-messages/PinnedMessageNotification.dom.tsx';
 import type { PollTerminateNotificationDataType } from '../../components/conversation/PollTerminateNotification.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
+import { isDownloadableOrBackfillable } from '../../util/downloadAttachment.preload.ts';
 
 const { groupBy, isEmpty, isNumber, isObject, map } = lodash;
 
@@ -221,6 +225,10 @@ export type GetPropsForBubbleOptions = Readonly<{
   accountSelector: AccountSelectorType;
   contactNameColors: Map<string, ContactNameColorType>;
   defaultConversationColor: DefaultConversationColorType;
+  hasMediaBackups: boolean;
+  getStoryReplyAttachment: (
+    storyMessageId: string
+  ) => AttachmentType | undefined;
 }>;
 
 export function hasErrors(
@@ -312,7 +320,8 @@ function getConversation(
 // Message
 
 export const getAttachmentsForMessage = (
-  message: MessageWithUIFieldsType
+  message: MessageWithUIFieldsType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): Array<AttachmentType> => {
   const { sticker, attachments = [] } = message;
   if (sticker && sticker.data) {
@@ -336,7 +345,9 @@ export const getAttachmentsForMessage = (
       // but in case they are still around, let's make sure not to show them
       .filter(attachment => attachment.contentType !== LONG_MESSAGE)
       .map(attachment =>
-        getPropsForAttachment(attachment, 'attachment', message)
+        getPropsForAttachment(attachment, 'attachment', message, {
+          hasMediaBackups,
+        })
       )
       .filter(isNotNil)
   );
@@ -404,7 +415,8 @@ const getAuthorForMessage = (
 };
 
 const getPreviewsForMessage = (
-  message: MessageWithUIFieldsType
+  message: MessageWithUIFieldsType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): Array<LinkPreviewForUIType> => {
   const { preview: previews = [] } = message;
   return previews.map(preview => ({
@@ -413,7 +425,9 @@ const getPreviewsForMessage = (
     isCallLink: isCallLink(preview.url),
     domain: getSafeDomain(preview.url),
     image: preview.image
-      ? getPropsForAttachment(preview.image, 'preview', message)
+      ? getPropsForAttachment(preview.image, 'preview', message, {
+          hasMediaBackups,
+        })
       : undefined,
   }));
 };
@@ -605,9 +619,10 @@ const getPollForMessage = (
       profileName: voter.profileName,
       title: voter.title,
     };
+    const uniqueOptionIndexes = [...new Set(vote.optionIndexes)];
 
     return {
-      optionIndexes: vote.optionIndexes,
+      optionIndexes: uniqueOptionIndexes,
       timestamp: vote.timestamp,
       isMe: voter.id === ourConversationId,
       from,
@@ -640,22 +655,42 @@ const getPollForMessage = (
   };
 };
 
+export const getStoryReplyAttachmentSelector = createSelector(
+  getStoriesState,
+  ({ stories }) =>
+    (storyMessageId: string): AttachmentType | undefined => {
+      if (!storyMessageId) {
+        return undefined;
+      }
+      const story = stories.find(item => item.messageId === storyMessageId);
+      return story?.attachment;
+    }
+);
+
 const getPropsForStoryReplyContext = (
   message: Pick<
     MessageWithUIFieldsType,
-    'body' | 'conversationId' | 'storyReaction' | 'storyReplyContext'
+    | 'body'
+    | 'conversationId'
+    | 'storyReaction'
+    | 'storyId'
+    | 'storyReplyContext'
   >,
   {
     conversationSelector,
     ourConversationId,
     defaultConversationColor,
+    getStoryReplyAttachment,
   }: {
     conversationSelector: GetConversationByIdType;
     ourConversationId?: string;
     defaultConversationColor: DefaultConversationColorType;
+    getStoryReplyAttachment: (
+      storyMessageId: string
+    ) => AttachmentType | undefined;
   }
 ): PropsData['storyReplyContext'] => {
-  const { storyReaction, storyReplyContext } = message;
+  const { storyReaction, storyId, storyReplyContext } = message;
   if (!storyReplyContext) {
     return undefined;
   }
@@ -671,6 +706,9 @@ const getPropsForStoryReplyContext = (
     conversation,
     defaultConversationColor
   );
+  const storyAttachment = storyId
+    ? getStoryReplyAttachment(storyId)
+    : undefined;
 
   return {
     authorTitle,
@@ -678,14 +716,12 @@ const getPropsForStoryReplyContext = (
     customColor,
     emoji: storyReaction?.emoji,
     isFromMe,
-    rawAttachment: storyReplyContext.attachment
-      ? processQuoteAttachment(storyReplyContext.attachment)
+    rawAttachment: storyAttachment
+      ? processQuoteAttachment(storyAttachment)
       : undefined,
-    storyId: storyReplyContext.messageId,
-    text: getStoryReplyText(
-      window.SignalContext.i18n,
-      storyReplyContext.attachment
-    ),
+    // Only expose the storyId (making the quote clickable) when the story is found.
+    storyId: storyAttachment ? storyId : undefined,
+    text: getStoryReplyText(window.SignalContext.i18n, storyAttachment),
   };
 };
 
@@ -788,14 +824,19 @@ export type GetPropsForMessageOptions = Pick<
   | 'accountSelector'
   | 'contactNameColors'
   | 'defaultConversationColor'
+  | 'hasMediaBackups'
+  | 'getStoryReplyAttachment'
 >;
 
 function getTextAttachment(
-  message: MessageWithUIFieldsType
+  message: MessageWithUIFieldsType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): AttachmentType | undefined {
   return (
     message.bodyAttachment &&
-    getPropsForAttachment(message.bodyAttachment, 'long-message', message)
+    getPropsForAttachment(message.bodyAttachment, 'long-message', message, {
+      hasMediaBackups,
+    })
   );
 }
 
@@ -807,8 +848,7 @@ function getPayment(
 
 export function cleanBodyForDirectionCheck(text: string): string {
   const MENTIONS_REGEX = getMentionsRegex();
-  const EMOJI_REGEX = emojiRegex();
-  const initial = text.replace(MENTIONS_REGEX, '').replace(EMOJI_REGEX, '');
+  const initial = Emoji.stripEmojiFromText(text.replace(MENTIONS_REGEX, ''));
 
   const linkMatches = linkify.match(initial);
 
@@ -865,13 +905,14 @@ const getPropsForMessage = (
   const attachmentDroppedDueToSize = message.attachments?.some(
     item => item.wasTooBig
   );
-  const attachments = getAttachmentsForMessage(message);
+  const { hasMediaBackups } = options;
+  const attachments = getAttachmentsForMessage(message, { hasMediaBackups });
   const author = getAuthorForMessage(message, options);
-  const previews = getPreviewsForMessage(message);
+  const previews = getPreviewsForMessage(message, { hasMediaBackups });
   const reactions = getReactionsForMessage(message, options);
 
   const storyReplyContext = getPropsForStoryReplyContext(message, options);
-  const textAttachment = getTextAttachment(message);
+  const textAttachment = getTextAttachment(message, { hasMediaBackups });
   const payment = getPayment(message);
 
   const {
@@ -940,7 +981,9 @@ const getPropsForMessage = (
 
   return {
     attachments: attachments?.map(attachment =>
-      getPropsForAttachment(attachment, 'attachment', message)
+      getPropsForAttachment(attachment, 'attachment', message, {
+        hasMediaBackups,
+      })
     ),
     attachmentDroppedDueToSize,
     author,
@@ -953,7 +996,9 @@ const getPropsForMessage = (
     textAttachment:
       textAttachment == null
         ? undefined
-        : getPropsForAttachment(textAttachment, 'long-message', message),
+        : getPropsForAttachment(textAttachment, 'long-message', message, {
+            hasMediaBackups,
+          }),
     payment,
     canCopy: canCopy(message),
     canEditMessage: canEditMessage(message) && !isGroupTerminated,
@@ -1008,6 +1053,7 @@ const getPropsForMessage = (
     isSelectMode,
     isSMS: message.sms === true,
     isSpoilerExpanded: message.isSpoilerExpanded,
+    isSignalConversation: isSignalConversation(author),
     isSticker: Boolean(sticker),
     isTargeted,
     isTargetedCounter: isTargeted ? targetedMessageCounter : undefined,
@@ -1044,6 +1090,8 @@ export const getMessagePropsSelector = createSelector(
   getPinnedMessagesMessageIds,
   getSelectedMessageIds,
   getDefaultConversationColor,
+  getHasMediaBackups,
+  getStoryReplyAttachmentSelector,
   (
     conversationSelector,
     ourConversationId,
@@ -1056,7 +1104,9 @@ export const getMessagePropsSelector = createSelector(
     targetedMessage,
     pinnedMessagesMessageIds,
     selectedMessageIds,
-    defaultConversationColor
+    defaultConversationColor,
+    hasMediaBackups,
+    getStoryReplyAttachment
   ) =>
     (message: MessageWithUIFieldsType) => {
       const contactNameColors = cachedConversationMemberColorsSelector(
@@ -1076,6 +1126,8 @@ export const getMessagePropsSelector = createSelector(
         pinnedMessagesMessageIds,
         selectedMessageIds,
         defaultConversationColor,
+        hasMediaBackups,
+        getStoryReplyAttachment,
       });
     }
 );
@@ -1523,10 +1575,9 @@ function getPropsForSafetyNumberNotification(
     );
   }
 
-  const contact = identifier ? conversationSelector(identifier) : conversation;
+  const contact = isGroup ? conversationSelector(identifier) : conversation;
 
   return {
-    isGroup,
     contact,
   };
 }
@@ -1677,6 +1728,8 @@ const emptyCallNotification: CallingNotificationType = {
   deviceCount: 0,
   isSelectMode: false,
   isTargeted: false,
+  expireTimer: null,
+  expirationStartTimestamp: null,
 };
 
 export function getPropsForCallHistory(
@@ -1729,6 +1782,8 @@ export function getPropsForCallHistory(
       maxDevices: Infinity,
       isSelectMode,
       isTargeted: message.id === targetedMessageId,
+      expireTimer: message.expireTimer ?? null,
+      expirationStartTimestamp: message.expirationStartTimestamp ?? null,
     };
   }
 
@@ -1758,6 +1813,8 @@ export function getPropsForCallHistory(
     maxDevices,
     isSelectMode,
     isTargeted: message.id === targetedMessageId,
+    expireTimer: message.expireTimer ?? null,
+    expirationStartTimestamp: message.expirationStartTimestamp ?? null,
   };
 }
 
@@ -1777,6 +1834,8 @@ function getPropsForPinnedMessageNotification(
   return {
     sender: conversationSelector(message.sourceServiceId),
     pinMessage: message.pinMessage,
+    expireTimer: message.expireTimer ?? null,
+    expirationStartTimestamp: message.expirationStartTimestamp ?? null,
   };
 }
 
@@ -1814,8 +1873,13 @@ function getPropsForPollTerminate(
   message: MessageWithUIFieldsType,
   { conversationSelector }: GetPropsForBubbleOptions
 ): PollTerminateNotificationDataType {
-  const { pollTerminateNotification, sourceServiceId, conversationId } =
-    message;
+  const {
+    pollTerminateNotification,
+    sourceServiceId,
+    conversationId,
+    expireTimer,
+    expirationStartTimestamp,
+  } = message;
 
   if (!pollTerminateNotification) {
     throw new Error(
@@ -1831,6 +1895,8 @@ function getPropsForPollTerminate(
     pollQuestion: question,
     pollTimestamp,
     conversationId,
+    expireTimer: expireTimer ?? null,
+    expirationStartTimestamp: expirationStartTimestamp ?? null,
   };
 }
 
@@ -2032,6 +2098,7 @@ export function isTapToView(
 export function getMessagePropStatus(
   message: Pick<
     MessageWithUIFieldsType,
+    | 'conversationId'
     | 'deletedForEveryone'
     | 'deletedForEveryoneFailed'
     | 'deletedForEveryoneSendStatus'
@@ -2076,7 +2143,10 @@ export function getMessagePropStatus(
 
   if (
     ourConversationId &&
-    isMessageJustForMe(sendStateByConversationId, ourConversationId)
+    isNoteToSelf({
+      message,
+      ourConversationId,
+    })
   ) {
     const status =
       sendStateByConversationId[ourConversationId]?.status ??
@@ -2093,7 +2163,10 @@ export function getMessagePropStatus(
 
   const highestSuccessfulStatus = getHighestSuccessfulRecipientStatus(
     sendStateByConversationId,
-    ourConversationId
+    // If it's just for us, consider us a recipient. Otherwise, exclude us.
+    isMessageJustForMe(sendStateByConversationId, ourConversationId)
+      ? undefined
+      : ourConversationId
   );
 
   if (
@@ -2178,7 +2251,8 @@ function getPropsForEmbeddedContact(
 export function getPropsForAttachment(
   attachment: AttachmentType,
   disposition: MessageAttachmentType,
-  message: Pick<ReadonlyMessageAttributesType, 'type'>
+  message: Pick<ReadonlyMessageAttributesType, 'type'>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): AttachmentForUIType {
   const { path, pending, screenshot, thumbnail, thumbnailFromBackup } =
     attachment;
@@ -2191,7 +2265,7 @@ export function getPropsForAttachment(
     incrementalUrl:
       isIncremental(attachment) &&
       attachment.downloadPath &&
-      isDownloadable(attachment)
+      isDownloadable(attachment, { hasMediaBackups })
         ? getLocalAttachmentUrl(attachment, {
             disposition: AttachmentDisposition.Download,
           })
@@ -2219,11 +2293,14 @@ export function getPropsForAttachment(
           url: getLocalAttachmentUrl(thumbnail),
         }
       : undefined,
-    isPermanentlyUndownloadable: isPermanentlyUndownloadable(
-      attachment,
-      disposition,
-      message
-    ),
+    isPermanentlyUndownloadable:
+      !isDownloaded(attachment) &&
+      !isDownloadableOrBackfillable({
+        attachment,
+        attachmentType: disposition,
+        isStory: message.type === 'story',
+        hasMediaBackups,
+      }),
   };
 }
 
@@ -2629,6 +2706,9 @@ export function canForward(message: ReadonlyMessageAttributesType): boolean {
 }
 
 export function canPinMessages(conversation: ConversationType): boolean {
+  if (isSignalConversation(conversation)) {
+    return false;
+  }
   return (
     conversation.type === 'direct' ||
     (conversation.canEditGroupInfo === true && !conversation.terminated)
@@ -2759,7 +2839,7 @@ function getMessageDetailRecipients(
       }),
     ].filter(isNotNil);
   } else if (!isEmpty(sendStateByConversationId)) {
-    if (isMessageJustForMe(sendStateByConversationId, ourConversationId)) {
+    if (isNoteToSelf({ message, ourConversationId })) {
       conversationIds = [ourConversationId];
     } else {
       conversationIds = Object.keys(sendStateByConversationId).filter(
@@ -2842,6 +2922,8 @@ export const getMessageDetailsSelector = createSelector(
   getSelectedMessageIds,
   getDefaultConversationColor,
   getHasUnidentifiedDeliveryIndicators,
+  getHasMediaBackups,
+  getStoryReplyAttachmentSelector,
   (
     accountSelector,
     cachedConversationMemberColorsSelector,
@@ -2856,7 +2938,9 @@ export const getMessageDetailsSelector = createSelector(
     pinnedMessagesMessageIds,
     selectedMessageIds,
     defaultConversationColor,
-    hasUnidentifiedDeliveryIndicators
+    hasUnidentifiedDeliveryIndicators,
+    hasMediaBackups,
+    getStoryReplyAttachment
   ): ((messageId: string) => SmartMessageDetailPropsType | undefined) =>
     (messageId: string) => {
       if (!messageLookup || !ourConversationId) {
@@ -2909,6 +2993,8 @@ export const getMessageDetailsSelector = createSelector(
           pinnedMessagesMessageIds,
           selectedMessageIds,
           defaultConversationColor,
+          hasMediaBackups,
+          getStoryReplyAttachment,
         }),
         receivedAt: message.received_at_ms ?? message.received_at ?? 0,
       };

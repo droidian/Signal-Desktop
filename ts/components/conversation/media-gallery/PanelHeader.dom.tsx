@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import { useCallback, type JSX } from 'react';
 
 import { tw } from '../../../axo/tw.dom.tsx';
 import { ExperimentalAxoSegmentedControl } from '../../../axo/AxoSegmentedControl.dom.tsx';
@@ -29,7 +29,7 @@ export function PanelHeader({
   setTab,
   sortOrder,
   setSortOrder,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const setSelectedTabWithDefault = useCallback(
     (value: string | null) => {
       switch (value) {
@@ -91,7 +91,7 @@ export function PanelHeader({
       <div className={tw('block @min-[260px]:hidden')}>
         <AxoSelect.Root value={tab} onValueChange={setSelectedTabWithDefault}>
           <AxoSelect.Trigger
-            variant="floating"
+            variant="elevated"
             width="fit"
             placeholder=""
             chevron="always"
@@ -124,9 +124,11 @@ export function PanelHeader({
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
           <AxoIconButton.Root
-            variant={isNonDefaultSorting ? 'primary' : 'borderless-secondary'}
+            variant={
+              isNonDefaultSorting ? 'strong-primary' : 'implied-secondary'
+            }
             size="md"
-            symbol="sort-vertical"
+            symbol="arrow-up-down"
             label={i18n('icu:MediaGallery__sort')}
           />
         </AxoDropdownMenu.Trigger>

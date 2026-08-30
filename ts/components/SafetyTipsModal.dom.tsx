@@ -1,6 +1,6 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { type JSX, useId, useMemo, useState } from 'react';
+import { type JSX, useId, useMemo, useState } from 'react';
 import { Tabs } from 'radix-ui';
 import type { LocalizerType } from '../types/I18N.std.ts';
 import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
@@ -11,7 +11,7 @@ import { AxoButton } from '../axo/AxoButton.dom.tsx';
 
 export type SafetyTipsModalProps = Readonly<{
   i18n: LocalizerType;
-  onClose(): void;
+  onClose: () => void;
 }>;
 
 export function SafetyTipsModal({
@@ -41,7 +41,7 @@ function SafetyTipsSummary({
 }: {
   i18n: LocalizerType;
   onViewMore: () => void;
-}): React.JSX.Element {
+}): JSX.Element {
   const tips = useMemo(
     () =>
       [
@@ -81,7 +81,7 @@ function SafetyTipsSummary({
         <AxoDialog.Title>
           {i18n('icu:SafetyTipsModal__Title-v2')}
         </AxoDialog.Title>
-        <AxoDialog.Close aria-label={i18n('icu:close')} />
+        <AxoDialog.Close />
       </AxoDialog.Header>
       <AxoDialog.Body>
         <div className={tw('py-4')}>
@@ -95,12 +95,10 @@ function SafetyTipsSummary({
                   src={tip.iconUrl}
                 />
                 <div>
-                  <h3 className={tw('type-title-small text-label-primary')}>
+                  <h3 className={tw('type-title-small text-primary')}>
                     {tip.titleId}
                   </h3>
-                  <p
-                    className={tw('mt-1 type-body-medium text-label-secondary')}
-                  >
+                  <p className={tw('mt-1 type-body-medium text-secondary')}>
                     {tip.descriptionId}
                   </p>
                 </div>
@@ -109,7 +107,7 @@ function SafetyTipsSummary({
           </ul>
           <AxoButton.Root
             size="lg"
-            variant="secondary"
+            variant="strong-secondary"
             width="full"
             onClick={onViewMore}
           >
@@ -121,11 +119,7 @@ function SafetyTipsSummary({
   );
 }
 
-function SafetyTipsDetails({
-  i18n,
-}: {
-  i18n: LocalizerType;
-}): React.JSX.Element {
+function SafetyTipsDetails({ i18n }: { i18n: LocalizerType }): JSX.Element {
   const cardWrapperId = useId();
 
   const tips = useMemo(
@@ -203,7 +197,7 @@ function SafetyTipsDetails({
             {i18n('icu:SafetyTipsModal__Title-v2')}
           </AxoDialog.Title>
         </div>
-        <AxoDialog.Close aria-label={i18n('icu:close')} />
+        <AxoDialog.Close />
       </AxoDialog.Header>
       <Tabs.Root
         value={tips[pageIndex]?.key}
@@ -240,12 +234,12 @@ function SafetyTipsDetails({
                 </div>
                 <h2
                   className={tw(
-                    'mt-2 type-title-small font-semibold text-label-primary'
+                    'mt-2 type-title-small font-semibold text-primary'
                   )}
                 >
                   {page.title}
                 </h2>
-                <p className={tw('mt-1 type-body-medium text-label-secondary')}>
+                <p className={tw('mt-1 type-body-medium text-secondary')}>
                   {page.description}
                 </p>
               </Tabs.Content>
@@ -256,7 +250,7 @@ function SafetyTipsDetails({
           <div className={tw('flex w-full items-center justify-between p-1')}>
             <div className={pageIndex === 0 ? tw('invisible') : ''}>
               <AxoIconButton.Root
-                variant="secondary"
+                variant="strong-secondary"
                 iconWeight={300}
                 label={i18n('icu:previous')}
                 tooltip={false}
@@ -288,7 +282,7 @@ function SafetyTipsDetails({
             <div className={pageIndex === maxPageIndex ? tw('invisible') : ''}>
               <AxoIconButton.Root
                 symbol="chevron-[end]"
-                variant="secondary"
+                variant="strong-secondary"
                 tooltip={false}
                 iconWeight={300}
                 label={i18n('icu:next')}

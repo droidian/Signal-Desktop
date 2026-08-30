@@ -20,13 +20,6 @@ export type configOptionalStringType = z.infer<
   typeof configOptionalStringSchema
 >;
 
-export const directoryConfigSchema = z.object({
-  directoryUrl: configRequiredStringSchema,
-  directoryMRENCLAVE: configRequiredStringSchema,
-});
-
-export type DirectoryConfigType = z.infer<typeof directoryConfigSchema>;
-
 export const rendererConfigSchema = z.object({
   appInstance: configOptionalStringSchema,
   appStartInitialSpellcheckSetting: z.boolean(),
@@ -76,7 +69,6 @@ export const rendererConfigSchema = z.object({
   resourcesUrl: configRequiredStringSchema,
   userDataPath: configRequiredStringSchema,
   version: configRequiredStringSchema,
-  directoryConfig: directoryConfigSchema,
 
   // Only used by main window
   isMainWindowFullScreen: z.boolean(),

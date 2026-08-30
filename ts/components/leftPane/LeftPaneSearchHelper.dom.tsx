@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React from 'react';
 
 import type { ToFindType } from './LeftPaneHelper.dom.tsx';
 import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
@@ -49,6 +48,7 @@ export type LeftPaneSearchPropsType = {
   searchConversation: undefined | ConversationType;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType> {
   readonly #conversationResults: MaybeLoadedSearchResultsType<ConversationListItemPropsType>;
   readonly #contactResults: MaybeLoadedSearchResultsType<ConversationListItemPropsType>;

@@ -1,8 +1,9 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
-import React from 'react';
 import { createPortal } from 'react-dom';
 
 import { SECOND } from '../util/durations/index.std.ts';
@@ -62,7 +63,7 @@ function renderToast({
   setDidResumeDonation,
   OS,
   toast,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   if (toast === undefined) {
     return null;
   }
@@ -320,7 +321,11 @@ function renderToast({
   if (toastType === ToastType.CopiedBackupKey) {
     return (
       <Toast onClose={hideToast} timeout={3 * SECOND}>
-        {i18n('icu:Preferences__local-backups-copied-recovery-key')}
+        <div className={tw('flex items-center')}>
+          <AxoSymbol.InlineGlyph symbol="copy" label={null} />
+          &nbsp;&nbsp;
+          {i18n('icu:Preferences__local-backups-copied-recovery-key')}
+        </div>
       </Toast>
     );
   }
@@ -329,6 +334,14 @@ function renderToast({
     return (
       <Toast onClose={hideToast} timeout={3 * SECOND}>
         {i18n('icu:calling__call-link-copied')}
+      </Toast>
+    );
+  }
+
+  if (toastType === ToastType.CopiedStickerPackLink) {
+    return (
+      <Toast onClose={hideToast} timeout={3 * SECOND}>
+        {i18n('icu:stickers--StickerPreview--LinkCopied')}
       </Toast>
     );
   }
@@ -539,20 +552,6 @@ function renderToast({
     );
   }
 
-  if (toastType === ToastType.FailedToSendWithEndorsements) {
-    return (
-      <Toast
-        onClose={hideToast}
-        toastAction={{
-          label: i18n('icu:Toast__ActionLabel--SubmitLog'),
-          onClick: onShowDebugLog,
-        }}
-      >
-        {i18n('icu:Toast--FailedToSendWithEndorsements')}
-      </Toast>
-    );
-  }
-
   if (toastType === ToastType.FailedToImportBackup) {
     return (
       <Toast
@@ -602,7 +601,7 @@ function renderToast({
   if (toastType === ToastType.FileSize) {
     return (
       <Toast onClose={hideToast}>
-        {i18n('icu:fileSizeWarning', {
+        {i18n('icu:fileTooLargeWarning', {
           limit: toast.parameters.limit,
           units: toast.parameters.units,
         })}
@@ -612,7 +611,7 @@ function renderToast({
   if (toastType === ToastType.VideoFileSize) {
     return (
       <Toast onClose={hideToast}>
-        {i18n('icu:videoFileSizeWarning', {
+        {i18n('icu:videoFileTooLargeWarning', {
           limit: toast.parameters.limit,
           units: toast.parameters.units,
         })}
@@ -788,7 +787,13 @@ function renderToast({
 
   if (toastType === ToastType.PinnedConversationsFull) {
     return (
-      <Toast onClose={hideToast}>{i18n('icu:pinnedConversationsFull')}</Toast>
+      <Toast onClose={hideToast}>
+        <I18n
+          i18n={i18n}
+          id="icu:pinnedConversations--max"
+          components={{ maxPinnedConversations: toast.maxPinnedConversations }}
+        />
+      </Toast>
     );
   }
 
@@ -815,6 +820,30 @@ function renderToast({
   if (toastType === ToastType.ReceiptSaveFailed) {
     return (
       <Toast onClose={hideToast}>{i18n('icu:Toast--ReceiptSaveFailed')}</Toast>
+    );
+  }
+
+  if (toastType === ToastType.RemoteConfigChanged) {
+    return (
+      <Toast
+        autoDismissDisabled
+        onClose={hideToast}
+        style={{ width: 'max-content', maxWidth: '650px' }}
+      >
+        <div>
+          <strong>
+            <span className={tw('text-warning')}>
+              <AxoSymbol.InlineGlyph symbol="error-triangle" label="Change" />
+            </span>
+            &nbsp;Remote Config changed:
+          </strong>
+        </div>
+        {toast.changes.map(({ name, from, to }) => (
+          <div key={name} className={tw('font-mono type-body-small')}>
+            {name}: {from} → {to}
+          </div>
+        ))}
+      </Toast>
     );
   }
 
@@ -1020,7 +1049,7 @@ function renderMegaphone({
   megaphone,
   containerWidthBreakpoint,
   expandNarrowLeftPane,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   if (!megaphone) {
     return null;
   }
@@ -1043,7 +1072,7 @@ function renderMegaphone({
   throw missingCaseError(megaphone);
 }
 
-export function ToastManager(props: PropsType): React.JSX.Element {
+export function ToastManager(props: PropsType): JSX.Element {
   const {
     centerToast,
     containerWidthBreakpoint,

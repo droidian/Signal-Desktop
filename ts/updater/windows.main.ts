@@ -61,6 +61,10 @@ export class WindowsUpdater extends Updater {
     };
   }
 
+  protected handleUpdateFromThirdParty(): boolean {
+    return false;
+  }
+
   protected restart(): void {
     this.logger.info('downloadAndInstall: restarting...');
     this.markRestarting();

@@ -1,7 +1,7 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { StoryViewer } from '../../components/StoryViewer.dom.tsx';
 import { ToastType } from '../../types/Toast.dom.tsx';
@@ -26,7 +26,6 @@ import {
   getStoryByIdSelector,
   getHasAllStoriesUnmuted,
 } from '../selectors/stories.preload.ts';
-import { isInFullScreenCall } from '../selectors/calling.std.ts';
 import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation.dom.ts';
 import { strictAssert } from '../../util/assert.std.ts';
 import { asyncShouldNeverBeCalled } from '../../util/shouldNeverBeCalled.std.ts';
@@ -38,6 +37,8 @@ import { useStoriesActions } from '../ducks/stories.preload.ts';
 import { useIsWindowActive } from '../../hooks/useIsWindowActive.dom.ts';
 import type { DraftBodyRanges } from '../../types/BodyRange.std.ts';
 import type { StoryViewType } from '../../types/Stories.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
+import { getIsInFullScreenCall } from '../selectors/isInFullScreenCall.std.ts';
 
 export const SmartStoryViewer = memo(function SmartStoryViewer() {
   const {
@@ -80,7 +81,7 @@ export const SmartStoryViewer = memo(function SmartStoryViewer() {
   const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
   const replyState = useSelector(getStoryReplies);
   const hasAllStoriesUnmuted = useSelector(getHasAllStoriesUnmuted);
-  const hasActiveCall = useSelector(isInFullScreenCall);
+  const hasActiveCall = useSelector(getIsInFullScreenCall);
   const hasViewReceiptSetting = useSelector(getHasStoryViewReceiptSetting);
   const isFormattingEnabled = useSelector(getTextFormattingEnabled);
 
@@ -99,7 +100,7 @@ export const SmartStoryViewer = memo(function SmartStoryViewer() {
   );
 
   const handleReactToStory = useCallback(
-    async (emoji: string, story: StoryViewType) => {
+    async (emoji: Emoji.Variant, story: StoryViewType) => {
       const { messageId } = story;
       reactToStory(emoji, messageId);
     },

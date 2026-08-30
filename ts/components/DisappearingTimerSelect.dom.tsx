@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback, useState, useMemo } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import type { LocalizerType } from '../types/Util.std.ts';
 import * as expirationTimer from '../util/expirationTimer.std.ts';
 import { DurationInSeconds } from '../util/durations/index.std.ts';
@@ -15,10 +15,10 @@ export type Props = {
 
   disabled?: boolean;
   value?: DurationInSeconds;
-  onChange(value: DurationInSeconds): void;
+  onChange: (value: DurationInSeconds) => void;
 };
 
-export function DisappearingTimerSelect(props: Props): React.JSX.Element {
+export function DisappearingTimerSelect(props: Props): JSX.Element {
   const { i18n, disabled, value = DurationInSeconds.ZERO, onChange } = props;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,10 +87,7 @@ export function DisappearingTimerSelect(props: Props): React.JSX.Element {
   if (isCustomTimeSelected) {
     info = (
       <div
-        className={tw(
-          'absolute mt-1 ps-3.5',
-          'type-body-small text-label-secondary'
-        )}
+        className={tw('absolute mt-1 ps-3.5', 'type-body-small text-secondary')}
       >
         {expirationTimer.format(i18n, value)}
       </div>

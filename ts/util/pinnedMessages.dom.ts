@@ -5,6 +5,6 @@ import * as RemoteConfig from '../RemoteConfig.dom.ts';
 import { parseIntWithFallback } from './parseIntWithFallback.std.ts';
 
 export function getPinnedMessagesLimit(): number {
-  const remoteValue = RemoteConfig.getValue('global.pinned_message_limit');
+  const remoteValue = RemoteConfig.getValue('global.pinnedMessageLimit');
   return parseIntWithFallback(remoteValue, 3);
 }

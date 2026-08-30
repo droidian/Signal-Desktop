@@ -147,6 +147,14 @@ import updateToSchemaVersion1670 from './1670-drop-call-link-epoch.std.ts';
 import updateToSchemaVersion1680 from './1680-cleanup-empty-strings.std.ts';
 import updateToSchemaVersion1690 from './1690-poll-terminate-notification-timestamp.std.ts';
 import updateToSchemaVersion1700 from './1700-trim-profile-names.std.ts';
+import updateToSchemaVersion1710 from './1710-emoji-skin-tone-default.std.ts';
+import updateToSchemaVersion1720 from './1720-update-recent-emoji.std.ts';
+import updateToSchemaVersion1730 from './1730-protected-attachments-dedupe-token.std.ts';
+import updateToSchemaVersion1740 from './1740-cleanup-groups.node.ts';
+import updateToSchemaVersion1750 from './1750-fts-url.std.ts';
+import updateToSchemaVersion1760 from './1760-delete-story-reply-attachment.std.ts';
+import updateToSchemaVersion1770 from './1770-add-blocked-at.std.ts';
+import updateToSchemaVersion1780 from './1780-fts-reindex.std.ts';
 
 import { DataWriter } from '../Server.node.ts';
 import { strictAssert } from '../../util/assert.std.ts';
@@ -1462,7 +1470,8 @@ export type SchemaUpdateType = Readonly<{
   update: (
     db: WritableDB,
     logger: LoggerType,
-    startingVersion: number
+    startingVersion: number,
+    data: { userDataPath: string }
   ) => void | 'vacuum';
 }>;
 
@@ -1655,7 +1664,16 @@ export const SCHEMA_VERSIONS: ReadonlyArray<SchemaUpdateType> = [
   { version: 1670, update: updateToSchemaVersion1670 },
   { version: 1680, update: updateToSchemaVersion1680 },
   { version: 1690, update: updateToSchemaVersion1690 },
+
   { version: 1700, update: updateToSchemaVersion1700 },
+  { version: 1710, update: updateToSchemaVersion1710 },
+  { version: 1720, update: updateToSchemaVersion1720 },
+  { version: 1730, update: updateToSchemaVersion1730 },
+  { version: 1740, update: updateToSchemaVersion1740 },
+  { version: 1750, update: updateToSchemaVersion1750 },
+  { version: 1760, update: updateToSchemaVersion1760 },
+  { version: 1770, update: updateToSchemaVersion1770 },
+  { version: 1780, update: updateToSchemaVersion1780 },
 ];
 
 class DBVersionFromFutureError extends Error {
@@ -1687,7 +1705,11 @@ function enableFTS5SecureDelete(db: Database, logger: LoggerType): void {
   }
 }
 
-export function updateSchema(db: WritableDB, logger: LoggerType): void {
+export function updateSchema(
+  db: WritableDB,
+  logger: LoggerType,
+  data: { userDataPath: string }
+): void {
   const sqliteVersion = getSQLiteVersion(db);
   const sqlcipherVersion = getSQLCipherVersion(db);
   const startingVersion = getUserVersion(db);
@@ -1739,7 +1761,7 @@ export function updateSchema(db: WritableDB, logger: LoggerType): void {
         }
 
         const schemaLogger = logger.child(`updateSchema(${version})`);
-        const result = update(db, schemaLogger, startingVersion);
+        const result = update(db, schemaLogger, startingVersion, data);
         if (result === 'vacuum') {
           schemaLogger.info('success, needs vacuum');
 

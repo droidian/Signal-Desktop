@@ -31,6 +31,7 @@ export enum ToastType {
   ConversationUnarchived = 'ConversationUnarchived',
   CopiedBackupKey = 'CopiedBackupKey',
   CopiedCallLink = 'CopiedCallLink',
+  CopiedStickerPackLink = 'CopiedStickerPackLink',
   CopiedUsername = 'CopiedUsername',
   CopiedUsernameLink = 'CopiedUsernameLink',
   DangerousFileType = 'DangerousFileType',
@@ -53,7 +54,6 @@ export enum ToastType {
   FailedToDeleteUsername = 'FailedToDeleteUsername',
   FailedToFetchPhoneNumber = 'FailedToFetchPhoneNumber',
   FailedToFetchUsername = 'FailedToFetchUsername',
-  FailedToSendWithEndorsements = 'FailedToSendWithEndorsements',
   FailedToImportBackup = 'FailedToImportBackup',
   FileSaved = 'FileSaved',
   FileSize = 'FileSize',
@@ -78,6 +78,7 @@ export enum ToastType {
   ReceiptSaved = 'ReceiptSaved',
   ReceiptSaveFailed = 'ReceiptSaveFailed',
   ReportedSpam = 'ReportedSpam',
+  RemoteConfigChanged = 'RemoteConfigChanged',
   ReportedSpamAndBlocked = 'ReportedSpamAndBlocked',
   SQLError = 'SQLError',
   StickerPackInstallFailed = 'StickerPackInstallFailed',
@@ -159,6 +160,7 @@ export type AnyToast =
   | { toastType: ToastType.ConversationUnarchived }
   | { toastType: ToastType.CopiedBackupKey }
   | { toastType: ToastType.CopiedCallLink }
+  | { toastType: ToastType.CopiedStickerPackLink }
   | { toastType: ToastType.CopiedUsername }
   | { toastType: ToastType.CopiedUsernameLink }
   | { toastType: ToastType.DangerousFileType }
@@ -180,7 +182,6 @@ export type AnyToast =
   | { toastType: ToastType.FailedToDeleteUsername }
   | { toastType: ToastType.FailedToFetchPhoneNumber }
   | { toastType: ToastType.FailedToFetchUsername }
-  | { toastType: ToastType.FailedToSendWithEndorsements }
   | { toastType: ToastType.FailedToImportBackup }
   | {
       toastType: ToastType.FileSaved;
@@ -217,10 +218,21 @@ export type AnyToast =
       parameters: { enabled: boolean; name: string };
     }
   | { toastType: ToastType.OriginalMessageNotFound }
-  | { toastType: ToastType.PinnedConversationsFull }
+  | {
+      toastType: ToastType.PinnedConversationsFull;
+      maxPinnedConversations: number;
+    }
   | { toastType: ToastType.PinnedMessageNotFound }
   | { toastType: ToastType.PollNotFound }
   | { toastType: ToastType.ReactionFailed }
+  | {
+      toastType: ToastType.RemoteConfigChanged;
+      changes: ReadonlyArray<{
+        name: string;
+        from: string;
+        to: string;
+      }>;
+    }
   | {
       toastType: ToastType.ReceiptSaved;
       parameters: { fullPath: string };

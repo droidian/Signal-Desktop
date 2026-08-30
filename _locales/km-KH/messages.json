@@ -1,4 +1,25 @@
 {
+  "icu:AxoAlertDialog.Cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:AxoButton.Pending": {
+    "messageformat": "មិនទាន់សម្រេច"
+  },
+  "icu:AxoDialog.Back": {
+    "messageformat": "ត្រឡប់ក្រោយ"
+  },
+  "icu:AxoDialog.Close": {
+    "messageformat": "បិទ"
+  },
+  "icu:AxoPasswordField.Reveal": {
+    "messageformat": "បង្ហាញពាក្យសម្ងាត់"
+  },
+  "icu:AxoTextField.Clear": {
+    "messageformat": "សម្អាត"
+  },
+  "icu:AxoBadge.MaxOverflow": {
+    "messageformat": "{max,number}+"
+  },
   "icu:AddUserToAnotherGroupModal__title": {
     "messageformat": "ដាក់បញ្ចូលទៅក្រុមមួយ"
   },
@@ -70,6 +91,9 @@
   },
   "icu:unknownContact": {
     "messageformat": "បញ្ជីទំនាក់ទំនងដែលមិនស្គាល់"
+  },
+  "icu:deletedAccount": {
+    "messageformat": "បានលុបគណនី"
   },
   "icu:unknownContactShort": {
     "messageformat": "មិនស្គាល់"
@@ -296,8 +320,8 @@
   "icu:LeftPaneChatFolders__ItemLabel--All": {
     "messageformat": "ការជជែកទាំងអស់"
   },
-  "icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount": {
-    "messageformat": "{maxCount,number}+"
+  "icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel": {
+    "messageformat": "{count, plural, other {{count,number} សារមិនទាន់អាន}}"
   },
   "icu:LeftPaneChatFolders__Item__ContextMenu__MarkAllRead": {
     "messageformat": "សម្គាល់ថាបានអានទាំងអស់"
@@ -355,9 +379,6 @@
   },
   "icu:NavTabs__ItemLabel--Settings": {
     "messageformat": "ការកំណត់"
-  },
-  "icu:NavTabs__ItemLabel--Profile": {
-    "messageformat": "ប្រវត្តិរូប"
   },
   "icu:NavSidebar__BackButtonLabel": {
     "messageformat": "ត្រលប់ក្រោយ"
@@ -437,17 +458,8 @@
   "icu:unpinConversation": {
     "messageformat": "ដោះខ្ទាស់ការជជែក"
   },
-  "icu:pinnedConversationsFull": {
-    "messageformat": "អ្នកអាចខ្ទាស់ការជជែកបានរហូតដល់ 4 ប៉ុណ្ណោះ"
-  },
-  "icu:loadingMessages--other": {
-    "messageformat": "{daysAgo, plural, other {កំពុងផ្ទុកសារពី {daysAgo,number} ថ្ងៃមុន…}}"
-  },
-  "icu:loadingMessages--yesterday": {
-    "messageformat": "កំពុងផ្ទុកសារពីម្សិលមិញ…"
-  },
-  "icu:loadingMessages--today": {
-    "messageformat": "កំពុងផ្ទុកសារចាប់ពីថ្ងៃនេះ…"
+  "icu:pinnedConversations--max": {
+    "messageformat": "{maxPinnedConversations, plural, other {អ្នកអាចខ្ទាស់ការជជែកបានរហូតដល់ {maxPinnedConversations,number} ប៉ុណ្ណោះ}}"
   },
   "icu:view": {
     "messageformat": "មើល"
@@ -602,14 +614,14 @@
   "icu:SafetyNumberViewer__KeyTransparency__popup--ok__title": {
     "messageformat": "ការអ៊ីនគ្រីបត្រូវបានផ្ទៀងផ្ទាត់ដោយស្វ័យប្រវត្តិសម្រាប់ការជជែកនេះ "
   },
-  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body": {
-    "messageformat": "សម្រាប់ទំនាក់ទំនងដែលអ្នកបានភ្ជាប់ជាមួយតាមរយៈលេខទូរសព្ទ Signal អាចបញ្ជាក់ដោយស្វ័យប្រវត្តិថាតើការភ្ជាប់នោះមានសុវត្ថិភាពឬអត់ ដោយប្រើដំណើរការមួយដែលហៅថា តម្លាភាពកូនសោ។ ដើម្បីសុវត្ថិភាពបន្ថែម សូមផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបទាំងសងខាងដោយដៃដោយប្រៀបធៀបលេខនៅលើអេក្រង់មុន ឬស្គែនកូដនៅលើឧបករណ៍របស់ពួកគេ។"
+  "icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2": {
+    "messageformat": "ចំពោះមនុស្សដែលអ្នកបានភ្ជាប់ទំនាក់ទំនងជាមួយតាមលេខទូរសព្ទ Signal អាចបញ្ជាក់ដោយស្វ័យប្រវត្តិថាតើការភ្ជាប់ទំនាក់ទំនងនោះមានសុវត្ថិភាពឬអត់ ដោយប្រើដំណើរការមួយដែលហៅថា តម្លាភាពកូនសោ។ ដើម្បីសុវត្ថិភាពបន្ថែម សូមផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបទាំងសងខាងដោយដៃដោយប្រៀបធៀបលេខនៅលើអេក្រង់មុន ឬស្គែនកូដនៅលើឧបករណ៍របស់ពួកគេ។"
   },
-  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title": {
-    "messageformat": "ការផ្ទៀងផ្ទាត់ដោយស្វ័យប្រវត្តិមិនអាចធ្វើបានសម្រាប់ការជជែកនេះទៀតទេ"
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2": {
+    "messageformat": "ការផ្ទៀងផ្ទាត់ដោយស្វ័យប្រវត្តិមិនអាចប្រើសម្រាប់ការជជែកនេះបានទេ"
   },
-  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body": {
-    "messageformat": "Signal លែងអាចផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបសម្រាប់ការជជែកនេះដោយស្វ័យប្រវត្តិទៀតហើយ។ នេះទំនងជាដោយសារតែ {name} បានប្តូរលេខទូរសព្ទរបស់គាត់។ ផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបទាំងសងខាងដោយដៃដោយប្រៀបធៀបលេខនៅលើអេក្រង់មុន ឬស្គែនកូដនៅលើឧបករណ៍របស់ពួកគេ។"
+  "icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2": {
+    "messageformat": "Signal មិនអាចផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបសម្រាប់ការជជែកនេះដោយស្វ័យប្រវត្តិបានទេ។ នេះអាចបណ្តាលមកពី {name} បានប្តូរលេខទូរសព្ទរបស់គាត់ ឬការកំណត់ឯកជនភាពនៃលេខទូរសព្ទរបស់គាត់។ ផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបទាំងសងខាងដោយដៃដោយប្រៀបធៀបលេខនៅលើអេក្រង់មុន ឬស្គែនកូដនៅលើឧបករណ៍របស់គាត់។"
   },
   "icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body": {
     "messageformat": "Signal អាចផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបដោយស្វ័យប្រវត្តិបានតែនៅក្នុងការជជែកដែលអ្នកបានភ្ជាប់ជាមួយនរណាម្នាក់តាមរយៈលេខទូរសព្ទប៉ុណ្ណោះ។ ប្រសិនបើការជជែកត្រូវបានចាប់ផ្តើមជាមួយឈ្មោះអ្នកប្រើ ឬក្រុមដែលមានឈ្មោះដូចគ្នា សូមផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបទាំងសងខាងដោយប្រៀបធៀបលេខនៅលើអេក្រង់មុន ឬស្គែនកូដនៅលើឧបករណ៍របស់ពួកគេ។"
@@ -638,9 +650,6 @@
   "icu:KeyTransparencyErrorDialog__Submit": {
     "messageformat": "ដាក់បញ្ជូន"
   },
-  "icu:KeyTransparencyErrorDialog__Submitting": {
-    "messageformat": "កំពុងដាក់បញ្ជូន…"
-  },
   "icu:KeyTransparencyOnboardingDialog__Title": {
     "messageformat": "ឥឡូវនេះ Signal អាចផ្ទៀងផ្ទាត់ការអ៊ីនគ្រីបដោយស្វ័យប្រវត្តិបាន"
   },
@@ -652,9 +661,6 @@
   },
   "icu:KeyTransparencyOnboardingDialog__LearnMore": {
     "messageformat": "ស្វែងយល់បន្ថែម"
-  },
-  "icu:KeyTransparencyOnboardingDialog__CloseButton__AccessibilityLabel": {
-    "messageformat": "បិទ"
   },
   "icu:verified": {
     "messageformat": "បានផ្ទៀងផ្ទាត់"
@@ -707,9 +713,6 @@
   "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "ដាក់បញ្ជូនកំណត់ហេតុ"
   },
-  "icu:Toast--FailedToSendWithEndorsements": {
-    "messageformat": "Failed to send message with endorsements"
-  },
   "icu:Toast--SQLError": {
     "messageformat": "បញ្ហាមូលដ្ឋានទិន្នន័យ៖ សូមចែករំលែកកំណត់ហេតុរបស់អ្នក។"
   },
@@ -749,6 +752,12 @@
   "icu:videoFileSizeWarning": {
     "messageformat": "សូមអភ័យទោស ឯកសារវីដេអូដែលបានជ្រើសរើសគឺលើសពីទំហំសារដែលបានកំហិត។ {limit,number}{units}"
   },
+  "icu:fileTooLargeWarning": {
+    "messageformat": "មិនអាចផ្ញើឯកសារនេះបានទេ ព្រោះវាធំពេក។ អ្នកអាចផ្ញើឯកសារដែលមានទំហំរហូតដល់ {limit,number}{units}។"
+  },
+  "icu:videoFileTooLargeWarning": {
+    "messageformat": "មិនអាចផ្ញើឯកសារវីដេអូនេះបានទេ ព្រោះវាធំពេក។ អ្នកអាចផ្ញើឯកសារវីដេអូដែលមានទំហំរហូតដល់ {limit,number}{units}។"
+  },
   "icu:unableToLoadAttachment": {
     "messageformat": "មិនអាចផ្ទុកឯកសារភ្ជាប់ដែលបានជ្រើសរើស។"
   },
@@ -769,6 +778,9 @@
   },
   "icu:checkNetworkConnection": {
     "messageformat": "ត្រួតពិនិត្យការតភ្ជាប់បណ្តាញរបស់អ្នក។"
+  },
+  "icu:clockSkewDetected": {
+    "messageformat": "កាលបរិច្ឆេទឧបករណ៍របស់អ្នកមិនត្រឹមត្រូវទេ។ កែតម្រូវម៉ោងនាឡិការបស់អ្នក រួចព្យាយាមម្តងទៀត។ កាលបរិច្ឆេទ និងម៉ោងឧបករណ៍របស់អ្នកគឺ៖"
   },
   "icu:submitDebugLog": {
     "messageformat": "កំណត់ត្រាបញ្ហា"
@@ -1259,6 +1271,9 @@
   "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
     "messageformat": "សារទាំងអស់នៅក្នុងការជជែកនេះនឹងត្រូវបានលុបចេញពីឧបករណ៍ទាំងអស់របស់អ្នក។"
   },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync--still-member": {
+    "messageformat": "សារទាំងអស់នៅក្នុងការជជែកនេះនឹងត្រូវបានលុបចេញពីឧបករណ៍ទាំងអស់របស់អ្នក។ អ្នកនឹងនៅតែជាសមាជិកនៃក្រុមនេះ។"
+  },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "ចាកចេញពីក្រុម"
   },
@@ -1286,9 +1301,6 @@
   "icu:PinMessageDialog__Title": {
     "messageformat": "ខ្ទាស់សារសម្រាប់…"
   },
-  "icu:PinMessageDialog__Close": {
-    "messageformat": "បិទ"
-  },
   "icu:PinMessageDialog__Option--TIME_24_HOURS": {
     "messageformat": "24 ម៉ោង"
   },
@@ -1312,9 +1324,6 @@
   },
   "icu:PinMessageDialog--HasMaxPinnedMessages__Description": {
     "messageformat": "ការខ្ទាស់សារនេះនឹងជំនួសសារដែលយូរជាងគេបំផុត។"
-  },
-  "icu:PinMessageDialog--HasMaxPinnedMessages__Cancel": {
-    "messageformat": "បោះបង់"
   },
   "icu:PinMessageDialog--HasMaxPinnedMessages__Continue": {
     "messageformat": "បន្ត"
@@ -1402,9 +1411,6 @@
   },
   "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Description": {
     "messageformat": "សារនឹងឈប់ខ្ទាស់សម្រាប់សមាជិកនៃការជជែកនេះ។"
-  },
-  "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Cancel": {
-    "messageformat": "បោះបង់"
   },
   "icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Unpin": {
     "messageformat": "ឈប់ខ្ទាស់"
@@ -1592,6 +1598,15 @@
   "icu:Install__support-link": {
     "messageformat": "ត្រូវការជំនួយ?"
   },
+  "icu:Install__confirm-data-deletion__title": {
+    "messageformat": "លុបទិន្នន័យទាំងអស់?"
+  },
+  "icu:Install__confirm-data-deletion__body": {
+    "messageformat": "អ្នកកំពុងព្យាយាមភ្ជាប់គណនី Signal ផ្សេងជាមួយកុំព្យូទ័រលើតុនេះ។ ប្រសិនបើអ្នកបន្ត ទិន្នន័យទាំងអស់ដែលកំពុងមាននៅក្នុង Signal Desktop នឹងត្រូវបានលុប។"
+  },
+  "icu:Install__confirm-data-deletion__continue": {
+    "messageformat": "បន្ត"
+  },
   "icu:Preferences--header": {
     "messageformat": "ការកំណត់"
   },
@@ -1642,9 +1657,6 @@
   },
   "icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "លុប"
-  },
-  "icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "បោះបង់"
   },
   "icu:Preferences__ChatFoldersPage__Title": {
     "messageformat": "ថតឯកសារជជែក"
@@ -1769,9 +1781,6 @@
   "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton": {
     "messageformat": "លុប"
   },
-  "icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton": {
-    "messageformat": "បោះបង់"
-  },
   "icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title": {
     "messageformat": "រក្សាទុកការផ្លាស់ប្តូរឬ?"
   },
@@ -1791,10 +1800,10 @@
     "messageformat": "បោះបង់"
   },
   "icu:Preferences__PrivacyPage__ShowStatusIcon__Label": {
-    "messageformat": "Show status icon"
+    "messageformat": "បង្ហាញរូបស្ថានភាព"
   },
   "icu:Preferences__PrivacyPage__ShowStatusIcon__Description": {
-    "messageformat": "Show an icon in message details when they were delivered using sealed sender."
+    "messageformat": "បង្ហាញរូបតំណាងនៅក្នុងព័ត៌មានលម្អិតរបស់សារ នៅពេលវាត្រូវបានបញ្ជូន ដោយប្រើមុខងារការពារអ្នកផ្ញើ។"
   },
   "icu:Preferences__PrivacyPage__KeyTransparency__Label": {
     "messageformat": "ការផ្ទៀងផ្ទាត់សោដោយស្វ័យប្រវត្តិ"
@@ -1955,6 +1964,27 @@
   "icu:CallingButton--more-options": {
     "messageformat": "ជម្រើសច្រើនទៀត"
   },
+  "icu:CallingParticipantMenu__MuteAudio": {
+    "messageformat": "បិទសំឡេង"
+  },
+  "icu:CallingParticipantMenu__UnmuteAudio": {
+    "messageformat": "បើកសំឡេង"
+  },
+  "icu:CallingParticipantMenu__ViewProfile": {
+    "messageformat": "មើលប្រូហ្វាល់"
+  },
+  "icu:CallingParticipantMenu__GoToChat": {
+    "messageformat": "ចូលទៅការជជែក"
+  },
+  "icu:CallingParticipantMenu__RemoveFromCall": {
+    "messageformat": "ដកចេញពីការហៅ"
+  },
+  "icu:CallingParticipantListItem__ContextMenuButton": {
+    "messageformat": "សកម្មភាពច្រើនទៀត"
+  },
+  "icu:CallingParticipantListItem__Presenting": {
+    "messageformat": "កំពុងធ្វើបទបង្ហាញ"
+  },
   "icu:CallingPendingParticipants__ApproveUser": {
     "messageformat": "យល់ព្រមតាមសំណើចូលរួម"
   },
@@ -1993,9 +2023,6 @@
   },
   "icu:CallingRaisedHandsList__Title": {
     "messageformat": "{count, plural, other {{count,number} នាក់បានលើកដៃ}}"
-  },
-  "icu:CallingRaisedHandsList__TitleHint": {
-    "messageformat": "(ពីដំបូងដល់ចុងក្រោយ)"
   },
   "icu:CallingReactions--me": {
     "messageformat": "អ្នក"
@@ -2186,6 +2213,21 @@
   "icu:deleteAllDataProgress": {
     "messageformat": "កំពុងផ្តាច់ និងលុបទិន្នន័យទាំងអស់…"
   },
+  "icu:deleteAccountHeader": {
+    "messageformat": "លុបគណនី"
+  },
+  "icu:deleteAccountExplanation": {
+    "messageformat": "វានឹងលុបព័ត៌មានគណនី ប្រូហ្វាល់ និងសារទាំងអស់របស់អ្នក។ អ្នកក៏នឹងត្រូវបានដកចេញពីក្រុម Signal ទាំងអស់ផងដែរ។"
+  },
+  "icu:deleteAccountButton": {
+    "messageformat": "លុបគណនី"
+  },
+  "icu:deleteAccountDialogHeader": {
+    "messageformat": "លុបគណនី?"
+  },
+  "icu:deleteAccountDialogBody": {
+    "messageformat": "វានឹងលុបព័ត៌មានគណនី ប្រូហ្វាល់ និងសារទាំងអស់របស់អ្នក។ អ្នកក៏នឹងត្រូវបានដកចេញពីក្រុម Signal ទាំងអស់ផងដែរ។ កម្មវិធីនឹងបិទបន្ទាប់ពីដំណើរការនេះត្រូវបានបញ្ចប់។"
+  },
   "icu:deleteOldIndexedDBData": {
     "messageformat": "អ្នកមានទិន្នន័យដែលលែងប្រើ ពីការដំឡើង Signal Desktop ពីមុន។ ប្រសិនបើអ្នកជ្រើសរើសបន្ត វានឹងត្រូវលុបចោល ហើយអ្នកនឹងចាប់ផ្តើមសាឡើងវិញទាំងអស់។"
   },
@@ -2240,9 +2282,6 @@
   "icu:partiallySent": {
     "messageformat": "បានផ្ញើផ្នែកខ្លះ សូមចុចមើលព័ត៌មានលម្អិត"
   },
-  "icu:partiallyDeleted": {
-    "messageformat": "បានលុបខ្លះ សូមចុចព្យាយាមម្តងទៀត"
-  },
   "icu:partiallyDeleted--clickForDetails": {
     "messageformat": "បានលុបខ្លះ ចុចមើលព័ត៌មានលម្អិត"
   },
@@ -2263,9 +2302,6 @@
   },
   "icu:syncNow": {
     "messageformat": "នាំចូលឥឡូវ"
-  },
-  "icu:syncing": {
-    "messageformat": "កំពុងនាំចូល…"
   },
   "icu:syncFailed": {
     "messageformat": "ការនាំចូលបរាជ័យ។ ត្រូវប្រាកដថាកុំព្យូទ័រ និងទូរស័ព្ទរបស់អ្នកបានតភ្ជាប់ទៅកាន់អ៊ិនធឺណិត។"
@@ -2448,7 +2484,7 @@
     "messageformat": "ការទាញយកមិនបានជោគជ័យទេ"
   },
   "icu:Toast--unable-download-from-backup-tier": {
-    "messageformat": "Attachment missing from backup CDN"
+    "messageformat": "Attachment missing from backup CDN, please share desktop & primary logs"
   },
   "icu:ToastManager__CannotAddMemberLabel": {
     "messageformat": "មានតែអ្នកគ្រប់គ្រងទេដែលអាចបញ្ចូលស្លាកសមាជិកនៅក្នុងក្រុមនេះបាន។"
@@ -2530,6 +2566,12 @@
   },
   "icu:unlinked": {
     "messageformat": "បានផ្តាច់"
+  },
+  "icu:unregisteredWarning": {
+    "messageformat": "ចុចដើម្បីចុះឈ្មោះឡើងវិញ និងបន្តផ្ញើសារ។ Signal Desktop មិនត្រូវបានចុះឈ្មោះទេ ទំនងជាដោយសារតែអ្នកបានចុះឈ្មោះលេខទូរសព្ទរបស់អ្នកជាមួយ Signal នៅលើឧបករណ៍ផ្សេង។"
+  },
+  "icu:unregistered": {
+    "messageformat": "លែងចុះឈ្មោះទៀតហើយ"
   },
   "icu:autoUpdateNewVersionTitle": {
     "messageformat": "មានកំណែថ្មី"
@@ -2663,9 +2705,6 @@
   "icu:message--getDescription--gif": {
     "messageformat": "GIF"
   },
-  "icu:message--deletedForEveryone": {
-    "messageformat": "សារនេះត្រូវបានលុប។"
-  },
   "icu:message--deletedByAdmin": {
     "messageformat": "អ្នកគ្រប់គ្រង {admin} បានលុបសារនេះ"
   },
@@ -2756,14 +2795,11 @@
   "icu:stickers--toast--InstallFailed": {
     "messageformat": "កញ្ចប់ស្ទីកគ័រមិនអាចដំឡើងបាន"
   },
-  "icu:stickers--StickerManager--Available": {
-    "messageformat": "មាន"
+  "icu:stickers--StickerManager--MyStickers--None": {
+    "messageformat": "មិនមានកញ្ចប់ស្ទីកគ័រទេ សូមបញ្ចូលស្ទីកគ័រដើម្បីផ្ញើទៅមិត្តភក្តិរបស់អ្នក។"
   },
-  "icu:stickers--StickerManager--InstalledPacks": {
-    "messageformat": "បានដំឡើង"
-  },
-  "icu:stickers--StickerManager--InstalledPacks--Empty": {
-    "messageformat": "ពុំមានស្ទីកគ័រដំឡើងទេ"
+  "icu:stickers--StickerManager--AddStickers": {
+    "messageformat": "បញ្ចូលស្ទីកគ័រ"
   },
   "icu:stickers--StickerManager--BlessedPacks": {
     "messageformat": "សេ៊រីសិល្បករ Signal"
@@ -2771,14 +2807,17 @@
   "icu:stickers--StickerManager--BlessedPacks--Empty": {
     "messageformat": "ពុំមានស្ទីកគ័រសិល្បករ Signal ទេ"
   },
-  "icu:stickers--StickerManager--ReceivedPacks": {
-    "messageformat": "ស្ទីកគ័រដែលអ្នកបានទទួល"
+  "icu:stickers--StickerManager--ReceivedPacks2": {
+    "messageformat": "បានចែករំលែកជាមួយអ្នក"
   },
-  "icu:stickers--StickerManager--ReceivedPacks--Empty": {
-    "messageformat": "ស្ទីកគ័រពីសារដែលចូលមកនឹងបង្ហាញទីនេះ"
+  "icu:stickers--StickerManager--ReceivedPacksDescription": {
+    "messageformat": "នៅពេលអ្នកទទួលបានស្ទីកគ័រពីនរណាម្នាក់ កញ្ចប់ស្ទីកគ័រនឹងបង្ហាញនៅទីនេះ។"
   },
   "icu:stickers--StickerManager--Install": {
     "messageformat": "ដំឡើង"
+  },
+  "icu:stickers--StickerManager--Installed": {
+    "messageformat": "បានដំឡើង"
   },
   "icu:stickers--StickerManager--Uninstall": {
     "messageformat": "លុបចេញ"
@@ -2786,11 +2825,59 @@
   "icu:stickers--StickerManager--UninstallWarning": {
     "messageformat": "អ្នកប្រហែលមិនអាចដំឡើងកញ្ចប់ស្ទីកគ័រនេះឡើងវិញ ប្រសិនបើអ្នកមិនមានសារដើម។"
   },
+  "icu:stickers--StickerManagerHeader--All": {
+    "messageformat": "ទាំងអស់"
+  },
+  "icu:stickers--StickerManagerHeader--MyStickers": {
+    "messageformat": "ស្ទីកគ័ររបស់ខ្ញុំ"
+  },
+  "icu:stickers--StickerManagerPackContextMenu--Add": {
+    "messageformat": "បញ្ចូល"
+  },
+  "icu:stickers--StickerManagerPackContextMenu--Remove": {
+    "messageformat": "ដកចេញ"
+  },
+  "icu:stickers--StickerManagerPackDragHandle--Label": {
+    "messageformat": "អូសដើម្បីតម្រៀបកញ្ចប់ស្ទីកគ័រឡើងវិញ"
+  },
+  "icu:stickers--StickerManagerBlessedPacksList--Label": {
+    "messageformat": "កញ្ចប់ស្ទីកគ័រស៊េរីសិល្បករ Signal"
+  },
+  "icu:stickers--StickerManagerReceivedPacksList--Label": {
+    "messageformat": "បានទទួលកញ្ចប់ស្ទីកគ័រ"
+  },
+  "icu:stickers--StickerManagerInstalledPacksList--Label": {
+    "messageformat": "បានដំឡើងកញ្ចប់ស្ទីកគ័រ"
+  },
   "icu:stickers--StickerPreview--Title": {
     "messageformat": "កញ្ចប់ស្ទីកគ័រ"
   },
   "icu:stickers--StickerPreview--Error": {
     "messageformat": "បញ្ហាក្នុងការបើកកញ្ចប់ស្ទីកគ័រ។ សូមពិនិត្យការតភ្ជាប់បណ្តាញ ហើយព្យាយាមម្តងទៀត។"
+  },
+  "icu:stickers--StickerPreview--Install": {
+    "messageformat": "បញ្ចូលស្ទីកគ័រ"
+  },
+  "icu:stickers--StickerPreview--Remove": {
+    "messageformat": "ដកចេញ"
+  },
+  "icu:stickers--StickerPreview--Link": {
+    "messageformat": "តំណ"
+  },
+  "icu:stickers--StickerPreview--LinkCopied": {
+    "messageformat": "បានចម្លងតំណ"
+  },
+  "icu:stickers--StickerPreview--StickerCount": {
+    "messageformat": "{count, plural, other {{count,number} ស្ទីកគ័រ}}"
+  },
+  "icu:stickers--StickerPreview--StickerNoEmojiAriaLabel": {
+    "messageformat": "ស្ទីកគ័រដែលគ្មានរូបអារម្មណ៍"
+  },
+  "icu:stickers--StickerPackLinkPreviewDescription": {
+    "messageformat": "កញ្ចប់ស្ទីកគ័រដោយ {author}"
+  },
+  "icu:stickers--ViewPack": {
+    "messageformat": "មើលកញ្ចប់"
   },
   "icu:FunPicker__Tab--Emojis": {
     "messageformat": "រូបអារម្មណ៍"
@@ -3004,6 +3091,18 @@
   },
   "icu:FunButton__Label--StickerPicker": {
     "messageformat": "ដាក់ស្ទីកគ័រមួយ"
+  },
+  "icu:FunPicker__Label--StickerReply": {
+    "messageformat": "ឆ្លើយតប"
+  },
+  "icu:FunPicker__Label--SendStickerReply": {
+    "messageformat": "ផ្ញើ"
+  },
+  "icu:FunPicker__Label--CancelStickerReply": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:FunPicker__Label--Sticker": {
+    "messageformat": "ស្ទីកគ័រ"
   },
   "icu:confirmation-dialog--Cancel": {
     "messageformat": "បោះបង់"
@@ -3260,6 +3359,9 @@
   "icu:Keyboard--toggle-preview": {
     "messageformat": "បើក/បិទការមើលជាមុនដែលបានពង្រីក"
   },
+  "icu:Keyboard--toggle-raise-hand": {
+    "messageformat": "លើក ឬដាក់ដៃចុះ (ការហៅជាក្រុមតែប៉ុណ្ណោះ)"
+  },
   "icu:Keyboard--accept-video-call": {
     "messageformat": "ទទួលការហៅទូរសព្ទជាវីដេអូ (ការហៅជាវីដេអូតែប៉ុណ្ណោះ)"
   },
@@ -3317,17 +3419,38 @@
   "icu:ReactionsViewer--all": {
     "messageformat": "ទាំងអស់"
   },
-  "icu:SafetyTipsModal__Title": {
+  "icu:SafetyTipsModal__Title-v2": {
     "messageformat": "គន្លឹះសុវត្ថិភាព"
   },
-  "icu:SafetyTipsModal__Description": {
-    "messageformat": "សូមប្រុងប្រយ័ត្នពេលទទួលយកសំណើសារពីមនុស្សដែលអ្នកមិនស្គាល់។ សូមប្រុងប្រយ័ត្នចំពោះ៖"
+  "icu:SafetyTipsModal__TipTitle--SignalChat": {
+    "messageformat": "កុំឆ្លើយតបទៅនឹងការជជែកពី Signal"
   },
-  "icu:SafetyTipsModal__TipTitle--Fake": {
-    "messageformat": "ឈ្មោះ និងគណនីក្លែងក្លាយ"
+  "icu:SafetyTipsModal__TipDescription--SignalChat": {
+    "messageformat": "Signal នឹងមិនផ្ញើសារមកអ្នកដើម្បីសុំលេខកូដចុះឈ្មោះ លេខកូដសម្ងាត់ ឬសោស្តាររបស់អ្នកឡើយ។ កុំឆ្លើយតបទៅនឹងការជជែកដែលតាំងខ្លួនជា Signal។"
   },
-  "icu:SafetyTipsModal__TipDescription--Fake": {
-    "messageformat": "Signal នឹងមិនទាក់ទងអ្នកដើម្បីសួររកលេខកូដចុះឈ្មោះ ឬលេខកូដសម្ងាត់របស់អ្នកជាដាច់ខាត។ សូមប្រុងប្រយ័ត្នចំពោះសំណើទាំងឡាយណាដែលក្លែងបន្លំជាអ្នកផ្សេង។ ឈ្មោះប្រូហ្វាល់ត្រូវបានជ្រើសរើសដោយម្ចាស់គណនី ហើយមិនត្រូវបានផ្ទៀងផ្ទាត់ទេ។"
+  "icu:SafetyTipsModal__TipTitle--NamesAndPhotos": {
+    "messageformat": "ពិនិត្យមើលឈ្មោះ និងរូបថត"
+  },
+  "icu:SafetyTipsModal__TipDescription--NamesAndPhotos": {
+    "messageformat": "សូមប្រយ័ត្នចំពោះការជូនដំណឹងអំពី “ឈ្មោះមិនត្រូវបានផ្ទៀងផ្ទាត់”។ មនុស្សគ្រប់គ្នាសុទ្ធតែដាក់ឈ្មោះប្រូហ្វាល់របស់ពួកគេផ្ទាល់នៅក្នុង Signal។"
+  },
+  "icu:SafetyTipsModal__TipTitle--Scams": {
+    "messageformat": "សូមប្រុងប្រយ័ត្នចំពោះការបោកប្រាស់"
+  },
+  "icu:SafetyTipsModal__TipDescription--Scams": {
+    "messageformat": "ជៀសវាងសារមិនច្បាស់លាស់ដែលព្យាយាមធ្វើឱ្យអ្នកឆ្លើយតប។ ប្រុងប្រយ័ត្នចំពោះគន្លឹះអំពីហិរញ្ញវត្ថុ និងតំណភ្ជាប់គេហទំព័រដែលគួរឱ្យសង្ស័យ។"
+  },
+  "icu:SafetyTipsModal__TipTitle--DontRespond": {
+    "messageformat": "កុំឆ្លើយតបទៅនឹងការជជែកពី Signal"
+  },
+  "icu:SafetyTipsModal__TipDescription--DontRespond": {
+    "messageformat": "Signal នឹងមិនផ្ញើសារមកអ្នកដើម្បីសុំលេខកូដចុះឈ្មោះ លេខកូដសម្ងាត់ ឬសោស្តាររបស់អ្នកឡើយ។ កុំឆ្លើយតបទៅនឹងការជជែកដែលតាំងខ្លួនជា Signal ឬផ្នែកជំនួយរបស់ Signal។ ជនខិលខូចបង្កើតឈ្មោះក្លែងក្លាយ ដើម្បីព្យាយាមគ្រប់គ្រងគណនីរបស់អ្នក។"
+  },
+  "icu:SafetyTipsModal__TipTitle--ReviewNames": {
+    "messageformat": "ពិនិត្យមើលឈ្មោះ និងរូបថត"
+  },
+  "icu:SafetyTipsModal__TipDescription--ReviewNames": {
+    "messageformat": "សូមប្រយ័ត្នចំពោះការជូនដំណឹងអំពី “ឈ្មោះមិនត្រូវបានផ្ទៀងផ្ទាត់”។ មនុស្សគ្រប់គ្នាសុទ្ធតែដាក់ឈ្មោះប្រូហ្វាល់ និងរូបថតរបស់ពួកគេផ្ទាល់នៅក្នុង Signal។ បើអ្នកមិនច្បាស់ថាសំណើថ្មីនោះផ្ញើមកពីនរណានោះទេ កុំយកចិត្តទុកដាក់នឹងវាអីល្អជាង។"
   },
   "icu:SafetyTipsModal__TipTitle--Crypto": {
     "messageformat": "ការបោកប្រាស់លុយកាក់ ឬលុយគ្រីបតូ"
@@ -3341,11 +3464,11 @@
   "icu:SafetyTipsModal__TipDescription--Vague": {
     "messageformat": "អ្នកផ្ញើសារឥតបានការច្រើនតែចាប់ផ្តើមដោយសារសាមញ្ញដូចជា “សួស្តី” ដើម្បីទាក់ទាញអារម្មណ៍អ្នក។ ប្រសិនបើអ្នកឆ្លើយតប ពួកគេអាចនឹងទាញអារម្មណ៍អ្នកបន្ថែមទៀត។"
   },
-  "icu:SafetyTipsModal__TipTitle--Links": {
-    "messageformat": "សារដែលមានតំណភ្ជាប់"
-  },
   "icu:SafetyTipsModal__TipDescription--Links": {
     "messageformat": "សូមប្រុងប្រយ័ត្នចំពោះសារមកពីមនុស្សដែលអ្នកមិនស្គាល់ ដែលមានតំណទៅកាន់គេហទំព័រផ្សេងៗ។ កុំចូលមើលតំណពីមនុស្សដែលអ្នកមិនទុកចិត្តឱ្យសោះ។"
+  },
+  "icu:SafetyTipsModal__TipTitle--Links-v2": {
+    "messageformat": "សារដែលមានតំណភ្ជាប់គេហទំព័រ"
   },
   "icu:SafetyTipsModal__TipTitle--Business": {
     "messageformat": "អាជីវកម្ម និងស្ថាប័នក្លែងក្លាយ"
@@ -3353,17 +3476,8 @@
   "icu:SafetyTipsModal__TipDescription--Business": {
     "messageformat": "សូមប្រុងប្រយ័ត្នចំពោះអាជីវកម្ម ឬទីភ្នាក់ងាររដ្ឋាភិបាលដែលទាក់ទងអ្នក។ សារដែលពាក់ព័ន្ធនឹងទីភ្នាក់ងារពន្ធ អ្នកដឹកជញ្ជូន និងអ្វីៗជាច្រើនទៀតអាចជាសារឥតបានការ។"
   },
-  "icu:SafetyTipsModal__DotLabel": {
-    "messageformat": "ចូលទៅកាន់ទំព័រទី {page,number}"
-  },
-  "icu:SafetyTipsModal__Button--Previous": {
-    "messageformat": "គន្លឹះមុន"
-  },
-  "icu:SafetyTipsModal__Button--Next": {
-    "messageformat": "គន្លឹះបន្ទាប់"
-  },
-  "icu:SafetyTipsModal__Button--Done": {
-    "messageformat": "បញ្ចប់"
+  "icu:SafetyTipsModal__Button--ViewMore": {
+    "messageformat": "មើលបន្ថែម"
   },
   "icu:MessageRequests--message-direct": {
     "messageformat": "ឲ្យ {name} ផ្ញើសារមកអ្នកបាន និងចែករំលែកឈ្មោះ និងរូបថតរបស់អ្នកជាមួយគេឬ? គេនឹងមិនដឹងថាអ្នកបានឃើញសាររបស់គេទេ ទាល់តែអ្នកព្រមទទួលយកសិន។"
@@ -3461,11 +3575,11 @@
   "icu:MessageRequests--accept": {
     "messageformat": "យល់ព្រម"
   },
-  "icu:MessageRequests--accept-confirm-title": {
+  "icu:MessageRequests--accept-confirm-title-v2": {
     "messageformat": "ទទួលយកសំណើឬទេ?"
   },
-  "icu:MessageRequests--accept-confirm-body": {
-    "messageformat": "ពិនិត្យមើលសំណើដោយយកចិត្តទុកដាក់។ ឈ្មោះប្រូហ្វាល់ត្រូវបានជ្រើសរើសដោយម្ចាស់គណនី ហើយមិនត្រូវបានផ្ទៀងផ្ទាត់ទេ។"
+  "icu:MessageRequests--accept-confirm-body-v2": {
+    "messageformat": "ទទួលយកតែសំណើពីមនុស្សដែលអ្នកទុកចិត្តប៉ុណ្ណោះ។ <bold>Signal នឹងមិន</bold>ផ្ញើសារមកអ្នកដើម្បីសុំលេខកូដចុះឈ្មោះ លេខកូដសម្ងាត់ ឬសោស្តាររបស់អ្នកឡើយ។"
   },
   "icu:MessageRequests--continue": {
     "messageformat": "បន្ត"
@@ -3509,9 +3623,6 @@
   "icu:ConversationHero--group-members-other-and-you": {
     "messageformat": "{remainingCount, plural, other {{member1}, {member2}, {member3} និង <clickable>{remainingCount,number} នាក់ផ្សេងទៀត</clickable>}}"
   },
-  "icu:ConversationHero--review-carefully": {
-    "messageformat": "ពិនិត្យមើលដោយយកចិត្តទុកដាក់"
-  },
   "icu:ConversationHero--group-names": {
     "messageformat": "<clickable>ឈ្មោះក្រុម</clickable>មិនត្រូវបានផ្ទៀងផ្ទាត់ទេ"
   },
@@ -3519,16 +3630,19 @@
     "messageformat": "<clickable>ឈ្មោះប្រូហ្វាល់</clickable>មិនត្រូវបានផ្ទៀងផ្ទាត់ទេ"
   },
   "icu:ConversationHero--name-not-verified": {
-    "messageformat": "Name not verified"
+    "messageformat": "ឈ្មោះមិនទាន់បានផ្ទៀងផ្ទាត់"
   },
   "icu:ConversationHero--signal-official-chat": {
     "messageformat": "នេះជាការជជែកជាផ្លូវការ និងតែមួយគត់ពី Signal"
   },
-  "icu:ConversationHero--signal-official-account": {
-    "messageformat": "Official account"
+  "icu:ConversationHero--signal-official-chat-title": {
+    "messageformat": "ការជជែកជាផ្លូវការ"
   },
   "icu:ConversationHero--signal-official-account--description": {
-    "messageformat": "The only official chat from Signal. Keep up to date with news and release notes."
+    "messageformat": "ការជជែកជាផ្លូវការតែមួយគត់ពី Signal។ ទទួលបានដំណឹង និងកំណត់ចំណាំនៃការចេញផ្សាយថ្មីៗ។"
+  },
+  "icu:Timeline--signal-official-chat--chip": {
+    "messageformat": "ការជជែកជាផ្លូវការតែមួយគត់ពី Signal។"
   },
   "icu:ConversationHero--release-notes": {
     "messageformat": "ទទួលបានដំណឹង និងកំណត់ចំណាំនៃការចេញផ្សាយថ្មីៗ។"
@@ -3785,6 +3899,18 @@
   "icu:calling__view_mode--updated": {
     "messageformat": "បានផ្លាស់ប្តូរទិដ្ឋភាព"
   },
+  "icu:calling__change-layout": {
+    "messageformat": "ផ្លាស់ប្តូរប្លង់"
+  },
+  "icu:calling__layout--paginated": {
+    "messageformat": "ក្រឡាចត្រង្គ"
+  },
+  "icu:calling__layout--overflow": {
+    "messageformat": "របារចំហៀង"
+  },
+  "icu:calling__layout--speaker": {
+    "messageformat": "អ្នកនិយាយ"
+  },
   "icu:calling__SelectPresentingSourcesModal--title": {
     "messageformat": "ចែករំលែកអេក្រង់របស់អ្នក"
   },
@@ -3799,9 +3925,6 @@
   },
   "icu:calling__SelectPresentingSourcesModal--window": {
     "messageformat": "វីនដូ"
-  },
-  "icu:calling__ParticipantInfoButton": {
-    "messageformat": "ព័ត៌មានបន្ថែមអំពីទំនាក់ទំនងនេះ"
   },
   "icu:CallingAdhocCallInfo__CopyLink": {
     "messageformat": "ចម្លងតំណហៅទូរសព្ទ"
@@ -3829,9 +3952,6 @@
   },
   "icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody": {
     "messageformat": "មុនពេលចូលរួមការហៅទូរសព្ទ អ្នកអាចមើលឃើញតែឈ្មោះរបស់ទំនាក់ទំនងទូរសព្ទ មនុស្សដែលអ្នកនៅក្នុងក្រុមជាមួយ ឬមនុស្សដែលអ្នកបានជជែកជាមួយមួយទល់មួយប៉ុណ្ណោះ។ អ្នកនឹងឃើញឈ្មោះ និងរូបថតទាំងអស់នៅពេលដែលអ្នកបានចូលរួមការហៅ។"
-  },
-  "icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk": {
-    "messageformat": "យល់ហើយ"
   },
   "icu:callingDeviceSelection__label--video": {
     "messageformat": "វីដេអូ"
@@ -4523,29 +4643,23 @@
   "icu:ClearingData__description": {
     "messageformat": "វាអាចនឹងចំណាយពេលពីរបីនាទី"
   },
+  "icu:DeletingAccount__LeavingGroups__Title": {
+    "messageformat": "កំពុងចាកចេញពីក្រុម…"
+  },
+  "icu:DeletingAccount__LeavingGroups__Detail": {
+    "messageformat": "អាស្រ័យទៅលើចំនួនក្រុមរបស់អ្នក ដំណើរការនេះប្រហែលចំណាយពេលពីរបីនាទី"
+  },
+  "icu:DeletingAccount__DeletingData__Title": {
+    "messageformat": "កំពុងលុបគណនី និងទិន្នន័យទាំងអស់..."
+  },
+  "icu:DeletingAccount__DeletingData__Detail": {
+    "messageformat": "កំពុងលុបទិន្នន័យអ្នកប្រើ ហើយកំណត់កម្មវិធីឡើងវិញ"
+  },
   "icu:BadgeDialog__become-a-sustainer-button": {
     "messageformat": "ឧបត្ថម្ភទៅ Signal"
   },
-  "icu:BadgeSustainerInstructions__header": {
-    "messageformat": "ឧបត្ថម្ភទៅ Signal"
-  },
-  "icu:BadgeSustainerInstructions__subheader": {
-    "messageformat": "Signal ដំណើរការបានដោយមនុស្សដូចអ្នក។ ចូលរួមចំណែកដើម្បីទទួលបានស្លាកសម្គាល់គណនី។"
-  },
-  "icu:BadgeSustainerInstructions__instructions__1": {
-    "messageformat": "បើក Signal នៅលើទូរសព្ទរបស់អ្នក"
-  },
-  "icu:BadgeSustainerInstructions__instructions__2": {
-    "messageformat": "ចុចលើរូបថតប្រវត្តិរូបរបស់អ្នក នៅខាងលើផ្នែកឆ្វេង ដើម្បីបើក ការកំណត់"
-  },
-  "icu:BadgeSustainerInstructions__instructions__3": {
-    "messageformat": "ចុចលើ \"បរិច្ចាគទៅ Signal\" ហើយជាវ"
-  },
-  "icu:ProfileMovedModal__title": {
-    "messageformat": "ប្រូហ្វាល់របស់អ្នកបានផ្លាស់ទី"
-  },
-  "icu:ProfileMovedModal__description": {
-    "messageformat": "បើកផ្ទាំងការកំណត់ ដើម្បីមើល និងកែប្រូហ្វាល់របស់អ្នក។"
+  "icu:BadgeDialog__name-supports-signal": {
+    "messageformat": "{name} ឧបត្ថម្ភគាំទ្រ Signal"
   },
   "icu:BackupImportScreen__title": {
     "messageformat": "ធ្វើសមកាលកម្មសារ"
@@ -4637,9 +4751,6 @@
   "icu:BackupMediaDownloadCancelConfirmation__description": {
     "messageformat": "មេឌៀរបស់អ្នកមិនទាន់បានបញ្ចប់ការធ្វើសមកាលកម្មទេ។ ប្រសិនបើអ្នកជ្រើសរើសបោះបង់ អ្នកអាចធ្វើសមកាលកម្មម្តងទៀតដោយភ្ជាប់ឧបករណ៍នេះឡើងវិញ។ <learnMoreLink>ស្វែងយល់បន្ថែម</learnMoreLink>។"
   },
-  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
-    "messageformat": "បន្តធ្វើសមកាលកម្ម"
-  },
   "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
     "messageformat": "បោះបង់ការធ្វើសមកាលកម្ម"
   },
@@ -4675,9 +4786,6 @@
   },
   "icu:CompositionArea--expand": {
     "messageformat": "ពង្រីក"
-  },
-  "icu:CompositionArea--attach-file": {
-    "messageformat": "ភ្ជាប់ឯកសារ"
   },
   "icu:CompositionArea__AttachMenu__PhotosAndVideos": {
     "messageformat": "រូបថត និងវីដេអូ"
@@ -4816,9 +4924,6 @@
   },
   "icu:ConversationDetails--member-label--no-members": {
     "messageformat": "គ្មានសមាជិកផ្សេងទៀតដែលមានស្លាកទេ"
-  },
-  "icu:ConversationDetails--member-label--saving": {
-    "messageformat": "កំពុងរក្សាទុកការផ្លាស់ប្តូរ..."
   },
   "icu:ConversationDetails--member-label--error-title": {
     "messageformat": "មិនអាចរក្សាទុកស្លាកសមាជិកបានទេ"
@@ -4991,6 +5096,9 @@
   "icu:ConversationDetailsMembershipList--show-all": {
     "messageformat": "មើលទាំងអស់"
   },
+  "icu:ConversationDetailsMembershipList__Search__AccessibilityLabel": {
+    "messageformat": "ស្វែងរក"
+  },
   "icu:ConversationDetailsGroups--title": {
     "messageformat": "{count, plural, other {{count,number}ក្រុមរួមគ្នា}}"
   },
@@ -5059,6 +5167,51 @@
   },
   "icu:GroupLinkManagement__CopyGroupLinkButtonLabel": {
     "messageformat": "ចម្លងតំណ signal.group ទៅឃ្លីបបត"
+  },
+  "icu:GroupMembersSearchDialog__DialogTitle": {
+    "messageformat": "ស្វែងរកសមាជិក"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder": {
+    "messageformat": "ស្វែងរក"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder--FilteringByAdmins": {
+    "messageformat": "ស្វែងរកអ្នកគ្រប់គ្រង"
+  },
+  "icu:GroupMembersSearchDialog__SearchField__Placeholder--FilteringBySystemContacts": {
+    "messageformat": "ស្វែងរកទំនាក់ទំនង"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__Label": {
+    "messageformat": "តម្រង"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__AllMembers": {
+    "messageformat": "សមាជិកទាំងអស់"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__Admins": {
+    "messageformat": "អ្នកគ្រប់គ្រង"
+  },
+  "icu:GroupMembersSearchDialog__FilterMenu__SystemContacts": {
+    "messageformat": "បញ្ជីទំនាក់ទំនង"
+  },
+  "icu:GroupMembersSearchDialog__EmptyState__NoResults--WithoutSearchQuery": {
+    "messageformat": "គ្មានលទ្ធផល"
+  },
+  "icu:GroupMembersSearchDialog__EmptyState__NoResults--WithSearchQuery": {
+    "messageformat": "គ្មានលទ្ធផលសម្រាប់ “{searchQuery}”"
+  },
+  "icu:GroupMembersSearchDialog__MemberItem__Admin": {
+    "messageformat": "អ្នកគ្រប់គ្រង"
+  },
+  "icu:GroupMembersSearchDialog__SearchResults__Title": {
+    "messageformat": "លទ្ធផលស្វែងរក"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__AddMember": {
+    "messageformat": "បញ្ចូលសមាជិក"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__AddMembers": {
+    "messageformat": "បន្ថែមសមាជិក"
+  },
+  "icu:GroupMembersSearchDialog__BottomActions__InviteViaGroupLink": {
+    "messageformat": "អញ្ជើញតាមរយៈតំណក្រុម"
   },
   "icu:PendingInvites--tab-requests": {
     "messageformat": "សំណើ ({count,number})"
@@ -5132,26 +5285,17 @@
   "icu:SelectModeActions--forwardSelectedMessages": {
     "messageformat": "បញ្ជូនបន្តសារដែលបានជ្រើសរើស"
   },
-  "icu:DeleteMessagesModal--title": {
-    "messageformat": "{count, plural, other {លុប {count,number} សារឬ?}}"
-  },
   "icu:DeleteMessagesModal--title-2": {
     "messageformat": "{count, plural, other {លុប {count,number} សារដែលបានជ្រើសរើស?}}"
   },
   "icu:DeleteMessagesModal--description": {
     "messageformat": "{count, plural, other {តើអ្នកចង់លុបសារទាំងនេះសម្រាប់នរណាគេ?}}"
   },
-  "icu:DeleteMessagesModal--description--noteToSelf": {
-    "messageformat": "{count, plural, other {តើអ្នកចង់លុបសារទាំងនេះចេញពីឧបករណ៍ណាខ្លះ?}}"
-  },
   "icu:DeleteMessagesModal--description--noteToSelf--deleteSync": {
     "messageformat": "{count, plural, other {សារទាំងនេះនឹងត្រូវបានលុបចេញពីឧបករណ៍ទាំងអស់របស់អ្នក។}}"
   },
   "icu:DeleteMessagesModal--deleteForMe": {
     "messageformat": "លុបសម្រាប់ខ្ញុំ"
-  },
-  "icu:DeleteMessagesModal--deleteFromThisDevice": {
-    "messageformat": "លុបចេញពីឧបករណ៍នេះ"
   },
   "icu:DeleteMessagesModal--deleteForEveryone": {
     "messageformat": "លុបសម្រាប់អ្នករាល់គ្នា"
@@ -5165,9 +5309,6 @@
   },
   "icu:DeleteMessagesModal--adminDeleteConfirmation--description__rollout": {
     "messageformat": "{count, plural, other {សមាជិកក្រុមដែលប្រើប្រាស់ Signal កំណែចុងក្រោយបំផុតនឹងឃើញថាអ្នកបានលុបសារទាំងនេះ។}}"
-  },
-  "icu:DeleteMessagesModal--deleteFromAllDevices": {
-    "messageformat": "លុបចេញពីឧបករណ៍ទាំងអស់"
   },
   "icu:DeleteMessagesModal--noteToSelf--deleteSync": {
     "messageformat": "លុប"
@@ -5186,9 +5327,6 @@
   },
   "icu:DeleteAttachmentModal__Body": {
     "messageformat": "វានឹងលុបធាតុនេះជារៀងរហូត។ សារជាអក្សរណាមួយដែលភ្ជាប់ជាមួយធាតុនេះក៏នឹងត្រូវបានលុបផងដែរ។"
-  },
-  "icu:DeleteAttachmentModal__Close": {
-    "messageformat": "បិទ"
   },
   "icu:DeleteAttachmentModal__Delete": {
     "messageformat": "លុប"
@@ -5298,11 +5436,11 @@
   "icu:ShareCallLinkViaSignal__DraftMessageText": {
     "messageformat": "ប្រើតំណនេះដើម្បីចូលរួមការហៅតាម Signal៖ {url}"
   },
-  "icu:MessageRequestWarning__safety-tips": {
-    "messageformat": "គន្លឹះសុវត្ថិភាព"
+  "icu:MessageRequestWarning__review-carefully": {
+    "messageformat": "ពិនិត្យការស្នើសុំដោយប្រុងប្រយ័ត្ន"
   },
   "icu:MessageRequestWarning__safety-tips-v2": {
-    "messageformat": "Safety tips"
+    "messageformat": "គន្លឹះសុវត្ថិភាព"
   },
   "icu:ContactSpoofing__same-name--link": {
     "messageformat": "ពិនិត្យសំណើដោយយកចិត្តទុកដាក់។ Signal បានរកឃើញឈ្មោះទំនាក់ទំនងមួយផ្សេងទៀតដែលមានឈ្មោះដូចគ្នា។ <reviewRequestLink>ពិនិត្យសំណើ</reviewRequestLink>"
@@ -5902,17 +6040,14 @@
   "icu:Preferences__link-previews--title": {
     "messageformat": "បង្កើតការមើលមុនតំណភ្ជាប់"
   },
-  "icu:Preferences__link-previews--description": {
-    "messageformat": "ដើម្បីផ្លាស់ប្តូរការកំណត់នេះ សូមបើកកម្មវិធី Signal នៅលើឧបករណ៍ចល័តរបស់អ្នក ហើយចូលទៅកាន់ការកំណត់ > ការជជែក"
-  },
   "icu:Preferences__link-previews--new-description": {
-    "messageformat": "Retrieve link previews directly from websites for messages you send."
+    "messageformat": "ទាញយកតំណភ្ជាប់មើលជាមុនពីគេហទំព័រដោយផ្ទាល់ សម្រាប់សារដែលអ្នកផ្ញើ។"
   },
   "icu:Preferences__address-book-photos--title": {
-    "messageformat": "Use address book photos"
+    "messageformat": "ប្រើប្រាស់រូបថតសៀវភៅអាសយដ្ឋាន"
   },
   "icu:Preferences__address-book-photos--description": {
-    "messageformat": "Display contact photos from your address book if available."
+    "messageformat": "បង្ហាញរូបថតលេខទំនាក់ទំនងចេញពីសៀវភៅអាសយដ្ឋានរបស់អ្នក ប្រសិនបើមាន។"
   },
   "icu:Preferences__auto-convert-emoji--title": {
     "messageformat": "បំប្លែងសញ្ញាអារម្មណ៍ដែលបានវាយបញ្ចូលទៅជារូបអារម្មណ៍"
@@ -5952,9 +6087,6 @@
   },
   "icu:PlaintextExport--Confirmation--ContinueButton": {
     "messageformat": "បន្ត"
-  },
-  "icu:PlaintextExport--Confirmation--WaitingLabel": {
-    "messageformat": "កំពុងរង់ចាំការបញ្ចូល"
   },
   "icu:PlaintextExport--OSPrompt--Mac": {
     "messageformat": "នាំចេញប្រវត្តិជជែករបស់អ្នក"
@@ -6274,6 +6406,27 @@
   "icu:Preferences--blocked": {
     "messageformat": "បានទប់ស្កាត់"
   },
+  "icu:Preferences--blocked-count-both-new": {
+    "messageformat": "{num, plural, =0 { មិនមានអ្នកប្រើ ឬក្រុមទេ } other {អ្នកប្រើ ឬក្រុមចំនួន {num,number}}}"
+  },
+  "icu:Preferences--blocked-count-contacts-new": {
+    "messageformat": "{num, plural, =0 { មិនមានអ្នកប្រើ } other {អ្នកប្រើចំនួន {num,number}}}"
+  },
+  "icu:Preferences--blocked-count-groups-new": {
+    "messageformat": "{num, plural, =0 { មិនមានក្រុម } other {{num,number} ក្រុម}}"
+  },
+  "icu:Preferences--blocked-users--description": {
+    "messageformat": "អ្នកប្រើដែលបានទប់ស្កាត់នឹងមិនអាចហៅ ឬផ្ញើសារមកអ្នកបានទេ"
+  },
+  "icu:Preferences--blocked-users": {
+    "messageformat": "អ្នកប្រើដែលបានទប់ស្កាត់"
+  },
+  "icu:Preferences--blocked-groups": {
+    "messageformat": "ក្រុមដែលបានទប់ស្កាត់"
+  },
+  "icu:Preferences--blocked--blocked-on": {
+    "messageformat": "បានទប់ស្កាត់នៅថ្ងៃទី {blockedAt}"
+  },
   "icu:Preferences--signal-backups": {
     "messageformat": "ការបម្រុងទុកសុវត្ថិភាព Signal"
   },
@@ -6367,11 +6520,26 @@
   "icu:Preferences--local-backups-enter-backup-key": {
     "messageformat": "បញ្ចូលសោ"
   },
-  "icu:Preferences--local-backups-record-recovery-key": {
-    "messageformat": "កត់ត្រាសោស្តាររបស់អ្នក"
+  "icu:Preferences--local-backups-recovery-key--title": {
+    "messageformat": "សោស្តាររបស់អ្នក"
   },
-  "icu:Preferences--local-backups-record-backup-key-description": {
-    "messageformat": "តម្រូវឱ្យមានសោនេះដើម្បីស្តារគណនី និងទិន្នន័យរបស់អ្នក។ ទុកសោនេះនៅកន្លែងដែលមានសុវត្ថិភាព។ ប្រសិនបើអ្នកបាត់វា អ្នកនឹងមិនអាចស្តារគណនីរបស់អ្នកមកវិញបានទេ។ <learnMoreLink>ស្វែងយល់បន្ថែម។</learnMoreLink>"
+  "icu:Preferences--local-backups-recovery-key--description": {
+    "messageformat": "តម្រូវឱ្យមានសោនេះដើម្បីស្តារគណនី និងទិន្នន័យរបស់អ្នក។ រក្សាទុកវានៅកន្លែងដែលមានសុវត្ថិភាព ហើយកុំចែករំលែកវាជាមួយនរណាឡើយ។ Signal នឹងមិនផ្ញើសារមកអ្នកដើម្បីសួររកសោស្តាររបស់អ្នកជាដាច់ខាត។ <learnMoreLink>ស្វែងយល់បន្ថែម។</learnMoreLink>"
+  },
+  "icu:Preferences__recovery-key__do-not-share-title": {
+    "messageformat": "កុំចែករំលែកសោស្តារ"
+  },
+  "icu:Preferences__recovery-key__do-not-share-confirm": {
+    "messageformat": "យល់ហើយ"
+  },
+  "icu:CompositionInput__recovery-key-paste__share-key": {
+    "messageformat": "ចែករំលែកសោស្តារ"
+  },
+  "icu:CompositionInput__recovery-key-paste__do-not-share-key": {
+    "messageformat": "កុំចែករំលែកសោស្តារ"
+  },
+  "icu:CompositionInput__recovery-key-warning--description": {
+    "messageformat": "កុំចែករំលែកសោស្តាររបស់អ្នកជាមួយនរណាម្នាក់។ ព្រោះវានឹងអាចឱ្យពួកគេគ្រប់គ្រងគណនីរបស់អ្នកបាន។ <strong>Signal នឹងមិនផ្ញើសារមកអ្នក</strong>ដើម្បីសួររកសោស្តាររបស់អ្នកជាដាច់ខាត។ កុំឆ្លើយតបទៅនឹងការជជែកដែលតាំងខ្លួនជា Signal។ <learnMoreLink>ស្វែងយល់បន្ថែម។</learnMoreLink>"
   },
   "icu:Preferences--local-backups-confirm-recovery-key": {
     "messageformat": "បញ្ជាក់សោស្តាររបស់អ្នក"
@@ -6436,6 +6604,9 @@
   "icu:Preferences__local-backups-auth-error--unauthorized": {
     "messageformat": "សកម្មភាពនេះមិនអាចបញ្ចប់បានទេ ពីព្រោះការផ្ទៀងផ្ទាត់ប្រព័ន្ធមិនបានជោគជ័យ។ សូមព្យាយាមម្តងទៀត ឬបើកកម្មវិធី Signal នៅលើឧបករណ៍ចល័តរបស់អ្នក ហើយចូលទៅកាន់ការកំណត់ការបម្រុងទុក ដើម្បីមើលសោស្តាររបស់អ្នក។"
   },
+  "icu:Preferences__local-backups-auth-error--unknown-error": {
+    "messageformat": "មានបញ្ហាកើតឡើង ខណៈពេលស្នើសុំការផ្ទៀងផ្ទាត់ប្រព័ន្ធសម្រាប់សកម្មភាពនេះ។"
+  },
   "icu:Preferences__view-key": {
     "messageformat": "មើលសោ"
   },
@@ -6456,12 +6627,6 @@
   },
   "icu:Preferences__recovery-key-updated__view-key": {
     "messageformat": "មើលសោថ្មី"
-  },
-  "icu:Preferences--blocked-count": {
-    "messageformat": "{num, plural, other {{num,number} ឈ្មោះទំនាក់ទំនង}}"
-  },
-  "icu:Preferences__privacy--description": {
-    "messageformat": "ដើម្បីផ្លាស់ប្តូរការកំណត់ទាំងនេះ សូមបើកកម្មវិធី Signal នៅលើឧបករណ៍ចល័តរបស់អ្នក ហើយចូលទៅកាន់ការកំណត់ > ឯកជនភាព"
   },
   "icu:Preferences__pnp__row--title": {
     "messageformat": "លេខទូរសព្ទ"
@@ -6521,13 +6686,13 @@
     "messageformat": "ទទួលបានការអាន"
   },
   "icu:Preferences--read-receipts--description": {
-    "messageformat": "If disabled, you won't see read receipts from others."
+    "messageformat": "ប្រសិនបើបិទ អ្នកនឹងមិនឃើញមុខងារអានសារពីអ្នកផ្សេងទេ។"
   },
   "icu:Preferences--typing-indicators": {
     "messageformat": "វាស់ការវាយអក្សរ"
   },
   "icu:Preferences--typing-indicators--description": {
-    "messageformat": "If disabled, you won't see typing indicators from others."
+    "messageformat": "ប្រសិនបើបិទ អ្នកនឹងមិនឃើញសញ្ញាវាយអក្សរពីអ្នកផ្សេងទេ។"
   },
   "icu:Preferences--updates": {
     "messageformat": "កំណែថ្មី"
@@ -6607,6 +6772,12 @@
   "icu:DialogUpdate__downloaded": {
     "messageformat": "កំណែថ្មីត្រូវបានទាញយក"
   },
+  "icu:DialogUpdate__upgrade-mas": {
+    "messageformat": "ចុចដើម្បីចូលទៅកាន់ App Store"
+  },
+  "icu:DialogExpiredBuild__upgrade-mas": {
+    "messageformat": "ចុចដើម្បីចូលទៅកាន់ App Store"
+  },
   "icu:CriticalIdlePrimaryDevice__title": {
     "messageformat": "បើក Signal នៅលើទូរសព្ទរបស់អ្នក"
   },
@@ -6645,6 +6816,411 @@
   },
   "icu:InstallScreenUpdateDialog--cannot-update__body": {
     "messageformat": "Signal Desktop មិនអាចដំឡើងកំណែបានទេ ប៉ុន្តែមានកំណែថ្មីមួយដែលអាចប្រើបាន។ សូមចូលទៅកាន់ {downloadUrl} ហើយដំឡើងកំណែថ្មីនោះដោយផ្ទាល់ បន្ទាប់មកទាក់ទងផ្នែកជំនួយ ឬរាយការណ៍អំពីបញ្ហានេះ។"
+  },
+  "icu:StandaloneRegistration--signal-logo": {
+    "messageformat": "និមិត្តសញ្ញា Signal"
+  },
+  "icu:StandaloneRegistration--back": {
+    "messageformat": "ត្រឡប់ក្រោយ"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--header": {
+    "messageformat": "លេខទូរសព្ទ"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-1": {
+    "messageformat": "បញ្ចូលលេខទូរសព្ទរបស់អ្នកដើម្បីផ្ទៀងផ្ទាត់គណនីអ្នក។"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--description--line-2": {
+    "messageformat": "អាចនឹងមានការគិតថ្លៃពីក្រុមហ៊ុនសេវាទូរសព្ទ។"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--waiting": {
+    "messageformat": "សូមព្យាយាមម្តងទៀតក្នុងពេល {duration} ទៀត។"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--placeholder": {
+    "messageformat": "លេខទូរសព្ទ"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--button": {
+    "messageformat": "បន្ត"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--description": {
+    "messageformat": "តើលេខទូរសព្ទរបស់អ្នកខាងលើត្រឹមត្រូវទេ?"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--cancel": {
+    "messageformat": "កែលេខ"
+  },
+  "icu:StandaloneRegistration--PhoneNumber--Confirmation--confirm": {
+    "messageformat": "បាទ/ចាស"
+  },
+  "icu:StandaloneRegistration--Captcha--header": {
+    "messageformat": "សូមផ្ទៀងផ្ទាត់ថាអ្នកជាមនុស្ស ដើម្បីបន្ត"
+  },
+  "icu:StandaloneRegistration--Captcha--description": {
+    "messageformat": "ដើម្បីជួយបង្ការកុំឱ្យមានសារឥតបានការនៅលើ Signal សូមបញ្ចប់ការផ្ទៀងផ្ទាត់។ បន្ទាប់ពីផ្ទៀងផ្ទាត់រួច អ្នកអាចបន្តការចុះឈ្មោះបាន។"
+  },
+  "icu:StandaloneRegistration--Captcha--retry-button": {
+    "messageformat": "ព្យាយាមផ្ទៀងផ្ទាត់ម្តងទៀត"
+  },
+  "icu:StandaloneRegistration--Captcha--button": {
+    "messageformat": "ផ្ទៀងផ្ទាត់នៅក្នុងកម្មវិធីរុករក"
+  },
+  "icu:StandaloneRegistration--Captcha--button--wait": {
+    "messageformat": "ផ្ទៀងផ្ទាត់ក្នុងពេល {duration}"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--header": {
+    "messageformat": "ទាមទារការផ្ទៀងផ្ទាត់បន្ថែម"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--description": {
+    "messageformat": "សូមបំពេញ captcha មួយទៀតដើម្បីបន្តការចុះឈ្មោះ។"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--Captcha--NeedAnother--retry": {
+    "messageformat": "ព្យាយាមផ្ទៀងផ្ទាត់ម្តងទៀត"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--aria-title": {
+    "messageformat": "ព្យាយាមម្តងទៀតនៅពេលក្រោយ"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-1": {
+    "messageformat": "មិនអាចបញ្ចប់ការផ្ទៀងផ្ទាត់នៅពេលនេះបានទេ។"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--line-2": {
+    "messageformat": "ព្យាយាមម្តងទៀតក្នុងពេល {duration} ទៀត។"
+  },
+  "icu:StandaloneRegistration--Captcha--MustWait--button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--header": {
+    "messageformat": "បញ្ហាក្នុងការផ្ទៀងផ្ទាត់"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--description": {
+    "messageformat": "សាកល្បងផ្ទៀងផ្ទាត់ម្តងទៀតដើម្បីបន្តការចុះឈ្មោះ។"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--try-again": {
+    "messageformat": "ព្យាយាមម្តងទៀត"
+  },
+  "icu:StandaloneRegistration--Captcha--Error--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--VerificationCode--header": {
+    "messageformat": "លេខកូដផ្ទៀងផ្ទាត់"
+  },
+  "icu:StandaloneRegistration--VerificationCode--description": {
+    "messageformat": "បញ្ចូលលេខកូដដែលយើងបានផ្ញើទៅ {phoneNumber}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--button": {
+    "messageformat": "បន្ត"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms": {
+    "messageformat": "ផ្ញើលេខកូដឡើងវិញ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--send-sms--duration": {
+    "messageformat": "ផ្ញើលេខកូដឡើងវិញក្នុងពេល {duration} ទៀត"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me": {
+    "messageformat": "ហៅទូរសព្ទមកខ្ញុំ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--call-me--duration": {
+    "messageformat": "ហៅទូរសព្ទមកខ្ញុំក្នុងរយៈពេល {duration}"
+  },
+  "icu:StandaloneRegistration--VerificationCode--wrong-number": {
+    "messageformat": "ខុសលេខ?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--having-trouble": {
+    "messageformat": "មានបញ្ហាក្នុងការចុះឈ្មោះឬ?"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--aria-title": {
+    "messageformat": "លេខកូដមិនត្រឹមត្រូវ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--description": {
+    "messageformat": "លេខកូដដែលអ្នកបានបញ្ចូលមិនត្រឹមត្រូវទេ។ សូមពិនិត្យមើលលេខកូដ 6 ខ្ទង់ ហើយព្យាយាមម្តងទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--IncorrectCode--button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--aria-title": {
+    "messageformat": "លេខកូដមិនត្រឹមត្រូវ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--description": {
+    "messageformat": "លេខកូដដែលអ្នកបានបញ្ចូលមិនត្រឹមត្រូវទេ។ សូមផ្ញើលេខកូដឡើងវិញ ហើយព្យាយាមម្តងទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--resend-button": {
+    "messageformat": "ផ្ញើលេខកូដឡើងវិញ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CodeInvalid--edit-number-button": {
+    "messageformat": "កែលេខ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--aria-title": {
+    "messageformat": "មិនអាចផ្ញើសារជាអក្សរបានទេ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--description": {
+    "messageformat": "យើងមិនអាចផ្ញើលេខកូដផ្ទៀងផ្ទាត់តាមរយៈសារជាអក្សរទេ។ សាកល្បងទទួលលេខកូដរបស់អ្នកតាមរយៈការហៅជាសំឡេងជំនួសវិញ។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--confirm": {
+    "messageformat": "ការហៅជាសំឡេង"
+  },
+  "icu:StandaloneRegistration--VerificationCode--SMSFailed--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--aria-title": {
+    "messageformat": "ព្យាយាមម្តងទៀតនៅពេលក្រោយ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--description": {
+    "messageformat": "អ្នកបានព្យាយាមបញ្ចូលលេខកូដច្រើនដងពេកហើយ។ ព្យាយាមម្តងទៀតក្នុងពេល {duration} ទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MustWait--button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--aria-title": {
+    "messageformat": "ព្យាយាមច្រើនដងពេក"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--description": {
+    "messageformat": "អ្នកបានព្យាយាមបញ្ចូលលេខកូដច្រើនដងពេកហើយ។ សូមផ្ញើលេខកូដឡើងវិញ ហើយព្យាយាមម្តងទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--resend-button": {
+    "messageformat": "ផ្ញើលេខកូដឡើងវិញ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--MaximumAttempts--edit-number-button": {
+    "messageformat": "កែលេខ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--aria-title": {
+    "messageformat": "មិនអាចហៅទូរសព្ទបានទេ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--description": {
+    "messageformat": "យើងមិនអាចហៅទូរសព្ទទៅលេខដែលអ្នកបានបញ្ចូលទេ។ ត្រូវប្រាកដថាលេខទូរសព្ទនោះត្រឹមត្រូវ រួចព្យាយាមម្តងទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--FailedToCall--ok-button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--aria-title": {
+    "messageformat": "មិនអាចផ្ញើលេខកូដបានទេ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--description": {
+    "messageformat": "លេខកូដផ្ទៀងផ្ទាត់មិនអាចផ្ញើទៅកាន់លេខទូរសព្ទដែលអ្នកបានបញ្ចូលទេ។ ត្រូវប្រាកដថាលេខដែលអ្នកបានបញ្ចូលគឺត្រឹមត្រូវ ឬសាកល្បងលេខផ្សេង។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodePermanent--ok-button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--aria-title": {
+    "messageformat": "ព្យាយាមម្តងទៀតនៅពេលក្រោយ"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--description": {
+    "messageformat": "បញ្ហាមួយបានកើតឡើង ហើយមិនអាចផ្ញើលេខកូដផ្ទៀងផ្ទាត់បានទេ។ ព្យាយាមម្តងទៀតក្នុងពេល {duration} ទៀត។"
+  },
+  "icu:StandaloneRegistration--VerificationCode--CannotSendCodeTemporary--ok-button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--header": {
+    "messageformat": "រៀបចំប្រូហ្វាល់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--description": {
+    "messageformat": "ប្រូហ្វាល់នឹងត្រូវបានមើលឃើញដោយមនុស្សដែលអ្នកផ្ញើសារ បញ្ជីទំនាក់ទំនង និងក្រុម។"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--learn-more": {
+    "messageformat": "ស្វែងយល់បន្ថែម"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--add-photo": {
+    "messageformat": "ដាក់រូបថត"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--first-name": {
+    "messageformat": "នាមខ្លួន (ចាំបាច់)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--last-name": {
+    "messageformat": "ត្រកូល (មិនតម្រូវ)"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability": {
+    "messageformat": "នរណាខ្លះអាចរកខ្ញុំឃើញតាមលេខទូរសព្ទ"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--change-button": {
+    "messageformat": "ផ្លាស់ប្តូរ"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--discoverability--done-button": {
+    "messageformat": "រួចរាល់"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--continue": {
+    "messageformat": "បន្ត"
+  },
+  "icu:StandaloneRegistration--ProfileEntry--AvatarModal--header": {
+    "messageformat": "រូបតំណាងរបស់អ្នក"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--header": {
+    "messageformat": "បញ្ចូលលេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--description": {
+    "messageformat": "បញ្ចូលលេខកូដសម្ងាត់ដែលអ្នកបានបង្កើតសម្រាប់គណនីរបស់អ្នក។ វាខុសពីលេខកូដផ្ទៀងផ្ទាត់ពីសារជាអក្សររបស់អ្នក។ <needHelp>ត្រូវការជំនួយ?</needHelp>"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--placeholder": {
+    "messageformat": "បញ្ចូលលេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin": {
+    "messageformat": "លេខកូដសម្ងាត់មិនត្រឹមត្រូវ"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--incorrect-pin--with-count": {
+    "messageformat": "{triesRemaining, plural, other {លេខកូដសម្ងាត់មិនត្រឹមត្រូវ។ អាចព្យាយាមបាន {triesRemaining,number} ដងទៀត។}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--just-count": {
+    "messageformat": "{triesRemaining, plural, other {អាចព្យាយាមបាន {triesRemaining,number} ដងទៀត។}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--header": {
+    "messageformat": "ត្រូវការជំនួយ?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--no-reglock": {
+    "messageformat": "លេខកូដសម្ងាត់របស់អ្នកគឺជាលេខកូដ 4+ ខ្ទង់ដែលអ្នកបានបង្កើតឡើង ហើយវាអាចជាលេខ ឬជាអក្សរនិងលេខ។ ប្រសិនបើអ្នកចាំលេខកូដសម្ងាត់របស់អ្នកមិនបានទេ អ្នកអាចបង្កើតលេខកូដសម្ងាត់ថ្មី។ អ្នកអាចចុះឈ្មោះ និងប្រើប្រាស់គណនីរបស់អ្នកបាន ប៉ុន្តែអ្នកនឹងបាត់បង់ការកំណត់ដែលបានរក្សាទុកមួយចំនួនដូចជាព័ត៌មានប្រូហ្វាល់របស់អ្នក។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>។"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--description--reglock": {
+    "messageformat": "លេខកូដសម្ងាត់របស់អ្នកគឺជាលេខកូដ 4+ ខ្ទង់ដែលអ្នកបានបង្កើតឡើង ហើយវាអាចជាលេខ ឬជាអក្សរនិងលេខ។ បើអ្នកចាំលេខកូដសម្ងាត់របស់អ្នកមិនបានទេ អ្នកនឹងត្រូវរង់ចាំ 7 ថ្ងៃដើម្បីចុះឈ្មោះគណនីរបស់អ្នកឡើងវិញ។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>។"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--skip-button--no-reglock": {
+    "messageformat": "រំលង ហើយបង្កើតលេខកូដសម្ងាត់ថ្មី"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--contact-support-button": {
+    "messageformat": "ទាក់ទងផ្នែកជំនួយ"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NeedHelp--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--header": {
+    "messageformat": "លេខកូដសម្ងាត់មិនត្រឹមត្រូវ"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--no-reglock": {
+    "messageformat": "{triesRemaining, plural, other {អ្នកនៅសល់ការព្យាយាមចំនួន {triesRemaining,number} ដងទៀត។ ប្រសិនបើអ្នកអស់ការព្យាយាមទាំងនោះ អ្នកអាចបង្កើតលេខកូដសម្ងាត់ថ្មី។ អ្នកអាចចុះឈ្មោះ និងប្រើប្រាស់គណនីរបស់អ្នកបាន ប៉ុន្តែអ្នកនឹងបាត់បង់ការកំណត់ដែលបានរក្សាទុកមួយចំនួនដូចជាព័ត៌មានប្រូហ្វាល់របស់អ្នក។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>។}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--description--reglock": {
+    "messageformat": "{triesRemaining, plural, other {អ្នកនៅសល់ការព្យាយាមចំនួន {triesRemaining,number} ដងទៀត។ ប្រសិនបើអ្នកអស់ការព្យាយាមទាំងនោះ គណនីរបស់អ្នកនឹងត្រូវបានចាក់សោរយៈពេល 7 ថ្ងៃ។ បន្ទាប់ពីគ្មានសកម្មភាពរយៈពេល 7 ថ្ងៃ អ្នកអាចចុះឈ្មោះឡើងវិញដោយមិនចាំបាច់ប្រើលេខកូដសម្ងាត់របស់អ្នក។ ខ្លឹមសារទាំងអស់នឹងត្រូវបានលុបចោល។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>។}}"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--FewRemainingTries--button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--header": {
+    "messageformat": "លេខកូដសម្ងាត់មិនត្រឹមត្រូវ"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--description": {
+    "messageformat": "ការសាកល្បងទាយស្មានលេខកូដសម្ងាត់របស់អ្នកបានអស់ហើយ ប៉ុន្តែអ្នកនៅតែអាចចូលប្រើគណនី Signal របស់អ្នកបាន ដោយបង្កើតលេខកូដសម្ងាត់ថ្មី។ ដើម្បីឯកជនភាព និងសុវត្ថិភាពរបស់អ្នក គណនីរបស់អ្នកនឹងត្រូវបានស្ដារមកវិញដោយមិនចាំបាច់មានព័ត៌មានប្រូហ្វាល់ ឬការកំណត់ដែលបានរក្សាទុកណាមួយឡើយ។"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--create-new-pin": {
+    "messageformat": "បង្កើតលេខកូដសម្ងាត់ថ្មី"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--NoRemainingTries--learn-more": {
+    "messageformat": "ស្វែងយល់បន្ថែមអំពីលេខកូដសម្ងាត់"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--open-menu": {
+    "messageformat": "បើកម៉ឺនុយ"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--menu--skip-pin": {
+    "messageformat": "រំលងលេខកូដសម្ងាត់"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--header": {
+    "messageformat": "រំលងការបញ្ចូលលេខកូដសម្ងាត់?"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--description": {
+    "messageformat": "ប្រសិនបើអ្នកចាំលេខកូដសម្ងាត់របស់អ្នកមិនបានទេ អ្នកអាចបង្កើតលេខកូដសម្ងាត់ថ្មី។ អ្នកអាចចុះឈ្មោះ និងប្រើប្រាស់គណនីរបស់អ្នកបាន ប៉ុន្តែអ្នកនឹងបាត់បង់ការកំណត់ដែលបានរក្សាទុកមួយចំនួនដូចជាព័ត៌មានប្រូហ្វាល់របស់អ្នក។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>។"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--skip-button": {
+    "messageformat": "រំលង ហើយបង្កើតលេខកូដសម្ងាត់ថ្មី"
+  },
+  "icu:StandaloneRegistration--VerifyPIN--SkipPIN--cancel-button": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--CreatePIN--header": {
+    "messageformat": "បង្កើតលេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--CreatePIN--description": {
+    "messageformat": "PIN អាចជួយអ្នកក្នុងការស្តារគណនីរបស់អ្នកឡើងវិញ និងរក្សាឲ្យព័ត៌មានរបស់អ្នកអ៊ីនគ្រីបជាមួយ Signal។ <learnMore>ស្វែងយល់បន្ថែម</learnMore>"
+  },
+  "icu:StandaloneRegistration--CreatePIN--placeholder": {
+    "messageformat": "បង្កើតលេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--CreatePIN--helper-text": {
+    "messageformat": "លេខកូដសម្ងាត់ត្រូវតែមានយ៉ាងហោចណាស់ 4 តួអក្សរ"
+  },
+  "icu:StandaloneRegistration--CreatePIN--continue": {
+    "messageformat": "បន្ត"
+  },
+  "icu:StandaloneRegistration--CreatePIN--open-menu": {
+    "messageformat": "បើកម៉ឺនុយ"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--more-about": {
+    "messageformat": "ព័ត៌មានបន្ថែមអំពីលេខកូដសម្ងាត់"
+  },
+  "icu:StandaloneRegistration--CreatePIN--menu--disable": {
+    "messageformat": "បិទលេខកូដសម្ងាត់"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--header": {
+    "messageformat": "ព្រមាន"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--description": {
+    "messageformat": "ប្រសិនបើអ្នកបិទលេខកូដសម្ងាត់ អ្នកនឹងបាត់បង់ទិន្នន័យទាំងអស់នៅពេលអ្នកចុះឈ្មោះ Signal ឡើងវិញ។ អ្នកមិនអាចបើកមុខងារចាក់សោការចុះឈ្មោះបានទេ ខណៈពេលដែលលេខកូដសម្ងាត់ត្រូវបានបិទ។"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--disable-button": {
+    "messageformat": "បិទលេខកូដសម្ងាត់"
+  },
+  "icu:StandaloneRegistration--CreatePIN--DisableWarning--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--header": {
+    "messageformat": "អំពីលេខកូដសម្ងាត់ Signal"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--description": {
+    "messageformat": "លេខកូដសម្ងាត់ធ្វើឱ្យព័ត៌មានរបស់អ្នកដែលរក្សាទុកជាមួយ Signal បន្តអ៊ីនគ្រីប ដូច្នេះមានតែអ្នកទេដែលអាចចូលប្រើវាបាន។ ប្រូហ្វាល់ ការកំណត់ និងទំនាក់ទំនងរបស់អ្នកនឹងស្ដារមកវិញ នៅពេលអ្នកដំឡើងវាឡើងវិញ។"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--learn-more-button": {
+    "messageformat": "ស្វែងយល់បន្ថែម"
+  },
+  "icu:StandaloneRegistration--CreatePIN--AboutPINs--ok-button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--header": {
+    "messageformat": "បញ្ជាក់លេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--description": {
+    "messageformat": "បញ្ចូលឡើងវិញនូវ PIN ដែលអ្នកទើបតែបង្កើត។"
+  },
+  "icu:StandaloneRegistration--CreatePIN--confirming--placeholder": {
+    "messageformat": "បញ្ចូលលេខកូដសម្ងាត់របស់អ្នក"
+  },
+  "icu:StandaloneRegistration--AccountLocked--header": {
+    "messageformat": "គណនីត្រូវបានចាក់សោ"
+  },
+  "icu:StandaloneRegistration--AccountLocked--description": {
+    "messageformat": "គណនីរបស់អ្នកត្រូវបានចាក់សោដើម្បីការពារឯកជនភាព និងសុវត្ថិភាពរបស់អ្នក។ បន្ទាប់ពីគ្មានសកម្មភាពរយៈពេល 7 ថ្ងៃនៅក្នុងគណនីរបស់អ្នក អ្នកនឹងអាចចុះឈ្មោះលេខទូរសព្ទនេះឡើងវិញដោយមិនចាំបាច់ប្រើលេខកូដសម្ងាត់របស់អ្នកទេ។ ខ្លឹមសារទាំងអស់នឹងត្រូវបានលុបចោល។"
+  },
+  "icu:StandaloneRegistration--AccountLocked--start-over-button": {
+    "messageformat": "ប្រើលេខផ្សេង"
+  },
+  "icu:StandaloneRegistration--AccountLocked--help-button": {
+    "messageformat": "ស្វែងយល់អំពីគណនីដែលបានចាក់សោ"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--header": {
+    "messageformat": "តម្រូវឲ្យដំឡើងកំណែ"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--description": {
+    "messageformat": "ដើម្បីបន្តការចុះឈ្មោះ សូមដំឡើងកំណែទៅកំណែចុងក្រោយបំផុតរបស់ Signal។"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--update": {
+    "messageformat": "ដំឡើងកំណែ"
+  },
+  "icu:StandaloneRegistration--UpdateRequired--cancel": {
+    "messageformat": "បោះបង់"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--header": {
+    "messageformat": "សូមពិនិត្យមើលសេវាអ៊ីនធឺណិតរបស់អ្នក"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--description": {
+    "messageformat": "ដើម្បីបន្ត សូមពិនិត្យមើលសេវាអ៊ីនធឺណិតរបស់កុំព្យូទ័រអ្នក ហើយព្យាយាមម្តងទៀត។"
+  },
+  "icu:StandaloneRegistration--ConnectionProblem--button": {
+    "messageformat": "យល់ព្រម"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--header": {
+    "messageformat": "មិនអាចបញ្ចប់ការចុះឈ្មោះបានទេ"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--description": {
+    "messageformat": "បញ្ហាមួយបានកើតឡើង ហើយការចុះឈ្មោះមិនអាចបញ្ចប់បានទេ។ ប្រសិនបើបញ្ហានេះនៅតែបន្ត សូមទាក់ទងផ្នែកជំនួយ។"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--try-again-button": {
+    "messageformat": "ព្យាយាមម្តងទៀត"
+  },
+  "icu:StandaloneRegistration--UnexpectedError--contact-support-button": {
+    "messageformat": "ទាក់ទងផ្នែកជំនួយ"
   },
   "icu:NSIS__retry-dialog--first-line": {
     "messageformat": "មិនអាចបិទ Signal បានទេ។",
@@ -6850,6 +7426,9 @@
   "icu:MessageRequestResponseNotification__Message--Accepted": {
     "messageformat": "អ្នកបានទទួលយកសំណើសារ"
   },
+  "icu:MessageRequestResponseNotification__Message--Accepted-Contact-Title": {
+    "messageformat": "អ្នកបានព្រមទទួលសំណើសុំផ្ញើសាររបស់ {userProfileName}"
+  },
   "icu:MessageRequestResponseNotification__Message--Reported": {
     "messageformat": "បានរាយការណ៍ជាសារឥតបានការ"
   },
@@ -6865,8 +7444,8 @@
   "icu:MessageRequestResponseNotification__Message--Unblocked--Group": {
     "messageformat": "អ្នកឈប់ទប់ស្កាត់ក្រុមនេះហើយ"
   },
-  "icu:MessageRequestResponseNotification__Button--Options": {
-    "messageformat": "ជម្រើស"
+  "icu:MessageRequestResponseNotification__Button--block-or-report": {
+    "messageformat": "ទប់ស្កាត់ ឬរាយការណ៍…"
   },
   "icu:MessageRequestResponseNotification__Button--LearnMore": {
     "messageformat": "ស្វែងយល់បន្ថែម"
@@ -6888,15 +7467,6 @@
   },
   "icu:SignalConnectionsModal__footer": {
     "messageformat": "អ្នកភ្ជាប់ទំនាក់ទំនងរបស់អ្នកអាចមើលឃើញឈ្មោះ និងរូបថតរបស់អ្នក ហើយអាចឃើញសារបង្ហោះទៅ \"រឿងរ៉ាវរបស់ខ្ញុំ\" លើកលែងតែអ្នកលាក់វាពីពួកគេ"
-  },
-  "icu:LocalDeleteWarningModal__header": {
-    "messageformat": "ការលុបត្រូវបានធ្វើសមកាលកម្មនៅលើឧបករណ៍ទាំងឡាយរបស់អ្នក"
-  },
-  "icu:LocalDeleteWarningModal__description": {
-    "messageformat": "នៅពេលអ្នកលុបសារ ឬការជជែក ពួកវានឹងត្រូវបានលុបចេញពីឧបករណ៍ទាំងអស់របស់អ្នក។"
-  },
-  "icu:LocalDeleteWarningModal__confirm": {
-    "messageformat": "យល់ហើយ"
   },
   "icu:Stories__title": {
     "messageformat": "រឿងរ៉ាវ"
@@ -7040,10 +7610,7 @@
     "messageformat": "មុខងារមើលសារ"
   },
   "icu:StoriesSettings__view-receipts--new-description": {
-    "messageformat": "See and share when stories are viewed. If disabled, you won't see when others view your story."
-  },
-  "icu:StoriesSettings__view-receipts--description": {
-    "messageformat": "ដើម្បីផ្លាស់ប្តូរការកំណត់នេះ សូមបើកកម្មវិធី Signal នៅលើឧបករណ៍ចល័តរបស់អ្នក ហើយចូលទៅកាន់ការកំណត់ -> រឿងរ៉ាវ"
+    "messageformat": "ឃើញហើយចែករំលែក នៅពេលរឿងរ៉ាវត្រូវបានមើល។ ប្រសិនបើបិទ អ្នកនឹងមើលមិនឃើញទេនៅពេលដែលអ្នកផ្សេងមើលរឿងរ៉ាវរបស់អ្នក។"
   },
   "icu:GroupStorySettingsModal__members_title": {
     "messageformat": "អ្នកដែលអាចមើលរឿងរ៉ាវនេះបាន"
@@ -7454,9 +8021,6 @@
   "icu:DraftGifMessageSendModal__SendButtonLabel": {
     "messageformat": "ផ្ញើ"
   },
-  "icu:DraftGifMessageSendModal__CancelButtonLabel": {
-    "messageformat": "បោះបង់"
-  },
   "icu:EditHistoryMessagesModal__title": {
     "messageformat": "កែប្រវត្តិ"
   },
@@ -7625,9 +8189,6 @@
   "icu:CallLinkDetails__DeleteLinkModal__Body": {
     "messageformat": "តំណនេះនឹងលែងដំណើរការសម្រាប់នរណាដែលមានវាទៀតហើយ។"
   },
-  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
-    "messageformat": "បោះបង់"
-  },
   "icu:CallLinkDetails__DeleteLinkModal__Delete": {
     "messageformat": "លុប"
   },
@@ -7682,26 +8243,17 @@
   "icu:ProfileNameWarningModal__description--direct": {
     "messageformat": "ឈ្មោះប្រូហ្វាល់នៅលើ Signal ត្រូវបានជ្រើសរើសដោយម្ចាស់គណនី៖"
   },
-  "icu:ProfileNameWarningModal__list--item1--direct": {
-    "messageformat": "ឈ្មោះប្រូហ្វាល់មិនត្រូវបានផ្ទៀងផ្ទាត់ទេ"
-  },
-  "icu:ProfileNameWarningModal__list--item2--direct": {
-    "messageformat": "សូមប្រុងប្រយ័ត្នចំពោះគណនីដែលក្លែងបន្លំជាអ្នកផ្សេង"
-  },
-  "icu:ProfileNameWarningModal__list--item3--direct": {
-    "messageformat": "កុំចែករំលែកព័ត៌មានផ្ទាល់ខ្លួនជាមួយមនុស្សដែលអ្នកមិនស្គាល់"
-  },
   "icu:ProfileNameWarningModal__warning--signal-cant-verify": {
-    "messageformat": "Signal can’t verify names and photos"
+    "messageformat": "Signal មិនអាចផ្ទៀងផ្ទាត់ឈ្មោះ និងរូបថតបានទេ"
   },
   "icu:ProfileNameWarningModal__warning--signal-wont-contact": {
-    "messageformat": "Signal will never contact you for your registration code, PIN, or recovery key"
+    "messageformat": "Signal នឹងមិនដែលទាក់ទងអ្នកដើម្បីសុំលេខកូដចុះឈ្មោះ លេខកូដសម្ងាត់ ឬសោស្តាររបស់អ្នកជាដាច់ខាត"
   },
   "icu:ProfileNameWarningModal__warning--be-cautious": {
-    "messageformat": "Be cautious of accounts that impersonate others"
+    "messageformat": "សូមប្រុងប្រយ័ត្នចំពោះគណនីដែលក្លែងបន្លំជាអ្នកផ្សេង"
   },
   "icu:ProfileNameWarningModal__warning--dont-share-info": {
-    "messageformat": "Don't share personal information with people you don't know"
+    "messageformat": "កុំចែករំលែកព័ត៌មានផ្ទាល់ខ្លួនជាមួយមនុស្សដែលអ្នកមិនស្គាល់"
   },
   "icu:ProfileNameWarningModal__description--group": {
     "messageformat": "ឈ្មោះក្រុមត្រូវបានជ្រើសរើសដោយសមាជិកក្រុម។"
@@ -7747,9 +8299,6 @@
   },
   "icu:PreferencesDonations__privacy-modal-title": {
     "messageformat": "ព័ត៌មានរបស់អ្នកមានលក្ខណៈឯកជន"
-  },
-  "icu:PreferencesDonations__privacy-modal-content": {
-    "messageformat": "<paragraph>Signal មិនប្រមូល ឬរក្សាទុកព័ត៌មានផ្ទាល់ខ្លួនណាមួយរបស់អ្នកទេ នៅពេលអ្នកធ្វើការបរិច្ចាគ។</paragraph><paragraph>យើងប្រើ Stripe ជាអ្នកដំណើរការទូទាត់របស់យើង ដើម្បីទទួលបានការបរិច្ចាគរបស់អ្នក។ យើងមិនចូលប្រើ រក្សា ឬរក្សាទុកព័ត៌មានណាមួយដែលអ្នកផ្តល់ឱ្យពួកគេទេ។</paragraph><paragraph>Signal មិនមាន និងមិនអាចភ្ជាប់ការបរិច្ចាគរបស់អ្នកជាមួយគណនី Signal របស់អ្នកបានទេ។</paragraph><paragraph>សូមអរគុណចំពោះការគាំទ្ររបស់អ្នក!</paragraph>"
   },
   "icu:PreferencesDonations__privacy-modal-intro": {
     "messageformat": "ក្នុងនាមជាអង្គការមិនស្វែងរកប្រាក់ចំណេញឯករាជ្យមួយ Signal ប្តេជ្ញាចិត្តផ្តល់នូវការផ្ញើសារ និងការហៅទូរសព្ទឯកជន។ គ្មានការផ្សាយពាណិជ្ជកម្ម គ្មានកម្មវិធីតាមដាន គ្មានការឃ្លាំមើល។ បរិច្ចាគថ្ងៃនេះដើម្បីឧបត្ថម្ភគាំទ្រដល់ Signal។"
@@ -7885,6 +8434,9 @@
   },
   "icu:DonationReceipt__footer-text": {
     "messageformat": "សូមអរគុណចំពោះការគាំទ្រ Signal។ ការចូលរួមចំណែករបស់អ្នកជួយជំរុញដល់បេសកកម្មការពារការបញ្ចេញមតិដោយសេរី និងញ៉ាំងឱ្យមានការប្រាស្រ័យទាក់ទងគ្នាជាសាកលដោយសុវត្ថិភាពសម្រាប់មនុស្សរាប់លាននាក់ជុំវិញពិភពលោក តាមរយៈបច្ចេកវិទ្យាឯកជនភាពប្រភពបើកចំហ។ ប្រសិនបើអ្នកជាអ្នករស់នៅក្នុងសហរដ្ឋអាមេរិក សូមរក្សាទុកបង្កាន់ដៃនេះសម្រាប់កំណត់ត្រាពន្ធរបស់អ្នក។ Signal Technology Foundation គឺជាអង្គការមិនរកប្រាក់ចំណេញដែលទទួលបានការលើកលែងពន្ធនៅក្នុងសហរដ្ឋអាមេរិកក្រោមផ្នែក 501c3 នៃក្រមស្តីពីប្រាក់ចំណូលផ្ទៃក្នុង។ លេខអត្តសញ្ញាណកម្មពន្ធរបស់យើងគឺ 82-4506840។"
+  },
+  "icu:DonationReceipt__footer-text-v2": {
+    "messageformat": "សូមអរគុណចំពោះការគាំទ្រ Signal។ ការចូលរួមចំណែករបស់អ្នកជួយជំរុញដល់បេសកកម្មការពារការបញ្ចេញមតិដោយសេរី និងញ៉ាំងឱ្យមានការប្រាស្រ័យទាក់ទងគ្នាជាសាកលដោយសុវត្ថិភាពសម្រាប់មនុស្សរាប់លាននាក់ជុំវិញពិភពលោក តាមរយៈបច្ចេកវិទ្យាឯកជនភាពប្រភពបើកចំហ។ ប្រសិនបើអ្នកជាអ្នករស់នៅក្នុងសហរដ្ឋអាមេរិក សូមរក្សាទុកបង្កាន់ដៃនេះសម្រាប់កំណត់ត្រាពន្ធរបស់អ្នក។ Signal Technology Foundation គឺជាអង្គការមិនរកប្រាក់ចំណេញដែលទទួលបានការលើកលែងពន្ធនៅក្នុងសហរដ្ឋអាមេរិកក្រោមផ្នែក 501c3 នៃក្រមស្តីពីចំណូលផ្ទៃក្នុង។ លេខអត្តសញ្ញាណកម្មពន្ធសហព័ន្ធរបស់យើងគឺ 82-4506840។ Signal មិនបានផ្តល់ទំនិញ ឬសេវាកម្មណាមួយជាការតបស្នងចំពោះការចូលរួមចំណែកនេះឡើយ។"
   },
   "icu:Donations__OfflineTooltip": {
     "messageformat": "អ្នកមិនមានអ៊ីនធឺណិតទេ។ សូមភ្ជាប់អ៊ីនធឺណិត ដើម្បីបំពេញការបរិច្ចាគ។"
@@ -8030,12 +8582,6 @@
   "icu:Donations__badge-modal--help-text": {
     "messageformat": "អ្នកអាចកែតម្រូវវានៅលើឧបករណ៍ចល័តរបស់អ្នកនៅក្រោមការកំណត់ → បរិច្ចាគទៅ Signal → ស្លាក"
   },
-  "icu:CallQualitySurvey__CloseButton__AccessibilityLabel": {
-    "messageformat": "បិទ"
-  },
-  "icu:CallQualitySurvey__BackButton__AccessibilityLabel": {
-    "messageformat": "ត្រឡប់ក្រោយ"
-  },
   "icu:CallQualitySurvey__HowWasYourCall__PageTitle": {
     "messageformat": "តើការហៅទូរសព្ទរបស់អ្នកយ៉ាងម៉េចដែរ?"
   },
@@ -8123,9 +8669,6 @@
   "icu:CallQualitySurvey__ConfirmSubmission__SubmitButton": {
     "messageformat": "ដាក់បញ្ជូន"
   },
-  "icu:CallQualitySurvey__ConfirmSubmission__Submitting": {
-    "messageformat": "កំពុងដាក់បញ្ជូនការស្ទង់មតិ…"
-  },
   "icu:CallQualitySurvey__SubmissionFailed": {
     "messageformat": "មិនអាចដាក់បញ្ជូនការស្ទង់មតិបានទេ"
   },
@@ -8137,6 +8680,42 @@
   },
   "icu:Megaphone__ExpandNarrowSidebar": {
     "messageformat": "ពង្រីករបារចំហៀងដើម្បីធ្វើអន្តរកម្មជាមួយមេហ្គាហ្វូន"
+  },
+  "icu:Carousel--Role": {
+    "messageformat": "បណ្តុំរូបភាព"
+  },
+  "icu:Carousel__Slide--Role": {
+    "messageformat": "រូបអូស"
+  },
+  "icu:MaybeTransferModal__title": {
+    "messageformat": "ផ្ទេរប្រវត្តិសារទូរសព្ទរបស់អ្នកទៅកុំព្យូទ័រលើតុនេះ?"
+  },
+  "icu:MaybeTransferModal__description": {
+    "messageformat": "នៅពេលអ្នកភ្ជាប់ជាមួយកុំព្យូទ័រលើតុនេះឡើងវិញ អ្នកអាចផ្ទេរប្រវត្តិសាររបស់ទូរសព្ទអ្នកទៅឧបករណ៍នេះបាន។"
+  },
+  "icu:MaybeTransferModal__learnMore": {
+    "messageformat": "ស្វែងយល់បន្ថែម"
+  },
+  "icu:MaybeTransferModal__replaceHistory": {
+    "messageformat": "ការធ្វើបែបនេះនឹង<bold>ជំនួស</bold>ប្រវត្តិសារនៅលើកុំព្យូទ័រលើតុនេះ។"
+  },
+  "icu:MaybeTransferModal__scanQrCode": {
+    "messageformat": "អ្នកនឹងត្រូវភ្ជាប់ឡើងវិញដោយស្គែនកូដ QR។"
+  },
+  "icu:MaybeTransferModal__media": {
+    "messageformat": "ប្រសិនបើអ្នកបានបង់ប្រាក់លើការបម្រុងទុកសុវត្ថិភាព Signal មេឌៀទាំងអស់របស់អ្នកនឹងត្រូវបានផ្ទេរ។ បើមិនដូច្នោះទេ មេឌៀរយៈពេល 45 ថ្ងៃចុងក្រោយរបស់អ្នកនឹងត្រូវបានរួមបញ្ចូល។"
+  },
+  "icu:MaybeTransferModal__transfer": {
+    "messageformat": "ផ្ទេរ"
+  },
+  "icu:MaybeTransferModal__dontTransfer": {
+    "messageformat": "កុំផ្ទេរ"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__title": {
+    "messageformat": "លុបទិន្នន័យទាំងអស់?"
+  },
+  "icu:DeleteDataAndRelinkConfirmationDialog__body": {
+    "messageformat": "ទិន្នន័យបច្ចុប្បន្នទាំងអស់នៅក្នុង Signal Desktop នឹងត្រូវបានលុប។ បន្ទាប់មក អ្នកអាចស្គែនកូដ QR ហើយផ្ទេរប្រវត្តិសាររបស់អ្នកពីទូរសព្ទរបស់អ្នក។"
   },
   "icu:WhatsNew__bugfixes": {
     "messageformat": "កំណែ​នេះ​មាន​ការ​កែ​សម្រួល និង​ការកែបញ្ហាតូចៗ​មួយ​ចំនួន ដើម្បី​ឲ្យ​ Signal បន្ត​ដំណើរការ​ដោយ​រលូន។",
@@ -8165,5 +8744,17 @@
   "icu:WhatsNew__bugfixes--6": {
     "messageformat": "ការកែប្រែបន្តិចបន្តួច ការដោះស្រាយបញ្ហា និងការបង្កើនប្រតិបត្តិការ។ សូមអរគុណចំពោះការប្រើប្រាស់ Signal!",
     "ignoreUnused": true
+  },
+  "icu:WhatsNew__8.20--0": {
+    "messageformat": "សូមណែនាំព្រឹត្តិការណ៍ហៅទូរសព្ទដែលបាត់ដោយស្វ័យប្រវត្តិ៖ ការហៅដែលខកខានមិនបានទទួល ការហៅចេញ និងការហៅដែលបានទទួល ដែលកើតឡើងបន្ទាប់ពីអ្នកដំឡើងកំណែថ្មីនេះនឹងបាត់ដោយស្វ័យប្រវត្តិនៅក្នុងការជជែកណាមួយដែលសារបាត់ដោយស្វ័យប្រវត្តិត្រូវបានបើក។"
+  },
+  "icu:WhatsNew__8.20--1": {
+    "messageformat": "ឥឡូវនេះ អ្នកអាចតម្រៀបឡើងវិញនូវកញ្ចប់ស្ទីកគ័រដែលបានដំឡើងហើយ ដូច្នេះស្ទីកគ័រដែលអ្នកចូលចិត្តថ្មីៗមិនគាំងនៅចុងក្រោយគេទេ។"
+  },
+  "icu:WhatsNew__8.24--1": {
+    "messageformat": "យើងបានបង្កលក្ខណៈកាន់តែស្រួលជាងមុន ក្នុងការស្វែងរកសមាជិកក្រុមនៅលើទំព័រការកំណត់ក្រុម ដើម្បីឱ្យអ្នកឆាប់ដឹងថាតើម្តាយអ្នកបានដាក់បងប្អូនជីដូនមួយទីពីររបស់អ្នកទៅក្នុងក្រុមបាប៊ីខ្ជូ (BBQ) សម្រាប់ការជួបជុំមហាគ្រួសារប្រចាំឆ្នាំលើកទីបីហើយឬនៅ។"
+  },
+  "icu:WhatsNew__8.25--0": {
+    "messageformat": "យើងបានបញ្ចូលកម្រិតពង្រីកថ្មីចំនួនពីរនៅក្នុងការកំណត់រូបរាង ដូច្នេះអ្នកនៅតែអាចពង្រីកសាររបស់អ្នកបាន 110% (ឬ 90%) ដែរ ដោយមិនសូវពិបាកឡើយ។"
   }
 }

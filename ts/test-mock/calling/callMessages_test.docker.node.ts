@@ -179,7 +179,7 @@ describe('callMessages', function callMessages(this: Mocha.Suite) {
 
     await leftPane.locator(`[data-testid="${aci}"]`).click();
     // Try to start a call
-    await win.locator('.module-ConversationHeader__button--audio').click();
+    await win.getByLabel('Start a call').click();
     await win
       .locator('.CallingLobbyJoinButton')
       .and(win.locator('button:visible'))
@@ -193,10 +193,7 @@ describe('callMessages', function callMessages(this: Mocha.Suite) {
 
   async function setInputAndOutput(win: Page, input: string, output: string) {
     debug(`setInputAndOutput input: ${input} output: ${output}`);
-    await win
-      .locator('.CallSettingsButton__Button')
-      .and(win.getByLabel('Settings'))
-      .click();
+    await win.getByLabel('Settings').click();
     await win.locator('#audio-input').selectOption(input);
     await win.locator('#audio-output').selectOption(output);
     await win.locator('.module-calling-device-selection__close-button').click();

@@ -43,11 +43,17 @@ const storybookConfig: StorybookConfig = {
     { from: '../fonts', to: 'fonts' },
     { from: '../images', to: 'images' },
     { from: '../fixtures', to: 'fixtures' },
-    {
-      from: '../node_modules/intl-tel-input/build/img',
-      to: 'node_modules/intl-tel-input/build/img',
-    },
   ],
+
+  swc() {
+    return {
+      jsc: {
+        transform: {
+          react: { runtime: 'automatic' },
+        },
+      },
+    };
+  },
 
   webpackFinal(webpackConfig) {
     // oxlint-disable-next-line no-param-reassign

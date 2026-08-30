@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import * as React from 'react';
 import { action } from '@storybook/addon-actions';
 
 import type { Props } from './StagedLinkPreview.dom.tsx';
@@ -122,4 +121,17 @@ CompositionInput.args = {
     url: '/fixtures/kitten-4-112-112.jpg',
     contentType: IMAGE_JPEG,
   }),
+};
+
+export const CompositionInputStickerPack = Template.bind({});
+CompositionInputStickerPack.args = {
+  ...getDefaultProps(),
+  moduleClassName: 'CompositionInput__link-preview',
+  title: 'Cat stickers',
+  description: 'Sticker pack by Ann Chovy',
+  image: fakeAttachment({
+    url: '/fixtures/kitten-4-112-112.jpg',
+    contentType: IMAGE_JPEG,
+  }),
+  isStickerPack: true,
 };

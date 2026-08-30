@@ -34,6 +34,7 @@ import type { actions as network } from './ducks/network.dom.ts';
 import type { actions as notificationProfiles } from './ducks/notificationProfiles.preload.ts';
 import type { actions as safetyNumber } from './ducks/safetyNumber.preload.ts';
 import type { actions as search } from './ducks/search.preload.ts';
+import type { actions as standaloneInstaller } from './ducks/standaloneInstaller.preload.ts';
 import type { actions as stickers } from './ducks/stickers.preload.ts';
 import type { actions as stories } from './ducks/stories.preload.ts';
 import type { actions as storyDistributionLists } from './ducks/storyDistributionLists.preload.ts';
@@ -72,6 +73,7 @@ export type ReduxActions = {
   notificationProfiles: typeof notificationProfiles;
   safetyNumber: typeof safetyNumber;
   search: typeof search;
+  standaloneInstaller: typeof standaloneInstaller;
   stickers: typeof stickers;
   stories: typeof stories;
   storyDistributionLists: typeof storyDistributionLists;
@@ -88,3 +90,8 @@ export type StateThunk<A extends Action = never> = ThunkAction<
   unknown,
   A
 >;
+
+// oxlint-disable-next-line typescript/no-explicit-any
+export type ActionCreator<T extends (...params: Array<any>) => any> = (
+  ...params: Parameters<T>
+) => void;

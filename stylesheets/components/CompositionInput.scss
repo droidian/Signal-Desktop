@@ -48,6 +48,9 @@
     overflow-wrap: break-word;
     word-break: auto-phrase;
 
+    background: var(--axo-color-surface-message-incoming);
+    color: var(--axo-color-label-primary);
+
     &--with-view-once {
       position: relative;
       display: flex;
@@ -80,18 +83,6 @@
       @include mixins.dark-theme() {
         color: variables.$color-gray-25;
       }
-    }
-
-    @include mixins.light-theme() {
-      // Same as background color
-      background-color: variables.$color-gray-05;
-      color: variables.$color-gray-90;
-    }
-
-    @include mixins.dark-theme() {
-      // Same as background color
-      background-color: variables.$color-gray-75;
-      color: variables.$color-gray-05;
     }
 
     &__scroller {
@@ -440,7 +431,6 @@
   &__editing-message {
     @include mixins.font-body-2-bold;
     margin-top: 10px;
-    user-select: none;
 
     &::before {
       content: '';

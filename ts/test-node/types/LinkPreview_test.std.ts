@@ -121,7 +121,7 @@ describe('Link previews', () => {
 
       const expected = ['https://github.com/signalapp/Signal-Desktop'];
 
-      const actual = findLinks(text, 45);
+      const actual = findLinks(text, 46);
       assert.deepEqual(expected, actual);
     });
 
@@ -130,7 +130,7 @@ describe('Link previews', () => {
 
       const expected = ['https://github.com/signalapp/Signal-Desktop'];
 
-      const actual = findLinks(text, 45);
+      const actual = findLinks(text, 52);
       assert.deepEqual(expected, actual);
     });
 
@@ -197,56 +197,60 @@ describe('Link previews', () => {
   });
 
   describe('#isLinkSneaky', () => {
-    it('returns true for =', () => {
+    it('returns "yes" for =', () => {
       const link = 'r.id=s.id';
-      assert.strictEqual(isLinkSneaky(link), true);
+      assert.strictEqual(isLinkSneaky(link), 'yes');
     });
 
-    it('returns true for strings with unicode drawing characters', () => {
+    it('returns "yes" for strings with unicode drawing characters', () => {
       assert.strictEqual(
         isLinkSneaky('https://example.com/\u2500/stuff'),
-        true
+        'yes'
       );
       assert.strictEqual(
         isLinkSneaky('https://example.com/\u2588/stuff'),
-        true
+        'yes'
       );
       assert.strictEqual(
         isLinkSneaky('https://example.com/\u25FF/stuff'),
-        true
+        'yes'
       );
     });
 
-    it('returns true for $', () => {
+    it('returns "yes" for $', () => {
       const link = 'r.id$s.id';
-      assert.strictEqual(isLinkSneaky(link), true);
+      assert.strictEqual(isLinkSneaky(link), 'yes');
     });
 
-    it('returns true for +', () => {
+    it('returns "yes" for +', () => {
       const link = 'r.id+s.id';
-      assert.strictEqual(isLinkSneaky(link), true);
+      assert.strictEqual(isLinkSneaky(link), 'yes');
     });
 
-    it('returns true for ^', () => {
+    it('returns "yes" for ^', () => {
       const link = 'r.id^s.id';
-      assert.strictEqual(isLinkSneaky(link), true);
+      assert.strictEqual(isLinkSneaky(link), 'yes');
     });
 
-    it('returns true for URLs with a length of 4097 or higher', () => {
+    it('returns "yes" for URLs with a length of 4097 or higher', () => {
       const href = `https://example.com/${'a'.repeat(4077)}`;
       assert.lengthOf(href, 4097, 'Test href is not the proper length');
 
-      assert.isTrue(isLinkSneaky(href));
-      assert.isTrue(isLinkSneaky(`${href}?foo=bar`));
+      assert.strictEqual(isLinkSneaky(href), 'yes');
+      assert.strictEqual(isLinkSneaky(`${href}?foo=bar`), 'yes');
     });
 
     describe('auth', () => {
-      it('returns true for hrefs with auth (or pretend auth)', () => {
-        assert.isTrue(isLinkSneaky('https://user:pass@example.com'));
-        assert.isTrue(isLinkSneaky('https://user:@example.com'));
-        assert.isTrue(isLinkSneaky('https://:pass@example.com'));
-        assert.isTrue(
-          isLinkSneaky('http://whatever.com&login=someuser@77777777')
+      it('returns "yes" for hrefs with auth (or pretend auth)', () => {
+        assert.strictEqual(
+          isLinkSneaky('https://user:pass@example.com'),
+          'yes'
+        );
+        assert.strictEqual(isLinkSneaky('https://user:@example.com'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://:pass@example.com'), 'yes');
+        assert.strictEqual(
+          isLinkSneaky('http://whatever.com&login=someuser@77777777'),
+          'yes'
         );
       });
     });
@@ -264,55 +268,58 @@ describe('Link previews', () => {
 
       // It's possible that this should return `false` but we'd need to add special logic
       //   for it.
-      it('returns true for IPv6 addresses', () => {
-        assert.isTrue(
-          isLinkSneaky('https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]/path')
+      it('returns "yes" for IPv6 addresses', () => {
+        assert.strictEqual(
+          isLinkSneaky(
+            'https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]/path'
+          ),
+          'yes'
         );
-        assert.isTrue(isLinkSneaky('https://[::]/path'));
+        assert.strictEqual(isLinkSneaky('https://[::]/path'), 'yes');
       });
 
-      it('returns true for Latin + Cyrillic domain', () => {
+      it('returns "yes" for Latin + Cyrillic domain', () => {
         const link = 'https://www.aмazon.com';
         const actual = isLinkSneaky(link);
-        assert.strictEqual(actual, true);
+        assert.strictEqual(actual, 'yes');
       });
 
-      it('returns true for Latin + Greek domain', () => {
+      it('returns "yes" for Latin + Greek domain', () => {
         const link = 'https://www.αpple.com';
         const actual = isLinkSneaky(link);
-        assert.strictEqual(actual, true);
+        assert.strictEqual(actual, 'yes');
       });
 
-      it('returns true for ASCII and non-ASCII mix', () => {
+      it('returns "yes" for ASCII and non-ASCII mix', () => {
         const link = 'https://www.аррӏе.com';
         const actual = isLinkSneaky(link);
-        assert.strictEqual(actual, true);
+        assert.strictEqual(actual, 'yes');
       });
 
-      it('returns true for Latin + High Greek domain', () => {
+      it('returns "yes" for Latin + High Greek domain', () => {
         const link = `https://www.apple${String.fromCodePoint(0x101a0)}.com`;
         const actual = isLinkSneaky(link);
-        assert.strictEqual(actual, true);
+        assert.strictEqual(actual, 'yes');
       });
 
-      it("returns true if the domain doesn't contain a .", () => {
-        assert.isTrue(isLinkSneaky('https://example'));
-        assert.isTrue(isLinkSneaky('https://localhost'));
-        assert.isTrue(isLinkSneaky('https://localhost:3000'));
+      it("returns 'yes' if the domain doesn't contain a .", () => {
+        assert.strictEqual(isLinkSneaky('https://example'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://localhost'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://localhost:3000'), 'yes');
       });
 
-      it('returns true if the domain has any empty labels', () => {
-        assert.isTrue(isLinkSneaky('https://example.'));
-        assert.isTrue(isLinkSneaky('https://example.com.'));
-        assert.isTrue(isLinkSneaky('https://.example.com'));
-        assert.isTrue(isLinkSneaky('https://..example.com'));
+      it('returns "yes" if the domain has any empty labels', () => {
+        assert.strictEqual(isLinkSneaky('https://example.'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://example.com.'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://.example.com'), 'yes');
+        assert.strictEqual(isLinkSneaky('https://..example.com'), 'yes');
       });
 
-      it('returns true if the domain is longer than 2048 UTF-16 code points', () => {
+      it('returns "yes" if the domain is longer than 2048 UTF-16 code points', () => {
         const domain = `${'a'.repeat(2041)}.example`;
         assert.lengthOf(domain, 2049, 'Test domain is the incorrect length');
         const link = `https://${domain}/foo/bar`;
-        assert.isTrue(isLinkSneaky(link));
+        assert.strictEqual(isLinkSneaky(link), 'yes');
       });
     });
 
@@ -335,12 +342,27 @@ describe('Link previews', () => {
         );
       });
 
-      it('returns true if the pathname contains invalid characters', () => {
-        assert.isTrue(isLinkSneaky('https://example.com/hello world'));
-        assert.isTrue(isLinkSneaky('https://example.com/aquí-está'));
-        assert.isTrue(isLinkSneaky('https://example.com/hello\x00world'));
-        assert.isTrue(isLinkSneaky('https://example.com/hello\nworld'));
-        assert.isTrue(isLinkSneaky('https://example.com/hello😈world'));
+      it('returns "maybe" if the pathname contains invalid characters', () => {
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/hello world'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/aquí-está'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/hello\x00world'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/hello\nworld'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/hello😈world'),
+          'maybe'
+        );
       });
     });
 
@@ -365,16 +387,35 @@ describe('Link previews', () => {
         );
       });
 
-      it('returns true if the query string contains invalid characters', () => {
-        assert.isTrue(isLinkSneaky('https://example.com/foo?bar baz'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo?bar baz=qux'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo?bar=baz qux'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo?aquí=está'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo?hello=\x00world'));
-        assert.isTrue(
-          isLinkSneaky('https://example.com/foo?hello=hello\nworld')
+      it('returns "maybe" if the query string contains invalid characters', () => {
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?bar baz'),
+          'maybe'
         );
-        assert.isTrue(isLinkSneaky('https://example.com/foo?hello=😈world'));
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?bar baz=qux'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?bar=baz qux'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?aquí=está'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?hello=\x00world'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?hello=hello\nworld'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo?hello=😈world'),
+          'maybe'
+        );
       });
     });
 
@@ -391,14 +432,35 @@ describe('Link previews', () => {
         );
       });
 
-      it('returns true if the hash contains invalid characters', () => {
-        assert.isTrue(isLinkSneaky('https://example.com/foo#bar baz'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#bar baz=qux'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#bar=baz qux'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#aquí_está'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#hello\x00world'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#hello\nworld'));
-        assert.isTrue(isLinkSneaky('https://example.com/foo#hello😈world'));
+      it('returns "maybe" if the hash contains invalid characters', () => {
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#bar baz'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#bar baz=qux'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#bar=baz qux'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#aquí_está'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#hello\x00world'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#hello\nworld'),
+          'maybe'
+        );
+        assert.strictEqual(
+          isLinkSneaky('https://example.com/foo#hello😈world'),
+          'maybe'
+        );
       });
     });
   });

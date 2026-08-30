@@ -1,7 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import lodash, { omit, partition, without } from 'lodash';
+import lodash, { isNumber, omit, partition, without } from 'lodash';
 
 import { ServiceId } from '@signalapp/libsignal-client';
 import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes.std.ts';
@@ -133,6 +133,9 @@ import { keyTransparency } from './keyTransparency.preload.ts';
 import { toNumber } from '../util/toNumber.std.ts';
 import { MAX_VALUE } from '../util/long.std.ts';
 import { isKnownProtoEnumMember } from '../util/isKnownProtoEnumMember.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
+import { getOurAddress } from '../util/sendToGroup.preload.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
 
 const { isEqual } = lodash;
 
@@ -156,6 +159,13 @@ export type MergeResultType = Readonly<{
   details: ReadonlyArray<string>;
 }>;
 
+function makeBigInt(value: number | undefined): bigint | undefined {
+  if (!isNumber(value)) {
+    return undefined;
+  }
+
+  return BigInt(value);
+}
 function toRecordVerified(verified: number): Proto.ContactRecord.IdentityState {
   const VERIFIED_ENUM = signalProtocolStore.VerifiedStatus;
   const STATE_ENUM = Proto.ContactRecord.IdentityState;
@@ -301,6 +311,7 @@ export async function toContactRecord(
   const username = conversation.get('username');
   const ourID = window.ConversationController.getOurConversationId();
   const pni = conversation.getPni();
+  const e164 = conversation.get('e164');
 
   const profileKey = conversation.get('profileKey');
   const serviceId = aci ?? pni;
@@ -309,8 +320,15 @@ export async function toContactRecord(
   const nicknameFamilyName = conversation.get('nicknameFamilyName');
   const hideStory = conversation.get('hideStory');
 
+  const blockedServiceId = serviceId
+    ? itemStorage.blocked.getBlockedServiceIds().get(serviceId)
+    : undefined;
+  const blockedE164 = e164
+    ? itemStorage.blocked.getBlockedNumbers().get(e164)
+    : undefined;
+
   return {
-    e164: conversation.get('e164') ?? null,
+    e164: e164 ?? null,
     aciBinary:
       isProtoBinaryEncodingEnabled() && aci
         ? toAciObject(aci).getRawUuidBytes()
@@ -344,7 +362,11 @@ export async function toContactRecord(
     systemGivenName: conversation.get('systemGivenName') || null,
     systemFamilyName: conversation.get('systemFamilyName') || null,
     systemNickname: conversation.get('systemNickname') || null,
-    blocked: conversation.isBlocked(),
+    blocked: Boolean(blockedServiceId || blockedE164),
+    blockedAtTimestamp:
+      makeBigInt(blockedServiceId?.blockedAt) ??
+      makeBigInt(blockedE164?.blockedAt) ??
+      null,
     hidden: conversation.get('removalStage') !== undefined,
     whitelisted: Boolean(conversation.get('profileSharing')),
     archived: Boolean(conversation.get('isArchived')),
@@ -362,12 +384,15 @@ export async function toContactRecord(
   };
 }
 
-export function toAccountRecord(
-  conversation: ConversationModel,
-  {
-    notificationProfileSyncDisabled,
-  }: { notificationProfileSyncDisabled: boolean }
-): Proto.AccountRecord.Params {
+export function toAccountRecord({
+  ourConversation,
+  signalConversation,
+  notificationProfileSyncDisabled,
+}: {
+  ourConversation: ConversationModel;
+  signalConversation: ConversationModel;
+  notificationProfileSyncDisabled: boolean;
+}): Proto.AccountRecord.Params {
   const PHONE_NUMBER_SHARING_MODE_ENUM =
     Proto.AccountRecord.PhoneNumberSharingMode;
   const localPhoneNumberSharingMode = parsePhoneNumberSharingMode(
@@ -408,6 +433,14 @@ export function toAccountRecord(
 
       if (!pinnedConversation) {
         return undefined;
+      }
+
+      if (pinnedConversation.id === signalConversation.id) {
+        return {
+          identifier: {
+            releaseNotes: {},
+          },
+        };
       }
 
       if (pinnedConversation.get('type') === 'private') {
@@ -502,7 +535,7 @@ export function toAccountRecord(
     };
   }
 
-  const profileKey = conversation.get('profileKey');
+  const profileKey = ourConversation.get('profileKey');
   const storyViewReceiptsEnabled = itemStorage.get('storyViewReceiptsEnabled');
   const backupTier = itemStorage.get('backupTier');
 
@@ -528,18 +561,24 @@ export function toAccountRecord(
     storyViewReceiptsEnabledValue = Proto.OptionalBool.UNSET;
   }
 
+  const releaseNotesChatBlocked = signalConversation?.isBlocked() ?? null;
+  const releaseNotesChatBlockedAt = releaseNotesChatBlocked
+    ? itemStorage.blocked.whenWasReleaseNotesChatBlocked()
+    : undefined;
+
   return {
     profileKey: profileKey ? Bytes.fromBase64(profileKey) : null,
-    givenName: conversation.get('profileName') || null,
-    familyName: conversation.get('profileFamilyName') || null,
+    givenName: ourConversation.get('profileName') || null,
+    familyName: ourConversation.get('profileFamilyName') || null,
     avatarUrlPath: itemStorage.get('avatarUrl') || null,
-    username: conversation.get('username') || null,
-    noteToSelfArchived: Boolean(conversation.get('isArchived')),
-    noteToSelfMarkedUnread: Boolean(conversation.get('markedUnread')),
+    username: ourConversation.get('username') || null,
+    noteToSelfArchived: Boolean(ourConversation.get('isArchived')),
+    noteToSelfMarkedUnread: Boolean(ourConversation.get('markedUnread')),
     readReceipts: getReadReceiptSetting(),
     sealedSenderIndicators: getSealedSenderIndicatorSetting(),
     typingIndicators: getTypingIndicatorSetting(),
     linkPreviews: getLinkPreviewSetting(),
+    payments: itemStorage.get('payments') ?? null,
 
     preferContactAvatars: preferContactAvatars ?? null,
     preferredReactionEmoji: preferredReactionEmoji.canBeSynced(
@@ -585,7 +624,7 @@ export function toAccountRecord(
     hasSeenAdminDeleteEducationDialog:
       itemStorage.get('hasSeenAdminDeleteEducationDialog') ?? null,
 
-    avatarColor: conversation.get('colorFromPrimary') ?? null,
+    avatarColor: ourConversation.get('colorFromPrimary') ?? null,
     automaticKeyVerificationDisabled:
       itemStorage.get('hasKeyTransparencyDisabled') === true,
     storiesDisabled: itemStorage.get('hasStoriesDisabled') === true,
@@ -594,8 +633,20 @@ export function toAccountRecord(
     usernameLink,
     notificationProfileManualOverride,
     notificationProfileSyncDisabled,
+    releaseNotesChatArchived: Boolean(signalConversation?.get('isArchived')),
+    releaseNotesChatMarkedUnread: Boolean(
+      signalConversation?.get('markedUnread')
+    ),
+    releaseNotesChatMutedUntilTimestamp: getSafeLongFromTimestamp(
+      signalConversation?.get('muteExpiresAt'),
+      MAX_VALUE
+    ),
+    releaseNotesChatBlocked,
+    releaseNotesChatBlockedAt: releaseNotesChatBlockedAt
+      ? BigInt(releaseNotesChatBlockedAt)
+      : null,
 
-    $unknown: conversationUnknownFieldsToRecord(conversation),
+    $unknown: conversationUnknownFieldsToRecord(ourConversation),
   };
 }
 
@@ -626,13 +677,19 @@ export function toGroupV2Record(
     throw missingCaseError(localStorySendMode);
   }
 
+  const groupId = conversation.get('groupId');
   const avatarColor = conversation.get('colorFromPrimary');
   const masterKey = conversation.get('masterKey');
   const verifiedNameHash = conversation.get('groupVerifiedNameHash');
 
+  const blockedItem = groupId
+    ? itemStorage.blocked.getBlockedGroups().get(groupId)
+    : undefined;
+
   return {
     masterKey: masterKey != null ? Bytes.fromBase64(masterKey) : null,
-    blocked: conversation.isBlocked(),
+    blocked: Boolean(blockedItem),
+    blockedAtTimestamp: makeBigInt(blockedItem?.blockedAt) ?? null,
     whitelisted: Boolean(conversation.get('profileSharing')),
     archived: Boolean(conversation.get('isArchived')),
     markedUnread: Boolean(conversation.get('markedUnread')),
@@ -724,7 +781,7 @@ export function toCallLinkRecord(
       $unknown,
     };
   }
-  strictAssert(callLinkDbRecord.adminKey, 'toCallLinkRecord: no adminPasskey');
+
   return {
     rootKey: callLinkDbRecord.rootKey,
     adminPasskey: callLinkDbRecord.adminKey,
@@ -899,12 +956,12 @@ export function toNotificationProfileRecord(
   };
 }
 
-type MessageRequestCapableRecord =
-  | Proto.ContactRecord.Params
-  | Proto.GroupV2Record.Params;
-
 async function applyMessageRequestState(
-  record: MessageRequestCapableRecord,
+  record: {
+    blocked: boolean;
+    blockedAtTimestamp: bigint | undefined;
+    whitelisted: boolean;
+  },
   conversation: ConversationModel
 ): Promise<void> {
   const messageRequestEnum = Proto.SyncMessage.MessageRequestResponse.Type;
@@ -915,6 +972,7 @@ async function applyMessageRequestState(
       {
         source: MessageRequestResponseSource.STORAGE_SERVICE,
         learnedAtMs: Date.now(),
+        blockedAt: dropNull(toNumber(record.blockedAtTimestamp)),
       },
       { shouldSave: false }
     );
@@ -926,6 +984,7 @@ async function applyMessageRequestState(
       {
         source: MessageRequestResponseSource.STORAGE_SERVICE,
         learnedAtMs: Date.now(),
+        blockedAt: undefined,
       },
       { shouldSave: false }
     );
@@ -935,7 +994,7 @@ async function applyMessageRequestState(
     conversation.unblock({ viaStorageServiceSync: true });
   }
 
-  if (record.whitelisted === false) {
+  if (!record.whitelisted) {
     conversation.disableProfileSharing({
       reason: 'storage record not whitelisted',
       viaStorageServiceSync: true,
@@ -1247,6 +1306,7 @@ export async function mergeGroupV2Record(
     storySendMode,
 
     needsStorageServiceSync: false,
+    needsGroupUpdate: undefined,
   });
 
   // We only update verified name hash if it is truthy, to avoid races where a linked
@@ -1274,6 +1334,9 @@ export async function mergeGroupV2Record(
 
   addUnknownFieldsToConversation(groupV2Record, conversation, details);
 
+  const deletedAndTerminated =
+    conversation.get('messagesDeleted') && conversation.get('terminated');
+
   if (isGroupV1(conversation.attributes)) {
     // If we found a GroupV1 conversation from this incoming GroupV2 record, we need to
     //   migrate it!
@@ -1285,7 +1348,7 @@ export async function mergeGroupV2Record(
         conversation,
       })
     );
-  } else {
+  } else if (!deletedAndTerminated) {
     const isFirstSync = !itemStorage.get('storageFetchComplete');
     const dropInitialJoinMessage = isFirstSync;
 
@@ -1394,7 +1457,17 @@ export async function mergeContactRecord(
   });
 
   let needsProfileFetch = false;
-  if (contactRecord.profileKey && contactRecord.profileKey.length > 0) {
+  const isFirstSync = !itemStorage.get('storageFetchComplete');
+
+  const localProfileKey = conversation.get('profileKey');
+  if (
+    (isFirstSync || !localProfileKey) &&
+    contactRecord.profileKey &&
+    contactRecord.profileKey.length > 0
+  ) {
+    log.info(
+      `mergeContactRecord: ${conversation.idForLogging()} had no profileKey; using remote`
+    );
     needsProfileFetch = await conversation.setProfileKey(
       Bytes.toBase64(contactRecord.profileKey),
       { viaStorageServiceSync: true, reason: 'mergeContactRecord' }
@@ -1405,25 +1478,18 @@ export async function mergeContactRecord(
   const remoteFamilyName = normalizeProfileName(contactRecord.familyName);
   const localName = conversation.get('profileName');
   const localFamilyName = conversation.get('profileFamilyName');
-  if (
-    remoteName &&
-    (localName !== remoteName || localFamilyName !== remoteFamilyName)
-  ) {
+  const noLocalProfileName = !localName && !localFamilyName;
+  if (remoteName && (isFirstSync || noLocalProfileName)) {
     log.info(
-      `mergeContactRecord: ${conversation.idForLogging()} name doesn't match remote name; overwriting`
+      `mergeContactRecord: ${conversation.idForLogging()} had no profileName; using remote`
     );
     details.push('updated profile name');
     conversation.set({
       profileName: remoteName,
       profileFamilyName: remoteFamilyName,
     });
-    if (localName) {
-      log.info(
-        `mergeContactRecord: ${conversation.idForLogging()} name doesn't match remote name; also fetching profile`
-      );
-      drop(conversation.getProfiles());
-      details.push('refreshing profile');
-    }
+
+    needsProfileFetch = true;
   }
   conversation.set({
     systemGivenName: dropNull(contactRecord.systemGivenName || null),
@@ -1568,16 +1634,26 @@ export async function mergeAccountRecord(
     storyViewReceiptsEnabled,
     username,
     usernameLink,
+    payments,
     notificationProfileManualOverride,
     notificationProfileSyncDisabled,
     automaticKeyVerificationDisabled,
+    releaseNotesChatArchived,
+    releaseNotesChatBlocked,
+    releaseNotesChatBlockedAt,
+    releaseNotesChatMarkedUnread,
+    releaseNotesChatMutedUntilTimestamp,
   } = accountRecord;
 
-  const conversation =
+  const ourConversation =
     window.ConversationController.getOurConversationOrThrow();
+  const signalConversation =
+    await window.ConversationController.getOrCreateSignalConversation();
 
   const details = logRecordChanges(
-    toAccountRecord(conversation, {
+    toAccountRecord({
+      ourConversation,
+      signalConversation,
       notificationProfileSyncDisabled,
     }),
     accountRecord
@@ -1621,7 +1697,12 @@ export async function mergeAccountRecord(
         rawPreferredReactionEmoji.length
       );
     }
-    await itemStorage.put('preferredReactionEmoji', rawPreferredReactionEmoji);
+    await itemStorage.put(
+      'preferredReactionEmoji',
+      rawPreferredReactionEmoji?.map(emoji => {
+        return Emoji.unsafeCastMaybeInvalidStringToVariant(emoji);
+      })
+    );
   }
 
   void setUniversalExpireTimer(
@@ -1661,14 +1742,14 @@ export async function mergeAccountRecord(
   // Key Transparancy parameters for self request change whenever
   // discoverability changes. Make sure we don't do self check prematurely
   if (discoverability !== itemStorage.get('phoneNumberDiscoverability')) {
-    drop(keyTransparency.onKnownIdentifierChange());
+    drop(keyTransparency.onKnownIdentifierChange('phoneNumberDiscoverability'));
   }
   await itemStorage.put('phoneNumberDiscoverability', discoverability);
 
   if (profileKey && profileKey.byteLength > 0) {
     // Access key is part of Key Transparency request and changing it must
     // delay self monitoring.
-    drop(keyTransparency.onKnownIdentifierChange());
+    drop(keyTransparency.onKnownIdentifierChange('accessKey'));
     drop(ourProfileKeyService.set(profileKey));
   }
 
@@ -1711,7 +1792,8 @@ export async function mergeAccountRecord(
           return undefined;
         }
 
-        const { contact, legacyGroupId, groupMasterKey } = identifier;
+        const { contact, legacyGroupId, groupMasterKey, releaseNotes } =
+          identifier;
         let convo: ConversationModel | undefined;
 
         if (contact) {
@@ -1734,6 +1816,8 @@ export async function mergeAccountRecord(
             e164: contact.e164,
             reason: 'storageService.mergeAccountRecord',
           });
+        } else if (releaseNotes) {
+          convo = signalConversation;
         } else if (legacyGroupId && legacyGroupId.length) {
           const groupId = Bytes.toBinary(legacyGroupId);
           convo = window.ConversationController.get(groupId);
@@ -1806,6 +1890,16 @@ export async function mergeAccountRecord(
 
   await saveBackupsSubscriberData(backupSubscriberData);
   await saveBackupTier(toNumber(backupTier) ?? undefined);
+
+  await itemStorage.put(
+    'payments',
+    payments
+      ? {
+          enabled: payments.enabled,
+          entropy: payments.entropy,
+        }
+      : null
+  );
 
   await itemStorage.put('displayBadgesOnProfile', displayBadgesOnProfile);
   await itemStorage.put('keepMutedChatsArchived', keepMutedChatsArchived);
@@ -1945,22 +2039,12 @@ export async function mergeAccountRecord(
     updateOverride(overrideToSave, { fromStorageService: true });
   }
 
-  addUnknownFieldsToConversation(accountRecord, conversation, details);
+  addUnknownFieldsToConversation(accountRecord, ourConversation, details);
 
-  const oldStorageID = conversation.get('storageID');
-  const oldStorageVersion = conversation.get('storageVersion');
+  const oldStorageID = ourConversation.get('storageID');
+  const oldStorageVersion = ourConversation.get('storageVersion');
 
-  if ((username || undefined) !== conversation.get('username')) {
-    // Username is part of key transparency self monitor parameters. Make sure
-    // we delay self-check until the changes fully propagate to the log.
-    drop(keyTransparency.onKnownIdentifierChange());
-    if (itemStorage.get('usernameCorrupted')) {
-      details.push('clearing username corruption');
-      await itemStorage.remove('usernameCorrupted');
-    }
-  }
-
-  conversation.set({
+  ourConversation.set({
     isArchived: noteToSelfArchived,
     markedUnread: noteToSelfMarkedUnread,
     storageID,
@@ -1968,32 +2052,73 @@ export async function mergeAccountRecord(
     needsStorageServiceSync: false,
   });
 
-  await conversation.updateUsername(dropNull(username || null), {
+  await ourConversation.updateUsername(dropNull(username || null), {
     shouldSave: false,
     fromStorageService: true,
   });
 
   let needsProfileFetch = false;
   if (profileKey && profileKey.byteLength > 0) {
-    needsProfileFetch = await conversation.setProfileKey(
+    needsProfileFetch = await ourConversation.setProfileKey(
       Bytes.toBase64(profileKey),
       { viaStorageServiceSync: true, reason: 'mergeAccountRecord' }
     );
 
     const avatarUrl = dropNull(accountRecord.avatarUrlPath || null);
-    await conversation.setAndMaybeFetchProfileAvatar({
+    await ourConversation.setAndMaybeFetchProfileAvatar({
       avatarUrl,
       decryptionKey: profileKey,
     });
     await itemStorage.put('avatarUrl', avatarUrl);
   }
 
-  applyAvatarColor(conversation, accountRecord.avatarColor);
+  applyAvatarColor(ourConversation, accountRecord.avatarColor);
 
-  updatedConversations.push(conversation);
+  if (releaseNotesChatArchived != null) {
+    signalConversation.set({
+      isArchived: releaseNotesChatArchived,
+    });
+  }
+  if (releaseNotesChatMarkedUnread != null) {
+    signalConversation.set({
+      markedUnread: releaseNotesChatMarkedUnread,
+    });
+  }
+
+  signalConversation.set({
+    storageID,
+    storageVersion,
+    needsStorageServiceSync: false,
+  });
+
+  if (releaseNotesChatBlocked != null) {
+    await applyMessageRequestState(
+      {
+        blocked: releaseNotesChatBlocked,
+        whitelisted: !releaseNotesChatBlocked,
+        blockedAtTimestamp: dropNull(releaseNotesChatBlockedAt),
+      },
+      signalConversation
+    );
+  }
+
+  if (releaseNotesChatMutedUntilTimestamp != null) {
+    signalConversation.setMuteExpiration(
+      getTimestampFromLong(
+        releaseNotesChatMutedUntilTimestamp,
+        Number.MAX_SAFE_INTEGER
+      ),
+      {
+        viaStorageServiceSync: true,
+      }
+    );
+  }
+
+  updatedConversations.push(ourConversation);
+  updatedConversations.push(signalConversation);
 
   return {
-    conversation,
+    conversation: ourConversation,
     updatedConversations,
     needsProfileFetch,
     oldStorageID,
@@ -2036,6 +2161,7 @@ export async function mergeStoryDistributionListRecord(
 
   const localStoryDistributionList =
     await DataReader.getStoryDistributionWithMembers(listId);
+  let senderKeyInfo = localStoryDistributionList?.senderKeyInfo;
 
   const details = logRecordChanges(
     localStoryDistributionList == null
@@ -2059,13 +2185,23 @@ export async function mergeStoryDistributionListRecord(
     remoteListMembers = [];
   }
 
-  if (storyDistributionListRecord.$unknown) {
-    details.push('adding unknown fields');
-  }
-
   const deletedAtTimestamp = getTimestampFromLong(
     storyDistributionListRecord.deletedAtTimestamp
   );
+
+  if (senderKeyInfo?.distributionId && deletedAtTimestamp) {
+    const ourAddress = getOurAddress();
+    const ourAci = itemStorage.user.getCheckedAci();
+    await signalProtocolStore.removeSenderKey(
+      new QualifiedAddress(ourAci, ourAddress),
+      senderKeyInfo.distributionId
+    );
+    senderKeyInfo = undefined;
+  }
+
+  if (storyDistributionListRecord.$unknown) {
+    details.push('adding unknown fields');
+  }
 
   const storyDistribution: StoryDistributionWithMembersType = {
     id: listId,
@@ -2074,7 +2210,7 @@ export async function mergeStoryDistributionListRecord(
     allowsReplies: storyDistributionListRecord.allowsReplies,
     isBlockList: storyDistributionListRecord.isBlockList,
     members: remoteListMembers,
-    senderKeyInfo: localStoryDistributionList?.senderKeyInfo,
+    senderKeyInfo,
 
     storageID,
     storageVersion,
@@ -2176,6 +2312,10 @@ export async function mergeStickerPackRecord(
     stickerPackRecord
   );
 
+  const remoteDeletedAtTimestamp = toNumber(
+    stickerPackRecord.deletedAtTimestamp
+  );
+
   if (stickerPackRecord.$unknown) {
     details.push('adding unknown fields');
   }
@@ -2184,10 +2324,10 @@ export async function mergeStickerPackRecord(
   );
 
   let stickerPack: StickerPackInfoType;
-  if (toNumber(stickerPackRecord.deletedAtTimestamp)) {
+  if (remoteDeletedAtTimestamp) {
     stickerPack = {
       id,
-      uninstalledAt: toNumber(stickerPackRecord.deletedAtTimestamp),
+      uninstalledAt: remoteDeletedAtTimestamp,
       storageID,
       storageVersion,
       storageUnknownFields,
@@ -2228,11 +2368,12 @@ export async function mergeStickerPackRecord(
   const wasUninstalled = Boolean(localStickerPack?.uninstalledAt);
   const isUninstalled = Boolean(stickerPack.uninstalledAt);
 
+  const newPosition = stickerPack.position ?? undefined;
   details.push(
     `wasUninstalled=${wasUninstalled}`,
     `isUninstalled=${isUninstalled}`,
     `oldPosition=${localStickerPack?.position ?? '?'}`,
-    `newPosition=${stickerPack.position ?? '?'}`
+    `newPosition=${newPosition ?? '?'}`
   );
 
   if (!wasUninstalled && isUninstalled) {
@@ -2263,22 +2404,40 @@ export async function mergeStickerPackRecord(
         stickerPack.key,
         {
           actionSource: 'storageService',
+          position: newPosition,
         }
       );
     } else {
-      void Stickers.downloadStickerPack(stickerPack.id, stickerPack.key, {
-        finalStatus: 'installed',
-        actionSource: 'storageService',
-      });
+      drop(
+        Stickers.downloadStickerPack(stickerPack.id, stickerPack.key, {
+          finalStatus: 'installed',
+          actionSource: 'storageService',
+          position: newPosition,
+        })
+      );
     }
+  } else if (
+    localStickerPack &&
+    !isUninstalled &&
+    newPosition &&
+    newPosition !== localStickerPack?.position
+  ) {
+    window.reduxActions.stickers.stickerPackUpdated(localStickerPack.id, {
+      position: newPosition,
+    });
   }
 
   await DataWriter.updateStickerPackInfo(stickerPack);
+
+  const shouldDrop =
+    remoteDeletedAtTimestamp > 0 &&
+    isOlderThan(remoteDeletedAtTimestamp, getMessageQueueTime());
 
   return {
     details,
     oldStorageID,
     oldStorageVersion,
+    shouldDrop,
   };
 }
 
@@ -2449,7 +2608,7 @@ function protoToChatFolderType(
 function recipientToConversationId(
   recipient: Proto.Recipient,
   logPrefix: string
-): string {
+): string | undefined {
   let match: ConversationModel | undefined;
   if (recipient.identifier?.contact != null) {
     const serviceId = fromServiceIdBinaryOrString(
@@ -2479,7 +2638,10 @@ function recipientToConversationId(
   } else {
     throw new Error('Unexpected type of recipient');
   }
-  strictAssert(match, `${logPrefix}: Missing conversation for recipient`);
+  if (!match) {
+    log.warn(`${logPrefix}: unknown recipient, dropping`);
+    return undefined;
+  }
   return match.id;
 }
 
@@ -2487,9 +2649,11 @@ function recipientsToConversationIds(
   recipients: ReadonlyArray<Proto.Recipient>,
   logPrefix: string
 ): ReadonlyArray<string> {
-  return recipients.map(recipient => {
-    return recipientToConversationId(recipient, logPrefix);
-  });
+  return recipients
+    .map(recipient => {
+      return recipientToConversationId(recipient, logPrefix);
+    })
+    .filter(isNotNil);
 }
 
 export async function mergeChatFolderRecord(
@@ -2844,7 +3008,10 @@ export async function mergeNotificationProfileRecord(
   const newProfile: NotificationProfileType = {
     id: idString,
     name,
-    emoji: dropNull(emoji),
+    emoji:
+      emoji != null
+        ? Emoji.unsafeCastMaybeInvalidStringToVariant(emoji)
+        : undefined,
     color: dropNull(color) ?? DEFAULT_PROFILE_COLOR,
     createdAtMs: toNumber(createdAtMs) ?? Date.now(),
     allowAllCalls,

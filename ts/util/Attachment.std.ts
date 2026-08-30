@@ -673,7 +673,7 @@ export const getSuggestedFilename = ({
   }
 
   const suffix = timestamp
-    ? moment(timestamp).format('-YYYY-MM-DD-HHmmss')
+    ? moment(timestamp).format('-YYYY-MM-DD-HH-mm-ss-SSS')
     : '';
   const fileType = getFileExtension(attachment);
   const extension = fileType ? `.${fileType}` : '';
@@ -697,6 +697,8 @@ export const getFileExtension = (
       return 'mov';
     case 'audio/mpeg':
       return 'mp3';
+    case 'image/jpeg':
+      return 'jpg';
     default:
       return attachment.contentType.split('/')[1];
   }
@@ -809,7 +811,7 @@ export function canAttachmentHaveThumbnail({
   return isVideoTypeSupported(contentType) || isImageTypeSupported(contentType);
 }
 
-export function hasRequiredInformationToDownloadFromTransitTier(
+export function isDownloadableFromTransitTier(
   attachment: AttachmentType
 ): attachment is AttachmentDownloadableFromTransitTier {
   const hasIntegrityCheck =
@@ -830,25 +832,26 @@ export function hasRequiredInformationToDownloadFromTransitTier(
   return true;
 }
 
-export function shouldAttachmentEndUpInRemoteBackup({
-  attachment,
-  hasMediaBackups,
-}: {
-  attachment: AttachmentType;
-  hasMediaBackups: boolean;
-}): boolean {
-  return hasMediaBackups && hasRequiredInformationForRemoteBackup(attachment);
+export function isDownloadable(
+  attachment: AttachmentType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
+): boolean {
+  return (
+    hasRequiredInformationForLocalBackup(attachment) ||
+    isDownloadableFromTransitTier(attachment) ||
+    isDownloadableFromBackupTier(attachment, { hasMediaBackups })
+  );
 }
 
-export function isDownloadable(attachment: AttachmentType): boolean {
-  return (
-    hasRequiredInformationToDownloadFromTransitTier(attachment) ||
-    shouldAttachmentEndUpInRemoteBackup({
-      attachment,
-      // TODO: DESKTOP-8905
-      hasMediaBackups: true,
-    })
-  );
+export function isDownloadableFromBackupTier(
+  attachment: AttachmentType,
+  {
+    hasMediaBackups,
+  }: {
+    hasMediaBackups: boolean;
+  }
+): attachment is BackupableAttachmentType {
+  return hasMediaBackups && hasRequiredInformationForRemoteBackup(attachment);
 }
 
 // We now partition out the bodyAttachment on receipt, but older

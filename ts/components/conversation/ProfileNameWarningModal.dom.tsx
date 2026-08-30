@@ -1,7 +1,8 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { LocalizerType } from '../../types/Util.std.ts';
 import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
 import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
@@ -17,7 +18,7 @@ export function ProfileNameWarningModal({
   conversationType,
   i18n,
   onClose,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   return (
     <AxoDialog.Root open onOpenChange={onClose}>
       <AxoDialog.Content
@@ -26,14 +27,14 @@ export function ProfileNameWarningModal({
         disableMissingAriaDescriptionWarning
       >
         <AxoDialog.Header>
-          <AxoDialog.Close aria-label={i18n('icu:close')} />
+          <AxoDialog.Close />
         </AxoDialog.Header>
-        <AxoDialog.Body padding="normal">
+        <AxoDialog.Body>
           <div className={tw('flex justify-center')}>
             <div
               className={tw(
-                // oxlint-disable-next-line better-tailwindcss/no-restricted-classes
-                'rounded-3xl bg-color-fill-destructive/12 px-4 py-1.5 type-title-large font-regular text-[#C84118]'
+                'rounded-3xl bg-(--axo-color-legacy-warning-badge)/12 px-4 py-1.5',
+                'type-title-large font-regular text-(--axo-color-legacy-warning-badge)'
               )}
             >
               {conversationType === 'direct' ? (
@@ -43,7 +44,7 @@ export function ProfileNameWarningModal({
               )}
             </div>
           </div>
-          <div className={tw('mt-5 mb-12 type-body-medium text-label-primary')}>
+          <div className={tw('mt-5 mb-12 type-body-medium text-primary')}>
             {conversationType === 'direct' ? (
               <>
                 {i18n('icu:ProfileNameWarningModal__description--direct')}

@@ -14,11 +14,12 @@ import type { PollMessageAttribute } from '../../types/Polls.dom.ts';
 import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 import { itemStorage } from '../../textsecure/Storage.preload.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { IMAGE_BMP, IMAGE_JPEG } from '../../types/MIME.std.ts';
+import { IMAGE_JPEG } from '../../types/MIME.std.ts';
 import { SendStatus } from '../../messages/MessageSendState.std.ts';
 import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.ts';
 import { getAttachmentsPath } from '../../../app/attachments.node.ts';
 import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 async function writeAttachmentFile(path: string) {
   await ensureFile(getAbsoluteAttachmentPath(path));
@@ -55,14 +56,19 @@ describe('cleanupMessage', () => {
       timestamp: now,
       schemaVersion: 12,
       body: 'body',
+      reactions: [
+        {
+          emoji: 'emoji' as Emoji.Variant,
+          fromId: 'from',
+          targetTimestamp: now,
+          timestamp: now + 1,
+        },
+      ],
       poll: {
         question: 'poll question',
       } as PollMessageAttribute,
       sendStateByConversationId: { aci: { status: SendStatus.Delivered } },
-      storyReplyContext: {
-        attachment: { contentType: IMAGE_BMP, size: 128 },
-        messageId: 'messageId',
-      },
+      storyReplyContext: { authorAci: generateAci() },
     };
     await window.MessageCache.saveMessage(attributes, { forceSave: true });
     const message = new MessageModel(attributes);
@@ -78,6 +84,57 @@ describe('cleanupMessage', () => {
       timestamp: attributes.timestamp,
       schemaVersion: 12,
       sendStateByConversationId: { aci: { status: SendStatus.Delivered } },
+      isErased: true,
+    });
+  });
+
+  it('eraseMessageContents preserves reactions for view-once messages', async () => {
+    const now = Date.now();
+    const attributes: MessageAttributesType = {
+      id: v7(),
+      type: 'incoming',
+      sent_at: now,
+      received_at: now,
+      conversationId: 'convoId',
+      timestamp: now,
+      schemaVersion: 12,
+      body: 'body',
+      reactions: [
+        {
+          emoji: 'emoji' as Emoji.Variant,
+          fromId: 'from',
+          targetTimestamp: now,
+          timestamp: now + 1,
+        },
+      ],
+      poll: {
+        question: 'poll question',
+      } as PollMessageAttribute,
+      sendStateByConversationId: { aci: { status: SendStatus.Delivered } },
+      storyReplyContext: { authorAci: generateAci() },
+    };
+    await window.MessageCache.saveMessage(attributes, { forceSave: true });
+    const message = new MessageModel(attributes);
+
+    await eraseMessageContents(message, 'view-once-viewed');
+
+    assert.deepEqual(message.attributes, {
+      id: attributes.id,
+      type: attributes.type,
+      sent_at: attributes.sent_at,
+      received_at: attributes.received_at,
+      conversationId: 'convoId',
+      timestamp: attributes.timestamp,
+      schemaVersion: 12,
+      sendStateByConversationId: { aci: { status: SendStatus.Delivered } },
+      reactions: [
+        {
+          emoji: 'emoji' as Emoji.Variant,
+          fromId: 'from',
+          targetTimestamp: now,
+          timestamp: now + 1,
+        },
+      ],
       isErased: true,
     });
   });
@@ -157,11 +214,7 @@ describe('cleanupMessage', () => {
         conversationId: groupConversationId,
         timestamp: now - 20,
         storyId: storyAttributes.id,
-        storyReplyContext: {
-          authorAci: storyAuthorAci,
-          attachment: { contentType: IMAGE_BMP, size: 128 },
-          messageId: storyAttributes.id,
-        },
+        storyReplyContext: { authorAci: storyAuthorAci },
       };
       const reply2: MessageAttributesType = {
         id: v7(),
@@ -171,11 +224,7 @@ describe('cleanupMessage', () => {
         conversationId: groupConversationId,
         timestamp: now - 10,
         storyId: storyAttributes.id,
-        storyReplyContext: {
-          authorAci: storyAuthorAci,
-          attachment: { contentType: IMAGE_BMP, size: 256 },
-          messageId: storyAttributes.id,
-        },
+        storyReplyContext: { authorAci: storyAuthorAci },
       };
       await window.MessageCache.saveMessage(reply1, { forceSave: true });
       await window.MessageCache.saveMessage(reply2, { forceSave: true });
@@ -196,7 +245,7 @@ describe('cleanupMessage', () => {
       assert.isUndefined(await DataReader.getMessageById(reply2.id));
     });
 
-    it('cleanupFilesAndReferencesToMessage clears storyReplyContext for 1:1 conversations', async () => {
+    it('cleanupFilesAndReferencesToMessage preserves 1:1 story replies', async () => {
       const now = Date.now();
       const directConversationId = v7();
       const storyAuthorAci = generateAci();
@@ -227,11 +276,7 @@ describe('cleanupMessage', () => {
         conversationId: directConversationId,
         timestamp: now - 20,
         storyId: storyAttributes.id,
-        storyReplyContext: {
-          authorAci: storyAuthorAci,
-          attachment: { contentType: IMAGE_BMP, size: 128 },
-          messageId: storyAttributes.id,
-        },
+        storyReplyContext: { authorAci: storyAuthorAci },
       };
       const reply2: MessageAttributesType = {
         id: v7(),
@@ -241,11 +286,7 @@ describe('cleanupMessage', () => {
         conversationId: directConversationId,
         timestamp: now - 10,
         storyId: storyAttributes.id,
-        storyReplyContext: {
-          authorAci: storyAuthorAci,
-          attachment: { contentType: IMAGE_BMP, size: 256 },
-          messageId: storyAttributes.id,
-        },
+        storyReplyContext: { authorAci: storyAuthorAci },
       };
       await window.MessageCache.saveMessage(reply1, { forceSave: true });
       await window.MessageCache.saveMessage(reply2, { forceSave: true });
@@ -263,25 +304,13 @@ describe('cleanupMessage', () => {
         '1:1 story replies should NOT be deleted'
       );
 
-      // Verify storyReplyContext was cleared
+      // Replies are not mutated on story deletion; they render "story unavailable"
+      // via the live story lookup once the story is gone. The cached author remains.
       for (const reply of repliesAfter) {
-        assert.isDefined(
-          reply.storyReplyContext,
-          'storyReplyContext should still exist'
-        );
-        assert.strictEqual(
-          reply.storyReplyContext?.messageId,
-          '',
-          'messageId should be empty string'
-        );
-        assert.isUndefined(
-          reply.storyReplyContext?.attachment,
-          'attachment should be undefined'
-        );
         assert.strictEqual(
           reply.storyReplyContext?.authorAci,
           storyAuthorAci,
-          'authorAci should be preserved'
+          'storyReplyContext author should be preserved'
         );
       }
     });

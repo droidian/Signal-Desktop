@@ -15,7 +15,7 @@ import { backupsService } from '../services/backups/index.preload.ts';
 import { tusUpload } from './uploads/tusProtocol.node.ts';
 import { defaultFileReader } from './uploads/uploads.node.ts';
 import {
-  type AttachmentUploadFormResponseType,
+  type AttachmentUploadFormType,
   getAttachmentUploadForm,
   createFetchForAttachmentUpload,
   putEncryptedAttachment,
@@ -101,7 +101,7 @@ export async function uploadAttachment(
   let { fileName } = attachment;
   if (isImageAttachment(attachment) || isVideoAttachment(attachment)) {
     assertDev(
-      fileName == null,
+      fileName == null || fileName === '',
       'Filename should be stripped from visual attachments'
     );
 
@@ -127,12 +127,12 @@ export async function uploadAttachment(
     uploadTimestamp: BigInt(uploadTimestamp),
 
     contentType: MIMETypeToString(attachment.contentType),
-    fileName: fileName ?? null,
+    fileName: fileName || null,
     flags: flags ?? null,
     width: width ?? null,
     height: height ?? null,
-    caption: caption ?? null,
-    blurHash: blurHash ?? null,
+    caption: caption || null,
+    blurHash: blurHash || null,
 
     thumbnail: null,
   };
@@ -153,7 +153,7 @@ export async function encryptAndUploadAttachment({
   cdnNumber: number;
   encrypted: EncryptedAttachmentV2;
 }> {
-  let uploadForm: AttachmentUploadFormResponseType;
+  let uploadForm: AttachmentUploadFormType;
   let absoluteCiphertextPath: string | undefined;
 
   try {
@@ -211,7 +211,7 @@ export async function uploadFile({
 }: {
   absoluteCiphertextPath: string;
   ciphertextFileSize: number;
-  uploadForm: AttachmentUploadFormResponseType;
+  uploadForm: AttachmentUploadFormType;
 }): Promise<void> {
   if (CDNS_SUPPORTING_TUS.has(uploadForm.cdn)) {
     const fetchFn = createFetchForAttachmentUpload(uploadForm);

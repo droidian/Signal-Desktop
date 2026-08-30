@@ -17,6 +17,11 @@ import { drop } from '../util/drop.std.ts';
 import type { AppendPinnedMessageResult } from '../sql/server/pinnedMessages.std.ts';
 import * as Errors from '../types/errors.std.ts';
 import { isGiftBadge } from '../state/selectors/message.preload.ts';
+import type {
+  DurationSecs,
+  ReceivedTimestampMs,
+  SentTimestampMs,
+} from '@signalapp/types';
 
 const { AccessRequired } = Proto.AccessControl;
 const { Role } = Proto.Member;
@@ -26,10 +31,10 @@ const parentLog = createLogger('PinnedMessages');
 export type PinnedMessageAddProps = Readonly<{
   targetSentTimestamp: number;
   targetAuthorAci: AciString;
-  pinDuration: DurationInSeconds | null;
+  pinDuration: DurationSecs | null;
   pinnedByAci: AciString;
-  sentAtTimestamp: number;
-  receivedAtTimestamp: number;
+  sentAtTimestamp: SentTimestampMs;
+  receivedAtTimestamp: ReceivedTimestampMs;
   expireTimer: DurationInSeconds | null;
   expirationStartTimestamp: number | null;
 }>;
@@ -215,6 +220,10 @@ function validatePinnedMessageTarget(
   sourceAci: AciString
 ): { error: string } | null {
   const message = target.targetMessage.attributes;
+
+  if (target.targetConversation.isBlocked()) {
+    return { error: 'Target conversation is blocked' };
+  }
 
   if (!isValidSenderAciForConversation(target.targetConversation, sourceAci)) {
     return { error: 'Sender cannot send to target conversation' };

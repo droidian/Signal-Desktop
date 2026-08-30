@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ForwardedRef, ReactNode } from 'react';
-import React, { forwardRef, memo, useCallback, useMemo, useState } from 'react';
+import type { ForwardedRef, ReactNode, JSX } from 'react';
+import { forwardRef, memo, useCallback, useMemo } from 'react';
 import { Tabs } from 'radix-ui';
 import { AnimatePresence, motion } from 'motion/react';
 import type { LocalizerType } from '../../../types/I18N.std.ts';
@@ -19,23 +19,12 @@ import type { HydratedBodyRangesType } from '../../../types/BodyRange.std.ts';
 import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
 import { missingCaseError } from '../../../util/missingCaseError.std.ts';
 import { stripNewlinesForLeftPane } from '../../../util/stripNewlinesForLeftPane.std.ts';
+import { usePrevious } from '../../../hooks/usePrevious.std.ts';
 
 enum Direction {
   None = 0,
   Backwards = -1,
   Forwards = 1,
-}
-
-// This `usePrevious()` hook is safe in React concurrent mode and doesn't break
-// when rendered multiple times with the same values in `<StrictMode>`
-function usePrevious<T>(value: T): T | null {
-  const [current, setCurrent] = useState<T>(value);
-  const [previous, setPrevious] = useState<T | null>(null);
-  if (current !== value) {
-    setCurrent(value);
-    setPrevious(current);
-  }
-  return previous;
 }
 
 export type PinMessageText = Readonly<{
@@ -225,8 +214,8 @@ function Bar(props: {
             when: 'beforeChildren',
           }}
           className={tw(
-            'overflow-clip border-t-[0.5px] border-t-border-primary',
-            'bg-legacy-conversation-header-bg'
+            'overflow-clip border-t-[0.5px] border-t-primary',
+            'bg-(--axo-color-legacy-conversation-header-bg)'
           )}
         >
           <motion.div
@@ -248,10 +237,9 @@ function Row(props: { children: ReactNode }) {
     <AriaClickable.Root
       className={tw(
         'contain-strict',
-        'flex h-14 items-center pe-3 select-none',
+        'flex h-14 items-center pe-3',
         'rounded-xs',
-        'outline-0 outline-border-focused',
-        'data-focused:outline-[2.5px]'
+        'outline-none data-focused:axo-focus-ring'
       )}
     >
       {props.children}
@@ -272,7 +260,7 @@ function HiddenTrigger(props: {
 
   return (
     <AriaClickable.HiddenTrigger
-      aria-label={i18n(
+      label={i18n(
         'icu:PinnedMessagesBar__GoToMessageClickableArea__AccessibilityLabel'
       )}
       onClick={handlePinGoToCurrent}
@@ -339,17 +327,16 @@ function TabTrigger(props: {
         pinNumber: props.pinNumber,
       })}
       className={tw(
-        'group flex-1 px-[7px] outline-0',
+        'group flex-1 px-[7px] outline-none',
         props.pinsCount === 3 ? 'py-px' : 'py-0.5'
       )}
     >
       <span
         className={tw(
           'block h-full w-0.5 rounded-full',
-          'bg-label-disabled',
-          'group-data-[state=active]:bg-label-primary',
-          'outline-border-focused',
-          'group-focused:outline-[2.5px]'
+          'bg-(--axo-color-label-disabled)',
+          'group-data-[state=active]:bg-(--axo-color-label-primary)',
+          'keyboard-mode:group-focus:axo-focus-ring'
         )}
       />
     </Tabs.Trigger>
@@ -366,7 +353,7 @@ type ContentProps = Readonly<{
 const Content = forwardRef(function Content(
   { i18n, pin, direction, pinsCount, ...forwardedProps }: ContentProps,
   ref: ForwardedRef<HTMLDivElement>
-): React.JSX.Element {
+): JSX.Element {
   const thumbnailUrl = useMemo(() => {
     return getThumbnailUrl(pin.message);
   }, [pin.message]);
@@ -399,10 +386,10 @@ const Content = forwardRef(function Content(
     >
       {thumbnailUrl != null && <ImageThumbnail url={thumbnailUrl} />}
       <div className={tw('min-w-0 flex-1')}>
-        <h1 className={tw('type-body-small font-semibold text-label-primary')}>
+        <h1 className={tw('type-body-small font-semibold text-primary')}>
           <UserText text={pin.sender.title} />
         </h1>
-        <p className={tw('me-2 truncate type-body-medium text-label-primary')}>
+        <p className={tw('me-2 truncate type-body-medium text-primary')}>
           <MessagePreview i18n={i18n} message={pin.message} />
         </p>
       </div>
@@ -438,7 +425,7 @@ function PinActionsMenu(props: {
       <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
           <AxoIconButton.Root
-            variant="borderless-secondary"
+            variant="implied-secondary"
             size="md"
             symbol="pin"
             label={i18n(
@@ -495,7 +482,7 @@ function ImageThumbnail(props: { url: string }) {
 }
 
 type PreviewIcon = Readonly<{
-  symbol: AxoSymbol.InlineGlyphName;
+  symbol: AxoSymbol.Name;
   label: string;
 }>;
 

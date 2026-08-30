@@ -16,6 +16,7 @@ import { expect } from 'playwright/test';
 import { strictAssert } from '../util/assert.std.ts';
 import { SECOND } from '../util/durations/constants.std.ts';
 import { toNumber } from '../util/toNumber.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 const debug = createDebug('mock:test:helpers');
 
@@ -260,7 +261,7 @@ export function sendReaction({
   to: PrimaryDevice | Device;
   targetAuthor: PrimaryDevice | Device;
   targetMessageTimestamp: number;
-  emoji: string;
+  emoji: Emoji.Variant;
   reactionTimestamp?: number;
   desktop: Device;
 }): Promise<void> {
@@ -356,7 +357,7 @@ export async function acceptConversation(page: Page): Promise<void> {
     .click();
 
   const confirmationButton = page
-    .locator('.MessageRequestActionsConfirmation')
+    .getByRole('alertdialog', { name: 'Accept request?' })
     .getByRole('button', { name: 'Accept' });
 
   await confirmationButton.waitFor({
@@ -504,7 +505,7 @@ export async function createCallLink(
     .getByText('Create a Call Link')
     .click();
 
-  const editModal = page.locator('.CallLinkEditModal');
+  const editModal = page.getByRole('dialog', { name: 'Call link details' });
   await editModal.waitFor();
 
   if (isAdminApprovalRequired !== undefined) {
@@ -518,7 +519,7 @@ export async function createCallLink(
     }
   }
 
-  await editModal.locator('button', { hasText: 'Add call name' }).click();
+  await editModal.getByRole('button', { name: 'Add call name' }).click();
 
   const addNameModal = page.locator('.CallLinkAddNameModal');
   await addNameModal.waitFor();

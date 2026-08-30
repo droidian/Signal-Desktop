@@ -353,14 +353,15 @@ function verifyWithOSForExport(
         chooseExportLocation()(dispatch, getState, null);
         break;
       case 'unsupported':
-      case 'error':
-        log.warn(
-          `verifyWithOSForExport: Got '${result}' status, but continuing on`
-        );
+        log.warn(`verifyWithOSForExport: Unsupported, continuing on`);
         chooseExportLocation()(dispatch, getState, null);
         break;
       case 'unauthorized':
         log.warn('verifyWithOSForExport: Not authorized; clearing workflow');
+        dispatch(clearWorkflow());
+        break;
+      case 'error':
+        log.warn('verifyWithOSForExport: Error; clearing workflow');
         dispatch(clearWorkflow());
         break;
       default:

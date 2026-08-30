@@ -1,7 +1,7 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { tw, type TailwindStyles } from '../axo/tw.dom.tsx';
 import { roundFractionForProgressBar } from '../util/numbers.std.ts';
@@ -24,44 +24,52 @@ type SpinnerVariantStyles = Readonly<{
 
 const SpinnerVariants = {
   normal: {
-    bg: tw('stroke-label-disabled-on-color'),
-    fg: tw('stroke-label-primary-on-color'),
+    bg: tw('stroke-(--axo-color-label-disabled-oncolor)'),
+    fg: tw('stroke-(--axo-color-label-primary-oncolor)'),
   },
   'no-background': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-label-primary-on-color'),
+    fg: tw('stroke-(--axo-color-label-primary-oncolor)'),
   },
   'no-background-incoming': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-label-primary'),
+    fg: tw('stroke-(--axo-color-label-primary)'),
   },
   'no-background-light': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-border-primary'),
+    fg: tw('stroke-primary'),
   },
   brand: {
-    bg: tw('stroke-fill-secondary'),
-    fg: tw('stroke-border-selected'),
+    bg: tw('stroke-(--axo-color-fill-secondary)'),
+    fg: tw('stroke-(--axo-color-label-accent)'),
   },
   'axo-button-spinner-secondary': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-label-primary'),
+    fg: tw('stroke-(--axo-color-label-primary)'),
   },
-  'axo-button-spinner-on-color': {
+  'axo-button-spinner-oncolor': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-label-primary-on-color'),
+    fg: tw('stroke-(--axo-color-label-primary-oncolor)'),
+  },
+  'axo-button-spinner-onbright': {
+    bg: tw('stroke-none'),
+    fg: tw('stroke-(--axo-color-label-primary-onbright)'),
   },
   'axo-button-spinner-primary': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-color-label-primary'),
+    fg: tw('stroke-(--axo-color-label-primary)'),
   },
   'axo-button-spinner-affirmative': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-color-label-affirmative'),
+    fg: tw('stroke-(--axo-color-label-affirmative)'),
+  },
+  'axo-button-spinner-warning': {
+    bg: tw('stroke-none'),
+    fg: tw('stroke-(--axo-color-label-warning)'),
   },
   'axo-button-spinner-destructive': {
     bg: tw('stroke-none'),
-    fg: tw('stroke-color-label-destructive'),
+    fg: tw('stroke-(--axo-color-label-destructive)'),
   },
 } as const satisfies Record<string, SpinnerVariantStyles>;
 
@@ -76,7 +84,7 @@ export function SpinnerV2({
   size,
   strokeWidth,
   ariaLabel,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const sizeInPixels = `${size}px`;
 
   const radius = Math.min(

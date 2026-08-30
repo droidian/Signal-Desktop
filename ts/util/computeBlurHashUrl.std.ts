@@ -46,6 +46,12 @@ const BITMAP_HEADER = new Uint8Array([
 ]);
 
 const PIXEL_COUNT = 32 * 32;
+const MIN_DIMENSION = 4;
+
+// width * height = PIXEL_COUNT, so aspect_ratio = PIXEL_COUNT / (height * height), which is
+// maximized when height is small
+const MAX_ASPECT_RATIO = PIXEL_COUNT / (MIN_DIMENSION * MIN_DIMENSION); // 64
+const MIN_ASPECT_RATIO = 1 / MAX_ASPECT_RATIO;
 
 function writeUInt32LE(
   bytes: Uint8Array<ArrayBuffer>,
@@ -68,8 +74,13 @@ export function computeBlurHashUrl(
   desiredWidth = 1,
   desiredHeight = 1
 ): string {
-  const invAspect =
+  const rawInvAspect =
     (Math.abs(desiredHeight) + 1e-23) / (Math.abs(desiredWidth) + 1e-23);
+
+  const invAspect = Math.min(
+    MAX_ASPECT_RATIO,
+    Math.max(MIN_ASPECT_RATIO, rawInvAspect)
+  );
 
   // Calculate width and height that roughly satisfy the desired PIXEL_COUNT
   //
@@ -85,14 +96,12 @@ export function computeBlurHashUrl(
   // oxlint-disable-next-line no-bitwise
   width <<= 2;
 
-  // Give at least two pixels of width to show gradients
-  width = Math.max(2, width);
+  width = Math.max(MIN_DIMENSION, width);
 
   let height = width * invAspect;
   height = Math.round(height);
 
-  // Minimum two pixels of height for gradients
-  height = Math.max(2, height);
+  height = Math.max(MIN_DIMENSION, height);
 
   const rgba = decode(blurHash, width, height);
   const bgrSize = (rgba.byteLength / 4) * 3;

@@ -23,19 +23,18 @@ type AttachmentDataToBeReused = WithRequiredProperties<
     | 'screenshot'
     | 'width'
     | 'height'
+    | 'reuseToken'
   >,
-  'path' | 'localKey' | 'version'
+  'path' | 'localKey' | 'version' | 'reuseToken'
 >;
 
 export async function getExistingAttachmentDataForReuse({
   plaintextHash,
   contentType,
-  messageId,
   logId,
 }: {
   plaintextHash: string;
   contentType: MIMEType;
-  messageId: string;
   logId?: string;
 }): Promise<AttachmentDataToBeReused | null> {
   const existingAttachmentData =
@@ -43,7 +42,6 @@ export async function getExistingAttachmentDataForReuse({
       plaintextHash,
       version: CURRENT_ATTACHMENT_VERSION,
       contentType,
-      messageId,
     });
 
   if (!existingAttachmentData) {
@@ -72,6 +70,7 @@ export async function getExistingAttachmentDataForReuse({
     version: existingAttachmentData.version,
     width: existingAttachmentData.width ?? undefined,
     height: existingAttachmentData.height ?? undefined,
+    reuseToken: existingAttachmentData.reuseToken,
   };
   const { thumbnailPath, thumbnailSize, thumbnailContentType } =
     existingAttachmentData;

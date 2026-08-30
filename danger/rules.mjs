@@ -3,5 +3,6 @@
 // @ts-check
 
 import './rules/enforcePackageJsonPinnedDeps.mjs';
+import './rules/enforcePackageJsonPublishConfig.mjs';
 import './rules/enforcePnpmLockfileDepsIntegrity.mjs';
 import './rules/enforceTailwindDepsMatch.mjs';

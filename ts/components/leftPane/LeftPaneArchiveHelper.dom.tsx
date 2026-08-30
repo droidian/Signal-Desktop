@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React from 'react';
 import lodash from 'lodash';
 
 import type { ToFindType } from './LeftPaneHelper.dom.tsx';
@@ -35,6 +34,7 @@ export type LeftPaneArchivePropsType =
   | LeftPaneArchiveBasePropsType
   | (LeftPaneArchiveBasePropsType & LeftPaneSearchPropsType);
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneArchiveHelper extends LeftPaneHelper<LeftPaneArchivePropsType> {
   readonly #archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
   readonly #isSearchingGlobally: boolean;

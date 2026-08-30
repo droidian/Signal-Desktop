@@ -69,6 +69,12 @@ button.BackupMediaDownloadProgress__button {
       color: variables.$color-ultramarine-light;
     }
   }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
+    }
+  }
 }
 
 button.BackupMediaDownloadProgress__button-more {
@@ -94,6 +100,12 @@ button.BackupMediaDownloadProgress__button-more {
         '../images/icons/v3/more/more.svg',
         variables.$color-gray-20
       );
+    }
+  }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -122,6 +134,12 @@ button.BackupMediaDownloadProgress__button-close {
       );
     }
   }
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
+    }
+  }
 }
 
 .BackupMediaDownloadProgress__description {
@@ -133,12 +151,5 @@ button.BackupMediaDownloadProgress__button-close {
 
   @include mixins.dark-theme {
     color: variables.$color-gray-25;
-  }
-}
-
-.BackupMediaDownloadCancelConfirmation {
-  min-width: 440px;
-  a {
-    text-decoration: none;
   }
 }

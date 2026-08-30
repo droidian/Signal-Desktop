@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, Fragment, type JSX } from 'react';
 import classNames from 'classnames';
 import { v4 as uuid } from 'uuid';
 
@@ -24,6 +24,7 @@ import { AxoButton } from '../axo/AxoButton.dom.tsx';
 import { AxoSwitch } from '../axo/AxoSwitch.dom.tsx';
 import type { VisibleRemoteMegaphoneType } from '../types/Megaphone.std.ts';
 import { internalGetTestMegaphone } from '../util/getTestMegaphone.std.ts';
+import type { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
 
 const log = createLogger('PreferencesInternal');
 
@@ -95,7 +96,7 @@ export function PreferencesInternal({
   setSfuUrl: (value: string | undefined) => void;
   forceKeyTransparencyCheck: () => Promise<void>;
   keyTransparencySelfHealth: StorageAccessType['keyTransparencySelfHealth'];
-}): React.JSX.Element {
+}): JSX.Element {
   const [messageCountBySchemaVersion, setMessageCountBySchemaVersion] =
     useState<MessageCountBySchemaVersionType>();
   const [messageSampleForVersions, setMessageSampleForVersions] = useState<{
@@ -185,7 +186,7 @@ export function PreferencesInternal({
   const renderValidationResult = useCallback(
     (
       backupResult: BackupValidationResultType | undefined
-    ): React.JSX.Element | undefined => {
+    ): JSX.Element | undefined => {
       if (backupResult == null) {
         return;
       }
@@ -195,7 +196,7 @@ export function PreferencesInternal({
           result: { totalBytes, stats, duration },
         } = backupResult;
 
-        let snapshotDirEl: React.JSX.Element | undefined;
+        let snapshotDirEl: JSX.Element | undefined;
         if ('snapshotDir' in backupResult.result) {
           snapshotDirEl = (
             <p>
@@ -295,15 +296,15 @@ export function PreferencesInternal({
     }
   }, [forceKeyTransparencyCheck]);
 
-  let keyTransparencySymbol: undefined | 'check-circle-fill' | 'error-fill';
+  let keyTransparencySymbol: AxoSymbol.Name | undefined;
   if (keyTransparencySelfHealth == null) {
     keyTransparencySymbol = undefined;
   } else if (keyTransparencySelfHealth === 'ok') {
     keyTransparencySymbol = 'check-circle-fill';
   } else if (keyTransparencySelfHealth === 'fail') {
-    keyTransparencySymbol = 'error-fill';
+    keyTransparencySymbol = 'error-circle-fill';
   } else if (keyTransparencySelfHealth === 'intermittent') {
-    keyTransparencySymbol = 'error-fill';
+    keyTransparencySymbol = 'error-circle-fill';
   }
 
   const prevAbortControlerRef = useRef<AbortController | null>(null);
@@ -345,15 +346,10 @@ export function PreferencesInternal({
             )}
           >
             <AxoButton.Root
-              variant="secondary"
+              variant="strong-secondary"
               size="lg"
               onClick={validateBackup}
-              disabled={isValidationPending}
-              experimentalSpinner={
-                isValidationPending
-                  ? { 'aria-label': i18n('icu:loading') }
-                  : null
-              }
+              pending={isValidationPending}
             >
               {i18n('icu:Preferences__internal__validate-backup')}
             </AxoButton.Root>
@@ -379,7 +375,7 @@ export function PreferencesInternal({
             )}
           >
             <AxoButton.Root
-              variant="secondary"
+              variant="strong-secondary"
               size="lg"
               onClick={async () => {
                 setMessageCountBySchemaVersion(
@@ -407,7 +403,7 @@ export function PreferencesInternal({
                   {messageCountBySchemaVersion.map(
                     ({ schemaVersion, count }) => {
                       return (
-                        <React.Fragment key={schemaVersion}>
+                        <Fragment key={schemaVersion}>
                           <tr>
                             <td>{schemaVersion}</td>
                             <td>{count}</td>
@@ -444,7 +440,7 @@ export function PreferencesInternal({
                               </td>
                             </tr>
                           ) : null}
-                        </React.Fragment>
+                        </Fragment>
                       );
                     }
                   )}
@@ -472,7 +468,7 @@ export function PreferencesInternal({
               )}
             >
               <AxoButton.Root
-                variant="secondary"
+                variant="strong-secondary"
                 size="lg"
                 onClick={handleAddTestReceipt}
               >
@@ -523,15 +519,10 @@ export function PreferencesInternal({
                       </td>
                       <td style={{ padding: '8px' }}>
                         <AxoButton.Root
-                          variant="secondary"
+                          variant="strong-secondary"
                           size="lg"
                           onClick={() => handleGenerateReceipt(receipt)}
-                          disabled={isGeneratingReceipt}
-                          experimentalSpinner={
-                            isGeneratingReceipt
-                              ? { 'aria-label': i18n('icu:loading') }
-                              : null
-                          }
+                          pending={isGeneratingReceipt}
                         >
                           Download
                         </AxoButton.Root>
@@ -575,7 +566,7 @@ export function PreferencesInternal({
             moduleClassName="Preferences__ReadonlySqlPlayground__Textarea"
           />
           <AxoButton.Root
-            variant="destructive"
+            variant="strong-destructive"
             size="lg"
             onClick={handleReadOnlySqlInputSubmit}
           >
@@ -607,7 +598,7 @@ export function PreferencesInternal({
             )}
           >
             <AxoButton.Root
-              variant="secondary"
+              variant="strong-secondary"
               size="lg"
               onClick={async () => {
                 const megaphone = internalGetTestMegaphone();
@@ -643,7 +634,7 @@ export function PreferencesInternal({
             )}
           >
             <AxoButton.Root
-              variant="destructive"
+              variant="strong-destructive"
               size="lg"
               onClick={async () => {
                 const result = await internalDeleteAllMegaphones();
@@ -672,7 +663,7 @@ export function PreferencesInternal({
           </div>
           <div className="Preferences__one-third-flow Preferences__one-third-flow--justify-end">
             <AxoButton.Root
-              variant="destructive"
+              variant="strong-destructive"
               size="lg"
               onClick={handleResetCallingOverrides}
             >
@@ -759,14 +750,10 @@ export function PreferencesInternal({
           <div className="Preferences__one-third-flow Preferences__one-third-flow--justify-end">
             <AxoButton.Root
               symbol={keyTransparencySymbol}
-              variant="secondary"
+              variant="strong-secondary"
               size="lg"
               onClick={handleKeyTransparencyCheck}
-              experimentalSpinner={
-                isKeyTransparencyRunning
-                  ? { 'aria-label': i18n('icu:loading') }
-                  : null
-              }
+              pending={isKeyTransparencyRunning}
             >
               Check
             </AxoButton.Root>

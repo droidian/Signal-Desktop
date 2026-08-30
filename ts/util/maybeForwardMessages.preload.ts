@@ -127,6 +127,7 @@ export async function maybeForwardMessages(
               data: {
                 ...stickerWithData.data,
                 path: undefined,
+                reuseToken: undefined,
               },
             }
           : undefined;
@@ -152,6 +153,7 @@ export async function maybeForwardMessages(
             thumbnail: undefined,
             thumbnailFromBackup: undefined,
             screenshot: undefined,
+            reuseToken: undefined,
           }))
         );
         const attachmentsToSend = attachmentsWithData.filter(

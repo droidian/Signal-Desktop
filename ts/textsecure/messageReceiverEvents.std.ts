@@ -24,6 +24,12 @@ import type {
 } from '../types/CallDisposition.std.ts';
 import type { CallLinkUpdateSyncType } from '../types/CallLink.std.ts';
 import { isAciString } from '../util/isAciString.std.ts';
+import type {
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+  TimestampMs,
+} from '@signalapp/types';
 
 export class EmptyEvent extends Event {
   constructor() {
@@ -173,10 +179,10 @@ export type DecryptionErrorEventData = Readonly<{
   contentHint: number | undefined;
   groupId: string | undefined;
   receivedAtCounter: number;
-  receivedAtDate: number;
+  receivedAtDate: ReceivedTimestampMs;
   senderDevice: number;
   senderAci: AciString;
-  timestamp: number;
+  timestamp: SentTimestampMs;
 }>;
 
 export class DecryptionErrorEvent extends ConfirmableEvent {
@@ -227,15 +233,15 @@ export type SentEventData = Readonly<{
   envelopeId: string;
   destinationE164?: string;
   destinationServiceId?: ServiceIdString;
-  timestamp: number;
-  serverTimestamp: number;
+  timestamp: SentTimestampMs;
+  serverTimestamp: ServerTimestampMs;
   device: number | undefined;
   unidentifiedStatus: ProcessedSent['unidentifiedStatus'];
   message: ProcessedDataMessage;
   isRecipientUpdate: boolean;
   receivedAtCounter: number;
-  receivedAtDate: number;
-  expirationStartTimestamp?: number;
+  receivedAtDate: ReceivedTimestampMs;
+  expirationStartTimestamp?: TimestampMs;
   storyDistributionListId?: StoryDistributionIdString;
 }>;
 
@@ -276,13 +282,13 @@ export type MessageEventData = Readonly<{
   sourceAci: AciString;
   sourceDevice?: number;
   destinationServiceId: ServiceIdString;
-  timestamp: number;
+  timestamp: SentTimestampMs;
   serverGuid: string;
-  serverTimestamp: number;
+  serverTimestamp: ServerTimestampMs;
   unidentifiedDeliveryReceived: boolean;
   message: ProcessedDataMessage;
   receivedAtCounter: number;
-  receivedAtDate: number;
+  receivedAtDate: ReceivedTimestampMs;
 }>;
 
 export class MessageEvent extends ConfirmableEvent {
@@ -560,6 +566,12 @@ export class CallLinkUpdateSyncEvent extends ConfirmableEvent {
 export class DeviceNameChangeSyncEvent extends ConfirmableEvent {
   constructor(confirm: ConfirmCallback) {
     super('deviceNameChangeSync', confirm);
+  }
+}
+
+export class UsernameChangeSyncEvent extends ConfirmableEvent {
+  constructor(confirm: ConfirmCallback) {
+    super('usernameChangeSync', confirm);
   }
 }
 

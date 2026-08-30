@@ -198,6 +198,14 @@ export class SenderCertificateService {
       return undefined;
     }
 
+    if (
+      mode === SenderCertificateMode.WithoutE164 &&
+      decodedCert.senderE164() != null
+    ) {
+      log.error('Sender certificate included E164 incorrectly');
+      return undefined;
+    }
+
     const serializedCertificate = {
       expires,
       serialized: certificate,

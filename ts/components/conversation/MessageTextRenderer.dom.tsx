@@ -1,23 +1,21 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { ReactElement } from 'react';
+import { useMemo } from 'react';
+import type { ReactElement, JSX } from 'react';
 import classNames from 'classnames';
-import emojiRegex from 'emoji-regex';
 import lodash from 'lodash';
 
 import { linkify, SUPPORTED_PROTOCOLS } from './Linkify.dom.tsx';
 import type {
   BodyRangesForDisplayType,
+  DisplayBodyRangeType,
   DisplayNode,
   HydratedBodyRangeMention,
-  RangeNode,
 } from '../../types/BodyRange.std.ts';
 import {
   BodyRange,
-  insertRange,
-  collapseRangeTree,
+  collapseRangesToDisplayNodes,
   groupContiguousSpoilers,
 } from '../../types/BodyRange.std.ts';
 import { AtMention } from './AtMention.dom.tsx';
@@ -26,10 +24,10 @@ import { Emojify } from './Emojify.dom.tsx';
 import { AddNewLines } from './AddNewLines.dom.tsx';
 import type { LocalizerType } from '../../types/Util.std.ts';
 import type { FunJumboEmojiSize } from '../fun/FunEmoji.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { sortBy } = lodash;
 
-const EMOJI_REGEXP = emojiRegex();
 export enum RenderLocation {
   ConversationList = 'ConversationList',
   Quote = 'Quote',
@@ -69,45 +67,36 @@ export function MessageTextRenderer({
   renderLocation,
   textLength,
   originalMessageText,
-}: Props): React.JSX.Element {
-  const finalNodes = React.useMemo(() => {
+}: Props): JSX.Element {
+  const finalNodes = useMemo(() => {
     const links = disableLinks
       ? []
-      : extractLinks(messageText, originalMessageText);
+      : extractLinks(originalMessageText, textLength);
 
     // We need mentions to come last; they can't have children for proper rendering
     const sortedRanges = sortBy(bodyRanges, range =>
       BodyRange.isMention(range) ? 1 : 0
     );
 
-    // Create range tree, dropping bodyRanges that don't apply. Read More means truncated
-    //   strings.
+    // Prepare ranges (assign spoiler ids, drop ones that don't apply
     let spoilerCount = 0;
-    const tree = sortedRanges.reduce<ReadonlyArray<RangeNode>>(
-      (acc, range) => {
-        if (
-          BodyRange.isFormatting(range) &&
-          range.style === BodyRange.Style.SPOILER
-        ) {
-          spoilerCount += 1;
-          return insertRange(
-            {
-              ...range,
-              spoilerId: spoilerCount,
-            },
-            acc
-          );
-        }
-        if (range.start < textLength) {
-          return insertRange(range, acc);
-        }
-        return acc;
-      },
-      links.map(b => ({ ...b, ranges: [] }))
-    );
+    const preparedRanges: Array<DisplayBodyRangeType> = [];
+    for (const range of sortedRanges) {
+      if (
+        BodyRange.isFormatting(range) &&
+        range.style === BodyRange.Style.SPOILER
+      ) {
+        spoilerCount += 1;
+        preparedRanges.push({ ...range, spoilerId: spoilerCount });
+      } else if (range.start < textLength) {
+        preparedRanges.push(range);
+      }
+    }
 
-    // Turn tree into flat list for proper spoiler rendering
-    const nodes = collapseRangeTree({ tree, text: messageText });
+    const nodes = collapseRangesToDisplayNodes(messageText, [
+      ...links,
+      ...preparedRanges,
+    ]);
 
     // Group all contigusous spoilers to create one parent spoiler element in the DOM
     return groupContiguousSpoilers(nodes);
@@ -272,7 +261,7 @@ function renderNode({
   if (
     node.url &&
     SUPPORTED_PROTOCOLS.test(node.url) &&
-    !isLinkSneaky(node.url)
+    isLinkSneaky(node.url) !== 'yes'
   ) {
     return (
       <a
@@ -436,35 +425,23 @@ function renderText({
   );
 }
 
-function extractLinks(
-  messageText: string,
-  // Full, untruncated message text
-  originalMessageText: string
+/** @testexport */
+export function extractLinks(
+  originalMessageText: string,
+  displayedTextLength: number
 ): ReadonlyArray<BodyRange<{ url: string }>> {
   // to support emojis immediately before links
   // we replace emojis with a space for each byte
-  const matches = linkify.match(
-    originalMessageText.replace(EMOJI_REGEXP, s => ' '.repeat(s.length))
-  );
+  const matches = linkify
+    .match(Emoji.replaceEmojiWithSpaces(originalMessageText))
+    // Only linkify links that are fully visible
+    ?.filter(match => match.lastIndex <= displayedTextLength);
 
   if (matches == null) {
     return [];
   }
 
-  // Only return matches present in the `messageText`
-  const currentMatches = matches.filter(({ index, lastIndex, url }) => {
-    if (index >= messageText.length) {
-      return false;
-    }
-
-    if (lastIndex > messageText.length) {
-      return false;
-    }
-
-    return messageText.slice(index, lastIndex) === url;
-  });
-
-  return currentMatches.map(match => {
+  return matches.map(match => {
     return {
       start: match.index,
       length: match.lastIndex - match.index,

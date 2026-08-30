@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useMemo, useId } from 'react';
+import { useMemo, useId, type JSX } from 'react';
 import type { ConversationTypeType } from '../../../state/ducks/conversations.preload.ts';
 import type { LocalizerType } from '../../../types/Util.std.ts';
 import { PanelSection } from './PanelSection.dom.tsx';
@@ -25,9 +25,9 @@ export type PropsType = {
     conversationId: string,
     dontNotifyForMentionsIfMuted: boolean
   ) => unknown;
-  setMuteExpiration: (
+  setMuteDuration: (
     conversationId: string,
-    muteExpiresAt: undefined | number
+    muteDuration: undefined | number
   ) => unknown;
 };
 
@@ -37,9 +37,9 @@ export function ConversationNotificationsSettings({
   dontNotifyForMentionsIfMuted,
   i18n,
   muteExpiresAt,
-  setMuteExpiration,
+  setMuteDuration,
   setDontNotifyForMentionsIfMuted,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const muteNotificationsSelectId = useId();
   const mentionsSelectId = useId();
   const muteOptions = useMemo(
@@ -69,7 +69,7 @@ export function ConversationNotificationsSettings({
       rawValue,
       'NotificationSettings: mute ms was not an integer'
     );
-    setMuteExpiration(id, ms);
+    setMuteDuration(id, ms);
   };
 
   const onChangeDontNotifyForMentionsIfMuted = (rawValue: string) => {

@@ -1,6 +1,6 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import classNames from 'classnames';
 import type { CallHistoryGroup } from '../types/CallDisposition.std.ts';
 import type { LocalizerType } from '../types/I18N.std.ts';
@@ -18,15 +18,15 @@ import type {
 import { linkCallRoute } from '../util/signalRoutes.std.ts';
 import { drop } from '../util/drop.std.ts';
 import { Avatar, AvatarSize } from './Avatar.dom.tsx';
-import { Button, ButtonSize, ButtonVariant } from './Button.dom.tsx';
 import { copyCallLink } from '../util/copyLinksWithToast.dom.ts';
 import { getColorForCallLink } from '../util/getColorForCallLink.std.ts';
 import { isCallLinkAdmin } from '../types/CallLink.std.ts';
 import { CallLinkRestrictionsSelect } from './CallLinkRestrictionsSelect.dom.tsx';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.tsx';
 import { InAnotherCallTooltip } from './conversation/InAnotherCallTooltip.dom.tsx';
 import { offsetDistanceModifier } from '../util/popperUtil.std.ts';
 import { Tooltip, TooltipPlacement } from './Tooltip.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
 
 function toUrlWithoutProtocol(url: URL): string {
   return `${url.hostname}${url.pathname}${url.search}${url.hash}`;
@@ -60,7 +60,7 @@ export function CallLinkDetails({
   onStartCallLinkLobby,
   onShareCallLinkViaSignal,
   onUpdateCallLinkRestrictions,
-}: CallLinkDetailsProps): React.JSX.Element {
+}: CallLinkDetailsProps): JSX.Element {
   const [isDeleteCallLinkModalOpen, setIsDeleteCallLinkModalOpen] =
     useState(false);
 
@@ -71,26 +71,6 @@ export function CallLinkDetails({
   const webUrl = linkCallRoute.toWebUrl({
     key: callLink.rootKey,
   });
-  const joinButton = (
-    <Button
-      className={classNames({
-        CallLinkDetails__HeaderButton: true,
-        'CallLinkDetails__HeaderButton--active-call': isAnybodyInCall,
-      })}
-      variant={
-        isAnybodyInCall
-          ? ButtonVariant.Calling
-          : ButtonVariant.SecondaryAffirmative
-      }
-      discouraged={isInAnotherCall}
-      size={ButtonSize.Small}
-      onClick={onStartCallLinkLobby}
-    >
-      {isInCall
-        ? i18n('icu:CallsNewCallButton--return')
-        : i18n('icu:CallLinkDetails__Join')}
-    </Button>
-  );
   const callLinkRestrictionsSelect = (
     <CallLinkRestrictionsSelect
       disabled={isCallActiveOnServer}
@@ -123,13 +103,23 @@ export function CallLinkDetails({
           </p>
         </div>
         <div className="CallLinkDetails__HeaderActions">
-          {isInAnotherCall ? (
-            <InAnotherCallTooltip i18n={i18n}>
-              {joinButton}
-            </InAnotherCallTooltip>
-          ) : (
-            joinButton
-          )}
+          <InAnotherCallTooltip inAnotherCall={isInAnotherCall} i18n={i18n}>
+            <AxoButton.Root
+              variant={
+                isAnybodyInCall || isInCall
+                  ? 'strong-affirmative'
+                  : 'subtle-affirmative'
+              }
+              symbol="videocamera-fill"
+              discouraged={isInAnotherCall}
+              size="md"
+              onClick={onStartCallLinkLobby}
+            >
+              {isInCall
+                ? i18n('icu:CallsNewCallButton--return')
+                : i18n('icu:CallLinkDetails__Join')}
+            </AxoButton.Root>
+          </InAnotherCallTooltip>
         </div>
       </header>
       <CallHistoryGroupPanelSection
@@ -240,26 +230,20 @@ export function CallLinkDetails({
           />
         </PanelSection>
       )}
-      {isDeleteCallLinkModalOpen && (
-        <ConfirmationDialog
-          i18n={i18n}
-          dialogName="CallLinkDetails__DeleteLinkModal"
-          title={i18n('icu:CallLinkDetails__DeleteLinkModal__Title')}
-          cancelText={i18n('icu:CallLinkDetails__DeleteLinkModal__Cancel')}
-          actions={[
-            {
-              text: i18n('icu:CallLinkDetails__DeleteLinkModal__Delete'),
-              style: 'affirmative',
-              action: onDeleteCallLink,
-            },
-          ]}
-          onClose={() => {
-            setIsDeleteCallLinkModalOpen(false);
-          }}
+      <AxoConfirmDialog.Root
+        open={isDeleteCallLinkModalOpen}
+        onOpenChange={setIsDeleteCallLinkModalOpen}
+        title={i18n('icu:CallLinkDetails__DeleteLinkModal__Title')}
+        description={i18n('icu:CallLinkDetails__DeleteLinkModal__Body')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={onDeleteCallLink}
         >
-          {i18n('icu:CallLinkDetails__DeleteLinkModal__Body')}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:CallLinkDetails__DeleteLinkModal__Delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     </div>
   );
 }
@@ -267,7 +251,7 @@ export function CallLinkDetails({
 function renderMissingCallLink({
   callHistoryGroup,
   i18n,
-}: Pick<CallLinkDetailsProps, 'callHistoryGroup' | 'i18n'>): React.JSX.Element {
+}: Pick<CallLinkDetailsProps, 'callHistoryGroup' | 'i18n'>): JSX.Element {
   return (
     <div className="CallLinkDetails__Container">
       <header className="CallLinkDetails__Header">

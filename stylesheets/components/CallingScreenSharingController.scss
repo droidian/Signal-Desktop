@@ -18,7 +18,6 @@
     @include mixins.font-body-2;
     overflow: hidden;
     text-overflow: ellipsis;
-    user-select: none;
     white-space: nowrap;
     width: 73vw;
   }
@@ -42,15 +41,25 @@
 
   &__close {
     @include mixins.button-reset;
-    @include mixins.color-svg(
-      '../images/icons/v3/x/x.svg',
-      variables.$color-gray-25
-    );
     & {
-      width: 4.5vw;
-      height: 45.5vh;
       margin-inline-start: 2.5vw;
       cursor: pointer;
+    }
+    &::before {
+      content: '';
+      display: block;
+      width: 4.5vw;
+      height: 45.5vh;
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x.svg',
+        variables.$color-gray-25
+      );
+    }
+    &:focus {
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
+      }
     }
   }
 }

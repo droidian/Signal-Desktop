@@ -20,8 +20,7 @@
       z-index: 1;
       pointer-events: none;
       border-radius: 4px;
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 }
@@ -36,10 +35,7 @@
   transition: opacity 100ms ease;
   pointer-events: none;
 
-  $hint-shadow: light-dark(
-    variables.$color-black-alpha-08,
-    variables.$color-black-alpha-12
-  );
+  $hint-shadow: var(--axo-shadow-color-elevation-1);
 
   &.FunScroller__Hint--Top {
     top: 0;

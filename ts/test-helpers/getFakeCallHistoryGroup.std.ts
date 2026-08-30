@@ -26,10 +26,22 @@ export function getFakeCallHistoryGroup(
     status: DirectCallStatus.Accepted,
     timestamp: Date.now(),
     children: [
-      { callId: '123', timestamp: Date.now() },
-      { callId: '122', timestamp: Date.now() - mins(30) },
-      { callId: '121', timestamp: Date.now() - mins(45) },
-      { callId: '121', timestamp: Date.now() - mins(60) },
+      {
+        callId: '123',
+        timestamp: Date.now(),
+      },
+      {
+        callId: '122',
+        timestamp: Date.now() - mins(30),
+      },
+      {
+        callId: '121',
+        timestamp: Date.now() - mins(45),
+      },
+      {
+        callId: '121',
+        timestamp: Date.now() - mins(60),
+      },
     ],
     ...overrides,
   };

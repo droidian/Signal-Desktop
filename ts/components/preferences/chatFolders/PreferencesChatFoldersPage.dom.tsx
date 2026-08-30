@@ -1,8 +1,8 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { MutableRefObject, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { MutableRefObject, ReactNode, JSX } from 'react';
 import { ListBox, ListBoxItem, useDragAndDrop } from 'react-aria-components';
 import { isEqual, partition } from 'lodash';
 import classNames from 'classnames';
@@ -95,7 +95,7 @@ export type PreferencesChatFoldersPageProps = Readonly<{
 
 export function PreferencesChatFoldersPage(
   props: PreferencesChatFoldersPageProps
-): React.JSX.Element {
+): JSX.Element {
   const {
     i18n,
     onOpenEditChatFoldersPage,
@@ -192,9 +192,7 @@ export function PreferencesChatFoldersPage(
       });
     },
     renderDropIndicator: () => {
-      return (
-        <div className={tw('-my-px h-0.5 rounded-full bg-fill-inverted')} />
-      );
+      return <div className={tw('-my-px h-0.5 rounded-full bg-inverted')} />;
     },
   });
 
@@ -345,9 +343,6 @@ export function PreferencesChatFoldersPage(
           deleteText={i18n(
             'icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton'
           )}
-          cancelText={i18n(
-            'icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton'
-          )}
           onConfirm={handleChatFolderDeleteConfirm}
         />
       </AxoAlertDialog.Root>
@@ -394,7 +389,7 @@ function ChatFolderPresetItem(props: ChatFolderPresetItemProps) {
         </ItemBody>
         <AxoButton.Root
           size="md"
-          variant="secondary"
+          variant="subtle-secondary"
           onClick={handleCreateChatFolder}
         >
           {i18n(
@@ -411,7 +406,7 @@ function ChatFolderListItem(props: {
   chatFolder: ChatFolder;
   onChatFolderEdit: (chatFolder: ChatFolder) => void;
   onChatFolderDelete: (chatFolder: ChatFolder) => void;
-}): React.JSX.Element {
+}): JSX.Element {
   const { i18n, chatFolder, onChatFolderEdit } = props;
 
   const handleClickChatFolder = useCallback(() => {

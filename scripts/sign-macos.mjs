@@ -34,6 +34,10 @@ export async function sign(configuration) {
   // The script will update the file in-place
   const returnCode = execSync(`bash "${scriptPath}" "${target}"`, {
     stdio: [null, process.stdout, process.stderr],
+    env: {
+      ...process.env,
+      ELECTRON_BUILDER_PLATFORM: configuration.platform,
+    },
   });
 
   if (returnCode) {

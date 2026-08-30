@@ -8,6 +8,7 @@ import { aciSchema } from '../types/ServiceId.std.ts';
 import { safeParseStrict } from '../util/schemas.std.ts';
 import { HOUR } from '../util/durations/index.std.ts';
 import type { StorageInterface } from '../types/Storage.d.ts';
+import { ReceivedTimestampMs, SentTimestampMs } from '@signalapp/types';
 
 const { groupBy } = lodash;
 
@@ -16,8 +17,8 @@ const log = createLogger('retryPlaceholders');
 const retryItemSchema = z
   .object({
     conversationId: z.string(),
-    sentAt: z.number(),
-    receivedAt: z.number(),
+    sentAt: SentTimestampMs.Schema,
+    receivedAt: ReceivedTimestampMs.Schema,
     receivedAtCounter: z.number(),
     senderAci: aciSchema,
     wasOpened: z.boolean().optional(),

@@ -234,7 +234,7 @@ type SenderKeyCacheEntry = CacheEntryType<SenderKeyType, SenderKeyRecord>;
 
 type ZoneQueueEntryType = Readonly<{
   zone: Zone;
-  callback(): void;
+  callback: () => void;
 }>;
 
 export class SignalProtocolStore extends EventEmitter {

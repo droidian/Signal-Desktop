@@ -58,6 +58,7 @@ import {
   confirmPaypalBoostPayment,
 } from '../textsecure/WebAPI.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { fetchDonationPermit } from './donationPermits.preload.ts';
 
 const { createDonationReceipt } = DataWriter;
 
@@ -686,11 +687,15 @@ export async function _createPaymentIntent({
 
     log.info(`${logId}: Creating new workflow`);
 
+    const donationPermit = await fetchDonationPermit();
+    const donationPermitBase64 = Bytes.toBase64(donationPermit.serialize());
+
     const payload = {
       currency: currencyType,
       amount: paymentAmount,
-      level: 1,
+      level: BOOST_LEVEL,
       paymentMethod: 'CARD',
+      donationPermitBase64,
     };
     const { clientSecret } = await createBoostPaymentIntent(payload);
     const paymentIntentId = clientSecret.split('_secret_')[0];

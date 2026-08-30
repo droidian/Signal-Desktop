@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import classNames from 'classnames';
 import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
-import type { AxoSymbolIconName } from '../../axo/_internal/AxoSymbolDefs.generated.std.ts';
 import { tw } from '../../axo/tw.dom.tsx';
+import { ExpireTimer } from './ExpireTimer.dom.tsx';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.std.ts';
+import { DurationInSeconds } from '../../util/durations/duration-in-seconds.std.ts';
 
 export enum SystemMessageKind {
   Normal = 'Normal',
@@ -18,6 +20,8 @@ type SystemMessageBaseProps = {
   contents: ReactNode;
   button?: ReactNode;
   kind?: SystemMessageKind;
+  expireTimer?: DurationInSeconds | null;
+  expirationStartTimestamp?: number | null;
 };
 
 export type PropsType = SystemMessageBaseProps &
@@ -64,13 +68,21 @@ export type PropsType = SystemMessageBaseProps &
       }
     | {
         icon?: never;
-        symbol: AxoSymbolIconName;
+        symbol: AxoSymbol.Name;
       }
   );
 
 export const SystemMessage = forwardRef<HTMLDivElement, PropsType>(
   function SystemMessageInner(
-    { icon, symbol, contents, button, kind = SystemMessageKind.Normal },
+    {
+      icon,
+      symbol,
+      contents,
+      button,
+      kind = SystemMessageKind.Normal,
+      expireTimer,
+      expirationStartTimestamp,
+    },
     ref
   ) {
     return (
@@ -95,6 +107,15 @@ export const SystemMessage = forwardRef<HTMLDivElement, PropsType>(
             </span>
           )}
           {contents}
+          {expireTimer != null && expirationStartTimestamp != null && (
+            <ExpireTimer
+              expirationLength={DurationInSeconds.toMillis(expireTimer)}
+              expirationTimestamp={calculateExpirationTimestamp({
+                expireTimer,
+                expirationStartTimestamp,
+              })}
+            />
+          )}
         </div>
         {button && (
           <div className="SystemMessage__button-container">{button}</div>

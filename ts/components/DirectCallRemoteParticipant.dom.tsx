@@ -1,7 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect, type JSX } from 'react';
 import classNames from 'classnames';
 import type { SetRendererCanvasType } from '../state/ducks/calling.preload.ts';
 import type { ConversationType } from '../state/ducks/conversations.preload.ts';
@@ -27,7 +27,7 @@ export function DirectCallRemoteParticipant({
   isReconnecting,
   setRendererCanvas,
   handleSize,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const remoteVideoRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -38,6 +38,8 @@ export function DirectCallRemoteParticipant({
   }, [handleSize, setRendererCanvas]);
 
   return hasRemoteVideo ? (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label
     <canvas
       className={classNames(
         'module-ongoing-call__remote-video-enabled',
@@ -73,7 +75,7 @@ function renderAvatar(
     | 'profileName'
     | 'title'
   >
-): React.JSX.Element {
+): JSX.Element {
   return (
     <div className="module-ongoing-call__remote-video-disabled">
       <CallBackgroundBlur avatarUrl={avatarUrl}>

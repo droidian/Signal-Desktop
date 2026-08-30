@@ -36,7 +36,7 @@ import { isSent } from '../messages/MessageSendState.std.ts';
 import { strictAssert } from '../util/assert.std.ts';
 import { repeat, zipObject } from '../util/iterables.std.ts';
 import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
-import { hydrateStoryContext } from '../util/hydrateStoryContext.preload.ts';
+import { getStoryReplyContext } from '../util/getStoryReplyContext.std.ts';
 import { drop } from '../util/drop.std.ts';
 import * as reactionUtil from '../reactions/util.std.ts';
 import { isNewReactionReplacingPrevious } from '../reactions/util.std.ts';
@@ -49,13 +49,15 @@ import {
 } from '../jobs/conversationJobQueue.preload.ts';
 import { maybeNotify } from '../messages/maybeNotify.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { isValidSenderAciForConversation } from './helpers/isValidSenderAciForConversation.preload.ts';
 
 const { maxBy } = lodash;
 
 const log = createLogger('Reactions');
 
 export type ReactionAttributesType = {
-  emoji: string;
+  emoji: Emoji.Variant;
   envelopeId: string;
   fromId: string;
   remove?: boolean;
@@ -178,6 +180,38 @@ export function isMessageAMatchForReaction({
     return true;
   }
 
+  const messageConversation = window.ConversationController.get(
+    message.conversationId
+  );
+
+  if (!messageConversation) {
+    return false;
+  }
+
+  if (
+    messageConversation.isBlocked() ||
+    reactionSenderConversation.isBlocked()
+  ) {
+    return false;
+  }
+
+  // Stories sent to a distribution list are stored in our own conversation (see
+  //   sendStoryMessage), which would never report one of their recipients as a member.
+  const isOutgoingDistributionListStory =
+    isOutgoingStory(message, ourAci) && message.storyDistributionListId != null;
+
+  const reactionSenderAci = reactionSenderConversation.getAci();
+  if (!reactionSenderAci) {
+    return false;
+  }
+
+  if (
+    !isValidSenderAciForConversation(messageConversation, reactionSenderAci) &&
+    !isOutgoingDistributionListStory
+  ) {
+    return false;
+  }
+
   if (isOutgoing(message) || isOutgoingStory(message, ourAci)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
@@ -201,24 +235,8 @@ export function isMessageAMatchForReaction({
     return isSent(sendState.status);
   }
 
-  if (isIncoming(message) || isIncomingStory(message, ourAci)) {
-    const messageConversation = window.ConversationController.get(
-      message.conversationId
-    );
-
-    if (!messageConversation) {
-      return false;
-    }
-
-    const reactionSenderServiceId = reactionSenderConversation.getServiceId();
-    return (
-      reactionSenderServiceId != null &&
-      messageConversation.hasMember(reactionSenderServiceId)
-    );
-  }
-
   // Only incoming, outgoing, and story messages can be reacted to
-  return false;
+  return isIncoming(message) || isIncomingStory(message, ourAci);
 }
 
 export async function onReaction(
@@ -402,6 +420,7 @@ export async function handleReaction(
           ? targetConversation.get('expireTimer')
           : undefined,
         storyId: storyMessage.id,
+        storyReplyContext: getStoryReplyContext(storyMessage),
         storyReaction: {
           emoji: reaction.emoji,
           targetAuthorAci: reaction.targetAuthorAci,
@@ -409,9 +428,6 @@ export async function handleReaction(
         },
       });
 
-      await hydrateStoryContext(generatedMessage.id, storyMessage, {
-        shouldSave: false,
-      });
       // Note: generatedMessage comes with an id, so we have to force this save
       await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,
@@ -438,6 +454,7 @@ export async function handleReaction(
       if (isFromSomeoneElse) {
         drop(
           maybeNotify({
+            kind: 'normalMessage',
             message: generatedMessage.attributes,
             conversation: targetConversation,
           })
@@ -516,6 +533,7 @@ export async function handleReaction(
         if (isOutgoing(message.attributes) && isFromSomeoneElse) {
           drop(
             maybeNotify({
+              kind: 'reaction',
               targetMessage: message.attributes,
               conversation,
               reaction,
@@ -574,8 +592,8 @@ export async function handleReaction(
         'Story reactions must provide storyReactionmessage'
       );
 
-      await hydrateStoryContext(generatedMessage.id, message.attributes, {
-        shouldSave: false,
+      generatedMessage.set({
+        storyReplyContext: getStoryReplyContext(message.attributes),
       });
       await window.MessageCache.saveMessage(generatedMessage.attributes, {
         forceSave: true,

@@ -23,7 +23,7 @@
      */
 
     /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
-    "incremental": true,
+    "incremental": false,
     /* Enable constraints that allow a TypeScript project to be used with project references. */
     "composite": false,
     /* Specify the path to .tsbuildinfo incremental compilation file. */
@@ -48,7 +48,7 @@
       "ESNext"
     ],
     /* Specify what JSX code is generated. */
-    "jsx": "react",
+    "jsx": "react-jsx",
     /* Enable experimental support for legacy experimental decorators. */
     // "experimentalDecorators": true,
     /* Emit design-type metadata for decorated declarations in source files. */

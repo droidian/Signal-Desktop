@@ -50,7 +50,7 @@ export class Storage implements StorageInterface {
     defaultValue?: Access[K]
   ): Access[K] | undefined {
     if (!this.#ready) {
-      log.warn('Called storage.get before storage is ready. key:', key);
+      log.error('Called storage.get before storage is ready. key:', key);
     }
 
     const item = this.#items[key];
@@ -66,18 +66,17 @@ export class Storage implements StorageInterface {
     value: Access[K]
   ): Promise<void> {
     if (!this.#ready) {
-      log.warn('Called storage.put before storage is ready. key:', key);
+      log.error('Called storage.put before storage is ready. key:', key);
     }
 
     this.#items[key] = value;
-    await DataWriter.createOrUpdateItem({ id: key, value });
-
     window.reduxActions?.items.putItemExternal(key, value);
+    await DataWriter.createOrUpdateItem({ id: key, value });
   }
 
   public async remove<K extends keyof Access>(key: K): Promise<void> {
     if (!this.#ready) {
-      log.warn('Called storage.remove before storage is ready. key:', key);
+      log.error('Called storage.remove before storage is ready. key:', key);
     }
 
     delete this.#items[key];
@@ -102,17 +101,20 @@ export class Storage implements StorageInterface {
     Object.assign(this.#items, await DataReader.getAllItems());
 
     this.#ready = true;
+
+    this.blocked.load();
     this.#callListeners();
   }
 
   public reset(): void {
     this.#ready = false;
     this.#items = Object.create(null);
+    this.blocked.reset();
   }
 
   public getItemsState(): Partial<Access> {
     if (!this.#ready) {
-      log.warn('Called getItemsState before storage is ready');
+      log.error('Called getItemsState before storage is ready');
     }
 
     log.info('getItemsState: now preparing copy of items...');

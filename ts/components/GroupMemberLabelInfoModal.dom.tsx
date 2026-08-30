@@ -1,7 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
 
@@ -17,7 +17,7 @@ export type PropsType = {
   showEditMemberLabelScreen: () => unknown;
 };
 
-export function GroupMemberLabelInfoModal(props: PropsType): React.JSX.Element {
+export function GroupMemberLabelInfoModal(props: PropsType): JSX.Element {
   const {
     canAddLabel,
     hasLabel,
@@ -52,7 +52,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): React.JSX.Element {
             </div>
           </AxoDialog.Title>
           <AxoDialog.Description>
-            <div className={tw('mb-1.5 type-body-medium text-label-secondary')}>
+            <div className={tw('mb-1.5 type-body-medium text-secondary')}>
               {i18n('icu:GroupMemberLabelInfoModal--description')}
             </div>
           </AxoDialog.Description>
@@ -60,7 +60,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): React.JSX.Element {
         <AxoDialog.Footer>
           {isEditMemberLabelEnabled && canAddLabel && (
             <AxoDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={() => {
                 showEditMemberLabelScreen();
                 onClose();
@@ -72,7 +72,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): React.JSX.Element {
             </AxoDialog.Action>
           )}
           <AxoDialog.Action
-            variant="primary"
+            variant="strong-primary"
             onClick={() => {
               onClose();
             }}

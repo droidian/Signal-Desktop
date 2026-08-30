@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { FC } from 'react';
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { getIntl } from '../selectors/user.std.ts';
 import { getConversationByIdSelector } from '../selectors/conversations.dom.ts';
@@ -38,7 +38,7 @@ export const SmartLeftPaneConversationListItemContextMenu: FC<RenderConversation
       onArchive,
       onMoveToInbox,
       deleteConversation,
-      setMuteExpiration,
+      setMuteDuration,
     } = useConversationsActions();
     const { updateChatFolderToggleChat } = useChatFolderActions();
     const { changeLocation } = useNavActions();
@@ -93,7 +93,7 @@ export const SmartLeftPaneConversationListItemContextMenu: FC<RenderConversation
         onMarkRead={markConversationRead}
         onPin={handlePin}
         onUnpin={handleUnpin}
-        onUpdateMute={setMuteExpiration}
+        onUpdateMute={setMuteDuration}
         onArchive={onArchive}
         onUnarchive={onMoveToInbox}
         onDelete={deleteConversation}

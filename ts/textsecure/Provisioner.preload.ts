@@ -76,7 +76,7 @@ export type EventType = Readonly<
 
 export type SubscribeNotifierType = (event: EventType) => void;
 
-export type UnsubscribeFunctionType = () => void;
+export type UnsubscribeFunctionType = () => Promise<void>;
 
 export type SubscriberType = Readonly<{
   notify: SubscribeNotifierType;
@@ -113,7 +113,7 @@ export class Provisioner {
   };
   readonly #retryBackOff = new BackOff(FIBONACCI_TIMEOUTS);
 
-  #sockets: Array<ProvisioningConnection> = [];
+  readonly #sockets: Array<ProvisioningConnection> = [];
   #abortController: AbortController | undefined;
   #attemptCount = 0;
   #isRunning = false;
@@ -130,7 +130,7 @@ export class Provisioner {
       this.#start();
     }
 
-    return () => {
+    return async () => {
       this.#subscribers.delete(subscriber);
       if (this.#subscribers.size === 0) {
         this.#stop('Cancel, no subscribers');
@@ -221,11 +221,10 @@ export class Provisioner {
       return;
     }
     log.info(`stopping, reason=${reason}`);
+    this.#isRunning = false;
 
-    this.#sockets = [];
     this.#abortController?.abort();
     this.#abortController = undefined;
-    this.#isRunning = false;
   }
 
   async #loop(signal: AbortSignal): Promise<void> {
@@ -241,6 +240,7 @@ export class Provisioner {
         });
 
         this.#stop('Max rotations reached');
+
         break;
       }
 
@@ -287,6 +287,7 @@ export class Provisioner {
           }
 
           this.#subscribers.clear();
+
           this.#stop('Only socket failed');
 
           break;

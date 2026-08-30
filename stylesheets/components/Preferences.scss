@@ -6,34 +6,18 @@
 
 @mixin preferences-icon($url) {
   &::before {
-    @include mixins.light-theme {
-      @include mixins.color-svg($url, variables.$color-gray-75);
-    }
-    @include mixins.dark-theme {
-      @include mixins.color-svg($url, variables.$color-gray-15);
-    }
+    @include mixins.color-svg($url, var(--axo-color-label-primary));
   }
 }
-
-$secondary-text-color: light-dark(
-  variables.$color-gray-60,
-  variables.$color-gray-25
-);
 
 .Preferences {
   display: flex;
   overflow: hidden;
-  user-select: none;
   height: 100%;
   width: 100%;
   align-items: stretch;
 
-  @include mixins.light-theme {
-    background: variables.$color-white;
-  }
-  @include mixins.dark-theme {
-    background: variables.$color-gray-95;
-  }
+  background: var(--axo-color-surface-primary);
 
   &__dialog-container {
     margin-bottom: 8px;
@@ -42,13 +26,6 @@ $secondary-text-color: light-dark(
   &__page-selector {
     padding-top: 2px;
     max-height: 100%;
-
-    @include mixins.light-theme {
-      background: variables.$color-gray-04;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-gray-80;
-    }
   }
 
   &__scroll-area {
@@ -90,29 +67,16 @@ $secondary-text-color: light-dark(
     }
 
     &--selected {
-      @include mixins.light-theme {
-        background: variables.$color-gray-15;
-      }
-      @include mixins.dark-theme {
-        background: variables.$color-gray-65;
-      }
+      background: var(--axo-color-fill-primary-pressed);
     }
 
     &:has(.Preferences__profile-chip__button:focus) {
       @include mixins.keyboard-mode {
-        background: variables.$color-gray-05;
-      }
-      @include mixins.dark-keyboard-mode {
-        background: variables.$color-gray-75;
+        @include mixins.axo-focus-ring;
       }
     }
     &:has(.Preferences__profile-chip__button:hover):not(&--selected) {
-      @include mixins.mouse-mode {
-        background: variables.$color-gray-05;
-      }
-      @include mixins.dark-mouse-mode {
-        background: variables.$color-gray-75;
-      }
+      background: var(--axo-color-fill-primary);
     }
 
     &__button {
@@ -121,6 +85,9 @@ $secondary-text-color: light-dark(
         position: absolute;
         z-index: 1;
         inset: 0;
+      }
+      &:focus {
+        outline: none;
       }
     }
 
@@ -170,28 +137,16 @@ $secondary-text-color: light-dark(
         height: 36px;
         width: 36px;
         border-radius: 50%;
-      }
-      @include mixins.light-theme {
-        background-color: variables.$color-white;
-      }
-      @include mixins.dark-theme {
-        background-color: rgba(variables.$color-gray-40, 0.2);
+        background: var(--axo-color-fill-primary);
       }
 
       &:active {
-        @include mixins.mouse-mode {
-          background-color: variables.$color-gray-02;
-        }
-        @include mixins.dark-mouse-mode {
-          background-color: rgba(variables.$color-gray-40, 0.28);
-        }
+        background: var(--axo-color-fill-secondary);
       }
       &:focus {
+        outline: none;
         @include mixins.keyboard-mode {
-          box-shadow: 0px 0px 0px 2.5px #a0a7fe;
-        }
-        @include mixins.dark-keyboard-mode {
-          box-shadow: 0px 0px 0px 2.5px #c1c7fe;
+          @include mixins.axo-focus-ring;
         }
       }
     }
@@ -200,10 +155,9 @@ $secondary-text-color: light-dark(
       width: 20px;
       @include mixins.position-absolute-center;
 
-      @include mixins.color-svg-themed(
+      @include mixins.color-svg(
         '../images/icons/v3/qr_code/qr_code.svg',
-        variables.$color-black,
-        variables.$color-white
+        var(--axo-color-label-primary)
       );
     }
   }
@@ -223,28 +177,13 @@ $secondary-text-color: light-dark(
     }
 
     &--selected {
-      @include mixins.light-theme {
-        background: variables.$color-gray-15;
-      }
-      @include mixins.dark-theme {
-        background: variables.$color-gray-65;
-      }
+      background: var(--axo-color-fill-secondary);
     }
 
-    &:focus {
-      @include mixins.keyboard-mode {
-        background: variables.$color-gray-05;
-      }
-      @include mixins.dark-keyboard-mode {
-        background: variables.$color-gray-75;
-      }
-    }
-    &:hover:not(&--selected) {
-      @include mixins.mouse-mode {
-        background: variables.$color-gray-05;
-      }
-      @include mixins.dark-mouse-mode {
-        background: variables.$color-gray-75;
+    &:not(&--selected) {
+      &:hover,
+      &:focus {
+        background: var(--axo-color-fill-primary);
       }
     }
 
@@ -386,16 +325,8 @@ $secondary-text-color: light-dark(
   }
 
   &__settings-row:not(:last-child) {
-    border-bottom: 1px solid variables.$color-gray-15;
-    @include mixins.light-theme {
-      border-color: variables.$color-gray-15;
-    }
-    @include mixins.dark-theme {
-      border-color: variables.$color-gray-65;
-    }
-    & {
-      margin-bottom: 24px;
-    }
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--axo-color-border-primary);
   }
 
   &__pnp {
@@ -470,7 +401,7 @@ $secondary-text-color: light-dark(
   &__flow-value,
   &__flow-description {
     vertical-align: middle;
-    color: $secondary-text-color;
+    color: var(--axo-color-label-secondary);
   }
   &__device-name-description {
     padding-top: 8px;
@@ -504,7 +435,7 @@ $secondary-text-color: light-dark(
     }
 
     &--value {
-      color: variables.$color-gray-45;
+      color: var(--axo-color-label-secondary);
       flex-shrink: 0;
     }
 
@@ -515,12 +446,14 @@ $secondary-text-color: light-dark(
         padding-inline: 24px;
         width: 100%;
       }
-      &:hover {
-        @include mixins.light-theme {
-          background: variables.$color-gray-02;
-        }
-        @include mixins.dark-theme {
-          background: variables.$color-gray-80;
+      &:hover,
+      &:focus {
+        background: var(--axo-color-fill-primary);
+      }
+      &:focus {
+        outline: none;
+        @include mixins.keyboard-mode {
+          @include mixins.axo-focus-ring;
         }
       }
     }
@@ -533,26 +466,16 @@ $secondary-text-color: light-dark(
 
   &__option-name {
     @include mixins.font-body-1;
-    @include mixins.light-theme {
-      color: variables.$color-gray-90;
-    }
-    @include mixins.dark-theme {
-      color: variables.$color-gray-05;
-    }
+    color: var(--axo-color-label-primary);
   }
 
   &__checkbox__description,
   &__description {
     @include mixins.font-subtitle;
-    // For specificity reasons, we can't use $secondary-text-color. We need the mixins.
-    @include mixins.light-theme {
-      color: variables.$color-gray-60;
-    }
-    @include mixins.dark-theme {
-      color: variables.$color-gray-25;
-    }
+    color: var(--axo-color-label-secondary);
+
     &--error {
-      color: variables.$color-accent-red !important;
+      color: var(--axo-color-label-destructive) !important;
     }
 
     &--medium {
@@ -581,22 +504,26 @@ $secondary-text-color: light-dark(
     & {
       display: inline-block;
       inset-inline-start: 12px;
-      height: 20px;
-      width: 20px;
       vertical-align: text-bottom;
       @include mixins.position-absolute-center-y;
     }
 
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/chevron/chevron-left.svg',
-        variables.$color-gray-90
-      );
+    &:focus {
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
+      }
     }
-    @include mixins.dark-theme {
+
+    &::before {
+      content: '';
+      display: block;
+      height: 20px;
+      width: 20px;
+
       @include mixins.color-svg(
         '../images/icons/v3/chevron/chevron-left.svg',
-        variables.$color-gray-02
+        var(--axo-color-label-primary)
       );
     }
 
@@ -627,18 +554,10 @@ $secondary-text-color: light-dark(
 }
 
 .Preferences__LanguageIcon {
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/globe/globe.svg',
-      variables.$color-gray-75
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/globe/globe.svg',
-      variables.$color-gray-15
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/globe/globe.svg',
+    var(--axo-color-label-secondary)
+  );
 }
 
 .Preferences__LanguageButton {
@@ -671,25 +590,17 @@ $secondary-text-color: light-dark(
     padding-block: 2px;
     padding-inline: 8px;
   }
-  &:hover {
+  &:hover,
+  &:focus {
     .Preferences__LanguageModal__Item__Inner {
-      @include mixins.light-theme {
-        background-color: variables.$color-black-alpha-06;
-      }
-      @include mixins.dark-theme {
-        background-color: variables.$color-white-alpha-06;
-      }
+      background: var(--axo-color-fill-primary);
     }
   }
   &:focus {
     outline: none;
     .Preferences__LanguageModal__Item__Inner {
       @include mixins.keyboard-mode {
-        background-color: variables.$color-black-alpha-06;
-        box-shadow: 0 0 0 2px variables.$color-ultramarine;
-      }
-      @include mixins.dark-keyboard-mode {
-        background-color: variables.$color-white-alpha-06;
+        @include mixins.axo-focus-ring;
       }
     }
   }
@@ -720,12 +631,12 @@ $secondary-text-color: light-dark(
   width: 20px;
   align-items: center;
   justify-content: center;
-  background: variables.$color-ultramarine;
+  background: var(--axo-color-fill-accent);
   @include mixins.rounded-corners;
   &::after {
     @include mixins.color-svg(
       '../images/icons/v3/check/check.svg',
-      variables.$color-white
+      var(--axo-color-label-primary-oncolor)
     );
     & {
       content: '';
@@ -739,12 +650,7 @@ $secondary-text-color: light-dark(
   display: block;
   @include mixins.localized-fonts;
   @include mixins.font-body-2;
-  @include mixins.light-theme {
-    color: variables.$color-gray-60;
-  }
-  @include mixins.dark-theme {
-    color: variables.$color-gray-25;
-  }
+  color: var(--axo-color-label-secondary);
 }
 
 .Preferences--backups-summary {
@@ -764,19 +670,19 @@ $secondary-text-color: light-dark(
   }
   &__type {
     @include mixins.font-subtitle;
-    color: $secondary-text-color;
+    color: var(--axo-color-label-secondary);
     margin-block-end: 8px;
   }
 
   &__note {
     @include mixins.font-subtitle;
-    color: $secondary-text-color;
+    color: var(--axo-color-label-secondary);
     margin-block-start: 12px;
   }
 
   &__canceled {
     @include mixins.font-body-1-bold;
-    color: variables.$color-accent-red;
+    color: var(--axo-color-label-destructive);
   }
   &__icon {
     &--active {
@@ -842,7 +748,7 @@ $secondary-text-color: light-dark(
   &__value {
     margin-block-start: 2px;
     @include mixins.font-subtitle;
-    color: $secondary-text-color;
+    color: var(--axo-color-label-secondary);
   }
   &__value-divider {
     &::before {
@@ -856,33 +762,17 @@ $secondary-text-color: light-dark(
 }
 
 .Preferences__BackupsIcon {
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/signal_backups/signal_backups.svg',
-      variables.$color-gray-75
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/signal_backups/signal_backups.svg',
-      variables.$color-gray-15
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/signal_backups/signal_backups.svg',
+    var(--axo-color-label-secondary)
+  );
 }
 
 .Preferences__LocalBackupsIcon {
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/device/device-laptop.svg',
-      variables.$color-gray-75
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v3/device/device-laptop.svg',
-      variables.$color-gray-15
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v3/device/device-laptop.svg',
+    var(--axo-color-label-secondary)
+  );
 }
 
 .Preferences--LocalBackupsSetupScreen {
@@ -931,7 +821,7 @@ $secondary-text-color: light-dark(
 .Preferences--LocalBackupsSetupScreenBody {
   @include mixins.font-body-1;
   margin-block: 8px;
-  color: $secondary-text-color;
+  color: var(--axo-color-label-secondary);
 
   a {
     text-decoration: none;
@@ -975,7 +865,7 @@ $secondary-text-color: light-dark(
   text-transform: uppercase;
 
   &::placeholder {
-    color: variables.$color-gray-45;
+    color: var(--axo-color-label-placeholder);
     text-transform: none;
   }
 }
@@ -1003,7 +893,7 @@ $secondary-text-color: light-dark(
   &::before {
     @include mixins.color-svg(
       '../images/icons/v3/folder/folder.svg',
-      variables.$color-ultramarine-logo
+      var(--axo-color-brand-primary)
     );
   }
 }
@@ -1012,7 +902,7 @@ $secondary-text-color: light-dark(
   &::before {
     @include mixins.color-svg(
       '../images/icons/v3/key/key.svg',
-      variables.$color-ultramarine-logo
+      var(--axo-color-brand-primary)
     );
   }
 }
@@ -1021,7 +911,7 @@ $secondary-text-color: light-dark(
   &::before {
     @include mixins.color-svg(
       '../images/icons/v3/lock/lock.svg',
-      variables.$color-ultramarine-logo
+      var(--axo-color-brand-primary)
     );
   }
 }
@@ -1044,7 +934,7 @@ $secondary-text-color: light-dark(
 .Preferences--LocalBackupsConfirmKeyModalBody {
   @include mixins.font-body-1;
   margin-block: 8px 32px;
-  color: $secondary-text-color;
+  color: var(--axo-color-label-secondary);
 }
 
 .Preferences--LocalBackupsConfirmKeyModal .module-Modal__button-footer {
@@ -1073,7 +963,7 @@ $secondary-text-color: light-dark(
 
 .Preferences--internal--error {
   padding-inline: 48px 24px;
-  color: variables.$color-accent-red;
+  color: var(--axo-color-label-destructive);
 }
 
 .Preferences--internal pre,
@@ -1108,9 +998,13 @@ $secondary-text-color: light-dark(
   }
 }
 
-.Preferences__ChatFolders__ChatSelection__Item--Button,
-.Preferences__ChatFolders__ChatSelection__Item--ListItem {
-  outline: 0;
+.Preferences__ChatFolders__ChatSelection__Item:focus {
+  outline: none;
+  @include mixins.keyboard-mode {
+    .Preferences__ChatFolders__ChatSelection__ItemContent {
+      @include mixins.axo-focus-ring-inset;
+    }
+  }
 }
 
 .Preferences__ChatFolders__ChatSelection__Item--Button,
@@ -1118,7 +1012,7 @@ $secondary-text-color: light-dark(
   cursor: pointer;
   &:hover .Preferences__ChatFolders__ChatSelection__ItemContent,
   .Preferences__ChatFolders__ChatSelection__ItemContent[data-axo-contextmenu-state='open'] {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-80);
+    background: var(--axo-color-fill-primary);
   }
 }
 
@@ -1129,12 +1023,6 @@ $secondary-text-color: light-dark(
   padding-block: 8px;
   padding-inline: 24px;
   border-radius: 8px;
-
-  @include mixins.keyboard-mode {
-    .Preferences__ChatFolders__ChatSelection__Item:focus & {
-      outline: 2px solid variables.$color-ultramarine;
-    }
-  }
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar {
@@ -1144,7 +1032,7 @@ $secondary-text-color: light-dark(
   width: 36px;
   height: 36px;
   border-radius: 9999px;
-  background: light-dark(variables.$color-gray-05, variables.$color-gray-90);
+  background: var(--axo-color-fill-primary);
   &::before {
     content: '';
     display: block;
@@ -1156,35 +1044,35 @@ $secondary-text-color: light-dark(
 .Preferences__ChatFolders__ChatSelection__ItemAvatar--Add::before {
   @include mixins.color-svg(
     '../images/icons/v3/plus/plus.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-secondary)
   );
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar--Folder::before {
   @include mixins.color-svg(
     '../images/icons/v3/folder/folder.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-secondary)
   );
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar--UnreadChats::before {
   @include mixins.color-svg(
     '../images/icons/v3/chat/chat-badge.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-secondary)
   );
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar--DirectChats::before {
   @include mixins.color-svg(
     '../images/icons/v3/person/person.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-secondary)
   );
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemAvatar--GroupChats::before {
   @include mixins.color-svg(
     '../images/icons/v3/group/group.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-secondary)
   );
 }
 
@@ -1196,23 +1084,24 @@ $secondary-text-color: light-dark(
 
 .Preferences__ChatFolders__ChatSelection__ItemTitle {
   @include mixins.font-body-1;
-  color: light-dark(variables.$color-gray-90, variables.$color-gray-05);
+  color: var(--axo-color-label-primary);
 }
 
 .Preferences__ChatFolders__ChatSelection__ItemDescription {
   @include mixins.font-body-2;
-  color: light-dark(variables.$color-gray-60, variables.$color-gray-25);
+  color: var(--axo-color-label-secondary);
 }
 
 .Preferences__ChatFolders__ChatList__DeleteButton {
   @include mixins.button-reset();
   & {
-    color: variables.$color-accent-red;
+    color: var(--axo-color-label-destructive);
     border-radius: 1px;
   }
   @include mixins.keyboard-mode {
+    outline: none;
     &:focus {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -1259,16 +1148,8 @@ $secondary-text-color: light-dark(
   height: 18px;
   display: inline-block;
 
-  @include mixins.light-theme {
-    @include mixins.color-svg(
-      '../images/icons/v2/unidentified-delivery-solid-20.svg',
-      variables.$color-gray-60
-    );
-  }
-  @include mixins.dark-theme {
-    @include mixins.color-svg(
-      '../images/icons/v2/unidentified-delivery-solid-20.svg',
-      variables.$color-gray-25
-    );
-  }
+  @include mixins.color-svg(
+    '../images/icons/v2/unidentified-delivery-solid-20.svg',
+    var(--axo-color-label-secondary)
+  );
 }

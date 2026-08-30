@@ -33,6 +33,7 @@ import { reducer as notificationProfiles } from './ducks/notificationProfiles.pr
 import { reducer as preferredReactions } from './ducks/preferredReactions.preload.ts';
 import { reducer as safetyNumber } from './ducks/safetyNumber.preload.ts';
 import { reducer as search } from './ducks/search.preload.ts';
+import { reducer as standaloneInstaller } from './ducks/standaloneInstaller.preload.ts';
 import { reducer as stickers } from './ducks/stickers.preload.ts';
 import { reducer as stories } from './ducks/stories.preload.ts';
 import { reducer as storyDistributionLists } from './ducks/storyDistributionLists.preload.ts';
@@ -72,6 +73,7 @@ export const reducer = combineReducers({
   preferredReactions,
   safetyNumber,
   search,
+  standaloneInstaller,
   stickers,
   stories,
   storyDistributionLists,

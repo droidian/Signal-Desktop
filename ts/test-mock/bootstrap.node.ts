@@ -181,6 +181,7 @@ const DEFAULT_REMOTE_CONFIG = [
   ['global.backups.mediaTierFallbackCdnNumber', { enabled: true, value: '3' }],
   ['global.groupsv2.groupSizeHardLimit', { enabled: true, value: '64' }],
   ['global.groupsv2.maxGroupSize', { enabled: true, value: '32' }],
+  ['global.pinnedChatLimit', { enabled: true, value: '4' }],
   [
     'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameHash',
     { enabled: true },
@@ -270,7 +271,11 @@ export class Bootstrap {
     assert(totalContactCount <= MAX_CONTACTS);
   }
 
-  public async init(): Promise<void> {
+  public async init({
+    isStandalone,
+  }: {
+    isStandalone?: boolean;
+  } = {}): Promise<void> {
     debug('initializing');
 
     if (this.#options.server === undefined) {
@@ -314,13 +319,15 @@ export class Bootstrap {
       this.#options.unknownContactCount
     );
 
-    this.#privPhone = await this.server.createPrimaryDevice({
-      profileName: 'Myself',
-      contacts: this.contacts,
-      contactsWithoutProfileKey: this.contactsWithoutProfileKey,
-    });
-    if (this.#options.useLegacyStorageEncryption) {
-      this.#privPhone.storageRecordIkm = undefined;
+    if (!isStandalone) {
+      this.#privPhone = await this.server.createPrimaryDevice({
+        profileName: 'Myself',
+        contacts: this.contacts,
+        contactsWithoutProfileKey: this.contactsWithoutProfileKey,
+      });
+      if (this.#options.useLegacyStorageEncryption) {
+        this.#privPhone.storageRecordIkm = undefined;
+      }
     }
 
     this.#storagePath = await fs.mkdtemp(
@@ -399,6 +406,24 @@ export class Bootstrap {
     ]);
   }
 
+  public async prepareForStandaloneRegistration({
+    extraConfig,
+  }: LinkOptionsType = {}): Promise<App> {
+    debug('preparing for standalone registration');
+
+    const app = await this.startApp(extraConfig);
+
+    debug('waiting until app is loaded');
+    await app.waitUntilReadyForUpdates();
+
+    const window = await app.getWindow();
+
+    debug('kicking off standalone registration');
+    await window.evaluate('window.SignalCI.startStandaloneRegistration();');
+
+    return app;
+  }
+
   public async link({
     extraConfig,
     ephemeralBackup,
@@ -425,6 +450,7 @@ export class Bootstrap {
             return;
           }
           await relinkButton.click();
+          await window.getByRole('button', { name: "Don't transfer" }).click();
         } catch {
           // Ignore, provision will fail if QR code was never generated
         }
@@ -493,7 +519,7 @@ export class Bootstrap {
 
     debug('starting the app');
 
-    const { port, family } = this.server.address();
+    const { port } = this.server.address();
 
     let startAttempts = 0;
     const MAX_ATTEMPTS = 4;
@@ -507,7 +533,7 @@ export class Bootstrap {
       }
 
       // oxlint-disable-next-line no-await-in-loop
-      const config = await this.#generateConfig(port, family, extraConfig);
+      const config = await this.#generateConfig(port, extraConfig);
 
       const startedApp = new App({
         main: ELECTRON,
@@ -951,12 +977,9 @@ export class Bootstrap {
 
   async #generateConfig(
     port: number,
-    family: string,
     extraConfig?: Partial<RendererConfigType>
   ): Promise<string> {
-    const host = family === 'IPv6' ? '[::1]' : '127.0.0.1';
-
-    const url = `https://${host}:${port}`;
+    const url = `https://localhost:${port}`;
     return JSON.stringify({
       ...(await loadCertificates()),
 
@@ -968,7 +991,7 @@ export class Bootstrap {
       serverUrl: url,
       storageUrl: `${url}/storageService`,
       resourcesUrl: `${url}/updates2`,
-      sfuUrl: url,
+      sfuUrl: `${url}/callingService`,
       cdn: {
         '0': url,
         '2': url,

@@ -10,6 +10,7 @@ import {
 } from '../../jobs/conversationJobQueue.preload.ts';
 import { getPinnedMessageTarget } from '../../util/getPinMessageTarget.preload.ts';
 import { drop } from '../../util/drop.std.ts';
+import { TimestampMs } from '@signalapp/types';
 
 export const pinnedMessagesCleanupService = createExpiringEntityCleanupService({
   logPrefix: 'PinnedMessages',
@@ -31,7 +32,7 @@ export const pinnedMessagesCleanupService = createExpiringEntityCleanupService({
   cleanupExpiredEntities: async () => {
     const deletedPinnedMessages =
       await DataWriter.deleteAllExpiredPinnedMessagesBefore(Date.now());
-    const unpinnedAt = Date.now();
+    const unpinnedAt = TimestampMs.now();
     const deletedPinnedMessagesIds = [];
     const changedConversationIds = new Set<string>();
 
@@ -53,7 +54,7 @@ export const pinnedMessagesCleanupService = createExpiringEntityCleanupService({
   },
 });
 
-async function sendUnpinSync(targetMessageId: string, unpinnedAt: number) {
+async function sendUnpinSync(targetMessageId: string, unpinnedAt: TimestampMs) {
   const target = await getPinnedMessageTarget(targetMessageId);
   if (target == null) {
     return;

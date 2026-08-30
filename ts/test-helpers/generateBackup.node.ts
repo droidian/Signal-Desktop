@@ -163,7 +163,6 @@ function* createRecords({
       androidSpecificSettings: null,
       bioText: null,
       bioEmoji: null,
-      keyTransparencyData: null,
     },
   });
 
@@ -203,6 +202,7 @@ function* createRecords({
           contact: {
             aci: chatAci,
             blocked: false,
+            blockedAtTimestamp: null,
             visibility: Backups.Contact.Visibility.VISIBLE,
             registration: {
               registered: {},

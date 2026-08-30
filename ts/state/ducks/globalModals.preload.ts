@@ -11,7 +11,6 @@ import type {
   ReadonlyMessageAttributesType,
 } from '../../model-types.d.ts';
 import type {
-  ActionCreator,
   MessageChangedActionType,
   MessageDeletedActionType,
 } from './conversations.preload.ts';
@@ -42,8 +41,6 @@ import {
   actions as conversationsActions,
 } from './conversations.preload.ts';
 import { isDownloaded } from '../../util/Attachment.std.ts';
-import { isPermanentlyUndownloadable } from '../../jobs/AttachmentDownloadManager.preload.ts';
-import type { ButtonVariant } from '../../components/Button.dom.tsx';
 import type { MessageRequestState } from '../../components/conversation/MessageRequestActionsConfirmation.dom.tsx';
 import type { MessageForwardDraft } from '../../types/ForwardDraft.std.ts';
 import { hydrateRanges } from '../../util/BodyRange.node.ts';
@@ -60,13 +57,17 @@ import { linkCallRoute } from '../../util/signalRoutes.std.ts';
 import type { StartCallData } from '../../components/ConfirmLeaveCallModal.dom.tsx';
 import type { CallQualitySurvey } from '../../types/CallQualitySurvey.std.ts';
 import { getMessageById } from '../../messages/getMessageById.preload.ts';
-import type { DataPropsType as TapToViewNotAvailablePropsType } from '../../components/TapToViewNotAvailableModal.dom.tsx';
-import type { DataPropsType as BackfillFailureModalPropsType } from '../../components/BackfillFailureModal.dom.tsx';
+import type { TapToViewNotAvailableModalData } from '../../components/TapToViewNotAvailableModal.dom.tsx';
+import type { BackfillFailureModalKind } from '../../components/BackfillFailureModal.dom.tsx';
 import type { SmartDraftGifMessageSendModalProps } from '../smart/DraftGifMessageSendModal.preload.tsx';
 import { onCriticalIdlePrimaryDeviceModalDismissed } from '../../util/handleServerAlerts.preload.ts';
 import type { PinMessageDialogData } from '../smart/PinMessageDialog.preload.tsx';
-import type { StateThunk } from '../types.std.ts';
+import type { ActionCreator, StateThunk } from '../types.std.ts';
 import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { ErrorModalDataProps } from '../../components/ErrorModal.dom.tsx';
+import { isDownloadableOrBackfillable } from '../../util/downloadAttachment.preload.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
+import { getHasMediaBackups } from '../selectors/items.dom.ts';
 
 const log = createLogger('globalModals');
 
@@ -125,7 +126,7 @@ export type GroupMemberLabelInfoPropsType = ReadonlyDeep<{
 export type GlobalModalsStateType = ReadonlyDeep<{
   addUserToAnotherGroupModalContactId?: string;
   aboutContactModalState?: ContactModalStateType;
-  backfillFailureModalProps: BackfillFailureModalPropsType | undefined;
+  backfillFailureModalKind: BackfillFailureModalKind | null;
   callLinkAddNameModalRoomId: string | null;
   callLinkEditModalRoomId: string | null;
   callLinkPendingParticipantContactId: string | undefined;
@@ -141,11 +142,7 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   };
   editHistoryMessages?: EditHistoryMessagesType;
   editNicknameAndNoteModalProps: EditNicknameAndNoteModalPropsType | null;
-  errorModalProps?: {
-    buttonVariant?: ButtonVariant;
-    description?: string;
-    title?: string | null;
-  };
+  errorModalProps: ErrorModalDataProps | null;
   forwardMessagesProps?: ForwardMessagesPropsType;
   gv2MigrationProps?: MigrateToGV2PropsType;
   groupMemberLabelInfoModalState?: GroupMemberLabelInfoPropsType;
@@ -173,7 +170,7 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   safetyNumberChangedBlockingData?: SafetyNumberChangedBlockingDataType;
   safetyNumberModalContactId?: string;
   stickerPackPreviewId?: string;
-  tapToViewNotAvailableModalProps?: TapToViewNotAvailablePropsType;
+  tapToViewNotAvailableModalData: TapToViewNotAvailableModalData | null;
   terminateGroupFailedModal: { conversationId: string } | null;
   userNotFoundModalState?: UserNotFoundModalStateType;
 }>;
@@ -287,7 +284,7 @@ type HideTapToViewNotAvailableModalActionType = ReadonlyDeep<{
 
 type ShowTapToViewNotAvailableModalActionType = ReadonlyDeep<{
   type: typeof SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL;
-  payload: TapToViewNotAvailablePropsType;
+  payload: TapToViewNotAvailableModalData;
 }>;
 
 type HideBackfillFailureModalActionType = ReadonlyDeep<{
@@ -296,7 +293,7 @@ type HideBackfillFailureModalActionType = ReadonlyDeep<{
 
 type ShowBackfillFailureModalActionType = ReadonlyDeep<{
   type: typeof SHOW_BACKFILL_FAILURE_MODAL;
-  payload: BackfillFailureModalPropsType;
+  payload: BackfillFailureModalKind;
 }>;
 
 type HideContactModalActionType = ReadonlyDeep<{
@@ -473,11 +470,7 @@ type CloseErrorModalActionType = ReadonlyDeep<{
 
 export type ShowErrorModalActionType = ReadonlyDeep<{
   type: typeof SHOW_ERROR_MODAL;
-  payload: {
-    buttonVariant?: ButtonVariant;
-    description?: string;
-    title?: string | null;
-  };
+  payload: ErrorModalDataProps;
 }>;
 
 type CloseDebugLogErrorModalActionType = ReadonlyDeep<{
@@ -717,7 +710,7 @@ function hideTapToViewNotAvailableModal(): HideTapToViewNotAvailableModalActionT
 }
 
 function showTapToViewNotAvailableModal(
-  payload: TapToViewNotAvailablePropsType
+  payload: TapToViewNotAvailableModalData
 ): ShowTapToViewNotAvailableModalActionType {
   return {
     type: SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL,
@@ -726,7 +719,7 @@ function showTapToViewNotAvailableModal(
 }
 
 function showBackfillFailureModal(
-  payload: BackfillFailureModalPropsType
+  payload: BackfillFailureModalKind
 ): ShowBackfillFailureModalActionType {
   return {
     type: SHOW_BACKFILL_FAILURE_MODAL,
@@ -971,6 +964,7 @@ function toggleForwardMessagesModal(
     }
 
     let messageDrafts: ReadonlyArray<MessageForwardDraft>;
+    const hasMediaBackups = getHasMediaBackups(getState());
 
     if (payload.type === ForwardMessagesModalType.Forward) {
       messageDrafts = await Promise.all(
@@ -987,11 +981,12 @@ function toggleForwardMessagesModal(
             !attachments.every(
               attachment =>
                 isDownloaded(attachment) ||
-                isPermanentlyUndownloadable(
+                !isDownloadableOrBackfillable({
                   attachment,
-                  'attachment',
-                  message.attributes
-                )
+                  attachmentType: 'attachment',
+                  isStory: message.attributes.type === 'story',
+                  hasMediaBackups,
+                })
             )
           ) {
             dispatch(
@@ -1007,13 +1002,13 @@ function toggleForwardMessagesModal(
           const messageDraft = toMessageForwardDraft(
             {
               ...messageProps,
-              attachments: (messageProps.attachments ?? []).filter(
-                attachment =>
-                  !isPermanentlyUndownloadable(
-                    attachment,
-                    'attachment',
-                    message.attributes
-                  )
+              attachments: (messageProps.attachments ?? []).filter(attachment =>
+                isDownloadableOrBackfillable({
+                  attachment,
+                  attachmentType: 'attachment',
+                  isStory: message.attributes.type === 'story',
+                  hasMediaBackups,
+                })
               ),
             },
             conversationSelector
@@ -1257,22 +1252,12 @@ function closeErrorModal(): CloseErrorModalActionType {
   };
 }
 
-function showErrorModal({
-  buttonVariant,
-  description,
-  title,
-}: {
-  buttonVariant?: ButtonVariant;
-  description?: string;
-  title?: string;
-}): ShowErrorModalActionType {
+function showErrorModal(
+  payload: ErrorModalDataProps
+): ShowErrorModalActionType {
   return {
     type: SHOW_ERROR_MODAL,
-    payload: {
-      buttonVariant,
-      description,
-      title,
-    },
+    payload,
   };
 }
 
@@ -1520,6 +1505,7 @@ function copyOverMessageAttributesIntoForwardMessages(
   messageDrafts: ReadonlyArray<MessageForwardDraft>,
   attributes: ReadonlyDeep<ReadonlyMessageAttributesType>
 ): ReadonlyArray<MessageForwardDraft> {
+  const hasMediaBackups = backupsService.hasMediaBackups();
   return messageDrafts.map(messageDraft => {
     if (messageDraft.originalMessageId !== attributes.id) {
       return messageDraft;
@@ -1527,7 +1513,9 @@ function copyOverMessageAttributesIntoForwardMessages(
     return {
       ...messageDraft,
       attachments: attributes.attachments?.map(attachment =>
-        getPropsForAttachment(attachment, 'attachment', attributes)
+        getPropsForAttachment(attachment, 'attachment', attributes, {
+          hasMediaBackups,
+        })
       ),
     };
   });
@@ -1561,7 +1549,7 @@ function hidePinMessageDialog(): TogglePinMessageDialogActionType {
 
 export function getEmptyState(): GlobalModalsStateType {
   return {
-    backfillFailureModalProps: undefined,
+    backfillFailureModalKind: null,
     hasConfirmationModal: false,
     callLinkAddNameModalRoomId: null,
     callLinkEditModalRoomId: null,
@@ -1572,6 +1560,7 @@ export function getEmptyState(): GlobalModalsStateType {
     discardDraftDialogProps: null,
     draftGifMessageSendModalProps: null,
     editNicknameAndNoteModalProps: null,
+    errorModalProps: null,
     isProfileNameWarningModalVisible: false,
     profileNameWarningModalConversationType: undefined,
     isShortcutGuideModalVisible: false,
@@ -1583,7 +1572,7 @@ export function getEmptyState(): GlobalModalsStateType {
     lowDiskSpaceBackupImportModal: null,
     usernameOnboardingState: UsernameOnboardingState.NeverShown,
     messageRequestActionsConfirmationProps: null,
-    tapToViewNotAvailableModalProps: undefined,
+    tapToViewNotAvailableModalData: null,
     notePreviewModalProps: null,
     pinMessageDialogData: null,
     terminateGroupFailedModal: null,
@@ -1701,28 +1690,28 @@ export function reducer(
   if (action.type === HIDE_TAP_TO_VIEW_NOT_AVAILABLE_MODAL) {
     return {
       ...state,
-      tapToViewNotAvailableModalProps: undefined,
+      tapToViewNotAvailableModalData: null,
     };
   }
 
   if (action.type === SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL) {
     return {
       ...state,
-      tapToViewNotAvailableModalProps: action.payload,
+      tapToViewNotAvailableModalData: action.payload,
     };
   }
 
   if (action.type === SHOW_BACKFILL_FAILURE_MODAL) {
     return {
       ...state,
-      backfillFailureModalProps: action.payload,
+      backfillFailureModalKind: action.payload,
     };
   }
 
   if (action.type === HIDE_BACKFILL_FAILURE_MODAL) {
     return {
       ...state,
-      backfillFailureModalProps: undefined,
+      backfillFailureModalKind: null,
     };
   }
 
@@ -1885,7 +1874,7 @@ export function reducer(
   if (action.type === CLOSE_ERROR_MODAL) {
     return {
       ...state,
-      errorModalProps: undefined,
+      errorModalProps: null,
     };
   }
 

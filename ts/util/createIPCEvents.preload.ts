@@ -278,15 +278,15 @@ export function createIPCEvents(
       try {
         await new Promise<void>((resolve, reject) => {
           showConfirmationDialog({
-            dialogName: 'closeConfirmation',
-            onTopOfEverything: true,
             cancelText: i18n(
               'icu:ConfirmationDialog__Title--close-requested-not-now'
             ),
-            confirmStyle: 'negative',
+            confirmStyle: 'strong-destructive',
             title: i18n(
               'icu:ConfirmationDialog__Title--in-call-close-requested'
             ),
+            // @ts-expect-error ConfirmationDialog migration: Needs title
+            description: null,
             okText: i18n('icu:close'),
             reject: () => reject(),
             resolve: () => resolve(),
@@ -452,6 +452,7 @@ export function createIPCEvents(
 
 function showUnknownSgnlLinkModal(): void {
   window.reduxActions.globalModals.showErrorModal({
+    title: i18n('icu:ErrorModal--title'),
     description: i18n('icu:unknown-sgnl-link'),
   });
 }

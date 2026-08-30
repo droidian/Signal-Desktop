@@ -12,15 +12,8 @@
   flex-direction: column;
   flex-shrink: 0;
   padding-top: var(--title-bar-drag-area-height);
-  user-select: none;
-  @include mixins.light-theme {
-    background-color: variables.$color-gray-04;
-    border-inline-end: 1px solid variables.$color-black-alpha-16;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-gray-80;
-    border-inline-end: 1px solid variables.$color-white-alpha-16;
-  }
+  background: var(--axo-color-surface-secondary);
+  border-inline-end: 1px solid var(--axo-color-border-primary);
 }
 
 .NavSidebar__Header {
@@ -91,18 +84,13 @@
   }
 
   &:hover {
-    @include mixins.light-theme {
-      background: variables.$color-gray-20;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-gray-62;
-    }
+    background: var(--axo-color-fill-primary);
   }
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -111,18 +99,10 @@
     display: block;
     width: 20px;
     height: 20px;
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/chevron/chevron-left.svg',
-        variables.$color-black
-      );
-    }
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/chevron/chevron-left.svg',
-        variables.$color-gray-15
-      );
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/chevron/chevron-left.svg',
+      var(--axo-color-label-primary)
+    );
   }
 }
 
@@ -157,18 +137,13 @@
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow: inset 0 0 0 2px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
 
 .NavSidebar__DragHandle--dragging {
-  @include mixins.light-theme {
-    background-color: variables.$color-black-alpha-12;
-  }
-  @include mixins.dark-theme {
-    background-color: variables.$color-white-alpha-12;
-  }
+  background-color: var(--axo-color-fill-primary-pressed);
 }
 
 .NavSidebar__document--draggingHandle {
@@ -196,27 +171,17 @@
 
   &:hover,
   &:focus {
-    @include mixins.light-theme {
-      background-color: variables.$color-black-alpha-06;
-    }
-    @include mixins.dark-theme {
-      background-color: variables.$color-white-alpha-06;
-    }
+    background: var(--axo-color-fill-primary);
   }
 
   &:active {
-    @include mixins.light-theme {
-      background: variables.$color-gray-20;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-gray-62;
-    }
+    background: var(--axo-color-fill-primary-pressed);
   }
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -265,11 +230,11 @@
   margin-block: 0px 6px;
 
   @include mixins.font-title-medium;
-  color: variables.$color-gray-45;
+  color: var(--axo-color-label-primary);
 }
 
 .NavSidebarEmpty__subtitle {
   margin-block: 0;
 
-  color: variables.$color-gray-45;
+  color: var(--axo-color-label-secondary);
 }

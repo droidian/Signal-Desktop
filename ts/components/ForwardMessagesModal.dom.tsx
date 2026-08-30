@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentType } from 'react';
-import React, {
+import type { ComponentType, JSX } from 'react';
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -12,8 +12,6 @@ import React, {
 } from 'react';
 import { AttachmentList } from './conversation/AttachmentList.dom.tsx';
 import type { AttachmentForUIType } from '../types/Attachment.std.ts';
-import { Button } from './Button.dom.tsx';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.tsx';
 import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.tsx';
 import type { Row } from './ConversationList.dom.tsx';
 import { ConversationList, RowType } from './ConversationList.dom.tsx';
@@ -43,7 +41,9 @@ import {
 } from '../types/ForwardDraft.std.ts';
 import { missingCaseError } from '../util/missingCaseError.std.ts';
 import { Theme } from '../util/theme.std.ts';
-import { EmojiSkinTone } from './fun/data/emojis.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { AxoIconButton } from '../axo/AxoIconButton.dom.tsx';
 
 export enum ForwardMessagesModalType {
   Forward,
@@ -101,7 +101,7 @@ export function ForwardMessagesModal({
   showToast,
   theme,
   regionCode,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const inputRef = useRef<null | HTMLInputElement>(null);
   const [selectedContacts, setSelectedContacts] = useState<
     Array<ConversationType>
@@ -134,7 +134,7 @@ export function ForwardMessagesModal({
   const canForwardMessages =
     hasContactsSelected && drafts.every(isDraftForwardable);
 
-  const forwardMessages = React.useCallback(() => {
+  const forwardMessages = useCallback(() => {
     if (!canForwardMessages) {
       showToast({ toastType: ToastType.CannotForwardEmptyMessage });
       return;
@@ -260,16 +260,20 @@ export function ForwardMessagesModal({
       </div>
       <div>
         {isEditingMessage || !isLonelyDraftEditable ? (
-          <Button
-            aria-label={i18n('icu:ForwardMessageModal--continue')}
-            className="module-ForwardMessageModal__send-button module-ForwardMessageModal__send-button--forward"
-            aria-disabled={!canForwardMessages}
+          <AxoIconButton.Root
+            size="md"
+            variant="strong-primary"
+            symbol="send-fill"
+            label={i18n('icu:ForwardMessageModal--continue')}
+            disabled={!canForwardMessages}
             onClick={forwardMessages}
           />
         ) : (
-          <Button
-            aria-label={i18n('icu:forwardMessage')}
-            className="module-ForwardMessageModal__send-button module-ForwardMessageModal__send-button--continue"
+          <AxoIconButton.Root
+            size="md"
+            variant="strong-primary"
+            symbol="arrow-[end]"
+            label={i18n('icu:forwardMessage')}
             disabled={!hasContactsSelected}
             onClick={() => setIsEditingMessage(true)}
           />
@@ -294,16 +298,17 @@ export function ForwardMessagesModal({
 
   return (
     <>
-      {cannotMessage && (
-        <ConfirmationDialog
-          dialogName="ForwardMessageModal.confirm"
-          cancelText={i18n('icu:Confirmation--confirm')}
-          i18n={i18n}
-          onClose={() => setCannotMessage(false)}
-        >
-          {i18n('icu:GroupV2--cannot-send')}
-        </ConfirmationDialog>
-      )}
+      <AxoConfirmDialog.Root
+        open={cannotMessage}
+        onOpenChange={setCannotMessage}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:GroupV2--cannot-send')}
+      >
+        <AxoConfirmDialog.Cancel>
+          {i18n('icu:Confirmation--confirm')}
+        </AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
       <Modal
         modalName="ForwardMessageModal"
         hasXButton
@@ -390,6 +395,7 @@ export function ForwardMessagesModal({
                       }}
                       rowCount={rowCount}
                       shouldRecomputeRowHeights={false}
+                      resetShouldRecomputeRowHeights={shouldNeverBeCalled}
                       showChooseGroupMembers={shouldNeverBeCalled}
                       showFindByUsername={shouldNeverBeCalled}
                       showFindByPhoneNumber={shouldNeverBeCalled}
@@ -413,7 +419,7 @@ export function ForwardMessagesModal({
 type ForwardMessageEditorProps = Readonly<{
   draft: MessageForwardDraft;
   linkPreview: LinkPreviewForUIType | null | void;
-  removeLinkPreview(): void;
+  removeLinkPreview: () => void;
   RenderCompositionTextArea: ComponentType<SmartCompositionTextAreaProps>;
   onChange: (
     messageText: string,
@@ -438,7 +444,7 @@ function ForwardMessageEditor({
   onChangeAttachments,
   onSubmit,
   theme,
-}: ForwardMessageEditorProps): React.JSX.Element {
+}: ForwardMessageEditorProps): JSX.Element {
   const { attachments } = draft;
   return (
     <div className="module-ForwardMessageModal__main-body">
@@ -477,7 +483,7 @@ function ForwardMessageEditor({
         onChange={onChange}
         onSubmit={onSubmit}
         theme={theme}
-        emojiSkinToneDefault={EmojiSkinTone.None}
+        emojiSkinToneDefault={Emoji.SkinTone.None}
       />
     </div>
   );

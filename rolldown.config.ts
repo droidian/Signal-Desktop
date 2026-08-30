@@ -1,9 +1,11 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
+// @ts-check
 
 import { rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { defineConfig } from 'rolldown';
+import type { RolldownOptions } from 'rolldown';
 import { transform } from 'oxc-transform';
 
 const external = [
@@ -24,7 +26,6 @@ const external = [
   'sass',
 
   // Large libraries (3.7mb total)
-  'emoji-datasource',
   'google-libphonenumber',
 
   // Imported, but not used in production builds
@@ -60,6 +61,7 @@ const sandboxDOM = {
 
 const defaults = {
   transform: {
+    jsx: 'react-jsx',
     define: {
       'process.env.IS_BUNDLED': 'true',
       ...(isProd
@@ -126,13 +128,18 @@ const defaults = {
   watch: {
     clearScreen: false,
   },
-};
+} satisfies RolldownOptions;
 
 if (isProd) {
   try {
     rmSync(join(__dirname, 'bundles'), { recursive: true });
   } catch (error) {
-    if (error.code !== 'ENOENT') {
+    if (
+      typeof error === 'object' &&
+      error != null &&
+      'code' in error &&
+      error.code !== 'ENOENT'
+    ) {
       throw error;
     }
   }
@@ -141,7 +148,7 @@ if (isProd) {
 export default defineConfig([
   // Each sandboxed bundle has to be separate from the rest since
   // they cannot use `require()`
-  ...Object.entries(sandboxPreload).map(([key, value]) => {
+  ...Object.entries(sandboxPreload).map(([key, value]): RolldownOptions => {
     return {
       ...defaults,
       external: ['electron'],
@@ -183,23 +190,21 @@ export default defineConfig([
 
   // Voice Note Worker
   {
-    input: 'components/webaudiorecorder/lib/WebAudioRecorderMp3.js',
+    input: 'ts/workers/mp3Encoder.std.ts',
     transform: {
       define: {
         process: 'undefined',
         require: 'undefined',
         eval: 'undefined',
       },
-      inject: {
-        Mp3LameEncoder: '../../mp3lameencoder/lib/Mp3LameEncoder.js',
-      },
     },
     output: {
-      file: 'bundles/workers/WebAudioRecorderMp3.js',
+      file: 'bundles/workers/mp3Encoder.js',
       exports: 'named',
       generatedCode: {
         symbols: false,
       },
+      codeSplitting: false,
     },
     watch: {
       clearScreen: false,

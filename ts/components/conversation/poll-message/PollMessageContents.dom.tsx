@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, type JSX } from 'react';
 import { Checkbox } from 'radix-ui';
 import { AnimatePresence, motion } from 'motion/react';
 import { type TailwindStyles, tw } from '../../../axo/tw.dom.tsx';
@@ -12,7 +12,7 @@ import type { PollWithResolvedVotersType } from '../../../state/selectors/messag
 import type { LocalizerType } from '../../../types/Util.std.ts';
 import { PollVotesModal } from './PollVotesModal.dom.tsx';
 import { SpinnerV2 } from '../../SpinnerV2.dom.tsx';
-import { usePrevious } from '../../../hooks/usePrevious.std.ts';
+import { usePreviousDeprecated } from '../../../hooks/usePrevious.std.ts';
 import { UserText } from '../../UserText.dom.tsx';
 
 function VotedCheckmark({
@@ -21,7 +21,7 @@ function VotedCheckmark({
 }: {
   isIncoming: boolean;
   i18n: LocalizerType;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <div
       className={tw(
@@ -29,8 +29,8 @@ function VotedCheckmark({
         'flex items-center justify-center',
         'text-[10px]',
         isIncoming
-          ? 'bg-color-fill-primary text-label-primary-on-color'
-          : 'bg-label-primary-on-color text-color-fill-primary'
+          ? 'bg-accent text-primary-oncolor'
+          : 'bg-(--axo-color-label-primary-oncolor) text-(--axo-color-surface-message-outgoing)'
       )}
     >
       <AxoSymbol.InlineGlyph
@@ -59,27 +59,27 @@ const PollCheckbox = memo((props: PollCheckboxProps) => {
   if (isPending || !checked) {
     bgColor = tw('bg-transparent');
     borderColor = isIncoming
-      ? tw('border-label-placeholder')
-      : tw('border-label-primary-on-color');
+      ? tw('border-(--axo-color-label-placeholder)')
+      : tw('border-(--axo-color-label-primary-oncolor)');
     strokeColor = isIncoming
-      ? tw('stroke-label-placeholder')
-      : tw('stroke-label-primary-on-color');
+      ? tw('stroke-(--axo-color-label-placeholder)')
+      : tw('stroke-(--axo-color-label-primary-oncolor)');
     checkmarkColor = isIncoming
-      ? tw('text-label-placeholder')
-      : tw('text-label-primary-on-color');
+      ? tw('text-placeholder')
+      : tw('text-primary-oncolor');
   } else {
     bgColor = isIncoming
-      ? tw('bg-color-fill-primary')
-      : tw('bg-label-primary-on-color');
+      ? tw('bg-accent')
+      : tw('bg-(--axo-color-label-primary-oncolor)');
     borderColor = isIncoming
-      ? tw('border-color-fill-primary')
-      : tw('border-label-primary-on-color');
+      ? tw('border-(--axo-color-fill-accent)')
+      : tw('border-(--axo-color-label-primary-oncolor)');
     strokeColor = isIncoming
-      ? tw('stroke-color-fill-primary')
-      : tw('stroke-label-primary-on-color');
+      ? tw('stroke-(--axo-color-fill-accent)')
+      : tw('stroke-(--axo-color-label-primary-oncolor)');
     checkmarkColor = isIncoming
-      ? tw('text-label-primary-on-color')
-      : tw('text-color-fill-primary');
+      ? tw('text-primary-oncolor')
+      : tw('text-(--axo-color-fill-accent)');
   }
 
   return (
@@ -112,7 +112,7 @@ const PollCheckbox = memo((props: PollCheckboxProps) => {
         className={tw(
           'flex size-6 items-center justify-center rounded-full',
           isPending ? '' : 'border-[1.5px]',
-          'outline-0 outline-border-focused focused:outline-[2.5px]',
+          'outline-none keyboard-mode:focus:axo-focus-ring',
           'overflow-hidden',
           'transition-colors duration-250',
           bgColor,
@@ -165,12 +165,15 @@ export function PollMessageContents({
   canSendPollVote,
   sendPollVote,
   endPoll,
-}: PollMessageContentsProps): React.JSX.Element {
+}: PollMessageContentsProps): JSX.Element {
   const [showVotesModal, setShowVotesModal] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
   const hasPendingVotes = poll.pendingVoteDiff && poll.pendingVoteDiff.size > 0;
-  const hadPendingVotesInLastRender = usePrevious(hasPendingVotes, undefined);
+  const hadPendingVotesInLastRender = usePreviousDeprecated(
+    hasPendingVotes,
+    undefined
+  );
 
   const pendingCheckTimer = useRef<NodeJS.Timeout | null>(null);
   const isIncoming = direction === 'incoming';
@@ -246,7 +249,7 @@ export function PollMessageContents({
       className={tw(
         'text-start wrap-break-word whitespace-pre-wrap',
         'type-body-large',
-        isIncoming ? 'text-label-primary' : 'text-label-primary-on-color',
+        isIncoming ? 'text-primary' : 'text-primary-oncolor',
         'w-[275px] max-w-full',
         'mt-1'
       )}
@@ -258,7 +261,7 @@ export function PollMessageContents({
       <div
         className={tw(
           'mb-4 type-body-medium font-medium',
-          isIncoming ? 'text-label-secondary' : 'text-label-secondary-on-color'
+          isIncoming ? 'text-secondary' : 'text-secondary-oncolor'
         )}
       >
         {pollStatusText}
@@ -318,9 +321,7 @@ export function PollMessageContents({
                     <span
                       className={tw(
                         'type-body-medium',
-                        isIncoming
-                          ? 'text-label-secondary'
-                          : 'text-label-secondary-on-color'
+                        isIncoming ? 'text-secondary' : 'text-secondary-oncolor'
                       )}
                       data-testid={`poll-option-${index}-votes-${optionVotes}`}
                     >
@@ -338,8 +339,8 @@ export function PollMessageContents({
                     className={tw(
                       'absolute inset-0',
                       isIncoming
-                        ? 'bg-fill-secondary'
-                        : 'bg-message-fill-outgoing-tertiary'
+                        ? 'bg-primary'
+                        : 'bg-onmessage-outgoing-secondary'
                     )}
                   />
                   <div
@@ -347,8 +348,8 @@ export function PollMessageContents({
                       'absolute inset-y-0 inset-s-0 rounded-s-full',
                       'transition-[width] duration-250 motion-reduce:transition-none',
                       isIncoming
-                        ? 'bg-color-fill-primary'
-                        : 'bg-label-primary-on-color'
+                        ? 'bg-accent'
+                        : 'bg-(--axo-color-label-primary-oncolor)'
                     )}
                     style={{ width: `${percentage}%` }}
                   />
@@ -377,7 +378,7 @@ export function PollMessageContents({
             >
               <AxoButton.Root
                 size="md"
-                variant="floating-secondary"
+                variant="elevated-secondary"
                 onClick={() => setShowVotesModal(true)}
               >
                 {i18n('icu:PollMessage__ViewVotesButton')}
@@ -388,9 +389,7 @@ export function PollMessageContents({
               key="no-votes"
               className={tw(
                 'type-body-medium',
-                isIncoming
-                  ? 'text-label-primary'
-                  : 'text-label-primary-on-color'
+                isIncoming ? 'text-primary' : 'text-primary-oncolor'
               )}
             >
               {i18n('icu:PollVotesModal__noVotes')}

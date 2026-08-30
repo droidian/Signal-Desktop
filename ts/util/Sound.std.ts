@@ -1,6 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isTestOrMockEnvironment } from '../environment.std.ts';
 import { createLogger } from '../logging/log.std.ts';
 import { missingCaseError } from './missingCaseError.std.ts';
 
@@ -60,6 +61,11 @@ export class Sound {
     soundNode.connect(volumeNode);
     volumeNode.connect(this.#context.destination);
 
+    if (isTestOrMockEnvironment()) {
+      // Mute sounds in tests
+      volumeNode.gain.setValueAtTime(0, this.#context.currentTime);
+    }
+
     soundNode.loop = this.#loop;
 
     soundNode.start(0, 0);
@@ -76,14 +82,16 @@ export class Sound {
 
   get #context(): AudioContext {
     if (!Sound.context) {
-      // oxlint-disable-next-line no-undef FIXME
+      // FIXME
+      // oxlint-disable-next-line no-undef
       Sound.context = new AudioContext();
     }
     return Sound.context;
   }
 
   static async loadSoundFile(src: string): Promise<ArrayBuffer> {
-    // oxlint-disable-next-line no-undef FIXME
+    // FIXME
+    // oxlint-disable-next-line no-undef
     const xhr = new XMLHttpRequest();
 
     xhr.open('GET', src, true);

@@ -45,6 +45,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -76,6 +78,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -107,6 +111,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -138,6 +144,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -169,6 +177,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -200,6 +210,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -233,6 +245,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -267,6 +281,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -300,6 +316,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),
@@ -330,6 +348,8 @@ describe('calling notification helpers', () => {
             maxDevices: 23,
             isSelectMode: false,
             isTargeted: false,
+            expireTimer: null,
+            expirationStartTimestamp: null,
           },
           i18n
         ),

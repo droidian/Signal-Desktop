@@ -1,10 +1,9 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, JSX } from 'react';
 import type { LocalizerType } from '../types/I18N.std.ts';
-import { Button, ButtonSize, ButtonVariant } from './Button.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
 
 type Props = {
   i18n: LocalizerType;
@@ -18,25 +17,16 @@ export function RecordingComposer({
   onCancel,
   onSend,
   children,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   return (
     <div className="RecordingComposer">
       <div className="RecordingComposer__content">{children}</div>
-      <Button
-        className="RecordingComposer__button"
-        onClick={onCancel}
-        size={ButtonSize.Medium}
-        variant={ButtonVariant.Secondary}
-      >
+      <AxoButton.Root variant="implied-secondary" size="md" onClick={onCancel}>
         {i18n('icu:RecordingComposer__cancel')}
-      </Button>
-      <Button
-        className="RecordingComposer__button"
-        onClick={onSend}
-        size={ButtonSize.Medium}
-      >
+      </AxoButton.Root>
+      <AxoButton.Root variant="strong-primary" size="md" onClick={onSend}>
         {i18n('icu:RecordingComposer__send')}
-      </Button>
+      </AxoButton.Root>
     </div>
   );
 }

@@ -1,0 +1,1 @@
+signal,mesaj,messenger,zəng,səsli,şifrələnmiş,şəxsi,təhlükəsiz,məxfilik,qrup,video,çat,hekayələr

@@ -1,7 +1,12 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import {
+  useCallback,
+  type JSX,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 import classNames from 'classnames';
 
 import type {
@@ -14,7 +19,6 @@ import {
   getImageDimensionsForTimeline,
   getThumbnailUrl,
   getUrl,
-  isDownloadable,
   isIncremental,
   isVideoAttachment,
 } from '../../util/Attachment.std.ts';
@@ -125,7 +129,7 @@ export function ImageGrid({
   theme,
   withContentAbove,
   withContentBelow,
-}: Props): React.JSX.Element | null {
+}: Props): JSX.Element | null {
   const { curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight } =
     getCurves({
       direction,
@@ -137,8 +141,8 @@ export function ImageGrid({
 
   const withBottomOverlay = Boolean(bottomOverlay && !withContentBelow);
 
-  const startDownloadClick = React.useCallback(
-    (event: React.MouseEvent) => {
+  const startDownloadClick = useCallback(
+    (event: MouseEvent) => {
       if (startDownload) {
         event.preventDefault();
         event.stopPropagation();
@@ -147,8 +151,8 @@ export function ImageGrid({
     },
     [startDownload]
   );
-  const startDownloadKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const startDownloadKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>) => {
       if (startDownload && (event.key === 'Enter' || event.key === 'Space')) {
         event.preventDefault();
         event.stopPropagation();
@@ -158,7 +162,7 @@ export function ImageGrid({
     [startDownload]
   );
 
-  const showAttachmentOrNoLongerAvailableToast = React.useCallback(
+  const showAttachmentOrNoLongerAvailableToast = useCallback(
     (attachmentIndex: number) => {
       const attachment = attachments[attachmentIndex];
       strictAssert(attachment, 'Missing attachment');
@@ -173,8 +177,8 @@ export function ImageGrid({
     return null;
   }
 
-  const downloadableAttachments = attachments.filter(attachment =>
-    isDownloadable(attachment)
+  const downloadableAttachments = attachments.filter(
+    attachment => !attachment.isPermanentlyUndownloadable
   );
 
   const detailPill = (
@@ -591,9 +595,9 @@ function renderDownloadPill({
 }: {
   attachments: ReadonlyArray<AttachmentForUIType>;
   i18n: LocalizerType;
-  startDownloadClick: (event: React.MouseEvent) => void;
-  startDownloadKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
-}): React.JSX.Element | null {
+  startDownloadClick: (event: MouseEvent) => void;
+  startDownloadKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
+}): JSX.Element | null {
   const downloadedOrPendingOrIncremental = attachments.some(
     attachment =>
       attachment.path || attachment.pending || isIncremental(attachment)
@@ -602,8 +606,8 @@ function renderDownloadPill({
     return null;
   }
 
-  const noneDownloadable = !attachments.some(attachment =>
-    isDownloadable(attachment)
+  const noneDownloadable = attachments.every(
+    attachment => attachment.isPermanentlyUndownloadable
   );
   if (noneDownloadable) {
     return null;
@@ -612,17 +616,19 @@ function renderDownloadPill({
   return (
     <button
       type="button"
-      className="module-image-grid__download-pill"
+      className="module-image-grid__download-overlay"
       aria-label={i18n('icu:startDownload')}
       onClick={startDownloadClick}
       onKeyDown={startDownloadKeyDown}
     >
-      <div className="module-image-grid__download_pill__icon-wrapper">
-        <div className="module-image-grid__download_pill__download-icon" />
-      </div>
-      <div className="module-image-grid__download_pill__text-wrapper">
-        {i18n('icu:downloadNItems', { count: attachments.length })}
-      </div>
+      <span className="module-image-grid__download-pill">
+        <span className="module-image-grid__download_pill__icon-wrapper">
+          <span className="module-image-grid__download_pill__download-icon" />
+        </span>
+        <span className="module-image-grid__download_pill__text-wrapper">
+          {i18n('icu:downloadNItems', { count: attachments.length })}
+        </span>
+      </span>
     </button>
   );
 }

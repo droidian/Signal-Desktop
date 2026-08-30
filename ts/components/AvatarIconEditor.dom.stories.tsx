@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
@@ -16,6 +16,7 @@ const { i18n } = window.SignalContext;
 const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   avatarData: overrideProps.avatarData || createAvatarData({}),
   i18n,
+  isDisplayedAsPanel: false,
   onClose: action('onClose'),
 });
 
@@ -23,7 +24,7 @@ export default {
   title: 'Components/AvatarIconEditor',
 } satisfies Meta<PropsType>;
 
-export function PersonalIcon(): React.JSX.Element {
+export function PersonalIcon(): JSX.Element {
   return (
     <AvatarIconEditor
       {...createProps({
@@ -36,7 +37,7 @@ export function PersonalIcon(): React.JSX.Element {
   );
 }
 
-export function GroupIcon(): React.JSX.Element {
+export function GroupIcon(): JSX.Element {
   return (
     <AvatarIconEditor
       {...createProps({

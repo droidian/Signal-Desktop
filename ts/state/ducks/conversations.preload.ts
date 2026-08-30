@@ -245,7 +245,7 @@ import type {
   PinnedMessage,
   PinnedMessagePreloadData,
 } from '../../types/PinnedMessage.std.ts';
-import type { StateThunk } from '../types.std.ts';
+import type { ActionCreator, StateThunk } from '../types.std.ts';
 import { getPinnedMessagesLimit } from '../../util/pinnedMessages.dom.ts';
 import { getPinnedMessageExpiresAt } from '../../util/pinnedMessages.std.ts';
 import { pinnedMessagesCleanupService } from '../../services/expiring/pinnedMessagesCleanupService.preload.ts';
@@ -255,7 +255,17 @@ import {
   getPanels,
   getSelectedConversationId,
 } from '../selectors/nav.std.ts';
-import { computeGroupNameHash } from '../../util/Conversation.preload.ts';
+import {
+  computeGroupNameHash,
+  getPinnedConversationLimit,
+} from '../../util/Conversation.preload.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
+import { isSignalConversation } from '../../util/isSignalConversation.dom.ts';
+import {
+  type DurationSecs,
+  SentTimestampMs,
+  TimestampMs,
+} from '@signalapp/types';
 
 const { chunk, difference, fromPairs, omit, orderBy, pick, values, without } =
   lodash;
@@ -315,7 +325,7 @@ export type LastMessageType = ReadonlyDeep<
 >;
 export type DraftPreviewType = ReadonlyDeep<{
   text: string;
-  prefix?: string;
+  prefix?: Emoji.Variant;
   bodyRanges?: HydratedBodyRangesType;
 }>;
 
@@ -326,7 +336,7 @@ export type ConversationRemovalStage = ReadonlyDeep<
 export type MembershipType = ReadonlyDeep<{
   aci: AciString;
   isAdmin: boolean;
-  labelEmoji: string | undefined;
+  labelEmoji: Emoji.Variant | undefined;
   labelString: string | undefined;
 }>;
 
@@ -351,7 +361,7 @@ export type ConversationType = ReadonlyDeep<
     username?: string;
     about?: string;
     aboutText?: string;
-    aboutEmoji?: string;
+    aboutEmoji?: Emoji.Variant;
     avatars?: ReadonlyArray<AvatarDataType>;
     avatarUrl?: string;
     rawAvatarPath?: string;
@@ -529,6 +539,7 @@ export type ConversationPreloadDataType = ReadonlyDeep<{
 export type MessagesResetDataType = ReadonlyDeep<
   ConversationPreloadDataType & {
     scrollToMessageId?: string;
+    shouldHighlight?: boolean;
     selectedConversationId: string | undefined;
   }
 >;
@@ -1252,7 +1263,7 @@ export const actions = {
   setIsNearBottom,
   setMessageLoadingState,
   setMessageToEdit,
-  setMuteExpiration,
+  setMuteDuration,
   setChatFolderMuteExpiration,
   setPinned,
   setPreJoinConversation,
@@ -1561,14 +1572,16 @@ function removeMember(
   return noopAction('removeMember');
 }
 
-function filterAvatarData(
+export function filterAvatarData(
   avatars: ReadonlyArray<AvatarDataType>,
   data: AvatarDataType
 ): Array<AvatarDataType> {
   return avatars.filter(avatarData => !isSameAvatarData(data, avatarData));
 }
 
-function getNextAvatarId(avatars: ReadonlyArray<AvatarDataType>): number {
+export function getNextAvatarId(
+  avatars: ReadonlyArray<AvatarDataType>
+): number {
   return Math.max(...avatars.map(x => Number(x.id))) + 1;
 }
 
@@ -1774,7 +1787,7 @@ function setDontNotifyForMentionsIfMuted(
 
 function setChatFolderMuteExpiration(
   chatFolderId: ChatFolderId,
-  muteExpiresAt: number
+  muteDuration: number
 ): ThunkAction<void, RootStateType, unknown, NoopActionType> {
   return async (dispatch, getState) => {
     const chatFolderConversations = _getAllConversationsInChatFolder(
@@ -1783,27 +1796,29 @@ function setChatFolderMuteExpiration(
     );
 
     for (const conversation of chatFolderConversations) {
-      dispatch(setMuteExpiration(conversation.id, muteExpiresAt));
+      dispatch(setMuteDuration(conversation.id, muteDuration));
     }
   };
 }
 
-function setMuteExpiration(
+function setMuteDuration(
   conversationId: string,
-  muteExpiresAt = 0
+  muteDuration = 0
 ): NoopActionType {
   const conversation = window.ConversationController.get(conversationId);
   if (!conversation) {
-    throw new Error('setMuteExpiration: No conversation found');
+    throw new Error('setMuteDuration: No conversation found');
   }
 
-  conversation.setMuteExpiration(
-    muteExpiresAt >= Number.MAX_SAFE_INTEGER
-      ? muteExpiresAt
-      : Date.now() + muteExpiresAt
-  );
+  if (muteDuration === 0) {
+    conversation.setMuteExpiration(0);
+  } else {
+    conversation.setMuteExpiration(
+      Math.min(Date.now() + muteDuration, Number.MAX_SAFE_INTEGER)
+    );
+  }
 
-  return noopAction('setMuteExpiration');
+  return noopAction('setMuteDuration');
 }
 
 function setPinned(
@@ -1820,12 +1835,14 @@ function setPinned(
       'pinnedConversationIds',
       new Array<string>()
     );
+    const maxPinnedConversations = getPinnedConversationLimit();
 
-    if (pinnedConversationIds.length >= 4) {
+    if (pinnedConversationIds.length >= maxPinnedConversations) {
       return {
         type: SHOW_TOAST,
         payload: {
           toastType: ToastType.PinnedConversationsFull,
+          maxPinnedConversations,
         },
       };
     }
@@ -3424,6 +3441,7 @@ function messagesReset({
   metrics,
   pinnedMessagesPreloadData,
   scrollToMessageId,
+  shouldHighlight,
   unboundedFetch,
 }: MessagesResetOptionsType): ThunkAction<
   void,
@@ -3451,6 +3469,7 @@ function messagesReset({
         pinnedMessagesPreloadData,
         selectedConversationId,
         scrollToMessageId,
+        shouldHighlight,
       },
     });
   };
@@ -3751,10 +3770,15 @@ async function syncMessageRequestResponse(
     response,
     {
       source: MessageRequestResponseSource.LOCAL,
-      timestamp: Date.now(),
+      blockedAt: Date.now(),
     },
     { shouldSave }
   );
+
+  // Signal conversation block status is synced via storage service's AccountRecord
+  if (isSignalConversation(conversation)) {
+    return;
+  }
 
   const groupId = conversation.getGroupIdBuffer();
 
@@ -3985,7 +4009,7 @@ function acceptConversation(
         messageRequestEnum.ACCEPT,
         {
           source: MessageRequestResponseSource.LOCAL,
-          timestamp: Date.now(),
+          blockedAt: Date.now(),
         },
         { shouldSave: true }
       );
@@ -4061,7 +4085,7 @@ function blockConversation(
         messageRequestEnum.BLOCK,
         {
           source: MessageRequestResponseSource.LOCAL,
-          timestamp: Date.now(),
+          blockedAt: Date.now(),
         },
         { shouldSave: true }
       );
@@ -4445,7 +4469,7 @@ export function scrollToMessage(
       return;
     }
 
-    drop(conversation.loadAndScroll(messageId));
+    drop(conversation.loadAndScroll(messageId, { shouldHighlight: true }));
   };
 }
 
@@ -4609,10 +4633,6 @@ function addMembersToGroup(
   };
 }
 
-// oxlint-disable-next-line typescript/no-explicit-any
-export type ActionCreator<T extends (...params: Array<any>) => any> =
-  ReadonlyDeep<(...params: Parameters<T>) => void>;
-
 export type UpdateGroupAttributesType = ReadonlyDeep<
   ActionCreator<typeof updateGroupAttributes>
 >;
@@ -4675,7 +4695,7 @@ function updateGroupMemberLabel(
     labelString,
   }: {
     conversationId: string;
-    labelEmoji: string | undefined;
+    labelEmoji: Emoji.Variant | undefined;
     labelString: string | undefined;
   },
   {
@@ -4930,6 +4950,8 @@ function onConversationOpened(
             ? Promise.resolve()
             : conversation.loadNewestMessages(undefined, undefined),
           conversation.updateLastMessage(),
+          // FIXME
+          // oxlint-disable-next-line typescript/await-thenable
           conversation.throttledUpdateUnread(),
         ])
       );
@@ -5164,7 +5186,7 @@ function onPinnedMessagesChanged(
 
 function onPinnedMessageAdd(
   targetMessageId: string,
-  pinDurationSeconds: DurationInSeconds | null
+  pinDurationSeconds: DurationSecs | null
 ): StateThunk {
   return async dispatch => {
     const target = await getPinnedMessageTarget(targetMessageId);
@@ -5177,7 +5199,7 @@ function onPinnedMessageAdd(
     );
     strictAssert(targetConversation != null, 'Missing target conversation');
 
-    const pinnedAt = Date.now();
+    const pinnedAt = SentTimestampMs.now();
 
     await conversationJobQueue.add({
       type: conversationQueueJobEnum.enum.PinMessage,
@@ -5223,7 +5245,7 @@ function onPinnedMessageRemove(targetMessageId: string): StateThunk {
     await conversationJobQueue.add({
       type: conversationQueueJobEnum.enum.UnpinMessage,
       ...target,
-      unpinnedAt: Date.now(),
+      unpinnedAt: TimestampMs.now(),
       isSyncOnly: false,
     });
     await DataWriter.deletePinnedMessageByMessageId(targetMessageId);
@@ -5583,6 +5605,7 @@ function updateMessageLookup(
     metrics,
     selectedConversationId,
     scrollToMessageId,
+    shouldHighlight,
     unboundedFetch,
     pinnedMessagesPreloadData,
   }: MessagesResetDataType
@@ -5632,7 +5655,9 @@ function updateMessageLookup(
       ? {
           targetedMessage: scrollToMessageId,
           targetedMessageCounter: state.targetedMessageCounter + 1,
-          targetedMessageSource: TargetedMessageSource.Reset,
+          targetedMessageSource: shouldHighlight
+            ? TargetedMessageSource.NavigateToMessage
+            : TargetedMessageSource.Reset,
         }
       : {}),
     messagesLookup: {

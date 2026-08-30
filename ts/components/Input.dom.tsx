@@ -2,13 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 
 import * as grapheme from '../util/grapheme.std.ts';
@@ -39,6 +33,7 @@ export type PropsType = {
   onEnter?: (event: KeyboardEvent) => unknown;
   placeholder: string;
   readOnly?: boolean;
+  shouldShowClearButton?: boolean;
   value?: string;
   whenToShowRemainingCount?: number;
   whenToWarnRemainingCount?: number;
@@ -89,6 +84,7 @@ export const Input = forwardRef<
     onEnter,
     placeholder,
     readOnly,
+    shouldShowClearButton,
     value = '',
     whenToShowRemainingCount = Infinity,
     whenToWarnRemainingCount = Infinity,
@@ -210,8 +206,10 @@ export const Input = forwardRef<
           graphemeLimit: newPastedLength,
         });
 
-        inputEl.value =
+        const newValue =
           textBeforeSelection + truncatedPaste + textAfterSelection;
+        inputEl.value = newValue;
+        onChange(newValue);
       }
 
       maybeSetLarge();
@@ -222,6 +220,7 @@ export const Input = forwardRef<
       maxLengthCount,
       maxByteCount,
       maybeSetLarge,
+      onChange,
       value,
     ]
   );
@@ -264,7 +263,7 @@ export const Input = forwardRef<
   };
 
   const clearButtonElement =
-    hasClearButton && value ? (
+    hasClearButton && (shouldShowClearButton || value) ? (
       <button
         tabIndex={-1}
         className={getClassName('__clear-icon')}

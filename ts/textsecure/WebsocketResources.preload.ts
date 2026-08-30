@@ -162,17 +162,17 @@ type ChatConnection<Kind extends ChatKind> = Kind extends 'auth'
 
 // oxlint-disable-next-line typescript/consistent-type-definitions
 export interface IWebSocketResource {
-  sendRequest(options: SendRequestOptions): Promise<Response>;
+  sendRequest: (options: SendRequestOptions) => Promise<Response>;
 
-  addEventListener(name: 'close', handler: (ev: CloseEvent) => void): void;
+  addEventListener: (name: 'close', handler: (ev: CloseEvent) => void) => void;
 
-  forceKeepAlive(timeout?: number): void;
+  forceKeepAlive: (timeout?: number) => void;
 
-  shutdown(): void;
+  shutdown: () => void;
 
-  close(code?: number, reason?: string): void;
+  close: (code?: number, reason?: string) => void;
 
-  localPort(): number | undefined;
+  localPort: () => number | undefined;
 }
 
 export type IChatConnection<Chat extends ChatKind> = IWebSocketResource & {
@@ -230,12 +230,14 @@ export function connectAuthenticated({
   userLanguages,
   keepalive,
   onReceivedAlerts,
+  onServerTimestamp,
 }: {
   libsignalNet: Net.Net;
   name: string;
   credentials: WebAPICredentials;
   handler: (request: IncomingWebSocketRequest) => void;
   onReceivedAlerts: (alerts: Array<ServerAlert>) => void;
+  onServerTimestamp: (timestamp: number) => void;
   receiveStories: boolean;
   userLanguages: ReadonlyArray<string>;
   keepalive: KeepAliveOptionsType;
@@ -280,6 +282,9 @@ export function connectAuthenticated({
     },
     onReceivedAlerts(alerts: Array<string>): void {
       onReceivedAlerts(alerts.map(parseServerAlertsFromHeader).flat());
+    },
+    onServerTimestamp(timestamp: number): void {
+      onServerTimestamp(timestamp);
     },
   };
   return connect(

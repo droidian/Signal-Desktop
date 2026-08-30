@@ -19,12 +19,12 @@
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 
   &[aria-expanded='true'] {
-    background: light-dark(variables.$color-gray-05, variables.$color-gray-75);
+    background: var(--axo-color-fill-primary-pressed);
   }
 }
 
@@ -35,17 +35,16 @@
   flex-shrink: 0;
 }
 
-.FunButton__Icon--FunPicker,
 .FunButton__Icon--EmojiPicker {
   @include mixins.color-svg(
     '../images/icons/v3/emoji/emoji.svg',
-    var(--color-label-primary)
+    var(--axo-color-label-primary)
   );
 }
 
 .FunButton__Icon--StickerPicker {
   @include mixins.color-svg(
     '../images/icons/v3/sticker/sticker.svg',
-    var(--color-label-primary)
+    var(--axo-color-label-primary)
   );
 }

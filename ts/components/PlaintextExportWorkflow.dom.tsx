@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, type JSX } from 'react';
 
 import {
   LocalExportErrors,
@@ -29,11 +29,11 @@ export type PropsType = {
   workflow: PlaintextExportWorkflowType;
 };
 
-function Bold(parts: Array<string | React.JSX.Element>) {
+function Bold(parts: Array<string | JSX.Element>) {
   return <b>{parts}</b>;
 }
-function Secondary(parts: Array<string | React.JSX.Element>) {
-  return <span className={tw('text-label-secondary')}>{parts}</span>;
+function Secondary(parts: Array<string | JSX.Element>) {
+  return <span className={tw('text-secondary')}>{parts}</span>;
 }
 
 export function PlaintextExportWorkflow({
@@ -44,8 +44,8 @@ export function PlaintextExportWorkflow({
   osName,
   verifyWithOSForExport,
   workflow,
-}: PropsType): React.JSX.Element {
-  const [includeMedia, setIncludeMedia] = React.useState(true);
+}: PropsType): JSX.Element {
+  const [includeMedia, setIncludeMedia] = useState(true);
   const { step } = workflow;
 
   if (
@@ -65,9 +65,9 @@ export function PlaintextExportWorkflow({
               </div>
             </AxoDialog.Title>
           </AxoDialog.Header>
-          <AxoDialog.Body padding="normal">
+          <AxoDialog.Body>
             <div className={tw('px-[13px]')}>
-              <div className={tw('text-label-secondary')}>
+              <div className={tw('text-secondary')}>
                 <I18n
                   i18n={i18n}
                   id="icu:PlaintextExport--Confirmation--Description"
@@ -101,20 +101,15 @@ export function PlaintextExportWorkflow({
           </AxoDialog.Body>
           <AxoDialog.Footer>
             <AxoDialog.Actions>
-              <AxoDialog.Action variant="secondary" onClick={clearWorkflow}>
+              <AxoDialog.Action
+                variant="strong-secondary"
+                onClick={clearWorkflow}
+              >
                 {i18n('icu:cancel')}
               </AxoDialog.Action>
               <AxoDialog.Action
-                variant="primary"
-                experimentalSpinner={
-                  shouldShowSpinner
-                    ? {
-                        'aria-label': i18n(
-                          'icu:PlaintextExport--Confirmation--WaitingLabel'
-                        ),
-                      }
-                    : null
-                }
+                variant="strong-primary"
+                pending={shouldShowSpinner}
                 onClick={() => verifyWithOSForExport(includeMedia)}
               >
                 {i18n('icu:PlaintextExport--Confirmation--ContinueButton')}
@@ -181,14 +176,10 @@ export function PlaintextExportWorkflow({
               </div>
             </AxoDialog.Title>
           </AxoDialog.Header>
-          <AxoDialog.Body padding="normal">
+          <AxoDialog.Body>
             <div className={tw('mx-auto my-[29px] w-[331px]')}>
               {progressElements}
-              <div
-                className={tw(
-                  'text-center type-body-small text-label-secondary'
-                )}
-              >
+              <div className={tw('text-center type-body-small text-secondary')}>
                 {i18n('icu:PlaintextExport--ProgressDialog--TimeWarning')}
               </div>
             </div>
@@ -204,7 +195,10 @@ export function PlaintextExportWorkflow({
                 'items-center gap-x-2 gap-y-3'
               )}
             >
-              <AxoDialog.Action variant="secondary" onClick={cancelWorkflow}>
+              <AxoDialog.Action
+                variant="strong-secondary"
+                onClick={cancelWorkflow}
+              >
                 {i18n('icu:cancel')}
               </AxoDialog.Action>
             </div>
@@ -246,7 +240,7 @@ export function PlaintextExportWorkflow({
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
             <AxoAlertDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={() => {
                 openFileInFolder(workflow.exportPath);
                 clearWorkflow();
@@ -254,7 +248,10 @@ export function PlaintextExportWorkflow({
             >
               {showInFolderText}
             </AxoAlertDialog.Action>
-            <AxoAlertDialog.Action variant="primary" onClick={clearWorkflow}>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={clearWorkflow}
+            >
               {i18n('icu:ok')}
             </AxoAlertDialog.Action>
           </AxoAlertDialog.Footer>
@@ -295,7 +292,10 @@ export function PlaintextExportWorkflow({
             <AxoAlertDialog.Description>{detail}</AxoAlertDialog.Description>
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
-            <AxoAlertDialog.Action variant="primary" onClick={clearWorkflow}>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={clearWorkflow}
+            >
               {i18n('icu:ok')}
             </AxoAlertDialog.Action>
           </AxoAlertDialog.Footer>

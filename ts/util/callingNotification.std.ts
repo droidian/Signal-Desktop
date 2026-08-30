@@ -17,7 +17,7 @@ import { missingCaseError } from './missingCaseError.std.ts';
 import type { ConversationType } from '../state/ducks/conversations.preload.ts';
 import { strictAssert } from './assert.std.ts';
 import { isMoreRecentThan } from './timestamp.std.ts';
-import { MINUTE } from './durations/index.std.ts';
+import { type DurationInSeconds, MINUTE } from './durations/index.std.ts';
 
 export type CallingNotificationType = Readonly<{
   // In some older calls, we don't have a call id, this hardens against that.
@@ -29,6 +29,8 @@ export type CallingNotificationType = Readonly<{
   maxDevices: number;
   isSelectMode: boolean;
   isTargeted: boolean;
+  expireTimer: DurationInSeconds | null;
+  expirationStartTimestamp: number | null;
 }>;
 
 export function getDirectCallNotificationText(

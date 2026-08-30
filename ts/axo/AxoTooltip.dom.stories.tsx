@@ -1,7 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { JSX, ReactNode } from 'react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { AxoTooltip } from './AxoTooltip.dom.tsx';
@@ -38,6 +38,7 @@ type ExampleProps = {
   align?: AxoTooltip.Align;
   keyboardShortcut?: string;
   experimentalTimestamp?: number;
+  disabled?: boolean;
 };
 
 function SimpleExample(props: ExampleProps) {
@@ -49,8 +50,13 @@ function SimpleExample(props: ExampleProps) {
       align={props.align}
       keyboardShortcut={props.keyboardShortcut}
       experimentalTimestamp={props.experimentalTimestamp}
+      disabled={props.disabled}
     >
-      <AxoButton.Root variant="primary" size="md" onClick={action('onClick')}>
+      <AxoButton.Root
+        variant="strong-primary"
+        size="md"
+        onClick={action('onClick')}
+      >
         {props.trigger ?? 'Hover Me'}
       </AxoButton.Root>
     </AxoTooltip.Root>
@@ -164,7 +170,7 @@ export function InDialog(): JSX.Element {
       <AxoDialog.Content size="md" escape="cancel-is-destructive">
         <AxoDialog.Header>
           <AxoDialog.Title>Title</AxoDialog.Title>
-          <AxoDialog.Close aria-label="Close" />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body>
           <div className={tw('flex flex-col items-center-safe gap-50 py-50')}>
@@ -176,7 +182,7 @@ export function InDialog(): JSX.Element {
         <AxoDialog.Footer>
           <AxoDialog.Actions>
             <AxoDialog.IconAction
-              variant="primary"
+              variant="strong-primary"
               symbol="send-fill"
               label="Send message"
               onClick={action('onSave')}
@@ -185,5 +191,19 @@ export function InDialog(): JSX.Element {
         </AxoDialog.Footer>
       </AxoDialog.Content>
     </AxoDialog.Root>
+  );
+}
+
+export function Disabled(): JSX.Element {
+  return <SimpleExample disabled />;
+}
+
+export function LongText(): ReactNode {
+  return (
+    <AxoTooltip.Root __FORCE_OPEN label="This person is in your contacts.">
+      <AxoButton.Root variant="strong-primary" size="md">
+        Hover Me
+      </AxoButton.Root>
+    </AxoTooltip.Root>
   );
 }

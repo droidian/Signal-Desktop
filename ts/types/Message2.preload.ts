@@ -529,11 +529,7 @@ const toVersion10 = _withSchemaVersion({
         ...stickerMessage,
         sticker: {
           ...sticker,
-          data: await migrateDataToFileSystem(
-            sticker.data,
-            stickerContext,
-            stickerMessage
-          ),
+          data: await migrateDataToFileSystem(sticker.data, stickerContext),
         },
       };
     };

@@ -17,6 +17,13 @@ import type { DurationInSeconds } from '../util/durations/index.std.ts';
 import type { AnyPaymentEvent } from '../types/Payment.std.ts';
 import type { RawBodyRange } from '../types/BodyRange.std.ts';
 import type { StoryMessageRecipientsType } from '../types/Stories.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import type {
+  DurationSecs,
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
 
 export type {
   IdentityKeyType,
@@ -85,7 +92,7 @@ export type SessionResetsType = Record<string, number>;
 export type ProcessedEnvelope = Readonly<{
   id: string;
   receivedAtCounter: number;
-  receivedAtDate: number;
+  receivedAtDate: ReceivedTimestampMs;
   messageAgeSec: number;
 
   // Mostly from Proto.Envelope except for null/undefined
@@ -95,10 +102,10 @@ export type ProcessedEnvelope = Readonly<{
   sourceDevice: number | undefined;
   destinationServiceId: ServiceIdString;
   updatedPni: PniString | undefined;
-  timestamp: number;
+  timestamp: SentTimestampMs;
   content: Uint8Array<ArrayBuffer>;
   serverGuid: string;
-  serverTimestamp: number;
+  serverTimestamp: ServerTimestampMs;
   groupId: string | undefined;
   urgent: boolean;
   story: boolean;
@@ -175,12 +182,12 @@ export type ProcessedSticker = {
   packId?: string;
   packKey?: string;
   stickerId?: number;
-  emoji?: string;
+  emoji?: Emoji.Variant;
   data?: ProcessedAttachment;
 };
 
 export type ProcessedReaction = {
-  emoji?: string;
+  emoji?: Emoji.Variant;
   remove: boolean;
   targetAuthorAci?: AciString;
   targetTimestamp?: number;
@@ -188,8 +195,8 @@ export type ProcessedReaction = {
 
 export type ProcessedPinMessage = Readonly<{
   targetAuthorAci: AciString;
-  targetSentTimestamp: number;
-  pinDuration: DurationInSeconds | null;
+  targetSentTimestamp: SentTimestampMs;
+  pinDuration: DurationSecs | null;
 }>;
 
 export type ProcessedPollCreate = {
@@ -317,14 +324,14 @@ export type CallbackResultType = {
   contentHint?: number;
   contentProto?: Uint8Array<ArrayBuffer>;
   timestamp?: number;
-  recipients?: Record<ServiceIdString, Array<number>>;
+  recipients?: Record<ServiceIdString, ReadonlyArray<number>>;
   urgent?: boolean;
   hasPniSignatureMessage?: boolean;
 };
 
 export type IRequestHandler = {
-  handleRequest(request: IncomingWebSocketRequest): void;
-  handleDisconnect(): void;
+  handleRequest: (request: IncomingWebSocketRequest) => void;
+  handleDisconnect: () => void;
 };
 
 export type PniKeyMaterialType = Readonly<{

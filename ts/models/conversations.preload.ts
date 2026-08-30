@@ -49,7 +49,7 @@ import {
 } from '../util/avatarUtils.preload.ts';
 import { getDraftPreview } from '../util/getDraftPreview.preload.ts';
 import { hasDraft } from '../util/hasDraft.std.ts';
-import { hydrateStoryContext } from '../util/hydrateStoryContext.preload.ts';
+import { getStoryReplyContext } from '../util/getStoryReplyContext.std.ts';
 import { normalizeProfileName } from '../util/normalizeProfileName.std.ts';
 import type {
   StickerType,
@@ -118,11 +118,15 @@ import { migrateColor } from '../util/migrateColor.node.ts';
 import { isNotNil } from '../util/isNotNil.std.ts';
 import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
 import { shouldSaveNotificationAvatarToDisk } from '../services/notifications.preload.ts';
-import { storageServiceUploadJob } from '../services/storage.preload.ts';
+import { runStorageServiceUploadJob } from '../services/storage.preload.ts';
 import { challengeHandler } from '../services/challengeHandler.preload.ts';
+import { sendUsernameChangeSyncMessage } from '../services/username.preload.ts';
 import { getSendOptions } from '../util/getSendOptions.preload.ts';
 import type { IsConversationAcceptedOptionsType } from '../util/isConversationAccepted.preload.ts';
-import { isConversationAccepted } from '../util/isConversationAccepted.preload.ts';
+import {
+  isConversationAccepted,
+  isTrustedContact,
+} from '../util/isConversationAccepted.preload.ts';
 import {
   getNumber,
   getProfileName,
@@ -184,6 +188,7 @@ import * as Errors from '../types/errors.std.ts';
 import { isMessageUnread } from '../util/isMessageUnread.std.ts';
 import type { SenderKeyTargetType } from '../util/sendToGroup.preload.ts';
 import {
+  getOurAddress,
   resetSenderKey,
   sendContentMessageToGroup,
 } from '../util/sendToGroup.preload.ts';
@@ -233,7 +238,14 @@ import { migrateLegacyReadStatus } from '../messages/migrateLegacyReadStatus.std
 import { migrateLegacySendAttributes } from '../messages/migrateLegacySendAttributes.preload.ts';
 import { getIsInitialContactSync } from '../services/contactSync.preload.ts';
 import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../util/queueAttachmentDownloads.preload.ts';
-import { cleanupMessages } from '../util/cleanup.preload.ts';
+import {
+  safeCleanupAvatarDraftFiles,
+  safeCleanupAvatarFiles,
+  safeCleanupDraftFiles,
+  cleanupMessages,
+  GENERIC_CLEANUP_FIELDS,
+  GROUP_CLEANUP_FIELDS,
+} from '../util/cleanup.preload.ts';
 import { MessageModel } from './messages.preload.ts';
 import {
   applyNewAvatar,
@@ -270,6 +282,12 @@ import { missingCaseError } from '../util/missingCaseError.std.ts';
 import * as Message from '../types/Message2.preload.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 import { isUsernameValid } from '../util/Username.dom.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { canConversationOnlyBeMutedAlways } from '../conversations/canConversationOnlyBeMutedAlways.dom.ts';
+import { keyTransparency } from '../services/keyTransparency.preload.ts';
+import type { PollSource } from '../messageModifiers/Polls.preload.ts';
+import { isSignalServiceId } from '../types/SignalConversation.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
 
 const { compact, isNumber, throttle, debounce } = lodash;
 
@@ -986,25 +1004,39 @@ export class ConversationModel {
     return isBlocked(this.attributes);
   }
 
-  block({ viaStorageServiceSync = false } = {}): void {
+  block({
+    viaStorageServiceSync,
+    timestamp,
+  }: {
+    viaStorageServiceSync: boolean;
+    timestamp: number | undefined;
+  }): void {
+    if (isMe(this.attributes)) {
+      log.error(`${this.idForLogging()}: Refusing to block Note to Self`);
+      return;
+    }
+
     let blocked = false;
     const wasBlocked = this.isBlocked();
 
     const serviceId = this.getServiceId();
-    if (serviceId && isAciString(serviceId)) {
-      drop(itemStorage.blocked.addBlockedServiceId(serviceId));
+    if (isSignalConversation(this)) {
+      drop(itemStorage.blocked.setReleaseNotesChatBlocked(true, timestamp));
+      blocked = true;
+    } else if (serviceId && isAciString(serviceId)) {
+      drop(itemStorage.blocked.addBlockedServiceId(serviceId, timestamp));
       blocked = true;
     }
 
     const e164 = this.get('e164');
     if (e164) {
-      drop(itemStorage.blocked.addBlockedNumber(e164));
+      drop(itemStorage.blocked.addBlockedNumber(e164, timestamp));
       blocked = true;
     }
 
     const groupId = this.get('groupId');
     if (groupId) {
-      drop(itemStorage.blocked.addBlockedGroup(groupId));
+      drop(itemStorage.blocked.addBlockedGroup(groupId, timestamp));
       blocked = true;
     }
 
@@ -1022,7 +1054,10 @@ export class ConversationModel {
     const wasBlocked = this.isBlocked();
 
     const serviceId = this.getServiceId();
-    if (serviceId && isAciString(serviceId)) {
+    if (serviceId && isSignalServiceId(serviceId)) {
+      drop(itemStorage.blocked.setReleaseNotesChatBlocked(false, undefined));
+      unblocked = true;
+    } else if (serviceId && isAciString(serviceId)) {
       drop(itemStorage.blocked.removeBlockedServiceId(serviceId));
       unblocked = true;
     }
@@ -1088,10 +1123,11 @@ export class ConversationModel {
         ? {
             source: MessageRequestResponseSource.STORAGE_SERVICE,
             learnedAtMs: Date.now(),
+            blockedAt: undefined,
           }
         : {
             source: MessageRequestResponseSource.LOCAL,
-            timestamp: Date.now(),
+            blockedAt: Date.now(),
           },
       { shouldSave: false }
     );
@@ -1572,14 +1608,12 @@ export class ConversationModel {
     message: MessageAttributesType,
     { isJustSent }: { isJustSent: boolean } = { isJustSent: false }
   ): Promise<void> {
-    await this.#beforeAddSingleMessage(message);
+    await this.#beforeAddSingleMessage();
     this.#doAddSingleMessage(message, { isJustSent });
     this.debouncedUpdateLastMessage();
   }
 
-  async #beforeAddSingleMessage(message: MessageAttributesType): Promise<void> {
-    await hydrateStoryContext(message.id, undefined, { shouldSave: true });
-
+  async #beforeAddSingleMessage(): Promise<void> {
     if (!this.newMessageQueue) {
       this.newMessageQueue = new PQueue({
         concurrency: 1,
@@ -1989,7 +2023,11 @@ export class ConversationModel {
 
   async loadAndScroll(
     messageId: string,
-    options: { disableScroll?: boolean; onFinish?: () => void } = {}
+    options: {
+      disableScroll?: boolean;
+      onFinish?: () => void;
+      shouldHighlight?: boolean;
+    } = {}
   ): Promise<void> {
     const { messagesReset, setMessageLoadingState } =
       window.reduxActions.conversations;
@@ -2039,6 +2077,7 @@ export class ConversationModel {
         metrics,
         pinnedMessagesPreloadData,
         scrollToMessageId,
+        shouldHighlight: options.shouldHighlight,
       });
     } catch (error) {
       setMessageLoadingState(conversationId, undefined);
@@ -2106,14 +2145,6 @@ export class ConversationModel {
           updated = true;
         }
 
-        const patch = await hydrateStoryContext(message.id, undefined, {
-          shouldSave: true,
-        });
-        if (patch) {
-          updated = true;
-          model.set(patch);
-        }
-
         if (updated) {
           upgraded += 1;
           await window.MessageCache.saveMessage(model.attributes);
@@ -2174,7 +2205,23 @@ export class ConversationModel {
       return;
     }
 
+    const wasBlockedByNumber = oldValue
+      ? itemStorage.blocked.getBlockedNumbers().get(oldValue)
+      : undefined;
+    const serviceId = this.get('serviceId');
+    const wasBlockedByServiceId = serviceId
+      ? itemStorage.blocked.getBlockedServiceIds().get(serviceId)
+      : undefined;
+
     this.set({ e164: e164 || undefined });
+
+    if (wasBlockedByNumber || wasBlockedByServiceId) {
+      this.block({
+        viaStorageServiceSync: false,
+        timestamp:
+          wasBlockedByNumber?.blockedAt ?? wasBlockedByServiceId?.blockedAt,
+      });
+    }
 
     // This user changed their phone number
     if (oldValue && e164) {
@@ -2192,11 +2239,27 @@ export class ConversationModel {
       return;
     }
 
+    const wasBlockedByServiceId = oldValue
+      ? itemStorage.blocked.getBlockedServiceIds().get(oldValue)
+      : undefined;
+    const e164 = this.get('e164');
+    const wasBlockedByNumber = e164
+      ? itemStorage.blocked.getBlockedNumbers().get(e164)
+      : undefined;
+
     this.set({
       serviceId: serviceId
         ? normalizeServiceId(serviceId, 'Conversation.updateServiceId')
         : undefined,
     });
+
+    if (wasBlockedByServiceId || wasBlockedByNumber) {
+      this.block({
+        viaStorageServiceSync: false,
+        timestamp:
+          wasBlockedByNumber?.blockedAt ?? wasBlockedByServiceId?.blockedAt,
+      });
+    }
     drop(DataWriter.updateConversation(this.attributes));
     window.ConversationController.idUpdated(this, 'serviceId', oldValue);
 
@@ -2440,9 +2503,9 @@ export class ConversationModel {
     const { source } = responseInfo;
     switch (source) {
       case MessageRequestResponseSource.LOCAL:
-        receivedAtMs = responseInfo.timestamp;
+        receivedAtMs = responseInfo.blockedAt;
         receivedAtCounter = incrementMessageCounter();
-        timestamp = responseInfo.timestamp;
+        timestamp = responseInfo.blockedAt;
         break;
       case MessageRequestResponseSource.MRR_SYNC:
         receivedAtMs = responseInfo.receivedAtMs;
@@ -2583,7 +2646,10 @@ export class ConversationModel {
         isSpam?: boolean;
       }) => {
         if (isBlock) {
-          this.block({ viaStorageServiceSync });
+          this.block({
+            viaStorageServiceSync,
+            timestamp: responseInfo.blockedAt,
+          });
         }
 
         if (isBlock || isDelete) {
@@ -3332,7 +3398,11 @@ export class ConversationModel {
     drop(this.onNewMessage(message));
     this.throttledUpdateUnread();
 
-    await maybeNotify({ message: message.attributes, conversation: this });
+    await maybeNotify({
+      kind: 'deliveryIssue',
+      message: message.attributes,
+      conversation: this,
+    });
   }
 
   async addKeyChange(
@@ -3555,6 +3625,7 @@ export class ConversationModel {
   async addPollTerminateNotification(params: {
     pollQuestion: string;
     pollTimestamp: number;
+    pollSource: PollSource;
     terminatorId: string;
     timestamp: number;
     isMeTerminating: boolean;
@@ -3591,7 +3662,14 @@ export class ConversationModel {
     drop(this.onNewMessage(message));
 
     this.throttledUpdateUnread();
-    await maybeNotify({ message: message.attributes, conversation: this });
+
+    await maybeNotify({
+      kind: 'pollTerminate',
+      pollSource: params.pollSource,
+      pollTerminatorId: params.terminatorId,
+      message: message.attributes,
+      conversation: this,
+    });
   }
 
   async addPinnedMessageNotification(params: {
@@ -3850,7 +3928,7 @@ export class ConversationModel {
       throw new Error(`${logId}: shutting down, can't accept more work`);
     }
 
-    this.jobQueue = this.jobQueue || new PQueue({ concurrency: 1 });
+    this.jobQueue ??= new PQueue({ concurrency: 1 });
 
     const abortController = new AbortController();
     const { signal: abortSignal } = abortController;
@@ -3995,7 +4073,11 @@ export class ConversationModel {
     return getQuoteAttachment(attachments, preview, sticker);
   }
 
-  async sendStickerMessage(packId: string, stickerId: number): Promise<void> {
+  async sendStickerMessage(
+    packId: string,
+    stickerId: number,
+    options?: { quote?: QuotedMessageType; extraReduxActions?: () => void }
+  ): Promise<void> {
     const packData = Stickers.getStickerPack(packId);
     const stickerData = Stickers.getSticker(packId, stickerId);
     if (!stickerData || !packData) {
@@ -4004,6 +4086,8 @@ export class ConversationModel {
       );
       return;
     }
+
+    const { quote, extraReduxActions } = options ?? {};
 
     const { key } = packData;
     const { emoji, width, height } = stickerData;
@@ -4050,9 +4134,13 @@ export class ConversationModel {
         {
           body: undefined,
           attachments: [],
+          quote,
           sticker,
         },
-        { dontClearDraft: true }
+        {
+          dontClearDraft: true,
+          extraReduxActions,
+        }
       )
     );
     window.reduxActions.stickers.useSticker(packId, stickerId);
@@ -4063,9 +4151,20 @@ export class ConversationModel {
       return;
     }
 
-    if (!this.get('profileSharing')) {
+    if (
+      isDirectConversation(this.attributes) &&
+      !isTrustedContact(this.attributes)
+    ) {
       log.error(
-        'sendProfileKeyUpdate: profileSharing not enabled for conversation',
+        'sendProfileKeyUpdate: not a trusted contact',
+        this.idForLogging()
+      );
+      return;
+    }
+
+    if (isGroup(this.attributes) && !this.get('profileSharing')) {
+      log.error(
+        'sendProfileKeyUpdate: not a trusted group',
         this.idForLogging()
       );
       return;
@@ -4214,8 +4313,9 @@ export class ConversationModel {
       expireTimer = this.get('expireTimer');
     }
 
+    const story = storyId ? await getMessageById(storyId) : undefined;
+
     if (storyId && isGroup(this.attributes)) {
-      const story = await getMessageById(storyId);
       strictAssert(story, 'story being replied to must exist');
       strictAssert(
         story.expireTimer != null && story.expireTimer > 0,
@@ -4230,6 +4330,8 @@ export class ConversationModel {
       expireTimer = story.expireTimer;
       expirationStartTimestamp = story.expirationStartTimestamp;
     }
+
+    const storyReplyContext = story ? getStoryReplyContext(story) : undefined;
 
     const recipientMaybeConversations = map(
       this.getRecipients({
@@ -4313,6 +4415,7 @@ export class ConversationModel {
         })
       ),
       storyId,
+      storyReplyContext,
       poll,
     });
 
@@ -4359,7 +4462,7 @@ export class ConversationModel {
     const renderStart = Date.now();
 
     // Perform asynchronous tasks before entering the batching mode
-    await this.#beforeAddSingleMessage(model.attributes);
+    await this.#beforeAddSingleMessage();
 
     if (sticker) {
       await addStickerPackReference({
@@ -4472,6 +4575,20 @@ export class ConversationModel {
     log.info(`updateUsername(${this.idForLogging()}): updating username`);
 
     this.#doSet({ username });
+
+    if (isMe(this.attributes)) {
+      drop(keyTransparency.onKnownIdentifierChange('username'));
+      if (itemStorage.get('usernameCorrupted')) {
+        log.info('updateUsername: clearing username corruption');
+        await itemStorage.remove('usernameCorrupted');
+      }
+      if (
+        !fromStorageService &&
+        window.ConversationController.doWeHaveOtherDevices()
+      ) {
+        await sendUsernameChangeSyncMessage();
+      }
+    }
     await window.ConversationController.usernameUpdated(this);
 
     if (!fromStorageService) {
@@ -4641,7 +4758,7 @@ export class ConversationModel {
     labelEmoji,
     labelString,
   }: {
-    labelEmoji: string | undefined;
+    labelEmoji: Emoji.Variant | undefined;
     labelString: string | undefined;
   }): Promise<void> {
     if (!isGroupV2(this.attributes)) {
@@ -4950,7 +5067,7 @@ export class ConversationModel {
 
     const ourConversation =
       window.ConversationController.getOurConversationOrThrow();
-    source = source || ourConversation.id;
+    source ??= ourConversation.id;
     const sourceServiceId =
       window.ConversationController.get(source)?.get('serviceId');
 
@@ -5048,7 +5165,6 @@ export class ConversationModel {
   ): Promise<void> {
     await markConversationRead(this.attributes, readMessage, options);
     this.throttledUpdateUnread();
-    window.reduxActions.callHistory.updateCallHistoryUnreadCount();
   }
 
   async #updateUnread(): Promise<void> {
@@ -5308,10 +5424,12 @@ export class ConversationModel {
       { noTrigger: viaStorageServiceSync }
     );
 
-    // If our profile key was cleared above, we don't tell our linked devices about it.
-    //   We want linked devices to tell us what it should be, instead of telling them to
-    //   erase their local value.
-    if (!viaStorageServiceSync) {
+    // We _don't_ update storage service when we find out about a new profileKey unless
+    // we're a primary device
+    if (
+      !viaStorageServiceSync &&
+      window.ConversationController.areWePrimaryDevice()
+    ) {
       this.captureChange('profileKey');
     }
 
@@ -5457,15 +5575,27 @@ export class ConversationModel {
     source: 'message-request' | 'local-delete-sync' | 'local-delete';
   }): Promise<void> {
     const logId = `${providedLogId}/destroyMessagesInner`;
-    this.set({
-      lastMessage: null,
-      lastMessageAuthor: null,
-      lastMessageAuthorAci: undefined,
-      timestamp: null,
-      active_at: null,
-      pendingUniversalTimer: undefined,
-      messagesDeleted: true,
-    });
+    await safeCleanupDraftFiles(this.attributes);
+    await safeCleanupAvatarDraftFiles(this.attributes);
+    this.set(GENERIC_CLEANUP_FIELDS);
+
+    if (
+      isGroup(this.attributes) &&
+      (this.get('left') || this.get('terminated'))
+    ) {
+      await safeCleanupAvatarFiles(this.attributes);
+      const senderKeyInfo = this.get('senderKeyInfo');
+      if (senderKeyInfo?.distributionId) {
+        const ourAddress = getOurAddress();
+        const ourAci = itemStorage.user.getCheckedAci();
+        await signalProtocolStore.removeSenderKey(
+          new QualifiedAddress(ourAci, ourAddress),
+          senderKeyInfo.distributionId
+        );
+      }
+      this.set(GROUP_CLEANUP_FIELDS);
+    }
+
     await DataWriter.updateConversation(this.attributes);
 
     if (
@@ -5638,15 +5768,11 @@ export class ConversationModel {
   // [X] dontNotifyForMentionsIfMuted
   // [x] firstUnregisteredAt
   captureChange(logMessage: string): void {
-    if (isSignalConversation(this.attributes)) {
-      return;
-    }
-
     log.info('storageService[captureChange]', logMessage, this.idForLogging());
     this.set({ needsStorageServiceSync: true });
 
     void this.queueJob('captureChange', async () => {
-      storageServiceUploadJob({ reason: `captureChange/${logMessage}` });
+      runStorageServiceUploadJob({ reason: `captureChange/${logMessage}` });
     });
   }
 
@@ -5678,9 +5804,19 @@ export class ConversationModel {
   }
 
   setMuteExpiration(
-    muteExpiresAt = 0,
+    expiresAt = 0,
     { viaStorageServiceSync = false } = {}
   ): void {
+    let muteExpiresAt = expiresAt;
+
+    if (
+      muteExpiresAt > 0 &&
+      canConversationOnlyBeMutedAlways(this.attributes)
+    ) {
+      log.error('Invalid mute expiration for only-always-mute conversation');
+      muteExpiresAt = Number.MAX_SAFE_INTEGER;
+    }
+
     const prevExpiration = this.get('muteExpiresAt');
 
     if (prevExpiration === muteExpiresAt) {
@@ -5849,7 +5985,7 @@ export class ConversationModel {
 
     const typingToken = `${sender.id}.${senderDevice}`;
 
-    this.contactTypingTimers = this.contactTypingTimers || {};
+    this.contactTypingTimers ??= {};
     const record = this.contactTypingTimers[typingToken];
 
     if (record) {
@@ -5893,7 +6029,7 @@ export class ConversationModel {
   }
 
   clearContactTypingTimer(typingToken: string): void {
-    this.contactTypingTimers = this.contactTypingTimers || {};
+    this.contactTypingTimers ??= {};
     const record = this.contactTypingTimers[typingToken];
 
     if (record) {

@@ -1,6 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { tw } from '../axo/tw.dom.tsx';
@@ -13,7 +14,7 @@ import { AxoButton } from '../axo/AxoButton.dom.tsx';
 const { i18n } = window.SignalContext;
 
 export default {
-  title: 'CallingParticipantMenu',
+  title: 'Components/CallingParticipantMenu',
   excludeStories: ['renderCallingParticipantMenu'],
 } satisfies Meta;
 
@@ -23,27 +24,29 @@ const defaultProps: CallingParticipantMenuProps = {
   i18n,
   renderer: 'AxoContextMenu',
   isMuteAudioDisabled: false,
+  onBlockFromCall: action('on-block-from-call'),
   onMuteAudio: action('on-mute-audio'),
   onUnmuteAudio: null,
   onViewProfile: action('on-view-profile'),
   onGoToChat: action('on-go-to-chat'),
   onRemoveFromCall: action('on-remove-from-call'),
+  participantTitle: 'Participant Name',
   children: <div>Menu</div>,
 };
 
 export function renderCallingParticipantMenu(
   overrideProps: Partial<CallingParticipantMenuProps>
-): React.JSX.Element {
+): JSX.Element {
   return <CallingParticipantMenu {...defaultProps} {...overrideProps} />;
 }
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   return (
     <div className={tw('flex h-96 w-full items-center justify-center gap-8')}>
       {renderCallingParticipantMenu({
         renderer: 'AxoDropdownMenu',
         children: (
-          <AxoButton.Root variant="secondary" size="md">
+          <AxoButton.Root variant="strong-secondary" size="md">
             Open Dropdown Menu
           </AxoButton.Root>
         ),
@@ -51,11 +54,7 @@ export function Basic(): React.JSX.Element {
       {renderCallingParticipantMenu({
         renderer: 'AxoContextMenu',
         children: (
-          <div
-            className={tw('bg-fill-secondary p-12 text-color-label-primary')}
-          >
-            Right-Click
-          </div>
+          <div className={tw('bg-primary p-12 text-accent')}>Right-Click</div>
         ),
       })}
     </div>

@@ -1,7 +1,7 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import { useCallback, type JSX } from 'react';
 import classNames from 'classnames';
 
 import { tw } from '../axo/tw.dom.tsx';
@@ -33,7 +33,7 @@ type PropsType = {
   readonly showContactModal: (payload: ContactModalStateType) => void;
   readonly renderCallingParticipantMenu: (
     props: SmartCallingParticipantMenuProps
-  ) => React.JSX.Element;
+  ) => JSX.Element;
 };
 
 export function CallingParticipantListItem({
@@ -44,7 +44,7 @@ export function CallingParticipantListItem({
   participantMenuDisabled,
   renderCallingParticipantMenu,
   showContactModal,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const {
     demuxId,
     hasRemoteAudio,
@@ -55,7 +55,7 @@ export function CallingParticipantListItem({
   const renderParticipantContextMenu = useCallback(() => {
     const children = (
       <AxoIconButton.Root
-        variant="borderless-secondary"
+        variant="implied-secondary"
         size="sm"
         symbol="more"
         label={i18n('icu:CallingParticipantListItem__ContextMenuButton')}
@@ -101,6 +101,8 @@ export function CallingParticipantListItem({
   ]);
 
   return (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/interactive-supports-focus
     <div
       className={classNames(
         'module-calling-participants-list__contact',
@@ -147,7 +149,7 @@ export function CallingParticipantListItem({
             {participant.presenting && (
               <div
                 className={tw(
-                  'flex flex-row items-center type-caption text-label-secondary scheme-dark'
+                  'flex flex-row items-center type-caption text-secondary scheme-dark'
                 )}
               >
                 <span

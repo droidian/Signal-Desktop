@@ -1,7 +1,15 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  Fragment,
+  type JSX,
+} from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
 
@@ -28,7 +36,7 @@ import { LeftPaneMode } from '../types/leftPane.std.ts';
 import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
 import { ScrollBehavior } from '../types/Util.std.ts';
 import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
-import { usePrevious } from '../hooks/usePrevious.std.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
 import { missingCaseError } from '../util/missingCaseError.std.ts';
 import type { DurationInSeconds } from '../util/durations/index.std.ts';
 import { WidthBreakpoint, getNavSidebarWidthBreakpoint } from './_util.std.ts';
@@ -40,6 +48,7 @@ import type { SmartPropsType as SmartToastManagerPropsType } from '../state/smar
 
 import { ConversationList } from './ConversationList.dom.tsx';
 import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.tsx';
+import type { PropsType as DialogClockSkewPropsType } from './DialogClockSkew.dom.tsx';
 import type { PropsType as DialogExpiredBuildPropsType } from './DialogExpiredBuild.dom.tsx';
 import { LeftPaneBanner } from './LeftPaneBanner.dom.tsx';
 
@@ -82,6 +91,7 @@ export type PropsType = {
   };
   otherTabsUnreadStats: UnreadStats;
   hasAnyCurrentCustomChatFolders: boolean;
+  hasClockSkewDialog: boolean;
   hasExpiredDialog: boolean;
   hasFailedStorySends: boolean;
   hasNetworkDialog: boolean;
@@ -126,6 +136,7 @@ export type PropsType = {
   getServerAlertToShow: (alerts: ServerAlertsType) => ServerAlert | null;
   i18n: LocalizerType;
   isMacOS: boolean;
+  isMAS: boolean;
   isNotificationProfileActive: boolean;
   preferredWidthFromStorage: number;
   selectedChatFolder: ChatFolder | null;
@@ -187,32 +198,29 @@ export type PropsType = {
   updateFilterByUnread: (filterByUnread: boolean) => void;
 
   // Render Props
-  renderMessageSearchResult: (id: string) => React.JSX.Element;
+  renderMessageSearchResult: (id: string) => JSX.Element;
   renderConversationListItemContextMenu: (
     props: RenderConversationListItemContextMenuProps
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   renderNetworkStatus: (
     _: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   renderUnsupportedOSDialog: (
     _: Readonly<UnsupportedOSDialogPropsType>
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   renderRelinkDialog: (
     _: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   renderUpdateDialog: (
     _: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-  ) => React.JSX.Element;
-  renderCaptchaDialog: (props: { onSkip(): void }) => React.JSX.Element;
-  renderCrashReportDialog: () => React.JSX.Element;
-  renderExpiredBuildDialog: (
-    _: DialogExpiredBuildPropsType
-  ) => React.JSX.Element;
-  renderLeftPaneChatFolders: () => React.JSX.Element;
-  renderNotificationProfilesMenu: () => React.JSX.Element;
-  renderToastManager: (
-    _: Readonly<SmartToastManagerPropsType>
-  ) => React.JSX.Element;
+  ) => JSX.Element;
+  renderClockSkewDialog: (_: DialogClockSkewPropsType) => JSX.Element;
+  renderCaptchaDialog: (props: { onSkip: () => void }) => JSX.Element;
+  renderCrashReportDialog: () => JSX.Element;
+  renderExpiredBuildDialog: (_: DialogExpiredBuildPropsType) => JSX.Element;
+  renderLeftPaneChatFolders: () => JSX.Element;
+  renderNotificationProfilesMenu: () => JSX.Element;
+  renderToastManager: (_: Readonly<SmartToastManagerPropsType>) => JSX.Element;
 } & LookupConversationWithoutServiceIdActionsType;
 
 export function LeftPane({
@@ -237,6 +245,7 @@ export function LeftPane({
   getPreferredBadge,
   getServerAlertToShow,
   hasAnyCurrentCustomChatFolders,
+  hasClockSkewDialog,
   hasExpiredDialog,
   hasFailedStorySends,
   hasNetworkDialog,
@@ -246,6 +255,7 @@ export function LeftPane({
   i18n,
   lookupConversationWithoutServiceId,
   isMacOS,
+  isMAS,
   isNotificationProfileActive,
   isOnline,
   isUpdateDownloaded,
@@ -261,6 +271,7 @@ export function LeftPane({
   preloadConversation,
   removeConversation,
   renderCaptchaDialog,
+  renderClockSkewDialog,
   renderCrashReportDialog,
   renderExpiredBuildDialog,
   renderLeftPaneChatFolders,
@@ -308,11 +319,22 @@ export function LeftPane({
   updateSearchTerm,
   dismissBackupMediaDownloadBanner,
   updateFilterByUnread,
-}: PropsType): React.JSX.Element {
-  const previousModeSpecificProps = usePrevious(
+}: PropsType): JSX.Element {
+  const previousModeSpecificProps = usePreviousDeprecated(
     modeSpecificProps,
     modeSpecificProps
   );
+
+  const [shouldRecomputeRowHeights, setShouldRecomputeRowHeights] =
+    useState(false);
+
+  const markShouldRecomputeRowHeights = useCallback(() => {
+    setShouldRecomputeRowHeights(true);
+  }, []);
+
+  const resetShouldRecomputeRowHeights = useCallback(() => {
+    setShouldRecomputeRowHeights(false);
+  }, []);
 
   // The left pane can be in various modes: the inbox, the archive, the composer, etc.
   //   Ideally, this would render subcomponents such as `<LeftPaneInbox>` or
@@ -341,41 +363,48 @@ export function LeftPane({
     | LeftPaneFindByPhoneNumberHelper
     | LeftPaneChooseGroupMembersHelper
     | LeftPaneSetGroupMetadataHelper;
-  let shouldRecomputeRowHeights: boolean;
   switch (modeSpecificProps.mode) {
     case LeftPaneMode.Inbox: {
       const inboxHelper = new LeftPaneInboxHelper(modeSpecificProps);
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? inboxHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        inboxHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = inboxHelper;
       break;
     }
     case LeftPaneMode.Search: {
       const searchHelper = new LeftPaneSearchHelper(modeSpecificProps);
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? searchHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        searchHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = searchHelper;
       break;
     }
     case LeftPaneMode.Archive: {
       const archiveHelper = new LeftPaneArchiveHelper(modeSpecificProps);
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? archiveHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        archiveHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = archiveHelper;
       break;
     }
     case LeftPaneMode.Compose: {
       const composeHelper = new LeftPaneComposeHelper(modeSpecificProps);
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? composeHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        composeHelper.shouldRecomputeRowHeights(previousModeSpecificProps)
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = composeHelper;
       break;
     }
@@ -383,12 +412,14 @@ export function LeftPane({
       const findByUsernameHelper = new LeftPaneFindByUsernameHelper(
         modeSpecificProps
       );
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? findByUsernameHelper.shouldRecomputeRowHeights(
-              previousModeSpecificProps
-            )
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        findByUsernameHelper.shouldRecomputeRowHeights(
+          previousModeSpecificProps
+        )
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = findByUsernameHelper;
       break;
     }
@@ -396,12 +427,14 @@ export function LeftPane({
       const findByPhoneNumberHelper = new LeftPaneFindByPhoneNumberHelper(
         modeSpecificProps
       );
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? findByPhoneNumberHelper.shouldRecomputeRowHeights(
-              previousModeSpecificProps
-            )
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        findByPhoneNumberHelper.shouldRecomputeRowHeights(
+          previousModeSpecificProps
+        )
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = findByPhoneNumberHelper;
       break;
     }
@@ -409,12 +442,14 @@ export function LeftPane({
       const chooseGroupMembersHelper = new LeftPaneChooseGroupMembersHelper(
         modeSpecificProps
       );
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? chooseGroupMembersHelper.shouldRecomputeRowHeights(
-              previousModeSpecificProps
-            )
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        chooseGroupMembersHelper.shouldRecomputeRowHeights(
+          previousModeSpecificProps
+        )
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = chooseGroupMembersHelper;
       break;
     }
@@ -422,12 +457,14 @@ export function LeftPane({
       const setGroupMetadataHelper = new LeftPaneSetGroupMetadataHelper(
         modeSpecificProps
       );
-      shouldRecomputeRowHeights =
-        previousModeSpecificProps.mode === modeSpecificProps.mode
-          ? setGroupMetadataHelper.shouldRecomputeRowHeights(
-              previousModeSpecificProps
-            )
-          : false;
+      if (
+        previousModeSpecificProps.mode === modeSpecificProps.mode &&
+        setGroupMetadataHelper.shouldRecomputeRowHeights(
+          previousModeSpecificProps
+        )
+      ) {
+        markShouldRecomputeRowHeights();
+      }
       helper = setGroupMetadataHelper;
       break;
     }
@@ -596,7 +633,7 @@ export function LeftPane({
   const measureRef = useRef<HTMLDivElement>(null);
   const measureSize = useSizeObserver(measureRef);
 
-  const previousMeasureSize = usePrevious(null, measureSize);
+  const previousMeasureSize = usePreviousDeprecated(null, measureSize);
 
   const widthBreakpoint = getNavSidebarWidthBreakpoint(
     measureSize && !measureSize.hidden
@@ -610,7 +647,7 @@ export function LeftPane({
   };
 
   // Control scroll position
-  const previousSelectedConversationId = usePrevious(
+  const previousSelectedConversationId = usePreviousDeprecated(
     selectedConversationId,
     selectedConversationId
   );
@@ -657,7 +694,7 @@ export function LeftPane({
     commonDialogProps
   );
   // Yellow dialogs
-  let maybeYellowDialog: React.JSX.Element | undefined;
+  let maybeYellowDialog: JSX.Element | undefined;
 
   if (unsupportedOSDialogType === 'warning') {
     maybeYellowDialog = renderUnsupportedOSDialog({
@@ -673,23 +710,28 @@ export function LeftPane({
   }
 
   // Update dialog
-  let maybeUpdateDialog: React.JSX.Element | undefined;
+  let maybeUpdateDialog: JSX.Element | undefined;
   if (hasUpdateDialog && (!hasNetworkDialog || isUpdateDownloaded)) {
     maybeUpdateDialog = renderUpdateDialog(commonDialogProps);
   }
 
   // Red dialogs
-  let maybeRedDialog: React.JSX.Element | undefined;
+  let maybeRedDialog: JSX.Element | undefined;
   if (unsupportedOSDialogType === 'error') {
     maybeRedDialog = renderUnsupportedOSDialog({
       type: 'error',
       ...commonDialogProps,
     });
   } else if (hasExpiredDialog) {
-    maybeRedDialog = renderExpiredBuildDialog(commonDialogProps);
+    maybeRedDialog = renderExpiredBuildDialog({
+      ...commonDialogProps,
+      isMAS,
+    });
+  } else if (hasClockSkewDialog) {
+    maybeRedDialog = renderClockSkewDialog(commonDialogProps);
   }
 
-  const dialogs = new Array<{ key: string; dialog: React.JSX.Element }>();
+  const dialogs = new Array<{ key: string; dialog: JSX.Element }>();
 
   if (maybeRedDialog) {
     dialogs.push({ key: 'red', dialog: maybeRedDialog });
@@ -707,7 +749,7 @@ export function LeftPane({
     }
   }
 
-  let maybeBanner: React.JSX.Element | undefined;
+  let maybeBanner: JSX.Element | undefined;
   if (usernameCorrupted) {
     maybeBanner = (
       <LeftPaneBanner
@@ -786,7 +828,7 @@ export function LeftPane({
                 <button
                   type="button"
                   className={tw(
-                    'rounded-full outline-0 outline-border-focused focused:outline-[2.5px]'
+                    'rounded-full outline-none keyboard-mode:focus:axo-focus-ring'
                   )}
                 >
                   <ProfileAvatar i18n={i18n} size="medium-small" />
@@ -889,7 +931,7 @@ export function LeftPane({
         {hasDialogs ? (
           <div className="module-left-pane__dialogs">
             {dialogs.map(({ key, dialog }) => (
-              <React.Fragment key={key}>{dialog}</React.Fragment>
+              <Fragment key={key}>{dialog}</Fragment>
             ))}
           </div>
         ) : null}
@@ -905,7 +947,7 @@ export function LeftPane({
             handleCancel={cancelBackupMediaDownload}
           />
         ) : null}
-        {preRowsNode && <React.Fragment key={0}>{preRowsNode}</React.Fragment>}
+        {preRowsNode && <Fragment key={0}>{preRowsNode}</Fragment>}
         <div className="module-left-pane__list--measure" ref={measureRef}>
           {isEmpty &&
             helper.getEmptyViewNode({
@@ -953,6 +995,9 @@ export function LeftPane({
                   onClickClearFilterButton={() => {
                     updateFilterByUnread(false);
                   }}
+                  resetShouldRecomputeRowHeights={
+                    resetShouldRecomputeRowHeights
+                  }
                   showUserNotFoundModal={showUserNotFoundModal}
                   setIsFetchingUUID={setIsFetchingUUID}
                   lookupConversationWithoutServiceId={

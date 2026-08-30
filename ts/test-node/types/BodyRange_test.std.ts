@@ -3,16 +3,15 @@
 
 import { assert } from 'chai';
 import type {
+  DisplayNode,
   HydratedBodyRangeMention,
-  RangeNode,
 } from '../../types/BodyRange.std.ts';
 import {
   BodyRange,
   DisplayStyle,
   applyRangeToText,
   applyRangesToText,
-  collapseRangeTree,
-  insertRange,
+  collapseRangesToDisplayNodes,
   processBodyRangesForSearchResult,
   trimMessageWhitespace,
 } from '../../types/BodyRange.std.ts';
@@ -40,690 +39,463 @@ describe('BodyRanges', () => {
     };
   }
 
-  describe('insertRange', () => {
+  function composeNode(
+    fields: Pick<DisplayNode, 'text' | 'start' | 'length'> &
+      Partial<DisplayNode>
+  ): DisplayNode {
+    return {
+      isBold: false,
+      isItalic: false,
+      isMonospace: false,
+      isStrikethrough: false,
+      isKeywordHighlight: false,
+      url: undefined,
+      mentions: [],
+      ...fields,
+    };
+  }
+
+  describe('collapseRangesToDisplayNodes', () => {
     it('inserts a single mention', () => {
-      const result = insertRange({ start: 5, length: 1, ...mentionInfo }, []);
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('\uFFFC', [
+          { start: 0, length: 1, ...mentionInfo },
+        ]),
 
-      assert.deepEqual(result, [
-        {
-          start: 5,
-          length: 1,
-          ranges: [],
-          ...mentionInfo,
-        },
-      ]);
-    });
-
-    it('inserts a mention into a bold range', () => {
-      const existingRanges = [
-        {
-          start: 5,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-          ranges: [],
-        },
-      ];
-
-      const result = insertRange(
-        { start: 7, length: 1, ...mentionInfo },
-        existingRanges
+        [
+          composeNode({
+            text: '\uFFFC',
+            start: 0,
+            length: 1,
+            mentions: [{ start: 0, length: 1, ...mentionInfo }],
+          }),
+        ]
       );
-
-      // it nests the mention inside the bold range
-      // and offsets the mention by the bold range start
-      assert.deepEqual(result, [
-        {
-          start: 5,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-          ranges: [{ start: 2, length: 1, ranges: [], ...mentionInfo }],
-        },
-      ]);
     });
 
     it('intersects ranges by splitting up and nesting', () => {
-      const ranges = [
-        {
-          start: 5,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-        },
-        {
-          start: 10,
-          length: 10,
-          style: BodyRange.Style.ITALIC,
-        },
-      ];
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('abcdefghijklmnopqrst', [
+          {
+            start: 5,
+            length: 10,
+            style: BodyRange.Style.BOLD,
+          },
+          {
+            start: 10,
+            length: 10,
+            style: BodyRange.Style.ITALIC,
+          },
+        ]),
 
-      const result = ranges.reduce<ReadonlyArray<RangeNode>>(
-        (acc, r) => insertRange(r, acc),
-        []
+        [
+          composeNode({
+            text: 'abcde',
+            start: 0,
+            length: 5,
+          }),
+          composeNode({
+            text: 'fghij',
+            start: 5,
+            length: 5,
+            isBold: true,
+          }),
+          composeNode({
+            text: 'klmno',
+            start: 10,
+            length: 5,
+            isBold: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: 'pqrst',
+            start: 15,
+            length: 5,
+            isItalic: true,
+          }),
+        ]
       );
-
-      assert.deepEqual(result, [
-        {
-          start: 5,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-          ranges: [
-            { start: 5, length: 5, style: BodyRange.Style.ITALIC, ranges: [] },
-          ],
-        },
-        { start: 15, length: 5, style: BodyRange.Style.ITALIC, ranges: [] },
-      ]);
     });
 
     it('handles triple-nesting', () => {
       //                                                                 m            m
       // b                                      bs                                                          s
       // i                                                                                                             i
-      // Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End',
-      const ranges = [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.BOLD,
-        },
-        {
-          start: 0,
-          length: 111,
-          style: BodyRange.Style.ITALIC,
-        },
-        {
-          start: 40,
-          length: 60,
-          style: BodyRange.Style.STRIKETHROUGH,
-        },
-        {
-          start: 64,
-          length: 14,
-          style: BodyRange.Style.MONOSPACE,
-        },
-      ];
+      // Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End,
 
-      const result = ranges.reduce<ReadonlyArray<RangeNode>>(
-        (acc, r) => insertRange(r, acc),
-        []
-      );
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.BOLD,
-          ranges: [
-            {
-              start: 0,
-              length: 40,
-              style: BodyRange.Style.ITALIC,
-              ranges: [],
-            },
-          ],
-        },
-        {
-          start: 40,
-          length: 71,
-          style: BodyRange.Style.ITALIC,
-          ranges: [
-            {
-              start: 0,
-              length: 60,
-              style: BodyRange.Style.STRIKETHROUGH,
-              ranges: [
-                {
-                  start: 24,
-                  length: 14,
-                  style: BodyRange.Style.MONOSPACE,
-                  ranges: [],
-                },
-              ],
-            },
-          ],
-        },
-      ]);
-    });
-
-    it('handles triple-nesting, with out-of-order inputs', () => {
-      //                                                                 m            m
-      // b                                      bs                                                          s
-      // i                                                                                                             i
-      // Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End',
-      const ranges = [
-        {
-          start: 64,
-          length: 14,
-          style: BodyRange.Style.MONOSPACE,
-        },
-        {
-          start: 40,
-          length: 60,
-          style: BodyRange.Style.STRIKETHROUGH,
-        },
-        {
-          start: 0,
-          length: 111,
-          style: BodyRange.Style.ITALIC,
-        },
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.BOLD,
-        },
-      ];
-
-      const result = ranges.reduce<ReadonlyArray<RangeNode>>(
-        (acc, r) => insertRange(r, acc),
-        []
-      );
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.ITALIC,
-          ranges: [
+      assert.deepEqual(
+        collapseRangesToDisplayNodes(
+          'Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End',
+          [
             {
               start: 0,
               length: 40,
               style: BodyRange.Style.BOLD,
-              ranges: [],
             },
-          ],
-        },
-        {
-          start: 40,
-          length: 24,
-          style: BodyRange.Style.STRIKETHROUGH,
-          ranges: [
             {
               start: 0,
-              length: 24,
+              length: 111,
               style: BodyRange.Style.ITALIC,
-              ranges: [],
             },
-          ],
-        },
-        {
-          start: 64,
-          length: 14,
-          style: BodyRange.Style.MONOSPACE,
-          ranges: [
             {
-              start: 0,
-              length: 14,
+              start: 40,
+              length: 60,
               style: BodyRange.Style.STRIKETHROUGH,
-              ranges: [
-                {
-                  start: 0,
-                  length: 14,
-                  style: BodyRange.Style.ITALIC,
-                  ranges: [],
-                },
-              ],
             },
-          ],
-        },
-        {
-          start: 78,
-          length: 22,
-          style: BodyRange.Style.STRIKETHROUGH,
-          ranges: [
+            {
+              start: 64,
+              length: 14,
+              style: BodyRange.Style.MONOSPACE,
+            },
+          ]
+        ),
+        [
+          composeNode({
+            text: 'Italic Start and Bold Start ... Bold End',
+            start: 0,
+            length: 40,
+            isBold: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: 'Strikethrough Start ... ',
+            start: 40,
+            length: 24,
+            isItalic: true,
+            isStrikethrough: true,
+          }),
+          composeNode({
+            text: 'Monospace Pop!',
+            start: 64,
+            length: 14,
+            isStrikethrough: true,
+            isItalic: true,
+            isMonospace: true,
+          }),
+          composeNode({
+            text: ' ... Strikethrough End',
+            start: 78,
+            length: 22,
+            isStrikethrough: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: ' Italic End',
+            start: 100,
+            length: 11,
+            isItalic: true,
+          }),
+        ]
+      );
+    });
+
+    it('handles triple-nesting, with out-of-order inputs', () => {
+      assert.deepEqual(
+        collapseRangesToDisplayNodes(
+          'Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End',
+          [
+            {
+              start: 64,
+              length: 14,
+              style: BodyRange.Style.MONOSPACE,
+            },
+            {
+              start: 40,
+              length: 60,
+              style: BodyRange.Style.STRIKETHROUGH,
+            },
             {
               start: 0,
-              length: 22,
+              length: 111,
               style: BodyRange.Style.ITALIC,
-              ranges: [],
             },
-          ],
-        },
-        {
-          start: 100,
-          length: 11,
-          style: BodyRange.Style.ITALIC,
-          ranges: [],
-        },
-      ]);
-    });
-  });
-
-  describe('collapseRangeTree', () => {
-    it('handles a single mention', () => {
-      const text = '--\uFFFC? What? Is that true?';
-      const tree = [
-        {
-          start: 0,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-          ranges: [{ start: 2, length: 1, ranges: [], ...mentionInfo }],
-        },
-      ];
-      const result = collapseRangeTree({ tree, text });
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 10,
-          isBold: true,
-          text: '--\uFFFC? What?',
-          mentions: [{ start: 2, length: 1, ...mentionInfo }],
-        },
-        {
-          start: 10,
-          length: 14,
-          text: ' Is that true?',
-          mentions: [],
-        },
-      ]);
+            {
+              start: 0,
+              length: 40,
+              style: BodyRange.Style.BOLD,
+            },
+          ]
+        ),
+        [
+          composeNode({
+            text: 'Italic Start and Bold Start ... Bold End',
+            start: 0,
+            length: 40,
+            isBold: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: 'Strikethrough Start ... ',
+            start: 40,
+            length: 24,
+            isItalic: true,
+            isStrikethrough: true,
+          }),
+          composeNode({
+            text: 'Monospace Pop!',
+            start: 64,
+            length: 14,
+            isStrikethrough: true,
+            isItalic: true,
+            isMonospace: true,
+          }),
+          composeNode({
+            text: ' ... Strikethrough End',
+            start: 78,
+            length: 22,
+            isStrikethrough: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: ' Italic End',
+            start: 100,
+            length: 11,
+            isItalic: true,
+          }),
+        ]
+      );
     });
 
     it('handles basic nested styles', () => {
-      const text = '.... Bold I**** .... Basic Text';
-      const tree = [
-        {
-          start: 5,
-          length: 10,
-          style: BodyRange.Style.BOLD,
-          ranges: [
-            { start: 5, length: 5, style: BodyRange.Style.ITALIC, ranges: [] },
-          ],
-        },
-        { start: 15, length: 5, style: BodyRange.Style.ITALIC, ranges: [] },
-      ];
-      const result = collapseRangeTree({ tree, text });
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 5,
-          text: '.... ',
-          mentions: [],
-        },
-        {
-          start: 5,
-          length: 5,
-          text: 'Bold ',
-          isBold: true,
-          mentions: [],
-        },
-        {
-          start: 10,
-          length: 5,
-          text: 'I****',
-          isBold: true,
-          isItalic: true,
-          mentions: [],
-        },
-        {
-          start: 15,
-          length: 5,
-          text: ' ....',
-          isItalic: true,
-          mentions: [],
-        },
-        {
-          start: 20,
-          length: 11,
-          text: ' Basic Text',
-          mentions: [],
-        },
-      ]);
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('.... Bold I**** .... Basic Text', [
+          { start: 5, length: 10, style: BodyRange.Style.BOLD },
+          { start: 10, length: 5, style: BodyRange.Style.ITALIC },
+          { start: 15, length: 5, style: BodyRange.Style.ITALIC },
+        ]),
+        [
+          composeNode({ text: '.... ', start: 0, length: 5 }),
+          composeNode({ text: 'Bold ', start: 5, length: 5, isBold: true }),
+          composeNode({
+            text: 'I****',
+            start: 10,
+            length: 5,
+            isBold: true,
+            isItalic: true,
+          }),
+          composeNode({ text: ' ....', start: 15, length: 5, isItalic: true }),
+          composeNode({ text: ' Basic Text', start: 20, length: 11 }),
+        ]
+      );
     });
 
     it('handles complex nested styles', () => {
       const text =
         'Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End';
-      const tree = [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.BOLD,
-          ranges: [
-            {
-              start: 0,
-              length: 40,
-              style: BodyRange.Style.ITALIC,
-              ranges: [],
-            },
-          ],
-        },
-        {
-          start: 40,
-          length: 71,
-          style: BodyRange.Style.ITALIC,
-          ranges: [
-            {
-              start: 0,
-              length: 60,
-              style: BodyRange.Style.STRIKETHROUGH,
-              ranges: [
-                {
-                  start: 24,
-                  length: 14,
-                  style: BodyRange.Style.MONOSPACE,
-                  ranges: [],
-                },
-              ],
-            },
-          ],
-        },
-      ];
-      const result = collapseRangeTree({ tree, text });
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 40,
-          isBold: true,
-          isItalic: true,
-          text: 'Italic Start and Bold Start ... Bold End',
-          mentions: [],
-        },
-        {
-          start: 40,
-          length: 24,
-          isItalic: true,
-          isStrikethrough: true,
-          text: 'Strikethrough Start ... ',
-          mentions: [],
-        },
-        {
-          start: 64,
-          length: 14,
-          isItalic: true,
-          isStrikethrough: true,
-          isMonospace: true,
-          text: 'Monospace Pop!',
-          mentions: [],
-        },
-        {
-          start: 78,
-          length: 22,
-          isItalic: true,
-          isStrikethrough: true,
-          text: ' ... Strikethrough End',
-          mentions: [],
-        },
-        {
-          start: 100,
-          length: 11,
-          isItalic: true,
-          text: ' Italic End',
-          mentions: [],
-        },
-      ]);
-    });
-
-    it('handles complex nested styles (with a different arrangement)', () => {
-      const text =
-        'Italic Start and Bold Start ... Bold EndStrikethrough Start ... Monospace Pop! ... Strikethrough End Italic End';
-      const tree = [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.ITALIC,
-          ranges: [
-            {
-              start: 0,
-              length: 40,
-              style: BodyRange.Style.BOLD,
-              ranges: [],
-            },
-          ],
-        },
-        {
-          start: 40,
-          length: 24,
-          style: BodyRange.Style.STRIKETHROUGH,
-          ranges: [
-            {
-              start: 0,
-              length: 24,
-              style: BodyRange.Style.ITALIC,
-              ranges: [],
-            },
-          ],
-        },
-        {
-          start: 64,
-          length: 14,
-          style: BodyRange.Style.MONOSPACE,
-          ranges: [
-            {
-              start: 0,
-              length: 14,
-              style: BodyRange.Style.STRIKETHROUGH,
-              ranges: [
-                {
-                  start: 0,
-                  length: 14,
-                  style: BodyRange.Style.ITALIC,
-                  ranges: [],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          start: 78,
-          length: 22,
-          style: BodyRange.Style.STRIKETHROUGH,
-          ranges: [
-            {
-              start: 0,
-              length: 22,
-              style: BodyRange.Style.ITALIC,
-              ranges: [],
-            },
-          ],
-        },
-        {
-          start: 100,
-          length: 11,
-          style: BodyRange.Style.ITALIC,
-          ranges: [],
-        },
-      ];
-
-      const result = collapseRangeTree({ tree, text });
-
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 40,
-          isBold: true,
-          isItalic: true,
-          text: 'Italic Start and Bold Start ... Bold End',
-          mentions: [],
-        },
-        {
-          start: 40,
-          length: 24,
-          isItalic: true,
-          isStrikethrough: true,
-          text: 'Strikethrough Start ... ',
-          mentions: [],
-        },
-        {
-          start: 64,
-          length: 14,
-          isItalic: true,
-          isStrikethrough: true,
-          isMonospace: true,
-          text: 'Monospace Pop!',
-          mentions: [],
-        },
-        {
-          start: 78,
-          length: 22,
-          isItalic: true,
-          isStrikethrough: true,
-          text: ' ... Strikethrough End',
-          mentions: [],
-        },
-        {
-          start: 100,
-          length: 11,
-          isItalic: true,
-          text: ' Italic End',
-          mentions: [],
-        },
-      ]);
+      assert.deepEqual(
+        collapseRangesToDisplayNodes(text, [
+          { start: 0, length: 40, style: BodyRange.Style.BOLD },
+          { start: 0, length: 40, style: BodyRange.Style.ITALIC },
+          { start: 40, length: 71, style: BodyRange.Style.ITALIC },
+          { start: 40, length: 60, style: BodyRange.Style.STRIKETHROUGH },
+          { start: 64, length: 14, style: BodyRange.Style.MONOSPACE },
+        ]),
+        [
+          composeNode({
+            text: 'Italic Start and Bold Start ... Bold End',
+            start: 0,
+            length: 40,
+            isBold: true,
+            isItalic: true,
+          }),
+          composeNode({
+            text: 'Strikethrough Start ... ',
+            start: 40,
+            length: 24,
+            isItalic: true,
+            isStrikethrough: true,
+          }),
+          composeNode({
+            text: 'Monospace Pop!',
+            start: 64,
+            length: 14,
+            isItalic: true,
+            isStrikethrough: true,
+            isMonospace: true,
+          }),
+          composeNode({
+            text: ' ... Strikethrough End',
+            start: 78,
+            length: 22,
+            isItalic: true,
+            isStrikethrough: true,
+          }),
+          composeNode({
+            text: ' Italic End',
+            start: 100,
+            length: 11,
+            isItalic: true,
+          }),
+        ]
+      );
     });
 
     it('handles complex nested styles with embedded mentions', () => {
       const text =
         'Italic Start and Bold Start .\uFFFC. Bold EndStrikethrough Start .\uFFFC. Mono\uFFFCpace Pop! .\uFFFC. Strikethrough End Ital\uFFFCc End';
-      const tree = [
-        {
-          start: 0,
-          length: 40,
-          style: BodyRange.Style.BOLD,
-          ranges: [
-            {
-              start: 0,
-              length: 40,
-              style: BodyRange.Style.ITALIC,
-              ranges: [
-                {
-                  start: 29,
-                  length: 1,
-                  ...mentionInfo,
-                  replacementText: 'A',
-                  ranges: [],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          start: 40,
-          length: 71,
-          style: BodyRange.Style.ITALIC,
-          ranges: [
-            {
-              start: 0,
-              length: 60,
-              style: BodyRange.Style.STRIKETHROUGH,
-              ranges: [
-                {
-                  start: 21,
-                  length: 1,
-                  ...mentionInfo,
-                  replacementText: 'B',
-                  ranges: [],
-                },
-                {
-                  start: 24,
-                  length: 14,
-                  style: BodyRange.Style.MONOSPACE,
-                  ranges: [
-                    {
-                      start: 4,
-                      length: 1,
-                      ...mentionInfo,
-                      replacementText: 'C',
-                      ranges: [],
-                    },
-                  ],
-                },
-                {
-                  start: 40,
-                  length: 1,
-                  ...mentionInfo,
-                  replacementText: 'D',
-                  ranges: [],
-                },
-              ],
-            },
-            {
-              start: 65,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'E',
-              ranges: [],
-            },
-          ],
-        },
-      ];
-      const result = collapseRangeTree({ tree, text });
+      assert.deepEqual(
+        collapseRangesToDisplayNodes(text, [
+          { start: 0, length: 40, style: BodyRange.Style.BOLD },
+          { start: 0, length: 40, style: BodyRange.Style.ITALIC },
+          { start: 40, length: 71, style: BodyRange.Style.ITALIC },
+          { start: 40, length: 60, style: BodyRange.Style.STRIKETHROUGH },
+          { start: 64, length: 14, style: BodyRange.Style.MONOSPACE },
+          { start: 29, length: 1, ...mentionInfo, replacementText: 'A' },
+          { start: 61, length: 1, ...mentionInfo, replacementText: 'B' },
+          { start: 68, length: 1, ...mentionInfo, replacementText: 'C' },
+          { start: 80, length: 1, ...mentionInfo, replacementText: 'D' },
+          { start: 105, length: 1, ...mentionInfo, replacementText: 'E' },
+        ]),
+        [
+          composeNode({
+            text: 'Italic Start and Bold Start .\uFFFC. Bold End',
+            start: 0,
+            length: 40,
+            isBold: true,
+            isItalic: true,
+            mentions: [
+              { start: 29, length: 1, ...mentionInfo, replacementText: 'A' },
+            ],
+          }),
+          composeNode({
+            text: 'Strikethrough Start .\uFFFC. ',
+            start: 40,
+            length: 24,
+            isItalic: true,
+            isStrikethrough: true,
+            mentions: [
+              { start: 21, length: 1, ...mentionInfo, replacementText: 'B' },
+            ],
+          }),
+          composeNode({
+            text: 'Mono\uFFFCpace Pop!',
+            start: 64,
+            length: 14,
+            isItalic: true,
+            isStrikethrough: true,
+            isMonospace: true,
+            mentions: [
+              { start: 4, length: 1, ...mentionInfo, replacementText: 'C' },
+            ],
+          }),
+          composeNode({
+            text: ' .\uFFFC. Strikethrough End',
+            start: 78,
+            length: 22,
+            isItalic: true,
+            isStrikethrough: true,
+            mentions: [
+              { start: 2, length: 1, ...mentionInfo, replacementText: 'D' },
+            ],
+          }),
+          composeNode({
+            text: ' Ital\uFFFCc End',
+            start: 100,
+            length: 11,
+            isItalic: true,
+            mentions: [
+              { start: 5, length: 1, ...mentionInfo, replacementText: 'E' },
+            ],
+          }),
+        ]
+      );
+    });
 
-      assert.deepEqual(result, [
-        {
-          start: 0,
-          length: 40,
-          isBold: true,
-          isItalic: true,
-          text: 'Italic Start and Bold Start .\uFFFc. Bold End',
-          mentions: [
-            {
-              start: 29,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'A',
-            },
-          ],
-        },
-        {
-          start: 40,
-          length: 24,
-          isItalic: true,
-          isStrikethrough: true,
-          text: 'Strikethrough Start .\uFFFc. ',
-          mentions: [
-            {
-              start: 21,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'B',
-            },
-          ],
-        },
-        {
-          start: 64,
-          length: 14,
-          isItalic: true,
-          isStrikethrough: true,
-          isMonospace: true,
-          text: 'Mono\uFFFcpace Pop!',
-          mentions: [
-            {
-              start: 4,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'C',
-            },
-          ],
-        },
-        {
-          start: 78,
-          length: 22,
-          isItalic: true,
-          isStrikethrough: true,
-          text: ' .\uFFFc. Strikethrough End',
-          mentions: [
-            {
-              start: 2,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'D',
-            },
-          ],
-        },
-        {
-          start: 100,
-          length: 11,
-          isItalic: true,
-          text: ' Ital\uFFFcc End',
-          mentions: [
-            {
-              start: 5,
-              length: 1,
-              ...mentionInfo,
-              replacementText: 'E',
-            },
-          ],
-        },
-      ]);
+    it('keeps a style active while any overlapping range of it still covers the text', () => {
+      // Refcount: the tail (ghij) stays bold after the first bold range ends at
+      // 6, because the second still covers it.
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('abcdefghij', [
+          { start: 0, length: 6, style: BodyRange.Style.BOLD },
+          { start: 4, length: 6, style: BodyRange.Style.BOLD },
+        ]),
+        [
+          composeNode({ text: 'abcd', start: 0, length: 4, isBold: true }),
+          composeNode({ text: 'ef', start: 4, length: 2, isBold: true }),
+          composeNode({ text: 'ghij', start: 6, length: 4, isBold: true }),
+        ]
+      );
+    });
+
+    it('ends one spoiler and starts another at a shared boundary', () => {
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('abcdef', [
+          { start: 0, length: 3, style: BodyRange.Style.SPOILER, spoilerId: 1 },
+          { start: 3, length: 3, style: BodyRange.Style.SPOILER, spoilerId: 2 },
+        ]),
+        [
+          composeNode({
+            text: 'abc',
+            start: 0,
+            length: 3,
+            isSpoiler: true,
+            spoilerId: 1,
+          }),
+          composeNode({
+            text: 'def',
+            start: 3,
+            length: 3,
+            isSpoiler: true,
+            spoilerId: 2,
+          }),
+        ]
+      );
+    });
+
+    it('keeps the spoiler active across an inner formatting boundary', () => {
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('abcdefghij', [
+          {
+            start: 0,
+            length: 10,
+            style: BodyRange.Style.SPOILER,
+            spoilerId: 1,
+          },
+          { start: 3, length: 4, style: BodyRange.Style.BOLD },
+        ]),
+        [
+          composeNode({
+            text: 'abc',
+            start: 0,
+            length: 3,
+            isSpoiler: true,
+            spoilerId: 1,
+          }),
+          composeNode({
+            text: 'defg',
+            start: 3,
+            length: 4,
+            isBold: true,
+            isSpoiler: true,
+            spoilerId: 1,
+          }),
+          composeNode({
+            text: 'hij',
+            start: 7,
+            length: 3,
+            isSpoiler: true,
+            spoilerId: 1,
+          }),
+        ]
+      );
+    });
+
+    it('carries a link url', () => {
+      assert.deepEqual(
+        collapseRangesToDisplayNodes('abcde', [
+          { start: 1, length: 3, url: 'https://example' },
+        ]),
+        [
+          composeNode({ text: 'a', start: 0, length: 1 }),
+          composeNode({
+            text: 'bcd',
+            start: 1,
+            length: 3,
+            url: 'https://example',
+          }),
+          composeNode({ text: 'e', start: 4, length: 1 }),
+        ]
+      );
     });
   });
 

@@ -1,8 +1,13 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type {
+  ReactNode,
+  JSX,
+  MouseEvent as ReactMouseEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 import lodash from 'lodash';
@@ -24,7 +29,7 @@ import { formatDateTimeForAttachment } from '../util/formatTimestamp.dom.ts';
 import { formatDuration } from '../util/formatDuration.std.ts';
 import { isGIF, isIncremental } from '../util/Attachment.std.ts';
 import { useRestoreFocus } from '../hooks/useRestoreFocus.dom.ts';
-import { usePrevious } from '../hooks/usePrevious.std.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
 import { arrow } from '../util/keyboard.dom.ts';
 import { drop } from '../util/drop.std.ts';
 import { isCmdOrCtrl } from '../hooks/useKeyboardShortcuts.dom.tsx';
@@ -36,6 +41,7 @@ import { SECOND } from '../util/durations/index.std.ts';
 import { Toast } from './Toast.dom.tsx';
 import { isAbortError } from '../util/isAbortError.std.ts';
 import { strictAssert } from '../util/assert.std.ts';
+import { AxoTheme } from '../axo/AxoTheme.dom.tsx';
 
 const { noop } = lodash;
 
@@ -108,12 +114,12 @@ export function Lightbox({
   onSelectAttachment,
   hasNextMessage,
   hasPrevMessage,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const hasThumbnails = media.length > 1;
   const messageId = media.at(0)?.message.id;
-  const prevMessageId = usePrevious(messageId, messageId);
+  const prevMessageId = usePreviousDeprecated(messageId, messageId);
   const needsAnimation = messageId !== prevMessageId;
-  const [root, setRoot] = React.useState<HTMLElement | undefined>();
+  const [root, setRoot] = useState<HTMLElement | undefined>();
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null
@@ -174,7 +180,7 @@ export function Lightbox({
     setShouldShowDownloadToast(false);
   }, [isDownloading, setShouldShowDownloadToast]);
   const onUserInteractionOnVideo = useCallback(
-    (event: React.MouseEvent<HTMLVideoElement>) => {
+    (event: ReactMouseEvent<HTMLVideoElement>) => {
       if (downloadToastTimeout.current) {
         clearTimeout(downloadToastTimeout.current);
         downloadToastTimeout.current = undefined;
@@ -196,7 +202,7 @@ export function Lightbox({
   );
 
   const onPrevious = useCallback(
-    (event: KeyboardEvent | React.MouseEvent<HTMLButtonElement>) => {
+    (event: KeyboardEvent | ReactMouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
 
@@ -210,7 +216,7 @@ export function Lightbox({
   );
 
   const onNext = useCallback(
-    (event: KeyboardEvent | React.MouseEvent<HTMLButtonElement>) => {
+    (event: KeyboardEvent | ReactMouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
 
@@ -231,7 +237,7 @@ export function Lightbox({
   }, [setVideoTime, videoElement]);
 
   const handleSave = useCallback(
-    (event: KeyboardEvent | React.MouseEvent<HTMLButtonElement>) => {
+    (event: KeyboardEvent | ReactMouseEvent<HTMLButtonElement>) => {
       if (isViewOnce) {
         return;
       }
@@ -248,7 +254,7 @@ export function Lightbox({
     [isViewOnce, media, saveAttachment, selectedIndex]
   );
 
-  const handleForward = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleForward = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (isViewOnce) {
       return;
     }
@@ -298,7 +304,7 @@ export function Lightbox({
     [closeLightbox, onNext, onPrevious, handleSave]
   );
 
-  const onClose = (event: React.MouseEvent<HTMLElement>) => {
+  const onClose = (event: ReactMouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
 
@@ -516,7 +522,7 @@ export function Lightbox({
   );
 
   const zoomButtonHandler = useCallback(
-    (ev: React.MouseEvent<HTMLButtonElement>) => {
+    (ev: ReactMouseEvent<HTMLButtonElement>) => {
       ev.preventDefault();
       ev.stopPropagation();
 
@@ -592,7 +598,7 @@ export function Lightbox({
 
   const caption = attachment?.caption;
 
-  let content: React.JSX.Element;
+  let content: JSX.Element;
   if (!contentType) {
     content = <>{children}</>;
   } else {
@@ -616,7 +622,7 @@ export function Lightbox({
                 alt={i18n('icu:lightboxImageAlt')}
                 className="Lightbox__object"
                 data-testid={attachment.cdnKey}
-                onContextMenu={(ev: React.MouseEvent<HTMLImageElement>) => {
+                onContextMenu={(ev: ReactMouseEvent<HTMLImageElement>) => {
                   // These are the only image types supported by Electron's NativeImage
                   if (
                     ev &&
@@ -650,6 +656,8 @@ export function Lightbox({
       const shouldLoop = isAttachmentGIF || isViewOnce;
 
       content = (
+        // FIXME
+        // oxlint-disable-next-line jsx-a11y/control-has-associated-label
         <video
           className="Lightbox__object Lightbox__object--video"
           controls={!shouldLoop}
@@ -696,176 +704,175 @@ export function Lightbox({
 
   return root
     ? createPortal(
-        <div
-          className={classNames('Lightbox Lightbox__container', {
-            'Lightbox__container--zoom': isZoomed,
-          })}
-          onClick={(event: React.MouseEvent<HTMLDivElement>) => {
-            event.stopPropagation();
-            event.preventDefault();
+        <AxoTheme.Override theme="force-dark">
+          <div
+            className={classNames('Lightbox Lightbox__container', {
+              'Lightbox__container--zoom': isZoomed,
+            })}
+            onClick={(event: ReactMouseEvent<HTMLDivElement>) => {
+              event.stopPropagation();
+              event.preventDefault();
 
-            closeLightbox();
-          }}
-          onKeyUp={(event: React.KeyboardEvent<HTMLDivElement>) => {
-            if (
-              (containerRef && event.target !== containerRef.current) ||
-              event.keyCode !== 27
-            ) {
-              return;
-            }
+              closeLightbox();
+            }}
+            onKeyUp={(event: ReactKeyboardEvent<HTMLDivElement>) => {
+              if (
+                (containerRef && event.target !== containerRef.current) ||
+                event.keyCode !== 27
+              ) {
+                return;
+              }
 
-            closeLightbox();
-          }}
-          ref={containerRef}
-          role="presentation"
-        >
-          <div className="Lightbox__animated">
-            <div
-              className="Lightbox__main-container"
-              tabIndex={-1}
-              ref={focusRef}
-            >
-              <div className="Lightbox__header">
-                {getConversation && currentItem != null ? (
-                  <LightboxHeader
-                    getConversation={getConversation}
-                    i18n={i18n}
-                    item={currentItem}
-                  />
-                ) : (
-                  <div />
-                )}
-                <div className="Lightbox__controls">
-                  {!isViewOnce ? (
+              closeLightbox();
+            }}
+            ref={containerRef}
+            role="presentation"
+          >
+            <div className="Lightbox__animated">
+              <div className="Lightbox__main-container">
+                <div className="Lightbox__header">
+                  {getConversation && currentItem != null ? (
+                    <LightboxHeader
+                      getConversation={getConversation}
+                      i18n={i18n}
+                      item={currentItem}
+                    />
+                  ) : (
+                    <div />
+                  )}
+                  <div className="Lightbox__controls">
+                    {!isViewOnce ? (
+                      <button
+                        aria-label={i18n('icu:forwardMessage')}
+                        className="Lightbox__button Lightbox__button--forward"
+                        onClick={handleForward}
+                        type="button"
+                      />
+                    ) : null}
+                    {!isViewOnce ? (
+                      <button
+                        aria-label={i18n('icu:save')}
+                        className="Lightbox__button Lightbox__button--save"
+                        onClick={handleSave}
+                        type="button"
+                      />
+                    ) : null}
                     <button
-                      aria-label={i18n('icu:forwardMessage')}
-                      className="Lightbox__button Lightbox__button--forward"
-                      onClick={handleForward}
+                      aria-label={i18n('icu:close')}
+                      className="Lightbox__button Lightbox__button--close"
+                      onClick={closeLightbox}
+                      ref={focusRef}
                       type="button"
                     />
-                  ) : null}
-                  {!isViewOnce ? (
-                    <button
-                      aria-label={i18n('icu:save')}
-                      className="Lightbox__button Lightbox__button--save"
-                      onClick={handleSave}
-                      type="button"
-                    />
-                  ) : null}
-                  <button
-                    aria-label={i18n('icu:close')}
-                    className="Lightbox__button Lightbox__button--close"
-                    onClick={closeLightbox}
-                    type="button"
-                  />
+                  </div>
                 </div>
+                <animated.div
+                  className={classNames('Lightbox__object--container', {
+                    'Lightbox__object--container--zoom': isZoomed,
+                  })}
+                  ref={animateRef}
+                  style={{
+                    transform: to(
+                      [scale, translateX, translateY],
+                      (s, x, y) => `translate(${x}px, ${y}px) scale(${s})`
+                    ),
+                  }}
+                >
+                  {isDownloading ? (
+                    <div
+                      className={classNames(
+                        'Lightbox__toast-container',
+                        shouldShowDownloadToast
+                          ? 'Lightbox__toast-container--visible'
+                          : null
+                      )}
+                    >
+                      <Toast onClose={noop}>
+                        {attachment.totalDownloaded && attachment.size
+                          ? i18n('icu:lightBoxDownloading', {
+                              downloaded: formatFileSize(
+                                attachment.totalDownloaded
+                              ),
+                              total: formatFileSize(attachment.size),
+                            })
+                          : undefined}
+                      </Toast>
+                    </div>
+                  ) : null}
+                  {content}
+
+                  {hasPrevious && (
+                    <div className="Lightbox__nav-prev">
+                      <button
+                        aria-label={i18n('icu:previous')}
+                        className="Lightbox__button Lightbox__button--previous"
+                        onClick={onPrevious}
+                        type="button"
+                      />
+                    </div>
+                  )}
+                  {hasNext && (
+                    <div className="Lightbox__nav-next">
+                      <button
+                        aria-label={i18n('icu:next')}
+                        className="Lightbox__button Lightbox__button--next"
+                        onClick={onNext}
+                        type="button"
+                      />
+                    </div>
+                  )}
+                </animated.div>
               </div>
-              <animated.div
-                className={classNames('Lightbox__object--container', {
-                  'Lightbox__object--container--zoom': isZoomed,
-                })}
-                ref={animateRef}
-                style={{
-                  transform: to(
-                    [scale, translateX, translateY],
-                    (s, x, y) => `translate(${x}px, ${y}px) scale(${s})`
-                  ),
-                }}
-              >
-                {isDownloading ? (
-                  <div
-                    className={classNames(
-                      'Lightbox__toast-container',
-                      shouldShowDownloadToast
-                        ? 'Lightbox__toast-container--visible'
-                        : null
-                    )}
-                  >
-                    <Toast onClose={noop}>
-                      {attachment.totalDownloaded && attachment.size
-                        ? i18n('icu:lightBoxDownloading', {
-                            downloaded: formatFileSize(
-                              attachment.totalDownloaded
-                            ),
-                            total: formatFileSize(attachment.size),
-                          })
-                        : undefined}
-                    </Toast>
+              <div className="Lightbox__footer">
+                {isViewOnce && videoTime ? (
+                  <div className="Lightbox__timestamp">
+                    {formatDuration(videoTime)}
                   </div>
                 ) : null}
-                {content}
+                {caption ? (
+                  <div className="Lightbox__caption">{caption}</div>
+                ) : null}
+                <div className="Lightbox__thumbnails--container">
+                  <animated.div
+                    className="Lightbox__thumbnails"
+                    style={thumbnailsStyle}
+                  >
+                    {hasThumbnails
+                      ? media.map((item, index) => (
+                          <button
+                            className={classNames({
+                              Lightbox__thumbnail: true,
+                              'Lightbox__thumbnail--selected':
+                                index === selectedIndex,
+                            })}
+                            key={item.attachment.thumbnail?.url}
+                            type="button"
+                            onClick={(
+                              event: ReactMouseEvent<HTMLButtonElement>
+                            ) => {
+                              event.stopPropagation();
+                              event.preventDefault();
 
-                {hasPrevious && (
-                  <div className="Lightbox__nav-prev">
-                    <button
-                      aria-label={i18n('icu:previous')}
-                      className="Lightbox__button Lightbox__button--previous"
-                      onClick={onPrevious}
-                      type="button"
-                    />
-                  </div>
-                )}
-                {hasNext && (
-                  <div className="Lightbox__nav-next">
-                    <button
-                      aria-label={i18n('icu:next')}
-                      className="Lightbox__button Lightbox__button--next"
-                      onClick={onNext}
-                      type="button"
-                    />
-                  </div>
-                )}
-              </animated.div>
-            </div>
-            <div className="Lightbox__footer">
-              {isViewOnce && videoTime ? (
-                <div className="Lightbox__timestamp">
-                  {formatDuration(videoTime)}
+                              onSelectAttachment(index);
+                            }}
+                          >
+                            {item.attachment.thumbnail?.url ? (
+                              <img
+                                alt={i18n('icu:lightboxImageAlt')}
+                                src={item.attachment.thumbnail.url}
+                              />
+                            ) : (
+                              <div className="Lightbox__thumbnail--unavailable" />
+                            )}
+                          </button>
+                        ))
+                      : undefined}
+                  </animated.div>
                 </div>
-              ) : null}
-              {caption ? (
-                <div className="Lightbox__caption">{caption}</div>
-              ) : null}
-              <div className="Lightbox__thumbnails--container">
-                <animated.div
-                  className="Lightbox__thumbnails"
-                  style={thumbnailsStyle}
-                >
-                  {hasThumbnails
-                    ? media.map((item, index) => (
-                        <button
-                          className={classNames({
-                            Lightbox__thumbnail: true,
-                            'Lightbox__thumbnail--selected':
-                              index === selectedIndex,
-                          })}
-                          key={item.attachment.thumbnail?.url}
-                          type="button"
-                          onClick={(
-                            event: React.MouseEvent<HTMLButtonElement>
-                          ) => {
-                            event.stopPropagation();
-                            event.preventDefault();
-
-                            onSelectAttachment(index);
-                          }}
-                        >
-                          {item.attachment.thumbnail?.url ? (
-                            <img
-                              alt={i18n('icu:lightboxImageAlt')}
-                              src={item.attachment.thumbnail.url}
-                            />
-                          ) : (
-                            <div className="Lightbox__thumbnail--unavailable" />
-                          )}
-                        </button>
-                      ))
-                    : undefined}
-                </animated.div>
               </div>
             </div>
           </div>
-        </div>,
+        </AxoTheme.Override>,
         root
       )
     : null;
@@ -879,7 +886,7 @@ function LightboxHeader({
   getConversation: (id: string) => ConversationType;
   i18n: LocalizerType;
   item: ReadonlyDeep<MediaItemType>;
-}): React.JSX.Element {
+}): JSX.Element {
   const { message } = item;
   const conversation = getConversation(message.conversationId);
 

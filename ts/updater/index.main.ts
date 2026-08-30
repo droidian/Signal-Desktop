@@ -68,5 +68,5 @@ export function onRestartCanceled(): void {
 }
 
 function autoUpdateDisabled() {
-  return !app.isPackaged || process.mas || !config.get('updatesEnabled');
+  return !app.isPackaged || !config.get('updatesEnabled');
 }

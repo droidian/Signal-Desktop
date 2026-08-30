@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React, { useState } from 'react';
-import type { MutableRefObject } from 'react';
+import { useState } from 'react';
+import type { MutableRefObject, JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import lodash from 'lodash';
 
@@ -12,7 +12,6 @@ import { DEFAULT_CONVERSATION_COLOR } from '../types/Colors.std.ts';
 import { PhoneNumberSharingMode } from '../types/PhoneNumberSharingMode.std.ts';
 import { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.std.ts';
 import { sleep } from '../util/sleep.std.ts';
-import { EmojiSkinTone } from './fun/data/emojis.std.ts';
 import {
   DAY,
   DurationInSeconds,
@@ -61,6 +60,9 @@ import type { ExternalProps as SmartNotificationProfilesProps } from '../state/s
 import type { NotificationProfileIdString } from '../types/NotificationProfile.std.ts';
 import type { ExportResultType } from '../services/backups/types.std.ts';
 import { BackupLevel } from '../services/backups/types.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
+import type { BadgeType } from '../badges/types.std.ts';
+import { BadgeCategory } from '../badges/BadgeCategory.std.ts';
 
 const { shuffle } = lodash;
 
@@ -140,6 +142,32 @@ const validateBackupResult: ExportResultType = {
   },
 };
 
+const donationBadge: BadgeType = {
+  id: 'BOOST',
+  category: BadgeCategory.Donor,
+  name: 'Signal Boost',
+  descriptionTemplate:
+    '{short_name} supported Signal with a donation. Signal is a nonprofit with no advertisers or investors, supported only by people like you.',
+  images: [
+    {
+      dark: {
+        localPath: 'fixtures/badges/rocket/rocket-160.svg',
+        url: 'file:///fixtures/badges/rocket/rocket-36-dark.svg',
+      },
+      light: {
+        localPath: 'fixtures/badges/rocket/rocket-36-light.svg',
+        url: 'file:///fixtures/badges/rocket/rocket-36-light.svg',
+      },
+    },
+    {
+      transparent: {
+        localPath: 'fixtures/badges/rocket/rocket-160.svg',
+        url: 'file:///fixtures/badges/rocket/rocket-160.svg',
+      },
+    },
+  ],
+};
+
 const donationAmountsConfig = {
   cad: {
     minimum: 4,
@@ -177,7 +205,7 @@ const donationAmountsConfig = {
 
 function renderUpdateDialog(
   props: Readonly<{ containerWidthBreakpoint: WidthBreakpoint }>
-): React.JSX.Element {
+): JSX.Element {
   return (
     <DialogUpdate
       i18n={i18n}
@@ -198,7 +226,7 @@ function renderProfileEditor({
   contentsRef,
 }: {
   contentsRef: MutableRefObject<HTMLDivElement | null>;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <ProfileEditor
       aboutEmoji={undefined}
@@ -258,7 +286,7 @@ function renderDonationsPane(props: {
   ) => Promise<Blob>;
   showToast: (toast: AnyToast) => void;
   workflow?: DonationWorkflow;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <PreferencesDonations
       applyDonationBadge={action('applyDonationBadge')}
@@ -274,7 +302,7 @@ function renderDonationsPane(props: {
       lastError={undefined}
       workflow={props.workflow}
       didResumeWorkflowAtStartup={false}
-      badge={undefined}
+      myBadge={undefined}
       color={props.me.color}
       firstName={props.me.firstName}
       profileAvatarUrl={props.me.profileAvatarUrl}
@@ -286,7 +314,7 @@ function renderDonationsPane(props: {
       showToast={props.showToast}
       theme={ThemeType.light}
       updateLastError={action('updateLastError')}
-      donationBadge={undefined}
+      donationBadge={donationBadge}
       fetchBadgeData={async () => undefined}
       me={props.me}
       myProfileChanged={action('myProfileChanged')}
@@ -294,13 +322,13 @@ function renderDonationsPane(props: {
   );
 }
 
-function renderToastManager(): React.JSX.Element {
+function renderToastManager(): JSX.Element {
   return <div />;
 }
 
 function renderPreferencesChatFoldersPage(
   props: SmartPreferencesChatFoldersPageProps
-): React.JSX.Element {
+): JSX.Element {
   return (
     <PreferencesChatFoldersPage
       i18n={i18n}
@@ -318,7 +346,7 @@ function renderPreferencesChatFoldersPage(
 
 function renderPreferencesEditChatFolderPage(
   props: SmartPreferencesEditChatFolderPageProps
-): React.JSX.Element {
+): JSX.Element {
   return (
     <PreferencesEditChatFolderPage
       i18n={i18n}
@@ -343,7 +371,7 @@ function renderPreferencesEditChatFolderPage(
 
 function renderNotificationProfilesCreateFlow(
   props: SmartNotificationProfilesProps
-): React.JSX.Element {
+): JSX.Element {
   return (
     <NotificationProfilesCreateFlow
       contentsRef={props.contentsRef}
@@ -360,7 +388,7 @@ function renderNotificationProfilesCreateFlow(
 
 function renderNotificationProfilesHome(
   props: SmartNotificationProfilesProps
-): React.JSX.Element {
+): JSX.Element {
   return (
     <NotificationProfilesHome
       activeProfileId={undefined}
@@ -424,12 +452,13 @@ export default {
     backupSubscriptionStatus: { status: 'not-found' },
     backupTier: null,
     badge: undefined,
-    blockedCount: 0,
+    blockedContacts: [],
+    blockedGroups: [],
     currentChatFoldersCount: 0,
     customColors: {},
     defaultConversationColor: DEFAULT_CONVERSATION_COLOR,
     deviceName: 'Work Windows ME',
-    emojiSkinToneDefault: EmojiSkinTone.None,
+    emojiSkinToneDefault: Emoji.SkinTone.None,
     phoneNumber: '+1 555 123-4567',
     hasAnyCurrentCustomChatFolders: false,
     hasAudioNotifications: true,
@@ -473,7 +502,6 @@ export default {
     isContentProtectionSupported: true,
     isContentProtectionNeeded: true,
     isMinimizeToAndStartInSystemTraySupported: true,
-    isPlaintextExportEnabled: true,
     lastLocalBackup: undefined,
     lastSyncTime: Date.now(),
     localeOverride: null,
@@ -505,6 +533,7 @@ export default {
     themeSetting: 'system',
     theme: ThemeType.light,
     universalExpireTimer: DurationInSeconds.HOUR,
+    weArePrimaryDevice: false,
     whoCanFindMe: PhoneNumberDiscoverability.Discoverable,
     whoCanSeeMe: PhoneNumberSharingMode.Everybody,
     zoomFactor: 1,
@@ -554,6 +583,7 @@ export default {
     getMessageSampleForSchemaVersion: async () => [
       { id: 'messageId' } as MessageAttributesType,
     ],
+    getPreferredBadge: () => undefined,
     makeSyncRequest: action('makeSyncRequest'),
     onAudioNotificationsChange: action('onAudioNotificationsChange'),
     onAutoConvertEmojiChange: action('onAutoConvertEmojiChange'),
@@ -742,19 +772,12 @@ export const Donations = Template.bind({});
 Donations.args = {
   settingsLocation: { page: SettingsPage.Donations },
 };
-export const ChatsWithDisabledPlaintextExport = Template.bind({});
-ChatsWithDisabledPlaintextExport.args = {
-  settingsLocation: {
-    page: SettingsPage.Chats,
-  },
-  isPlaintextExportEnabled: false,
-};
 export const NotificationsPageWithThreeProfiles = Template.bind({});
 const threeProfiles = [
   {
     id: 'Weekday' as NotificationProfileIdString,
     name: 'Weekday',
-    emoji: '😬',
+    emoji: Emoji.GRIMACING,
     color: 0xffe3e3fe,
 
     createdAtMs: Date.now(),
@@ -783,7 +806,7 @@ const threeProfiles = [
   {
     id: 'Weekend' as NotificationProfileIdString,
     name: 'Weekend',
-    emoji: '❤️‍🔥',
+    emoji: Emoji.HEART_ON_FIRE,
     color: 0xffd7d7d9,
 
     createdAtMs: Date.now(),
@@ -1030,16 +1053,68 @@ Internal.args = {
   isInternalUser: true,
 };
 
-export const Blocked1 = Template.bind({});
-Blocked1.args = {
-  blockedCount: 1,
+export const PrivacyBlocked1Contact = Template.bind({});
+PrivacyBlocked1Contact.args = {
+  blockedContacts: [
+    { conversation: getDefaultConversation(), blockedAt: undefined },
+  ],
   settingsLocation: { page: SettingsPage.Privacy },
 };
 
-export const BlockedMany = Template.bind({});
-BlockedMany.args = {
-  blockedCount: 55,
+export const PrivacyBlocked1Group = Template.bind({});
+PrivacyBlocked1Group.args = {
+  blockedGroups: [
+    { conversation: getDefaultConversation(), blockedAt: undefined },
+  ],
   settingsLocation: { page: SettingsPage.Privacy },
+};
+
+export const PrivacyBlocked1BothWithBlockedAt = Template.bind({});
+PrivacyBlocked1BothWithBlockedAt.args = {
+  blockedContacts: [
+    { conversation: getDefaultConversation(), blockedAt: Date.now() },
+  ],
+  blockedGroups: [
+    { conversation: getDefaultConversation(), blockedAt: Date.now() - DAY },
+  ],
+  settingsLocation: { page: SettingsPage.Privacy },
+};
+
+export const PrivacyBlockedManyContacts = Template.bind({});
+PrivacyBlockedManyContacts.args = {
+  blockedContacts: new Array(55).fill(undefined).map(() => ({
+    conversation: getDefaultConversation(),
+    blockedAt: undefined,
+  })),
+  settingsLocation: { page: SettingsPage.Privacy },
+};
+
+export const PrivacyBlockedManyGroups = Template.bind({});
+PrivacyBlockedManyGroups.args = {
+  blockedGroups: new Array(55).fill(undefined).map(() => ({
+    conversation: getDefaultConversation(),
+    blockedAt: undefined,
+  })),
+  settingsLocation: { page: SettingsPage.Privacy },
+};
+
+export const PrivacyBlockedManyBoth = Template.bind({});
+PrivacyBlockedManyBoth.args = {
+  blockedContacts: new Array(20).fill(undefined).map(() => ({
+    conversation: getDefaultConversation(),
+    blockedAt: undefined,
+  })),
+  blockedGroups: new Array(20).fill(undefined).map(() => ({
+    conversation: getDefaultConversation(),
+    blockedAt: undefined,
+  })),
+  settingsLocation: { page: SettingsPage.Privacy },
+};
+
+export const PrivacyWhenPrimary = Template.bind({});
+PrivacyWhenPrimary.args = {
+  settingsLocation: { page: SettingsPage.Privacy },
+  weArePrimaryDevice: true,
 };
 
 export const CustomUniversalExpireTimer = Template.bind({});

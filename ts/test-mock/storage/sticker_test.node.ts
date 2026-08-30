@@ -24,6 +24,8 @@ import { toNumber } from '../../util/toNumber.std.ts';
 
 const { StickerPackOperation } = Proto.SyncMessage;
 
+const IdentifierType = Proto.ManifestRecord.Identifier.Type;
+
 describe('stickers', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
 
@@ -79,8 +81,8 @@ describe('stickers', function (this: Mocha.Suite) {
         .locator(`a:has-text("${STICKER_PACKS[0].id.toString('hex')}")`)
         .click();
       await window
-        .getByTestId('StickerPreviewModal')
-        .getByRole('button', { name: 'Install' })
+        .getByRole('dialog', { name: 'Sticker Pack' })
+        .getByRole('button', { name: 'Add Stickers' })
         .click();
 
       debug('waiting for sync message');
@@ -118,17 +120,21 @@ describe('stickers', function (this: Mocha.Suite) {
       debug('uninstalling first sticker pack via UI');
       const state = await phone.expectStorageState('initial state');
 
-      await conversationView
-        .locator(`a:has-text("${STICKER_PACKS[0].id.toString('hex')}")`)
-        .click();
+      // Dialog remains open after install
       await window
-        .getByTestId('StickerPreviewModal')
-        .getByRole('button', { name: 'Uninstall' })
+        .getByRole('dialog', { name: 'Sticker Pack' })
+        .getByRole('button', { name: 'Remove' })
         .click();
 
       // Confirm
       await window
-        .locator('.module-Button--destructive >> "Uninstall"')
+        .getByRole('alertdialog')
+        .filter({
+          has: window.getByText(
+            'You may not be able to re-install this sticker pack if you no longer have the source message.'
+          ),
+        })
+        .getByRole('button', { name: 'Uninstall' })
         .click();
 
       debug('waiting for sync message');
@@ -186,8 +192,8 @@ describe('stickers', function (this: Mocha.Suite) {
       '[data-testid=StickerManager]'
     );
 
-    debug('switching to Installed tab');
-    await stickerManager.locator('.Tabs__tab >> "Installed"').click();
+    debug('switching to My Stickers tab');
+    await window.getByText('My Stickers').click();
 
     {
       debug('installing first sticker pack via storage service');
@@ -249,7 +255,7 @@ describe('stickers', function (this: Mocha.Suite) {
       );
       assert.strictEqual(
         stickerPack.record.stickerPack.position,
-        12,
+        11,
         'Wrong sticker pack position'
       );
     }
@@ -313,5 +319,134 @@ describe('stickers', function (this: Mocha.Suite) {
     strictAssert(firstStickerData?.localKey, 'localKey exists');
     assert.strictEqual(firstStickerData.path, secondStickerData?.path);
     assert.strictEqual(firstStickerData.localKey, secondStickerData?.localKey);
+  });
+
+  it('should handle uninstalled sticker storage expiry', async () => {
+    const { phone, desktop, contacts } = bootstrap;
+    const [firstContact] = contacts as [PrimaryDevice];
+
+    const window = await app.getWindow();
+
+    const leftPane = window.locator('#LeftPane');
+    const conversationView = window.locator(
+      '.Inbox__conversation > .ConversationView'
+    );
+
+    await leftPane
+      .locator(`[data-testid="${firstContact.device.aci}"]`)
+      .click();
+
+    debug('opening sticker manager');
+
+    const FunButton = window.getByRole('button', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunDialog = window.getByRole('dialog', {
+      name: 'Add an Emoji, Sticker, or GIF',
+    });
+    const FunPickerStickersTab = FunDialog.getByRole('tab', {
+      name: 'Stickers',
+    });
+    const FunPickerAddSticker = FunDialog.getByRole('button', {
+      name: 'Add a sticker pack',
+    });
+
+    await FunButton.click();
+    await FunPickerStickersTab.click();
+    await FunPickerAddSticker.click();
+
+    const stickerManager = conversationView.locator(
+      '[data-testid=StickerManager]'
+    );
+
+    debug('switching to My Stickers tab');
+    await window.getByText('My Stickers').click();
+
+    {
+      debug('installing sticker pack via storage service');
+      const state = await phone.expectStorageState('initial state');
+
+      await phone.setStorageState(
+        state.addRecord({
+          type: IdentifierType.STICKER_PACK,
+          record: {
+            stickerPack: {
+              packId: STICKER_PACKS[0].id,
+              packKey: STICKER_PACKS[0].key,
+              position: 1,
+              deletedAtTimestamp: null,
+            },
+          },
+        })
+      );
+      await phone.sendFetchStorage({
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      debug('waiting for sticker pack to become visible');
+      await stickerManager
+        .locator(`[data-testid="${STICKER_PACKS[0].id.toString('hex')}"]`)
+        .waitFor();
+    }
+
+    {
+      debug('expiring sticker pack via storage service');
+      const state = await phone.expectStorageState('initial state');
+      const newState = state.updateRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[0]),
+        record => ({
+          stickerPack: {
+            ...record.stickerPack,
+            deletedAtTimestamp: BigInt(Date.now() - 12 * durations.MONTH),
+          },
+        })
+      );
+
+      await phone.setStorageState(newState);
+      await phone.sendFetchStorage({
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      debug('app wait for new storage state');
+      await app.waitForManifestVersion(newState.version);
+
+      debug('install second sticker pack via UI to cause storage upload');
+
+      await firstContact.sendText(
+        desktop,
+        `Second sticker pack ${getStickerPackLink(STICKER_PACKS[1])}`
+      );
+
+      await leftPane
+        .locator(`[data-testid="${firstContact.device.aci}"]`)
+        .click();
+
+      await conversationView
+        .locator(`a:has-text("${STICKER_PACKS[1].id.toString('hex')}")`)
+        .click();
+      await window
+        .getByRole('dialog', { name: 'Sticker Pack' })
+        .getByRole('button', { name: 'Add Stickers' })
+        .click();
+
+      debug('waiting for storage service update');
+      const stateAfter = await phone.waitForStorageState({ after: newState });
+
+      const oldStickerPack = stateAfter.findRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[0])
+      );
+      assert.notOk(
+        oldStickerPack,
+        'New storage state should not have expired first sticker pack record'
+      );
+
+      const newStickerPack = stateAfter.findRecord(
+        getStickerPackRecordPredicate(STICKER_PACKS[1])
+      );
+      assert.ok(
+        newStickerPack,
+        'New storage state should have second sticker pack record'
+      );
+    }
   });
 });

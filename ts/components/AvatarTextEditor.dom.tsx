@@ -1,14 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent, ClipboardEvent } from 'react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ChangeEvent, ClipboardEvent, JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import lodash from 'lodash';
 
 import * as grapheme from '../util/grapheme.std.ts';
@@ -24,6 +18,7 @@ import {
   getFittedFontSize,
   getFontSizes,
 } from '../util/avatarTextSizeCalculator.std.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
 
 const { noop } = lodash;
 
@@ -35,6 +30,7 @@ type DoneHandleType = (
 export type PropsType = {
   avatarData?: AvatarDataType;
   i18n: LocalizerType;
+  isDisplayedAsPanel: boolean;
   onCancel: () => unknown;
   onDone: DoneHandleType;
 };
@@ -45,9 +41,10 @@ const MAX_LENGTH = 3;
 export function AvatarTextEditor({
   avatarData,
   i18n,
+  isDisplayedAsPanel,
   onCancel,
   onDone,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const initialText = useMemo(() => avatarData?.text || '', [avatarData]);
   const initialColor = useMemo(
     () => avatarData?.color || AvatarColors[0],
@@ -155,43 +152,49 @@ export function AvatarTextEditor({
 
   return (
     <>
-      <div className="AvatarEditor__preview">
-        <BetterAvatarBubble
-          color={selectedColor}
+      <AxoDialog.Body maxHeight={isDisplayedAsPanel ? 9999 : undefined}>
+        <div className="AvatarEditor__preview">
+          <BetterAvatarBubble
+            color={selectedColor}
+            i18n={i18n}
+            onSelect={focusInput}
+            style={{
+              height: BUBBLE_SIZE,
+              width: BUBBLE_SIZE,
+            }}
+          >
+            {/* FIXME */}
+            {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
+            <input
+              className="AvatarTextEditor__input"
+              onChange={handleChange}
+              onPaste={handlePaste}
+              ref={inputRef}
+              style={{ fontSize }}
+              type="text"
+              dir="auto"
+              value={inputText}
+            />
+          </BetterAvatarBubble>
+        </div>
+        <hr className="AvatarEditor__divider" />
+        <AvatarColorPicker
           i18n={i18n}
-          onSelect={focusInput}
-          style={{
-            height: BUBBLE_SIZE,
-            width: BUBBLE_SIZE,
+          onColorSelected={color => {
+            setSelectedColor(color);
+            focusInput();
           }}
-        >
-          <input
-            className="AvatarTextEditor__input"
-            onChange={handleChange}
-            onPaste={handlePaste}
-            ref={inputRef}
-            style={{ fontSize }}
-            type="text"
-            dir="auto"
-            value={inputText}
-          />
-        </BetterAvatarBubble>
-      </div>
-      <hr className="AvatarEditor__divider" />
-      <AvatarColorPicker
-        i18n={i18n}
-        onColorSelected={color => {
-          setSelectedColor(color);
-          focusInput();
-        }}
-        selectedColor={selectedColor}
-      />
-      <AvatarModalButtons
-        hasChanges={hasChanges}
-        i18n={i18n}
-        onCancel={onCancel}
-        onSave={handleDone}
-      />
+          selectedColor={selectedColor}
+        />
+      </AxoDialog.Body>
+      <AxoDialog.Footer>
+        <AvatarModalButtons
+          hasChanges={hasChanges}
+          i18n={i18n}
+          onCancel={onCancel}
+          onSave={handleDone}
+        />
+      </AxoDialog.Footer>
       <div className="AvatarTextEditor__measure" ref={measureElRef}>
         {inputText}
       </div>

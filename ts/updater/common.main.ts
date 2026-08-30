@@ -231,6 +231,9 @@ export abstract class Updater {
     isSilent: boolean
   ): Promise<() => Promise<void>>;
 
+  // For Mac App Store
+  protected abstract handleUpdateFromThirdParty(version: string): boolean;
+
   //
   // Protected methods
   //
@@ -606,6 +609,13 @@ export abstract class Updater {
           'no new update available'
       );
 
+      return;
+    }
+
+    if (
+      checkType === CheckType.Normal &&
+      this.handleUpdateFromThirdParty(version)
+    ) {
       return;
     }
 
@@ -993,10 +1003,18 @@ function getUpdatesFileName(): string {
   const prefix = getChannel();
 
   if (process.platform === 'darwin') {
+    if (process.mas) {
+      return `${prefix}-mas.yml`;
+    }
+
     return `${prefix}-mac.yml`;
   }
 
   if (process.platform === 'linux') {
+    if (process.arch === 'arm64') {
+      return `${prefix}-linux-arm64.yml`;
+    }
+
     return `${prefix}-linux.yml`;
   }
 
@@ -1067,7 +1085,7 @@ export function getUpdateFileName(
     }
   }
 
-  path = path ?? info.path;
+  path ??= info.path;
 
   if (!isUpdateFileNameValid(path)) {
     throw new Error(

@@ -1,30 +1,30 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
 import { Direction } from 'radix-ui';
 import Fuse from 'fuse.js';
 import { AxoSymbol } from './AxoSymbol.dom.tsx';
 import { tw } from './tw.dom.tsx';
 import {
-  _getAllAxoSymbolInlineGlyphNames,
-  getAxoSymbolInlineGlyph,
+  _getAllAxoSymbolNames,
+  _getAxoSymbolInlineGlyph,
 } from './_internal/AxoSymbolDefs.generated.std.ts';
 
 export default {
   title: 'Axo/AxoSymbol',
 } satisfies Meta;
 
-const allAxoSymbolNames = _getAllAxoSymbolInlineGlyphNames()
+const allAxoSymbolNames = _getAllAxoSymbolNames()
   .slice()
   .sort((a, b) => a.localeCompare(b));
 const fuse = new Fuse(allAxoSymbolNames);
 
 const SymbolInfo = memo(function SymbolInfo(props: {
-  symbolName: AxoSymbol.InlineGlyphName;
-}): React.JSX.Element {
-  const ltr = getAxoSymbolInlineGlyph(props.symbolName, 'ltr');
-  const rtl = getAxoSymbolInlineGlyph(props.symbolName, 'rtl');
+  symbolName: AxoSymbol.Name;
+}): JSX.Element {
+  const ltr = _getAxoSymbolInlineGlyph(props.symbolName, 'ltr');
+  const rtl = _getAxoSymbolInlineGlyph(props.symbolName, 'rtl');
 
   type Variant = { title: string; dir: 'ltr' | 'rtl'; text: string };
 
@@ -42,14 +42,14 @@ const SymbolInfo = memo(function SymbolInfo(props: {
   return (
     <figure
       className={tw(
-        'flex flex-col items-center gap-2 border border-border-primary bg-background-secondary p-4'
+        'flex flex-col items-center gap-2 border border-primary bg-surface-secondary p-4'
       )}
     >
       <div className={tw('flex w-full flex-1 flex-row justify-between')}>
         {variants.map(variant => {
           return (
             <div className={tw('flex flex-1 flex-col items-center gap-2')}>
-              <span className={tw('type-caption text-label-secondary')}>
+              <span className={tw('type-caption text-secondary')}>
                 {variant.title}
               </span>
               <span className={tw('text-[20px]')}>
@@ -60,7 +60,7 @@ const SymbolInfo = memo(function SymbolInfo(props: {
                   />
                 </Direction.Provider>
               </span>
-              <code className={tw('type-caption text-label-secondary')}>
+              <code className={tw('type-caption text-secondary')}>
                 {Array.from(variant.text, char => {
                   const codePoint = char.codePointAt(0) ?? -1;
                   return `U+${codePoint.toString(16).toUpperCase()}`;
@@ -72,7 +72,7 @@ const SymbolInfo = memo(function SymbolInfo(props: {
       </div>
       <figcaption
         className={tw(
-          'w-full truncate border-t border-dotted border-border-primary pt-4 text-center type-body-medium text-color-label-primary'
+          'w-full truncate border-t border-dotted border-primary pt-4 text-center type-body-medium text-accent'
         )}
       >
         <code>{props.symbolName}</code>
@@ -81,7 +81,7 @@ const SymbolInfo = memo(function SymbolInfo(props: {
   );
 });
 
-export function All(): React.JSX.Element {
+export function All(): JSX.Element {
   const [input, setInput] = useState('');
 
   const results = useMemo(() => {
@@ -97,9 +97,11 @@ export function All(): React.JSX.Element {
     <>
       <div
         className={tw(
-          'sticky top-4 mb-3 bg-elevated-background-primary p-4 shadow-elevation-2'
+          'sticky top-4 mb-3 bg-material-primary p-4 shadow-elevation-2'
         )}
       >
+        {/* FIXME */}
+        {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
         <input
           type="search"
           value={input}
@@ -108,7 +110,7 @@ export function All(): React.JSX.Element {
             setInput(event.currentTarget.value);
           }}
           className={tw(
-            'w-full rounded-sm bg-elevated-background-secondary p-3 type-body-medium'
+            'w-full rounded-sm bg-material-secondary p-3 type-body-medium'
           )}
         />
       </div>

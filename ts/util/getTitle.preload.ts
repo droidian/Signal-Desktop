@@ -9,6 +9,7 @@ import { combineNames } from './combineNames.std.ts';
 import { getRegionCodeForNumber } from './libphonenumberUtil.std.ts';
 import { instance, PhoneNumberFormat } from './libphonenumberInstance.std.ts';
 import { isDirectConversation } from './whatTypeOfConversation.dom.ts';
+import { isConversationEverUnregistered } from './isConversationUnregistered.dom.ts';
 import { getE164 } from './getE164.std.ts';
 import { itemStorage } from '../textsecure/Storage.preload.ts';
 
@@ -29,6 +30,9 @@ export function getTitle(
   }
 
   if (isDirectConversation(attributes)) {
+    if (isConversationEverUnregistered(attributes)) {
+      return i18n('icu:deletedAccount');
+    }
     return i18n('icu:unknownContact');
   }
   return i18n('icu:unknownGroup');

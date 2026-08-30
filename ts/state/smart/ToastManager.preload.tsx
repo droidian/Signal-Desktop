@@ -1,7 +1,7 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import { memo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
 import { getHeapSnapshot } from 'node:v8';
 
@@ -17,7 +17,6 @@ import {
 } from '../selectors/globalModals.std.ts';
 import { hasSelectedStoryData } from '../selectors/stories.preload.ts';
 import { shouldShowLightbox } from '../selectors/lightbox.std.ts';
-import { isInFullScreenCall as getIsInFullScreenCall } from '../selectors/calling.std.ts';
 import {
   getSelectedConversationId,
   getSelectedNavTab,
@@ -40,6 +39,7 @@ import { useMegaphonesActions } from '../ducks/megaphones.preload.ts';
 import { shouldNeverBeCalled } from '../../util/shouldNeverBeCalled.std.ts';
 import { saveAttachmentToDisk } from '../../windows/main/attachments.preload.ts';
 import * as Bytes from '../../Bytes.std.ts';
+import { getIsInFullScreenCall } from '../selectors/isInFullScreenCall.std.ts';
 
 export type SmartPropsType = Readonly<{
   disableMegaphone?: boolean;
@@ -68,7 +68,7 @@ async function saveHeapSnapshot() {
 
 export function renderToastManagerWithoutMegaphone(props: {
   containerWidthBreakpoint: WidthBreakpoint;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <SmartToastManager
       disableMegaphone

@@ -1,8 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 // @ts-check
-import fse from 'fs-extra';
+import { readFile , writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import fse from 'fs-extra';
+import pMap from 'p-map';
+import { buildBinary as buildBPlist } from 'plist';
 
 /** @import { AfterPackContext } from 'electron-builder' */
 
@@ -13,9 +16,11 @@ import path from 'node:path';
 export async function afterPack({ appOutDir, packager, electronPlatformName }) {
   /** @type {string} */
   let defaultLocale;
-  let ourLocales = await fse.readdir(
-    path.join(import.meta.dirname, '..', '_locales')
-  );
+  const ourLocalesPath = path.join(import.meta.dirname, '..', '_locales');
+  const ourLocales = await fse.readdir(ourLocalesPath);
+
+  /** @type {Map<string, string>} */
+  let localeMap;
 
   /** @type {string} */
   let localesPath;
@@ -25,7 +30,9 @@ export async function afterPack({ appOutDir, packager, electronPlatformName }) {
     // en.lproj/*
     // zh_CN.lproj/*
     defaultLocale = 'en.lproj';
-    ourLocales = ourLocales.map(locale => `${locale.replace(/-/g, '_')}.lproj`);
+    localeMap = new Map(
+      ourLocales.map(locale => ([locale, `${locale.replace(/-/g, '_')}.lproj`])),
+    );
 
     localesPath = path.join(
       appOutDir,
@@ -41,13 +48,13 @@ export async function afterPack({ appOutDir, packager, electronPlatformName }) {
     // en-US.pak
     // zh-CN.pak
     defaultLocale = 'en-US.pak';
-    ourLocales = ourLocales.map(locale => {
+    localeMap = new Map(ourLocales.map(locale => {
       if (locale === 'en') {
-        return defaultLocale;
+        return [locale, defaultLocale];
       }
 
-      return `${locale.replace(/_/g, '-')}.pak`;
-    });
+      return [locale, `${locale.replace(/_/g, '-')}.pak`];
+    }));
 
     localesPath = path.join(appOutDir, 'locales');
   } else {
@@ -59,21 +66,34 @@ export async function afterPack({ appOutDir, packager, electronPlatformName }) {
 
   const electronLocales = new Set(await fse.readdir(localesPath));
 
-  /** @type {Promise<void>[]} */
-  const promises = [];
-  for (const locale of ourLocales) {
-    if (electronLocales.has(locale)) {
-      continue;
+  await pMap(Array.from(localeMap.entries()), async ([srcLocale, dstLocale]) => {
+    if (!electronLocales.has(dstLocale)) {
+      console.log(`Copying ${defaultLocale} to ${dstLocale}`);
+      await fse.copy(
+        path.join(localesPath, defaultLocale),
+        path.join(localesPath, dstLocale)
+      );
     }
 
-    console.log(`Copying ${defaultLocale} to ${locale}`);
-    promises.push(
-      fse.copy(
-        path.join(localesPath, defaultLocale),
-        path.join(localesPath, locale)
-      )
-    );
-  }
+    // Copy MAS strings into each .lproj folder
+    // See https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/AboutInformationPropertyListFiles.html#//apple_ref/doc/uid/TP40009254-102276
+    if (electronPlatformName === 'mas') {
+      const jsonFile = path.join(ourLocalesPath, srcLocale, 'mas-info-plist.json');
 
-  await Promise.all(promises);
+      /** @type {Record<string, { messageformat: string }>} */
+      const json = JSON.parse(await readFile(jsonFile, 'utf8'));
+
+      /** @type {Record<string, string>} */
+      const plist = Object.create(null);
+      for (const [key, value] of Object.entries(json)) {
+        if (key === 'smartling') {
+          continue;
+        }
+        const { messageformat } = value;
+        plist[key] = messageformat;
+      }
+
+      await writeFile(path.join(localesPath, dstLocale, 'InfoPlist.strings'), buildBPlist(plist));
+    }
+  }, { concurrency: 16 });
 }

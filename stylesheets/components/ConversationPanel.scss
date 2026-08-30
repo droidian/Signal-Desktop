@@ -15,13 +15,7 @@
   width: 100%;
   z-index: variables.$z-index-above-base;
 
-  @include mixins.light-theme() {
-    background-color: variables.$color-white;
-  }
-
-  @include mixins.dark-theme() {
-    background-color: variables.$color-gray-95;
-  }
+  background: var(--axo-color-surface-primary);
 
   &__body {
     // Used for centering EmptyState in All Media view
@@ -47,14 +41,8 @@
     width: 100%;
     z-index: variables.$z-index-base;
 
-    @include mixins.light-theme {
-      color: variables.$color-gray-90;
-      background-color: variables.$color-white;
-    }
-    @include mixins.dark-theme {
-      color: variables.$color-gray-02;
-      background-color: variables.$color-gray-95;
-    }
+    color: var(--axo-color-label-primary);
+    background: var(--axo-color-surface-primary);
 
     &__info {
       display: flex;
@@ -69,7 +57,6 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        user-select: none;
 
         &__in-contacts-icon {
           margin-inline-start: 4px;

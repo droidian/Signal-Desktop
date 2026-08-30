@@ -109,6 +109,8 @@ import {
   getSelectedConversationId,
 } from '../selectors/nav.std.ts';
 import { isPoll } from '../../messages/helpers.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
+import { isFeaturedEnabledNoRedux } from '../../util/isFeatureEnabled.dom.ts';
 
 const { debounce, isEqual } = lodash;
 
@@ -602,7 +604,9 @@ function sendEditedMessage(
   void,
   RootStateType,
   unknown,
-  UpdateComposerDisabledActionType | ShowToastActionType
+  | UpdateComposerDisabledActionType
+  | ShowToastActionType
+  | IncrementSendActionType
 > {
   return async dispatch => {
     const conversation = window.ConversationController.get(conversationId);
@@ -628,6 +632,7 @@ function sendEditedMessage(
           quoteSentAt,
           targetMessageId,
         });
+        dispatch(incrementSendCounter(conversationId));
       } catch (error) {
         log.error('sendEditedMessage', Errors.toLogFormat(error));
         if (error.toastType) {
@@ -761,9 +766,12 @@ function sendStickerMessage(
   void,
   RootStateType,
   unknown,
-  NoopActionType | ShowToastActionType
+  | NoopActionType
+  | ShowToastActionType
+  | IncrementSendActionType
+  | SetQuotedMessageActionType
 > {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
       throw new Error('sendStickerMessage: No conversation found');
@@ -791,8 +799,49 @@ function sendStickerMessage(
         return;
       }
 
+      const isStickerReplySendEnabled = isFeaturedEnabledNoRedux({
+        betaKey: 'desktop.stickerReply.send.beta',
+        prodKey: 'desktop.stickerReply.send.prod',
+      });
+
+      let sendStickerMessageOptions;
+      if (isStickerReplySendEnabled) {
+        const state = getState();
+        const conversationComposerState = getComposerStateForConversation(
+          state.composer,
+          conversationId
+        );
+        const quote = conversationComposerState.quotedMessage?.quote;
+
+        const draft = conversation.get('draft');
+        const isDraftPresent =
+          (draft != null && draft.length > 0) ||
+          conversationComposerState.attachments.length > 0;
+
+        sendStickerMessageOptions = {
+          quote,
+          extraReduxActions: isDraftPresent
+            ? undefined
+            : () => {
+                setQuoteByMessageId(conversationId, undefined)(
+                  dispatch,
+                  getState,
+                  undefined
+                );
+              },
+        };
+      } else {
+        sendStickerMessageOptions = undefined;
+      }
+
       const { packId, stickerId } = options;
-      void conversation.sendStickerMessage(packId, stickerId);
+      drop(
+        conversation.sendStickerMessage(
+          packId,
+          stickerId,
+          sendStickerMessageOptions
+        )
+      );
     } catch (error) {
       log.error('clickSend error:', Errors.toLogFormat(error));
     }
@@ -1182,8 +1231,12 @@ function processAttachments({
 
     const { audioRecorder } = getState();
 
-    if (hasLinkPreviewLoaded() || getIsRecording(audioRecorder)) {
+    if (getIsRecording(audioRecorder)) {
       return;
+    }
+
+    if (hasLinkPreviewLoaded()) {
+      removeLinkPreview(conversationId);
     }
 
     let toastToShow: AnyToast | undefined;
@@ -1431,7 +1484,7 @@ export function replaceAttachments(
 
 function reactToMessage(
   messageId: string,
-  reaction: { emoji: string; remove: boolean }
+  reaction: { emoji: Emoji.Variant; remove: boolean }
 ): ThunkAction<
   void,
   RootStateType,

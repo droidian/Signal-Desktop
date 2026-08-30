@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode, ChangeEvent } from 'react';
-import React from 'react';
 
 import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
 import type { Row } from '../ConversationList.dom.tsx';
@@ -35,6 +34,7 @@ enum TopButtons {
   Visible = 'Visible',
 }
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneComposeHelper extends LeftPaneHelper<LeftPaneComposePropsType> {
   readonly #composeContacts: ReadonlyArray<ContactListItemConversationType>;
   readonly #composeGroups: ReadonlyArray<GroupListItemConversationType>;

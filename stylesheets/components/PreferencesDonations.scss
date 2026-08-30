@@ -101,9 +101,10 @@
       );
     }
 
-    @include mixins.keyboard-mode {
-      &:focus {
-        outline: 2px solid variables.$color-ultramarine;
+    &:focus {
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
       }
     }
 
@@ -118,7 +119,7 @@
         height: 20px;
         @include mixins.color-svg(
           '../images/icons/v3/receipt/receipt.svg',
-          light-dark(variables.$color-gray-75, variables.$color-gray-15)
+          var(--axo-color-label-secondary)
         );
       }
 
@@ -129,7 +130,7 @@
         height: 20px;
         @include mixins.color-svg(
           '../images/icons/v3/help/help-light.svg',
-          light-dark(variables.$color-gray-75, variables.$color-gray-15)
+          var(--axo-color-label-secondary)
         );
       }
     }
@@ -251,20 +252,8 @@
 
     // Currently only one time donations are possible
     &__icon {
-      @include mixins.light-theme {
-        background: url('../images/rocket-36-light.svg');
-      }
-      @include mixins.dark-theme {
-        background: url('../images/rocket-36-dark.svg');
-      }
-
-      & {
-        width: 36px;
-        height: 36px;
-        background-size: 100%;
-        border-radius: 18px;
-        flex-shrink: 0;
-      }
+      display: flex;
+      align-items: center;
     }
 
     &__details {
@@ -448,9 +437,10 @@
     background: light-dark(variables.$color-gray-04, variables.$color-gray-80);
   }
 
-  @include mixins.keyboard-mode {
-    &:focus {
-      outline: 2px solid variables.$color-ultramarine;
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -472,12 +462,6 @@
 
 .PreferencesDonations__badge-icon {
   display: flex;
-  width: 40px;
-  height: 40px;
-  background-size: 100%;
-
-  // Currently only one time donations are possible
-  background-image: url('../images/rocket-160.svg');
 }
 
 .PreferencesDonations__badge-info {
@@ -517,6 +501,7 @@
   display: flex;
   width: 280px;
   height: 36px;
+  padding-block: 5px;
   background: variables.$color-paypal-yellow;
   border-radius: 6px;
   justify-content: center;

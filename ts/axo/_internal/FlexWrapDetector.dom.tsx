@@ -1,12 +1,18 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { tw } from '../tw.dom.tsx';
 
 export type FlexWrapDetectorProps = Readonly<{
   children: ReactNode;
 }>;
 
+/**
+ * Detects when flex items wrap and exposes `container-scrollable` /
+ * `container-not-scrollable` container-query states to descendants.
+ * Used internally by `AxoAlertDialog.Footer` to toggle between stacked
+ * (full-width) and inline (equal-basis) button layouts.
+ */
 export const FlexWrapDetector = memo(function FlexWrapDetector(
   props: FlexWrapDetectorProps
 ) {
@@ -22,7 +28,7 @@ export const FlexWrapDetector = memo(function FlexWrapDetector(
       {/* 3. When wrapped, this will grow to fill the container */}
       <div className={tw('relative grow')}>
         {/* 4. And then this will make the scroll container overflow */}
-        <div className={tw('absolute -end-px size-px')} />
+        <div className={tw('absolute -inset-e-px size-px')} />
       </div>
       {/* 5. When not wrapped, this item should take priority when growing the items */}
       <div className={tw('grow-9999')}>{props.children}</div>

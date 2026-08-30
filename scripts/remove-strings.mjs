@@ -38,7 +38,7 @@ await Promise.all(
       const deletedAtStr = match[1];
       assert(deletedAtStr != null, 'Missing deletedAtStr');
       const deletedAt = new Date(deletedAtStr).getTime();
-      if (deletedAt <= removeBefore) {
+      if (deletedAt >= removeBefore) {
         return;
       }
 

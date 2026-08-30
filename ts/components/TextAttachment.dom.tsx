@@ -1,7 +1,7 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState, type JSX } from 'react';
 import classNames from 'classnames';
 
 import type {
@@ -121,7 +121,7 @@ export const TextAttachment = forwardRef<HTMLTextAreaElement, PropsType>(
       textAttachment,
     },
     forwardedTextEditorRef
-  ): React.JSX.Element | null {
+  ): JSX.Element | null {
     const linkPreview = useRef<HTMLDivElement | null>(null);
     const [linkPreviewOffsetTop, setLinkPreviewOffsetTop] = useState<
       number | undefined
@@ -243,6 +243,8 @@ export const TextAttachment = forwardRef<HTMLTextAreaElement, PropsType>(
               }}
             >
               {onChange ? (
+                // FIXME
+                // oxlint-disable-next-line jsx-a11y/control-has-associated-label
                 <textarea
                   dir="auto"
                   className="TextAttachment__text__container TextAttachment__text__textarea"

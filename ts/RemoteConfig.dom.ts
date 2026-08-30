@@ -36,6 +36,8 @@ const SemverKeys = [
   'desktop.adminDelete.send.prod',
   'desktop.binaryServiceId.beta',
   'desktop.binaryServiceId.prod',
+  'desktop.disappearingCalls.beta',
+  'desktop.disappearingCalls.prod',
   'desktop.groupMemberLabels.edit.beta',
   'desktop.groupMemberLabels.edit.prod',
   'desktop.groupTerminate.send.beta',
@@ -44,19 +46,22 @@ const SemverKeys = [
   'desktop.keyTransparency.prod',
   'desktop.localBackups.beta',
   'desktop.localBackups.prod',
-  'desktop.plaintextExport.beta',
-  'desktop.plaintextExport.prod',
   'desktop.pollSend1to1.beta',
   'desktop.pollSend1to1.prod',
   'desktop.remoteMute.send.beta',
   'desktop.remoteMute.send.prod',
   'desktop.retireAccessKeyGroupSend.beta',
   'desktop.retireAccessKeyGroupSend.prod',
+  'desktop.sendMessageViaLibsignal.beta',
+  'desktop.sendMessageViaLibsignal.prod',
+  'desktop.stickerReply.send.beta',
+  'desktop.stickerReply.send.prod',
 ] as const;
 
 export type SemverKeyType = ArrayValues<typeof SemverKeys>;
 
 const ScalarKeys = [
+  'client.maxAllowedClockSkewSeconds',
   'desktop.callQualitySurveyPPM',
   'desktop.calling.dredDuration.alpha',
   'desktop.calling.dredDuration.beta',
@@ -72,6 +77,7 @@ const ScalarKeys = [
   'desktop.senderKey.retry',
   'desktop.senderKeyMaxAge',
   'global.adminDeleteMaxAgeInSeconds',
+  'global.attachments.maxAutoDownloadSizeBytes',
   'global.attachments.maxBytes',
   'global.attachments.maxReceiveBytes',
   'global.backups.mediaTierFallbackCdnNumber',
@@ -82,7 +88,8 @@ const ScalarKeys = [
   'global.nicknames.max',
   'global.nicknames.min',
   'global.normalDeleteMaxAgeInSeconds',
-  'global.pinned_message_limit',
+  'global.pinnedChatLimit',
+  'global.pinnedMessageLimit',
   'global.textAttachmentLimitBytes',
   'global.videoAttachments.transcodeTargetBytes',
 ] as const;
@@ -101,12 +108,14 @@ const KnownDesktopLibsignalNetKeys = [
   'desktop.libsignalNet.grpc.AccountsAnonymousLookupUsernameLink.2.beta',
   'desktop.libsignalNet.grpc.AttachmentsGetUploadForm',
   'desktop.libsignalNet.grpc.AttachmentsGetUploadForm.beta',
+  'desktop.libsignalNet.grpc.BackupsAnonymousGetUploadForm',
+  'desktop.libsignalNet.grpc.BackupsAnonymousGetUploadForm.beta',
   'desktop.libsignalNet.grpc.MessagesAnonymousSendMultiRecipientMessage.2',
   'desktop.libsignalNet.grpc.MessagesAnonymousSendMultiRecipientMessage.2.beta',
-  'desktop.libsignalNet.useH2ForAuthChat',
-  'desktop.libsignalNet.useH2ForAuthChat.beta',
-  'desktop.libsignalNet.useH2ForUnauthChat',
-  'desktop.libsignalNet.useH2ForUnauthChat.beta',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendSingleRecipientMessage',
+  'desktop.libsignalNet.grpc.MessagesAnonymousSendSingleRecipientMessage.beta',
+  'desktop.libsignalNet.grpc.MessagesSendMessage',
+  'desktop.libsignalNet.grpc.MessagesSendMessage.beta',
 ] as const;
 
 type KnownLibsignalKeysType = StripPrefix<
@@ -212,6 +221,11 @@ export const _refreshRemoteConfig = async ({
   }
 
   const changedKeys = new Set<string>();
+  const changeDescriptions: Array<{
+    name: string;
+    from: string;
+    to: string;
+  }> = [];
 
   const oldConfig = config;
   let semverError = false;
@@ -258,6 +272,11 @@ export const _refreshRemoteConfig = async ({
 
       if (hasChanged) {
         changedKeys.add(name);
+        changeDescriptions.push({
+          name,
+          from: previousValue ?? '[undefined]',
+          to: configValue.value ?? '[undefined]',
+        });
       }
 
       // Return new configuration object
@@ -273,6 +292,16 @@ export const _refreshRemoteConfig = async ({
     log.info(
       `Remote Config: Flags ${[...changedKeys].join(', ')} have changed`
     );
+
+    if (
+      isEnabled('desktop.loggingErrorToasts') &&
+      Object.keys(oldConfig ?? {}).length > 0
+    ) {
+      window.reduxActions.toast.showToast({
+        toastType: ToastType.RemoteConfigChanged,
+        changes: changeDescriptions,
+      });
+    }
 
     // If enablement changes at all, notify listeners
     for (const { keys, callback } of listeners) {

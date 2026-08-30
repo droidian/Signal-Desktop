@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
@@ -14,6 +14,7 @@ const { i18n } = window.SignalContext;
 const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   avatarData: overrideProps.avatarData,
   i18n,
+  isDisplayedAsPanel: false,
   onCancel: action('onCancel'),
   onDone: action('onDone'),
 });
@@ -22,11 +23,11 @@ export default {
   title: 'Components/AvatarTextEditor',
 } satisfies Meta<PropsType>;
 
-export function Empty(): React.JSX.Element {
+export function Empty(): JSX.Element {
   return <AvatarTextEditor {...createProps()} />;
 }
 
-export function WithData(): React.JSX.Element {
+export function WithData(): JSX.Element {
   return (
     <AvatarTextEditor
       {...createProps({
@@ -40,7 +41,7 @@ export function WithData(): React.JSX.Element {
   );
 }
 
-export function WithWideCharacters(): React.JSX.Element {
+export function WithWideCharacters(): JSX.Element {
   return (
     <AvatarTextEditor
       {...createProps({

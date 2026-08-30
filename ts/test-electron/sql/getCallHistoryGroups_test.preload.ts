@@ -43,7 +43,10 @@ function toGroup(calls: Array<CallHistoryDetails>): CallHistoryGroup {
     timestamp: firstCall.timestamp,
     status: firstCall.status,
     children: calls.map(call => {
-      return { callId: call.callId, timestamp: call.timestamp };
+      return {
+        callId: call.callId,
+        timestamp: call.timestamp,
+      };
     }),
   };
 }

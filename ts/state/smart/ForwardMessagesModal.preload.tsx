@@ -1,7 +1,7 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 import { useSelector } from 'react-redux';
 import type { ForwardMessagesPropsType } from '../ducks/globalModals.preload.ts';
 import { createLogger } from '../../logging/log.std.ts';
@@ -11,7 +11,6 @@ import * as Errors from '../../types/errors.std.ts';
 import { getAllComposableConversations } from '../selectors/conversations.dom.ts';
 import { getIntl, getTheme, getRegionCode } from '../selectors/user.std.ts';
 import { getLinkPreview } from '../selectors/linkPreviews.std.ts';
-import { isInFullScreenCall as getIsInFullScreenCall } from '../selectors/calling.std.ts';
 import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
 import { maybeForwardMessages } from '../../util/maybeForwardMessages.preload.ts';
 import {
@@ -31,10 +30,11 @@ import type {
 } from '../../types/ForwardDraft.std.ts';
 import { getForwardMessagesProps } from '../selectors/globalModals.std.ts';
 import { applyRangesToText } from '../../types/BodyRange.std.ts';
+import { getIsInFullScreenCall } from '../selectors/isInFullScreenCall.std.ts';
 
 const log = createLogger('ForwardMessagesModal');
 
-export function SmartForwardMessagesModal(): React.JSX.Element | null {
+export function SmartForwardMessagesModal(): JSX.Element | null {
   const forwardMessagesProps = useSelector(getForwardMessagesProps);
 
   if (forwardMessagesProps == null) {
@@ -60,7 +60,7 @@ function SmartForwardMessagesModalInner({
   forwardMessagesProps,
 }: {
   forwardMessagesProps: ForwardMessagesPropsType;
-}): React.JSX.Element | null {
+}): JSX.Element | null {
   const { type } = forwardMessagesProps;
 
   const candidateConversations = useSelector(getAllComposableConversations);

@@ -99,26 +99,6 @@
     }
   }
 
-  &__send-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: none;
-    border: none;
-    width: 32px;
-    height: 32px;
-    &::after {
-      display: block;
-      content: '';
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      @include mixins.color-svg(
-        '../images/icons/v3/send/send-fill.svg',
-        variables.$color-ultramarine
-      );
-    }
-  }
   &__input {
     flex-grow: 1;
     position: relative;
@@ -153,13 +133,7 @@
       pointer-events: all;
     }
 
-    @include mixins.light-theme() {
-      background-color: variables.$color-white;
-    }
-
-    @include mixins.dark-theme() {
-      background-color: variables.$color-gray-95;
-    }
+    background-color: var(--axo-color-surface-primary);
 
     &__button {
       width: 48px;

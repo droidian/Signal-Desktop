@@ -26,9 +26,15 @@ import {
   getUserACI,
   getUserPNI,
 } from './user.std.ts';
-import { getDefaultConversationColor } from './items.dom.ts';
+import {
+  getDefaultConversationColor,
+  getHasMediaBackups,
+} from './items.dom.ts';
 import { getActiveCall, getCallSelector } from './calling.std.ts';
-import { getPropsForBubble } from './message.preload.ts';
+import {
+  getPropsForBubble,
+  getStoryReplyAttachmentSelector,
+} from './message.preload.ts';
 import { getCallHistorySelector } from './callHistory.std.ts';
 import { useProxySelector } from '../../hooks/useProxySelector.std.ts';
 import type { StateSelector } from '../types.std.ts';
@@ -42,6 +48,10 @@ import type { ConversationType } from '../ducks/conversations.preload.ts';
 import { missingCaseError } from '../../util/missingCaseError.std.ts';
 import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
 import type { ContactNameColorType } from '../../types/Colors.std.ts';
+
+// A no-op lookup for non-story-reply items. Only story replies should take a
+// dependency on the stories slice
+const noStoryReplyAttachment = () => undefined;
 
 const getTimelineItem = (
   state: StateType,
@@ -73,6 +83,10 @@ const getTimelineItem = (
   const pinnedMessagesMessageIds = getPinnedMessagesMessageIds(state);
   const selectedMessageIds = getSelectedMessageIds(state);
   const defaultConversationColor = getDefaultConversationColor(state);
+  const hasMediaBackups = getHasMediaBackups(state);
+  const getStoryReplyAttachment = message.storyReplyContext
+    ? getStoryReplyAttachmentSelector(state)
+    : noStoryReplyAttachment;
 
   return getPropsForBubble(message, {
     conversationSelector,
@@ -91,6 +105,8 @@ const getTimelineItem = (
     pinnedMessagesMessageIds,
     selectedMessageIds,
     defaultConversationColor,
+    hasMediaBackups,
+    getStoryReplyAttachment,
   });
 };
 

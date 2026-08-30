@@ -145,6 +145,7 @@ const NODE_PACKAGES = new Set([
   'svgo',
   'synckit',
   'tailwindcss',
+  'tsdown',
   'tsx',
   'typescript',
   'wait-on',
@@ -184,7 +185,6 @@ const DOM_PACKAGES = new Set([
   '@storybook/addon-toolbars',
   '@storybook/addon-viewport',
   '@storybook/addon-webpack5-compiler-swc',
-  '@storybook/csf',
   '@storybook/react',
   '@storybook/react-webpack5',
   '@storybook/test',
@@ -207,8 +207,11 @@ const STD_PACKAGES = new Set([
   '@indutny/sneequals',
   '@internationalized/date',
   '@react-types/shared',
+  '@signalapp/types',
   '@signalapp/minimask',
+  '@signalapp/parchment-cjs',
   '@signalapp/quill-cjs',
+  '@signalapp/lame',
   '@typescript-eslint/eslint-plugin',
   '@typescript-eslint/parser',
   'axe-core',
@@ -230,20 +233,19 @@ const STD_PACKAGES = new Set([
   'danger',
   'debug',
   'direction',
-  'emoji-datasource',
-  'emoji-regex',
+  'emoji-regex-xs',
   'eslint',
   'eslint-plugin-better-tailwindcss',
   'filesize',
   'firstline',
   'form-data',
+  'micromatch',
   'motion',
   'motion/react',
   'fuse.js',
   'google-libphonenumber',
   'heic-convert',
   'humanize-duration',
-  'intl-tel-input',
   'js-yaml',
   'linkify-it',
   'lodash',
@@ -273,6 +275,7 @@ const STD_PACKAGES = new Set([
   'sinon',
   'tinykeys',
   'type-fest',
+  'unicode-number',
   'url',
   'uuid',
   'zod',
@@ -516,7 +519,7 @@ export const enforceFileSuffix = ESLintUtils.RuleCreator.withoutDocs({
 
     return {
       Program: node => {
-        if (filename.endsWith('.d.ts')) {
+        if (/\.d\.m?ts$/.test(filename)) {
           // Skip types
           return;
         }
@@ -526,7 +529,7 @@ export const enforceFileSuffix = ESLintUtils.RuleCreator.withoutDocs({
         );
         if (match == null) {
           context.report({
-            node: node,
+            node,
             messageId: 'missingFileSuffixMustBeOneOf',
           });
           return;

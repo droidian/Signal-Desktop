@@ -66,6 +66,7 @@ import {
 } from '../types/ServiceId.std.ts';
 import { normalizeAci } from '../util/normalizeAci.std.ts';
 import { isAciString } from '../util/isAciString.std.ts';
+import { isSignalServiceId } from '../types/SignalConversation.std.ts';
 import { calling } from '../services/calling.preload.ts';
 import { retryPlaceholders } from '../services/retryPlaceholders.std.ts';
 import * as Errors from '../types/errors.std.ts';
@@ -87,7 +88,7 @@ import type { EventHandler } from './EventTarget.std.ts';
 import EventTarget from './EventTarget.std.ts';
 import type { IncomingWebSocketRequest } from './WebsocketResources.preload.ts';
 import { ServerRequestType } from './WebsocketResources.preload.ts';
-import { type Storage } from './Storage.preload.ts';
+import { itemStorage, type Storage } from './Storage.preload.ts';
 import { accountManager } from './AccountManager.preload.ts';
 import { WarnOnlyError } from './Errors.std.ts';
 import * as Bytes from '../Bytes.std.ts';
@@ -139,6 +140,7 @@ import {
   StoryRecipientUpdateEvent,
   SuccessfulDecryptEvent,
   TypingEvent,
+  UsernameChangeSyncEvent,
   ViewEvent,
   ViewOnceOpenSyncEvent,
   ViewSyncEvent,
@@ -174,6 +176,13 @@ import {
 } from '../types/MessageRequestResponseEvent.std.ts';
 
 import { toNumber } from '../util/toNumber.std.ts';
+import {
+  TimestampMs,
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
+import type { ConversationAttributesTypeType } from '../model-types.d.ts';
 
 const { isBoolean, isNumber, isString, noop } = lodash;
 
@@ -403,7 +412,9 @@ export default class MessageReceiver
         const plaintext = request.body;
 
         const decoded = Proto.Envelope.decode(plaintext);
-        const serverTimestamp = toNumber(decoded.serverTimestamp) ?? 0;
+        const serverTimestamp = ServerTimestampMs.fromBigInt(
+          decoded.serverTimestamp ?? 0n
+        );
 
         const ourAci = this.#storage.user.getCheckedAci();
 
@@ -414,7 +425,7 @@ export default class MessageReceiver
           //   from logs
           id: getGuid().replace(/-/g, '.'),
           receivedAtCounter: incrementMessageCounter(),
-          receivedAtDate: Date.now(),
+          receivedAtDate: ReceivedTimestampMs.now(),
           // Calculate the message age (time on server).
           messageAgeSec: this.#calculateMessageAge(
             request.timestamp,
@@ -443,7 +454,7 @@ export default class MessageReceiver
             decoded.updatedPni,
             'MessageReceiver.handleRequest.updatedPni'
           ),
-          timestamp: toNumber(decoded.clientTimestamp) ?? 0,
+          timestamp: SentTimestampMs.fromBigInt(decoded.clientTimestamp ?? 0n),
           content: content ?? new Uint8Array(0),
           serverGuid:
             (Bytes.isNotEmpty(decoded.serverGuidBinary)
@@ -694,6 +705,11 @@ export default class MessageReceiver
   public override addEventListener(
     name: 'deviceNameChangeSync',
     handler: (ev: DeviceNameChangeSyncEvent) => void
+  ): void;
+
+  public override addEventListener(
+    name: 'usernameChangeSync',
+    handler: (ev: UsernameChangeSyncEvent) => void
   ): void;
 
   public override addEventListener(name: string, handler: EventHandler): void {
@@ -1801,6 +1817,7 @@ export default class MessageReceiver
         return signalDecrypt(
           message,
           sourceAddress,
+          localAddress,
           sessionStore,
           identityKeyStore
         );
@@ -1886,6 +1903,10 @@ export default class MessageReceiver
             await signalDecrypt(
               signalMessage,
               ProtocolAddress.new(identifier, sourceDevice),
+              ProtocolAddress.new(
+                this.#storage.user.getCheckedServiceId(serviceIdKind),
+                this.#storage.user.getCheckedDeviceId()
+              ),
               sessionStore,
               identityKeyStore
             )
@@ -2090,6 +2111,7 @@ export default class MessageReceiver
       const length = Buffer.byteLength(message.body);
       this.#removeFromCache(envelope);
       log.warn(`${logId}: Dropping too-long message. Length: ${length}`);
+      return;
     }
 
     strictAssert(timestamp, 'Missing sent timestamp');
@@ -2099,15 +2121,17 @@ export default class MessageReceiver
         envelopeId: envelope.id,
         destinationE164: destinationE164 ?? '',
         destinationServiceId,
-        timestamp: toNumber(timestamp),
+        timestamp: SentTimestampMs.fromBigInt(timestamp),
         serverTimestamp: envelope.serverTimestamp,
         device: envelope.sourceDevice,
         unidentifiedStatus,
         message,
-        isRecipientUpdate: isRecipientUpdate,
+        isRecipientUpdate,
         receivedAtCounter: envelope.receivedAtCounter,
         receivedAtDate: envelope.receivedAtDate,
-        expirationStartTimestamp: toNumber(expirationStartTimestamp) ?? 0,
+        expirationStartTimestamp: TimestampMs.fromBigInt(
+          expirationStartTimestamp ?? 0n
+        ),
       },
       this.#removeFromCache.bind(this, envelope)
     );
@@ -2376,6 +2400,13 @@ export default class MessageReceiver
       'MessageReceiver.handleEditMesage: received message from PNI'
     );
 
+    if (message.body && isBodyTooLong(message.body)) {
+      const length = Buffer.byteLength(message.body);
+      this.#removeFromCache(envelope);
+      log.warn(`${logId}: Dropping too-long message. Length: ${length}`);
+      return;
+    }
+
     const ev = new MessageEvent(
       {
         envelopeId: envelope.id,
@@ -2491,6 +2522,7 @@ export default class MessageReceiver
       const length = Buffer.byteLength(message.body);
       this.#removeFromCache(envelope);
       log.warn(`${logId}: Dropping too-long message. Length: ${length}`);
+      return;
     }
 
     const ev = new MessageEvent(
@@ -3025,7 +3057,7 @@ export default class MessageReceiver
       return this.#handleContacts(envelope, syncMessage.content.contacts);
     }
     if (syncMessage.content?.blocked) {
-      return this.#handleBlocked(envelope, syncMessage.content.blocked);
+      return this._handleBlocked(envelope, syncMessage.content.blocked);
     }
     if (syncMessage.content?.request) {
       log.info('Got SyncMessage Request');
@@ -3109,6 +3141,9 @@ export default class MessageReceiver
         syncMessage.content.attachmentBackfillResponse
       );
     }
+    if (syncMessage.content?.usernameChange) {
+      return this.#handleUsernameChangeSync(envelope);
+    }
 
     this.#removeFromCache(envelope);
     const envelopeId = getEnvelopeId(envelope);
@@ -3155,6 +3190,13 @@ export default class MessageReceiver
 
     const message = this.#processDecrypted(envelope, editMessage.dataMessage);
 
+    if (message.body && isBodyTooLong(message.body)) {
+      const length = Buffer.byteLength(message.body);
+      this.#removeFromCache(envelope);
+      log.warn(`${logId}: Dropping too-long message. Length: ${length}`);
+      return;
+    }
+
     const ev = new SentEvent(
       {
         envelopeId: envelope.id,
@@ -3168,10 +3210,12 @@ export default class MessageReceiver
           ...message,
           editedMessageTimestamp: toNumber(editMessage.targetSentTimestamp),
         },
-        isRecipientUpdate: isRecipientUpdate,
+        isRecipientUpdate,
         receivedAtCounter: envelope.receivedAtCounter,
         receivedAtDate: envelope.receivedAtDate,
-        expirationStartTimestamp: toNumber(expirationStartTimestamp) ?? 0,
+        expirationStartTimestamp: TimestampMs.fromBigInt(
+          expirationStartTimestamp ?? 0n
+        ),
       },
       this.#removeFromCache.bind(this, envelope)
     );
@@ -3463,7 +3507,8 @@ export default class MessageReceiver
 
     const callEventDetails = getCallEventForProto(
       callEvent,
-      'MessageReceiver.handleCallEvent'
+      'MessageReceiver.handleCallEvent',
+      envelope.timestamp
     );
 
     const callEventSync = new CallEventSyncEvent(
@@ -3533,7 +3578,10 @@ export default class MessageReceiver
 
     const { receivedAtCounter } = envelope;
 
-    const callLogEventDetails = getCallLogEventForProto(callLogEvent);
+    const callLogEventDetails = getCallLogEventForProto(
+      callLogEvent,
+      envelope.timestamp
+    );
     const callLogEventSync = new CallLogEventSyncEvent(
       {
         callLogEventDetails,
@@ -3862,6 +3910,18 @@ export default class MessageReceiver
     await this.#dispatchAndWait(logId, deviceNameChangeEvent);
   }
 
+  async #handleUsernameChangeSync(envelope: ProcessedEnvelope): Promise<void> {
+    const logId = `handleUsernameChangeSync: ${getEnvelopeId(envelope)}`;
+    log.info(logId);
+
+    logUnexpectedUrgentValue(envelope, 'usernameChangeSync');
+
+    const usernameChangeEvent = new UsernameChangeSyncEvent(
+      this.#removeFromCache.bind(this, envelope)
+    );
+    await this.#dispatchAndWait(logId, usernameChangeEvent);
+  }
+
   async #handleContacts(
     envelope: ProcessedEnvelope,
     contactSyncProto: Proto.SyncMessage.Contacts
@@ -3888,7 +3948,8 @@ export default class MessageReceiver
 
   // This function calls applyMessageRequestResponse before setting storage so
   // proper before/after logic can be applied within that function.
-  async #handleBlocked(
+  // Exposed only for testing.
+  async _handleBlocked(
     envelope: ProcessedEnvelope,
     blocked: Proto.SyncMessage.Blocked
   ): Promise<void> {
@@ -3902,24 +3963,245 @@ export default class MessageReceiver
       receivedAtCounter: envelope.receivedAtCounter,
       receivedAtMs: envelope.receivedAtDate,
       timestamp: envelope.timestamp,
+      blockedAt: undefined,
     };
 
+    const areModernFieldsUsed =
+      blocked.blockedE164s.length ||
+      blocked.blockedAcis.length ||
+      blocked.blockedGroups.length;
+    const areLegacyFieldsUsed =
+      blocked.numbers.length ||
+      blocked.acisBinary.length ||
+      blocked.acis.length ||
+      blocked.groupIds.length;
+
+    if (areModernFieldsUsed || !areLegacyFieldsUsed) {
+      log.info(`${logId}: Using modern fields`);
+
+      {
+        const previous = this.#storage.get('blocked', []);
+        const updatedBlocked = blocked.blockedE164s
+          .map(item => {
+            if (!item.e164) {
+              return;
+            }
+
+            return {
+              e164: item.e164,
+              blockedAt: item.timestamp
+                ? TimestampMs.fromBigInt(item.timestamp)
+                : undefined,
+            };
+          })
+          .filter(isNotNil);
+
+        const { added, removed } = diffArraysAsSets(
+          previous.map(item => item.e164),
+          updatedBlocked.map(item => item.e164)
+        );
+
+        if (removed.length) {
+          await Promise.all(
+            removed.map(getAndApply(messageRequestEnum.ACCEPT))
+          );
+        }
+
+        await Promise.all(
+          updatedBlocked.map(async item => {
+            if (!item.e164 || !added.includes(item.e164)) {
+              return;
+            }
+
+            const conversation = window.ConversationController.getOrCreate(
+              item.e164,
+              'private'
+            );
+            await conversation.applyMessageRequestResponse(
+              messageRequestEnum.BLOCK,
+              {
+                ...responseInfo,
+                blockedAt: item.blockedAt,
+              }
+            );
+          })
+        );
+
+        log.info(`${logId}: New e164 blocks:`, added);
+        log.info(`${logId}: New e164 unblocks:`, removed);
+
+        await this.#storage.put('blocked', updatedBlocked);
+        itemStorage.blocked.setBlockedNumbers();
+      }
+
+      {
+        const updatedBlocked = blocked.blockedAcis
+          .map((item, index) => {
+            try {
+              const aci = fromAciUuidBytes(item.aciBinary);
+              if (!aci) {
+                return undefined;
+              }
+
+              return {
+                serviceId: aci,
+                blockedAt: item.timestamp
+                  ? TimestampMs.fromBigInt(item.timestamp)
+                  : undefined,
+              };
+            } catch (error) {
+              log.warn(
+                `${logId}: ACI ${index} was malformed`,
+                Errors.toLogFormat(error)
+              );
+              return undefined;
+            }
+          })
+          .filter(isNotNil);
+
+        const previous = this.#storage.get('blocked-uuids', []);
+        const { added, removed } = diffArraysAsSets(
+          previous.map(item => item.serviceId),
+          updatedBlocked.map(item => item.serviceId)
+        );
+
+        if (removed.length) {
+          await Promise.all(
+            removed.map(getAndApply(messageRequestEnum.ACCEPT))
+          );
+        }
+
+        await Promise.all(
+          updatedBlocked.map(async item => {
+            if (!added.includes(item.serviceId)) {
+              return;
+            }
+
+            const conversation = window.ConversationController.getOrCreate(
+              item.serviceId,
+              'private'
+            );
+            await conversation.applyMessageRequestResponse(
+              messageRequestEnum.BLOCK,
+              {
+                ...responseInfo,
+                blockedAt: item.blockedAt,
+              }
+            );
+          })
+        );
+
+        log.info(`${logId}: New aci blocks:`, added);
+        log.info(`${logId}: New aci unblocks:`, removed);
+
+        await this.#storage.put('blocked-uuids', updatedBlocked);
+        itemStorage.blocked.setBlockedServiceIds();
+      }
+
+      {
+        const updatedBlocked = blocked.blockedGroups
+          .map((item, index) => {
+            const { groupId, timestamp } = item;
+
+            if (groupId?.byteLength !== GROUPV2_ID_LENGTH) {
+              log.error(
+                `${logId}: Received invalid groupId value at index ${index}`
+              );
+              return undefined;
+            }
+
+            return {
+              groupId: Bytes.toBase64(groupId),
+              blockedAt: timestamp
+                ? TimestampMs.fromBigInt(timestamp)
+                : undefined,
+            };
+          })
+          .filter(isNotNil);
+
+        const previous = this.#storage.get('blocked-groups', []);
+        const { added, removed } = diffArraysAsSets(
+          previous.map(item => item.groupId),
+          updatedBlocked.map(item => item.groupId)
+        );
+
+        if (removed.length) {
+          await Promise.all(
+            removed.map(async item => {
+              const conversation = window.ConversationController.get(item);
+              if (!conversation) {
+                log.warn(`${logId}: Group groupv2(${item}) not found!`);
+                return;
+              }
+              await conversation.applyMessageRequestResponse(
+                messageRequestEnum.ACCEPT,
+                responseInfo
+              );
+            })
+          );
+        }
+
+        await Promise.all(
+          updatedBlocked.map(async item => {
+            if (!added.includes(item.groupId)) {
+              return;
+            }
+
+            const conversation = window.ConversationController.get(
+              item.groupId
+            );
+            if (!conversation) {
+              log.warn(`${logId}: Group groupv2(${item.groupId}) not found!`);
+              return;
+            }
+            await conversation.applyMessageRequestResponse(
+              messageRequestEnum.BLOCK,
+              { ...responseInfo, blockedAt: item.blockedAt }
+            );
+          })
+        );
+
+        log.info(
+          `${logId}: New groupId blocks:`,
+          added.map(groupId => `groupv2(${groupId})`)
+        );
+        log.info(
+          `${logId}: New groupId unblocks:`,
+          removed.map(groupId => `groupv2(${groupId})`)
+        );
+
+        await this.#storage.put('blocked-groups', updatedBlocked);
+        itemStorage.blocked.setBlockedGroups();
+      }
+
+      this.#removeFromCache(envelope);
+      return;
+    }
+
+    log.info(`${logId}: Using legacy fields`);
+
     function getAndApply(
-      type: Proto.SyncMessage.MessageRequestResponse.Type
+      type: Proto.SyncMessage.MessageRequestResponse.Type,
+      convoType: ConversationAttributesTypeType = 'private'
     ): (value: string) => Promise<void> {
       return async item => {
         const conversation = window.ConversationController.getOrCreate(
           item,
-          'private'
+          convoType
         );
         await conversation.applyMessageRequestResponse(type, responseInfo);
       };
     }
 
+    // If we get here, we need to be ready to keep all existing timestamps!
+
     if (blocked.numbers) {
       const previous = this.#storage.get('blocked', []);
 
-      const { added, removed } = diffArraysAsSets(previous, blocked.numbers);
+      const { added, removed } = diffArraysAsSets(
+        previous.map(item => item.e164),
+        blocked.numbers
+      );
       if (added.length) {
         await Promise.all(added.map(getAndApply(messageRequestEnum.BLOCK)));
       }
@@ -3929,7 +4211,13 @@ export default class MessageReceiver
 
       log.info(`${logId}: New e164 blocks:`, added);
       log.info(`${logId}: New e164 unblocks:`, removed);
-      await this.#storage.put('blocked', blocked.numbers);
+
+      const updatedBlocked = previous
+        .filter(item => !removed.includes(item.e164))
+        .concat(added.map(e164 => ({ e164, blockedAt: undefined })));
+
+      await this.#storage.put('blocked', updatedBlocked);
+      itemStorage.blocked.setBlockedNumbers();
     }
     if (blocked.acisBinary?.length || blocked.acis?.length) {
       const previous = this.#storage.get('blocked-uuids', []);
@@ -3966,7 +4254,13 @@ export default class MessageReceiver
         throw new Error('No blocked acis');
       }
 
-      const { added, removed } = diffArraysAsSets(previous, acis);
+      // Older desktops might send the release note serviceId incorrectly
+      acis = acis.filter(aci => !isSignalServiceId(aci));
+
+      const { added, removed } = diffArraysAsSets(
+        previous.map(item => item.serviceId),
+        acis
+      );
       if (added.length) {
         await Promise.all(added.map(getAndApply(messageRequestEnum.BLOCK)));
       }
@@ -3976,7 +4270,13 @@ export default class MessageReceiver
 
       log.info(`${logId}: New aci blocks:`, added);
       log.info(`${logId}: New aci unblocks:`, removed);
-      await this.#storage.put('blocked-uuids', acis);
+
+      const updatedBlocked = previous
+        .filter(item => !removed.includes(item.serviceId))
+        .concat(added.map(serviceId => ({ serviceId, blockedAt: undefined })));
+
+      await this.#storage.put('blocked-uuids', updatedBlocked);
+      itemStorage.blocked.setBlockedServiceIds();
     }
 
     if (blocked.groupIds) {
@@ -3991,7 +4291,10 @@ export default class MessageReceiver
         }
       });
 
-      const { added, removed } = diffArraysAsSets(previous, groupIds);
+      const { added, removed } = diffArraysAsSets(
+        previous.map(item => item.groupId),
+        groupIds
+      );
       if (added.length) {
         await Promise.all(
           added.map(async item => {
@@ -4031,17 +4334,31 @@ export default class MessageReceiver
         `${logId}: New groupId unblocks:`,
         removed.map(groupId => `groupv2(${groupId})`)
       );
-      await this.#storage.put('blocked-groups', groupIds);
+
+      const updatedBlocked = previous
+        .filter(item => !removed.includes(item.groupId))
+        .concat(added.map(groupId => ({ groupId, blockedAt: undefined })));
+
+      await this.#storage.put('blocked-groups', updatedBlocked);
+      itemStorage.blocked.setBlockedGroups();
     }
 
     this.#removeFromCache(envelope);
   }
 
   #isBlocked(number: string): boolean {
+    const conversation = window.ConversationController.get(number);
+    if (conversation) {
+      return conversation.isBlocked();
+    }
     return this.#storage.blocked.isBlocked(number);
   }
 
   #isServiceIdBlocked(serviceId: ServiceIdString): boolean {
+    const conversation = window.ConversationController.get(serviceId);
+    if (conversation) {
+      return conversation.isBlocked();
+    }
     return this.#storage.blocked.isServiceIdBlocked(serviceId);
   }
 

@@ -9,6 +9,7 @@ import { LogLevel } from '../types/Logging.std.ts';
 export { LogLevel };
 
 export type FetchLogIpcData = {
+  backupTierLogCode: string;
   capabilities: Record<string, unknown>;
   remoteConfig: Record<string, unknown>;
   statistics: Record<string, unknown>;
@@ -25,6 +26,7 @@ export type FetchLogIpcData = {
 //   Unfortunately, Zod is a bit slow even with `z.array(z.unknown())`.
 export const isFetchLogIpcData = (data: unknown): data is FetchLogIpcData =>
   isRecord(data) &&
+  typeof data.backupTierLogCode === 'string' &&
   isRecord(data.capabilities) &&
   isRecord(data.remoteConfig) &&
   isRecord(data.statistics) &&

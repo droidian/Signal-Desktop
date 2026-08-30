@@ -59,7 +59,6 @@ describe('storage service', function (this: Mocha.Suite) {
       debug('archiving conversation on desktop');
       {
         const state = await phone.expectStorageState('consistency check');
-
         await leftPane.locator(`[data-testid="${testid}"]`).click();
 
         await conversationStack
@@ -68,18 +67,26 @@ describe('storage service', function (this: Mocha.Suite) {
 
         await window.getByRole('menuitem', { name: 'Archive' }).click();
 
-        const newState = await phone.waitForStorageState({
+        await phone.waitForStorageState({
           after: state,
+          predicate: storageState => {
+            if (kind === 'contact') {
+              return storageState.getContact(first)?.archived === true;
+            }
+
+            return storageState.getGroup(group)?.archived === true;
+          },
         });
-
-        const record =
-          kind === 'contact'
-            ? newState.getContact(first)
-            : newState.getGroup(group);
-
-        assert.ok(record, 'contact record not found');
-        assert.ok(record?.archived, 'contact archived');
       }
+
+      debug('attempting unarchive');
+      await leftPane.getByLabel('Archived Chats').click();
+
+      await leftPane.locator(`[data-testid="${testid}"]`).click();
+
+      await conversationStack
+        .getByRole('button', { name: 'More Info' })
+        .click();
 
       debug('updating contact on phone without sync message');
       let archivedVersion: bigint;
@@ -97,15 +104,6 @@ describe('storage service', function (this: Mocha.Suite) {
         newState = await phone.setStorageState(newState);
         archivedVersion = newState.version;
       }
-
-      debug('attempting unarchive');
-      await leftPane.getByLabel('Archived Chats').click();
-
-      await leftPane.locator(`[data-testid="${testid}"]`).click();
-
-      await conversationStack
-        .getByRole('button', { name: 'More Info' })
-        .click();
 
       await window.getByRole('menuitem', { name: 'Unarchive' }).click();
 
@@ -280,9 +278,12 @@ describe('storage service', function (this: Mocha.Suite) {
     assert.exists(roomId, 'Call link roomId should exist');
 
     debug('Waiting for storage update');
-    state = await phone.waitForStorageState({ after: state });
-
-    assert.exists(state.findRecord(getCallLinkRecordPredicate(roomId)));
+    state = await phone.waitForStorageState({
+      after: state,
+      predicate: storageState => {
+        return storageState.hasRecord(getCallLinkRecordPredicate(roomId));
+      },
+    });
 
     debug('Updating storage without sync');
     const deletedAt = bootstrap.getTimestamp();
@@ -303,10 +304,10 @@ describe('storage service', function (this: Mocha.Suite) {
       .getByRole('button', { name: 'Delete link' })
       .click();
 
-    const confirmModal = window.getByTestId(
-      'ConfirmationDialog.CallLinkDetails__DeleteLinkModal'
-    );
-    await confirmModal.locator('.module-Button').getByText('Delete').click();
+    await window
+      .getByRole('alertdialog', { name: 'Delete call link?' })
+      .getByRole('button', { name: 'Delete' })
+      .click();
 
     debug('Waiting for manifest sync');
     await app.waitForManifestVersion(state.version);
@@ -316,13 +317,16 @@ describe('storage service', function (this: Mocha.Suite) {
     assert.exists(otherRoomId, 'Call link roomId should exist');
 
     debug('Waiting for storage update');
-    state = await phone.waitForStorageState({ after: state });
+    state = await phone.waitForStorageState({
+      after: state,
+      predicate: storageState => {
+        return (
+          storageState.findRecord(getCallLinkRecordPredicate(roomId))?.record
+            .callLink.deletedAtTimestampMs === BigInt(deletedAt)
+        );
+      },
+    });
 
-    assert.strictEqual(
-      state.findRecord(getCallLinkRecordPredicate(roomId))?.record.callLink
-        .deletedAtTimestampMs,
-      BigInt(deletedAt)
-    );
     assert.exists(state.findRecord(getCallLinkRecordPredicate(otherRoomId)));
   });
 });

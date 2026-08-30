@@ -3,8 +3,6 @@
 
 import '../ts/window.d.ts';
 
-import React, { StrictMode } from 'react';
-
 import '@signalapp/quill-cjs/dist/quill.core.css';
 import '../stylesheets/manifest.scss';
 import '../stylesheets/tailwind-config.css';
@@ -20,7 +18,7 @@ import { StorybookThemeContext } from './StorybookThemeContext.std.ts';
 import { SystemThemeType, ThemeType } from '../ts/types/Util.std.ts';
 import { setupI18n } from '../ts/util/setupI18n.dom.tsx';
 import { HourCyclePreference } from '../ts/types/I18N.std.ts';
-import { AxoProvider } from '../ts/axo/AxoProvider.dom.tsx';
+import { AppProvider } from '../ts/windows/AppProvider.dom.tsx';
 import type { StateType } from '../ts/state/reducer.preload.ts';
 import {
   ScrollerLockContext,
@@ -30,13 +28,13 @@ import { Environment, setEnvironment } from '../ts/environment.std.ts';
 import { parseUnknown } from '../ts/util/schemas.std.ts';
 import { LocaleEmojiListSchema } from '../ts/types/emoji.std.ts';
 import { FunProvider } from '../ts/components/fun/FunProvider.dom.tsx';
-import { EmojiSkinTone } from '../ts/components/fun/data/emojis.std.ts';
 import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/test-helpers/funPickerMocks.dom.tsx';
 import { NavTab } from '../ts/types/Nav.std.ts';
 
 import type { FunEmojiSelection } from '../ts/components/fun/panels/FunPanelEmojis.dom.tsx';
 import type { FunGifSelection } from '../ts/components/fun/panels/FunPanelGifs.dom.tsx';
 import type { FunStickerSelection } from '../ts/components/fun/panels/FunPanelStickers.dom.tsx';
+import { Emoji } from '../ts/axo/emoji.std.ts';
 
 setEnvironment(Environment.Development, true);
 
@@ -62,6 +60,16 @@ export const globalTypes = {
       dynamicTitle: true,
       icon: 'circlehollow',
       items: ['light', 'dark'],
+      showName: true,
+    },
+  },
+  background: {
+    name: 'Background',
+    defaultValue: 'Default',
+    toolbar: {
+      dynamicTitle: true,
+      icon: 'circlehollow',
+      items: ['default', 'checkerboard', 'wallpaper', 'scrolling'],
       showName: true,
     },
   },
@@ -105,7 +113,7 @@ const mockStore: Store<StateType> = createStore(
 // oxlint-disable-next-line
 const noop = () => {};
 
-window.Whisper = window.Whisper || {};
+window.Whisper ??= {};
 window.Whisper.events = {
   on: noop,
   off: noop,
@@ -147,6 +155,7 @@ window.SignalContext = {
   getPreferredSystemLocales: () => ['en'],
   getLocaleOverride: () => null,
   getLocaleDisplayNames: () => ({ en: { en: 'English' } }),
+  getResolvedMessagesLocale: () => 'en',
 
   getLocalizedEmojiList: async locale => {
     const data = await fetch(
@@ -169,7 +178,7 @@ window.SignalContext = {
   _stopTrackingICUStrings: () => i18n.stopTrackingUsage(),
 };
 
-window.ConversationController = window.ConversationController || {};
+window.ConversationController ??= {};
 window.ConversationController.isSignalConversationId = () => false;
 window.ConversationController.onConvoMessageMount = noop;
 window.reduxStore = mockStore;
@@ -185,19 +194,12 @@ window.Signal = {
   },
 };
 
-function withStrictMode(Story, context) {
-  return (
-    <StrictMode>
-      <Story {...context} />
-    </StrictMode>
-  );
-}
-
 const withGlobalTypesProvider = (Story, context) => {
   const theme =
     context.globals.theme === 'light' ? ThemeType.light : ThemeType.dark;
   const mode = context.globals.mode;
   const direction = context.globals.direction ?? 'auto';
+  const background = context.globals.background;
 
   window.SignalContext.getResolvedMessagesLocaleDirection = () =>
     direction === 'auto' ? 'ltr' : direction;
@@ -219,6 +221,19 @@ const withGlobalTypesProvider = (Story, context) => {
     document.body.classList.remove('mouse-mode');
     document.body.classList.add('keyboard-mode');
   }
+
+  document.body.classList.toggle(
+    'background-checkerboard',
+    background === 'checkerboard'
+  );
+  document.body.classList.toggle(
+    'background-wallpaper',
+    background === 'wallpaper'
+  );
+  document.body.classList.toggle(
+    'background-scrolling',
+    background === 'scrolling'
+  );
 
   document.body.classList.add('page-is-visible');
 
@@ -258,8 +273,9 @@ function withFunProvider(Story, context) {
       recentEmojis={[]}
       recentStickers={[]}
       recentGifs={[]}
-      emojiSkinToneDefault={EmojiSkinTone.None}
+      emojiSkinToneDefault={Emoji.SkinTone.None}
       onEmojiSkinToneDefaultChange={noop}
+      isStickerReplySendEnabled
       installedStickerPacks={[]}
       showStickerPickerHint={false}
       onClearStickerPickerHint={noop}
@@ -285,19 +301,16 @@ function withFunProvider(Story, context) {
   );
 }
 
-function withAxoProvider(Story, context) {
-  const globalValue = context.globals.direction ?? 'ltr';
-  const dir = globalValue === 'auto' ? 'ltr' : globalValue;
+function withAppProvider(Story, context) {
   return (
-    <AxoProvider dir={dir}>
+    <AppProvider>
       <Story {...context} />
-    </AxoProvider>
+    </AppProvider>
   );
 }
 
 export const decorators = [
-  withStrictMode,
-  withAxoProvider,
+  withAppProvider,
   withGlobalTypesProvider,
   withMockStoreProvider,
   withScrollLockProvider,

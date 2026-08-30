@@ -4,8 +4,6 @@
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
 import type { StateType as RootStateType } from '../reducer.preload.ts';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
-import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 import { createLogger } from '../../logging/log.std.ts';
 import { AppViewType } from '../../types/app.std.ts';
 import { getEnvironment, Environment } from '../../environment.std.ts';
@@ -14,7 +12,9 @@ import {
   type StartInstallerActionType,
   SHOW_BACKUP_IMPORT,
   type ShowBackupImportActionType,
+  cancelInstall,
 } from './installer.preload.ts';
+import { startRegistration } from './standaloneInstaller.preload.ts';
 
 const log = createLogger('app');
 
@@ -35,7 +35,7 @@ type InitialLoadCompleteActionType = ReadonlyDeep<{
   type: typeof INITIAL_LOAD_COMPLETE;
 }>;
 
-type OpenInboxActionType = ReadonlyDeep<{
+export type OpenInboxActionType = ReadonlyDeep<{
   type: typeof OPEN_INBOX;
 }>;
 
@@ -53,17 +53,14 @@ export const actions = {
   openStandalone,
 };
 
-export const useAppActions = (): BoundActionCreatorsMapObject<typeof actions> =>
-  useBoundActions(actions);
-
 function initialLoadComplete(): InitialLoadCompleteActionType {
   return {
     type: INITIAL_LOAD_COMPLETE,
   };
 }
 
-function openInbox(): ThunkAction<
-  void,
+export function openInbox(): ThunkAction<
+  Promise<void>,
   RootStateType,
   unknown,
   OpenInboxActionType
@@ -79,18 +76,30 @@ function openInbox(): ThunkAction<
   };
 }
 
-function openStandalone(): ThunkAction<
-  void,
+function openStandalone(
+  startFromBeginning = true
+): ThunkAction<
+  Promise<void>,
   RootStateType,
   unknown,
   OpenStandaloneActionType
 > {
-  return dispatch => {
-    if (getEnvironment() === Environment.PackagedApp) {
+  return async (dispatch, getState) => {
+    if (!window.SignalCI && getEnvironment() === Environment.PackagedApp) {
+      log.warn(
+        `openStandalone: refusing because environment is ${getEnvironment()}`
+      );
       return;
     }
 
+    cancelInstall()(dispatch, getState, undefined);
+
     window.IPC.addSetupMenuItems();
+
+    if (startFromBeginning) {
+      await startRegistration()(dispatch, getState, undefined);
+    }
+
     dispatch({
       type: OPEN_STANDALONE,
     });

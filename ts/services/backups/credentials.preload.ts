@@ -142,7 +142,17 @@ export class BackupCredentials {
       'X-Signal-ZK-Auth-Signature': Bytes.toBase64(signature),
     };
 
-    const info = { headers, level: result.level };
+    const info = {
+      headers,
+      level: result.level,
+      // For libsignal APIs
+      backupAuth: {
+        credential: cred,
+        serverKeys: serverPublicParams,
+        signingKey: signatureKey,
+      },
+    };
+
     if (itemStorage.get(storageKey)) {
       return info;
     }
@@ -150,8 +160,7 @@ export class BackupCredentials {
     log.warn(`uploading signature key (${storageKey})`);
 
     await setBackupSignatureKey({
-      headers,
-      backupIdPublicKey: signatureKey.getPublicKey().serialize(),
+      auth: info.backupAuth,
     });
 
     await itemStorage.put(storageKey, true);
@@ -187,18 +196,17 @@ export class BackupCredentials {
       return cachedCredentials.credentials;
     }
 
-    const headers = await this.getHeadersForToday(credentialType);
+    const { backupAuth } = await this.getForToday(credentialType);
 
-    const retrievedAtMs = Date.now();
     const newCredentials = await getBackupCDNCredentials({
-      headers,
+      auth: backupAuth,
       cdnNumber,
     });
 
     cachedCredentialsForThisCredentialType[cdnNumber] = {
       credentials: newCredentials,
       cdnNumber,
-      retrievedAtMs,
+      retrievedAtMs: Date.now(),
     };
 
     return newCredentials;
