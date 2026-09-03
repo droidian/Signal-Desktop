@@ -1,42 +1,43 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useContext, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './LeftPane.dom.js';
-import { LeftPane } from './LeftPane.dom.js';
-import { CaptchaDialog } from './CaptchaDialog.dom.js';
-import { CrashReportDialog } from './CrashReportDialog.dom.js';
-import { ToastManager } from './ToastManager.dom.js';
-import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus.dom.js';
-import { DialogExpiredBuild } from './DialogExpiredBuild.dom.js';
-import { DialogNetworkStatus } from './DialogNetworkStatus.dom.js';
-import { DialogRelink } from './DialogRelink.dom.js';
-import type { PropsType as DialogUpdatePropsType } from './DialogUpdate.dom.js';
-import { DialogUpdate } from './DialogUpdate.dom.js';
-import { UnsupportedOSDialog } from './UnsupportedOSDialog.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.js';
-import { DurationInSeconds, DAY } from '../util/durations/index.std.js';
-import { LeftPaneMode } from '../types/leftPane.std.js';
-import { ThemeType } from '../types/Util.std.js';
+import type { PropsType } from './LeftPane.dom.tsx';
+import { LeftPane } from './LeftPane.dom.tsx';
+import { CaptchaDialog } from './CaptchaDialog.dom.tsx';
+import { CrashReportDialog } from './CrashReportDialog.dom.tsx';
+import { ToastManager } from './ToastManager.dom.tsx';
+import type { PropsType as DialogNetworkStatusPropsType } from './DialogNetworkStatus.dom.tsx';
+import { DialogExpiredBuild } from './DialogExpiredBuild.dom.tsx';
+import { DialogNetworkStatus } from './DialogNetworkStatus.dom.tsx';
+import { DialogRelink } from './DialogRelink.dom.tsx';
+import type { PropsType as DialogUpdatePropsType } from './DialogUpdate.dom.tsx';
+import { DialogUpdate } from './DialogUpdate.dom.tsx';
+import { UnsupportedOSDialog } from './UnsupportedOSDialog.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.tsx';
+import { DurationInSeconds, DAY } from '../util/durations/index.std.ts';
+import { LeftPaneMode } from '../types/leftPane.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
 import {
   getDefaultConversation,
   getDefaultGroupListItem,
-} from '../test-helpers/getDefaultConversation.std.js';
-import { DialogType } from '../types/Dialogs.std.js';
-import { SocketStatus } from '../types/SocketStatus.std.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
+} from '../test-helpers/getDefaultConversation.std.ts';
+import { DialogType } from '../types/Dialogs.std.ts';
+import { SocketStatus } from '../types/SocketStatus.std.ts';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
 import {
   makeFakeLookupConversationWithoutServiceId,
   useUuidFetchState,
-} from '../test-helpers/fakeLookupConversationWithoutServiceId.std.js';
-import type { GroupListItemConversationType } from './conversationList/GroupListItem.dom.js';
-import { ServerAlert } from '../types/ServerAlert.std.js';
-import { LeftPaneChatFolders } from './leftPane/LeftPaneChatFolders.dom.js';
-import { LeftPaneConversationListItemContextMenu } from './leftPane/LeftPaneConversationListItemContextMenu.dom.js';
-import { CurrentChatFolders } from '../types/CurrentChatFolders.std.js';
+} from '../test-helpers/fakeLookupConversationWithoutServiceId.std.ts';
+import type { GroupListItemConversationType } from './conversationList/GroupListItem.dom.tsx';
+import { ServerAlert } from '../types/ServerAlert.std.ts';
+import { LeftPaneChatFolders } from './leftPane/LeftPaneChatFolders.dom.tsx';
+import { LeftPaneConversationListItemContextMenu } from './leftPane/LeftPaneConversationListItemContextMenu.dom.tsx';
+import { CurrentChatFolders } from '../types/CurrentChatFolders.std.ts';
+import { DialogClockSkew } from './DialogClockSkew.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -51,7 +52,7 @@ export default {
   args: {},
 } satisfies Meta<PropsType>;
 
-const defaultConversations: Array<ConversationType> = [
+const defaultConversations = [
   getDefaultConversation({
     id: 'fred-convo',
     title: 'Fred Willard',
@@ -61,7 +62,7 @@ const defaultConversations: Array<ConversationType> = [
     isSelected: true,
     title: 'Marc Barraca',
   }),
-];
+] as const satisfies Array<ConversationType>;
 
 const defaultSearchProps = {
   filterByUnread: false,
@@ -192,12 +193,14 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     hasPendingUpdate: false,
     i18n,
     isMacOS: false,
+    isMAS: false,
     isOnline: true,
     preferredWidthFromStorage: 320,
     challengeStatus: 'idle',
     crashReportCount: 0,
 
     hasAnyCurrentCustomChatFolders: false,
+    hasClockSkewDialog: false,
     hasNetworkDialog: false,
     hasExpiredDialog: false,
     hasRelinkDialog: false,
@@ -207,7 +210,6 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     usernameLinkCorrupted: false,
     isUpdateDownloaded,
     isNotificationProfileActive: false,
-    isChatFoldersEnabled: true,
     navTabsCollapsed: false,
 
     setChallengeStatus: action('setChallengeStatus'),
@@ -261,6 +263,9 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
       <DialogRelink
         i18n={i18n}
         relinkDevice={action('relinkDevice')}
+        renderClearingDataView={action('renderClearingDataView')}
+        reregister={action('reregister')}
+        weArePrimaryDevice={false}
         {...props}
       />
     ),
@@ -287,12 +292,18 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
         onSkip={action('onCaptchaSkip')}
       />
     ),
+    renderClockSkewDialog: ({ containerWidthBreakpoint }) => (
+      <DialogClockSkew
+        containerWidthBreakpoint={containerWidthBreakpoint}
+        i18n={i18n}
+      />
+    ),
     renderCrashReportDialog: () => (
       <CrashReportDialog
         i18n={i18n}
         isPending={false}
-        writeCrashReportsToLog={action('writeCrashReportsToLog')}
-        eraseCrashReports={action('eraseCrashReports')}
+        onSend={action('writeCrashReportsToLog')}
+        onErase={action('eraseCrashReports')}
       />
     ),
     renderExpiredBuildDialog: props => <DialogExpiredBuild {...props} />,
@@ -312,11 +323,14 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
         i18n={i18n}
         onShowDebugLog={action('onShowDebugLog')}
         onUndoArchive={action('onUndoArchive')}
+        retryCallQualitySurvey={action('retryCallQualitySurvey')}
         openFileInFolder={action('openFileInFolder')}
+        saveHeapSnapshot={action('saveHeapSnapshot')}
         setDidResumeDonation={action('setDidResumeDonation')}
         toast={undefined}
         megaphone={undefined}
         containerWidthBreakpoint={containerWidthBreakpoint}
+        expandNarrowLeftPane={action('expandNarrowLeftPane')}
         isInFullScreenCall={false}
       />
     ),
@@ -351,14 +365,13 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
         onDelete={action('onDelete')}
         onChatFolderOpenCreatePage={action('onChatFolderOpenCreatePage')}
         onChatFolderToggleChat={action('onChatFolderToggleChat')}
-        localDeleteWarningShown={false}
-        setLocalDeleteWarningShown={action('setLocalDeleteWarningShown')}
       >
         {props.children}
       </LeftPaneConversationListItemContextMenu>
     ),
     selectedChatFolder: null,
     selectedConversationId: undefined,
+    selectedLocation: undefined,
     targetedMessageId: undefined,
     openUsernameReservationModal: action('openUsernameReservationModal'),
     saveAlerts: async () => action('saveAlerts')(),
@@ -377,7 +390,7 @@ const useProps = (overrideProps: OverridePropsType = {}): PropsType => {
     showFindByPhoneNumber: action('showFindByPhoneNumber'),
     startSearch: action('startSearch'),
     startSettingGroupMetadata: action('startSettingGroupMetadata'),
-    theme: React.useContext(StorybookThemeContext),
+    theme: useContext(StorybookThemeContext),
     toggleComposeEditingAvatar: action('toggleComposeEditingAvatar'),
     toggleConversationInChooseMembers: action(
       'toggleConversationInChooseMembers'
@@ -1130,7 +1143,7 @@ export function CaptchaDialogPending(): JSX.Element {
   );
 }
 
-export function _CrashReportDialog(): JSX.Element {
+export function CrashReportDialogExample(): JSX.Element {
   return (
     <LeftPaneInContainer
       {...useProps({

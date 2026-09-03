@@ -4,16 +4,16 @@
 import type { Database } from '@signalapp/sqlcipher';
 import lodash from 'lodash';
 
-import type { LoggerType } from '../../types/Logging.std.js';
+import type { LoggerType } from '../../types/Logging.std.ts';
 import type {
   ServiceIdString,
   AciString,
   PniString,
-} from '../../types/ServiceId.std.js';
-import { normalizeServiceId, normalizePni } from '../../types/ServiceId.std.js';
-import { normalizeAci } from '../../util/normalizeAci.std.js';
-import type { JSONWithUnknownFields } from '../../types/Util.std.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
+} from '../../types/ServiceId.std.ts';
+import { normalizeServiceId, normalizePni } from '../../types/ServiceId.std.ts';
+import { normalizeAci } from '../../util/normalizeAci.std.ts';
+import type { JSONWithUnknownFields } from '../../types/Util.std.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
 
 const { omit } = lodash;
 
@@ -594,6 +594,7 @@ function migrateSessions(
 
   logger.info(`updating ${sessions.length} sessions`);
   for (const { id, serviceId, ourServiceId, json } of sessions) {
+    type Match = RegExpMatchArray & { 1: string; 2: string; 3: string };
     const match = id.match(/^(.*):(.*)\.(.*)$/);
     if (!match) {
       logger.warn(`invalid session id ${id}`);
@@ -607,7 +608,7 @@ function migrateSessions(
       continue;
     }
 
-    const [, from, to, device] = match;
+    const [, from, to, device] = match as Match;
 
     const newId =
       `${migrateServiceId(from, ourServiceIds, logger)}:` +
@@ -734,7 +735,7 @@ function migrateMessages(db: Database, logger: LoggerType): void {
   logger.info('updating messages');
 
   let totalMessages = 0;
-  // eslint-disable-next-line no-constant-condition
+  // oxlint-disable-next-line no-constant-condition
   for (let offset = 0; true; offset += PAGE_SIZE) {
     const messages: Array<{ id: string; rowid: number; json: string }> =
       getPage.all({
@@ -844,6 +845,7 @@ function migratePreKeys(
 
   logger.info(`updating ${preKeys.length} ${table}`);
   for (const { id, json } of preKeys) {
+    type Match = RegExpMatchArray & { 1: string; 2: string };
     const match = id.match(/^(.*):(.*)$/);
     if (!match) {
       logger.warn(`invalid ${table} id ${id}`);
@@ -858,7 +860,7 @@ function migratePreKeys(
       continue;
     }
 
-    const [, ourUuid, keyId] = match;
+    const [, ourUuid, keyId] = match as Match;
 
     const ourServiceId = migrateServiceId(ourUuid, ourServiceIds, logger);
     const newId = `${ourServiceId}:${keyId}`;
@@ -992,6 +994,7 @@ function migrateJobs(
     try {
       const parsedData: unknown = JSON.parse(data);
 
+      // oxlint-disable-next-line typescript/no-redundant-type-constituents
       let updatedData: unknown | undefined;
       if (queueType === 'conversation') {
         const convoJob = parsedData as LegacyConversationJob;

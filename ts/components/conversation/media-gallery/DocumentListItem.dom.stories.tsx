@@ -1,15 +1,16 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './DocumentListItem.dom.js';
-import { DocumentListItem } from './DocumentListItem.dom.js';
+import type { Props } from './DocumentListItem.dom.tsx';
+import { DocumentListItem } from './DocumentListItem.dom.tsx';
 import {
   createPreparedMediaItems,
   createRandomDocuments,
-} from './utils/mocks.std.js';
+} from '../../../test-helpers/mediaGalleryMocks.std.ts';
 
 export default {
   title: 'Components/Conversation/MediaGallery/DocumentListItem',
@@ -27,8 +28,10 @@ export function Multiple(): JSX.Element {
           i18n={i18n}
           key={mediaItem.attachment.fileName}
           mediaItem={mediaItem}
+          authorTitle="Alice"
           onClick={action('onClick')}
-          onShowMessage={action('onShowMessage')}
+          showMessage={action('showMessage')}
+          renderContextMenu={(_item, children) => <>{children}</>}
         />
       ))}
     </>

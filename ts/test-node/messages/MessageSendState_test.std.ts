@@ -9,7 +9,7 @@ import type {
   SendAction,
   SendState,
   SendStateByConversationId,
-} from '../../messages/MessageSendState.std.js';
+} from '../../messages/MessageSendState.std.ts';
 import {
   SendActionType,
   SendStatus,
@@ -24,7 +24,7 @@ import {
   sendStateReducer,
   someRecipientSendStatus,
   someSendStatus,
-} from '../../messages/MessageSendState.std.js';
+} from '../../messages/MessageSendState.std.ts';
 
 const { sampleSize, times } = lodash;
 
@@ -47,7 +47,7 @@ describe('message send state utilities', () => {
 
     it('orders the statuses', () => {
       times(100, () => {
-        const [a, b] = sampleSize(expectedOrder, 2);
+        const [a, b] = sampleSize(expectedOrder, 2) as [SendStatus, SendStatus];
         const isABigger = expectedOrder.indexOf(a) > expectedOrder.indexOf(b);
         const expected = isABigger ? a : b;
 

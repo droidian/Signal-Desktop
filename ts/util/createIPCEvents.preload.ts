@@ -5,37 +5,37 @@ import { ipcRenderer } from 'electron';
 import type { SystemPreferences } from 'electron';
 import lodash from 'lodash';
 
-import type { ZoomFactorType } from '../types/Storage.d.ts';
-import * as Errors from '../types/errors.std.js';
-import * as Stickers from '../types/Stickers.preload.js';
-import * as Settings from '../types/Settings.std.js';
+import type { ZoomFactorType } from '../types/StorageKeys.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import * as Stickers from '../types/Stickers.preload.ts';
+import * as Settings from '../types/Settings.std.ts';
 
-import { resolveUsernameByLinkBase64 } from '../services/username.preload.js';
-import { isInCall } from '../state/selectors/calling.std.js';
+import { resolveUsernameByLinkBase64 } from '../services/username.preload.ts';
+import { isInCall } from '../state/selectors/calling.std.ts';
 
-import * as Registration from './registration.preload.js';
-import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId.preload.js';
-import { createLogger } from '../logging/log.std.js';
+import * as Registration from './registration.preload.ts';
+import { lookupConversationWithoutServiceId } from './lookupConversationWithoutServiceId.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
 import {
   type NotificationClickData,
   notificationService,
-} from '../services/notifications.preload.js';
-import { joinViaLink } from '../groups.preload.js';
+} from '../services/notifications.preload.ts';
+import { joinViaLink } from '../groups.preload.ts';
 import {
   StoryViewModeType,
   StoryViewTargetType,
-} from '../types/Stories.std.js';
-import { isValidE164 } from './isValidE164.std.js';
-import { fromWebSafeBase64 } from './webSafeBase64.std.js';
-import { showConfirmationDialog } from './showConfirmationDialog.dom.js';
+} from '../types/Stories.std.ts';
+import { isValidE164 } from './isValidE164.std.ts';
+import { fromWebSafeBase64 } from './webSafeBase64.std.ts';
+import { showConfirmationDialog } from './showConfirmationDialog.dom.tsx';
 import type {
   EphemeralSettings,
   SettingsValuesType,
   ThemeType,
-} from './preload.preload.js';
-import { SystemTraySetting } from '../types/SystemTraySetting.std.js';
-import { putStickers } from '../textsecure/WebAPI.preload.js';
-import OS from './os/osPreload.preload.js';
+} from './preload.preload.ts';
+import { SystemTraySetting } from '../types/SystemTraySetting.std.ts';
+import { putStickers } from '../textsecure/WebAPI.preload.ts';
+import OS from './os/osPreload.preload.ts';
 
 const { noop } = lodash;
 
@@ -76,8 +76,8 @@ export type IPCEventsCallbacksType = {
   startCallingLobbyViaToken: (token: string) => void;
   unknownSignalLink: () => void;
   uploadStickerPack: (
-    manifest: Uint8Array,
-    stickers: ReadonlyArray<Uint8Array>
+    manifest: Uint8Array<ArrayBuffer>,
+    stickers: ReadonlyArray<Uint8Array<ArrayBuffer>>
   ) => Promise<string>;
 };
 
@@ -278,15 +278,15 @@ export function createIPCEvents(
       try {
         await new Promise<void>((resolve, reject) => {
           showConfirmationDialog({
-            dialogName: 'closeConfirmation',
-            onTopOfEverything: true,
             cancelText: i18n(
               'icu:ConfirmationDialog__Title--close-requested-not-now'
             ),
-            confirmStyle: 'negative',
+            confirmStyle: 'strong-destructive',
             title: i18n(
               'icu:ConfirmationDialog__Title--in-call-close-requested'
             ),
+            // @ts-expect-error ConfirmationDialog migration: Needs title
+            description: null,
             okText: i18n('icu:close'),
             reject: () => reject(),
             resolve: () => resolve(),
@@ -439,8 +439,8 @@ export function createIPCEvents(
       showUnknownSgnlLinkModal();
     },
     uploadStickerPack: (
-      manifest: Uint8Array,
-      stickers: ReadonlyArray<Uint8Array>
+      manifest: Uint8Array<ArrayBuffer>,
+      stickers: ReadonlyArray<Uint8Array<ArrayBuffer>>
     ): Promise<string> => {
       return putStickers(manifest, stickers, () =>
         ipcRenderer.send('art-creator:onUploadProgress')
@@ -452,6 +452,7 @@ export function createIPCEvents(
 
 function showUnknownSgnlLinkModal(): void {
   window.reduxActions.globalModals.showErrorModal({
+    title: i18n('icu:ErrorModal--title'),
     description: i18n('icu:unknown-sgnl-link'),
   });
 }

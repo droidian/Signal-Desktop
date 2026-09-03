@@ -4,33 +4,36 @@
 import { assert } from 'chai';
 import { v4 as generateGuid } from 'uuid';
 
-import * as Bytes from '../Bytes.std.js';
+import * as Bytes from '../Bytes.std.ts';
 import type {
   EphemeralAttachmentFields,
   ScreenshotType,
   AttachmentType,
   ThumbnailType,
   BackupThumbnailType,
-} from '../types/Attachment.std.js';
+} from '../types/Attachment.std.ts';
 import {
   APPLICATION_OCTET_STREAM,
   IMAGE_JPEG,
   IMAGE_PNG,
   LONG_MESSAGE,
-} from '../types/MIME.std.js';
+} from '../types/MIME.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import { generateAci } from '../types/ServiceId.std.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
-import { SeenStatus } from '../MessageSeenStatus.std.js';
-import { DataWriter, DataReader } from '../sql/Client.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { HOUR, MINUTE } from '../util/durations/index.std.js';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import { SeenStatus } from '../MessageSeenStatus.std.ts';
+import { DataWriter, DataReader } from '../sql/Client.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { HOUR, MINUTE } from '../util/durations/index.std.ts';
+import {
+  testAttachmentDigest,
+  testAttachmentKey,
+  testAttachmentLocalKey,
+  testPlaintextHash,
+} from '../test-helpers/attachments.node.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const CONTACT_A = generateAci();
 const contactAConversationId = generateGuid();
-function getBase64(str: string): string {
-  return Bytes.toBase64(Bytes.fromString(str));
-}
 
 function composeThumbnail(
   index: number,
@@ -82,20 +85,20 @@ function composeAttachment(
   // Make sure you add a column to the `message_attachments` table and update
   // MESSAGE_ATTACHMENT_COLUMNS.
 ): Required<Omit<AttachmentType, keyof EphemeralAttachmentFields>> {
-  const label = `${key ?? 'attachment'}${index}`;
+  const label = key ?? `attachment${index}`;
   const attachment = {
     cdnKey: `cdnKey${label}`,
     cdnNumber: 3,
-    key: getBase64(`key${label}`),
-    digest: getBase64(`digest${label}`),
+    key: testAttachmentKey(),
+    digest: testAttachmentDigest(),
     duration: 123,
     size: 100,
     downloadPath: 'downloadPath',
     contentType: IMAGE_JPEG,
-    path: `path/to/file${label}`,
+    path: `path/to/file.${label}`,
     pending: false,
-    localKey: 'localKey',
-    plaintextHash: `plaintextHash${label}`,
+    localKey: testAttachmentLocalKey(),
+    plaintextHash: testPlaintextHash(),
     uploadTimestamp: index,
     clientUuid: generateGuid(),
     width: 100,
@@ -164,9 +167,144 @@ function composeMessage(
   };
 }
 
+function composeMessageWithEveryAttachment() {
+  const attachment1 = composeAttachment('attachment1');
+  const attachment2 = composeAttachment('attachment2');
+  const previewAttachment = composeAttachment('preview');
+  const quoteAttachment = composeAttachment('quote');
+  const contactAttachment = composeAttachment('contact');
+  const stickerAttachment = composeAttachment('sticker');
+  const bodyAttachment = composeAttachment('body', {
+    contentType: LONG_MESSAGE,
+  });
+
+  const now = Date.now();
+  return composeMessage(now, {
+    attachments: [attachment1, attachment2],
+    bodyAttachment,
+    preview: [
+      {
+        title: 'preview',
+        description: 'description',
+        domain: 'domain',
+        url: 'https://signal.org',
+        isStickerPack: false,
+        isCallLink: false,
+        image: previewAttachment,
+        date: now,
+      },
+    ],
+    quote: {
+      id: now,
+      referencedMessageNotFound: true,
+      isViewOnce: false,
+      messageId: 'quotedMessageId',
+      attachments: [
+        {
+          contentType: IMAGE_JPEG,
+          thumbnail: quoteAttachment,
+        },
+      ],
+    },
+    contact: [
+      {
+        name: {
+          givenName: 'Alice',
+          familyName: 'User',
+        },
+        avatar: {
+          isProfile: true,
+          avatar: contactAttachment,
+        },
+      },
+    ],
+    sticker: {
+      packId: 'stickerPackId',
+      stickerId: 123,
+      packKey: 'abcdefg',
+      data: stickerAttachment,
+    },
+    editMessageReceivedAt: now + HOUR + 42,
+    editMessageTimestamp: now + HOUR,
+    editHistory: [
+      {
+        timestamp: now + HOUR,
+        received_at: now + HOUR + 42,
+        attachments: [
+          composeAttachment('attachment.edit1.1'),
+          composeAttachment('attachment.edit1.2'),
+        ],
+        bodyAttachment: composeAttachment('body.edit1', {
+          contentType: LONG_MESSAGE,
+        }),
+        preview: [
+          {
+            title: 'preview',
+            description: 'description',
+            domain: 'domain',
+            url: 'https://signal.org',
+            isStickerPack: false,
+            isCallLink: true,
+            image: composeAttachment('preview.edit1'),
+            date: now,
+          },
+        ],
+        quote: {
+          id: now,
+          referencedMessageNotFound: true,
+          isViewOnce: false,
+          messageId: 'quotedMessageId',
+          attachments: [
+            {
+              contentType: IMAGE_JPEG,
+              thumbnail: composeAttachment('quote.edit1'),
+            },
+          ],
+        },
+      },
+      {
+        timestamp: now + MINUTE,
+        received_at: now + MINUTE + 42,
+        attachments: [
+          composeAttachment('attachment.edit2.1'),
+          composeAttachment('attachment.edit2.2'),
+        ],
+        bodyAttachment: composeAttachment('body.edit2', {
+          contentType: LONG_MESSAGE,
+        }),
+        preview: [
+          {
+            title: 'preview',
+            description: 'description',
+            domain: 'domain',
+            url: 'https://signal.org',
+            isStickerPack: false,
+            isCallLink: true,
+            image: composeAttachment('preview.edit2'),
+            date: now,
+          },
+        ],
+        quote: {
+          id: now,
+          referencedMessageNotFound: true,
+          isViewOnce: false,
+          messageId: 'quotedMessageId',
+          attachments: [
+            {
+              contentType: IMAGE_JPEG,
+              thumbnail: composeAttachment('quote.edit2'),
+            },
+          ],
+        },
+      },
+    ],
+  });
+}
+
 describe('normalizes attachment references', () => {
   beforeEach(async () => {
     await DataWriter.removeAll();
+    index = 0;
   });
 
   it('saves message with undownloaded attachments', async () => {
@@ -236,89 +374,7 @@ describe('normalizes attachment references', () => {
   });
 
   it('saves and re-hydrates messages with normal, body, preview, quote, contact, and sticker attachments', async () => {
-    const attachment1 = composeAttachment('first');
-    const attachment2 = composeAttachment('second');
-    const previewAttachment1 = composeAttachment('preview1');
-    const previewAttachment2 = composeAttachment('preview2');
-    const quoteAttachment1 = composeAttachment('quote1');
-    const quoteAttachment2 = composeAttachment('quote2');
-    const contactAttachment1 = composeAttachment('contact1');
-    const contactAttachment2 = composeAttachment('contact2');
-    const stickerAttachment = composeAttachment('sticker');
-    const bodyAttachment = composeAttachment('body', {
-      contentType: LONG_MESSAGE,
-    });
-
-    const message = composeMessage(Date.now(), {
-      attachments: [attachment1, attachment2],
-      bodyAttachment,
-      preview: [
-        {
-          title: 'preview',
-          description: 'description',
-          domain: 'domain',
-          url: 'https://signal.org',
-          isStickerPack: false,
-          isCallLink: false,
-          image: previewAttachment1,
-          date: Date.now(),
-        },
-        {
-          title: 'preview2',
-          description: 'description2',
-          domain: 'domain2',
-          url: 'https://signal2.org',
-          isStickerPack: true,
-          isCallLink: false,
-          image: previewAttachment2,
-          date: Date.now(),
-        },
-      ],
-      quote: {
-        id: Date.now(),
-        referencedMessageNotFound: true,
-        isViewOnce: false,
-        messageId: 'quotedMessageId',
-        attachments: [
-          {
-            contentType: IMAGE_JPEG,
-            thumbnail: quoteAttachment1,
-          },
-          {
-            contentType: IMAGE_PNG,
-            thumbnail: quoteAttachment2,
-          },
-        ],
-      },
-      contact: [
-        {
-          name: {
-            givenName: 'Alice',
-            familyName: 'User',
-          },
-          avatar: {
-            isProfile: true,
-            avatar: contactAttachment1,
-          },
-        },
-        {
-          name: {
-            givenName: 'Bob',
-            familyName: 'User',
-          },
-          avatar: {
-            isProfile: false,
-            avatar: contactAttachment2,
-          },
-        },
-      ],
-      sticker: {
-        packId: 'stickerPackId',
-        stickerId: 123,
-        packKey: 'abcdefg',
-        data: stickerAttachment,
-      },
-    });
+    const message = composeMessageWithEveryAttachment();
 
     await DataWriter.saveMessage(message, {
       forceSave: true,

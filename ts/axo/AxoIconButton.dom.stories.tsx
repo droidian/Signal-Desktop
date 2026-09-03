@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { Fragment } from 'react';
+import { Fragment, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import { AxoIconButton } from './AxoIconButton.dom.js';
-import type { TailwindStyles } from './tw.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoIconButton } from './AxoIconButton.dom.tsx';
+import type { TailwindStyles } from './tw.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoIconButton',
@@ -13,22 +13,22 @@ export default {
 export function Basic(): JSX.Element {
   return (
     <AxoIconButton.Root
-      variant="secondary"
+      variant="strong-secondary"
       size="lg"
       symbol="more"
-      aria-label="More"
+      label="More actions"
     />
   );
 }
 
 const Backgrounds: Record<string, TailwindStyles> = {
-  'background-primary': tw('bg-background-primary'),
-  'background-secondary': tw('bg-background-secondary'),
-  'background-overlay': tw('bg-background-overlay'),
-  'elevated-background-primary': tw('bg-elevated-background-primary'),
-  'elevated-background-secondary': tw('bg-elevated-background-secondary'),
-  'elevated-background-tertiary': tw('bg-elevated-background-tertiary'),
-  'elevated-background-quaternary': tw('bg-elevated-background-quaternary'),
+  'background-primary': tw('bg-surface-primary'),
+  'background-secondary': tw('bg-surface-secondary'),
+  'background-overlay': tw('bg-overlay'),
+  'elevated-background-primary': tw('bg-material-primary'),
+  'elevated-background-secondary': tw('bg-material-secondary'),
+  'elevated-background-tertiary': tw('bg-material-tertiary'),
+  'elevated-background-quaternary': tw('bg-material-quaternary'),
 };
 
 const Themes: Record<string, TailwindStyles> = {
@@ -79,8 +79,8 @@ export function Variants(): JSX.Element {
                   <AxoIconButton.Root
                     variant={variant}
                     size="lg"
-                    symbol="more"
-                    aria-label="More"
+                    symbol="lock-fill"
+                    label={variant}
                   />
                 </div>
               );
@@ -121,7 +121,7 @@ export function Sizes(): JSX.Element {
                     variant={variant}
                     size={size}
                     symbol="more"
-                    aria-label="More"
+                    label="More actions"
                   />
                 </div>
               );
@@ -135,8 +135,8 @@ export function Sizes(): JSX.Element {
 
 const AllStates: Record<string, Partial<AxoIconButton.RootProps>> = {
   'disabled=true': { disabled: true },
-  'aria-pressed=false': { 'aria-pressed': false },
-  'aria-pressed=true': { 'aria-pressed': true },
+  'pressed=false': { pressed: false },
+  'pressed=true': { pressed: true },
 };
 
 export function States(): JSX.Element {
@@ -168,7 +168,7 @@ export function States(): JSX.Element {
                     variant={variant}
                     size="lg"
                     symbol="more"
-                    aria-label="More"
+                    label="More actions"
                     {...AllStates[state]}
                   />
                 </div>
@@ -210,8 +210,8 @@ export function Spinners(): JSX.Element {
                     variant={variant}
                     size={size}
                     symbol="more"
-                    aria-label="More"
-                    experimentalSpinner={{ 'aria-label': 'Loading' }}
+                    label="More actions"
+                    pending
                   />
                 </div>
               );

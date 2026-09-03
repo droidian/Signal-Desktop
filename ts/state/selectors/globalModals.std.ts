@@ -3,9 +3,14 @@
 
 import { createSelector } from 'reselect';
 
-import type { StateType } from '../reducer.preload.js';
-import type { GlobalModalsStateType } from '../ducks/globalModals.preload.js';
-import { UsernameOnboardingState } from '../../types/globalModals.std.js';
+import type { StateType } from '../reducer.preload.ts';
+import type { GlobalModalsStateType } from '../ducks/globalModals.preload.ts';
+import {
+  PinReminderState,
+  UsernameOnboardingState,
+} from '../../types/globalModals.std.ts';
+import type { StateSelector } from '../types.std.ts';
+import type { PinMessageDialogData } from '../smart/PinMessageDialog.preload.tsx';
 
 export const getGlobalModalsState = (state: StateType): GlobalModalsStateType =>
   state.globalModals;
@@ -18,6 +23,10 @@ export const isShowingAnyModal = createSelector(
         return value === UsernameOnboardingState.Open;
       }
 
+      if (key === 'pinReminderState') {
+        return value === PinReminderState.Modal;
+      }
+
       return Boolean(value);
     })
 );
@@ -25,6 +34,11 @@ export const isShowingAnyModal = createSelector(
 export const getCallLinkEditModalRoomId = createSelector(
   getGlobalModalsState,
   ({ callLinkEditModalRoomId }) => callLinkEditModalRoomId
+);
+
+export const getCallQualitySurveyProps = createSelector(
+  getGlobalModalsState,
+  ({ callQualitySurveyProps }) => callQualitySurveyProps
 );
 
 export const getCallLinkAddNameModalRoomId = createSelector(
@@ -41,6 +55,16 @@ export const getCallLinkPendingParticipantContactId = createSelector(
 export const getConfirmLeaveCallModalState = createSelector(
   getGlobalModalsState,
   ({ confirmLeaveCallModalState }) => confirmLeaveCallModalState
+);
+
+export const getAboutContactModalState = createSelector(
+  getGlobalModalsState,
+  ({ aboutContactModalState }) => aboutContactModalState
+);
+
+export const getGroupMemberLabelInfoModalState = createSelector(
+  getGlobalModalsState,
+  ({ groupMemberLabelInfoModalState }) => groupMemberLabelInfoModalState
 );
 
 export const getContactModalState = createSelector(
@@ -61,6 +85,11 @@ export const getSafetyNumberChangedBlockingData = createSelector(
 export const getDeleteMessagesProps = createSelector(
   getGlobalModalsState,
   ({ deleteMessagesProps }) => deleteMessagesProps
+);
+
+export const getDiscardDraftDialogProps = createSelector(
+  getGlobalModalsState,
+  ({ discardDraftDialogProps }) => discardDraftDialogProps
 );
 
 export const getDraftGifMessageSendModalProps = createSelector(
@@ -86,4 +115,15 @@ export const getEditNicknameAndNoteModalProps = createSelector(
 export const getNotePreviewModalProps = createSelector(
   getGlobalModalsState,
   ({ notePreviewModalProps }) => notePreviewModalProps
+);
+
+export const getPinMessageDialogData: StateSelector<PinMessageDialogData | null> =
+  createSelector(
+    getGlobalModalsState,
+    ({ pinMessageDialogData }) => pinMessageDialogData
+  );
+
+export const getPinReminderModalProps = createSelector(
+  getGlobalModalsState,
+  ({ pinReminderState }) => pinReminderState
 );

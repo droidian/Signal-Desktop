@@ -1,8 +1,8 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-@import '../../mixins.scss';
-@import '../../colors.scss';
+@use '../../mixins.scss';
+@use '../../colors.scss';
 
 .base {
   height: 100%;
@@ -16,14 +16,7 @@
   font-size: 13px;
   line-height: 18px;
   font-weight: 400;
-
-  @include light-theme() {
-    color: $color-gray-60;
-  }
-
-  @include dark-theme() {
-    color: $color-gray-45;
-  }
+  color: light-dark(colors.$color-gray-60, colors.$color-gray-45);
 }
 
 .progress {

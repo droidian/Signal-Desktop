@@ -1,15 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { assert } from 'chai';
-import Long from 'long';
 
-import * as Bytes from '../../Bytes.std.js';
-import type { LocalUserDataType } from '../../util/sessionTranslation.node.js';
-import { sessionRecordToProtobuf } from '../../util/sessionTranslation.node.js';
+import * as Bytes from '../../Bytes.std.ts';
+import type { LocalUserDataType } from '../../util/sessionTranslation.node.ts';
+import { sessionRecordToProtobuf } from '../../util/sessionTranslation.node.ts';
 
+import { toNumber } from '../../util/toNumber.std.ts';
+
+// oxlint-disable-next-line typescript/no-explicit-any
 const getRecordCopy = (record: any): any => JSON.parse(JSON.stringify(record));
 
 export const SESSION_V1_RECORD = {
@@ -189,6 +189,7 @@ export const SESSION_V1_RECORD = {
     },
   },
   version: 'v1',
+  // oxlint-disable-next-line typescript/no-explicit-any
 } as any;
 
 function protoToJSON(value: unknown): unknown {
@@ -208,8 +209,8 @@ function protoToJSON(value: unknown): unknown {
     return value.map(protoToJSON);
   }
 
-  if (Long.isLong(value)) {
-    return value.toNumber();
+  if (typeof value === 'bigint') {
+    return toNumber(value);
   }
 
   if (typeof value === 'object') {
@@ -236,6 +237,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Throws if given an empty object', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = {};
     assert.throws(
       () => sessionRecordToProtobuf(record, ourData),
@@ -244,6 +246,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Generates expected protobuf with minimal record', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = {
       sessions: {
         '\u0005W¿\u0000lÈ\nyª\u000eümB0\u0017j.Û£³-s\u0016Ä(O_M': {
@@ -310,6 +313,7 @@ describe('sessionTranslation', () => {
         receiverChains: [
           {
             senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 6,
               key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -332,6 +336,9 @@ describe('sessionTranslation', () => {
         ],
         remoteRegistrationId: 4243,
         localRegistrationId: 3554,
+        needsRefresh: null,
+        pqRatchetState: null,
+        pendingPreKey: null,
         aliceBaseKey: 'BVeHv5MAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
       },
       previousSessions: [],
@@ -348,6 +355,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Generates expected protobuf with many old receiver chains', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = SESSION_V1_RECORD;
 
     const expected = {
@@ -370,6 +378,7 @@ describe('sessionTranslation', () => {
         receiverChains: [
           {
             senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 6,
               key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -391,8 +400,10 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'BTpb20+IlnBkryDC2ecQT96Hd3t9/Qh3ljnA3509kxRa',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 2,
+              key: null,
             },
             messageKeys: [
               {
@@ -405,8 +416,10 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'Bd5nlMVr6YMBE5eh//tOWMgoOQakkneYri/YuVJpi0pJ',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 12,
+              key: null,
             },
             messageKeys: [
               {
@@ -437,8 +450,10 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'BYSxQO1OIs0ZSFN7JI/vF5Rb0VwaKjs+UAAfDkhOYfkp',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 6,
+              key: null,
             },
             messageKeys: [
               {
@@ -469,22 +484,28 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'BbXSFD/IoivRUvfnPzOaRLqDXEAwi4YEristfwiOj3IJ',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 3,
+              key: null,
             },
             messageKeys: [],
           },
           {
             senderRatchetKey: 'BRRAnr1NhizgCPPzmYV9qGBpvwCpSQH0Rx+UOtl78wUg',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 1,
+              key: null,
             },
             messageKeys: [],
           },
           {
             senderRatchetKey: 'BZvOKPA+kXiCg8TIP/52fu1reCDirC7wb5nyRGce3y4N',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 7,
+              key: null,
             },
             messageKeys: [
               {
@@ -497,8 +518,10 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'Ba9q9bHjMHfbUNDCU8+0O7cmEcIluq+wk3/d2f7q+ThG',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 4,
+              key: null,
             },
             messageKeys: [
               {
@@ -523,28 +546,37 @@ describe('sessionTranslation', () => {
           },
           {
             senderRatchetKey: 'BTwX5SmcUeBG7mwyOZ3YgxyXIN0ktzuEdWTfBUmPfGYG',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 2,
+              key: null,
             },
             messageKeys: [],
           },
           {
             senderRatchetKey: 'BV7ECvKbwKIAD61BXDYr0xr3JtckuKzR1Hw8cVPWGtlo',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 3,
+              key: null,
             },
             messageKeys: [],
           },
           {
             senderRatchetKey: 'BTC7rQqoykGR5Aaix7RkAhI5fSXufc6pVGN9OIC8EW5c',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 1,
+              key: null,
             },
             messageKeys: [],
           },
         ],
         remoteRegistrationId: 4243,
         localRegistrationId: 3554,
+        needsRefresh: null,
+        pqRatchetState: null,
+        pendingPreKey: null,
         aliceBaseKey: 'BVeHv5MAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
       },
       previousSessions: [],
@@ -561,6 +593,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Generates expected protobuf with pending prekey', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = {
       sessions: {
         '\u0005W¿\u0000lÈ\nyª\u000eümB0\u0017j.Û£³-s\u0016Ä(O_M': {
@@ -632,6 +665,7 @@ describe('sessionTranslation', () => {
         receiverChains: [
           {
             senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 6,
               key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -659,6 +693,8 @@ describe('sessionTranslation', () => {
         },
         remoteRegistrationId: 4243,
         localRegistrationId: 3554,
+        needsRefresh: null,
+        pqRatchetState: null,
         aliceBaseKey: 'BVeHv5MAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
       },
       previousSessions: [],
@@ -675,6 +711,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Generates expected protobuf with multiple sessions', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = {
       sessions: {
         '\u0005W¿\u0000lÈ\nyª\u000eümB0\u0017j.Û£³-s\u0016Ä(O_M': {
@@ -821,6 +858,7 @@ describe('sessionTranslation', () => {
         receiverChains: [
           {
             senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+            senderRatchetKeyPrivate: null,
             chainKey: {
               index: 6,
               key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -843,6 +881,9 @@ describe('sessionTranslation', () => {
         ],
         remoteRegistrationId: 4243,
         localRegistrationId: 3554,
+        needsRefresh: null,
+        pqRatchetState: null,
+        pendingPreKey: null,
         aliceBaseKey: 'BVeHv5MAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
       },
       previousSessions: [
@@ -865,6 +906,7 @@ describe('sessionTranslation', () => {
           receiverChains: [
             {
               senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+              senderRatchetKeyPrivate: null,
               chainKey: {
                 index: 6,
                 key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -887,6 +929,9 @@ describe('sessionTranslation', () => {
           ],
           remoteRegistrationId: 2312,
           localRegistrationId: 3554,
+          needsRefresh: null,
+          pqRatchetState: null,
+          pendingPreKey: null,
           aliceBaseKey: 'BUFOv0MAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
         },
         {
@@ -908,6 +953,7 @@ describe('sessionTranslation', () => {
           receiverChains: [
             {
               senderRatchetKey: 'BQo3HG1UhWIh6A7NBxZtNGezBZH8nElZjOqNCBHPzlBz',
+              senderRatchetKeyPrivate: null,
               chainKey: {
                 index: 6,
                 key: 'Wnvy2TjYs0HdZFNahmsKw5cc9KEbW1nSwraDFmGwBDw=',
@@ -930,6 +976,9 @@ describe('sessionTranslation', () => {
           ],
           remoteRegistrationId: 3432,
           localRegistrationId: 3554,
+          needsRefresh: null,
+          pqRatchetState: null,
+          pendingPreKey: null,
           aliceBaseKey: 'BUJEv1oAbMgKeaoO/G1CMBdqhC7bo7Mtc4EWxI0oT19N',
         },
       ],
@@ -946,6 +995,7 @@ describe('sessionTranslation', () => {
   });
 
   it('Generates expected protobuf with just-initialized session', () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
     const record: any = {
       sessions: {
         '\u00055>=eV¹\u0019Ûn¾¯#ß¶_=\u0013.Nî\u001a¥%-]ù_\n': {
@@ -991,6 +1041,8 @@ describe('sessionTranslation', () => {
         aliceBaseKey: 'BTU+PWVWuRnbiW6+ja+XI9+2Xz0TLk7uGqUlhS1d+V8K',
         localIdentityPublic: 'Baioqfzc/5JD6b+GNqapPouf6eHK7xr9ynLJHnvl+444',
         localRegistrationId: 3554,
+        needsRefresh: null,
+        pqRatchetState: null,
         pendingPreKey: {
           baseKey: 'BTU+PWVWuRnbiW6+ja+XI9+2Xz0TLk7uGqUlhS1d+V8K',
           preKeyId: 386,

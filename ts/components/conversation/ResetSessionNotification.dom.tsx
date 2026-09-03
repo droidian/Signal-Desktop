@@ -1,10 +1,10 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import { SystemMessage } from './SystemMessage.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { SystemMessage } from './SystemMessage.dom.tsx';
 
 export type Props = {
   i18n: LocalizerType;

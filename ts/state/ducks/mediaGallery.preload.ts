@@ -5,57 +5,67 @@ import lodash from 'lodash';
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { createLogger } from '../../logging/log.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
+import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
 import type {
   MediaItemDBType,
-  LinkPreviewMediaItemDBType,
-} from '../../sql/Interface.std.js';
+  NonAttachmentMediaItemDBType,
+  ContactMediaItemDBType,
+} from '../../sql/Interface.std.ts';
 import {
   CONVERSATION_UNLOADED,
   MESSAGE_CHANGED,
   MESSAGE_DELETED,
-  MESSAGE_EXPIRED,
-} from './conversations.preload.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+} from './conversations.preload.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
 import type {
   ConversationUnloadedActionType,
   MessageChangedActionType,
   MessageDeletedActionType,
-  MessageExpiredActionType,
-} from './conversations.preload.js';
+} from './conversations.preload.ts';
 import type {
+  MediaTabType,
+  MediaSortOrderType,
   MediaItemMessageType,
   MediaItemType,
   LinkPreviewMediaItemType,
-} from '../../types/MediaItem.std.js';
+  ContactMediaItemType,
+  GenericMediaItemType,
+} from '../../types/MediaItem.std.ts';
+import type { AttachmentForUIType } from '../../types/Attachment.std.ts';
 import {
   isFile,
   isVisualMedia,
   isVoiceMessage,
   isAudio,
-} from '../../util/Attachment.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { getPropsForAttachment } from '../selectors/message.preload.js';
+} from '../../util/Attachment.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { getPropsForAttachment } from '../selectors/message.preload.ts';
+import { getHasMediaBackups } from '../selectors/items.dom.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
 
 const { orderBy } = lodash;
 
 const log = createLogger('mediaGallery');
 
 export type MediaGalleryStateType = ReadonlyDeep<{
+  tab: MediaTabType;
+  sortOrder: MediaSortOrderType;
   conversationId: string | undefined;
-  haveOldestDocument: boolean;
   haveOldestMedia: boolean;
   haveOldestAudio: boolean;
   haveOldestLink: boolean;
+  haveOldestDocument: boolean;
   loading: boolean;
   media: ReadonlyArray<MediaItemType>;
   audio: ReadonlyArray<MediaItemType>;
-  documents: ReadonlyArray<MediaItemType>;
   links: ReadonlyArray<LinkPreviewMediaItemType>;
+  documents: ReadonlyArray<MediaItemType | ContactMediaItemType>;
 }>;
 
 const FETCH_CHUNK_COUNT = 50;
@@ -63,15 +73,17 @@ const FETCH_CHUNK_COUNT = 50;
 const INITIAL_LOAD = 'mediaGallery/INITIAL_LOAD';
 const LOAD_MORE = 'mediaGallery/LOAD_MORE';
 const SET_LOADING = 'mediaGallery/SET_LOADING';
+const SET_TAB = 'mediaGallery/SET_TAB';
+const SET_SORT_ORDER = 'mediaGallery/SET_SORT_ORDER';
 
 type InitialLoadActionType = ReadonlyDeep<{
   type: typeof INITIAL_LOAD;
   payload: {
     conversationId: string;
-    documents: ReadonlyArray<MediaItemType>;
     media: ReadonlyArray<MediaItemType>;
     audio: ReadonlyArray<MediaItemType>;
     links: ReadonlyArray<LinkPreviewMediaItemType>;
+    documents: ReadonlyArray<MediaItemType | ContactMediaItemType>;
   };
 }>;
 type LoadMoreActionType = ReadonlyDeep<{
@@ -80,14 +92,26 @@ type LoadMoreActionType = ReadonlyDeep<{
     conversationId: string;
     media: ReadonlyArray<MediaItemType>;
     audio: ReadonlyArray<MediaItemType>;
-    documents: ReadonlyArray<MediaItemType>;
     links: ReadonlyArray<LinkPreviewMediaItemType>;
+    documents: ReadonlyArray<MediaItemType | ContactMediaItemType>;
   };
 }>;
 type SetLoadingActionType = ReadonlyDeep<{
   type: typeof SET_LOADING;
   payload: {
     loading: boolean;
+  };
+}>;
+type SetTabActionType = ReadonlyDeep<{
+  type: typeof SET_TAB;
+  payload: {
+    tab: MediaGalleryStateType['tab'];
+  };
+}>;
+type SetSortOrderActionType = ReadonlyDeep<{
+  type: typeof SET_SORT_ORDER;
+  payload: {
+    sortOrder: MediaGalleryStateType['sortOrder'];
   };
 }>;
 
@@ -97,38 +121,206 @@ type MediaGalleryActionType = ReadonlyDeep<
   | LoadMoreActionType
   | MessageChangedActionType
   | MessageDeletedActionType
-  | MessageExpiredActionType
   | SetLoadingActionType
+  | SetTabActionType
+  | SetSortOrderActionType
 >;
 
+function getMediaItemSize(item: GenericMediaItemType): number {
+  switch (item.type) {
+    case 'media':
+    case 'audio':
+    case 'document':
+      return item.attachment.size;
+    case 'link':
+    case 'contact':
+      return 0;
+    default:
+      throw missingCaseError(item);
+  }
+}
+
+function _updateMedia<ItemType extends GenericMediaItemType>({
+  message,
+  haveOldest,
+  media,
+  newMedia,
+  sortOrder,
+}: {
+  message: ReadonlyMessageAttributesType;
+  haveOldest: boolean;
+  media: ReadonlyArray<ItemType>;
+  newMedia: ReadonlyArray<ItemType>;
+  sortOrder: MediaSortOrderType;
+}): [ReadonlyArray<ItemType>, boolean] {
+  const mediaWithout = media.filter(item => item.message.id !== message.id);
+  const difference = media.length - mediaWithout.length;
+
+  if (message.deletedForEveryone || message.isErased) {
+    // If message is erased and there was media from this message - update state
+    if (difference > 0) {
+      return [mediaWithout, haveOldest];
+    }
+    return [media, haveOldest];
+  }
+
+  const oldest = media[0];
+
+  let inMediaTimeRange: boolean;
+
+  if (oldest == null) {
+    inMediaTimeRange = true;
+  } else if (sortOrder === 'date') {
+    inMediaTimeRange =
+      message.received_at >= oldest.message.receivedAt &&
+      message.sent_at >= oldest.message.sentAt;
+  } else if (sortOrder === 'size') {
+    const messageLatest = _sortItems(newMedia, sortOrder).at(-1);
+    inMediaTimeRange =
+      messageLatest == null ||
+      (getMediaItemSize(messageLatest) >= getMediaItemSize(oldest) &&
+        message.received_at >= oldest.message.receivedAt &&
+        message.sent_at >= oldest.message.sentAt);
+  } else {
+    throw missingCaseError(sortOrder);
+  }
+
+  // If message is updated out of current range - it means that the oldest
+  // message in the view might no longer be the oldest in the database.
+  if (!inMediaTimeRange) {
+    return [media, false];
+  }
+
+  // If the message is in the view and attachments might have changed - update
+  if (difference > 0 || newMedia.length > 0) {
+    return [_sortItems(mediaWithout.concat(newMedia), sortOrder), haveOldest];
+  }
+
+  return [media, haveOldest];
+}
+
 function _sortItems<
-  Item extends ReadonlyDeep<{ message: MediaItemMessageType }>,
->(items: ReadonlyArray<Item>): ReadonlyArray<Item> {
-  return orderBy(items, [
-    'message.receivedAt',
-    'message.sentAt',
-    'message.index',
-  ]);
+  Item extends ReadonlyDeep<{
+    attachment?: AttachmentForUIType;
+    message: MediaItemMessageType;
+  }>,
+>(
+  items: ReadonlyArray<Item>,
+  sortOrder: MediaSortOrderType
+): ReadonlyArray<Item> {
+  if (sortOrder === 'date') {
+    return orderBy(items, [
+      'message.receivedAt',
+      'message.sentAt',
+      'message.index',
+    ]);
+  }
+  if (sortOrder === 'size') {
+    return orderBy(items, [
+      'attachment.size',
+      'message.receivedAt',
+      'message.sentAt',
+      'message.index',
+    ]);
+  }
+  throw missingCaseError(sortOrder);
+}
+
+function _cleanMessage(
+  message: ReadonlyMessageAttributesType
+): MediaItemMessageType {
+  return {
+    id: message.id,
+    type: message.type,
+    source: message.source,
+    sourceServiceId: message.sourceServiceId,
+    conversationId: message.conversationId,
+    receivedAt: message.received_at,
+    receivedAtMs: message.received_at_ms,
+    sentAt: message.sent_at,
+    isErased: !!message.isErased,
+    errors: message.errors ?? undefined,
+    readStatus: message.readStatus,
+    sendStateByConversationId: message.sendStateByConversationId,
+  };
+}
+
+function _cleanAttachment(
+  type: 'media' | 'audio' | 'documents',
+  { message, index, attachment }: MediaItemDBType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
+): MediaItemType {
+  return {
+    type: type === 'documents' ? 'document' : type,
+    index,
+    attachment: getPropsForAttachment(attachment, 'attachment', message, {
+      hasMediaBackups,
+    }),
+    message,
+  };
 }
 
 function _cleanAttachments(
   type: 'media' | 'audio' | 'documents',
-  rawMedia: ReadonlyArray<MediaItemDBType>
+  rawMedia: ReadonlyArray<MediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): ReadonlyArray<MediaItemType> {
-  return rawMedia.map(({ message, index, attachment }) => {
-    return {
-      type: type === 'documents' ? 'document' : type,
-      index,
-      attachment: getPropsForAttachment(attachment, 'attachment', message),
-      message,
-    };
+  return rawMedia.map(media =>
+    _cleanAttachment(type, media, { hasMediaBackups })
+  );
+}
+
+function _cleanContact(
+  raw: ContactMediaItemDBType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
+): ContactMediaItemType {
+  const { message, contact } = raw;
+  return {
+    type: 'contact',
+    contact: {
+      ...contact,
+      avatar:
+        contact.avatar?.avatar == null
+          ? undefined
+          : {
+              ...contact.avatar,
+              avatar: getPropsForAttachment(
+                contact.avatar.avatar,
+                'contact',
+                message,
+                { hasMediaBackups }
+              ),
+            },
+    },
+    message,
+  };
+}
+
+function _cleanDocuments(
+  rawDocuments: ReadonlyArray<MediaItemDBType | ContactMediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
+): ReadonlyArray<MediaItemType | ContactMediaItemType> {
+  return rawDocuments.map(rawDocument => {
+    if (rawDocument.type === 'mediaItem') {
+      return _cleanAttachment('documents', rawDocument, { hasMediaBackups });
+    }
+
+    strictAssert(
+      rawDocument.type === 'contact',
+      `Unexpected documen type ${rawDocument.type}`
+    );
+    return _cleanContact(rawDocument, { hasMediaBackups });
   });
 }
 
 function _cleanLinkPreviews(
-  rawPreviews: ReadonlyArray<LinkPreviewMediaItemDBType>
+  rawPreviews: ReadonlyArray<NonAttachmentMediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): ReadonlyArray<LinkPreviewMediaItemType> {
-  return rawPreviews.map(({ message, preview }) => {
+  return rawPreviews.map(raw => {
+    strictAssert(raw.type === 'link', 'Expected link preview');
+
+    const { message, preview } = raw;
     return {
       type: 'link',
       preview: {
@@ -136,11 +328,24 @@ function _cleanLinkPreviews(
         image:
           preview.image == null
             ? undefined
-            : getPropsForAttachment(preview.image, 'preview', message),
+            : getPropsForAttachment(preview.image, 'preview', message, {
+                hasMediaBackups,
+              }),
       },
       message,
     };
   });
+}
+
+function sortOrderToOrder(sortOrder: MediaSortOrderType): 'older' | 'bigger' {
+  switch (sortOrder) {
+    case 'date':
+      return 'older';
+    case 'size':
+      return 'bigger';
+    default:
+      throw missingCaseError(sortOrder);
+  }
 }
 
 function initialLoad(
@@ -151,11 +356,16 @@ function initialLoad(
   unknown,
   InitialLoadActionType | SetLoadingActionType
 > {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     dispatch({
       type: SET_LOADING,
       payload: { loading: true },
     });
+
+    const {
+      mediaGallery: { sortOrder },
+    } = getState();
+    const order = sortOrderToOrder(sortOrder);
 
     const [rawMedia, rawAudio, rawDocuments, rawLinkPreviews] =
       await Promise.all([
@@ -163,39 +373,42 @@ function initialLoad(
           conversationId,
           limit: FETCH_CHUNK_COUNT,
           type: 'media',
-          order: 'older',
+          order,
         }),
         DataReader.getSortedMedia({
           conversationId,
           limit: FETCH_CHUNK_COUNT,
           type: 'audio',
-          order: 'older',
+          order,
         }),
-        DataReader.getSortedMedia({
+        // Note: `getSortedDocuments` mixes in contacts
+        DataReader.getSortedDocuments({
           conversationId,
           limit: FETCH_CHUNK_COUNT,
-          type: 'documents',
-          order: 'older',
+          order,
         }),
-        DataReader.getOlderLinkPreviews({
+        DataReader.getSortedNonAttachmentMedia({
           conversationId,
           limit: FETCH_CHUNK_COUNT,
+          type: 'links',
+          order,
         }),
       ]);
 
-    const media = _cleanAttachments('media', rawMedia);
-    const audio = _cleanAttachments('audio', rawAudio);
-    const documents = _cleanAttachments('documents', rawDocuments);
-    const links = _cleanLinkPreviews(rawLinkPreviews);
+    const hasMediaBackups = getHasMediaBackups(getState());
+    const media = _cleanAttachments('media', rawMedia, { hasMediaBackups });
+    const audio = _cleanAttachments('audio', rawAudio, { hasMediaBackups });
+    const documents = _cleanDocuments(rawDocuments, { hasMediaBackups });
+    const links = _cleanLinkPreviews(rawLinkPreviews, { hasMediaBackups });
 
     dispatch({
       type: INITIAL_LOAD,
       payload: {
         conversationId,
-        documents,
         media,
         audio,
         links,
+        documents,
       },
     });
   };
@@ -203,7 +416,7 @@ function initialLoad(
 
 function loadMore(
   conversationId: string,
-  type: 'media' | 'audio' | 'documents' | 'links'
+  type: MediaTabType
 ): ThunkAction<
   void,
   RootStateType,
@@ -212,7 +425,7 @@ function loadMore(
 > {
   return async (dispatch, getState) => {
     const { mediaGallery } = getState();
-    const { conversationId: previousConversationId } = mediaGallery;
+    const { conversationId: previousConversationId, sortOrder } = mediaGallery;
 
     if (conversationId !== previousConversationId) {
       log.warn('loadMore: conversationId mismatch; calling initialLoad()');
@@ -220,7 +433,9 @@ function loadMore(
       return;
     }
 
-    let previousItems: ReadonlyArray<MediaItemType | LinkPreviewMediaItemType>;
+    let previousItems: ReadonlyArray<
+      MediaItemType | LinkPreviewMediaItemType | ContactMediaItemType
+    >;
     if (type === 'media') {
       previousItems = mediaGallery.media;
     } else if (type === 'audio') {
@@ -253,32 +468,42 @@ function loadMore(
       messageId,
       receivedAt,
       sentAt,
+      size: getMediaItemSize(oldestLoadedItem),
+      order: sortOrderToOrder(sortOrder),
     };
 
     let media: ReadonlyArray<MediaItemType> = [];
     let audio: ReadonlyArray<MediaItemType> = [];
-    let documents: ReadonlyArray<MediaItemType> = [];
+    let documents: ReadonlyArray<MediaItemType | ContactMediaItemType> = [];
     let links: ReadonlyArray<LinkPreviewMediaItemType> = [];
-    if (type === 'media' || type === 'audio' || type === 'documents') {
+    const hasMediaBackups = getHasMediaBackups(getState());
+    if (type === 'media' || type === 'audio') {
+      strictAssert(oldestLoadedItem.type === type, 'must be a media item');
+
       const rawMedia = await DataReader.getSortedMedia({
         ...sharedOptions,
-        order: 'older',
         type,
       });
 
-      const result = _cleanAttachments(type, rawMedia);
+      const result = _cleanAttachments(type, rawMedia, { hasMediaBackups });
       if (type === 'media') {
         media = result;
       } else if (type === 'audio') {
         audio = result;
-      } else if (type === 'documents') {
-        documents = result;
       } else {
         throw missingCaseError(type);
       }
+    } else if (type === 'documents') {
+      // Note: `getSortedDocuments` mixes in contacts
+      const rawDocuments = await DataReader.getSortedDocuments(sharedOptions);
+
+      documents = _cleanDocuments(rawDocuments, { hasMediaBackups });
     } else if (type === 'links') {
-      const rawPreviews = await DataReader.getOlderLinkPreviews(sharedOptions);
-      links = _cleanLinkPreviews(rawPreviews);
+      const rawPreviews = await DataReader.getSortedNonAttachmentMedia({
+        ...sharedOptions,
+        type,
+      });
+      links = _cleanLinkPreviews(rawPreviews, { hasMediaBackups });
     } else {
       throw missingCaseError(type);
     }
@@ -296,9 +521,31 @@ function loadMore(
   };
 }
 
+function setTab(tab: MediaGalleryStateType['tab']): SetTabActionType {
+  return {
+    type: SET_TAB,
+    payload: {
+      tab,
+    },
+  };
+}
+
+function setSortOrder(
+  sortOrder: MediaGalleryStateType['sortOrder']
+): SetSortOrderActionType {
+  return {
+    type: SET_SORT_ORDER,
+    payload: {
+      sortOrder,
+    },
+  };
+}
+
 export const actions = {
   initialLoad,
   loadMore,
+  setTab,
+  setSortOrder,
 };
 
 export const useMediaGalleryActions = (): BoundActionCreatorsMapObject<
@@ -307,6 +554,8 @@ export const useMediaGalleryActions = (): BoundActionCreatorsMapObject<
 
 export function getEmptyState(): MediaGalleryStateType {
   return {
+    tab: 'media',
+    sortOrder: 'date',
     conversationId: undefined,
     haveOldestDocument: false,
     haveOldestMedia: false,
@@ -337,17 +586,18 @@ export function reducer(
     const { payload } = action;
 
     return {
-      ...state,
+      tab: 'media',
+      sortOrder: state.sortOrder,
       loading: false,
       conversationId: payload.conversationId,
       haveOldestMedia: payload.media.length === 0,
       haveOldestAudio: payload.audio.length === 0,
       haveOldestLink: payload.links.length === 0,
       haveOldestDocument: payload.documents.length === 0,
-      media: _sortItems(payload.media),
-      audio: _sortItems(payload.audio),
-      links: _sortItems(payload.links),
-      documents: _sortItems(payload.documents),
+      media: _sortItems(payload.media, state.sortOrder),
+      audio: _sortItems(payload.audio, state.sortOrder),
+      links: _sortItems(payload.links, 'date'),
+      documents: _sortItems(payload.documents, state.sortOrder),
     };
   }
 
@@ -364,10 +614,30 @@ export function reducer(
       haveOldestAudio: audio.length === 0,
       haveOldestDocument: documents.length === 0,
       haveOldestLink: links.length === 0,
-      media: _sortItems(media.concat(state.media)),
-      audio: _sortItems(audio.concat(state.audio)),
-      links: _sortItems(links.concat(state.links)),
-      documents: _sortItems(documents.concat(state.documents)),
+      media: _sortItems(media.concat(state.media), state.sortOrder),
+      audio: _sortItems(audio.concat(state.audio), state.sortOrder),
+      links: _sortItems(links.concat(state.links), 'date'),
+      documents: _sortItems(documents.concat(state.documents), state.sortOrder),
+    };
+  }
+
+  if (action.type === SET_TAB) {
+    const { tab } = action.payload;
+
+    return {
+      ...state,
+      tab,
+    };
+  }
+
+  if (action.type === SET_SORT_ORDER) {
+    const { sortOrder } = action.payload;
+
+    return {
+      ...getEmptyState(),
+      loading: true,
+      tab: state.tab,
+      sortOrder,
     };
   }
 
@@ -382,152 +652,93 @@ export function reducer(
       return state;
     }
 
-    const mediaWithout = state.media.filter(
-      item => item.message.id !== message.id
-    );
-    const audioWithout = state.audio.filter(
-      item => item.message.id !== message.id
-    );
-    const documentsWithout = state.documents.filter(
-      item => item.message.id !== message.id
-    );
-    const linksWithout = state.links.filter(
-      item => item.message.id !== message.id
-    );
-    const mediaDifference = state.media.length - mediaWithout.length;
-    const audioDifference = state.audio.length - audioWithout.length;
-    const documentDifference = state.documents.length - documentsWithout.length;
-    const linkDifference = state.links.length - linksWithout.length;
-
-    if (message.deletedForEveryone || message.isErased) {
-      if (
-        mediaDifference > 0 ||
-        audioDifference > 0 ||
-        documentDifference > 0 ||
-        linkDifference > 0
-      ) {
-        return {
-          ...state,
-          media: mediaWithout,
-          audio: audioWithout,
-          documents: documentsWithout,
-          links: linksWithout,
-        };
-      }
-      return state;
-    }
-
-    const oldestLoadedMedia = state.media[0];
-    const oldestLoadedAudio = state.audio[0];
-    const oldestLoadedDocument = state.documents[0];
-    const oldestLoadedLink = state.links[0];
-
     const messageMediaItems: Array<MediaItemDBType> = (
       message.attachments ?? []
     ).map((attachment, index) => {
       return {
+        type: 'mediaItem',
         index,
         attachment,
-        message: {
-          id: message.id,
-          type: message.type,
-          source: message.source,
-          sourceServiceId: message.sourceServiceId,
-          conversationId: message.conversationId,
-          receivedAt: message.received_at,
-          receivedAtMs: message.received_at_ms,
-          sentAt: message.sent_at,
-        },
+        message: _cleanMessage(message),
       };
     });
 
+    const hasMediaBackups = backupsService.hasMediaBackups();
     const newMedia = _cleanAttachments(
       'media',
-      messageMediaItems.filter(({ attachment }) => isVisualMedia(attachment))
+      messageMediaItems.filter(({ attachment }) => isVisualMedia(attachment)),
+      { hasMediaBackups }
     );
     const newAudio = _cleanAttachments(
       'audio',
       messageMediaItems.filter(
         ({ attachment }) => isVoiceMessage(attachment) || isAudio([attachment])
-      )
-    );
-    const newDocuments = _cleanAttachments(
-      'documents',
-      messageMediaItems.filter(({ attachment }) => isFile(attachment))
+      ),
+      { hasMediaBackups }
     );
     const newLinks = _cleanLinkPreviews(
       message.preview != null && message.preview.length > 0
         ? [
             {
-              preview: message.preview[0],
-              message: {
-                id: message.id,
-                type: message.type,
-                source: message.source,
-                sourceServiceId: message.sourceServiceId,
-                conversationId: message.conversationId,
-                receivedAt: message.received_at,
-                receivedAtMs: message.received_at_ms,
-                sentAt: message.sent_at,
-              },
+              type: 'link',
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              preview: message.preview[0]!,
+              message: _cleanMessage(message),
             },
           ]
-        : []
+        : [],
+      { hasMediaBackups }
     );
-
-    let {
-      media,
-      audio,
-      links,
-      documents,
-      haveOldestMedia,
-      haveOldestAudio,
-      haveOldestLink,
-      haveOldestDocument,
-    } = state;
-
-    const inMediaTimeRange =
-      !oldestLoadedMedia ||
-      (message.received_at >= oldestLoadedMedia.message.receivedAt &&
-        message.sent_at >= oldestLoadedMedia.message.sentAt);
-    if ((mediaDifference > 0 || newMedia.length > 0) && inMediaTimeRange) {
-      media = _sortItems(mediaWithout.concat(newMedia));
-    } else if (!inMediaTimeRange) {
-      haveOldestMedia = false;
+    let newDocuments: ReadonlyArray<MediaItemType | ContactMediaItemType> =
+      _cleanAttachments(
+        'documents',
+        messageMediaItems.filter(({ attachment }) => isFile(attachment)),
+        { hasMediaBackups }
+      );
+    if (message.contact != null && message.contact.length > 0) {
+      newDocuments = newDocuments.concat(
+        _cleanContact(
+          {
+            type: 'contact',
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            contact: message.contact[0]!,
+            message: _cleanMessage(message),
+          },
+          { hasMediaBackups }
+        )
+      );
     }
 
-    const inAudioTimeRange =
-      !oldestLoadedAudio ||
-      (message.received_at >= oldestLoadedAudio.message.receivedAt &&
-        message.sent_at >= oldestLoadedAudio.message.sentAt);
-    if ((audioDifference > 0 || newAudio.length > 0) && inAudioTimeRange) {
-      audio = _sortItems(audioWithout.concat(newAudio));
-    } else if (!inAudioTimeRange) {
-      haveOldestAudio = false;
-    }
+    const { sortOrder } = state;
 
-    const inDocumentTimeRange =
-      !oldestLoadedDocument ||
-      (message.received_at >= oldestLoadedDocument.message.receivedAt &&
-        message.sent_at >= oldestLoadedDocument.message.sentAt);
-    if (
-      (documentDifference > 0 || newDocuments.length > 0) &&
-      inDocumentTimeRange
-    ) {
-      documents = _sortItems(documentsWithout.concat(newDocuments));
-    } else if (!inDocumentTimeRange) {
-      haveOldestDocument = false;
-    }
-
-    const inLinkTimeRange =
-      !oldestLoadedLink ||
-      (message.received_at >= oldestLoadedLink.message.receivedAt &&
-        message.sent_at >= oldestLoadedLink.message.sentAt);
-    if ((linkDifference > 0 || newLinks.length > 0) && inLinkTimeRange) {
-      links = _sortItems(linksWithout.concat(newLinks));
-    } else if (!inLinkTimeRange) {
-      haveOldestLink = false;
-    }
+    const [media, haveOldestMedia] = _updateMedia({
+      message,
+      haveOldest: state.haveOldestMedia,
+      media: state.media,
+      newMedia,
+      sortOrder,
+    });
+    const [audio, haveOldestAudio] = _updateMedia({
+      message,
+      haveOldest: state.haveOldestAudio,
+      media: state.audio,
+      newMedia: newAudio,
+      sortOrder,
+    });
+    const [documents, haveOldestDocument] = _updateMedia({
+      message,
+      haveOldest: state.haveOldestDocument,
+      media: state.documents,
+      newMedia: newDocuments,
+      sortOrder,
+    });
+    const [links, haveOldestLink] = _updateMedia({
+      message,
+      haveOldest: state.haveOldestLink,
+      media: state.links,
+      newMedia: newLinks,
+      sortOrder: 'date',
+    });
 
     if (
       state.haveOldestMedia !== haveOldestMedia ||
@@ -555,7 +766,7 @@ export function reducer(
     return state;
   }
 
-  if (action.type === MESSAGE_DELETED || action.type === MESSAGE_EXPIRED) {
+  if (action.type === MESSAGE_DELETED) {
     return {
       ...state,
       media: state.media.filter(item => item.message.id !== action.payload.id),

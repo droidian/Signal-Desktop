@@ -4,13 +4,13 @@
 import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
-import * as Contact from './EmbeddedContact.std.js';
+import * as Contact from './EmbeddedContact.std.ts';
 import type {
   AddressableAttachmentType,
   AttachmentType,
   AttachmentWithHydratedData,
   LocalAttachmentV2Type,
-} from './Attachment.std.js';
+} from './Attachment.std.ts';
 import {
   isAudio,
   isVoiceMessage,
@@ -18,20 +18,20 @@ import {
   replaceUnicodeOrderOverrides,
   replaceUnicodeV2,
   shouldGenerateThumbnailForAttachmentType,
-} from '../util/Attachment.std.js';
-import { captureDimensionsAndScreenshot } from '../util/captureDimensionsAndScreenshot.dom.js';
-import { captureAudioDuration } from '../util/captureAudioDuration.dom.js';
-import type { MakeVideoScreenshotResultType } from './VisualAttachment.dom.js';
-import * as Errors from './errors.std.js';
-import * as SchemaVersion from './SchemaVersion.std.js';
+} from '../util/Attachment.std.ts';
+import { captureDimensionsAndScreenshot } from '../util/captureDimensionsAndScreenshot.dom.ts';
+import { captureAudioDuration } from '../util/captureAudioDuration.dom.ts';
+import type { MakeVideoScreenshotResultType } from './VisualAttachment.dom.ts';
+import * as Errors from './errors.std.ts';
+import * as SchemaVersion from './SchemaVersion.std.ts';
 
-import { LONG_MESSAGE } from './MIME.std.js';
-import type * as MIME from './MIME.std.js';
-import type { LoggerType } from './Logging.std.js';
+import { LONG_MESSAGE } from './MIME.std.ts';
+import type * as MIME from './MIME.std.ts';
+import type { LoggerType } from './Logging.std.ts';
 import type {
   EmbeddedContactType,
   EmbeddedContactWithHydratedAvatar,
-} from './EmbeddedContact.std.js';
+} from './EmbeddedContact.std.ts';
 
 import type {
   MessageAttributesType,
@@ -41,24 +41,26 @@ import type {
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from './message/LinkPreviews.std.js';
+} from './message/LinkPreviews.std.ts';
 import type {
   StickerType,
   StickerWithHydratedData,
-} from './Stickers.preload.js';
-import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.std.js';
+} from './Stickers.preload.ts';
+import { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.std.ts';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from '../util/getLocalAttachmentUrl.std.js';
-import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment.preload.js';
-import { deepClone } from '../util/deepClone.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { isBodyTooLong } from '../util/longAttachment.std.js';
-import type { MessageAttachmentType } from './AttachmentDownload.std.js';
-import { getFilePathsOwnedByMessage } from '../util/messageFilePaths.std.js';
+} from '../util/getLocalAttachmentUrl.std.ts';
+import { encryptLegacyAttachment } from '../util/encryptLegacyAttachment.preload.ts';
+import { deepClone } from '../util/deepClone.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { isBodyTooLong } from '../util/longAttachment.std.ts';
+import type { MessageAttachmentType } from './AttachmentDownload.std.ts';
+import type { getExistingAttachmentDataForReuse } from '../util/attachments/deduplicateAttachment.preload.ts';
+import type { getPlaintextHashForInMemoryAttachment } from '../AttachmentCrypto.node.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
-const { isFunction, isObject, identity } = lodash;
+const { isFunction, isObject } = lodash;
 
 export const GROUP = 'group';
 export const PRIVATE = 'private';
@@ -72,6 +74,7 @@ export type ContextType = {
     width: number;
     height: number;
   }>;
+  getPlaintextHashForInMemoryAttachment: typeof getPlaintextHashForInMemoryAttachment;
   getRegionCode: () => string | undefined;
   logger: LoggerType;
   makeImageThumbnail: (params: {
@@ -81,7 +84,7 @@ export type ContextType = {
     logger: LoggerType;
   }) => Promise<Blob>;
   makeObjectUrl: (
-    data: Uint8Array | ArrayBuffer,
+    data: Uint8Array<ArrayBuffer> | ArrayBuffer,
     contentType: MIME.MIMEType
   ) => string;
   makeVideoScreenshot: (params: {
@@ -93,10 +96,15 @@ export type ContextType = {
   revokeObjectUrl: (objectUrl: string) => void;
   readAttachmentData: (
     attachment: Partial<AddressableAttachmentType>
-  ) => Promise<Uint8Array>;
-  writeNewAttachmentData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
-  writeNewStickerData: (data: Uint8Array) => Promise<LocalAttachmentV2Type>;
-  deleteAttachmentOnDisk: (path: string) => Promise<void>;
+  ) => Promise<Uint8Array<ArrayBuffer>>;
+  writeNewAttachmentData: (
+    data: Uint8Array<ArrayBuffer>
+  ) => Promise<LocalAttachmentV2Type>;
+  writeNewStickerData: (
+    data: Uint8Array<ArrayBuffer>
+  ) => Promise<LocalAttachmentV2Type>;
+  maybeDeleteAttachmentFile: (path: string) => Promise<{ wasDeleted: boolean }>;
+  getExistingAttachmentDataForReuse: typeof getExistingAttachmentDataForReuse;
 };
 
 // Schema version history
@@ -150,7 +158,7 @@ export type ContextType = {
 const INITIAL_SCHEMA_VERSION = 0;
 
 // Placeholder until we have stronger preconditions:
-export const isValid = (_message: MessageAttributesType): boolean => true;
+const isValid = (_message: MessageAttributesType): boolean => true;
 
 // Schema
 export const initializeSchemaVersion = ({
@@ -251,7 +259,7 @@ export const _withSchemaVersion = ({
       upgradedMessage = await upgrade(message, context);
     } catch (error) {
       logger.error(
-        `Message._withSchemaVersion: error updating message ${message.id}, 
+        `Message._withSchemaVersion: error updating message ${message.id},
         attempt ${message.schemaMigrationAttempts}:`,
         Errors.toLogFormat(error)
       );
@@ -280,12 +288,7 @@ export type UpgradeAttachmentType = (
   message: MessageAttributesType
 ) => Promise<AttachmentType>;
 
-// As regrettable as it is we have to fight back against esbuild's `__name`
-// wrapper for functions that are created at high rate, because `__name` affects
-// runtime performance.
-const esbuildAnonymize = identity;
-
-export const _mapAttachments =
+const _mapAttachments =
   (upgradeAttachment: UpgradeAttachmentType) =>
   async (
     message: MessageAttributesType,
@@ -295,15 +298,15 @@ export const _mapAttachments =
       return message;
     }
 
-    const upgradeWithContext = esbuildAnonymize((attachment: AttachmentType) =>
-      upgradeAttachment(attachment, context, message)
-    );
+    const upgradeWithContext = (attachment: AttachmentType) =>
+      upgradeAttachment(attachment, context, message);
     const attachments = await Promise.all(
       (message.attachments || []).map(upgradeWithContext)
     );
     return { ...message, attachments };
   };
 
+/** @testexport */
 export const _mapAllAttachments =
   (upgradeAttachment: UpgradeAttachmentType) =>
   async (
@@ -370,10 +373,8 @@ export const _mapContact =
       return message;
     }
 
-    const upgradeWithContext = esbuildAnonymize(
-      (contact: EmbeddedContactType) =>
-        upgradeContact(contact, context, message)
-    );
+    const upgradeWithContext = (contact: EmbeddedContactType) =>
+      upgradeContact(contact, context, message);
     const contact = await Promise.all(
       (message.contact || []).map(upgradeWithContext)
     );
@@ -396,23 +397,21 @@ export const _mapQuotedAttachments =
       throw new Error('_mapQuotedAttachments: context must have logger object');
     }
 
-    const upgradeWithContext = esbuildAnonymize(
-      async (
-        attachment: QuotedAttachmentType
-      ): Promise<QuotedAttachmentType> => {
-        const { thumbnail } = attachment;
-        if (!thumbnail) {
-          return attachment;
-        }
-
-        const upgradedThumbnail = await upgradeAttachment(
-          thumbnail as AttachmentType,
-          context,
-          message
-        );
-        return { ...attachment, thumbnail: upgradedThumbnail };
+    const upgradeWithContext = async (
+      attachment: QuotedAttachmentType
+    ): Promise<QuotedAttachmentType> => {
+      const { thumbnail } = attachment;
+      if (!thumbnail) {
+        return attachment;
       }
-    );
+
+      const upgradedThumbnail = await upgradeAttachment(
+        thumbnail as AttachmentType,
+        context,
+        message
+      );
+      return { ...attachment, thumbnail: upgradedThumbnail };
+    };
 
     const quotedAttachments =
       (message.quote && message.quote.attachments) || [];
@@ -426,7 +425,7 @@ export const _mapQuotedAttachments =
 //      _mapPreviewAttachments :: (PreviewAttachment -> Promise PreviewAttachment) ->
 //                               (Message, Context) ->
 //                               Promise Message
-export const _mapPreviewAttachments =
+const _mapPreviewAttachments =
   (upgradeAttachment: UpgradeAttachmentType) =>
   async (
     message: MessageAttributesType,
@@ -441,17 +440,15 @@ export const _mapPreviewAttachments =
       );
     }
 
-    const upgradeWithContext = esbuildAnonymize(
-      async (preview: LinkPreviewType) => {
-        const { image } = preview;
-        if (!image) {
-          return preview;
-        }
-
-        const upgradedImage = await upgradeAttachment(image, context, message);
-        return { ...preview, image: upgradedImage };
+    const upgradeWithContext = async (preview: LinkPreviewType) => {
+      const { image } = preview;
+      if (!image) {
+        return preview;
       }
-    );
+
+      const upgradedImage = await upgradeAttachment(image, context, message);
+      return { ...preview, image: upgradedImage };
+    };
 
     const preview = await Promise.all(
       (message.preview || []).map(upgradeWithContext)
@@ -519,25 +516,23 @@ const toVersion10 = _withSchemaVersion({
   schemaVersion: 10,
   upgrade: async (message, context) => {
     const processPreviews = _mapPreviewAttachments(migrateDataToFileSystem);
-    const processSticker = esbuildAnonymize(
-      async (
-        stickerMessage: MessageAttributesType,
-        stickerContext: ContextType
-      ): Promise<MessageAttributesType> => {
-        const { sticker } = stickerMessage;
-        if (!sticker || !sticker.data || !sticker.data.data) {
-          return stickerMessage;
-        }
-
-        return {
-          ...stickerMessage,
-          sticker: {
-            ...sticker,
-            data: await migrateDataToFileSystem(sticker.data, stickerContext),
-          },
-        };
+    const processSticker = async (
+      stickerMessage: MessageAttributesType,
+      stickerContext: ContextType
+    ): Promise<MessageAttributesType> => {
+      const { sticker } = stickerMessage;
+      if (!sticker || !sticker.data || !sticker.data.data) {
+        return stickerMessage;
       }
-    );
+
+      return {
+        ...stickerMessage,
+        sticker: {
+          ...sticker,
+          data: await migrateDataToFileSystem(sticker.data, stickerContext),
+        },
+      };
+    };
 
     const previewProcessed = await processPreviews(message, context);
     const stickerProcessed = await processSticker(previewProcessed, context);
@@ -707,24 +702,12 @@ export const CURRENT_SCHEMA_VERSION = VERSIONS.length - 1;
 // We need dimensions and screenshots for images for proper display
 export const VERSION_NEEDED_FOR_DISPLAY = 9;
 
+export const MESSAGE_VERSION_WITH_NORMALIZED_ATTACHMENTS = 15;
+
 // UpgradeStep
 export const upgradeSchema = async (
   rawMessage: MessageAttributesType,
-  {
-    readAttachmentData,
-    writeNewAttachmentData,
-    doesAttachmentExist,
-    getRegionCode,
-    makeObjectUrl,
-    revokeObjectUrl,
-    getImageDimensions,
-    makeImageThumbnail,
-    makeVideoScreenshot,
-    writeNewStickerData,
-    deleteAttachmentOnDisk,
-    logger,
-    maxVersion = CURRENT_SCHEMA_VERSION,
-  }: ContextType,
+  context: ContextType,
   upgradeOptions: {
     versions: ReadonlyArray<
       (
@@ -734,6 +717,7 @@ export const upgradeSchema = async (
     >;
   } = { versions: VERSIONS }
 ): Promise<MessageAttributesType> => {
+  const { logger, maxVersion = CURRENT_SCHEMA_VERSION } = context;
   const { versions } = upgradeOptions;
   let message = rawMessage;
   const startingVersion = message.schemaVersion ?? 0;
@@ -744,23 +728,11 @@ export const upgradeSchema = async (
 
     const currentVersion = versions[index];
     try {
+      strictAssert(currentVersion, 'Missing currentVersion');
       // We really do want this intra-loop await because this is a chained async action,
       //   each step dependent on the previous
-      // eslint-disable-next-line no-await-in-loop
-      message = await currentVersion(message, {
-        readAttachmentData,
-        writeNewAttachmentData,
-        makeObjectUrl,
-        revokeObjectUrl,
-        doesAttachmentExist,
-        getImageDimensions,
-        makeImageThumbnail,
-        makeVideoScreenshot,
-        logger,
-        getRegionCode,
-        writeNewStickerData,
-        deleteAttachmentOnDisk,
-      });
+      // oxlint-disable-next-line no-await-in-loop
+      message = await currentVersion(message, context);
     } catch (e) {
       // Throw the error if we were unable to upgrade the message at all
       if (message.schemaVersion === startingVersion) {
@@ -854,7 +826,7 @@ export const processNewAttachment = async (
 };
 
 export const processNewSticker = async (
-  stickerData: Uint8Array,
+  stickerData: Uint8Array<ArrayBuffer>,
   isEphemeral: boolean,
   {
     writeNewStickerData,
@@ -873,7 +845,7 @@ export const processNewSticker = async (
   }
 
   const local = await writeNewStickerData(stickerData);
-  const url = await getLocalAttachmentUrl(local, {
+  const url = getLocalAttachmentUrl(local, {
     disposition: isEphemeral
       ? AttachmentDisposition.Temporary
       : AttachmentDisposition.Sticker,
@@ -894,25 +866,6 @@ export const processNewSticker = async (
 type LoadAttachmentType = (
   attachment: Partial<AttachmentType>
 ) => Promise<AttachmentWithHydratedData>;
-
-export const createAttachmentLoader = (
-  loadAttachmentData: LoadAttachmentType
-): ((message: MessageAttributesType) => Promise<MessageAttributesType>) => {
-  if (!isFunction(loadAttachmentData)) {
-    throw new TypeError(
-      'createAttachmentLoader: loadAttachmentData is required'
-    );
-  }
-
-  return async (
-    message: MessageAttributesType
-  ): Promise<MessageAttributesType> => ({
-    ...message,
-    attachments: await Promise.all(
-      (message.attachments || []).map(loadAttachmentData)
-    ),
-  });
-};
 
 export const loadQuoteData = (
   loadAttachmentData: LoadAttachmentType
@@ -1055,41 +1008,6 @@ export const loadStickerData = (
   };
 };
 
-export const deleteAllExternalFiles = ({
-  deleteAttachmentOnDisk,
-  deleteDownloadOnDisk,
-}: {
-  deleteAttachmentOnDisk: (path: string) => Promise<void>;
-  deleteDownloadOnDisk: (path: string) => Promise<void>;
-}): ((message: MessageAttributesType) => Promise<void>) => {
-  if (!isFunction(deleteAttachmentOnDisk)) {
-    throw new TypeError(
-      'deleteAllExternalFiles: deleteAttachmentOnDisk must be a function'
-    );
-  }
-
-  if (!isFunction(deleteDownloadOnDisk)) {
-    throw new TypeError(
-      'deleteAllExternalFiles: deleteDownloadOnDisk must be a function'
-    );
-  }
-  return async (message: MessageAttributesType) => {
-    const { externalAttachments, externalDownloads } =
-      getFilePathsOwnedByMessage(message);
-
-    await Promise.all(
-      [...externalAttachments].map(attachmentPath =>
-        deleteAttachmentOnDisk(attachmentPath)
-      )
-    );
-    await Promise.all(
-      [...externalDownloads].map(downloadPath =>
-        deleteDownloadOnDisk(downloadPath)
-      )
-    );
-  };
-};
-
 export async function migrateBodyAttachmentToDisk(
   message: MessageAttributesType,
   { logger, writeNewAttachmentData }: ContextType
@@ -1118,23 +1036,7 @@ export async function migrateBodyAttachmentToDisk(
   };
 }
 
-export const isUserMessage = (message: MessageAttributesType): boolean =>
-  message.type === 'incoming' || message.type === 'outgoing';
-
-// NB: if adding more expiring message types, be sure to also update
-// getUnreadByConversationAndMarkRead &
-// getMessagesUnexpectedlyMissingExpirationStartTimestamp
-export const EXPIRING_MESSAGE_TYPES = new Set([
-  'incoming',
-  'outgoing',
-  'poll-terminate',
-]);
-
 export const isExpiringMessage = (message: MessageAttributesType): boolean => {
-  if (!EXPIRING_MESSAGE_TYPES.has(message.type)) {
-    return false;
-  }
-
   const { expireTimer } = message;
 
   return typeof expireTimer === 'number' && expireTimer > 0;

@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useSelector } from 'react-redux';
-import React, { memo } from 'react';
-import { ConversationNotificationsSettings } from '../../components/conversation/conversation-details/ConversationNotificationsSettings.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import { getConversationByIdSelector } from '../selectors/conversations.dom.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+import { memo } from 'react';
+import { ConversationNotificationsSettings } from '../../components/conversation/conversation-details/ConversationNotificationsSettings.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getConversationByIdSelector } from '../selectors/conversations.dom.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 
 export type SmartConversationNotificationsSettingsProps = {
   conversationId: string;

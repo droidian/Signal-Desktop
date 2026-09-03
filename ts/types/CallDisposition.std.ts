@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { z } from 'zod';
-import Long from 'long';
-import type { AciString } from './ServiceId.std.js';
-import { aciSchema } from './ServiceId.std.js';
-import { bytesToUuid } from '../util/uuidToBytes.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { UUID_BYTE_SIZE } from './Crypto.std.js';
+import type { AciString } from './ServiceId.std.ts';
+import { aciSchema } from './ServiceId.std.ts';
+import { bytesToUuid } from '../util/uuidToBytes.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { UUID_BYTE_SIZE } from './Crypto.std.ts';
+
+import { toNumber } from '../util/toNumber.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
 // These are strings (1) for the backup (2) for Storybook.
 export enum CallMode {
@@ -35,6 +37,7 @@ export enum CallDirection {
 
 export enum CallLogEvent {
   Clear = 'Clear',
+  UNIMPLEMENTED_ClearInConversation = 'ClearInConversation',
   MarkedAsRead = 'MarkedAsRead',
   MarkedAsReadInConversation = 'MarkedAsReadInConversation',
 }
@@ -142,16 +145,18 @@ export type CallLogEventTarget = Readonly<
 
 export type CallLogEventDetails = Readonly<{
   type: CallLogEvent;
-  timestamp: number;
+  targetTimestamp: number;
   peerIdAsConversationId: AciString | string | null;
   peerIdAsRoomId: string | null;
   callId: string | null;
+  eventTimestamp: number;
 }>;
 
 export type CallEventDetails = CallDetails &
   Readonly<{
     event: CallEvent;
     eventSource: string;
+    eventTimestamp: number;
   }>;
 
 export type CallHistoryDetails = CallDetails &
@@ -232,11 +237,17 @@ export const callDetailsSchema = z.object({
 export const callEventDetailsSchema = callDetailsSchema.extend({
   event: callEventSchema,
   eventSource: z.string(),
+  eventTimestamp: z.number(),
 }) satisfies z.ZodType<CallEventDetails>;
 
 export const callHistoryDetailsSchema = callDetailsSchema.extend({
   status: callStatusSchema,
 }) satisfies z.ZodType<CallHistoryDetails>;
+
+export const callHistoryGroupChildSchema = z.object({
+  callId: z.string(),
+  timestamp: z.number(),
+});
 
 export const callHistoryGroupSchema = z.object({
   peerId: z.string(),
@@ -245,17 +256,12 @@ export const callHistoryGroupSchema = z.object({
   direction: callDirectionSchema,
   status: callStatusSchema,
   timestamp: z.number(),
-  children: z.array(
-    z.object({
-      callId: z.string(),
-      timestamp: z.number(),
-    })
-  ),
+  children: z.array(callHistoryGroupChildSchema),
 }) satisfies z.ZodType<CallHistoryGroup>;
 
 const conversationPeerIdInBytesSchema = z
   .instanceof(Uint8Array)
-  .transform(value => {
+  .transform((value): string | AciString => {
     // direct conversationId
     if (value.byteLength === UUID_BYTE_SIZE) {
       const uuid = bytesToUuid(value);
@@ -272,13 +278,9 @@ const roomIdInBytesSchema = z
   .instanceof(Uint8Array)
   .transform(value => Bytes.toHex(value));
 
-const longToStringSchema = z
-  .instanceof(Long)
-  .transform(long => long.toString());
+const longToStringSchema = z.bigint().transform(big => big.toString());
 
-const longToNumberSchema = z
-  .instanceof(Long)
-  .transform(long => long.toNumber());
+const longToNumberSchema = z.bigint().transform(big => toNumber(big));
 
 export const callEventNormalizeSchema = z
   .object({
@@ -293,24 +295,46 @@ export const callEventNormalizeSchema = z
         type: z
           .nativeEnum(Proto.SyncMessage.CallEvent.Type)
           .refine(val => val === Proto.SyncMessage.CallEvent.Type.AD_HOC_CALL),
-        peerId: roomIdInBytesSchema,
+        conversationId: roomIdInBytesSchema,
       }),
       z.object({
         type: z
           .nativeEnum(Proto.SyncMessage.CallEvent.Type)
           .refine(val => val !== Proto.SyncMessage.CallEvent.Type.AD_HOC_CALL),
-        peerId: conversationPeerIdInBytesSchema,
+        conversationId: conversationPeerIdInBytesSchema,
       }),
     ])
   );
 
+const CALL_LOG_EVENT_TYPE_MAP: Record<
+  Proto.SyncMessage.CallLogEvent.Type,
+  CallLogEvent
+> = {
+  [Proto.SyncMessage.CallLogEvent.Type.CLEAR]: CallLogEvent.Clear,
+  [Proto.SyncMessage.CallLogEvent.Type.CLEAR_IN_CONVERSATION]:
+    CallLogEvent.UNIMPLEMENTED_ClearInConversation,
+  [Proto.SyncMessage.CallLogEvent.Type.MARKED_AS_READ]:
+    CallLogEvent.MarkedAsRead,
+  [Proto.SyncMessage.CallLogEvent.Type.MARKED_AS_READ_IN_CONVERSATION]:
+    CallLogEvent.MarkedAsReadInConversation,
+};
+
+const callLogEventTypeNormalizeSchema = z
+  .enum(Proto.SyncMessage.CallLogEvent.Type)
+  .transform(type => {
+    const result = CALL_LOG_EVENT_TYPE_MAP[type];
+    strictAssert(result, `Missing CALL_LOG_EVENT_TYPE_MAP for ${type}`);
+    return result;
+  });
+
 export const callLogEventNormalizeSchema = z.object({
-  type: z.nativeEnum(Proto.SyncMessage.CallLogEvent.Type),
-  timestamp: longToNumberSchema,
-  peerIdAsConversationId: conversationPeerIdInBytesSchema.optional(),
-  peerIdAsRoomId: roomIdInBytesSchema.optional(),
-  callId: longToStringSchema.optional(),
-});
+  type: callLogEventTypeNormalizeSchema,
+  targetTimestamp: longToNumberSchema,
+  peerIdAsConversationId: conversationPeerIdInBytesSchema.nullable(),
+  peerIdAsRoomId: roomIdInBytesSchema.nullable(),
+  callId: longToStringSchema.nullable(),
+  eventTimestamp: z.number(),
+}) satisfies z.ZodType<CallLogEventDetails>;
 
 export function isSameCallHistoryGroup(
   a: CallHistoryGroup,

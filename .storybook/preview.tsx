@@ -3,37 +3,39 @@
 
 import '../ts/window.d.ts';
 
-import React, { StrictMode } from 'react';
-
+import '@signalapp/quill-cjs/dist/quill.core.css';
 import '../stylesheets/manifest.scss';
 import '../stylesheets/tailwind-config.css';
 import * as styles from './styles.scss';
 import messages from '../_locales/en/messages.json';
 
 import { Provider } from 'react-redux';
-import { Store, combineReducers, createStore } from 'redux';
+import type { Store } from 'redux';
+import { combineReducers, createStore } from 'redux';
 import { Globals } from '@react-spring/web';
 
-import { StorybookThemeContext } from './StorybookThemeContext.std.js';
-import { SystemThemeType, ThemeType } from '../ts/types/Util.std.js';
-import { setupI18n } from '../ts/util/setupI18n.dom.js';
-import { HourCyclePreference } from '../ts/types/I18N.std.js';
-import { AxoProvider } from '../ts/axo/AxoProvider.dom.js';
-import type { StateType } from '../ts/state/reducer.preload.js';
+import { StorybookThemeContext } from './StorybookThemeContext.std.ts';
+import { SystemThemeType, ThemeType } from '../ts/types/Util.std.ts';
+import { setupI18n } from '../ts/util/setupI18n.dom.tsx';
+import { HourCyclePreference } from '../ts/types/I18N.std.ts';
+import { AppProvider } from '../ts/windows/AppProvider.dom.tsx';
+import type { StateType } from '../ts/state/reducer.preload.ts';
 import {
   ScrollerLockContext,
   createScrollerLock,
-} from '../ts/hooks/useScrollLock.dom.js';
-import { Environment, setEnvironment } from '../ts/environment.std.js';
-import { parseUnknown } from '../ts/util/schemas.std.js';
-import { LocaleEmojiListSchema } from '../ts/types/emoji.std.js';
-import { FunProvider } from '../ts/components/fun/FunProvider.dom.js';
-import { EmojiSkinTone } from '../ts/components/fun/data/emojis.std.js';
-import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/components/fun/mocks.dom.js';
+} from '../ts/hooks/useScrollLock.dom.tsx';
+import { Environment, setEnvironment } from '../ts/environment.std.ts';
+import { parseUnknown } from '../ts/util/schemas.std.ts';
+import { LocaleEmojiListSchema } from '../ts/types/emoji.std.ts';
+import { FunProvider } from '../ts/components/fun/FunProvider.dom.tsx';
+import { MuteUntilDialogProvider } from '../ts/components/MuteNotificationsMenu.dom.tsx';
+import { MOCK_GIFS_PAGINATED_ONE_PAGE } from '../ts/test-helpers/funPickerMocks.dom.tsx';
+import { NavTab } from '../ts/types/Nav.std.ts';
 
-import type { FunEmojiSelection } from '../ts/components/fun/panels/FunPanelEmojis.dom.js';
-import type { FunGifSelection } from '../ts/components/fun/panels/FunPanelGifs.dom.js';
-import type { FunStickerSelection } from '../ts/components/fun/panels/FunPanelStickers.dom.js';
+import type { FunEmojiSelection } from '../ts/components/fun/panels/FunPanelEmojis.dom.tsx';
+import type { FunGifSelection } from '../ts/components/fun/panels/FunPanelGifs.dom.tsx';
+import type { FunStickerSelection } from '../ts/components/fun/panels/FunPanelStickers.dom.tsx';
+import { Emoji } from '../ts/axo/emoji.std.ts';
 
 setEnvironment(Environment.Development, true);
 
@@ -62,6 +64,16 @@ export const globalTypes = {
       showName: true,
     },
   },
+  background: {
+    name: 'Background',
+    defaultValue: 'Default',
+    toolbar: {
+      dynamicTitle: true,
+      icon: 'circlehollow',
+      items: ['default', 'checkerboard', 'wallpaper', 'scrolling'],
+      showName: true,
+    },
+  },
   direction: {
     name: 'Direction',
     description: 'Direction of text',
@@ -78,6 +90,16 @@ export const globalTypes = {
 const mockStore: Store<StateType> = createStore(
   combineReducers({
     calling: (state = {}) => state,
+    nav: (
+      state = {
+        selectedLocation: {
+          tab: NavTab.Chats,
+          details: {
+            conversationId: undefined,
+          },
+        },
+      }
+    ) => state,
     conversations: (
       state = {
         conversationLookup: {},
@@ -89,10 +111,10 @@ const mockStore: Store<StateType> = createStore(
   })
 );
 
-// eslint-disable-next-line
+// oxlint-disable-next-line
 const noop = () => {};
 
-window.Whisper = window.Whisper || {};
+window.Whisper ??= {};
 window.Whisper.events = {
   on: noop,
   off: noop,
@@ -127,12 +149,14 @@ window.SignalContext = {
     platform: '',
     release: '',
   },
+  // oxlint-disable-next-line typescript/no-explicit-any
   config: {} as any,
 
   getHourCyclePreference: () => HourCyclePreference.UnknownPreference,
   getPreferredSystemLocales: () => ['en'],
   getLocaleOverride: () => null,
   getLocaleDisplayNames: () => ({ en: { en: 'English' } }),
+  getResolvedMessagesLocale: () => 'en',
 
   getLocalizedEmojiList: async locale => {
     const data = await fetch(
@@ -155,7 +179,7 @@ window.SignalContext = {
   _stopTrackingICUStrings: () => i18n.stopTrackingUsage(),
 };
 
-window.ConversationController = window.ConversationController || {};
+window.ConversationController ??= {};
 window.ConversationController.isSignalConversationId = () => false;
 window.ConversationController.onConvoMessageMount = noop;
 window.reduxStore = mockStore;
@@ -171,19 +195,12 @@ window.Signal = {
   },
 };
 
-function withStrictMode(Story, context) {
-  return (
-    <StrictMode>
-      <Story {...context} />
-    </StrictMode>
-  );
-}
-
 const withGlobalTypesProvider = (Story, context) => {
   const theme =
     context.globals.theme === 'light' ? ThemeType.light : ThemeType.dark;
   const mode = context.globals.mode;
   const direction = context.globals.direction ?? 'auto';
+  const background = context.globals.background;
 
   window.SignalContext.getResolvedMessagesLocaleDirection = () =>
     direction === 'auto' ? 'ltr' : direction;
@@ -205,6 +222,19 @@ const withGlobalTypesProvider = (Story, context) => {
     document.body.classList.remove('mouse-mode');
     document.body.classList.add('keyboard-mode');
   }
+
+  document.body.classList.toggle(
+    'background-checkerboard',
+    background === 'checkerboard'
+  );
+  document.body.classList.toggle(
+    'background-wallpaper',
+    background === 'wallpaper'
+  );
+  document.body.classList.toggle(
+    'background-scrolling',
+    background === 'scrolling'
+  );
 
   document.body.classList.add('page-is-visible');
 
@@ -230,7 +260,7 @@ function withMockStoreProvider(Story, context) {
 function withScrollLockProvider(Story, context) {
   return (
     <ScrollerLockContext.Provider
-      value={createScrollerLock('MockStories', () => {})}
+      value={createScrollerLock('MockStories', () => null)}
     >
       <Story {...context} />
     </ScrollerLockContext.Provider>
@@ -244,8 +274,9 @@ function withFunProvider(Story, context) {
       recentEmojis={[]}
       recentStickers={[]}
       recentGifs={[]}
-      emojiSkinToneDefault={EmojiSkinTone.None}
+      emojiSkinToneDefault={Emoji.SkinTone.None}
       onEmojiSkinToneDefaultChange={noop}
+      isStickerReplySendEnabled
       installedStickerPacks={[]}
       showStickerPickerHint={false}
       onClearStickerPickerHint={noop}
@@ -254,12 +285,15 @@ function withFunProvider(Story, context) {
       fetchGifsFeatured={() => Promise.resolve(MOCK_GIFS_PAGINATED_ONE_PAGE)}
       fetchGif={() => Promise.resolve(new Blob([new Uint8Array(1)]))}
       onSelectEmoji={function (emojiSelection: FunEmojiSelection): void {
+        // oxlint-disable-next-line no-console
         console.log('onSelectEmoji', emojiSelection);
       }}
       onSelectSticker={function (stickerSelection: FunStickerSelection): void {
+        // oxlint-disable-next-line no-console
         console.log('onSelectSticker', stickerSelection);
       }}
       onSelectGif={function (gifSelection: FunGifSelection): void {
+        // oxlint-disable-next-line no-console
         console.log('onSelectGif', gifSelection);
       }}
     >
@@ -268,19 +302,25 @@ function withFunProvider(Story, context) {
   );
 }
 
-function withAxoProvider(Story, context) {
-  const globalValue = context.globals.direction ?? 'ltr';
-  const dir = globalValue === 'auto' ? 'ltr' : globalValue;
+function withAppProvider(Story, context) {
   return (
-    <AxoProvider dir={dir}>
+    <AppProvider>
       <Story {...context} />
-    </AxoProvider>
+    </AppProvider>
+  );
+}
+
+function withMutedUntilDialogProvider(Story, context) {
+  return (
+    <MuteUntilDialogProvider i18n={window.SignalContext.i18n}>
+      <Story {...context} />
+    </MuteUntilDialogProvider>
   );
 }
 
 export const decorators = [
-  withStrictMode,
-  withAxoProvider,
+  withMutedUntilDialogProvider,
+  withAppProvider,
   withGlobalTypesProvider,
   withMockStoreProvider,
   withScrollLockProvider,

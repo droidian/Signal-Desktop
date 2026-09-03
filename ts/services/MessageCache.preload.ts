@@ -4,25 +4,22 @@
 import lodash from 'lodash';
 import { LRUCache } from 'lru-cache';
 
-import { createLogger } from '../logging/log.std.js';
-import { MessageModel } from '../models/messages.preload.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { getMessageConversation } from '../util/getMessageConversation.dom.js';
-import { getSenderIdentifier } from '../util/getSenderIdentifier.dom.js';
-import { upgradeMessageSchema } from '../util/migrations.preload.js';
-import { isNotNil } from '../util/isNotNil.std.js';
-import { isStory } from '../messages/helpers.std.js';
-import { getStoryDataFromMessageAttributes } from './storyLoader.preload.js';
-import { postSaveUpdates } from '../util/cleanup.preload.js';
+import { MessageModel } from '../models/messages.preload.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { getMessageConversation } from '../util/getMessageConversation.dom.ts';
+import { upgradeMessageSchema } from '../util/migrations.preload.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { isStory } from '../messages/helpers.std.ts';
+import { getStoryDataFromMessageAttributes } from './storyLoader.preload.ts';
+import { postSaveUpdates } from '../util/cleanup.preload.ts';
 
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { SendStateByConversationId } from '../messages/MessageSendState.std.js';
-import type { StoredJob } from '../jobs/types.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import type { SendStateByConversationId } from '../messages/MessageSendState.std.ts';
+import type { StoredJob } from '../jobs/types.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { getSelectedConversationId } from '../state/selectors/nav.std.ts';
 
 const { throttle } = lodash;
-
-const log = createLogger('MessageCache');
 
 const MAX_THROTTLED_REDUX_UPDATERS = 200;
 export class MessageCache {
@@ -32,9 +29,8 @@ export class MessageCache {
     return instance;
   }
 
-  #state = {
+  readonly #state = {
     messages: new Map<string, MessageModel>(),
-    messageIdsBySender: new Map<string, string>(),
     messageIdsBySentAt: new Map<number, Array<string>>(),
     lastAccessedAt: new Map<string, number>(),
   };
@@ -71,16 +67,6 @@ export class MessageCache {
     return message;
   }
 
-  // Finds a message in the cache by sender identifier
-  public findBySender(senderIdentifier: string): MessageModel | undefined {
-    const id = this.#state.messageIdsBySender.get(senderIdentifier);
-    if (!id) {
-      return undefined;
-    }
-
-    return this.getById(id);
-  }
-
   // Finds a message in the cache by Id
   public getById(id: string): MessageModel | undefined {
     const message = this.#state.messages.get(id);
@@ -108,7 +94,6 @@ export class MessageCache {
       return inMemory;
     }
 
-    log.info(`findBySentAt(${sentAt}): db lookup needed`);
     const allOnDisk = await DataReader.getMessagesBySentAt(sentAt);
     const onDisk = allOnDisk
       .map(message => this.register(new MessageModel(message)))
@@ -136,8 +121,9 @@ export class MessageCache {
       const timeLastAccessed = this.#state.lastAccessedAt.get(messageId) ?? 0;
       const conversation = getMessageConversation(message.attributes);
 
-      const state = window.reduxStore.getState();
-      const selectedId = state?.conversations?.selectedConversationId;
+      const selectedId = getSelectedConversationId(
+        window.reduxStore.getState()
+      );
       const inActiveConversation =
         conversation && selectedId && conversation.id === selectedId;
 
@@ -177,7 +163,8 @@ export class MessageCache {
       }
       const { [obsoleteId]: obsoleteSendState, ...rest } = sendState;
       return {
-        [conversationId]: obsoleteSendState,
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        [conversationId]: obsoleteSendState!,
         ...rest,
       };
     };
@@ -218,10 +205,6 @@ export class MessageCache {
       return;
     }
 
-    this.#state.messageIdsBySender.delete(
-      getSenderIdentifier(message.attributes)
-    );
-
     const { id, sent_at: sentAt } = message.attributes;
     const previousIdsBySentAt = this.#state.messageIdsBySentAt.get(sentAt);
 
@@ -234,10 +217,6 @@ export class MessageCache {
     }
 
     this.#state.lastAccessedAt.set(id, Date.now());
-    this.#state.messageIdsBySender.set(
-      getSenderIdentifier(message.attributes),
-      id
-    );
 
     this.#throttledUpdateRedux(message.attributes);
   }
@@ -268,10 +247,6 @@ export class MessageCache {
     this.#state.messages.set(message.id, message);
     this.#state.lastAccessedAt.set(message.id, Date.now());
     this.#state.messageIdsBySentAt.set(sentAt, Array.from(nextIdsBySentAtSet));
-    this.#state.messageIdsBySender.set(
-      getSenderIdentifier(message.attributes),
-      id
-    );
   }
 
   #removeMessage(messageId: string): void {
@@ -297,9 +272,6 @@ export class MessageCache {
 
     this.#state.messages.delete(messageId);
     this.#state.lastAccessedAt.delete(messageId);
-    this.#state.messageIdsBySender.delete(
-      getSenderIdentifier(message.attributes)
-    );
   }
 
   #updateRedux(attributes: MessageAttributesType) {
@@ -328,7 +300,7 @@ export class MessageCache {
     );
   }
 
-  #throttledReduxUpdaters = new LRUCache<
+  readonly #throttledReduxUpdaters = new LRUCache<
     string,
     (attributes: MessageAttributesType) => void
   >({

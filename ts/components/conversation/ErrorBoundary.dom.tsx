@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
+import { PureComponent } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import * as Errors from '../../types/errors.std.js';
-import { createLogger } from '../../logging/log.std.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
 
 const log = createLogger('ErrorBoundary');
 
@@ -14,7 +14,7 @@ export type Props = {
   i18n: LocalizerType;
   children: ReactNode;
 
-  showDebugLog(): void;
+  showDebugLog: () => void;
 };
 
 export type State = {
@@ -23,7 +23,7 @@ export type State = {
 
 const CSS_MODULE = 'module-error-boundary-notification';
 
-export class ErrorBoundary extends React.PureComponent<Props, State> {
+export class ErrorBoundary extends PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -61,14 +61,14 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     );
   }
 
-  #onClick(event: React.MouseEvent): void {
+  #onClick(event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
 
     this.#onAction();
   }
 
-  #onKeyDown(event: React.KeyboardEvent): void {
+  #onKeyDown(event: KeyboardEvent): void {
     if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }

@@ -1,13 +1,9 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import createDebug from 'debug';
-
-import * as durations from '../../util/durations/index.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-
-export const debug = createDebug('mock:test:settings');
+import * as durations from '../../util/durations/index.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 
 describe('settings', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -38,24 +34,32 @@ describe('settings', function (this: Mocha.Suite) {
     await window.getByRole('heading', { name: 'Settings' }).waitFor();
 
     await window.getByRole('button', { name: 'General' }).click();
-    await window.getByText('Device Name').waitFor();
+    await window.getByRole('listitem', { name: 'Device Name' }).waitFor();
 
     await window.getByRole('button', { name: 'Appearance' }).click();
-    await window.getByText('Language').first().waitFor();
+    await window.getByRole('listitem', { name: 'Language' }).waitFor();
 
     await window.getByRole('button', { name: 'Chats' }).click();
-    await window.getByText('Spell check text').waitFor();
+    await window.getByRole('listitem', { name: 'Spell check text' }).waitFor();
 
     await window.getByRole('button', { name: 'Calls' }).click();
-    await window.getByText('Enable incoming calls').waitFor();
+    await window
+      .getByRole('listitem', { name: 'Enable incoming calls' })
+      .waitFor();
 
     await window.getByRole('button', { name: 'Notifications' }).click();
-    await window.getByText('Notification content').waitFor();
+    await window
+      .getByRole('listitem', { name: 'Notification content' })
+      .waitFor();
 
     await window.getByRole('button', { name: 'Privacy' }).click();
-    await window.getByText('Read receipts').waitFor();
+    await window
+      .getByRole('listitem', { name: 'Read receipts', exact: true })
+      .waitFor();
 
     await window.getByRole('button', { name: 'Data usage' }).click();
-    await window.getByText('Sent media quality').waitFor();
+    await window
+      .getByRole('listitem', { name: 'Sent media quality' })
+      .waitFor();
   });
 });

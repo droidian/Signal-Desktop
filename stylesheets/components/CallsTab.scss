@@ -54,7 +54,6 @@
   justify-content: center;
   flex-direction: column;
   padding-block: 78px 28px;
-  user-select: none;
 }
 
 .CallsTab__EmptyStateIcon {
@@ -115,7 +114,6 @@
   height: 100%;
   padding-block: 80px;
   padding-inline: 24px;
-  user-select: none;
 }
 
 .CallsList__Header {
@@ -134,7 +132,6 @@
   }
   padding-inline-start: 24px;
   text-overflow: ellipsis;
-  user-select: none;
   white-space: nowrap;
 }
 
@@ -162,9 +159,7 @@
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow:
-        0 0 0 2px variables.$color-white,
-        0 0 0 4px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -385,7 +380,7 @@
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
   &:disabled,

@@ -1,14 +1,14 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { FormEvent, KeyboardEvent } from 'react';
-import React, { memo, useCallback, useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import {
   CC_NUMBER_FORMATTER,
   useInputMask,
-} from '../../../hooks/useInputMask.dom.js';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import { CardNumberError } from '../../../types/DonationsCardForm.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
+} from '../../../hooks/useInputMask.dom.tsx';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import { CardNumberError } from '../../../types/DonationsCardForm.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
 
 export function getCardNumberErrorMessage(
   i18n: LocalizerType,
@@ -59,6 +59,8 @@ export const DonateInputCardNumber = memo(function DonateInputCardNumber(
   );
 
   return (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label
     <input
       ref={inputRef}
       id={props.id}

@@ -3,17 +3,17 @@
 
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { setVoiceNotePlaybackRate } from './conversations.preload.js';
-import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.js';
-import { getUserConversationId } from '../selectors/user.std.js';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { setVoiceNotePlaybackRate } from './conversations.preload.ts';
+import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.ts';
+import { getUserConversationId } from '../selectors/user.std.ts';
 import type {
   VoiceNoteAndConsecutiveForPlayback,
   VoiceNoteForPlayback,
-} from '../selectors/audioPlayer.preload.js';
+} from '../selectors/audioPlayer.preload.ts';
 
 import type {
   MessagesAddedActionType,
@@ -21,15 +21,15 @@ import type {
   MessageChangedActionType,
   TargetedConversationChangedActionType,
   ConversationsUpdatedActionType,
-} from './conversations.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { isAudio } from '../../util/Attachment.std.js';
-import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.js';
-import { assertDev } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { Sound, SoundType } from '../../util/Sound.std.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { DataReader } from '../../sql/Client.preload.js';
+} from './conversations.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { isAudio } from '../../util/Attachment.std.ts';
+import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.ts';
+import { assertDev } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import type { RenderingContextType } from '../../types/RenderingContext.d.ts';
+import { Sound, SoundType } from '../../util/Sound.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
 
 const stateChangeConfirmUpSound = new Sound({
   soundType: SoundType.VoiceNoteEnd,
@@ -48,7 +48,7 @@ type AudioPlayerContentDraft = ReadonlyDeep<{
 /** A voice note consecutive playback */
 export type AudioPlayerContentVoiceNote = ReadonlyDeep<{
   conversationId: string;
-  context: string;
+  context: RenderingContextType;
   current: VoiceNoteForPlayback;
   // playing because it followed a message
   // false on the first of a consecutive group
@@ -64,7 +64,6 @@ export type ActiveAudioPlayerStateType = ReadonlyDeep<{
   content: AudioPlayerContentVoiceNote | AudioPlayerContentDraft;
 }>;
 
-/* eslint-disable @typescript-eslint/no-namespace */
 export namespace AudioPlayerContent {
   export function isVoiceNote(
     content: ActiveAudioPlayerStateType['content']
@@ -110,12 +109,17 @@ async function getNextVoiceNote({
     return undefined;
   }
 
-  const next = await getMessageById(results[0].message.id);
-  if (next == null) {
-    return undefined;
-  }
-
-  return extractVoiceNoteForPlayback(next.attributes, ourConversationId);
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  const { message, attachment } = results[0]!;
+  return extractVoiceNoteForPlayback(
+    {
+      ...message,
+      attachments: [attachment],
+      sent_at: message.sentAt,
+      received_at: message.receivedAt,
+    },
+    ourConversationId
+  );
 }
 
 // Actions
@@ -205,6 +209,14 @@ function messageAudioEnded(): ThunkAction<
 
     const { content, playbackRate } = active;
     if (content == null || AudioPlayerContent.isDraft(content)) {
+      dispatch({
+        type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
+      });
+      return;
+    }
+
+    // No consecutive playback in All Media view
+    if (content.context === 'AllMedia') {
       dispatch({
         type: 'audioPlayer/MESSAGE_AUDIO_ENDED',
       });
@@ -311,7 +323,7 @@ function loadVoiceNoteAudio({
 }: {
   voiceNoteData: VoiceNoteAndConsecutiveForPlayback;
   position: number;
-  context: string;
+  context: RenderingContextType;
   playbackRate: number;
 }): SetMessageAudioAction {
   const { conversationId, voiceNote } = voiceNoteData;
@@ -328,7 +340,7 @@ function loadVoiceNoteAudio({
   };
 }
 
-export function loadVoiceNoteDraftAudio(
+function loadVoiceNoteDraftAudio(
   content: AudioPlayerContentDraft & {
     playbackRate: number;
     startPosition: number;
@@ -351,11 +363,11 @@ function setIsPlaying(value: boolean): SetIsPlayingAction {
  * alias for callers that just want to pause any voice notes before starting
  * their own playback: story viewer, media viewer, calling
  */
-export function pauseVoiceNotePlayer(): ReturnType<typeof setIsPlaying> {
+function pauseVoiceNotePlayer(): ReturnType<typeof setIsPlaying> {
   return setIsPlaying(false);
 }
 
-export function unloadMessageAudio(): SetMessageAudioAction {
+function unloadMessageAudio(): SetMessageAudioAction {
   return {
     type: 'audioPlayer/SET_MESSAGE_AUDIO',
     payload: undefined,

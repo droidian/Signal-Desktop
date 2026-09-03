@@ -3,15 +3,16 @@
 
 import * as sinon from 'sinon';
 import { v4 as generateUuid } from 'uuid';
+import { MuteExpiration } from '@signalapp/types';
 
 import lodash from 'lodash';
-import { ConversationModel } from '../models/conversations.preload.js';
+import { ConversationModel } from '../models/conversations.preload.ts';
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { generateAci } from '../types/ServiceId.std.js';
-import { DAY, HOUR, MINUTE, MONTH } from '../util/durations/index.std.js';
+import { DAY, HOUR, MINUTE, MONTH } from '../util/durations/index.std.ts';
 
-import { routineProfileRefresh } from '../routineProfileRefresh.preload.js';
-import type { getProfile } from '../util/getProfile.preload.js';
+import { routineProfileRefresh } from '../routineProfileRefresh.preload.ts';
+import type { getProfile } from '../util/getProfile.preload.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const { times } = lodash;
 
@@ -50,7 +51,7 @@ describe('routineProfileRefresh', () => {
       messageCount: 2,
       messageCountBeforeMessageRequests: 0,
       messageRequestResponseType: 0,
-      muteExpiresAt: 0,
+      muteExpiresAt: MuteExpiration.UNMUTED,
       profileAvatar: undefined,
       profileKeyCredential: generateUuid(),
       profileKeyCredentialExpiration: Date.now() + 2 * DAY,
@@ -58,7 +59,6 @@ describe('routineProfileRefresh', () => {
       quotedMessageId: null,
       sealedSender: 1,
       sentMessageCount: 1,
-      sharedGroupNames: [],
       timestamp: Date.now(),
       type: 'private',
       serviceId: generateAci(),

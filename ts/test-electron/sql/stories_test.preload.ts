@@ -4,11 +4,10 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { _getAllMessages, getAllStories } = DataReader;
 const { removeAll, saveMessages } = DataWriter;
@@ -91,12 +90,12 @@ describe('sql/stories', () => {
 
       // They are in ASC order
       assert.strictEqual(
-        stories[0].id,
+        stories[0]?.id,
         story1.id,
         'stories first should be story5'
       );
       assert.strictEqual(
-        stories[3].id,
+        stories[3]?.id,
         story5.id,
         'stories last should be story1'
       );
@@ -112,12 +111,12 @@ describe('sql/stories', () => {
 
       // They are in ASC order
       assert.strictEqual(
-        storiesInConversation[0].id,
+        storiesInConversation[0]?.id,
         story1.id,
         'storiesInConversation first should be story4'
       );
       assert.strictEqual(
-        storiesInConversation[1].id,
+        storiesInConversation[1]?.id,
         story4.id,
         'storiesInConversation last should be story1'
       );
@@ -129,12 +128,12 @@ describe('sql/stories', () => {
 
       // They are in ASC order
       assert.strictEqual(
-        storiesByAuthor[0].id,
+        storiesByAuthor[0]?.id,
         story2.id,
         'storiesByAuthor first should be story5'
       );
       assert.strictEqual(
-        storiesByAuthor[1].id,
+        storiesByAuthor[1]?.id,
         story5.id,
         'storiesByAuthor last should be story2'
       );
@@ -230,24 +229,24 @@ describe('sql/stories', () => {
 
       // They are in ASC order
       assert.strictEqual(
-        stories[0].id,
+        stories[0]?.id,
         story1.id,
         'stories first should be story1'
       );
       assert.strictEqual(
-        stories[2].id,
+        stories[2]?.id,
         story3.id,
         'stories last should be story3'
       );
 
-      assert.strictEqual(stories[0].hasReplies, true);
-      assert.strictEqual(stories[0].hasRepliesFromSelf, true);
+      assert.strictEqual(stories[0]?.hasReplies, true);
+      assert.strictEqual(stories[0]?.hasRepliesFromSelf, true);
 
-      assert.strictEqual(stories[1].hasReplies, true);
-      assert.strictEqual(stories[1].hasRepliesFromSelf, false);
+      assert.strictEqual(stories[1]?.hasReplies, true);
+      assert.strictEqual(stories[1]?.hasRepliesFromSelf, false);
 
-      assert.strictEqual(stories[2].hasReplies, false);
-      assert.strictEqual(stories[2].hasRepliesFromSelf, false);
+      assert.strictEqual(stories[2]?.hasReplies, false);
+      assert.strictEqual(stories[2]?.hasRepliesFromSelf, false);
     });
   });
 });

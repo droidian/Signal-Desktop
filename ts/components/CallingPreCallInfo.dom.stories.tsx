@@ -1,18 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import lodash from 'lodash';
-import type { Meta } from '@storybook/react';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import type { PropsType } from './CallingPreCallInfo.dom.js';
-import { CallingPreCallInfo, RingMode } from './CallingPreCallInfo.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import { FAKE_CALL_LINK } from '../test-helpers/fakeCallLink.std.js';
-import { callLinkToConversation } from '../util/callLinks.std.js';
+import type { JSX } from 'react';
 
-const { times } = lodash;
+import type { Meta } from '@storybook/react';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import type { PropsType } from './CallingPreCallInfo.dom.tsx';
+import { CallingPreCallInfo, RingMode } from './CallingPreCallInfo.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { FAKE_CALL_LINK } from '../test-helpers/fakeCallLink.std.ts';
+import { callLinkToConversation } from '../util/callLinks.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const { i18n } = window.SignalContext;
 const getDefaultGroupConversation = () =>
@@ -23,7 +21,14 @@ const getDefaultGroupConversation = () =>
     title: 'Tahoe Trip',
     type: 'group',
   });
-const otherMembers = times(6, () => getDefaultConversation());
+const otherMembers = [
+  getDefaultConversation(),
+  getDefaultConversation(),
+  getDefaultConversation(),
+  getDefaultConversation(),
+  getDefaultConversation(),
+  getDefaultConversation(),
+] as const;
 
 const getUnknownContact = (): ConversationType => ({
   acceptedMessageRequest: false,
@@ -32,7 +37,6 @@ const getUnknownContact = (): ConversationType => ({
   type: 'direct',
   title: i18n('icu:unknownContact'),
   isMe: false,
-  sharedGroupNames: [],
   serviceId: generateAci(),
 });
 

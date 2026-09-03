@@ -1,27 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable no-console */
-
 import { inspect, parseArgs } from 'node:util';
 import { ipcRenderer as ipc } from 'electron';
 import { sync } from 'fast-glob';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import chai, { assert, config as chaiConfig } from 'chai';
-// eslint-disable-next-line import/no-extraneous-dependencies
+import { assert, use as chaiUse, config as chaiConfig } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { reporters, type MochaOptions } from 'mocha';
 
-import { initMessageCleanup } from '../../services/messageStateCleanup.preload.js';
-import { initializeMessageCounter } from '../../util/incrementMessageCounter.preload.js';
-import { initializeRedux } from '../../state/initializeRedux.preload.js';
-import * as Stickers from '../../types/Stickers.preload.js';
-import { ThemeType } from '../../types/Util.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { initializeMessageCounter } from '../../util/incrementMessageCounter.preload.ts';
+import { initializeRedux } from '../../state/initializeRedux.preload.ts';
+import * as Stickers from '../../types/Stickers.preload.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { MessageCache } from '../../services/MessageCache.preload.ts';
+import { updateRemoteConfig } from '../../test-helpers/RemoteConfigStub.dom.ts';
 
-chai.use(chaiAsPromised);
+chaiUse(chaiAsPromised);
 
 // Show actual objects instead of abbreviated errors
 chaiConfig.truncateThreshold = 0;
@@ -95,7 +91,10 @@ window.testUtilities = {
   },
 
   async initialize() {
-    initMessageCleanup();
+    // Since background.preload.ts is not loaded in tests, we need to do some minimal
+    // setup
+    MessageCache.install();
+    await updateRemoteConfig([]);
     await initializeMessageCounter();
     await Stickers.load();
 
@@ -105,12 +104,18 @@ window.testUtilities = {
       callHistory: [],
       callHistoryUnreadCount: 0,
       chatFolders: [],
+      emojis: {
+        recentEmojis: [],
+      },
       gifs: {
         recentGifs: [],
       },
       mainWindowStats: {
         isFullScreen: false,
         isMaximized: false,
+      },
+      megaphones: {
+        visibleMegaphones: [],
       },
       menuOptions: {
         development: false,
@@ -121,22 +126,22 @@ window.testUtilities = {
         platform: 'test',
       },
       notificationProfiles: [],
-      recentEmoji: {
-        recents: [],
-      },
       stories: [],
       storyDistributionLists: [],
       donations: {
         currentWorkflow: undefined,
         didResumeWorkflowAtStartup: false,
         lastError: undefined,
+        lastReturnToken: undefined,
         receipts: [],
+        configCache: undefined,
       },
       stickers: {
         installedPack: null,
         packs: {},
         recentStickers: [],
         blessedPacks: {},
+        stickerManagerTab: 'all',
       },
       theme: ThemeType.dark,
     });
@@ -145,21 +150,22 @@ window.testUtilities = {
   },
 
   prepareTests() {
+    // oxlint-disable-next-line no-console
     console.log('Preparing tests...');
-    const files = sync('../../test-{both,electron}/**/*_test.*.js', {
+    const files = sync('../../test-electron/**/*_test.*.{ts,tsx}', {
       absolute: true,
       cwd: __dirname,
     });
 
-    for (let i = 0; i < files.length; i += 1) {
+    for (const [i, file] of files.entries()) {
       if (i % workerCount === worker) {
         try {
-          // eslint-disable-next-line import/no-dynamic-require, global-require
-          require(files[i]);
+          // oxlint-disable-next-line import/no-dynamic-require, global-require
+          require(file);
         } catch (error) {
           window.testUtilities.onTestEvent({
             type: 'fail',
-            title: ['Failed to load test:', files[i]],
+            title: ['Failed to load test:', file],
             error: error.stack || String(error),
           });
         }

@@ -1,8 +1,8 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { SECOND } from '../util/durations/constants.std.js';
-import { throttle } from '../util/throttle.std.js';
+import { SECOND } from '../util/durations/constants.std.ts';
+import { throttle } from '../util/throttle.std.ts';
 
 // Idle timer - you're active for ACTIVE_TIMEOUT after one of these events
 const ACTIVE_TIMEOUT = 15 * SECOND;
@@ -35,7 +35,8 @@ class ActiveWindowService {
   #changeCallbacks: Array<(isActive: boolean) => void> = [];
   #lastActiveEventAt = -Infinity;
   #lastActiveNonFocusingEventAt = -Infinity;
-  #callActiveCallbacks: () => void;
+  #lastBlurredAt = -Infinity;
+  readonly #callActiveCallbacks: () => void;
 
   constructor() {
     this.#callActiveCallbacks = throttle(() => {
@@ -68,6 +69,11 @@ class ActiveWindowService {
   isActive(): boolean {
     if (this.#isFocused) {
       return Date.now() < this.#lastActiveEventAt + ACTIVE_TIMEOUT;
+    }
+
+    if (this.#lastBlurredAt >= this.#lastActiveNonFocusingEventAt) {
+      // We are always inactive after blurring
+      return false;
     }
 
     return (
@@ -109,6 +115,9 @@ class ActiveWindowService {
   #setWindowFocus(isFocused: boolean): void {
     this.#updateState(() => {
       this.#isFocused = isFocused;
+      if (!isFocused) {
+        this.#lastBlurredAt = Date.now();
+      }
     });
   }
 
@@ -130,11 +139,11 @@ class ActiveWindowService {
 }
 
 export type ActiveWindowServiceType = {
-  isActive(): boolean;
-  registerForActive(callback: () => void): void;
-  unregisterForActive(callback: () => void): void;
-  registerForChange(callback: (isActive: boolean) => void): void;
-  unregisterForChange(callback: (isActive: boolean) => void): void;
+  isActive: () => boolean;
+  registerForActive: (callback: () => void) => void;
+  unregisterForActive: (callback: () => void) => void;
+  registerForChange: (callback: (isActive: boolean) => void) => void;
+  unregisterForChange: (callback: (isActive: boolean) => void) => void;
 };
 
 export function getActiveWindowService(

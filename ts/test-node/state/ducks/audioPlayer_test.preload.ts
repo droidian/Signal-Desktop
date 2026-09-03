@@ -3,20 +3,20 @@
 
 import { assert } from 'chai';
 
-import type { TargetedConversationChangedActionType } from '../../../state/ducks/conversations.preload.js';
+import type { TargetedConversationChangedActionType } from '../../../state/ducks/conversations.preload.ts';
 import {
   TARGETED_CONVERSATION_CHANGED,
   actions as conversationsActions,
-} from '../../../state/ducks/conversations.preload.js';
-import { noopAction } from '../../../state/ducks/noop.std.js';
+} from '../../../state/ducks/conversations.preload.ts';
+import { noopAction } from '../../../state/ducks/noop.std.ts';
 
-import type { StateType } from '../../../state/reducer.preload.js';
-import { reducer as rootReducer } from '../../../state/reducer.preload.js';
+import type { StateType } from '../../../state/reducer.preload.ts';
+import { reducer as rootReducer } from '../../../state/reducer.preload.ts';
 import {
   actions,
   AudioPlayerContent,
-} from '../../../state/ducks/audioPlayer.preload.js';
-import type { VoiceNoteAndConsecutiveForPlayback } from '../../../state/selectors/audioPlayer.preload.js';
+} from '../../../state/ducks/audioPlayer.preload.ts';
+import type { VoiceNoteAndConsecutiveForPlayback } from '../../../state/selectors/audioPlayer.preload.ts';
 
 const { messageDeleted, messageChanged } = conversationsActions;
 
@@ -44,7 +44,7 @@ function voiceNoteDataForMessage(
 
 describe('both/state/ducks/audioPlayer', () => {
   const getEmptyRootState = (): StateType => {
-    return rootReducer(undefined, noopAction());
+    return rootReducer(undefined, noopAction('getEmptyRootState'));
   };
 
   const getInitializedState = (): StateType => {
@@ -54,7 +54,7 @@ describe('both/state/ducks/audioPlayer', () => {
       actions.loadVoiceNoteAudio({
         voiceNoteData: voiceNoteDataForMessage(MESSAGE_ID),
         position: 0,
-        context: 'context',
+        context: 'AllMedia',
         playbackRate: 1,
       })
     );
@@ -65,7 +65,7 @@ describe('both/state/ducks/audioPlayer', () => {
 
     if (content && AudioPlayerContent.isVoiceNote(content)) {
       assert.strictEqual(content.current.id, MESSAGE_ID);
-      assert.strictEqual(content.context, 'context');
+      assert.strictEqual(content.context, 'AllMedia');
     }
 
     return updated;
@@ -81,7 +81,7 @@ describe('both/state/ducks/audioPlayer', () => {
         actions.loadVoiceNoteAudio({
           voiceNoteData: voiceNoteDataForMessage('test'),
           position: 0,
-          context: 'context',
+          context: 'AllMedia',
           playbackRate: 1,
         })
       );
@@ -91,7 +91,7 @@ describe('both/state/ducks/audioPlayer', () => {
 
       if (content && AudioPlayerContent.isVoiceNote(content)) {
         assert.strictEqual(content.current.id, 'test');
-        assert.strictEqual(content.context, 'context');
+        assert.strictEqual(content.context, 'AllMedia');
       }
     });
   });

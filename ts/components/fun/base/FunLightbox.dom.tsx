@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode, RefObject } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode, RefObject, JSX } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { strictAssert } from '../../../util/assert.std.js';
+import { strictAssert } from '../../../util/assert.std.ts';
 
 /**
  * Tracks the current `data-key` that has a long-press/long-focus
@@ -19,7 +19,7 @@ export function useFunLightboxKey(): string | null {
  */
 
 export type FunLightboxProviderProps = Readonly<{
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 }>;
 

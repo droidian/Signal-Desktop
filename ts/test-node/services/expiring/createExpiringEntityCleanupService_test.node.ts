@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import type {
   ExpiringEntity,
   ExpiringEntityCleanupService,
-} from '../../../services/expiring/createExpiringEntityCleanupService.std.js';
-import { createExpiringEntityCleanupService } from '../../../services/expiring/createExpiringEntityCleanupService.std.js';
+} from '../../../services/expiring/createExpiringEntityCleanupService.std.ts';
+import { createExpiringEntityCleanupService } from '../../../services/expiring/createExpiringEntityCleanupService.std.ts';
 
 function waitForMicrotasks() {
   return new Promise<void>(resolve => {
@@ -109,7 +109,7 @@ describe('createExpiringEntityCleanupService', () => {
       },
       async cleanupExpiredEntities() {
         calls.push('cleanupExpiredEntities');
-        const deletedIds: Array<string> = [];
+        const deletedIds: Array<string | number> = [];
         const undeleted: Array<ExpiringEntity> = [];
         for (const entity of mockExpiringEntities) {
           if (entity.expiresAtMs <= clock.getCurrentTime()) {

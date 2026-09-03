@@ -1,17 +1,18 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { Fragment } from 'react';
+import { Fragment, type JSX } from 'react';
 
-import type { ItemClickEvent } from './types/ItemClickEvent.std.js';
+import type { ItemClickEvent } from './types/ItemClickEvent.std.ts';
 import type {
   GenericMediaItemType,
   MediaItemType,
   LinkPreviewMediaItemType,
-} from '../../../types/MediaItem.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { tw } from '../../../axo/tw.dom.js';
+  ContactMediaItemType,
+} from '../../../types/MediaItem.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
 
 export type Props = {
   header?: string;
@@ -34,12 +35,16 @@ function getMediaItemKey(mediaItem: GenericMediaItemType): string {
 
 type VerifiedMediaItems =
   | {
-      type: 'media' | 'audio' | 'document';
+      type: 'media' | 'audio';
       entries: ReadonlyArray<MediaItemType>;
     }
   | {
       type: 'link';
       entries: ReadonlyArray<LinkPreviewMediaItemType>;
+    }
+  | {
+      type: 'document';
+      entries: ReadonlyArray<MediaItemType | ContactMediaItemType>;
     };
 
 function verifyMediaItems(
@@ -48,11 +53,19 @@ function verifyMediaItems(
   const first = mediaItems.at(0);
   strictAssert(first != null, 'AttachmentSection cannot be empty');
 
-  const { type } = first;
+  let { type } = first;
+  if (type === 'contact') {
+    type = 'document';
+  }
 
   const result = {
     type,
-    entries: mediaItems.filter(item => item.type === type),
+    entries: mediaItems.filter(item => {
+      if (type === 'document') {
+        return item.type === 'document' || item.type === 'contact';
+      }
+      return item.type === type;
+    }),
   };
 
   strictAssert(
@@ -74,9 +87,21 @@ export function AttachmentSection({
   switch (verified.type) {
     case 'media':
       return (
-        <section className={tw('ps-5')}>
-          <h2 className={tw('ps-1 pt-4 pb-2 font-semibold')}>{header}</h2>
-          <div className={tw('flex flex-row flex-wrap gap-1 pb-1')}>
+        <section className={tw('@container px-5')}>
+          {header != null && (
+            <h2 className={tw('ps-1 pt-4 pb-2 type-body-medium font-semibold')}>
+              {header}
+            </h2>
+          )}
+          <div
+            className={tw(
+              'grid gap-1',
+              '@min-[560px]:grid-cols-[repeat(5,minmax(100px,120px))]',
+              '@min-[455px]:grid-cols-[repeat(4,minmax(100px,120px))]',
+              'grid-cols-[repeat(3,minmax(100px,120px))]',
+              'pb-1'
+            )}
+          >
             {verified.entries.map(mediaItem => {
               return (
                 <Fragment key={getMediaItemKey(mediaItem)}>
@@ -94,8 +119,14 @@ export function AttachmentSection({
     case 'audio':
     case 'link':
       return (
-        <section className={tw('mb-3 border-b-border-primary px-6 pb-3')}>
-          <h2 className={tw('pt-1.5 pb-2 font-semibold')}>{header}</h2>
+        <section>
+          {header != null && (
+            <h2
+              className={tw('px-6 pt-1.5 pb-2 type-body-medium font-semibold')}
+            >
+              {header}
+            </h2>
+          )}
           <div>
             {verified.entries.map(mediaItem => {
               return (

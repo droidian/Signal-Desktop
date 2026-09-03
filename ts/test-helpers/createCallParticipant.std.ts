@@ -3,11 +3,10 @@
 
 import lodash from 'lodash';
 
-import { AvatarColors } from '../types/Colors.std.js';
-import type { GroupCallRemoteParticipantType } from '../types/Calling.std.js';
-import { generateAci } from '../types/ServiceId.std.js';
-
-import { getDefaultConversationWithServiceId } from './getDefaultConversation.std.js';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { GroupCallRemoteParticipantType } from '../types/Calling.std.ts';
+import { getDefaultConversationWithServiceId } from './getDefaultConversation.std.ts';
+import { generateAci } from './serviceIdUtils.std.ts';
 
 const { sample } = lodash;
 
@@ -19,9 +18,10 @@ export function createCallParticipant(
     demuxId: 2,
     hasRemoteAudio: Boolean(participantProps.hasRemoteAudio),
     hasRemoteVideo: Boolean(participantProps.hasRemoteVideo),
-    isHandRaised: Boolean(participantProps.isHandRaised),
+    isOnlyHandRaised: Boolean(participantProps.isOnlyHandRaised),
     mediaKeysReceived: Boolean(participantProps.mediaKeysReceived),
     presenting: Boolean(participantProps.presenting),
+    raisedHandOrder: participantProps.raisedHandOrder,
     sharingScreen: Boolean(participantProps.sharingScreen),
     videoAspectRatio: 1.3,
     ...getDefaultConversationWithServiceId({

@@ -8,29 +8,27 @@ import {
   dequeueOldestSyncTasks,
   removeSyncTaskById,
   saveSyncTasks,
-} from '../../sql/Server.node.js';
+} from '../../sql/Server.node.ts';
 import type {
   WritableDB,
   ReadableDB,
   MessageType,
-} from '../../sql/Interface.std.js';
-import { sql, jsonToObject } from '../../sql/util.std.js';
+} from '../../sql/Interface.std.ts';
+import { sql, jsonToObject } from '../../sql/util.std.ts';
 import {
   insertData,
   updateToVersion,
   createDB,
   explain,
-} from './helpers.node.js';
-import { MAX_SYNC_TASK_ATTEMPTS } from '../../util/syncTasks.types.std.js';
-import { WEEK } from '../../util/durations/index.std.js';
+} from './helpers.node.ts';
+import { MAX_SYNC_TASK_ATTEMPTS } from '../../util/syncTasks.types.std.ts';
+import { WEEK } from '../../util/durations/index.std.ts';
 
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import type { SyncTaskType } from '../../util/syncTasks.preload.js';
-
-/* eslint-disable camelcase */
+import type { SyncTaskType } from '../../util/syncTasks.preload.ts';
 
 // Snapshot before: 1270
-export function getMostRecentAddressableMessages(
+function getMostRecentAddressableMessages(
   db: ReadableDB,
   conversationId: string,
   limit = 5
@@ -204,7 +202,7 @@ describe('SQL/updateToSchemaVersion1060', () => {
   describe('Sync Tasks', () => {
     it('creates tasks in bulk, and fetches all', () => {
       const now = Date.now();
-      const expected: Array<SyncTaskType> = [
+      const expected = [
         {
           id: generateGuid(),
           attempts: 1,
@@ -241,7 +239,7 @@ describe('SQL/updateToSchemaVersion1060', () => {
           sentAt: 3,
           type: 'delete-conversation',
         },
-      ];
+      ] as const satisfies Array<SyncTaskType>;
 
       saveSyncTasks(db, expected);
 

@@ -1,14 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
 import {
   IdenticonSVGForCallLink,
   IdenticonSVGForContact,
   IdenticonSVGForGroup,
-} from './IdenticonSVG.dom.js';
-import { AvatarColorMap } from '../types/Colors.std.js';
+} from './IdenticonSVG.dom.tsx';
+import { AvatarColorMap } from '../types/Colors.std.ts';
 
 export default {
   title: 'Components/IdenticonSVG',

@@ -1,65 +1,52 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { MutableRefObject } from 'react';
-import { DateInput, DateSegment, TimeField } from 'react-aria-components';
-import { Time } from '@internationalized/date';
-import { sample, isEqual, noop, range } from 'lodash';
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+} from 'react';
+import type { MutableRefObject, JSX, ReactNode } from 'react';
+import { sample, isEqual, noop } from 'lodash';
 import classNames from 'classnames';
-import { Popper } from 'react-popper';
 
-import {
-  isEmojiVariantValue,
-  getEmojiVariantByKey,
-  getEmojiVariantKeyByValue,
-} from './fun/data/emojis.std.js';
-import { FunStaticEmoji } from './fun/FunEmoji.dom.js';
-import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.js';
-import { useFunEmojiLocalizer } from './fun/useFunEmojiLocalizer.dom.js';
-import { FunEmojiPickerButton } from './fun/FunButton.dom.js';
-import { tw } from '../axo/tw.dom.js';
-import { AxoButton } from '../axo/AxoButton.dom.js';
-import { AxoSelect } from '../axo/AxoSelect.dom.js';
-import { AxoSwitch } from '../axo/AxoSwitch.dom.js';
-import { AxoSymbol } from '../axo/AxoSymbol.dom.js';
-import { Input } from './Input.dom.js';
-import { Checkbox } from './Checkbox.dom.js';
-import { AvatarColorMap, AvatarColors } from '../types/Colors.std.js';
-import { PreferencesSelectChatsDialog } from './preferences/PreferencesSelectChatsDialog.dom.js';
-import {
-  DayOfWeek,
-  getMidnight,
-  scheduleToTime,
-} from '../types/NotificationProfile.std.js';
-import { Avatar } from './Avatar.dom.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { formatTimestamp } from '../util/formatTimestamp.dom.js';
-import { strictAssert } from '../util/assert.std.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { SettingsPage } from '../types/Nav.std.js';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.js';
-import { AriaClickable } from '../axo/AriaClickable.dom.js';
-import { offsetDistanceModifier } from '../util/popperUtil.std.js';
-import { themeClassName2 } from '../util/theme.std.js';
-import { useRefMerger } from '../hooks/useRefMerger.std.js';
-import { handleOutsideClick } from '../util/handleOutsideClick.dom.js';
-import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.js';
-import { Modal } from './Modal.dom.js';
-
-import type { EmojiVariantKey } from './fun/data/emojis.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import type { ThemeType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { GetConversationByIdType } from '../state/selectors/conversations.dom.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
+import { FunStaticEmoji } from './fun/FunEmoji.dom.tsx';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.tsx';
+import { FunEmojiPickerButton } from './fun/FunButton.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
+import { AxoSelect } from '../axo/AxoSelect.dom.tsx';
+import { AxoSwitch } from '../axo/AxoSwitch.dom.tsx';
+import { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
+import { Input } from './Input.dom.tsx';
+import { Checkbox } from './Checkbox.dom.tsx';
+import { AvatarColorMap, AvatarColors } from '../types/Colors.std.ts';
+import { PreferencesSelectChatsDialog } from './preferences/PreferencesSelectChatsDialog.dom.tsx';
+import { DayOfWeek } from '../types/NotificationProfile.std.ts';
+import { Avatar } from './Avatar.dom.tsx';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { SettingsPage } from '../types/Nav.std.ts';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.tsx';
+import { AriaClickable } from '../axo/AriaClickable.dom.tsx';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import type { ThemeType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { GetConversationByIdType } from '../state/selectors/conversations.dom.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
 import type {
   NotificationProfileIdString,
   NotificationProfileType,
   ScheduleDays,
-} from '../types/NotificationProfile.std.js';
-import type { SettingsLocation } from '../types/Nav.std.js';
-import { addLeadingZero } from '../util/timestamp.std.js';
+} from '../types/NotificationProfile.std.ts';
+import type { SettingsLocation } from '../types/Nav.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { NotificationProfilesOnboardingDialog } from './preferences/notificationProfiles/NotificationProfilesOnboardingDialog.dom.tsx';
+import { formatTimeForDisplay, TimePicker } from './TimePicker.dom.tsx';
 
 enum CreateFlowPage {
   Name = 'Name',
@@ -149,101 +136,12 @@ type HomeProps = {
   updateProfile: (profile: NotificationProfileType) => void;
 };
 
-function formatTimeForDisplay(time: number): string {
-  const midnight = getMidnight(Date.now());
-  const ms = scheduleToTime(midnight, time);
-  return formatTimestamp(ms, { timeStyle: 'short' });
-}
-
-function need24HourTime(): boolean {
-  const formatted = formatTimeForDisplay(FIVE_PM);
-  return formatted.includes('17');
-}
-
-function formatTimeForInput(time: number): Time {
-  const { hours, minutes } = getTimeDetails(time, true);
-  return new Time(hours, minutes);
-}
-
-function parseTimeFromInput(time: Time): number {
-  return time.hour * 100 + time.minute;
-}
-
-type PERIOD = 'AM' | 'PM';
-function hourTo24HourTime(hours: number, period: PERIOD) {
-  if (period === 'AM' && hours === 12) {
-    return 0;
-  }
-  if (period === 'AM') {
-    return hours;
-  }
-  if (period === 'PM' && hours < 12) {
-    return hours + 12;
-  }
-
-  return hours;
-}
-function hourFrom24HourTime(hours: number): { hours: number; period: PERIOD } {
-  if (hours === 0) {
-    return {
-      hours: 12,
-      period: 'AM',
-    };
-  }
-  if (hours === 12) {
-    return {
-      hours: 12,
-      period: 'PM',
-    };
-  }
-  if (hours > 12) {
-    return {
-      hours: hours - 12,
-      period: 'PM',
-    };
-  }
-  return {
-    hours,
-    period: 'AM',
-  };
-}
-function makeTime(
-  rawHours: number,
-  minutes: number,
-  period: PERIOD | undefined
-): number {
-  if (!period) {
-    return rawHours * 100 + minutes;
-  }
-
-  const hours = hourTo24HourTime(rawHours, period);
-  return hours * 100 + minutes;
-}
-
-function getTimeDetails(
-  time: number,
-  use24HourTime: boolean
-): { hours: number; minutes: number; period: PERIOD | undefined } {
-  const rawHours = Math.floor(time / 100);
-  const minutes = time % 100;
-
-  if (use24HourTime) {
-    return { hours: rawHours, minutes, period: undefined };
-  }
-
-  const { hours, period } = hourFrom24HourTime(rawHours);
-  return {
-    hours,
-    minutes,
-    period,
-  };
-}
-
 const ARGB_BITS = 0xff000000;
 const A100_BACKGROUND_ARGB = 0xffe3e3fe;
 
 function getRandomColor(): number {
-  const colorName = sample(AvatarColors) || AvatarColors[0];
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  const colorName = sample(AvatarColors) || AvatarColors[0]!;
   const color = AvatarColorMap.get(colorName);
   if (!color) {
     return A100_BACKGROUND_ARGB; // A100, background, with bits for ARGB
@@ -255,17 +153,9 @@ function getRandomColor(): number {
   return argb;
 }
 
-export function getColorFromProfile(argb: number): string {
+function getColorFromProfile(argb: number): string {
   const rgb = argb - ARGB_BITS;
   return `#${rgb.toString(16)}`;
-}
-
-function getEmojiVariantKey(value: string): EmojiVariantKey | undefined {
-  if (isEmojiVariantValue(value)) {
-    return getEmojiVariantKeyByValue(value);
-  }
-
-  return undefined;
 }
 
 type ProfileToSave = Omit<NotificationProfileType, 'id'>;
@@ -280,32 +170,36 @@ export function NotificationProfilesCreateFlow({
   setSettingsLocation,
   theme,
 }: CreateFlowProps): JSX.Element {
-  const [page, setPage] = React.useState(CreateFlowPage.Name);
+  const [page, setPage] = useState(CreateFlowPage.Name);
 
-  const [name, setName] = React.useState<string | undefined>();
-  const [emoji, setEmoji] = React.useState<string | undefined>();
-  const [allowedMembers, setAllowedMembers] = React.useState<
-    ReadonlySet<string>
-  >(new Set<string>());
-  const [allowAllCalls, setAllowAllCalls] = React.useState(DEFAULT_ALLOW_CALLS);
-  const [allowAllMentions, setAllowAllMentions] = React.useState(
+  const [name, setName] = useState<string | undefined>();
+  const [emoji, setEmoji] = useState<Emoji.Variant | undefined>();
+  const [allowedMembers, setAllowedMembers] = useState<ReadonlySet<string>>(
+    new Set<string>()
+  );
+  const [allowAllCalls, setAllowAllCalls] = useState(DEFAULT_ALLOW_CALLS);
+  const [allowAllMentions, setAllowAllMentions] = useState(
     DEFAULT_ALLOW_MENTIONS
   );
-  const [isEnabled, setIsEnabled] = React.useState<boolean>(DEFAULT_ENABLED);
+  const [isEnabled, setIsEnabled] = useState<boolean>(DEFAULT_ENABLED);
   const [scheduleDays, setScheduledDays] =
-    React.useState<ScheduleDays>(DEFAULT_SCHEDULE);
-  const [startTime, setStartTime] = React.useState<number>(DEFAULT_START);
-  const [endTime, setEndTime] = React.useState<number>(DEFAULT_END);
-  const [color] = React.useState<number>(getRandomColor());
+    useState<ScheduleDays>(DEFAULT_SCHEDULE);
+  const [startTime, setStartTime] = useState<number>(DEFAULT_START);
+  const [endTime, setEndTime] = useState<number>(DEFAULT_END);
+  const [color] = useState<number>(getRandomColor());
 
-  const tryClose = React.useRef<() => void | undefined>();
+  const tryClose = useRef<(() => void) | null>(null);
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'NotificationProfilesCreateFlow',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
 
-  const onTryClose = React.useCallback(() => {
+  const onTryClose = useCallback(() => {
     const isDirty =
       page !== CreateFlowPage.Done && (Boolean(name) || Boolean(emoji));
     const discardChanges = noop;
@@ -338,7 +232,7 @@ export function NotificationProfilesCreateFlow({
     };
   }
 
-  const goToNotificationsProfilesHome = React.useCallback(() => {
+  const goToNotificationsProfilesHome = useCallback(() => {
     setSettingsLocation({ page: SettingsPage.NotificationProfilesHome });
   }, [setSettingsLocation]);
 
@@ -453,21 +347,18 @@ export function NotificationProfilesHome({
   theme,
   updateProfile,
 }: HomeProps): JSX.Element {
-  const [page, setPage] = React.useState(HomePage.List);
-  const [profile, setProfile] = React.useState<
-    NotificationProfileType | undefined
-  >();
-  const [isShowingOnboardModal, setIsShowingOnboardModal] =
-    React.useState(false);
+  const [page, setPage] = useState(HomePage.List);
+  const [profile, setProfile] = useState<NotificationProfileType | undefined>();
+  const [isShowingOnboardModal, setIsShowingOnboardModal] = useState(false);
 
-  const goBackToNotifications = React.useCallback(() => {
+  const goBackToNotifications = useCallback(() => {
     setSettingsLocation({ page: SettingsPage.Notifications });
   }, [setSettingsLocation]);
-  const goToNotificationsProfilesCreateFlow = React.useCallback(() => {
+  const goToNotificationsProfilesCreateFlow = useCallback(() => {
     setSettingsLocation({ page: SettingsPage.NotificationProfilesCreateFlow });
   }, [setSettingsLocation]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (page === HomePage.List && !hasOnboardingBeenSeen) {
       if (allProfiles.length === 0) {
         setIsShowingOnboardModal(true);
@@ -558,7 +449,7 @@ export function NotificationProfilesHome({
             i18n={i18n}
             isEditing
             onBack={() => setPage(HomePage.Edit)}
-            onNext={() => setPage(HomePage.Edit)} // TODO: probably don't show Next button?
+            onNext={() => setPage(HomePage.Edit)}
             onSetIsEnabled={(scheduleEnabled: boolean) => {
               const newProfile = {
                 ...profile,
@@ -643,35 +534,6 @@ export function NotificationProfilesHome({
   );
 }
 
-function NotificationProfilesOnboardingDialog({
-  i18n,
-  onDismiss,
-}: {
-  i18n: LocalizerType;
-  onDismiss: VoidFunction;
-}) {
-  return (
-    <Modal
-      modalName="NotificationProfilesOnboarding"
-      onClose={onDismiss}
-      i18n={i18n}
-    >
-      <div className={tw('flex flex-col items-center')}>
-        <div className={tw('mt-4 mb-3')}>
-          <ProfileAvatar i18n={i18n} size="large" />
-        </div>
-        <Title title={i18n('icu:NotificationProfiles--title')} />
-        <p className={tw('mt-4 mb-12 max-w-[340px] text-center leading-5')}>
-          {i18n('icu:NotificationProfiles--setup-description')}
-        </p>
-        <AxoButton.Root variant="primary" onClick={onDismiss} size="lg">
-          {i18n('icu:NotificationProfiles--setup-continue')}
-        </AxoButton.Root>
-      </div>
-    </Modal>
-  );
-}
-
 function NotificationProfilesNamePage({
   contentsRef,
   i18n,
@@ -685,50 +547,49 @@ function NotificationProfilesNamePage({
 }: {
   contentsRef: MutableRefObject<HTMLDivElement | null>;
   i18n: LocalizerType;
-  initialEmoji: string | undefined;
+  initialEmoji: Emoji.Variant | undefined;
   initialName?: string;
   isEditing: boolean;
   onBack: VoidFunction;
   onNext: () => void;
-  onUpdate: (data: { emoji: string | undefined; name: string }) => void;
+  onUpdate: (data: { emoji: Emoji.Variant | undefined; name: string }) => void;
   theme: ThemeType;
 }) {
-  const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
-  const [name, setName] = React.useState(initialName);
-  const [emoji, setEmoji] = React.useState<string | undefined>(initialEmoji);
-  const emojiLocalizer = useFunEmojiLocalizer();
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [name, setName] = useState(initialName);
+  const [emoji, setEmoji] = useState<Emoji.Variant | undefined>(initialEmoji);
 
   const isValid = Boolean(name);
-  const sampleProfileNames = React.useMemo(() => {
+  const sampleProfileNames = useMemo(() => {
     return [
       {
-        emoji: '💪',
+        emoji: Emoji.getDefaultVariant(Emoji.MUSCLE),
         text: i18n('icu:NotificationProfiles--sample-name__work'),
       },
       {
-        emoji: '😴',
+        emoji: Emoji.SLEEPING,
         text: i18n('icu:NotificationProfiles--sample-name__sleep'),
       },
       {
-        emoji: '🚗',
+        emoji: Emoji.CAR,
         text: i18n('icu:NotificationProfiles--sample-name__driving'),
       },
       {
-        emoji: '😊',
+        emoji: Emoji.BLUSH,
         text: i18n('icu:NotificationProfiles--sample-name__downtime'),
       },
       {
-        emoji: '💡',
+        emoji: Emoji.BULB,
         text: i18n('icu:NotificationProfiles--sample-name__focus'),
       },
     ] as const;
   }, [i18n]);
 
-  const handleFunEmojiPickerOpenChange = React.useCallback((open: boolean) => {
+  const handleFunEmojiPickerOpenChange = useCallback((open: boolean) => {
     setEmojiPickerOpen(open);
   }, []);
 
-  const handleInputChange = React.useCallback(
+  const handleInputChange = useCallback(
     (newName: string) => {
       setName(newName);
 
@@ -740,8 +601,6 @@ function NotificationProfilesNamePage({
     },
     [emoji, setEmoji, setName, onUpdate]
   );
-
-  const emojiKey = emoji ? getEmojiVariantKey(emoji) : null;
 
   return (
     <>
@@ -769,8 +628,7 @@ function NotificationProfilesNamePage({
                 onOpenChange={handleFunEmojiPickerOpenChange}
                 placement="bottom"
                 onSelectEmoji={data => {
-                  const newEmoji = getEmojiVariantByKey(data.variantKey)?.value;
-
+                  const newEmoji = data.emoji;
                   setEmoji(newEmoji);
                   if (name) {
                     onUpdate({ name, emoji: newEmoji });
@@ -779,7 +637,7 @@ function NotificationProfilesNamePage({
                 closeOnSelect
                 theme={theme}
               >
-                <FunEmojiPickerButton i18n={i18n} selectedEmoji={emojiKey} />
+                <FunEmojiPickerButton i18n={i18n} selectedEmoji={emoji} />
               </FunEmojiPicker>
             }
             maxLengthCount={140}
@@ -793,13 +651,6 @@ function NotificationProfilesNamePage({
           />
           <div className={tw('mx-auto w-full max-w-[320px]')}>
             {sampleProfileNames.map(item => {
-              const itemEmojiKey = getEmojiVariantKey(item.emoji);
-              strictAssert(
-                itemEmojiKey,
-                'Emoji for name defaults should exist'
-              );
-              const itemEmojiData = getEmojiVariantByKey(itemEmojiKey);
-
               return (
                 <FullWidthButton
                   key={item.text}
@@ -815,11 +666,9 @@ function NotificationProfilesNamePage({
                 >
                   <FunStaticEmoji
                     role="img"
-                    aria-label={emojiLocalizer.getLocaleShortName(
-                      itemEmojiData.key
-                    )}
+                    aria-label={Emoji.getDisplayLabel(item.emoji)}
                     size={24}
-                    emoji={itemEmojiData}
+                    emoji={item.emoji}
                   />
                   {item.text}
                 </FullWidthButton>
@@ -830,7 +679,7 @@ function NotificationProfilesNamePage({
       </Container>
       <ButtonContainer>
         <AxoButton.Root
-          variant="primary"
+          variant="strong-primary"
           size="lg"
           disabled={!isValid}
           onClick={onNext}
@@ -900,7 +749,7 @@ function NotificationProfilesAllowedPage({
         />
       </Container>
       <ButtonContainer>
-        <AxoButton.Root variant="primary" size="lg" onClick={onNext}>
+        <AxoButton.Root variant="strong-primary" size="lg" onClick={onNext}>
           {i18n('icu:next2')}
         </AxoButton.Root>
       </ButtonContainer>
@@ -939,7 +788,10 @@ function NotificationProfilesSchedulePage({
   onSetEndTime: (value: number) => void;
   theme: ThemeType;
 }) {
-  const daysInUIOrder = React.useMemo(() => {
+  const startLabelId = useId();
+  const endLabelId = useId();
+
+  const daysInUIOrder = useMemo(() => {
     return [
       {
         dayOfWeek: DayOfWeek.SUNDAY,
@@ -1017,14 +869,14 @@ function NotificationProfilesSchedulePage({
           </h2>
         </FullWidthRow>
         <FullWidthRow className={tw('flex min-h-[40px] items-center')}>
-          <span id="start-label" className={tw('grow')}>
+          <span id={startLabelId} className={tw('grow')}>
             {i18n('icu:NotificationProfiles--schedule-from')}
           </span>
           <span className={tw('shrink-0')}>
             <TimePicker
               i18n={i18n}
               isDisabled={!isEnabled}
-              labelId="start-label"
+              aria-labelledby={startLabelId}
               onUpdateTime={onSetStartTime}
               theme={theme}
               time={startTime}
@@ -1032,14 +884,14 @@ function NotificationProfilesSchedulePage({
           </span>
         </FullWidthRow>
         <FullWidthRow className={tw('flex min-h-[40px] items-center')}>
-          <span id="end-label" className={tw('grow')}>
+          <span id={endLabelId} className={tw('grow')}>
             {i18n('icu:NotificationProfiles--schedule-until')}
           </span>
           <span className={tw('shrink-0')}>
             <TimePicker
               i18n={i18n}
               isDisabled={!isEnabled}
-              labelId="end-label"
+              aria-labelledby={endLabelId}
               onUpdateTime={onSetEndTime}
               theme={theme}
               time={endTime}
@@ -1062,7 +914,7 @@ function NotificationProfilesSchedulePage({
         </FullWidthRow>
       </Container>
       <ButtonContainer>
-        <AxoButton.Root variant="primary" size="lg" onClick={onNext}>
+        <AxoButton.Root variant="strong-primary" size="lg" onClick={onNext}>
           {isEditing ? i18n('icu:done') : i18n('icu:next2')}
         </AxoButton.Root>
       </ButtonContainer>
@@ -1092,7 +944,7 @@ function NotificationProfilesDonePage({
         <p className={tw('mt-4 mb-6 max-w-[350px] text-center leading-5')}>
           {i18n('icu:NotificationProfiles--done-description')}
         </p>
-        <AxoButton.Root variant="primary" size="lg" onClick={onNext}>
+        <AxoButton.Root variant="strong-primary" size="lg" onClick={onNext}>
           {i18n('icu:done')}
         </AxoButton.Root>
       </MidFloatingContainer>
@@ -1121,10 +973,10 @@ function NotificationProfilesListPage({
   onEditProfile: (profileToEdit: NotificationProfileType) => void;
   setIsSyncEnabled: (value: boolean) => void;
 }) {
-  const [cachedProfiles, setCachedProfiles] = React.useState<
+  const [cachedProfiles, setCachedProfiles] = useState<
     ReadonlyArray<NotificationProfileType>
   >([]);
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loading) {
       setCachedProfiles(allProfiles);
     }
@@ -1168,10 +1020,10 @@ function NotificationProfilesListPage({
         <FullWidthDivider />
         <FullWidthRow className={tw('flex min-h-[40px] items-start pt-1')}>
           <div className={tw('grow')}>
-            <div className={tw('type-body-large text-label-primary')}>
+            <div className={tw('type-body-large text-primary')}>
               {i18n('icu:NotificationProfiles--list--sync')}
             </div>
-            <div className={tw('mt-1 type-body-small text-label-secondary')}>
+            <div className={tw('mt-1 type-body-small text-secondary')}>
               {i18n('icu:NotificationProfiles--list--sync--description')}
             </div>
           </div>
@@ -1220,40 +1072,39 @@ function NotificationProfilesEditPage({
   profile: NotificationProfileType;
   theme: ThemeType;
 }) {
-  const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const activeString = i18n('icu:NotificationProfiles--edit--is-active');
   const notActiveString = i18n('icu:NotificationProfiles--edit--is-not-active');
   const isProfileActive = activeProfileId === profile.id;
   const currentActiveString = isProfileActive ? activeString : notActiveString;
 
-  const allowedMembersArray = React.useMemo(() => {
+  const allowedMembersArray = useMemo(() => {
     return Array.from(profile.allowedMembers);
   }, [profile.allowedMembers]);
 
   return (
     <>
-      {isConfirmingDelete ? (
-        <ConfirmationDialog
-          dialogName="NotificationProfileDelete"
-          actions={[
-            {
-              action: onDeleteProfile,
-              text: i18n('icu:NotificationProfiles--delete-button'),
-              style: 'affirmative',
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => setIsConfirmingDelete(false)}
+      <AxoConfirmDialog.Root
+        open={isConfirmingDelete}
+        onOpenChange={setIsConfirmingDelete}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:NotificationProfiles--delete-confirmation')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={onDeleteProfile}
         >
-          {i18n('icu:NotificationProfiles--delete-confirmation')}
-        </ConfirmationDialog>
-      ) : null}
+          {i18n('icu:NotificationProfiles--delete-button')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
       <Header onBack={onBack} title={profile.name} i18n={i18n} />
       <Container contentsRef={contentsRef}>
         <AriaClickable.Root
           className={tw(
-            'group mb-3 flex min-h-[80px] w-full items-center rounded-md border-[2.5px] border-transparent px-[11.5px] outline-none data-[focused]:border-color-label-light'
+            'group mb-3 flex min-h-[80px] w-full items-center rounded-md border-[2.5px] border-transparent px-[11.5px] outline-none keyboard-mode:data-focused:axo-focus-ring'
           )}
         >
           <ProfileAvatar i18n={i18n} profile={profile} size="medium" />
@@ -1261,7 +1112,7 @@ function NotificationProfilesEditPage({
           <span
             id="edit-icon"
             className={tw(
-              'ms-2 opacity-0 group-hover:opacity-100 group-data-[focused]:opacity-100'
+              'ms-2 opacity-0 group-hover:opacity-100 group-data-focused:opacity-100'
             )}
           >
             <AxoSymbol.Icon
@@ -1271,7 +1122,7 @@ function NotificationProfilesEditPage({
             />
             <AriaClickable.HiddenTrigger
               onClick={onEditName}
-              aria-labelledby="edit-icon"
+              labelledby="edit-icon"
             />
           </span>
 
@@ -1285,22 +1136,12 @@ function NotificationProfilesEditPage({
                   onUpdateOverrideState(value);
                 }}
               >
-                <AxoSelect.Trigger placeholder={currentActiveString}>
-                  {currentActiveString}
-                </AxoSelect.Trigger>
+                <AxoSelect.Trigger placeholder="" />
                 <AxoSelect.Content>
-                  <AxoSelect.Item
-                    key="isActive"
-                    value={activeString}
-                    textValue={activeString}
-                  >
+                  <AxoSelect.Item value={activeString}>
                     <AxoSelect.ItemText>{activeString}</AxoSelect.ItemText>
                   </AxoSelect.Item>
-                  <AxoSelect.Item
-                    key="isNotActive"
-                    value={notActiveString}
-                    textValue={notActiveString}
-                  >
+                  <AxoSelect.Item value={notActiveString}>
                     <AxoSelect.ItemText>{notActiveString}</AxoSelect.ItemText>
                   </AxoSelect.Item>
                 </AxoSelect.Content>
@@ -1345,7 +1186,7 @@ function NotificationProfilesEditPage({
                 ),
               })}
             </div>
-            <div className={tw('mt-0.5 type-body-small text-label-secondary')}>
+            <div className={tw('mt-0.5 type-body-small text-secondary')}>
               <ScheduleSummary
                 i18n={i18n}
                 scheduleDays={profile.scheduleDaysEnabled ?? DEFAULT_SCHEDULE}
@@ -1373,16 +1214,16 @@ function NotificationProfilesEditPage({
           className={tw('mt-6 min-h-[52px]')}
           onClick={() => setIsConfirmingDelete(true)}
         >
-          <div className={tw('me-4 text-color-label-destructive')}>
+          <div className={tw('me-4 text-destructive')}>
             <AxoSymbol.Icon size={24} symbol="trash" label={null} />
           </div>
-          <span className={tw('grow text-start text-color-label-destructive')}>
+          <span className={tw('grow text-start text-destructive')}>
             {i18n('icu:NotificationProfiles--delete')}
           </span>
         </FullWidthButton>
       </Container>
       <ButtonContainer>
-        <AxoButton.Root variant="primary" size="lg" onClick={onBack}>
+        <AxoButton.Root variant="strong-primary" size="lg" onClick={onBack}>
           {i18n('icu:done')}
         </AxoButton.Root>
       </ButtonContainer>
@@ -1392,13 +1233,13 @@ function NotificationProfilesEditPage({
 
 // Utility components
 
-export function FullWidthButton({
+function FullWidthButton({
   children,
   className,
   onClick,
   testId,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   onClick: () => void;
   testId?: string;
@@ -1407,7 +1248,7 @@ export function FullWidthButton({
     <button
       className={classNames(
         tw(
-          'flex w-full items-center rounded-md border-[2.5px] border-transparent px-[11.5px] outline-none focus-visible:border-color-label-light'
+          'flex w-full items-center rounded-md border-[2.5px] border-transparent px-[11.5px] outline-none keyboard-mode:focus:axo-focus-ring'
         ),
         className
       )}
@@ -1424,7 +1265,7 @@ function FullWidthRow({
   children,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -1439,7 +1280,7 @@ function FullWidthDivider() {
     <div className={tw('my-3 w-full px-[14px]')}>
       <hr
         aria-orientation="horizontal"
-        className={tw('border-t-[0.5px] border-label-secondary')}
+        className={tw('border-t-[0.5px] border-primary')}
       />
     </div>
   );
@@ -1473,7 +1314,7 @@ function Container({
   children,
   contentsRef,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   contentsRef: MutableRefObject<HTMLDivElement | null>;
 }) {
   return (
@@ -1496,7 +1337,7 @@ function Title({ title }: { title: string }) {
   return <h1 className={tw('type-title-medium')}>{title}</h1>;
 }
 
-function ButtonContainer({ children }: { children: React.ReactNode }) {
+function ButtonContainer({ children }: { children: ReactNode }) {
   return (
     <div
       className={tw(
@@ -1512,7 +1353,7 @@ function MidFloatingContainer({
   children,
   contentsRef,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   contentsRef: MutableRefObject<HTMLDivElement | null>;
 }) {
   return (
@@ -1568,13 +1409,12 @@ function EmojiOrMoon({
   i18n,
   size,
 }: {
-  emoji?: EmojiVariantKey | undefined;
+  emoji?: Emoji.Variant | undefined;
   forceLightTheme?: boolean;
   i18n: LocalizerType;
   size: IconSize;
 }) {
-  const emojiLocalizer = useFunEmojiLocalizer();
-  const sizeMap = React.useMemo(
+  const sizeMap = useMemo(
     () => ({
       large: 48 as const,
       medium: 20 as const,
@@ -1588,7 +1428,7 @@ function EmojiOrMoon({
     return (
       <div
         className={tw(
-          'absolute start-1/2 top-1/2 -translate-1/2 text-color-label-primary'
+          'absolute inset-s-1/2 top-1/2 -translate-1/2 text-accent'
         )}
         style={
           forceLightTheme
@@ -1607,15 +1447,15 @@ function EmojiOrMoon({
     );
   }
 
-  const emojiData = getEmojiVariantByKey(emoji);
-
   return (
-    <span className={tw('absolute start-1/2 top-1/2 -translate-1/2 leading-0')}>
+    <span
+      className={tw('absolute inset-s-1/2 top-1/2 -translate-1/2 leading-0')}
+    >
       <FunStaticEmoji
         role="img"
-        aria-label={emojiLocalizer.getLocaleShortName(emojiData.key)}
+        aria-label={Emoji.getDisplayLabel(emoji)}
         size={sizeMap[size]}
-        emoji={emojiData}
+        emoji={emoji}
       />
     </span>
   );
@@ -1625,7 +1465,7 @@ function PlusIconInCircle() {
   return (
     <div
       className={tw(
-        'me-3 flex size-[36px] items-center justify-center rounded-full bg-background-secondary'
+        'me-3 flex size-[36px] items-center justify-center rounded-full bg-surface-secondary'
       )}
     >
       <AxoSymbol.Icon size={20} symbol="plus" label={null} />
@@ -1652,7 +1492,7 @@ function AllowedMembersSection({
   theme: ThemeType;
   title: string;
 }) {
-  const [showingMemberChooser, setShowingMemberChooser] = React.useState(false);
+  const [showingMemberChooser, setShowingMemberChooser] = useState(false);
 
   return (
     <>
@@ -1698,7 +1538,7 @@ function AllowedMembersSection({
           >
             <div
               className={tw(
-                'me-3 flex size-[36px] items-center justify-center rounded-full bg-background-secondary'
+                'me-3 flex size-[36px] items-center justify-center rounded-full bg-surface-secondary'
               )}
             >
               <Avatar
@@ -1774,14 +1614,13 @@ export function ProfileAvatar({
   isActive?: boolean;
   profile?: ProfileToSave;
   size: IconSize;
-}): React.ReactNode {
-  const emoji = profile?.emoji ? getEmojiVariantKey(profile.emoji) : undefined;
+}): ReactNode {
   const backgroundColor = profile?.color
     ? getColorFromProfile(profile.color)
     : undefined;
   const forceLightTheme = profile && !profile.emoji;
 
-  const sizeMap = React.useMemo(
+  const sizeMap = useMemo(
     () => ({
       large: tw('size-[80px]'),
       medium: tw('size-[36px]'),
@@ -1797,13 +1636,13 @@ export function ProfileAvatar({
       className={classNames(
         tw('relative rounded-full'),
         sizeClass,
-        isActive ? tw('border-2 border-border-selected') : undefined,
-        !backgroundColor ? tw('bg-color-label-light-disabled') : undefined
+        isActive ? tw('border-2 border-selected') : undefined,
+        !backgroundColor ? tw('bg-accent-tint') : undefined
       )}
       style={{ backgroundColor }}
     >
       <EmojiOrMoon
-        emoji={emoji}
+        emoji={profile?.emoji}
         forceLightTheme={forceLightTheme}
         i18n={i18n}
         size={size}
@@ -1819,7 +1658,7 @@ function ScheduleSummary({
   i18n: LocalizerType;
   scheduleDays: ScheduleDays;
 }): string {
-  const daysInUIOrder = React.useMemo(() => {
+  const daysInUIOrder = useMemo(() => {
     return [
       {
         dayOfWeek: DayOfWeek.SUNDAY,
@@ -1876,244 +1715,4 @@ function ScheduleSummary({
   });
 
   return result;
-}
-
-const HOURS_24 = range(0, 24);
-const HOURS_12 = range(1, 13);
-const MINUTES = range(0, 60);
-
-function TimePicker({
-  i18n,
-  isDisabled,
-  labelId,
-  theme,
-  time,
-  onUpdateTime,
-}: {
-  i18n: LocalizerType;
-  isDisabled: boolean;
-  labelId: string;
-  theme: ThemeType;
-  time: number;
-  onUpdateTime: (value: number) => void;
-}) {
-  const [isShowingPopup, setIsShowingPopup] = React.useState(false);
-  const use24HourTime = need24HourTime();
-  const AM_PM: Array<PERIOD> = ['AM', 'PM'];
-  const periodLookup = React.useMemo(() => {
-    return {
-      AM: i18n('icu:NotificationProfile--am'),
-      PM: i18n('icu:NotificationProfile--pm'),
-    };
-  }, [i18n]);
-  const [timeFieldElement, setTimeFieldElement] = React.useState<
-    HTMLDivElement | undefined
-  >();
-  const [popupElement, setPopupElement] = React.useState<
-    HTMLDivElement | undefined
-  >();
-  const { minutes, hours, period } = getTimeDetails(time, use24HourTime);
-  const refMerger = useRefMerger();
-  const selectedHour = React.useRef<HTMLButtonElement | null>(null);
-  const selectedMinute = React.useRef<HTMLButtonElement | null>(null);
-
-  React.useEffect(() => {
-    if (!isShowingPopup || !popupElement) {
-      return noop;
-    }
-    return handleOutsideClick(
-      (_target, event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        setIsShowingPopup(false);
-        return true;
-      },
-      {
-        containerElements: [popupElement],
-        name: 'TimePicker.popup',
-      }
-    );
-  }, [isShowingPopup, popupElement, setIsShowingPopup]);
-
-  React.useEffect(() => {
-    if (!isShowingPopup || !popupElement) {
-      return;
-    }
-    if (selectedHour.current) {
-      selectedHour.current.focus();
-    }
-    if (selectedMinute.current) {
-      selectedMinute.current.scrollIntoView();
-    }
-  }, [isShowingPopup, popupElement, setIsShowingPopup]);
-
-  useEscapeHandling(
-    isShowingPopup ? () => setIsShowingPopup(false) : undefined
-  );
-
-  return (
-    <>
-      {isShowingPopup && (
-        <Popper
-          placement="bottom-end"
-          modifiers={[offsetDistanceModifier(6)]}
-          referenceElement={timeFieldElement}
-        >
-          {({ ref, style }) => (
-            <div
-              ref={refMerger(ref, (element: HTMLDivElement | null) =>
-                setPopupElement(element ?? undefined)
-              )}
-              style={style}
-              className={classNames(
-                'TimePickerPopup',
-                tw(
-                  'flex h-[244px] rounded-[10px] bg-background-secondary p-1 shadow-elevation-1'
-                ),
-                use24HourTime ? tw('w-[102px]') : tw('w-[150px]'),
-                theme ? themeClassName2(theme) : undefined
-              )}
-            >
-              <div className={tw('w-[46px] overflow-y-scroll')}>
-                {(use24HourTime ? HOURS_24 : HOURS_12).map(hour => {
-                  const isSelected = hour === hours;
-
-                  return (
-                    <button
-                      key={hour.toString()}
-                      ref={isSelected ? selectedHour : null}
-                      className={classNames(
-                        tw('w-[46px] rounded-sm py-[7px] type-body-medium'),
-                        isSelected ? tw('bg-fill-secondary') : null
-                      )}
-                      type="button"
-                      onClick={() => {
-                        const newTime = makeTime(hour, minutes, period);
-                        onUpdateTime(newTime);
-                      }}
-                    >
-                      {hour}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className={tw('ms-0.5 w-[46px] overflow-y-scroll')}>
-                {MINUTES.map(minute => {
-                  const isSelected = minute === minutes;
-
-                  return (
-                    <button
-                      key={minute.toString()}
-                      ref={isSelected ? selectedMinute : null}
-                      className={classNames(
-                        tw('w-[46px] rounded-sm py-[7px] type-body-medium'),
-                        isSelected ? tw('bg-fill-secondary') : null
-                      )}
-                      type="button"
-                      onClick={() => {
-                        const newTime = makeTime(hours, minute, period);
-                        onUpdateTime(newTime);
-                      }}
-                    >
-                      {addLeadingZero(minute)}
-                    </button>
-                  );
-                })}
-              </div>
-              {!use24HourTime ? (
-                <div className={tw('ms-0.5 w-[46px] overflow-y-scroll')}>
-                  {AM_PM.map(item => {
-                    const isSelected = item === period;
-
-                    return (
-                      <button
-                        key={item}
-                        className={classNames(
-                          tw('w-[46px] rounded-sm py-[7px] type-body-medium'),
-                          isSelected ? tw('bg-fill-secondary') : null
-                        )}
-                        type="button"
-                        onClick={() => {
-                          const newTime = makeTime(hours, minutes, item);
-                          onUpdateTime(newTime);
-                        }}
-                      >
-                        {periodLookup[item]}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          )}
-        </Popper>
-      )}
-      <TimeField
-        ref={element => {
-          setTimeFieldElement(element ?? undefined);
-        }}
-        className={tw(
-          'flex items-center rounded-lg border-[2.5px] border-transparent bg-fill-secondary px-2 py-0.5 focus-within:border-border-focused'
-        )}
-        aria-labelledby={labelId}
-        hourCycle={use24HourTime ? 24 : 12}
-        isDisabled={isDisabled}
-        minValue={new Time(0, 0)}
-        maxValue={new Time(23, 59)}
-        onChange={value => {
-          if (!value) {
-            return;
-          }
-          onUpdateTime(parseTimeFromInput(value));
-        }}
-        value={formatTimeForInput(time)}
-      >
-        <DateInput className={tw('inline-flex min-w-[5em] items-center')}>
-          {segment => {
-            // We don't need the space between the time and the am/pm
-            if (segment.type === 'literal' && segment.text === ' ') {
-              return <span />;
-            }
-            if (segment.type === 'literal') {
-              // eslint-disable-next-line no-param-reassign
-              segment.text = i18n('icu:NotificationProfile--time-separator');
-            }
-            return (
-              <DateSegment
-                className={classNames(
-                  tw(
-                    'inline-block px-[1px] type-body-medium outline-none focus:bg-fill-selected'
-                  ),
-                  segment.type === 'literal' ? tw('px-[3px]') : null,
-                  segment.type === 'dayPeriod' ? tw('ps-[2px]') : null,
-                  segment.type === 'hour' ? tw('flex-grow text-end') : null,
-                  isDisabled ? tw('text-label-placeholder') : null
-                )}
-                segment={segment}
-              />
-            );
-          }}
-        </DateInput>
-        <button
-          className={classNames(
-            tw('ms-3 p-0.5 outline-0 focus-visible:bg-fill-selected'),
-            isDisabled ? tw('text-label-placeholder') : null
-          )}
-          type="button"
-          onClick={() => {
-            if (isDisabled) {
-              return;
-            }
-            setIsShowingPopup(!isShowingPopup);
-          }}
-        >
-          <AxoSymbol.Icon
-            size={14}
-            symbol="chevron-down"
-            label={i18n('icu:NotificationProfiles--open-time-picker')}
-          />
-        </button>
-      </TimeField>
-    </>
-  );
 }

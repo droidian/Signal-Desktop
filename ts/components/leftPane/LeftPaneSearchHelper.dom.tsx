@@ -1,25 +1,24 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild } from 'react';
-import React from 'react';
+import type { ReactNode } from 'react';
 
-import type { ToFindType } from './LeftPaneHelper.dom.js';
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.js';
-import { handleKeydownForSearch } from './handleKeydownForSearch.dom.js';
+import type { ToFindType } from './LeftPaneHelper.dom.tsx';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.tsx';
+import { handleKeydownForSearch } from './handleKeydownForSearch.dom.ts';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../state/ducks/conversations.preload.js';
-import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.js';
+} from '../../state/ducks/conversations.preload.ts';
+import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.tsx';
 
-import { I18n } from '../I18n.dom.js';
-import { assertDev } from '../../util/assert.std.js';
-import { UserText } from '../UserText.dom.js';
+import { I18n } from '../I18n.dom.tsx';
+import { assertDev, strictAssert } from '../../util/assert.std.ts';
+import { UserText } from '../UserText.dom.tsx';
 
 // The "correct" thing to do is to measure the size of the left pane and render enough
 //   search results for the container height. But (1) that's slow (2) the list is
@@ -49,6 +48,7 @@ export type LeftPaneSearchPropsType = {
   searchConversation: undefined | ConversationType;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType> {
   readonly #conversationResults: MaybeLoadedSearchResultsType<ConversationListItemPropsType>;
   readonly #contactResults: MaybeLoadedSearchResultsType<ConversationListItemPropsType>;
@@ -111,7 +111,7 @@ export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType
     showConversation: ShowConversationType;
     updateSearchTerm: (searchTerm: string) => unknown;
     updateFilterByUnread: (filterByUnread: boolean) => void;
-  }>): ReactChild {
+  }>): ReactNode {
     return (
       <LeftPaneSearchInput
         clearConversationSearch={clearConversationSearch}
@@ -138,7 +138,7 @@ export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType
     i18n,
   }: Readonly<{
     i18n: LocalizerType;
-  }>): ReactChild | null {
+  }>): ReactNode | null {
     const mightHaveSearchResults = this.#allResults().some(
       searchResult => searchResult.isLoading || searchResult.results.length
     );
@@ -150,7 +150,7 @@ export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType
     const searchTerm = this.#searchTerm;
     const searchConversationName = this.#searchConversationName;
 
-    let noResults: ReactChild;
+    let noResults: ReactNode;
     if (searchConversationName) {
       noResults = (
         <I18n
@@ -381,6 +381,7 @@ export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType
       }
       if (pointer < list.results.length) {
         const result = list.results[pointer];
+        strictAssert(result, 'Missing result');
         return result.type === 'incoming' || result.type === 'outgoing' // message
           ? {
               conversationId: result.conversationId,
@@ -425,7 +426,7 @@ export class LeftPaneSearchHelper extends LeftPaneHelper<LeftPaneSearchPropsType
     return this.#allResults().some(results => results.isLoading);
   }
 
-  #onEnterKeyDown = (
+  readonly #onEnterKeyDown = (
     clearSearchQuery: () => unknown,
     showConversation: ShowConversationType
   ): void => {

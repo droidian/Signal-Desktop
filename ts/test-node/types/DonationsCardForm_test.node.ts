@@ -6,7 +6,7 @@ import type {
   CardFormFields,
   CardFormResult,
   CardFormSettings,
-} from '../../types/DonationsCardForm.std.js';
+} from '../../types/DonationsCardForm.std.ts';
 import {
   CardCvcError,
   CardExpirationError,
@@ -19,8 +19,8 @@ import {
   parseCardExpiration,
   parseCardForm,
   parseCardNumber,
-} from '../../types/DonationsCardForm.std.js';
-import type { CardDetail } from '../../types/Donations.std.js';
+} from '../../types/DonationsCardForm.std.ts';
+import type { CardDetail } from '../../types/Donations.std.ts';
 
 function testCard(cardNumber: string, cvcSize: number) {
   return { cardNumber, cvcSize };
@@ -142,7 +142,7 @@ describe('DonationsCardForm', () => {
     });
     it('empty', () => {
       const allPossibilities = getPossibleCardFormats('');
-      assert.equal(allPossibilities.length, 12);
+      assert.equal(allPossibilities.length, 13);
     });
     it('invalid', () => {
       check('1111', []);
@@ -284,9 +284,18 @@ describe('DonationsCardForm', () => {
   });
 
   describe('parseCardExpiration', () => {
+    const now = new Date('2025-02-03T04:05:06.078Z');
+
+    const currMonth = 2;
+    const currYear = 2025;
+    const lastMonth = 1;
+    const lastYear = 2024;
+    const nextMonth = 3;
+    const nextYear = 2026;
+
     function checkValid(input: string, month: string, year: string) {
       it(`${JSON.stringify(input)} -> ${month}/${year} (valid)`, () => {
-        assert.deepEqual(parseCardExpiration(input), { month, year });
+        assert.deepEqual(parseCardExpiration(input, now), { month, year });
       });
     }
 
@@ -297,7 +306,7 @@ describe('DonationsCardForm', () => {
       year: string
     ) {
       it(`${JSON.stringify(input)} -> ${error} (error with values)`, () => {
-        assert.deepEqual(parseCardExpiration(input), {
+        assert.deepEqual(parseCardExpiration(input, now), {
           error,
           month,
           year,
@@ -307,18 +316,9 @@ describe('DonationsCardForm', () => {
 
     function checkError(input: string, error: CardExpirationError) {
       it(`${JSON.stringify(input)} -> ${error} (error)`, () => {
-        assert.deepEqual(parseCardExpiration(input), { error });
+        assert.deepEqual(parseCardExpiration(input, now), { error });
       });
     }
-
-    const now = new Date();
-
-    const currMonth = now.getMonth() + 1;
-    const currYear = now.getFullYear();
-    const lastMonth = currMonth - 1;
-    const lastYear = currYear - 1;
-    const nextMonth = currMonth + 1;
-    const nextYear = currYear + 1;
 
     const mm = (month: number) => String(month).padStart(2, '0');
     const yy = (year: number) => String(year - 2000).padStart(2, '0');

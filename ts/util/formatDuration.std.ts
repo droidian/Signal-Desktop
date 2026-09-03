@@ -3,12 +3,24 @@
 
 import moment from 'moment';
 
-const HOUR = 1000 * 60 * 60;
+import { HOUR } from './durations/constants.std.ts';
+
+const HOUR_IN_SECONDS = 1000 * 60 * 60;
 
 export function formatDuration(seconds: number): string {
   const time = moment.utc(seconds * 1000);
 
-  if (seconds > HOUR) {
+  if (seconds > HOUR_IN_SECONDS) {
+    return time.format('H:mm:ss');
+  }
+
+  return time.format('m:ss');
+}
+
+export function formatDurationInMs(ms: number): string {
+  const time = moment.utc(ms);
+
+  if (ms > HOUR) {
     return time.format('H:mm:ss');
   }
 

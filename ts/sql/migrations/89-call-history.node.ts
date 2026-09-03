@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { callIdFromEra } from '@signalapp/ringrtc';
-import Long from 'long';
 import { v4 as generateUuid } from 'uuid';
 import lodash from 'lodash';
 
 import type { SetOptional } from 'type-fest';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { jsonToObject, sql } from '../util.std.js';
-import { getOurUuid } from './41-uuid-keys.std.js';
-import type { CallHistoryDetails } from '../../types/CallDisposition.std.js';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import { jsonToObject, sql } from '../util.std.ts';
+import { getOurUuid } from './41-uuid-keys.std.ts';
+import type { CallHistoryDetails } from '../../types/CallDisposition.std.ts';
 import {
   DirectCallStatus,
   CallDirection,
@@ -18,16 +17,16 @@ import {
   GroupCallStatus,
   callHistoryDetailsSchema,
   CallMode,
-} from '../../types/CallDisposition.std.js';
+} from '../../types/CallDisposition.std.ts';
 import type {
   WritableDB,
   MessageType,
   ConversationType,
-} from '../Interface.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { isAciString } from '../../util/isAciString.std.js';
-import { safeParseStrict } from '../../util/schemas.std.js';
+} from '../Interface.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import { safeParseStrict } from '../../util/schemas.std.ts';
 
 const { isObject } = lodash;
 
@@ -156,7 +155,8 @@ function convertLegacyCallDetails(
     }
     timestamp = details.acceptedTime ?? details.endedTime ?? fallbackTimestamp;
   } else if (mode === CallMode.Group) {
-    callId = Long.fromValue(callIdFromEra(details.eraId)).toString();
+    const callIdBigInt: bigint = callIdFromEra(details.eraId);
+    callId = callIdBigInt.toString();
     type = CallType.Group;
     direction =
       details.creatorUuid === ourUuid

@@ -1,16 +1,17 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import { action } from '@storybook/addon-actions';
-import { PlaintextExportWorkflow } from './PlaintextExportWorkflow.dom.js';
-import {
-  PlaintextExportErrors,
-  PlaintextExportSteps,
-} from '../types/Backups.std.js';
+import type { JSX } from 'react';
 
-import type { PropsType } from './PlaintextExportWorkflow.dom.js';
-import type { ComponentMeta } from '../storybook/types.std.js';
+import { action } from '@storybook/addon-actions';
+import { PlaintextExportWorkflow } from './PlaintextExportWorkflow.dom.tsx';
+import {
+  LocalExportErrors,
+  PlaintextExportSteps,
+} from '../types/LocalExport.std.ts';
+
+import type { PropsType } from './PlaintextExportWorkflow.dom.tsx';
+import type { ComponentMeta } from '../storybook/types.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -65,7 +66,6 @@ export function ExportingMessages(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.ExportingMessages,
         abortController: new AbortController(),
-        exportInBackground: false,
         exportPath: '/somewhere',
       }}
     />
@@ -79,7 +79,6 @@ export function ExportingAttachments(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.ExportingAttachments,
         abortController: new AbortController(),
-        exportInBackground: false,
         exportPath: '/somewhere',
         progress: {
           totalBytes: 1000000,
@@ -123,7 +122,7 @@ export function ErrorGeneric(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.Error,
         errorDetails: {
-          type: PlaintextExportErrors.General,
+          type: LocalExportErrors.General,
         },
       }}
     />
@@ -137,7 +136,7 @@ export function ErrorNotEnoughStorage(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.Error,
         errorDetails: {
-          type: PlaintextExportErrors.NotEnoughStorage,
+          type: LocalExportErrors.NotEnoughStorage,
           bytesNeeded: 12000000,
         },
       }}
@@ -152,7 +151,7 @@ export function ErrorRanOutOfStorage(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.Error,
         errorDetails: {
-          type: PlaintextExportErrors.RanOutOfStorage,
+          type: LocalExportErrors.RanOutOfStorage,
           bytesNeeded: 12000000,
         },
       }}
@@ -167,7 +166,7 @@ export function ErrorStoragePermissions(args: PropsType): JSX.Element {
       workflow={{
         step: PlaintextExportSteps.Error,
         errorDetails: {
-          type: PlaintextExportErrors.StoragePermissions,
+          type: LocalExportErrors.StoragePermissions,
         },
       }}
     />

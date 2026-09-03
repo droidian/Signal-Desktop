@@ -7,27 +7,23 @@ import {
   getUserACI,
   getUserConversationId,
   getUserNumber,
-} from './user.std.js';
-import {
-  getMessagePropStatus,
-  getSource,
-  getSourceServiceId,
-} from './message.preload.js';
+} from './user.std.ts';
+import { getSource, getSourceServiceId } from './message.preload.ts';
 import {
   getConversationByIdSelector,
   getConversations,
   getConversationSelector,
-  getSelectedConversationId,
-} from './conversations.dom.js';
-import type { StateType } from '../reducer.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.js';
+} from './conversations.dom.ts';
+import type { StateType } from '../reducer.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { getLocalAttachmentUrl } from '../../util/getLocalAttachmentUrl.std.ts';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
-import { getMessageIdForLogging } from '../../util/idForLogging.preload.js';
-import * as Attachment from '../../util/Attachment.std.js';
-import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.js';
-import { isPlayed } from '../../util/Attachment.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
+import { getMessageIdForLogging } from '../../util/idForLogging.preload.ts';
+import * as Attachment from '../../util/Attachment.std.ts';
+import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.ts';
+import { isVoiceMessagePlayed } from '../../util/isVoiceMessagePlayed.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { getSelectedConversationId } from './nav.std.ts';
 
 const log = createLogger('audioPlayer');
 
@@ -42,10 +38,6 @@ export type VoiceNoteForPlayback = {
   messageIdForLogging: string;
   sentAt: number;
   receivedAt: number;
-};
-
-export const isPaused = (state: StateType): boolean => {
-  return state.audioPlayer.active === undefined;
 };
 
 export const selectAudioPlayerActive = (
@@ -81,7 +73,21 @@ export const selectVoiceNoteTitle = createSelector(
 );
 
 export function extractVoiceNoteForPlayback(
-  message: ReadonlyMessageAttributesType,
+  message: Pick<
+    ReadonlyMessageAttributesType,
+    | 'id'
+    | 'conversationId'
+    | 'type'
+    | 'attachments'
+    | 'isErased'
+    | 'errors'
+    | 'readStatus'
+    | 'sendStateByConversationId'
+    | 'sent_at'
+    | 'received_at'
+    | 'source'
+    | 'sourceServiceId'
+  >,
   ourConversationId: string | undefined
 ): VoiceNoteForPlayback | undefined {
   const { type } = message;
@@ -98,13 +104,12 @@ export function extractVoiceNoteForPlayback(
   const voiceNoteUrl = attachment.path
     ? getLocalAttachmentUrl(attachment)
     : undefined;
-  const status = getMessagePropStatus(message, ourConversationId);
 
   return {
     id: message.id,
     url: voiceNoteUrl,
     type,
-    isPlayed: isPlayed(type, status, message.readStatus),
+    isPlayed: isVoiceMessagePlayed(message, ourConversationId),
     messageIdForLogging: getMessageIdForLogging(message),
     sentAt: message.sent_at,
     receivedAt: message.received_at,

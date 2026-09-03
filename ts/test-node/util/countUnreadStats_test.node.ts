@@ -3,6 +3,8 @@
 
 import assert from 'node:assert/strict';
 import { v4 as generateUuid } from 'uuid';
+import { MuteExpiration } from '@signalapp/types';
+
 import {
   _canCountConversation,
   _countConversation,
@@ -10,25 +12,24 @@ import {
   _shouldExcludeMuted,
   countAllChatFoldersUnreadStats,
   countAllConversationsUnreadStats,
-  countConversationUnreadStats,
   isConversationUnread,
-} from '../../util/countUnreadStats.std.js';
+} from '../../util/countUnreadStats.std.ts';
 import type {
   UnreadStats,
   ConversationPropsForUnreadStats,
   UnreadStatsIncludeMuted,
-} from '../../util/countUnreadStats.std.js';
-import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.js';
-import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.js';
-import type { ChatFolderId } from '../../types/ChatFolder.std.js';
-import { CHAT_FOLDER_DEFAULTS } from '../../types/ChatFolder.std.js';
+} from '../../util/countUnreadStats.std.ts';
+import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.ts';
+import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.ts';
+import type { ChatFolderId } from '../../types/ChatFolder.std.ts';
+import { CHAT_FOLDER_DEFAULTS } from '../../types/ChatFolder.std.ts';
 
 function getFutureMutedTimestamp() {
-  return Date.now() + 12345;
+  return MuteExpiration.fromNumber(Date.now() + 12345);
 }
 
 function getPastMutedTimestamp() {
-  return Date.now() - 1000;
+  return MuteExpiration.fromNumber(Date.now() - 1000);
 }
 
 type ChatProps = Partial<ConversationPropsForUnreadStats>;
@@ -209,46 +210,6 @@ describe('countUnreadStats', () => {
       check({ unreadCount: 1, muteExpiresAt: future }, false);
       check({ unreadCount: 1, muteExpiresAt: future }, true, 'force-include');
       check({ unreadCount: 1, left: true }, false);
-    });
-  });
-
-  describe('countConversationUnreadStats', () => {
-    function check(
-      chat: ChatProps,
-      expected: StatsProps,
-      includeMuted: UnreadStatsIncludeMuted = 'force-exclude'
-    ) {
-      const actual = countConversationUnreadStats(mockChat(chat), {
-        activeProfile: undefined,
-        includeMuted,
-      });
-      assert.deepEqual(actual, mockStats(expected));
-    }
-
-    it('should count all stats', () => {
-      check({ unreadCount: 0 }, { unreadCount: 0 });
-      check({ unreadCount: 1 }, { unreadCount: 1 });
-      check({ unreadMentionsCount: 0 }, { unreadMentionsCount: 0 });
-      check({ unreadMentionsCount: 1 }, { unreadMentionsCount: 1 });
-      check({ markedUnread: false }, { readChatsMarkedUnreadCount: 0 });
-      check({ markedUnread: true }, { readChatsMarkedUnreadCount: 1 });
-    });
-
-    it('should check if it can count the conversation', () => {
-      const isCounted = { unreadCount: 10 };
-      const isNotCounted = { unreadCount: 0 };
-
-      const unread = { unreadCount: 10 };
-      const inactive = { ...unread, activeAt: 0 };
-      const archived = { ...unread, isArchived: true };
-      const muted = { ...unread, muteExpiresAt: getFutureMutedTimestamp() };
-      const left = { ...unread, left: true };
-
-      check(inactive, isNotCounted);
-      check(archived, isNotCounted);
-      check(muted, isNotCounted);
-      check(muted, isCounted, 'force-include');
-      check(left, isNotCounted);
     });
   });
 

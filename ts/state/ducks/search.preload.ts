@@ -5,15 +5,15 @@ import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import lodash from 'lodash';
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { filterAndSortConversations } from '../../util/filterAndSortConversations.std.js';
-import type { ClientSearchResultMessageType } from '../../sql/Interface.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
-import { makeLookup } from '../../util/makeLookup.std.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { filterAndSortConversations } from '../../util/filterAndSortConversations.std.ts';
+import type { ClientSearchResultMessageType } from '../../sql/Interface.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import { makeLookup } from '../../util/makeLookup.std.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 
 import type {
   ConversationType,
@@ -24,30 +24,31 @@ import type {
   ShowArchivedConversationsActionType,
   MessageType,
   ConversationLookupType,
-} from './conversations.preload.js';
+} from './conversations.preload.ts';
 import {
   getFilterByUnread,
   getIsActivelySearching,
   getQuery,
   getSearchConversation,
-} from '../selectors/search.preload.js';
-import { getAllConversations } from '../selectors/conversations.dom.js';
+} from '../selectors/search.preload.ts';
+import { getAllConversations } from '../selectors/conversations.dom.ts';
 import {
   getIntl,
   getRegionCode,
   getUserConversationId,
-} from '../selectors/user.std.js';
-import { strictAssert } from '../../util/assert.std.js';
+} from '../selectors/user.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 import {
   CONVERSATION_UNLOADED,
   TARGETED_CONVERSATION_CHANGED,
-} from './conversations.preload.js';
-import { removeDiacritics } from '../../util/removeDiacritics.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { searchConversationTitles } from '../../util/searchConversationTitles.std.js';
-import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.js';
-import { isConversationSMSOnly } from '../../util/isConversationSMSOnly.std.js';
-import { isConversationUnread } from '../../util/countUnreadStats.std.js';
+} from './conversations.preload.ts';
+import { removeDiacritics } from '../../util/removeDiacritics.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { searchConversationTitles } from '../../util/searchConversationTitles.std.ts';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.ts';
+import { isConversationSMSOnly } from '../../util/isConversationSMSOnly.std.ts';
+import { isConversationUnread } from '../../util/countUnreadStats.std.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
 
 const { debounce, omit, reject } = lodash;
 
@@ -278,7 +279,7 @@ function refreshSearch(): ThunkAction<
   };
 }
 
-function updateSearchResultsOnConversationUpdate(
+export function updateSearchResultsOnConversationUpdate(
   oldConversationLookup: ConversationLookupType,
   updatedConversations: Array<ConversationType>
 ): ThunkAction<
@@ -316,7 +317,7 @@ function updateSearchResultsOnConversationUpdate(
       type: 'MAYBE_REMOVE_READ_CONVERSATIONS',
       payload: {
         conversations: updatedConversations,
-        selectedConversationId: state.conversations.selectedConversationId,
+        selectedConversationId: getSelectedConversationId(state),
       },
     });
   };
@@ -344,7 +345,7 @@ function shouldRemoveConversationFromUnreadList(
   return false;
 }
 
-function maybeRemoveReadConversations(
+export function maybeRemoveReadConversations(
   conversationIds: Array<string>
 ): ThunkAction<
   void,
@@ -353,9 +354,11 @@ function maybeRemoveReadConversations(
   MaybeRemoveReadConversationsActionType
 > {
   return (dispatch, getState) => {
+    const state = getState();
     const {
-      conversations: { selectedConversationId, conversationLookup },
-    } = getState();
+      conversations: { conversationLookup },
+    } = state;
+    const selectedConversationId = getSelectedConversationId(state);
 
     const conversations = conversationIds
       .map(id => conversationLookup[id])
@@ -430,8 +433,7 @@ const doSearch = debounce(
     const noteToSelf = i18n('icu:noteToSelf').toLowerCase();
     const ourConversationId = getUserConversationId(state);
     const searchConversationId = getSearchConversation(state)?.id;
-
-    const { selectedConversationId } = state.conversations;
+    const selectedConversationId = getSelectedConversationId(state);
 
     strictAssert(ourConversationId, 'doSearch our conversation is missing');
 
@@ -538,14 +540,14 @@ async function queryMessages({
     }
 
     if (searchConversationId) {
-      return dataSearchMessages({
+      return await dataSearchMessages({
         query,
         conversationId: searchConversationId,
         contactServiceIdsMatchingQuery,
       });
     }
 
-    return dataSearchMessages({
+    return await dataSearchMessages({
       query,
       contactServiceIdsMatchingQuery,
     });
@@ -622,10 +624,7 @@ async function queryConversationsAndContacts(
   // Split into two groups - active conversations and items just from address book
   let conversationIds: Array<string> = [];
   let contactIds: Array<string> = [];
-  const max = searchResults.length;
-  for (let i = 0; i < max; i += 1) {
-    const conversation = searchResults[i];
-
+  for (const conversation of searchResults) {
     if (conversation.type === 'direct' && !conversation.lastMessage) {
       contactIds.push(conversation.id);
     } else {
@@ -637,7 +636,7 @@ async function queryConversationsAndContacts(
   // inject synthetic Note to Self only in the contacts list.
   // If we're filtering by unread, no contacts are shown anyway, so we show it in the
   // normal flow of the conversations list.
-  if (!filterByUnread && noteToSelf.indexOf(query.toLowerCase()) !== -1) {
+  if (!filterByUnread && noteToSelf.includes(query.toLowerCase())) {
     // ensure that we don't have duplicates in our results
     contactIds = contactIds.filter(id => id !== ourConversationId);
     conversationIds = conversationIds.filter(id => id !== ourConversationId);

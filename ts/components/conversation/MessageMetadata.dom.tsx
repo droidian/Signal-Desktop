@@ -1,25 +1,29 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild } from 'react';
-import React, { forwardRef, useCallback, useState } from 'react';
+import type { ReactNode, MouseEvent, JSX } from 'react';
+import { forwardRef, useCallback, useState } from 'react';
 import classNames from 'classnames';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { MessageStatusType } from '../../types/message/MessageStatus.std.js';
-import type { DirectionType } from './Message.dom.js';
-import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { ExpireTimer } from './ExpireTimer.dom.js';
-import { MessageTimestamp } from './MessageTimestamp.dom.js';
-import { PanelType } from '../../types/Panels.std.js';
-import { Spinner } from '../Spinner.dom.js';
-import { ConfirmationDialog } from '../ConfirmationDialog.dom.js';
-import { refMerger } from '../../util/refMerger.std.js';
-import type { Size } from '../../hooks/useSizeObserver.dom.js';
-import { SizeObserver } from '../../hooks/useSizeObserver.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { MessageStatusType } from '../../types/message/MessageStatus.std.ts';
+import type { DirectionType } from './Message.dom.tsx';
+import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { ExpireTimer } from './ExpireTimer.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import { PanelType } from '../../types/Panels.std.ts';
+import { Spinner } from '../Spinner.dom.tsx';
+import { AxoAlertDialog } from '../../axo/AxoAlertDialog.dom.tsx';
+import { refMerger } from '../../util/refMerger.std.ts';
+import type { Size } from '../../hooks/useSizeObserver.dom.tsx';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
 
 type PropsType = {
+  canRetryDeleteForEveryone: boolean;
   deletedForEveryone?: boolean;
   direction: DirectionType;
   expirationLength?: number;
@@ -28,13 +32,16 @@ type PropsType = {
   i18n: LocalizerType;
   id: string;
   isEditedMessage?: boolean;
+  isPinned: boolean;
   isSMS?: boolean;
   isInline?: boolean;
   isOutlineOnlyBubble?: boolean;
   isShowingImage: boolean;
   isSticker?: boolean;
+  isStickerReply?: boolean;
   onWidthMeasured?: (width: number) => unknown;
   pushPanelForConversation: PushPanelForConversationActionType;
+  retryDeleteForEveryone: (messageId: string) => unknown;
   retryMessageSend: (messageId: string) => unknown;
   showEditHistoryModal?: (id: string) => unknown;
   status?: MessageStatusType;
@@ -44,11 +51,13 @@ type PropsType = {
 
 enum ConfirmationType {
   EditError = 'EditError',
+  DeleteError = 'DeleteError',
 }
 
 export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
   function MessageMetadataInner(
     {
+      canRetryDeleteForEveryone,
       deletedForEveryone,
       direction,
       expirationLength,
@@ -57,13 +66,16 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       i18n,
       id,
       isEditedMessage,
+      isPinned,
       isSMS,
       isOutlineOnlyBubble,
       isInline,
       isShowingImage,
       isSticker,
+      isStickerReply,
       onWidthMeasured,
       pushPanelForConversation,
+      retryDeleteForEveryone,
       retryMessageSend,
       showEditHistoryModal,
       status,
@@ -75,29 +87,44 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
     const [confirmationType, setConfirmationType] = useState<
       ConfirmationType | undefined
     >();
-    const withImageNoCaption = Boolean(
-      !isSticker && !hasText && isShowingImage
-    );
+    const withImageNoCaption = !isSticker && !hasText && isShowingImage;
     const metadataDirection = isSticker ? undefined : direction;
 
-    let timestampNode: ReactChild;
+    let timestampNode: ReactNode;
     {
-      const isError = status === 'error' && direction === 'outgoing';
-      const isPartiallySent =
-        status === 'partial-sent' && direction === 'outgoing';
+      // When deletedForEveryone, the status reflects our delete send,
+      // not the original message direction
+      const isOutgoingOrDelete = direction === 'outgoing' || deletedForEveryone;
+      const isError = status === 'error' && isOutgoingOrDelete;
+      const isPartiallySent = status === 'partial-sent' && isOutgoingOrDelete;
       const isPaused = status === 'paused';
 
       if (isError || isPartiallySent || isPaused) {
-        let statusInfo: React.ReactChild;
+        let statusInfo: ReactNode;
         if (isError) {
-          if (deletedForEveryone) {
+          if (deletedForEveryone && canRetryDeleteForEveryone) {
+            statusInfo = (
+              <button
+                type="button"
+                className="module-message__metadata__tapable"
+                onClick={(event: MouseEvent) => {
+                  event.stopPropagation();
+                  event.preventDefault();
+
+                  setConfirmationType(ConfirmationType.DeleteError);
+                }}
+              >
+                {i18n('icu:deleteFailedClickForDetails')}
+              </button>
+            );
+          } else if (deletedForEveryone) {
             statusInfo = i18n('icu:deleteFailed');
           } else if (isEditedMessage) {
             statusInfo = (
               <button
                 type="button"
                 className="module-message__metadata__tapable"
-                onClick={(event: React.MouseEvent) => {
+                onClick={(event: MouseEvent) => {
                   event.stopPropagation();
                   event.preventDefault();
 
@@ -117,7 +144,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
             <button
               type="button"
               className="module-message__metadata__tapable"
-              onClick={(event: React.MouseEvent) => {
+              onClick={(event: MouseEvent) => {
                 event.stopPropagation();
                 event.preventDefault();
 
@@ -128,26 +155,14 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
               }}
             >
               {deletedForEveryone
-                ? i18n('icu:partiallyDeleted')
+                ? i18n('icu:partiallyDeleted--clickForDetails')
                 : i18n('icu:partiallySent')}
             </button>
           );
         }
 
         timestampNode = (
-          <span
-            className={classNames({
-              'module-message__metadata__date': true,
-              'module-message__metadata__date--with-sticker': isSticker,
-              'module-message__metadata__date--outline-only-bubble':
-                isOutlineOnlyBubble,
-              [`module-message__metadata__date--${direction}`]: !isSticker,
-              'module-message__metadata__date--with-image-no-caption':
-                withImageNoCaption,
-            })}
-          >
-            {statusInfo}
-          </span>
+          <span className="module-message__metadata__date">{statusInfo}</span>
         );
       } else {
         timestampNode = (
@@ -169,25 +184,54 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       // no-op
     } else if (confirmationType === ConfirmationType.EditError) {
       confirmation = (
-        <ConfirmationDialog
-          dialogName="MessageMetadata.confirmEditResend"
-          actions={[
-            {
-              action: () => {
-                retryMessageSend(id);
-                setConfirmationType(undefined);
-              },
-              style: 'negative',
-              text: i18n('icu:ResendMessageEdit__button'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmationType(undefined);
-          }}
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setConfirmationType(undefined)}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={i18n('icu:ResendMessageEdit__body')}
         >
-          {i18n('icu:ResendMessageEdit__body')}
-        </ConfirmationDialog>
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => {
+              retryMessageSend(id);
+              setConfirmationType(undefined);
+            }}
+          >
+            {i18n('icu:ResendMessageEdit__button')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+      );
+    } else if (confirmationType === ConfirmationType.DeleteError) {
+      confirmation = (
+        <AxoAlertDialog.Root
+          open
+          onOpenChange={() => setConfirmationType(undefined)}
+        >
+          <AxoAlertDialog.Content escape="cancel-is-noop">
+            <AxoAlertDialog.Body>
+              <AxoAlertDialog.Title screenReaderOnly>
+                {i18n('icu:retryDeleteForEveryone--title')}
+              </AxoAlertDialog.Title>
+              <AxoAlertDialog.Description>
+                {i18n('icu:retryDeleteForEveryone--body')}
+              </AxoAlertDialog.Description>
+            </AxoAlertDialog.Body>
+            <AxoAlertDialog.Footer>
+              <AxoAlertDialog.Cancel />
+              <AxoAlertDialog.Action
+                variant="strong-primary"
+                onClick={() => {
+                  retryDeleteForEveryone(id);
+                  setConfirmationType(undefined);
+                }}
+              >
+                {i18n('icu:retryDeleteForEveryone--tryAgain')}
+              </AxoAlertDialog.Action>
+            </AxoAlertDialog.Footer>
+          </AxoAlertDialog.Content>
+        </AxoAlertDialog.Root>
       );
     } else {
       throw missingCaseError(confirmationType);
@@ -195,12 +239,22 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
 
     const className = classNames(
       'module-message__metadata',
+      direction === 'outgoing' && 'module-message__metadata--outgoing',
       isInline && 'module-message__metadata--inline',
       withImageNoCaption && 'module-message__metadata--with-image-no-caption',
-      isOutlineOnlyBubble && 'module-message__metadata--outline-only-bubble'
+      isOutlineOnlyBubble && 'module-message__metadata--outline-only-bubble',
+      isSticker && !isStickerReply && 'module-message__metadata--sticker'
     );
     const children = (
       <>
+        {isPinned && (
+          <span className={tw('me-1')}>
+            <AxoSymbol.InlineGlyph
+              symbol="pin-fill"
+              label={i18n('icu:MessageMetadata__pinned')}
+            />
+          </span>
+        )}
         {isEditedMessage && showEditHistoryModal && (
           <button
             className="module-message__metadata__edited"
@@ -212,18 +266,14 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
         )}
         {timestampNode}
         {isSMS ? (
-          <div
-            className={`module-message__metadata__sms module-message__metadata__sms--${direction}`}
-          />
+          <div className="module-message__metadata__sms">
+            <AxoSymbol.InlineGlyph symbol="lock-open" label={null} />
+          </div>
         ) : null}
         {expirationLength ? (
           <ExpireTimer
-            direction={metadataDirection}
-            isOutlineOnlyBubble={isOutlineOnlyBubble}
             expirationLength={expirationLength}
             expirationTimestamp={expirationTimestamp}
-            withImageNoCaption={withImageNoCaption}
-            withSticker={isSticker}
           />
         ) : null}
         {textPending ? (
@@ -233,22 +283,13 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
         ) : null}
         {(!deletedForEveryone || status === 'sending') &&
         !textPending &&
-        direction === 'outgoing' &&
+        (direction === 'outgoing' || deletedForEveryone) &&
         status !== 'error' &&
         status !== 'partial-sent' ? (
           <div
             className={classNames(
               'module-message__metadata__status-icon',
-              `module-message__metadata__status-icon--${status}`,
-              isSticker
-                ? 'module-message__metadata__status-icon--with-sticker'
-                : null,
-              withImageNoCaption
-                ? 'module-message__metadata__status-icon--with-image-no-caption'
-                : null,
-              isOutlineOnlyBubble
-                ? 'module-message__metadata__status-icon--outline-only-bubble'
-                : null
+              `module-message__metadata__status-icon--${status}`
             )}
           />
         ) : null}
@@ -258,6 +299,9 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
 
     const onResize = useCallback(
       (size: Size) => {
+        if (size.hidden) {
+          return;
+        }
         onWidthMeasured?.(size.width);
       },
       [onWidthMeasured]
@@ -267,7 +311,11 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       return (
         <SizeObserver onSizeChange={onResize}>
           {measureRef => (
-            <div className={className} ref={refMerger(measureRef, ref)}>
+            <div
+              className={className}
+              ref={refMerger(measureRef, ref)}
+              aria-live="off"
+            >
               {children}
             </div>
           )}
@@ -276,7 +324,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
     }
 
     return (
-      <div className={className} ref={ref}>
+      <div className={className} ref={ref} aria-live="off">
         {children}
       </div>
     );

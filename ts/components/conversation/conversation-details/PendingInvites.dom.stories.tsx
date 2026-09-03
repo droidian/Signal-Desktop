@@ -1,18 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useContext, type JSX } from 'react';
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { generateAci } from '../../../types/ServiceId.std.js';
-import { StorySendMode } from '../../../types/Stories.std.js';
-import type { PropsType } from './PendingInvites.dom.js';
-import { PendingInvites } from './PendingInvites.dom.js';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
-import { getFakeBadge } from '../../../test-helpers/getFakeBadge.std.js';
-import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.js';
+import { StorySendMode } from '../../../types/Stories.std.ts';
+import type { PropsType } from './PendingInvites.dom.tsx';
+import { PendingInvites } from './PendingInvites.dom.tsx';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
+import { getFakeBadge } from '../../../test-helpers/getFakeBadge.std.ts';
+import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.ts';
+import { generateAci } from '../../../test-helpers/serviceIdUtils.std.ts';
 
 const { times } = lodash;
 
@@ -39,7 +39,6 @@ const conversation: ConversationType = {
   sortedGroupMembers,
   title: 'Some Conversation',
   type: 'group',
-  sharedGroupNames: [],
   acknowledgedGroupNameCollisions: {},
   storySendMode: StorySendMode.IfActive,
 };
@@ -74,7 +73,7 @@ const useProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   revokePendingMembershipsFromGroupV2: action(
     'revokePendingMembershipsFromGroupV2'
   ),
-  theme: React.useContext(StorybookThemeContext),
+  theme: useContext(StorybookThemeContext),
   ...overrideProps,
 });
 

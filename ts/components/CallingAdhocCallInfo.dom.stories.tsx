@@ -1,19 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './CallingAdhocCallInfo.dom.js';
-import { CallingAdhocCallInfo } from './CallingAdhocCallInfo.dom.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import type { GroupCallRemoteParticipantType } from '../types/Calling.std.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import type { CallLinkType } from '../types/CallLink.std.js';
-import { CallLinkRestrictions } from '../types/CallLink.std.js';
+import type { PropsType } from './CallingAdhocCallInfo.dom.tsx';
+import { CallingAdhocCallInfo } from './CallingAdhocCallInfo.dom.tsx';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { GroupCallRemoteParticipantType } from '../types/Calling.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import type { CallLinkType } from '../types/CallLink.std.ts';
+import { CallLinkRestrictions } from '../types/CallLink.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+import { renderCallingParticipantMenu } from './CallingParticipantMenu.dom.stories.tsx';
 
 const { sample } = lodash;
 
@@ -22,7 +24,8 @@ const { i18n } = window.SignalContext;
 const OUR_ACI = generateAci();
 
 function createParticipant(
-  participantProps: Partial<GroupCallRemoteParticipantType>
+  participantProps: Partial<GroupCallRemoteParticipantType>,
+  isUnknownContact?: boolean
 ): GroupCallRemoteParticipantType {
   const aci = participantProps.aci ?? generateAci();
 
@@ -31,9 +34,10 @@ function createParticipant(
     demuxId: 2,
     hasRemoteAudio: Boolean(participantProps.hasRemoteAudio),
     hasRemoteVideo: Boolean(participantProps.hasRemoteVideo),
-    isHandRaised: Boolean(participantProps.isHandRaised),
+    isOnlyHandRaised: Boolean(participantProps.isOnlyHandRaised),
     mediaKeysReceived: Boolean(participantProps.mediaKeysReceived),
     presenting: Boolean(participantProps.presenting),
+    raisedHandOrder: participantProps.raisedHandOrder,
     sharingScreen: Boolean(participantProps.sharingScreen),
     videoAspectRatio: 1.3,
     ...getDefaultConversation({
@@ -44,7 +48,9 @@ function createParticipant(
       profileName: participantProps.title,
       title: String(participantProps.title),
       serviceId: aci,
+      ...(isUnknownContact && { titleNoDefault: undefined }),
     }),
+    isMe: Boolean(participantProps.isMe),
   };
 }
 
@@ -54,7 +60,6 @@ function getCallLink(overrideProps: Partial<CallLinkType> = {}): CallLinkType {
   return {
     roomId: 'abcd1234abcd1234abcd1234abcd1234abcd1234',
     rootKey: 'abcd-abcd-abcd-abcd-abcd-abcd-abcd-abcd',
-    epoch: null,
     adminKey: null,
     name: 'Axolotl Discuss',
     restrictions: CallLinkRestrictions.None,
@@ -68,16 +73,14 @@ function getCallLink(overrideProps: Partial<CallLinkType> = {}): CallLinkType {
 const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   callLink: getCallLink(overrideProps.callLink || {}),
   i18n,
-  isCallLinkAdmin: overrideProps.isCallLinkAdmin || false,
   isUnknownContactDiscrete: overrideProps.isUnknownContactDiscrete || false,
   ourServiceId: OUR_ACI,
   participants: overrideProps.participants || [],
   onClose: action('on-close'),
   onCopyCallLink: action('on-copy-call-link'),
   onShareCallLinkViaSignal: action('on-share-call-link-via-signal'),
-  removeClient: overrideProps.removeClient || action('remove-client'),
-  blockClient: overrideProps.blockClient || action('block-client'),
   showContactModal: action('show-contact-modal'),
+  renderCallingParticipantMenu,
 });
 
 export default {
@@ -124,13 +127,13 @@ export function ManyParticipants(): JSX.Element {
         title: 'Goku Black',
       }),
       createParticipant({
-        isHandRaised: true,
+        raisedHandOrder: 0,
         title: 'Supreme Kai Zamasu',
       }),
       createParticipant({
         hasRemoteAudio: false,
         hasRemoteVideo: true,
-        isHandRaised: true,
+        raisedHandOrder: 1,
         title: 'Chi Chi',
       }),
       createParticipant({
@@ -139,6 +142,7 @@ export function ManyParticipants(): JSX.Element {
       createParticipant({
         title: 'My Name',
         aci: OUR_ACI,
+        isMe: true,
       }),
     ],
   });
@@ -185,7 +189,17 @@ export function AsAdmin(): JSX.Element {
         aci: OUR_ACI,
       }),
     ],
-    isCallLinkAdmin: true,
+  });
+  return <CallingAdhocCallInfo {...props} />;
+}
+
+export function UnknownParticipants(): JSX.Element {
+  const props = createProps({
+    participants: [
+      createParticipant({ title: 'Son Goku' }),
+      createParticipant({ title: 'Unknown Contact' }, true),
+      createParticipant({ title: 'Unknown Contact' }, true),
+    ],
   });
   return <CallingAdhocCallInfo {...props} />;
 }

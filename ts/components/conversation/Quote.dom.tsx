@@ -1,36 +1,39 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import lodash from 'lodash';
 import classNames from 'classnames';
 
-import * as MIME from '../../types/MIME.std.js';
-import * as GoogleChrome from '../../util/GoogleChrome.std.js';
+import type { ReactNode, JSX, KeyboardEvent, MouseEvent } from 'react';
 
-import { MessageBody } from './MessageBody.dom.js';
+import * as MIME from '../../types/MIME.std.ts';
+import * as GoogleChrome from '../../util/GoogleChrome.std.ts';
+import { MessageBody } from './MessageBody.dom.tsx';
+import { ContactName, GroupMemberLabel } from './ContactName.dom.tsx';
+import { Emojify } from './Emojify.dom.tsx';
+import { TextAttachment } from '../TextAttachment.dom.tsx';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
+import { getCustomColorStyle } from '../../util/getCustomColorStyle.dom.ts';
+import { PaymentEventKind } from '../../types/Payment.std.ts';
+import { getPaymentEventNotificationText } from '../../messages/payments.std.ts';
+import { shouldTryToCopyFromQuotedMessage } from '../../messages/helpers.std.ts';
+import { RenderLocation } from './MessageTextRenderer.dom.tsx';
+
 import type {
   AttachmentType,
   ThumbnailType,
-} from '../../types/Attachment.std.js';
-import type { HydratedBodyRangesType } from '../../types/BodyRange.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+} from '../../types/Attachment.std.ts';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   ConversationColorType,
   CustomColorType,
-} from '../../types/Colors.std.js';
-import { ContactName } from './ContactName.dom.js';
-import { Emojify } from './Emojify.dom.js';
-import { TextAttachment } from '../TextAttachment.dom.js';
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
-import { getCustomColorStyle } from '../../util/getCustomColorStyle.dom.js';
-import type { AnyPaymentEvent } from '../../types/Payment.std.js';
-import { PaymentEventKind } from '../../types/Payment.std.js';
-import { getPaymentEventNotificationText } from '../../messages/payments.std.js';
-import { shouldTryToCopyFromQuotedMessage } from '../../messages/helpers.std.js';
-import { RenderLocation } from './MessageTextRenderer.dom.js';
+} from '../../types/Colors.std.ts';
+import type { AnyPaymentEvent } from '../../types/Payment.std.ts';
 import type { QuotedAttachmentType } from '../../model-types.d.ts';
+import type { MemberLabelType } from '../../types/GroupMemberLabels.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { noop } = lodash;
 
@@ -44,6 +47,7 @@ export type QuotedAttachmentForUIType = Pick<
 
 export type Props = {
   authorTitle: string;
+  authorLabel?: MemberLabelType;
   conversationColor: ConversationColorType;
   conversationTitle: string;
   customColor?: CustomColorType;
@@ -61,7 +65,7 @@ export type Props = {
   payment?: AnyPaymentEvent;
   isGiftBadge: boolean;
   isViewOnce: boolean;
-  reactionEmoji?: string;
+  reactionEmoji?: Emoji.Variant;
   referencedMessageNotFound: boolean;
   doubleCheckMissingQuoteReference?: () => unknown;
 };
@@ -157,6 +161,7 @@ export function Quote(props: Props): JSX.Element | null {
     text,
     bodyRanges,
     authorTitle,
+    authorLabel,
     conversationTitle,
     isFromMe,
     i18n,
@@ -191,7 +196,7 @@ export function Quote(props: Props): JSX.Element | null {
     doubleCheckMissingQuoteReference,
   ]);
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     // This is important to ensure that using this quote to navigate to the referenced
     //   message doesn't also trigger its parent message's keydown.
     if (onClick && (event.key === 'Enter' || event.key === ' ')) {
@@ -201,7 +206,7 @@ export function Quote(props: Props): JSX.Element | null {
     }
   }
 
-  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+  function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (onClick) {
       event.preventDefault();
       event.stopPropagation();
@@ -429,13 +434,13 @@ export function Quote(props: Props): JSX.Element | null {
       return null;
     }
 
-    const clickHandler = (e: React.MouseEvent): void => {
+    const clickHandler = (e: MouseEvent): void => {
       e.stopPropagation();
       e.preventDefault();
 
       onClose();
     };
-    const keyDownHandler = (e: React.KeyboardEvent): void => {
+    const keyDownHandler = (e: KeyboardEvent): void => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.stopPropagation();
         e.preventDefault();
@@ -471,7 +476,15 @@ export function Quote(props: Props): JSX.Element | null {
         {title} &middot; {i18n('icu:Quote__story')}
       </>
     ) : (
-      title
+      <>
+        {title}
+        {authorLabel ? (
+          <>
+            {' '}
+            <GroupMemberLabel context="quote" contactLabel={authorLabel} />
+          </>
+        ) : undefined}
+      </>
     );
 
     return (

@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import classNames from 'classnames';
-import React, { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, type JSX } from 'react';
 import { v4 as uuid } from 'uuid';
 import lodash from 'lodash';
 import {
   CircleCheckbox,
   Variant as CircleCheckboxVariant,
-} from './CircleCheckbox.dom.js';
+} from './CircleCheckbox.dom.tsx';
 
 const { noop } = lodash;
 

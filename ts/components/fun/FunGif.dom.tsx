@@ -1,16 +1,15 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { CSSProperties, ForwardedRef } from 'react';
-import React, { forwardRef, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ForwardedRef, JSX } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@react-spring/web';
-import { SpinnerV2 } from '../SpinnerV2.dom.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { Loadable } from '../../util/loadable.std.js';
-import { LoadingState } from '../../util/loadable.std.js';
-import { useIntent } from './base/FunImage.dom.js';
-import { createLogger } from '../../logging/log.std.js';
-import * as Errors from '../../types/errors.std.js';
-import { isAbortError } from '../../util/isAbortError.std.js';
+import { SpinnerV2 } from '../SpinnerV2.dom.tsx';
+import { strictAssert } from '../../util/assert.std.ts';
+import { LoadingState } from '../../util/loadable.std.ts';
+import { useIntent } from './base/FunImage.dom.tsx';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { isAbortError } from '../../util/isAbortError.std.ts';
 
 const log = createLogger('FunGif');
 
@@ -65,6 +64,7 @@ function FunGifReducedMotion(props: FunGifProps) {
     strictAssert(videoRef.current, 'Expected video element');
     const video = videoRef.current;
     if (shouldPlay) {
+      // oxlint-disable-next-line promise/prefer-await-to-then
       video.play().catch(error => {
         // ignore errors where `play()` was interrupted by `pause()`
         if (!isAbortError(error)) {
@@ -78,8 +78,6 @@ function FunGifReducedMotion(props: FunGifProps) {
 
   return <FunGifBase {...props} ref={videoRef} autoPlay={shouldPlay} />;
 }
-
-export type FunGifPreviewLoadable = Loadable<string>;
 
 export type FunGifPreviewProps = Readonly<{
   src: string | null;
@@ -101,7 +99,7 @@ export function FunGifPreview(props: FunGifPreviewProps): JSX.Element {
   const [spinner, setSpinner] = useState(false);
   const [playbackError, setPlaybackError] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     const timer = setTimeout(() => {

@@ -2,18 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { assert } from 'chai';
-import Long from 'long';
 import { Proto, StorageState } from '@signalapp/mock-server';
-import * as durations from '../../util/durations/index.std.js';
-import type { App } from './fixtures.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App } from './fixtures.node.ts';
 import {
   Bootstrap,
   debug,
   getCallLinkRecordPredicate,
-} from './fixtures.node.js';
-import { createCallLink } from '../helpers.node.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
+} from './fixtures.node.ts';
+import { createCallLink } from '../helpers.node.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
 
 const IdentifierType = Proto.ManifestRecord.Identifier.Type;
 
@@ -45,6 +44,8 @@ describe('storage service', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+          deletedAtTimestamp: null,
+          recipientServiceIdsBinary: null,
         },
       },
     });
@@ -83,9 +84,7 @@ describe('storage service', function (this: Mocha.Suite) {
 
     const record = state.findRecord(getCallLinkRecordPredicate(roomId));
     assert.ok(record, 'Saves call link record with matching roomId');
-    const deletedAt = Long.fromValue(
-      record.record.callLink?.deletedAtTimestampMs ?? 0
-    ).toNumber();
+    const deletedAt = record.record.callLink.deletedAtTimestampMs ?? 0;
     assert.notOk(deletedAt, 'deletedAt falsey');
 
     debug('Creating link then deleting it');
@@ -102,27 +101,26 @@ describe('storage service', function (this: Mocha.Suite) {
     );
     assert.ok(recordToDelete, 'Saves call link record with matching roomId');
 
-    const deletedAtBeforeDelete = Long.fromValue(
-      recordToDelete.record.callLink?.deletedAtTimestampMs ?? 0
-    ).toNumber();
+    const deletedAtBeforeDelete =
+      recordToDelete.record.callLink.deletedAtTimestampMs ?? 0;
     assert.notOk(deletedAtBeforeDelete, 'deletedAt falsey');
 
     debug('Deleting call link');
-    const callLinkItem = await window.getByText('Link to delete');
+    const callLinkItem = window.getByText('Link to delete');
     await callLinkItem.click();
-    const callLinkDetails = await window.locator(
+    const callLinkDetails = window.locator(
       '.CallsTab__ConversationCallDetails'
     );
     await callLinkDetails.waitFor();
-    const deleteButton = await window.getByText('Delete link');
+    const deleteButton = window.getByRole('button', {
+      name: 'Delete link',
+    });
     await deleteButton.click();
-    const confirmModal = await window.getByTestId(
-      'ConfirmationDialog.CallLinkDetails__DeleteLinkModal'
-    );
+    const confirmModal = window.getByRole('alertdialog', {
+      name: 'Delete call link?',
+    });
     await confirmModal.waitFor();
-    const deleteConfirm = await window
-      .locator('.module-Button')
-      .getByText('Delete');
+    const deleteConfirm = confirmModal.getByRole('button', { name: 'Delete' });
     await deleteConfirm.click();
 
     debug('Waiting for storage update');
@@ -132,9 +130,8 @@ describe('storage service', function (this: Mocha.Suite) {
       getCallLinkRecordPredicate(roomIdDelete)
     );
     assert.ok(recordAfterDelete, 'Call link record still present');
-    const deletedAtAfterDelete = Long.fromValue(
-      recordAfterDelete.record.callLink?.deletedAtTimestampMs ?? 0
-    ).toNumber();
+    const deletedAtAfterDelete =
+      recordAfterDelete.record.callLink.deletedAtTimestampMs ?? 0;
     assert.ok(deletedAtAfterDelete, 'deletedAt present');
   });
 });

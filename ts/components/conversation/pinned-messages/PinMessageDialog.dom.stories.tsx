@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { PinMessageDialog } from './PinMessageDialog.dom.js';
+import { PinMessageDialog } from './PinMessageDialog.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -19,7 +19,13 @@ export function Default(): JSX.Element {
       open={open}
       onOpenChange={setOpen}
       messageId="42"
-      onPinMessage={action('onPinMessage')}
+      onPinnedMessageAdd={action('onPinnedMessageAdd')}
+      hasMaxPinnedMessages
+      isPinningDisappearingMessage
+      seenPinMessageDisappearingMessagesWarningCount={0}
+      onSeenPinMessageDisappearingMessagesWarning={action(
+        'onSeenPinMessageDisappearingMessagesWarning'
+      )}
     />
   );
 }

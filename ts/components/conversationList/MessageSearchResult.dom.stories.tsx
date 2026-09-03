@@ -1,17 +1,17 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useContext, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { getFakeBadge } from '../../test-helpers/getFakeBadge.std.js';
-import type { PropsType } from './MessageSearchResult.dom.js';
-import { MessageSearchResult } from './MessageSearchResult.dom.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
-import { BodyRange } from '../../types/BodyRange.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
+import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { getFakeBadge } from '../../test-helpers/getFakeBadge.std.ts';
+import type { PropsType } from './MessageSearchResult.dom.tsx';
+import { MessageSearchResult } from './MessageSearchResult.dom.tsx';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import { BodyRange } from '../../types/BodyRange.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const SERVICE_ID_1 = generateAci();
 const SERVICE_ID_2 = generateAci();
@@ -49,13 +49,15 @@ const useProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   snippet: overrideProps.snippet || "What's <<left>>going<<right>> on?",
   body: overrideProps.body || "What's going on?",
   bodyRanges: overrideProps.bodyRanges || [],
-  from: overrideProps.from as PropsType['from'],
-  to: overrideProps.to as PropsType['to'],
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  from: overrideProps.from!,
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  to: overrideProps.to!,
   getPreferredBadge: overrideProps.getPreferredBadge || (() => undefined),
   isSelected: overrideProps.isSelected || false,
   showConversation: action('showConversation'),
   isSearchingInConversation: overrideProps.isSearchingInConversation || false,
-  theme: React.useContext(StorybookThemeContext),
+  theme: useContext(StorybookThemeContext),
 });
 
 export function Default(): JSX.Element {
@@ -239,7 +241,7 @@ export function MentionNoMatches(): JSX.Element {
   return <MessageSearchResult {...props} />;
 }
 
-export const _MentionNoMatches = (): JSX.Element => {
+export const MentionNoMatches2 = (): JSX.Element => {
   const props = useProps({
     body: 'moss banana twine sound lake zoo brain count vacuum work stairs try power forget hair dry diary years no results \uFFFC elephant sorry umbrella potato igloo kangaroo home Georgia bayonet vector orange forge diary zebra turtle rise front \uFFFC',
     bodyRanges: [

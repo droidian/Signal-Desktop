@@ -7,34 +7,36 @@ import {
   ErrorCode,
 } from '@signalapp/libsignal-client';
 
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { getMinNickname, getMaxNickname } from '../util/Username.dom.js';
-import { bytesToUuid, uuidToBytes } from '../util/uuidToBytes.std.js';
-import type { UsernameReservationType } from '../types/Username.std.js';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { getMinNickname, getMaxNickname } from '../util/Username.dom.ts';
+import { bytesToUuid, uuidToBytes } from '../util/uuidToBytes.std.ts';
+import type { UsernameReservationType } from '../types/Username.std.ts';
 import {
   ReserveUsernameError,
   ConfirmUsernameResult,
   getNickname,
   getDiscriminator,
   isCaseChange,
-} from '../types/Username.std.js';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { MessageSender } from '../textsecure/SendMessage.preload.js';
+} from '../types/Username.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { MessageSender } from '../textsecure/SendMessage.preload.ts';
 import {
   reserveUsername as doReserveUsername,
   replaceUsernameLink,
   confirmUsername as doConfirmUsername,
   deleteUsername as doDeleteUsername,
   resolveUsernameLink,
-} from '../textsecure/WebAPI.preload.js';
-import { HTTPError } from '../types/HTTPError.std.js';
-import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { storageServiceUploadJob } from './storage.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../textsecure/WebAPI.preload.ts';
+import type { ResolveUsernameByLinkOptionsType } from '../textsecure/WebAPI.preload.ts';
+import { HTTPError } from '../types/HTTPError.std.ts';
+import { findRetryAfterTimeFromError } from '../jobs/helpers/findRetryAfterTimeFromError.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { runStorageServiceUploadJob } from './storage.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('username');
 
@@ -128,64 +130,60 @@ export async function reserveUsername(
       return { ok: false, error: ReserveUsernameError.Unprocessable };
     }
 
-    const username = candidates[index];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const username = candidates[index]!;
 
     return {
       ok: true,
       reservation: { previousUsername, username, hash: usernameHash },
     };
   } catch (error) {
-    if (error instanceof HTTPError) {
-      if (error.code === 422) {
-        return { ok: false, error: ReserveUsernameError.Unprocessable };
-      }
-      if (error.code === 409) {
+    if (error instanceof LibSignalErrorBase) {
+      if (error.is(ErrorCode.UsernameNotAvailable)) {
         return { ok: false, error: ReserveUsernameError.Conflict };
       }
-      if (error.code === 413 || error.code === 429) {
+      if (error.is(ErrorCode.RateLimitedError)) {
         return {
           ok: false,
           error: ReserveUsernameError.TooManyAttempts,
         };
       }
-    }
-    if (error instanceof LibSignalErrorBase) {
       if (
-        error.code === ErrorCode.NicknameCannotBeEmpty ||
-        error.code === ErrorCode.NicknameTooShort
+        error.is(ErrorCode.NicknameCannotBeEmpty) ||
+        error.is(ErrorCode.NicknameTooShort)
       ) {
         return {
           ok: false,
           error: ReserveUsernameError.NotEnoughCharacters,
         };
       }
-      if (error.code === ErrorCode.NicknameTooLong) {
+      if (error.is(ErrorCode.NicknameTooLong)) {
         return {
           ok: false,
           error: ReserveUsernameError.TooManyCharacters,
         };
       }
-      if (error.code === ErrorCode.CannotStartWithDigit) {
+      if (error.is(ErrorCode.CannotStartWithDigit)) {
         return {
           ok: false,
           error: ReserveUsernameError.CheckStartingCharacter,
         };
       }
-      if (error.code === ErrorCode.BadNicknameCharacter) {
+      if (error.is(ErrorCode.BadNicknameCharacter)) {
         return {
           ok: false,
           error: ReserveUsernameError.CheckCharacters,
         };
       }
 
-      if (error.code === ErrorCode.DiscriminatorCannotBeZero) {
+      if (error.is(ErrorCode.DiscriminatorCannotBeZero)) {
         return {
           ok: false,
           error: ReserveUsernameError.AllZeroDiscriminator,
         };
       }
 
-      if (error.code === ErrorCode.DiscriminatorCannotHaveLeadingZeros) {
+      if (error.is(ErrorCode.DiscriminatorCannotHaveLeadingZeros)) {
         return {
           ok: false,
           error: ReserveUsernameError.LeadingZeroDiscriminator,
@@ -193,10 +191,10 @@ export async function reserveUsername(
       }
 
       if (
-        error.code === ErrorCode.DiscriminatorCannotBeEmpty ||
-        error.code === ErrorCode.DiscriminatorCannotBeSingleDigit ||
+        error.is(ErrorCode.DiscriminatorCannotBeEmpty) ||
+        error.is(ErrorCode.DiscriminatorCannotBeSingleDigit) ||
         // This is handled on UI level
-        error.code === ErrorCode.DiscriminatorTooLarge
+        error.is(ErrorCode.DiscriminatorTooLarge)
       ) {
         return {
           ok: false,
@@ -213,9 +211,14 @@ async function updateUsernameAndSyncProfile(
 ): Promise<void> {
   const me = window.ConversationController.getOurConversationOrThrow();
 
-  // Update model, update DB, then tell linked devices about profile update
+  // Update model, update DB
   await me.updateUsername(username);
 
+  if (!window.ConversationController.doWeHaveOtherDevices()) {
+    return;
+  }
+
+  // then tell our other devices about profile update, username
   try {
     await singleProtoJobQueue.add(
       MessageSender.getFetchLocalProfileSyncMessage()
@@ -253,7 +256,7 @@ export async function confirmUsername(
     await itemStorage.remove('usernameLink');
 
     let serverIdString: string;
-    let entropy: Uint8Array;
+    let entropy: Uint8Array<ArrayBuffer>;
     if (previousLink && isCaseChange(reservation)) {
       log.info('confirmUsername: updating link only');
 
@@ -305,6 +308,19 @@ export async function confirmUsername(
         return ConfirmUsernameResult.ConflictOrGone;
       }
     }
+    if (error instanceof LibSignalErrorBase) {
+      if (error.is(ErrorCode.RateLimitedError)) {
+        const time = error.retryAfterSecs * SECOND;
+        log.warn(`confirmUsername: rate limited, waiting ${time}ms`);
+        await sleep(time, abortSignal);
+
+        return confirmUsername(reservation, abortSignal);
+      }
+
+      if (error.is(ErrorCode.UsernameNotSet)) {
+        return ConfirmUsernameResult.ConflictOrGone;
+      }
+    }
     throw error;
   }
 
@@ -352,7 +368,7 @@ export async function resetLink(username: string): Promise<void> {
   await itemStorage.remove('usernameLinkCorrupted');
 
   me.captureChange('usernameLink');
-  storageServiceUploadJob({ reason: 'resetLink' });
+  runStorageServiceUploadJob({ reason: 'resetLink' });
 }
 
 const USERNAME_LINK_ENTROPY_SIZE = 32;
@@ -364,32 +380,43 @@ export async function resolveUsernameByLinkBase64(
   const entropy = content.subarray(0, USERNAME_LINK_ENTROPY_SIZE);
   const serverId = content.subarray(USERNAME_LINK_ENTROPY_SIZE);
 
-  return resolveUsernameByLink({ entropy, serverId });
+  const uuid = bytesToUuid(serverId);
+  strictAssert(uuid, 'Failed to re-encode server id as uuid');
+
+  return resolveUsernameByLink({ entropy, uuid });
 }
 
-export type ResolveUsernameByLinkOptionsType = Readonly<{
-  entropy: Uint8Array;
-  serverId: Uint8Array;
-}>;
-
-export async function resolveUsernameByLink({
-  entropy,
-  serverId: serverIdBytes,
-}: ResolveUsernameByLinkOptionsType): Promise<string | undefined> {
-  const serverId = bytesToUuid(serverIdBytes);
-  strictAssert(serverId, 'Failed to re-encode server id as uuid');
-
+async function resolveUsernameByLink(
+  options: ResolveUsernameByLinkOptionsType
+): Promise<string | undefined> {
   try {
-    const { usernameLinkEncryptedValue } = await resolveUsernameLink(serverId);
+    const result = await resolveUsernameLink(options);
+    if (!result) {
+      return undefined;
+    }
 
-    return usernames.decryptUsernameLink({
-      entropy,
-      encryptedUsername: usernameLinkEncryptedValue,
-    });
+    return result.username;
   } catch (error) {
     if (error instanceof HTTPError && error.code === 404) {
       return undefined;
     }
     throw error;
   }
+}
+
+export function hasUsernameChangeSyncCapability(): boolean {
+  const ourConversation =
+    window.ConversationController.getOurConversationOrThrow();
+
+  return (
+    ourConversation.get('capabilities')?.usernameChangeSyncMessage === true
+  );
+}
+
+export async function sendUsernameChangeSyncMessage(): Promise<void> {
+  if (!hasUsernameChangeSyncCapability()) {
+    return;
+  }
+
+  await singleProtoJobQueue.add(MessageSender.getUsernameChangeSyncMessage());
 }

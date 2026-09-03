@@ -1,34 +1,38 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {
+import { MuteExpiration } from '@signalapp/types';
+
+import {
   useCallback,
   useMemo,
   type FocusEvent,
   type ReactNode,
+  type JSX,
 } from 'react';
 import {
   ChatFolderType,
   type ChatFolder,
   type ChatFolderId,
-} from '../../types/ChatFolder.std.js';
-import type { LocalizerType } from '../../types/I18N.std.js';
-import { ExperimentalAxoSegmentedControl } from '../../axo/AxoSegmentedControl.dom.js';
-import { tw } from '../../axo/tw.dom.js';
+} from '../../types/ChatFolder.std.ts';
+import type { LocalizerType } from '../../types/I18N.std.ts';
+import { ExperimentalAxoSegmentedControl } from '../../axo/AxoSegmentedControl.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
 import type {
   AllChatFoldersUnreadStats,
   UnreadStats,
-} from '../../util/countUnreadStats.std.js';
-import { WidthBreakpoint } from '../_util.std.js';
-import { AxoSelect } from '../../axo/AxoSelect.dom.js';
-import { AxoContextMenu } from '../../axo/AxoContextMenu.dom.js';
-import { getMuteValuesOptions } from '../../util/getMuteOptions.std.js';
+} from '../../util/countUnreadStats.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+import { AxoSelect } from '../../axo/AxoSelect.dom.tsx';
+import { AxoContextMenu } from '../../axo/AxoContextMenu.dom.tsx';
+import { getMuteValuesOptions } from '../../util/getMuteOptions.std.ts';
+import { MuteNotificationsSubMenu } from '../MuteNotificationsMenu.dom.tsx';
 import type {
   AllChatFoldersMutedStats,
   MutedStats,
-} from '../../util/countMutedStats.std.js';
-import type { AxoSymbol } from '../../axo/AxoSymbol.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.js';
+} from '../../util/countMutedStats.std.ts';
+import type { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { CurrentChatFolders } from '../../types/CurrentChatFolders.std.ts';
 
 export type LeftPaneChatFoldersProps = Readonly<{
   i18n: LocalizerType;
@@ -39,13 +43,14 @@ export type LeftPaneChatFoldersProps = Readonly<{
   selectedChatFolder: ChatFolder | null;
   onSelectedChatFolderIdChange: (newValue: ChatFolderId) => void;
   onChatFolderMarkRead: (chatFolderId: ChatFolderId) => void;
-  onChatFolderUpdateMute: (chatFolderId: ChatFolderId, value: number) => void;
+  onChatFolderUpdateMute: (
+    chatFolderId: ChatFolderId,
+    muteExpiresAt: MuteExpiration
+  ) => void;
   onChatFolderOpenSettings: (chatFolderId: ChatFolderId) => void;
 }>;
 
-function getBadgeValue(
-  unreadStats: UnreadStats | null
-): ExperimentalAxoSegmentedControl.ExperimentalItemBadgeProps['value'] | null {
+function getBadgeValue(unreadStats: UnreadStats | null): number | null {
   if (unreadStats == null) {
     return null;
   }
@@ -75,9 +80,7 @@ function getChatFolderLabel(
   return '';
 }
 
-function getChatFolderIconName(
-  chatFolder: ChatFolder | null
-): AxoSymbol.IconName {
+function getChatFolderIconName(chatFolder: ChatFolder | null): AxoSymbol.Name {
   if (chatFolder == null) {
     return 'message';
   }
@@ -125,7 +128,7 @@ export function LeftPaneChatFolders(
           onValueChange={handleValueChange}
         >
           <AxoSelect.Trigger
-            variant="floating"
+            variant="elevated"
             width="full"
             placeholder=""
             chevron="on-hover"
@@ -152,7 +155,7 @@ export function LeftPaneChatFolders(
   return (
     <div
       className={tw(
-        'scroll-px-[20%] overflow-x-auto overflow-y-clip px-4 py-2 [scrollbar-width:none]'
+        'scroll-px-[20%] scrollbar-width-none overflow-x-auto overflow-y-clip px-4 py-2'
       )}
       onFocus={handleFocus}
     >
@@ -209,16 +212,14 @@ function ChatFolderSelectItem(props: {
         {getChatFolderLabel(i18n, props.chatFolder, true)}
       </AxoSelect.ItemText>
       {badgeValue != null && (
-        <AxoSelect.ExperimentalItemBadge
+        <AxoSelect.ItemBadge
+          variant="primary"
           value={badgeValue}
           max={UNREAD_BADGE_MAX_COUNT}
-          maxDisplay={i18n(
-            'icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount',
-            {
-              maxCount: UNREAD_BADGE_MAX_COUNT,
-            }
+          label={i18n(
+            'icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel',
+            { count: badgeValue }
           )}
-          aria-label={null}
         />
       )}
     </AxoSelect.Item>
@@ -231,7 +232,10 @@ function ChatFolderSegmentedControlItem(props: {
   unreadStats: UnreadStats | null;
   mutedStats: MutedStats | null;
   onChatFolderMarkRead: (chatFolderId: ChatFolderId) => void;
-  onChatFolderUpdateMute: (chatFolderId: ChatFolderId, value: number) => void;
+  onChatFolderUpdateMute: (
+    chatFolderId: ChatFolderId,
+    muteExpiresAt: MuteExpiration
+  ) => void;
   onChatFolderOpenSettings: (chatFolderId: ChatFolderId) => void;
 }): JSX.Element {
   const { i18n, unreadStats } = props;
@@ -255,14 +259,14 @@ function ChatFolderSegmentedControlItem(props: {
           {getChatFolderLabel(i18n, props.chatFolder, false)}
         </ExperimentalAxoSegmentedControl.ItemText>
         {badgeValue != null && (
-          <ExperimentalAxoSegmentedControl.ExperimentalItemBadge
+          <ExperimentalAxoSegmentedControl.ItemBadge
+            variant="primary"
             value={badgeValue}
             max={UNREAD_BADGE_MAX_COUNT}
-            maxDisplay={i18n(
-              'icu:LeftPaneChatFolders__ItemUnreadBadge__MaxCount',
-              { maxCount: UNREAD_BADGE_MAX_COUNT }
+            label={i18n(
+              'icu:LeftPaneChatFolders__ItemUnreadBadge__AccessibleLabel',
+              { count: badgeValue }
             )}
-            aria-label={null}
           />
         )}
       </ExperimentalAxoSegmentedControl.Item>
@@ -276,7 +280,10 @@ function ChatFolderSegmentedControlItemContextMenu(props: {
   unreadStats: UnreadStats | null;
   mutedStats: MutedStats | null;
   onChatFolderMarkRead: (chatFolderId: ChatFolderId) => void;
-  onChatFolderUpdateMute: (chatFolderId: ChatFolderId, value: number) => void;
+  onChatFolderUpdateMute: (
+    chatFolderId: ChatFolderId,
+    muteExpiresAt: MuteExpiration
+  ) => void;
   onChatFolderOpenSettings: (chatFolderId: ChatFolderId) => void;
   children: ReactNode;
 }) {
@@ -305,11 +312,15 @@ function ChatFolderSegmentedControlItemContextMenu(props: {
   }, [chatFolderId, onChatFolderMarkRead]);
 
   const handleChatFolderUpdateMute = useCallback(
-    (value: number) => {
-      onChatFolderUpdateMute(chatFolderId, value);
+    (muteExpiresAt: MuteExpiration) => {
+      onChatFolderUpdateMute(chatFolderId, muteExpiresAt);
     },
     [chatFolderId, onChatFolderUpdateMute]
   );
+
+  const handleChatFolderUnmuteAll = useCallback(() => {
+    onChatFolderUpdateMute(chatFolderId, MuteExpiration.UNMUTED);
+  }, [chatFolderId, onChatFolderUpdateMute]);
 
   const handleChatFolderOpenSettings = useCallback(() => {
     onChatFolderOpenSettings(chatFolderId);
@@ -328,45 +339,31 @@ function ChatFolderSegmentedControlItemContextMenu(props: {
           </AxoContextMenu.Item>
         )}
         {!showOnlyUnmuteAll && (
-          <AxoContextMenu.Sub>
-            <AxoContextMenu.SubTrigger symbol="bell-slash">
-              {i18n(
-                'icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications'
-              )}
-            </AxoContextMenu.SubTrigger>
-            <AxoContextMenu.SubContent>
-              {someChatsMuted && (
-                <ContextMenuMuteNotificationsItem
-                  value={0}
-                  onSelect={handleChatFolderUpdateMute}
-                >
-                  {i18n(
-                    'icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll'
-                  )}
-                </ContextMenuMuteNotificationsItem>
-              )}
-              {muteValuesOptions.map(option => {
-                return (
-                  <ContextMenuMuteNotificationsItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={handleChatFolderUpdateMute}
-                  >
-                    {option.name}
-                  </ContextMenuMuteNotificationsItem>
-                );
-              })}
-            </AxoContextMenu.SubContent>
-          </AxoContextMenu.Sub>
+          <MuteNotificationsSubMenu
+            i18n={i18n}
+            renderer="AxoContextMenu"
+            title={i18n(
+              'icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications'
+            )}
+            options={muteValuesOptions}
+            onMuteExpiration={handleChatFolderUpdateMute}
+          >
+            {someChatsMuted && (
+              <AxoContextMenu.Item onSelect={handleChatFolderUnmuteAll}>
+                {i18n(
+                  'icu:LeftPaneChatFolders__Item__ContextMenu__MuteNotifications__UnmuteAll'
+                )}
+              </AxoContextMenu.Item>
+            )}
+          </MuteNotificationsSubMenu>
         )}
         {showOnlyUnmuteAll && (
-          <ContextMenuMuteNotificationsItem
+          <AxoContextMenu.Item
             symbol="bell"
-            value={0}
-            onSelect={handleChatFolderUpdateMute}
+            onSelect={handleChatFolderUnmuteAll}
           >
             {i18n('icu:LeftPaneChatFolders__Item__ContextMenu__UnmuteAll')}
-          </ContextMenuMuteNotificationsItem>
+          </AxoContextMenu.Item>
         )}
         {props.chatFolder.folderType === ChatFolderType.CUSTOM && (
           <AxoContextMenu.Item
@@ -378,22 +375,5 @@ function ChatFolderSegmentedControlItemContextMenu(props: {
         )}
       </AxoContextMenu.Content>
     </AxoContextMenu.Root>
-  );
-}
-
-function ContextMenuMuteNotificationsItem(props: {
-  symbol?: AxoSymbol.IconName;
-  value: number;
-  onSelect: (value: number) => void;
-  children: ReactNode;
-}): JSX.Element {
-  const { value, onSelect } = props;
-  const handleSelect = useCallback(() => {
-    onSelect(value);
-  }, [onSelect, value]);
-  return (
-    <AxoContextMenu.Item symbol={props.symbol} onSelect={handleSelect}>
-      {props.children}
-    </AxoContextMenu.Item>
   );
 }

@@ -1,10 +1,11 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './ImageOrBlurhash.dom.js';
-import { ImageOrBlurhash } from './ImageOrBlurhash.dom.js';
+import type { Props } from './ImageOrBlurhash.dom.tsx';
+import { ImageOrBlurhash } from './ImageOrBlurhash.dom.tsx';
 
 export default {
   title: 'Components/ImageOrBlurhash',

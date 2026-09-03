@@ -3,27 +3,27 @@
 
 import * as z from 'zod';
 import PQueue from 'p-queue';
-import { CallLinkRootKey, CallLinkEpoch } from '@signalapp/ringrtc';
-import { createLogger } from '../logging/log.std.js';
-import type { LoggerType } from '../types/Logging.std.js';
-import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.std.js';
-import type { ParsedJob, StoredJob } from './types.std.js';
-import type { JOB_STATUS } from './JobQueue.std.js';
-import { JobQueue } from './JobQueue.std.js';
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.preload.js';
-import { DAY, SECOND } from '../util/durations/index.std.js';
-import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.preload.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
+import { CallLinkRootKey } from '@signalapp/ringrtc';
+import { createLogger } from '../logging/log.std.ts';
+import type { LoggerType } from '../types/Logging.std.ts';
+import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.std.ts';
+import type { ParsedJob, StoredJob } from './types.std.ts';
+import type { JOB_STATUS } from './JobQueue.std.ts';
+import { JobQueue } from './JobQueue.std.ts';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.preload.ts';
+import { DAY, SECOND } from '../util/durations/index.std.ts';
+import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.preload.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
 import type {
   CallLinkType,
   PendingCallLinkType,
-} from '../types/CallLink.std.js';
-import { calling } from '../services/calling.preload.js';
-import { sleeper } from '../util/sleeper.std.js';
-import { parseUnknown } from '../util/schemas.std.js';
-import { getRoomIdFromRootKey } from '../util/callLinksRingrtc.node.js';
-import { toCallHistoryFromUnusedCallLink } from '../util/callLinks.std.js';
-import type { StorageServiceFieldsType } from '../sql/Interface.std.js';
+} from '../types/CallLink.std.ts';
+import { calling } from '../services/calling.preload.ts';
+import { sleeper } from '../util/sleeper.std.ts';
+import { parseUnknown } from '../util/schemas.std.ts';
+import { getRoomIdFromRootKey } from '../util/callLinksRingrtc.node.ts';
+import { toCallHistoryFromUnusedCallLink } from '../util/callLinks.std.ts';
+import type { StorageServiceFieldsType } from '../sql/Interface.std.ts';
 
 const globalLogger = createLogger('callLinkRefreshJobQueue');
 
@@ -38,7 +38,6 @@ const DEFAULT_SLEEP_TIME = 20 * SECOND;
 // the call link is confirmed valid on the calling server.
 const callLinkRefreshJobDataSchema = z.object({
   rootKey: z.string(),
-  epoch: z.string().nullable().optional(),
   adminKey: z.string().nullable().optional(),
   storageID: z.string().nullable().optional(),
   storageVersion: z.number().int().nullable().optional(),
@@ -50,8 +49,8 @@ export type CallLinkRefreshJobData = z.infer<
   typeof callLinkRefreshJobDataSchema
 >;
 
-export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
-  #parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
+class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
+  readonly #parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
   readonly #pendingCallLinks = new Map<string, PendingCallLinkType>();
 
   protected override getQueues(): ReadonlySet<PQueue> {
@@ -83,13 +82,11 @@ export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
       storageVersion,
       storageUnknownFields,
       rootKey,
-      epoch,
       adminKey,
     } = parsedData ?? {};
     if (storageID && storageVersion && rootKey) {
       this.#pendingCallLinks.set(rootKey, {
         rootKey,
-        epoch: epoch ?? null,
         adminKey: adminKey ?? null,
         storageID: storageID ?? undefined,
         storageVersion: storageVersion ?? undefined,
@@ -168,9 +165,8 @@ export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
     }: Readonly<{ data: CallLinkRefreshJobData; timestamp: number }>,
     { attempt, log }: Readonly<{ attempt: number; log: LoggerType }>
   ): Promise<typeof JOB_STATUS.NEEDS_RETRY | undefined> {
-    const { rootKey, epoch, source } = data;
+    const { rootKey, source } = data;
     const callLinkRootKey = CallLinkRootKey.parse(rootKey);
-    const callLinkEpoch = epoch ? CallLinkEpoch.parse(epoch) : undefined;
     const roomId = getRoomIdFromRootKey(callLinkRootKey);
 
     const logId = `callLinkRefreshJobQueue(${roomId}, source=${source}).run`;
@@ -191,10 +187,7 @@ export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
     try {
       // This will either return the fresh call link state,
       // null (link deleted from server), or err (connection error)
-      const freshCallLinkState = await calling.readCallLink(
-        callLinkRootKey,
-        callLinkEpoch
-      );
+      const freshCallLinkState = await calling.readCallLink(callLinkRootKey);
       const existingCallLink = await DataReader.getCallLinkByRoomId(roomId);
 
       if (freshCallLinkState != null) {
@@ -218,7 +211,6 @@ export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
             ...freshCallLinkState,
             roomId,
             rootKey,
-            epoch: epoch ?? null,
             adminKey: adminKey ?? null,
             ...storageFields,
             storageNeedsSync: false,
@@ -247,7 +239,6 @@ export class CallLinkRefreshJobQueue extends JobQueue<CallLinkRefreshJobData> {
         await DataWriter.insertDefunctCallLink({
           roomId,
           rootKey,
-          epoch: data.epoch ?? null,
           adminKey: data.adminKey ?? null,
           ...storageFields,
           storageNeedsSync: false,

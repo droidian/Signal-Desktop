@@ -1,9 +1,9 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { RenderTextCallbackType } from '../../types/Util.std.js';
+import type { RenderTextCallbackType } from '../../types/Util.std.ts';
 
 export type Props = {
   text: string;

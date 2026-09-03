@@ -1,11 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import { AxoScrollArea } from './AxoScrollArea.dom.js';
-import { tw } from './tw.dom.js';
-import { AxoSymbol } from './AxoSymbol.dom.js';
+import { AxoScrollArea } from './AxoScrollArea.dom.tsx';
+import { tw } from './tw.dom.tsx';
+import { AxoSymbol } from './AxoSymbol.dom.tsx';
 
 export default {
   title: 'Axo/AxoScrollArea',
@@ -15,7 +14,7 @@ function Box(props: { children: ReactNode }) {
   return (
     <div
       className={tw(
-        'flex items-center justify-center rounded-2xl bg-color-fill-primary p-10 type-title-large font-semibold text-label-primary-on-color'
+        'flex items-center justify-center rounded-2xl bg-accent p-10 type-title-large font-semibold text-primary-oncolor'
       )}
     >
       {props.children}
@@ -39,7 +38,7 @@ function VerticalTemplate(props: {
   mask?: boolean;
 }) {
   return (
-    <div className={tw('w-64 rounded-2xl bg-background-secondary')}>
+    <div className={tw('w-64 rounded-2xl bg-surface-secondary')}>
       <h1 className={tw('px-3 pt-3 pb-2 type-title-large')}>Header</h1>
       <div className={tw(props.fit || 'h-100')}>
         <AxoScrollArea.Root
@@ -109,7 +108,7 @@ function HorizontalTemplate(props: {
   return (
     <div
       className={tw(
-        'flex h-32 w-fit flex-row rounded-2xl bg-background-secondary'
+        'flex h-32 w-fit flex-row rounded-2xl bg-surface-secondary'
       )}
     >
       <div className={tw('flex flex-col justify-center p-4')}>
@@ -184,10 +183,7 @@ function BothTemplate(props: {
 }) {
   return (
     <div
-      className={tw(
-        props.fit || 'size-100',
-        'rounded-lg bg-background-secondary'
-      )}
+      className={tw(props.fit || 'size-100', 'rounded-lg bg-surface-secondary')}
     >
       <AxoScrollArea.Root
         orientation="both"

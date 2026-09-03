@@ -1,24 +1,32 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentProps } from 'react';
-import React, { useContext } from 'react';
+import type { ComponentProps, JSX } from 'react';
+import { useContext } from 'react';
+import { MuteExpiration } from '@signalapp/types';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
+import { times } from 'lodash';
+import { v4 as generateUuid } from 'uuid';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../../test-helpers/getDefaultConversation.std.js';
-import { getRandomColor } from '../../test-helpers/getRandomColor.std.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.js';
-import type { PropsType } from './ConversationHeader.dom.js';
+} from '../../test-helpers/getDefaultConversation.std.ts';
+import { getRandomColor } from '../../test-helpers/getRandomColor.std.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.ts';
+import {
+  CannotLeaveGroupBecauseYouAreLastAdminAlert,
+  type PropsType,
+} from './ConversationHeader.dom.tsx';
 import {
   ConversationHeader,
   OutgoingCallButtonStyle,
-} from './ConversationHeader.dom.js';
-import { gifUrl } from '../../storybook/Fixtures.std.js';
-import { ThemeType } from '../../types/Util.std.js';
+} from './ConversationHeader.dom.tsx';
+import { gifUrl } from '../../storybook/Fixtures.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { ContactSpoofingType } from '../../util/contactSpoofing.std.ts';
+import { CollidingAvatars } from '../CollidingAvatars.dom.tsx';
 
 export default {
   title: 'Components/Conversation/ConversationHeader',
@@ -30,6 +38,20 @@ type ItemsType = Array<{
   title: string;
   props: Omit<ComponentProps<typeof ConversationHeader>, 'theme'>;
 }>;
+
+const alice = getDefaultConversation();
+const bob = getDefaultConversation();
+
+const renderCollidingAvatars = () => (
+  <CollidingAvatars i18n={i18n} conversations={[alice, bob]} />
+);
+const renderMiniPlayer = () => (
+  <div>If active, this is where smart mini player would be</div>
+);
+
+const renderPinnedMessagesBar = () => (
+  <div>If active, this is where the smart pinned messages bar would be</div>
+);
 
 const commonConversation = getDefaultConversation();
 const commonProps: PropsType = {
@@ -44,9 +66,6 @@ const commonProps: PropsType = {
   isSelectMode: false,
 
   i18n,
-
-  localDeleteWarningShown: true,
-  setLocalDeleteWarningShown: action('setLocalDeleteWarningShown'),
 
   onConversationAccept: action('onConversationAccept'),
   onConversationArchive: action('onConversationArchive'),
@@ -74,6 +93,18 @@ const commonProps: PropsType = {
   onViewAllMedia: action('onViewAllMedia'),
   onViewConversationDetails: action('onViewConversationDetails'),
   onViewUserStories: action('onViewUserStories'),
+
+  contactSpoofingWarning: null,
+  acknowledgeGroupMemberNameCollisions: action(
+    'acknowledgeGroupMemberNameCollisions'
+  ),
+  reviewConversationNameCollision: action('reviewConversationNameCollision'),
+  renderCollidingAvatars,
+
+  shouldShowMiniPlayer: false,
+  renderMiniPlayer,
+
+  renderPinnedMessagesBar,
 };
 
 export function PrivateConvo(): JSX.Element {
@@ -200,7 +231,9 @@ export function PrivateConvo(): JSX.Element {
           type: 'direct',
           id: '9',
           acceptedMessageRequest: true,
-          muteExpiresAt: new Date('3000-10-18T11:11:11Z').valueOf(),
+          muteExpiresAt: MuteExpiration.fromNumber(
+            new Date('3000-10-18T11:11:11Z').valueOf()
+          ),
         }),
       },
     },
@@ -306,7 +339,7 @@ export function Group(): JSX.Element {
           expireTimer: DurationInSeconds.fromSeconds(10),
           acceptedMessageRequest: true,
 
-          muteExpiresAt: Infinity,
+          muteExpiresAt: MuteExpiration.ALWAYS,
         }),
       },
     },
@@ -454,19 +487,6 @@ export function Blocked(): JSX.Element {
   );
 }
 
-export function NeedsDeleteConfirmation(): JSX.Element {
-  const [localDeleteWarningShown, setLocalDeleteWarningShown] =
-    React.useState(false);
-  const props = {
-    ...commonProps,
-    localDeleteWarningShown,
-    setLocalDeleteWarningShown: () => setLocalDeleteWarningShown(true),
-  };
-  const theme = useContext(StorybookThemeContext);
-
-  return <ConversationHeader {...props} theme={theme} />;
-}
-
 export function DirectConversationInAnotherCall(): JSX.Element {
   const props = {
     ...commonProps,
@@ -510,4 +530,86 @@ export function GroupConversationInCurrentCall(): JSX.Element {
   const theme = useContext(StorybookThemeContext);
 
   return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithSameNameInDirectConversationWarning(): JSX.Element {
+  const props: PropsType = {
+    ...commonProps,
+    contactSpoofingWarning: {
+      type: ContactSpoofingType.DirectConversationWithSameTitle,
+      safeConversationId: '123',
+    },
+  };
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithSameNameInGroupConversationWarning(): JSX.Element {
+  const props: PropsType = {
+    ...commonProps,
+    contactSpoofingWarning: {
+      type: ContactSpoofingType.MultipleGroupMembersWithSameTitle,
+      acknowledgedGroupNameCollisions: {},
+      groupNameCollisions: {
+        Alice: times(2, () => generateUuid()),
+      },
+    },
+  };
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithSameNamesInGroupConversationWarning(): JSX.Element {
+  const props: PropsType = {
+    ...commonProps,
+    contactSpoofingWarning: {
+      type: ContactSpoofingType.MultipleGroupMembersWithSameTitle,
+      acknowledgedGroupNameCollisions: {},
+      groupNameCollisions: {
+        Alice: times(2, () => generateUuid()),
+        Bob: times(3, () => generateUuid()),
+      },
+    },
+  };
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithJustMiniPlayer(): JSX.Element {
+  const props: PropsType = {
+    ...commonProps,
+    shouldShowMiniPlayer: true,
+  };
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithJustPinnedMessagesBar(): JSX.Element {
+  const props: PropsType = commonProps;
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function WithMinPlayerAndPinnedMessagesBar(): JSX.Element {
+  const props: PropsType = {
+    ...commonProps,
+    shouldShowMiniPlayer: true,
+  };
+  const theme = useContext(StorybookThemeContext);
+
+  return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function LastAdminAlert(): JSX.Element {
+  return (
+    <CannotLeaveGroupBecauseYouAreLastAdminAlert
+      i18n={i18n}
+      onClose={action('onClose')}
+    />
+  );
 }

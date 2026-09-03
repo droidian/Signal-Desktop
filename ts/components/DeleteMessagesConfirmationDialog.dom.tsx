@@ -1,53 +1,44 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { LocalDeleteWarningModal } from './LocalDeleteWarningModal.dom.js';
+import type { JSX } from 'react';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 export function DeleteMessagesConfirmationDialog({
   i18n,
-  localDeleteWarningShown,
+  areWeMember,
   onDestroyMessages,
   onClose,
-  setLocalDeleteWarningShown,
 }: {
   i18n: LocalizerType;
-  localDeleteWarningShown: boolean;
+  areWeMember: boolean;
   onDestroyMessages: () => void;
   onClose: () => void;
-  setLocalDeleteWarningShown: () => void;
 }): JSX.Element {
-  if (!localDeleteWarningShown) {
-    return (
-      <LocalDeleteWarningModal
-        i18n={i18n}
-        onClose={setLocalDeleteWarningShown}
-      />
-    );
-  }
-
-  const dialogBody = i18n(
-    'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
-  );
+  const dialogBody = areWeMember
+    ? i18n(
+        'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync--still-member'
+      )
+    : i18n(
+        'icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync'
+      );
 
   return (
-    <ConfirmationDialog
-      dialogName="ConversationHeader.destroyMessages"
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={onClose}
       title={i18n(
         'icu:ConversationHeader__DeleteConversationConfirmation__title'
       )}
-      actions={[
-        {
-          action: onDestroyMessages,
-          style: 'negative',
-          text: i18n('icu:delete'),
-        },
-      ]}
-      i18n={i18n}
-      onClose={onClose}
+      description={dialogBody}
     >
-      {dialogBody}
-    </ConfirmationDialog>
+      <AxoConfirmDialog.Cancel />
+      <AxoConfirmDialog.Action
+        variant="strong-destructive"
+        onClick={onDestroyMessages}
+      >
+        {i18n('icu:delete')}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }

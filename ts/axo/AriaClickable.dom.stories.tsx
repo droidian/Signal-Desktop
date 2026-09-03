@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useId } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useId } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { AriaClickable } from './AriaClickable.dom.js';
-import { AxoButton } from './AxoButton.dom.js';
-import { tw } from './tw.dom.js';
+import { AriaClickable } from './AriaClickable.dom.tsx';
+import { AxoButton } from './AxoButton.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AriaClickable',
@@ -16,11 +16,10 @@ function Card(props: { children: ReactNode }) {
   return (
     <AriaClickable.Root
       className={tw(
-        'group flex items-center gap-4 rounded-md border border-border-secondary p-4',
-        'data-[hovered]:bg-background-secondary',
-        'data-[pressed]:bg-fill-secondary-pressed',
-        'outline-0 outline-border-focused',
-        'data-[focused]:outline-[2.5px]'
+        'group flex items-center gap-4 rounded-md border border-secondary p-4',
+        'data-hovered:bg-surface-secondary',
+        'data-pressed:bg-primary-pressed',
+        'outline-none data-focused:axo-focus-ring'
       )}
     >
       {props.children}
@@ -30,9 +29,7 @@ function Card(props: { children: ReactNode }) {
 
 function CardTitle(props: { children: ReactNode }) {
   return (
-    <h3 className={tw('type-title-medium text-label-primary')}>
-      {props.children}
-    </h3>
+    <h3 className={tw('type-title-medium text-primary')}>{props.children}</h3>
   );
 }
 
@@ -46,17 +43,11 @@ function CardSeeMoreLink(props: { onClick: () => void; children: ReactNode }) {
     <>
       <span
         id={id}
-        className={tw(
-          'text-color-label-primary',
-          'group-data-[hovered]:underline'
-        )}
+        className={tw('text-accent', 'group-data-hovered:underline')}
       >
         {props.children}
       </span>
-      <AriaClickable.HiddenTrigger
-        aria-labelledby={id}
-        onClick={props.onClick}
-      />
+      <AriaClickable.HiddenTrigger labelledby={id} onClick={props.onClick} />
     </>
   );
 }
@@ -98,10 +89,10 @@ export function Basic(): JSX.Element | null {
         </p>
       </CardContent>
       <CardActions>
-        <CardButton variant="borderless-primary" onClick={action('onEdit')}>
+        <CardButton variant="implied-primary" onClick={action('onEdit')}>
           Edit
         </CardButton>
-        <CardButton variant="destructive" onClick={action('onDelete')}>
+        <CardButton variant="strong-destructive" onClick={action('onDelete')}>
           Delete
         </CardButton>
       </CardActions>

@@ -1,10 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './AddNewLines.dom.js';
-import { AddNewLines } from './AddNewLines.dom.js';
+import type { Props } from './AddNewLines.dom.tsx';
+import { AddNewLines } from './AddNewLines.dom.tsx';
 
 export default {
   title: 'Components/Conversation/AddNewLines',

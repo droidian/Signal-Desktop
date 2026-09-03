@@ -7,17 +7,17 @@ import { randomBytes } from 'node:crypto';
 import { readdir, writeFile } from 'node:fs/promises';
 import { v7 } from 'uuid';
 
-import * as MIME from '../../types/MIME.std.js';
-import { composeAttachment } from '../../test-node/util/queueAttachmentDownloads_test.preload.js';
-import { addAttachmentToMessage } from '../../messageModifiers/AttachmentDownloads.preload.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { MessageCache } from '../../services/MessageCache.preload.js';
-import { getPath } from '../../../app/attachments.node.js';
-import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.js';
-import { DataWriter } from '../../sql/Client.preload.js';
-import type { MessageAttributesType } from '../../model-types.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
+import * as MIME from '../../types/MIME.std.ts';
+import { composeAttachment } from '../../test-node/util/queueAttachmentDownloads_test.preload.ts';
+import { addAttachmentToMessage } from '../../messageModifiers/AttachmentDownloads.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { MessageCache } from '../../services/MessageCache.preload.ts';
+import { getAttachmentsPath } from '../../../app/attachments.node.ts';
+import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import type { MessageAttributesType } from '../../model-types.d.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 describe('addAttachmentToMessage', () => {
   beforeEach(async () => {
@@ -27,7 +27,9 @@ describe('addAttachmentToMessage', () => {
   });
 
   afterEach(async () => {
-    await emptyDir(getPath(window.SignalContext.config.userDataPath));
+    await emptyDir(
+      getAttachmentsPath(window.SignalContext.config.userDataPath)
+    );
   });
 
   async function saveMessage(
@@ -53,7 +55,9 @@ describe('addAttachmentToMessage', () => {
   }
 
   async function listAttachmentsOnDisk(): Promise<Array<string>> {
-    return readdir(getPath(window.SignalContext.config.userDataPath));
+    return readdir(
+      getAttachmentsPath(window.SignalContext.config.userDataPath)
+    );
   }
   it('replaces attachment on message', async () => {
     const attachment = composeAttachment({
@@ -143,7 +147,7 @@ describe('addAttachmentToMessage', () => {
     );
 
     const message = await getMessageById(messageId);
-    assert.deepStrictEqual(message?.attributes.preview?.[0].image, {
+    assert.deepStrictEqual(message?.attributes.preview?.[0]?.image, {
       ...attachment,
       path: '/path/to/attachment',
     });
@@ -177,7 +181,7 @@ describe('addAttachmentToMessage', () => {
 
     const message = await getMessageById(messageId);
     assert.deepStrictEqual(
-      message?.attributes.editHistory?.[0].preview?.[0].image,
+      message?.attributes.editHistory?.[0]?.preview?.[0]?.image,
       {
         ...attachment,
         path: '/path/to/attachment',
@@ -211,7 +215,7 @@ describe('addAttachmentToMessage', () => {
 
     const message = await getMessageById(messageId);
     assert.deepStrictEqual(
-      message?.attributes.quote?.attachments[0].thumbnail,
+      message?.attributes.quote?.attachments[0]?.thumbnail,
       {
         ...attachment,
         path: '/path/to/attachment',
@@ -254,7 +258,7 @@ describe('addAttachmentToMessage', () => {
 
     const message = await getMessageById(messageId);
     assert.deepStrictEqual(
-      message?.attributes.editHistory?.[0].quote?.attachments[0].thumbnail,
+      message?.attributes.editHistory?.[0]?.quote?.attachments[0]?.thumbnail,
       {
         ...attachment,
         path: '/path/to/attachment',
@@ -390,11 +394,11 @@ describe('addAttachmentToMessage', () => {
 
     const message = await getMessageById(messageId);
     assert.deepStrictEqual(
-      message?.attributes.editHistory?.[0].body,
+      message?.attributes.editHistory?.[0]?.body,
       'attachmenttext'
     );
     assert.deepStrictEqual(
-      message?.attributes.editHistory?.[0].bodyAttachment,
+      message?.attributes.editHistory?.[0]?.bodyAttachment,
       {
         ...attachment,
         path: 'bodyAttachmentPath',

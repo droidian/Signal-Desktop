@@ -3,13 +3,20 @@
 
 import isNumber from 'lodash/isNumber.js';
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import type { ServiceIdString, AciString } from '../types/ServiceId.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+import type { ServiceIdString, AciString } from '../types/ServiceId.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 import {
   isDirectConversation,
   isGroupV2,
-} from './whatTypeOfConversation.dom.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from './whatTypeOfConversation.dom.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { truncateString } from './truncateString.std.ts';
+import {
+  STRING_BYTE_LIMIT,
+  STRING_GRAPHEME_LIMIT,
+} from '../types/GroupMemberLabels.std.ts';
+import { isConversationAccepted } from './isConversationAccepted.preload.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 export function isMemberPending(
   conversationAttrs: Pick<
@@ -177,6 +184,8 @@ export function getMemberships(
 ): ReadonlyArray<{
   aci: AciString;
   isAdmin: boolean;
+  labelEmoji: Emoji.Variant | undefined;
+  labelString: string | undefined;
 }> {
   if (!isGroupV2(conversationAttrs)) {
     return EMPTY_ARRAY;
@@ -186,6 +195,18 @@ export function getMemberships(
   return members.map(member => ({
     isAdmin: member.role === Proto.Member.Role.ADMINISTRATOR,
     aci: member.aci,
+    ...(isConversationAccepted(conversationAttrs) ||
+    member.aci === itemStorage.user.getCheckedAci()
+      ? {
+          labelEmoji: member.labelEmoji,
+          labelString: member.labelString
+            ? truncateString(member.labelString.trim(), {
+                byteLimit: STRING_BYTE_LIMIT,
+                graphemeLimit: STRING_GRAPHEME_LIMIT,
+              })
+            : undefined,
+        }
+      : { labelEmoji: undefined, labelString: undefined }),
   }));
 }
 
@@ -196,14 +217,14 @@ export function areWePending(
   >
 ): boolean {
   const ourAci = itemStorage.user.getAci();
-  const ourPni = itemStorage.user.getPni();
+  const ourPni = itemStorage.user.getOptionalPni();
   return Boolean(
     ourAci &&
-      (isMemberPending(conversationAttrs, ourAci) ||
-        Boolean(
-          ourPni &&
-            !isMember(conversationAttrs, ourAci) &&
-            isMemberPending(conversationAttrs, ourPni)
-        ))
+    (isMemberPending(conversationAttrs, ourAci) ||
+      Boolean(
+        ourPni &&
+        !isMember(conversationAttrs, ourAci) &&
+        isMemberPending(conversationAttrs, ourPni)
+      ))
   );
 }

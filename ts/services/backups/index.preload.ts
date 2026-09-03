@@ -5,9 +5,9 @@ import { pipeline } from 'node:stream/promises';
 import { PassThrough } from 'node:stream';
 import type { Readable, Writable } from 'node:stream';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import fsExtra from 'fs-extra';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { createGzip, createGunzip } from 'node:zlib';
 import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 import lodash from 'lodash';
@@ -16,108 +16,110 @@ import { BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys.js';
 import lodashFp from 'lodash/fp.js';
 import { ipcRenderer } from 'electron';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import * as Bytes from '../../Bytes.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { TEMP_PATH } from '../../util/basePaths.preload.js';
-import {
-  getAbsoluteDownloadsPath,
-  saveAttachmentToDisk,
-} from '../../util/migrations.preload.js';
-import { waitForAllBatchers } from '../../util/batcher.std.js';
-import { flushAllWaitBatchers } from '../../util/waitBatcher.std.js';
-import { DelimitedStream } from '../../util/DelimitedStream.node.js';
-import { appendPaddingStream } from '../../util/logPadding.node.js';
-import { prependStream } from '../../util/prependStream.node.js';
-import { appendMacStream } from '../../util/appendMacStream.node.js';
-import { getMacAndUpdateHmac } from '../../util/getMacAndUpdateHmac.node.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { HOUR, SECOND } from '../../util/durations/index.std.js';
-import type { ExplodePromiseResultType } from '../../util/explodePromise.std.js';
-import { explodePromise } from '../../util/explodePromise.std.js';
-import type { RetryBackupImportValue } from '../../state/ducks/installer.preload.js';
-import { CipherType, HashType } from '../../types/Crypto.std.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { TEMP_PATH } from '../../util/basePaths.preload.ts';
+import { getAbsoluteDownloadsPath } from '../../util/migrations.preload.ts';
+import { waitForAllBatchers } from '../../util/batcher.std.ts';
+import { flushAllWaitBatchers } from '../../util/waitBatcher.std.ts';
+import { DelimitedStream } from '../../util/DelimitedStream.node.ts';
+import { appendPaddingStream } from '../../util/logPadding.node.ts';
+import { prependStream } from '../../util/prependStream.node.ts';
+import { appendMacStream } from '../../util/appendMacStream.node.ts';
+import { getMacAndUpdateHmac } from '../../util/getMacAndUpdateHmac.node.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { HOUR, SECOND } from '../../util/durations/index.std.ts';
+import type { ExplodePromiseResultType } from '../../util/explodePromise.std.ts';
+import { explodePromise } from '../../util/explodePromise.std.ts';
+import type { RetryBackupImportValue } from '../../state/ducks/installer.preload.ts';
+import { CipherType, HashType } from '../../types/Crypto.std.ts';
 import {
   InstallScreenBackupStep,
   InstallScreenBackupError,
-} from '../../types/InstallScreen.std.js';
-import * as Errors from '../../types/errors.std.js';
+} from '../../types/InstallScreen.std.ts';
+import * as Errors from '../../types/errors.std.ts';
 import {
   BackupCredentialType,
   type BackupsSubscriptionType,
   type BackupStatusType,
-} from '../../types/backups.node.js';
-import { HTTPError } from '../../types/HTTPError.std.js';
-import { constantTimeEqual } from '../../Crypto.node.js';
-import { measureSize } from '../../AttachmentCrypto.node.js';
-import { signalProtocolStore } from '../../SignalProtocolStore.preload.js';
-import { isTestOrMockEnvironment } from '../../environment.std.js';
-import { runStorageServiceSyncJob } from '../storage.preload.js';
-import { BackupExportStream } from './export.preload.js';
-import { BackupImportStream } from './import.preload.js';
+} from '../../types/backups.node.ts';
+import { HTTPError } from '../../types/HTTPError.std.ts';
+import { constantTimeEqual } from '../../Crypto.node.ts';
+import { measureSize } from '../../AttachmentCrypto.node.ts';
+import { signalProtocolStore } from '../../SignalProtocolStore.preload.ts';
+import { isTestOrMockEnvironment } from '../../environment.std.ts';
+import { runStorageServiceSyncJob } from '../storage.preload.ts';
+import { BackupExportStream } from './export.preload.ts';
+import { BackupImportStream } from './import.preload.ts';
 import {
   getBackupId,
   getKeyMaterial,
   getLocalBackupMetadataKey,
-} from './crypto.preload.js';
-import { BackupCredentials } from './credentials.preload.js';
-import { BackupAPI } from './api.preload.js';
+} from './crypto.preload.ts';
+import { BackupCredentials } from './credentials.preload.ts';
+import { BackupAPI } from './api.preload.ts';
 import {
   validateBackup,
   validateBackupStream,
   ValidationType,
-} from './validator.preload.js';
+} from './validator.preload.ts';
 import type {
   BackupExportOptions,
   BackupImportOptions,
   ExportResultType,
   LocalBackupExportResultType,
   OnProgressCallback,
-} from './types.std.js';
+} from './types.std.ts';
 import {
   BackupInstallerError,
   BackupDownloadFailedError,
   BackupImportCanceledError,
   BackupProcessingError,
   RelinkRequestedError,
-} from './errors.std.js';
-import { FileStream } from './util/FileStream.node.js';
-import { ToastType } from '../../types/Toast.dom.js';
-import { isAdhoc, isNightly } from '../../util/version.std.js';
-import { isLocalBackupsEnabled } from '../../util/isLocalBackupsEnabled.dom.js';
-import type { ValidateLocalBackupStructureResultType } from './util/localBackup.node.js';
+} from './errors.std.ts';
+import { FileStream } from './util/FileStream.node.ts';
+import { ToastType } from '../../types/Toast.dom.tsx';
+import { isAdhoc, isNightly } from '../../util/version.std.ts';
+import { isLocalBackupsEnabled } from '../../util/isLocalBackupsEnabled.preload.ts';
+import type { ValidateLocalBackupStructureResultType } from './util/localBackup.node.ts';
 import {
   writeLocalBackupMetadata,
   verifyLocalBackupMetadata,
   writeLocalBackupFilesList,
   readLocalBackupFilesList,
+  pruneLocalBackups,
   validateLocalBackupStructure,
-} from './util/localBackup.node.js';
+  getLocalBackupFilesDirectory,
+  getLocalBackupSnapshotDirectory,
+  LOCAL_BACKUP_DIR_NAME,
+} from './util/localBackup.node.ts';
 import {
   AttachmentPermanentlyMissingError,
   getJobIdForLogging,
   runAttachmentBackupJob,
-} from '../../jobs/AttachmentLocalBackupManager.preload.js';
-import { decipherWithAesKey } from '../../util/decipherWithAesKey.node.js';
-import { areRemoteBackupsTurnedOn } from '../../util/isBackupEnabled.preload.js';
+} from '../../jobs/AttachmentLocalBackupManager.preload.ts';
+import { decipherWithAesKey } from '../../util/decipherWithAesKey.node.ts';
+import { areRemoteBackupsTurnedOn } from '../../util/isBackupEnabled.preload.ts';
 import {
   isOnline,
   unlink as unlinkAccount,
-} from '../../textsecure/WebAPI.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import { LOCAL_BACKUP_VERSION } from './constants.std.js';
-import { getTimestampForFolder } from '../../util/timestamp.std.js';
-import { MEBIBYTE } from '../../types/AttachmentSize.std.js';
+} from '../../textsecure/WebAPI.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { addSensitivePath } from '../../util/privacy.node.ts';
+import { LOCAL_BACKUP_VERSION } from './constants.std.ts';
+import { getTimestampForFolder } from '../../util/timestamp.std.ts';
+import { MEBIBYTE } from '../../types/AttachmentSize.std.ts';
 import {
   NotEnoughStorageError,
   RanOutOfStorageError,
   StoragePermissionsError,
-} from '../../types/Backups.std.js';
-import { getFreeDiskSpace } from '../../util/getFreeDiskSpace.node.js';
+} from '../../types/LocalExport.std.ts';
+import { getFreeDiskSpace } from '../../util/getFreeDiskSpace.node.ts';
 
-const { ensureFile } = fsExtra;
+const { ensureFile, exists } = fsExtra;
 
 const { throttle } = lodashFp;
 
@@ -128,6 +130,9 @@ const log = createLogger('backupsService');
 const IV_LENGTH = 16;
 
 const BACKUP_REFRESH_INTERVAL = 24 * HOUR;
+
+const MIMINUM_DISK_SPACE_FOR_LOCAL_EXPORT = 200 * MEBIBYTE;
+const LOCAL_BACKUP_SNAPSHOTS_TO_KEEP = 2;
 
 export type DownloadOptionsType = Readonly<{
   onProgress?: (
@@ -140,7 +145,7 @@ export type DownloadOptionsType = Readonly<{
 
 type DoDownloadOptionsType = Readonly<{
   downloadPath: string;
-  ephemeralKey?: Uint8Array;
+  ephemeralKey?: Uint8Array<ArrayBuffer>;
   onProgress?: (
     backupStep: InstallScreenBackupStep,
     currentBytes: number,
@@ -219,10 +224,10 @@ export class BackupsService {
     const absoluteDownloadPath = getAbsoluteDownloadsPath(backupDownloadPath);
     let hasBackup = false;
 
-    // eslint-disable-next-line no-constant-condition
+    // oxlint-disable-next-line no-constant-condition
     while (true) {
       try {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         hasBackup = await this.#doDownloadAndImport({
           downloadPath: absoluteDownloadPath,
           onProgress: options.onProgress,
@@ -259,7 +264,7 @@ export class BackupsService {
         const nextStep =
           error instanceof BackupImportCanceledError
             ? 'cancel'
-            : // eslint-disable-next-line no-await-in-loop
+            : // oxlint-disable-next-line no-await-in-loop
               await this.#downloadRetryPromise.promise;
         if (nextStep === 'retry') {
           log.warn('backups.downloadAndImport: retrying');
@@ -274,11 +279,11 @@ export class BackupsService {
         // getting an error (potentially fatal).
         log.warn('backups.downloadAndImport: unlinking');
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await this.#unlinkAndDeleteAllData();
 
         try {
-          // eslint-disable-next-line no-await-in-loop
+          // oxlint-disable-next-line no-await-in-loop
           await unlink(absoluteDownloadPath);
         } catch {
           // Best-effort
@@ -324,6 +329,7 @@ export class BackupsService {
       const { totalBytes } = await this.exportToDisk(filePath, {
         type: 'remote',
         level: backupLevel,
+        abortSignal: new AbortController().signal,
       });
 
       await this.api.upload(filePath, totalBytes);
@@ -336,138 +342,67 @@ export class BackupsService {
     }
   }
 
-  public async exportLocalBackup(
-    backupsBaseDir: string,
-    options: BackupExportOptions
-  ): Promise<LocalBackupExportResultType> {
+  public async exportLocalBackup(options: {
+    backupsBaseDir: string;
+    abortSignal: AbortSignal;
+    onProgress: OnProgressCallback;
+  }): Promise<LocalBackupExportResultType> {
     strictAssert(isLocalBackupsEnabled(), 'Local backups must be enabled');
+    const fnLog = log.child('exportLocalBackup');
+    fnLog.info('starting...');
 
     if (isOnline()) {
       await this.#waitForEmptyQueues('backups.exportLocalBackup');
     } else {
-      log.info('exportLocalBackup: Offline; skipping wait for empty queues');
+      fnLog.info('offline; skipping wait for empty queues');
     }
 
-    const baseDir =
-      backupsBaseDir ??
-      join(window.SignalContext.getPath('userData'), 'SignalBackups');
-    const snapshotDir = join(
-      baseDir,
-      `signal-backup-${getTimestampForFolder()}`
-    );
-    await mkdir(snapshotDir, { recursive: true });
+    // Just in case it's been deleted, ensure the backup dir exists
+    await mkdir(options.backupsBaseDir, { recursive: true });
 
-    const isPlaintextExport = options.type === 'plaintext-export';
-    const mainProtoPath = join(
-      snapshotDir,
-      isPlaintextExport ? 'main.jsonl' : 'main'
-    );
-
-    log.info(`exportLocalBackup: starting with type=${options.type}`);
-
-    const exportResult = await this.exportToDisk(
-      mainProtoPath,
-      options.type === 'local-encrypted'
-        ? {
-            ...options,
-            localBackupSnapshotDir: snapshotDir,
-          }
-        : options
-    );
-
-    const { attachmentBackupJobs } = exportResult;
-    let totalAttachmentBytes = 0;
-    if (options.type === 'plaintext-export' && !options.shouldIncludeMedia) {
-      log.info(
-        `BackupExportStream: shouldIncludeMedia=false, not adding ${attachmentBackupJobs.length} attachment jobs`
+    const freeSpaceBytes = await getFreeDiskSpace(options.backupsBaseDir);
+    const bytesNeeded = MIMINUM_DISK_SPACE_FOR_LOCAL_EXPORT - freeSpaceBytes;
+    if (bytesNeeded > 0) {
+      fnLog.info(
+        `Not enough storage; only ${freeSpaceBytes} available, ${MIMINUM_DISK_SPACE_FOR_LOCAL_EXPORT} is minimum needed`
       );
-    } else if (
-      options.type === 'plaintext-export' ||
-      options.type === 'local-encrypted'
-    ) {
-      const onProgress =
-        options.type === 'plaintext-export' ? options.onProgress : undefined;
-      const abortSignal =
-        options.type === 'plaintext-export' ? options.abortSignal : undefined;
-      let currentBytes = 0;
-
-      log.info(
-        `BackupExportStream: About to process ${attachmentBackupJobs.length} jobs`
-      );
-      for (const job of attachmentBackupJobs) {
-        if (job.type !== 'local') {
-          log.error(
-            "BackupExportStream: Can't process remote backup jobs during local backup, skipping"
-          );
-          continue;
-        }
-
-        totalAttachmentBytes += job.data.size;
-      }
-
-      const freeSpaceBytes = await getFreeDiskSpace(baseDir);
-      const bufferBytes = 100 * MEBIBYTE;
-      const bytesNeeded = totalAttachmentBytes + bufferBytes - freeSpaceBytes;
-      if (bytesNeeded > 0) {
-        log.info(
-          `exportLocalBackup: Not enough storage; only ${freeSpaceBytes} available, ${totalAttachmentBytes} of attachments to export`
-        );
-        throw new NotEnoughStorageError(bytesNeeded);
-      }
-
-      for (const job of attachmentBackupJobs) {
-        if (job.type !== 'local') {
-          log.error(
-            'exportLocalBackup: Cannot process remote backup jobs during local backup, skipping'
-          );
-          continue;
-        }
-
-        if (abortSignal?.aborted) {
-          log.info(
-            'exportLocalBackup: Aborted; exiting before processing all attachment jobs'
-          );
-          throw new Error('User aborted the export!');
-        }
-
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await runAttachmentBackupJob(job, baseDir);
-
-          currentBytes += job.data.size;
-          onProgress?.(currentBytes, totalAttachmentBytes);
-        } catch (error) {
-          if (error instanceof AttachmentPermanentlyMissingError) {
-            log.error(
-              `${getJobIdForLogging(job)}: Attachment was not found; continuing with export`
-            );
-            currentBytes += job.data.size;
-            continue;
-          }
-
-          const stillToExportBytes = totalAttachmentBytes - currentBytes;
-          if (error.code === 'ENOSPC') {
-            throw new RanOutOfStorageError(stillToExportBytes);
-          }
-          if (error.code === 'EPERM' || error.code === 'EACCES') {
-            throw new StoragePermissionsError();
-          }
-
-          throw error;
-        }
-      }
     }
 
-    log.info('exportLocalBackup: writing metadata');
-    if (isPlaintextExport) {
-      const metadataPath = join(snapshotDir, 'metadata.json');
-      await writeFile(
-        metadataPath,
-        JSON.stringify({
-          version: LOCAL_BACKUP_VERSION,
-        })
+    const filesDir = getLocalBackupFilesDirectory({
+      backupsBaseDir: options.backupsBaseDir,
+    });
+
+    await mkdir(filesDir, { recursive: true });
+
+    const snapshotDir = getLocalBackupSnapshotDirectory(
+      options.backupsBaseDir,
+      Date.now()
+    );
+
+    if (await exists(snapshotDir)) {
+      throw new Error('snapshotDir already exists');
+    }
+
+    try {
+      await mkdir(snapshotDir, { recursive: true });
+
+      const exportResult = await this.exportToDisk(join(snapshotDir, 'main'), {
+        type: 'local-encrypted',
+        abortSignal: options.abortSignal,
+      });
+
+      fnLog.info('writing local backup files list');
+      const filesWritten = await writeLocalBackupFilesList({
+        snapshotDir,
+        mediaNames: exportResult.mediaNames,
+      });
+      const filesRead = await readLocalBackupFilesList(snapshotDir);
+      strictAssert(
+        isEqual(filesWritten, filesRead),
+        'exportBackup: Local backup files proto must match files written'
       );
-    } else {
+
+      fnLog.info('writing metadata');
       const metadataArgs = {
         snapshotDir,
         backupId: getBackupId(),
@@ -475,10 +410,125 @@ export class BackupsService {
       };
       await writeLocalBackupMetadata(metadataArgs);
       await verifyLocalBackupMetadata(metadataArgs);
+
+      await this.#runLocalAttachmentBackupJobs({
+        attachmentBackupJobs: exportResult.attachmentBackupJobs,
+        baseDir: options.backupsBaseDir,
+        onProgress: options.onProgress,
+        abortSignal: options.abortSignal,
+      });
+
+      try {
+        await pruneLocalBackups({
+          backupsBaseDir: options.backupsBaseDir,
+          numSnapshotsToKeep: LOCAL_BACKUP_SNAPSHOTS_TO_KEEP,
+        });
+      } catch (error) {
+        fnLog.warn(
+          'failed to prune old local backups',
+          Errors.toLogFormat(error)
+        );
+      }
+
+      return { ...exportResult, snapshotDir };
+    } catch (e) {
+      if (options.abortSignal.aborted) {
+        fnLog.warn('aborted', Errors.toLogFormat(e));
+      } else {
+        fnLog.error('encountered error', Errors.toLogFormat(e));
+      }
+
+      fnLog.info('Deleting just-created snapshot directory');
+      await rm(snapshotDir, { recursive: true, force: true });
+      fnLog.info('Deleted just-created directory');
+
+      // Prune to remove any files which may have been written before the error occurred
+      try {
+        await pruneLocalBackups({
+          backupsBaseDir: options.backupsBaseDir,
+          numSnapshotsToKeep: LOCAL_BACKUP_SNAPSHOTS_TO_KEEP,
+        });
+      } catch (error) {
+        fnLog.warn(
+          'failed to prune local backups after export error',
+          Errors.toLogFormat(error)
+        );
+      }
+
+      throw e;
+    }
+  }
+
+  async #runLocalAttachmentBackupJobs({
+    attachmentBackupJobs,
+    baseDir,
+    onProgress,
+    abortSignal,
+  }: {
+    attachmentBackupJobs: ExportResultType['attachmentBackupJobs'];
+    baseDir: string;
+    onProgress: OnProgressCallback;
+    abortSignal: AbortSignal;
+  }) {
+    let totalAttachmentBytes = 0;
+    let currentBytes = 0;
+
+    log.info(
+      `runLocalExportAttachmentBackupJobs: About to process ${attachmentBackupJobs.length} jobs`
+    );
+
+    for (const job of attachmentBackupJobs) {
+      strictAssert(job.type === 'local', 'must be local');
+      totalAttachmentBytes += job.data.size;
     }
 
-    log.info(`exportLocalBackup: exported to disk: ${snapshotDir}`);
-    return { ...exportResult, snapshotDir, totalAttachmentBytes };
+    const freeSpaceBytes = await getFreeDiskSpace(baseDir);
+    const bufferBytes = 100 * MEBIBYTE;
+    const bytesNeeded = totalAttachmentBytes + bufferBytes - freeSpaceBytes;
+
+    if (bytesNeeded > 0) {
+      log.info(
+        `exportLocalBackup: Not enough storage; only ${freeSpaceBytes} available, ${totalAttachmentBytes} of attachments to export`
+      );
+      throw new NotEnoughStorageError(bytesNeeded);
+    }
+
+    for (const job of attachmentBackupJobs) {
+      strictAssert(job.type === 'local', 'must be local');
+
+      if (abortSignal.aborted) {
+        log.info(
+          'exportLocalBackup: Aborted; exiting before processing all attachment jobs'
+        );
+        throw new Error('User aborted the export!');
+      }
+
+      try {
+        // oxlint-disable-next-line no-await-in-loop
+        await runAttachmentBackupJob(job, baseDir);
+
+        currentBytes += job.data.size;
+        onProgress(currentBytes, totalAttachmentBytes);
+      } catch (error) {
+        if (error instanceof AttachmentPermanentlyMissingError) {
+          log.error(
+            `${getJobIdForLogging(job)}: Attachment was not found; continuing with export`
+          );
+          currentBytes += job.data.size;
+          continue;
+        }
+
+        const stillToExportBytes = totalAttachmentBytes - currentBytes;
+        if (error.code === 'ENOSPC') {
+          throw new RanOutOfStorageError(stillToExportBytes);
+        }
+        if (error.code === 'EPERM' || error.code === 'EACCES') {
+          throw new StoragePermissionsError();
+        }
+
+        throw error;
+      }
+    }
   }
 
   public async stageLocalBackupForImport(
@@ -488,11 +538,26 @@ export class BackupsService {
     const { success, error } = result;
     if (success) {
       this.#localBackupSnapshotDir = snapshotDir;
+
+      if (!isTestOrMockEnvironment()) {
+        // Regenerate QR code without link & sync option
+        window.reduxActions.installer.startInstaller();
+
+        // oxlint-disable-next-line no-alert
+        window.alert(
+          'Staged backup successfully. Please link to perform import.'
+        );
+      }
+
       log.info(
         `stageLocalBackupForImport: Staged ${snapshotDir} for import. Please link to perform import.`
       );
     } else {
       this.#localBackupSnapshotDir = undefined;
+      // oxlint-disable-next-line no-alert
+      window.alert(
+        'Invalid backup snapshot directory; make sure you choose a snapshot directory (e.g. `signal-backup-2026-01-01-12-00-00`)'
+      );
       log.info(
         `stageLocalBackupForImport: Invalid snapshot ${snapshotDir}. Error: ${error}.`
       );
@@ -532,10 +597,10 @@ export class BackupsService {
   // Test harness
   public async exportBackupData(
     options: BackupExportOptions
-  ): Promise<{ data: Uint8Array } & ExportResultType> {
+  ): Promise<{ data: Uint8Array<ArrayBuffer> } & ExportResultType> {
     const sink = new PassThrough();
 
-    const chunks = new Array<Uint8Array>();
+    const chunks = new Array<Uint8Array<ArrayBuffer>>();
     sink.on('data', chunk => chunks.push(chunk));
     const result = await this.#exportBackup(sink, options);
 
@@ -567,25 +632,6 @@ export class BackupsService {
     return exportResult;
   }
 
-  public async _internalExportLocalBackup(): Promise<ValidationResultType> {
-    try {
-      const { canceled, dirPath: backupsBaseDir } = await ipcRenderer.invoke(
-        'show-open-folder-dialog'
-      );
-      if (canceled || !backupsBaseDir) {
-        return { error: 'Backups directory not selected' };
-      }
-
-      const result = await this.exportLocalBackup(backupsBaseDir, {
-        type: 'local-encrypted',
-        localBackupSnapshotDir: backupsBaseDir,
-      });
-      return { result };
-    } catch (error) {
-      return { error: Errors.toLogFormat(error) };
-    }
-  }
-
   public async exportPlaintext({
     abortSignal,
     onProgress,
@@ -597,39 +643,75 @@ export class BackupsService {
     shouldIncludeMedia: boolean;
     targetPath: string;
   }): Promise<LocalBackupExportResultType> {
+    let exportDir: string | undefined;
+    const fnLog = log.child('exportPlaintext');
     try {
-      log.info('exportPlaintext starting...');
+      fnLog.info('starting...');
 
       const freeSpaceBytes = await getFreeDiskSpace(targetPath);
-      const minimumBytes = 200 * MEBIBYTE;
-      const bytesNeeded = minimumBytes - freeSpaceBytes;
+      const bytesNeeded = MIMINUM_DISK_SPACE_FOR_LOCAL_EXPORT - freeSpaceBytes;
       if (bytesNeeded > 0) {
-        log.info(
-          `exportPlaintext: Not enough storage; only ${freeSpaceBytes} available, ${minimumBytes} is minimum needed`
+        fnLog.info(
+          `Not enough storage; only ${freeSpaceBytes} available, ${MIMINUM_DISK_SPACE_FOR_LOCAL_EXPORT} is minimum needed`
         );
         throw new NotEnoughStorageError(bytesNeeded);
       }
 
-      const exportDir = join(
-        targetPath,
-        `signal-export-${getTimestampForFolder()}`
-      );
+      exportDir = join(targetPath, `signal-export-${getTimestampForFolder()}`);
 
       await mkdir(exportDir, { recursive: true });
 
-      const result = await this.exportLocalBackup(exportDir, {
-        abortSignal,
-        type: 'plaintext-export',
-        onProgress,
-        shouldIncludeMedia,
-      });
+      if (isOnline()) {
+        await this.#waitForEmptyQueues('backups.exportPlaintext');
+      } else {
+        fnLog.info('offline; skipping wait for empty queues');
+      }
 
-      log.info('exportPlaintext complete!');
+      fnLog.info('starting...');
+
+      await mkdir(exportDir, { recursive: true });
+
+      const exportResult = await this.exportToDisk(
+        join(exportDir, 'main.jsonl'),
+        {
+          type: 'plaintext-export',
+          abortSignal,
+        }
+      );
+
+      fnLog.info('writing metadata');
+
+      const metadataPath = join(exportDir, 'metadata.json');
+      await writeFile(
+        metadataPath,
+        JSON.stringify({
+          version: LOCAL_BACKUP_VERSION,
+        })
+      );
+
+      if (shouldIncludeMedia) {
+        await this.#runLocalAttachmentBackupJobs({
+          attachmentBackupJobs: exportResult.attachmentBackupJobs,
+          baseDir: exportDir,
+          onProgress,
+          abortSignal,
+        });
+      }
+
+      fnLog.info('finished');
+
       return {
-        ...result,
+        ...exportResult,
         snapshotDir: exportDir,
       };
     } catch (error) {
+      fnLog.warn('encountered error', Errors.toLogFormat(error));
+      if (exportDir) {
+        fnLog.info('Deleting export directory');
+        await rm(exportDir, { recursive: true, force: true });
+        fnLog.info('Export directory deleted');
+      }
+
       if (error.code === 'EPERM' || error.code === 'EACCES') {
         throw new StoragePermissionsError();
       }
@@ -654,45 +736,48 @@ export class BackupsService {
   }
 
   // Test harness
-  public async _internalValidate(): Promise<ValidationResultType> {
+  public async _internalValidate(
+    exportOptions: BackupExportOptions = {
+      type: 'local-encrypted',
+      abortSignal: new AbortController().signal,
+    }
+  ): Promise<ValidationResultType> {
     try {
+      log.info('internal validation: starting');
       const start = Date.now();
 
+      window.IPC.startTrackingQueryStats();
       const recordStream = new BackupExportStream({
-        type: 'remote',
-        level: BackupLevel.Free,
+        ...exportOptions,
+        validationRun: true,
       });
 
       recordStream.run();
 
       const totalBytes = await validateBackupStream(recordStream);
+      window.IPC.stopTrackingQueryStats({
+        epochName: 'Internal Validate Backup',
+      });
 
       const duration = Date.now() - start;
 
+      log.info('internal validation: succeeded');
       return {
         result: {
           attachmentBackupJobs: recordStream.getAttachmentBackupJobs(),
+          mediaNames: recordStream.getMediaNames(),
           duration,
           stats: recordStream.getStats(),
           totalBytes,
         },
       };
     } catch (error) {
+      log.warn(
+        'internal validation: failed with errors\n',
+        Errors.toLogFormat(error)
+      );
       return { error: Errors.toLogFormat(error) };
     }
-  }
-
-  // Test harness
-  public async exportWithDialog(): Promise<void> {
-    const { data } = await this.exportBackupData({
-      type: 'remote',
-      level: BackupLevel.Free,
-    });
-
-    await saveAttachmentToDisk({
-      name: 'backup.bin',
-      data,
-    });
   }
 
   public async importFromDisk(
@@ -757,7 +842,7 @@ export class BackupsService {
 
         // First pass - don't decrypt, only verify mac
         let hmac = createHmac(HashType.size256, macKey);
-        let theirMac: Uint8Array | undefined;
+        let theirMac: Uint8Array<ArrayBuffer> | undefined;
         let totalBytes = 0;
 
         const sink = new PassThrough();
@@ -869,15 +954,20 @@ export class BackupsService {
     log.info('fetchAndSaveBackupCdnObjectMetadata: clearing existing metadata');
     await DataWriter.clearAllBackupCdnObjectMetadata();
 
+    strictAssert(
+      areRemoteBackupsTurnedOn(),
+      'Remote backups must be turned on to fetch cdn metadata'
+    );
+
     let cursor: string | undefined;
     const PAGE_SIZE = 1000;
     let numObjects = 0;
     do {
       log.info('fetchAndSaveBackupCdnObjectMetadata: fetching next page');
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       const listResult = await this.api.listMedia({ cursor, limit: PAGE_SIZE });
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await DataWriter.saveBackupCdnObjectMetadata(
         listResult.storedMediaObjects.map(object => ({
           mediaId: object.mediaId,
@@ -1080,26 +1170,35 @@ export class BackupsService {
     this.#isRunning = 'export';
 
     const start = Date.now();
+    window.IPC.startTrackingQueryStats();
     try {
+      if (options.type === 'remote') {
+        strictAssert(
+          areRemoteBackupsTurnedOn(),
+          'Remote backups must be turned on for a remote export'
+        );
+      }
+
       // TODO (DESKTOP-7168): Update mock-server to support this endpoint
       if (window.SignalCI || options.type === 'cross-client-integration-test') {
         strictAssert(
           isTestOrMockEnvironment(),
-          'exportBackup: Plaintext backups can be exported only in test harness'
+          'exportBackup: cross-client-integration tests must only be run in test harness'
         );
-      } else if (
-        !isOnline() &&
-        (options.type === 'local-encrypted' ||
-          options.type === 'plaintext-export')
-      ) {
-        log.info(
-          `exportBackup: Skipping CDN update; offline at type is ${options.type}`
-        );
-      } else {
-        // We first fetch the latest info on what's on the CDN, since this affects the
-        // filePointers we will generate during export
-        log.info('exportBackup: Fetching latest backup CDN metadata');
-        await this.fetchAndSaveBackupCdnObjectMetadata();
+      }
+
+      switch (options.type) {
+        case 'remote':
+          log.info('exportBackup: Fetching latest backup CDN metadata');
+          await this.fetchAndSaveBackupCdnObjectMetadata();
+          break;
+        case 'cross-client-integration-test':
+        case 'local-encrypted':
+        case 'plaintext-export':
+          // no need to fetch what's on backup CDN
+          break;
+        default:
+          throw missingCaseError(options);
       }
 
       const { aesKey, macKey } = getKeyMaterial();
@@ -1127,7 +1226,8 @@ export class BackupsService {
                 totalBytes = size;
               },
             }),
-            sink
+            sink,
+            { signal: options.abortSignal }
           );
           break;
         case 'cross-client-integration-test':
@@ -1142,7 +1242,8 @@ export class BackupsService {
                 totalBytes = size;
               },
             }),
-            sink
+            sink,
+            { signal: options.abortSignal }
           );
           break;
         case 'plaintext-export':
@@ -1153,36 +1254,24 @@ export class BackupsService {
                 totalBytes = size;
               },
             }),
-            sink
+            sink,
+            { signal: options.abortSignal }
           );
           break;
         default:
           throw missingCaseError(type);
       }
 
-      if (type === 'local-encrypted') {
-        log.info('exportBackup: writing local backup files list');
-        const filesWritten = await writeLocalBackupFilesList({
-          snapshotDir: options.localBackupSnapshotDir,
-          mediaNamesIterator: recordStream.getMediaNamesIterator(),
-        });
-        const filesRead = await readLocalBackupFilesList(
-          options.localBackupSnapshotDir
-        );
-        strictAssert(
-          isEqual(filesWritten, filesRead),
-          'exportBackup: Local backup files proto must match files written'
-        );
-      }
-
       const duration = Date.now() - start;
       return {
         attachmentBackupJobs: recordStream.getAttachmentBackupJobs(),
+        mediaNames: recordStream.getMediaNames(),
         totalBytes,
         stats: recordStream.getStats(),
         duration,
       };
     } finally {
+      window.IPC.stopTrackingQueryStats({ epochName: 'Backup Export' });
       log.info('exportBackup: finished...');
       this.#isRunning = false;
     }
@@ -1229,7 +1318,10 @@ export class BackupsService {
   }
 
   async #waitForEmptyQueues(
-    reason: 'backups.upload' | 'backups.exportLocalBackup'
+    reason:
+      | 'backups.upload'
+      | 'backups.exportPlaintext'
+      | 'backups.exportLocalBackup'
   ) {
     // Make sure we are up-to-date on storage service
     {
@@ -1343,16 +1435,63 @@ export class BackupsService {
   }
 
   async pickLocalBackupFolder(): Promise<string | undefined> {
-    const { canceled, dirPath: snapshotDir } = await ipcRenderer.invoke(
+    const { canceled, dirPath: backupsParentDir } = await ipcRenderer.invoke(
       'show-open-folder-dialog'
     );
-    if (canceled || !snapshotDir) {
+    if (canceled || !backupsParentDir) {
       return;
     }
 
-    drop(itemStorage.put('localBackupFolder', snapshotDir));
-    return snapshotDir;
+    const localBackupsBaseDir = join(backupsParentDir, LOCAL_BACKUP_DIR_NAME);
+
+    await mkdir(localBackupsBaseDir, { recursive: true });
+
+    await itemStorage.put('localBackupFolder', localBackupsBaseDir);
+    addSensitivePath(localBackupsBaseDir);
+    return localBackupsBaseDir;
+  }
+
+  async disableLocalBackups({
+    deleteExistingBackups,
+  }: {
+    deleteExistingBackups: boolean;
+  }): Promise<void> {
+    const backupsBaseDir = itemStorage.get('localBackupFolder');
+
+    await Promise.all([
+      itemStorage.remove('lastLocalBackup'),
+      itemStorage.remove('localBackupFolder'),
+      itemStorage.remove('backupKeyViewedHash'),
+    ]);
+
+    if (deleteExistingBackups) {
+      if (!backupsBaseDir) {
+        log.error('disableLocalBackups: backups dir not set');
+        return;
+      }
+
+      if (basename(backupsBaseDir) !== LOCAL_BACKUP_DIR_NAME) {
+        log.warn(
+          'disableLocalBackups: backups dir does not have expected name, bailing on deleting backups'
+        );
+        return;
+      }
+
+      await rm(backupsBaseDir, {
+        force: true,
+        recursive: true,
+        maxRetries: 10,
+      });
+      log.info('disableLocalBackups: deleted backups directory');
+    }
   }
 }
 
 export const backupsService = new BackupsService();
+
+itemStorage.onready(() => {
+  const localBackupFolder = itemStorage.get('localBackupFolder');
+  if (localBackupFolder) {
+    addSensitivePath(localBackupFolder);
+  }
+});

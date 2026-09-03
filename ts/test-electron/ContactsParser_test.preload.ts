@@ -15,33 +15,32 @@ import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import fse from 'fs-extra';
 
-import protobuf from '../protobuf/wrap.std.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Bytes from '../Bytes.std.js';
-import * as Errors from '../types/errors.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import * as Errors from '../types/errors.std.ts';
 import {
   getAbsoluteAttachmentPath,
-  deleteAttachmentData,
+  maybeDeleteAttachmentFile,
   readAttachmentData,
-} from '../util/migrations.preload.js';
-import { APPLICATION_OCTET_STREAM } from '../types/MIME.std.js';
-import { type AciString, generateAci } from '../types/ServiceId.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+} from '../util/migrations.preload.ts';
+import { APPLICATION_OCTET_STREAM } from '../types/MIME.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 import {
   ParseContactsTransform,
   parseContactsV2,
-} from '../textsecure/ContactsParser.preload.js';
-import type { ContactDetailsWithAvatar } from '../textsecure/ContactsParser.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { toAciObject } from '../util/ServiceId.node.js';
+} from '../textsecure/ContactsParser.preload.ts';
+import type { ContactDetailsWithAvatar } from '../textsecure/ContactsParser.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { encodeDelimited } from '../util/encodeDelimited.std.ts';
+import { toAciObject } from '../util/ServiceId.node.ts';
 import {
   generateKeys,
   encryptAttachmentV2ToDisk,
-} from '../AttachmentCrypto.node.js';
+} from '../AttachmentCrypto.node.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const log = createLogger('ContactsParser_test');
-
-const { Writer } = protobuf;
 
 const DEFAULT_ACI = generateAci();
 
@@ -83,7 +82,7 @@ describe('ContactsParser', () => {
         await Promise.all(contacts.map(contact => verifyContact(contact)));
       } finally {
         if (path) {
-          await deleteAttachmentData(path);
+          await maybeDeleteAttachmentFile(path);
         }
       }
     });
@@ -115,7 +114,7 @@ describe('ContactsParser', () => {
 
       try {
         const bytes = Bytes.concatenate([
-          generatePrefixedContact(undefined),
+          ...generatePrefixedContact(undefined),
           getTestBuffer(),
         ]);
 
@@ -144,12 +143,15 @@ describe('ContactsParser', () => {
 });
 
 class SmallChunksTransform extends Transform {
-  constructor(private chunkSize: number) {
+  readonly #chunkSize: number;
+
+  constructor(chunkSize: number) {
     super();
+    this.#chunkSize = chunkSize;
   }
 
   override _transform(
-    incomingChunk: Buffer | undefined,
+    incomingChunk: Buffer<ArrayBuffer> | undefined,
     _encoding: string,
     done: (error?: Error) => void
   ) {
@@ -161,16 +163,16 @@ class SmallChunksTransform extends Transform {
     try {
       const totalSize = incomingChunk.byteLength;
 
-      const chunkCount = Math.floor(totalSize / this.chunkSize);
-      const remainder = totalSize % this.chunkSize;
+      const chunkCount = Math.floor(totalSize / this.#chunkSize);
+      const remainder = totalSize % this.#chunkSize;
 
       for (let i = 0; i < chunkCount; i += 1) {
-        const start = i * this.chunkSize;
-        const end = start + this.chunkSize;
+        const start = i * this.#chunkSize;
+        const end = start + this.#chunkSize;
         this.push(incomingChunk.subarray(start, end));
       }
       if (remainder > 0) {
-        this.push(incomingChunk.subarray(chunkCount * this.chunkSize));
+        this.push(incomingChunk.subarray(chunkCount * this.#chunkSize));
       }
     } catch (error) {
       done(error);
@@ -181,7 +183,7 @@ class SmallChunksTransform extends Transform {
   }
 }
 
-function generateAvatar(): Uint8Array {
+function generateAvatar(): Uint8Array<ArrayBuffer> {
   const result = new Uint8Array(255);
   for (let i = 0; i < result.length; i += 1) {
     result[i] = i;
@@ -189,13 +191,13 @@ function generateAvatar(): Uint8Array {
   return result;
 }
 
-function getTestBuffer(): Uint8Array {
+function getTestBuffer(): Uint8Array<ArrayBuffer> {
   const avatarBuffer = generateAvatar();
   const prefixedContact = generatePrefixedContact(avatarBuffer);
 
-  const chunks: Array<Uint8Array> = [];
+  const chunks: Array<Uint8Array<ArrayBuffer>> = [];
   for (let i = 0; i < 3; i += 1) {
-    chunks.push(prefixedContact);
+    chunks.push(...prefixedContact);
     chunks.push(avatarBuffer);
   }
 
@@ -203,22 +205,23 @@ function getTestBuffer(): Uint8Array {
 }
 
 function generatePrefixedContact(
-  avatarBuffer: Uint8Array | undefined,
+  avatarBuffer: Uint8Array<ArrayBuffer> | undefined,
   aci: AciString | null = DEFAULT_ACI
-) {
+): [Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>] {
   const contactInfoBuffer = Proto.ContactDetails.encode({
     name: 'Zero Cool',
     number: '+10000000000',
+    aci: null,
     aciBinary: aci == null ? null : toAciObject(aci).getRawUuidBytes(),
     avatar: avatarBuffer
       ? { contentType: 'image/jpeg', length: avatarBuffer.length }
-      : undefined,
-  }).finish();
+      : null,
+    expireTimer: null,
+    expireTimerVersion: null,
+    inboxPosition: null,
+  });
 
-  const writer = new Writer();
-  writer.bytes(contactInfoBuffer);
-  const prefixedContact = writer.finish();
-  return prefixedContact;
+  return encodeDelimited(contactInfoBuffer);
 }
 
 async function verifyContact(
@@ -236,7 +239,7 @@ async function verifyContact(
   strictAssert(contact.avatar?.path, 'Avatar needs path');
 
   const avatarBytes = await readAttachmentData(contact.avatar);
-  await deleteAttachmentData(contact.avatar.path);
+  await maybeDeleteAttachmentFile(contact.avatar.path);
 
   for (let j = 0; j < 255; j += 1) {
     assert.strictEqual(avatarBytes[j], j);
@@ -253,6 +256,9 @@ async function parseContactsWithSmallChunkSize({
   const readStream = createReadStream(absolutePath);
   const smallChunksTransform = new SmallChunksTransform(32);
   const parseContactsTransform = new ParseContactsTransform();
+
+  const contacts = new Array<ContactDetailsWithAvatar>();
+  parseContactsTransform.on('data', contact => contacts.push(contact));
 
   try {
     await pipeline(readStream, smallChunksTransform, parseContactsTransform);
@@ -271,5 +277,5 @@ async function parseContactsWithSmallChunkSize({
 
   readStream.close();
 
-  return parseContactsTransform.contacts;
+  return contacts;
 }

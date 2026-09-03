@@ -1,21 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useContext } from 'react';
+import { useContext, type JSX } from 'react';
 import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
+import { MuteExpiration } from '@signalapp/types';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Row, PropsType } from './ConversationList.dom.js';
-import { ConversationList, RowType } from './ConversationList.dom.js';
-import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.js';
-import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.js';
-import { MessageStatuses } from '../types/message/MessageStatus.std.js';
-import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
-import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId.std.js';
+import type { Row, PropsType } from './ConversationList.dom.tsx';
+import { ConversationList, RowType } from './ConversationList.dom.tsx';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.tsx';
+import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.tsx';
+import { MessageStatuses } from '../types/message/MessageStatus.std.ts';
+import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.tsx';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
+import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { times, omit } = lodash;
 
@@ -27,7 +29,7 @@ export default {
   args: {},
 } satisfies Meta<PropsType>;
 
-const defaultConversations: Array<ConversationListItemPropsType> = [
+const defaultConversations = [
   getDefaultConversation({
     id: 'fred-convo',
     title: 'Fred Willard',
@@ -48,7 +50,7 @@ const defaultConversations: Array<ConversationListItemPropsType> = [
       'Pablo Diego José Francisco de Paula Juan Nepomuceno María de los Remedios Cipriano de la Santísima Trinidad Ruiz y Picasso',
   }),
   getDefaultConversation(),
-];
+] as const satisfies Array<ConversationListItemPropsType>;
 
 function Wrapper({
   rows,
@@ -66,6 +68,7 @@ function Wrapper({
       getPreferredBadge={() => undefined}
       getRow={(index: number) => rows[index]}
       shouldRecomputeRowHeights={false}
+      resetShouldRecomputeRowHeights={action('resetShouldRecomputeRowHeights')}
       i18n={i18n}
       blockConversation={action('blockConversation')}
       onPreloadConversation={action('onPreloadConversation')}
@@ -290,7 +293,6 @@ const createConversation = (
     deletedForEveryone: false,
   },
   lastUpdated: overrideProps.lastUpdated ?? Date.now() - 5 * 60 * 1000,
-  sharedGroupNames: [],
 });
 
 const renderConversation = (
@@ -350,7 +352,7 @@ export const ConversationWithDraft = (): JSX.Element =>
     shouldShowDraft: true,
     draftPreview: {
       text: "I'm in the middle of typing this...",
-      prefix: '🎤',
+      prefix: Emoji.MICROPHONE,
       bodyRanges: [],
     },
   });
@@ -509,7 +511,7 @@ export const ConversationMissingText = (): JSX.Element =>
 
 export const ConversationMutedConversation = (): JSX.Element =>
   renderConversation({
-    muteExpiresAt: Date.now() + 1000 * 60 * 60,
+    muteExpiresAt: MuteExpiration.fromNumber(Date.now() + 1000 * 60 * 60),
   });
 
 export const ConversationAtMention = (): JSX.Element =>
@@ -529,22 +531,22 @@ export function Headers(): JSX.Element {
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:conversationsHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:messagesHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByPhoneNumberHeader'),
         },
       ]}
@@ -558,7 +560,7 @@ export function FindByPhoneNumber(): JSX.Element {
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByPhoneNumberHeader'),
         },
         {
@@ -599,7 +601,7 @@ export function FindByUsername(): JSX.Element {
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {
@@ -664,7 +666,7 @@ export function KitchenSink(): JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:contactsHeader'),
         },
         {
@@ -673,7 +675,7 @@ export function KitchenSink(): JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:messagesHeader'),
         },
         {
@@ -686,7 +688,7 @@ export function KitchenSink(): JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {

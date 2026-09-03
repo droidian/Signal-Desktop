@@ -1,59 +1,31 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
-import lodash from 'lodash';
-import type {
-  ConversationType,
-  ShowConversationType,
-} from '../state/ducks/conversations.preload.js';
-import { I18n } from './I18n.dom.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { ConversationListItem } from './conversationList/ConversationListItem.dom.js';
+import { useState, type JSX } from 'react';
+import type { ShowConversationType } from '../state/ducks/conversations.preload.ts';
+import { I18n } from './I18n.dom.tsx';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { AdminMembershipType } from '../state/selectors/conversations.dom.ts';
+import type { ContactNameColorType } from '../types/Colors.std.ts';
+import { AnnouncementsOnlyGroupBannerAdminsDialog } from './AnnouncementsOnlyGroupBannerAdminsDialog.dom.tsx';
 
-const { noop } = lodash;
-
-type PropsType = {
-  groupAdmins: Array<ConversationType>;
+type AnnouncementsOnlyGroupBannerProps = Readonly<{
+  getPreferredBadge: PreferredBadgeSelectorType;
+  groupAdmins: Array<AdminMembershipType>;
+  memberColors: Map<string, ContactNameColorType>;
   i18n: LocalizerType;
   showConversation: ShowConversationType;
   theme: ThemeType;
-};
+}>;
 
-export function AnnouncementsOnlyGroupBanner({
-  groupAdmins,
-  i18n,
-  showConversation,
-  theme,
-}: PropsType): JSX.Element {
+export function AnnouncementsOnlyGroupBanner(
+  props: AnnouncementsOnlyGroupBannerProps
+): JSX.Element {
+  const { i18n } = props;
   const [isShowingAdmins, setIsShowingAdmins] = useState(false);
-
   return (
     <>
-      {isShowingAdmins && (
-        <Modal
-          modalName="AnnouncmentsOnlyGroupBanner"
-          i18n={i18n}
-          onClose={() => setIsShowingAdmins(false)}
-          title={i18n('icu:AnnouncementsOnlyGroupBanner--modal')}
-        >
-          {groupAdmins.map(admin => (
-            <ConversationListItem
-              {...admin}
-              draftPreview={undefined}
-              i18n={i18n}
-              lastMessage={undefined}
-              lastUpdated={undefined}
-              onClick={() => {
-                showConversation({ conversationId: admin.id });
-              }}
-              onMouseDown={noop}
-              theme={theme}
-            />
-          ))}
-        </Modal>
-      )}
       <div className="AnnouncementsOnlyGroupBanner__banner">
         <I18n
           i18n={i18n}
@@ -71,6 +43,16 @@ export function AnnouncementsOnlyGroupBanner({
           }}
         />
       </div>
+      <AnnouncementsOnlyGroupBannerAdminsDialog
+        i18n={i18n}
+        open={isShowingAdmins}
+        onOpenChange={setIsShowingAdmins}
+        groupAdmins={props.groupAdmins}
+        memberColors={props.memberColors}
+        getPreferredBadge={props.getPreferredBadge}
+        showConversation={props.showConversation}
+        theme={props.theme}
+      />
     </>
   );
 }

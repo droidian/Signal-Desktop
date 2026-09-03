@@ -4,70 +4,22 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { EmojiCompletion } from '../../../quill/emoji/completion.dom.js';
+import { EmojiCompletion } from '../../../quill/emoji/completion.dom.tsx';
 import type {
   EmojiCompletionOptions,
   InsertEmojiOptionsType,
-} from '../../../quill/emoji/completion.dom.js';
-import {
-  EMOJI_VARIANT_KEY_CONSTANTS,
-  EmojiSkinTone,
-  getEmojiParentKeyByVariantKey,
-  getEmojiVariantByKey,
-} from '../../../components/fun/data/emojis.std.js';
-import {
-  _createFunEmojiSearch,
-  createFunEmojiSearchIndex,
-} from '../../../components/fun/useFunEmojiSearch.dom.js';
-import {
-  _createFunEmojiLocalizer,
-  createFunEmojiLocalizerIndex,
-} from '../../../components/fun/useFunEmojiLocalizer.dom.js';
-import type { LocaleEmojiListType } from '../../../types/emoji.std.js';
+} from '../../../quill/emoji/completion.dom.tsx';
+import { Emoji } from '../../../axo/emoji.std.ts';
 
-const EMOJI_VARIANTS = {
-  SMILE: getEmojiVariantByKey(
-    EMOJI_VARIANT_KEY_CONSTANTS.GRINNING_FACE_WITH_SMILING_EYES
-  ),
-  SMILE_CAT: getEmojiVariantByKey(
-    EMOJI_VARIANT_KEY_CONSTANTS.GRINNING_CAT_WITH_SMILING_EYES
-  ),
-  FRIEND_SHRIMP: getEmojiVariantByKey(EMOJI_VARIANT_KEY_CONSTANTS.FRIED_SHRIMP),
-} as const;
-
-const PARENT_KEYS = {
-  SMILE: getEmojiParentKeyByVariantKey(EMOJI_VARIANTS.SMILE.key),
-  SMILE_CAT: getEmojiParentKeyByVariantKey(EMOJI_VARIANTS.SMILE_CAT.key),
-  FRIED_SHRIMP: getEmojiParentKeyByVariantKey(EMOJI_VARIANTS.FRIEND_SHRIMP.key),
-} as const;
-
-const EMOJI_LIST: LocaleEmojiListType = [
-  {
-    emoji: EMOJI_VARIANTS.SMILE.value,
-    shortName: 'smile',
-    tags: [],
-    rank: 0,
-  },
-  {
-    emoji: EMOJI_VARIANTS.SMILE_CAT.value,
-    shortName: 'smile_cat',
-    tags: [],
-    rank: 0,
-  },
-  {
-    emoji: EMOJI_VARIANTS.FRIEND_SHRIMP.value,
-    shortName: 'fried_shrimp',
-    tags: [],
-    rank: 0,
-  },
-];
+const SMILE = Emoji.SMILE;
+const SMILE_CAT = Emoji.SMILE_CAT;
 
 describe('emojiCompletion', () => {
   let emojiCompletion: EmojiCompletion;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   let mockQuill: any;
 
-  beforeEach(function (this: Mocha.Context) {
+  beforeEach(() => {
     mockQuill = {
       getLeaf: sinon.stub(),
       getText: sinon.stub(),
@@ -80,22 +32,13 @@ describe('emojiCompletion', () => {
       updateContents: sinon.stub(),
     };
 
-    const searchIndex = createFunEmojiSearchIndex(EMOJI_LIST);
-    const localizerIndex = createFunEmojiLocalizerIndex(EMOJI_LIST);
-
-    const emojiSearch = _createFunEmojiSearch(searchIndex);
-    const emojiLocalizer = _createFunEmojiLocalizer(localizerIndex);
-
     const options: EmojiCompletionOptions = {
       onSelectEmoji: sinon.stub(),
       setEmojiPickerElement: sinon.stub(),
-      emojiSkinToneDefault: EmojiSkinTone.None,
-      emojiSearch,
-      emojiLocalizer,
+      emojiSkinToneDefault: Emoji.SkinTone.None,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    emojiCompletion = new EmojiCompletion(mockQuill as any, options);
+    emojiCompletion = new EmojiCompletion(mockQuill, options);
 
     // Stub rendering to avoid missing DOM until we bring in Enzyme
     emojiCompletion.render = sinon.stub();
@@ -119,7 +62,7 @@ describe('emojiCompletion', () => {
     let insertEmojiStub: sinon.SinonStub<[InsertEmojiOptionsType], void>;
 
     beforeEach(() => {
-      emojiCompletion.results = [{ parentKey: PARENT_KEYS.SMILE }];
+      emojiCompletion.results = [SMILE];
       emojiCompletion.index = 5;
       insertEmojiStub = sinon
         .stub(emojiCompletion, 'insertEmoji')
@@ -218,7 +161,7 @@ describe('emojiCompletion', () => {
         });
 
         const blot = {
-          value: () => ':smi',
+          value: () => ':soc',
         };
         mockQuill.getLeaf.returns([blot, 4]);
 
@@ -252,9 +195,12 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
+          const firstArgs = insertEmojiStub.args[0];
+          assert.exists(firstArgs);
 
-          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
+          const [{ emoji, index, range }] = firstArgs;
+
+          assert.equal(emoji, SMILE);
           assert.equal(index, 0);
           assert.equal(range, 7);
         });
@@ -281,9 +227,12 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
+          const firstArgs = insertEmojiStub.args[0];
+          assert.exists(firstArgs);
 
-          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
+          const [{ emoji, index, range }] = firstArgs;
+
+          assert.equal(emoji, SMILE);
           assert.equal(index, 7);
           assert.equal(range, 7);
         });
@@ -341,9 +290,12 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
+          const firstArgs = insertEmojiStub.args[0];
+          assert.exists(firstArgs);
 
-          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
+          const [{ emoji, index, range }] = firstArgs;
+
+          assert.equal(emoji, SMILE);
           assert.equal(index, 0);
           assert.equal(range, validEmoji.length);
         });
@@ -390,9 +342,12 @@ describe('emojiCompletion', () => {
         });
 
         it('inserts the emoji at the current cursor position', () => {
-          const [{ emojiParentKey, index, range }] = insertEmojiStub.args[0];
+          const firstArgs = insertEmojiStub.args[0];
+          assert.exists(firstArgs);
 
-          assert.equal(emojiParentKey, PARENT_KEYS.SMILE);
+          const [{ emoji, index, range }] = firstArgs;
+
+          assert.equal(emoji, SMILE);
           assert.equal(index, 0);
           assert.equal(range, 6);
         });
@@ -408,10 +363,7 @@ describe('emojiCompletion', () => {
     let insertEmojiStub: sinon.SinonStub<[InsertEmojiOptionsType], void>;
 
     beforeEach(() => {
-      emojiCompletion.results = [
-        { parentKey: PARENT_KEYS.SMILE },
-        { parentKey: PARENT_KEYS.SMILE_CAT },
-      ];
+      emojiCompletion.results = [SMILE, SMILE_CAT];
       emojiCompletion.index = 1;
       insertEmojiStub = sinon.stub(emojiCompletion, 'insertEmoji');
     });
@@ -435,10 +387,12 @@ describe('emojiCompletion', () => {
       });
 
       it('inserts the currently selected emoji at the current cursor position', () => {
-        const [{ emojiParentKey, index: insertIndex, range }] =
-          insertEmojiStub.args[0];
+        const firstArgs = insertEmojiStub.args[0];
+        assert.exists(firstArgs);
 
-        assert.equal(emojiParentKey, PARENT_KEYS.SMILE_CAT);
+        const [{ emoji, index: insertIndex, range }] = firstArgs;
+
+        assert.equal(emoji, SMILE_CAT);
         assert.equal(insertIndex, 0);
         assert.equal(range, text.length);
       });

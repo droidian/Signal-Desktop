@@ -1,15 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useContext, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
-import { getFakeBadges } from '../../../test-helpers/getFakeBadge.std.js';
-import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.js';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { Props } from './ConversationDetailsHeader.dom.js';
-import { ConversationDetailsHeader } from './ConversationDetailsHeader.dom.js';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
+import { getFakeBadges } from '../../../test-helpers/getFakeBadge.std.ts';
+import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.ts';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { Props } from './ConversationDetailsHeader.dom.tsx';
+import { ConversationDetailsHeader } from './ConversationDetailsHeader.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -30,7 +30,7 @@ const createConversation = (): ConversationType =>
   });
 
 function Wrapper(overrideProps: Partial<Props>) {
-  const theme = React.useContext(StorybookThemeContext);
+  const theme = useContext(StorybookThemeContext);
 
   return (
     <ConversationDetailsHeader
@@ -43,6 +43,7 @@ function Wrapper(overrideProps: Partial<Props>) {
       isGroup
       isMe={false}
       isSignalConversation={false}
+      onNavigateToDonate={action('onNavigateToDonate')}
       pendingAvatarDownload={false}
       startAvatarDownload={action('startAvatarDownload')}
       theme={theme}

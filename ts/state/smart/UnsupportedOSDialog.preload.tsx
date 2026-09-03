@@ -1,13 +1,13 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import { memo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { UnsupportedOSDialog } from '../../components/UnsupportedOSDialog.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import { getExpirationTimestamp } from '../selectors/expiration.dom.js';
-import type { WidthBreakpoint } from '../../components/_util.std.js';
-import OS from '../../util/os/osMain.node.js';
+import { UnsupportedOSDialog } from '../../components/UnsupportedOSDialog.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getExpirationTimestamp } from '../selectors/expiration.dom.ts';
+import type { WidthBreakpoint } from '../../components/_util.std.ts';
+import OS from '../../util/os/osMain.node.ts';
 
 export type PropsType = Readonly<{
   type: 'warning' | 'error';

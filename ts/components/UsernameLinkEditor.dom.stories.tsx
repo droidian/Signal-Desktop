@@ -1,20 +1,20 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';
-import { UsernameLinkState } from '../state/ducks/usernameEnums.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+import { UsernameLinkState } from '../state/ducks/usernameEnums.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 
-import type { PropsType } from './UsernameLinkEditor.dom.js';
+import type { PropsType } from './UsernameLinkEditor.dom.tsx';
 import {
   UsernameLinkEditor,
   PRINT_WIDTH,
   PRINT_HEIGHT,
-} from './UsernameLinkEditor.dom.js';
-import { Modal } from './Modal.dom.js';
+} from './UsernameLinkEditor.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
 
 const ColorEnum = Proto.AccountRecord.UsernameLink.Color;
 
@@ -68,26 +68,28 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => {
   const [attachment, setAttachment] = useState<string | undefined>();
-  const saveAttachment = useCallback(({ data }: { data?: Uint8Array }) => {
-    if (!data) {
-      setAttachment(undefined);
-      return;
-    }
-
-    const blob = new Blob([data], {
-      type: 'image/png',
-    });
-
-    setAttachment(oldURL => {
-      if (oldURL) {
-        URL.revokeObjectURL(oldURL);
+  const saveAttachment = useCallback(
+    ({ data }: { data?: Uint8Array<ArrayBuffer> }) => {
+      if (!data) {
+        setAttachment(undefined);
+        return;
       }
-      return URL.createObjectURL(blob);
-    });
-  }, []);
+
+      const blob = new Blob([data], {
+        type: 'image/png',
+      });
+
+      setAttachment(oldURL => {
+        if (oldURL) {
+          URL.revokeObjectURL(oldURL);
+        }
+        return URL.createObjectURL(blob);
+      });
+    },
+    []
+  );
 
   return (
     <>

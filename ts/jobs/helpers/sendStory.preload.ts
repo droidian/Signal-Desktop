@@ -4,54 +4,55 @@
 import lodash from 'lodash';
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import type { UploadedAttachmentType } from '../../types/Attachment.std.js';
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { UploadedAttachmentType } from '../../types/Attachment.std.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   StoryJobData,
-} from '../conversationJobQueue.preload.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import type { MessageModel } from '../../models/messages.preload.js';
+} from '../conversationJobQueue.preload.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import type { MessageModel } from '../../models/messages.preload.ts';
 import type {
   SendState,
   SendStateByConversationId,
-} from '../../messages/MessageSendState.std.js';
+} from '../../messages/MessageSendState.std.ts';
 import {
   isSent,
   SendActionType,
   sendStateReducer,
-} from '../../messages/MessageSendState.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.js';
-import * as Errors from '../../types/errors.std.js';
-import type { StoryMessageRecipientsType } from '../../types/Stories.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
-import { getMessagesById } from '../../messages/getMessagesById.preload.js';
+} from '../../messages/MessageSendState.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import type { StoryMessageRecipientsType } from '../../types/Stories.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import type { SignalService as Proto } from '../../protobuf/index.std.ts';
+import { getMessagesById } from '../../messages/getMessagesById.preload.ts';
 import {
   getSendOptions,
   getSendOptionsForRecipients,
-} from '../../util/getSendOptions.preload.js';
+} from '../../util/getSendOptions.preload.ts';
 import {
   loadPreviewData,
   loadAttachmentData,
-} from '../../util/migrations.preload.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.js';
-import { isGroupV2, isMe } from '../../util/whatTypeOfConversation.dom.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
-import { challengeHandler } from '../../services/challengeHandler.preload.js';
-import { sendContentMessageToGroup } from '../../util/sendToGroup.preload.js';
-import { distributionListToSendTarget } from '../../util/distributionListToSendTarget.preload.js';
-import { uploadAttachment } from '../../util/uploadAttachment.preload.js';
-import { SendMessageChallengeError } from '../../textsecure/Errors.std.js';
-import type { OutgoingTextAttachmentType } from '../../textsecure/SendMessage.preload.js';
+} from '../../util/migrations.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.ts';
+import { isGroupV2, isMe } from '../../util/whatTypeOfConversation.dom.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { challengeHandler } from '../../services/challengeHandler.preload.ts';
+import { sendContentMessageToGroup } from '../../util/sendToGroup.preload.ts';
+import { distributionListToSendTarget } from '../../util/distributionListToSendTarget.preload.ts';
+import { uploadAttachment } from '../../util/uploadAttachment.preload.ts';
+import { SendMessageChallengeError } from '../../textsecure/Errors.std.ts';
+import type { OutgoingTextAttachmentType } from '../../textsecure/SendMessage.preload.ts';
 import {
   markFailed,
   notifyStorySendFailed,
   saveErrorsOnMessage,
-} from '../../test-node/util/messageFailures.preload.js';
-import { send } from '../../messages/send.preload.js';
+} from '../../test-node/util/messageFailures.preload.ts';
+import { send } from '../../messages/send.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 
 const { isEqual } = lodash;
 
@@ -132,7 +133,7 @@ export async function sendStory(
   // can reuse it but first we'll need textAttachment | fileAttachment.
   // This function pulls off the attachment and generates the proto from the
   // first message on the list prior to continuing.
-  let originalStoryMessage: Proto.StoryMessage;
+  let originalStoryMessage: Proto.StoryMessage.Params;
   {
     const [originalMessageId] = messageIds;
     const originalMessage = messages.find(
@@ -167,9 +168,9 @@ export async function sendStory(
           preview: undefined,
         };
       } else {
-        const hydratedPreview = (
-          await loadPreviewData([localAttachment.preview])
-        )[0];
+        const previewData = await loadPreviewData([localAttachment.preview]);
+        const hydratedPreview = previewData[0];
+        strictAssert(hydratedPreview, 'Missing hydratedPreview');
 
         textAttachment = {
           ...localAttachment,
@@ -330,52 +331,56 @@ export async function sendStory(
           return;
         }
 
-        const sendOptions = await getSendOptionsForRecipients(
-          pendingSendRecipientServiceIds,
-          { story: true }
-        );
-
         log.info(
           `stories.sendStory(${timestamp}): sending story to ${receiverId}`
         );
 
-        const storyMessage = new Proto.StoryMessage();
-        storyMessage.bodyRanges = originalStoryMessage.bodyRanges;
-        storyMessage.profileKey = originalStoryMessage.profileKey;
-        storyMessage.fileAttachment = originalStoryMessage.fileAttachment;
-        storyMessage.textAttachment = originalStoryMessage.textAttachment;
-        storyMessage.group = originalStoryMessage.group;
-        storyMessage.allowsReplies =
-          isGroupV2(conversation.attributes) ||
-          Boolean(distributionList?.allowsReplies);
-
-        const sendTarget = distributionList
-          ? distributionListToSendTarget(
-              distributionList,
-              pendingSendRecipientServiceIds
-            )
-          : conversation.toSenderKeyTarget();
-
-        const contentMessage = new Proto.Content();
-        contentMessage.storyMessage = storyMessage;
-
-        const innerPromise = sendContentMessageToGroup({
-          contentHint: ContentHint.Implicit,
-          contentMessage,
-          isPartialSend: false,
-          messageId: undefined,
-          recipients: pendingSendRecipientServiceIds,
-          sendOptions,
-          sendTarget,
-          sendType: 'story',
-          story: true,
-          timestamp: message.get('timestamp'),
-          urgent: false,
-        });
-
         // Don't send normal sync messages; a story sync is sent at the end of the process
-        // eslint-disable-next-line no-param-reassign
+        // oxlint-disable-next-line no-param-reassign
         message.doNotSendSyncMessage = true;
+
+        const innerPromise = conversation.queueJob('sendStory', async () => {
+          const sendOptions = await getSendOptionsForRecipients(
+            pendingSendRecipientServiceIds,
+            { story: true }
+          );
+          const storyMessage: Proto.StoryMessage.Params = {
+            bodyRanges: originalStoryMessage.bodyRanges,
+            profileKey: originalStoryMessage.profileKey,
+            attachment: originalStoryMessage.attachment,
+            group: originalStoryMessage.group,
+            allowsReplies:
+              isGroupV2(conversation.attributes) ||
+              Boolean(distributionList?.allowsReplies),
+          };
+
+          const sendTarget = distributionList
+            ? distributionListToSendTarget(
+                distributionList,
+                pendingSendRecipientServiceIds
+              )
+            : conversation.toSenderKeyTarget();
+
+          return sendContentMessageToGroup({
+            contentHint: ContentHint.Implicit,
+            contentMessage: {
+              content: {
+                storyMessage,
+              },
+              senderKeyDistributionMessage: null,
+              pniSignatureMessage: null,
+            },
+            isPartialSend: false,
+            messageId: undefined,
+            recipients: pendingSendRecipientServiceIds,
+            sendOptions,
+            sendTarget,
+            sendType: 'story',
+            story: true,
+            timestamp: message.get('timestamp'),
+            urgent: false,
+          });
+        });
 
         const messageSendPromise = send(message, {
           promise: handleMessageSend(innerPromise, {
@@ -492,57 +497,48 @@ export async function sendStory(
 
       let hasFailedSends = false;
 
-      const newSendStateByConversationId = Object.keys(
-        oldSendStateByConversationId
-      ).reduce((acc, conversationId) => {
-        const sendState = sentConversationIds.get(conversationId);
-        if (sendState) {
-          return {
-            ...acc,
-            [conversationId]: sendState,
-          };
-        }
+      const newSendStateByConversationId: SendStateByConversationId = {};
 
-        const oldSendState = {
-          ...oldSendStateByConversationId[conversationId],
-        };
-        if (!oldSendState) {
-          return acc;
+      for (const [conversationId, oldSendState] of Object.entries(
+        oldSendStateByConversationId
+      )) {
+        const sendState = sentConversationIds.get(conversationId);
+
+        if (sendState) {
+          newSendStateByConversationId[conversationId] = sendState;
+          continue;
         }
 
         const recipient = window.ConversationController.get(conversationId);
         if (!recipient) {
-          return acc;
+          continue;
         }
 
         if (isMe(recipient.attributes)) {
-          return acc;
+          continue;
         }
 
         if (recipient.isEverUnregistered()) {
           if (!isSent(oldSendState.status)) {
             // We should have filtered this out on initial send, but we'll drop them from
             //   send list here if needed.
-            return acc;
+            continue;
           }
 
           // If a previous send to them did succeed, we'll keep that status around
-          return {
-            ...acc,
-            [conversationId]: oldSendState,
-          };
+          newSendStateByConversationId[conversationId] = oldSendState;
         }
 
         hasFailedSends = true;
 
-        return {
-          ...acc,
-          [conversationId]: sendStateReducer(oldSendState, {
+        newSendStateByConversationId[conversationId] = sendStateReducer(
+          oldSendState,
+          {
             type: SendActionType.Failed,
             updatedAt: Date.now(),
-          }),
-        };
-      }, {} as SendStateByConversationId);
+          }
+        );
+      }
 
       if (hasFailedSends) {
         notifyStorySendFailed(message);
@@ -580,6 +576,8 @@ export async function sendStory(
     log.warn(
       'No successful sends; will not send a sync message for this attempt'
     );
+  } else if (!window.ConversationController.doWeHaveOtherDevices()) {
+    log.info('We have no other devices; not sending sync message');
   } else {
     const options = await getSendOptions(conversation.attributes, {
       syncMessage: true,
@@ -606,8 +604,9 @@ export async function sendStory(
       sendErrors.push(result);
     }
   });
-  if (sendErrors.length) {
-    throw sendErrors[0].reason;
+  const [firstError] = sendErrors;
+  if (firstError != null) {
+    throw firstError.reason;
   }
 }
 

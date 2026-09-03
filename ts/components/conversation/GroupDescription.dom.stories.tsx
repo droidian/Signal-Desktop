@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupDescription.dom.js';
-import { GroupDescription } from './GroupDescription.dom.js';
+import type { PropsType } from './GroupDescription.dom.tsx';
+import { GroupDescription } from './GroupDescription.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -44,7 +45,7 @@ export function WithNewlines(args: PropsType): JSX.Element {
 }
 
 export function WithEmoji(args: PropsType): JSX.Element {
-  return <GroupDescription {...args} text="🍒🍩🌭" />;
+  return <GroupDescription {...args} text={'🍒🍩🌭'.repeat(20)} />;
 }
 
 export function WithLink(args: PropsType): JSX.Element {
@@ -52,6 +53,15 @@ export function WithLink(args: PropsType): JSX.Element {
     <GroupDescription
       {...args}
       text="I love https://example.com and http://example.com and example.com, but not https://user:bar@example.com"
+    />
+  );
+}
+
+export function WithLongLink(args: PropsType): JSX.Element {
+  return (
+    <GroupDescription
+      {...args}
+      text={`Read more at https://example.com/${'some-very-long-path-segment/'.repeat(5)}?query=${'x'.repeat(100)}`}
     />
   );
 }

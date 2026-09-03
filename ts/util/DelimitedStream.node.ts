@@ -3,70 +3,121 @@
 
 import { Transform } from 'node:stream';
 
-import { missingCaseError } from './missingCaseError.std.js';
+import { missingCaseError } from './missingCaseError.std.ts';
 
-enum State {
-  Prefix = 'Prefix',
-  Data = 'Data',
-}
+type State =
+  | {
+      kind: 'prefix';
+      size: number;
+      value: number;
+    }
+  | {
+      kind: 'frame';
+      remaining: number;
+      parts: Array<Buffer<ArrayBuffer>>;
+    }
+  | {
+      kind: 'trailer';
+      frame: Buffer<ArrayBuffer>;
+      remaining: number;
+      parts: Array<Buffer<ArrayBuffer>>;
+    };
+
+const EMPTY_TRAILER = Buffer.alloc(0);
 
 export class DelimitedStream extends Transform {
-  #state = State.Prefix;
-  #prefixValue = 0;
-  #prefixSize = 0;
-  #parts = new Array<Buffer>();
+  #state: State = { kind: 'prefix', size: 0, value: 0 };
 
   constructor() {
     super({ readableObjectMode: true });
   }
 
-  override _transform(
-    chunk: Buffer,
+  override async _transform(
+    chunk: Buffer<ArrayBuffer>,
     _encoding: BufferEncoding,
     done: (error?: Error) => void
-  ): void {
+  ): Promise<void> {
     let offset = 0;
     while (offset < chunk.length) {
-      if (this.#state === State.Prefix) {
-        const b = chunk[offset];
+      if (this.#state.kind === 'prefix') {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const b = chunk[offset]!;
         offset += 1;
 
         // See: https://protobuf.dev/programming-guides/encoding/
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         const isLast = (b & 0x80) === 0;
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         const value = b & 0x7f;
 
-        // eslint-disable-next-line no-bitwise
-        this.#prefixValue |= value << (7 * this.#prefixSize);
-        this.#prefixSize += 1;
+        // oxlint-disable-next-line no-bitwise
+        this.#state.value |= value << (7 * this.#state.size);
+        this.#state.size += 1;
 
         // Check that we didn't go over 32bits. Node.js buffers can never
         // be larger than 2gb anyway!
-        if (this.#prefixSize > 4) {
+        if (this.#state.size > 4) {
           done(new Error('Delimiter encoding overflow'));
           return;
         }
 
         if (isLast) {
-          this.#state = State.Data;
+          this.#state = {
+            kind: 'frame',
+            remaining: this.#state.value,
+            parts: [],
+          };
         }
-      } else if (this.#state === State.Data) {
-        const toTake = Math.min(this.#prefixValue, chunk.length - offset);
+      } else if (
+        this.#state.kind === 'frame' ||
+        this.#state.kind === 'trailer'
+      ) {
+        const toTake = Math.min(this.#state.remaining, chunk.length - offset);
         const part = chunk.slice(offset, offset + toTake);
         offset += toTake;
-        this.#prefixValue -= toTake;
+        this.#state.remaining -= toTake;
 
-        this.#parts.push(part);
+        this.#state.parts.push(part);
 
-        if (this.#prefixValue <= 0) {
-          this.#state = State.Prefix;
-          this.#prefixSize = 0;
-          this.#prefixValue = 0;
+        if (this.#state.remaining > 0) {
+          continue;
+        }
 
-          const whole = Buffer.concat(this.#parts);
-          this.#parts = [];
-          this.push(whole);
+        if (this.#state.kind === 'frame') {
+          const frame = Buffer.concat(this.#state.parts);
+          const trailerSize = this.getTrailerSize(frame);
+
+          if (trailerSize === 0) {
+            this.#state = {
+              kind: 'prefix',
+              size: 0,
+              value: 0,
+            };
+
+            // oxlint-disable-next-line no-await-in-loop
+            await this.pushFrame(frame, EMPTY_TRAILER);
+          } else {
+            this.#state = {
+              kind: 'trailer',
+              frame,
+              remaining: trailerSize,
+              parts: [],
+            };
+          }
+        } else if (this.#state.kind === 'trailer') {
+          const oldState = this.#state;
+          const trailer = Buffer.concat(this.#state.parts);
+
+          this.#state = {
+            kind: 'prefix',
+            size: 0,
+            value: 0,
+          };
+
+          // oxlint-disable-next-line no-await-in-loop
+          await this.pushFrame(oldState.frame, trailer);
+        } else {
+          throw missingCaseError(this.#state);
         }
       } else {
         throw missingCaseError(this.#state);
@@ -76,16 +127,34 @@ export class DelimitedStream extends Transform {
   }
 
   override _flush(done: (error?: Error) => void): void {
-    if (this.#state !== State.Prefix) {
-      done(new Error('Unfinished data'));
+    if (this.#state.kind === 'frame') {
+      done(new Error('Unfinished frame'));
       return;
     }
+    if (this.#state.kind === 'trailer') {
+      done(new Error('Unfinished trailer'));
+      return;
+    }
+    if (this.#state.kind !== 'prefix') {
+      throw missingCaseError(this.#state);
+    }
 
-    if (this.#prefixSize !== 0) {
+    if (this.#state.size !== 0) {
       done(new Error('Unfinished prefix'));
       return;
     }
 
     done();
+  }
+
+  protected getTrailerSize(_frame: Buffer<ArrayBuffer>): number {
+    return 0;
+  }
+
+  protected async pushFrame(
+    frame: Buffer<ArrayBuffer>,
+    _trailer: Buffer<ArrayBuffer>
+  ): Promise<void> {
+    this.push(frame);
   }
 }

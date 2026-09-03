@@ -1,7 +1,6 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable no-console */
 import { createWriteStream } from 'node:fs';
 import fsExtra from 'fs-extra';
 import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
@@ -10,8 +9,6 @@ import { release as osRelease, tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 
 import config from 'config';
-import type { ParserConfiguration } from 'dashdash';
-import { createParser } from 'dashdash';
 import { FAILSAFE_SCHEMA, load as loadYaml } from 'js-yaml';
 import { gt, gte, lt } from 'semver';
 import got from 'got';
@@ -19,49 +16,49 @@ import { v4 as getGuid } from 'uuid';
 import type { BrowserWindow } from 'electron';
 import { app, ipcMain } from 'electron';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { getTempPath, getUpdateCachePath } from '../../app/attachments.node.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { getTempPath, getUpdateCachePath } from '../../app/attachments.node.ts';
 import {
   markShouldNotQuit,
   markShouldQuit,
-} from '../../app/window_state.std.js';
-import { DialogType } from '../types/Dialogs.std.js';
-import * as Errors from '../types/errors.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { drop } from '../util/drop.std.js';
-import * as durations from '../util/durations/index.std.js';
+} from '../../app/window_state.std.ts';
+import { DialogType } from '../types/Dialogs.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { drop } from '../util/drop.std.ts';
+import * as durations from '../util/durations/index.std.ts';
 import {
   isAlpha,
   isAxolotl,
   isBeta,
   isNotUpdatable,
   isStaging,
-} from '../util/version.std.js';
-import { isPathInside } from '../util/isPathInside.node.js';
+} from '../util/version.std.ts';
+import { isPathInside } from '../util/isPathInside.node.ts';
 
-import { version as packageVersion } from '../util/packageJson.node.js';
+import { packageJson } from '../util/packageJson.main.ts';
 
 import {
   getSignatureFileName,
   hexToBinary,
   verifySignature,
-} from './signature.node.js';
+} from './signature.node.ts';
 import {
   download as downloadDifferentialData,
   getBlockMapFileName,
   isValidPreparedData as isValidDifferentialData,
   prepareDownload as prepareDifferentialDownload,
-} from './differential.node.js';
-import { getGotOptions } from './got.node.js';
-import { checkIntegrity, isTimeToUpdate } from './util.node.js';
+} from './differential.main.ts';
+import { getGotOptions } from './got.main.ts';
+import { checkIntegrity, isTimeToUpdate } from './util.node.ts';
 import {
   gracefulRename,
   gracefulRmRecursive,
-} from '../util/gracefulFs.node.js';
+} from '../util/gracefulFs.node.ts';
 
-import type { LoggerType } from '../types/Logging.std.js';
-import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential.node.js';
-import type { MainSQL } from '../sql/main.main.js';
+import type { LoggerType } from '../types/Logging.std.ts';
+import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential.main.ts';
+import type { MainSQL } from '../sql/main.main.ts';
 
 const { pathExists } = fsExtra;
 
@@ -69,7 +66,8 @@ const { throttle } = lodash;
 
 const POLL_INTERVAL = 30 * durations.MINUTE;
 
-type JSONVendorSchema = {
+export type JSONVendorSchema = {
+  minGlibcVersion?: string;
   minOSVersion?: string;
   requireManualUpdate?: 'true' | 'false';
   requireUserConfirmation?: 'true' | 'false';
@@ -112,7 +110,7 @@ enum DownloadMode {
 
 type DownloadUpdateResultType = Readonly<{
   updateFilePath: string;
-  signature: Buffer;
+  signature: Buffer<ArrayBuffer>;
 }>;
 
 export type UpdaterOptionsType = Readonly<{
@@ -145,7 +143,7 @@ export abstract class Updater {
 
   protected readonly getMainWindow: () => BrowserWindow | undefined;
 
-  #throttledSendDownloadingUpdate: ((
+  readonly #throttledSendDownloadingUpdate: ((
     downloadedSize: number,
     downloadSize: number
   ) => void) & {
@@ -161,7 +159,7 @@ export abstract class Updater {
 
   // Just a stable randomness that is used for determining the update time. The
   // value does not have to be consistent across restarts.
-  #pollId = getGuid();
+  readonly #pollId = getGuid();
 
   constructor({
     canRunSilently,
@@ -233,6 +231,9 @@ export abstract class Updater {
     isSilent: boolean
   ): Promise<() => Promise<void>>;
 
+  // For Mac App Store
+  protected abstract handleUpdateFromThirdParty(version: string): boolean;
+
   //
   // Protected methods
   //
@@ -242,6 +243,31 @@ export abstract class Updater {
   ): void {
     ipcMain.removeHandler('start-update');
     ipcMain.handleOnce('start-update', performUpdateCallback);
+  }
+
+  protected checkSystemRequirements(vendor: JSONVendorSchema): boolean {
+    if (vendor.requireManualUpdate === 'true') {
+      this.logger.warn('checkSystemRequirements: manual update required');
+      this.markCannotUpdate(
+        new Error('yaml file has requireManualUpdate flag'),
+        DialogType.Cannot_Update_Require_Manual
+      );
+      return false;
+    }
+
+    if (vendor.minOSVersion && lt(osRelease(), vendor.minOSVersion)) {
+      this.logger.warn(
+        `checkSystemRequirements: OS version ${osRelease()} is less than the ` +
+          `minimum supported version ${vendor.minOSVersion}`
+      );
+      this.markCannotUpdate(
+        new Error('yaml file has unsatisfied minOSVersion value'),
+        DialogType.UnsupportedOS
+      );
+      return false;
+    }
+
+    return true;
   }
 
   protected markCannotUpdate(
@@ -282,7 +308,7 @@ export abstract class Updater {
     markShouldQuit();
   }
 
-  protected getUpdatesPublicKey(): Buffer {
+  protected getUpdatesPublicKey(): Buffer<ArrayBuffer> {
     return hexToBinary(config.get('updatesPublicKey'));
   }
 
@@ -552,7 +578,7 @@ export abstract class Updater {
   async #checkForUpdates(
     checkType: CheckType
   ): Promise<UpdateInformationType | undefined> {
-    if (isNotUpdatable(packageVersion)) {
+    if (isNotUpdatable(packageJson.version)) {
       this.logger.info(
         'checkForUpdates: not checking for updates, this is not an updatable build'
       );
@@ -563,27 +589,8 @@ export abstract class Updater {
     const parsedYaml = parseYaml(yaml);
 
     const { vendor } = parsedYaml;
-    if (vendor) {
-      if (vendor.requireManualUpdate === 'true') {
-        this.logger.warn('checkForUpdates: manual update required');
-        this.markCannotUpdate(
-          new Error('yaml file has requireManualUpdate flag'),
-          DialogType.Cannot_Update_Require_Manual
-        );
-        return;
-      }
-
-      if (vendor.minOSVersion && lt(osRelease(), vendor.minOSVersion)) {
-        this.logger.warn(
-          `checkForUpdates: OS version ${osRelease()} is less than the ` +
-            `minimum supported version ${vendor.minOSVersion}`
-        );
-        this.markCannotUpdate(
-          new Error('yaml file has unsatisfied minOSVersion value'),
-          DialogType.UnsupportedOS
-        );
-        return;
-      }
+    if (vendor && !this.checkSystemRequirements(vendor)) {
+      return;
     }
 
     const version = getVersion(parsedYaml);
@@ -598,10 +605,17 @@ export abstract class Updater {
 
     if (checkType === CheckType.Normal && !isVersionNewer(version)) {
       this.logger.info(
-        `checkForUpdates: ${version} is not newer than ${packageVersion}; ` +
+        `checkForUpdates: ${version} is not newer than ${packageJson.version}; ` +
           'no new update available'
       );
 
+      return;
+    }
+
+    if (
+      checkType === CheckType.Normal &&
+      this.handleUpdateFromThirdParty(version)
+    ) {
       return;
     }
 
@@ -936,7 +950,7 @@ export abstract class Updater {
         'getItemById',
         'auto-download-update'
       );
-      return result?.value ?? true;
+      return typeof result?.value === 'boolean' ? result.value : true;
     } catch (error) {
       this.logger.warn(
         'getAutoDownloadUpdateSetting: Failed to fetch, returning false',
@@ -977,22 +991,30 @@ export function validatePath(basePath: string, targetPath: string): void {
 
 // Helper functions
 
-export function getUpdateCheckUrl(): string {
+function getUpdateCheckUrl(): string {
   return `${getUpdatesBase()}/${getUpdatesFileName()}`;
 }
 
-export function getUpdatesBase(): string {
+function getUpdatesBase(): string {
   return config.get('updatesUrl');
 }
 
-export function getUpdatesFileName(): string {
+function getUpdatesFileName(): string {
   const prefix = getChannel();
 
   if (process.platform === 'darwin') {
+    if (process.mas) {
+      return `${prefix}-mas.yml`;
+    }
+
     return `${prefix}-mac.yml`;
   }
 
   if (process.platform === 'linux') {
+    if (process.arch === 'arm64') {
+      return `${prefix}-linux-arm64.yml`;
+    }
+
     return `${prefix}-linux.yml`;
   }
 
@@ -1000,27 +1022,27 @@ export function getUpdatesFileName(): string {
 }
 
 function getChannel(): string {
-  if (isNotUpdatable(packageVersion)) {
+  if (isNotUpdatable(packageJson.version)) {
     // we don't want ad hoc versions to update
-    return packageVersion;
+    return packageJson.version;
   }
-  if (isStaging(packageVersion)) {
+  if (isStaging(packageJson.version)) {
     return 'staging';
   }
-  if (isAlpha(packageVersion)) {
+  if (isAlpha(packageJson.version)) {
     return 'alpha';
   }
-  if (isAxolotl(packageVersion)) {
+  if (isAxolotl(packageJson.version)) {
     return 'axolotl';
   }
-  if (isBeta(packageVersion)) {
+  if (isBeta(packageJson.version)) {
     return 'beta';
   }
   return 'latest';
 }
 
 function isVersionNewer(newVersion: string): boolean {
-  return gt(newVersion, packageVersion);
+  return gt(newVersion, packageJson.version);
 }
 
 export function getVersion(info: JSONUpdateSchema): string | null {
@@ -1058,11 +1080,12 @@ export function getUpdateFileName(
     const candidates = files.filter(fileFilter);
 
     if (candidates.length === 1) {
-      path = candidates[0].url;
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      path = candidates[0]!.url;
     }
   }
 
-  path = path ?? info.path;
+  path ??= info.path;
 
   if (!isUpdateFileNameValid(path)) {
     throw new Error(
@@ -1097,7 +1120,7 @@ function getSize(info: JSONUpdateSchema, fileName: string): number {
 }
 
 export function parseYaml(yaml: string): JSONUpdateSchema {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   return loadYaml(yaml, { schema: FAILSAFE_SCHEMA, json: true }) as any;
 }
 
@@ -1170,17 +1193,4 @@ export async function deleteTempDir(
   }
 
   await gracefulRmRecursive(logger, targetDir);
-}
-
-export function getCliOptions<T>(options: ParserConfiguration['options']): T {
-  const parser = createParser({ options });
-  const cliOptions = parser.parse(process.argv);
-
-  if (cliOptions.help) {
-    const help = parser.help().trimRight();
-    console.log(help);
-    process.exit(0);
-  }
-
-  return cliOptions as unknown as T;
 }

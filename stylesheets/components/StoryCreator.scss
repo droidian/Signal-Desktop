@@ -22,7 +22,6 @@
   inset-inline-start: 0;
   position: absolute;
   top: 0;
-  user-select: none;
   z-index: variables.$z-index-popup-overlay;
 
   &__container {
@@ -43,7 +42,6 @@
     position: absolute;
     text-align: center;
     top: 50%;
-    user-select: none;
 
     &:focus {
       outline: none;
@@ -317,7 +315,6 @@
       color: variables.$color-white;
       display: -webkit-box;
       overflow: hidden;
-      user-select: none;
     }
 
     &__location {

@@ -1,30 +1,28 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-// eslint-disable-next-line import/no-restricted-paths
-import { ProgressModal } from '../components/ProgressModal.dom.js';
-import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary.std.js';
-import { sleep } from './sleep.std.js';
-// eslint-disable-next-line import/no-restricted-paths
-import { FunDefaultEnglishEmojiLocalizationProvider } from '../components/fun/FunEmojiLocalizationProvider.dom.js';
-// eslint-disable-next-line import/no-restricted-paths
-import { AxoProvider } from '../axo/AxoProvider.dom.js';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+// oxlint-disable-next-line signal-desktop/no-restricted-paths
+import { ProgressModal } from '../components/ProgressModal.dom.tsx';
+import { clearTimeoutIfNecessary } from './clearTimeoutIfNecessary.std.ts';
+import { sleep } from './sleep.std.ts';
+import { AppProvider } from '../windows/AppProvider.dom.tsx';
 
 const log = createLogger('longRunningTaskWrapper');
 
 export async function longRunningTaskWrapper<T>({
   name,
   idForLogging,
+  spinnerText,
   task,
   suppressErrorDialog,
 }: {
   name: string;
   idForLogging: string;
+  spinnerText?: string;
   task: () => Promise<T>;
   suppressErrorDialog?: boolean;
 }): Promise<T> {
@@ -41,13 +39,9 @@ export async function longRunningTaskWrapper<T>({
     log.info(`${idLog}: Creating spinner`);
     progressRoot = createRoot(progressNode);
     progressRoot.render(
-      <StrictMode>
-        <AxoProvider dir={i18n.getLocaleDirection()}>
-          <FunDefaultEnglishEmojiLocalizationProvider>
-            <ProgressModal i18n={i18n} />
-          </FunDefaultEnglishEmojiLocalizationProvider>
-        </AxoProvider>
-      </StrictMode>
+      <AppProvider>
+        <ProgressModal i18n={i18n} description={spinnerText} />
+      </AppProvider>
     );
     spinnerStart = Date.now();
   }, TWO_SECONDS);
@@ -86,7 +80,10 @@ export async function longRunningTaskWrapper<T>({
 
     if (!suppressErrorDialog) {
       log.info(`${idLog}: Showing error dialog`);
-      window.reduxActions.globalModals.showErrorModal({});
+      window.reduxActions.globalModals.showErrorModal({
+        title: i18n('icu:ErrorModal--title'),
+        description: i18n('icu:ErrorModal--description'),
+      });
     }
 
     throw error;

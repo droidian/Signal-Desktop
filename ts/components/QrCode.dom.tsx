@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactElement } from 'react';
-import React, { useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import qrcode from 'qrcode-generator';
-import { getEnvironment, Environment } from '../environment.std.js';
+import { getEnvironment, Environment } from '../environment.std.ts';
 
 const AUTODETECT_TYPE_NUMBER = 0;
 const ERROR_CORRECTION_LEVEL = 'L';
@@ -12,7 +12,7 @@ const ERROR_CORRECTION_LEVEL = 'L';
 export type PropsType = Readonly<{
   alt: string;
   className?: string;
-  data: string | Uint8Array;
+  data: string | Uint8Array<ArrayBuffer>;
 }>;
 
 export function QrCode(props: PropsType): ReactElement {

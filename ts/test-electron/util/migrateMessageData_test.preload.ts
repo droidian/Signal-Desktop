@@ -3,13 +3,13 @@
 
 import assert from 'node:assert';
 import { v7 as uuid } from 'uuid';
-import { _migrateMessageData as migrateMessageData } from '../../messages/migrateMessageData.preload.js';
+import { _migrateMessageData as migrateMessageData } from '../../messages/migrateMessageData.preload.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
-import { upgradeMessageSchema } from '../../util/migrations.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { upgradeMessageSchema } from '../../util/migrations.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 function composeMessage(timestamp: number): MessageAttributesType {
   return {
@@ -34,9 +34,13 @@ describe('utils/migrateMessageData', async () => {
     await itemStorage.fetch();
   });
   it('increments attempts for messages which fail to save', async () => {
-    const messages = new Array(5)
-      .fill(null)
-      .map((_, idx) => composeMessage(idx + 1));
+    const messages = [
+      composeMessage(1),
+      composeMessage(2),
+      composeMessage(3),
+      composeMessage(4),
+      composeMessage(5),
+    ] as const;
 
     const CANNOT_UPGRADE_MESSAGE_ID = messages[1].id;
     const CANNOT_SAVE_MESSAGE_ID = messages[2].id;

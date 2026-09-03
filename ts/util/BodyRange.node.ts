@@ -3,17 +3,17 @@
 
 import lodash from 'lodash';
 
-import type { SignalService as Proto } from '../protobuf/index.std.js';
 import {
   BodyRange,
   type RawBodyRange,
   type HydratedBodyRangeType,
-} from '../types/BodyRange.std.js';
-import type { AciString } from '../types/ServiceId.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { isNotNil } from './isNotNil.std.js';
-import { dropNull } from './dropNull.std.js';
-import { fromAciUuidBytesOrString } from './ServiceId.node.js';
+} from '../types/BodyRange.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { isNotNil } from './isNotNil.std.ts';
+import { dropNull } from './dropNull.std.ts';
+import { fromAciUuidBytesOrString } from './ServiceId.node.ts';
+import { isNonSharedUint8Array } from '../Bytes.std.ts';
 
 const { isNumber } = lodash;
 
@@ -26,7 +26,7 @@ const MAX_PER_TYPE = 250;
 
 // We drop unknown bodyRanges and remove extra stuff so they serialize properly
 export function filterAndClean(
-  ranges: ReadonlyArray<Proto.IBodyRange | RawBodyRange> | undefined | null
+  ranges: ReadonlyArray<RawBodyRange> | undefined | null
 ): ReadonlyArray<RawBodyRange> | undefined {
   if (!ranges) {
     return undefined;
@@ -56,11 +56,14 @@ export function filterAndClean(
       }
 
       let rawMentionAci: string | undefined;
-      let mentionAciBinary: Uint8Array | undefined;
+      let mentionAciBinary: Uint8Array<ArrayBuffer> | undefined;
       if ('mentionAci' in range) {
         rawMentionAci = dropNull(range.mentionAci);
       }
-      if ('mentionAciBinary' in range) {
+      if (
+        'mentionAciBinary' in range &&
+        isNonSharedUint8Array(range.mentionAciBinary)
+      ) {
         mentionAciBinary = dropNull(range.mentionAciBinary);
       }
 
@@ -80,7 +83,6 @@ export function filterAndClean(
         }
 
         return {
-          ...restOfRange,
           start,
           length,
           mentionAci,
@@ -106,7 +108,7 @@ export function filterAndClean(
 }
 
 export function hydrateRanges(
-  ranges: ReadonlyArray<BodyRange<object>> | undefined,
+  ranges: ReadonlyArray<RawBodyRange> | undefined,
   conversationSelector: (id: string) => { id: string; title: string }
 ): Array<HydratedBodyRangeType> | undefined {
   if (!ranges) {

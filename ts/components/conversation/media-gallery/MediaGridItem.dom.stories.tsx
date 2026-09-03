@@ -1,20 +1,20 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useContext, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.js';
-import type { MediaItemType } from '../../../types/MediaItem.std.js';
-import { SignalService } from '../../../protobuf/index.std.js';
+import { StorybookThemeContext } from '../../../../.storybook/StorybookThemeContext.std.ts';
+import type { MediaItemType } from '../../../types/MediaItem.std.ts';
+import { SignalService } from '../../../protobuf/index.std.ts';
 import {
   IMAGE_JPEG,
   VIDEO_MP4,
   APPLICATION_OCTET_STREAM,
   type MIMEType,
-} from '../../../types/MIME.std.js';
-import type { Props } from './MediaGridItem.dom.js';
-import { MediaGridItem } from './MediaGridItem.dom.js';
+} from '../../../types/MIME.std.ts';
+import type { Props } from './MediaGridItem.dom.tsx';
+import { MediaGridItem } from './MediaGridItem.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -25,14 +25,16 @@ export default {
 const createProps = (
   overrideProps: Partial<Props> & { mediaItem: MediaItemType }
 ): Props => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const theme = React.useContext(StorybookThemeContext);
+  // oxlint-disable-next-line react-hooks/rules-of-hooks
+  const theme = useContext(StorybookThemeContext);
 
   return {
     i18n,
     theme,
     mediaItem: overrideProps.mediaItem,
+    showSize: false,
     onClick: action('onClick'),
+    renderContextMenu: (_item, children) => <>{children}</>,
   };
 };
 
@@ -65,6 +67,10 @@ const createMediaItem = (
     // Unused for now
     source: undefined,
     sourceServiceId: undefined,
+    readStatus: undefined,
+    isErased: false,
+    errors: undefined,
+    sendStateByConversationId: undefined,
   },
 });
 

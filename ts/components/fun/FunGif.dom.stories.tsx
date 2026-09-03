@@ -1,25 +1,29 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useEffect, useState, useId } from 'react';
+import { useEffect, useState, useId, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
 import { VisuallyHidden } from 'react-aria';
-import { FunGif, FunGifPreview } from './FunGif.dom.js';
-import { LoadingState } from '../../util/loadable.std.js';
+import { FunGif, FunGifPreview } from './FunGif.dom.tsx';
+import { LoadingState } from '../../util/loadable.std.ts';
 
 export default {
   title: 'Components/Fun/FunGif',
 } satisfies Meta;
 
+const MOCK_GIF_URL =
+  'https://media2.giphy.com/media/v1.Y2lkPTZhNGNmY2JhaXFlbXZxcHVjNXlmaGdlYWs1dTlwYnNrb2I5aGttbXViYjh4Z2hqbyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3kzJvEciJa94SMW3hN/giphy.mp4';
+const MOCK_GIF_WIDTH = 480;
+const MOCK_GIF_HEIGHT = 418;
+
 export function Basic(): JSX.Element {
   const id = useId();
   return (
     <>
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <div tabIndex={0}>
         <FunGif
-          src="https://media.tenor.com/tN6E5iSxeI8AAAPo/spongebob-spongebob-squarepants.mp4"
-          width={498}
-          height={376}
+          src={MOCK_GIF_URL}
+          width={MOCK_GIF_WIDTH}
+          height={MOCK_GIF_HEIGHT}
           aria-label="Spongebob Spongebob Squarepants GIF"
           aria-describedby={id}
         />
@@ -35,29 +39,29 @@ export function PreviewSizing(): JSX.Element {
   return (
     <>
       <FunGifPreview
-        src="https://media.tenor.com/tN6E5iSxeI8AAAPo/spongebob-spongebob-squarepants.mp4"
+        src={MOCK_GIF_URL}
         state={LoadingState.Loaded}
-        width={498}
-        height={376}
+        width={MOCK_GIF_WIDTH}
+        height={MOCK_GIF_HEIGHT}
         maxHeight={400}
         aria-describedby=""
       />
       <div style={{ maxWidth: 200 }}>
         <FunGifPreview
-          src="https://media.tenor.com/tN6E5iSxeI8AAAPo/spongebob-spongebob-squarepants.mp4"
+          src={MOCK_GIF_URL}
           state={LoadingState.Loaded}
-          width={498}
-          height={376}
+          width={MOCK_GIF_WIDTH}
+          height={MOCK_GIF_HEIGHT}
           maxHeight={400}
           aria-describedby=""
         />
       </div>
       <div style={{ maxHeight: 200 }}>
         <FunGifPreview
-          src="https://media.tenor.com/tN6E5iSxeI8AAAPo/spongebob-spongebob-squarepants.mp4"
+          src={MOCK_GIF_URL}
           state={LoadingState.Loaded}
-          width={498}
-          height={376}
+          width={MOCK_GIF_WIDTH}
+          height={MOCK_GIF_HEIGHT}
           maxHeight={200}
           aria-describedby=""
         />
@@ -71,9 +75,7 @@ export function PreviewLoading(): JSX.Element {
 
   useEffect(() => {
     setTimeout(() => {
-      setSrc(
-        'https://media.tenor.com/tN6E5iSxeI8AAAPo/spongebob-spongebob-squarepants.mp4'
-      );
+      setSrc(MOCK_GIF_URL);
     }, 2000);
   }, []);
 
@@ -81,8 +83,8 @@ export function PreviewLoading(): JSX.Element {
     <FunGifPreview
       src={src}
       state={src == null ? LoadingState.Loading : LoadingState.Loaded}
-      width={498}
-      height={376}
+      width={MOCK_GIF_WIDTH}
+      height={MOCK_GIF_HEIGHT}
       maxHeight={400}
       aria-describedby=""
     />
@@ -102,8 +104,8 @@ export function PreviewError(): JSX.Element {
     <FunGifPreview
       src={null}
       state={error == null ? LoadingState.Loading : LoadingState.LoadFailed}
-      width={498}
-      height={376}
+      width={MOCK_GIF_WIDTH}
+      height={MOCK_GIF_HEIGHT}
       maxHeight={400}
       aria-describedby=""
     />

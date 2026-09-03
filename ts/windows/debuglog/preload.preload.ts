@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { contextBridge, ipcRenderer } from 'electron';
-import { MinimalSignalContext } from '../minimalContext.preload.js';
+import { MinimalSignalContext } from '../minimalContext.preload.ts';
 
 function downloadLog(logText: string) {
   ipcRenderer.send('show-debug-log-save-dialog', logText);
@@ -21,11 +21,15 @@ function uploadLogs(logs: string) {
   return ipcRenderer.invoke('DebugLogs.upload', logs);
 }
 
+const urlParams = new URLSearchParams(window.location.search);
+const mode = urlParams.get('mode') === 'close' ? 'close' : 'submit';
+
 const Signal = {
   DebugLogWindowProps: {
     downloadLog,
     fetchLogs,
     uploadLogs,
+    mode,
   },
 };
 contextBridge.exposeInMainWorld('Signal', Signal);

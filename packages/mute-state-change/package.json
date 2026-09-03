@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "@signalapp/mute-state-change",
   "description": "ScreenCaptureKit bindings for Node.js",
   "version": "1.0.0",

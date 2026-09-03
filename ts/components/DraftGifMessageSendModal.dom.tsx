@@ -1,18 +1,18 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { type ComponentType, useEffect, useMemo, useId } from 'react';
+import { type ComponentType, useEffect, useMemo, useId, type JSX } from 'react';
 import { VisuallyHidden } from 'react-aria';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Modal } from './Modal.dom.js';
-import type { HydratedBodyRangesType } from '../types/BodyRange.std.js';
-import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea.preload.js';
-import type { ThemeType } from '../types/Util.std.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
-import { FunGifPreview } from './fun/FunGif.dom.js';
-import type { FunGifSelection } from './fun/panels/FunPanelGifs.dom.js';
-import type { GifDownloadState } from '../state/smart/DraftGifMessageSendModal.preload.js';
-import { LoadingState } from '../util/loadable.std.js';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import type { HydratedBodyRangesType } from '../types/BodyRange.std.ts';
+import type { SmartCompositionTextAreaProps } from '../state/smart/CompositionTextArea.preload.tsx';
+import type { ThemeType } from '../types/Util.std.ts';
+import { FunGifPreview } from './fun/FunGif.dom.tsx';
+import type { FunGifSelection } from './fun/panels/FunPanelGifs.dom.tsx';
+import type { GifDownloadState } from '../state/smart/DraftGifMessageSendModal.preload.tsx';
+import { LoadingState } from '../util/loadable.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type DraftGifMessageSendModalProps = Readonly<{
   i18n: LocalizerType;
@@ -52,54 +52,59 @@ export function DraftGifMessageSendModal(
   }, [url]);
 
   return (
-    <Modal
-      i18n={i18n}
-      hasXButton
-      title={i18n('icu:DraftGifMessageSendModal__Title')}
-      modalName="DraftGifMessageSendModal"
-      moduleClassName="DraftGifMessageSendModal"
-      onClose={props.onClose}
-      noMouseClose
-      padded={false}
-      modalFooter={
-        <>
-          <Button variant={ButtonVariant.Secondary} onClick={props.onClose}>
-            {i18n('icu:DraftGifMessageSendModal__CancelButtonLabel')}
-          </Button>
-          <Button
-            onClick={props.onSubmit}
-            disabled={
-              props.gifDownloadState.loadingState !== LoadingState.Loaded
-            }
-          >
-            {i18n('icu:DraftGifMessageSendModal__SendButtonLabel')}
-          </Button>
-        </>
-      }
-    >
-      <div className="DraftGifMessageSendModal__GifPreview">
-        <FunGifPreview
-          src={url}
-          state={props.gifDownloadState.loadingState}
-          width={props.gifSelection.gif.attachmentMedia.width}
-          height={props.gifSelection.gif.attachmentMedia.height}
-          maxHeight={256}
-          aria-label={props.gifSelection.gif.title}
-          aria-describedby={descriptionId}
-        />
-        <VisuallyHidden id={descriptionId}>
-          {props.gifSelection.gif.description}
-        </VisuallyHidden>
-      </div>
-      <RenderCompositionTextArea
-        bodyRanges={props.draftBodyRanges}
-        draftText={props.draftText}
-        isActive
-        onChange={props.onChange}
-        onSubmit={props.onSubmit}
-        theme={props.theme}
-        emojiSkinToneDefault={EmojiSkinTone.None}
-      />
-    </Modal>
+    <AxoDialog.Root open onOpenChange={props.onClose}>
+      <AxoDialog.Content size="sm" escape="cancel-is-destructive">
+        <AxoDialog.Header>
+          <AxoDialog.Title>
+            {i18n('icu:DraftGifMessageSendModal__Title')}
+          </AxoDialog.Title>
+          <AxoDialog.Close />
+        </AxoDialog.Header>
+        <AxoDialog.Body padding="sm">
+          <div className={tw('flex justify-center px-2')}>
+            <FunGifPreview
+              src={url}
+              state={props.gifDownloadState.loadingState}
+              width={props.gifSelection.gif.attachmentMedia.width}
+              height={props.gifSelection.gif.attachmentMedia.height}
+              maxHeight={256}
+              aria-label={props.gifSelection.gif.title}
+              aria-describedby={descriptionId}
+            />
+            <VisuallyHidden id={descriptionId}>
+              {props.gifSelection.gif.description}
+            </VisuallyHidden>
+          </div>
+          <RenderCompositionTextArea
+            bodyRanges={props.draftBodyRanges}
+            draftText={props.draftText}
+            isActive
+            onChange={props.onChange}
+            onSubmit={props.onSubmit}
+            theme={props.theme}
+            emojiSkinToneDefault={Emoji.SkinTone.None}
+          />
+        </AxoDialog.Body>
+        <AxoDialog.Footer>
+          <AxoDialog.Actions>
+            <AxoDialog.Action
+              variant="strong-secondary"
+              onClick={props.onClose}
+            >
+              {i18n('icu:cancel')}
+            </AxoDialog.Action>
+            <AxoDialog.Action
+              variant="strong-primary"
+              onClick={props.onSubmit}
+              disabled={
+                props.gifDownloadState.loadingState !== LoadingState.Loaded
+              }
+            >
+              {i18n('icu:DraftGifMessageSendModal__SendButtonLabel')}
+            </AxoDialog.Action>
+          </AxoDialog.Actions>
+        </AxoDialog.Footer>
+      </AxoDialog.Content>
+    </AxoDialog.Root>
   );
 }

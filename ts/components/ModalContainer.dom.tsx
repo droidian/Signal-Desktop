@@ -1,10 +1,10 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { ReactNode } from 'react';
+import { useRef } from 'react';
+import type { ReactNode, JSX } from 'react';
 import ReactDOM from 'react-dom';
-import { ModalContainerContext } from './ModalHost.dom.js';
+import { ModalContainerContext } from './ModalHost.dom.tsx';
 
 type Props = {
   children: ReactNode;
@@ -18,7 +18,7 @@ type Props = {
  * the styles of the container in way that also applies to modals.
  */
 export const ModalContainer = ({ children, className }: Props): JSX.Element => {
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   return ReactDOM.createPortal(
     <div ref={containerRef} className={className}>
       <ModalContainerContext.Provider value={containerRef.current}>

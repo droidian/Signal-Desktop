@@ -1,29 +1,35 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useEffect } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type JSX,
+  type ComponentProps,
+} from 'react';
 import lodash from 'lodash';
 import type { VideoFrameSource } from '@signalapp/ringrtc';
-import { CallNeedPermissionScreen } from './CallNeedPermissionScreen.dom.js';
-import { CallScreen } from './CallScreen.dom.js';
-import { CallingLobby } from './CallingLobby.dom.js';
-import { CallingParticipantsList } from './CallingParticipantsList.dom.js';
-import { CallingSelectPresentingSourcesModal } from './CallingSelectPresentingSourcesModal.dom.js';
-import { CallingPip } from './CallingPip.dom.js';
-import { IncomingCallBar } from './IncomingCallBar.dom.js';
+import { CallNeedPermissionScreen } from './CallNeedPermissionScreen.dom.tsx';
+import { CallScreen } from './CallScreen.dom.tsx';
+import { CallingLobby } from './CallingLobby.dom.tsx';
+import { CallingParticipantsList } from './CallingParticipantsList.dom.tsx';
+import { CallingSelectPresentingSourcesModal } from './CallingSelectPresentingSourcesModal.dom.tsx';
+import { CallingPip } from './CallingPip.dom.tsx';
+import { IncomingCallBar } from './IncomingCallBar.dom.tsx';
 import type {
   ActiveCallType,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallVideoRequest,
-} from '../types/Calling.std.js';
+} from '../types/Calling.std.ts';
 import {
   CallEndedReason,
   CallState,
   GroupCallJoinState,
-} from '../types/Calling.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
+} from '../types/Calling.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
 import type {
   AcceptCallType,
   BatchUserActionPayloadType,
@@ -31,34 +37,36 @@ import type {
   DeclineCallType,
   GroupCallParticipantInfoType,
   PendingUserActionPayloadType,
-  RemoveClientType,
   SendGroupCallRaiseHandType,
   SendGroupCallReactionType,
   SetGroupCallVideoRequestType,
   SetLocalAudioType,
-  SetMutedByType,
   SetLocalVideoType,
   SetRendererCanvasType,
   StartCallType,
-} from '../state/ducks/calling.preload.js';
-import { CallLinkRestrictions } from '../types/CallLink.std.js';
-import type { CallLinkType } from '../types/CallLink.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { CallingToastProvider } from './CallingToast.dom.js';
-import type { SmartReactionPicker } from '../state/smart/ReactionPicker.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.js';
-import { CallingAdhocCallInfo } from './CallingAdhocCallInfo.dom.js';
-import { callLinkRootKeyToUrl } from '../util/callLinkRootKeyToUrl.std.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import { copyCallLink } from '../util/copyLinksWithToast.dom.js';
+} from '../state/ducks/calling.preload.ts';
+import { CallLinkRestrictions } from '../types/CallLink.std.ts';
+import type { CallLinkType } from '../types/CallLink.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { CallingToastProvider } from './CallingToast.dom.tsx';
+import type { SmartReactionPicker } from '../state/smart/ReactionPicker.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.ts';
+import { CallingAdhocCallInfo } from './CallingAdhocCallInfo.dom.tsx';
+import { callLinkRootKeyToUrl } from '../util/callLinkRootKeyToUrl.std.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import { copyCallLink } from '../util/copyLinksWithToast.dom.ts';
 import {
   redactNotificationProfileId,
   shouldNotify,
-} from '../types/NotificationProfile.std.js';
-import type { NotificationProfileType } from '../types/NotificationProfile.std.js';
-import { strictAssert } from '../util/assert.std.js';
+} from '../types/NotificationProfile.std.ts';
+import type { NotificationProfileType } from '../types/NotificationProfile.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import type { SetLocalPreviewContainerType } from '../services/calling.preload.ts';
+import type { ContactModalStateType } from '../types/globalModals.std.ts';
+import type { PropsType as SmartCallingParticipantMenuProps } from '../state/smart/CallingParticipantMenu.preload.tsx';
+import { AxoTheme } from '../axo/AxoTheme.dom.tsx';
 
 const { noop } = lodash;
 
@@ -104,9 +112,12 @@ export type PropsType = {
   ringingCall: DirectIncomingCall | GroupIncomingCall | null;
   renderDeviceSelection: () => JSX.Element;
   renderReactionPicker: (
-    props: React.ComponentProps<typeof SmartReactionPicker>
+    props: ComponentProps<typeof SmartReactionPicker>
   ) => JSX.Element;
-  showContactModal: (contactId: string, conversationId?: string) => void;
+  renderCallingParticipantMenu: (
+    props: SmartCallingParticipantMenuProps
+  ) => JSX.Element;
+  showContactModal: (payload: ContactModalStateType) => void;
   startCall: (payload: StartCallType) => void;
   toggleParticipants: () => void;
   acceptCall: (_: AcceptCallType) => void;
@@ -127,8 +138,6 @@ export type PropsType = {
   ) => unknown;
   openSystemPreferencesAction: () => unknown;
   playRingtone: () => unknown;
-  removeClient: (payload: RemoveClientType) => void;
-  blockClient: (payload: RemoveClientType) => void;
   selectPresentingSource: (id: string) => void;
   sendGroupCallRaiseHand: (payload: SendGroupCallRaiseHandType) => void;
   sendGroupCallReaction: (payload: SendGroupCallReactionType) => void;
@@ -136,8 +145,7 @@ export type PropsType = {
   setIsCallActive: (_: boolean) => void;
   setLocalAudio: SetLocalAudioType;
   setLocalVideo: SetLocalVideoType;
-  setLocalAudioRemoteMuted: SetMutedByType;
-  setLocalPreviewContainer: (container: HTMLDivElement | null) => void;
+  setLocalPreviewContainer: (options: SetLocalPreviewContainerType) => void;
   setOutgoingRing: (_: boolean) => void;
   setRendererCanvas: (_: SetRendererCanvasType) => void;
   showShareCallLinkViaSignal: (
@@ -179,7 +187,6 @@ function ActiveCallManager({
   approveUser,
   availableCameras,
   batchUserAction,
-  blockClient,
   callLink,
   cancelCall,
   cancelPresenting,
@@ -194,15 +201,14 @@ function ActiveCallManager({
   getPresentingSources,
   me,
   openSystemPreferencesAction,
+  renderCallingParticipantMenu,
   renderDeviceSelection,
   renderReactionPicker,
-  removeClient,
   selectPresentingSource,
   sendGroupCallRaiseHand,
   sendGroupCallReaction,
   setGroupCallVideoRequest,
   setLocalAudio,
-  setLocalAudioRemoteMuted,
   setLocalPreviewContainer,
   setLocalVideo,
   setRendererCanvas,
@@ -256,9 +262,12 @@ function ActiveCallManager({
   ]);
 
   // For caching screenshare frames which update slowly, between Pip and CallScreen.
-  const imageDataCache = React.useRef<CallingImageDataCache>(new Map());
+  const imageDataCache = useRef<CallingImageDataCache>(new Map());
 
-  const previousConversationId = usePrevious(conversation.id, conversation.id);
+  const previousConversationId = usePreviousDeprecated(
+    conversation.id,
+    conversation.id
+  );
   useEffect(() => {
     if (conversation.id !== previousConversationId) {
       imageDataCache.current.clear();
@@ -375,7 +384,7 @@ function ActiveCallManager({
 
   if (showCallLobby) {
     return (
-      <>
+      <AxoTheme.Override theme="force-dark">
         <CallingLobby
           availableCameras={availableCameras}
           callMode={activeCall.callMode}
@@ -412,16 +421,15 @@ function ActiveCallManager({
             <CallingAdhocCallInfo
               callLink={callLink}
               i18n={i18n}
-              isCallLinkAdmin={isCallLinkAdmin}
               isUnknownContactDiscrete={false}
               ourServiceId={me.serviceId}
               participants={peekedParticipants}
+              participantMenuDisabled
               onClose={toggleParticipants}
               onCopyCallLink={onCopyCallLink}
               onShareCallLinkViaSignal={handleShareCallLinkViaSignal}
-              removeClient={removeClient}
-              blockClient={blockClient}
               showContactModal={showContactModal}
+              renderCallingParticipantMenu={renderCallingParticipantMenu}
             />
           ) : (
             <CallingParticipantsList
@@ -429,11 +437,13 @@ function ActiveCallManager({
               i18n={i18n}
               onClose={toggleParticipants}
               ourServiceId={me.serviceId}
+              participantMenuDisabled
               participants={peekedParticipants}
               showContactModal={showContactModal}
+              renderCallingParticipantMenu={renderCallingParticipantMenu}
             />
           ))}
-      </>
+      </AxoTheme.Override>
     );
   }
 
@@ -462,7 +472,7 @@ function ActiveCallManager({
     : [];
 
   return (
-    <>
+    <AxoTheme.Override theme="force-dark">
       <CallScreen
         activeCall={activeCall}
         approveUser={approveUser}
@@ -479,6 +489,7 @@ function ActiveCallManager({
         isCallLinkAdmin={isCallLinkAdmin}
         me={me}
         openSystemPreferencesAction={openSystemPreferencesAction}
+        renderCallingParticipantMenu={renderCallingParticipantMenu}
         renderReactionPicker={renderReactionPicker}
         sendGroupCallRaiseHand={sendGroupCallRaiseHand}
         sendGroupCallReaction={sendGroupCallReaction}
@@ -486,7 +497,6 @@ function ActiveCallManager({
         setLocalPreviewContainer={setLocalPreviewContainer}
         setRendererCanvas={setRendererCanvas}
         setLocalAudio={setLocalAudio}
-        setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
         setLocalVideo={setLocalVideo}
         stickyControls={showParticipantsList}
         switchToPresentationView={switchToPresentationView}
@@ -516,16 +526,14 @@ function ActiveCallManager({
           <CallingAdhocCallInfo
             callLink={callLink}
             i18n={i18n}
-            isCallLinkAdmin={isCallLinkAdmin}
             isUnknownContactDiscrete
             ourServiceId={me.serviceId}
             participants={groupCallParticipantsForParticipantsList}
             onClose={toggleParticipants}
             onCopyCallLink={onCopyCallLink}
             onShareCallLinkViaSignal={handleShareCallLinkViaSignal}
-            removeClient={removeClient}
-            blockClient={blockClient}
             showContactModal={showContactModal}
+            renderCallingParticipantMenu={renderCallingParticipantMenu}
           />
         ) : (
           <CallingParticipantsList
@@ -535,9 +543,10 @@ function ActiveCallManager({
             ourServiceId={me.serviceId}
             participants={groupCallParticipantsForParticipantsList}
             showContactModal={showContactModal}
+            renderCallingParticipantMenu={renderCallingParticipantMenu}
           />
         ))}
-    </>
+    </AxoTheme.Override>
   );
 }
 
@@ -548,7 +557,6 @@ export function CallManager({
   approveUser,
   availableCameras,
   batchUserAction,
-  blockClient,
   bounceAppIconStart,
   bounceAppIconStop,
   callLink,
@@ -570,7 +578,7 @@ export function CallManager({
   openSystemPreferencesAction,
   pauseVoiceNotePlayer,
   playRingtone,
-  removeClient,
+  renderCallingParticipantMenu,
   renderDeviceSelection,
   renderReactionPicker,
   ringingCall,
@@ -580,7 +588,6 @@ export function CallManager({
   setGroupCallVideoRequest,
   setIsCallActive,
   setLocalAudio,
-  setLocalAudioRemoteMuted,
   setLocalPreviewContainer,
   setLocalVideo,
   setOutgoingRing,
@@ -612,7 +619,7 @@ export function CallManager({
           activeProfile: activeNotificationProfile,
           conversationId: ringingCallId,
           isCall: true,
-          isMention: false,
+          isMentionOrReply: false,
         })
       ) {
         const redactedId = redactNotificationProfileId(
@@ -670,7 +677,6 @@ export function CallManager({
           availableCameras={availableCameras}
           approveUser={approveUser}
           batchUserAction={batchUserAction}
-          blockClient={blockClient}
           callLink={callLink}
           cancelCall={cancelCall}
           cancelPresenting={cancelPresenting}
@@ -688,15 +694,14 @@ export function CallManager({
           me={me}
           openSystemPreferencesAction={openSystemPreferencesAction}
           pauseVoiceNotePlayer={pauseVoiceNotePlayer}
-          removeClient={removeClient}
           renderDeviceSelection={renderDeviceSelection}
           renderReactionPicker={renderReactionPicker}
+          renderCallingParticipantMenu={renderCallingParticipantMenu}
           selectPresentingSource={selectPresentingSource}
           sendGroupCallRaiseHand={sendGroupCallRaiseHand}
           sendGroupCallReaction={sendGroupCallReaction}
           setGroupCallVideoRequest={setGroupCallVideoRequest}
           setLocalAudio={setLocalAudio}
-          setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
           setLocalPreviewContainer={setLocalPreviewContainer}
           setLocalVideo={setLocalVideo}
           setOutgoingRing={setOutgoingRing}
@@ -726,7 +731,7 @@ export function CallManager({
     if (
       !shouldNotify({
         isCall: true,
-        isMention: false,
+        isMentionOrReply: false,
         conversationId: ringingCall.conversation.id,
         activeProfile: activeNotificationProfile,
       })

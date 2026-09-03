@@ -1,9 +1,9 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { strictAssert } from '../util/assert.std.js';
+import { strictAssert } from '../util/assert.std.ts';
 
-type LayoutMapType = { get(code: string): string | undefined };
+type LayoutMapType = { get: (code: string) => string | undefined };
 
 let layoutMap: LayoutMapType | undefined;
 
@@ -11,7 +11,7 @@ export async function initialize(): Promise<void> {
   strictAssert(layoutMap === undefined, 'keyboardLayout already initialized');
 
   const experimentalNavigator = window.navigator as unknown as {
-    keyboard: { getLayoutMap(): Promise<LayoutMapType> };
+    keyboard: { getLayoutMap: () => Promise<LayoutMapType> };
   };
 
   strictAssert(

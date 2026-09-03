@@ -1,14 +1,13 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import Long from 'long';
-import type { Backups, SignalService } from '../protobuf/index.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { backupsService } from '../services/backups/index.preload.js';
-import { drop } from './drop.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { resetBackupMediaDownloadStats } from './backupMediaDownload.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import type { Backups, SignalService } from '../protobuf/index.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { backupsService } from '../services/backups/index.preload.ts';
+import { drop } from './drop.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { resetBackupMediaDownloadStats } from './backupMediaDownload.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('BackupSubscriptionData');
 
@@ -17,8 +16,8 @@ const log = createLogger('BackupSubscriptionData');
 // we'll need separate logic for each
 export async function saveBackupsSubscriberData(
   backupsSubscriberData:
-    | Backups.AccountData.IIAPSubscriberData
-    | SignalService.AccountRecord.IIAPSubscriberData
+    | Backups.AccountData.IAPSubscriberData.Params
+    | SignalService.AccountRecord.IAPSubscriberData.Params
     | null
     | undefined
 ): Promise<void> {
@@ -35,8 +34,7 @@ export async function saveBackupsSubscriberData(
     return;
   }
 
-  const { subscriberId, purchaseToken, originalTransactionId } =
-    backupsSubscriberData;
+  const { subscriberId, iapSubscriptionId } = backupsSubscriberData;
 
   if (Bytes.isNotEmpty(subscriberId)) {
     await itemStorage.put('backupsSubscriberId', subscriberId);
@@ -44,16 +42,19 @@ export async function saveBackupsSubscriberData(
     await itemStorage.remove('backupsSubscriberId');
   }
 
-  if (purchaseToken) {
-    await itemStorage.put('backupsSubscriberPurchaseToken', purchaseToken);
+  if (iapSubscriptionId?.purchaseToken != null) {
+    await itemStorage.put(
+      'backupsSubscriberPurchaseToken',
+      iapSubscriptionId.purchaseToken
+    );
   } else {
     await itemStorage.remove('backupsSubscriberPurchaseToken');
   }
 
-  if (originalTransactionId) {
+  if (iapSubscriptionId?.originalTransactionId != null) {
     await itemStorage.put(
       'backupsSubscriberOriginalTransactionId',
-      originalTransactionId.toString()
+      iapSubscriptionId.originalTransactionId.toString()
     );
   } else {
     await itemStorage.remove('backupsSubscriberOriginalTransactionId');
@@ -72,27 +73,38 @@ export async function saveBackupTier(
   }
 }
 
-export function generateBackupsSubscriberData(): Backups.AccountData.IIAPSubscriberData | null {
-  const backupsSubscriberId = itemStorage.get('backupsSubscriberId');
+export function generateBackupsSubscriberData(): Backups.AccountData.IAPSubscriberData.Params | null {
+  const subscriberId = itemStorage.get('backupsSubscriberId') ?? null;
 
-  if (Bytes.isEmpty(backupsSubscriberId)) {
+  if (Bytes.isEmpty(subscriberId)) {
     return null;
   }
 
-  const backupsSubscriberData: Backups.AccountData.IIAPSubscriberData = {
-    subscriberId: backupsSubscriberId,
-  };
+  let backupsSubscriberData: Backups.AccountData.IAPSubscriberData.Params;
   const purchaseToken = itemStorage.get('backupsSubscriberPurchaseToken');
   if (purchaseToken) {
-    backupsSubscriberData.purchaseToken = purchaseToken;
+    backupsSubscriberData = {
+      subscriberId,
+      iapSubscriptionId: {
+        purchaseToken,
+      },
+    };
   } else {
     const originalTransactionId = itemStorage.get(
       'backupsSubscriberOriginalTransactionId'
     );
-    if (originalTransactionId) {
-      backupsSubscriberData.originalTransactionId = Long.fromString(
-        originalTransactionId
-      );
+    if (originalTransactionId != null) {
+      backupsSubscriberData = {
+        subscriberId,
+        iapSubscriptionId: {
+          originalTransactionId: BigInt(originalTransactionId),
+        },
+      };
+    } else {
+      backupsSubscriberData = {
+        subscriberId,
+        iapSubscriptionId: null,
+      };
     }
   }
 

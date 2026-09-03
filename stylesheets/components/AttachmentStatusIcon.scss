@@ -111,22 +111,22 @@
 .AttachmentStatusIcon__circle-icon--x {
   @include mixins.color-svg-themed(
     '../images/icons/v3/x/x-bold.svg',
-    var(--color-label-primary-on-color),
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor),
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .AttachmentStatusIcon__circle-icon--arrow-down {
   @include mixins.color-svg-themed(
     '../images/icons/v3/arrow/arrow-down-bold.svg',
-    var(--color-label-primary-on-color),
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor),
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .AttachmentStatusIcon__circle-icon--incoming {
   @include mixins.light-theme {
-    background-color: var(--color-label-primary);
+    background-color: var(--axo-color-label-primary);
   }
   @include mixins.dark-theme {
-    background-color: var(--color-label-primary);
+    background-color: var(--axo-color-label-primary);
   }
 }

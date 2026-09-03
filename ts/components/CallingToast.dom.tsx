@@ -1,24 +1,29 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, {
+import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
+  type JSX,
+  type ReactNode,
+  type RefObject,
+  type HTMLAttributes,
 } from 'react';
 import { useFocusWithin, useHover, mergeProps } from 'react-aria';
 import { createPortal } from 'react-dom';
 import { useTransition, animated } from '@react-spring/web';
 import classNames from 'classnames';
 import { v4 as uuid } from 'uuid';
-import { useIsMounted } from '../hooks/useIsMounted.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import { difference } from '../util/setUtil.std.js';
-import { useReducedMotion } from '../hooks/useReducedMotion.dom.js';
+import { useIsMounted } from '../hooks/useIsMounted.std.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import { difference } from '../util/setUtil.std.ts';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
 
 const DEFAULT_LIFETIME = 5000;
 const DEFAULT_TRANSITION_FROM = {
@@ -69,19 +74,19 @@ export function CallingToastProvider({
   transitionFrom = DEFAULT_TRANSITION_FROM,
 }: {
   i18n: LocalizerType;
-  children: React.ReactNode;
-  region?: React.RefObject<HTMLElement>;
+  children: ReactNode;
+  region?: RefObject<HTMLElement | null>;
   maxNonPersistentToasts?: number;
   lifetime?: number;
   transitionFrom?: object;
 }): JSX.Element {
-  const [toasts, setToasts] = React.useState<Array<CallingToastStateType>>([]);
-  const previousToasts = usePrevious([], toasts);
-  const timeouts = React.useRef<Map<string, TimeoutType>>(new Map());
+  const [toasts, setToasts] = useState<Array<CallingToastStateType>>([]);
+  const previousToasts = usePreviousDeprecated([], toasts);
+  const timeouts = useRef<Map<string, TimeoutType>>(new Map());
   // All toasts are paused on hover or focus so that toasts don't disappear while a user
   // is attempting to interact with them
-  const timeoutsStatus = React.useRef<'active' | 'paused'>('active');
-  const shownToasts = React.useRef<Set<string>>(new Set());
+  const timeoutsStatus = useRef<'active' | 'paused'>('active');
+  const shownToasts = useRef<Set<string>>(new Set());
   const isMounted = useIsMounted();
 
   const clearToastTimeout = useCallback((key: string) => {
@@ -235,7 +240,8 @@ export function CallingToastProvider({
         toast => toast.key === item.key
       );
       const isToastReplacingAnExistingOneAtThisPosition = toastsRemoved.has(
-        previousToasts[enteringItemIndex]
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        previousToasts[enteringItemIndex]!
       );
       return {
         ...transitionFrom,
@@ -275,7 +281,8 @@ export function CallingToastProvider({
         toast => toast.key === item.key
       );
       const isToastBeingReplacedByANewOneAtThisPosition = toastsAdded.has(
-        toasts[leavingItemIndex]
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        toasts[leavingItemIndex]!
       );
       return {
         zIndex: 0,
@@ -351,7 +358,7 @@ function CallingToast(
     props.dismissable && 'CallingToast--dismissable'
   );
 
-  const elementHtmlProps: React.HTMLAttributes<HTMLDivElement> = {
+  const elementHtmlProps: HTMLAttributes<HTMLDivElement> = {
     role: 'alert',
     'aria-live': props.autoClose ? 'assertive' : 'polite',
   };

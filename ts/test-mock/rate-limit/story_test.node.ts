@@ -5,11 +5,11 @@ import { assert } from 'chai';
 import createDebug from 'debug';
 import { Proto, StorageState } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 
 export const debug = createDebug('mock:test:rate-limit');
 
@@ -46,6 +46,8 @@ describe('story/no-sender-key', function (this: Mocha.Suite) {
           identifier: uuidToBytes(MY_STORY_ID),
           isBlockList: true,
           name: MY_STORY_ID,
+          deletedAtTimestamp: null,
+          recipientServiceIdsBinary: null,
         },
       },
     });
@@ -123,7 +125,10 @@ describe('story/no-sender-key', function (this: Mocha.Suite) {
             storyMessage.profileKey ?? new Uint8Array(0)
           )
         );
-        assert.strictEqual(storyMessage.textAttachment?.text, '123');
+        assert.strictEqual(
+          storyMessage.attachment?.textAttachment?.text,
+          '123'
+        );
       })
     );
   });

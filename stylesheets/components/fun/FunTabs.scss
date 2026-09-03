@@ -39,6 +39,15 @@
     // Handled by .FunTabs__TabButton
     outline: none;
   }
+
+  &:not([data-selected='true']) {
+    &:hover,
+    &:focus {
+      .FunTabs__TabButton {
+        background: var(--axo-color-fill-primary);
+      }
+    }
+  }
 }
 
 .FunTabs__TabButton {
@@ -49,12 +58,7 @@
   border-radius: 9999px;
   text-align: center;
   @include mixins.font-body-1;
-  color: light-dark(variables.$color-gray-90, variables.$color-gray-05);
-
-  .FunTabs__Tab:hover &,
-  .FunTabs__Tab:focus & {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
-  }
+  color: var(--axo-color-label-primary);
 }
 
 .FunTabs__TabButtonIndicator {
@@ -67,12 +71,12 @@
   height: 100%;
   cursor: pointer;
   pointer-events: none;
-  background: light-dark(variables.$color-gray-05, variables.$color-gray-60);
+  background: var(--axo-color-fill-primary-pressed);
 
   .FunTabs__Tab[data-focused='true'] & {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -88,8 +92,4 @@
   grid-column: 1;
   grid-row: 2;
   min-height: 0;
-}
-
-.FunTabs__TabPanelInner {
-  background: FunConstants.$Fun__BgColor; // Needed for smooth fade-between animation
 }

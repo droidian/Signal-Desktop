@@ -1,11 +1,12 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './ImageGrid.dom.js';
-import { ImageGrid } from './ImageGrid.dom.js';
+import type { Props } from './ImageGrid.dom.tsx';
+import { ImageGrid } from './ImageGrid.dom.tsx';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -13,11 +14,9 @@ import {
   IMAGE_WEBP,
   VIDEO_MP4,
   stringToMIMEType,
-} from '../../types/MIME.std.js';
-import { pngUrl, squareStickerUrl } from '../../storybook/Fixtures.std.js';
-import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { isDownloadable } from '../../util/Attachment.std.js';
+} from '../../types/MIME.std.ts';
+import { pngUrl, squareStickerUrl } from '../../storybook/Fixtures.std.ts';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -1075,10 +1074,6 @@ export function DownloadPill(args: Props): JSX.Element {
     cdnKey: 'mock-cdn-key',
     cdnNumber: 4000,
   });
-
-  // Pill only shows if the attachments are downloadable
-  strictAssert(isDownloadable(attachment1), 'attachment1 must be downloadable');
-  strictAssert(isDownloadable(attachment2), 'attachment2 must be downloadable');
 
   return <ImageGrid {...args} attachments={[attachment1, attachment2]} />;
 }

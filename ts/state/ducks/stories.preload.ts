@@ -5,85 +5,86 @@ import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import lodash from 'lodash';
 
 import type { ReadonlyDeep } from 'type-fest';
-import * as Errors from '../../types/errors.std.js';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import type { DraftBodyRanges } from '../../types/BodyRange.std.js';
+import * as Errors from '../../types/errors.std.ts';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import type { DraftBodyRanges } from '../../types/BodyRange.std.ts';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
 import type {
   MessageChangedActionType,
   MessageDeletedActionType,
   MessagesAddedActionType,
   TargetedConversationChangedActionType,
-} from './conversations.preload.js';
-import type { NoopActionType } from './noop.std.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
+} from './conversations.preload.ts';
+import { noopAction, type NoopActionType } from './noop.std.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
 import type {
   StoryViewTargetType,
   StoryViewType,
-} from '../../types/Stories.std.js';
-import type { SyncType } from '../../jobs/helpers/syncHelpers.preload.js';
-import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import { isAciString } from '../../util/isAciString.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { TARGETED_CONVERSATION_CHANGED } from './conversations.preload.js';
-import { SIGNAL_ACI } from '../../types/SignalConversation.std.js';
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.js';
+} from '../../types/Stories.std.ts';
+import type { SyncType } from '../../jobs/helpers/syncHelpers.preload.ts';
+import type { StoryDistributionIdString } from '../../types/StoryDistributionId.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { TARGETED_CONVERSATION_CHANGED } from './conversations.preload.ts';
+import { SIGNAL_ACI } from '../../types/SignalConversation.std.ts';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.ts';
 import {
   StoryViewDirectionType,
   StoryViewModeType,
-} from '../../types/Stories.std.js';
-import { areStoryViewReceiptsEnabled } from '../../util/Settings.preload.js';
-import { assertDev, strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified.dom.js';
-import { deleteStoryForEveryone as doDeleteStoryForEveryone } from '../../util/deleteStoryForEveryone.preload.js';
-import { deleteGroupStoryReplyForEveryone as doDeleteGroupStoryReplyForEveryone } from '../../util/deleteGroupStoryReplyForEveryone.preload.js';
-import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend.preload.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { markOnboardingStoryAsRead } from '../../util/markOnboardingStoryAsRead.preload.js';
-import { markViewed } from '../../services/MessageUpdater.preload.js';
-import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads.preload.js';
-import { replaceIndex } from '../../util/replaceIndex.std.js';
-import type { DurationInSeconds } from '../../util/durations/index.std.js';
+} from '../../types/Stories.std.ts';
+import { areStoryViewReceiptsEnabled } from '../../util/Settings.preload.ts';
+import { assertDev, strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified.dom.ts';
+import { deleteStoryForEveryone as doDeleteStoryForEveryone } from '../../util/deleteStoryForEveryone.preload.ts';
+import { deleteGroupStoryReplyForEveryone as doDeleteGroupStoryReplyForEveryone } from '../../util/deleteGroupStoryReplyForEveryone.preload.ts';
+import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { markOnboardingStoryAsRead } from '../../util/markOnboardingStoryAsRead.preload.ts';
+import { markViewed } from '../../services/MessageUpdater.preload.ts';
+import { queueAttachmentDownloads } from '../../util/queueAttachmentDownloads.preload.ts';
+import { replaceIndex } from '../../util/replaceIndex.std.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
 import {
   hasFailed,
   isDownloaded,
   isDownloading,
-} from '../../util/Attachment.std.js';
+} from '../../util/Attachment.std.ts';
 import {
   getConversationSelector,
   getHideStoryConversationIds,
-} from '../selectors/conversations.dom.js';
+} from '../selectors/conversations.dom.ts';
 import {
   getStories,
   getStoryDownloadableAttachment,
-} from '../selectors/stories.preload.js';
-import { setStoriesDisabled as utilSetStoriesDisabled } from '../../util/stories.preload.js';
-import { getStoryDataFromMessageAttributes } from '../../services/storyLoader.preload.js';
-import { isGroup } from '../../util/whatTypeOfConversation.dom.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
-import { isStory } from '../../messages/helpers.std.js';
-import { sendStoryMessage as doSendStoryMessage } from '../../util/sendStoryMessage.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import { verifyStoryListMembers as doVerifyStoryListMembers } from '../../util/verifyStoryListMembers.preload.js';
-import { viewSyncJobQueue } from '../../jobs/viewSyncJobQueue.preload.js';
-import { getOwn } from '../../util/getOwn.std.js';
-import { SHOW_TOAST } from './toast.preload.js';
-import { ToastType } from '../../types/Toast.dom.js';
-import type { ShowToastActionType } from './toast.preload.js';
+} from '../selectors/stories.preload.ts';
+import { setStoriesDisabled as utilSetStoriesDisabled } from '../../util/stories.preload.ts';
+import { getStoryDataFromMessageAttributes } from '../../services/storyLoader.preload.ts';
+import { isGroup } from '../../util/whatTypeOfConversation.dom.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
+import { isStory } from '../../messages/helpers.std.ts';
+import { sendStoryMessage as doSendStoryMessage } from '../../util/sendStoryMessage.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { verifyStoryListMembers as doVerifyStoryListMembers } from '../../util/verifyStoryListMembers.preload.ts';
+import { viewSyncJobQueue } from '../../jobs/viewSyncJobQueue.preload.ts';
+import { getOwn } from '../../util/getOwn.std.ts';
+import { SHOW_TOAST } from './toast.preload.ts';
+import { ToastType } from '../../types/Toast.dom.tsx';
+import type { ShowToastActionType } from './toast.preload.ts';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../../jobs/conversationJobQueue.preload.js';
-import { ReceiptType } from '../../types/Receipt.std.js';
-import { cleanupMessages } from '../../util/cleanup.preload.js';
-import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../jobs/conversationJobQueue.preload.ts';
+import { ReceiptType } from '../../types/Receipt.std.ts';
+import { cleanupMessages } from '../../util/cleanup.preload.ts';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { isEqual, pick } = lodash;
 
@@ -276,7 +277,7 @@ type SetHasAllStoriesUnmutedType = ReadonlyDeep<{
   payload: boolean;
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 export type StoriesActionType =
   | DOEStoryActionType
   | ListMembersVerified
@@ -304,7 +305,7 @@ function deleteGroupStoryReply(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, StoryReplyDeletedActionType> {
   return async dispatch => {
-    await DataWriter.removeMessage(messageId, { cleanupMessages });
+    await DataWriter.removeMessageById(messageId, { cleanupMessages });
     dispatch({
       type: STORY_REPLY_DELETED,
       payload: messageId,
@@ -320,10 +321,7 @@ function deleteGroupStoryReplyForEveryone(
 
     // the call above re-uses the sync-message processing code to update the UI
     // we don't need to do anything here
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('deleteGroupStoryReplyForEveryone'));
   };
 }
 
@@ -455,7 +453,7 @@ function markStoryRead(
 
     if (
       !isSignalOnboardingStory &&
-      !window.ConversationController.areWePrimaryDevice()
+      window.ConversationController.doWeHaveOtherDevices()
     ) {
       drop(viewSyncJobQueue.add({ viewSyncs }));
     }
@@ -535,10 +533,6 @@ function queueStoryDownload(
     const message = await getMessageById(storyId);
 
     if (message) {
-      // We want to ensure that we re-hydrate the story reply context with the
-      // completed attachment download.
-      message.set({ storyReplyContext: undefined });
-
       dispatch({
         type: QUEUE_STORY_DOWNLOAD,
         payload: storyId,
@@ -555,15 +549,12 @@ function queueStoryDownload(
       return;
     }
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('queueStoryDownload'));
   };
 }
 
 function reactToStory(
-  nextReaction: string,
+  nextReaction: Emoji.Variant,
   messageId: string
 ): ThunkAction<
   void,
@@ -578,10 +569,7 @@ function reactToStory(
         emoji: nextReaction,
         remove: false,
       });
-      dispatch({
-        type: 'NOOP',
-        payload: null,
-      });
+      dispatch(noopAction('reactToStory'));
     } catch (error) {
       log.error('Error enqueuing reaction', error, messageId, nextReaction);
       dispatch({
@@ -916,6 +904,7 @@ const viewUserStories: ViewUserStoriesActionCreatorType = ({
       });
 
     const story = storiesByConversationId[currentIndex];
+    strictAssert(story, 'Missing story');
     const state = getState();
 
     const hiddenConversationIds = new Set(getHideStoryConversationIds(state));
@@ -1081,6 +1070,7 @@ const viewStory: ViewStoryActionCreatorType = (
       const currentDistributionListIndex = myStories.findIndex(item => {
         for (let i = item.stories.length - 1; i >= 0; i -= 1) {
           const myStory = item.stories[i];
+          strictAssert(myStory, 'Missing myStory');
           if (myStory.messageId === storyId) {
             // [1] reversed
             currentStoryIndex = item.stories.length - 1 - i;
@@ -1107,37 +1097,51 @@ const viewStory: ViewStoryActionCreatorType = (
       let nextSentStoryIndex = -1;
       let nextNumStories = numStories;
 
+      const currentSentStoryContainer = myStories[currentDistributionListIndex];
+      strictAssert(
+        currentSentStoryContainer,
+        'Missing currentSentStoryContainer'
+      );
+
       // [2] reversed
-      const currentStories = myStories[currentDistributionListIndex].stories
+      const currentStories = currentSentStoryContainer.stories
         .slice()
         .reverse();
 
       if (viewDirection === StoryViewDirectionType.Next) {
         if (currentStoryIndex < currentStories.length - 1) {
           nextSentStoryIndex = currentStoryIndex + 1;
-          nextSentStoryId = currentStories[nextSentStoryIndex].messageId;
+          nextSentStoryId = currentStories[nextSentStoryIndex]?.messageId;
         } else if (currentDistributionListIndex < myStories.length - 1) {
           const nextSentStoryContainer =
             myStories[currentDistributionListIndex + 1];
+          strictAssert(
+            nextSentStoryContainer,
+            'Missing nextSentStoryContainer'
+          );
 
           nextNumStories = nextSentStoryContainer.stories.length;
           nextSentStoryIndex = 0;
           nextSentStoryId =
-            nextSentStoryContainer.stories[nextNumStories - 1].messageId;
+            nextSentStoryContainer.stories[nextNumStories - 1]?.messageId;
         }
       }
 
       if (viewDirection === StoryViewDirectionType.Previous) {
         if (currentStoryIndex > 0) {
           nextSentStoryIndex = currentStoryIndex - 1;
-          nextSentStoryId = currentStories[nextSentStoryIndex].messageId;
+          nextSentStoryId = currentStories[nextSentStoryIndex]?.messageId;
         } else if (currentDistributionListIndex > 0) {
           const nextSentStoryContainer =
             myStories[currentDistributionListIndex - 1];
+          strictAssert(
+            nextSentStoryContainer,
+            'Missing nextSentStoryContainer'
+          );
 
           nextNumStories = nextSentStoryContainer.stories.length;
           nextSentStoryIndex = nextNumStories - 1;
-          nextSentStoryId = nextSentStoryContainer.stories[0].messageId;
+          nextSentStoryId = nextSentStoryContainer.stories[0]?.messageId;
         }
       }
 
@@ -1169,6 +1173,7 @@ const viewStory: ViewStoryActionCreatorType = (
     ) {
       const nextIndex = currentIndex + 1;
       const nextStory = storiesByConversationId[nextIndex];
+      strictAssert(nextStory, 'Missing nextStory');
 
       dispatch({
         type: VIEW_STORY,
@@ -1187,6 +1192,7 @@ const viewStory: ViewStoryActionCreatorType = (
     if (viewDirection === StoryViewDirectionType.Previous && currentIndex > 0) {
       const nextIndex = currentIndex - 1;
       const nextStory = storiesByConversationId[nextIndex];
+      strictAssert(nextStory, 'Missing nextStory');
 
       dispatch({
         type: VIEW_STORY,
@@ -1245,15 +1251,17 @@ const viewStory: ViewStoryActionCreatorType = (
             onlyFromSelf: false,
           }
         );
+        const nextStory =
+          nextSelectedStoryData.storiesByConversationId[
+            nextSelectedStoryData.currentIndex
+          ];
+        strictAssert(nextStory, 'Missing nextStory');
 
         dispatch({
           type: VIEW_STORY,
           payload: {
             currentIndex: nextSelectedStoryData.currentIndex,
-            messageId:
-              nextSelectedStoryData.storiesByConversationId[
-                nextSelectedStoryData.currentIndex
-              ].messageId,
+            messageId: nextStory.messageId,
             numStories: nextSelectedStoryData.numStories,
             storyViewMode,
             unviewedStoryConversationIdsSorted,
@@ -1298,6 +1306,7 @@ const viewStory: ViewStoryActionCreatorType = (
       // Touch area for tapping right should be 80% of width of the screen
       const nextConversationStoryIndex = conversationStoryIndex + 1;
       const conversationStory = conversationStories[nextConversationStoryIndex];
+      strictAssert(conversationStory, 'Missing conversationStory');
 
       const nextSelectedStoryData = getSelectedStoryDataForConversationId(
         dispatch,
@@ -1308,11 +1317,14 @@ const viewStory: ViewStoryActionCreatorType = (
         }
       );
 
+      const nextStory = nextSelectedStoryData.storiesByConversationId[0];
+      strictAssert(nextStory, 'Missing nextStory');
+
       dispatch({
         type: VIEW_STORY,
         payload: {
           currentIndex: 0,
-          messageId: nextSelectedStoryData.storiesByConversationId[0].messageId,
+          messageId: nextStory.messageId,
           numStories: nextSelectedStoryData.numStories,
           storyViewMode,
           unviewedStoryConversationIdsSorted,
@@ -1336,6 +1348,7 @@ const viewStory: ViewStoryActionCreatorType = (
       // Touch area for tapping left should be 20% of width of the screen
       const nextConversationStoryIndex = conversationStoryIndex - 1;
       const conversationStory = conversationStories[nextConversationStoryIndex];
+      strictAssert(conversationStory, 'Missing conversationStory');
 
       const nextSelectedStoryData = getSelectedStoryDataForConversationId(
         dispatch,
@@ -1346,11 +1359,14 @@ const viewStory: ViewStoryActionCreatorType = (
         }
       );
 
+      const nextStory = nextSelectedStoryData.storiesByConversationId[0];
+      strictAssert(nextStory, 'Missing nextStory');
+
       dispatch({
         type: VIEW_STORY,
         payload: {
           currentIndex: 0,
-          messageId: nextSelectedStoryData.storiesByConversationId[0].messageId,
+          messageId: nextStory.messageId,
           numStories: nextSelectedStoryData.numStories,
           storyViewMode,
           unviewedStoryConversationIdsSorted,
@@ -1425,12 +1441,9 @@ function removeAllContactStories(
 
     log.info(`${logId}: removing ${messages.length} stories`);
 
-    await DataWriter.removeMessages(messageIds, { cleanupMessages });
+    await DataWriter.removeMessagesById(messageIds, { cleanupMessages });
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('removeAllContactStories'));
   };
 }
 
@@ -1558,6 +1571,7 @@ export function reducer(
     );
     if (prevStoryIndex >= 0) {
       const prevStory = state.stories[prevStoryIndex];
+      strictAssert(prevStory, 'Missing prevStory');
 
       // Stories rarely need to change, here are the following exceptions...
 
@@ -1708,17 +1722,20 @@ export function reducer(
         story => story.messageId === replyState.messageId
       );
 
-      const stories =
-        storyIndex >= 0
-          ? replaceIndex(state.stories, storyIndex, {
-              ...state.stories[storyIndex],
-              hasReplies: true,
-              hasRepliesFromSelf:
-                state.stories[storyIndex].hasRepliesFromSelf ||
-                state.stories[storyIndex].conversationId ===
-                  action.payload.conversationId,
-            })
-          : state.stories;
+      let stories: ReadonlyArray<StoryDataType>;
+      if (storyIndex >= 0) {
+        const currentStory = state.stories[storyIndex];
+        strictAssert(currentStory, 'Missing currentStory');
+        stories = replaceIndex(state.stories, storyIndex, {
+          ...currentStory,
+          hasReplies: true,
+          hasRepliesFromSelf:
+            currentStory.hasRepliesFromSelf ||
+            currentStory.conversationId === action.payload.conversationId,
+        });
+      } else {
+        stories = state.stories;
+      }
 
       return {
         ...state,
@@ -1775,6 +1792,7 @@ export function reducer(
     }
 
     const existingStory = state.stories[storyIndex];
+    strictAssert(existingStory, 'Missing existingStory');
 
     return {
       ...state,

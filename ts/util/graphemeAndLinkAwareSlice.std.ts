@@ -61,7 +61,8 @@ const expandToIncludeEntireLink = (
     return truncated;
   }
 
-  return original.slice(0, truncatedLink[0].lastIndex);
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return original.slice(0, truncatedLink[0]!.lastIndex);
 };
 
 type LinkRange = {

@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 
@@ -9,14 +9,14 @@ import type { Meta } from '@storybook/react';
 import type {
   CallingRaisedHandsListButtonPropsType,
   PropsType,
-} from './CallingRaisedHandsList.dom.js';
+} from './CallingRaisedHandsList.dom.tsx';
 import {
   CallingRaisedHandsList,
   CallingRaisedHandsListButton,
-} from './CallingRaisedHandsList.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { getDefaultConversationWithServiceId } from '../test-helpers/getDefaultConversation.std.js';
+} from './CallingRaisedHandsList.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { getDefaultConversationWithServiceId } from '../test-helpers/getDefaultConversation.std.ts';
 
 const { times } = lodash;
 
@@ -119,8 +119,8 @@ export function Button(): JSX.Element {
 export function ButtonChanging(): JSX.Element {
   const initialProps = createPropsForButton();
 
-  const [props, setProps] = React.useState(initialProps);
-  React.useEffect(() => {
+  const [props, setProps] = useState(initialProps);
+  useEffect(() => {
     const interval = setInterval(() => {
       const raisedHandsCount = Math.floor(4 * Math.random());
       setProps(prevProps => ({

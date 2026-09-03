@@ -28,7 +28,6 @@
   min-height: 64px;
   padding-block: 12px;
   padding-inline: 16px 14px;
-  user-select: none;
   width: 100%;
   position: relative;
 
@@ -101,7 +100,7 @@
     -webkit-mask-size: contain;
 
     @media (forced-colors: active) {
-      background-color: WindowText;
+      background-color: CanvasText;
     }
 
     &--relink {
@@ -143,7 +142,7 @@
       .LeftPaneDialog__icon {
         background-color: $warning-text-color;
         @media (forced-colors: active) {
-          background-color: WindowText;
+          background-color: CanvasText;
         }
       }
     }
@@ -176,9 +175,9 @@
       height: 100%;
 
       @media (forced-colors: active) {
-        background-color: WindowText;
+        background-color: CanvasText;
         @include mixins.dark-theme {
-          background-color: WindowText;
+          background-color: CanvasText;
         }
       }
     }
@@ -267,7 +266,7 @@
 
       @include mixins.light-theme {
         background-color: variables.$color-white;
-        --tooltip-background-color: variables.$color-white;
+        --tooltip-background-color: #{variables.$color-white};
         border: 1px solid variables.$color-gray-20;
       }
       @include mixins.dark-theme {
@@ -314,7 +313,7 @@
         background-color: $warning-text-color;
 
         @media (forced-colors: active) {
-          background-color: WindowText;
+          background-color: CanvasText;
         }
       }
 
@@ -322,7 +321,7 @@
         background-color: $warning-text-color;
 
         @media (forced-colors: active) {
-          background-color: WindowText;
+          background-color: CanvasText;
         }
       }
 

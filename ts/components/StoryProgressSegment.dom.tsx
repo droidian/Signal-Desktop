@@ -1,6 +1,6 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, type JSX } from 'react';
 import { animated, useSpring } from '@react-spring/web';
 
 export type StoryProgressSegmentProps = Readonly<{

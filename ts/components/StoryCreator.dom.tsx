@@ -1,27 +1,28 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
-import lodash from 'lodash';
+import { useEffect, useState, type JSX } from 'react';
+import lodash, { omit } from 'lodash';
 
 import { createPortal } from 'react-dom';
-import type { AttachmentType } from '../types/Attachment.std.js';
-import type { LinkPreviewSourceType } from '../types/LinkPreview.std.js';
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.std.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import type { PropsType as SendStoryModalPropsType } from './SendStoryModal.dom.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
-import type { imageToBlurHash } from '../util/imageToBlurHash.dom.js';
-import type { PropsType as MediaEditorPropsType } from './MediaEditor.dom.js';
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import type { LinkPreviewSourceType } from '../types/LinkPreview.std.ts';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.std.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { PropsType as SendStoryModalPropsType } from './SendStoryModal.dom.tsx';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
+import type { imageToBlurHash } from '../util/imageToBlurHash.dom.ts';
+import type { PropsType as MediaEditorPropsType } from './MediaEditor.dom.tsx';
 
-import { TEXT_ATTACHMENT } from '../types/MIME.std.js';
-import { isVideoAttachment } from '../util/Attachment.std.js';
-import { SendStoryModal } from './SendStoryModal.dom.js';
+import { TEXT_ATTACHMENT } from '../types/MIME.std.ts';
+import { isVideoAttachment } from '../util/Attachment.std.ts';
+import { SendStoryModal } from './SendStoryModal.dom.tsx';
 
-import { MediaEditor } from './MediaEditor.dom.js';
-import { TextStoryCreator } from './TextStoryCreator.dom.js';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import type { processAttachment } from '../util/processAttachment.preload.js';
+import { MediaEditor } from './MediaEditor.dom.tsx';
+import { TextStoryCreator } from './TextStoryCreator.dom.tsx';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { processAttachment } from '../util/processAttachment.preload.ts';
+import { AxoTheme } from '../axo/AxoTheme.dom.tsx';
 
 const { get, has } = lodash;
 
@@ -177,7 +178,7 @@ export function StoryCreator({
             })
           );
           attachment = {
-            ...draft,
+            ...omit(draft, 'screenshotData'),
             screenshot: {
               contentType: draft.screenshotContentType,
               url,
@@ -217,7 +218,7 @@ export function StoryCreator({
 
   return portalElement != null
     ? createPortal(
-        <>
+        <AxoTheme.Override theme="force-dark">
           {draftAttachment && isReadyToSend && (
             <SendStoryModal
               draftAttachment={draftAttachment}
@@ -315,7 +316,7 @@ export function StoryCreator({
               onSelectEmoji={onSelectEmoji}
             />
           )}
-        </>,
+        </AxoTheme.Override>,
         portalElement
       )
     : null;

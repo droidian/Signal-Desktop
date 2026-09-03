@@ -3,28 +3,27 @@
 
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
 import {
   isDirectConversation,
   isMe,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
-import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
+} from './handleMultipleSendErrors.std.ts';
+import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ExpirationTimerUpdateJobData,
   ConversationQueueJobBundle,
-} from '../conversationJobQueue.preload.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { isConversationAccepted } from '../../util/isConversationAccepted.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
+} from '../conversationJobQueue.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
 
 export async function sendDirectExpirationTimerUpdate(
   conversation: ConversationModel,
@@ -67,101 +66,96 @@ export async function sendDirectExpirationTimerUpdate(
     `Starting expiration timer update for ${conversation.idForLogging()} with timestamp ${timestamp}`
   );
 
-  const { expireTimer } = data;
+  await conversation.queueJob('sendDirectExpirationTimerUpdate', async () => {
+    const { expireTimer } = data;
 
-  const sendOptions = await getSendOptions(conversation.attributes);
-  let profileKey: Uint8Array | undefined;
-  if (conversation.get('profileSharing')) {
-    profileKey = await ourProfileKeyService.get();
-  }
+    const sendOptions = await getSendOptions(conversation.attributes);
+    let profileKey: Uint8Array<ArrayBuffer> | undefined;
+    if (conversation.get('profileSharing')) {
+      profileKey = await ourProfileKeyService.get();
+    }
 
-  const contentHint = ContentHint.Resendable;
+    const contentHint = ContentHint.Resendable;
 
-  const sendType = 'expirationTimerUpdate';
-  const flags = Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE;
-  const proto = await messaging.getContentMessage({
-    // `expireTimer` is already in seconds
-    expireTimer:
-      expireTimer === undefined
-        ? undefined
-        : DurationInSeconds.fromSeconds(expireTimer),
-    expireTimerVersion: conversation.getExpireTimerVersion(),
-    flags,
-    profileKey,
-    recipients: conversation.getRecipients(),
-    timestamp,
-    includePniSignatureMessage: true,
-  });
+    const sendType = 'expirationTimerUpdate';
+    const flags = Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE;
+    const proto = await messaging.getContentMessage({
+      // `expireTimer` is already in seconds
+      expireTimer:
+        expireTimer === undefined
+          ? undefined
+          : DurationInSeconds.fromSeconds(expireTimer),
+      expireTimerVersion: conversation.getExpireTimerVersion(),
+      flags,
+      profileKey,
+      recipients: conversation.getRecipients(),
+      timestamp,
+      includePniSignatureMessage: true,
+    });
 
-  if (!proto.dataMessage) {
-    log.error(
-      "ContentMessage proto didn't have a data message; canceling job."
-    );
-    return;
-  }
-
-  const logId = `expirationTimerUdate/${conversation.idForLogging()}`;
-
-  try {
-    if (isMe(conversation.attributes)) {
-      await handleMessageSend(
-        messaging.sendSyncMessage({
-          encodedDataMessage: Proto.DataMessage.encode(
-            proto.dataMessage
-          ).finish(),
-          destinationE164: conversation.get('e164'),
-          destinationServiceId: conversation.getServiceId(),
-          expirationStartTimestamp: null,
-          options: sendOptions,
-          timestamp,
-          urgent: false,
-        }),
-        { messageIds: [], sendType }
+    if (!proto.content?.dataMessage) {
+      log.error(
+        "ContentMessage proto didn't have a data message; canceling job."
       );
-    } else if (isDirectConversation(conversation.attributes)) {
-      if (!isConversationAccepted(conversation.attributes)) {
-        log.info(
-          `conversation ${conversation.idForLogging()} is not accepted; refusing to send`
-        );
-        return;
-      }
-      if (isConversationUnregistered(conversation.attributes)) {
-        log.info(
-          `conversation ${conversation.idForLogging()} is unregistered; refusing to send`
-        );
-        return;
-      }
-      if (conversation.isBlocked()) {
-        log.info(
-          `conversation ${conversation.idForLogging()} is blocked; refusing to send`
-        );
-        return;
-      }
+      return;
+    }
 
-      await wrapWithSyncMessageSend({
-        conversation,
-        logId,
-        messageIds: [],
-        send: async sender =>
-          sender.sendIndividualProto({
-            contentHint,
-            serviceId: conversation.getSendTarget(),
+    const logId = `expirationTimerUdate/${conversation.idForLogging()}`;
+
+    try {
+      if (isMe(conversation.attributes)) {
+        if (!window.ConversationController.doWeHaveOtherDevices()) {
+          log.info(`${logId}: We have no other devices; not sending sync`);
+          return;
+        }
+
+        await handleMessageSend(
+          messaging.sendSyncMessage({
+            encodedDataMessage: Proto.DataMessage.encode(
+              proto.content.dataMessage
+            ),
+            destinationE164: conversation.get('e164'),
+            destinationServiceId: conversation.getServiceId(),
+            expirationStartTimestamp: null,
             options: sendOptions,
-            proto,
             timestamp,
             urgent: false,
           }),
-        sendType,
-        timestamp,
+          { messageIds: [], sendType }
+        );
+      } else if (isDirectConversation(conversation.attributes)) {
+        const [ok, refusal] = shouldSendToDirectConversation(conversation);
+        if (!ok) {
+          log.info(refusal.logLine);
+          return;
+        }
+
+        await wrapWithSyncMessageSend({
+          conversation,
+          logId,
+          messageIds: [],
+          send: async sender =>
+            sender.sendIndividualProto({
+              contentHint,
+              serviceId: conversation.getSendTarget(),
+              options: sendOptions,
+              proto,
+              timestamp,
+              urgent: false,
+            }),
+          sendType,
+          timestamp,
+          expirationStartTimestamp: null,
+        });
+      }
+    } catch (error: unknown) {
+      await handleMultipleSendErrors({
+        errors: maybeExpandErrors(error),
+        isFinalAttempt,
+        log,
+        timeRemaining,
+        toThrow: error,
       });
     }
-  } catch (error: unknown) {
-    await handleMultipleSendErrors({
-      errors: maybeExpandErrors(error),
-      isFinalAttempt,
-      log,
-      timeRemaining,
-      toThrow: error,
-    });
-  }
+  });
 }

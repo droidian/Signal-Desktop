@@ -4,20 +4,21 @@
 import { v4 as uuid } from 'uuid';
 import { assert } from 'chai';
 
-import { type AciString, generateAci } from '../types/ServiceId.std.js';
+import type { AciString } from '../types/ServiceId.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
 import type {
   MessageReceiptAttributesType,
   MessageReceiptType,
-} from '../messageModifiers/MessageReceipts.preload.js';
+} from '../messageModifiers/MessageReceipts.preload.ts';
 import {
   onReceipt,
   messageReceiptTypeSchema,
-} from '../messageModifiers/MessageReceipts.preload.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../messageModifiers/MessageReceipts.preload.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 describe('MessageReceipts', () => {
   let ourAci: AciString;
@@ -106,10 +107,10 @@ describe('MessageReceipts', () => {
     const messageFromDatabase = await DataReader.getMessageById(id);
     const savedSendState = messageFromDatabase?.sendStateByConversationId;
 
-    assert.equal(savedSendState?.aaaa.status, SendStatus.Read, 'aaaa');
-    assert.equal(savedSendState?.bbbb.status, SendStatus.Delivered, 'bbbb');
-    assert.equal(savedSendState?.cccc.status, SendStatus.Read, 'cccc');
-    assert.equal(savedSendState?.dddd.status, SendStatus.Sent, 'dddd');
+    assert.equal(savedSendState?.aaaa?.status, SendStatus.Read, 'aaaa');
+    assert.equal(savedSendState?.bbbb?.status, SendStatus.Delivered, 'bbbb');
+    assert.equal(savedSendState?.cccc?.status, SendStatus.Read, 'cccc');
+    assert.equal(savedSendState?.dddd?.status, SendStatus.Sent, 'dddd');
   });
 
   it('updates sendStateByConversationId for edits', async () => {
@@ -221,34 +222,34 @@ describe('MessageReceipts', () => {
 
     assert.deepEqual(
       rootSendState,
-      messageFromDatabase?.editHistory?.[0].sendStateByConversationId,
+      messageFromDatabase?.editHistory?.[0]?.sendStateByConversationId,
       'edit history version should match root version'
     );
-    assert.equal(rootSendState?.aaaa.status, SendStatus.Delivered, 'aaaa');
-    assert.equal(rootSendState?.bbbb.status, SendStatus.Read, 'bbbb');
-    assert.equal(rootSendState?.cccc.status, SendStatus.Read, 'cccc');
-    assert.equal(rootSendState?.dddd.status, SendStatus.Sent, 'dddd');
+    assert.equal(rootSendState?.aaaa?.status, SendStatus.Delivered, 'aaaa');
+    assert.equal(rootSendState?.bbbb?.status, SendStatus.Read, 'bbbb');
+    assert.equal(rootSendState?.cccc?.status, SendStatus.Read, 'cccc');
+    assert.equal(rootSendState?.dddd?.status, SendStatus.Sent, 'dddd');
 
     const originalMessageSendState =
-      messageFromDatabase?.editHistory?.[1].sendStateByConversationId;
+      messageFromDatabase?.editHistory?.[1]?.sendStateByConversationId;
 
     assert.equal(
-      originalMessageSendState?.aaaa.status,
+      originalMessageSendState?.aaaa?.status,
       SendStatus.Read,
       'original-aaaa'
     );
     assert.equal(
-      originalMessageSendState?.bbbb.status,
+      originalMessageSendState?.bbbb?.status,
       SendStatus.Delivered,
       'original-bbbb'
     );
     assert.equal(
-      originalMessageSendState?.cccc.status,
+      originalMessageSendState?.cccc?.status,
       SendStatus.Read,
       'original-cccc'
     );
     assert.equal(
-      originalMessageSendState?.dddd.status,
+      originalMessageSendState?.dddd?.status,
       SendStatus.Sent,
       'original-dddd'
     );

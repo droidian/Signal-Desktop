@@ -1,13 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './Slider.dom.js';
-import { Slider } from './Slider.dom.js';
+import type { PropsType } from './Slider.dom.tsx';
+import { Slider } from './Slider.dom.tsx';
 
 export default {
   title: 'Components/Slider',

@@ -1,21 +1,20 @@
 // Copyright 2015 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { MouseEvent } from 'react';
-import React, { useEffect, useState } from 'react';
-import copyText from 'copy-text-to-clipboard';
-import type { LocalizerType } from '../types/Util.std.js';
-import * as Errors from '../types/errors.std.js';
-import type { AnyToast } from '../types/Toast.dom.js';
-import { ToastType } from '../types/Toast.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Spinner } from './Spinner.dom.js';
-import { ToastManager } from './ToastManager.dom.js';
-import { createSupportUrl } from '../util/createSupportUrl.std.js';
-import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.js';
-import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.js';
-import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.js';
+import type { MouseEvent, JSX } from 'react';
+import { useEffect, useState } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import type { AnyToast } from '../types/Toast.dom.tsx';
+import { ToastType } from '../types/Toast.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
+import { ToastManager } from './ToastManager.dom.tsx';
+import { createSupportUrl } from '../util/createSupportUrl.std.ts';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.ts';
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
 
 const log = createLogger('DebugLogWindow');
 
@@ -32,6 +31,7 @@ export type PropsType = {
   i18n: LocalizerType;
   fetchLogs: () => Promise<string>;
   uploadLogs: (logs: string) => Promise<string>;
+  mode?: 'submit' | 'close';
 };
 
 export function DebugLogWindow({
@@ -40,6 +40,7 @@ export function DebugLogWindow({
   i18n,
   fetchLogs,
   uploadLogs,
+  mode = 'submit',
 }: PropsType): JSX.Element {
   const [loadState, setLoadState] = useState<LoadState>(LoadState.NotStarted);
   const [logText, setLogText] = useState<string | undefined>();
@@ -109,9 +110,9 @@ export function DebugLogWindow({
   }
 
   if (publicLogURL) {
-    const copyLog = (ev: MouseEvent) => {
+    const copyLog = async (ev: MouseEvent) => {
       ev.preventDefault();
-      copyText(publicLogURL);
+      await navigator.clipboard.writeText(publicLogURL);
       setToast({ toastType: ToastType.LinkCopied });
     };
 
@@ -133,6 +134,8 @@ export function DebugLogWindow({
           </p>
         </div>
         <div className="DebugLogWindow__container">
+          {/* FIXME */}
+          {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
           <input
             className="DebugLogWindow__link"
             readOnly
@@ -157,10 +160,13 @@ export function DebugLogWindow({
           i18n={i18n}
           onShowDebugLog={shouldNeverBeCalled}
           onUndoArchive={shouldNeverBeCalled}
+          retryCallQualitySurvey={shouldNeverBeCalled}
           openFileInFolder={shouldNeverBeCalled}
+          saveHeapSnapshot={shouldNeverBeCalled}
           setDidResumeDonation={shouldNeverBeCalled}
           toast={toast}
           containerWidthBreakpoint={null}
+          expandNarrowLeftPane={shouldNeverBeCalled}
           isInFullScreenCall={false}
         />
       </div>
@@ -179,7 +185,9 @@ export function DebugLogWindow({
           {i18n('icu:submitDebugLog')}
         </div>
         <p className="DebugLogWindow__subtitle">
-          {i18n('icu:debugLogExplanation')}
+          {mode === 'close'
+            ? i18n('icu:debugLogExplanation--close')
+            : i18n('icu:debugLogExplanation')}
         </p>
       </div>
       {isLoading ? (
@@ -205,9 +213,13 @@ export function DebugLogWindow({
         >
           {i18n('icu:debugLogSave')}
         </Button>
-        <Button disabled={!canSubmit} onClick={handleSubmit}>
-          {i18n('icu:submit')}
-        </Button>
+        {mode === 'close' ? (
+          <Button onClick={closeWindow}>{i18n('icu:close')}</Button>
+        ) : (
+          <Button disabled={!canSubmit} onClick={handleSubmit}>
+            {i18n('icu:submit')}
+          </Button>
+        )}
       </div>
       <ToastManager
         changeLocation={shouldNeverBeCalled}
@@ -216,10 +228,13 @@ export function DebugLogWindow({
         i18n={i18n}
         onShowDebugLog={shouldNeverBeCalled}
         onUndoArchive={shouldNeverBeCalled}
+        retryCallQualitySurvey={shouldNeverBeCalled}
         openFileInFolder={shouldNeverBeCalled}
+        saveHeapSnapshot={shouldNeverBeCalled}
         setDidResumeDonation={shouldNeverBeCalled}
         toast={toast}
         containerWidthBreakpoint={null}
+        expandNarrowLeftPane={shouldNeverBeCalled}
         isInFullScreenCall={false}
       />
     </div>

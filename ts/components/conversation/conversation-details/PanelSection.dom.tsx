@@ -1,13 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
+
 import classNames from 'classnames';
-import { bemGenerator } from './util.std.js';
+import { bemGenerator } from './util.std.ts';
 
 export type Props = {
-  actions?: React.ReactNode;
-  children?: React.ReactNode;
+  actions?: ReactNode;
+  children?: ReactNode;
   borderless?: boolean;
   centerTitle?: boolean;
   title?: string;

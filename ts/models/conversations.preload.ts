@@ -5,6 +5,7 @@ import lodash from 'lodash';
 import { v4 as generateGuid } from 'uuid';
 import PQueue from 'p-queue';
 import { ContentHint } from '@signalapp/libsignal-client';
+import { MuteExpiration } from '@signalapp/types';
 
 import type { ReadonlyDeep } from 'type-fest';
 import type {
@@ -12,61 +13,63 @@ import type {
   ConversationLastProfileType,
   ConversationRenderInfoType,
   MessageAttributesType,
+  PinMessageData,
   QuotedMessageType,
   SenderKeyInfoType,
+  SettableConversationAttributesType,
 } from '../model-types.d.ts';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { getConversation } from '../util/getConversation.preload.js';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { getConversation } from '../util/getConversation.preload.ts';
 import {
   copyAttachmentIntoTempDirectory,
-  deleteAttachmentData,
+  maybeDeleteAttachmentFile,
   doesAttachmentExist,
   getAbsoluteAttachmentPath,
   getAbsoluteTempPath,
   readStickerData,
   upgradeMessageSchema,
   writeNewAttachmentData,
-} from '../util/migrations.preload.js';
-import { drop } from '../util/drop.std.js';
-import { isShallowEqual } from '../util/isShallowEqual.std.js';
-import { getInitials } from '../util/getInitials.std.js';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.std.js';
-import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.js';
-import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.preload.js';
-import { getNotificationDataForMessage } from '../util/getNotificationDataForMessage.preload.js';
-import type { ProfileNameChangeType } from '../util/getStringForProfileChange.std.js';
-import type { AttachmentType, ThumbnailType } from '../types/Attachment.std.js';
-import { toDayMillis } from '../util/timestamp.std.js';
-import { areWeAdmin } from '../util/areWeAdmin.preload.js';
-import { isBlocked } from '../util/isBlocked.preload.js';
-import { getAboutText } from '../util/getAboutText.dom.js';
+} from '../util/migrations.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { isShallowEqual } from '../util/isShallowEqual.std.ts';
+import { getInitials } from '../util/getInitials.std.ts';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.std.ts';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.ts';
+import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.preload.ts';
+import { getNotificationDataForMessage } from '../util/getNotificationDataForMessage.preload.ts';
+import type { ProfileNameChangeType } from '../util/getStringForProfileChange.std.ts';
+import type { AttachmentType, ThumbnailType } from '../types/Attachment.std.ts';
+import { toDayMillis } from '../util/timestamp.std.ts';
+import { areWeAdmin } from '../util/areWeAdmin.preload.ts';
+import { isBlocked } from '../util/isBlocked.preload.ts';
+import { getAboutText } from '../util/getAboutText.dom.ts';
 import {
   getAvatar,
   getRawAvatarPath,
   getLocalAvatarUrl,
-} from '../util/avatarUtils.preload.js';
-import { getDraftPreview } from '../util/getDraftPreview.preload.js';
-import { hasDraft } from '../util/hasDraft.std.js';
-import { hydrateStoryContext } from '../util/hydrateStoryContext.preload.js';
-import * as Conversation from '../types/Conversation.node.js';
+} from '../util/avatarUtils.preload.ts';
+import { getDraftPreview } from '../util/getDraftPreview.preload.ts';
+import { hasDraft } from '../util/hasDraft.std.ts';
+import { getStoryReplyContext } from '../util/getStoryReplyContext.std.ts';
+import { normalizeProfileName } from '../util/normalizeProfileName.std.ts';
 import type {
   StickerType,
   StickerWithHydratedData,
-} from '../types/Stickers.preload.js';
-import * as Stickers from '../types/Stickers.preload.js';
-import { StorySendMode } from '../types/Stories.std.js';
-import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.std.js';
+} from '../types/Stickers.preload.ts';
+import * as Stickers from '../types/Stickers.preload.ts';
+import { StorySendMode } from '../types/Stories.std.ts';
+import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.std.ts';
 import {
   type GroupV2InfoType,
   messageSender,
-} from '../textsecure/SendMessage.preload.js';
+} from '../textsecure/SendMessage.preload.ts';
 import {
   getAvatar as doGetAvatar,
   cdsLookup,
   checkAccountExistence,
-} from '../textsecure/WebAPI.preload.js';
-import createTaskWithTimeout from '../textsecure/TaskWithTimeout.std.js';
-import { MessageSender } from '../textsecure/SendMessage.preload.js';
+} from '../textsecure/WebAPI.preload.ts';
+import { runTaskWithTimeout } from '../textsecure/TaskWithTimeout.std.ts';
+import { MessageSender } from '../textsecure/SendMessage.preload.ts';
 import type {
   CallbackResultType,
   PniSignatureMessageType,
@@ -74,53 +77,57 @@ import type {
 import type {
   ConversationType,
   DraftPreviewType,
-} from '../state/ducks/conversations.preload.js';
+} from '../state/ducks/conversations.preload.ts';
 import type {
   AvatarColorType,
   ConversationColorType,
   CustomColorType,
-} from '../types/Colors.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { isConversationMuted } from '../util/isConversationMuted.std.js';
-import { isConversationSMSOnly } from '../util/isConversationSMSOnly.std.js';
+} from '../types/Colors.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { isConversationMuted } from '../util/isConversationMuted.std.ts';
+import { isConversationSMSOnly } from '../util/isConversationSMSOnly.std.ts';
 import {
   isConversationEverUnregistered,
   isConversationUnregistered,
   isConversationUnregisteredAndStale,
-} from '../util/isConversationUnregistered.dom.js';
-import { sniffImageMimeType } from '../util/sniffImageMimeType.std.js';
-import { isValidE164 } from '../util/isValidE164.std.js';
-import type { MIMEType } from '../types/MIME.std.js';
-import { IMAGE_JPEG, IMAGE_WEBP } from '../types/MIME.std.js';
+} from '../util/isConversationUnregistered.dom.ts';
+import { sniffImageMimeType } from '../util/sniffImageMimeType.std.ts';
+import { isValidE164 } from '../util/isValidE164.std.ts';
+import type { MIMEType } from '../types/MIME.std.ts';
+import { IMAGE_JPEG, IMAGE_WEBP } from '../types/MIME.std.ts';
 import type {
   AciString,
   PniString,
   ServiceIdString,
-} from '../types/ServiceId.std.js';
+} from '../types/ServiceId.std.ts';
 import {
   ServiceIdKind,
   normalizeServiceId,
   normalizePni,
-} from '../types/ServiceId.std.js';
-import { isAciString } from '../util/isAciString.std.js';
+} from '../types/ServiceId.std.ts';
+import { isAciString } from '../util/isAciString.std.ts';
 import {
   constantTimeEqual,
   decryptProfile,
   decryptProfileName,
   hashProfileKey,
-} from '../Crypto.node.js';
-import { decryptAttachmentV2 } from '../AttachmentCrypto.node.js';
-import * as Bytes from '../Bytes.std.js';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import { migrateColor } from '../util/migrateColor.node.js';
-import { isNotNil } from '../util/isNotNil.std.js';
-import { signalProtocolStore } from '../SignalProtocolStore.preload.js';
-import { shouldSaveNotificationAvatarToDisk } from '../services/notifications.preload.js';
-import { storageServiceUploadJob } from '../services/storage.preload.js';
-import { challengeHandler } from '../services/challengeHandler.preload.js';
-import { getSendOptions } from '../util/getSendOptions.preload.js';
-import type { IsConversationAcceptedOptionsType } from '../util/isConversationAccepted.preload.js';
-import { isConversationAccepted } from '../util/isConversationAccepted.preload.js';
+} from '../Crypto.node.ts';
+import { decryptAttachmentV2 } from '../AttachmentCrypto.node.ts';
+import * as Bytes from '../Bytes.std.ts';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import { migrateColor } from '../util/migrateColor.node.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
+import { shouldSaveNotificationAvatarToDisk } from '../services/notifications.preload.ts';
+import { runStorageServiceUploadJob } from '../services/storage.preload.ts';
+import { challengeHandler } from '../services/challengeHandler.preload.ts';
+import { sendUsernameChangeSyncMessage } from '../services/username.preload.ts';
+import { getSendOptions } from '../util/getSendOptions.preload.ts';
+import type { IsConversationAcceptedOptionsType } from '../util/isConversationAccepted.preload.ts';
+import {
+  isConversationAccepted,
+  isTrustedContact,
+} from '../util/isConversationAccepted.preload.ts';
 import {
   getNumber,
   getProfileName,
@@ -129,111 +136,123 @@ import {
   hasNumberTitle,
   hasUsernameTitle,
   canHaveUsername,
-} from '../util/getTitle.preload.js';
-import { markConversationRead } from '../util/markConversationRead.preload.js';
-import { handleMessageSend } from '../util/handleMessageSend.preload.js';
-import { getConversationMembers } from '../util/getConversationMembers.dom.js';
-import { updateConversationsWithUuidLookup } from '../updateConversationsWithUuidLookup.dom.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
+} from '../util/getTitle.preload.ts';
+import { markConversationRead } from '../util/markConversationRead.preload.ts';
+import { handleMessageSend } from '../util/handleMessageSend.preload.ts';
+import { getConversationMembers } from '../util/getConversationMembers.dom.ts';
+import { updateConversationsWithUuidLookup } from '../updateConversationsWithUuidLookup.dom.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
 import type {
   LinkPreviewType,
   LinkPreviewWithHydratedData,
-} from '../types/message/LinkPreviews.std.js';
-import type { PollCreateType } from '../types/Polls.dom.js';
+} from '../types/message/LinkPreviews.std.ts';
+import type { PollCreateType } from '../types/Polls.dom.ts';
 import {
   MINUTE,
   SECOND,
   DurationInSeconds,
-} from '../util/durations/index.std.js';
+} from '../util/durations/index.std.ts';
 import {
   concat,
   filter,
   map,
   repeat,
   zipObject,
-} from '../util/iterables.std.js';
-import * as universalExpireTimer from '../util/universalExpireTimer.preload.js';
-import type { GroupNameCollisionsWithIdsByTitle } from '../util/groupMemberNameCollisions.std.js';
+} from '../util/iterables.std.ts';
+import * as universalExpireTimer from '../util/universalExpireTimer.preload.ts';
+import type { GroupNameCollisionsWithIdsByTitle } from '../util/groupMemberNameCollisions.std.ts';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
   isMe,
-} from '../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+} from '../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 import {
   getMessagePropStatus,
   hasErrors,
   isIncoming,
   isStory,
-} from '../state/selectors/message.preload.js';
-import { getPreloadedConversationId } from '../state/selectors/conversations.dom.js';
+} from '../state/selectors/message.preload.ts';
+import { getPreloadedConversationId } from '../state/selectors/conversations.dom.ts';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue.preload.js';
-import { getProfile } from '../util/getProfile.preload.js';
-import { SEALED_SENDER } from '../types/SealedSender.std.js';
-import { createIdenticon } from '../util/createIdenticon.preload.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
-import { isMessageUnread } from '../util/isMessageUnread.std.js';
-import type { SenderKeyTargetType } from '../util/sendToGroup.preload.js';
+} from '../jobs/conversationJobQueue.preload.ts';
+import { getProfile } from '../util/getProfile.preload.ts';
+import { SEALED_SENDER } from '../types/SealedSender.std.ts';
+import { createIdenticon } from '../util/createIdenticon.preload.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { isMessageUnread } from '../util/isMessageUnread.std.ts';
+import type { SenderKeyTargetType } from '../util/sendToGroup.preload.ts';
 import {
+  getOurAddress,
   resetSenderKey,
   sendContentMessageToGroup,
-} from '../util/sendToGroup.preload.js';
-import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.js';
-import { TimelineMessageLoadingState } from '../util/timelineUtil.std.js';
-import { SeenStatus } from '../MessageSeenStatus.std.js';
-import { getConversationIdForLogging } from '../util/idForLogging.preload.js';
-import { getSendTarget } from '../util/getSendTarget.std.js';
-import { getRecipients } from '../util/getRecipients.dom.js';
-import { validateConversation } from '../util/validateConversation.dom.js';
-import { isSignalConversation } from '../util/isSignalConversation.dom.js';
-import { removePendingMember } from '../util/removePendingMember.preload.js';
+} from '../util/sendToGroup.preload.ts';
+import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue.preload.ts';
+import { TimelineMessageLoadingState } from '../util/timelineUtil.std.ts';
+import { SeenStatus } from '../MessageSeenStatus.std.ts';
+import { getConversationIdForLogging } from '../util/idForLogging.preload.ts';
+import { getSendTarget } from '../util/getSendTarget.std.ts';
+import { getRecipients } from '../util/getRecipients.dom.ts';
+import { validateConversation } from '../util/validateConversation.dom.ts';
+import { isSignalConversation } from '../util/isSignalConversation.dom.ts';
+import { removePendingMember } from '../util/removePendingMember.preload.ts';
 import {
   isMember,
   isMemberAwaitingApproval,
   isMemberBanned,
   isMemberPending,
   isMemberRequestingToJoin,
-} from '../util/groupMembershipUtils.preload.js';
-import { imageToBlurHash } from '../util/imageToBlurHash.dom.js';
-import { ReceiptType } from '../types/Receipt.std.js';
-import { getQuoteAttachment } from '../util/makeQuote.preload.js';
+} from '../util/groupMembershipUtils.preload.ts';
+import { imageToBlurHash } from '../util/imageToBlurHash.dom.ts';
+import { ReceiptType } from '../types/Receipt.std.ts';
+import { getQuoteAttachment } from '../util/makeQuote.preload.ts';
 import {
   deriveAccessKeyFromProfileKey,
   deriveProfileKeyVersion,
-} from '../util/zkgroup.node.js';
-import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.js';
-import { generateMessageId } from '../util/generateMessageId.node.js';
-import { getMessageAuthorText } from '../util/getMessageAuthorText.preload.js';
-import { downscaleOutgoingAttachment } from '../util/attachments.preload.js';
+} from '../util/zkgroup.node.ts';
+import { incrementMessageCounter } from '../util/incrementMessageCounter.preload.ts';
+import { generateMessageId } from '../util/generateMessageId.node.ts';
+import {
+  getMessageAuthorAci,
+  getMessageAuthorText,
+} from '../util/getMessageAuthorText.preload.ts';
+import { downscaleOutgoingAttachment } from '../util/attachments.preload.ts';
 import {
   MessageRequestResponseSource,
   type MessageRequestResponseInfo,
   MessageRequestResponseEvent,
-} from '../types/MessageRequestResponseEvent.std.js';
-import type { AddressableMessage } from '../textsecure/messageReceiverEvents.std.js';
+} from '../types/MessageRequestResponseEvent.std.ts';
+import type { AddressableMessage } from '../textsecure/messageReceiverEvents.std.ts';
 import {
   getConversationIdentifier,
   getAddressableMessage,
-} from '../util/syncIdentifiers.preload.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { getCallHistorySelector } from '../state/selectors/callHistory.std.js';
-import { migrateLegacyReadStatus } from '../messages/migrateLegacyReadStatus.std.js';
-import { migrateLegacySendAttributes } from '../messages/migrateLegacySendAttributes.preload.js';
-import { getIsInitialContactSync } from '../services/contactSync.preload.js';
-import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../util/queueAttachmentDownloads.preload.js';
-import { cleanupMessages } from '../util/cleanup.preload.js';
-import { MessageModel } from './messages.preload.js';
+} from '../util/syncIdentifiers.preload.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { getCallHistorySelector } from '../state/selectors/callHistory.std.ts';
+import { migrateLegacyReadStatus } from '../messages/migrateLegacyReadStatus.std.ts';
+import { migrateLegacySendAttributes } from '../messages/migrateLegacySendAttributes.preload.ts';
+import { getIsInitialContactSync } from '../services/contactSync.preload.ts';
+import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../util/queueAttachmentDownloads.preload.ts';
+import {
+  safeCleanupAvatarDraftFiles,
+  safeCleanupAvatarFiles,
+  safeCleanupDraftFiles,
+  cleanupMessages,
+  GENERIC_CLEANUP_FIELDS,
+  GROUP_CLEANUP_FIELDS,
+} from '../util/cleanup.preload.ts';
+import { MessageModel } from './messages.preload.ts';
 import {
   applyNewAvatar,
   buildAccessControlAddFromInviteLinkChange,
   buildAccessControlAttributesChange,
+  buildAccessControlMemberLabelChange,
   buildAccessControlMembersChange,
   buildAddBannedMemberChange,
   buildAddMember,
@@ -244,23 +263,32 @@ import {
   buildDisappearingMessagesTimerChange,
   buildGroupLink,
   buildInviteLinkPasswordChange,
+  buildModifyMemberLabelChange,
   buildModifyMemberRoleChange,
   buildNewGroupLinkChange,
   buildPromoteMemberChange,
+  buildTerminateChange,
   generateGroupInviteLinkPassword,
   hasV1GroupBeenMigrated,
   joinGroupV2ViaLinkAndMigrate,
   modifyGroupV2,
   waitThenMaybeUpdateGroup,
   waitThenRespondToGroupV2Migration,
-} from '../groups.preload.js';
-import { safeSetTimeout } from '../util/timeout.std.js';
-import { getTypingIndicatorSetting } from '../util/Settings.preload.js';
-import { INITIAL_EXPIRE_TIMER_VERSION } from '../util/expirationTimer.std.js';
-import { maybeNotify } from '../messages/maybeNotify.preload.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import * as Message from '../types/Message2.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../groups.preload.ts';
+import { safeSetTimeout } from '../util/timeout.std.ts';
+import { getTypingIndicatorSetting } from '../util/Settings.preload.ts';
+import { INITIAL_EXPIRE_TIMER_VERSION } from '../util/expirationTimer.std.ts';
+import { maybeNotify } from '../messages/maybeNotify.preload.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import * as Message from '../types/Message2.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { isUsernameValid } from '../util/Username.dom.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { canConversationOnlyBeMutedAlways } from '../conversations/canConversationOnlyBeMutedAlways.dom.ts';
+import { keyTransparency } from '../services/keyTransparency.preload.ts';
+import type { PollSource } from '../messageModifiers/Polls.preload.ts';
+import { isSignalServiceId } from '../types/SignalConversation.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
 
 const { compact, isNumber, throttle, debounce } = lodash;
 
@@ -274,6 +302,7 @@ const {
   getMostRecentAddressableMessages,
   getMostRecentAddressableNondisappearingMessages,
   getNewerMessagesByConversation,
+  getPinnedMessagesPreloadDataForConversation,
 } = DataReader;
 const { addStickerPackReference } = DataWriter;
 
@@ -347,17 +376,15 @@ export class ConversationModel {
 
   lastSuccessfulGroupFetch?: number;
 
-  throttledUpdateSharedGroups?: () => Promise<void>;
-
   #cachedIdenticon?: CachedIdenticon;
 
   public isFetchingUUID?: boolean;
 
   #lastIsTyping?: boolean;
   #muteTimer?: NodeJS.Timeout;
-  #privVerifiedEnum?: typeof signalProtocolStore.VerifiedStatus;
+  readonly #privVerifiedEnum?: typeof signalProtocolStore.VerifiedStatus;
   #isShuttingDown = false;
-  #savePromises = new Set<Promise<void>>();
+  readonly #savePromises = new Set<Promise<void>>();
 
   public get id(): string {
     return this.#_attributes.id;
@@ -368,7 +395,15 @@ export class ConversationModel {
   ): ConversationAttributesType[keyName] {
     return this.attributes[key];
   }
+
   public set(
+    attributes: Partial<SettableConversationAttributesType>,
+    { noTrigger }: { noTrigger?: boolean } = {}
+  ): void {
+    this.#doSet(attributes, { noTrigger });
+  }
+
+  #doSet(
     attributes: Partial<ConversationAttributesType>,
     { noTrigger }: { noTrigger?: boolean } = {}
   ): void {
@@ -498,10 +533,6 @@ export class ConversationModel {
 
     this.throttledBumpTyping = throttle(this.bumpTyping, 300);
     this.throttledUpdateUnread = throttle(this.#updateUnread, 300);
-    this.throttledUpdateSharedGroups = throttle(
-      this.updateSharedGroups.bind(this),
-      FIVE_MINUTES
-    );
     this.throttledFetchSMSOnlyUUID = throttle(
       this.fetchSMSOnlyUUID.bind(this),
       FIVE_MINUTES
@@ -579,10 +610,10 @@ export class ConversationModel {
 
   async updateExpirationTimerInGroupV2(
     seconds?: DurationInSeconds
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     const idLog = this.idForLogging();
     const current = this.get('expireTimer');
-    const bothFalsey = Boolean(current) === false && Boolean(seconds) === false;
+    const bothFalsey = !current && !seconds;
 
     if (current === seconds || bothFalsey) {
       log.warn(
@@ -599,7 +630,7 @@ export class ConversationModel {
 
   async #promotePendingMember(
     serviceIdKind: ServiceIdKind
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     const idLog = this.idForLogging();
 
     const us = window.ConversationController.getOurConversationOrThrow();
@@ -649,7 +680,7 @@ export class ConversationModel {
 
   async #denyPendingApprovalRequest(
     aci: AciString
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     const idLog = this.idForLogging();
 
     // This user's pending state may have changed in the time between the user's
@@ -673,7 +704,7 @@ export class ConversationModel {
   }
 
   async addPendingApprovalRequest(): Promise<
-    Proto.GroupChange.Actions | undefined
+    Proto.GroupChange.Actions.Params | undefined
   > {
     const idLog = this.idForLogging();
 
@@ -718,7 +749,7 @@ export class ConversationModel {
 
   async addMember(
     serviceId: ServiceIdString
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     const idLog = this.idForLogging();
 
     const toRequest = window.ConversationController.get(serviceId);
@@ -764,13 +795,13 @@ export class ConversationModel {
 
   async #removePendingMember(
     serviceIds: ReadonlyArray<ServiceIdString>
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     return removePendingMember(this.attributes, serviceIds);
   }
 
   async #removeMember(
     serviceId: ServiceIdString
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     const idLog = this.idForLogging();
 
     // This user's pending state may have changed in the time between the user's
@@ -794,7 +825,7 @@ export class ConversationModel {
 
   async #toggleAdminChange(
     serviceId: ServiceIdString
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     if (!isGroupV2(this.attributes)) {
       return undefined;
     }
@@ -830,7 +861,9 @@ export class ConversationModel {
     syncMessageOnly,
   }: {
     usingCredentialsFrom: ReadonlyArray<ConversationModel>;
-    createGroupChange: () => Promise<Proto.GroupChange.Actions | undefined>;
+    createGroupChange: () => Promise<
+      Proto.GroupChange.Actions.Params | undefined
+    >;
     extraConversationsForSend?: ReadonlyArray<string>;
     inviteLinkPassword?: string;
     name: string;
@@ -972,25 +1005,39 @@ export class ConversationModel {
     return isBlocked(this.attributes);
   }
 
-  block({ viaStorageServiceSync = false } = {}): void {
+  block({
+    viaStorageServiceSync,
+    timestamp,
+  }: {
+    viaStorageServiceSync: boolean;
+    timestamp: number | undefined;
+  }): void {
+    if (isMe(this.attributes)) {
+      log.error(`${this.idForLogging()}: Refusing to block Note to Self`);
+      return;
+    }
+
     let blocked = false;
     const wasBlocked = this.isBlocked();
 
     const serviceId = this.getServiceId();
-    if (serviceId && isAciString(serviceId)) {
-      drop(itemStorage.blocked.addBlockedServiceId(serviceId));
+    if (isSignalConversation(this)) {
+      drop(itemStorage.blocked.setReleaseNotesChatBlocked(true, timestamp));
+      blocked = true;
+    } else if (serviceId && isAciString(serviceId)) {
+      drop(itemStorage.blocked.addBlockedServiceId(serviceId, timestamp));
       blocked = true;
     }
 
     const e164 = this.get('e164');
     if (e164) {
-      drop(itemStorage.blocked.addBlockedNumber(e164));
+      drop(itemStorage.blocked.addBlockedNumber(e164, timestamp));
       blocked = true;
     }
 
     const groupId = this.get('groupId');
     if (groupId) {
-      drop(itemStorage.blocked.addBlockedGroup(groupId));
+      drop(itemStorage.blocked.addBlockedGroup(groupId, timestamp));
       blocked = true;
     }
 
@@ -1008,7 +1055,10 @@ export class ConversationModel {
     const wasBlocked = this.isBlocked();
 
     const serviceId = this.getServiceId();
-    if (serviceId && isAciString(serviceId)) {
+    if (serviceId && isSignalServiceId(serviceId)) {
+      drop(itemStorage.blocked.setReleaseNotesChatBlocked(false, undefined));
+      unblocked = true;
+    } else if (serviceId && isAciString(serviceId)) {
       drop(itemStorage.blocked.removeBlockedServiceId(serviceId));
       unblocked = true;
     }
@@ -1074,10 +1124,11 @@ export class ConversationModel {
         ? {
             source: MessageRequestResponseSource.STORAGE_SERVICE,
             learnedAtMs: Date.now(),
+            blockedAt: undefined,
           }
         : {
             source: MessageRequestResponseSource.LOCAL,
-            timestamp: Date.now(),
+            blockedAt: Date.now(),
           },
       { shouldSave: false }
     );
@@ -1182,6 +1233,34 @@ export class ConversationModel {
 
   getDraftPreview(): DraftPreviewType {
     return getDraftPreview(this.attributes);
+  }
+
+  async maybeUpdateDraftPreview(): Promise<void> {
+    const logId = `maybeUpdateDraft/${this.idForLogging()}`;
+
+    if (this.get('draftChanged')) {
+      if (this.hasDraft()) {
+        log.info(`${logId}: new draft info needs update`);
+        const now = Date.now();
+        const activeAt = this.get('active_at') || now;
+
+        this.set({
+          active_at: activeAt,
+          draftChanged: false,
+          draftTimestamp: now,
+        });
+      } else {
+        log.info(`${logId}: clearing draft info`);
+        this.set({
+          draftChanged: false,
+          draftTimestamp: null,
+        });
+      }
+
+      await DataWriter.updateConversation(this.attributes);
+
+      drop(this.updateLastMessage());
+    }
   }
 
   bumpTyping(): void {
@@ -1330,7 +1409,7 @@ export class ConversationModel {
 
   getGroupV2Info(
     options: Readonly<
-      { groupChange?: Uint8Array } & (
+      { groupChange?: Uint8Array<ArrayBuffer> } & (
         | {
             includePendingMembers?: boolean;
             extraConversationsForSend?: ReadonlyArray<string>;
@@ -1344,10 +1423,10 @@ export class ConversationModel {
     }
     return {
       masterKey: Bytes.fromBase64(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         this.get('masterKey')!
       ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       revision: this.get('revision')!,
       members:
         'members' in options ? options.members : this.getRecipients(options),
@@ -1355,7 +1434,7 @@ export class ConversationModel {
     };
   }
 
-  getGroupIdBuffer(): Uint8Array | undefined {
+  getGroupIdBuffer(): Uint8Array<ArrayBuffer> | undefined {
     const groupIdString = this.get('groupId');
 
     if (!groupIdString) {
@@ -1530,14 +1609,12 @@ export class ConversationModel {
     message: MessageAttributesType,
     { isJustSent }: { isJustSent: boolean } = { isJustSent: false }
   ): Promise<void> {
-    await this.#beforeAddSingleMessage(message);
+    await this.#beforeAddSingleMessage();
     this.#doAddSingleMessage(message, { isJustSent });
     this.debouncedUpdateLastMessage();
   }
 
-  async #beforeAddSingleMessage(message: MessageAttributesType): Promise<void> {
-    await hydrateStoryContext(message.id, undefined, { shouldSave: true });
-
+  async #beforeAddSingleMessage(): Promise<void> {
     if (!this.newMessageQueue) {
       this.newMessageQueue = new PQueue({
         concurrency: 1,
@@ -1592,7 +1669,7 @@ export class ConversationModel {
     const logId = `setInProgressFetch(${this.idForLogging()})`;
     while (this.inProgressFetch != null) {
       log.warn(`${logId}: blocked, waiting`);
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await this.inProgressFetch;
     }
     const start = Date.now();
@@ -1601,6 +1678,7 @@ export class ConversationModel {
     this.inProgressFetch = promise;
 
     let isFinished = false;
+    // oxlint-disable-next-line prefer-const
     let timeout: NodeJS.Timeout;
     const finish = () => {
       strictAssert(!isFinished, 'inProgressFetch.finish called twice');
@@ -1688,10 +1766,14 @@ export class ConversationModel {
           `latest timestamp=${cleaned.at(-1)?.sent_at}`
       );
 
+      const pinnedMessagesPreloadData =
+        await getPinnedMessagesPreloadDataForConversation(this.id);
+
       addPreloadData({
         conversationId: this.id,
         messages: cleaned,
         metrics,
+        pinnedMessagesPreloadData,
         unboundedFetch,
       });
     } finally {
@@ -1803,6 +1885,11 @@ export class ConversationModel {
           `latest timestamp=${cleaned.at(-1)?.sent_at}`
       );
 
+      const pinnedMessagesPreloadData =
+        await DataReader.getPinnedMessagesPreloadDataForConversation(
+          conversationId
+        );
+
       // Because our `getOlderMessages` fetch above didn't specify a receivedAt, we got
       //   the most recent N messages in the conversation. If it has a conflict with
       //   metrics, fetched a bit before, that's likely a race condition. So we tell our
@@ -1813,6 +1900,7 @@ export class ConversationModel {
         conversationId,
         messages: cleaned,
         metrics,
+        pinnedMessagesPreloadData,
         scrollToMessageId,
         unboundedFetch,
       });
@@ -1936,7 +2024,11 @@ export class ConversationModel {
 
   async loadAndScroll(
     messageId: string,
-    options: { disableScroll?: boolean; onFinish?: () => void } = {}
+    options: {
+      disableScroll?: boolean;
+      onFinish?: () => void;
+      shouldHighlight?: boolean;
+    } = {}
   ): Promise<void> {
     const { messagesReset, setMessageLoadingState } =
       window.reduxActions.conversations;
@@ -1977,11 +2069,16 @@ export class ConversationModel {
       const scrollToMessageId =
         options && options.disableScroll ? undefined : messageId;
 
+      const pinnedMessagesPreloadData =
+        await getPinnedMessagesPreloadDataForConversation(conversationId);
+
       messagesReset({
         conversationId,
         messages: cleaned,
         metrics,
+        pinnedMessagesPreloadData,
         scrollToMessageId,
+        shouldHighlight: options.shouldHighlight,
       });
     } catch (error) {
       setMessageLoadingState(conversationId, undefined);
@@ -2049,14 +2146,6 @@ export class ConversationModel {
           updated = true;
         }
 
-        const patch = await hydrateStoryContext(message.id, undefined, {
-          shouldSave: true,
-        });
-        if (patch) {
-          updated = true;
-          model.set(patch);
-        }
-
         if (updated) {
           upgraded += 1;
           await window.MessageCache.saveMessage(model.attributes);
@@ -2117,10 +2206,26 @@ export class ConversationModel {
       return;
     }
 
+    const wasBlockedByNumber = oldValue
+      ? itemStorage.blocked.getBlockedNumbers().get(oldValue)
+      : undefined;
+    const serviceId = this.get('serviceId');
+    const wasBlockedByServiceId = serviceId
+      ? itemStorage.blocked.getBlockedServiceIds().get(serviceId)
+      : undefined;
+
     this.set({ e164: e164 || undefined });
 
+    if (wasBlockedByNumber || wasBlockedByServiceId) {
+      this.block({
+        viaStorageServiceSync: false,
+        timestamp:
+          wasBlockedByNumber?.blockedAt ?? wasBlockedByServiceId?.blockedAt,
+      });
+    }
+
     // This user changed their phone number
-    if (oldValue && e164 && this.get('sharingPhoneNumber')) {
+    if (oldValue && e164) {
       void this.addChangeNumberNotification(oldValue, e164);
     }
 
@@ -2135,11 +2240,27 @@ export class ConversationModel {
       return;
     }
 
+    const wasBlockedByServiceId = oldValue
+      ? itemStorage.blocked.getBlockedServiceIds().get(oldValue)
+      : undefined;
+    const e164 = this.get('e164');
+    const wasBlockedByNumber = e164
+      ? itemStorage.blocked.getBlockedNumbers().get(e164)
+      : undefined;
+
     this.set({
       serviceId: serviceId
         ? normalizeServiceId(serviceId, 'Conversation.updateServiceId')
         : undefined,
     });
+
+    if (wasBlockedByServiceId || wasBlockedByNumber) {
+      this.block({
+        viaStorageServiceSync: false,
+        timestamp:
+          wasBlockedByNumber?.blockedAt ?? wasBlockedByServiceId?.blockedAt,
+      });
+    }
     drop(DataWriter.updateConversation(this.attributes));
     window.ConversationController.idUpdated(this, 'serviceId', oldValue);
 
@@ -2153,7 +2274,7 @@ export class ConversationModel {
     this.captureChange('updateServiceId');
   }
 
-  trackPreviousIdentityKey(publicKey: Uint8Array): void {
+  trackPreviousIdentityKey(publicKey: Uint8Array<ArrayBuffer>): void {
     const logId = `trackPreviousIdentityKey/${this.idForLogging()}`;
     const identityKey = Bytes.toBase64(publicKey);
 
@@ -2260,7 +2381,7 @@ export class ConversationModel {
     }
   }
 
-  async updateReportingToken(token?: Uint8Array): Promise<void> {
+  async updateReportingToken(token?: Uint8Array<ArrayBuffer>): Promise<void> {
     const oldValue = this.get('reportingToken');
     const newValue = token ? Bytes.toBase64(token) : undefined;
 
@@ -2312,7 +2433,7 @@ export class ConversationModel {
     do {
       const first = messages ? messages[0] : undefined;
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       messages = await DataReader.getOlderMessagesByConversation({
         conversationId: this.get('id'),
         includeStoryReplies: !isGroup(this.attributes),
@@ -2332,7 +2453,7 @@ export class ConversationModel {
       if (isLocalAction) {
         const conversationId = this.get('id');
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await conversationJobQueue.add({
           type: conversationQueueJobEnum.enum.Receipts,
           conversationId: this.get('id'),
@@ -2353,7 +2474,7 @@ export class ConversationModel {
         });
       }
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await Promise.all(
         readMessages.map(async m => {
           const registered = window.MessageCache.register(new MessageModel(m));
@@ -2383,9 +2504,9 @@ export class ConversationModel {
     const { source } = responseInfo;
     switch (source) {
       case MessageRequestResponseSource.LOCAL:
-        receivedAtMs = responseInfo.timestamp;
+        receivedAtMs = responseInfo.blockedAt;
         receivedAtCounter = incrementMessageCounter();
-        timestamp = responseInfo.timestamp;
+        timestamp = responseInfo.blockedAt;
         break;
       case MessageRequestResponseSource.MRR_SYNC:
         receivedAtMs = responseInfo.receivedAtMs;
@@ -2526,7 +2647,10 @@ export class ConversationModel {
         isSpam?: boolean;
       }) => {
         if (isBlock) {
-          this.block({ viaStorageServiceSync });
+          this.block({
+            viaStorageServiceSync,
+            timestamp: responseInfo.blockedAt,
+          });
         }
 
         if (isBlock || isDelete) {
@@ -2598,7 +2722,7 @@ export class ConversationModel {
 
         if (isLocalAction) {
           const ourAci = itemStorage.user.getCheckedAci();
-          const ourPni = itemStorage.user.getPni();
+          const ourPni = itemStorage.user.getOptionalPni();
           const ourConversation =
             window.ConversationController.getOurConversationOrThrow();
 
@@ -2759,7 +2883,7 @@ export class ConversationModel {
     }
 
     const ourAci = itemStorage.user.getCheckedAci();
-    const ourPni = itemStorage.user.getPni();
+    const ourPni = itemStorage.user.getOptionalPni();
 
     if (this.isMemberPending(ourAci)) {
       await this.modifyGroupV2({
@@ -2792,7 +2916,7 @@ export class ConversationModel {
 
   async addBannedMember(
     serviceId: ServiceIdString
-  ): Promise<Proto.GroupChange.Actions | undefined> {
+  ): Promise<Proto.GroupChange.Actions.Params | undefined> {
     if (this.isMember(serviceId)) {
       log.warn('addBannedMember: Member is a part of the group!');
 
@@ -2931,7 +3055,7 @@ export class ConversationModel {
     this.fetchContacts();
 
     await Promise.all(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       this.contactCollection!.map(async contact => {
         if (!isMe(contact.attributes)) {
           await contact.updateVerified();
@@ -3020,9 +3144,9 @@ export class ConversationModel {
     aci: AciString,
     state: number
   ): Promise<CallbackResultType | void> {
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.warn(
-        'sendVerifySyncMessage: We are primary device; not sending sync'
+    if (!window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(
+        'sendVerifySyncMessage: We have no other devices; not sending sync'
       );
       return;
     }
@@ -3057,7 +3181,7 @@ export class ConversationModel {
       return false;
     }
 
-    if (contacts.length === 1 && isMe(contacts[0]?.attributes)) {
+    if (contacts.length === 1 && contacts[0] && isMe(contacts[0].attributes)) {
       return false;
     }
 
@@ -3275,7 +3399,11 @@ export class ConversationModel {
     drop(this.onNewMessage(message));
     this.throttledUpdateUnread();
 
-    await maybeNotify({ message: message.attributes, conversation: this });
+    await maybeNotify({
+      kind: 'deliveryIssue',
+      message: message.attributes,
+      conversation: this,
+    });
   }
 
   async addKeyChange(
@@ -3497,7 +3625,8 @@ export class ConversationModel {
 
   async addPollTerminateNotification(params: {
     pollQuestion: string;
-    pollMessageId: string;
+    pollTimestamp: number;
+    pollSource: PollSource;
     terminatorId: string;
     timestamp: number;
     isMeTerminating: boolean;
@@ -3519,7 +3648,7 @@ export class ConversationModel {
       sourceServiceId: terminatorServiceId,
       pollTerminateNotification: {
         question: params.pollQuestion,
-        pollMessageId: params.pollMessageId,
+        pollTimestamp: params.pollTimestamp,
       },
       readStatus: params.isMeTerminating ? ReadStatus.Read : ReadStatus.Unread,
       seenStatus: params.isMeTerminating ? SeenStatus.Seen : SeenStatus.Unseen,
@@ -3534,7 +3663,46 @@ export class ConversationModel {
     drop(this.onNewMessage(message));
 
     this.throttledUpdateUnread();
-    await maybeNotify({ message: message.attributes, conversation: this });
+
+    await maybeNotify({
+      kind: 'pollTerminate',
+      pollSource: params.pollSource,
+      pollTerminatorId: params.terminatorId,
+      message: message.attributes,
+      conversation: this,
+    });
+  }
+
+  async addPinnedMessageNotification(params: {
+    pinMessage: PinMessageData;
+    senderAci: AciString;
+    sentAtTimestamp: number;
+    receivedAtTimestamp: number;
+    expireTimer: DurationInSeconds | null;
+    expirationStartTimestamp: number | null;
+  }): Promise<void> {
+    const ourAci = itemStorage.user.getCheckedAci();
+    const senderIsMe = params.senderAci === ourAci;
+
+    const message = new MessageModel({
+      ...generateMessageId(incrementMessageCounter()),
+      conversationId: this.id,
+      type: 'pinned-message-notification',
+      sent_at: params.sentAtTimestamp,
+      received_at_ms: params.receivedAtTimestamp,
+      timestamp: params.sentAtTimestamp,
+      readStatus: senderIsMe ? ReadStatus.Read : ReadStatus.Unread,
+      seenStatus: senderIsMe ? SeenStatus.Seen : SeenStatus.Unseen,
+      sourceServiceId: params.senderAci,
+      expireTimer: params.expireTimer ?? undefined,
+      expirationStartTimestamp: params.expirationStartTimestamp,
+      pinMessage: params.pinMessage,
+    });
+
+    await window.MessageCache.saveMessage(message, { forceSave: true });
+    window.MessageCache.register(message);
+
+    drop(this.onNewMessage(message));
   }
 
   async addNotification(
@@ -3639,7 +3807,7 @@ export class ConversationModel {
 
     const message = window.MessageCache.getById(notificationId);
     if (message) {
-      await DataWriter.removeMessage(message.id, {
+      await DataWriter.removeMessageById(message.id, {
         cleanupMessages,
       });
     }
@@ -3682,7 +3850,7 @@ export class ConversationModel {
 
     const message = window.MessageCache.getById(notificationId);
     if (message) {
-      await DataWriter.removeMessage(message.id, {
+      await DataWriter.removeMessageById(message.id, {
         cleanupMessages,
       });
     }
@@ -3761,9 +3929,7 @@ export class ConversationModel {
       throw new Error(`${logId}: shutting down, can't accept more work`);
     }
 
-    this.jobQueue = this.jobQueue || new PQueue({ concurrency: 1 });
-
-    const taskWithTimeout = createTaskWithTimeout(callback, logId);
+    this.jobQueue ??= new PQueue({ concurrency: 1 });
 
     const abortController = new AbortController();
     const { signal: abortSignal } = abortController;
@@ -3778,7 +3944,10 @@ export class ConversationModel {
       }
 
       try {
-        return await taskWithTimeout(abortSignal);
+        return await runTaskWithTimeout(
+          async () => callback(abortSignal),
+          logId
+        );
       } catch (error) {
         abortController.abort();
         throw error;
@@ -3848,6 +4017,7 @@ export class ConversationModel {
     return buildGroupLink(this.attributes);
   }
 
+  // TODO(DESKTOP-9497): This will not include `ourAci` in 1:1 chats
   getMembers(
     options: { includePendingMembers?: boolean } = {}
   ): Array<ConversationModel> {
@@ -3904,7 +4074,11 @@ export class ConversationModel {
     return getQuoteAttachment(attachments, preview, sticker);
   }
 
-  async sendStickerMessage(packId: string, stickerId: number): Promise<void> {
+  async sendStickerMessage(
+    packId: string,
+    stickerId: number,
+    options?: { quote?: QuotedMessageType; extraReduxActions?: () => void }
+  ): Promise<void> {
     const packData = Stickers.getStickerPack(packId);
     const stickerData = Stickers.getSticker(packId, stickerId);
     if (!stickerData || !packData) {
@@ -3913,6 +4087,8 @@ export class ConversationModel {
       );
       return;
     }
+
+    const { quote, extraReduxActions } = options ?? {};
 
     const { key } = packData;
     const { emoji, width, height } = stickerData;
@@ -3959,9 +4135,13 @@ export class ConversationModel {
         {
           body: undefined,
           attachments: [],
+          quote,
           sticker,
         },
-        { dontClearDraft: true }
+        {
+          dontClearDraft: true,
+          extraReduxActions,
+        }
       )
     );
     window.reduxActions.stickers.useSticker(packId, stickerId);
@@ -3972,9 +4152,20 @@ export class ConversationModel {
       return;
     }
 
-    if (!this.get('profileSharing')) {
+    if (
+      isDirectConversation(this.attributes) &&
+      !isTrustedContact(this.attributes)
+    ) {
       log.error(
-        'sendProfileKeyUpdate: profileSharing not enabled for conversation',
+        'sendProfileKeyUpdate: not a trusted contact',
+        this.idForLogging()
+      );
+      return;
+    }
+
+    if (isGroup(this.attributes) && !this.get('profileSharing')) {
+      log.error(
+        'sendProfileKeyUpdate: not a trusted group',
         this.idForLogging()
       );
       return;
@@ -4010,8 +4201,8 @@ export class ConversationModel {
     const { clearUnreadMetrics } = window.reduxActions.conversations;
     clearUnreadMetrics(this.id);
 
-    const enabledProfileSharing = Boolean(!this.get('profileSharing'));
-    const unarchivedConversation = Boolean(this.get('isArchived'));
+    const enabledProfileSharing = !this.get('profileSharing');
+    const unarchivedConversation = this.get('isArchived');
 
     log.info(
       `beforeMessageSend(${this.idForLogging()}): ` +
@@ -4028,6 +4219,7 @@ export class ConversationModel {
           draft: '',
           draftEditMessage: undefined,
           draftBodyRanges: [],
+          draftIsViewOnce: false,
           draftTimestamp: null,
           quotedMessageId: undefined,
         };
@@ -4062,6 +4254,7 @@ export class ConversationModel {
       body,
       contact,
       bodyRanges,
+      isViewOnce,
       preview,
       quote,
       sticker,
@@ -4071,6 +4264,7 @@ export class ConversationModel {
       body: string | undefined;
       contact?: Array<EmbeddedContactWithHydratedAvatar>;
       bodyRanges?: DraftBodyRanges;
+      isViewOnce?: boolean;
       preview?: Array<LinkPreviewWithHydratedData>;
       quote?: QuotedMessageType;
       sticker?: StickerWithHydratedData;
@@ -4078,12 +4272,14 @@ export class ConversationModel {
     },
     {
       dontClearDraft = false,
+      isForwarding = false,
       sendHQImages,
       storyId,
       timestamp,
       extraReduxActions,
     }: {
       dontClearDraft?: boolean;
+      isForwarding?: boolean;
       sendHQImages?: boolean;
       storyId?: string;
       timestamp?: number;
@@ -4118,6 +4314,26 @@ export class ConversationModel {
       expireTimer = this.get('expireTimer');
     }
 
+    const story = storyId ? await getMessageById(storyId) : undefined;
+
+    if (storyId && isGroup(this.attributes)) {
+      strictAssert(story, 'story being replied to must exist');
+      strictAssert(
+        story.expireTimer != null && story.expireTimer > 0,
+        'story missing expireTimer'
+      );
+      strictAssert(
+        story.expirationStartTimestamp != null &&
+          story.expirationStartTimestamp > 0,
+        'story missing expirationStartTimestamp'
+      );
+
+      expireTimer = story.expireTimer;
+      expirationStartTimestamp = story.expirationStartTimestamp;
+    }
+
+    const storyReplyContext = story ? getStoryReplyContext(story) : undefined;
+
     const recipientMaybeConversations = map(
       this.getRecipients({
         isStoryReply: storyId !== undefined,
@@ -4137,10 +4353,10 @@ export class ConversationModel {
     // any attachments as well.
     let attachmentsToSend = preview && preview.length ? [] : attachments;
 
-    if (preview && preview.length) {
+    if (preview && preview.length && !isForwarding) {
       attachments.forEach(attachment => {
         if (attachment.path) {
-          void deleteAttachmentData(attachment.path);
+          drop(maybeDeleteAttachmentFile(attachment.path));
         }
       });
     }
@@ -4158,13 +4374,13 @@ export class ConversationModel {
      * All draft attachments (with a path or just in-memory) will be written to disk for
      * real in `upgradeMessageSchema`.
      */
-    if (!sendHQImages) {
+    if (!sendHQImages && !isForwarding) {
       attachmentsToSend = await Promise.all(
         attachmentsToSend.map(async attachment => {
           const downscaledAttachment =
             await downscaleOutgoingAttachment(attachment);
           if (downscaledAttachment !== attachment && attachment.path) {
-            drop(deleteAttachmentData(attachment.path));
+            drop(maybeDeleteAttachmentFile(attachment.path));
           }
           return downscaledAttachment;
         })
@@ -4186,6 +4402,7 @@ export class ConversationModel {
       received_at_ms: now,
       expirationStartTimestamp,
       expireTimer,
+      isViewOnce,
       readStatus: ReadStatus.Read,
       seenStatus: SeenStatus.NotApplicable,
       sticker,
@@ -4199,6 +4416,7 @@ export class ConversationModel {
         })
       ),
       storyId,
+      storyReplyContext,
       poll,
     });
 
@@ -4245,7 +4463,7 @@ export class ConversationModel {
     const renderStart = Date.now();
 
     // Perform asynchronous tasks before entering the batching mode
-    await this.#beforeAddSingleMessage(model.attributes);
+    await this.#beforeAddSingleMessage();
 
     if (sticker) {
       await addStickerPackReference({
@@ -4297,7 +4515,7 @@ export class ConversationModel {
 
     log.info(`maybeClearUsername(${this.idForLogging()}): clearing username`);
 
-    this.set({ username: undefined });
+    this.#doSet({ username: undefined });
 
     if (this.get('needsTitleTransition') && getProfileName(this.attributes)) {
       log.info(
@@ -4326,7 +4544,13 @@ export class ConversationModel {
 
   async updateUsername(
     username: string | undefined,
-    { shouldSave = true }: { shouldSave?: boolean } = {}
+    {
+      shouldSave = true,
+      fromStorageService = false,
+    }: {
+      shouldSave?: boolean;
+      fromStorageService?: boolean;
+    } = {}
   ): Promise<void> {
     const ourConversationId =
       window.ConversationController.getOurConversationId();
@@ -4339,10 +4563,38 @@ export class ConversationModel {
       return;
     }
 
+    if (username && !isUsernameValid(username)) {
+      log.error(
+        `updateUsername(${this.idForLogging()}): username is invalid, dropping`,
+        {
+          fromStorageService,
+        }
+      );
+      return;
+    }
+
     log.info(`updateUsername(${this.idForLogging()}): updating username`);
 
-    this.set({ username });
-    this.captureChange('updateUsername');
+    this.#doSet({ username });
+
+    if (isMe(this.attributes)) {
+      drop(keyTransparency.onKnownIdentifierChange('username'));
+      if (itemStorage.get('usernameCorrupted')) {
+        log.info('updateUsername: clearing username corruption');
+        await itemStorage.remove('usernameCorrupted');
+      }
+      if (
+        !fromStorageService &&
+        window.ConversationController.doWeHaveOtherDevices()
+      ) {
+        await sendUsernameChangeSyncMessage();
+      }
+    }
+    await window.ConversationController.usernameUpdated(this);
+
+    if (!fromStorageService) {
+      this.captureChange('updateUsername');
+    }
 
     if (shouldSave) {
       await DataWriter.updateConversation(this.attributes);
@@ -4384,7 +4636,8 @@ export class ConversationModel {
       preview = window.MessageCache.register(
         new MessageModel(previewAttributes)
       );
-      const updates = (await this.cleanAttributes([preview.attributes]))?.[0];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const updates = (await this.cleanAttributes([preview.attributes]))[0]!;
       preview.set(updates);
     }
 
@@ -4392,7 +4645,8 @@ export class ConversationModel {
       activity = window.MessageCache.register(
         new MessageModel(activityAttributes)
       );
-      const updates = (await this.cleanAttributes([activity.attributes]))?.[0];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const updates = (await this.cleanAttributes([activity.attributes]))[0]!;
       activity.set(updates);
     }
 
@@ -4417,6 +4671,8 @@ export class ConversationModel {
     | 'lastMessageReceivedAtMs'
     | 'timestamp'
     | 'lastMessageDeletedForEveryone'
+    | 'lastMessageDeletedForEveryoneByAdminAci'
+    | 'lastMessageAuthorAci'
   > {
     const ourConversationId =
       window.ConversationController.getOurConversationId();
@@ -4458,6 +4714,10 @@ export class ConversationModel {
       lastMessageReceivedAtMs,
       timestamp,
       lastMessageDeletedForEveryone: preview?.deletedForEveryone || false,
+      lastMessageDeletedForEveryoneByAdminAci:
+        preview?.deletedForEveryoneByAdminAci,
+      lastMessageAuthorAci:
+        preview != null ? getMessageAuthorAci(preview) : undefined,
     };
   }
 
@@ -4478,12 +4738,12 @@ export class ConversationModel {
   }
 
   setMarkedUnread(markedUnread: boolean): void {
-    const previousMarkedUnread = this.get('markedUnread');
+    const previousMarkedUnread = this.get('markedUnread') ?? false;
 
     this.set({ markedUnread });
     drop(DataWriter.updateConversation(this.attributes));
 
-    if (Boolean(previousMarkedUnread) !== Boolean(markedUnread)) {
+    if (previousMarkedUnread !== markedUnread) {
       this.captureChange('markedUnread');
     }
   }
@@ -4493,6 +4753,34 @@ export class ConversationModel {
       this.set({ messagesDeleted: false });
       await DataWriter.updateConversation(this.attributes);
     }
+  }
+
+  async updateGroupMemberLabel({
+    labelEmoji,
+    labelString,
+  }: {
+    labelEmoji: Emoji.Variant | undefined;
+    labelString: string | undefined;
+  }): Promise<void> {
+    if (!isGroupV2(this.attributes)) {
+      return;
+    }
+
+    log.info('updateGroupMemberLabel for conversation', this.idForLogging());
+
+    const ourServiceId = itemStorage.user.getCheckedAci();
+
+    await this.modifyGroupV2({
+      name: 'updateGroupMemberLabel',
+      usingCredentialsFrom: [],
+      createGroupChange: async () =>
+        buildModifyMemberLabelChange({
+          serviceId: ourServiceId,
+          group: this.attributes,
+          labelEmoji,
+          labelString,
+        }),
+    });
   }
 
   async refreshGroupLink(): Promise<void> {
@@ -4512,8 +4800,6 @@ export class ConversationModel {
       createGroupChange: async () =>
         buildInviteLinkPasswordChange(this.attributes, groupInviteLinkPassword),
     });
-
-    this.set({ groupInviteLinkPassword });
   }
 
   async toggleGroupLink(value: boolean): Promise<void> {
@@ -4556,18 +4842,6 @@ export class ConversationModel {
           ),
       });
     }
-
-    this.set({
-      accessControl: {
-        addFromInviteLink,
-        attributes: this.get('accessControl')?.attributes || ACCESS_ENUM.MEMBER,
-        members: this.get('accessControl')?.members || ACCESS_ENUM.MEMBER,
-      },
-    });
-
-    if (shouldCreateNewGroupLink) {
-      this.set({ groupInviteLinkPassword });
-    }
   }
 
   async updateAccessControlAddFromInviteLink(value: boolean): Promise<void> {
@@ -4590,14 +4864,6 @@ export class ConversationModel {
           addFromInviteLink
         ),
     });
-
-    this.set({
-      accessControl: {
-        addFromInviteLink,
-        attributes: this.get('accessControl')?.attributes || ACCESS_ENUM.MEMBER,
-        members: this.get('accessControl')?.members || ACCESS_ENUM.MEMBER,
-      },
-    });
   }
 
   async updateAccessControlAttributes(value: number): Promise<void> {
@@ -4610,16 +4876,6 @@ export class ConversationModel {
       usingCredentialsFrom: [],
       createGroupChange: async () =>
         buildAccessControlAttributesChange(this.attributes, value),
-    });
-
-    const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
-    this.set({
-      accessControl: {
-        addFromInviteLink:
-          this.get('accessControl')?.addFromInviteLink || ACCESS_ENUM.MEMBER,
-        attributes: value,
-        members: this.get('accessControl')?.members || ACCESS_ENUM.MEMBER,
-      },
     });
   }
 
@@ -4634,15 +4890,18 @@ export class ConversationModel {
       createGroupChange: async () =>
         buildAccessControlMembersChange(this.attributes, value),
     });
+  }
 
-    const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
-    this.set({
-      accessControl: {
-        addFromInviteLink:
-          this.get('accessControl')?.addFromInviteLink || ACCESS_ENUM.MEMBER,
-        attributes: this.get('accessControl')?.attributes || ACCESS_ENUM.MEMBER,
-        members: value,
-      },
+  async updateAccessControlMemberLabel(value: number): Promise<void> {
+    if (!isGroupV2(this.attributes)) {
+      return;
+    }
+
+    await this.modifyGroupV2({
+      name: 'updateAccessControlMembers',
+      usingCredentialsFrom: [],
+      createGroupChange: async () =>
+        buildAccessControlMemberLabelChange(this.attributes, value),
     });
   }
 
@@ -4657,8 +4916,6 @@ export class ConversationModel {
       createGroupChange: async () =>
         buildAnnouncementsOnlyChange(this.attributes, value),
     });
-
-    this.set({ announcementsOnly: value });
   }
 
   async updateExpirationTimer(
@@ -4676,12 +4933,28 @@ export class ConversationModel {
       reason: string;
       receivedAt?: number;
       receivedAtMS?: number;
-      sentAt?: number;
-      source?: string;
-      version: number | undefined;
       fromSync?: boolean;
       isInitialSync?: boolean;
-    }
+    } & (
+      | {
+          // isSetByOther=true
+          sentAt: number;
+          source?: string;
+          version: number;
+        }
+      | {
+          // isSetByOther=true
+          sentAt?: number;
+          source: string;
+          version: number;
+        }
+      | {
+          // isSetByOther=false
+          sentAt?: undefined;
+          source?: undefined;
+          version: undefined;
+        }
+    )
   ): Promise<void> {
     const isSetByOther = providedSource || providedSentAt !== undefined;
 
@@ -4747,21 +5020,24 @@ export class ConversationModel {
       `source=${source ?? '?'} localValue=${this.get('expireTimer')} ` +
       `localVersion=${localVersion}, reason=${reason}, isInitialSync=${isInitialSync}`;
 
-    if (isSetByOther) {
-      if (version) {
-        if (localVersion && version < localVersion) {
-          log.warn(`${logId}: not updating, local version is ${localVersion}`);
-          return;
-        }
+    if (version === 0) {
+      log.warn(`${logId}: not updating, zero version`);
+      return;
+    }
 
-        if (version === localVersion) {
-          if (!timerMatchesLocalValue) {
-            log.warn(`${logId}: expire version glare`);
-          }
-        } else {
-          this.set({ expireTimerVersion: version });
-          log.info(`${logId}: updating expire version`);
+    if (isSetByOther) {
+      if (localVersion && version < localVersion) {
+        log.warn(`${logId}: not updating, local version is ${localVersion}`);
+        return;
+      }
+
+      if (version === localVersion) {
+        if (!timerMatchesLocalValue) {
+          log.warn(`${logId}: expire version glare`);
         }
+      } else {
+        this.set({ expireTimerVersion: version });
+        log.info(`${logId}: updating expire version`);
       }
     }
 
@@ -4792,7 +5068,7 @@ export class ConversationModel {
 
     const ourConversation =
       window.ConversationController.getOurConversationOrThrow();
-    source = source || ourConversation.id;
+    source ??= ourConversation.id;
     const sourceServiceId =
       window.ConversationController.get(source)?.get('serviceId');
 
@@ -4850,6 +5126,18 @@ export class ConversationModel {
     );
   }
 
+  async terminateGroup(): Promise<void> {
+    if (!isGroupV2(this.attributes)) {
+      return;
+    }
+
+    await this.modifyGroupV2({
+      name: 'terminate',
+      usingCredentialsFrom: [],
+      createGroupChange: async () => buildTerminateChange(this.attributes),
+    });
+  }
+
   isSealedSenderDisabled(): boolean {
     const members = this.getMembers();
     if (
@@ -4878,7 +5166,6 @@ export class ConversationModel {
   ): Promise<void> {
     await markConversationRead(this.attributes, readMessage, options);
     this.throttledUpdateUnread();
-    window.reduxActions.callHistory.updateCallHistoryUnreadCount();
   }
 
   async #updateUnread(): Promise<void> {
@@ -4920,31 +5207,13 @@ export class ConversationModel {
     }
 
     const ourGroups =
-      await window.ConversationController.getAllGroupsInvolvingServiceId(
-        ourAci
-      );
+      window.ConversationController.getAllGroupsInvolvingServiceId(ourAci);
     return ourGroups
       .filter(c => c.hasMember(ourAci) && c.hasMember(theirAci))
       .sort(
         (left, right) =>
           (right.get('timestamp') || 0) - (left.get('timestamp') || 0)
       );
-  }
-
-  // This is an expensive operation we use to populate the message request hero row. It
-  //   shows groups the current user has in common with this potential new contact.
-  async updateSharedGroups(): Promise<void> {
-    const sharedGroups = await this.#getSharedGroups();
-
-    if (sharedGroups == null) {
-      return;
-    }
-
-    const sharedGroupNames = sharedGroups.map(conversation =>
-      conversation.getTitle()
-    );
-
-    this.set({ sharedGroupNames });
   }
 
   onChangeProfileKey(): void {
@@ -4975,7 +5244,7 @@ export class ConversationModel {
 
   async setEncryptedProfileName(
     encryptedName: string,
-    decryptionKey: Uint8Array
+    decryptionKey: Uint8Array<ArrayBuffer>
   ): Promise<void> {
     if (!encryptedName) {
       return;
@@ -4985,8 +5254,12 @@ export class ConversationModel {
     const { given, family } = decryptProfileName(encryptedName, decryptionKey);
 
     // encode
-    const profileName = given ? Bytes.toString(given) : undefined;
-    const profileFamilyName = family ? Bytes.toString(family) : undefined;
+    const profileName = normalizeProfileName(
+      given ? Bytes.toString(given) : undefined
+    );
+    const profileFamilyName = normalizeProfileName(
+      family ? Bytes.toString(family) : undefined
+    );
 
     // set then check for changes
     const oldName = this.getProfileName();
@@ -5012,7 +5285,7 @@ export class ConversationModel {
 
   async setAndMaybeFetchProfileAvatar(options: {
     avatarUrl: undefined | null | string;
-    decryptionKey?: Uint8Array | null | undefined;
+    decryptionKey?: Uint8Array<ArrayBuffer> | null | undefined;
     forceFetch?: boolean;
   }): Promise<void> {
     const { avatarUrl, decryptionKey, forceFetch } = options;
@@ -5034,6 +5307,16 @@ export class ConversationModel {
       return;
     }
 
+    const existingProfileAvatar = this.get('profileAvatar');
+
+    if (
+      existingProfileAvatar?.path &&
+      (await doesAttachmentExist(existingProfileAvatar.path)) &&
+      existingProfileAvatar.url === avatarUrl
+    ) {
+      return;
+    }
+
     const avatar = await doGetAvatar(avatarUrl);
 
     // If decryptionKey isn't provided, use the one from the model
@@ -5052,18 +5335,16 @@ export class ConversationModel {
     // decrypt
     const decrypted = decryptProfile(avatar, updatedDecryptionKey);
 
-    // update the conversation avatar only if hash differs
-    if (decrypted) {
-      const newAttributes = await Conversation.maybeUpdateProfileAvatar(
-        this.attributes,
-        {
-          data: decrypted,
-          writeNewAttachmentData,
-          deleteAttachmentData,
-          doesAttachmentExist,
-        }
-      );
-      this.set(newAttributes);
+    const newAttachment = await writeNewAttachmentData(decrypted);
+    this.set({
+      profileAvatar: {
+        url: avatarUrl,
+        ...newAttachment,
+      },
+    });
+
+    if (existingProfileAvatar?.path) {
+      await maybeDeleteAttachmentFile(existingProfileAvatar.path);
     }
   }
 
@@ -5083,7 +5364,7 @@ export class ConversationModel {
       return false;
     }
 
-    let derivedAccessKey: Uint8Array;
+    let derivedAccessKey: Uint8Array<ArrayBuffer>;
     try {
       derivedAccessKey = deriveAccessKeyFromProfileKey(
         Bytes.fromBase64(profileKey)
@@ -5144,10 +5425,12 @@ export class ConversationModel {
       { noTrigger: viaStorageServiceSync }
     );
 
-    // If our profile key was cleared above, we don't tell our linked devices about it.
-    //   We want linked devices to tell us what it should be, instead of telling them to
-    //   erase their local value.
-    if (!viaStorageServiceSync) {
+    // We _don't_ update storage service when we find out about a new profileKey unless
+    // we're a primary device
+    if (
+      !viaStorageServiceSync &&
+      window.ConversationController.areWePrimaryDevice()
+    ) {
       this.captureChange('profileKey');
     }
 
@@ -5258,6 +5541,7 @@ export class ConversationModel {
     await DataWriter.updateConversation(this.attributes);
   }
 
+  // TODO(DESKTOP-9497): This will return false for `ourAci` in 1:1 chats
   hasMember(serviceId: ServiceIdString): boolean {
     const members = this.getMembers();
 
@@ -5292,17 +5576,35 @@ export class ConversationModel {
     source: 'message-request' | 'local-delete-sync' | 'local-delete';
   }): Promise<void> {
     const logId = `${providedLogId}/destroyMessagesInner`;
-    this.set({
-      lastMessage: null,
-      lastMessageAuthor: null,
-      timestamp: null,
-      active_at: null,
-      pendingUniversalTimer: undefined,
-      messagesDeleted: true,
-    });
+    await safeCleanupDraftFiles(this.attributes);
+    await safeCleanupAvatarDraftFiles(this.attributes);
+    this.set(GENERIC_CLEANUP_FIELDS);
+
+    if (
+      isGroup(this.attributes) &&
+      (this.get('left') || this.get('terminated'))
+    ) {
+      await safeCleanupAvatarFiles(this.attributes);
+      const senderKeyInfo = this.get('senderKeyInfo');
+      if (senderKeyInfo?.distributionId) {
+        const ourAddress = getOurAddress();
+        const ourAci = itemStorage.user.getCheckedAci();
+        await signalProtocolStore.removeSenderKey(
+          new QualifiedAddress(ourAci, ourAddress),
+          senderKeyInfo.distributionId
+        );
+      }
+      this.set(GROUP_CLEANUP_FIELDS);
+    }
+
     await DataWriter.updateConversation(this.attributes);
 
-    if (source === 'local-delete') {
+    if (
+      source === 'local-delete' &&
+      !window.ConversationController.doWeHaveOtherDevices()
+    ) {
+      log.info(`${logId}}: We have no other devices; not sending sync message`);
+    } else if (source === 'local-delete') {
       log.info(`${logId}: Preparing sync message`);
       const timestamp = Date.now();
 
@@ -5467,15 +5769,11 @@ export class ConversationModel {
   // [X] dontNotifyForMentionsIfMuted
   // [x] firstUnregisteredAt
   captureChange(logMessage: string): void {
-    if (isSignalConversation(this.attributes)) {
-      return;
-    }
-
     log.info('storageService[captureChange]', logMessage, this.idForLogging());
     this.set({ needsStorageServiceSync: true });
 
     void this.queueJob('captureChange', async () => {
-      storageServiceUploadJob({ reason: `captureChange/${logMessage}` });
+      runStorageServiceUploadJob({ reason: `captureChange/${logMessage}` });
     });
   }
 
@@ -5484,15 +5782,20 @@ export class ConversationModel {
     this.#muteTimer = undefined;
 
     const muteExpiresAt = this.get('muteExpiresAt');
-    if (isNumber(muteExpiresAt) && muteExpiresAt < Number.MAX_SAFE_INTEGER) {
+    if (isNumber(muteExpiresAt) && !MuteExpiration.isAlways(muteExpiresAt)) {
       const delay = muteExpiresAt - Date.now();
       if (delay <= 0) {
-        this.setMuteExpiration(0, { viaStorageServiceSync });
+        this.setMuteExpiration(MuteExpiration.UNMUTED, {
+          viaStorageServiceSync,
+        });
         return;
       }
 
       this.#muteTimer =
-        safeSetTimeout(() => this.setMuteExpiration(0), delay) ?? undefined;
+        safeSetTimeout(
+          () => this.setMuteExpiration(MuteExpiration.UNMUTED),
+          delay
+        ) ?? undefined;
     }
   }
 
@@ -5507,9 +5810,19 @@ export class ConversationModel {
   }
 
   setMuteExpiration(
-    muteExpiresAt = 0,
+    expiresAt: MuteExpiration = MuteExpiration.UNMUTED,
     { viaStorageServiceSync = false } = {}
   ): void {
+    let muteExpiresAt = expiresAt;
+
+    if (
+      muteExpiresAt > MuteExpiration.UNMUTED &&
+      canConversationOnlyBeMutedAlways(this.attributes)
+    ) {
+      log.error('Invalid mute expiration for only-always-mute conversation');
+      muteExpiresAt = MuteExpiration.ALWAYS;
+    }
+
     const prevExpiration = this.get('muteExpiresAt');
 
     if (prevExpiration === muteExpiresAt) {
@@ -5591,7 +5904,7 @@ export class ConversationModel {
       );
       return getAbsoluteTempPath(tempPath);
     } finally {
-      await deleteAttachmentData(plaintextPath);
+      await maybeDeleteAttachmentFile(plaintextPath);
     }
   }
 
@@ -5672,9 +5985,13 @@ export class ConversationModel {
       return;
     }
 
+    if (this.get('terminated')) {
+      return;
+    }
+
     const typingToken = `${sender.id}.${senderDevice}`;
 
-    this.contactTypingTimers = this.contactTypingTimers || {};
+    this.contactTypingTimers ??= {};
     const record = this.contactTypingTimers[typingToken];
 
     if (record) {
@@ -5682,18 +5999,22 @@ export class ConversationModel {
     }
 
     if (isTyping) {
-      this.contactTypingTimers[typingToken] = this.contactTypingTimers[
-        typingToken
-      ] || {
-        timestamp: Date.now(),
-        senderId,
-        senderDevice,
-      };
-
-      this.contactTypingTimers[typingToken].timer = setTimeout(
+      const timer = setTimeout(
         this.clearContactTypingTimer.bind(this, typingToken),
         15 * 1000
       );
+
+      const prev = this.contactTypingTimers[typingToken];
+      if (prev != null) {
+        prev.timer = timer;
+      } else {
+        this.contactTypingTimers[typingToken] ??= {
+          timestamp: Date.now(),
+          senderId,
+          timer,
+        };
+      }
+
       // User was not previously typing before. State change!
       if (!record) {
         window.ConversationController.conversationUpdated(
@@ -5714,7 +6035,7 @@ export class ConversationModel {
   }
 
   clearContactTypingTimer(typingToken: string): void {
-    this.contactTypingTimers = this.contactTypingTimers || {};
+    this.contactTypingTimers ??= {};
     const record = this.contactTypingTimers[typingToken];
 
     if (record) {

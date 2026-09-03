@@ -1,19 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useEffect } from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { assertDev } from '../../util/assert.std.js';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { assertDev } from '../../util/assert.std.ts';
 
-import { Avatar, AvatarSize } from '../Avatar.dom.js';
-import { ContactName } from './ContactName.dom.js';
-import { SharedGroupNames } from '../SharedGroupNames.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { I18n } from '../I18n.dom.js';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { ContactName } from './ContactName.dom.tsx';
+import { SharedGroupNames } from '../SharedGroupNames.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
 
 export type PropsType = Readonly<{
   children?: ReactNode;
@@ -21,8 +20,8 @@ export type PropsType = Readonly<{
   getPreferredBadge: PreferredBadgeSelectorType;
   i18n: LocalizerType;
   onClick?: () => void;
+  sharedGroupNames: ReadonlyArray<string>;
   toggleSignalConnectionsModal: () => void;
-  updateSharedGroups: (conversationId: string) => void;
   theme: ThemeType;
   oldName: string | undefined;
   isSignalConnection: boolean;
@@ -34,8 +33,8 @@ export function ContactSpoofingReviewDialogPerson({
   getPreferredBadge,
   i18n,
   onClick,
+  sharedGroupNames,
   toggleSignalConnectionsModal,
-  updateSharedGroups,
   theme,
   oldName,
   isSignalConnection,
@@ -44,11 +43,6 @@ export function ContactSpoofingReviewDialogPerson({
     conversation.type === 'direct',
     '<ContactSpoofingReviewDialogPerson> expected a direct conversation'
   );
-
-  useEffect(() => {
-    // Kick off the expensive hydration of the current sharedGroupNames
-    updateSharedGroups(conversation.id);
-  }, [conversation.id, updateSharedGroups]);
 
   const newName = conversation.profileName || conversation.title;
 
@@ -124,10 +118,10 @@ export function ContactSpoofingReviewDialogPerson({
         <div className="module-ContactSpoofingReviewDialogPerson__info__property">
           <i className="module-ContactSpoofingReviewDialogPerson__info__property__icon module-ContactSpoofingReviewDialogPerson__info__property__icon--group" />
           <div>
-            {conversation.sharedGroupNames?.length ? (
+            {sharedGroupNames.length > 0 ? (
               <SharedGroupNames
                 i18n={i18n}
-                sharedGroupNames={conversation.sharedGroupNames || []}
+                sharedGroupNames={sharedGroupNames}
               />
             ) : (
               i18n(

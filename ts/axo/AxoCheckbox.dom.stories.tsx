@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import { AxoCheckbox } from './AxoCheckbox.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoCheckbox } from './AxoCheckbox.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoCheckbox',
@@ -33,7 +33,7 @@ export function Basic(): JSX.Element {
   return (
     <>
       <h1 className={tw('type-title-large')}>AxoCheckbox</h1>
-      {AxoCheckbox._getAllCheckboxVariants().map(variant => {
+      {AxoCheckbox._getAllVariants().map(variant => {
         return (
           <section>
             <Template

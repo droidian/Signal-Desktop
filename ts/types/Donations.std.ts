@@ -6,16 +6,42 @@ import { z } from 'zod';
 export const ONE_TIME_DONATION_CONFIG_ID = '1';
 export const BOOST_ID = 'BOOST';
 
+/**
+ * For one-time donations, there are 2 possible flows:
+ *
+ * Stripe:
+ * INTENT -> INTENT_METHOD -> (INTENT_REDIRECT) -> PAYMENT_CONFIRMED -> RECEIPT -> DONE
+ * - INTENT_REDIRECT only occurs when Stripe requires additional validation (e.g. 3ds).
+ *
+ * PayPal:
+ * PAYPAL_INTENT -> PAYPAL_APPROVED -> PAYMENT_CONFIRMED -> RECEIPT -> DONE
+ */
+
 export const donationStateSchema = z.enum([
   'INTENT',
   'INTENT_METHOD',
-  'INTENT_CONFIRMED',
+  'INTENT_CONFIRMED', // Deprecated
   'INTENT_REDIRECT',
+  'PAYPAL_INTENT',
+  'PAYPAL_APPROVED',
+  'PAYMENT_CONFIRMED',
   'RECEIPT',
   'DONE',
 ]);
 
 export type DonationStateType = z.infer<typeof donationStateSchema>;
+
+export enum DonationProcessor {
+  Paypal = 'PAYPAL',
+  Stripe = 'STRIPE',
+}
+
+export enum PaymentMethod {
+  Card = 'CARD',
+  Paypal = 'PAYPAL',
+}
+
+export const donationProcessorSchema = z.nativeEnum(DonationProcessor);
 
 export const donationErrorTypeSchema = z.enum([
   // Used if the user is redirected back from validation, but continuing forward fails
@@ -24,6 +50,12 @@ export const donationErrorTypeSchema = z.enum([
   'GeneralError',
   // Any 4xx error when adding payment method or confirming intent
   'PaymentDeclined',
+  // When the user approves PayPal payment but they canceled it in-app, so we lost the
+  // Paypal state. The user will not be charged, because they are only charged when we
+  // confirm with the server.
+  'PaypalError',
+  // When the user cancels PayPal payment.
+  'PaypalCanceled',
   // When it's been too long since the last step of the donation, and card wasn't charged
   'TimedOut',
   // When donation succeeds but badge application fails
@@ -44,7 +76,6 @@ const coreDataSchema = z.object({
   // The last time we transitioned into a new state.
   timestamp: z.number(),
 });
-export type CoreData = z.infer<typeof coreDataSchema>;
 
 // Payment type: CARD
 export type CardDetail = {
@@ -72,7 +103,6 @@ const stripeDataSchema = z.object({
   // Used for any validation that takes the user somewhere else
   returnToken: z.string(),
 });
-export type StripeData = z.infer<typeof stripeDataSchema>;
 
 // We need these for durability. if we keep these around throughout the process, retries
 // later in the process won't give us weird errors.
@@ -93,7 +123,7 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
     // Track that user has chosen currency and amount, and we've successfully fetched an
     // intent. There is no need to persist this, because we'd need to update
     // currency/amount on the intent if we want to continue to use it.
-    type: z.literal(donationStateSchema.Enum.INTENT),
+    type: z.literal(donationStateSchema.enum.INTENT),
     ...coreDataSchema.shape,
     ...stripeDataSchema.shape,
   }),
@@ -103,7 +133,7 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
     // payment details and pressed the button to make the payment, and we have sent that
     // to stripe, which has saved that data behind a paymentMethodId. The only thing
     // that might require further user interaction: 3ds validation - see INTENT_REDIRECT.
-    type: z.literal(donationStateSchema.Enum.INTENT_METHOD),
+    type: z.literal(donationStateSchema.enum.INTENT_METHOD),
 
     // Stripe persists the user's payment information for us, behind this id
     paymentMethodId: z.string(),
@@ -113,11 +143,12 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
   }),
 
   z.object({
+    // Deprecated. We no longer enter this state -- PAYMENT_CONFIRMED has replaced it.
     // By this point, Stripe is attempting to charge the user's provided payment method.
     // However it will take some time (usually seconds, sometimes minutes or 1 day) to
     // finalize the transaction. We will only know when we successfully get a receipt
     // credential from the chat server.
-    type: z.literal(donationStateSchema.Enum.INTENT_CONFIRMED),
+    type: z.literal(donationStateSchema.enum.INTENT_CONFIRMED),
 
     ...coreDataSchema.shape,
     ...stripeDataSchema.shape,
@@ -125,12 +156,29 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
   }),
 
   z.object({
-    // An alternate state to INTENT_CONFIRMED. A response from Stripe indicated
+    // This state is shared by Stripe and PayPal.
+    // Stripe: By this point, Stripe is attempting to charge the user's payment method.
+    // However it will take some time (usually seconds, sometimes minutes or 1 day) to
+    // finalize the transaction. We will only know when we successfully get a receipt
+    // credential from the chat server.
+    // PayPal: Payment should finalize immediately. The subsequent call to get a receipt
+    // should always succeed.
+    type: z.literal(donationStateSchema.enum.PAYMENT_CONFIRMED),
+
+    processor: donationProcessorSchema,
+    paymentIntentId: z.string(),
+
+    ...coreDataSchema.shape,
+    ...receiptContextSchema.shape,
+  }),
+
+  z.object({
+    // An alternate state to PAYMENT_CONFIRMED. A response from Stripe indicated
     // the user's card requires 3ds authentication, so we need to redirect to their
     // bank, which will complete verification, then redirect back to us. We hand that
     // service a token to connect it back to this process. If the user never comes back,
     // we need to offer the redirect again.
-    type: z.literal(donationStateSchema.Enum.INTENT_REDIRECT),
+    type: z.literal(donationStateSchema.enum.INTENT_REDIRECT),
 
     // Where user should be sent; in this state we are waiting for them to come back
     redirectTarget: z.string(),
@@ -141,9 +189,43 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
   }),
 
   z.object({
+    // User has selected currency and amount, and we've initiated a PayPal payment
+    // via the chat server. To complete the payment, the user needs to visit the
+    // PayPal website. Upon approval, the website redirects to the app URI to
+    // continue the donation process to get a receipt and badge from the chat server.
+    // To cancel, a user can either cancel on the Paypal website, or cancel from within
+    // the app (which just clears the active transaction locally).
+    type: z.literal(donationStateSchema.enum.PAYPAL_INTENT),
+
+    paypalPaymentId: z.string(),
+
+    // The user needs to visit this URL to complete payment on PayPal.
+    approvalUrl: z.string(),
+
+    // When the user returns to the app, we check the returnToken to confirm it matches
+    // the active workflow.
+    returnToken: z.string(),
+
+    ...coreDataSchema.shape,
+  }),
+
+  z.object({
+    // After PayPal approval, the user is redirected back to us with a payerId and
+    // paymentToken. We save them immediately, then
+    // confirm the payment on the chat server.
+    type: z.literal(donationStateSchema.enum.PAYPAL_APPROVED),
+
+    paypalPaymentId: z.string(),
+    paypalPayerId: z.string(),
+    paypalPaymentToken: z.string(),
+
+    ...coreDataSchema.shape,
+  }),
+
+  z.object({
     // We now have everything we need to redeem. We know the payment has gone through
     // successfully; we just need to redeem it on the server anonymously.
-    type: z.literal(donationStateSchema.Enum.RECEIPT),
+    type: z.literal(donationStateSchema.enum.RECEIPT),
 
     // The result of mixing the receiptCredentialResponse from the API from our
     // previously-generated receiptCredentialRequestContext
@@ -156,7 +238,7 @@ export const donationWorkflowSchema = z.discriminatedUnion('type', [
     // After everything is done, we should notify the user the donation succeeded.
     // After we show a notification, or if the user initiates a new donation,
     // then this workflow can be deleted.
-    type: z.literal(donationStateSchema.Enum.DONE),
+    type: z.literal(donationStateSchema.enum.DONE),
     id: coreDataSchema.shape.id,
     timestamp: coreDataSchema.shape.timestamp,
   }),
@@ -183,6 +265,7 @@ export type StripeDonationAmount = z.infer<typeof stripeDonationAmountSchema>;
 export const subscriptionConfigurationCurrencyZod = z.object({
   minimum: humanDonationAmountSchema,
   oneTime: z.record(z.string(), humanDonationAmountSchema.array()),
+  supportedPaymentMethods: z.array(z.string()),
 });
 
 export const oneTimeDonationAmountsZod = z.record(

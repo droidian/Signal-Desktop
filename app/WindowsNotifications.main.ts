@@ -9,11 +9,11 @@ import {
   sendDummyKeystroke,
 } from '@indutny/simple-windows-notifications';
 
-import { createLogger } from '../ts/logging/log.std.js';
-import { AUMID } from './startup_config.main.js';
-import type { WindowsNotificationData } from '../ts/services/notifications.preload.js';
-import OS from '../ts/util/os/osMain.node.js';
-import { renderWindowsToast } from './renderWindowsToast.std.js';
+import { createLogger } from '../ts/logging/log.std.ts';
+import { AUMID } from './startup_config.main.ts';
+import type { WindowsNotificationData } from '../ts/services/notifications.preload.ts';
+import OS from '../ts/util/os/osMain.node.ts';
+import { renderWindowsToast } from './renderWindowsToast.std.tsx';
 
 export { sendDummyKeystroke };
 

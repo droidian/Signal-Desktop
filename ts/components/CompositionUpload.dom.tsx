@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ChangeEventHandler } from 'react';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
-import type { AttachmentDraftType } from '../types/Attachment.std.js';
+import type { AttachmentDraftType } from '../types/Attachment.std.ts';
 import {
   isVideoAttachment,
   isImageAttachment,
-} from '../util/Attachment.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
+} from '../util/Attachment.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 import {
   getSupportedImageTypes,
   getSupportedVideoTypes,
-} from '../util/GoogleChrome.std.js';
+} from '../util/GoogleChrome.std.ts';
 
 export type PropsType = {
   conversationId: string;
@@ -62,6 +62,8 @@ export const CompositionUpload = forwardRef<HTMLInputElement, PropsType>(
         : null;
 
     return (
+      // FIXME
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label
       <input
         data-testid={testId ?? 'attachfile-input'}
         hidden

@@ -1,18 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent, ReactChild } from 'react';
+import type { ChangeEvent, ReactNode, JSX } from 'react';
 
-import type { Row } from '../ConversationList.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+import type { Row } from '../ConversationList.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../../types/Avatar.std.js';
-import type { DurationInSeconds } from '../../util/durations/index.std.js';
-import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.js';
-import type { ShowConversationType } from '../../state/ducks/conversations.preload.js';
+} from '../../types/Avatar.std.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
 
 export enum FindDirection {
   Up,
@@ -32,7 +32,7 @@ export abstract class LeftPaneHelper<T> {
       startComposing: () => void;
       showChooseGroupMembers: () => void;
     }>
-  ): null | ReactChild {
+  ): null | ReactNode {
     return null;
   }
 
@@ -53,7 +53,7 @@ export abstract class LeftPaneHelper<T> {
       updateFilterByUnread: (filterByUnread: boolean) => void;
     }> &
       LookupConversationWithoutServiceIdActionsType
-  ): null | ReactChild {
+  ): null | ReactNode {
     return null;
   }
 
@@ -71,7 +71,7 @@ export abstract class LeftPaneHelper<T> {
     _: Readonly<{
       i18n: LocalizerType;
     }>
-  ): null | ReactChild {
+  ): null | ReactNode {
     return null;
   }
 
@@ -89,12 +89,14 @@ export abstract class LeftPaneHelper<T> {
       i18n: LocalizerType;
       removeSelectedContact: (_: string) => unknown;
       renderLeftPaneChatFolders: () => JSX.Element;
-      setComposeGroupAvatar: (_: undefined | Uint8Array) => unknown;
+      setComposeGroupAvatar: (
+        _: undefined | Uint8Array<ArrayBuffer>
+      ) => unknown;
       setComposeGroupExpireTimer: (_: DurationInSeconds) => void;
       setComposeGroupName: (_: string) => unknown;
       toggleComposeEditingAvatar: () => unknown;
     }>
-  ): null | ReactChild {
+  ): null | ReactNode {
     return null;
   }
 
@@ -108,7 +110,7 @@ export abstract class LeftPaneHelper<T> {
         showConversation: ShowConversationType;
       } & LookupConversationWithoutServiceIdActionsType
     >
-  ): null | ReactChild {
+  ): null | ReactNode {
     return null;
   }
 

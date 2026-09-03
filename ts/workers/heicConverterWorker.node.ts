@@ -7,7 +7,7 @@ import { parentPort } from 'node:worker_threads';
 import type {
   WrappedWorkerRequest,
   WrappedWorkerResponse,
-} from './heicConverterMain.main.js';
+} from './heicConverterMain.main.ts';
 
 if (!parentPort) {
   throw new Error('Must run as a worker thread');
@@ -15,7 +15,11 @@ if (!parentPort) {
 
 const port = parentPort;
 
-function respond(uuid: string, error: Error | undefined, response?: Buffer) {
+function respond(
+  uuid: string,
+  error: Error | undefined,
+  response?: Buffer<ArrayBuffer>
+) {
   const wrappedResponse: WrappedWorkerResponse = {
     uuid,
     error: error?.stack,

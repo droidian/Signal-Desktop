@@ -1,18 +1,16 @@
 // Copyright 2016 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-import { batch } from 'react-redux';
 import lodash from 'lodash';
 
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { MessageModel } from '../models/messages.preload.js';
-import { cleanupMessages } from '../util/cleanup.preload.js';
-import { drop } from '../util/drop.std.js';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { MessageModel } from '../models/messages.preload.ts';
+import { cleanupMessages } from '../util/cleanup.preload.ts';
+import { drop } from '../util/drop.std.ts';
 
 const { debounce } = lodash;
 
@@ -20,7 +18,10 @@ const log = createLogger('expiringMessagesDeletion');
 
 class ExpiringMessagesDeletionService {
   #timeout?: ReturnType<typeof setTimeout>;
-  #debouncedCheckExpiringMessages = debounce(this.#checkExpiringMessages, 1000);
+  readonly #debouncedCheckExpiringMessages = debounce(
+    this.#checkExpiringMessages,
+    1000
+  );
 
   update() {
     drop(this.#debouncedCheckExpiringMessages());
@@ -45,18 +46,13 @@ class ExpiringMessagesDeletionService {
         inMemoryMessages.push(message);
       });
 
-      await DataWriter.removeMessages(messageIds, {
+      await DataWriter.removeMessagesById(messageIds, {
         cleanupMessages,
       });
 
-      batch(() => {
-        inMemoryMessages.forEach(message => {
-          log.info('Message expired', {
-            sentAt: message.get('sent_at'),
-          });
-
-          // We do this to update the UI, if this message is being displayed somewhere
-          window.reduxActions.conversations.messageExpired(message.id);
+      inMemoryMessages.forEach(message => {
+        log.info('Message expired', {
+          sentAt: message.get('sent_at'),
         });
       });
     } catch (error) {
@@ -71,7 +67,7 @@ class ExpiringMessagesDeletionService {
     }
 
     log.info('destroyExpiredMessages: done, scheduling another check');
-    void this.update();
+    this.update();
   }
 
   async #checkExpiringMessages() {

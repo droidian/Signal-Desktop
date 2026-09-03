@@ -1,15 +1,16 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
 import lodash from 'lodash';
 
-import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { CurveType, Image } from './conversation/Image.dom.js';
-import { isImageAttachment } from '../util/Attachment.std.js';
-import { getSafeDomain } from '../types/LinkPreview.std.js';
+import type { LinkPreviewForUIType } from '../types/message/LinkPreviews.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { CurveType, Image } from './conversation/Image.dom.tsx';
+import { isImageAttachment } from '../util/Attachment.std.ts';
+import { getSafeDomain } from '../types/LinkPreview.std.ts';
 
 const { unescape } = lodash;
 
@@ -28,7 +29,7 @@ export function StoryLinkPreview({
   url,
 }: Props): JSX.Element {
   const isImage = isImageAttachment(image);
-  const location = domain || getSafeDomain(String(url));
+  const location = domain || getSafeDomain(url);
   const isCompact = forceCompactMode || !image;
 
   let content: JSX.Element | undefined;

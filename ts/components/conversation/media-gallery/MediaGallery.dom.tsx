@@ -1,28 +1,41 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+  type JSX,
+} from 'react';
 
 import moment from 'moment';
 
-import type { ItemClickEvent } from './types/ItemClickEvent.std.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
+import type { ItemClickEvent } from './types/ItemClickEvent.std.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
 import type {
+  MediaTabType,
+  MediaSortOrderType,
   LinkPreviewMediaItemType,
+  ContactMediaItemType,
   MediaItemType,
   GenericMediaItemType,
-} from '../../../types/MediaItem.std.js';
-import type { SaveAttachmentActionCreatorType } from '../../../state/ducks/conversations.preload.js';
-import { AttachmentSection } from './AttachmentSection.dom.js';
-import { EmptyState } from './EmptyState.dom.js';
-import { Tabs } from '../../Tabs.dom.js';
-import { TabViews } from './types/TabViews.std.js';
-import { groupMediaItemsByDate } from './groupMediaItemsByDate.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.js';
-import { usePrevious } from '../../../hooks/usePrevious.std.js';
-import type { AttachmentForUIType } from '../../../types/Attachment.std.js';
-import { tw } from '../../../axo/tw.dom.js';
+} from '../../../types/MediaItem.std.ts';
+import type {
+  SaveAttachmentActionCreatorType,
+  PushPanelForConversationActionType,
+} from '../../../state/ducks/conversations.preload.ts';
+import { AttachmentSection } from './AttachmentSection.dom.tsx';
+import { EmptyState } from './EmptyState.dom.tsx';
+import { groupMediaItemsByDate } from './groupMediaItemsByDate.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.ts';
+import { useIntersectionObserver } from '../../../hooks/useIntersectionObserver.std.ts';
+import type { AttachmentForUIType } from '../../../types/Attachment.std.ts';
+import { PanelType } from '../../../types/Panels.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
 
 export type Props = {
   conversationId: string;
@@ -33,15 +46,15 @@ export type Props = {
   haveOldestDocument: boolean;
   loading: boolean;
   initialLoad: (id: string) => unknown;
-  loadMore: (
-    id: string,
-    type: 'media' | 'audio' | 'documents' | 'links'
-  ) => unknown;
+  loadMore: (id: string, type: MediaTabType) => unknown;
   media: ReadonlyArray<MediaItemType>;
   audio: ReadonlyArray<MediaItemType>;
-  documents: ReadonlyArray<MediaItemType>;
   links: ReadonlyArray<LinkPreviewMediaItemType>;
+  documents: ReadonlyArray<MediaItemType | ContactMediaItemType>;
+  tab: MediaTabType;
+  sortOrder: MediaSortOrderType;
   saveAttachment: SaveAttachmentActionCreatorType;
+  pushPanelForConversation: PushPanelForConversationActionType;
   kickOffAttachmentDownload: (options: { messageId: string }) => void;
   cancelAttachmentDownload: (options: { messageId: string }) => void;
   playAudio: (attachment: MediaItemType) => void;
@@ -50,7 +63,6 @@ export type Props = {
     messageId: string;
   }) => void;
 
-  renderMiniPlayer: () => JSX.Element;
   renderMediaItem: (props: {
     onItemClick: (event: ItemClickEvent) => unknown;
     mediaItem: GenericMediaItemType;
@@ -63,8 +75,10 @@ function MediaSection({
   i18n,
   loading,
   tab,
+  sortOrder,
   mediaItems,
   saveAttachment,
+  pushPanelForConversation,
   kickOffAttachmentDownload,
   cancelAttachmentDownload,
   showLightbox,
@@ -75,13 +89,15 @@ function MediaSection({
   | 'i18n'
   | 'loading'
   | 'saveAttachment'
+  | 'pushPanelForConversation'
   | 'kickOffAttachmentDownload'
   | 'cancelAttachmentDownload'
   | 'showLightbox'
   | 'playAudio'
   | 'renderMediaItem'
 > & {
-  tab: TabViews;
+  tab: MediaTabType;
+  sortOrder: MediaSortOrderType;
   mediaItems: ReadonlyArray<GenericMediaItemType>;
 }): JSX.Element {
   const onItemClick = useCallback(
@@ -111,11 +127,19 @@ function MediaSection({
         openLinkInWebBrowser(mediaItem.preview.url);
       } else if (mediaItem.type === 'audio') {
         playAudio(mediaItem);
+      } else if (mediaItem.type === 'contact') {
+        pushPanelForConversation({
+          type: PanelType.ContactDetails,
+          args: {
+            messageId: message.id,
+          },
+        });
       } else {
         throw missingCaseError(mediaItem.type);
       }
     },
     [
+      pushPanelForConversation,
       saveAttachment,
       showLightbox,
       cancelAttachmentDownload,
@@ -123,6 +147,10 @@ function MediaSection({
       playAudio,
     ]
   );
+
+  const reversedMediaItems = useMemo(() => {
+    return mediaItems.toReversed();
+  }, [mediaItems]);
 
   if (mediaItems.length === 0) {
     if (loading) {
@@ -133,8 +161,28 @@ function MediaSection({
   }
 
   const now = Date.now();
-  const sections = groupMediaItemsByDate(now, mediaItems).map(section => {
-    const first = section.mediaItems[0];
+  const groupedItems = groupMediaItemsByDate(now, mediaItems);
+
+  const isGrid = mediaItems.at(0)?.type === 'media';
+
+  if (sortOrder === 'size') {
+    return (
+      <div className={tw('grow', 'mx-auto', 'max-w-[660px] min-w-[360px]')}>
+        <div className={tw('flex flex-col')}>
+          <AttachmentSection
+            mediaItems={reversedMediaItems}
+            onItemClick={onItemClick}
+            renderMediaItem={renderMediaItem}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const sections = groupedItems.map((section, index) => {
+    const isLast = index === groupedItems.length - 1;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const first = section.mediaItems[0]!;
     const { message } = first;
     const date = moment(message.receivedAtMs || message.receivedAt);
 
@@ -158,18 +206,24 @@ function MediaSection({
     const header = getHeader();
 
     return (
-      <AttachmentSection
-        key={header}
-        header={header}
-        mediaItems={section.mediaItems}
-        onItemClick={onItemClick}
-        renderMediaItem={renderMediaItem}
-      />
+      <Fragment key={header}>
+        <AttachmentSection
+          header={header}
+          mediaItems={section.mediaItems}
+          onItemClick={onItemClick}
+          renderMediaItem={renderMediaItem}
+        />
+        {!isGrid && !isLast && (
+          <hr className={tw('mx-4 my-3 border-[0.5px] border-primary')} />
+        )}
+      </Fragment>
     );
   });
 
   return (
-    <div className={tw('flex min-w-0 grow flex-col divide-y')}>{sections}</div>
+    <div className={tw('grow', 'mx-auto', 'max-w-[660px] min-w-[360px]')}>
+      <div className={tw('flex flex-col')}>{sections}</div>
+    </div>
   );
 }
 
@@ -181,25 +235,31 @@ export function MediaGallery({
   haveOldestDocument,
   i18n,
   initialLoad,
-  loading,
+  loading: reduxLoading,
   loadMore,
   media,
   audio,
   links,
   documents,
+  tab,
+  sortOrder,
   saveAttachment,
+  pushPanelForConversation,
   kickOffAttachmentDownload,
   cancelAttachmentDownload,
   playAudio,
   showLightbox,
   renderMediaItem,
-  renderMiniPlayer,
 }: Props): JSX.Element {
   const focusRef = useRef<HTMLDivElement | null>(null);
-  const scrollObserverRef = useRef<HTMLDivElement | null>(null);
-  const intersectionObserver = useRef<IntersectionObserver | null>(null);
-  const loadingRef = useRef<boolean>(false);
-  const tabViewRef = useRef<TabViews>(TabViews.Media);
+  const [loading, setLoading] = useState(reduxLoading);
+
+  // Reset local state when redux finishes loading
+  useEffect(() => {
+    if (!reduxLoading) {
+      setLoading(false);
+    }
+  }, [reduxLoading]);
 
   useEffect(() => {
     focusRef.current?.focus();
@@ -219,7 +279,6 @@ export function MediaGallery({
       return;
     }
     initialLoad(conversationId);
-    loadingRef.current = true;
   }, [
     conversationId,
     haveOldestMedia,
@@ -231,140 +290,92 @@ export function MediaGallery({
     audio.length,
     links.length,
     documents.length,
+    sortOrder,
   ]);
 
-  const previousLoading = usePrevious(loading, loading);
-  if (previousLoading && !loading) {
-    loadingRef.current = false;
-  }
-
+  const [setObserverRef, observerEntry] = useIntersectionObserver();
   useEffect(() => {
-    if (loading || !scrollObserverRef.current) {
+    if (loading) {
       return;
     }
 
-    intersectionObserver.current?.disconnect();
-    intersectionObserver.current = null;
+    if (!observerEntry?.isIntersecting) {
+      return;
+    }
 
-    intersectionObserver.current = new IntersectionObserver(
-      (entries: ReadonlyArray<IntersectionObserverEntry>) => {
-        if (loadingRef.current) {
-          return;
-        }
-
-        const entry = entries.find(
-          item => item.target === scrollObserverRef.current
-        );
-
-        if (entry && entry.intersectionRatio > 0) {
-          if (tabViewRef.current === TabViews.Media) {
-            if (!haveOldestMedia) {
-              loadMore(conversationId, 'media');
-              loadingRef.current = true;
-            }
-          } else if (tabViewRef.current === TabViews.Audio) {
-            if (!haveOldestMedia) {
-              loadMore(conversationId, 'audio');
-              loadingRef.current = true;
-            }
-          } else if (tabViewRef.current === TabViews.Documents) {
-            if (!haveOldestDocument) {
-              loadMore(conversationId, 'documents');
-              loadingRef.current = true;
-            }
-          } else if (tabViewRef.current === TabViews.Links) {
-            if (!haveOldestLink) {
-              loadMore(conversationId, 'links');
-              loadingRef.current = true;
-            }
-          } else {
-            throw missingCaseError(tabViewRef.current);
-          }
-        }
+    if (tab === 'media') {
+      if (haveOldestMedia) {
+        return;
       }
-    );
-    intersectionObserver.current.observe(scrollObserverRef.current);
-
-    return () => {
-      intersectionObserver.current?.disconnect();
-      intersectionObserver.current = null;
-    };
+      loadMore(conversationId, 'media');
+    } else if (tab === 'audio') {
+      if (haveOldestAudio) {
+        return;
+      }
+      loadMore(conversationId, 'audio');
+    } else if (tab === 'documents') {
+      if (haveOldestDocument) {
+        return;
+      }
+      loadMore(conversationId, 'documents');
+    } else if (tab === 'links') {
+      if (haveOldestLink) {
+        return;
+      }
+      loadMore(conversationId, 'links');
+    } else {
+      throw missingCaseError(tab);
+    }
+    setLoading(true);
   }, [
+    observerEntry,
     conversationId,
     haveOldestDocument,
     haveOldestMedia,
+    haveOldestAudio,
     haveOldestLink,
     loading,
     loadMore,
+    tab,
   ]);
 
+  let mediaItems: ReadonlyArray<GenericMediaItemType>;
+
+  if (tab === 'media') {
+    mediaItems = media;
+  } else if (tab === 'audio') {
+    mediaItems = audio;
+  } else if (tab === 'documents') {
+    mediaItems = documents;
+  } else if (tab === 'links') {
+    mediaItems = links;
+  } else {
+    throw new Error(`Unexpected select tab: ${tab}`);
+  }
+
   return (
-    <div className="module-media-gallery" tabIndex={-1} ref={focusRef}>
-      <Tabs
-        initialSelectedTab={TabViews.Media}
-        tabs={[
-          {
-            id: TabViews.Media,
-            label: i18n('icu:media'),
-          },
-          {
-            id: TabViews.Audio,
-            label: i18n('icu:MediaGallery__tab__audio'),
-          },
-          {
-            id: TabViews.Links,
-            label: i18n('icu:MediaGallery__tab__links'),
-          },
-          {
-            id: TabViews.Documents,
-            label: i18n('icu:MediaGallery__tab__files'),
-          },
-        ]}
-      >
-        {({ selectedTab }) => {
-          let mediaItems: ReadonlyArray<GenericMediaItemType>;
-
-          if (selectedTab === TabViews.Media) {
-            tabViewRef.current = TabViews.Media;
-            mediaItems = media;
-          } else if (selectedTab === TabViews.Audio) {
-            tabViewRef.current = TabViews.Audio;
-            mediaItems = audio;
-          } else if (selectedTab === TabViews.Documents) {
-            tabViewRef.current = TabViews.Documents;
-            mediaItems = documents;
-          } else if (selectedTab === TabViews.Links) {
-            tabViewRef.current = TabViews.Links;
-            mediaItems = links;
-          } else {
-            throw new Error(`Unexpected select tab: ${selectedTab}`);
-          }
-
-          return (
-            <>
-              {renderMiniPlayer()}
-              <div className="module-media-gallery__content">
-                <MediaSection
-                  i18n={i18n}
-                  loading={loading}
-                  tab={tabViewRef.current}
-                  mediaItems={mediaItems}
-                  saveAttachment={saveAttachment}
-                  showLightbox={showLightbox}
-                  kickOffAttachmentDownload={kickOffAttachmentDownload}
-                  cancelAttachmentDownload={cancelAttachmentDownload}
-                  playAudio={playAudio}
-                  renderMediaItem={renderMediaItem}
-                />
-              </div>
-            </>
-          );
-        }}
-      </Tabs>
-      <div
-        ref={scrollObserverRef}
-        className="module-media-gallery__scroll-observer"
-      />
+    <div
+      className={tw('flex size-full grow flex-col outline-none')}
+      tabIndex={-1}
+      ref={focusRef}
+    >
+      <div className={tw('grow overflow-y-auto')}>
+        <MediaSection
+          i18n={i18n}
+          loading={loading}
+          tab={tab}
+          sortOrder={sortOrder}
+          mediaItems={mediaItems}
+          saveAttachment={saveAttachment}
+          pushPanelForConversation={pushPanelForConversation}
+          showLightbox={showLightbox}
+          kickOffAttachmentDownload={kickOffAttachmentDownload}
+          cancelAttachmentDownload={cancelAttachmentDownload}
+          playAudio={playAudio}
+          renderMediaItem={renderMediaItem}
+        />
+        <div ref={setObserverRef} className={tw('h-px')} />
+      </div>
     </div>
   );
 }

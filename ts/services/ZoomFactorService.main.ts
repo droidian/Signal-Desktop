@@ -4,7 +4,7 @@ import type { BrowserWindow } from 'electron';
 import { ipcMain } from 'electron';
 import EventEmitter from 'node:events';
 
-import { createLogger } from '../logging/log.std.js';
+import { createLogger } from '../logging/log.std.ts';
 
 const log = createLogger('ZoomFactorService');
 
@@ -31,7 +31,7 @@ type ZoomFactorServiceConfig = Readonly<{
 }>;
 
 export class ZoomFactorService extends EventEmitter {
-  #config: ZoomFactorServiceConfig;
+  readonly #config: ZoomFactorServiceConfig;
   #cachedZoomFactor: number | null = null;
   #isListeningForZoom = false;
 
@@ -117,14 +117,12 @@ export class ZoomFactorService extends EventEmitter {
         return;
       }
 
-      window.webContents.on('preferred-size-changed', onWindowChange);
       window.webContents.on('zoom-changed', onWindowChange);
       this.on('zoomFactorChanged', onServiceChange);
       this.#isListeningForZoom = true;
     };
 
     const stopListenForZoomEvents = () => {
-      window.webContents.off('preferred-size-changed', onWindowChange);
       window.webContents.off('zoom-changed', onWindowChange);
       this.off('zoomFactorChanged', onServiceChange);
       this.#isListeningForZoom = false;

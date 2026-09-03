@@ -3,9 +3,10 @@
 
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations/index.std.js';
-import type { App, Bootstrap } from './fixtures.node.js';
-import { initStorage, debug } from './fixtures.node.js';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import { initStorage, debug } from './fixtures.node.ts';
 
 describe('storage service', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -29,7 +30,7 @@ describe('storage service', function (this: Mocha.Suite) {
 
   it('should archive/unarchive contacts', async () => {
     const { phone, contacts } = bootstrap;
-    const [firstContact] = contacts;
+    const [firstContact] = contacts as [PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -39,11 +40,11 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('archiving contact');
     {
       const state = await phone.expectStorageState('consistency check');
-      const newState = state
+      const modifiedState = state
         .updateContact(firstContact, { archived: true })
         .unpin(firstContact);
 
-      await phone.setStorageState(newState);
+      const newState = await phone.setStorageState(modifiedState);
       await phone.sendFetchStorage({
         timestamp: bootstrap.getTimestamp(),
       });
@@ -62,13 +63,13 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('unarchiving pinned contact');
     {
       const state = await phone.expectStorageState('consistency check');
-      const newState = state
+      const modifiedState = state
         .updateContact(firstContact, {
           archived: false,
         })
         .pin(firstContact);
 
-      await phone.setStorageState(newState);
+      const newState = await phone.setStorageState(modifiedState);
       await phone.sendFetchStorage({
         timestamp: bootstrap.getTimestamp(),
       });
@@ -99,16 +100,19 @@ describe('storage service', function (this: Mocha.Suite) {
 
       const archiveButton = window.getByRole('menuitem', {
         name: 'Archive',
+        exact: true,
       });
       await archiveButton.click();
 
       const newState = await phone.waitForStorageState({
         after: state,
+        predicate: storageState => {
+          return (
+            !storageState.isPinned(firstContact) &&
+            storageState.getContact(firstContact)?.archived === true
+          );
+        },
       });
-      assert.ok(!(await newState.isPinned(firstContact)), 'contact not pinned');
-      const record = await newState.getContact(firstContact);
-      assert.ok(record, 'contact record not found');
-      assert.ok(record?.archived, 'contact archived');
 
       // AccountRecord + ContactRecord
       const { added, removed } = newState.diff(state);
@@ -119,6 +123,6 @@ describe('storage service', function (this: Mocha.Suite) {
     debug('Verifying the final manifest version');
     const finalState = await phone.expectStorageState('consistency check');
 
-    assert.strictEqual(finalState.version, 4);
+    assert.strictEqual(finalState.version, 4n);
   });
 });

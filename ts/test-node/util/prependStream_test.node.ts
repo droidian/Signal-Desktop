@@ -3,14 +3,14 @@
 
 import { assert } from 'chai';
 
-import { prependStream } from '../../util/prependStream.node.js';
+import { prependStream } from '../../util/prependStream.node.ts';
 
 describe('prependStream', () => {
   it('should prepend stream with a prefix', async () => {
     const stream = prependStream(Buffer.from('prefix:'));
     stream.end('hello');
 
-    const chunks = new Array<Buffer>();
+    const chunks = new Array<Buffer<ArrayBuffer>>();
     for await (const chunk of stream) {
       chunks.push(chunk);
     }

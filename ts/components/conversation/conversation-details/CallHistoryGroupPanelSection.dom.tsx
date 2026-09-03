@@ -1,21 +1,22 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
 import {
   CallDirection,
   CallType,
   DirectCallStatus,
   GroupCallStatus,
-} from '../../../types/CallDisposition.std.js';
+} from '../../../types/CallDisposition.std.ts';
 import type {
   CallStatus,
   CallHistoryGroup,
-} from '../../../types/CallDisposition.std.js';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import { formatDate, formatTime } from '../../../util/formatTimestamp.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { getDirectCallNotificationText } from '../../../util/callingNotification.std.js';
+} from '../../../types/CallDisposition.std.ts';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import { formatDate, formatTime } from '../../../util/formatTimestamp.dom.ts';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { getDirectCallNotificationText } from '../../../util/callingNotification.std.ts';
 
 function describeCallHistory(
   i18n: LocalizerType,

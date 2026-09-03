@@ -3,14 +3,14 @@
 
 import pMap from 'p-map';
 
-import { createLogger } from '../logging/log.std.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
+import { createLogger } from '../logging/log.std.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { encryptLegacyAttachment } from './encryptLegacyAttachment.preload.js';
-import { AttachmentDisposition } from './getLocalAttachmentUrl.std.js';
-import { isNotNil } from './isNotNil.std.js';
+import { encryptLegacyAttachment } from './encryptLegacyAttachment.preload.ts';
+import { AttachmentDisposition } from './getLocalAttachmentUrl.std.ts';
+import { isNotNil } from './isNotNil.std.ts';
 import {
-  deleteAttachmentData,
+  maybeDeleteAttachmentFile,
   deleteAvatar,
   deleteDraftFile,
   readAttachmentData,
@@ -19,16 +19,16 @@ import {
   writeNewAttachmentData,
   writeNewAvatarData,
   writeNewDraftData,
-} from './migrations.preload.js';
-import { isSignalConversation } from './isSignalConversation.dom.js';
-import { getConversationIdForLogging } from './idForLogging.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from './migrations.preload.ts';
+import { isSignalConversation } from './isSignalConversation.dom.ts';
+import { getConversationIdForLogging } from './idForLogging.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('encryptConversationAttachments');
 
 const CONCURRENCY = 32;
 
-type CleanupType = Array<() => Promise<void>>;
+type CleanupType = Array<() => Promise<unknown>>;
 
 export async function encryptConversationAttachments(): Promise<void> {
   const all = await DataReader.getAllConversations();
@@ -100,7 +100,7 @@ async function encryptOne(attributes: ConversationAttributesType): Promise<
     );
     if (result.profileAvatar !== attributes.profileAvatar) {
       const { path } = attributes.profileAvatar;
-      cleanup.push(() => deleteAttachmentData(path));
+      cleanup.push(() => maybeDeleteAttachmentFile(path));
     }
   }
 
@@ -113,7 +113,7 @@ async function encryptOne(attributes: ConversationAttributesType): Promise<
     });
     if (result.avatar !== attributes.avatar) {
       const { path } = attributes.avatar;
-      cleanup.push(() => deleteAttachmentData(path));
+      cleanup.push(() => maybeDeleteAttachmentFile(path));
     }
   }
 

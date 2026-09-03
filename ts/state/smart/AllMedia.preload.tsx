@@ -1,33 +1,29 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { MediaGallery } from '../../components/conversation/media-gallery/MediaGallery.dom.js';
-import { createLogger } from '../../logging/log.std.js';
-import type { MediaItemType } from '../../types/MediaItem.std.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { getMediaGalleryState } from '../selectors/mediaGallery.std.js';
-import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.js';
-import { getIntl, getUserConversationId } from '../selectors/user.std.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { useLightboxActions } from '../ducks/lightbox.preload.js';
-import { useMediaGalleryActions } from '../ducks/mediaGallery.preload.js';
-import { useAudioPlayerActions } from '../ducks/audioPlayer.preload.js';
+import { MediaGallery } from '../../components/conversation/media-gallery/MediaGallery.dom.tsx';
+import { createLogger } from '../../logging/log.std.ts';
+import type { MediaItemType } from '../../types/MediaItem.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { getMediaGalleryState } from '../selectors/mediaGallery.std.ts';
+import { extractVoiceNoteForPlayback } from '../selectors/audioPlayer.preload.ts';
+import { getIntl, getUserConversationId } from '../selectors/user.std.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useLightboxActions } from '../ducks/lightbox.preload.ts';
+import { useMediaGalleryActions } from '../ducks/mediaGallery.preload.ts';
+import { useAudioPlayerActions } from '../ducks/audioPlayer.preload.ts';
 import {
   MediaItem,
   type PropsType as MediaItemPropsType,
-} from './MediaItem.preload.js';
-import { SmartMiniPlayer } from './MiniPlayer.preload.js';
+} from './MediaItem.preload.tsx';
+import { useNavActions } from '../ducks/nav.std.ts';
 
 const log = createLogger('AllMedia');
 
 export type PropsType = {
   conversationId: string;
 };
-
-function renderMiniPlayer(): JSX.Element {
-  return <SmartMiniPlayer shouldFlow />;
-}
 
 function renderMediaItem(props: MediaItemPropsType): JSX.Element {
   return <MediaItem {...props} />;
@@ -46,6 +42,8 @@ export const SmartAllMedia = memo(function SmartAllMedia({
     haveOldestLink,
     haveOldestDocument,
     loading,
+    tab,
+    sortOrder,
   } = useSelector(getMediaGalleryState);
   const { initialLoad, loadMore } = useMediaGalleryActions();
   const {
@@ -53,6 +51,7 @@ export const SmartAllMedia = memo(function SmartAllMedia({
     kickOffAttachmentDownload,
     cancelAttachmentDownload,
   } = useConversationsActions();
+  const { pushPanelForConversation } = useNavActions();
   const { showLightbox } = useLightboxActions();
   const { loadVoiceNoteAudio } = useAudioPlayerActions();
   const i18n = useSelector(getIntl);
@@ -109,13 +108,15 @@ export const SmartAllMedia = memo(function SmartAllMedia({
       audio={audio}
       links={links}
       documents={documents}
+      tab={tab}
+      sortOrder={sortOrder}
       showLightbox={showLightbox}
       playAudio={playAudio}
       kickOffAttachmentDownload={kickOffAttachmentDownload}
       cancelAttachmentDownload={cancelAttachmentDownload}
       saveAttachment={saveAttachment}
+      pushPanelForConversation={pushPanelForConversation}
       renderMediaItem={renderMediaItem}
-      renderMiniPlayer={renderMiniPlayer}
     />
   );
 });

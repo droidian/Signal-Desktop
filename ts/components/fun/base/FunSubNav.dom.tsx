@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import classNames from 'classnames';
-import type { Transition } from 'framer-motion';
-import { motion } from 'framer-motion';
-import type { ReactNode, Ref } from 'react';
-import React, {
+import type { Transition } from 'motion/react';
+import { motion } from 'motion/react';
+import type { ReactNode, Ref, JSX } from 'react';
+import {
   createContext,
   useCallback,
   useContext,
@@ -21,12 +21,12 @@ import {
   getScrollLeftDistance,
   getScrollRightDistance,
   useScrollObserver,
-} from '../../../hooks/useSizeObserver.dom.js';
-import { createLogger } from '../../../logging/log.std.js';
-import * as Errors from '../../../types/errors.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { FunImage } from './FunImage.dom.js';
-import { FunTooltip } from './FunTooltip.dom.js';
+} from '../../../hooks/useSizeObserver.dom.tsx';
+import { createLogger } from '../../../logging/log.std.ts';
+import * as Errors from '../../../types/errors.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { FunImage } from './FunImage.dom.tsx';
+import { FunTooltip } from './FunTooltip.dom.tsx';
 
 const log = createLogger('FunSubNav');
 

@@ -1,6 +1,6 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import { assert } from './assert.dom.js';
+import { assert } from './assert.std.tsx';
 
 export type ScrollbarWidth = 'auto' | 'thin' | 'none';
 
@@ -17,10 +17,11 @@ type Listener = () => void;
 type Unsubscribe = () => void;
 
 class ScrollbarGuttersObserver {
-  #scroller: HTMLDivElement;
-  #current: ScrollbarGutters;
-  #observer: ResizeObserver;
-  #listeners = new Set<Listener>();
+  readonly #container: HTMLDivElement;
+  readonly #scroller: HTMLDivElement;
+  #current: ScrollbarGutters | null;
+  readonly #observer: ResizeObserver;
+  readonly #listeners = new Set<Listener>();
 
   constructor(scrollbarWidth: Exclude<ScrollbarWidth, 'none'>) {
     const container = document.createElement('div');
@@ -54,15 +55,27 @@ class ScrollbarGuttersObserver {
     scroller.append(content);
     container.append(scroller);
 
+    this.#container = container;
     this.#scroller = scroller;
     this.#current = this.#compute();
     this.#observer = new ResizeObserver(() => this.#update());
     this.#observer.observe(this.#scroller, { box: 'content-box' });
   }
 
-  #compute(): ScrollbarGutters {
+  destroy() {
+    this.#observer.disconnect();
+    this.#container.remove();
+  }
+
+  #compute(): ScrollbarGutters | null {
     const { offsetWidth, offsetHeight, clientWidth, clientHeight } =
       this.#scroller;
+
+    if (offsetWidth === 0 || offsetHeight === 0) {
+      // If the element is not properly rendered, we might get zero sizes.
+      // In that case, we should return zeros instead of throwing an error.
+      return null;
+    }
 
     assert(offsetWidth === 100, 'offsetWidth must be exactly 100px');
     assert(offsetHeight === 100, 'offsetHeight must be exactly 100px');
@@ -85,8 +98,8 @@ class ScrollbarGuttersObserver {
     const next = this.#compute();
 
     if (
-      next.vertical === this.#current.vertical &&
-      next.horizontal === this.#current.horizontal
+      next?.vertical === this.#current?.vertical &&
+      next?.horizontal === this.#current?.horizontal
     ) {
       return;
     }
@@ -98,7 +111,7 @@ class ScrollbarGuttersObserver {
     });
   }
 
-  current(): ScrollbarGutters {
+  current(): ScrollbarGutters | null {
     return this.#current;
   }
 
@@ -117,30 +130,51 @@ function applyGlobalProperties(
 ): Unsubscribe {
   const root = document.documentElement;
 
+  function removeProperties() {
+    root.style.removeProperty(verticalProperty);
+    root.style.removeProperty(horizontalProperty);
+  }
+
   function update() {
     const value = observer.current();
-    root.style.setProperty(verticalProperty, `${value.vertical}px`);
-    root.style.setProperty(horizontalProperty, `${value.horizontal}px`);
+    if (value != null) {
+      root.style.setProperty(verticalProperty, `${value.vertical}px`);
+      root.style.setProperty(horizontalProperty, `${value.horizontal}px`);
+    } else {
+      removeProperties();
+    }
   }
 
   update();
   const unsubscribe = observer.subscribe(update);
   return () => {
     unsubscribe();
-    root.style.removeProperty(verticalProperty);
-    root.style.removeProperty(horizontalProperty);
+    removeProperties();
   };
 }
 
+/**
+ * Mounts hidden scrollers into the DOM to measure system scrollbar gutter widths.
+ *
+ * Provides values as custom CSS properties on `<html>`:
+ *
+ * - `--axo-scrollbar-gutter-auto-vertical`
+ * - `--axo-scrollbar-gutter-auto-horizontal`
+ * - `--axo-scrollbar-gutter-thin-vertical`
+ * - `--axo-scrollbar-gutter-thin-horizontal`
+ */
 export function createScrollbarGutterCssProperties(): Unsubscribe {
+  const autoObserver = new ScrollbarGuttersObserver('auto');
+  const thinObserver = new ScrollbarGuttersObserver('thin');
+
   const autoUnsubscribe = applyGlobalProperties(
-    new ScrollbarGuttersObserver('auto'),
+    autoObserver,
     '--axo-scrollbar-gutter-auto-vertical',
     '--axo-scrollbar-gutter-auto-horizontal'
   );
 
   const thinUnsubscribe = applyGlobalProperties(
-    new ScrollbarGuttersObserver('thin'),
+    thinObserver,
     '--axo-scrollbar-gutter-thin-vertical',
     '--axo-scrollbar-gutter-thin-horizontal'
   );
@@ -148,5 +182,7 @@ export function createScrollbarGutterCssProperties(): Unsubscribe {
   return () => {
     autoUnsubscribe();
     thinUnsubscribe();
+    autoObserver.destroy();
+    thinObserver.destroy();
   };
 }

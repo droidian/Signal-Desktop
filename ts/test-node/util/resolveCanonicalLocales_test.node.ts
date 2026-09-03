@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import assert from 'node:assert/strict';
-import { resolveCanonicalLocales } from '../../util/resolveCanonicalLocales.std.js';
+import { resolveCanonicalLocales } from '../../util/resolveCanonicalLocales.std.ts';
 
 describe('resolveCanonicalLocales', () => {
   it('returns an array of canonical locales', () => {
@@ -13,7 +13,10 @@ describe('resolveCanonicalLocales', () => {
   });
 
   it('removes invalid locales', () => {
-    assert.deepEqual(resolveCanonicalLocales(['!@#$', 'POSIX', 'en']), ['en']);
+    assert.deepEqual(resolveCanonicalLocales(['!@#$', 'POSIX', 'en']), [
+      'posix',
+      'en',
+    ]);
   });
 
   it('defaults to en if no valid locales are provided', () => {

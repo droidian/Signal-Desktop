@@ -9,12 +9,17 @@ import pTimeout from 'p-timeout';
 import type {
   IPCRequest as ChallengeRequestType,
   IPCResponse as ChallengeResponseType,
-} from '../challenge.dom.js';
-import type { ReceiptType } from '../types/Receipt.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { drop } from '../util/drop.std.js';
+} from '../challenge.dom.ts';
+import type { ReceiptType } from '../types/Receipt.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { toNumber } from '../util/toNumber.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { SocketStatuses } from '../textsecure/SocketManager.preload.js';
+import type { SocketStatuses } from '../textsecure/SocketManager.preload.ts';
+import type {
+  RestoreResponseType,
+  StoreParameters,
+} from '../textsecure/WebAPI.preload.ts';
 
 export type AppLoadedInfoType = Readonly<{
   loadTime: number;
@@ -39,7 +44,7 @@ export type ReceiptsInfoType = Readonly<{
 }>;
 
 export type StorageServiceInfoType = Readonly<{
-  manifestVersion: number;
+  manifestVersion: bigint;
 }>;
 
 export type AppOptionsType = Readonly<{
@@ -51,22 +56,24 @@ export type AppOptionsType = Readonly<{
 const WAIT_FOR_EVENT_TIMEOUT = 30 * SECOND;
 
 export class App extends EventEmitter {
+  readonly #options: AppOptionsType;
   #privApp: ElectronApplication | undefined;
 
-  constructor(private readonly options: AppOptionsType) {
+  constructor(options: AppOptionsType) {
     super();
+    this.#options = options;
   }
 
   public async start(): Promise<void> {
     try {
       // launch the electron processs
       this.#privApp = await electron.launch({
-        executablePath: this.options.main,
-        args: this.options.args.slice(),
+        executablePath: this.#options.main,
+        args: this.#options.args.slice(),
         env: {
           ...process.env,
           MOCK_TEST: 'true',
-          SIGNAL_CI_CONFIG: this.options.config,
+          SIGNAL_CI_CONFIG: this.#options.config,
         },
         locale: 'en',
         timeout: 30 * SECOND,
@@ -86,7 +93,7 @@ export class App extends EventEmitter {
           await page?.emulateMedia({ reducedMotion: 'reduce' });
           await page?.waitForLoadState('load');
         })(),
-        20 * SECOND
+        { milliseconds: 20 * SECOND }
       );
     } catch (e) {
       this.#privApp?.process().kill('SIGKILL');
@@ -110,6 +117,10 @@ export class App extends EventEmitter {
     return this.#waitForEvent('db-initialized');
   }
 
+  public async waitUntilReadyForUpdates(): Promise<void> {
+    return this.#waitForEvent('ready-for-updates');
+  }
+
   public async waitUntilLoaded(): Promise<AppLoadedInfoType> {
     return this.#waitForEvent('app-loaded');
   }
@@ -125,6 +136,11 @@ export class App extends EventEmitter {
   public async waitForMessageSend(): Promise<MessageSendInfoType> {
     return this.#waitForEvent('message:send-complete');
   }
+  public async waitForMessageToBeCleanedUp(
+    messageId: string
+  ): Promise<Array<string>> {
+    return this.#waitForEvent(`message:cleaned-up:${messageId}`);
+  }
 
   public async waitForConversationOpen(): Promise<ConversationOpenInfoType> {
     return this.#waitForEvent('conversation:open');
@@ -138,7 +154,13 @@ export class App extends EventEmitter {
     return this.#waitForEvent('receipts');
   }
 
-  public async waitForReleaseNotesFetcher(): Promise<void> {
+  public async waitForPhoneNumberSharedWith(
+    serviceId: string
+  ): Promise<ChallengeRequestType> {
+    return this.#waitForEvent(`sharedPhoneNumber:${serviceId}`);
+  }
+
+  public async waitForReleaseNoteAndMegaphoneFetcher(): Promise<void> {
     return this.#waitForEvent('release_notes_fetcher_complete');
   }
 
@@ -146,10 +168,18 @@ export class App extends EventEmitter {
     return this.#waitForEvent('storageServiceComplete');
   }
 
-  public async waitForManifestVersion(version: number): Promise<void> {
-    // eslint-disable-next-line no-constant-condition
+  public async waitForQueuedStickerPacks(): Promise<void> {
+    return this.#waitForEvent('queuedStickerPacksDownloaded');
+  }
+
+  public async waitForSVRStore(): Promise<StoreParameters> {
+    return this.#waitForEvent('svrStore');
+  }
+
+  public async waitForManifestVersion(version: bigint): Promise<void> {
+    // oxlint-disable-next-line no-constant-condition
     while (true) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       const { manifestVersion } = await this.waitForStorageService();
       if (manifestVersion >= version) {
         break;
@@ -171,7 +201,7 @@ export class App extends EventEmitter {
       return;
     }
     for (let i = 0; i < count; i += 1) {
-      // eslint-disable-next-line no-await-in-loop, no-console
+      // oxlint-disable-next-line no-await-in-loop, no-console
       console.error(await this.#waitForEvent('fatalTestError'));
     }
     throw new Error('App had fatal test errors');
@@ -187,6 +217,10 @@ export class App extends EventEmitter {
 
   public async getWindow(): Promise<Page> {
     return this.#app.firstWindow();
+  }
+
+  public async waitForWindow(): Promise<Page> {
+    return this.#app.waitForEvent('window');
   }
 
   public async openSignalRoute(url: URL | string): Promise<void> {
@@ -256,7 +290,7 @@ export class App extends EventEmitter {
 
   public override on(
     type: string | symbol,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     listener: (...args: Array<any>) => void
   ): this {
     return super.on(type, listener);
@@ -264,7 +298,7 @@ export class App extends EventEmitter {
 
   public override emit(type: 'close'): boolean;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   public override emit(type: string | symbol, ...args: Array<any>): boolean {
     return super.emit(type, ...args);
   }
@@ -275,7 +309,16 @@ export class App extends EventEmitter {
       `window.SignalCI.getPendingEventCount(${JSON.stringify(event)})`
     );
 
-    return Number(result);
+    return toNumber(result as bigint);
+  }
+
+  public async saveSVR2RestoreResponse(
+    response: RestoreResponseType
+  ): Promise<void> {
+    const window = await this.getWindow();
+    return window.evaluate(
+      `window.SignalCI.saveSVR2RestoreResponse(${JSON.stringify(response)})`
+    );
   }
 
   //
@@ -315,10 +358,10 @@ export class App extends EventEmitter {
       return kClosed;
     })();
 
-    // eslint-disable-next-line no-constant-condition
+    // oxlint-disable-next-line no-constant-condition
     while (true) {
       try {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         const value = await Promise.race([
           this.#waitForEvent<string>('print', 0),
           onClose,
@@ -328,7 +371,7 @@ export class App extends EventEmitter {
           break;
         }
 
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.error(`CI.print: ${value}`);
       } catch {
         // Ignore errors

@@ -2,57 +2,58 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { FocusScope } from 'react-aria';
-import type { UIEvent } from 'react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { UIEvent, JSX, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ContextMenuOptionType } from './ContextMenu.dom.js';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ContextMenuOptionType } from './ContextMenu.dom.tsx';
 import type {
   ConversationType,
   SaveAttachmentActionCreatorType,
-} from '../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { ReplyStateType, StoryViewType } from '../types/Stories.std.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
-import type { ShowToastAction } from '../state/ducks/toast.preload.js';
-import type { ViewStoryActionCreatorType } from '../state/ducks/stories.preload.js';
-import { createLogger } from '../logging/log.std.js';
-import { AnimatedEmojiGalore } from './AnimatedEmojiGalore.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { ContextMenu } from './ContextMenu.dom.js';
-import { I18n } from './I18n.dom.js';
-import { MessageTimestamp } from './conversation/MessageTimestamp.dom.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
-import { Spinner } from './Spinner.dom.js';
-import { StoryDetailsModal } from './StoryDetailsModal.dom.js';
-import { StoryDistributionListName } from './StoryDistributionListName.dom.js';
-import { StoryImage } from './StoryImage.dom.js';
+} from '../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { ReplyStateType, StoryViewType } from '../types/Stories.std.ts';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
+import type { ShowToastAction } from '../state/ducks/toast.preload.ts';
+import type { ViewStoryActionCreatorType } from '../state/ducks/stories.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { AnimatedEmojiGalore } from './AnimatedEmojiGalore.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { ContextMenu } from './ContextMenu.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import { MessageTimestamp } from './conversation/MessageTimestamp.dom.tsx';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
+import { Spinner } from './Spinner.dom.tsx';
+import { StoryDetailsModal } from './StoryDetailsModal.dom.tsx';
+import { StoryDistributionListName } from './StoryDistributionListName.dom.tsx';
+import { StoryImage } from './StoryImage.dom.tsx';
 import {
   ResolvedSendStatus,
   StoryViewDirectionType,
   StoryViewModeType,
   StoryViewTargetType,
-} from '../types/Stories.std.js';
-import { StoryViewsNRepliesModal } from './StoryViewsNRepliesModal.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { ToastType } from '../types/Toast.dom.js';
-import { getAvatarColor } from '../types/Colors.std.js';
-import { getStoryBackground } from '../util/getStoryBackground.std.js';
-import { getStoryDuration } from '../util/getStoryDuration.dom.js';
-import { isVideoAttachment } from '../util/Attachment.std.js';
-import { graphemeAndLinkAwareSlice } from '../util/graphemeAndLinkAwareSlice.std.js';
-import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.js';
-import { useRetryStorySend } from '../hooks/useRetryStorySend.dom.js';
-import { resolveStorySendStatus } from '../util/resolveStorySendStatus.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { MessageBody } from './conversation/MessageBody.dom.js';
-import { RenderLocation } from './conversation/MessageTextRenderer.dom.js';
-import { arrow } from '../util/keyboard.dom.js';
-import { StoryProgressSegment } from './StoryProgressSegment.dom.js';
-import type { EmojiSkinTone } from './fun/data/emojis.std.js';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.js';
+} from '../types/Stories.std.ts';
+import { StoryViewsNRepliesModal } from './StoryViewsNRepliesModal.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { ToastType } from '../types/Toast.dom.tsx';
+import { getAvatarColor } from '../types/Colors.std.ts';
+import { getStoryBackground } from '../util/getStoryBackground.std.ts';
+import { getStoryDuration } from '../util/getStoryDuration.dom.ts';
+import { isVideoAttachment } from '../util/Attachment.std.ts';
+import { graphemeAndLinkAwareSlice } from '../util/graphemeAndLinkAwareSlice.std.ts';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
+import { useRetryStorySend } from '../hooks/useRetryStorySend.dom.tsx';
+import { resolveStorySendStatus } from '../util/resolveStorySendStatus.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { MessageBody } from './conversation/MessageBody.dom.tsx';
+import { RenderLocation } from './conversation/MessageTextRenderer.dom.tsx';
+import { arrow } from '../util/keyboard.dom.ts';
+import { StoryProgressSegment } from './StoryProgressSegment.dom.tsx';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.tsx';
+import type { ContactModalStateType } from '../types/globalModals.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const log = createLogger('StoryViewer');
 
@@ -75,10 +76,10 @@ export type PropsType = {
     | 'id'
     | 'name'
     | 'profileName'
-    | 'sharedGroupNames'
     | 'sortedGroupMembers'
     | 'title'
     | 'left'
+    | 'terminated'
   >;
   hasActiveCall?: boolean;
   hasAllStoriesUnmuted: boolean;
@@ -94,7 +95,7 @@ export type PropsType = {
   onGoToConversation: (conversationId: string) => unknown;
   onHideStory: (conversationId: string) => unknown;
   onTextTooLong: () => unknown;
-  onReactToStory: (emoji: string, story: StoryViewType) => unknown;
+  onReactToStory: (emoji: Emoji.Variant, story: StoryViewType) => unknown;
   onReplyToStory: (
     message: string,
     bodyRanges: DraftBodyRanges,
@@ -105,15 +106,15 @@ export type PropsType = {
   onMediaPlaybackStart: () => void;
   ourConversationId: string | undefined;
   platform: string;
-  preferredReactionEmoji: ReadonlyArray<string>;
+  preferredReactionEmoji: ReadonlyArray<Emoji.Variant>;
   queueStoryDownload: (storyId: string) => unknown;
   replyState?: ReplyStateType;
   retryMessageSend: (messageId: string) => unknown;
   saveAttachment: SaveAttachmentActionCreatorType;
   setHasAllStoriesUnmuted: (isUnmuted: boolean) => unknown;
-  showContactModal: (contactId: string, conversationId?: string) => void;
+  showContactModal: (payload: ContactModalStateType) => void;
   showToast: ShowToastAction;
-  emojiSkinToneDefault: EmojiSkinTone | null;
+  emojiSkinToneDefault: Emoji.SkinTone | null;
   story: StoryViewType;
   storyViewMode: StoryViewModeType;
   viewStory: ViewStoryActionCreatorType;
@@ -177,7 +178,9 @@ export function StoryViewer({
     useState<boolean>(false);
   const [storyDuration, setStoryDuration] = useState<number | undefined>();
   const [hasConfirmHideStory, setHasConfirmHideStory] = useState(false);
-  const [reactionEmoji, setReactionEmoji] = useState<string | undefined>();
+  const [reactionEmoji, setReactionEmoji] = useState<
+    Emoji.Variant | undefined
+  >();
   const [confirmDeleteStory, setConfirmDeleteStory] = useState<
     StoryViewType | undefined
   >();
@@ -192,20 +195,13 @@ export function StoryViewer({
     sendState,
     timestamp,
   } = story;
-  const {
-    avatarUrl,
-    color,
-    isMe,
-    firstName,
-    profileName,
-    sharedGroupNames,
-    title,
-  } = story.sender;
+  const { avatarUrl, color, isMe, firstName, profileName, title } =
+    story.sender;
 
   const conversationId = group?.id || story.sender.id;
 
   const sendStatus = sendState ? resolveStorySendStatus(sendState) : undefined;
-  const { renderAlert, setWasManuallyRetried, wasManuallyRetried } =
+  const { hasAlert, renderAlert, setWasManuallyRetried, wasManuallyRetried } =
     useRetryStorySend(i18n, sendStatus);
 
   const [currentViewTarget, setCurrentViewTarget] = useState(
@@ -327,7 +323,7 @@ export function StoryViewer({
 
   const shouldPauseViewing =
     storyDuration == null ||
-    Boolean(alertElement) ||
+    hasAlert ||
     Boolean(confirmDeleteStory) ||
     currentViewTarget != null ||
     hasActiveCall ||
@@ -490,6 +486,7 @@ export function StoryViewer({
     | undefined;
 
   if (isSent) {
+    // TODO: DESKTOP-9943
     contextMenuOptions = [
       {
         icon: 'StoryListItem__icon--info',
@@ -564,10 +561,9 @@ export function StoryViewer({
 
   return (
     <FocusScope contain={currentViewTarget == null} autoFocus>
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         className="StoryViewer"
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         onMouseDown={event => {
           if (isDescendentEvent(event)) {
@@ -707,7 +703,7 @@ export function StoryViewer({
                     onClick={() => {
                       setHasExpandedCaption(true);
                     }}
-                    onKeyDown={(ev: React.KeyboardEvent) => {
+                    onKeyDown={(ev: ReactKeyboardEvent) => {
                       if (ev.key === 'Space' || ev.key === 'Enter') {
                         setHasExpandedCaption(true);
                       }
@@ -729,7 +725,6 @@ export function StoryViewer({
                   conversationType="direct"
                   i18n={i18n}
                   profileName={profileName}
-                  sharedGroupNames={sharedGroupNames}
                   size={AvatarSize.TWENTY_EIGHT}
                   title={title}
                 />
@@ -742,7 +737,6 @@ export function StoryViewer({
                     conversationType="group"
                     i18n={i18n}
                     profileName={group.profileName}
-                    sharedGroupNames={group.sharedGroupNames}
                     size={AvatarSize.TWENTY_EIGHT}
                     title={group.title}
                   />
@@ -948,7 +942,6 @@ export function StoryViewer({
             onReact={emoji => {
               onReactToStory(emoji, story);
               if (!isGroupStory) {
-                setCurrentViewTarget(null);
                 showToast({ toastType: ToastType.StoryReact });
               }
               setReactionEmoji(emoji);
@@ -975,45 +968,53 @@ export function StoryViewer({
             deleteGroupStoryReplyForEveryone={deleteGroupStoryReplyForEveryone}
           />
         )}
-        {hasConfirmHideStory && (
-          <ConfirmationDialog
-            dialogName="StoryViewer.confirmHideStory"
-            actions={[
-              {
-                action: () => {
-                  onHideStory(conversationId);
-                  onClose();
-                },
-                style: 'affirmative',
-                text: i18n('icu:StoryListItem__hide-modal--confirm'),
-              },
-            ]}
-            i18n={i18n}
-            onClose={() => {
-              setHasConfirmHideStory(false);
+
+        <AxoConfirmDialog.Root
+          open={hasConfirmHideStory}
+          onOpenChange={setHasConfirmHideStory}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={i18n('icu:StoryListItem__hide-modal--body', {
+            name: firstName ?? '',
+          })}
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-primary"
+            onClick={() => {
+              onHideStory(conversationId);
+              onClose();
             }}
           >
-            {i18n('icu:StoryListItem__hide-modal--body', {
-              name: String(firstName),
-            })}
-          </ConfirmationDialog>
-        )}
-        {confirmDeleteStory && (
-          <ConfirmationDialog
-            dialogName="StoryViewer.deleteStory"
-            actions={[
-              {
-                text: i18n('icu:delete'),
-                action: () => deleteStoryForEveryone(confirmDeleteStory),
-                style: 'negative',
-              },
-            ]}
-            i18n={i18n}
-            onClose={() => setConfirmDeleteStory(undefined)}
+            {i18n('icu:StoryListItem__hide-modal--confirm')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
+
+        <AxoConfirmDialog.Root
+          open={confirmDeleteStory != null}
+          onOpenChange={() => setConfirmDeleteStory(undefined)}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={
+            group?.terminated
+              ? i18n('icu:MyStories__delete-group-story-for-me')
+              : i18n('icu:MyStories__delete')
+          }
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => {
+              strictAssert(
+                confirmDeleteStory != null,
+                'Missing confirmDeleteStory'
+              );
+              deleteStoryForEveryone(confirmDeleteStory);
+            }}
           >
-            {i18n('icu:MyStories__delete')}
-          </ConfirmationDialog>
-        )}
+            {i18n('icu:delete')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       </div>
     </FocusScope>
   );

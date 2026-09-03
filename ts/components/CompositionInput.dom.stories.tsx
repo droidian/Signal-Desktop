@@ -1,17 +1,15 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
-// @ts-expect-error -- no types
-import '@signalapp/quill-cjs/dist/quill.core.css';
+import { useContext, useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import type { Props } from './CompositionInput.dom.js';
-import { CompositionInput } from './CompositionInput.dom.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import type { Props } from './CompositionInput.dom.tsx';
+import { CompositionInput } from './CompositionInput.dom.tsx';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -48,11 +46,15 @@ const useProps = (overrideProps: Partial<Props> = {}): Props => {
     sendCounter: 0,
     sortedGroupMembers: overrideProps.sortedGroupMembers ?? [],
     emojiSkinToneDefault:
-      overrideProps.emojiSkinToneDefault ?? EmojiSkinTone.None,
-    theme: React.useContext(StorybookThemeContext),
+      overrideProps.emojiSkinToneDefault ?? Emoji.SkinTone.None,
+    theme: useContext(StorybookThemeContext),
     inputApi: null,
     shouldHidePopovers: null,
+    showRecoveryKeyPasteWarning: false,
     linkPreviewResult: null,
+    showViewOnceButton: false,
+    isViewOnceActive: false,
+    onToggleViewOnce: action('onToggleViewOnce'),
   };
 };
 
@@ -141,4 +143,42 @@ export function Mentions(): JSX.Element {
 
 export function NoFormattingMenu(): JSX.Element {
   return <CompositionInput {...useProps({ isFormattingEnabled: false })} />;
+}
+export function RecoveryKeyWarning(): JSX.Element {
+  return (
+    <div>
+      Paste <code>AEP</code> into the input.
+      <CompositionInput
+        {...useProps({ isFormattingEnabled: false })}
+        showRecoveryKeyPasteWarning={text => text.includes('AEP')}
+      />
+    </div>
+  );
+}
+
+export function ViewOnceButton(): JSX.Element {
+  const [isActive, setIsActive] = useState(false);
+  const props = useProps();
+
+  return (
+    <CompositionInput
+      {...props}
+      showViewOnceButton
+      isViewOnceActive={isActive}
+      onToggleViewOnce={() => setIsActive(!isActive)}
+    />
+  );
+}
+
+export function ViewOnceButtonActive(): JSX.Element {
+  const props = useProps();
+
+  return (
+    <CompositionInput
+      {...props}
+      showViewOnceButton
+      isViewOnceActive
+      onToggleViewOnce={action('onToggleViewOnce')}
+    />
+  );
 }

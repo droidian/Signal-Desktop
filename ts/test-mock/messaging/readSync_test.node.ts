@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import createDebug from 'debug';
-import Long from 'long';
 
-import type { App } from '../playwright.node.js';
-import * as durations from '../../util/durations/index.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import type { App } from '../playwright.node.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 
 export const debug = createDebug('mock:test:readSync');
 
@@ -34,7 +34,7 @@ describe('readSync', function (this: Mocha.Suite) {
 
   it('applies out of order read syncs', async () => {
     const { contacts, desktop, phone } = bootstrap;
-    const [friend] = contacts;
+    const [friend] = contacts as [PrimaryDevice];
 
     const page = await app.getWindow();
 
@@ -98,21 +98,28 @@ describe('readSync', function (this: Mocha.Suite) {
         timestamp: bootstrap.getTimestamp(),
       };
 
-      const longTimestamps = timestamps.map(timestamp =>
-        Long.fromNumber(timestamp)
-      );
+      const longTimestamps = timestamps.map(timestamp => BigInt(timestamp));
 
       const senderAciBinary = friend.device.aciRawUuid;
 
       await phone.sendRaw(
         desktop,
         {
-          syncMessage: {
-            read: longTimestamps.map(timestamp => ({
-              senderAciBinary,
-              timestamp,
-            })),
+          content: {
+            syncMessage: {
+              content: null,
+              read: longTimestamps.map(timestamp => ({
+                senderAciBinary,
+                timestamp,
+                senderAci: null,
+              })),
+              stickerPackOperation: null,
+              viewed: null,
+              padding: null,
+            },
           },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
         },
         sendOptions
       );

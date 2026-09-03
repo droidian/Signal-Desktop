@@ -4,26 +4,25 @@
 import lodash from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { SignalService as Proto } from '../protobuf/index.std.js';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
 
-import { isNotNil } from '../util/isNotNil.std.js';
+import { isNotNil } from '../util/isNotNil.std.ts';
 import {
   format as formatPhoneNumber,
   normalize as normalizePhoneNumber,
-} from './PhoneNumber.std.js';
+} from './PhoneNumber.std.ts';
 import type {
   AttachmentType,
   AttachmentForUIType,
   AttachmentWithHydratedData,
-  LocalAttachmentV2Type,
   UploadedAttachmentType,
-} from './Attachment.std.js';
-import { toLogFormat } from './errors.std.js';
-import type { LoggerType } from './Logging.std.js';
-import type { ServiceIdString } from './ServiceId.std.js';
-import type { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.std.js';
-import { getLocalAttachmentUrl } from '../util/getLocalAttachmentUrl.std.js';
+} from './Attachment.std.ts';
+import { toLogFormat } from './errors.std.ts';
+import type { ServiceIdString } from './ServiceId.std.ts';
+import type { migrateDataToFileSystem } from '../util/attachments/migrateDataToFilesystem.std.ts';
+import { getLocalAttachmentUrl } from '../util/getLocalAttachmentUrl.std.ts';
+import type { ContextType } from './Message2.preload.ts';
 
 const { omit } = lodash;
 
@@ -94,7 +93,7 @@ export type PostalAddress = {
 };
 
 type GenericAvatar<Attachment> = {
-  avatar: Attachment;
+  avatar?: Attachment;
   isProfile: boolean;
 };
 
@@ -172,7 +171,7 @@ export function embeddedContactSelector(
         ...avatar,
         avatar: {
           ...avatar.avatar,
-          path: avatar.avatar.path
+          url: avatar.avatar.path
             ? getLocalAttachmentUrl(avatar.avatar)
             : undefined,
 
@@ -231,13 +230,14 @@ export function parseAndWriteAvatar(
 ) {
   return async (
     contact: EmbeddedContactType,
-    context: {
-      getRegionCode: () => string | undefined;
-      logger: LoggerType;
-      writeNewAttachmentData: (
-        data: Uint8Array
-      ) => Promise<LocalAttachmentV2Type>;
-    },
+    context: Pick<
+      ContextType,
+      | 'getRegionCode'
+      | 'logger'
+      | 'writeNewAttachmentData'
+      | 'getExistingAttachmentDataForReuse'
+      | 'getPlaintextHashForInMemoryAttachment'
+    >,
     message: ReadonlyMessageAttributesType
   ): Promise<EmbeddedContactType> => {
     const { getRegionCode, logger } = context;

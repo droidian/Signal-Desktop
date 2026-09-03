@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import createDebug from 'debug';
+import type { PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, StorageState } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations/index.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import { expectSystemMessages } from '../helpers.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import { expectSystemMessages } from '../helpers.node.ts';
 
 export const debug = createDebug('mock:test:relink');
 
@@ -21,10 +22,12 @@ describe('messaging/relink', function (this: Mocha.Suite) {
     bootstrap = new Bootstrap();
     await bootstrap.init();
 
-    const {
-      phone,
-      contacts: [first, second, third],
-    } = bootstrap;
+    const { phone, contacts } = bootstrap;
+    const [first, second, third] = contacts as [
+      PrimaryDevice,
+      PrimaryDevice,
+      PrimaryDevice,
+    ];
 
     let state = StorageState.getEmpty();
 
@@ -68,12 +71,8 @@ describe('messaging/relink', function (this: Mocha.Suite) {
   });
 
   it('updates pin state on relink', async () => {
-    const {
-      contacts: [first, second],
-      desktop,
-      phone,
-      server,
-    } = bootstrap;
+    const { contacts, desktop, phone, server } = bootstrap;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     {
       const window = await app.getWindow();
@@ -91,7 +90,7 @@ describe('messaging/relink', function (this: Mocha.Suite) {
       await app.unlink();
       await app.waitForUnlink();
       await phone.unlink(desktop);
-      await server.removeDevice(desktop.number, desktop.deviceId);
+      await server.removeDeviceByServiceId(desktop.aci, desktop.deviceId);
 
       debug('closing');
       await app.close();
@@ -133,7 +132,7 @@ describe('messaging/relink', function (this: Mocha.Suite) {
       state = state.unpin(second);
       state = state.pin(first);
 
-      await phone.setStorageState(state);
+      state = await phone.setStorageState(state);
       await phone.sendFetchStorage({
         timestamp: bootstrap.getTimestamp(),
       });
@@ -148,7 +147,7 @@ describe('messaging/relink', function (this: Mocha.Suite) {
         )
         .click();
 
-      await expectSystemMessages(window, [/Safety Number has changed/]);
+      await expectSystemMessages(window, [/Safety Number with Alice/]);
     }
   });
 });

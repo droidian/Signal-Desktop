@@ -1,15 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './AvatarPreview.dom.js';
-import { AvatarPreview } from './AvatarPreview.dom.js';
-import { AvatarColors } from '../types/Colors.std.js';
+import type { PropsType } from './AvatarPreview.dom.tsx';
+import { AvatarPreview } from './AvatarPreview.dom.tsx';
+import { AvatarColors } from '../types/Colors.std.ts';
 
 const { chunk } = lodash;
 
@@ -41,12 +42,23 @@ export default {
   title: 'Components/AvatarPreview',
 } satisfies Meta<PropsType>;
 
-export function NoStatePersonal(): JSX.Element {
+export function NoStateContact(): JSX.Element {
   return (
     <AvatarPreview
       {...createProps({
         avatarColor: AvatarColors[0],
         conversationTitle: 'Just Testing',
+      })}
+    />
+  );
+}
+
+export function NoInitialsContact(): JSX.Element {
+  return (
+    <AvatarPreview
+      {...createProps({
+        avatarColor: AvatarColors[0],
+        conversationTitle: '',
       })}
     />
   );

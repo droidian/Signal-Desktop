@@ -10,64 +10,68 @@ import {
   GenericServerPublicParams,
 } from '@signalapp/libsignal-client/zkgroup.js';
 import { type BackupKey } from '@signalapp/libsignal-client/dist/AccountKeys.js';
+import type { BackupAuth } from '@signalapp/libsignal-client/dist/net';
 import lodashFp from 'lodash/fp.js';
 
-import * as Bytes from '../../Bytes.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { isMoreRecentThan, toDayMillis } from '../../util/timestamp.std.js';
+import * as Bytes from '../../Bytes.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { isMoreRecentThan, toDayMillis } from '../../util/timestamp.std.ts';
 import {
   DAY,
   DurationInSeconds,
   HOUR,
   MINUTE,
-} from '../../util/durations/index.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../../util/BackOff.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
+} from '../../util/durations/index.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
 import {
   type BackupCdnReadCredentialType,
   type BackupCredentialWrapperType,
-  type BackupPresentationHeadersType,
-  type BackupSignedPresentationType,
   BackupCredentialType,
-} from '../../types/backups.node.js';
-import { toLogFormat } from '../../types/errors.std.js';
-import { HTTPError } from '../../types/HTTPError.std.js';
+} from '../../types/backups.node.ts';
+import { HTTPError } from '../../types/HTTPError.std.ts';
 import type {
   GetBackupCredentialsResponseType,
   GetBackupCDNCredentialsResponseType,
-} from '../../textsecure/WebAPI.preload.js';
+} from '../../textsecure/WebAPI.preload.ts';
 import {
   setBackupSignatureKey,
   getBackupCDNCredentials,
   getBackupCredentials,
   setBackupId,
-} from '../../textsecure/WebAPI.preload.js';
+} from '../../textsecure/WebAPI.preload.ts';
 import {
   getBackupKey,
   getBackupMediaRootKey,
   getBackupSignatureKey,
   getBackupMediaSignatureKey,
-} from './crypto.preload.js';
-import { isTestOrMockEnvironment } from '../../environment.std.js';
+} from './crypto.preload.ts';
+import { isTestOrMockEnvironment } from '../../environment.std.ts';
 import {
   areRemoteBackupsTurnedOn,
   canAttemptRemoteBackupDownload,
-} from '../../util/isBackupEnabled.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../util/isBackupEnabled.preload.ts';
+import { CheckScheduler } from '../../util/CheckScheduler.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 const { throttle } = lodashFp;
 
 const log = createLogger('Backup.Credentials');
-
-const FETCH_INTERVAL = 3 * DAY;
 
 //  Credentials should be good for 24 hours, but let's play it safe.
 const BACKUP_CDN_READ_CREDENTIALS_VALID_DURATION = 12 * HOUR;
 
 export class BackupCredentials {
   #activeFetch: Promise<ReadonlyArray<BackupCredentialWrapperType>> | undefined;
+
+  readonly #scheduler = new CheckScheduler({
+    name: 'BackupCredentials',
+    interval: 3 * DAY,
+    storageKey: 'backupCombinedCredentialsLastRequestTime',
+    callback: async () => {
+      await this.#fetch();
+    },
+  });
 
   #cachedCdnReadCredentials: Record<
     BackupCredentialType,
@@ -77,8 +81,6 @@ export class BackupCredentials {
     [BackupCredentialType.Messages]: {},
   };
 
-  readonly #fetchBackoff = new BackOff(FIBONACCI_TIMEOUTS);
-
   // Throttle credential clearing to avoid loops
   public readonly onCdnCredentialError = throttle(5 * MINUTE, () => {
     log.warn('onCdnCredentialError: clearing cache');
@@ -86,12 +88,12 @@ export class BackupCredentials {
   });
 
   public start(): void {
-    this.#scheduleFetch();
+    this.#scheduler.start();
   }
 
   public async getForToday(
     credentialType: BackupCredentialType
-  ): Promise<BackupSignedPresentationType> {
+  ): Promise<BackupAuth> {
     const now = toDayMillis(Date.now());
 
     let signatureKey: PrivateKey;
@@ -131,36 +133,25 @@ export class BackupCredentials {
       Bytes.fromBase64(window.getBackupServerPublicParams())
     );
 
-    const presentation = cred.present(serverPublicParams).serialize();
-    const signature = signatureKey.sign(presentation);
-
-    const headers = {
-      'X-Signal-ZK-Auth': Bytes.toBase64(presentation),
-      'X-Signal-ZK-Auth-Signature': Bytes.toBase64(signature),
+    const backupAuth: BackupAuth = {
+      credential: cred,
+      serverKeys: serverPublicParams,
+      signingKey: signatureKey,
     };
 
-    const info = { headers, level: result.level };
     if (itemStorage.get(storageKey)) {
-      return info;
+      return backupAuth;
     }
 
     log.warn(`uploading signature key (${storageKey})`);
 
     await setBackupSignatureKey({
-      headers,
-      backupIdPublicKey: signatureKey.getPublicKey().serialize(),
+      auth: backupAuth,
     });
 
     await itemStorage.put(storageKey, true);
 
-    return info;
-  }
-
-  public async getHeadersForToday(
-    credentialType: BackupCredentialType
-  ): Promise<BackupPresentationHeadersType> {
-    const { headers } = await this.getForToday(credentialType);
-    return headers;
+    return backupAuth;
   }
 
   public async getCDNReadCredentials(
@@ -184,53 +175,20 @@ export class BackupCredentials {
       return cachedCredentials.credentials;
     }
 
-    const headers = await this.getHeadersForToday(credentialType);
+    const backupAuth = await this.getForToday(credentialType);
 
-    const retrievedAtMs = Date.now();
     const newCredentials = await getBackupCDNCredentials({
-      headers,
+      auth: backupAuth,
       cdnNumber,
     });
 
     cachedCredentialsForThisCredentialType[cdnNumber] = {
       credentials: newCredentials,
       cdnNumber,
-      retrievedAtMs,
+      retrievedAtMs: Date.now(),
     };
 
     return newCredentials;
-  }
-
-  #scheduleFetch(): void {
-    const lastFetchAt = itemStorage.get(
-      'backupCombinedCredentialsLastRequestTime',
-      0
-    );
-    const nextFetchAt = lastFetchAt + FETCH_INTERVAL;
-    const delay = Math.max(0, nextFetchAt - Date.now());
-
-    log.info(`scheduling fetch in ${delay}ms`);
-    setTimeout(() => drop(this.#runPeriodicFetch()), delay);
-  }
-
-  async #runPeriodicFetch(): Promise<void> {
-    try {
-      log.info('running periodic fetch');
-      await this.#fetch();
-
-      const now = Date.now();
-      await itemStorage.put('backupCombinedCredentialsLastRequestTime', now);
-
-      this.#fetchBackoff.reset();
-      this.#scheduleFetch();
-    } catch (error) {
-      const delay = this.#fetchBackoff.getAndIncrement();
-      log.error(
-        'periodic fetch failed with ' +
-          `error: ${toLogFormat(error)}, retrying in ${delay}ms`
-      );
-      setTimeout(() => this.#scheduleFetch(), delay);
-    }
   }
 
   async #fetch(): Promise<ReadonlyArray<BackupCredentialWrapperType>> {
@@ -388,8 +346,10 @@ export class BackupCredentials {
     result.sort((a, b) => a.redemptionTimeMs - b.redemptionTimeMs);
     await this.#updateCache(result);
 
-    const startMs = result[0].redemptionTimeMs;
-    const endMs = result[result.length - 1].redemptionTimeMs;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const startMs = result[0]!.redemptionTimeMs;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const endMs = result[result.length - 1]!.redemptionTimeMs;
     log.info(`saved [${startMs}, ${endMs}]`);
 
     strictAssert(result.length === 14, 'Expected one week of credentials');
@@ -427,7 +387,8 @@ export class BackupCredentials {
   public async getBackupLevel(
     credentialType: BackupCredentialType
   ): Promise<BackupLevel> {
-    return (await this.getForToday(credentialType)).level;
+    const backupAuth = await this.getForToday(credentialType);
+    return backupAuth.credential.getBackupLevel();
   }
 
   // Called when backup tier changes or when userChanged event

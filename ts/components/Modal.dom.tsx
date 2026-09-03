@@ -1,27 +1,30 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactElement, ReactNode } from 'react';
-import React, { useEffect, useRef, useState } from 'react';
+import type { ReactElement, ReactNode, JSX } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
-import { animated } from '@react-spring/web';
+import { animated, type SpringValues } from '@react-spring/web';
 
 import { v4 as uuid } from 'uuid';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ModalHost } from './ModalHost.dom.js';
-import type { Theme } from '../util/theme.std.js';
-import { assertDev } from '../util/assert.std.js';
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
-import { useAnimated } from '../hooks/useAnimated.dom.js';
-import { useHasWrapped } from '../hooks/useHasWrapped.std.js';
-import { createLogger } from '../logging/log.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ModalHost } from './ModalHost.dom.tsx';
+import type { Theme } from '../util/theme.std.ts';
+import { assertDev } from '../util/assert.std.ts';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
+import {
+  type ModalConfigType,
+  useAnimated,
+} from '../hooks/useAnimated.dom.tsx';
+import { useHasWrapped } from '../hooks/useHasWrapped.std.ts';
+import { createLogger } from '../logging/log.std.ts';
 import {
   isScrollOverflowVertical,
   isScrollAtTop,
   isScrollAtBottom,
   useScrollObserver,
-} from '../hooks/useSizeObserver.dom.js';
+} from '../hooks/useSizeObserver.dom.tsx';
 
 const { noop } = lodash;
 
@@ -125,31 +128,30 @@ export function Modal({
       overlayStyles={overlayStyles}
       theme={theme}
     >
-      <animated.div style={modalStyles}>
-        <ModalPage
-          modalName={modalName}
-          hasXButton={hasXButton}
-          i18n={i18n}
-          modalFooter={modalFooter}
-          modalHeaderChildren={modalHeaderChildren}
-          moduleClassName={moduleClassName}
-          onBackButtonClick={onBackButtonClick}
-          onClose={close}
-          title={title}
-          padded={padded}
-          hasHeaderDivider={hasHeaderDivider}
-          hasFooterDivider={hasFooterDivider}
-          aria-describedby={ariaDescribedBy}
-        >
-          {children}
-        </ModalPage>
-      </animated.div>
+      <ModalPage
+        modalName={modalName}
+        hasXButton={hasXButton}
+        i18n={i18n}
+        modalFooter={modalFooter}
+        modalHeaderChildren={modalHeaderChildren}
+        moduleClassName={moduleClassName}
+        onBackButtonClick={onBackButtonClick}
+        onClose={close}
+        title={title}
+        padded={padded}
+        hasHeaderDivider={hasHeaderDivider}
+        hasFooterDivider={hasFooterDivider}
+        aria-describedby={ariaDescribedBy}
+        modalStyles={modalStyles}
+      >
+        {children}
+      </ModalPage>
     </ModalHost>
   );
 }
 
 type ModalPageProps = Readonly<{
-  // should be the one provided by PagedModal
+  modalStyles?: SpringValues<ModalConfigType>;
   onClose: () => void;
 }> &
   Omit<Readonly<PropsType>, 'onClose'>;
@@ -175,6 +177,7 @@ export function ModalPage({
   modalFooter,
   modalHeaderChildren,
   modalName,
+  modalStyles,
   moduleClassName,
   onBackButtonClick,
   onClose,
@@ -207,93 +210,90 @@ export function ModalPage({
   });
 
   return (
-    <>
-      {/* We don't want the click event to propagate to its container node. */}
-      {/* eslint-disable-next-line max-len */}
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
-      <div
-        className={classNames(
-          getClassName(''),
-          getClassName(hasHeader ? '--has-header' : '--no-header'),
-          Boolean(modalFooter) && getClassName('--has-footer'),
-          padded && getClassName('--padded'),
-          hasHeaderDivider && getClassName('--header-divider'),
-          hasFooterDivider && getClassName('--footer-divider')
-        )}
-        ref={modalRef}
-        role="dialog"
-        tabIndex={-1}
-        aria-labelledby={title ? `${id}-title` : undefined}
-        aria-describedby={ariaDescribedBy}
-        data-testid={modalName}
-        onClick={event => {
-          event.stopPropagation();
-        }}
-      >
-        {hasHeader && (
-          <div
-            className={classNames(
-              getClassName('__header'),
-              onBackButtonClick
-                ? getClassName('__header--with-back-button')
-                : null
-            )}
-          >
-            <div className={getClassName('__headerTitle')}>
-              {onBackButtonClick && (
-                <button
-                  aria-label={i18n('icu:back')}
-                  className={getClassName('__back-button')}
-                  onClick={onBackButtonClick}
-                  tabIndex={0}
-                  type="button"
-                />
-              )}
-              {title && (
-                <h1
-                  id={`${id}-title`}
-                  className={classNames(
-                    getClassName('__title'),
-                    hasXButton ? getClassName('__title--with-x-button') : null
-                  )}
-                >
-                  {title}
-                </h1>
-              )}
-              {hasXButton && !title && (
-                <div className={getClassName('__title')} />
-              )}
-              {hasXButton && (
-                <button
-                  aria-label={i18n('icu:close')}
-                  className={getClassName('__close-button')}
-                  onClick={onClose}
-                  tabIndex={0}
-                  type="button"
-                />
-              )}
-            </div>
-            {modalHeaderChildren}
-          </div>
-        )}
+    <animated.div
+      className={classNames(
+        getClassName(''),
+        getClassName(hasHeader ? '--has-header' : '--no-header'),
+        Boolean(modalFooter) && getClassName('--has-footer'),
+        padded && getClassName('--padded'),
+        hasHeaderDivider && getClassName('--header-divider'),
+        hasFooterDivider && getClassName('--footer-divider')
+      )}
+      ref={modalRef}
+      role="dialog"
+      tabIndex={-1}
+      aria-labelledby={title ? `${id}-title` : undefined}
+      aria-describedby={ariaDescribedBy}
+      data-testid={modalName}
+      onClick={event => {
+        // We don't want the click event to propagate to its container node.
+        event.stopPropagation();
+      }}
+      style={modalStyles}
+    >
+      {hasHeader && (
         <div
           className={classNames(
-            getClassName('__body'),
-            scrollAtTop ? getClassName('__body--scrollAtTop') : null,
-            scrollAtBottom ? getClassName('__body--scrollAtBottom') : null,
-            scrollVerticalOverflow || scrollAtTop
-              ? getClassName('__body--scrollVerticalOverflow')
+            getClassName('__header'),
+            onBackButtonClick
+              ? getClassName('__header--with-back-button')
               : null
           )}
-          ref={bodyRef}
         >
-          <div ref={bodyInnerRef} className={getClassName('__body_inner')}>
-            {children}
+          <div className={getClassName('__headerTitle')}>
+            {onBackButtonClick && (
+              <button
+                aria-label={i18n('icu:back')}
+                className={getClassName('__back-button')}
+                onClick={onBackButtonClick}
+                tabIndex={0}
+                type="button"
+              />
+            )}
+            {title && (
+              <h1
+                id={`${id}-title`}
+                className={classNames(
+                  getClassName('__title'),
+                  hasXButton ? getClassName('__title--with-x-button') : null
+                )}
+              >
+                {title}
+              </h1>
+            )}
+            {hasXButton && !title && (
+              <div className={getClassName('__title')} />
+            )}
+            {hasXButton && (
+              <button
+                aria-label={i18n('icu:close')}
+                className={getClassName('__close-button')}
+                onClick={onClose}
+                tabIndex={0}
+                type="button"
+              />
+            )}
           </div>
+          {modalHeaderChildren}
         </div>
-        {modalFooter && <Modal.ButtonFooter>{modalFooter}</Modal.ButtonFooter>}
+      )}
+      <div
+        className={classNames(
+          getClassName('__body'),
+          scrollAtTop ? getClassName('__body--scrollAtTop') : null,
+          scrollAtBottom ? getClassName('__body--scrollAtBottom') : null,
+          scrollVerticalOverflow || scrollAtTop
+            ? getClassName('__body--scrollVerticalOverflow')
+            : null
+        )}
+        ref={bodyRef}
+      >
+        <div ref={bodyInnerRef} className={getClassName('__body_inner')}>
+          {children}
+        </div>
       </div>
-    </>
+      {modalFooter && <Modal.ButtonFooter>{modalFooter}</Modal.ButtonFooter>}
+    </animated.div>
   );
 }
 

@@ -4,7 +4,6 @@
 import {
   CallLinkRestrictions as RingRTCCallLinkRestrictions,
   CallLinkRootKey,
-  CallLinkEpoch,
 } from '@signalapp/ringrtc';
 import type { CallLinkState as RingRTCCallLinkState } from '@signalapp/ringrtc';
 import { z } from 'zod';
@@ -13,7 +12,7 @@ import {
   callLinkRecordSchema,
   defunctCallLinkRecordSchema,
   toCallLinkRestrictions,
-} from '../types/CallLink.std.js';
+} from '../types/CallLink.std.ts';
 import type {
   CallLinkRecord,
   CallLinkRestrictions,
@@ -21,15 +20,15 @@ import type {
   DefunctCallLinkRecord,
   DefunctCallLinkType,
   CallLinkStateType,
-} from '../types/CallLink.std.js';
-import { unicodeSlice } from './unicodeSlice.std.js';
+} from '../types/CallLink.std.ts';
+import { unicodeSlice } from './unicodeSlice.std.ts';
 import {
   fromAdminKeyBytes,
   getKeyFromCallLink,
   toAdminKeyBytes,
-} from './callLinks.std.js';
-import { parseStrict } from './schemas.std.js';
-import * as Bytes from '../Bytes.std.js';
+} from './callLinks.std.ts';
+import { parseStrict } from './schemas.std.ts';
+import * as Bytes from '../Bytes.std.ts';
 
 /**
  * RingRTC conversions
@@ -57,17 +56,14 @@ export function callLinkRestrictionsToRingRTC(
 }
 
 export function getRoomIdFromRootKey(rootKey: CallLinkRootKey): string {
-  return Bytes.toHex(rootKey.deriveRoomId());
+  const roomId = rootKey.deriveRoomId();
+  const roomIdBytes: Uint8Array<ArrayBuffer> = roomId;
+  return Bytes.toHex(roomIdBytes);
 }
 
 export function getRoomIdFromRootKeyString(rootKeyString: string): string {
   const callLinkRootKey = CallLinkRootKey.parse(rootKeyString);
   return getRoomIdFromRootKey(callLinkRootKey);
-}
-
-export function getCallLinkRootKeyFromUrlKey(key: string): Uint8Array {
-  // Returns `Buffer` which inherits from `Uint8Array`
-  return CallLinkRootKey.parse(key).bytes;
 }
 
 export function getRoomIdFromCallLink(url: string): string {
@@ -76,20 +72,14 @@ export function getRoomIdFromCallLink(url: string): string {
   return getRoomIdFromRootKey(key);
 }
 
-export function toRootKeyBytes(rootKey: string): Uint8Array {
-  return CallLinkRootKey.parse(rootKey).bytes;
+export function toRootKeyBytes(rootKey: string): Uint8Array<ArrayBuffer> {
+  const rootKeyBytes = CallLinkRootKey.parse(rootKey).bytes;
+  const result: Uint8Array<ArrayBuffer> = rootKeyBytes;
+  return result;
 }
 
-export function fromRootKeyBytes(rootKey: Uint8Array): string {
-  return CallLinkRootKey.fromBytes(rootKey as Buffer).toString();
-}
-
-export function toEpochBytes(epoch: string): Uint8Array {
-  return CallLinkEpoch.parse(epoch).bytes;
-}
-
-export function fromEpochBytes(epoch: Uint8Array): string {
-  return CallLinkEpoch.fromBytes(epoch).toString();
+export function fromRootKeyBytes(rootKey: Uint8Array<ArrayBuffer>): string {
+  return CallLinkRootKey.fromBytes(rootKey as Buffer<ArrayBuffer>).toString();
 }
 
 /**
@@ -103,12 +93,10 @@ export function callLinkFromRecord(record: CallLinkRecord): CallLinkType {
 
   // root keys in memory are strings for simplicity
   const rootKey = fromRootKeyBytes(record.rootKey);
-  const epoch = record.epoch ? fromEpochBytes(record.epoch) : null;
   const adminKey = record.adminKey ? fromAdminKeyBytes(record.adminKey) : null;
   return {
     roomId: record.roomId,
     rootKey,
-    epoch,
     adminKey,
     name: record.name,
     restrictions: toCallLinkRestrictions(record.restrictions),
@@ -127,14 +115,12 @@ export function callLinkToRecord(callLink: CallLinkType): CallLinkRecord {
   }
 
   const rootKey = toRootKeyBytes(callLink.rootKey);
-  const epoch = callLink.epoch ? toEpochBytes(callLink.epoch) : null;
   const adminKey = callLink.adminKey
     ? toAdminKeyBytes(callLink.adminKey)
     : null;
   return parseStrict(callLinkRecordSchema, {
     roomId: callLink.roomId,
     rootKey,
-    epoch,
     adminKey,
     name: callLink.name,
     restrictions: callLink.restrictions,
@@ -156,12 +142,10 @@ export function defunctCallLinkFromRecord(
 
   const rootKey = fromRootKeyBytes(record.rootKey);
   const adminKey = record.adminKey ? fromAdminKeyBytes(record.adminKey) : null;
-  const epoch = record.epoch ? fromEpochBytes(record.epoch) : null;
   return {
     roomId: record.roomId,
     rootKey,
     adminKey,
-    epoch,
     storageID: record.storageID || undefined,
     storageVersion: record.storageVersion || undefined,
     storageUnknownFields: record.storageUnknownFields || undefined,
@@ -177,16 +161,12 @@ export function defunctCallLinkToRecord(
   }
 
   const rootKey = toRootKeyBytes(defunctCallLink.rootKey);
-  const epoch = defunctCallLink.epoch
-    ? toEpochBytes(defunctCallLink.epoch)
-    : null;
   const adminKey = defunctCallLink.adminKey
     ? toAdminKeyBytes(defunctCallLink.adminKey)
     : null;
   return parseStrict(defunctCallLinkRecordSchema, {
     roomId: defunctCallLink.roomId,
     rootKey,
-    epoch,
     adminKey,
     storageID: defunctCallLink.storageID || null,
     storageVersion: defunctCallLink.storageVersion || null,

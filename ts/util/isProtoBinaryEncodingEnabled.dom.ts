@@ -1,8 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isTestOrMockEnvironment } from '../environment.std.js';
-import { isStagingServer } from './isStagingServer.dom.js';
+import { isTestOrMockEnvironment } from '../environment.std.ts';
+import { isStagingServer } from './isStagingServer.dom.ts';
+import { isFeaturedEnabledNoRedux } from './isFeatureEnabled.dom.ts';
 
 export function isProtoBinaryEncodingEnabled(): boolean {
   if (isTestOrMockEnvironment()) {
@@ -13,6 +14,8 @@ export function isProtoBinaryEncodingEnabled(): boolean {
     return true;
   }
 
-  // TODO: DESKTOP-8938
-  return false;
+  return isFeaturedEnabledNoRedux({
+    betaKey: 'desktop.binaryServiceId.beta',
+    prodKey: 'desktop.binaryServiceId.prod',
+  });
 }

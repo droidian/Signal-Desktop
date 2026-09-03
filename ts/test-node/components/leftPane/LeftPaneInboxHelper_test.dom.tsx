@@ -6,12 +6,12 @@ import * as sinon from 'sinon';
 import {
   RowType,
   _testHeaderText,
-} from '../../../components/ConversationList.dom.js';
-import { FindDirection } from '../../../components/leftPane/LeftPaneHelper.dom.js';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
+} from '../../../components/ConversationList.dom.tsx';
+import { FindDirection } from '../../../components/leftPane/LeftPaneHelper.dom.tsx';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
 
-import type { LeftPaneInboxPropsType } from '../../../components/leftPane/LeftPaneInboxHelper.dom.js';
-import { LeftPaneInboxHelper } from '../../../components/leftPane/LeftPaneInboxHelper.dom.js';
+import type { LeftPaneInboxPropsType } from '../../../components/leftPane/LeftPaneInboxHelper.dom.tsx';
+import { LeftPaneInboxHelper } from '../../../components/leftPane/LeftPaneInboxHelper.dom.tsx';
 
 describe('LeftPaneInboxHelper', () => {
   const defaultProps: LeftPaneInboxPropsType = {
@@ -125,7 +125,7 @@ describe('LeftPaneInboxHelper', () => {
     });
 
     it('returns undefined if the selected conversation is not pinned or non-pinned', () => {
-      const archivedConversations = [getDefaultConversation()];
+      const archivedConversations = [getDefaultConversation()] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         conversations: [getDefaultConversation(), getDefaultConversation()],
@@ -142,7 +142,7 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         pinnedConversations,
@@ -162,7 +162,7 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         conversations,
@@ -176,7 +176,7 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         conversations: [getDefaultConversation()],
@@ -197,7 +197,7 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         conversations,
@@ -234,7 +234,7 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -260,7 +260,7 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -291,7 +291,7 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -313,7 +313,7 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -341,11 +341,11 @@ describe('LeftPaneInboxHelper', () => {
         getDefaultConversation(),
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -389,11 +389,11 @@ describe('LeftPaneInboxHelper', () => {
         getDefaultConversation(),
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -444,11 +444,11 @@ describe('LeftPaneInboxHelper', () => {
         getDefaultConversation(),
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -482,7 +482,7 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -509,7 +509,7 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -536,11 +536,11 @@ describe('LeftPaneInboxHelper', () => {
       const conversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
 
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
@@ -581,8 +581,8 @@ describe('LeftPaneInboxHelper', () => {
       const pinnedConversations = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
-      const conversations = [getDefaultConversation()];
+      ] as const;
+      const conversations = [getDefaultConversation()] as const;
       const helper = new LeftPaneInboxHelper({
         ...defaultProps,
         conversations,

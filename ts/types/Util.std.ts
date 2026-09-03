@@ -1,15 +1,17 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import type { IntlShape } from 'react-intl';
-import type { AciString } from './ServiceId.std.js';
-import type { LocaleDirection } from '../../app/locale.node.js';
+import type { AciString } from './ServiceId.std.ts';
+import type { LocaleDirection } from '../../app/locale.node.ts';
 import type {
   ICUJSXMessageParamsByKeyType,
   ICUStringMessageParamsByKeyType,
 } from '../../build/ICUMessageParams.d.ts';
 
-import type { HourCyclePreference, LocaleMessagesType } from './I18N.std.js';
+import type { HourCyclePreference, LocaleMessagesType } from './I18N.std.ts';
 
 export type StoryContextType = {
   authorAci?: AciString;
@@ -21,7 +23,7 @@ export type RenderTextCallbackType = (options: {
   key: number;
 }) => JSX.Element | string;
 
-export { ICUJSXMessageParamsByKeyType, ICUStringMessageParamsByKeyType };
+export type { ICUJSXMessageParamsByKeyType, ICUStringMessageParamsByKeyType };
 
 export type LocalizerOptions = {
   /**
@@ -43,15 +45,15 @@ export type LocalizerType = {
           options?: LocalizerOptions,
         ]
   ): string;
-  getIntl(): IntlShape;
-  getLocale(): string;
-  getLocaleMessages(): LocaleMessagesType;
-  getLocaleDirection(): LocaleDirection;
-  getHourCyclePreference(): HourCyclePreference;
+  getIntl: () => IntlShape;
+  getLocale: () => string;
+  getLocaleMessages: () => LocaleMessagesType;
+  getLocaleDirection: () => LocaleDirection;
+  getHourCyclePreference: () => HourCyclePreference;
 
   // Storybook
-  trackUsage(): void;
-  stopTrackingUsage(): Array<[string, string]>;
+  trackUsage: () => void;
+  stopTrackingUsage: () => Array<[string, string]>;
 };
 
 export enum SentMediaQualityType {
@@ -78,6 +80,7 @@ export enum ScrollBehavior {
 type InternalAssertProps<
   Result,
   Value,
+  // oxlint-disable-next-line no-shadow
   Missing = Omit<Result, keyof Value>,
 > = keyof Missing extends never
   ? Result
@@ -92,9 +95,10 @@ export type AssertProps<Result, Value> = InternalAssertProps<Result, Value>;
 
 export type UnwrapPromise<Value> = Value extends Promise<infer T> ? T : Value;
 
-export type BytesToStrings<Value> = Value extends Uint8Array
-  ? string
-  : { [Key in keyof Value]: BytesToStrings<Value[Key]> };
+export type BytesToStrings<Value> =
+  Value extends Uint8Array<ArrayBuffer>
+    ? string
+    : { [Key in keyof Value]: BytesToStrings<Value[Key]> };
 
 export type JSONWithUnknownFields<Value> =
   Value extends Record<string | symbol | number, unknown>
@@ -115,3 +119,48 @@ export type WithRequiredProperties<T, P extends keyof T> = Omit<T, P> &
 
 export type WithOptionalProperties<T, P extends keyof T> = Omit<T, P> &
   Partial<Pick<T, P>>;
+
+// Check that two const arrays do not have overlapping values
+export type ErrorIfOverlapping<
+  T1 extends ReadonlyArray<unknown>,
+  T2 extends ReadonlyArray<unknown>,
+> = T1[number] & T2[number] extends never
+  ? void
+  : 'Error: Arrays have overlapping values';
+
+// Check that T has all the fields (and only those fields) from K
+export type ExactKeys<T, K extends ReadonlyArray<string>> =
+  Exclude<keyof T, K[number]> extends never
+    ? Exclude<K[number], keyof T> extends never
+      ? T
+      : 'Error: Array has fields not present in object type'
+    : 'Error: Object type has keys not present in array';
+
+export type StripPrefix<
+  T extends string,
+  Prefix extends string,
+> = T extends `${Prefix}${infer Rest}` ? Rest : T;
+
+export type AddPrefix<
+  T extends string,
+  Prefix extends string,
+> = `${Prefix}${T}`;
+
+type Missing<A, B> = Exclude<B, A>;
+type Extra<A, B> = Exclude<A, B>;
+
+export type AssertSameMembers<Actual, Expected> = [
+  Missing<Actual, Expected>,
+] extends [never]
+  ? [Extra<Actual, Expected>] extends [never]
+    ? true
+    : {
+        error: 'Extra keys';
+        extra: Extra<Actual, Expected>;
+      }
+  : {
+      error: 'Missing keys';
+      missing: Missing<Actual, Expected>;
+    };
+
+export type ArrayValues<T extends ReadonlyArray<unknown>> = T[number];

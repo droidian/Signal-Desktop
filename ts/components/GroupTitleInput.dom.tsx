@@ -1,10 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
-import { Input } from './Input.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import { Input } from './Input.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 export type PropsType = {
   disabled?: boolean;

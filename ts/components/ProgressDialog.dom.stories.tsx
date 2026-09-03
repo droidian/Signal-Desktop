@@ -1,11 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './ProgressDialog.dom.js';
-import { ProgressDialog } from './ProgressDialog.dom.js';
+import type { PropsType } from './ProgressDialog.dom.tsx';
+import { ProgressDialog } from './ProgressDialog.dom.tsx';
 
 export default {
   title: 'Components/ProgressDialog',

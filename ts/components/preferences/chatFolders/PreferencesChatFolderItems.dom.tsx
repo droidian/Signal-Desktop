@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import classNames from 'classnames';
-import React, { forwardRef } from 'react';
-import type { ForwardedRef, HTMLAttributes, ReactNode } from 'react';
-import { tw } from '../../../axo/tw.dom.js';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import { AxoSymbol } from '../../../axo/AxoSymbol.dom.js';
-import type { ChatFolderPresetId } from './PreferencesChatFoldersPage.dom.js';
+import { forwardRef } from 'react';
+import type { ForwardedRef, HTMLAttributes, ReactNode, JSX } from 'react';
+import { tw } from '../../../axo/tw.dom.tsx';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
+import type { ChatFolderPresetId } from './PreferencesChatFoldersPage.dom.tsx';
 
 export const itemClassName = classNames(
   tw('group'),
@@ -74,7 +74,7 @@ export function ItemDragHandle(props: { i18n: LocalizerType }): JSX.Element {
   return (
     <span
       className={tw(
-        'cursor-grab text-label-primary opacity-0 group-hovered:opacity-100 group-focused:opacity-100'
+        'cursor-grab text-primary opacity-0 group-enabled:group-focus:opacity-100 group-enabled:group-active:opacity-100'
       )}
     >
       <AxoSymbol.Icon

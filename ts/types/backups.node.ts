@@ -3,7 +3,7 @@
 
 import type { BackupLevel } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
 import { BackupCredentialType } from '@signalapp/libsignal-client/dist/zkgroup/index.js';
-import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI.preload.js';
+import type { GetBackupCDNCredentialsResponseType } from '../textsecure/WebAPI.preload.ts';
 
 export { BackupCredentialType };
 
@@ -17,11 +17,6 @@ export type BackupCredentialWrapperType = Readonly<{
 export type BackupPresentationHeadersType = Readonly<{
   'X-Signal-ZK-Auth': string;
   'X-Signal-ZK-Auth-Signature': string;
-}>;
-
-export type BackupSignedPresentationType = Readonly<{
-  headers: BackupPresentationHeadersType;
-  level: BackupLevel;
 }>;
 
 export type BackupCdnReadCredentialType = Readonly<{
@@ -67,6 +62,6 @@ export type BackupsSubscriptionType = (
 
 export type LocalBackupMetadataVerificationType = {
   snapshotDir: string;
-  backupId: Uint8Array;
-  metadataKey: Uint8Array;
+  backupId: Uint8Array<ArrayBuffer>;
+  metadataKey: Uint8Array<ArrayBuffer>;
 };

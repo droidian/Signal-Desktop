@@ -1,21 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { v4 as generateUuid } from 'uuid';
-import * as Bytes from '../Bytes.std.js';
+import * as Bytes from '../Bytes.std.ts';
 import type {
   CallLinkConversationType,
   CallLinkType,
-} from '../types/CallLink.std.js';
-import { CallLinkRestrictions } from '../types/CallLink.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { getColorForCallLink } from './getColorForCallLink.std.js';
+} from '../types/CallLink.std.ts';
+import { CallLinkRestrictions } from '../types/CallLink.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { getColorForCallLink } from './getColorForCallLink.std.ts';
 import {
   AdhocCallStatus,
   CallDirection,
   CallType,
   type CallHistoryDetails,
   CallMode,
-} from '../types/CallDisposition.std.js';
+} from '../types/CallDisposition.std.ts';
 
 export const CALL_LINK_DEFAULT_STATE: Pick<
   CallLinkType,
@@ -40,24 +40,6 @@ export function getKeyFromCallLink(callLink: string): string {
   return hashParams.get('key') || '';
 }
 
-export function getKeyAndEpochFromCallLink(callLink: string): {
-  key: string;
-  epoch: string;
-} {
-  const url = new URL(callLink);
-  if (url == null) {
-    throw new Error('Failed to parse call link URL');
-  }
-
-  const hash = url.hash.slice(1);
-  const hashParams = new URLSearchParams(hash);
-
-  return {
-    key: hashParams.get('key') || '',
-    epoch: hashParams.get('epoch') || '',
-  };
-}
-
 export function callLinkToConversation(
   callLink: CallLinkType,
   i18n: LocalizerType
@@ -69,7 +51,6 @@ export function callLinkToConversation(
     color: getColorForCallLink(rootKey),
     isMe: false,
     title: name || i18n('icu:calling__call-link-default-title'),
-    sharedGroupNames: [],
     acceptedMessageRequest: true,
     badges: [],
   };
@@ -84,17 +65,16 @@ export function getPlaceholderCallLinkConversation(
     type: 'callLink',
     isMe: false,
     title: i18n('icu:calling__call-link-default-title'),
-    sharedGroupNames: [],
     acceptedMessageRequest: true,
     badges: [],
   };
 }
 
-export function toAdminKeyBytes(adminKey: string): Uint8Array {
+export function toAdminKeyBytes(adminKey: string): Uint8Array<ArrayBuffer> {
   return Bytes.fromBase64(adminKey);
 }
 
-export function fromAdminKeyBytes(adminKey: Uint8Array): string {
+export function fromAdminKeyBytes(adminKey: Uint8Array<ArrayBuffer>): string {
   return Bytes.toBase64(adminKey);
 }
 

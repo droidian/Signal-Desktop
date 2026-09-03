@@ -5,8 +5,11 @@
 // ts/types/Storage.d.ts
 export type CapabilitiesType = {
   attachmentBackfill: boolean;
+  usernameChangeSyncMessage: boolean;
 };
 export type CapabilitiesUploadType = {
   attachmentBackfill: true;
   spqr: true;
+  usernameChangeSyncMessage: true;
+  optionalPhoneNumber: boolean;
 };

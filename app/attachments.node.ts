@@ -9,24 +9,24 @@ import fastGlob from 'fast-glob';
 import fse from 'fs-extra';
 import lodash from 'lodash';
 import normalizePath from 'normalize-path';
-import { isPathInside } from '../ts/util/isPathInside.node.js';
-import { DAY } from '../ts/util/durations/index.std.js';
-import { isOlderThan } from '../ts/util/timestamp.std.js';
-import { isNotNil } from '../ts/util/isNotNil.std.js';
+import { isPathInside } from '../ts/util/isPathInside.node.ts';
+import { DAY } from '../ts/util/durations/index.std.ts';
+import { isOlderThan } from '../ts/util/timestamp.std.ts';
+import { isNotNil } from '../ts/util/isNotNil.std.ts';
 import {
   generateKeys,
   decryptAttachmentV2ToSink,
   encryptAttachmentV2ToDisk,
-} from '../ts/AttachmentCrypto.node.js';
-import type { LocalAttachmentV2Type } from '../ts/types/Attachment.std.js';
-import * as Errors from '../ts/types/errors.std.js';
-import { createLogger } from '../ts/logging/log.std.js';
+} from '../ts/AttachmentCrypto.node.ts';
+import type { LocalAttachmentV2Type } from '../ts/types/Attachment.std.ts';
+import * as Errors from '../ts/types/errors.std.ts';
+import { createLogger } from '../ts/logging/log.std.ts';
 
 const { map, isString } = lodash;
 
 const log = createLogger('attachments');
 
-const PATH = 'attachments.noindex';
+const ATTACHMENTS_PATH = 'attachments.noindex';
 const AVATAR_PATH = 'avatars.noindex';
 const BADGES_PATH = 'badges.noindex';
 const STICKER_PATH = 'stickers.noindex';
@@ -34,6 +34,7 @@ const TEMP_PATH = 'temp';
 const UPDATE_CACHE_PATH = 'update-cache';
 const DRAFT_PATH = 'drafts.noindex';
 const DOWNLOADS_PATH = 'downloads.noindex';
+const MEGAPHONES_PATH = 'megaphones.noindex';
 
 const CACHED_PATHS = new Map<string, string>();
 
@@ -67,7 +68,8 @@ export const getAvatarsPath = createPathGetter(AVATAR_PATH);
 export const getBadgesPath = createPathGetter(BADGES_PATH);
 export const getDraftPath = createPathGetter(DRAFT_PATH);
 export const getDownloadsPath = createPathGetter(DOWNLOADS_PATH);
-export const getPath = createPathGetter(PATH);
+export const getMegaphonesPath = createPathGetter(MEGAPHONES_PATH);
+export const getAttachmentsPath = createPathGetter(ATTACHMENTS_PATH);
 export const getStickersPath = createPathGetter(STICKER_PATH);
 export const getTempPath = createPathGetter(TEMP_PATH);
 export const getUpdateCachePath = createPathGetter(UPDATE_CACHE_PATH);
@@ -109,7 +111,7 @@ async function getAllFiles(dir: string): Promise<ReadonlyArray<string>> {
 export const getAllAttachments = (
   userDataPath: string
 ): Promise<ReadonlyArray<string>> => {
-  return getAllFiles(getPath(userDataPath));
+  return getAllFiles(getAttachmentsPath(userDataPath));
 };
 
 export const getAllDownloads = (
@@ -122,6 +124,12 @@ const getAllBadgeImageFiles = (
   userDataPath: string
 ): Promise<ReadonlyArray<string>> => {
   return getAllFiles(getBadgesPath(userDataPath));
+};
+
+const getAllMegaphoneImageFiles = (
+  userDataPath: string
+): Promise<ReadonlyArray<string>> => {
+  return getAllFiles(getMegaphonesPath(userDataPath));
 };
 
 export const getAllStickers = (
@@ -178,14 +186,14 @@ export const deleteStaleDownloads = async (
   await deleteAllDownloads({ userDataPath, downloads: stale });
 };
 
-export const deleteAll = async ({
+export const deleteAllAttachments = async ({
   userDataPath,
   attachments,
 }: {
   userDataPath: string;
   attachments: ReadonlyArray<string>;
 }): Promise<void> => {
-  const deleteFromDisk = createDeleter(getPath(userDataPath));
+  const deleteFromDisk = createDeleter(getAttachmentsPath(userDataPath));
 
   await pMap(attachments, deleteFromDisk, { concurrency: FS_CONCURRENCY });
 
@@ -232,13 +240,36 @@ export const deleteAllBadges = async ({
   let filesDeleted = 0;
   for (const file of await getAllBadgeImageFiles(userDataPath)) {
     if (!pathsToKeep.has(file)) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await deleteFromDisk(file);
       filesDeleted += 1;
     }
   }
 
   log.info(`deleteAllBadges: deleted ${filesDeleted} files`);
+};
+
+export const deleteAllMegaphones = async ({
+  userDataPath,
+  pathsToKeep,
+}: {
+  userDataPath: string;
+  pathsToKeep: Set<string>;
+}): Promise<void> => {
+  const deleteFromDisk = createDeleter(getMegaphonesPath(userDataPath));
+
+  let filesDeleted = 0;
+  for (const file of await getAllMegaphoneImageFiles(userDataPath)) {
+    if (!pathsToKeep.has(file)) {
+      // oxlint-disable-next-line no-await-in-loop
+      await deleteFromDisk(file);
+      filesDeleted += 1;
+    }
+  }
+
+  if (filesDeleted > 0) {
+    log.error(`deleteAllMegaphones: deleted ${filesDeleted} files`);
+  }
 };
 
 export const deleteAllDraftAttachments = async ({
@@ -263,10 +294,10 @@ export const readAndDecryptDataFromDisk = async ({
   absolutePath: string;
   keysBase64: string;
   size: number;
-}): Promise<Uint8Array> => {
+}): Promise<Uint8Array<ArrayBuffer>> => {
   const sink = new PassThrough();
 
-  const chunks = new Array<Buffer>();
+  const chunks = new Array<Buffer<ArrayBuffer>>();
 
   sink.on('data', chunk => chunks.push(chunk));
   sink.resume();
@@ -285,11 +316,12 @@ export const readAndDecryptDataFromDisk = async ({
   return Buffer.concat(chunks);
 };
 
+export const CURRENT_ATTACHMENT_VERSION = 2;
 export const writeNewAttachmentData = async ({
   data,
   getAbsoluteAttachmentPath,
 }: {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
   getAbsoluteAttachmentPath: (relativePath: string) => string;
 }): Promise<LocalAttachmentV2Type> => {
   const keys = generateKeys();
@@ -302,7 +334,7 @@ export const writeNewAttachmentData = async ({
   });
 
   return {
-    version: 2,
+    version: CURRENT_ATTACHMENT_VERSION,
     plaintextHash,
     size: data.byteLength,
     path,

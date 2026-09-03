@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useSelector } from 'react-redux';
-import React, { memo } from 'react';
-import { GroupV2Permissions } from '../../components/conversation/conversation-details/GroupV2Permissions.dom.js';
-import { getConversationSelector } from '../selectors/conversations.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+import { memo } from 'react';
+import { GroupV2Permissions } from '../../components/conversation/conversation-details/GroupV2Permissions.dom.tsx';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 
 export type SmartGroupV2PermissionsProps = {
   conversationId: string;
@@ -21,6 +21,7 @@ export const SmartGroupV2Permissions = memo(function SmartGroupV2Permissions({
   const {
     setAccessControlAttributesSetting,
     setAccessControlMembersSetting,
+    setAccessControlMemberLabelSetting,
     setAnnouncementsOnly,
   } = useConversationsActions();
   return (
@@ -29,6 +30,7 @@ export const SmartGroupV2Permissions = memo(function SmartGroupV2Permissions({
       conversation={conversation}
       setAccessControlAttributesSetting={setAccessControlAttributesSetting}
       setAccessControlMembersSetting={setAccessControlMembersSetting}
+      setAccessControlMemberLabelSetting={setAccessControlMemberLabelSetting}
       setAnnouncementsOnly={setAnnouncementsOnly}
     />
   );

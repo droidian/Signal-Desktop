@@ -1,15 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './MessageBodyReadMore.dom.js';
-import { MessageBodyReadMore } from './MessageBodyReadMore.dom.js';
-import type { HydratedBodyRangesType } from '../../types/BodyRange.std.js';
-import { BodyRange } from '../../types/BodyRange.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { RenderLocation } from './MessageTextRenderer.dom.js';
+import type { Props } from './MessageBodyReadMore.dom.tsx';
+import { MessageBodyReadMore } from './MessageBodyReadMore.dom.tsx';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.std.ts';
+import { BodyRange } from '../../types/BodyRange.std.ts';
+import { RenderLocation } from './MessageTextRenderer.dom.tsx';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -122,7 +122,7 @@ export function LongTextWithFormatting(): JSX.Element {
 }
 
 export function LongTextMostlySpoiler(): JSX.Element {
-  const [isSpoilerExpanded, setIsSpoilerExpanded] = React.useState({});
+  const [isSpoilerExpanded, setIsSpoilerExpanded] = useState({});
   const bodyRanges = [
     {
       start: 7,

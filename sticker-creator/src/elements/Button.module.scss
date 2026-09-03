@@ -1,9 +1,11 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-@import '../mixins.scss';
-@import '../colors.scss';
-@import '../fonts.scss';
+@use 'sass:color';
+
+@use '../mixins.scss';
+@use '../colors.scss';
+@use '../fonts.scss';
 
 .base {
   border: none;
@@ -15,38 +17,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: $inter;
+  font-family: fonts.$inter;
   font-weight: normal;
   font-size: 14px;
   white-space: nowrap;
-
-  @include light-theme() {
-    background-color: $color-gray-05;
-    color: $color-gray-90;
-  }
-
-  @include dark-theme() {
-    background-color: $color-gray-65;
-    color: $color-gray-05;
-  }
+  background-color: light-dark(colors.$color-gray-05, colors.$color-gray-65);
+  color: light-dark(colors.$color-gray-90, colors.$color-gray-05);
 
   &:hover {
-    @include light-theme() {
-      background-color: mix($color-black, $color-gray-05, 15%);
-    }
-
-    @include dark-theme() {
-      background-color: mix($color-white, $color-gray-65, 15%);
-    }
+    background-color: light-dark(
+      color.mix(colors.$color-black, colors.$color-gray-05, 15%),
+      color.mix(colors.$color-white, colors.$color-gray-65, 15%)
+    );
   }
 
   &:active {
-    @include light-theme() {
-      background-color: mix($color-black, $color-gray-05, 25%);
-    }
-    @include dark-theme() {
-      background-color: mix($color-white, $color-gray-65, 25%);
-    }
+    background-color: light-dark(
+      color.mix(colors.$color-black, colors.$color-gray-05, 25%),
+      color.mix(colors.$color-white, colors.$color-gray-65, 25%)
+    );
   }
 
   &:disabled {
@@ -56,33 +45,21 @@
 
 .primary {
   composes: base;
-  background-color: $color-ultramarine;
-
-  @include light-theme() {
-    color: $color-white;
-  }
-
-  @include dark-theme() {
-    color: $color-white;
-  }
+  background-color: colors.$color-ultramarine;
+  color: light-dark(colors.$color-white, colors.$color-white);
 
   &:hover {
-    @include light-theme() {
-      background-color: mix($color-black, $color-ultramarine, 15%);
-    }
-
-    @include dark-theme() {
-      background-color: mix($color-white, $color-ultramarine, 15%);
-    }
+    background-color: light-dark(
+      color.mix(colors.$color-black, colors.$color-ultramarine, 15%),
+      color.mix(colors.$color-white, colors.$color-ultramarine, 15%)
+    );
   }
 
   &:active {
-    @include light-theme() {
-      background-color: mix($color-black, $color-ultramarine, 25%);
-    }
-    @include dark-theme() {
-      background-color: mix($color-white, $color-ultramarine, 25%);
-    }
+    background-color: light-dark(
+      color.mix(colors.$color-black, colors.$color-ultramarine, 25%),
+      color.mix(colors.$color-white, colors.$color-ultramarine, 25%)
+    );
   }
 }
 
@@ -92,32 +69,17 @@
   border-radius: 15px;
   padding-block: 0;
   padding-inline: 17px;
-
-  @include light-theme() {
-    color: $color-gray-90;
-    border: 1px solid $color-gray-90;
-    background: transparent;
-  }
-
-  @include dark-theme() {
-    color: $color-white;
-    border: 1px solid $color-white;
-    background: transparent;
-  }
+  color: light-dark(colors.$color-gray-90, colors.$color-white);
+  border: 1px solid light-dark(colors.$color-gray-90, colors.$color-white);
+  background: transparent;
 }
 
 .pill-primary {
   composes: pill;
-
-  @include light-theme() {
-    border: none;
-    background-color: $color-ultramarine;
-    color: $color-white;
-  }
-
-  @include dark-theme() {
-    border: none;
-    background-color: $color-ultramarine-light;
-    color: $color-white;
-  }
+  border: none;
+  background-color: light-dark(
+    colors.$color-ultramarine,
+    colors.$color-ultramarine-light
+  );
+  color: light-dark(colors.$color-white, colors.$color-white);
 }

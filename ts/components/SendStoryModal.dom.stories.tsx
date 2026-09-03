@@ -1,22 +1,23 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './SendStoryModal.dom.js';
-import { SendStoryModal } from './SendStoryModal.dom.js';
+import type { PropsType } from './SendStoryModal.dom.tsx';
+import { SendStoryModal } from './SendStoryModal.dom.tsx';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-helpers/getDefaultConversation.std.js';
+} from '../test-helpers/getDefaultConversation.std.ts';
 import {
   getMyStories,
   getFakeDistributionListsWithMembers,
-} from '../test-helpers/getFakeDistributionLists.std.js';
-import { VIDEO_MP4 } from '../types/MIME.std.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
+} from '../test-helpers/getFakeDistributionLists.std.ts';
+import { VIDEO_MP4 } from '../types/MIME.std.ts';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -126,6 +127,20 @@ export function FirstTimeAlreadyConfiguredOnMobile(
       ]}
       groupStories={[]}
       hasFirstStoryPostExperience
+    />
+  );
+}
+
+export function AnnouncementsOnly(args: PropsType): JSX.Element {
+  return (
+    <SendStoryModal
+      {...args}
+      distributionLists={[]}
+      groupStories={[]}
+      candidateConversations={[]}
+      groupConversations={[
+        getDefaultGroup({ announcementsOnly: true, areWeAdmin: false }),
+      ]}
     />
   );
 }

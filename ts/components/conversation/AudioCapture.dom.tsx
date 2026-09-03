@@ -1,22 +1,24 @@
 // Copyright 2016 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import { useCallback, type JSX } from 'react';
 
-import type { ShowToastAction } from '../../state/ducks/toast.preload.js';
-import type { AttachmentDraftType } from '../../types/Attachment.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { ToastType } from '../../types/Toast.dom.js';
+import type { ShowToastAction } from '../../state/ducks/toast.preload.ts';
+import type { AttachmentDraftType } from '../../types/Attachment.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { ToastType } from '../../types/Toast.dom.tsx';
 import {
   useStartRecordingShortcut,
   useKeyboardShortcuts,
-} from '../../hooks/useKeyboardShortcuts.dom.js';
+} from '../../hooks/useKeyboardShortcuts.dom.tsx';
+import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
 
 export type PropsType = {
   conversationId: string;
   draftAttachments: ReadonlyArray<AttachmentDraftType>;
   i18n: LocalizerType;
   startRecording: (id: string) => unknown;
+  warmupRecording: () => void;
   showToast: ShowToastAction;
 };
 
@@ -25,6 +27,7 @@ export function AudioCapture({
   draftAttachments,
   i18n,
   startRecording,
+  warmupRecording,
   showToast,
 }: PropsType): JSX.Element {
   const recordConversation = useCallback(
@@ -42,14 +45,21 @@ export function AudioCapture({
     }
   }, [conversationId, draftAttachments, showToast, startRecording]);
 
+  const handleWarmup = useCallback(() => {
+    warmupRecording();
+  }, [warmupRecording]);
+
   return (
     <div className="AudioCapture">
-      <button
-        aria-label={i18n('icu:voiceRecording--start')}
-        className="AudioCapture__microphone"
+      <AxoIconButton.Root
+        symbol="mic"
+        variant="implied-secondary"
+        size="md"
+        label={i18n('icu:voiceRecording--start')}
         onClick={handleClick}
-        title={i18n('icu:voiceRecording--start')}
-        type="button"
+        onMouseEnter={handleWarmup}
+        onFocus={handleWarmup}
+        tooltip={false}
       />
     </div>
   );

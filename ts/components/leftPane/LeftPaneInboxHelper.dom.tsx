@@ -2,27 +2,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import type { ReactChild, ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import type { ToFindType } from './LeftPaneHelper.dom.js';
+import type { ToFindType } from './LeftPaneHelper.dom.tsx';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../state/ducks/conversations.preload.js';
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import { getConversationInDirection } from './getConversationInDirection.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { handleKeydownForSearch } from './handleKeydownForSearch.dom.js';
-import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.js';
-import type { ChatFolder } from '../../types/ChatFolder.std.js';
-import { ChatFolderType } from '../../types/ChatFolder.std.js';
-import { AxoButton } from '../../axo/AxoButton.dom.js';
-import { NavTab, SettingsPage, type Location } from '../../types/Nav.std.js';
-import { tw } from '../../axo/tw.dom.js';
+} from '../../state/ducks/conversations.preload.ts';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import { getConversationInDirection } from './getConversationInDirection.dom.ts';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { handleKeydownForSearch } from './handleKeydownForSearch.dom.ts';
+import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.tsx';
+import type { ChatFolder } from '../../types/ChatFolder.std.ts';
+import { ChatFolderType } from '../../types/ChatFolder.std.ts';
+import { AxoButton } from '../../axo/AxoButton.dom.tsx';
+import { NavTab, SettingsPage, type Location } from '../../types/Nav.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
 
 const { last } = lodash;
 
@@ -40,6 +39,7 @@ export type LeftPaneInboxPropsType = {
   filterByUnread: boolean;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> {
   readonly #conversations: ReadonlyArray<ConversationListItemPropsType>;
   readonly #archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
@@ -117,7 +117,7 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     showConversation: ShowConversationType;
     updateSearchTerm: (searchTerm: string) => unknown;
     updateFilterByUnread: (filterByUnread: boolean) => void;
-  }>): ReactChild {
+  }>): ReactNode {
     return (
       <LeftPaneSearchInput
         clearConversationSearch={clearConversationSearch}
@@ -143,7 +143,7 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     renderLeftPaneChatFolders,
   }: Readonly<{
     renderLeftPaneChatFolders: () => JSX.Element;
-  }>): ReactChild {
+  }>): ReactNode {
     return renderLeftPaneChatFolders();
   }
 
@@ -151,20 +151,22 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     i18n,
     selectedChatFolder,
     changeLocation,
+    selectedLocation,
   }: Readonly<{
     i18n: LocalizerType;
     selectedChatFolder: ChatFolder | null;
     changeLocation: (location: Location) => void;
-  }>): ReactChild | null {
+    selectedLocation: Location | undefined;
+  }>): ReactNode | null {
     if (this.getRowCount() === 0) {
       if (selectedChatFolder?.folderType === ChatFolderType.CUSTOM) {
         return (
           <EmptyView>
-            <h3 className={tw('type-body-large text-label-primary')}>
+            <h3 className={tw('type-body-large text-primary')}>
               {i18n('icu:LeftPane__EmptyView--WithSelectedChatFolder')}
             </h3>
             <AxoButton.Root
-              variant="floating-secondary"
+              variant="elevated-secondary"
               size="md"
               onClick={() => {
                 changeLocation({
@@ -173,9 +175,7 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
                     page: SettingsPage.EditChatFolder,
                     chatFolderId: selectedChatFolder.id,
                     initChatFolderParams: null,
-                    previousLocation: {
-                      tab: NavTab.Chats,
-                    },
+                    previousLocation: selectedLocation ?? null,
                   },
                 });
               }}
@@ -190,10 +190,10 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
 
       return (
         <EmptyView>
-          <h3 className={tw('type-title-medium text-label-secondary')}>
+          <h3 className={tw('type-title-medium text-secondary')}>
             {i18n('icu:emptyInbox__title')}
           </h3>
-          <p className={tw('type-body-medium text-label-secondary')}>
+          <p className={tw('type-body-medium text-secondary')}>
             {i18n('icu:emptyInbox__subtitle')}
           </p>
         </EmptyView>
@@ -239,7 +239,8 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
       if (index < pinnedConversations.length) {
         return {
           type: RowType.Conversation,
-          conversation: pinnedConversations[index],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          conversation: pinnedConversations[index]!,
         };
       }
       index -= pinnedConversations.length;
@@ -259,7 +260,8 @@ export class LeftPaneInboxHelper extends LeftPaneHelper<LeftPaneInboxPropsType> 
     if (index < conversations.length) {
       return {
         type: RowType.Conversation,
-        conversation: conversations[index],
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        conversation: conversations[index]!,
       };
     }
     index -= conversations.length;

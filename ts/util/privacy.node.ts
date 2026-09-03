@@ -1,17 +1,14 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-env node */
-
 import path from 'node:path';
 
 import lodashFp from 'lodash/fp.js';
 import lodash from 'lodash';
 
 import type { ExtendedStorageID } from '../types/StorageService.d.ts';
-import type { ConversationModel } from '../models/conversations.preload.js';
+import type { ConversationModel } from '../models/conversations.preload.ts';
 
-export const APP_ROOT_PATH = path.join(__dirname, '..', '..');
 const { escapeRegExp, isString, isRegExp } = lodash;
 
 const { compose } = lodashFp;
@@ -27,7 +24,14 @@ const CALL_LINK_ROOT_KEY_PATTERN =
   /([A-Z]{4})-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}/gi;
 const ATTACHMENT_URL_KEY_PATTERN = /(attachment:\/\/[^\s]+key=)([^\s]+)/gi;
 const REDACTION_PLACEHOLDER = '[REDACTED]';
-const CARD_NUMBER_PATTERN = /\d\d(\d[-]?){11,16}\d/g;
+
+// Since card number pattern has 11-16 decimal digits we cannot use lookback
+// assertion to prevent all-decimal stack traces from matching. For this reason
+// we include both stack trace and number in the same regex and detect stack
+// traces below when doing the replacement.
+const CARD_NUMBER_OR_STACK_TRACE_PATTERN =
+  /0x[0-9a-f]{16}|\d\d(\d[-]?){11,16}\d/g;
+const SAFE_STACK_TRACE_PATTERN = /^0x[0-9a-f]{16}$/;
 
 export type RedactFunction = (value: string) => string;
 
@@ -67,7 +71,7 @@ export const _redactPath = (filePath: string): RedactFunction => {
   };
 };
 
-export const _pathToRegExp = (filePath: string): RegExp | undefined => {
+const _pathToRegExp = (filePath: string): RegExp | undefined => {
   try {
     return new RegExp(
       // Any possible prefix that we want to include
@@ -122,7 +126,12 @@ export const redactCardNumbers = (text: string): string => {
     throw new TypeError("'text' must be a string");
   }
 
-  return text.replace(CARD_NUMBER_PATTERN, '[REDACTED]');
+  return text.replace(CARD_NUMBER_OR_STACK_TRACE_PATTERN, match => {
+    if (SAFE_STACK_TRACE_PATTERN.test(match)) {
+      return match;
+    }
+    return '[REDACTED]';
+  });
 };
 
 export const redactPhoneNumbers = (text: string): string => {
@@ -187,22 +196,8 @@ export const redactAttachmentUrlKeys = (text: string): string => {
   return text.replace(ATTACHMENT_URL_KEY_PATTERN, `$1${REDACTION_PLACEHOLDER}`);
 };
 
-export const redactCdnKey = (cdnKey: string): string => {
-  return `${REDACTION_PLACEHOLDER}${cdnKey.slice(-3)}`;
-};
-
 export const redactGenericText = (text: string): string => {
   return `${REDACTION_PLACEHOLDER}${text.slice(-3)}`;
-};
-
-export const redactAttachmentUrl = (urlString: string): string => {
-  try {
-    const url = new URL(urlString);
-    url.search = '';
-    return url.toString();
-  } catch {
-    return REDACTION_PLACEHOLDER;
-  }
 };
 
 const createRedactSensitivePaths = (
@@ -219,8 +214,6 @@ export const addSensitivePath = (filePath: string): void => {
   sensitivePaths.push(filePath);
   redactSensitivePaths = createRedactSensitivePaths(sensitivePaths);
 };
-
-addSensitivePath(APP_ROOT_PATH);
 
 export const redactAll: RedactFunction = text => {
   let result = text;

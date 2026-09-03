@@ -1,10 +1,10 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { Props } from './MiniPlayer.dom.js';
-import { MiniPlayer, PlayerState } from './MiniPlayer.dom.js';
+import type { Props } from './MiniPlayer.dom.tsx';
+import { MiniPlayer, PlayerState } from './MiniPlayer.dom.tsx';
 
 const { i18n } = window.SignalContext;
 

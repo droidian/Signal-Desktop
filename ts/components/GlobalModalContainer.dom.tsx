@@ -1,39 +1,46 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 import type {
-  ContactModalStateType,
+  CallQualitySurveyPropsType,
   DeleteMessagesPropsType,
+  DiscardDraftDialogPropsType,
   EditHistoryMessagesType,
   EditNicknameAndNoteModalPropsType,
   ForwardMessagesPropsType,
+  GroupMemberLabelInfoPropsType,
   MessageRequestActionsConfirmationPropsType,
   SafetyNumberChangedBlockingDataType,
   UserNotFoundModalStateType,
-} from '../state/ducks/globalModals.preload.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import { UsernameOnboardingState } from '../types/globalModals.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-
-import { ButtonVariant } from './Button.dom.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { SignalConnectionsModal } from './SignalConnectionsModal.dom.js';
-import { WhatsNewModal } from './WhatsNewModal.dom.js';
-import { MediaPermissionsModal } from './MediaPermissionsModal.dom.js';
-import type { StartCallData } from './ConfirmLeaveCallModal.dom.js';
+} from '../state/ducks/globalModals.preload.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import {
+  type ContactModalStateType,
+  PinReminderState,
+  UsernameOnboardingState,
+} from '../types/globalModals.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { SignalConnectionsModal } from './SignalConnectionsModal.dom.tsx';
+import { WhatsNewModal } from './WhatsNewModal.dom.tsx';
+import { MediaPermissionsModal } from './MediaPermissionsModal.dom.tsx';
+import type { StartCallData } from './ConfirmLeaveCallModal.dom.tsx';
 import {
   TapToViewNotAvailableModal,
-  type DataPropsType as TapToViewNotAvailablePropsType,
-} from './TapToViewNotAvailableModal.dom.js';
+  type TapToViewNotAvailableModalData,
+} from './TapToViewNotAvailableModal.dom.tsx';
 import {
   BackfillFailureModal,
-  type DataPropsType as BackfillFailureModalPropsType,
-} from './BackfillFailureModal.dom.js';
-import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal.preload.js';
-import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal.dom.js';
-import { LowDiskSpaceBackupImportModal } from './LowDiskSpaceBackupImportModal.dom.js';
-import { isUsernameValid } from '../util/Username.dom.js';
+  type BackfillFailureModalKind,
+} from './BackfillFailureModal.dom.tsx';
+import type { SmartDraftGifMessageSendModalProps } from '../state/smart/DraftGifMessageSendModal.preload.tsx';
+import { CriticalIdlePrimaryDeviceModal } from './CriticalIdlePrimaryDeviceModal.dom.tsx';
+import { LowDiskSpaceBackupImportModal } from './LowDiskSpaceBackupImportModal.dom.tsx';
+import { KeyTransparencyOnboardingDialog } from './KeyTransparencyOnboardingDialog.dom.tsx';
+import { isUsernameValid } from '../util/Username.dom.ts';
+import type { PinMessageDialogData } from '../state/smart/PinMessageDialog.preload.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import type { ErrorModalDataProps } from './ErrorModal.dom.tsx';
 
 // NOTE: All types should be required for this component so that the smart
 // component gives you type errors when adding/removing props.
@@ -49,6 +56,9 @@ export type PropsType = {
   // CallLinkEditModal
   callLinkEditModalRoomId: string | null;
   renderCallLinkEditModal: () => JSX.Element;
+  // CallQualitySurvey
+  callQualitySurveyProps: CallQualitySurveyPropsType | null;
+  renderCallQualitySurvey: () => JSX.Element;
   // CallLinkPendingParticipantModal
   callLinkPendingParticipantContactId: string | undefined;
   renderCallLinkPendingParticipantModal: () => JSX.Element;
@@ -65,18 +75,8 @@ export type PropsType = {
   editNicknameAndNoteModalProps: EditNicknameAndNoteModalPropsType | null;
   renderEditNicknameAndNoteModal: () => JSX.Element;
   // ErrorModal
-  errorModalProps:
-    | {
-        buttonVariant?: ButtonVariant;
-        description?: string;
-        title?: string | null;
-      }
-    | undefined;
-  renderErrorModal: (opts: {
-    buttonVariant?: ButtonVariant;
-    description?: string;
-    title?: string | null;
-  }) => JSX.Element;
+  errorModalProps: ErrorModalDataProps | null;
+  renderErrorModal: (props: ErrorModalDataProps) => JSX.Element;
   // DebugLogErrorModal
   debugLogErrorModalProps:
     | {
@@ -87,12 +87,18 @@ export type PropsType = {
   // DeleteMessageModal
   deleteMessagesProps: DeleteMessagesPropsType | undefined;
   renderDeleteMessagesModal: () => JSX.Element;
+  // DiscardDraftDialog
+  discardDraftDialogProps: DiscardDraftDialogPropsType | null;
+  renderDiscardDraftDialog: () => JSX.Element;
   // DraftGifMessageSendModal
   draftGifMessageSendModalProps: SmartDraftGifMessageSendModalProps | null;
   renderDraftGifMessageSendModal: () => JSX.Element;
   // ForwardMessageModal
   forwardMessagesProps: ForwardMessagesPropsType | undefined;
   renderForwardMessagesModal: () => JSX.Element;
+  // GroupMemberLabelInfoModal
+  groupMemberLabelInfoModalState: GroupMemberLabelInfoPropsType | undefined;
+  renderGroupMemberLabelInfoModal: () => JSX.Element;
   // MediaPermissionsModal
   mediaPermissionsModalProps:
     | {
@@ -105,6 +111,9 @@ export type PropsType = {
   // MessageRequestActionsConfirmation
   messageRequestActionsConfirmationProps: MessageRequestActionsConfirmationPropsType | null;
   renderMessageRequestActionsConfirmation: () => JSX.Element;
+  // PinMessageDialog
+  pinMessageDialogData: PinMessageDialogData | null;
+  renderPinMessageDialog: () => JSX.Element;
   // NotePreviewModal
   notePreviewModalProps: { conversationId: string } | null;
   renderNotePreviewModal: () => JSX.Element;
@@ -126,6 +135,13 @@ export type PropsType = {
   // StoriesSettings
   isStoriesSettingsVisible: boolean;
   renderStoriesSettings: () => JSX.Element;
+  // KeyTransparencyErrorDialog
+  isKeyTransparencyErrorVisible: boolean;
+  renderKeyTransparencyErrorDialog: () => JSX.Element;
+  // KeyTransparencyOnboardingDialog
+  isKeyTransparencyOnboardingVisible: boolean;
+  hideKeyTransparencyOnboardingDialog: () => void;
+  finishKeyTransparencyOnboarding: () => void;
   // SendAnywayDialog
   hasSafetyNumberChangeModal: boolean;
   safetyNumberChangedBlockingData:
@@ -133,10 +149,10 @@ export type PropsType = {
     | undefined;
   renderSendAnywayDialog: () => JSX.Element;
   // TapToViewNotAvailableModal
-  tapToViewNotAvailableModalProps: TapToViewNotAvailablePropsType | undefined;
+  tapToViewNotAvailableModalData: TapToViewNotAvailableModalData | null;
   hideTapToViewNotAvailableModal: () => void;
   // BackfillFailureModal
-  backfillFailureModalProps: BackfillFailureModalPropsType | undefined;
+  backfillFailureModalKind: BackfillFailureModalKind | null;
   hideBackfillFailureModal: () => void;
   // UserNotFoundModal
   hideUserNotFoundModal: () => unknown;
@@ -159,6 +175,15 @@ export type PropsType = {
   // PlaintextExportWorkflow
   shouldShowPlaintextExportWorkflow: boolean;
   renderPlaintextExportWorkflow: () => JSX.Element;
+  // LocalBackupExportWorkflow
+  shouldShowLocalBackupExportWorkflow: boolean;
+  renderLocalBackupExportWorkflow: () => JSX.Element;
+  // TerminateGroupFailedModal
+  terminateGroupFailedModal: { conversationId: string } | null;
+  renderTerminateGroupFailedModal: () => JSX.Element | null;
+  // PinReminderModal
+  pinReminderState: PinReminderState;
+  renderPinReminderModal: () => JSX.Element | null;
 };
 
 export function GlobalModalContainer({
@@ -172,6 +197,9 @@ export function GlobalModalContainer({
   // CallLinkEditModal
   callLinkEditModalRoomId,
   renderCallLinkEditModal,
+  // CallQualitySurvey
+  callQualitySurveyProps,
+  renderCallQualitySurvey,
   // CallLinkPendingParticipantModal
   callLinkPendingParticipantContactId,
   renderCallLinkPendingParticipantModal,
@@ -196,12 +224,18 @@ export function GlobalModalContainer({
   // DeleteMessageModal
   deleteMessagesProps,
   renderDeleteMessagesModal,
+  // DiscardDraftDialog
+  discardDraftDialogProps,
+  renderDiscardDraftDialog,
   // DraftGifMessageSendModal
   draftGifMessageSendModalProps,
   renderDraftGifMessageSendModal,
   // ForwardMessageModal
   forwardMessagesProps,
   renderForwardMessagesModal,
+  // GroupMemberLabelInfoModal
+  groupMemberLabelInfoModalState,
+  renderGroupMemberLabelInfoModal,
   // MediaPermissionsModal
   mediaPermissionsModalProps,
   closeMediaPermissionsModal,
@@ -212,6 +246,12 @@ export function GlobalModalContainer({
   // NotePreviewModal
   notePreviewModalProps,
   renderNotePreviewModal,
+  // PinMessageDialog
+  pinMessageDialogData,
+  renderPinMessageDialog,
+  // PinReminderModal
+  pinReminderState,
+  renderPinReminderModal,
   // SafetyNumberModal
   safetyNumberModalContactId,
   renderSafetyNumber,
@@ -230,15 +270,22 @@ export function GlobalModalContainer({
   // StoriesSettings
   isStoriesSettingsVisible,
   renderStoriesSettings,
+  // KeyTransparencyErrorDialog
+  isKeyTransparencyErrorVisible,
+  renderKeyTransparencyErrorDialog,
+  // KeyTransparencyOnboardingDialog
+  isKeyTransparencyOnboardingVisible,
+  hideKeyTransparencyOnboardingDialog,
+  finishKeyTransparencyOnboarding,
   // SendAnywayDialog
   hasSafetyNumberChangeModal,
   safetyNumberChangedBlockingData,
   renderSendAnywayDialog,
   // TapToViewNotAvailableModal
-  tapToViewNotAvailableModalProps,
+  tapToViewNotAvailableModalData,
   hideTapToViewNotAvailableModal,
   // BackfillFailureModal
-  backfillFailureModalProps,
+  backfillFailureModalKind,
   hideBackfillFailureModal,
   // UserNotFoundModal
   hideUserNotFoundModal,
@@ -261,6 +308,12 @@ export function GlobalModalContainer({
   // PlaintextExportWorkflow
   shouldShowPlaintextExportWorkflow,
   renderPlaintextExportWorkflow,
+  // LocalBackupExportWorkflow
+  shouldShowLocalBackupExportWorkflow,
+  renderLocalBackupExportWorkflow,
+  // TerminateGroupFailedModal
+  terminateGroupFailedModal,
+  renderTerminateGroupFailedModal,
 }: PropsType): JSX.Element | null {
   // We want the following dialogs to show in this order:
   // 0. Stateful multi-modal workflows
@@ -273,6 +326,10 @@ export function GlobalModalContainer({
     return renderPlaintextExportWorkflow();
   }
 
+  if (shouldShowLocalBackupExportWorkflow) {
+    return renderLocalBackupExportWorkflow();
+  }
+
   // Errors
   if (errorModalProps) {
     return renderErrorModal(errorModalProps);
@@ -281,6 +338,10 @@ export function GlobalModalContainer({
   // Errors where we want them to submit a debug log
   if (debugLogErrorModalProps) {
     return renderDebugLogErrorModal(debugLogErrorModalProps);
+  }
+
+  if (isKeyTransparencyErrorVisible) {
+    return renderKeyTransparencyErrorDialog();
   }
 
   // Safety Number
@@ -323,6 +384,10 @@ export function GlobalModalContainer({
     return renderCallLinkEditModal();
   }
 
+  if (callQualitySurveyProps) {
+    return renderCallQualitySurvey();
+  }
+
   if (editHistoryMessages) {
     return renderEditHistoryMessagesModal();
   }
@@ -335,6 +400,10 @@ export function GlobalModalContainer({
     return renderDeleteMessagesModal();
   }
 
+  if (discardDraftDialogProps) {
+    return renderDiscardDraftDialog();
+  }
+
   if (draftGifMessageSendModalProps) {
     return renderDraftGifMessageSendModal();
   }
@@ -345,6 +414,14 @@ export function GlobalModalContainer({
 
   if (notePreviewModalProps) {
     return renderNotePreviewModal();
+  }
+
+  if (pinMessageDialogData) {
+    return renderPinMessageDialog();
+  }
+
+  if (pinReminderState === PinReminderState.Modal) {
+    return renderPinReminderModal();
   }
 
   if (isProfileNameWarningModalVisible) {
@@ -364,12 +441,33 @@ export function GlobalModalContainer({
     );
   }
 
+  // Intentionally above safety number since that causes onboarding flow
+  if (isKeyTransparencyOnboardingVisible) {
+    return (
+      <KeyTransparencyOnboardingDialog
+        i18n={i18n}
+        open
+        onOpenChange={open => {
+          if (!open) {
+            hideKeyTransparencyOnboardingDialog();
+          }
+        }}
+        onContinue={finishKeyTransparencyOnboarding}
+      />
+    );
+  }
+
   if (safetyNumberModalContactId) {
     return renderSafetyNumber();
   }
 
   if (isAboutContactModalVisible) {
     return renderAboutContactModal();
+  }
+
+  // This needs to be before the contact modal, which opens it
+  if (groupMemberLabelInfoModalState) {
+    return renderGroupMemberLabelInfoModal();
   }
 
   if (contactModalState) {
@@ -420,34 +518,34 @@ export function GlobalModalContainer({
     }
 
     return (
-      <ConfirmationDialog
-        dialogName="GlobalModalContainer.userNotFound"
-        cancelText={i18n('icu:ok')}
-        cancelButtonVariant={ButtonVariant.Secondary}
-        i18n={i18n}
-        onClose={hideUserNotFoundModal}
+      <AxoConfirmDialog.Root
+        open
+        onOpenChange={hideUserNotFoundModal}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={content}
       >
-        {content}
-      </ConfirmationDialog>
+        <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
     );
   }
 
-  if (tapToViewNotAvailableModalProps) {
+  if (tapToViewNotAvailableModalData) {
     return (
       <TapToViewNotAvailableModal
         i18n={i18n}
         onClose={hideTapToViewNotAvailableModal}
-        {...tapToViewNotAvailableModalProps}
+        {...tapToViewNotAvailableModalData}
       />
     );
   }
 
-  if (backfillFailureModalProps != null) {
+  if (backfillFailureModalKind != null) {
     return (
       <BackfillFailureModal
         i18n={i18n}
         onClose={hideBackfillFailureModal}
-        {...backfillFailureModalProps}
+        kind={backfillFailureModalKind}
       />
     );
   }
@@ -469,6 +567,10 @@ export function GlobalModalContainer({
         onClose={hideLowDiskSpaceBackupImportModal}
       />
     );
+  }
+
+  if (terminateGroupFailedModal) {
+    return renderTerminateGroupFailedModal();
   }
 
   return null;

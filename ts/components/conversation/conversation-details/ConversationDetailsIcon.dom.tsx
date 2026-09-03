@@ -1,19 +1,22 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX, ReactNode, MouseEvent, KeyboardEvent } from 'react';
+
 import classNames from 'classnames';
 
-import { Spinner } from '../../Spinner.dom.js';
-import { bemGenerator } from './util.std.js';
+import { Spinner } from '../../Spinner.dom.tsx';
+import { bemGenerator } from './util.std.ts';
 
 export enum IconType {
+  'archive' = 'archive',
   'approveAllMembers' = 'approveAllMembers',
   'bell' = 'bell',
   'block' = 'block',
   'edit' = 'edit',
   'unblock' = 'unblock',
   'color' = 'color',
+  'delete' = 'delete',
   'down' = 'down',
   'forward' = 'forward',
   'heart' = 'heart',
@@ -30,7 +33,10 @@ export enum IconType {
   'official' = 'official',
   'reset' = 'reset',
   'share' = 'share',
+  'spam' = 'spam',
   'spinner' = 'spinner',
+  'tag' = 'tag',
+  'terminate' = 'terminate',
   'timer' = 'timer',
   'trash' = 'trash',
   'verify' = 'verify',
@@ -53,7 +59,7 @@ export function ConversationDetailsIcon({
   fakeButton,
   onClick,
 }: Props): JSX.Element {
-  let content: React.ReactChild;
+  let content: ReactNode;
 
   if (icon === IconType.spinner) {
     content = <Spinner svgSize="small" size="24" />;
@@ -77,12 +83,12 @@ export function ConversationDetailsIcon({
         role="button"
         className={bem('button')}
         tabIndex={0}
-        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        onClick={(event: MouseEvent<HTMLDivElement>) => {
           event.preventDefault();
           event.stopPropagation();
           onClick();
         }}
-        onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             event.stopPropagation();
@@ -102,7 +108,7 @@ export function ConversationDetailsIcon({
         className={bem('button')}
         disabled={disabled}
         type="button"
-        onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        onClick={(event: MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
           onClick();

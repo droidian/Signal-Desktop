@@ -1,11 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DeliveryIssueNotification.dom.js';
-import { DeliveryIssueNotification } from './DeliveryIssueNotification.dom.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
+import type { PropsType } from './DeliveryIssueNotification.dom.tsx';
+import { DeliveryIssueNotification } from './DeliveryIssueNotification.dom.tsx';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
 
 export default {
   title: 'Components/Conversation/DeliveryIssueNotification',

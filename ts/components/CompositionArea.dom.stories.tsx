@@ -1,23 +1,62 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useContext, useState } from 'react';
+import { type JSX, useContext } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { IMAGE_JPEG } from '../types/MIME.std.js';
-import type { Props } from './CompositionArea.dom.js';
-import { CompositionArea } from './CompositionArea.dom.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
+import { IMAGE_JPEG } from '../types/MIME.std.ts';
+import type { Props } from './CompositionArea.dom.tsx';
+import { CompositionArea } from './CompositionArea.dom.tsx';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
 
-import { fakeDraftAttachment } from '../test-helpers/fakeAttachment.std.js';
-import { landscapeGreenUrl } from '../storybook/Fixtures.std.js';
-import { RecordingState } from '../types/AudioRecorder.std.js';
-import { ConversationColors } from '../types/Colors.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { PaymentEventKind } from '../types/Payment.std.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
+import { fakeDraftAttachment } from '../test-helpers/fakeAttachment.std.ts';
+import { landscapeGreenUrl } from '../storybook/Fixtures.std.ts';
+import { RecordingState } from '../types/AudioRecorder.std.ts';
+import type { ContactNameColorType } from '../types/Colors.std.ts';
+import { ContactNameColors, ConversationColors } from '../types/Colors.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { PaymentEventKind } from '../types/Payment.std.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
+
+const groupAdmins = [
+  {
+    member: getDefaultConversation(),
+    labelEmoji: undefined,
+    labelString: undefined,
+  },
+  {
+    member: getDefaultConversation(),
+    labelEmoji: Emoji.CHECKMARK,
+    labelString: 'Planner',
+  },
+  {
+    member: getDefaultConversation(),
+    labelEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant('#'),
+    labelString: 'Invalid Emoji',
+  },
+  {
+    member: getDefaultConversation(),
+    labelEmoji: undefined,
+    labelString: 'No Emoji',
+  },
+];
+const memberColors = new Map(
+  groupAdmins
+    .map((admin, i): [string, ContactNameColorType] | null => {
+      if (!admin.member.id) {
+        return null;
+      }
+      return [
+        admin.member.id,
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        ContactNameColors[i % ContactNameColors.length]!,
+      ];
+    })
+    .filter(isNotNil)
+);
 
 export default {
   title: 'Components/CompositionArea',
@@ -33,6 +72,7 @@ export default {
     },
     announcementsOnly: { control: { type: 'boolean' } },
     areWePendingApproval: { control: { type: 'boolean' } },
+    terminated: { control: { type: 'boolean' } },
   },
   args: {
     acceptedMessageRequest: true,
@@ -45,7 +85,7 @@ export default {
     i18n,
     isDisabled: false,
     isFormattingEnabled: true,
-    messageCompositionId: '456',
+    isPollSend1to1Enabled: true,
     sendEditedMessage: action('sendEditedMessage'),
     sendMultiMediaMessage: action('sendMultiMediaMessage'),
     platform: 'darwin',
@@ -65,6 +105,7 @@ export default {
     errorRecording: action('errorRecording'),
     recordingState: RecordingState.Idle,
     startRecording: action('startRecording'),
+    warmupRecording: action('warmupRecording'),
     // StagedLinkPreview
     linkPreviewLoading: false,
     linkPreviewResult: undefined,
@@ -77,6 +118,9 @@ export default {
     // MediaQualitySelector
     setMediaQualitySetting: action('setMediaQualitySetting'),
     shouldSendHighQualityAttachments: false,
+    // ViewOnce
+    isViewOnce: false,
+    setViewOnce: action('setViewOnce'),
     // CompositionInput
     onEditorStateChange: action('onEditorStateChange'),
     onTextTooLong: action('onTextTooLong'),
@@ -85,7 +129,7 @@ export default {
     sortedGroupMembers: [],
     // FunPicker
     onSelectEmoji: action('onSelectEmoji'),
-    emojiSkinToneDefault: EmojiSkinTone.Type1,
+    emojiSkinToneDefault: Emoji.SkinTone.Type1,
     pushPanelForConversation: action('pushPanelForConversation'),
     sendStickerMessage: action('sendStickerMessage'),
     // Message Requests
@@ -95,16 +139,20 @@ export default {
     blockAndReportSpam: action('blockAndReportSpam'),
     deleteConversation: action('deleteConversation'),
     conversationName: getDefaultConversation(),
+    getSharedGroupNames: () => [],
     // GroupV1 Disabled Actions
     showGV2MigrationDialog: action('showGV2MigrationDialog'),
     // GroupV2
     announcementsOnly: false,
     areWeAdmin: false,
     areWePendingApproval: false,
-    groupAdmins: [],
+    terminated: false,
+    groupAdmins,
+    memberColors,
     cancelJoinRequest: action('cancelJoinRequest'),
     showConversation: action('showConversation'),
     isSmsOnlyOrUnregistered: false,
+    isSignalConversation: false,
     isFetchingUUID: false,
     renderSmartCompositionRecording: () => <div>RECORDING</div>,
     renderSmartCompositionRecordingDraft: _ => <div>RECORDING DRAFT</div>,
@@ -112,10 +160,6 @@ export default {
     selectedMessageIds: undefined,
     toggleSelectMode: action('toggleSelectMode'),
     toggleForwardMessagesModal: action('toggleForwardMessagesModal'),
-    // Signal Conversation
-    isSignalConversation: false,
-    isMuted: false,
-    setMuteExpiration: action('setMuteExpiration'),
   },
 } satisfies Meta<Props>;
 
@@ -180,6 +224,23 @@ export function Attachments(args: Props): JSX.Element {
   );
 }
 
+export function ViewOnceEnabled(args: Props): JSX.Element {
+  const theme = useContext(StorybookThemeContext);
+  return (
+    <CompositionArea
+      {...args}
+      theme={theme}
+      isViewOnce
+      draftAttachments={[
+        fakeDraftAttachment({
+          contentType: IMAGE_JPEG,
+          url: landscapeGreenUrl,
+        }),
+      ]}
+    />
+  );
+}
+
 export function PendingApproval(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return <CompositionArea {...args} theme={theme} areWePendingApproval />;
@@ -194,6 +255,13 @@ export function AnnouncementsOnlyGroup(args: Props): JSX.Element {
       announcementsOnly
       areWeAdmin={false}
     />
+  );
+}
+
+export function TerminatedGroup(args: Props): JSX.Element {
+  const theme = useContext(StorybookThemeContext);
+  return (
+    <CompositionArea {...args} theme={theme} terminated areWeAdmin={false} />
   );
 }
 
@@ -245,23 +313,5 @@ export function NoFormattingMenu(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea {...args} theme={theme} isFormattingEnabled={false} />
-  );
-}
-
-export function SignalConversationMuteToggle(args: Props): JSX.Element {
-  const theme = useContext(StorybookThemeContext);
-  const [isMuted, setIsMuted] = useState(true);
-
-  function setIsMutedByTime(_: string, muteExpiresAt: number) {
-    setIsMuted(muteExpiresAt > Date.now());
-  }
-  return (
-    <CompositionArea
-      {...args}
-      theme={theme}
-      isSignalConversation
-      isMuted={isMuted}
-      setMuteExpiration={setIsMutedByTime}
-    />
   );
 }

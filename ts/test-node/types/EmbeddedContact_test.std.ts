@@ -4,10 +4,10 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import { createLogger } from '../../logging/log.std.js';
-import { IMAGE_GIF, IMAGE_PNG } from '../../types/MIME.std.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { IMAGE_GIF, IMAGE_PNG } from '../../types/MIME.std.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import type { Avatar, Email, Phone } from '../../types/EmbeddedContact.std.js';
+import type { Avatar, Email, Phone } from '../../types/EmbeddedContact.std.ts';
 import {
   _validate,
   ContactFormType,
@@ -15,18 +15,14 @@ import {
   getName,
   parseAndWriteAvatar,
   parsePhoneItem,
-} from '../../types/EmbeddedContact.std.js';
-import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
+} from '../../types/EmbeddedContact.std.ts';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const logger = createLogger('EmbeddedContact_test');
 
 describe('Contact', () => {
   const NUMBER = '+12025550099';
-
-  const writeNewAttachmentData = sinon
-    .stub()
-    .throws(new Error("Shouldn't be called"));
 
   const getDefaultMessageAttrs = (): Pick<
     MessageAttributesType,
@@ -181,6 +177,7 @@ describe('Contact', () => {
           avatar: fakeAttachment({
             pending: true,
             path: undefined,
+            url: undefined,
             contentType: IMAGE_GIF,
           }),
         },
@@ -224,7 +221,8 @@ describe('Contact', () => {
         avatar: {
           isProfile: true,
           avatar: fakeAttachment({
-            path: 'attachment://v1/somewhere?size=10304&contentType=image%2Fgif',
+            path: 'somewhere',
+            url: 'attachment://v1/somewhere?size=10304&contentType=image%2Fgif',
             contentType: IMAGE_GIF,
           }),
         },
@@ -242,6 +240,16 @@ describe('Contact', () => {
   });
 
   describe('parseAndWriteAvatar', () => {
+    const defaultContext = {
+      logger,
+      getRegionCode: () => '1',
+      writeNewAttachmentData: sinon
+        .stub()
+        .throws(new Error("Shouldn't be called")),
+      getPlaintextHashForInMemoryAttachment: sinon.stub(),
+      getExistingAttachmentDataForReuse: sinon.stub(),
+    };
+
     it('handles message with no avatar in contact', async () => {
       const upgradeAttachment = sinon
         .stub()
@@ -263,14 +271,10 @@ describe('Contact', () => {
             ],
           },
         ],
-      };
+      } as const;
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          logger,
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, message.contact[0]);
@@ -297,7 +301,7 @@ describe('Contact', () => {
             ],
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -312,9 +316,8 @@ describe('Contact', () => {
       const result = await upgradeVersion(
         message.contact[0],
         {
+          ...defaultContext,
           getRegionCode: () => 'US',
-          logger,
-          writeNewAttachmentData,
         },
         message
       );
@@ -345,7 +348,7 @@ describe('Contact', () => {
             } as unknown as Avatar,
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -359,11 +362,7 @@ describe('Contact', () => {
       };
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, expected);
@@ -412,7 +411,7 @@ describe('Contact', () => {
             } as unknown as Avatar,
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -447,11 +446,7 @@ describe('Contact', () => {
 
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, expected);
@@ -479,11 +474,11 @@ describe('Contact', () => {
               {
                 type: 0,
                 value: 'someone@somewhere.com',
-              },
+              } as unknown as Email,
             ],
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -497,11 +492,7 @@ describe('Contact', () => {
       };
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, expected);
@@ -533,7 +524,7 @@ describe('Contact', () => {
             ],
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -547,11 +538,7 @@ describe('Contact', () => {
       };
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, expected);
@@ -585,7 +572,7 @@ describe('Contact', () => {
             ],
           },
         ],
-      };
+      } as const;
       const expected = {
         name: {
           nickname: 'Someone Somewhere',
@@ -593,11 +580,7 @@ describe('Contact', () => {
       };
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, expected);
@@ -622,14 +605,10 @@ describe('Contact', () => {
             ],
           },
         ],
-      };
+      } as const;
       const result = await upgradeVersion(
         message.contact[0],
-        {
-          getRegionCode: () => '1',
-          writeNewAttachmentData,
-          logger,
-        },
+        defaultContext,
         message
       );
       assert.deepEqual(result, message.contact[0]);

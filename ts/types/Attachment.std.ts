@@ -1,14 +1,13 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-/* eslint-disable max-classes-per-file */
 
-import type { LinkPreviewForUIType } from './message/LinkPreviews.std.js';
-import type { MIMEType } from './MIME.std.js';
+import type { LinkPreviewForUIType } from './message/LinkPreviews.std.ts';
+import type { MIMEType } from './MIME.std.ts';
 import type {
   WithOptionalProperties,
   WithRequiredProperties,
-} from './Util.std.js';
-import type { SignalService as Proto } from '../protobuf/index.std.js';
+} from './Util.std.ts';
+import type { SignalService as Proto } from '../protobuf/index.std.ts';
 
 export type ThumbnailType = EphemeralAttachmentFields & {
   size: number;
@@ -27,13 +26,19 @@ export type BackupThumbnailType = WithOptionalProperties<ThumbnailType, 'size'>;
 // These fields do not get saved to the DB.
 export type EphemeralAttachmentFields = {
   totalDownloaded?: number;
-  data?: Uint8Array;
+  data?: Uint8Array<ArrayBuffer>;
+  /**
+   * Identifies this attachment's claim on reused paths in
+   * attachments_protected_from_deletion; saveMessageAttachments releases the claim when
+   * the attachment is saved.
+   */
+  reuseToken?: string;
   /** Not included in protobuf, needs to be pulled from flags */
   isVoiceMessage?: boolean;
   /** For messages not already on disk, this will be a data url */
   url?: string;
   incrementalUrl?: string;
-  screenshotData?: Uint8Array;
+  screenshotData?: Uint8Array<ArrayBuffer>;
   /** @deprecated Legacy field */
   screenshotPath?: string;
 
@@ -116,7 +121,7 @@ export type AddressableAttachmentType = Readonly<{
   contentType: MIMEType;
 
   // In-memory data, for outgoing attachments that are not saved to disk.
-  data?: Uint8Array;
+  data?: Uint8Array<ArrayBuffer>;
 }>;
 
 export type AttachmentForUIType = AttachmentType & {
@@ -126,19 +131,24 @@ export type AttachmentForUIType = AttachmentType & {
   };
 };
 
-export type UploadedAttachmentType = Proto.IAttachmentPointer &
+export type UploadedAttachmentType = Omit<
+  Proto.AttachmentPointer.Params,
+  'attachmentIdentifier'
+> &
   Readonly<{
     // Required fields
-    cdnKey: string;
-    key: Uint8Array;
+    attachmentIdentifier: Readonly<{
+      cdnKey: string;
+    }>;
+    key: Uint8Array<ArrayBuffer>;
     size: number;
-    digest: Uint8Array;
+    digest: Uint8Array<ArrayBuffer>;
     contentType: string;
     plaintextHash: string;
   }>;
 
 export type AttachmentWithHydratedData = AttachmentType & {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
 };
 
 export enum TextAttachmentStyleType {
@@ -178,10 +188,10 @@ export type BaseAttachmentDraftType = {
 //   a draft and final save on disk and in conversation.draftAttachments.
 export type InMemoryAttachmentDraftType =
   | ({
-      data: Uint8Array;
+      data: Uint8Array<ArrayBuffer>;
       clientUuid: string;
       pending: false;
-      screenshotData?: Uint8Array;
+      screenshotData?: Uint8Array<ArrayBuffer>;
       duration?: number;
       fileName?: string;
       path?: string;
@@ -248,14 +258,15 @@ export type LocallySavedAttachment = WithRequiredProperties<
   'path'
 >;
 
-// Used for display
-
-export class AttachmentSizeError extends Error {}
-
-// Used for downlaods
-
-export class AttachmentPermanentlyUndownloadableError extends Error {
+export class AttachmentSizeError extends Error {
   constructor(message: string) {
-    super(`AttachmentPermanentlyUndownloadableError: ${message}`);
+    super(`AttachmentSizeError: ${message}`);
+  }
+}
+
+// oxlint-disable-next-line max-classes-per-file
+export class AttachmentUndownloadableFromTransitTierError extends Error {
+  constructor(message: string) {
+    super(`AttachmentUndownloadableFromTransitTierError: ${message}`);
   }
 }

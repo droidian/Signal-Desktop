@@ -1,11 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable no-bitwise */
-/* eslint-disable max-classes-per-file */
-
 import { z } from 'zod';
-import Long from 'long';
 import PQueue from 'p-queue';
 import pMap from 'p-map';
 import type { PlaintextContent } from '@signalapp/libsignal-client';
@@ -14,98 +10,105 @@ import {
   ProtocolAddress,
   SenderKeyDistributionMessage,
 } from '@signalapp/libsignal-client';
+import type { RequireExactlyOne } from 'type-fest';
 
 import {
   GLOBAL_ZONE,
   signalProtocolStore,
-} from '../SignalProtocolStore.preload.js';
-import { DataWriter } from '../sql/Client.preload.js';
-import type { ConversationModel } from '../models/conversations.preload.js';
-import { assertDev, strictAssert } from '../util/assert.std.js';
-import { parseIntOrThrow } from '../util/parseIntOrThrow.std.js';
-import { Address } from '../types/Address.std.js';
-import { QualifiedAddress } from '../types/QualifiedAddress.std.js';
-import { SenderKeys } from '../LibSignalStores.preload.js';
+} from '../SignalProtocolStore.preload.ts';
+import { DataWriter } from '../sql/Client.preload.ts';
+import type { ConversationModel } from '../models/conversations.preload.ts';
+import { assertDev, strictAssert } from '../util/assert.std.ts';
+import { parseIntOrThrow } from '../util/parseIntOrThrow.std.ts';
+import { uuidToBytes } from '../util/uuidToBytes.std.ts';
+import { Address } from '../types/Address.std.ts';
+import { QualifiedAddress } from '../types/QualifiedAddress.std.ts';
+import type { StoryMessageRecipientsType } from '../types/Stories.std.ts';
+import { SenderKeys } from '../LibSignalStores.node.ts';
 import type {
   TextAttachmentType,
   UploadedAttachmentType,
-} from '../types/Attachment.std.js';
-import type { AciString, ServiceIdString } from '../types/ServiceId.std.js';
+} from '../types/Attachment.std.ts';
+import type { AciString, ServiceIdString } from '../types/ServiceId.std.ts';
 import {
   ServiceIdKind,
   serviceIdSchema,
   isPniString,
-} from '../types/ServiceId.std.js';
+} from '../types/ServiceId.std.ts';
 import {
   toAciObject,
   toPniObject,
   toServiceIdObject,
-} from '../util/ServiceId.node.js';
-import createTaskWithTimeout from './TaskWithTimeout.std.js';
+} from '../util/ServiceId.node.ts';
+import { runTaskWithTimeout } from './TaskWithTimeout.std.ts';
 import type { CallbackResultType } from './Types.d.ts';
 import type {
   SerializedCertificateType,
   SendLogCallbackType,
-} from './OutgoingMessage.preload.js';
-import OutgoingMessage from './OutgoingMessage.preload.js';
-import * as Bytes from '../Bytes.std.js';
-import { getRandomBytes } from '../Crypto.node.js';
-import {
-  MessageError,
-  SendMessageProtoError,
-  NoSenderKeyError,
-} from './Errors.std.js';
-import { BodyRange } from '../types/BodyRange.std.js';
-import { HTTPError } from '../types/HTTPError.std.js';
-import type { RawBodyRange } from '../types/BodyRange.std.js';
-import type { StoryContextType } from '../types/Util.std.js';
-import { concat, isEmpty } from '../util/iterables.std.js';
-import type { SendTypesType } from '../util/handleMessageSend.preload.js';
+} from './OutgoingMessage.preload.ts';
+import OutgoingMessage from './OutgoingMessage.preload.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { getRandomBytes } from '../Crypto.node.ts';
+import { SendMessageProtoError, NoSenderKeyError } from './Errors.std.ts';
+import { BodyRange } from '../types/BodyRange.std.ts';
+import type { RawBodyRange } from '../types/BodyRange.std.ts';
+import type { StoryContextType } from '../types/Util.std.ts';
+import { concat, isEmpty } from '../util/iterables.std.ts';
+import type { SendTypesType } from '../util/handleMessageSend.preload.ts';
 import {
   shouldSaveProto,
   sendTypesEnum,
-} from '../util/handleMessageSend.preload.js';
-import type { DurationInSeconds } from '../util/durations/index.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { createLogger } from '../logging/log.std.js';
-import type { EmbeddedContactWithUploadedAvatar } from '../types/EmbeddedContact.std.js';
+} from '../util/handleMessageSend.preload.ts';
+import type { DurationInSeconds } from '../util/durations/index.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import type { EmbeddedContactWithUploadedAvatar } from '../types/EmbeddedContact.std.ts';
 import {
   numberToPhoneType,
   numberToEmailType,
   numberToAddressType,
-} from '../types/EmbeddedContact.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { drop } from '../util/drop.std.js';
+} from '../types/EmbeddedContact.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { drop } from '../util/drop.std.ts';
 import type {
   ConversationIdentifier,
   DeleteForMeSyncEventData,
   DeleteMessageSyncTarget,
   AddressableMessage,
-} from './messageReceiverEvents.std.js';
-import { getConversationFromTarget } from '../util/syncIdentifiers.preload.js';
+} from './messageReceiverEvents.std.ts';
+import { getConversationFromTarget } from '../util/syncIdentifiers.preload.ts';
 import type {
   CallDetails,
   CallHistoryDetails,
-} from '../types/CallDisposition.std.js';
+} from '../types/CallDisposition.std.ts';
 import {
   AdhocCallStatus,
   DirectCallStatus,
   GroupCallStatus,
   CallMode,
-} from '../types/CallDisposition.std.js';
+} from '../types/CallDisposition.std.ts';
 import {
   getBytesForPeerId,
   getCallIdForProto,
   getProtoForCallHistory,
-} from '../util/callDisposition.preload.js';
-import { MAX_MESSAGE_COUNT } from '../util/deleteForMe.types.std.js';
-import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled.dom.js';
-import type { GroupSendToken } from '../types/GroupSendEndorsements.std.js';
-import type { OutgoingPollVote, PollCreateType } from '../types/Polls.dom.js';
-import { itemStorage } from './Storage.preload.js';
-import { accountManager } from './AccountManager.preload.js';
+} from '../util/callDisposition.preload.ts';
+import { MAX_MESSAGE_COUNT } from '../util/deleteForMe.types.std.ts';
+import { isProtoBinaryEncodingEnabled } from '../util/isProtoBinaryEncodingEnabled.dom.ts';
+import type { GroupSendToken } from '../types/GroupSendEndorsements.std.ts';
+import type { OutgoingPollVote, PollCreateType } from '../types/Polls.dom.ts';
+import { itemStorage } from './Storage.preload.ts';
+import { accountManager } from './AccountManager.preload.ts';
+import type {
+  SendPinMessageType,
+  SendUnpinMessageType,
+} from '../types/PinnedMessage.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import type { BlockedNumber } from '../types/StorageKeys.std.ts';
 
 const log = createLogger('SendMessage');
+
+const MAX_EMBEDDED_GROUP_CHANGE_BYTES = 2048;
+const MAX_INCREMENTAL_MAC_ATTACHMENTS = 10;
 
 export type SendIdentifierData =
   | {
@@ -158,8 +161,8 @@ export type OutgoingTextAttachmentType = Omit<TextAttachmentType, 'preview'> & {
 };
 
 export type GroupV2InfoType = {
-  groupChange?: Uint8Array;
-  masterKey: Uint8Array;
+  groupChange?: Uint8Array<ArrayBuffer>;
+  masterKey: Uint8Array<ArrayBuffer>;
   revision: number;
   members: ReadonlyArray<ServiceIdString>;
 };
@@ -172,12 +175,12 @@ export type OutgoingStickerType = Readonly<{
   packId: string;
   packKey: string;
   stickerId: number;
-  emoji?: string;
+  emoji?: Emoji.Variant;
   data: Readonly<UploadedAttachmentType>;
 }>;
 
 export type ReactionType = {
-  emoji?: string;
+  emoji?: Emoji.Variant;
   remove?: boolean;
   targetAuthorAci?: AciString;
   targetTimestamp?: number;
@@ -195,74 +198,74 @@ export const singleProtoJobDataSchema = z.object({
 
 export type SingleProtoJobData = z.infer<typeof singleProtoJobDataSchema>;
 
-export type MessageOptionsType = {
-  attachments?: ReadonlyArray<Proto.IAttachmentPointer>;
+export type SendDeleteForEveryoneType = Readonly<{
+  isAdminDelete: boolean;
+  targetSentTimestamp: number;
+  targetAuthorAci: AciString;
+}>;
+
+export type SharedMessageOptionsType = Readonly<{
+  // required
+  timestamp: number;
+  // optional
+  attachments?: ReadonlyArray<Proto.AttachmentPointer.Params>;
   body?: string;
   bodyRanges?: ReadonlyArray<RawBodyRange>;
   contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
-  expireTimer?: DurationInSeconds;
-  expireTimerVersion: number | undefined;
-  flags?: number;
-  group?: {
-    id: string;
-    type: number;
-  };
-  groupV2?: GroupV2InfoType;
-  needsSync?: boolean;
-  preview?: ReadonlyArray<OutgoingLinkPreviewType>;
-  profileKey?: Uint8Array;
-  quote?: OutgoingQuoteType;
-  recipients: ReadonlyArray<ServiceIdString>;
-  sticker?: OutgoingStickerType;
-  reaction?: ReactionType;
-  pollVote?: OutgoingPollVote;
-  pollCreate?: PollCreateType;
-  pollTerminate?: Readonly<{
-    targetTimestamp: number;
-  }>;
-  deletedForEveryoneTimestamp?: number;
-  targetTimestampForEdit?: number;
-  timestamp: number;
-  groupCallUpdate?: GroupCallUpdateType;
-  storyContext?: StoryContextType;
-};
-export type GroupSendOptionsType = {
-  attachments?: ReadonlyArray<Proto.IAttachmentPointer>;
-  bodyRanges?: ReadonlyArray<RawBodyRange>;
-  contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
-  deletedForEveryoneTimestamp?: number;
-  targetTimestampForEdit?: number;
+  deleteForEveryone?: SendDeleteForEveryoneType;
   expireTimer?: DurationInSeconds;
   flags?: number;
   groupCallUpdate?: GroupCallUpdateType;
   groupV2?: GroupV2InfoType;
-  messageText?: string;
+  isViewOnce?: boolean;
+  pinMessage?: SendPinMessageType;
+  pollCreate?: PollCreateType;
   preview?: ReadonlyArray<OutgoingLinkPreviewType>;
-  profileKey?: Uint8Array;
+  profileKey?: Uint8Array<ArrayBuffer>;
   quote?: OutgoingQuoteType;
   reaction?: ReactionType;
   sticker?: OutgoingStickerType;
   storyContext?: StoryContextType;
+  targetTimestampForEdit?: number;
+  unpinMessage?: SendUnpinMessageType;
+}>;
+
+export type MessageOptionsType = Readonly<
+  SharedMessageOptionsType & {
+    // Not needed for group messages, lives in group state
+    expireTimerVersion?: number | undefined;
+    recipients: ReadonlyArray<ServiceIdString>;
+  }
+>;
+
+export type GroupMessageOptionsType = Readonly<
+  SharedMessageOptionsType & {
+    groupV2: GroupV2InfoType;
+  }
+>;
+
+export type PollVoteBuildOptions = Readonly<{
   timestamp: number;
-  pollVote?: OutgoingPollVote;
-  pollCreate?: PollCreateType;
-  pollTerminate?: Readonly<{
+  pollVote: OutgoingPollVote;
+}> &
+  Pick<
+    MessageOptionsType,
+    'groupV2' | 'profileKey' | 'expireTimer' | 'expireTimerVersion'
+  >;
+
+export type PollTerminateBuildOptions = Readonly<{
+  timestamp: number;
+  pollTerminate: Readonly<{
     targetTimestamp: number;
   }>;
-};
-
-export type PollVoteBuildOptions = Required<
-  Pick<MessageOptionsType, 'groupV2' | 'timestamp' | 'pollVote'>
-> &
-  Pick<MessageOptionsType, 'profileKey' | 'expireTimer' | 'expireTimerVersion'>;
-
-export type PollTerminateBuildOptions = Required<
-  Pick<MessageOptionsType, 'groupV2' | 'timestamp' | 'pollTerminate'>
-> &
-  Pick<MessageOptionsType, 'profileKey' | 'expireTimer' | 'expireTimerVersion'>;
+}> &
+  Pick<
+    MessageOptionsType,
+    'groupV2' | 'profileKey' | 'expireTimer' | 'expireTimerVersion'
+  >;
 
 class Message {
-  attachments: ReadonlyArray<Proto.IAttachmentPointer>;
+  attachments: ReadonlyArray<Proto.AttachmentPointer.Params>;
 
   body?: string;
 
@@ -276,18 +279,13 @@ class Message {
 
   flags?: number;
 
-  group?: {
-    id: string;
-    type: number;
-  };
-
   groupV2?: GroupV2InfoType;
 
-  needsSync?: boolean;
+  isViewOnce?: boolean;
 
   preview?: ReadonlyArray<OutgoingLinkPreviewType>;
 
-  profileKey?: Uint8Array;
+  profileKey?: Uint8Array<ArrayBuffer>;
 
   quote?: OutgoingQuoteType;
 
@@ -303,11 +301,14 @@ class Message {
     targetTimestamp: number;
   }>;
 
+  pinMessage?: SendPinMessageType;
+  unpinMessage?: SendUnpinMessageType;
+
   timestamp: number;
 
-  dataMessage?: Proto.DataMessage;
+  dataMessage?: Proto.DataMessage.Params;
 
-  deletedForEveryoneTimestamp?: number;
+  deleteForEveryone?: SendDeleteForEveryoneType;
 
   groupCallUpdate?: GroupCallUpdateType;
 
@@ -323,9 +324,8 @@ class Message {
     this.expireTimer = options.expireTimer;
     this.expireTimerVersion = options.expireTimerVersion;
     this.flags = options.flags;
-    this.group = options.group;
     this.groupV2 = options.groupV2;
-    this.needsSync = options.needsSync;
+    this.isViewOnce = options.isViewOnce;
     this.preview = options.preview;
     this.profileKey = options.profileKey;
     this.quote = options.quote;
@@ -333,19 +333,18 @@ class Message {
     this.sticker = options.sticker;
     this.reaction = options.reaction;
     this.pollCreate = options.pollCreate;
-    this.pollTerminate = options.pollTerminate;
     this.timestamp = options.timestamp;
-    this.deletedForEveryoneTimestamp = options.deletedForEveryoneTimestamp;
+    this.deleteForEveryone = options.deleteForEveryone;
     this.groupCallUpdate = options.groupCallUpdate;
     this.storyContext = options.storyContext;
-    // Polls
-    this.pollVote = options.pollVote;
+    this.pinMessage = options.pinMessage;
+    this.unpinMessage = options.unpinMessage;
 
     if (!(this.recipients instanceof Array)) {
       throw new Error('Invalid recipient list');
     }
 
-    if (!this.group && !this.groupV2 && this.recipients.length !== 1) {
+    if (!this.groupV2 && this.recipients.length !== 1) {
       throw new Error('Invalid recipient list for non-group');
     }
 
@@ -369,48 +368,22 @@ class Message {
         throw new Error('Invalid message flags');
       }
     }
-    if (this.isEndSession()) {
-      if (
-        this.body != null ||
-        this.group != null ||
-        this.attachments.length !== 0
-      ) {
-        throw new Error('Invalid end session message');
-      }
-    } else {
-      if (
-        typeof this.timestamp !== 'number' ||
-        (this.body && typeof this.body !== 'string')
-      ) {
-        throw new Error('Invalid message body');
-      }
-      if (this.group) {
-        if (
-          typeof this.group.id !== 'string' ||
-          typeof this.group.type !== 'number'
-        ) {
-          throw new Error('Invalid group context');
-        }
-      }
+    if (
+      typeof this.timestamp !== 'number' ||
+      (this.body && typeof this.body !== 'string')
+    ) {
+      throw new Error('Invalid message body');
     }
   }
 
-  isEndSession() {
-    return (this.flags || 0) & Proto.DataMessage.Flags.END_SESSION;
-  }
-
-  toProto(): Proto.DataMessage {
+  toProto(): Proto.DataMessage.Params {
     if (this.dataMessage) {
       return this.dataMessage;
     }
-    const proto = new Proto.DataMessage();
 
-    proto.timestamp = Long.fromNumber(this.timestamp);
-    proto.attachments = this.attachments.slice();
+    let requiredProtocolVersion = 0;
 
     if (this.body) {
-      proto.body = this.body;
-
       const mentionCount = this.bodyRanges
         ? this.bodyRanges.filter(BodyRange.isMention).length
         : 0;
@@ -428,272 +401,328 @@ class Message {
           `and ${otherRangeCount} other ranges${storyInfo}`
       );
     }
-    if (this.flags) {
-      proto.flags = this.flags;
-    }
-    if (this.groupV2) {
-      proto.groupV2 = new Proto.GroupContextV2();
-      proto.groupV2.masterKey = this.groupV2.masterKey;
-      proto.groupV2.revision = this.groupV2.revision;
-      proto.groupV2.groupChange = this.groupV2.groupChange || null;
-    }
-    if (this.sticker) {
-      proto.sticker = new Proto.DataMessage.Sticker();
-      proto.sticker.packId = Bytes.fromHex(this.sticker.packId);
-      proto.sticker.packKey = Bytes.fromBase64(this.sticker.packKey);
-      proto.sticker.stickerId = this.sticker.stickerId;
-      proto.sticker.emoji = this.sticker.emoji;
-      proto.sticker.data = this.sticker.data;
-    }
-    if (this.reaction) {
-      proto.reaction = new Proto.DataMessage.Reaction();
-      proto.reaction.emoji = this.reaction.emoji || null;
-      proto.reaction.remove = this.reaction.remove || false;
-      if (isProtoBinaryEncodingEnabled()) {
-        proto.reaction.targetAuthorAciBinary = this.reaction.targetAuthorAci
-          ? toAciObject(this.reaction.targetAuthorAci).getRawUuidBytes()
-          : null;
-      } else {
-        proto.reaction.targetAuthorAci = this.reaction.targetAuthorAci || null;
-      }
-      proto.reaction.targetSentTimestamp =
-        this.reaction.targetTimestamp === undefined
-          ? null
-          : Long.fromNumber(this.reaction.targetTimestamp);
+
+    if (
+      this.groupV2?.groupChange &&
+      this.groupV2.groupChange.byteLength > MAX_EMBEDDED_GROUP_CHANGE_BYTES
+    ) {
+      // As a message-size optimization, we do not embed large updates and receiving
+      // devices fetch them from the group server instead
+      log.info(
+        'Discarding oversized group change proto ' +
+          `(${this.groupV2.groupChange.byteLength} bytes)`
+      );
     }
 
-    if (Array.isArray(this.preview)) {
-      proto.preview = this.preview.map(preview => {
-        const item = new Proto.Preview();
-        item.title = preview.title;
-        item.url = preview.url;
-        item.description = preview.description || null;
-        item.date = preview.date || null;
-        if (preview.image) {
-          item.image = preview.image;
-        }
-        return item;
-      });
-    }
+    let contact: Array<Proto.DataMessage.Contact.Params> | null = null;
     if (Array.isArray(this.contact)) {
-      proto.contact = this.contact.map(
-        (contact: EmbeddedContactWithUploadedAvatar) => {
-          const contactProto = new Proto.DataMessage.Contact();
-          if (contact.name) {
-            const nameProto: Proto.DataMessage.Contact.IName = {
-              givenName: contact.name.givenName,
-              familyName: contact.name.familyName,
-              prefix: contact.name.prefix,
-              suffix: contact.name.suffix,
-              middleName: contact.name.middleName,
-              nickname: contact.name.nickname,
+      contact = this.contact.map(
+        (contactEntry: EmbeddedContactWithUploadedAvatar) => {
+          let name: Proto.DataMessage.Contact.Name.Params | null = null;
+          if (contactEntry.name) {
+            name = {
+              givenName: contactEntry.name.givenName ?? null,
+              familyName: contactEntry.name.familyName ?? null,
+              prefix: contactEntry.name.prefix ?? null,
+              suffix: contactEntry.name.suffix ?? null,
+              middleName: contactEntry.name.middleName ?? null,
+              nickname: contactEntry.name.nickname ?? null,
             };
-            contactProto.name = new Proto.DataMessage.Contact.Name(nameProto);
           }
-          if (Array.isArray(contact.number)) {
-            contactProto.number = contact.number.map(number => {
-              const numberProto: Proto.DataMessage.Contact.IPhone = {
-                value: number.value,
-                type: numberToPhoneType(number.type),
-                label: number.label,
-              };
+          let number: Array<Proto.DataMessage.Contact.Phone.Params> | null =
+            null;
+          if (Array.isArray(contactEntry.number)) {
+            number = contactEntry.number.map(
+              (entry): Proto.DataMessage.Contact.Phone.Params => {
+                return {
+                  value: entry.value,
+                  type: numberToPhoneType(entry.type),
+                  label: entry.label,
+                };
+              }
+            );
+          }
+          let email: Array<Proto.DataMessage.Contact.Email.Params> | null =
+            null;
+          if (Array.isArray(contactEntry.email)) {
+            email = contactEntry.email.map(
+              (entry): Proto.DataMessage.Contact.Email.Params => {
+                return {
+                  value: entry.value,
+                  type: numberToEmailType(entry.type),
+                  label: entry.label,
+                };
+              }
+            );
+          }
+          let address: Array<Proto.DataMessage.Contact.PostalAddress.Params> | null =
+            null;
+          if (Array.isArray(contactEntry.address)) {
+            address = contactEntry.address.map(
+              (entry): Proto.DataMessage.Contact.PostalAddress.Params => {
+                return {
+                  type: numberToAddressType(entry.type),
+                  label: entry.label,
+                  street: entry.street,
+                  pobox: entry.pobox,
+                  neighborhood: entry.neighborhood,
+                  city: entry.city,
+                  region: entry.region,
+                  postcode: entry.postcode,
+                  country: entry.country,
+                };
+              }
+            );
+          }
+          let avatar: Proto.DataMessage.Contact.Avatar.Params | null = null;
+          if (contactEntry.avatar?.avatar) {
+            avatar = {
+              avatar: contactEntry.avatar.avatar,
+              isProfile: contactEntry.avatar.isProfile,
+            };
+          }
 
-              return new Proto.DataMessage.Contact.Phone(numberProto);
-            });
-          }
-          if (Array.isArray(contact.email)) {
-            contactProto.email = contact.email.map(email => {
-              const emailProto: Proto.DataMessage.Contact.IEmail = {
-                value: email.value,
-                type: numberToEmailType(email.type),
-                label: email.label,
-              };
-
-              return new Proto.DataMessage.Contact.Email(emailProto);
-            });
-          }
-          if (Array.isArray(contact.address)) {
-            contactProto.address = contact.address.map(address => {
-              const addressProto: Proto.DataMessage.Contact.IPostalAddress = {
-                type: numberToAddressType(address.type),
-                label: address.label,
-                street: address.street,
-                pobox: address.pobox,
-                neighborhood: address.neighborhood,
-                city: address.city,
-                region: address.region,
-                postcode: address.postcode,
-                country: address.country,
-              };
-
-              return new Proto.DataMessage.Contact.PostalAddress(addressProto);
-            });
-          }
-          if (contact.avatar?.avatar) {
-            const avatarProto = new Proto.DataMessage.Contact.Avatar();
-            avatarProto.avatar = contact.avatar.avatar;
-            avatarProto.isProfile = Boolean(contact.avatar.isProfile);
-            contactProto.avatar = avatarProto;
+          let organization: string | null = null;
+          if (contactEntry.organization) {
+            organization = contactEntry.organization;
           }
 
-          if (contact.organization) {
-            contactProto.organization = contact.organization;
-          }
-
-          return contactProto;
+          return {
+            name,
+            email,
+            number,
+            address,
+            avatar,
+            organization,
+          };
         }
       );
     }
 
+    let quote: Proto.DataMessage.Quote.Params | null = null;
     if (this.quote) {
-      const ProtoBodyRange = Proto.BodyRange;
-      const { Quote } = Proto.DataMessage;
+      quote = {
+        type: this.quote.isGiftBadge
+          ? Proto.DataMessage.Quote.Type.GIFT_BADGE
+          : Proto.DataMessage.Quote.Type.NORMAL,
+        id: this.quote.id === undefined ? null : BigInt(this.quote.id),
+        authorAciBinary:
+          this.quote.authorAci && isProtoBinaryEncodingEnabled()
+            ? toAciObject(this.quote.authorAci).getRawUuidBytes()
+            : null,
+        authorAci: isProtoBinaryEncodingEnabled()
+          ? null
+          : (this.quote.authorAci ?? null),
+        text: this.quote.text ?? null,
+        attachments: this.quote.attachments.map(attachment => {
+          return {
+            contentType: attachment.contentType,
+            fileName: attachment.fileName ?? null,
+            thumbnail: attachment.thumbnail ?? null,
+          };
+        }),
+        bodyRanges: this.quote.bodyRanges?.map(toBodyRange) ?? null,
+      };
 
-      proto.quote = new Quote();
-      const { quote } = proto;
+      if (quote?.bodyRanges?.length) {
+        requiredProtocolVersion = Math.max(
+          requiredProtocolVersion,
+          Proto.DataMessage.ProtocolVersion.MENTIONS
+        );
+      }
+    }
 
-      if (this.quote.isGiftBadge) {
-        quote.type = Proto.DataMessage.Quote.Type.GIFT_BADGE;
+    let adminDelete: Proto.DataMessage.AdminDelete.Params | null = null;
+    let del: Proto.DataMessage.Delete.Params | null = null;
+    if (this.deleteForEveryone) {
+      const { isAdminDelete, targetSentTimestamp, targetAuthorAci } =
+        this.deleteForEveryone;
+      if (isAdminDelete) {
+        adminDelete = {
+          targetSentTimestamp: BigInt(targetSentTimestamp),
+          targetAuthorAciBinary: uuidToBytes(targetAuthorAci),
+        };
       } else {
-        quote.type = Proto.DataMessage.Quote.Type.NORMAL;
+        del = {
+          targetSentTimestamp: BigInt(targetSentTimestamp),
+        };
       }
+    }
 
-      quote.id =
-        this.quote.id === undefined ? null : Long.fromNumber(this.quote.id);
-      if (isProtoBinaryEncodingEnabled()) {
-        quote.authorAciBinary = this.quote.authorAci
-          ? toAciObject(this.quote.authorAci).getRawUuidBytes()
-          : null;
-      } else {
-        quote.authorAci = this.quote.authorAci || null;
-      }
-      quote.text = this.quote.text || null;
-      quote.attachments = this.quote.attachments.slice() || [];
-      const bodyRanges = this.quote.bodyRanges || [];
-      quote.bodyRanges = bodyRanges.map(range => {
-        const bodyRange = new ProtoBodyRange();
-        bodyRange.start = range.start;
-        bodyRange.length = range.length;
-        if (BodyRange.isMention(range)) {
-          if (isProtoBinaryEncodingEnabled()) {
-            bodyRange.mentionAciBinary = toAciObject(
-              range.mentionAci
-            ).getRawUuidBytes();
-          } else {
-            bodyRange.mentionAci = range.mentionAci;
-          }
-        } else if (BodyRange.isFormatting(range)) {
-          bodyRange.style = range.style;
-        } else {
-          throw missingCaseError(range);
-        }
-        return bodyRange;
-      });
-      if (
-        quote.bodyRanges.length &&
-        (!proto.requiredProtocolVersion ||
-          proto.requiredProtocolVersion <
-            Proto.DataMessage.ProtocolVersion.MENTIONS)
-      ) {
-        proto.requiredProtocolVersion =
-          Proto.DataMessage.ProtocolVersion.MENTIONS;
-      }
+    if (this.bodyRanges?.length) {
+      requiredProtocolVersion = Math.max(
+        requiredProtocolVersion,
+        Proto.DataMessage.ProtocolVersion.MENTIONS
+      );
     }
-    if (this.expireTimer) {
-      proto.expireTimer = this.expireTimer;
-    }
-    if (this.expireTimerVersion) {
-      proto.expireTimerVersion = this.expireTimerVersion;
-    }
-    if (this.profileKey) {
-      proto.profileKey = this.profileKey;
-    }
-    if (this.deletedForEveryoneTimestamp) {
-      proto.delete = {
-        targetSentTimestamp: Long.fromNumber(this.deletedForEveryoneTimestamp),
+
+    let groupCallUpdate: Proto.DataMessage.GroupCallUpdate.Params | null = null;
+    if (this.groupCallUpdate) {
+      groupCallUpdate = {
+        eraId: this.groupCallUpdate.eraId,
       };
     }
-    if (this.bodyRanges) {
-      proto.requiredProtocolVersion =
-        Proto.DataMessage.ProtocolVersion.MENTIONS;
-      proto.bodyRanges = this.bodyRanges.map(bodyRange => {
-        const { start, length } = bodyRange;
 
-        if (BodyRange.isMention(bodyRange)) {
-          if (isProtoBinaryEncodingEnabled()) {
-            return {
-              start,
-              length,
-              mentionAciBinary: toAciObject(
-                bodyRange.mentionAci
-              ).getRawUuidBytes(),
-            };
-          }
-          return {
-            start,
-            length,
-            mentionAci: bodyRange.mentionAci,
-          };
-        }
-        if (BodyRange.isFormatting(bodyRange)) {
-          return {
-            start,
-            length,
-            style: bodyRange.style,
-          };
-        }
-        throw missingCaseError(bodyRange);
-      });
-    }
-
-    if (this.groupCallUpdate) {
-      const { GroupCallUpdate } = Proto.DataMessage;
-
-      const groupCallUpdate = new GroupCallUpdate();
-      groupCallUpdate.eraId = this.groupCallUpdate.eraId;
-
-      proto.groupCallUpdate = groupCallUpdate;
-    }
-
+    let storyContext: Proto.DataMessage.StoryContext.Params | null = null;
     if (this.storyContext) {
-      const { StoryContext } = Proto.DataMessage;
-
-      const storyContext = new StoryContext();
-      if (this.storyContext.authorAci) {
-        if (isProtoBinaryEncodingEnabled()) {
-          storyContext.authorAciBinary = toAciObject(
-            this.storyContext.authorAci
-          ).getRawUuidBytes();
-        } else {
-          storyContext.authorAci = this.storyContext.authorAci;
-        }
-      }
-      storyContext.sentTimestamp = Long.fromNumber(this.storyContext.timestamp);
-
-      proto.storyContext = storyContext;
+      storyContext = {
+        sentTimestamp: BigInt(this.storyContext.timestamp),
+        authorAciBinary:
+          this.storyContext.authorAci && isProtoBinaryEncodingEnabled()
+            ? toAciObject(this.storyContext.authorAci).getRawUuidBytes()
+            : null,
+        authorAci: isProtoBinaryEncodingEnabled()
+          ? null
+          : (this.storyContext.authorAci ?? null),
+      };
     }
 
+    let pollCreate: Proto.DataMessage.PollCreate.Params | null = null;
     if (this.pollCreate) {
-      const create = new Proto.DataMessage.PollCreate();
-      create.question = this.pollCreate.question;
-      create.allowMultiple = Boolean(this.pollCreate.allowMultiple);
-      create.options = this.pollCreate.options.slice();
-      proto.pollCreate = create;
-      proto.requiredProtocolVersion = Proto.DataMessage.ProtocolVersion.POLLS;
+      pollCreate = {
+        question: this.pollCreate.question,
+        allowMultiple: this.pollCreate.allowMultiple,
+        options: this.pollCreate.options.slice(),
+      };
+      requiredProtocolVersion = Math.max(
+        requiredProtocolVersion,
+        Proto.DataMessage.ProtocolVersion.POLLS
+      );
     }
 
-    this.dataMessage = proto;
-    return proto;
+    let pinMessage: Proto.DataMessage.PinMessage.Params | null = null;
+    if (this.pinMessage != null) {
+      const { targetAuthorAci, targetSentTimestamp, pinDurationSeconds } =
+        this.pinMessage;
+
+      pinMessage = {
+        targetAuthorAciBinary: toAciObject(targetAuthorAci).getRawUuidBytes(),
+        targetSentTimestamp: BigInt(targetSentTimestamp),
+        pinDuration:
+          pinDurationSeconds != null
+            ? {
+                pinDurationSeconds,
+              }
+            : {
+                pinDurationForever: true,
+              },
+      };
+    }
+
+    let unpinMessage: Proto.DataMessage.UnpinMessage.Params | null = null;
+    if (this.unpinMessage != null) {
+      const { targetAuthorAci, targetSentTimestamp } = this.unpinMessage;
+
+      unpinMessage = {
+        targetAuthorAciBinary: toAciObject(targetAuthorAci).getRawUuidBytes(),
+        targetSentTimestamp: BigInt(targetSentTimestamp),
+      };
+    }
+
+    let incrementalMacsIncluded = 0;
+    const dataMessage: Proto.DataMessage.Params = {
+      timestamp: BigInt(this.timestamp),
+      attachments: this.attachments.map(attachment => {
+        if (attachment.incrementalMac != null) {
+          if (incrementalMacsIncluded >= MAX_INCREMENTAL_MAC_ATTACHMENTS) {
+            log.warn(
+              `message.toProto${this.timestamp}: Dropping incremental mac`
+            );
+            return { ...attachment, incrementalMac: null, chunkSize: null };
+          }
+          incrementalMacsIncluded += 1;
+        }
+
+        return attachment;
+      }),
+      flags: this.flags ?? 0,
+      body: this.body ?? null,
+      bodyRanges: this.bodyRanges?.map(toBodyRange) ?? null,
+      groupV2: this.groupV2
+        ? {
+            masterKey: this.groupV2.masterKey,
+            revision: this.groupV2.revision,
+            groupChange:
+              this.groupV2.groupChange != null &&
+              this.groupV2.groupChange.byteLength <
+                MAX_EMBEDDED_GROUP_CHANGE_BYTES
+                ? this.groupV2.groupChange
+                : null,
+          }
+        : null,
+      sticker: this.sticker
+        ? ({
+            packId: Bytes.fromHex(this.sticker.packId),
+            packKey: Bytes.fromBase64(this.sticker.packKey),
+            stickerId: this.sticker.stickerId,
+            emoji: this.sticker.emoji ?? null,
+            data: this.sticker.data,
+          } satisfies Proto.DataMessage.Sticker.Params)
+        : null,
+      reaction: this.reaction
+        ? ({
+            emoji: this.reaction.emoji ?? null,
+            remove: Boolean(this.reaction.remove),
+            targetAuthorAciBinary:
+              this.reaction.targetAuthorAci && isProtoBinaryEncodingEnabled()
+                ? toAciObject(this.reaction.targetAuthorAci).getRawUuidBytes()
+                : null,
+            targetAuthorAci: isProtoBinaryEncodingEnabled()
+              ? null
+              : (this.reaction.targetAuthorAci ?? null),
+            targetSentTimestamp:
+              this.reaction.targetTimestamp == null
+                ? null
+                : BigInt(this.reaction.targetTimestamp),
+          } satisfies Proto.DataMessage.Reaction.Params)
+        : null,
+
+      preview:
+        this.preview?.map((preview): Proto.Preview.Params => {
+          return {
+            title: preview.title ?? null,
+            url: preview.url,
+            description: preview.description ?? null,
+            date: preview.date ? BigInt(preview.date) : null,
+            image: preview.image ?? null,
+          };
+        }) ?? null,
+
+      contact,
+      quote,
+      adminDelete,
+      delete: del,
+      groupCallUpdate,
+      storyContext,
+      pollCreate,
+      pinMessage,
+      unpinMessage,
+
+      // Handled separately
+      pollVote: null,
+      pollTerminate: null,
+
+      expireTimer: this.expireTimer ?? null,
+      expireTimerVersion: this.expireTimerVersion ?? null,
+      profileKey: this.profileKey ?? null,
+      isViewOnce: Boolean(this.isViewOnce),
+      requiredProtocolVersion,
+
+      payment: null,
+      giftBadge: null,
+    };
+    this.dataMessage = dataMessage;
+    return dataMessage;
   }
 }
 
-type AddPniSignatureMessageToProtoOptionsType = Readonly<{
+export type AddPniSignatureMessageToProtoOptionsType = Readonly<{
   conversation?: ConversationModel;
-  proto: Proto.Content;
+  proto: Proto.Content.Params;
   reason: string;
 }>;
 
-function addPniSignatureMessageToProto({
+export function addPniSignatureMessageToProto({
   conversation,
   proto,
   reason,
@@ -712,13 +741,14 @@ function addPniSignatureMessageToProto({
       `adding pni signature for ${conversation.idForLogging()}`
   );
 
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign
   proto.pniSignatureMessage = {
     pni: toPniObject(pniSignatureMessage.pni).getRawUuidBytes(),
     signature: pniSignatureMessage.signature,
   };
 }
 
+// oxlint-disable-next-line max-classes-per-file
 export class MessageSender {
   pendingMessages: {
     [id: string]: PQueue;
@@ -736,25 +766,22 @@ export class MessageSender {
       serviceId,
       'private'
     );
-    this.pendingMessages[id] =
-      this.pendingMessages[id] || new PQueue({ concurrency: 1 });
+    this.pendingMessages[id] ??= new PQueue({ concurrency: 1 });
 
     const queue = this.pendingMessages[id];
 
-    const taskWithTimeout = createTaskWithTimeout(
-      runJob,
-      `queueJobForServiceId ${serviceId} ${id}`
+    return queue.add(() =>
+      runTaskWithTimeout(runJob, `queueJobForServiceId ${serviceId} ${id}`)
     );
-
-    return queue.add(taskWithTimeout);
   }
 
   // Attachment upload functions
 
-  static getRandomPadding(): Uint8Array {
+  static getRandomPadding(): Uint8Array<ArrayBuffer> {
     // Generate a random int from 1 and 512
     const buffer = getRandomBytes(2);
-    const paddingLength = (new Uint16Array(buffer)[0] & 0x1ff) + 1;
+    // oxlint-disable-next-line typescript/no-non-null-assertion, no-bitwise
+    const paddingLength = (new Uint16Array(buffer)[0]! & 0x1ff) + 1;
 
     // Generate a random padding buffer of the chosen size
     return getRandomBytes(paddingLength);
@@ -764,65 +791,62 @@ export class MessageSender {
 
   getTextAttachmentProto(
     attachmentAttrs: OutgoingTextAttachmentType
-  ): Proto.TextAttachment {
-    const textAttachment = new Proto.TextAttachment();
+  ): Proto.TextAttachment.Params {
+    const { preview, gradient } = attachmentAttrs;
 
-    if (attachmentAttrs.text) {
-      textAttachment.text = attachmentAttrs.text;
-    }
-
-    textAttachment.textStyle = attachmentAttrs.textStyle
-      ? Number(attachmentAttrs.textStyle)
-      : 0;
-
-    if (attachmentAttrs.textForegroundColor) {
-      textAttachment.textForegroundColor = attachmentAttrs.textForegroundColor;
-    }
-
-    if (attachmentAttrs.textBackgroundColor) {
-      textAttachment.textBackgroundColor = attachmentAttrs.textBackgroundColor;
-    }
-
-    if (attachmentAttrs.preview) {
-      textAttachment.preview = {
-        image: attachmentAttrs.preview.image,
-        title: attachmentAttrs.preview.title,
-        url: attachmentAttrs.preview.url,
+    let background: Proto.TextAttachment.Params['background'];
+    if (gradient) {
+      background = {
+        gradient: {
+          startColor: gradient.startColor ?? null,
+          endColor: gradient.endColor ?? null,
+          angle: gradient.angle ?? null,
+          colors: gradient.colors?.slice() ?? null,
+          positions: gradient.positions?.slice() ?? null,
+        },
       };
-    }
-
-    if (attachmentAttrs.gradient) {
-      const { colors, positions, ...rest } = attachmentAttrs.gradient;
-
-      textAttachment.gradient = {
-        ...rest,
-        colors: colors?.slice(),
-        positions: positions?.slice(),
+    } else if (attachmentAttrs.color) {
+      background = {
+        color: attachmentAttrs.color,
       };
-      textAttachment.background = 'gradient';
     } else {
-      textAttachment.color = attachmentAttrs.color;
-      textAttachment.background = 'color';
+      background = null;
     }
 
-    return textAttachment;
+    return {
+      text: attachmentAttrs.text ?? null,
+      textStyle: attachmentAttrs.textStyle ?? 0,
+
+      textForegroundColor: attachmentAttrs.textForegroundColor ?? null,
+      textBackgroundColor: attachmentAttrs.textBackgroundColor ?? null,
+
+      preview: preview
+        ? {
+            image: preview.image ?? null,
+            title: preview.title ?? null,
+            url: preview.url,
+            description: null,
+            date: null,
+          }
+        : null,
+
+      background,
+    };
   }
 
   async getDataOrEditMessage(
     options: Readonly<MessageOptionsType>
-  ): Promise<Uint8Array> {
+  ): Promise<Uint8Array<ArrayBuffer>> {
     const message = await this.getHydratedMessage(options);
     const dataMessage = message.toProto();
 
     if (options.targetTimestampForEdit) {
-      const editMessage = new Proto.EditMessage();
-      editMessage.dataMessage = dataMessage;
-      editMessage.targetSentTimestamp = Long.fromNumber(
-        options.targetTimestampForEdit
-      );
-      return Proto.EditMessage.encode(editMessage).finish();
+      return Proto.EditMessage.encode({
+        dataMessage,
+        targetSentTimestamp: BigInt(options.targetTimestampForEdit),
+      });
     }
-    return Proto.DataMessage.encode(dataMessage).finish();
+    return Proto.DataMessage.encode(dataMessage);
   }
 
   createDataMessageProtoForPollVote({
@@ -832,35 +856,50 @@ export class MessageSender {
     expireTimer,
     expireTimerVersion,
     pollVote,
-  }: PollVoteBuildOptions): Proto.DataMessage {
-    const dataMessage = new Proto.DataMessage();
-    dataMessage.timestamp = Long.fromNumber(timestamp);
+  }: PollVoteBuildOptions): Proto.DataMessage.Params {
+    return {
+      timestamp: BigInt(timestamp),
+      groupV2: groupV2
+        ? {
+            masterKey: groupV2.masterKey,
+            revision: groupV2.revision,
+            groupChange: null,
+          }
+        : null,
+      expireTimer: expireTimer ?? null,
+      expireTimerVersion: expireTimerVersion ?? null,
+      profileKey: profileKey ?? null,
+      pollVote: {
+        targetAuthorAciBinary: toAciObject(
+          pollVote.targetAuthorAci
+        ).getRawUuidBytes(),
+        targetSentTimestamp: BigInt(pollVote.targetTimestamp),
+        optionIndexes: pollVote.optionIndexes.slice(),
+        voteCount: pollVote.voteCount,
+      },
 
-    const groupContext = new Proto.GroupContextV2();
-    groupContext.masterKey = groupV2.masterKey;
-    groupContext.revision = groupV2.revision;
-    dataMessage.groupV2 = groupContext;
-
-    if (typeof expireTimer !== 'undefined') {
-      dataMessage.expireTimer = expireTimer;
-    }
-    if (typeof expireTimerVersion !== 'undefined') {
-      dataMessage.expireTimerVersion = expireTimerVersion;
-    }
-    if (profileKey) {
-      dataMessage.profileKey = profileKey;
-    }
-
-    const vote = new Proto.DataMessage.PollVote();
-    vote.targetAuthorAciBinary = toAciObject(
-      pollVote.targetAuthorAci
-    ).getRawUuidBytes();
-    vote.targetSentTimestamp = Long.fromNumber(pollVote.targetTimestamp);
-    vote.optionIndexes = pollVote.optionIndexes.slice();
-    vote.voteCount = pollVote.voteCount;
-    dataMessage.pollVote = vote;
-
-    return dataMessage;
+      body: null,
+      attachments: null,
+      flags: null,
+      quote: null,
+      contact: null,
+      preview: null,
+      sticker: null,
+      requiredProtocolVersion: null,
+      isViewOnce: null,
+      reaction: null,
+      delete: null,
+      bodyRanges: null,
+      groupCallUpdate: null,
+      payment: null,
+      storyContext: null,
+      giftBadge: null,
+      pollCreate: null,
+      pollTerminate: null,
+      pinMessage: null,
+      unpinMessage: null,
+      adminDelete: null,
+    };
   }
 
   async getPollVoteDataMessage({
@@ -870,7 +909,7 @@ export class MessageSender {
     expireTimer,
     expireTimerVersion,
     pollVote,
-  }: PollVoteBuildOptions): Promise<Uint8Array> {
+  }: PollVoteBuildOptions): Promise<Uint8Array<ArrayBuffer>> {
     const proto = this.createDataMessageProtoForPollVote({
       groupV2,
       timestamp,
@@ -879,7 +918,7 @@ export class MessageSender {
       expireTimerVersion,
       pollVote,
     });
-    return Proto.DataMessage.encode(proto).finish();
+    return Proto.DataMessage.encode(proto);
   }
 
   async getPollVoteContentMessage({
@@ -889,7 +928,7 @@ export class MessageSender {
     expireTimer,
     expireTimerVersion,
     pollVote,
-  }: PollVoteBuildOptions): Promise<Proto.Content> {
+  }: PollVoteBuildOptions): Promise<Proto.Content.Params> {
     const dataMessage = this.createDataMessageProtoForPollVote({
       groupV2,
       timestamp,
@@ -898,9 +937,13 @@ export class MessageSender {
       expireTimerVersion,
       pollVote,
     });
-    const contentMessage = new Proto.Content();
-    contentMessage.dataMessage = dataMessage;
-    return contentMessage;
+    return {
+      content: {
+        dataMessage,
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
   }
 
   createDataMessageProtoForPollTerminate({
@@ -910,32 +953,45 @@ export class MessageSender {
     expireTimer,
     expireTimerVersion,
     pollTerminate,
-  }: PollTerminateBuildOptions): Proto.DataMessage {
-    const dataMessage = new Proto.DataMessage();
-    dataMessage.timestamp = Long.fromNumber(timestamp);
+  }: PollTerminateBuildOptions): Proto.DataMessage.Params {
+    return {
+      timestamp: BigInt(timestamp),
+      groupV2: groupV2
+        ? {
+            masterKey: groupV2.masterKey,
+            revision: groupV2.revision,
+            groupChange: null,
+          }
+        : null,
+      expireTimer: expireTimer ?? null,
+      expireTimerVersion: expireTimerVersion ?? null,
+      profileKey: profileKey ?? null,
+      pollTerminate: {
+        targetSentTimestamp: BigInt(pollTerminate.targetTimestamp),
+      },
 
-    const groupContext = new Proto.GroupContextV2();
-    groupContext.masterKey = groupV2.masterKey;
-    groupContext.revision = groupV2.revision;
-    dataMessage.groupV2 = groupContext;
-
-    if (typeof expireTimer !== 'undefined') {
-      dataMessage.expireTimer = expireTimer;
-    }
-    if (typeof expireTimerVersion !== 'undefined') {
-      dataMessage.expireTimerVersion = expireTimerVersion;
-    }
-    if (profileKey) {
-      dataMessage.profileKey = profileKey;
-    }
-
-    const terminate = new Proto.DataMessage.PollTerminate();
-    terminate.targetSentTimestamp = Long.fromNumber(
-      pollTerminate.targetTimestamp
-    );
-    dataMessage.pollTerminate = terminate;
-
-    return dataMessage;
+      body: null,
+      attachments: null,
+      flags: null,
+      quote: null,
+      contact: null,
+      preview: null,
+      sticker: null,
+      requiredProtocolVersion: null,
+      isViewOnce: null,
+      reaction: null,
+      delete: null,
+      bodyRanges: null,
+      groupCallUpdate: null,
+      payment: null,
+      storyContext: null,
+      giftBadge: null,
+      pollCreate: null,
+      pollVote: null,
+      pinMessage: null,
+      unpinMessage: null,
+      adminDelete: null,
+    };
   }
 
   async getPollTerminateContentMessage({
@@ -945,7 +1001,7 @@ export class MessageSender {
     expireTimer,
     expireTimerVersion,
     pollTerminate,
-  }: PollTerminateBuildOptions): Promise<Proto.Content> {
+  }: PollTerminateBuildOptions): Promise<Proto.Content.Params> {
     const dataMessage = this.createDataMessageProtoForPollTerminate({
       groupV2,
       timestamp,
@@ -954,9 +1010,13 @@ export class MessageSender {
       expireTimerVersion,
       pollTerminate,
     });
-    const contentMessage = new Proto.Content();
-    contentMessage.dataMessage = dataMessage;
-    return contentMessage;
+    return {
+      content: {
+        dataMessage,
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
   }
 
   async getStoryMessage({
@@ -971,47 +1031,36 @@ export class MessageSender {
     bodyRanges?: Array<RawBodyRange>;
     fileAttachment?: UploadedAttachmentType;
     groupV2?: GroupV2InfoType;
-    profileKey: Uint8Array;
+    profileKey: Uint8Array<ArrayBuffer>;
     textAttachment?: OutgoingTextAttachmentType;
-  }): Promise<Proto.StoryMessage> {
-    const storyMessage = new Proto.StoryMessage();
-
-    storyMessage.profileKey = profileKey;
-
-    if (fileAttachment) {
-      if (bodyRanges) {
-        storyMessage.bodyRanges = bodyRanges;
-      }
-      try {
-        storyMessage.fileAttachment = fileAttachment;
-      } catch (error) {
-        if (error instanceof HTTPError) {
-          throw new MessageError(storyMessage, error);
-        } else {
-          throw error;
-        }
-      }
-    }
+  }): Promise<Proto.StoryMessage.Params> {
+    let attachment: Proto.StoryMessage.Params['attachment'];
 
     if (textAttachment) {
-      storyMessage.textAttachment = this.getTextAttachmentProto(textAttachment);
+      attachment = {
+        textAttachment: this.getTextAttachmentProto(textAttachment),
+      };
+    } else if (fileAttachment) {
+      attachment = { fileAttachment };
+    } else {
+      attachment = null;
     }
 
-    if (groupV2) {
-      const groupV2Context = new Proto.GroupContextV2();
-      groupV2Context.masterKey = groupV2.masterKey;
-      groupV2Context.revision = groupV2.revision;
-
-      if (groupV2.groupChange) {
-        groupV2Context.groupChange = groupV2.groupChange;
-      }
-
-      storyMessage.group = groupV2Context;
-    }
-
-    storyMessage.allowsReplies = Boolean(allowsReplies);
-
-    return storyMessage;
+    return {
+      profileKey,
+      allowsReplies: Boolean(allowsReplies),
+      group: groupV2
+        ? {
+            masterKey: groupV2.masterKey,
+            revision: groupV2.revision,
+            groupChange: groupV2.groupChange ?? null,
+          }
+        : null,
+      bodyRanges: fileAttachment
+        ? (bodyRanges?.map(toBodyRange) ?? null)
+        : null,
+      attachment,
+    };
   }
 
   async getContentMessage(
@@ -1019,21 +1068,28 @@ export class MessageSender {
       Readonly<{
         includePniSignatureMessage?: boolean;
       }>
-  ): Promise<Proto.Content> {
+  ): Promise<Proto.Content.Params> {
     const message = await this.getHydratedMessage(options);
     const dataMessage = message.toProto();
 
-    const contentMessage = new Proto.Content();
-    if (options.targetTimestampForEdit) {
-      const editMessage = new Proto.EditMessage();
-      editMessage.dataMessage = dataMessage;
-      editMessage.targetSentTimestamp = Long.fromNumber(
-        options.targetTimestampForEdit
-      );
-      contentMessage.editMessage = editMessage;
-    } else {
-      contentMessage.dataMessage = dataMessage;
-    }
+    const contentMessage: Proto.Content.Params = options.targetTimestampForEdit
+      ? {
+          content: {
+            editMessage: {
+              dataMessage,
+              targetSentTimestamp: BigInt(options.targetTimestampForEdit),
+            },
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        }
+      : {
+          content: {
+            dataMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        };
 
     const { includePniSignatureMessage } = options;
     if (includePniSignatureMessage) {
@@ -1067,12 +1123,12 @@ export class MessageSender {
   getTypingContentMessage(
     options: Readonly<{
       recipientId?: ServiceIdString;
-      groupId?: Uint8Array;
+      groupId?: Uint8Array<ArrayBuffer>;
       groupMembers: ReadonlyArray<ServiceIdString>;
       isTyping: boolean;
       timestamp?: number;
     }>
-  ): Proto.Content {
+  ): Proto.Content.Params {
     const ACTION_ENUM = Proto.TypingMessage.Action;
     const { recipientId, groupId, isTyping, timestamp } = options;
 
@@ -1085,40 +1141,43 @@ export class MessageSender {
     const finalTimestamp = timestamp || Date.now();
     const action = isTyping ? ACTION_ENUM.STARTED : ACTION_ENUM.STOPPED;
 
-    const typingMessage = new Proto.TypingMessage();
-    if (groupId) {
-      typingMessage.groupId = groupId;
-    }
-    typingMessage.action = action;
-    typingMessage.timestamp = Long.fromNumber(finalTimestamp);
-
-    const contentMessage = new Proto.Content();
-    contentMessage.typingMessage = typingMessage;
+    const content: Proto.Content.Params = {
+      content: {
+        typingMessage: {
+          groupId: groupId ?? null,
+          action,
+          timestamp: BigInt(finalTimestamp),
+        },
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
 
     if (recipientId) {
       addPniSignatureMessageToProto({
         conversation: window.ConversationController.get(recipientId),
-        proto: contentMessage,
+        proto: content,
         reason: `getTypingContentMessage(${finalTimestamp})`,
       });
     }
 
-    return contentMessage;
+    return content;
   }
 
   getAttrsFromGroupOptions(
-    options: Readonly<GroupSendOptionsType>
+    options: Readonly<GroupMessageOptionsType>
   ): MessageOptionsType {
     const {
+      deleteForEveryone,
       attachments,
       bodyRanges,
       contact,
-      deletedForEveryoneTimestamp,
       expireTimer,
       flags,
       groupCallUpdate,
       groupV2,
-      messageText,
+      isViewOnce,
+      body,
       preview,
       profileKey,
       quote,
@@ -1127,9 +1186,9 @@ export class MessageSender {
       storyContext,
       targetTimestampForEdit,
       timestamp,
-      pollVote,
+      pinMessage,
+      unpinMessage,
       pollCreate,
-      pollTerminate,
     } = options;
 
     if (!groupV2) {
@@ -1144,8 +1203,12 @@ export class MessageSender {
 
     const blockedIdentifiers = new Set(
       concat(
-        itemStorage.blocked.getBlockedServiceIds(),
-        itemStorage.blocked.getBlockedNumbers()
+        Array.from(itemStorage.blocked.getBlockedServiceIds().values()).map(
+          item => item.serviceId
+        ),
+        Array.from(itemStorage.blocked.getBlockedNumbers().values()).map(
+          item => item.e164
+        )
       )
     );
 
@@ -1154,16 +1217,17 @@ export class MessageSender {
     );
 
     return {
+      deleteForEveryone,
       attachments,
       bodyRanges,
-      body: messageText,
+      body,
       contact,
-      deletedForEveryoneTimestamp,
       expireTimer,
       expireTimerVersion: undefined,
       flags,
       groupCallUpdate,
       groupV2,
+      isViewOnce,
       preview,
       profileKey,
       quote,
@@ -1173,18 +1237,23 @@ export class MessageSender {
       storyContext,
       targetTimestampForEdit,
       timestamp,
-      pollVote,
+      pinMessage,
+      unpinMessage,
       pollCreate,
-      pollTerminate,
     };
   }
 
-  static createSyncMessage(): Proto.SyncMessage {
-    const syncMessage = new Proto.SyncMessage();
-
-    syncMessage.padding = this.getRandomPadding();
-
-    return syncMessage;
+  static padSyncMessage(
+    params: RequireExactlyOne<Omit<Proto.SyncMessage.Params, 'padding'>>
+  ): Proto.SyncMessage.Params {
+    return {
+      read: null,
+      viewed: null,
+      stickerPackOperation: null,
+      content: null,
+      ...params,
+      padding: this.getRandomPadding(),
+    };
   }
 
   // Low-level sends
@@ -1252,7 +1321,7 @@ export class MessageSender {
     contentHint: number;
     groupId: string | undefined;
     options?: SendOptionsType;
-    proto: Proto.Content | Proto.DataMessage | PlaintextContent;
+    proto: Proto.Content.Params | PlaintextContent;
     recipients: ReadonlyArray<ServiceIdString>;
     sendLogCallback?: SendLogCallbackType;
     story?: boolean;
@@ -1313,7 +1382,7 @@ export class MessageSender {
   }: Readonly<{
     timestamp: number;
     recipients: Array<ServiceIdString>;
-    proto: Proto.Content | Proto.DataMessage | PlaintextContent;
+    proto: Proto.Content.Params | PlaintextContent;
     contentHint: number;
     groupId: string | undefined;
     options?: SendOptionsType;
@@ -1358,7 +1427,7 @@ export class MessageSender {
     groupId?: string;
     serviceId: ServiceIdString | undefined;
     options?: SendOptionsType;
-    proto: Proto.DataMessage | Proto.Content | PlaintextContent;
+    proto: Proto.Content.Params | PlaintextContent;
     timestamp: number;
     urgent: boolean;
   }>): Promise<CallbackResultType> {
@@ -1389,70 +1458,28 @@ export class MessageSender {
   // You might wonder why this takes a groupId. models/messages.resend() can send a group
   //   message to just one person.
   async sendMessageToServiceId({
-    attachments,
-    bodyRanges,
-    contact,
+    messageOptions,
     contentHint,
-    deletedForEveryoneTimestamp,
-    expireTimer,
-    expireTimerVersion,
     groupId,
     serviceId,
-    messageText,
     options,
-    preview,
-    profileKey,
-    quote,
-    reaction,
-    sticker,
-    storyContext,
     story,
-    targetTimestampForEdit,
-    timestamp,
     urgent,
     includePniSignatureMessage,
   }: Readonly<{
-    attachments: ReadonlyArray<Proto.IAttachmentPointer> | undefined;
-    bodyRanges?: ReadonlyArray<RawBodyRange>;
-    contact?: ReadonlyArray<EmbeddedContactWithUploadedAvatar>;
-    contentHint: number;
-    deletedForEveryoneTimestamp: number | undefined;
-    expireTimer: DurationInSeconds | undefined;
-    expireTimerVersion: number | undefined;
-    groupId: string | undefined;
     serviceId: ServiceIdString;
-    messageText: string | undefined;
+    groupId: string | undefined;
+    messageOptions: Omit<MessageOptionsType, 'recipients'>;
+    contentHint: number;
     options?: SendOptionsType;
-    preview?: ReadonlyArray<OutgoingLinkPreviewType> | undefined;
-    profileKey?: Uint8Array;
-    quote?: OutgoingQuoteType;
-    reaction?: ReactionType;
-    sticker?: OutgoingStickerType;
-    storyContext?: StoryContextType;
     story?: boolean;
-    targetTimestampForEdit?: number;
-    timestamp: number;
     urgent: boolean;
     includePniSignatureMessage?: boolean;
   }>): Promise<CallbackResultType> {
     return this.sendMessage({
       messageOptions: {
-        attachments,
-        bodyRanges,
-        body: messageText,
-        contact,
-        deletedForEveryoneTimestamp,
-        expireTimer,
-        expireTimerVersion,
-        preview,
-        profileKey,
-        quote,
-        reaction,
+        ...messageOptions,
         recipients: [serviceId],
-        sticker,
-        storyContext,
-        targetTimestampForEdit,
-        timestamp,
       },
       contentHint,
       groupId,
@@ -1482,8 +1509,8 @@ export class MessageSender {
     storyMessage,
     storyMessageRecipients,
   }: Readonly<{
-    encodedDataMessage?: Uint8Array;
-    encodedEditMessage?: Uint8Array;
+    encodedDataMessage?: Uint8Array<ArrayBuffer>;
+    encodedEditMessage?: Uint8Array<ArrayBuffer>;
     timestamp: number;
     destinationE164: string | undefined;
     destinationServiceId: ServiceIdString | undefined;
@@ -1493,91 +1520,130 @@ export class MessageSender {
     isUpdate?: boolean;
     urgent: boolean;
     options?: SendOptionsType;
-    storyMessage?: Proto.StoryMessage;
-    storyMessageRecipients?: ReadonlyArray<Proto.SyncMessage.Sent.IStoryMessageRecipient>;
+    storyMessage?: Proto.StoryMessage.Params;
+    storyMessageRecipients?: StoryMessageRecipientsType;
   }>): Promise<CallbackResultType> {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const sentMessage = new Proto.SyncMessage.Sent();
-    sentMessage.timestamp = Long.fromNumber(timestamp);
-
+    let editMessage: Proto.EditMessage.Params | null;
+    let message: Proto.DataMessage.Params | null;
     if (encodedEditMessage) {
-      const editMessage = Proto.EditMessage.decode(encodedEditMessage);
-      sentMessage.editMessage = editMessage;
+      editMessage = Proto.EditMessage.decode(encodedEditMessage);
+      message = null;
     } else if (encodedDataMessage) {
-      const dataMessage = Proto.DataMessage.decode(encodedDataMessage);
-      sentMessage.message = dataMessage;
-    }
-    if (destinationE164) {
-      sentMessage.destinationE164 = destinationE164;
-    }
-    if (destinationServiceId) {
-      if (isProtoBinaryEncodingEnabled()) {
-        sentMessage.destinationServiceIdBinary =
-          toServiceIdObject(destinationServiceId).getServiceIdBinary();
-      } else {
-        sentMessage.destinationServiceId = destinationServiceId;
-      }
-    }
-    if (expirationStartTimestamp) {
-      sentMessage.expirationStartTimestamp = Long.fromNumber(
-        expirationStartTimestamp
-      );
-    }
-    if (storyMessage) {
-      sentMessage.storyMessage = storyMessage;
-    }
-    if (storyMessageRecipients) {
-      sentMessage.storyMessageRecipients = storyMessageRecipients.slice();
-    }
-
-    if (isUpdate) {
-      sentMessage.isRecipientUpdate = true;
+      message = Proto.DataMessage.decode(encodedDataMessage);
+      editMessage = null;
+    } else {
+      message = null;
+      editMessage = null;
     }
 
     // Though this field has 'unidentified' in the name, it should have entries for each
     //   number we sent to.
-    if (!isEmpty(conversationIdsSentTo)) {
-      sentMessage.unidentifiedStatus = await pMap(
+    let unidentifiedStatus: Array<Proto.SyncMessage.Sent.UnidentifiedDeliveryStatus.Params> | null;
+    if (isEmpty(conversationIdsSentTo)) {
+      unidentifiedStatus = null;
+    } else {
+      unidentifiedStatus = await pMap(
         conversationIdsSentTo,
-        async conversationId => {
-          const status =
-            new Proto.SyncMessage.Sent.UnidentifiedDeliveryStatus();
+        async (
+          conversationId
+        ): Promise<Proto.SyncMessage.Sent.UnidentifiedDeliveryStatus.Params> => {
           const conv = window.ConversationController.get(conversationId);
+          const serviceId = conv?.getServiceId();
+          let destinationPniIdentityKey: Uint8Array<ArrayBuffer> | null = null;
           if (conv) {
-            const serviceId = conv.getServiceId();
-            if (serviceId) {
-              if (isProtoBinaryEncodingEnabled()) {
-                status.destinationServiceIdBinary =
-                  toServiceIdObject(serviceId).getServiceIdBinary();
-              } else {
-                status.destinationServiceId = serviceId;
-              }
-            }
             if (isPniString(serviceId)) {
               const pniIdentityKey =
                 await signalProtocolStore.loadIdentityKey(serviceId);
               if (pniIdentityKey) {
-                status.destinationPniIdentityKey = pniIdentityKey;
+                destinationPniIdentityKey = pniIdentityKey;
               }
             }
           }
-          status.unidentified =
-            conversationIdsWithSealedSender.has(conversationId);
-          return status;
+          return {
+            unidentified: conversationIdsWithSealedSender.has(conversationId),
+            ...(isProtoBinaryEncodingEnabled()
+              ? {
+                  destinationServiceId: null,
+                  destinationServiceIdBinary: serviceId
+                    ? toServiceIdObject(serviceId).getServiceIdBinary()
+                    : null,
+                }
+              : {
+                  destinationServiceId: serviceId ?? null,
+                  destinationServiceIdBinary: null,
+                }),
+            destinationPniIdentityKey,
+          };
         },
         { concurrency: 10 }
       );
     }
 
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.sent = sentMessage;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        sent: {
+          timestamp: BigInt(timestamp),
+          destinationE164: destinationE164 ?? null,
+          ...(isProtoBinaryEncodingEnabled()
+            ? {
+                destinationServiceId: null,
+                destinationServiceIdBinary: destinationServiceId
+                  ? toServiceIdObject(destinationServiceId).getServiceIdBinary()
+                  : null,
+              }
+            : {
+                destinationServiceId: destinationServiceId ?? null,
+                destinationServiceIdBinary: null,
+              }),
+          expirationStartTimestamp: expirationStartTimestamp
+            ? BigInt(expirationStartTimestamp)
+            : null,
+          storyMessage: storyMessage ?? null,
+          storyMessageRecipients:
+            storyMessageRecipients?.map(
+              (
+                recipient
+              ): Proto.SyncMessage.Sent.StoryMessageRecipient.Params => {
+                return {
+                  ...(isProtoBinaryEncodingEnabled()
+                    ? {
+                        destinationServiceId: null,
+                        destinationServiceIdBinary:
+                          recipient.destinationServiceId
+                            ? toServiceIdObject(
+                                recipient.destinationServiceId
+                              ).getServiceIdBinary()
+                            : null,
+                      }
+                    : {
+                        destinationServiceId:
+                          recipient.destinationServiceId ?? null,
+                        destinationServiceIdBinary: null,
+                      }),
+                  isAllowedToReply: recipient.isAllowedToReply,
+                  distributionListIds: recipient.distributionListIds,
+                };
+              }
+            ) ?? null,
+          unidentifiedStatus,
+          editMessage,
+          message,
+          isRecipientUpdate: Boolean(isUpdate),
+        },
+      },
+    });
 
     return this.sendIndividualProto({
       serviceId: myAci,
-      proto: contentMessage,
+      proto: {
+        content: {
+          syncMessage,
+        },
+        pniSignatureMessage: null,
+        senderKeyDistributionMessage: null,
+      },
       timestamp,
       contentHint: ContentHint.Resendable,
       options,
@@ -1588,19 +1654,28 @@ export class MessageSender {
   static getRequestBlockSyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const request = new Proto.SyncMessage.Request();
-    request.type = Proto.SyncMessage.Request.Type.BLOCKED;
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.request = request;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const request: Proto.SyncMessage.Request.Params = {
+      type: Proto.SyncMessage.Request.Type.BLOCKED,
+    };
+
+    const syncMessage = this.padSyncMessage({
+      content: {
+        request,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'blockSyncRequest',
       urgent: false,
@@ -1610,19 +1685,28 @@ export class MessageSender {
   static getRequestConfigurationSyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const request = new Proto.SyncMessage.Request();
-    request.type = Proto.SyncMessage.Request.Type.CONFIGURATION;
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.request = request;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const request: Proto.SyncMessage.Request.Params = {
+      type: Proto.SyncMessage.Request.Type.CONFIGURATION,
+    };
+
+    const syncMessage = this.padSyncMessage({
+      content: {
+        request,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'configurationSyncRequest',
       urgent: false,
@@ -1632,19 +1716,28 @@ export class MessageSender {
   static getRequestContactSyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const request = new Proto.SyncMessage.Request();
-    request.type = Proto.SyncMessage.Request.Type.CONTACTS;
-    const syncMessage = this.createSyncMessage();
-    syncMessage.request = request;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const request: Proto.SyncMessage.Request.Params = {
+      type: Proto.SyncMessage.Request.Type.CONTACTS,
+    };
+
+    const syncMessage = this.padSyncMessage({
+      content: {
+        request,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'contactSyncRequest',
       urgent: true,
@@ -1654,20 +1747,28 @@ export class MessageSender {
   static getFetchManifestSyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const fetchLatest = new Proto.SyncMessage.FetchLatest();
-    fetchLatest.type = Proto.SyncMessage.FetchLatest.Type.STORAGE_MANIFEST;
+    const fetchLatest: Proto.SyncMessage.FetchLatest.Params = {
+      type: Proto.SyncMessage.FetchLatest.Type.STORAGE_MANIFEST,
+    };
 
-    const syncMessage = this.createSyncMessage();
-    syncMessage.fetchLatest = fetchLatest;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = this.padSyncMessage({
+      content: {
+        fetchLatest,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'fetchLatestManifestSync',
       urgent: false,
@@ -1677,20 +1778,28 @@ export class MessageSender {
   static getFetchLocalProfileSyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const fetchLatest = new Proto.SyncMessage.FetchLatest();
-    fetchLatest.type = Proto.SyncMessage.FetchLatest.Type.LOCAL_PROFILE;
+    const fetchLatest: Proto.SyncMessage.FetchLatest.Params = {
+      type: Proto.SyncMessage.FetchLatest.Type.LOCAL_PROFILE,
+    };
 
-    const syncMessage = this.createSyncMessage();
-    syncMessage.fetchLatest = fetchLatest;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = this.padSyncMessage({
+      content: {
+        fetchLatest,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'fetchLocalProfileSync',
       urgent: false,
@@ -1700,20 +1809,28 @@ export class MessageSender {
   static getRequestKeySyncMessage(): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const request = new Proto.SyncMessage.Request();
-    request.type = Proto.SyncMessage.Request.Type.KEYS;
+    const request: Proto.SyncMessage.Request.Params = {
+      type: Proto.SyncMessage.Request.Type.KEYS,
+    };
 
-    const syncMessage = this.createSyncMessage();
-    syncMessage.request = request;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = this.padSyncMessage({
+      content: {
+        request,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'keySyncRequest',
       urgent: true,
@@ -1725,11 +1842,18 @@ export class MessageSender {
   ): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const deleteForMe = new Proto.SyncMessage.DeleteForMe();
-    const messageDeletes: Map<
-      string,
-      Array<DeleteMessageSyncTarget>
-    > = new Map();
+    const deleteForMe = {
+      messageDeletes:
+        new Array<Proto.SyncMessage.DeleteForMe.MessageDeletes.Params>(),
+      conversationDeletes:
+        new Array<Proto.SyncMessage.DeleteForMe.ConversationDelete.Params>(),
+      localOnlyConversationDeletes:
+        new Array<Proto.SyncMessage.DeleteForMe.LocalOnlyConversationDelete.Params>(),
+      attachmentDeletes:
+        new Array<Proto.SyncMessage.DeleteForMe.AttachmentDelete.Params>(),
+    } satisfies Proto.SyncMessage.DeleteForMe.Params;
+
+    const messageDeletes = new Map<string, Array<DeleteMessageSyncTarget>>();
 
     data.forEach(item => {
       if (item.type === 'delete-message') {
@@ -1749,10 +1873,9 @@ export class MessageSender {
         const mostRecentMessages =
           item.mostRecentMessages.map(toAddressableMessage);
         const mostRecentNonExpiringMessages =
-          item.mostRecentNonExpiringMessages?.map(toAddressableMessage);
+          item.mostRecentNonExpiringMessages?.map(toAddressableMessage) ?? null;
         const conversation = toConversationIdentifier(item.conversation);
 
-        deleteForMe.conversationDeletes = deleteForMe.conversationDeletes || [];
         deleteForMe.conversationDeletes.push({
           conversation,
           isFullDelete: true,
@@ -1762,15 +1885,27 @@ export class MessageSender {
       } else if (item.type === 'delete-local-conversation') {
         const conversation = toConversationIdentifier(item.conversation);
 
-        deleteForMe.localOnlyConversationDeletes =
-          deleteForMe.localOnlyConversationDeletes || [];
         deleteForMe.localOnlyConversationDeletes.push({
           conversation,
         });
       } else if (item.type === 'delete-single-attachment') {
-        throw new Error(
-          "getDeleteForMeSyncMessage: Desktop currently does not support sending 'delete-single-attachment' messages"
-        );
+        const conversation = toConversationIdentifier(item.conversation);
+        const targetMessage = toAddressableMessage(item.message);
+
+        deleteForMe.attachmentDeletes.push({
+          conversation,
+          targetMessage,
+          clientUuid:
+            item.clientUuid == null ? null : uuidToBytes(item.clientUuid),
+          fallbackDigest:
+            item.fallbackDigest == null
+              ? null
+              : Bytes.fromBase64(item.fallbackDigest),
+          fallbackPlaintextHash:
+            item.fallbackPlaintextHash == null
+              ? null
+              : Bytes.fromHex(item.fallbackPlaintextHash),
+        });
       } else {
         throw missingCaseError(item);
       }
@@ -1791,7 +1926,6 @@ export class MessageSender {
           );
         }
 
-        deleteForMe.messageDeletes = deleteForMe.messageDeletes || [];
         deleteForMe.messageDeletes.push({
           messages,
           conversation,
@@ -1799,19 +1933,53 @@ export class MessageSender {
       }
     }
 
-    const syncMessage = this.createSyncMessage();
-    syncMessage.deleteForMe = deleteForMe;
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = this.padSyncMessage({
+      content: {
+        deleteForMe,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'deleteForMeSync',
+      urgent: false,
+    };
+  }
+
+  static getUsernameChangeSyncMessage(): SingleProtoJobData {
+    const myAci = itemStorage.user.getCheckedAci();
+
+    const syncMessage = this.padSyncMessage({
+      content: {
+        usernameChange: {},
+      },
+    });
+
+    return {
+      contentHint: ContentHint.Resendable,
+      serviceId: myAci,
+      isSyncMessage: true,
+      protoBase64: Bytes.toBase64(
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
+      ),
+      type: 'usernameChangeSync',
       urgent: false,
     };
   }
@@ -1822,21 +1990,27 @@ export class MessageSender {
   ): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = this.createSyncMessage();
-    syncMessage.attachmentBackfillRequest = {
-      targetMessage: toAddressableMessage(targetMessage),
-      targetConversation: toConversationIdentifier(targetConversation),
-    };
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = this.padSyncMessage({
+      content: {
+        attachmentBackfillRequest: {
+          targetMessage: toAddressableMessage(targetMessage),
+          targetConversation: toConversationIdentifier(targetConversation),
+        },
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'attachmentBackfillRequestSync',
       urgent: false,
@@ -1847,25 +2021,31 @@ export class MessageSender {
     latestCall: CallHistoryDetails
   ): SingleProtoJobData {
     const ourAci = itemStorage.user.getCheckedAci();
-    const callLogEvent = new Proto.SyncMessage.CallLogEvent({
+    const callLogEvent: Proto.SyncMessage.CallLogEvent.Params = {
       type: Proto.SyncMessage.CallLogEvent.Type.CLEAR,
-      timestamp: Long.fromNumber(latestCall.timestamp),
-      peerId: getBytesForPeerId(latestCall),
+      timestamp: BigInt(latestCall.timestamp),
+      conversationId: getBytesForPeerId(latestCall),
       callId: getCallIdForProto(latestCall),
+    };
+
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        callLogEvent,
+      },
     });
-
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.callLogEvent = callLogEvent;
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'callLogEventSync',
       urgent: false,
@@ -1890,18 +2070,24 @@ export class MessageSender {
       status,
     });
 
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.callEvent = callEvent;
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        callEvent,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: ourAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'callLogEventSync',
       urgent: false,
@@ -1911,29 +2097,44 @@ export class MessageSender {
   async syncReadMessages(
     reads: ReadonlyArray<{
       senderAci?: AciString;
-      senderE164?: string;
       timestamp: number;
     }>,
     options?: Readonly<SendOptionsType>
   ): Promise<CallbackResultType> {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.read = [];
-    for (let i = 0; i < reads.length; i += 1) {
-      const proto = new Proto.SyncMessage.Read({
-        ...reads[i],
-        timestamp: Long.fromNumber(reads[i].timestamp),
-      });
-
-      syncMessage.read.push(proto);
+    const read = new Array<Proto.SyncMessage.Read.Params>();
+    for (const r of reads) {
+      if (isProtoBinaryEncodingEnabled()) {
+        read.push({
+          timestamp: BigInt(r.timestamp),
+          senderAci: null,
+          senderAciBinary: r.senderAci
+            ? toAciObject(r.senderAci).getRawUuidBytes()
+            : null,
+        });
+      } else {
+        read.push({
+          timestamp: BigInt(r.timestamp),
+          senderAci: r.senderAci ?? null,
+          senderAciBinary: null,
+        });
+      }
     }
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+
+    const syncMessage = MessageSender.padSyncMessage({
+      read,
+    });
 
     return this.sendIndividualProto({
       serviceId: myAci,
-      proto: contentMessage,
+      proto: {
+        content: {
+          syncMessage,
+        },
+        pniSignatureMessage: null,
+        senderKeyDistributionMessage: null,
+      },
       timestamp: Date.now(),
       contentHint: ContentHint.Resendable,
       options,
@@ -1944,27 +2145,44 @@ export class MessageSender {
   async syncView(
     views: ReadonlyArray<{
       senderAci?: AciString;
-      senderE164?: string;
       timestamp: number;
     }>,
     options?: SendOptionsType
   ): Promise<CallbackResultType> {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.viewed = views.map(
-      view =>
-        new Proto.SyncMessage.Viewed({
-          ...view,
-          timestamp: Long.fromNumber(view.timestamp),
-        })
+    const viewed = views.map(
+      ({ senderAci, timestamp }): Proto.SyncMessage.Viewed.Params => {
+        if (isProtoBinaryEncodingEnabled()) {
+          return {
+            timestamp: BigInt(timestamp),
+            senderAci: null,
+            senderAciBinary: senderAci
+              ? toAciObject(senderAci).getRawUuidBytes()
+              : null,
+          };
+        }
+        return {
+          timestamp: BigInt(timestamp),
+          senderAci: senderAci ?? null,
+          senderAciBinary: null,
+        };
+      }
     );
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+
+    const syncMessage = MessageSender.padSyncMessage({
+      viewed,
+    });
 
     return this.sendIndividualProto({
       serviceId: myAci,
-      proto: contentMessage,
+      proto: {
+        content: {
+          syncMessage,
+        },
+        pniSignatureMessage: null,
+        senderKeyDistributionMessage: null,
+      },
       timestamp: Date.now(),
       contentHint: ContentHint.Resendable,
       options,
@@ -1985,7 +2203,8 @@ export class MessageSender {
         `syncViewOnceOpen: ${viewOnceOpens.length} opens provided. Can only handle one.`
       );
     }
-    const { senderAci, timestamp } = viewOnceOpens[0];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const { senderAci, timestamp } = viewOnceOpens[0]!;
 
     if (!senderAci) {
       throw new Error('syncViewOnceOpen: Missing senderAci');
@@ -1993,23 +2212,32 @@ export class MessageSender {
 
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = MessageSender.createSyncMessage();
-
-    const viewOnceOpen = new Proto.SyncMessage.ViewOnceOpen();
+    const viewOnceOpen: Proto.SyncMessage.ViewOnceOpen.Params = {
+      timestamp: BigInt(timestamp),
+      senderAci: null,
+      senderAciBinary: null,
+    };
     if (isProtoBinaryEncodingEnabled()) {
       viewOnceOpen.senderAciBinary = toAciObject(senderAci).getRawUuidBytes();
     } else {
       viewOnceOpen.senderAci = senderAci;
     }
-    viewOnceOpen.timestamp = Long.fromNumber(timestamp);
-    syncMessage.viewOnceOpen = viewOnceOpen;
 
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        viewOnceOpen,
+      },
+    });
 
     return this.sendIndividualProto({
       serviceId: myAci,
-      proto: contentMessage,
+      proto: {
+        content: {
+          syncMessage,
+        },
+        pniSignatureMessage: null,
+        senderKeyDistributionMessage: null,
+      },
       timestamp: Date.now(),
       contentHint: ContentHint.Resendable,
       options,
@@ -2019,36 +2247,64 @@ export class MessageSender {
 
   static getBlockSync(
     options: Readonly<{
-      e164s: Array<string>;
-      acis: Array<AciString>;
-      groupIds: Array<Uint8Array>;
+      e164s: ReadonlyArray<BlockedNumber>;
+      acis: ReadonlyArray<{
+        blockedAt: number | undefined;
+        aci: AciString;
+      }>;
+      groupIds: ReadonlyArray<{
+        blockedAt: number | undefined;
+        groupId: Uint8Array<ArrayBuffer>;
+      }>;
     }>
   ): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = MessageSender.createSyncMessage();
-
-    const blocked = new Proto.SyncMessage.Blocked();
-    blocked.numbers = options.e164s;
+    const blocked: Proto.SyncMessage.Blocked.Params = {
+      numbers: options.e164s.map(item => item.e164),
+      blockedE164s: options.e164s.map(item => ({
+        timestamp: item.blockedAt ? BigInt(item.blockedAt) : null,
+        e164: item.e164,
+      })),
+      acisBinary: null,
+      acis: null,
+      blockedAcis: options.acis.map(item => ({
+        timestamp: item.blockedAt ? BigInt(item.blockedAt) : null,
+        aci: item.aci,
+        aciBinary: toAciObject(item.aci).getRawUuidBytes(),
+      })),
+      groupIds: options.groupIds.map(item => item.groupId),
+      blockedGroups: options.groupIds.map(item => ({
+        timestamp: item.blockedAt ? BigInt(item.blockedAt) : null,
+        groupId: item.groupId,
+      })),
+    };
     if (isProtoBinaryEncodingEnabled()) {
-      blocked.acisBinary = options.acis.map(aci =>
-        toAciObject(aci).getRawUuidBytes()
+      blocked.acisBinary = options.acis.map(item =>
+        toAciObject(item.aci).getRawUuidBytes()
       );
     } else {
-      blocked.acis = options.acis;
+      blocked.acis = options.acis.map(item => item.aci);
     }
-    blocked.groupIds = options.groupIds;
-    syncMessage.blocked = blocked;
 
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        blocked,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'blockSync',
       urgent: false,
@@ -2058,39 +2314,47 @@ export class MessageSender {
   static getMessageRequestResponseSync(
     options: Readonly<{
       threadAci?: AciString;
-      groupId?: Uint8Array;
+      groupId?: Uint8Array<ArrayBuffer>;
       type: number;
     }>
   ): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
-    const syncMessage = MessageSender.createSyncMessage();
+    const messageRequestResponse: Proto.SyncMessage.MessageRequestResponse.Params =
+      {
+        type: options.type,
+        groupId: options.groupId ? options.groupId : null,
+        threadAciBinary: null,
+        threadAci: null,
+      };
 
-    const response = new Proto.SyncMessage.MessageRequestResponse();
     if (options.threadAci !== undefined) {
       if (isProtoBinaryEncodingEnabled()) {
-        response.threadAciBinary = toAciObject(
+        messageRequestResponse.threadAciBinary = toAciObject(
           options.threadAci
         ).getRawUuidBytes();
       } else {
-        response.threadAci = options.threadAci;
+        messageRequestResponse.threadAci = options.threadAci;
       }
     }
-    if (options.groupId) {
-      response.groupId = options.groupId;
-    }
-    response.type = options.type;
-    syncMessage.messageRequestResponse = response;
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        messageRequestResponse,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'messageRequestSync',
       urgent: false,
@@ -2107,29 +2371,34 @@ export class MessageSender {
     const myAci = itemStorage.user.getCheckedAci();
     const ENUM = Proto.SyncMessage.StickerPackOperation.Type;
 
-    const packOperations = operations.map(item => {
-      const { packId, packKey, installed } = item;
+    const stickerPackOperation = operations.map(
+      (item): Proto.SyncMessage.StickerPackOperation.Params => {
+        const { packId, packKey, installed } = item;
 
-      const operation = new Proto.SyncMessage.StickerPackOperation();
-      operation.packId = Bytes.fromHex(packId);
-      operation.packKey = Bytes.fromBase64(packKey);
-      operation.type = installed ? ENUM.INSTALL : ENUM.REMOVE;
+        return {
+          packId: Bytes.fromHex(packId),
+          packKey: Bytes.fromBase64(packKey),
+          type: installed ? ENUM.INSTALL : ENUM.REMOVE,
+        };
+      }
+    );
 
-      return operation;
+    const syncMessage = MessageSender.padSyncMessage({
+      stickerPackOperation,
     });
-
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.stickerPackOperation = packOperations;
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'stickerPackSync',
       urgent: false,
@@ -2140,7 +2409,7 @@ export class MessageSender {
     destinationE164: string | undefined,
     destinationAci: AciString | undefined,
     state: number,
-    identityKey: Readonly<Uint8Array>
+    identityKey: Readonly<Uint8Array<ArrayBuffer>>
   ): SingleProtoJobData {
     const myAci = itemStorage.user.getCheckedAci();
 
@@ -2148,10 +2417,13 @@ export class MessageSender {
       throw new Error('syncVerification: Neither e164 nor UUID were provided');
     }
 
-    const padding = MessageSender.getRandomPadding();
-
-    const verified = new Proto.Verified();
-    verified.state = state;
+    const verified: Proto.Verified.Params = {
+      state,
+      identityKey,
+      nullMessage: MessageSender.getRandomPadding(),
+      destinationAci: null,
+      destinationAciBinary: null,
+    };
     if (destinationAci) {
       if (isProtoBinaryEncodingEnabled()) {
         verified.destinationAciBinary =
@@ -2160,21 +2432,25 @@ export class MessageSender {
         verified.destinationAci = destinationAci;
       }
     }
-    verified.identityKey = identityKey;
-    verified.nullMessage = padding;
 
-    const syncMessage = MessageSender.createSyncMessage();
-    syncMessage.verified = verified;
-
-    const contentMessage = new Proto.Content();
-    contentMessage.syncMessage = syncMessage;
+    const syncMessage = MessageSender.padSyncMessage({
+      content: {
+        verified,
+      },
+    });
 
     return {
       contentHint: ContentHint.Resendable,
       serviceId: myAci,
       isSyncMessage: true,
       protoBase64: Bytes.toBase64(
-        Proto.Content.encode(contentMessage).finish()
+        Proto.Content.encode({
+          content: {
+            syncMessage,
+          },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
+        })
       ),
       type: 'verificationSync',
       urgent: false,
@@ -2185,15 +2461,20 @@ export class MessageSender {
 
   async sendCallingMessage(
     serviceId: ServiceIdString,
-    callingMessage: Readonly<Proto.ICallMessage>,
+    callMessage: Readonly<Proto.CallMessage.Params>,
     timestamp: number,
     urgent: boolean,
     options?: Readonly<SendOptionsType>
   ): Promise<CallbackResultType> {
     const recipients = [serviceId];
 
-    const contentMessage = new Proto.Content();
-    contentMessage.callMessage = callingMessage;
+    const contentMessage: Proto.Content.Params = {
+      content: {
+        callMessage,
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
 
     const conversation = window.ConversationController.get(serviceId);
 
@@ -2271,14 +2552,18 @@ export class MessageSender {
   }>): Promise<CallbackResultType> {
     const timestamp = Date.now();
 
-    const receiptMessage = new Proto.ReceiptMessage();
-    receiptMessage.type = type;
-    receiptMessage.timestamp = timestamps.map(receiptTimestamp =>
-      Long.fromNumber(receiptTimestamp)
-    );
+    const receiptMessage: Proto.ReceiptMessage.Params = {
+      type,
+      timestamp: timestamps.map(receiptTimestamp => BigInt(receiptTimestamp)),
+    };
 
-    const contentMessage = new Proto.Content();
-    contentMessage.receiptMessage = receiptMessage;
+    const contentMessage = {
+      content: {
+        receiptMessage,
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
 
     if (isDirectConversation) {
       const conversation = window.ConversationController.get(senderAci);
@@ -2302,16 +2587,18 @@ export class MessageSender {
 
   static getNullMessage(
     options: Readonly<{
-      padding?: Uint8Array;
+      padding?: Uint8Array<ArrayBuffer>;
     }> = {}
-  ): Proto.Content {
-    const nullMessage = new Proto.NullMessage();
-    nullMessage.padding = options.padding || MessageSender.getRandomPadding();
-
-    const contentMessage = new Proto.Content();
-    contentMessage.nullMessage = nullMessage;
-
-    return contentMessage;
+  ): Proto.Content.Params {
+    return {
+      content: {
+        nullMessage: {
+          padding: options.padding || MessageSender.getRandomPadding(),
+        },
+      },
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: null,
+    };
   }
 
   // Group sends
@@ -2330,7 +2617,7 @@ export class MessageSender {
   }: Readonly<{
     contentHint: number;
     messageId?: string;
-    proto: Uint8Array;
+    proto: Uint8Array<ArrayBuffer>;
     sendType: SendTypesType;
     timestamp: number;
     urgent: boolean;
@@ -2343,7 +2630,7 @@ export class MessageSender {
       deviceIds,
     }: {
       serviceId: ServiceIdString;
-      deviceIds: Array<number>;
+      deviceIds: ReadonlyArray<number>;
     }) => {
       if (!shouldSaveProto(sendType)) {
         return;
@@ -2399,30 +2686,32 @@ export class MessageSender {
     recipients,
     sendLogCallback,
     story,
-    timestamp = Date.now(),
+    timestamp,
     urgent,
   }: Readonly<{
     contentHint: number;
     groupId: string | undefined;
     options?: SendOptionsType;
-    proto: Proto.Content;
+    proto: Proto.Content.Params;
     recipients: ReadonlyArray<ServiceIdString>;
     sendLogCallback?: SendLogCallbackType;
     story?: boolean;
     timestamp: number;
     urgent: boolean;
   }>): Promise<CallbackResultType> {
-    const myE164 = itemStorage.user.getNumber();
+    const myE164 = itemStorage.user.getOptionalNumber();
     const myAci = itemStorage.user.getAci();
-    const serviceIds = recipients.filter(id => id !== myE164 && id !== myAci);
+    const serviceIds = recipients.filter(id => {
+      return (myE164 == null || id !== myE164) && id !== myAci;
+    });
 
     if (serviceIds.length === 0) {
-      const dataMessage = proto.dataMessage
-        ? Proto.DataMessage.encode(proto.dataMessage).finish()
+      const dataMessage = proto.content?.dataMessage
+        ? Proto.DataMessage.encode(proto.content.dataMessage)
         : undefined;
 
-      const editMessage = proto.editMessage
-        ? Proto.EditMessage.encode(proto.editMessage).finish()
+      const editMessage = proto.content?.editMessage
+        ? Proto.EditMessage.encode(proto.content.editMessage)
         : undefined;
 
       return Promise.resolve({
@@ -2469,7 +2758,7 @@ export class MessageSender {
       throwIfNotInDatabase,
       timestamp,
     }: { throwIfNotInDatabase?: boolean; timestamp: number }
-  ): Promise<Proto.Content> {
+  ): Promise<Proto.Content.Params> {
     const ourAci = itemStorage.user.getCheckedAci();
     const ourDeviceId = parseIntOrThrow(
       itemStorage.user.getDeviceId(),
@@ -2485,6 +2774,7 @@ export class MessageSender {
     const senderKeyDistributionMessage =
       await signalProtocolStore.enqueueSenderKeyJob(address, async () => {
         const senderKeyStore = new SenderKeys({
+          signalProtocolStore,
           ourServiceId: ourAci,
           zone: GLOBAL_ZONE,
         });
@@ -2511,11 +2801,11 @@ export class MessageSender {
     log.info(
       `getSenderKeyDistributionMessage: Building ${distributionId} with timestamp ${timestamp}`
     );
-    const contentMessage = new Proto.Content();
-    contentMessage.senderKeyDistributionMessage =
-      senderKeyDistributionMessage.serialize();
-
-    return contentMessage;
+    return {
+      content: null,
+      pniSignatureMessage: null,
+      senderKeyDistributionMessage: senderKeyDistributionMessage.serialize(),
+    };
   }
 
   // The one group send exception - a message that should never be sent via sender key
@@ -2552,7 +2842,7 @@ export class MessageSender {
       serviceIds.length > 1
         ? this.makeSendLogCallback({
             contentHint: contentHint ?? ContentHint.Implicit,
-            proto: Proto.Content.encode(contentMessage).finish(),
+            proto: Proto.Content.encode(contentMessage),
             sendType: 'senderKeyDistributionMessage',
             timestamp,
             urgent,
@@ -2578,61 +2868,127 @@ export const messageSender = new MessageSender();
 
 // Helpers
 
-function toAddressableMessage(message: AddressableMessage) {
-  const targetMessage = new Proto.AddressableMessage();
-  targetMessage.sentTimestamp = Long.fromNumber(message.sentAt);
+function toAddressableMessage(
+  message: AddressableMessage
+): Proto.AddressableMessage.Params {
+  const sentTimestamp = BigInt(message.sentAt);
 
+  let author: Proto.AddressableMessage.Params['author'];
   if (message.type === 'aci') {
     if (isProtoBinaryEncodingEnabled()) {
-      targetMessage.authorServiceIdBinary = toAciObject(
-        message.authorAci
-      ).getServiceIdBinary();
+      author = {
+        authorServiceIdBinary: toAciObject(
+          message.authorAci
+        ).getServiceIdBinary(),
+      };
     } else {
-      targetMessage.authorServiceId = message.authorAci;
+      author = {
+        authorServiceId: message.authorAci,
+      };
     }
   } else if (message.type === 'e164') {
-    targetMessage.authorE164 = message.authorE164;
+    author = {
+      authorE164: message.authorE164,
+    };
   } else if (message.type === 'pni') {
     if (isProtoBinaryEncodingEnabled()) {
-      targetMessage.authorServiceIdBinary = toPniObject(
-        message.authorPni
-      ).getServiceIdBinary();
+      author = {
+        authorServiceIdBinary: toPniObject(
+          message.authorPni
+        ).getServiceIdBinary(),
+      };
     } else {
-      targetMessage.authorServiceId = message.authorPni;
+      author = {
+        authorServiceId: message.authorPni,
+      };
     }
   } else {
     throw missingCaseError(message);
   }
 
-  return targetMessage;
+  return {
+    sentTimestamp,
+    author,
+  };
 }
 
-function toConversationIdentifier(conversation: ConversationIdentifier) {
-  const targetConversation = new Proto.ConversationIdentifier();
-
+function toConversationIdentifier(
+  conversation: ConversationIdentifier
+): Proto.ConversationIdentifier.Params {
   if (conversation.type === 'aci') {
     if (isProtoBinaryEncodingEnabled()) {
-      targetConversation.threadServiceIdBinary = toAciObject(
-        conversation.aci
-      ).getServiceIdBinary();
-    } else {
-      targetConversation.threadServiceId = conversation.aci;
+      return {
+        identifier: {
+          threadServiceIdBinary: toAciObject(
+            conversation.aci
+          ).getServiceIdBinary(),
+        },
+      };
     }
-  } else if (conversation.type === 'pni') {
+    return {
+      identifier: {
+        threadServiceId: conversation.aci,
+      },
+    };
+  }
+  if (conversation.type === 'pni') {
     if (isProtoBinaryEncodingEnabled()) {
-      targetConversation.threadServiceIdBinary = toPniObject(
-        conversation.pni
-      ).getServiceIdBinary();
-    } else {
-      targetConversation.threadServiceId = conversation.pni;
+      return {
+        identifier: {
+          threadServiceIdBinary: toPniObject(
+            conversation.pni
+          ).getServiceIdBinary(),
+        },
+      };
     }
-  } else if (conversation.type === 'group') {
-    targetConversation.threadGroupId = Bytes.fromBase64(conversation.groupId);
-  } else if (conversation.type === 'e164') {
-    targetConversation.threadE164 = conversation.e164;
+    return {
+      identifier: {
+        threadServiceId: conversation.pni,
+      },
+    };
+  }
+  if (conversation.type === 'group') {
+    return {
+      identifier: {
+        threadGroupId: Bytes.fromBase64(conversation.groupId),
+      },
+    };
+  }
+  if (conversation.type === 'e164') {
+    return {
+      identifier: {
+        threadE164: conversation.e164,
+      },
+    };
+  }
+  throw missingCaseError(conversation);
+}
+
+function toBodyRange(bodyRange: RawBodyRange): Proto.BodyRange.Params {
+  const { start, length } = bodyRange;
+
+  let associatedValue: Proto.BodyRange.Params['associatedValue'];
+  if (BodyRange.isMention(bodyRange)) {
+    if (isProtoBinaryEncodingEnabled()) {
+      associatedValue = {
+        mentionAciBinary: toAciObject(bodyRange.mentionAci).getRawUuidBytes(),
+      };
+    } else {
+      associatedValue = {
+        mentionAci: bodyRange.mentionAci,
+      };
+    }
+  } else if (BodyRange.isFormatting(bodyRange)) {
+    associatedValue = {
+      style: bodyRange.style,
+    };
   } else {
-    throw missingCaseError(conversation);
+    throw missingCaseError(bodyRange);
   }
 
-  return targetConversation;
+  return {
+    start,
+    length,
+    associatedValue,
+  };
 }

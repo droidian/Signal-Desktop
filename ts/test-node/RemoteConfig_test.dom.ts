@@ -5,29 +5,30 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 
 import lodash from 'lodash';
-import { normalizeAci } from '../util/normalizeAci.std.js';
-import type { ConfigKeyType, ConfigListenerType } from '../RemoteConfig.dom.js';
+import { normalizeAci } from '../util/normalizeAci.std.ts';
+import type { ConfigKeyType } from '../RemoteConfig.dom.ts';
 import {
+  COUNTRY_CODE_FALLBACK,
   getCountryCodeValue,
   getBucketValue,
-  innerIsBucketValueEnabled,
+  isCountryPpmCsvBucketEnabled,
   onChange,
   getValue,
   isEnabled,
-} from '../RemoteConfig.dom.js';
-import { updateRemoteConfig } from '../test-helpers/RemoteConfigStub.dom.js';
+} from '../RemoteConfig.dom.ts';
+import { updateRemoteConfig } from '../test-helpers/RemoteConfigStub.dom.ts';
 
 const { omit } = lodash;
 
 describe('RemoteConfig', () => {
   const aci = normalizeAci('95b9729c-51ea-4ddb-b516-652befe78062', 'test');
 
-  describe('#innerIsBucketValueEnabled', () => {
+  describe('#isCountryPpmCsvBucketEnabled', () => {
     // Note: bucketValue is 376321 for 'desktop.internalUser' key
 
     it('returns true for 100% wildcard', () => {
       assert.strictEqual(
-        innerIsBucketValueEnabled(
+        isCountryPpmCsvBucketEnabled(
           'desktop.internalUser',
           '*:1000000',
           '+12125550000',
@@ -39,7 +40,7 @@ describe('RemoteConfig', () => {
 
     it('returns true for 70% on country code 1', () => {
       assert.strictEqual(
-        innerIsBucketValueEnabled(
+        isCountryPpmCsvBucketEnabled(
           'desktop.internalUser',
           '1:700000',
           '+12125550000',
@@ -51,7 +52,7 @@ describe('RemoteConfig', () => {
 
     it('returns false for 30% on country code 1', () => {
       assert.strictEqual(
-        innerIsBucketValueEnabled(
+        isCountryPpmCsvBucketEnabled(
           'desktop.internalUser',
           '1:300000',
           '+12125550000',
@@ -92,6 +93,20 @@ describe('RemoteConfig', () => {
     it('returns undefined if no wildcard or specific value', () => {
       assert.strictEqual(
         getCountryCodeValue(1, '2:56,3:74', 'flagName'),
+        undefined
+      );
+    });
+
+    it('returns wildcard for COUNTRY_CODE_FALLBACK', () => {
+      assert.strictEqual(
+        getCountryCodeValue(COUNTRY_CODE_FALLBACK, '*:56,1:74', 'flagName'),
+        56
+      );
+    });
+
+    it('returns undefined for COUNTRY_CODE_FALLBACK when no wildcard', () => {
+      assert.strictEqual(
+        getCountryCodeValue(COUNTRY_CODE_FALLBACK, '1:74,2:56', 'flagName'),
         undefined
       );
     });
@@ -171,9 +186,9 @@ describe('RemoteConfig', () => {
     it('triggers listener on known flag change', async () => {
       await updateRemoteConfig([]);
 
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      const listener = sinon.spy<ConfigListenerType>(() => {});
-      onChange('desktop.internalUser', listener);
+      // oxlint-disable-next-line typescript/no-empty-function
+      const listener = sinon.spy<() => void>(() => {});
+      onChange(['desktop.internalUser', 'desktop.clientExpiration'], listener);
 
       await updateRemoteConfig([
         { name: 'desktop.internalUser', value: 'yes' },
@@ -183,14 +198,16 @@ describe('RemoteConfig', () => {
         { name: 'desktop.internalUser', value: 'yes' },
       ]);
 
+      // should not trigger callback
+      await updateRemoteConfig([
+        { name: 'desktop.internalUser', value: 'yes' },
+        { name: 'global.nicknames.max', value: '42' },
+      ]);
+
       const calls = listener
         .getCalls()
         .map(call => omit(call.firstArg, 'enabledAt'));
-      assert.deepEqual(calls, [
-        { name: 'desktop.internalUser', value: 'yes', enabled: true },
-        { name: 'desktop.internalUser', enabled: false },
-        { name: 'desktop.internalUser', value: 'yes', enabled: true },
-      ]);
+      assert.deepEqual(calls, [{}, {}, {}]);
     });
   });
 });

@@ -1,14 +1,12 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { ContactName } from '../../components/conversation/ContactName.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import {
-  getConversationSelector,
-  getSelectedConversationId,
-} from '../selectors/conversations.dom.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
+import { ContactName } from '../../components/conversation/ContactName.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
 
 type ExternalProps = {
   contactId: string;
@@ -19,7 +17,7 @@ export const SmartContactName = memo(function SmartContactName({
 }: ExternalProps) {
   const i18n = useSelector(getIntl);
   const getConversation = useSelector(getConversationSelector);
-  const currentConversationId = useSelector(getSelectedConversationId);
+  const conversationId = useSelector(getSelectedConversationId);
 
   const { showContactModal } = useGlobalModalActions();
 
@@ -28,8 +26,8 @@ export const SmartContactName = memo(function SmartContactName({
   }, [getConversation, contactId]);
 
   const handleClick = useCallback(() => {
-    showContactModal(contactId, currentConversationId);
-  }, [showContactModal, contactId, currentConversationId]);
+    showContactModal({ contactId, conversationId });
+  }, [showContactModal, contactId, conversationId]);
 
   return (
     <ContactName

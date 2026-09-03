@@ -1,34 +1,34 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, FC } from 'react';
+import { memo } from 'react';
 import lodash from 'lodash';
 
-import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
-import { MessageTimestamp } from './MessageTimestamp.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+import { SystemMessage, SystemMessageKind } from './SystemMessage.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import {
   CallMode,
   CallDirection,
   CallType,
   DirectCallStatus,
   GroupCallStatus,
-} from '../../types/CallDisposition.std.js';
-import type { CallingNotificationType } from '../../util/callingNotification.std.js';
+} from '../../types/CallDisposition.std.ts';
+import type { CallingNotificationType } from '../../util/callingNotification.std.ts';
 import {
   getCallingIcon,
   getCallingNotificationText,
-} from '../../util/callingNotification.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { Tooltip, TooltipPlacement } from '../Tooltip.dom.js';
-import { createLogger } from '../../logging/log.std.js';
-import { MessageContextMenu } from './MessageContextMenu.dom.js';
-import type { DeleteMessagesPropsType } from '../../state/ducks/globalModals.preload.js';
-import { MINUTE } from '../../util/durations/index.std.js';
-import { isMoreRecentThan } from '../../util/timestamp.std.js';
-import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.js';
+} from '../../util/callingNotification.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { Tooltip, TooltipPlacement } from '../Tooltip.dom.tsx';
+import { createLogger } from '../../logging/log.std.ts';
+import { MessageContextMenu } from './MessageContextMenu.dom.tsx';
+import type { DeleteMessagesPropsType } from '../../state/ducks/globalModals.preload.ts';
+import { MINUTE } from '../../util/durations/index.std.ts';
+import { isMoreRecentThan } from '../../util/timestamp.std.ts';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip.dom.tsx';
+import { AxoButton } from '../../axo/AxoButton.dom.tsx';
 
 const { noop } = lodash;
 
@@ -52,7 +52,7 @@ export type PropsType = CallingNotificationType &
   PropsActionsType &
   PropsHousekeeping;
 
-export const CallingNotification: React.FC<PropsType> = React.memo(
+export const CallingNotification: FC<PropsType> = memo(
   function CallingNotificationInner(props) {
     const { i18n } = props;
     if (props.callHistory == null) {
@@ -73,6 +73,7 @@ export const CallingNotification: React.FC<PropsType> = React.memo(
           });
         }}
         shouldShowAdditional={false}
+        onDebugMessage={null}
         onDownload={null}
         onEdit={null}
         onReplyToMessage={null}
@@ -85,14 +86,13 @@ export const CallingNotification: React.FC<PropsType> = React.memo(
         onForward={null}
         onMoreInfo={null}
         onPinMessage={null}
+        onUnpinMessage={null}
       >
-        <div
-          // @ts-expect-error -- React/TS doesn't know about inert
-          // eslint-disable-next-line react/no-unknown-property
-          inert={props.isSelectMode ? '' : undefined}
-        >
+        <div inert={props.isSelectMode}>
           <SystemMessage
             button={renderCallingNotificationButton(props)}
+            expireTimer={props.expireTimer}
+            expirationStartTimestamp={props.expirationStartTimestamp}
             contents={
               <>
                 {getCallingNotificationText(props, i18n)} &middot;{' '}
@@ -144,7 +144,7 @@ function renderCallingNotificationButton(
 
   const inThisCall = Boolean(
     props.activeConversationId &&
-      props.activeConversationId === props.conversationId
+    props.activeConversationId === props.conversationId
   );
 
   if (props.callHistory == null) {
@@ -223,19 +223,19 @@ function renderCallingNotificationButton(
   const disabled = Boolean(disabledTooltipText);
   const inAnotherCall = Boolean(
     !disabled &&
-      props.activeConversationId &&
-      props.activeConversationId !== props.conversationId
+    props.activeConversationId &&
+    props.activeConversationId !== props.conversationId
   );
   const button = (
-    <Button
+    <AxoButton.Root
       disabled={disabled}
       discouraged={inAnotherCall}
       onClick={onClick}
-      size={ButtonSize.Small}
-      variant={ButtonVariant.SystemMessage}
+      size="md"
+      variant="subtle-secondary"
     >
       {buttonText}
-    </Button>
+    </AxoButton.Root>
   );
 
   if (disabledTooltipText) {
@@ -245,9 +245,10 @@ function renderCallingNotificationButton(
       </Tooltip>
     );
   }
-  if (inAnotherCall) {
-    return <InAnotherCallTooltip i18n={i18n}>{button}</InAnotherCallTooltip>;
-  }
 
-  return button;
+  return (
+    <InAnotherCallTooltip inAnotherCall={inAnotherCall} i18n={i18n}>
+      {button}
+    </InAnotherCallTooltip>
+  );
 }

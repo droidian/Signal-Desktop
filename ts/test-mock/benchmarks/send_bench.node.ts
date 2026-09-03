@@ -1,14 +1,14 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-/* eslint-disable no-await-in-loop, no-console */
 
 import assert from 'node:assert';
 
+import type { PrimaryDevice } from '@signalapp/mock-server';
 import { ReceiptType } from '@signalapp/mock-server';
 
-import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures.node.js';
-import { stats } from '../../util/benchmark/stats.std.js';
-import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.js';
+import { Bootstrap, debug, RUN_COUNT, DISCARD_COUNT } from './fixtures.node.ts';
+import { stats } from '../../test-helpers/benchmarkStats.std.ts';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.ts';
 
 const CONVERSATION_SIZE = 500; // messages
 
@@ -19,9 +19,9 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
 
   const { server, contacts, phone, desktop } = bootstrap;
 
-  const [first] = contacts;
+  const [first] = contacts as [PrimaryDevice];
 
-  const messages = new Array<Buffer>();
+  const messages = new Array<Buffer<ArrayBuffer>>();
   debug('encrypting');
   // Note: make it so that we receive the latest message from the first
   // contact.
@@ -37,6 +37,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
       const isLast = i === count - 1;
 
       messages.push(
+        // oxlint-disable-next-line no-await-in-loop
         await contact.encryptText(
           desktop,
           isLast ? LAST_MESSAGE : `#${i} from: ${contact.profileName}`,
@@ -47,6 +48,7 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
         )
       );
       messages.push(
+        // oxlint-disable-next-line no-await-in-loop
         await phone.encryptSyncRead(desktop, {
           timestamp: bootstrap.getTimestamp(),
           messages: [
@@ -77,49 +79,54 @@ Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
     '.timeline-wrapper, .Inbox__conversation .ConversationView'
   );
 
-  debug('accepting conversation');
-  await window.getByRole('button', { name: 'Continue' }).click();
-
-  const { dataMessage: profileKeyMsg } = await first.waitForMessage();
-  assert(profileKeyMsg.profileKey != null, 'Profile key message');
-
   const deltaList = new Array<number>();
   for (let runId = 0; runId < RUN_COUNT + DISCARD_COUNT; runId += 1) {
     debug('finding composition input and clicking it');
+    // oxlint-disable-next-line no-await-in-loop
     const input = await waitForEnabledComposer(window);
 
     debug('entering message text');
+    // oxlint-disable-next-line no-await-in-loop
     await typeIntoInput(input, `my message ${runId}`, '');
+    // oxlint-disable-next-line no-await-in-loop
     await input.press('Enter');
 
     debug('waiting for message on server side');
+    // oxlint-disable-next-line no-await-in-loop
     const { body, source } = await first.waitForMessage();
     assert.strictEqual(body, `my message ${runId}`);
     assert.strictEqual(source, desktop);
 
     debug('waiting for timing from the app');
+    // oxlint-disable-next-line no-await-in-loop
     const { timestamp, delta } = await app.waitForMessageSend();
 
     debug('sending delivery receipt');
+    // oxlint-disable-next-line no-await-in-loop
     const delivery = await first.encryptReceipt(desktop, {
       timestamp: timestamp + 1,
       messageTimestamps: [timestamp],
       type: ReceiptType.Delivery,
     });
 
+    // oxlint-disable-next-line no-await-in-loop
     await server.send(desktop, delivery);
 
     debug('waiting for message state change');
     const message = timeline.locator(`[data-testid="${timestamp}"]`);
+    // oxlint-disable-next-line no-await-in-loop
     await message.waitFor();
 
     if (runId >= DISCARD_COUNT) {
       deltaList.push(delta);
+      // oxlint-disable-next-line no-console
       console.log('run=%d info=%j', runId - DISCARD_COUNT, { delta });
     } else {
+      // oxlint-disable-next-line no-console
       console.log('discarded=%d info=%j', runId, { delta });
     }
   }
 
+  // oxlint-disable-next-line no-console
   console.log('stats info=%j', { delta: stats(deltaList, [99, 99.8]) });
 });

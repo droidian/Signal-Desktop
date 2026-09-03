@@ -8,7 +8,7 @@
       content="default-src 'none';
             frame-src 'none';
             form-action 'none';
-            font-src 'self';
+            font-src 'self' asset:;
             img-src 'self' blob: data:;
             media-src 'self' blob:;
             object-src 'none';
@@ -20,6 +20,6 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="bundles/permissions/app.dom.js"></script>
+    <script type="module" src="bundles/dom/permissions.js"></script>
   </body>
 </html>

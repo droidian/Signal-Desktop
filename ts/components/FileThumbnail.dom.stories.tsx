@@ -1,13 +1,14 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import { FileThumbnail } from './FileThumbnail.dom.js';
-import { APPLICATION_OCTET_STREAM } from '../types/MIME.std.js';
+import { FileThumbnail } from './FileThumbnail.dom.tsx';
+import { APPLICATION_OCTET_STREAM } from '../types/MIME.std.ts';
 
 export default {
-  title: 'FileThumbnail',
+  title: 'components/FileThumbnail',
 } satisfies Meta;
 
 export function ThreeLetterExtension(): JSX.Element {

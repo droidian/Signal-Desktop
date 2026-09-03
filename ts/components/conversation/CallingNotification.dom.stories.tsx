@@ -1,7 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
 import {
@@ -10,18 +11,18 @@ import {
   CallDirection,
   GroupCallStatus,
   DirectCallStatus,
-} from '../../types/CallDisposition.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
+} from '../../types/CallDisposition.std.ts';
 import {
   CallingNotification,
   type PropsType,
-} from './CallingNotification.dom.js';
+} from './CallingNotification.dom.tsx';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../../test-helpers/getDefaultConversation.std.js';
-import type { CallStatus } from '../../types/CallDisposition.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
+} from '../../test-helpers/getDefaultConversation.std.ts';
+import type { CallStatus } from '../../types/CallDisposition.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -91,6 +92,8 @@ const getCommonProps = (options: {
     deviceCount,
     isSelectMode: false,
     isTargeted: false,
+    expireTimer: null,
+    expirationStartTimestamp: null,
   };
 };
 

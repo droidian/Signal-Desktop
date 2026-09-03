@@ -1,20 +1,15 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { Key, ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { Key, ReactNode, JSX } from 'react';
 import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 import classNames from 'classnames';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { BadgeType } from '../badges/types.std.js';
-import { NavTab, ProfileEditorPage, SettingsPage } from '../types/Nav.std.js';
-import type { Location } from '../types/Nav.std.js';
-import { Tooltip, TooltipPlacement } from './Tooltip.dom.js';
-import { Theme } from '../util/theme.std.js';
-import type { UnreadStats } from '../util/countUnreadStats.std.js';
-import { ProfileMovedModal } from './ProfileMovedModal.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { NavTab, ProfileEditorPage, SettingsPage } from '../types/Nav.std.ts';
+import type { Location } from '../types/Nav.std.ts';
+import { Tooltip, TooltipPlacement } from './Tooltip.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import type { UnreadStats } from '../util/countUnreadStats.std.ts';
 
 type NavTabsItemBadgesProps = Readonly<{
   i18n: LocalizerType;
@@ -133,7 +128,7 @@ export type NavTabPanelProps = Readonly<{
   collapsed: boolean;
   hasFailedStorySends: boolean;
   hasPendingUpdate: boolean;
-  onToggleCollapse(collapsed: boolean): void;
+  onToggleCollapse: (collapsed: boolean) => void;
 }>;
 
 export type NavTabsToggleProps = Readonly<{
@@ -142,7 +137,7 @@ export type NavTabsToggleProps = Readonly<{
   hasFailedStorySends: boolean;
   hasPendingUpdate: boolean;
   navTabsCollapsed: boolean;
-  onToggleNavTabsCollapse(navTabsCollapsed: boolean): void;
+  onToggleNavTabsCollapse: (navTabsCollapsed: boolean) => void;
 }>;
 
 export function NavTabsToggle({
@@ -161,6 +156,8 @@ export function NavTabsToggle({
     : i18n('icu:NavTabsToggle__hideTabs');
   const isRTL = i18n.getLocaleDirection() === 'rtl';
   return (
+    // FIXME
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label
     <button
       type="button"
       className="NavTabs__Item NavTabs__Toggle"
@@ -193,55 +190,40 @@ export function NavTabsToggle({
 }
 
 export type NavTabsProps = Readonly<{
-  badge: BadgeType | undefined;
   hasFailedStorySends: boolean;
   hasPendingUpdate: boolean;
   i18n: LocalizerType;
-  me: ConversationType;
   navTabsCollapsed: boolean;
   onChangeLocation: (location: Location) => void;
-  onDismissProfileMovedModal: () => void;
   onToggleNavTabsCollapse: (collapsed: boolean) => void;
-  profileMovedModalNeeded: boolean;
   renderCallsTab: () => ReactNode;
   renderChatsTab: () => ReactNode;
   renderStoriesTab: () => ReactNode;
   renderSettingsTab: () => ReactNode;
   selectedNavTab: NavTab;
-  shouldShowProfileIcon: boolean;
   storiesEnabled: boolean;
-  theme: ThemeType;
   unreadCallsCount: number;
   unreadConversationsStats: UnreadStats;
   unreadStoriesCount: number;
 }>;
 
 export function NavTabs({
-  badge,
   hasFailedStorySends,
   hasPendingUpdate,
   i18n,
-  me,
   navTabsCollapsed,
   onChangeLocation,
-  onDismissProfileMovedModal,
   onToggleNavTabsCollapse,
-  profileMovedModalNeeded,
   renderCallsTab,
   renderChatsTab,
   renderStoriesTab,
   renderSettingsTab,
   selectedNavTab,
-  shouldShowProfileIcon,
   storiesEnabled,
-  theme,
   unreadCallsCount,
   unreadConversationsStats,
   unreadStoriesCount,
 }: NavTabsProps): JSX.Element {
-  const [showingProfileMovedModal, setShowingProfileMovedModal] =
-    useState(false);
-
   function handleSelectionChange(key: Key) {
     const tab = key as NavTab;
     if (tab === NavTab.Settings) {
@@ -252,12 +234,17 @@ export function NavTabs({
           state: ProfileEditorPage.None,
         },
       });
+    } else if (tab === NavTab.Chats) {
+      onChangeLocation({
+        tab: NavTab.Chats,
+        details: {
+          conversationId: undefined,
+        },
+      });
     } else {
       onChangeLocation({ tab });
     }
   }
-
-  const isRTL = i18n.getLocaleDirection() === 'rtl';
 
   return (
     <Tabs
@@ -266,16 +253,6 @@ export function NavTabs({
       selectedKey={selectedNavTab}
       onSelectionChange={handleSelectionChange}
     >
-      {showingProfileMovedModal ? (
-        <ProfileMovedModal
-          i18n={i18n}
-          onClose={() => {
-            setShowingProfileMovedModal(false);
-            onDismissProfileMovedModal();
-          }}
-          theme={theme}
-        />
-      ) : undefined}
       <nav
         data-supertab
         className={classNames('NavTabs', {
@@ -337,52 +314,6 @@ export function NavTabs({
             hasPendingUpdate={hasPendingUpdate}
           />
         </TabList>
-        {shouldShowProfileIcon && (
-          <div className="NavTabs__Misc">
-            <button
-              type="button"
-              className="NavTabs__Item NavTabs__Item--Profile"
-              onClick={() => {
-                if (profileMovedModalNeeded) {
-                  setShowingProfileMovedModal(true);
-                } else {
-                  handleSelectionChange(NavTab.Settings);
-                }
-              }}
-              aria-label={i18n('icu:NavTabs__ItemLabel--Profile')}
-            >
-              <Tooltip
-                content={i18n('icu:NavTabs__ItemLabel--Profile')}
-                theme={Theme.Dark}
-                direction={
-                  isRTL ? TooltipPlacement.Left : TooltipPlacement.Right
-                }
-                delay={600}
-              >
-                <span className="NavTabs__ItemButton">
-                  <span className="NavTabs__ItemContent">
-                    <Avatar
-                      avatarUrl={me.avatarUrl}
-                      badge={badge}
-                      className="module-main-header__avatar"
-                      color={me.color}
-                      conversationType="direct"
-                      i18n={i18n}
-                      phoneNumber={me.phoneNumber}
-                      profileName={me.profileName}
-                      theme={theme}
-                      title={me.title}
-                      // `sharedGroupNames` makes no sense for yourself, but
-                      // `<Avatar>` needs it to determine blurring.
-                      sharedGroupNames={[]}
-                      size={AvatarSize.TWENTY_EIGHT}
-                    />
-                  </span>
-                </span>
-              </Tooltip>
-            </button>
-          </div>
-        )}
       </nav>
       <TabPanel id={NavTab.Chats} className="NavTabs__TabPanel">
         {renderChatsTab}

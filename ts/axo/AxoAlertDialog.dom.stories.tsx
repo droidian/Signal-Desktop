@@ -3,9 +3,9 @@
 
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import React, { useState } from 'react';
-import { AxoAlertDialog } from './AxoAlertDialog.dom.js';
-import { AxoButton } from './AxoButton.dom.js';
+import { useState, type JSX } from 'react';
+import { AxoAlertDialog } from './AxoAlertDialog.dom.tsx';
+import { AxoButton } from './AxoButton.dom.tsx';
 
 export default {
   title: 'Axo/AxoAlertDialog',
@@ -65,7 +65,6 @@ const EXAMPLE_DESCRIPTION_LONG = (
 
 const EXAMPLE_ACTION = <>OK</>;
 const EXAMPLE_ACTION_LONG = <>Consectetur adipisicing elit</>;
-const EXAMPLE_CANCEL = <>Cancel</>;
 const EXAMPLE_CANCEL_LONG = <>Lorem ipsum dolor sit amet</>;
 
 function Template(props: {
@@ -100,10 +99,10 @@ function Template(props: {
         </AxoAlertDialog.Body>
         <AxoAlertDialog.Footer>
           <AxoAlertDialog.Cancel>
-            {props.extraLongText ? EXAMPLE_CANCEL_LONG : EXAMPLE_CANCEL}
+            {props.extraLongText ? EXAMPLE_CANCEL_LONG : null}
           </AxoAlertDialog.Cancel>
           <AxoAlertDialog.Action
-            variant="primary"
+            variant="strong-primary"
             symbol={props.extraLongText ? 'check' : undefined}
             arrow={props.extraLongText}
             onClick={action('Action clicked')}

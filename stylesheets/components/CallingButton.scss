@@ -19,13 +19,12 @@
     display: flex;
     height: 36px;
     justify-content: center;
-    outline: none;
     width: 36px;
 
-    @include mixins.keyboard-mode {
-      &:focus {
-        outline-offset: 1px;
-        outline: 2px solid variables.$color-ultramarine;
+    &:focus {
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
       }
     }
 

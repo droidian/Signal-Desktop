@@ -1,12 +1,13 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './OutgoingGiftBadgeModal.dom.js';
-import { OutgoingGiftBadgeModal } from './OutgoingGiftBadgeModal.dom.js';
-import { BadgeCategory } from '../badges/BadgeCategory.std.js';
+import type { PropsType } from './OutgoingGiftBadgeModal.dom.tsx';
+import { OutgoingGiftBadgeModal } from './OutgoingGiftBadgeModal.dom.tsx';
+import { BadgeCategory } from '../badges/BadgeCategory.std.ts';
 
 const { i18n } = window.SignalContext;
 

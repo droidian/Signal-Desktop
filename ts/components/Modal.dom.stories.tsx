@@ -1,13 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { Button } from './Button.dom.js';
-import type { ModalPropsType } from './Modal.dom.js';
-import { Modal } from './Modal.dom.js';
+import { Button } from './Button.dom.tsx';
+import type { ModalPropsType } from './Modal.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
 
 const { noop } = lodash;
 

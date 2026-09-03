@@ -1,42 +1,41 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild.dom.js';
-import { DialogExpiredBuild } from '../../components/DialogExpiredBuild.dom.js';
-import type { PropsType as LeftPanePropsType } from '../../components/LeftPane.dom.js';
-import { LeftPane } from '../../components/LeftPane.dom.js';
-import type { NavTabPanelProps } from '../../components/NavTabs.dom.js';
-import type { WidthBreakpoint } from '../../components/_util.std.js';
+import { createSelector } from 'reselect';
+import type { PropsType as DialogExpiredBuildPropsType } from '../../components/DialogExpiredBuild.dom.tsx';
+import { DialogExpiredBuild } from '../../components/DialogExpiredBuild.dom.tsx';
+import type { PropsType as LeftPanePropsType } from '../../components/LeftPane.dom.tsx';
+import { LeftPane } from '../../components/LeftPane.dom.tsx';
+import type { NavTabPanelProps } from '../../components/NavTabs.dom.tsx';
+import type { WidthBreakpoint } from '../../components/_util.std.ts';
 import {
   getGroupSizeHardLimit,
   getGroupSizeRecommendedLimit,
-} from '../../groups/limits.dom.js';
-import { LeftPaneMode } from '../../types/leftPane.std.js';
-import { getUsernameFromSearch } from '../../util/Username.dom.js';
-import { getCountryDataForLocale } from '../../util/getCountryData.dom.js';
-import { isChatFoldersEnabled } from '../../util/isChatFoldersEnabled.dom.js';
-import { lookupConversationWithoutServiceId } from '../../util/lookupConversationWithoutServiceId.preload.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { isDone as isRegistrationDone } from '../../util/registration.preload.js';
-import { drop } from '../../util/drop.std.js';
-import type { ServerAlertsType } from '../../types/ServerAlert.std.js';
-import { getServerAlertToShow } from '../../util/handleServerAlerts.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+} from '../../groups/limits.dom.ts';
+import { LeftPaneMode } from '../../types/leftPane.std.ts';
+import { getUsernameFromSearch } from '../../util/Username.dom.ts';
+import { getCountryDataForLocale } from '../../util/getCountryData.dom.ts';
+import { lookupConversationWithoutServiceId } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { isDone as isRegistrationDone } from '../../util/registration.preload.ts';
+import { drop } from '../../util/drop.std.ts';
+import type { ServerAlertsType } from '../../types/ServerAlert.std.ts';
+import { getServerAlertToShow } from '../../util/handleServerAlerts.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 import {
   ComposerStep,
   OneTimeModalState,
-} from '../ducks/conversationsEnums.std.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { useItemsActions } from '../ducks/items.preload.js';
-import { useNetworkActions } from '../ducks/network.dom.js';
-import { useSearchActions } from '../ducks/search.preload.js';
-import { useUsernameActions } from '../ducks/username.preload.js';
-import type { StateType } from '../reducer.preload.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
+} from '../ducks/conversationsEnums.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { useItemsActions } from '../ducks/items.preload.ts';
+import { useNetworkActions } from '../ducks/network.dom.ts';
+import { useSearchActions } from '../ducks/search.preload.ts';
+import { useUsernameActions } from '../ducks/username.preload.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
 import {
   getComposeAvatarData,
   getComposeGroupAvatar,
@@ -54,15 +53,18 @@ import {
   getMaximumGroupSizeModalState,
   getMe,
   getRecommendedGroupSizeModalState,
-  getSelectedConversationId,
   getShowArchived,
   getTargetedMessage,
   hasGroupCreationError,
   isCreatingGroup,
   isEditingAvatar,
-} from '../selectors/conversations.dom.js';
-import { getCrashReportCount } from '../selectors/crashReports.std.js';
-import { hasExpired } from '../selectors/expiration.dom.js';
+} from '../selectors/conversations.dom.ts';
+import {
+  getSelectedConversationId,
+  getSelectedLocation,
+} from '../selectors/nav.std.ts';
+import { getCrashReportCount } from '../selectors/crashReports.std.ts';
+import { hasExpired } from '../selectors/expiration.dom.ts';
 import {
   getBackupMediaDownloadProgress,
   getNavTabsCollapsed,
@@ -70,12 +72,13 @@ import {
   getServerAlerts,
   getUsernameCorrupted,
   getUsernameLinkCorrupted,
-} from '../selectors/items.dom.js';
+} from '../selectors/items.dom.ts';
 import {
   getChallengeStatus,
   hasNetworkDialog as getHasNetworkDialog,
+  getIsClockSkewTooMuch,
   getNetworkIsOnline,
-} from '../selectors/network.preload.js';
+} from '../selectors/network.preload.ts';
 import {
   getFilterByUnread,
   getHasSearchQuery,
@@ -86,44 +89,54 @@ import {
   getSearchConversation,
   getSearchResults,
   getStartSearchCounter,
-} from '../selectors/search.preload.js';
+} from '../selectors/search.preload.ts';
 import {
   isUpdateDownloaded as getIsUpdateDownloaded,
   isOSUnsupported,
   isUpdateDialogVisible,
-} from '../selectors/updates.std.js';
+} from '../selectors/updates.std.ts';
 import {
   getIntl,
   getIsMacOS,
   getRegionCode,
   getTheme,
-} from '../selectors/user.std.js';
-import { SmartCaptchaDialog } from './CaptchaDialog.preload.js';
-import { SmartCrashReportDialog } from './CrashReportDialog.preload.js';
-import { SmartMessageSearchResult } from './MessageSearchResult.preload.js';
-import { SmartNetworkStatus } from './NetworkStatus.preload.js';
-import { SmartRelinkDialog } from './RelinkDialog.dom.js';
-import { SmartToastManager } from './ToastManager.preload.js';
-import type { PropsType as SmartUnsupportedOSDialogPropsType } from './UnsupportedOSDialog.preload.js';
-import { SmartUnsupportedOSDialog } from './UnsupportedOSDialog.preload.js';
-import { SmartUpdateDialog } from './UpdateDialog.preload.js';
+} from '../selectors/user.std.ts';
+import { SmartCaptchaDialog } from './CaptchaDialog.preload.tsx';
+import { SmartCrashReportDialog } from './CrashReportDialog.preload.tsx';
+import { SmartMessageSearchResult } from './MessageSearchResult.preload.tsx';
+import { SmartNetworkStatus } from './NetworkStatus.preload.tsx';
+import { SmartRelinkDialog } from './RelinkDialog.preload.tsx';
+import {
+  renderToastManagerWithoutMegaphone,
+  SmartToastManager,
+} from './ToastManager.preload.tsx';
+import type { SmartPropsType as SmartToastManagerPropsType } from './ToastManager.preload.tsx';
+import type { PropsType as SmartUnsupportedOSDialogPropsType } from './UnsupportedOSDialog.preload.tsx';
+import { SmartUnsupportedOSDialog } from './UnsupportedOSDialog.preload.tsx';
+import { SmartUpdateDialog } from './UpdateDialog.preload.tsx';
 import {
   cancelBackupMediaDownload,
   dismissBackupMediaDownloadBanner,
   pauseBackupMediaDownload,
   resumeBackupMediaDownload,
-} from '../../util/backupMediaDownload.preload.js';
-import { useNavActions } from '../ducks/nav.std.js';
-import { SmartLeftPaneChatFolders } from './LeftPaneChatFolders.preload.js';
-import { SmartLeftPaneConversationListItemContextMenu } from './LeftPaneConversationListItemContextMenu.preload.js';
-import type { RenderConversationListItemContextMenuProps } from '../../components/conversationList/BaseConversationListItem.dom.js';
+} from '../../util/backupMediaDownload.preload.ts';
+import OS from '../../util/os/osPreload.preload.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { SmartLeftPaneChatFolders } from './LeftPaneChatFolders.preload.tsx';
+import { SmartLeftPaneConversationListItemContextMenu } from './LeftPaneConversationListItemContextMenu.preload.tsx';
+import type { RenderConversationListItemContextMenuProps } from '../../components/conversationList/BaseConversationListItem.dom.tsx';
 import {
   getHasAnyCurrentCustomChatFolders,
   getSelectedChatFolder,
-} from '../selectors/chatFolders.std.js';
-import { NavTab, SettingsPage } from '../../types/Nav.std.js';
-import { SmartNotificationProfilesMenu } from './NotificationProfilesMenu.preload.js';
-import { getActiveProfile } from '../selectors/notificationProfiles.dom.js';
+} from '../selectors/chatFolders.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
+import { SmartNotificationProfilesMenu } from './NotificationProfilesMenu.preload.tsx';
+import { getActiveProfile } from '../selectors/notificationProfiles.dom.ts';
+import type { StateSelector } from '../types.std.ts';
+import {
+  DialogClockSkew,
+  type PropsType as DialogClockSkewPropsType,
+} from '../../components/DialogClockSkew.dom.tsx';
 
 function renderMessageSearchResult(id: string): JSX.Element {
   return <SmartMessageSearchResult id={id} />;
@@ -148,7 +161,10 @@ function renderUpdateDialog(
 ): JSX.Element {
   return <SmartUpdateDialog {...props} />;
 }
-function renderCaptchaDialog({ onSkip }: { onSkip(): void }): JSX.Element {
+function renderClockSkewDialog(props: DialogClockSkewPropsType): JSX.Element {
+  return <DialogClockSkew {...props} />;
+}
+function renderCaptchaDialog({ onSkip }: { onSkip: () => void }): JSX.Element {
   return <SmartCaptchaDialog onSkip={onSkip} />;
 }
 function renderCrashReportDialog(): JSX.Element {
@@ -167,132 +183,131 @@ function renderUnsupportedOSDialog(
 ): JSX.Element {
   return <SmartUnsupportedOSDialog {...props} />;
 }
-function renderToastManagerWithMegaphone(props: {
-  containerWidthBreakpoint: WidthBreakpoint;
-}): JSX.Element {
+function renderToastManagerWithMegaphone(
+  props: Readonly<SmartToastManagerPropsType>
+): JSX.Element {
   return <SmartToastManager {...props} />;
-}
-
-function renderToastManagerWithoutMegaphone(props: {
-  containerWidthBreakpoint: WidthBreakpoint;
-}): JSX.Element {
-  return <SmartToastManager disableMegaphone {...props} />;
 }
 
 function renderNotificationProfilesMenu(): JSX.Element {
   return <SmartNotificationProfilesMenu />;
 }
 
-const getModeSpecificProps = (
-  state: StateType
-): LeftPanePropsType['modeSpecificProps'] => {
-  const i18n = getIntl(state);
-  const composerStep = getComposerStep(state);
-  switch (composerStep) {
-    case undefined:
-      if (getShowArchived(state)) {
-        const { archivedConversations } = getLeftPaneLists(state);
-        const searchConversation = getSearchConversation(state);
-        const searchTerm = getQuery(state);
+type ModeSpecificProps = LeftPanePropsType['modeSpecificProps'];
+
+const getModeSpecificProps: StateSelector<ModeSpecificProps> = createSelector(
+  state => state,
+  state => {
+    const i18n = getIntl(state);
+    const composerStep = getComposerStep(state);
+    switch (composerStep) {
+      case undefined:
+        if (getShowArchived(state)) {
+          const { archivedConversations } = getLeftPaneLists(state);
+          const searchConversation = getSearchConversation(state);
+          const searchTerm = getQuery(state);
+          return {
+            mode: LeftPaneMode.Archive,
+            archivedConversations,
+            isSearchingGlobally: getIsSearchingGlobally(state),
+            searchConversation,
+            searchTerm,
+            startSearchCounter: getStartSearchCounter(state),
+            ...(searchConversation && searchTerm
+              ? getSearchResults(state)
+              : {}),
+          };
+        }
+        if (getIsActivelySearching(state)) {
+          return {
+            mode: LeftPaneMode.Search,
+            isSearchingGlobally: getIsSearchingGlobally(state),
+            searchConversation: getSearchConversation(state),
+            searchDisabled: state.network.challengeStatus !== 'idle',
+            startSearchCounter: getStartSearchCounter(state),
+            ...getSearchResults(state),
+          };
+        }
         return {
-          mode: LeftPaneMode.Archive,
-          archivedConversations,
-          isSearchingGlobally: getIsSearchingGlobally(state),
-          searchConversation,
-          searchTerm,
-          startSearchCounter: getStartSearchCounter(state),
-          ...(searchConversation && searchTerm ? getSearchResults(state) : {}),
-        };
-      }
-      if (getIsActivelySearching(state)) {
-        return {
-          mode: LeftPaneMode.Search,
+          mode: LeftPaneMode.Inbox,
+          isAboutToSearch: getIsSearching(state),
           isSearchingGlobally: getIsSearchingGlobally(state),
           searchConversation: getSearchConversation(state),
           searchDisabled: state.network.challengeStatus !== 'idle',
+          searchTerm: getQuery(state),
           startSearchCounter: getStartSearchCounter(state),
-          ...getSearchResults(state),
+          filterByUnread: getFilterByUnread(state),
+          selectedChatFolder: getSelectedChatFolder(state),
+          ...getLeftPaneLists(state),
         };
-      }
-      return {
-        mode: LeftPaneMode.Inbox,
-        isAboutToSearch: getIsSearching(state),
-        isSearchingGlobally: getIsSearchingGlobally(state),
-        searchConversation: getSearchConversation(state),
-        searchDisabled: state.network.challengeStatus !== 'idle',
-        searchTerm: getQuery(state),
-        startSearchCounter: getStartSearchCounter(state),
-        filterByUnread: getFilterByUnread(state),
-        selectedChatFolder: getSelectedChatFolder(state),
-        ...getLeftPaneLists(state),
-      };
-    case ComposerStep.StartDirectConversation:
-      return {
-        mode: LeftPaneMode.Compose,
-        composeContacts: getFilteredComposeContacts(state),
-        composeGroups: getFilteredComposeGroups(state),
-        regionCode: getRegionCode(state),
-        searchTerm: getComposerConversationSearchTerm(state),
-        uuidFetchState: getComposerUUIDFetchState(state),
-        username: getUsernameFromSearch(
-          getComposerConversationSearchTerm(state)
-        ),
-      };
-    case ComposerStep.FindByUsername:
-      return {
-        mode: LeftPaneMode.FindByUsername,
-        searchTerm: getComposerConversationSearchTerm(state),
-        uuidFetchState: getComposerUUIDFetchState(state),
-        username: getUsernameFromSearch(
-          getComposerConversationSearchTerm(state)
-        ),
-      };
-    case ComposerStep.FindByPhoneNumber:
-      return {
-        mode: LeftPaneMode.FindByPhoneNumber,
-        searchTerm: getComposerConversationSearchTerm(state),
-        regionCode: getRegionCode(state),
-        uuidFetchState: getComposerUUIDFetchState(state),
-        countries: getCountryDataForLocale(i18n.getLocale()),
-        selectedRegion: getComposerSelectedRegion(state),
-      };
-    case ComposerStep.ChooseGroupMembers:
-      return {
-        mode: LeftPaneMode.ChooseGroupMembers,
-        candidateContacts: getFilteredCandidateContactsForNewGroup(state),
-        groupSizeRecommendedLimit: getGroupSizeRecommendedLimit(),
-        groupSizeHardLimit: getGroupSizeHardLimit(),
-        isShowingRecommendedGroupSizeModal:
-          getRecommendedGroupSizeModalState(state) ===
-          OneTimeModalState.Showing,
-        isShowingMaximumGroupSizeModal:
-          getMaximumGroupSizeModalState(state) === OneTimeModalState.Showing,
-        ourE164: getMe(state).e164,
-        ourUsername: getMe(state).username,
-        regionCode: getRegionCode(state),
-        searchTerm: getComposerConversationSearchTerm(state),
-        selectedContacts: getComposeSelectedContacts(state),
-        uuidFetchState: getComposerUUIDFetchState(state),
-        username: getUsernameFromSearch(
-          getComposerConversationSearchTerm(state)
-        ),
-      };
-    case ComposerStep.SetGroupMetadata:
-      return {
-        mode: LeftPaneMode.SetGroupMetadata,
-        groupAvatar: getComposeGroupAvatar(state),
-        groupName: getComposeGroupName(state),
-        groupExpireTimer: getComposeGroupExpireTimer(state),
-        hasError: hasGroupCreationError(state),
-        isCreating: isCreatingGroup(state),
-        isEditingAvatar: isEditingAvatar(state),
-        selectedContacts: getComposeSelectedContacts(state),
-        userAvatarData: getComposeAvatarData(state),
-      };
-    default:
-      throw missingCaseError(composerStep);
+      case ComposerStep.StartDirectConversation:
+        return {
+          mode: LeftPaneMode.Compose,
+          composeContacts: getFilteredComposeContacts(state),
+          composeGroups: getFilteredComposeGroups(state),
+          regionCode: getRegionCode(state),
+          searchTerm: getComposerConversationSearchTerm(state),
+          uuidFetchState: getComposerUUIDFetchState(state),
+          username: getUsernameFromSearch(
+            getComposerConversationSearchTerm(state)
+          ),
+        };
+      case ComposerStep.FindByUsername:
+        return {
+          mode: LeftPaneMode.FindByUsername,
+          searchTerm: getComposerConversationSearchTerm(state),
+          uuidFetchState: getComposerUUIDFetchState(state),
+          username: getUsernameFromSearch(
+            getComposerConversationSearchTerm(state)
+          ),
+        };
+      case ComposerStep.FindByPhoneNumber:
+        return {
+          mode: LeftPaneMode.FindByPhoneNumber,
+          searchTerm: getComposerConversationSearchTerm(state),
+          regionCode: getRegionCode(state),
+          uuidFetchState: getComposerUUIDFetchState(state),
+          countries: getCountryDataForLocale(i18n.getLocale()),
+          selectedRegion: getComposerSelectedRegion(state),
+        };
+      case ComposerStep.ChooseGroupMembers:
+        return {
+          mode: LeftPaneMode.ChooseGroupMembers,
+          candidateContacts: getFilteredCandidateContactsForNewGroup(state),
+          groupSizeRecommendedLimit: getGroupSizeRecommendedLimit(),
+          groupSizeHardLimit: getGroupSizeHardLimit(),
+          isShowingRecommendedGroupSizeModal:
+            getRecommendedGroupSizeModalState(state) ===
+            OneTimeModalState.Showing,
+          isShowingMaximumGroupSizeModal:
+            getMaximumGroupSizeModalState(state) === OneTimeModalState.Showing,
+          ourE164: getMe(state).e164,
+          ourUsername: getMe(state).username,
+          regionCode: getRegionCode(state),
+          searchTerm: getComposerConversationSearchTerm(state),
+          selectedContacts: getComposeSelectedContacts(state),
+          uuidFetchState: getComposerUUIDFetchState(state),
+          username: getUsernameFromSearch(
+            getComposerConversationSearchTerm(state)
+          ),
+        };
+      case ComposerStep.SetGroupMetadata:
+        return {
+          mode: LeftPaneMode.SetGroupMetadata,
+          groupAvatar: getComposeGroupAvatar(state),
+          groupName: getComposeGroupName(state),
+          groupExpireTimer: getComposeGroupExpireTimer(state),
+          hasError: hasGroupCreationError(state),
+          isCreating: isCreatingGroup(state),
+          isEditingAvatar: isEditingAvatar(state),
+          selectedContacts: getComposeSelectedContacts(state),
+          userAvatarData: getComposeAvatarData(state),
+        };
+      default:
+        throw missingCaseError(composerStep);
+    }
   }
-};
+);
 
 async function saveAlerts(alerts: ServerAlertsType): Promise<void> {
   await itemStorage.put('serverAlerts', alerts);
@@ -303,7 +318,6 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   hasPendingUpdate,
   otherTabsUnreadStats,
 }: NavTabPanelProps) {
-  const version = window.SignalContext.getVersion();
   const challengeStatus = useSelector(getChallengeStatus);
   const composerStep = useSelector(getComposerStep);
   const crashReportCount = useSelector(getCrashReportCount);
@@ -312,6 +326,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
   const hasAnyCurrentCustomChatFolders = useSelector(
     getHasAnyCurrentCustomChatFolders
   );
+  const hasClockSkewDialog = useSelector(getIsClockSkewTooMuch);
   const hasNetworkDialog = useSelector(getHasNetworkDialog);
   const hasSearchQuery = useSelector(getHasSearchQuery);
   const hasUnsupportedOS = useSelector(isOSUnsupported);
@@ -333,6 +348,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
     getBackupMediaDownloadProgress
   );
   const isOnline = useSelector(getNetworkIsOnline);
+  const selectedLocation = useSelector(getSelectedLocation);
 
   const serverAlerts = useSelector(getServerAlerts);
 
@@ -389,12 +405,10 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       tab: NavTab.Settings,
       details: {
         page: SettingsPage.ChatFolders,
-        previousLocation: {
-          tab: NavTab.Chats,
-        },
+        previousLocation: selectedLocation,
       },
     });
-  }, [changeLocation]);
+  }, [changeLocation, selectedLocation]);
 
   const maybePreloadConversation = useCallback(
     (conversationId: string) => {
@@ -454,6 +468,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       getPreferredBadge={getPreferredBadge}
       getServerAlertToShow={getServerAlertToShow}
       hasAnyCurrentCustomChatFolders={hasAnyCurrentCustomChatFolders}
+      hasClockSkewDialog={hasClockSkewDialog}
       hasExpiredDialog={hasExpiredDialog}
       hasFailedStorySends={hasFailedStorySends}
       hasNetworkDialog={hasNetworkDialog}
@@ -462,9 +477,9 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       hasUpdateDialog={hasUpdateDialog}
       i18n={i18n}
       isMacOS={isMacOS}
+      isMAS={OS.isMAS()}
       isOnline={isOnline}
       isNotificationProfileActive={isNotificationProfileActive}
-      isChatFoldersEnabled={isChatFoldersEnabled(version)}
       isUpdateDownloaded={isUpdateDownloaded}
       lookupConversationWithoutServiceId={lookupConversationWithoutServiceId}
       modeSpecificProps={modeSpecificProps}
@@ -480,6 +495,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       removeConversation={removeConversation}
       renderCaptchaDialog={renderCaptchaDialog}
       renderCrashReportDialog={renderCrashReportDialog}
+      renderClockSkewDialog={renderClockSkewDialog}
       renderExpiredBuildDialog={renderExpiredBuildDialog}
       renderLeftPaneChatFolders={renderLeftPaneChatFolders}
       renderMessageSearchResult={renderMessageSearchResult}
@@ -505,6 +521,7 @@ export const SmartLeftPane = memo(function SmartLeftPane({
       setComposeGroupName={setComposeGroupName}
       setComposeSearchTerm={setComposeSearchTerm}
       setComposeSelectedRegion={setComposeSelectedRegion}
+      selectedLocation={selectedLocation}
       setIsFetchingUUID={setIsFetchingUUID}
       showArchivedConversations={showArchivedConversations}
       showChooseGroupMembers={showChooseGroupMembers}

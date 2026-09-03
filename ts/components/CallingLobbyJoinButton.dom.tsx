@@ -1,13 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactChild } from 'react';
-import React, { useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import lodash from 'lodash';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Spinner } from './Spinner.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
 
 const { noop } = lodash;
 
@@ -45,7 +45,7 @@ export function CallingLobbyJoinButton({
   const [width, setWidth] = useState<undefined | number>();
   const [height, setHeight] = useState<undefined | number>();
 
-  const childrenByVariant: Record<CallingLobbyJoinButtonVariant, ReactChild> = {
+  const childrenByVariant: Record<CallingLobbyJoinButtonVariant, ReactNode> = {
     [CallingLobbyJoinButtonVariant.CallIsFull]: i18n(
       'icu:CallingLobbyJoinButton--call-full'
     ),

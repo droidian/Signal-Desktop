@@ -1,11 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
 
-import type { ComponentMeta } from '../storybook/types.std.js';
-import type { Props } from './I18n.dom.js';
-import { I18n } from './I18n.dom.js';
+import type { ComponentMeta } from '../storybook/types.std.ts';
+import type { Props } from './I18n.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -75,7 +75,7 @@ export function MultipleTagReplacement(
   );
 }
 
-export function Emoji(
+export function WithEmoji(
   args: Props<'icu:Message__reaction-emoji-label--you'>
 ): JSX.Element {
   return (

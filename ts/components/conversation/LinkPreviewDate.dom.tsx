@@ -1,10 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Moment } from 'moment';
 import moment from 'moment';
-import { isLinkPreviewDateValid } from '../../linkPreviews/isLinkPreviewDateValid.std.js';
+import { isLinkPreviewDateValid } from '../../linkPreviews/isLinkPreviewDateValid.std.ts';
 
 type Props = {
   date?: null | number;

@@ -1,11 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './ConversationNotificationsSettings.dom.js';
-import { ConversationNotificationsSettings } from './ConversationNotificationsSettings.dom.js';
+import type { PropsType } from './ConversationNotificationsSettings.dom.tsx';
+import { ConversationNotificationsSettings } from './ConversationNotificationsSettings.dom.tsx';
+import { MuteExpiration } from '@signalapp/types';
 
 const { i18n } = window.SignalContext;
 
@@ -32,7 +34,7 @@ export function GroupConversationMuted(): JSX.Element {
   return (
     <ConversationNotificationsSettings
       {...getCommonProps()}
-      muteExpiresAt={Date.UTC(2099, 5, 9)}
+      muteExpiresAt={MuteExpiration.fromNumber(Date.UTC(2099, 5, 9))}
     />
   );
 }

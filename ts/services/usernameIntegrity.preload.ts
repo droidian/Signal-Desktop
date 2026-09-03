@@ -4,33 +4,37 @@
 import pTimeout from 'p-timeout';
 import { usernames } from '@signalapp/libsignal-client';
 
-import * as Errors from '../types/errors.std.js';
-import { whoami } from '../textsecure/WebAPI.preload.js';
-import { isDone as isRegistrationDone } from '../util/registration.preload.js';
-import { getConversation } from '../util/getConversation.preload.js';
-import { MINUTE, DAY } from '../util/durations/index.std.js';
-import { drop } from '../util/drop.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.js';
-import { storageJobQueue } from '../util/JobQueue.std.js';
-import { getProfile } from '../util/getProfile.preload.js';
-import { isSharingPhoneNumberWithEverybody } from '../util/phoneNumberSharingMode.preload.js';
-import { bytesToUuid } from '../util/uuidToBytes.std.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { runStorageServiceSyncJob } from './storage.preload.js';
-import { writeProfile } from './writeProfile.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import { whoami } from '../textsecure/WebAPI.preload.ts';
+import { isDone as isRegistrationDone } from '../util/registration.preload.ts';
+import { getConversation } from '../util/getConversation.preload.ts';
+import { MINUTE, DAY } from '../util/durations/index.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { storageJobQueue } from '../util/JobQueue.std.ts';
+import { getProfile } from '../util/getProfile.preload.ts';
+import { isSharingPhoneNumberWithEverybody } from '../util/phoneNumberSharingMode.preload.ts';
+import { bytesToUuid } from '../util/uuidToBytes.std.ts';
+import { CheckScheduler } from '../util/CheckScheduler.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { runStorageServiceSyncJob } from './storage.preload.ts';
+import { writeProfile } from './writeProfile.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const log = createLogger('usernameIntegrity');
-
-const CHECK_INTERVAL = DAY;
 
 const STORAGE_SERVICE_TIMEOUT = 30 * MINUTE;
 
 class UsernameIntegrityService {
   #isStarted = false;
-  readonly #backOff = new BackOff(FIBONACCI_TIMEOUTS);
+  readonly #scheduler = new CheckScheduler({
+    name: 'UsernameIntegrityService',
+    interval: DAY,
+    storageKey: 'usernameLastIntegrityCheck',
+    callback: async () => {
+      await storageJobQueue(() => this.#check());
+    },
+  });
 
   async start(): Promise<void> {
     if (this.#isStarted) {
@@ -39,36 +43,7 @@ class UsernameIntegrityService {
 
     this.#isStarted = true;
 
-    this.#scheduleCheck();
-  }
-
-  #scheduleCheck(): void {
-    const lastCheckTimestamp = itemStorage.get('usernameLastIntegrityCheck', 0);
-    const delay = Math.max(0, lastCheckTimestamp + CHECK_INTERVAL - Date.now());
-    if (delay === 0) {
-      log.info('running the check immediately');
-      drop(this.#safeCheck());
-    } else {
-      log.info(`running the check in ${delay}ms`);
-      setTimeout(() => drop(this.#safeCheck()), delay);
-    }
-  }
-
-  async #safeCheck(): Promise<void> {
-    try {
-      await storageJobQueue(() => this.#check());
-      this.#backOff.reset();
-      await itemStorage.put('usernameLastIntegrityCheck', Date.now());
-
-      this.#scheduleCheck();
-    } catch (error) {
-      const delay = this.#backOff.getAndIncrement();
-      log.error(
-        'check failed with ' +
-          `error: ${Errors.toLogFormat(error)} retrying in ${delay}ms`
-      );
-      setTimeout(() => drop(this.#safeCheck()), delay);
-    }
+    this.#scheduler.start();
   }
 
   async #check(): Promise<void> {
@@ -152,7 +127,7 @@ class UsernameIntegrityService {
 
     window.Whisper.events.once('storageService:syncComplete', () => resolve());
 
-    await pTimeout(once, STORAGE_SERVICE_TIMEOUT);
+    await pTimeout(once, { milliseconds: STORAGE_SERVICE_TIMEOUT });
 
     const me = window.ConversationController.getOurConversationOrThrow();
 

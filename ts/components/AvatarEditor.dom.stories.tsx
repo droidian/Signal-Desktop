@@ -1,15 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { AvatarColors } from '../types/Colors.std.js';
-import type { PropsType } from './AvatarEditor.dom.js';
-import { AvatarEditor } from './AvatarEditor.dom.js';
-import { getDefaultAvatars } from '../types/Avatar.std.js';
-import { createAvatarData } from '../util/createAvatarData.std.js';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { PropsType } from './AvatarEditor.dom.tsx';
+import { AvatarEditor } from './AvatarEditor.dom.tsx';
+import { getDefaultAvatars } from '../types/Avatar.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -20,60 +19,13 @@ const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   conversationTitle: overrideProps.conversationTitle || 'Default Title',
   deleteAvatarFromDisk: action('deleteAvatarFromDisk'),
   i18n,
+  isDisplayedAsPanel: false,
   isGroup: Boolean(overrideProps.isGroup),
   onCancel: action('onCancel'),
   onSave: action('onSave'),
   replaceAvatar: action('replaceAvatar'),
   saveAvatarToDisk: action('saveAvatarToDisk'),
-  userAvatarData: overrideProps.userAvatarData || [
-    createAvatarData({
-      imagePath: '/fixtures/kitten-3-64-64.jpg',
-    }),
-    createAvatarData({
-      color: 'A110',
-      text: 'YA',
-    }),
-    createAvatarData({
-      color: 'A120',
-      text: 'OK',
-    }),
-    createAvatarData({
-      color: 'A130',
-      text: 'F',
-    }),
-    createAvatarData({
-      color: 'A140',
-      text: '🏄💣',
-    }),
-    createAvatarData({
-      color: 'A150',
-      text: '😇🙃😆',
-    }),
-    createAvatarData({
-      color: 'A160',
-      text: '🦊F💦',
-    }),
-    createAvatarData({
-      color: 'A170',
-      text: 'J',
-    }),
-    createAvatarData({
-      color: 'A180',
-      text: 'ZAP',
-    }),
-    createAvatarData({
-      color: 'A190',
-      text: '🍍P',
-    }),
-    createAvatarData({
-      color: 'A200',
-      text: '🌵',
-    }),
-    createAvatarData({
-      color: 'A210',
-      text: 'NAP',
-    }),
-  ],
+  userAvatarData: overrideProps.userAvatarData ?? [],
 });
 
 export default {
@@ -91,9 +43,24 @@ export function NoAvatarGroup(): JSX.Element {
   );
 }
 
-export function NoAvatarMe(): JSX.Element {
+export function NoAvatarContactNoInitials(): JSX.Element {
   return (
-    <AvatarEditor {...createProps({ userAvatarData: getDefaultAvatars() })} />
+    <AvatarEditor
+      {...createProps({
+        conversationTitle: ' ',
+        userAvatarData: getDefaultAvatars(),
+      })}
+    />
+  );
+}
+
+export function NoAvatarContact(): JSX.Element {
+  return (
+    <AvatarEditor
+      {...createProps({
+        userAvatarData: getDefaultAvatars(),
+      })}
+    />
   );
 }
 
@@ -102,6 +69,7 @@ export function HasAvatar(): JSX.Element {
     <AvatarEditor
       {...createProps({
         avatarUrl: '/fixtures/kitten-3-64-64.jpg',
+        userAvatarData: getDefaultAvatars(),
       })}
     />
   );

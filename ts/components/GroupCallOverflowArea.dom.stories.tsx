@@ -1,18 +1,19 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { createRef, type JSX } from 'react';
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupCallOverflowArea.dom.js';
-import { GroupCallOverflowArea } from './GroupCallOverflowArea.dom.js';
-import { getDefaultConversationWithServiceId } from '../test-helpers/getDefaultConversation.std.js';
-import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.js';
-import { FRAME_BUFFER_SIZE } from '../calling/constants.std.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import type { CallingImageDataCache } from './CallManager.dom.js';
-import { MINUTE } from '../util/durations/index.std.js';
+import type { PropsType } from './GroupCallOverflowArea.dom.tsx';
+import { GroupCallOverflowArea } from './GroupCallOverflowArea.dom.tsx';
+import { getDefaultConversationWithServiceId } from '../test-helpers/getDefaultConversation.std.ts';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.ts';
+import { FRAME_BUFFER_SIZE } from '../calling/constants.std.ts';
+import type { CallingImageDataCache } from './CallManager.dom.tsx';
+import { MINUTE } from '../util/durations/index.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+import { renderCallingParticipantMenu } from './CallingParticipantMenu.dom.stories.tsx';
 
 const { memoize, times } = lodash;
 
@@ -25,7 +26,8 @@ const allRemoteParticipants = times(MAX_PARTICIPANTS).map(index => ({
   demuxId: index,
   hasRemoteAudio: index % 3 !== 0,
   hasRemoteVideo: index % 4 !== 0,
-  isHandRaised: (index - 2) % 8 === 0,
+  isOnlyHandRaised: false,
+  raisedHandOrder: (index - 2) % 8 === 0 ? (index - 2) / 8 : undefined,
   mediaKeysReceived: (index + 1) % 20 !== 0,
   presenting: false,
   sharingScreen: false,
@@ -46,13 +48,14 @@ const defaultProps = {
   getFrameBuffer: memoize(() => new Uint8Array(FRAME_BUFFER_SIZE)),
   getCallingImageDataCache: memoize(() => new Map()),
   getGroupCallVideoFrameSource: fakeGetGroupCallVideoFrameSource,
-  imageDataCache: React.createRef<CallingImageDataCache>(),
+  imageDataCache: createRef<CallingImageDataCache>(),
   i18n,
   isCallReconnecting: false,
   joinedAt: new Date().getTime() - MINUTE,
   onParticipantVisibilityChanged: action('onParticipantVisibilityChanged'),
   remoteAudioLevels: new Map<number, number>(),
   remoteParticipantsCount: 1,
+  renderCallingParticipantMenu,
 };
 
 // This component is usually rendered on a call screen.
