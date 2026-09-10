@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "ვიდეო ზარებისთვის Signal-ი შენს კამერას იყენებს."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "სატელეფონო ზარების მიღებისა და განხორციელებისთვის, ასევე ხმოვანი შეტყობინებების ჩასაწერად, Signal-ს შენს მიკროფონზე წვდომა სჭირდება."
+  }
+}

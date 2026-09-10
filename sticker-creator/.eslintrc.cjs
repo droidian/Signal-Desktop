@@ -6,6 +6,7 @@ module.exports = {
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
     'airbnb-typescript-prettier',
   ],
   parser: '@typescript-eslint/parser',
@@ -77,6 +78,8 @@ module.exports = {
       },
     ],
 
+    'react/react-in-jsx-scope': 'off',
+
     'react/jsx-props-no-spreading': 'off',
 
     // Updated to reflect future airbnb standard
@@ -96,7 +99,7 @@ module.exports = {
     // Prefer functional components with default params
     'react/require-default-props': 'off',
 
-    // Empty fragments are used in adapters between backbone and react views.
+    // Empty fragments are used in adapters between models and react views.
     'react/jsx-no-useless-fragment': [
       'error',
       {

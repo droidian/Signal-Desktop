@@ -1,0 +1,80 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// oxlint-disable-next-line signal-desktop/no-restricted-paths
+import type { GroupV2Membership } from '../components/conversation/conversation-details/ConversationDetailsMembershipList.dom.tsx';
+import type {
+  GroupV2PendingMembership,
+  GroupV2RequestingMembership,
+  // oxlint-disable-next-line signal-desktop/no-restricted-paths
+} from '../components/conversation/conversation-details/PendingInvites.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { isConversationUnregistered } from './isConversationUnregistered.dom.ts';
+
+export type GroupMemberships = {
+  memberships: ReadonlyArray<GroupV2Membership>;
+  pendingApprovalMemberships: ReadonlyArray<GroupV2RequestingMembership>;
+  pendingMemberships: ReadonlyArray<GroupV2PendingMembership>;
+};
+
+export const getGroupMemberships = (
+  {
+    memberships = [],
+    pendingApprovalMemberships = [],
+    pendingMemberships = [],
+  }: Readonly<
+    Pick<
+      ConversationType,
+      'memberships' | 'pendingApprovalMemberships' | 'pendingMemberships'
+    >
+  >,
+  getConversationByServiceId: (
+    serviceId: ServiceIdString
+  ) => undefined | ConversationType
+): GroupMemberships => ({
+  memberships: memberships.reduce(
+    (result: ReadonlyArray<GroupV2Membership>, membership) => {
+      const member = getConversationByServiceId(membership.aci);
+      if (!member) {
+        return result;
+      }
+      return [
+        ...result,
+        {
+          isAdmin: membership.isAdmin,
+          labelEmoji: membership.labelEmoji,
+          labelString: membership.labelString,
+          member,
+        },
+      ];
+    },
+    []
+  ),
+  pendingApprovalMemberships: pendingApprovalMemberships.reduce(
+    (result: ReadonlyArray<GroupV2RequestingMembership>, membership) => {
+      const member = getConversationByServiceId(membership.aci);
+      if (!member || isConversationUnregistered(member)) {
+        return result;
+      }
+      return [...result, { member }];
+    },
+    []
+  ),
+  pendingMemberships: pendingMemberships.reduce(
+    (result: ReadonlyArray<GroupV2PendingMembership>, membership) => {
+      const member = getConversationByServiceId(membership.serviceId);
+      if (!member || isConversationUnregistered(member)) {
+        return result;
+      }
+      return [
+        ...result,
+        {
+          member,
+          metadata: { addedByUserId: membership.addedByUserId },
+        },
+      ];
+    },
+    []
+  ),
+});

@@ -1,0 +1,21 @@
+Signal to komunikator, w którym liczy się przede wszystkim prywatność. Aplikacja jest darmowa i prosta w użyciu, a za sprawą szyfrowania end-to-end zapewnia pełną poufność czatów i połączeń. Signal nie może odczytywać Twoich wiadomości ani podsłuchiwać Twoich rozmów. Nie pozwala też na to nikomu innemu. 
+
+• Aplikacja Signal w systemie macOS jest powiązana z aplikacją Signal na Twoim telefonie. 
+
+• Wysyłaj za darmo wiadomości tekstowe i głosowe, zdjęcia, wideo, GIF-y oraz pliki – a wszystko to szyfrowane metodą end-to-end. 
+
+• Korzystaj z czatów grupowych, w których może uczestniczyć nawet tysiąc osób. Jako administrator kontroluj, kto może wysyłać wiadomości, i zarządzaj osobami w grupie.
+
+• Prowadź szyfrowane rozmowy z dźwiękiem i obrazem wysokiej jakości. Obsługujemy połączenia grupowe z nawet 75 osobami naraz.
+
+• Stworzyliśmy aplikację Signal z myślą o ochronie prywatności. Nie wiemy niczego o Tobie ani o tym, z kim się kontaktujesz. Zgodnie z protokołem Signal, udostępnianym na zasadach open source, nie możemy czytać Twoich wiadomości ani słuchać Twoich rozmów. Ani my, ani nikt inny. Bez ściemy, bez gromadzenia danych, bez kompromisów. 
+
+• Udostępniaj relacje ze zdjęciami, wideo i tekstem znikające po 24 godzinach. Dzięki ustawieniom prywatności masz pełną kontrolę nad tym, kto może wyświetlić każdą relację.
+
+• Signal to niezależna organizacja non profit, działająca na zupełnie innych zasadach niż wielkie korporacje z branży technologicznej. Jako organizacja non profit polegamy na darowiznach użytkowników, a nie na reklamodawcach czy inwestorach. 
+
+• Aby zadać pytanie, otrzymać pomoc lub dowiedzieć się więcej, odwiedź https://support.signal.org/
+
+Aby sprawdzić nasz kod źródłowy, odwiedź https://github.com/signalapp 
+
+Obserwuj nas na platformie X (@signalapp) i Instagramie (@signal_app)

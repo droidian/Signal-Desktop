@@ -1,0 +1,167 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+import { memo } from 'react';
+import { useSelector } from 'react-redux';
+
+import type { MutableRefObject, JSX } from 'react';
+
+import { ProfileEditor } from '../../components/ProfileEditor.dom.tsx';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { useUsernameActions } from '../ducks/username.preload.ts';
+import {
+  getMe,
+  getProfileUpdateError,
+} from '../selectors/conversations.dom.ts';
+import {
+  getEmojiSkinToneDefault,
+  getHasCompletedUsernameLinkOnboarding,
+  getUsernameCorrupted,
+  getUsernameLink,
+  getUsernameLinkColor,
+  getUsernameLinkCorrupted,
+} from '../selectors/items.dom.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import {
+  getUsernameEditState,
+  getUsernameLinkState,
+} from '../selectors/username.std.ts';
+import { SmartUsernameEditor } from './UsernameEditor.preload.tsx';
+import { getSelectedLocation } from '../selectors/nav.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
+
+import type { ProfileEditorPage } from '../../types/Nav.std.ts';
+import type { SmartUsernameEditorProps } from './UsernameEditor.preload.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+
+function renderUsernameEditor(props: SmartUsernameEditorProps): JSX.Element {
+  return <SmartUsernameEditor {...props} />;
+}
+
+export const SmartProfileEditor = memo(function SmartProfileEditor(props: {
+  contentsRef: MutableRefObject<HTMLDivElement | null>;
+}) {
+  const i18n = useSelector(getIntl);
+  const {
+    aboutEmoji,
+    aboutText,
+    avatars: userAvatarData = [],
+    color,
+    familyName,
+    firstName,
+    id: conversationId,
+    profileAvatarUrl,
+    username,
+  } = useSelector(getMe);
+  const selectedLocation = useSelector(getSelectedLocation);
+  const hasCompletedUsernameLinkOnboarding = useSelector(
+    getHasCompletedUsernameLinkOnboarding
+  );
+  const hasError = useSelector(getProfileUpdateError);
+  const emojiSkinToneDefault = useSelector(getEmojiSkinToneDefault);
+  const usernameCorrupted = useSelector(getUsernameCorrupted);
+  const usernameEditState = useSelector(getUsernameEditState);
+  const usernameLink = useSelector(getUsernameLink);
+  const usernameLinkColor = useSelector(getUsernameLinkColor);
+  const usernameLinkCorrupted = useSelector(getUsernameLinkCorrupted);
+  const usernameLinkState = useSelector(getUsernameLinkState);
+
+  const {
+    deleteAvatarFromDisk,
+    myProfileChanged,
+    replaceAvatar,
+    saveAttachment,
+    saveAvatarToDisk,
+    setProfileUpdateError,
+  } = useConversationsActions();
+  const {
+    resetUsernameLink,
+    setUsernameLinkColor,
+    setUsernameEditState,
+    openUsernameReservationModal,
+    markCompletedUsernameLinkOnboarding,
+    deleteUsername,
+  } = useUsernameActions();
+  const { showToast } = useToastActions();
+  const { changeLocation } = useNavActions();
+
+  let errorDialog: JSX.Element | undefined;
+  if (hasError) {
+    errorDialog = (
+      <AxoConfirmDialog.Root
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:ProfileEditorModal--error')}
+        open
+        onOpenChange={() => setProfileUpdateError(false)}
+      >
+        <AxoConfirmDialog.Cancel>
+          {i18n('icu:Confirmation--confirm')}
+        </AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
+    );
+  }
+
+  if (
+    selectedLocation.tab !== NavTab.Settings ||
+    selectedLocation.details.page !== SettingsPage.Profile
+  ) {
+    return null;
+  }
+
+  const editState = selectedLocation.details.state;
+  const setEditState = (newState: ProfileEditorPage) => {
+    changeLocation({
+      tab: NavTab.Settings,
+      details: {
+        page: SettingsPage.Profile,
+        state: newState,
+      },
+    });
+  };
+
+  return (
+    <>
+      {errorDialog}
+      <ProfileEditor
+        aboutEmoji={aboutEmoji}
+        aboutText={aboutText}
+        color={color}
+        contentsRef={props.contentsRef}
+        conversationId={conversationId}
+        deleteAvatarFromDisk={deleteAvatarFromDisk}
+        deleteUsername={deleteUsername}
+        familyName={familyName}
+        firstName={firstName ?? ''}
+        hasCompletedUsernameLinkOnboarding={hasCompletedUsernameLinkOnboarding}
+        i18n={i18n}
+        editState={editState}
+        markCompletedUsernameLinkOnboarding={
+          markCompletedUsernameLinkOnboarding
+        }
+        onProfileChanged={myProfileChanged}
+        openUsernameReservationModal={openUsernameReservationModal}
+        profileAvatarUrl={profileAvatarUrl}
+        renderUsernameEditor={renderUsernameEditor}
+        replaceAvatar={replaceAvatar}
+        resetUsernameLink={resetUsernameLink}
+        saveAttachment={saveAttachment}
+        saveAvatarToDisk={saveAvatarToDisk}
+        setEditState={setEditState}
+        setUsernameEditState={setUsernameEditState}
+        setUsernameLinkColor={setUsernameLinkColor}
+        showToast={showToast}
+        emojiSkinToneDefault={emojiSkinToneDefault}
+        userAvatarData={userAvatarData}
+        username={username}
+        usernameCorrupted={usernameCorrupted}
+        usernameEditState={usernameEditState}
+        usernameLink={usernameLink}
+        usernameLinkColor={usernameLinkColor}
+        usernameLinkCorrupted={usernameLinkCorrupted}
+        usernameLinkState={usernameLinkState}
+      />
+    </>
+  );
+});

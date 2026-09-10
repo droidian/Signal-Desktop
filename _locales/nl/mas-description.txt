@@ -1,0 +1,21 @@
+Signal is een berichtenapp waar privacy centraal staat. Het is gratis en gemakkelijk te gebruiken, met sterke end-to-endversleuteling die je chats en oproepen volledig privé houdt. Signal, of iemand anders, kan je berichten niet lezen of je oproepen afluisteren. 
+
+• Signal in MacOs is gekoppeld aan Signal op je telefoon. 
+
+• Stuur gratis end-to-end versleutelde tekst- en spraakberichten, foto's, video's, GIF's en bestanden. 
+
+• Houd contact via groepschats met tot wel 1000 mensen. Bepaal wie kan posten en groepsleden kan beheren met instellingen voor beheerdersmachtigingen.
+
+• Bel je vrienden met versleutelde spraak- en video-oproepen. Groepsoproepen worden ondersteund tot wel 75 personen.
+
+• Signal is gebouwd voor jouw privacy. We weten niets over jou of met wie je praat. Ons opensource Signal Protocol betekent dat we jouw berichten niet kunnen lezen of naar je oproepen kunnen luisteren. En niemand anders kan dat. Geen addertjes onder het gras, geen gegevensverzameling, geen compromissen. 
+
+• Deel beeld-, tekst- en videoverhalen die na 24 uur verdwijnen. Met privacyinstellingen bepaal je precies wie elk verhaal kan zien.
+
+• Signal is onafhankelijk en heeft geen winstoogmerk. Onze unieke organisatie biedt een ander soort technologie. Als non-profitorganisatie worden we ondersteund door jouw donaties, niet door adverteerders of investeerders. 
+
+• Ga voor ondersteuning, vragen of meer informatie naar https://support.signal.org/
+
+Ga naar https://github.com/signalapp om onze broncode te bekijken 
+
+Volg ons op X @signalapp en Instagram @signal_app

@@ -13,7 +13,6 @@
   inset-inline-start: 0;
   top: 0;
   position: absolute;
-  user-select: none;
   -webkit-app-region: no-drag;
 
   z-index: variables.$z-index-popup-overlay;
@@ -149,7 +148,7 @@
     width: 100%;
 
     &--input {
-      margin-inline: 24px;
+      margin-inline: 8px;
       width: 400px;
     }
 
@@ -200,7 +199,6 @@
     flex-grow: 1;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: 596px;
     min-height: 36px;
   }
 

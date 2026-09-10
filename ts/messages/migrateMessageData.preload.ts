@@ -1,0 +1,202 @@
+// Copyright 2018 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import lodash from 'lodash';
+import pMap from 'p-map';
+import PQueue from 'p-queue';
+
+import { CURRENT_SCHEMA_VERSION } from '../types/Message2.preload.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { MINUTE } from '../util/durations/index.std.ts';
+import type { MessageAttributesType } from '../model-types.d.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { postSaveUpdates } from '../util/cleanup.preload.ts';
+import { upgradeMessageSchema as doUpgradeMessageSchema } from '../util/migrations.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+
+const { isFunction, isNumber } = lodash;
+
+const log = createLogger('migrateMessageData');
+
+const MAX_CONCURRENCY = 5;
+
+// Don't migrate batches concurrently
+const migrationQueue = new PQueue({
+  concurrency: 1,
+  timeout: MINUTE * 30,
+});
+
+type BatchResultType = Readonly<{
+  done: boolean;
+  numProcessed: number;
+  numSucceeded?: number;
+  numFailedSave?: number;
+  numFailedUpgrade?: number;
+  fetchDuration?: number;
+  upgradeDuration?: number;
+  saveDuration?: number;
+  totalDuration?: number;
+}>;
+
+/**
+ * Ensures that messages in database are at the right schema.
+ *
+ * @internal
+ */
+export async function _migrateMessageData({
+  numMessagesPerBatch,
+  upgradeMessageSchema,
+  getMessagesNeedingUpgrade,
+  saveMessagesIndividually,
+  incrementMessagesMigrationAttempts,
+  maxVersion = CURRENT_SCHEMA_VERSION,
+}: Readonly<{
+  numMessagesPerBatch: number;
+  upgradeMessageSchema: (
+    message: MessageAttributesType,
+    options: { maxVersion: number }
+  ) => Promise<MessageAttributesType>;
+  getMessagesNeedingUpgrade: (
+    limit: number,
+    options: { maxVersion: number }
+  ) => Promise<Array<MessageAttributesType>>;
+  saveMessagesIndividually: (
+    data: ReadonlyArray<MessageAttributesType>,
+    options: { ourAci: AciString; postSaveUpdates: () => Promise<void> }
+  ) => Promise<{ failedIndices: Array<number> }>;
+  incrementMessagesMigrationAttempts: (
+    messageIds: ReadonlyArray<string>
+  ) => Promise<void>;
+  maxVersion?: number;
+}>): Promise<BatchResultType> {
+  if (!isNumber(numMessagesPerBatch)) {
+    throw new TypeError("'numMessagesPerBatch' is required");
+  }
+
+  if (!isFunction(upgradeMessageSchema)) {
+    throw new TypeError("'upgradeMessageSchema' is required");
+  }
+
+  const startTime = Date.now();
+
+  const fetchStartTime = Date.now();
+  let messagesRequiringSchemaUpgrade;
+  try {
+    messagesRequiringSchemaUpgrade = await getMessagesNeedingUpgrade(
+      numMessagesPerBatch,
+      { maxVersion }
+    );
+  } catch (error) {
+    log.error('getMessagesNeedingUpgrade error:', Errors.toLogFormat(error));
+    return {
+      done: true,
+      numProcessed: 0,
+    };
+  }
+  const fetchDuration = Date.now() - fetchStartTime;
+
+  const upgradeStartTime = Date.now();
+  const failedToUpgradeMessageIds = new Array<string>();
+  const upgradedMessages = (
+    await pMap(
+      messagesRequiringSchemaUpgrade,
+      async message => {
+        try {
+          return await upgradeMessageSchema(message, { maxVersion });
+        } catch (error) {
+          log.error('upgradeMessageSchema error:', Errors.toLogFormat(error));
+          failedToUpgradeMessageIds.push(message.id);
+          return undefined;
+        }
+      },
+      { concurrency: MAX_CONCURRENCY }
+    )
+  ).filter(isNotNil);
+  const upgradeDuration = Date.now() - upgradeStartTime;
+
+  const saveStartTime = Date.now();
+
+  const ourAci = itemStorage.user.getCheckedAci();
+  const { failedIndices: failedToSaveIndices } = await saveMessagesIndividually(
+    upgradedMessages,
+    {
+      ourAci,
+      postSaveUpdates,
+    }
+  );
+
+  const failedToSaveMessageIds = failedToSaveIndices.map(
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    idx => upgradedMessages[idx]!.id
+  );
+
+  if (failedToUpgradeMessageIds.length || failedToSaveMessageIds.length) {
+    await incrementMessagesMigrationAttempts([
+      ...failedToUpgradeMessageIds,
+      ...failedToSaveMessageIds,
+    ]);
+  }
+  const saveDuration = Date.now() - saveStartTime;
+
+  const totalDuration = Date.now() - startTime;
+  const numProcessed = messagesRequiringSchemaUpgrade.length;
+  const numFailedUpgrade = failedToUpgradeMessageIds.length;
+  const numFailedSave = failedToSaveIndices.length;
+  const numSucceeded = numProcessed - numFailedSave - numFailedUpgrade;
+  const done = numProcessed < numMessagesPerBatch;
+  return {
+    done,
+    numProcessed,
+    numSucceeded,
+    numFailedUpgrade,
+    numFailedSave,
+    fetchDuration,
+    upgradeDuration,
+    saveDuration,
+    totalDuration,
+  };
+}
+
+export async function migrateBatchOfMessages({
+  numMessagesPerBatch,
+  maxVersion,
+}: {
+  numMessagesPerBatch: number;
+  maxVersion?: number;
+}): Promise<BatchResultType> {
+  return migrationQueue.add(() =>
+    _migrateMessageData({
+      numMessagesPerBatch,
+      upgradeMessageSchema: doUpgradeMessageSchema,
+      getMessagesNeedingUpgrade: DataReader.getMessagesNeedingUpgrade,
+      saveMessagesIndividually: DataWriter.saveMessagesIndividually,
+      incrementMessagesMigrationAttempts:
+        DataWriter.incrementMessagesMigrationAttempts,
+      maxVersion,
+    })
+  );
+}
+
+export async function migrateAllMessages({
+  maxVersion,
+}: {
+  maxVersion?: number;
+} = {}): Promise<void> {
+  const logId = `migrateAllMessages${maxVersion != null ? `[maxVersion=${maxVersion}]` : ''}`;
+
+  let batch: BatchResultType | undefined;
+  let total = 0;
+  while (!batch?.done) {
+    // oxlint-disable-next-line no-await-in-loop
+    batch = await migrateBatchOfMessages({
+      numMessagesPerBatch: 1000,
+      maxVersion,
+    });
+    total += batch.numProcessed;
+    log.info(`${logId}: Migrated batch of ${batch.numProcessed}`);
+  }
+  log.info(`${logId}: message migration complete; ${total} messages migrated`);
+}

@@ -1,0 +1,21 @@
+Signal er en meldingsapp som setter personvern i fokus. Den er helt gratis å bruke og har sterk ende-til-ende-kryptering som holder samtalene dine private. Signal kan verken lese meldingene eller lytte til samtalene dine – og det kan ingen andre heller. 
+
+• Signal på macOS kobles til Signal på telefonen din. 
+
+• Send ende-til-ende-krypterte tekstmeldinger, talemeldinger, bilder, videoer, GIF-er og filer helt gratis. 
+
+• Hold kontakten, med gruppesamtaler med plass til opptil 1000 personer. Velg hvem som kan legge ut innlegg og styre medlemslisten, via innstillingene for administratortillatelser.
+
+• Ring vennene dine med krystallklar lyd og krystallklart bilde i ende-til-ende-krypterte samtaler. Gruppesamtaler har plass til opptil 75 personer.
+
+• Signal er utviklet for å beskytte personvernet ditt. Vi vet ingenting om deg eller hvem du snakker med. Signal-protokollen vår sørger for at vi ikke kan lese meldingene dine eller lytte til samtalene dine. Det kan ingen andre heller. Ingen bakdører, ingen datainnsamling, ingen kompromiss. 
+
+• Del storyer med bilder, tekst og videoer som forsvinner automatisk etter 24 timer. Personverninnstillingene lar deg bestemme nøyaktig hvem som kan se hver story.
+
+• Signal er uavhengig og ikke utviklet for å tjene penger – helt spesiell teknologi fra en helt spesiell organisasjon. Som en ideell organisasjon støttes vi av pengegaver, ikke av annonsører og investorer. 
+
+• For brukerstøtte, spørsmål eller mer informasjon kan du gå til https://support.signal.org/
+
+Gå til https://github.com/signalapp for å se kildekoden vår 
+
+Følg oss på X (@signalapp) og Instagram (@signal_app)
