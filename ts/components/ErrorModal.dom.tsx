@@ -1,51 +1,32 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
+export type ErrorModalDataProps = Readonly<{
+  title: string;
+  description: string;
+}>;
 
-export type PropsType = {
-  buttonVariant?: ButtonVariant;
-  description?: string;
-  title?: string | null;
-
-  onClose: () => void;
-  i18n: LocalizerType;
-};
-
-function focusRef(el: HTMLElement | null) {
-  if (el) {
-    el.focus();
+export type PropsType = Readonly<
+  ErrorModalDataProps & {
+    i18n: LocalizerType;
+    onClose: () => void;
   }
-}
+>;
 
-export function ErrorModal(props: PropsType): React.JSX.Element {
-  const { buttonVariant, description, i18n, onClose, title } = props;
-
-  const footer = (
-    <Button
-      onClick={onClose}
-      ref={focusRef}
-      variant={buttonVariant || ButtonVariant.Secondary}
-    >
-      {i18n('icu:Confirmation--confirm')}
-    </Button>
-  );
-
+export function ErrorModal(props: PropsType): JSX.Element {
+  const { i18n } = props;
   return (
-    <Modal
-      modalName="ErrorModal"
-      i18n={i18n}
-      onClose={onClose}
-      title={title == null ? undefined : title || i18n('icu:ErrorModal--title')}
-      modalFooter={footer}
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={props.onClose}
+      title={props.title}
+      description={props.description}
     >
-      <div className="module-error-modal__description">
-        {description || i18n('icu:ErrorModal--description')}
-      </div>
-    </Modal>
+      <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+    </AxoConfirmDialog.Root>
   );
 }

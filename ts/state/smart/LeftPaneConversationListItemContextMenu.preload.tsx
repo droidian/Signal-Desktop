@@ -2,33 +2,30 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { FC } from 'react';
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { getIntl } from '../selectors/user.std.js';
-import { getConversationByIdSelector } from '../selectors/conversations.dom.js';
-import type { ChatFolderToggleChat } from '../../components/leftPane/LeftPaneConversationListItemContextMenu.dom.js';
-import { LeftPaneConversationListItemContextMenu } from '../../components/leftPane/LeftPaneConversationListItemContextMenu.dom.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { RenderConversationListItemContextMenuProps } from '../../components/conversationList/BaseConversationListItem.dom.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { getLocalDeleteWarningShown } from '../selectors/items.dom.js';
-import { useItemsActions } from '../ducks/items.preload.js';
+import { getIntl } from '../selectors/user.std.ts';
+import { getConversationByIdSelector } from '../selectors/conversations.dom.ts';
+import type { ChatFolderToggleChat } from '../../components/leftPane/LeftPaneConversationListItemContextMenu.dom.tsx';
+import { LeftPaneConversationListItemContextMenu } from '../../components/leftPane/LeftPaneConversationListItemContextMenu.dom.tsx';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { RenderConversationListItemContextMenuProps } from '../../components/conversationList/BaseConversationListItem.dom.tsx';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 import {
   getCurrentChatFolders,
   getSelectedChatFolder,
-} from '../selectors/chatFolders.std.js';
-import { useChatFolderActions } from '../ducks/chatFolders.preload.js';
-import { useNavActions } from '../ducks/nav.std.js';
-import { NavTab, SettingsPage } from '../../types/Nav.std.js';
-import type { ChatFolderParams } from '../../types/ChatFolder.std.js';
-import { getSelectedLocation } from '../selectors/nav.preload.js';
-import { getIsActivelySearching } from '../selectors/search.preload.js';
+} from '../selectors/chatFolders.std.ts';
+import { useChatFolderActions } from '../ducks/chatFolders.preload.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
+import type { ChatFolderParams } from '../../types/ChatFolder.std.ts';
+import { getSelectedLocation } from '../selectors/nav.std.ts';
+import { getIsActivelySearching } from '../selectors/search.preload.ts';
 
 export const SmartLeftPaneConversationListItemContextMenu: FC<RenderConversationListItemContextMenuProps> =
   memo(function SmartLeftPaneConversationListItemContextMenu(props) {
     const i18n = useSelector(getIntl);
     const conversationByIdSelector = useSelector(getConversationByIdSelector);
-    const localDeleteWarningShown = useSelector(getLocalDeleteWarningShown);
     const location = useSelector(getSelectedLocation);
     const isActivelySearching = useSelector(getIsActivelySearching);
     const selectedChatFolder = useSelector(getSelectedChatFolder);
@@ -44,12 +41,7 @@ export const SmartLeftPaneConversationListItemContextMenu: FC<RenderConversation
       setMuteExpiration,
     } = useConversationsActions();
     const { updateChatFolderToggleChat } = useChatFolderActions();
-    const { putItem } = useItemsActions();
     const { changeLocation } = useNavActions();
-
-    const setLocalDeleteWarningShown = useCallback(() => {
-      putItem('localDeleteWarningShown', true);
-    }, [putItem]);
 
     const conversation = conversationByIdSelector(props.conversationId);
     strictAssert(conversation, 'Missing conversation');
@@ -107,8 +99,6 @@ export const SmartLeftPaneConversationListItemContextMenu: FC<RenderConversation
         onDelete={deleteConversation}
         onChatFolderOpenCreatePage={handleChatFolderOpenCreatePage}
         onChatFolderToggleChat={handleChatFolderToggleChat}
-        localDeleteWarningShown={localDeleteWarningShown}
-        setLocalDeleteWarningShown={setLocalDeleteWarningShown}
       >
         {props.children}
       </LeftPaneConversationListItemContextMenu>

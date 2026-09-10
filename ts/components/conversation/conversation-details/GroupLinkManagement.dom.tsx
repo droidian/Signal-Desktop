@@ -1,20 +1,20 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useId, useState } from 'react';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { ConfirmationDialog } from '../../ConfirmationDialog.dom.js';
+import { useId, useState, type JSX } from 'react';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
 import {
   ConversationDetailsIcon,
   IconType,
-} from './ConversationDetailsIcon.dom.js';
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { Select } from '../../Select.dom.js';
-import { SignalService as Proto } from '../../../protobuf/index.std.js';
-import { copyGroupLink } from '../../../util/copyLinksWithToast.dom.js';
-import { drop } from '../../../util/drop.std.js';
-import { useDelayedRestoreFocus } from '../../../hooks/useRestoreFocus.dom.js';
+} from './ConversationDetailsIcon.dom.tsx';
+import { PanelRow } from './PanelRow.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { Select } from '../../Select.dom.tsx';
+import { SignalService as Proto } from '../../../protobuf/index.std.ts';
+import { copyGroupLink } from '../../../util/copyLinksWithToast.dom.ts';
+import { drop } from '../../../util/drop.std.ts';
+import { useDelayedRestoreFocus } from '../../../hooks/useRestoreFocus.dom.ts';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
 
 const AccessControlEnum = Proto.AccessControl.AccessRequired;
 
@@ -40,7 +40,7 @@ export function GroupLinkManagement({
   i18n,
   isAdmin,
   setAccessControlAddFromInviteLinkSetting,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const groupLinkSelectId = useId();
   const approveSelectId = useId();
 
@@ -67,7 +67,7 @@ export function GroupLinkManagement({
     conversation.accessControlAddFromInviteLink !==
       AccessControlEnum.UNSATISFIABLE;
 
-  let groupLinkInfo: React.JSX.Element | undefined;
+  let groupLinkInfo: JSX.Element | undefined;
   if (hasGroupLink) {
     groupLinkInfo = (
       <button
@@ -89,23 +89,25 @@ export function GroupLinkManagement({
   return (
     <>
       {hasGenerateNewLinkDialog && (
-        <ConfirmationDialog
-          dialogName="GroupLinkManagement.resetLink"
-          actions={[
-            {
-              action: () => {
-                generateNewGroupLink(conversation.id);
-              },
-              style: 'negative',
-              text: i18n('icu:GroupLinkManagement--reset'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => {
             setHasGenerateNewLinkDialog(false);
           }}
           title={i18n('icu:GroupLinkManagement--confirm-reset')}
-        />
+          // @ts-expect-error ConfirmationDialog migration: Needs description
+          description={null}
+        >
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => {
+              generateNewGroupLink(conversation.id);
+            }}
+          >
+            {i18n('icu:GroupLinkManagement--reset')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       )}
       <PanelSection>
         <PanelRow
@@ -149,7 +151,6 @@ export function GroupLinkManagement({
                 />
               }
               label={i18n('icu:GroupLinkManagement--share')}
-              ref={!isAdmin ? focusRef : undefined}
               onClick={() => {
                 if (conversation.groupLink) {
                   drop(copyGroupLink(conversation.groupLink));

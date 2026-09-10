@@ -1,18 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
-import { Button, ButtonVariant } from './Button.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Modal } from './Modal.dom.tsx';
 import type {
   PresentedSource,
   PresentableSource,
-} from '../types/Calling.std.js';
-import { Theme } from '../util/theme.std.js';
-import { strictAssert } from '../util/assert.std.js';
+} from '../types/Calling.std.ts';
+import { Theme } from '../util/theme.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
 const { groupBy } = lodash;
 
@@ -31,7 +31,7 @@ function Source({
   onSourceClick: (source: PresentedSource) => void;
   source: PresentableSource;
   sourceToPresent?: PresentedSource;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <button
       className={classNames({
@@ -76,7 +76,7 @@ export function CallingSelectPresentingSourcesModal({
   presentingSourcesAvailable,
   selectPresentingSource,
   cancelPresenting,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const [sourceToPresent, setSourceToPresent] = useState<
     PresentedSource | undefined
   >(undefined);

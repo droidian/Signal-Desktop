@@ -1,21 +1,23 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import os from 'node:os';
+
 import * as moment from 'moment';
-// @ts-expect-error -- no types
 import 'moment/min/locales.min.js';
 
-import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging.preload.js';
-import { setup } from '../../signal.preload.js';
-import { addSensitivePath } from '../../util/privacy.node.js';
-import * as dns from '../../util/dns.node.js';
+import { initialize as initializeLogging } from '../../logging/set_up_renderer_logging.preload.ts';
+import { setup } from '../../signal.preload.ts';
+import { addSensitivePath } from '../../util/privacy.node.ts';
+import * as dns from '../../util/dns.node.ts';
 import {
   ATTACHMENTS_PATH,
   STICKERS_PATH,
   DRAFT_PATH,
-} from '../../util/basePaths.preload.js';
-import { SignalContext } from '../context.preload.js';
-import '../clipboard.dom.js';
+  TEMP_PATH,
+} from '../../util/basePaths.preload.ts';
+import { SignalContext } from '../context.preload.ts';
+import '../clipboard.dom.ts';
 
 initializeLogging();
 
@@ -37,9 +39,14 @@ moment.locale(
   localeOverride != null ? [localeOverride] : preferredSystemLocales
 );
 
+const homedir = os.homedir();
+if (homedir && homedir !== '/' && homedir !== '\\') {
+  addSensitivePath(homedir);
+}
 addSensitivePath(ATTACHMENTS_PATH);
 addSensitivePath(STICKERS_PATH);
 addSensitivePath(DRAFT_PATH);
+addSensitivePath(TEMP_PATH);
 if (config.crashDumpsPath) {
   addSensitivePath(config.crashDumpsPath);
 }

@@ -1,15 +1,15 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { formatFileSize } from '../util/formatFileSize.std.js';
-import { SpinnerV2 } from './SpinnerV2.dom.js';
-import { ContextMenu } from './ContextMenu.dom.js';
-import { BackupMediaDownloadCancelConfirmationDialog } from './BackupMediaDownloadCancelConfirmationDialog.dom.js';
-import { LeftPaneDialog } from './LeftPaneDialog.dom.js';
-import { WidthBreakpoint } from './_util.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { formatFileSize } from '../util/formatFileSize.std.ts';
+import { SpinnerV2 } from './SpinnerV2.dom.tsx';
+import { ContextMenu } from './ContextMenu.dom.tsx';
+import { BackupMediaDownloadCancelConfirmationDialog } from './BackupMediaDownloadCancelConfirmationDialog.dom.tsx';
+import { LeftPaneDialog } from './LeftPaneDialog.dom.tsx';
+import { WidthBreakpoint } from './_util.std.ts';
 
 export type PropsType = Readonly<{
   i18n: LocalizerType;
@@ -37,7 +37,7 @@ export function BackupMediaDownloadProgress({
   handleResume,
   handlePause,
   widthBreakpoint,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const [isShowingCancelConfirmation, setIsShowingCancelConfirmation] =
     useState(false);
 
@@ -49,8 +49,8 @@ export function BackupMediaDownloadProgress({
     setIsShowingCancelConfirmation(true);
   }
 
-  let content: React.JSX.Element | undefined;
-  let icon: React.JSX.Element | undefined;
+  let content: JSX.Element | undefined;
+  let icon: JSX.Element | undefined;
 
   const isCompleted = downloadedBytes === totalBytes;
 

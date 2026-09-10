@@ -2,7 +2,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { ChatFolderId, ChatFolderParams } from './ChatFolder.std.js';
+import type { ChatFolderId, ChatFolderParams } from './ChatFolder.std.ts';
+import type { PanelArgsType } from './Panels.std.ts';
+
+export type Location = ReadonlyDeep<
+  | {
+      tab: NavTab.Chats;
+      details: ChatDetails;
+    }
+  | {
+      tab: NavTab.Settings;
+      details: SettingsLocation;
+    }
+  | { tab: Exclude<NavTab, NavTab.Chats | NavTab.Settings> }
+>;
+
+export type ChatDetails = ReadonlyDeep<{
+  conversationId?: string;
+  panels?: PanelInfo;
+}>;
+
+export type PanelInfo = {
+  direction: 'push' | 'pop' | undefined;
+  isAnimating: boolean;
+  // When navigating deep into a panel stack, we only want to render the leaf panel
+  leafPanelOnly?: boolean;
+  stack: ReadonlyArray<PanelArgsType>;
+  wasAnimated: boolean;
+  watermark: number;
+};
 
 export type SettingsLocation = ReadonlyDeep<
   | {
@@ -29,14 +57,6 @@ export type SettingsLocation = ReadonlyDeep<
     }
 >;
 
-export type Location = ReadonlyDeep<
-  | {
-      tab: NavTab.Settings;
-      details: SettingsLocation;
-    }
-  | { tab: Exclude<NavTab, NavTab.Settings> }
->;
-
 export enum NavTab {
   Chats = 'Chats',
   Calls = 'Calls',
@@ -47,6 +67,7 @@ export enum NavTab {
 export enum SettingsPage {
   // Accessible through left nav
   Profile = 'Profile',
+  Account = 'Account',
   General = 'General',
   Donations = 'Donations',
   Appearance = 'Appearance',
@@ -59,6 +80,8 @@ export enum SettingsPage {
   Internal = 'Internal',
 
   // Sub pages
+  AccountKeys = 'AccountKeys',
+  Blocked = 'Blocked',
   ChatColor = 'ChatColor',
   ChatFolders = 'ChatFolders',
   DonationsDonateFlow = 'DonationsDonateFlow',
@@ -66,6 +89,7 @@ export enum SettingsPage {
   EditChatFolder = 'EditChatFolder',
   NotificationProfilesHome = 'NotificationProfilesHome',
   NotificationProfilesCreateFlow = 'NotificationProfilesCreateFlow',
+  WhileMuted = 'WhileMuted',
   PNP = 'PNP',
   BackupsDetails = 'BackupsDetails',
   LocalBackups = 'LocalBackups',

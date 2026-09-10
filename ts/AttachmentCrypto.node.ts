@@ -26,7 +26,7 @@ import {
 import type { ChunkSizeChoice } from '@signalapp/libsignal-client/dist/incremental_mac.js';
 import { isAbsolute } from 'node:path';
 
-import { createLogger } from './logging/log.std.js';
+import { createLogger } from './logging/log.std.ts';
 import {
   HashType,
   CipherType,
@@ -36,24 +36,24 @@ import {
   DIGEST_LENGTH,
   ATTACHMENT_MAC_LENGTH,
   AES_KEY_LENGTH,
-} from './types/Crypto.std.js';
-import { constantTimeEqual } from './Crypto.node.js';
-import { createName, getRelativePath } from './util/attachmentPath.node.js';
-import { appendPaddingStream } from './util/logPadding.node.js';
-import { prependStream } from './util/prependStream.node.js';
-import { appendMacStream } from './util/appendMacStream.node.js';
-import { finalStream } from './util/finalStream.node.js';
-import { getMacAndUpdateHmac } from './util/getMacAndUpdateHmac.node.js';
-import { trimPadding } from './util/trimPadding.node.js';
-import { assertDev, strictAssert } from './util/assert.std.js';
-import * as Errors from './types/errors.std.js';
-import { isNotNil } from './util/isNotNil.std.js';
-import { missingCaseError } from './util/missingCaseError.std.js';
-import { getEnvironment, Environment } from './environment.std.js';
-import { isNotEmpty, toBase64, toHex } from './Bytes.std.js';
-import { decipherWithAesKey } from './util/decipherWithAesKey.node.js';
-import { getAttachmentCiphertextSize } from './util/AttachmentCrypto.std.js';
-import { MediaTier } from './types/AttachmentDownload.std.js';
+} from './types/Crypto.std.ts';
+import { constantTimeEqual } from './Crypto.node.ts';
+import { createName, getRelativePath } from './util/attachmentPath.node.ts';
+import { appendPaddingStream } from './util/logPadding.node.ts';
+import { prependStream } from './util/prependStream.node.ts';
+import { appendMacStream } from './util/appendMacStream.node.ts';
+import { finalStream } from './util/finalStream.node.ts';
+import { getMacAndUpdateHmac } from './util/getMacAndUpdateHmac.node.ts';
+import { trimPadding } from './util/trimPadding.node.ts';
+import { assertDev, strictAssert } from './util/assert.std.ts';
+import * as Errors from './types/errors.std.ts';
+import { isNotNil } from './util/isNotNil.std.ts';
+import { missingCaseError } from './util/missingCaseError.std.ts';
+import { getEnvironment, Environment } from './environment.std.ts';
+import { isNotEmpty, toBase64, toHex } from './Bytes.std.ts';
+import { decipherWithAesKey } from './util/decipherWithAesKey.node.ts';
+import { getAttachmentCiphertextSize } from './util/AttachmentCrypto.std.ts';
+import { MediaTier } from './types/AttachmentDownload.std.ts';
 
 const { ensureFile } = fsExtra;
 
@@ -64,19 +64,19 @@ const log = createLogger('AttachmentCrypto');
 // This file was split from ts/Crypto.ts because it pulls things in from node, and
 //   too many things pull in Crypto.ts, so it broke storybook.
 
-export function _generateAttachmentIv(): Uint8Array {
+export function _generateAttachmentIv(): Uint8Array<ArrayBuffer> {
   return randomBytes(IV_LENGTH);
 }
 
-export function generateAttachmentKeys(): Uint8Array {
+export function generateAttachmentKeys(): Uint8Array<ArrayBuffer> {
   return randomBytes(KEY_SET_LENGTH);
 }
 
 export type EncryptedAttachmentV2 = {
   chunkSize: number | undefined;
-  digest: Uint8Array;
-  incrementalMac: Uint8Array | undefined;
-  iv: Uint8Array;
+  digest: Uint8Array<ArrayBuffer>;
+  incrementalMac: Uint8Array<ArrayBuffer> | undefined;
+  iv: Uint8Array<ArrayBuffer>;
   plaintextHash: string;
   ciphertextSize: number;
 };
@@ -97,14 +97,14 @@ export type DecryptedAttachmentV2 = {
 };
 
 export type PlaintextSourceType =
-  | { data: Uint8Array }
+  | { data: Uint8Array<ArrayBuffer> }
   | { stream: Readable; size?: number }
   | { absolutePath: string };
 
 type EncryptAttachmentV2OptionsType = Readonly<{
-  _testOnlyDangerousIv?: Uint8Array;
+  _testOnlyDangerousIv?: Uint8Array<ArrayBuffer>;
   _testOnlyDangerousSkipPadding?: boolean;
-  keys: Readonly<Uint8Array>;
+  keys: Readonly<Uint8Array<ArrayBuffer>>;
   needIncrementalMac: boolean;
   plaintext: PlaintextSourceType;
 }>;
@@ -170,7 +170,7 @@ export async function encryptAttachmentV2({
   const digest = createHash(HashType.size256);
 
   let ciphertextSize: number | undefined;
-  let mac: Uint8Array | undefined;
+  let mac: Uint8Array<ArrayBuffer> | undefined;
   let incrementalDigestCreator: DigestingPassThrough | undefined;
   let chunkSizeChoice: ChunkSizeChoice | undefined;
 
@@ -274,16 +274,16 @@ export async function encryptAttachmentV2({
 }
 
 export type IntegrityCheckType =
-  | { type: 'plaintext'; plaintextHash: Readonly<Uint8Array> }
-  | { type: 'encrypted'; digest: Readonly<Uint8Array> };
+  | { type: 'plaintext'; plaintextHash: Readonly<Uint8Array<ArrayBuffer>> }
+  | { type: 'encrypted'; digest: Readonly<Uint8Array<ArrayBuffer>> };
 
 export type DecryptAttachmentToSinkOptionsType = Readonly<
   {
     idForLogging: string;
     size: number;
     outerEncryption?: {
-      aesKey: Readonly<Uint8Array>;
-      macKey: Readonly<Uint8Array>;
+      aesKey: Readonly<Uint8Array<ArrayBuffer>>;
+      macKey: Readonly<Uint8Array<ArrayBuffer>>;
     };
   } & (
     | {
@@ -296,7 +296,7 @@ export type DecryptAttachmentToSinkOptionsType = Readonly<
     (
       | {
           type: 'standard';
-          theirIncrementalMac: Readonly<Uint8Array> | undefined;
+          theirIncrementalMac: Readonly<Uint8Array<ArrayBuffer>> | undefined;
           theirChunkSize: number | undefined;
           integrityCheck: IntegrityCheckType;
         }
@@ -308,8 +308,8 @@ export type DecryptAttachmentToSinkOptionsType = Readonly<
     ) &
     (
       | {
-          aesKey: Readonly<Uint8Array>;
-          macKey: Readonly<Uint8Array>;
+          aesKey: Readonly<Uint8Array<ArrayBuffer>>;
+          macKey: Readonly<Uint8Array<ArrayBuffer>>;
         }
       | {
           // The format used by most stored attachments
@@ -369,8 +369,8 @@ export async function decryptAttachmentV2ToSink(
 ): Promise<Omit<DecryptedAttachmentV2, 'path'>> {
   const { idForLogging, outerEncryption } = options;
 
-  let aesKey: Uint8Array;
-  let macKey: Uint8Array;
+  let aesKey: Uint8Array<ArrayBuffer>;
+  let macKey: Uint8Array<ArrayBuffer>;
 
   if ('aesKey' in options) {
     ({ aesKey, macKey } = options);
@@ -387,11 +387,11 @@ export async function decryptAttachmentV2ToSink(
   const hmac = createHmac(HashType.size256, macKey);
   const plaintextHash = createHash(HashType.size256);
 
-  let theirMac: Uint8Array | undefined;
+  let theirMac: Uint8Array<ArrayBuffer> | undefined;
 
   // When downloading from backup there is an outer encryption layer; in that case we
   // need to decrypt the outer layer and check its MAC
-  let theirOuterMac: Uint8Array | undefined;
+  let theirOuterMac: Uint8Array<ArrayBuffer> | undefined;
   const outerHmac = outerEncryption
     ? createHmac(HashType.size256, outerEncryption.macKey)
     : undefined;
@@ -407,8 +407,8 @@ export async function decryptAttachmentV2ToSink(
     : undefined;
 
   let readFd: FileHandle | undefined;
-  let ourPlaintextHash: Uint8Array | undefined;
-  let ourDigest: Uint8Array | undefined;
+  let ourPlaintextHash: Uint8Array<ArrayBuffer> | undefined;
+  let ourDigest: Uint8Array<ArrayBuffer> | undefined;
   let ciphertextStream: Readable;
 
   try {
@@ -580,6 +580,8 @@ export async function decryptAndReencryptLocally(
     const passthrough = new PassThrough();
     const [result] = await Promise.all([
       decryptAttachmentV2ToSink(options, passthrough),
+      // FIXME
+      // oxlint-disable-next-line typescript/await-thenable
       await encryptAttachmentV2({
         keys,
         needIncrementalMac: false,
@@ -616,10 +618,12 @@ export async function decryptAndReencryptLocally(
  */
 
 type AttachmentEncryptionKeysType = {
-  aesKey: Uint8Array;
-  macKey: Uint8Array;
+  aesKey: Uint8Array<ArrayBuffer>;
+  macKey: Uint8Array<ArrayBuffer>;
 };
-export function splitKeys(keys: Uint8Array): AttachmentEncryptionKeysType {
+export function splitKeys(
+  keys: Uint8Array<ArrayBuffer>
+): AttachmentEncryptionKeysType {
   strictAssert(
     keys.byteLength === KEY_SET_LENGTH,
     `attachment keys must be ${KEY_SET_LENGTH} bytes, got ${keys.byteLength}`
@@ -629,7 +633,7 @@ export function splitKeys(keys: Uint8Array): AttachmentEncryptionKeysType {
   return { aesKey, macKey };
 }
 
-export function generateKeys(): Uint8Array {
+export function generateKeys(): Uint8Array<ArrayBuffer> {
   return randomBytes(KEY_SET_LENGTH);
 }
 
@@ -679,8 +683,8 @@ function checkIntegrity({
   integrityCheck,
   logId,
 }: {
-  locallyCalculatedDigest: Uint8Array;
-  locallyCalculatedPlaintextHash: Uint8Array;
+  locallyCalculatedDigest: Uint8Array<ArrayBuffer>;
+  locallyCalculatedPlaintextHash: Uint8Array<ArrayBuffer>;
   integrityCheck: IntegrityCheckType;
   logId: string;
 }): void {
@@ -709,7 +713,7 @@ function checkIntegrity({
 /**
  * Prepends the iv to the stream.
  */
-function prependIv(iv: Uint8Array) {
+function prependIv(iv: Uint8Array<ArrayBuffer>) {
   strictAssert(
     iv.byteLength === IV_LENGTH,
     `prependIv: iv should be ${IV_LENGTH} bytes, got ${iv.byteLength} bytes`
@@ -718,7 +722,7 @@ function prependIv(iv: Uint8Array) {
 }
 
 export function getPlaintextHashForInMemoryAttachment(
-  data: Uint8Array
+  data: Uint8Array<ArrayBuffer>
 ): string {
   return createHash(HashType.size256).update(data).digest('hex');
 }

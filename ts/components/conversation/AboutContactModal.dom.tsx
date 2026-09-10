@@ -1,30 +1,29 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { type ReactNode, useCallback, useMemo } from 'react';
-
-import { isInSystemContacts } from '../../util/isInSystemContacts.std.js';
-import { Avatar, AvatarBlur, AvatarSize } from '../Avatar.dom.js';
-import { Modal } from '../Modal.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { SharedGroupNames } from '../SharedGroupNames.dom.js';
-import { About } from './About.dom.js';
-import { I18n } from '../I18n.dom.js';
-import { canHaveNicknameAndNote } from '../../util/nicknames.dom.js';
-import { Tooltip, TooltipPlacement } from '../Tooltip.dom.js';
-import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer.dom.js';
 import {
-  getEmojiVariantByKey,
-  getEmojiVariantKeyByValue,
-  isEmojiVariantValue,
-} from '../fun/data/emojis.std.js';
-import { FunStaticEmoji } from '../fun/FunEmoji.dom.js';
-import { missingEmojiPlaceholder } from '../../types/GroupMemberLabels.std.js';
+  type ReactNode,
+  useCallback,
+  useMemo,
+  type JSX,
+  type MouseEvent,
+} from 'react';
+import { isInSystemContacts } from '../../util/isInSystemContacts.std.ts';
+import { Avatar, AvatarBlur, AvatarSize } from '../Avatar.dom.tsx';
+import { Modal } from '../Modal.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { SharedGroupNames } from '../SharedGroupNames.dom.tsx';
+import { About } from './About.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
+import { canHaveNicknameAndNote } from '../../util/nicknames.dom.ts';
+import { Tooltip, TooltipPlacement } from '../Tooltip.dom.tsx';
+import { FunStaticEmoji } from '../fun/FunEmoji.dom.tsx';
+import { missingEmojiPlaceholder } from '../../types/GroupMemberLabels.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-
-function muted(parts: Array<string | React.JSX.Element>) {
+function muted(parts: Array<string | JSX.Element>) {
   return (
     <span className="AboutContactModal__TitleWithoutNickname">{parts}</span>
   );
@@ -34,7 +33,7 @@ export type PropsType = Readonly<{
   i18n: LocalizerType;
   canAddLabel: boolean;
   contact: ConversationType;
-  contactLabelEmoji: string | undefined;
+  contactLabelEmoji: Emoji.Variant | undefined;
   contactLabelString: string | undefined;
   contactNameColor: string | undefined;
   fromOrAddedByTrustedContact?: boolean;
@@ -44,6 +43,9 @@ export type PropsType = Readonly<{
   onOpenNotePreviewModal: () => void;
   pendingAvatarDownload?: boolean;
   sharedGroupNames: ReadonlyArray<string>;
+  showEditMemberLabelScreen: () => unknown;
+  showProfileEditor: () => unknown;
+  showQRCodeScreen: () => unknown;
   startAvatarDownload?: (id: string) => unknown;
   toggleSignalConnectionsModal: () => void;
   toggleSafetyNumberModal: (id: string) => void;
@@ -62,13 +64,16 @@ export function AboutContactModal({
   isSignalConnection,
   pendingAvatarDownload,
   sharedGroupNames,
+  showEditMemberLabelScreen,
+  showProfileEditor,
+  showQRCodeScreen,
   startAvatarDownload,
   toggleSignalConnectionsModal,
   toggleSafetyNumberModal,
   toggleProfileNameWarningModal,
   onClose,
   onOpenNotePreviewModal,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const { avatarUrl, hasAvatar, isMe } = contact;
 
   // If hasAvatar is true, we show the download button instead of blur
@@ -95,7 +100,7 @@ export function AboutContactModal({
   ]);
 
   const onSignalConnectionClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
       toggleSignalConnectionsModal();
     },
@@ -103,7 +108,7 @@ export function AboutContactModal({
   );
 
   const onVerifiedClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
       toggleSafetyNumberModal(contact.id);
     },
@@ -111,35 +116,32 @@ export function AboutContactModal({
   );
 
   const onProfileNameWarningClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
       toggleProfileNameWarningModal();
     },
     [toggleProfileNameWarningModal]
   );
 
-  let statusRow: React.JSX.Element | undefined;
+  let statusRow: JSX.Element | undefined;
   const hasLabel = contactNameColor && contactLabelString;
   const shouldShowLabel = isMe && hasLabel;
   const shouldShowAddLabel =
     isMe && !hasLabel && canAddLabel && isEditMemberLabelEnabled;
-  const emojiLocalizer = useFunEmojiLocalizer();
 
   let labelEmojiElement;
   if (
     shouldShowLabel &&
     contactLabelEmoji &&
-    isEmojiVariantValue(contactLabelEmoji)
+    Emoji.isEmoji(contactLabelEmoji)
   ) {
-    const emojiKey = getEmojiVariantKeyByValue(contactLabelEmoji);
-    const labelEmojiData = getEmojiVariantByKey(emojiKey);
     labelEmojiElement = (
       <>
         <FunStaticEmoji
           role="img"
-          aria-label={emojiLocalizer.getLocaleShortName(labelEmojiData.key)}
+          aria-label={Emoji.getDisplayLabel(contactLabelEmoji)}
           size={14}
-          emoji={labelEmojiData}
+          emoji={contactLabelEmoji}
         />{' '}
       </>
     );
@@ -176,6 +178,42 @@ export function AboutContactModal({
     );
   }
 
+  const nameElement =
+    canHaveNicknameAndNote(contact) &&
+    contact.titleNoNickname !== contact.title &&
+    contact.titleNoNickname ? (
+      <span>
+        <I18n
+          i18n={i18n}
+          id="icu:AboutContactModal__TitleAndTitleWithoutNickname"
+          components={{
+            nickname: <UserText text={contact.title} />,
+            titleNoNickname: (
+              <Tooltip
+                className="AboutContactModal__TitleWithoutNickname__Tooltip"
+                direction={TooltipPlacement.Top}
+                content={
+                  <I18n
+                    i18n={i18n}
+                    id="icu:AboutContactModal__TitleWithoutNickname__Tooltip"
+                    components={{
+                      title: <UserText text={contact.titleNoNickname} />,
+                    }}
+                  />
+                }
+                delay={0}
+              >
+                <UserText text={contact.titleNoNickname} />
+              </Tooltip>
+            ),
+            muted,
+          }}
+        />
+      </span>
+    ) : (
+      <UserText text={contact.title} />
+    );
+
   return (
     <Modal
       key="main"
@@ -211,40 +249,16 @@ export function AboutContactModal({
       </div>
       <div className="AboutContactModal__row">
         <i className="AboutContactModal__row__icon AboutContactModal__row__icon--profile" />
-
-        {canHaveNicknameAndNote(contact) &&
-        contact.titleNoNickname !== contact.title &&
-        contact.titleNoNickname ? (
-          <span>
-            <I18n
-              i18n={i18n}
-              id="icu:AboutContactModal__TitleAndTitleWithoutNickname"
-              components={{
-                nickname: <UserText text={contact.title} />,
-                titleNoNickname: (
-                  <Tooltip
-                    className="AboutContactModal__TitleWithoutNickname__Tooltip"
-                    direction={TooltipPlacement.Top}
-                    content={
-                      <I18n
-                        i18n={i18n}
-                        id="icu:AboutContactModal__TitleWithoutNickname__Tooltip"
-                        components={{
-                          title: <UserText text={contact.titleNoNickname} />,
-                        }}
-                      />
-                    }
-                    delay={0}
-                  >
-                    <UserText text={contact.titleNoNickname} />
-                  </Tooltip>
-                ),
-                muted,
-              }}
-            />
-          </span>
+        {isMe ? (
+          <button
+            className="AboutContactModal__button"
+            type="button"
+            onClick={showProfileEditor}
+          >
+            {nameElement}
+          </button>
         ) : (
-          <UserText text={contact.title} />
+          nameElement
         )}
       </div>
       {!isMe && !fromOrAddedByTrustedContact ? (
@@ -259,7 +273,6 @@ export function AboutContactModal({
           >
             <I18n
               components={{
-                // eslint-disable-next-line react/no-unstable-nested-components
                 clickable: (parts: ReactNode) => <>{parts}</>,
               }}
               i18n={i18n}
@@ -314,29 +327,54 @@ export function AboutContactModal({
       {shouldShowLabel && (
         <div className="AboutContactModal__row">
           <i className="AboutContactModal__row__icon AboutContactModal__row__icon--label" />
-          <div className="AboutContactModal__label-container">
-            {labelEmojiElement}
-            <span className="AboutContactModal__label-container__string">
-              <UserText
-                fontSizeOverride={14}
-                style={{
-                  verticalAlign: 'top',
-                  marginTop: '3px',
-                }}
-                text={contactLabelString}
-              />
-            </span>
-          </div>
+          <button
+            className="AboutContactModal__button"
+            disabled={!canAddLabel}
+            type="button"
+            onClick={showEditMemberLabelScreen}
+          >
+            <div className="AboutContactModal__label-container">
+              {labelEmojiElement}
+              <span className="AboutContactModal__label-container__string">
+                <UserText
+                  fontSizeOverride={14}
+                  style={{
+                    verticalAlign: 'top',
+                    marginTop: '3px',
+                  }}
+                  text={contactLabelString}
+                />
+              </span>
+            </div>
+          </button>
         </div>
       )}
       {shouldShowAddLabel && (
         <div className="AboutContactModal__row">
           <i className="AboutContactModal__row__icon AboutContactModal__row__icon--label" />
-          {i18n('icu:AboutContactModal__add-member-label')}
+          <button
+            className="AboutContactModal__button"
+            type="button"
+            onClick={showEditMemberLabelScreen}
+          >
+            {i18n('icu:AboutContactModal__add-member-label')}
+          </button>
+        </div>
+      )}
+      {isMe && contact.username && (
+        <div className="AboutContactModal__row">
+          <i className="AboutContactModal__row__icon AboutContactModal__row__icon--qr-code" />
+          <button
+            className="AboutContactModal__button"
+            type="button"
+            onClick={showQRCodeScreen}
+          >
+            {i18n('icu:AboutContactModal__your-qr-code')}
+          </button>
         </div>
       )}
 
-      {contact.phoneNumber ? (
+      {!isMe && contact.phoneNumber ? (
         <div className="AboutContactModal__row">
           <i className="AboutContactModal__row__icon AboutContactModal__row__icon--phone" />
           <UserText text={contact.phoneNumber} />

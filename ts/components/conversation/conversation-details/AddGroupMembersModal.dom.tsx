@@ -1,22 +1,22 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useReducer } from 'react';
+import { useReducer, type JSX } from 'react';
 import lodash from 'lodash';
 
-import type { LocalizerType } from '../../../types/Util.std.js';
+import type { LocalizerType } from '../../../types/Util.std.ts';
 import {
-  AddGroupMemberErrorDialog,
-  AddGroupMemberErrorDialogMode,
-} from '../../AddGroupMemberErrorDialog.dom.js';
-import type { SmartChooseGroupMembersModalPropsType } from '../../../state/smart/ChooseGroupMembersModal.preload.js';
-import type { SmartConfirmAdditionsModalPropsType } from '../../../state/smart/ConfirmAdditionsModal.dom.js';
+  AddGroupMemberMaximumGroupSizeErrorDialog,
+  AddGroupMemberRecommendedMaximumGroupSizeErrorDialog,
+} from '../../AddGroupMemberErrorDialog.dom.tsx';
+import type { SmartChooseGroupMembersModalPropsType } from '../../../state/smart/ChooseGroupMembersModal.preload.tsx';
+import type { SmartConfirmAdditionsModalPropsType } from '../../../state/smart/ConfirmAdditionsModal.dom.tsx';
 import {
   toggleSelectedContactForGroupAddition,
   OneTimeModalState,
-} from '../../../groups/toggleSelectedContactForGroupAddition.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import type { RequestState } from './util.std.js';
+} from '../../../groups/toggleSelectedContactForGroupAddition.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import type { RequestState } from './util.std.ts';
 
 const { without } = lodash;
 
@@ -33,10 +33,10 @@ type PropsType = {
 
   renderChooseGroupMembersModal: (
     props: SmartChooseGroupMembersModalPropsType
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   renderConfirmAdditionsModal: (
     props: SmartConfirmAdditionsModalPropsType
-  ) => React.JSX.Element;
+  ) => JSX.Element;
 };
 
 enum Stage {
@@ -147,7 +147,7 @@ export function AddGroupMembersModal({
   requestState,
   renderChooseGroupMembersModal,
   renderConfirmAdditionsModal,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const numberOfContactsAlreadyInGroup = conversationIdsAlreadyInGroup.size;
   const isGroupAlreadyFull = numberOfContactsAlreadyInGroup >= maxGroupSize;
   const isGroupAlreadyOverRecommendedMaximum =
@@ -178,10 +178,9 @@ export function AddGroupMembersModal({
 
   if (maximumGroupSizeModalState === OneTimeModalState.Showing) {
     return (
-      <AddGroupMemberErrorDialog
+      <AddGroupMemberMaximumGroupSizeErrorDialog
         i18n={i18n}
         maximumNumberOfContacts={maxGroupSize}
-        mode={AddGroupMemberErrorDialogMode.MaximumGroupSize}
         onClose={() => {
           dispatch({ type: ActionType.CloseMaximumGroupSizeModal });
         }}
@@ -191,9 +190,8 @@ export function AddGroupMembersModal({
 
   if (recommendedGroupSizeModalState === OneTimeModalState.Showing) {
     return (
-      <AddGroupMemberErrorDialog
+      <AddGroupMemberRecommendedMaximumGroupSizeErrorDialog
         i18n={i18n}
-        mode={AddGroupMemberErrorDialogMode.RecommendedMaximumGroupSize}
         onClose={() => {
           dispatch({
             type: ActionType.CloseRecommendedMaximumGroupSizeModal,

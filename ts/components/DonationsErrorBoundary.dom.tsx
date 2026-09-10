@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode, ErrorInfo } from 'react';
-import React, { Component, useCallback } from 'react';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
+import type { ReactNode, ErrorInfo, JSX } from 'react';
+import { Component, useCallback } from 'react';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
 
 const log = createLogger('DonationsErrorBoundary');
 
@@ -18,7 +18,7 @@ type ErrorBoundaryState = {
 };
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // eslint-disable-next-line react/state-in-constructor
+  // oxlint-disable-next-line react/state-in-constructor
   override state: ErrorBoundaryState = {};
 
   static getDerivedStateFromError(error: unknown) {
@@ -44,7 +44,7 @@ export type DonationsErrorBoundaryProps = Readonly<{
 
 export function DonationsErrorBoundary(
   props: DonationsErrorBoundaryProps
-): React.JSX.Element {
+): JSX.Element {
   const fallback = useCallback(() => {
     return <div className="DonationsErrorBoundary" />;
   }, []);

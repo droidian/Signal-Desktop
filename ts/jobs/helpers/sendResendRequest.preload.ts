@@ -3,30 +3,31 @@
 
 import { ContentHint, PlaintextContent } from '@signalapp/libsignal-client';
 
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.js';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
+} from './handleMultipleSendErrors.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   ResendRequestJobData,
-} from '../conversationJobQueue.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
+} from '../conversationJobQueue.preload.ts';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
 import {
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import { drop } from '../../util/drop.std.js';
-import type { DecryptionErrorEventData } from '../../textsecure/messageReceiverEvents.std.js';
-import { retryPlaceholders } from '../../services/retryPlaceholders.std.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { startAutomaticSessionReset } from '../../util/handleRetry.preload.js';
-import * as Bytes from '../../Bytes.std.js';
+} from '../../textsecure/Errors.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import type { DecryptionErrorEventData } from '../../textsecure/messageReceiverEvents.std.ts';
+import { retryPlaceholders } from '../../services/retryPlaceholders.std.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import { startAutomaticSessionReset } from '../../util/handleRetry.preload.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { getSelectedConversationId } from '../../state/selectors/nav.std.ts';
 
 function failoverToLocalReset(
   logger: LoggerType,
@@ -105,19 +106,23 @@ export async function sendResendRequest(
   const targetConversationId = groupConversationId ?? conversation.get('id');
 
   try {
-    const options = await getSendOptions(conversation.attributes);
-    await handleMessageSend(
-      messaging.sendMessageProtoAndWait({
-        timestamp,
-        recipients: [senderAci],
-        proto: plaintext,
-        contentHint: ContentHint.Default,
+    await conversation.queueJob('sendResendRequest', async () => {
+      const options = await getSendOptions(conversation.attributes, {
         groupId,
-        options,
-        urgent: false,
-      }),
-      { messageIds: [], sendType: 'retryRequest' }
-    );
+      });
+      await handleMessageSend(
+        messaging.sendMessageProtoAndWait({
+          timestamp,
+          recipients: [senderAci],
+          proto: plaintext,
+          contentHint: ContentHint.Default,
+          groupId,
+          options,
+          urgent: false,
+        }),
+        { messageIds: [], sendType: 'retryRequest' }
+      );
+    });
 
     // Now that we've successfully sent, represent this to the user. Three options:
 
@@ -125,8 +130,9 @@ export async function sendResendRequest(
     if (contentHint === ContentHint.Resendable) {
       log.info('contentHint is RESENDABLE, adding placeholder');
 
-      const state = window.reduxStore.getState();
-      const selectedId = state.conversations.selectedConversationId;
+      const selectedId = getSelectedConversationId(
+        window.reduxStore.getState()
+      );
       const wasOpened = selectedId === targetConversationId;
 
       await retryPlaceholders.add({

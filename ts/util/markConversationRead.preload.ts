@@ -4,30 +4,30 @@
 import lodash from 'lodash';
 
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { DataWriter } from '../sql/Client.preload.js';
-import { hasErrors } from '../state/selectors/message.preload.js';
-import { readSyncJobQueue } from '../jobs/readSyncJobQueue.preload.js';
-import { notificationService } from '../services/notifications.preload.js';
-import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.preload.js';
-import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.preload.js';
-import { isGroup, isDirectConversation } from './whatTypeOfConversation.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { getConversationIdForLogging } from './idForLogging.preload.js';
-import { drop } from './drop.std.js';
-import { isNotNil } from './isNotNil.std.js';
-import { assertDev } from './assert.std.js';
-import { isConversationAccepted } from './isConversationAccepted.preload.js';
-import { ReadStatus } from '../messages/MessageReadStatus.std.js';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
+import { hasErrors } from '../state/selectors/message.preload.ts';
+import { readSyncJobQueue } from '../jobs/readSyncJobQueue.preload.ts';
+import { notificationService } from '../services/notifications.preload.ts';
+import { update as updateExpiringMessagesService } from '../services/expiringMessagesDeletion.preload.ts';
+import { tapToViewMessagesDeletionService } from '../services/tapToViewMessagesDeletionService.preload.ts';
+import { isGroup, isDirectConversation } from './whatTypeOfConversation.dom.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { getConversationIdForLogging } from './idForLogging.preload.ts';
+import { drop } from './drop.std.ts';
+import { isNotNil } from './isNotNil.std.ts';
+import { assertDev } from './assert.std.ts';
+import { isConversationAccepted } from './isConversationAccepted.preload.ts';
+import { ReadStatus } from '../messages/MessageReadStatus.std.ts';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
-} from '../jobs/conversationJobQueue.preload.js';
-import { ReceiptType } from '../types/Receipt.std.js';
-import type { AciString } from '../types/ServiceId.std.js';
-import { isAciString } from './isAciString.std.js';
-import type { MessageModel } from '../models/messages.preload.js';
-import { postSaveUpdates } from './cleanup.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../jobs/conversationJobQueue.preload.ts';
+import { ReceiptType } from '../types/Receipt.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { isAciString } from './isAciString.std.ts';
+import type { MessageModel } from '../models/messages.preload.ts';
+import { postSaveUpdates } from './cleanup.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const { isNumber, pick } = lodash;
 
@@ -50,6 +50,7 @@ export async function markConversationRead(
     unreadEditedMessages,
     unreadReactions,
     unreadPollVotes,
+    lastUnreadCallId,
   ] = await Promise.all([
     DataWriter.getUnreadByConversationAndMarkRead({
       conversationId,
@@ -69,6 +70,10 @@ export async function markConversationRead(
       conversationId,
       readMessageReceivedAt: readMessage.received_at,
     }),
+    DataReader.getPrevUnreadCallIdInConversation(
+      conversationId,
+      readMessage.received_at
+    ),
   ]);
 
   const convoId = getConversationIdForLogging(conversationAttrs);
@@ -80,6 +85,7 @@ export async function markConversationRead(
       receivedAt: readMessage.received_at,
     },
     unreadMessages: unreadMessages.length,
+    unreadEditedMessages: unreadEditedMessages.length,
     unreadReactions: unreadReactions.length,
     unreadPollVotes: unreadPollVotes.length,
   });
@@ -88,7 +94,8 @@ export async function markConversationRead(
     !unreadMessages.length &&
     !unreadEditedMessages.length &&
     !unreadReactions.length &&
-    !unreadPollVotes.length
+    !unreadPollVotes.length &&
+    lastUnreadCallId == null
   ) {
     return false;
   }
@@ -244,8 +251,8 @@ export async function markConversationRead(
     log.info(logId, `Sending ${readSyncs.length} read syncs`);
     // Because syncReadMessages sends to our other devices, and sendReadReceipts goes
     //   to a contact, we need accessKeys for both.
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.warn(logId, 'We are primary device; not sending read syncs');
+    if (!window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(logId, 'We have no other devices; not sending read syncs');
     } else {
       drop(readSyncJobQueue.add({ readSyncs }));
     }
@@ -260,8 +267,14 @@ export async function markConversationRead(
     }
   }
 
-  void updateExpiringMessagesService();
-  void tapToViewMessagesDeletionService.update();
+  if (lastUnreadCallId != null) {
+    window.reduxActions.callHistory.markCallHistoryReadInConversation(
+      lastUnreadCallId
+    );
+  }
+
+  updateExpiringMessagesService();
+  tapToViewMessagesDeletionService.update();
 
   return true;
 }

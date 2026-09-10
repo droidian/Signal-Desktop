@@ -1,22 +1,30 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { type ReactNode, type JSX } from 'react';
+import type { ReadonlyDeep } from 'type-fest';
 
-import type { ContactMediaItemType } from '../../../types/MediaItem.std.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { getName } from '../../../types/EmbeddedContact.std.js';
-import { AvatarColors } from '../../../types/Colors.std.js';
-import type { AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.js';
-import { Avatar, AvatarBlur, AvatarSize } from '../../Avatar.dom.js';
-import { ListItem } from './ListItem.dom.js';
+import type {
+  GenericMediaItemType,
+  ContactMediaItemType,
+} from '../../../types/MediaItem.std.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { getName } from '../../../types/EmbeddedContact.std.ts';
+import { AvatarColors } from '../../../types/Colors.std.ts';
+import type { AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.ts';
+import { Avatar, AvatarBlur, AvatarSize } from '../../Avatar.dom.tsx';
+import { ListItem } from './ListItem.dom.tsx';
 
 export type Props = {
   i18n: LocalizerType;
   mediaItem: ContactMediaItemType;
   authorTitle: string;
   onClick: (status: AttachmentStatusType['state']) => void;
-  onShowMessage: () => void;
+  showMessage: () => void;
+  renderContextMenu: (
+    mediaItem: ReadonlyDeep<GenericMediaItemType>,
+    children: ReactNode
+  ) => JSX.Element;
 };
 
 export function ContactListItem({
@@ -24,8 +32,9 @@ export function ContactListItem({
   mediaItem,
   authorTitle,
   onClick,
-  onShowMessage,
-}: Props): React.JSX.Element {
+  showMessage,
+  renderContextMenu,
+}: Props): JSX.Element {
   const { contact } = mediaItem;
   const { avatar } = contact;
 
@@ -58,7 +67,8 @@ export function ContactListItem({
       subtitle={subtitle}
       readyLabel={i18n('icu:startDownload')}
       onClick={onClick}
-      onShowMessage={onShowMessage}
+      showMessage={showMessage}
+      renderContextMenu={renderContextMenu}
     />
   );
 }

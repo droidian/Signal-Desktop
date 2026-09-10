@@ -1,13 +1,13 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import lodash from 'lodash';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './Lightbox.dom.js';
-import { Lightbox } from './Lightbox.dom.js';
-import type { MediaItemType } from '../types/MediaItem.std.js';
+import type { PropsType } from './Lightbox.dom.tsx';
+import { Lightbox } from './Lightbox.dom.tsx';
+import type { MediaItemType } from '../types/MediaItem.std.ts';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -15,9 +15,9 @@ import {
   VIDEO_QUICKTIME,
   stringToMIMEType,
   type MIMEType,
-} from '../types/MIME.std.js';
+} from '../types/MIME.std.ts';
 
-import { fakeAttachment } from '../test-helpers/fakeAttachment.std.js';
+import { fakeAttachment } from '../test-helpers/fakeAttachment.std.ts';
 
 const { noop } = lodash;
 
@@ -68,7 +68,7 @@ function createMediaItem(
 }
 
 const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // oxlint-disable-next-line react-hooks/rules-of-hooks
   const [selectedIndex, setSelectedIndex] = useState(0);
   const media = overrideProps.media || [];
   return {
@@ -91,7 +91,7 @@ const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => {
   };
 };
 
-export function Multimedia(): React.JSX.Element {
+export function Multimedia(): JSX.Element {
   const props = createProps({
     media: [
       {
@@ -109,7 +109,9 @@ export function Multimedia(): React.JSX.Element {
           type: 'incoming',
           id: 'image-msg',
           receivedAt: 1,
+          // oxlint-disable-next-line react/purity
           receivedAtMs: Date.now(),
+          // oxlint-disable-next-line react/purity
           sentAt: Date.now(),
           // Unused for now
           source: undefined,
@@ -133,7 +135,9 @@ export function Multimedia(): React.JSX.Element {
           type: 'incoming',
           id: 'video-msg',
           receivedAt: 2,
+          // oxlint-disable-next-line react/purity
           receivedAtMs: Date.now(),
+          // oxlint-disable-next-line react/purity
           sentAt: Date.now(),
           // Unused for now
           source: undefined,
@@ -160,7 +164,7 @@ export function Multimedia(): React.JSX.Element {
   return <Lightbox {...props} />;
 }
 
-export function MissingMedia(): React.JSX.Element {
+export function MissingMedia(): JSX.Element {
   const props = createProps({
     media: [
       {
@@ -176,7 +180,9 @@ export function MissingMedia(): React.JSX.Element {
           type: 'incoming',
           id: 'image-msg',
           receivedAt: 3,
+          // oxlint-disable-next-line react/purity
           receivedAtMs: Date.now(),
+          // oxlint-disable-next-line react/purity
           sentAt: Date.now(),
 
           // Unused for now
@@ -194,7 +200,7 @@ export function MissingMedia(): React.JSX.Element {
   return <Lightbox {...props} />;
 }
 
-export function SingleImage(): React.JSX.Element {
+export function SingleImage(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -208,7 +214,7 @@ export function SingleImage(): React.JSX.Element {
   );
 }
 
-export function ImageWithCaptionNormalImage(): React.JSX.Element {
+export function ImageWithCaptionNormalImage(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -224,7 +230,7 @@ export function ImageWithCaptionNormalImage(): React.JSX.Element {
   );
 }
 
-export function ImageWithCaptionAllWhiteImage(): React.JSX.Element {
+export function ImageWithCaptionAllWhiteImage(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -240,7 +246,7 @@ export function ImageWithCaptionAllWhiteImage(): React.JSX.Element {
   );
 }
 
-export function SingleVideo(): React.JSX.Element {
+export function SingleVideo(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -255,7 +261,7 @@ export function SingleVideo(): React.JSX.Element {
   );
 }
 
-export function SingleVideoWCaption(): React.JSX.Element {
+export function SingleVideoWCaption(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -272,7 +278,7 @@ export function SingleVideoWCaption(): React.JSX.Element {
   );
 }
 
-export function UnsupportedImageType(): React.JSX.Element {
+export function UnsupportedImageType(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -287,7 +293,7 @@ export function UnsupportedImageType(): React.JSX.Element {
   );
 }
 
-export function UnsupportedVideoType(): React.JSX.Element {
+export function UnsupportedVideoType(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -302,7 +308,7 @@ export function UnsupportedVideoType(): React.JSX.Element {
   );
 }
 
-export function UnsupportedContent(): React.JSX.Element {
+export function UnsupportedContent(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -317,7 +323,7 @@ export function UnsupportedContent(): React.JSX.Element {
   );
 }
 
-export function CustomChildren(): React.JSX.Element {
+export function CustomChildren(): JSX.Element {
   return (
     <Lightbox {...createProps({})} media={[]}>
       <div
@@ -334,7 +340,7 @@ export function CustomChildren(): React.JSX.Element {
   );
 }
 
-export function ConversationHeader(): React.JSX.Element {
+export function ConversationHeader(): JSX.Element {
   return (
     <Lightbox
       {...createProps({})}
@@ -360,7 +366,7 @@ export function ConversationHeader(): React.JSX.Element {
   );
 }
 
-export function ViewOnceVideo(): React.JSX.Element {
+export function ViewOnceVideo(): JSX.Element {
   return (
     <Lightbox
       {...createProps({
@@ -377,7 +383,7 @@ export function ViewOnceVideo(): React.JSX.Element {
   );
 }
 
-export function IncrementalVideo(): React.JSX.Element {
+export function IncrementalVideo(): JSX.Element {
   const item = createMediaItem({
     contentType: VIDEO_MP4,
     objectURL: '/fixtures/pixabay-Soap-Bubble-7141.mp4',

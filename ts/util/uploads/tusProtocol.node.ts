@@ -3,12 +3,12 @@
 import { type Readable } from 'node:stream';
 import fetch, { type RequestInit, type Response } from 'node-fetch';
 
-import { HTTPError } from '../../types/HTTPError.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import * as Errors from '../../types/errors.std.js';
-import { sleep } from '../sleep.std.js';
-import { FIBONACCI_TIMEOUTS, BackOff } from '../BackOff.std.js';
-import { MINUTE } from '../durations/constants.std.js';
+import { HTTPError } from '../../types/HTTPError.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { sleep } from '../sleep.std.ts';
+import { FIBONACCI_TIMEOUTS, BackOff } from '../BackOff.std.ts';
+import { MINUTE } from '../durations/constants.std.ts';
 
 const log = createLogger('tusProtocol');
 
@@ -59,7 +59,7 @@ function addProgressHandler(
   // Explicitly stop the flow, otherwise we might emit 'data' before `fetch()`
   // starts reading the stream.
   readable.pause();
-  readable.on('data', (chunk: Buffer) => {
+  readable.on('data', (chunk: Buffer<ArrayBuffer>) => {
     bytesUploaded += chunk.byteLength;
     onProgress(bytesUploaded);
   });
@@ -131,8 +131,7 @@ export async function _tusCreateWithUploadRequest({
           'Content-Type': 'application/offset+octet-stream',
         },
         timeout: MINUTE,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: readable as any,
+        body: readable,
       }),
       readable
     );
@@ -259,8 +258,7 @@ export async function _tusResumeUploadRequest({
           'Content-Type': 'application/offset+octet-stream',
         },
         timeout: MINUTE,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: readable as any,
+        body: readable,
       }),
       readable
     );
@@ -313,8 +311,7 @@ export async function tusUpload({
     headers,
     fileName,
     fileSize,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readable: readable as any,
+    readable,
     onProgress,
     onCaughtError,
     signal,
@@ -375,11 +372,11 @@ export async function tusResumeUpload({
 
   let retryAttempts = 0;
   while (retryAttempts < maxRetries) {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await sleep(backoff.getAndIncrement());
     retryAttempts += 1;
 
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const uploadOffset = await _tusGetCurrentOffsetRequest({
       endpoint,
       headers,
@@ -394,7 +391,7 @@ export async function tusResumeUpload({
 
     const readable = reader(filePath, uploadOffset);
 
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const done = await _tusResumeUploadRequest({
       endpoint,
       headers,

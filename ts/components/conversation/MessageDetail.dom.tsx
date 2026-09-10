@@ -1,41 +1,41 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useRef } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useRef } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
 
-import { Avatar, AvatarSize } from '../Avatar.dom.js';
-import { ContactName } from './ContactName.dom.js';
-import { ContextMenu } from '../ContextMenu.dom.js';
-import { Time } from '../Time.dom.js';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { ContactName } from './ContactName.dom.tsx';
+import { ContextMenu } from '../ContextMenu.dom.tsx';
+import { Time } from '../Time.dom.tsx';
 import type {
   Props as MessagePropsType,
   PropsData as MessagePropsDataType,
-} from './Message.dom.js';
-import { Message, MessageInteractivity } from './Message.dom.js';
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { groupBy } from '../../util/mapUtil.std.js';
-import type { ContactNameColorType } from '../../types/Colors.std.js';
+} from './Message.dom.tsx';
+import { Message, MessageInteractivity } from './Message.dom.tsx';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { groupBy } from '../../util/mapUtil.std.ts';
+import type { ContactNameColorType } from '../../types/Colors.std.ts';
 import {
   SendStatus,
   type VisibleSendStatus,
-} from '../../messages/MessageSendState.std.js';
-import { WidthBreakpoint } from '../_util.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { formatDateTimeLong } from '../../util/formatTimestamp.dom.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import { format as formatRelativeTime } from '../../util/expirationTimer.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { PanelRow } from './conversation-details/PanelRow.dom.js';
-import { PanelSection } from './conversation-details/PanelSection.dom.js';
+} from '../../messages/MessageSendState.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { formatDateTimeLong } from '../../util/formatTimestamp.dom.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { format as formatRelativeTime } from '../../util/expirationTimer.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { PanelRow } from './conversation-details/PanelRow.dom.tsx';
+import { PanelSection } from './conversation-details/PanelSection.dom.tsx';
 import {
   ConversationDetailsIcon,
   IconType,
-} from './conversation-details/ConversationDetailsIcon.dom.js';
+} from './conversation-details/ConversationDetailsIcon.dom.tsx';
 
 const { noop } = lodash;
 
@@ -59,7 +59,7 @@ export type Contact = Pick<
   isOutgoingKeyError: boolean;
   isUnidentifiedDelivery: boolean;
 
-  errors?: Array<Error>;
+  errors?: ReadonlyArray<Error>;
 };
 
 export type PropsData = {
@@ -69,7 +69,7 @@ export type PropsData = {
   contacts: ReadonlyArray<Contact>;
 
   contactNameColor?: ContactNameColorType;
-  errors: Array<Error>;
+  errors: ReadonlyArray<Error>;
   message: Omit<
     MessagePropsDataType,
     'renderingContext' | 'menu' | 'contextMenu' | 'showMenu'
@@ -111,6 +111,7 @@ export type PropsReduxActions = Pick<
   | 'showLightboxForViewOnceMedia'
   | 'showMediaNoLongerAvailableToast'
   | 'showSpoiler'
+  | 'retryDeleteForEveryone'
   | 'showTapToViewNotAvailableModal'
   | 'startConversation'
   | 'viewStory'
@@ -147,6 +148,7 @@ export function MessageDetail({
   openGiftBadge,
   platform,
   pushPanelForConversation,
+  retryDeleteForEveryone,
   retryMessageSend,
   sendPollVote,
   renderAudioAttachment,
@@ -167,10 +169,10 @@ export function MessageDetail({
   theme,
   toggleSafetyNumberModal,
   viewStory,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const messageDetailRef = useRef<HTMLDivElement>(null);
 
-  function renderAvatar(contact: Contact): React.JSX.Element {
+  function renderAvatar(contact: Contact): JSX.Element {
     const { avatarUrl, badges, color, phoneNumber, profileName, title } =
       contact;
 
@@ -190,7 +192,7 @@ export function MessageDetail({
     );
   }
 
-  function renderContact(contact: Contact): React.JSX.Element {
+  function renderContact(contact: Contact): JSX.Element {
     const contactErrors = contact.errors || [];
 
     const errorComponent = contact.isOutgoingKeyError ? (
@@ -318,7 +320,8 @@ export function MessageDetail({
   }
 
   const timeRemaining = message.expirationTimestamp
-    ? DurationInSeconds.fromMillis(message.expirationTimestamp - Date.now())
+    ? // oxlint-disable-next-line react/purity
+      DurationInSeconds.fromMillis(message.expirationTimestamp - Date.now())
     : undefined;
 
   return (
@@ -350,6 +353,7 @@ export function MessageDetail({
             openGiftBadge={openGiftBadge}
             platform={platform}
             pushPanelForConversation={pushPanelForConversation}
+            retryDeleteForEveryone={retryDeleteForEveryone}
             retryMessageSend={retryMessageSend}
             sendPollVote={sendPollVote}
             renderAudioAttachment={renderAudioAttachment}

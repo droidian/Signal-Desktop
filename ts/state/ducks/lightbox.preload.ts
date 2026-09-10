@@ -4,62 +4,61 @@
 import type { ThunkAction } from 'redux-thunk';
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import type { MediaItemType } from '../../types/MediaItem.std.js';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import type { MediaItemType } from '../../types/MediaItem.std.ts';
 import type {
   MessageChangedActionType,
   MessageDeletedActionType,
-  MessageExpiredActionType,
-} from './conversations.preload.js';
-import type { ShowStickerPackPreviewActionType } from './globalModals.preload.js';
-import type { ShowToastActionType } from './toast.preload.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
+} from './conversations.preload.ts';
+import type { ShowStickerPackPreviewActionType } from './globalModals.preload.ts';
+import type { ShowToastActionType } from './toast.preload.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
 
-import { createLogger } from '../../logging/log.std.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
 import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
 import {
   getUndownloadedAttachmentSignature,
   isIncremental,
-} from '../../util/Attachment.std.js';
+} from '../../util/Attachment.std.ts';
 import {
   isImageTypeSupported,
   isVideoTypeSupported,
-} from '../../util/GoogleChrome.std.js';
+} from '../../util/GoogleChrome.std.ts';
 import {
   getLocalAttachmentUrl,
   AttachmentDisposition,
-} from '../../util/getLocalAttachmentUrl.std.js';
+} from '../../util/getLocalAttachmentUrl.std.ts';
 import {
   deleteTempFile,
   copyAttachmentIntoTempDirectory,
   getAbsoluteAttachmentPath,
-} from '../../util/migrations.preload.js';
+} from '../../util/migrations.preload.ts';
 import {
   isTapToView,
   getPropsForAttachment,
-} from '../selectors/message.preload.js';
-import { SHOW_TOAST } from './toast.preload.js';
-import { ToastType } from '../../types/Toast.dom.js';
+} from '../selectors/message.preload.ts';
+import { getHasMediaBackups } from '../selectors/items.dom.ts';
+import { SHOW_TOAST } from './toast.preload.ts';
+import { ToastType } from '../../types/Toast.dom.tsx';
 import {
   MESSAGE_CHANGED,
   MESSAGE_DELETED,
-  MESSAGE_EXPIRED,
   saveAttachmentFromMessage,
-} from './conversations.preload.js';
-import { showStickerPackPreview } from './globalModals.preload.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
-import { deleteDownloadsJobQueue } from '../../jobs/deleteDownloadsJobQueue.preload.js';
-import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.std.js';
-import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../../util/queueAttachmentDownloads.preload.js';
-import { getMessageIdForLogging } from '../../util/idForLogging.preload.js';
-import { markViewOnceMessageViewed } from '../../services/MessageUpdater.preload.js';
+} from './conversations.preload.ts';
+import { showStickerPackPreview } from './globalModals.preload.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
+import { deleteDownloadsJobQueue } from '../../jobs/deleteDownloadsJobQueue.preload.ts';
+import { AttachmentDownloadUrgency } from '../../types/AttachmentDownload.std.ts';
+import { queueAttachmentDownloadsAndMaybeSaveMessage } from '../../util/queueAttachmentDownloads.preload.ts';
+import { getMessageIdForLogging } from '../../util/idForLogging.preload.ts';
+import { markViewOnceMessageViewed } from '../../services/MessageUpdater.preload.ts';
 
 const log = createLogger('lightbox');
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 export type LightboxStateType =
   | {
       isShowingLightbox: false;
@@ -84,7 +83,7 @@ type CloseLightboxActionType = ReadonlyDeep<{
   type: typeof CLOSE_LIGHTBOX;
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 type ShowLightboxActionType = {
   type: typeof SHOW_LIGHTBOX;
   payload: {
@@ -106,12 +105,11 @@ type SetSelectedLightboxIndexActionType = ReadonlyDeep<{
   payload: number;
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 type LightboxActionType =
   | CloseLightboxActionType
   | MessageChangedActionType
   | MessageDeletedActionType
-  | MessageExpiredActionType
   | ShowLightboxActionType
   | SetSelectedLightboxIndexActionType
   | SetLightboxPlaybackDisabledActionType;
@@ -173,7 +171,7 @@ function setPlaybackDisabled(
 function showLightboxForViewOnceMedia(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, ShowLightboxActionType> {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     log.info('showLightboxForViewOnceMedia: attempting to display message');
 
     const message = await getMessageById(messageId);
@@ -205,11 +203,13 @@ function showLightboxForViewOnceMedia(
     const absolutePath = getAbsoluteAttachmentPath(firstAttachment.path);
     const { path: tempPath } =
       await copyAttachmentIntoTempDirectory(absolutePath);
+    const hasMediaBackups = getHasMediaBackups(getState());
     const tempAttachment = {
       ...getPropsForAttachment(
         firstAttachment,
         'attachment',
-        message.attributes
+        message.attributes,
+        { hasMediaBackups }
       ),
       path: tempPath,
     };
@@ -236,7 +236,7 @@ function showLightboxForViewOnceMedia(
           isErased: !!message.get('isErased'),
           readStatus: message.get('readStatus'),
           sendStateByConversationId: message.get('sendStateByConversationId'),
-          errors: message.get('errors'),
+          errors: message.get('errors') ?? undefined,
         },
       },
     ];
@@ -319,6 +319,7 @@ function showLightbox(opts: {
     }
 
     const attachments = filterValidAttachments(message.attributes);
+    const hasMediaBackups = getHasMediaBackups(getState());
 
     const authorId =
       window.ConversationController.lookupOrCreate({
@@ -343,7 +344,7 @@ function showLightbox(opts: {
           sourceServiceId: message.get('sourceServiceId'),
           sentAt,
           isErased: !!message.get('isErased'),
-          errors: message.get('errors'),
+          errors: message.get('errors') ?? undefined,
           readStatus: message.get('readStatus'),
           sendStateByConversationId: message.get('sendStateByConversationId'),
         },
@@ -351,7 +352,8 @@ function showLightbox(opts: {
         attachment: getPropsForAttachment(
           item,
           'attachment',
-          message.attributes
+          message.attributes,
+          { hasMediaBackups }
         ),
         size: item.size,
         totalDownloaded: item.totalDownloaded,
@@ -407,9 +409,9 @@ function showLightbox(opts: {
         media,
         selectedIndex: index === -1 ? 0 : index,
         hasPrevMessage:
-          older.length > 0 && filterValidAttachments(older[0]).length > 0,
+          older[0] != null && filterValidAttachments(older[0]).length > 0,
         hasNextMessage:
-          newer.length > 0 && filterValidAttachments(newer[0]).length > 0,
+          newer[0] != null && filterValidAttachments(newer[0]).length > 0,
         playbackDisabled: false,
       },
     });
@@ -432,7 +434,7 @@ function showLightboxForAdjacentMessage(
   return async (dispatch, getState) => {
     const { lightbox } = getState();
 
-    if (!lightbox.isShowingLightbox || lightbox.media.length === 0) {
+    if (!lightbox.isShowingLightbox || lightbox.media[0] == null) {
       log.warn('showLightboxForAdjacentMessage: empty lightbox');
       return;
     }
@@ -505,8 +507,10 @@ function showLightboxForAdjacentMessage(
       showLightbox({
         attachment:
           direction === AdjacentMessageDirection.Previous
-            ? attachments[attachments.length - 1]
-            : attachments[0],
+            ? // oxlint-disable-next-line typescript/no-non-null-assertion
+              attachments[attachments.length - 1]!
+            : // oxlint-disable-next-line typescript/no-non-null-assertion
+              attachments[0]!,
         messageId: adjacent.id,
       })
     );
@@ -601,16 +605,8 @@ export function reducer(
     };
   }
 
-  if (
-    action.type === MESSAGE_CHANGED ||
-    action.type === MESSAGE_DELETED ||
-    action.type === MESSAGE_EXPIRED
-  ) {
+  if (action.type === MESSAGE_CHANGED || action.type === MESSAGE_DELETED) {
     if (!state.isShowingLightbox) {
-      return state;
-    }
-
-    if (action.type === MESSAGE_EXPIRED && !state.isViewOnce) {
       return state;
     }
 

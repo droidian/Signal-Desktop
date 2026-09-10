@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { getFunEmojiElementValue } from '../../components/fun/FunEmoji.dom.js';
+import { getFunEmojiElementValue } from '../../components/fun/FunEmoji.dom.tsx';
 
 const QUILL_EMBED_GUARD = '\uFEFF';
 
@@ -47,7 +47,7 @@ export function createEventHandler({
     //   clipboardData at all, all other data is reset.
     event.clipboardData?.setData('text/plain', plaintext);
 
-    event.clipboardData?.setData('text/signal', container.innerHTML);
+    event.clipboardData?.setData('text/signal', container.getHTML());
 
     if (deleteSelection) {
       selection.deleteFromDocument();
@@ -78,9 +78,9 @@ function getStringFromNode(
   }
   const element = node;
 
-  const emojiValue = getFunEmojiElementValue(element);
-  if (emojiValue != null) {
-    return emojiValue;
+  const emoji = getFunEmojiElementValue(element);
+  if (emoji != null) {
+    return emoji;
   }
 
   // Sometimes we need to add multiple newlines to represent nested divs, and other times
@@ -97,7 +97,8 @@ function getStringFromNode(
   }
   let result = '';
   for (let i = 0; i < childCount; i += 1) {
-    const child = element.childNodes[i];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const child = element.childNodes[i]!;
     const nextChild = element.childNodes[i + 1];
     result += getStringFromNode(child, node, nextChild);
   }
@@ -122,12 +123,12 @@ const STRIKETHROUGH_TAG = 's';
 const MONOSPACE_CLASSES = [
   'quill--monospace',
   'MessageTextRenderer__formatting--monospace',
-];
+] as const;
 const SPOILER_CLASSES = [
   'quill--spoiler',
   'MessageTextRenderer__formatting--spoiler',
   'MessageTextRenderer__formatting--spoiler--revealed',
-];
+] as const;
 
 // When the user cuts/copies single-line text which don't cross any mentions/emojo or
 // formatting boundaries, we don't get the surrounding formatting nodes in our selection.
@@ -191,10 +192,10 @@ function getRangeWithContainer(range: Range): Node {
     return fragment;
   }
 
-  currentNode = startContainer.parentElement as HTMLElement;
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  currentNode = startContainer.parentElement!;
   while (
     currentNode &&
-    // eslint-disable-next-line no-loop-func
     CONTAINER_CLASSES.every(item => !currentNode?.classList.contains(item))
   ) {
     const tagName = currentNode.tagName.toLowerCase();
@@ -211,7 +212,7 @@ function getRangeWithContainer(range: Range): Node {
       newNode.appendChild(finalNode);
       finalNode = newNode;
     } else if (
-      // eslint-disable-next-line no-loop-func
+      // oxlint-disable-next-line no-loop-func
       MONOSPACE_CLASSES.some(item => currentNode?.classList.contains(item))
     ) {
       const newNode = document.createElement('span');
@@ -220,7 +221,7 @@ function getRangeWithContainer(range: Range): Node {
       newNode.appendChild(finalNode);
       finalNode = newNode;
     } else if (
-      // eslint-disable-next-line no-loop-func
+      // oxlint-disable-next-line no-loop-func
       SPOILER_CLASSES.some(item => currentNode?.classList.contains(item))
     ) {
       const newNode = document.createElement('span');

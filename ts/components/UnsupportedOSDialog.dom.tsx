@@ -1,16 +1,17 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import moment from 'moment';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { UNSUPPORTED_OS_URL } from '../types/support.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import type { WidthBreakpoint } from './_util.std.js';
-import { I18n } from './I18n.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { UNSUPPORTED_OS_URL } from '../types/support.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import type { WidthBreakpoint } from './_util.std.ts';
+import { I18n } from './I18n.dom.tsx';
 
-import { LeftPaneDialog } from './LeftPaneDialog.dom.js';
+import { LeftPaneDialog } from './LeftPaneDialog.dom.tsx';
 
 export type PropsType = {
   containerWidthBreakpoint: WidthBreakpoint;
@@ -26,8 +27,8 @@ export function UnsupportedOSDialog({
   i18n,
   type,
   OS,
-}: PropsType): React.JSX.Element | null {
-  const learnMoreLink = (parts: Array<string | React.JSX.Element>) => (
+}: PropsType): JSX.Element | null {
+  const learnMoreLink = (parts: Array<string | JSX.Element>) => (
     <a
       key="signal-support"
       href={UNSUPPORTED_OS_URL}
@@ -38,7 +39,7 @@ export function UnsupportedOSDialog({
     </a>
   );
 
-  let body: React.JSX.Element;
+  let body: JSX.Element;
   if (type === 'error') {
     body = (
       <I18n

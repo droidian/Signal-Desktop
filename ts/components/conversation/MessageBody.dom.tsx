@@ -1,46 +1,45 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { KeyboardEvent } from 'react';
-import React from 'react';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import { canBeDownloaded, isDownloaded } from '../../util/Attachment.std.js';
-import type { ShowConversationType } from '../../state/ducks/conversations.preload.js';
-import type { HydratedBodyRangesType } from '../../types/BodyRange.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { MessageTextRenderer } from './MessageTextRenderer.dom.js';
-import type { RenderLocation } from './MessageTextRenderer.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { shouldLinkifyMessage } from '../../types/LinkPreview.std.js';
-import { FunJumboEmojiSize } from '../fun/FunEmoji.dom.js';
-import { getEmojifyData } from '../fun/data/emojis.std.js';
+import type { KeyboardEvent, JSX, ReactNode } from 'react';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import { canBeDownloaded, isDownloaded } from '../../util/Attachment.std.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { MessageTextRenderer } from './MessageTextRenderer.dom.tsx';
+import type { RenderLocation } from './MessageTextRenderer.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { shouldLinkifyMessage } from '../../types/LinkPreview.std.ts';
+import { FunJumboEmojiSize } from '../fun/FunEmoji.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
 
 function getSizeClass(str: string): FunJumboEmojiSize | null {
-  const emojifyData = getEmojifyData(str);
-  // Do we have non-emoji characters?
-  if (!emojifyData.isEmojiOnlyText) {
+  const count = Emoji.getJumboEmojiCount(str);
+  if (count == null) {
     return null;
   }
-  if (emojifyData.emojiCount === 1) {
+  if (count === 1) {
     return FunJumboEmojiSize.Max;
   }
-  if (emojifyData.emojiCount === 2) {
+  if (count === 2) {
     return FunJumboEmojiSize.ExtraLarge;
   }
-  if (emojifyData.emojiCount === 3) {
+  if (count === 3) {
     return FunJumboEmojiSize.Large;
   }
-  if (emojifyData.emojiCount === 4) {
+  if (count === 4) {
     return FunJumboEmojiSize.Medium;
   }
-  if (emojifyData.emojiCount === 5) {
+  if (count === 5) {
     return FunJumboEmojiSize.Small;
   }
-  return null;
+  throw missingCaseError(count);
 }
 
 export type Props = {
-  author?: string;
+  author?: string | null;
   bodyRanges?: HydratedBodyRangesType;
   direction?: 'incoming' | 'outgoing';
   // If set, all emoji will be the same size. Otherwise, just one emoji will be large.
@@ -86,7 +85,7 @@ export function MessageBody({
   text,
   textAttachment,
   originalText,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const shouldDisableLinks =
     disableLinks || !shouldLinkifyMessage(originalText);
   const textWithSuffix =
@@ -96,7 +95,7 @@ export function MessageBody({
 
   const sizeClass = disableJumbomoji ? null : getSizeClass(text);
 
-  let endNotification: React.ReactNode;
+  let endNotification: ReactNode;
   if (onIncreaseTextLength) {
     endNotification = (
       <button

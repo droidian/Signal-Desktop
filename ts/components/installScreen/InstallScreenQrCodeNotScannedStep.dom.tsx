@@ -1,30 +1,32 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState, useEffect } from 'react';
+import type { ReactElement, ReactNode, JSX, KeyboardEvent } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
 
-import type { LocalizerType } from '../../types/Util.std.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import {
   InstallScreenStep,
   InstallScreenQRCodeError,
-} from '../../types/InstallScreen.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import type { Loadable } from '../../util/loadable.std.js';
-import { LoadingState } from '../../util/loadable.std.js';
-import { drop } from '../../util/drop.std.js';
-import { getEnvironment, Environment } from '../../environment.std.js';
+} from '../../types/InstallScreen.std.ts';
+import { DialogType } from '../../types/Dialogs.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import type { Loadable } from '../../util/loadable.std.ts';
+import { LoadingState } from '../../util/loadable.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { getEnvironment, Environment } from '../../environment.std.ts';
 
-import { I18n } from '../I18n.dom.js';
-import { Spinner } from '../Spinner.dom.js';
-import { BrandedQRCode } from '../BrandedQRCode.dom.js';
-import { TitlebarDragArea } from '../TitlebarDragArea.dom.js';
-import { InstallScreenSignalLogo } from './InstallScreenSignalLogo.dom.js';
-import { InstallScreenUpdateDialog } from './InstallScreenUpdateDialog.dom.js';
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
-import type { UpdatesStateType } from '../../state/ducks/updates.preload.js';
+import { I18n } from '../I18n.dom.tsx';
+import { Spinner } from '../Spinner.dom.tsx';
+import { BrandedQRCode } from '../BrandedQRCode.dom.tsx';
+import { TitlebarDragArea } from '../TitlebarDragArea.dom.tsx';
+import { InstallScreenSignalLogo } from './InstallScreenSignalLogo.dom.tsx';
+import { InstallScreenUpdateDialog } from './InstallScreenUpdateDialog.dom.tsx';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
+import type { UpdatesStateType } from '../../state/ducks/updates.preload.ts';
+import { AxoAlertDialog } from '../../axo/AxoAlertDialog.dom.tsx';
 
 const { noop } = lodash;
 
@@ -42,6 +44,9 @@ export type PropsType = Readonly<{
   retryGetQrCode: () => void;
   startUpdate: () => void;
   forceUpdate: () => void;
+  isConfirmingDataDeletion: boolean;
+  continueInstallWithDataDeletion: () => void;
+  restartInstall: () => void;
 }>;
 
 const getQrCodeClassName = getClassNamesFor(
@@ -49,7 +54,7 @@ const getQrCodeClassName = getClassNamesFor(
 );
 
 const SUPPORT_PAGE =
-  'https://support.signal.org/hc/articles/360007320451#desktop_multiple_device';
+  'https://support.signal.org/hc/articles/360007320551-Linked-Devices';
 
 export function InstallScreenQrCodeNotScannedStep({
   currentVersion,
@@ -61,6 +66,9 @@ export function InstallScreenQrCodeNotScannedStep({
   retryGetQrCode,
   startUpdate,
   forceUpdate,
+  isConfirmingDataDeletion,
+  restartInstall,
+  continueInstallWithDataDeletion,
   updates,
 }: Readonly<PropsType>): ReactElement {
   return (
@@ -69,7 +77,7 @@ export function InstallScreenQrCodeNotScannedStep({
 
       <InstallScreenSignalLogo />
 
-      {hasExpired && (
+      {(hasExpired || updates.dialogType === DialogType.Downloading) && (
         <InstallScreenUpdateDialog
           i18n={i18n}
           {...updates}
@@ -124,6 +132,34 @@ export function InstallScreenQrCodeNotScannedStep({
           )}
         </div>
       </div>
+      {isConfirmingDataDeletion ? (
+        <AxoAlertDialog.Root open>
+          <AxoAlertDialog.Content escape="cancel-is-destructive">
+            <AxoAlertDialog.Body>
+              <AxoAlertDialog.Title>
+                {i18n('icu:Install__confirm-data-deletion__title')}
+              </AxoAlertDialog.Title>
+              <AxoAlertDialog.Description>
+                {i18n('icu:Install__confirm-data-deletion__body')}
+              </AxoAlertDialog.Description>
+            </AxoAlertDialog.Body>
+            <AxoAlertDialog.Footer>
+              <AxoAlertDialog.Action
+                variant="strong-secondary"
+                onClick={restartInstall}
+              >
+                {i18n('icu:cancel')}
+              </AxoAlertDialog.Action>
+              <AxoAlertDialog.Action
+                variant="strong-destructive"
+                onClick={continueInstallWithDataDeletion}
+              >
+                {i18n('icu:Install__confirm-data-deletion__continue')}
+              </AxoAlertDialog.Action>
+            </AxoAlertDialog.Footer>
+          </AxoAlertDialog.Content>
+        </AxoAlertDialog.Root>
+      ) : null}
     </div>
   );
 }
@@ -265,7 +301,7 @@ function QRCodeImage({
 }: {
   i18n: LocalizerType;
   link: string;
-}): React.JSX.Element {
+}): JSX.Element {
   const [isCopying, setIsCopying] = useState(false);
 
   // Add a development-only feature to copy a QR code to the clipboard by double-clicking.
@@ -294,6 +330,7 @@ function QRCodeImage({
   }, [isCopying]);
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <svg
       role="img"
       aria-label={i18n('icu:Install__scan-this-code')}
@@ -317,9 +354,9 @@ function RetryButton({
 }: {
   onClick: () => void;
   children: ReactNode;
-}): React.JSX.Element {
+}): JSX.Element {
   const onKeyDown = useCallback(
-    (ev: React.KeyboardEvent<HTMLButtonElement>) => {
+    (ev: KeyboardEvent<HTMLButtonElement>) => {
       if (ev.key === 'Enter') {
         ev.preventDefault();
         ev.stopPropagation();
@@ -341,6 +378,6 @@ function RetryButton({
   );
 }
 
-function Paragraph(children: React.ReactNode): React.JSX.Element {
+function Paragraph(children: ReactNode): JSX.Element {
   return <p>{children}</p>;
 }

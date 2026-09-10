@@ -7,11 +7,11 @@ import lodash from 'lodash';
 import {
   RowType,
   _testHeaderText,
-} from '../../../components/ConversationList.dom.js';
-import { ContactCheckboxDisabledReason } from '../../../components/conversationList/ContactCheckbox.dom.js';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
+} from '../../../components/ConversationList.dom.tsx';
+import { ContactCheckboxDisabledReason } from '../../../components/conversationList/ContactCheckbox.dom.tsx';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
 
-import { LeftPaneChooseGroupMembersHelper } from '../../../components/leftPane/LeftPaneChooseGroupMembersHelper.dom.js';
+import { LeftPaneChooseGroupMembersHelper } from '../../../components/leftPane/LeftPaneChooseGroupMembersHelper.dom.tsx';
 
 const { times } = lodash;
 
@@ -119,7 +119,7 @@ describe('LeftPaneChooseGroupMembersHelper', () => {
       const candidateContacts = [
         getDefaultConversation(),
         getDefaultConversation(),
-      ];
+      ] as const;
       const helper = new LeftPaneChooseGroupMembersHelper({
         ...defaults,
         candidateContacts,
@@ -145,7 +145,11 @@ describe('LeftPaneChooseGroupMembersHelper', () => {
     });
 
     it("disables non-selected contact checkboxes if you've selected the maximum number of contacts", () => {
-      const candidateContacts = times(50, () => getDefaultConversation());
+      const candidateContacts = [
+        getDefaultConversation(),
+        getDefaultConversation(),
+        ...times(48, () => getDefaultConversation()),
+      ] as const;
       const helper = new LeftPaneChooseGroupMembersHelper({
         ...defaults,
         candidateContacts,

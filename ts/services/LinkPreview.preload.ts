@@ -3,51 +3,51 @@
 
 import lodash from 'lodash';
 
-import { CallLinkRootKey, CallLinkEpoch } from '@signalapp/ringrtc';
-import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.std.js';
+import { CallLinkRootKey } from '@signalapp/ringrtc';
+import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.std.ts';
 import type {
   LinkPreviewImage,
   LinkPreviewResult,
   LinkPreviewSourceType,
   MaybeGrabLinkPreviewOptionsType,
   AddLinkPreviewOptionsType,
-} from '../types/LinkPreview.std.js';
-import type { LinkPreviewImage as LinkPreviewFetchImage } from '../linkPreviews/linkPreviewFetch.preload.js';
-import * as Errors from '../types/errors.std.js';
-import type { StickerPackType as StickerPackDBType } from '../sql/Interface.std.js';
-import type { MIMEType } from '../types/MIME.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { sha256 } from '../Crypto.node.js';
-import * as LinkPreview from '../types/LinkPreview.std.js';
-import { getLinkPreviewSetting } from '../util/Settings.preload.js';
-import { readTempData, readStickerData } from '../util/migrations.preload.js';
-import * as Stickers from '../types/Stickers.preload.js';
-import * as VisualAttachment from '../types/VisualAttachment.dom.js';
-import { createLogger } from '../logging/log.std.js';
+} from '../types/LinkPreview.std.ts';
+import type { LinkPreviewImage as LinkPreviewFetchImage } from '../linkPreviews/linkPreviewFetch.preload.ts';
+import * as Errors from '../types/errors.std.ts';
+import type { StickerPackType as StickerPackDBType } from '../sql/Interface.std.ts';
+import type { MIMEType } from '../types/MIME.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { sha256 } from '../Crypto.node.ts';
+import * as LinkPreview from '../types/LinkPreview.std.ts';
+import { getLinkPreviewSetting } from '../util/Settings.preload.ts';
+import { readTempData, readStickerData } from '../util/migrations.preload.ts';
+import * as Stickers from '../types/Stickers.preload.ts';
+import * as VisualAttachment from '../types/VisualAttachment.dom.ts';
+import { createLogger } from '../logging/log.std.ts';
 import {
   parseGroupLink,
   deriveGroupFields,
   getPreJoinGroupInfo,
   decryptGroupTitle,
   decryptGroupAvatar,
-} from '../groups.preload.js';
-import { IMAGE_JPEG, IMAGE_WEBP, stringToMIMEType } from '../types/MIME.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { autoScale } from '../util/handleImageAttachment.preload.js';
-import { dropNull } from '../util/dropNull.std.js';
-import { fileToBytes } from '../util/fileToBytes.std.js';
-import { imageToBlurHash } from '../util/imageToBlurHash.dom.js';
-import { maybeParseUrl } from '../util/url.std.js';
-import { sniffImageMimeType } from '../util/sniffImageMimeType.std.js';
-import { drop } from '../util/drop.std.js';
-import { calling } from './calling.preload.js';
-import { getKeyAndEpochFromCallLink } from '../util/callLinks.std.js';
-import { getRoomIdFromCallLink } from '../util/callLinksRingrtc.node.js';
+} from '../groups.preload.ts';
+import { IMAGE_JPEG, IMAGE_WEBP, stringToMIMEType } from '../types/MIME.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { autoScale } from '../util/handleImageAttachment.preload.ts';
+import { dropNull } from '../util/dropNull.std.ts';
+import { fileToBytes } from '../util/fileToBytes.std.ts';
+import { imageToBlurHash } from '../util/imageToBlurHash.dom.ts';
+import { maybeParseUrl } from '../util/url.std.ts';
+import { sniffImageMimeType } from '../util/sniffImageMimeType.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { calling } from './calling.preload.ts';
+import { getKeyFromCallLink } from '../util/callLinks.std.ts';
+import { getRoomIdFromCallLink } from '../util/callLinksRingrtc.node.ts';
 import {
   fetchLinkPreviewImage,
   fetchLinkPreviewMetadata,
-} from '../textsecure/WebAPI.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+} from '../textsecure/WebAPI.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const { debounce, omit } = lodash;
 
@@ -106,7 +106,7 @@ function _maybeGrabLinkPreview(
 
   const links = LinkPreview.findLinks(message, caretLocation);
   currentlyMatchedLink = undefined;
-  excludedPreviewUrls = excludedPreviewUrls || [];
+  excludedPreviewUrls ??= [];
 
   const link = links.find(
     item =>
@@ -145,7 +145,7 @@ export function removeLinkPreview(conversationId?: string): void {
   window.reduxActions.linkPreviews.removeLinkPreview(conversationId);
 }
 
-export async function addLinkPreview(
+async function addLinkPreview(
   url: string,
   source: LinkPreviewSourceType,
   { conversationId, disableFetch }: AddLinkPreviewOptionsType = {}
@@ -374,7 +374,6 @@ async function getPreview(
         file: new Blob([fetchedImage.data], {
           type: fetchedImage.contentType,
         }),
-        fileName: title,
         highQuality: true,
       });
 
@@ -474,8 +473,9 @@ async function getStickerPackPreview(
       return null;
     }
 
-    const { title, coverStickerId } = pack;
-    const sticker = pack.stickers[coverStickerId];
+    const { author, title, coverStickerId } = pack;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const sticker = pack.stickers[coverStickerId]!;
     const data =
       pack.status === 'ephemeral'
         ? await readTempData(sticker)
@@ -484,6 +484,13 @@ async function getStickerPackPreview(
     if (abortSignal.aborted) {
       return null;
     }
+
+    const description = i18n(
+      'icu:stickers--StickerPackLinkPreviewDescription',
+      {
+        author,
+      }
+    );
 
     let contentType: MIMEType;
     const sniffedMimeType = sniffImageMimeType(data);
@@ -498,7 +505,7 @@ async function getStickerPackPreview(
 
     return {
       date: null,
-      description: null,
+      description,
       image: {
         ...sticker,
         data,
@@ -593,13 +600,9 @@ async function getCallLinkPreview(
   url: string,
   _abortSignal: Readonly<AbortSignal>
 ): Promise<null | LinkPreviewResult> {
-  const { key, epoch } = getKeyAndEpochFromCallLink(url);
+  const key = getKeyFromCallLink(url);
   const callLinkRootKey = CallLinkRootKey.parse(key);
-  const callLinkEpoch = epoch ? CallLinkEpoch.parse(epoch) : undefined;
-  const callLinkState = await calling.readCallLink(
-    callLinkRootKey,
-    callLinkEpoch
-  );
+  const callLinkState = await calling.readCallLink(callLinkRootKey);
   if (callLinkState == null || callLinkState.revoked) {
     return null;
   }

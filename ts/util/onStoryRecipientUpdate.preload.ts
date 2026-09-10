@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import { DataReader } from '../sql/Client.preload.js';
-import type { StoryRecipientUpdateEvent } from '../textsecure/messageReceiverEvents.std.js';
-import { normalizeStoryDistributionId } from '../types/StoryDistributionId.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
-import { getConversationIdForLogging } from './idForLogging.preload.js';
-import { isStory } from '../state/selectors/message.preload.js';
-import { queueUpdateMessage } from './messageBatcher.preload.js';
-import { isMe } from './whatTypeOfConversation.dom.js';
-import { drop } from './drop.std.js';
-import { fromServiceIdBinaryOrString } from './ServiceId.node.js';
-import { handleDeleteForEveryone } from './deleteForEveryone.preload.js';
-import { MessageModel } from '../models/messages.preload.js';
+import { DataReader } from '../sql/Client.preload.ts';
+import type { StoryRecipientUpdateEvent } from '../textsecure/messageReceiverEvents.std.ts';
+import { normalizeStoryDistributionId } from '../types/StoryDistributionId.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
+import { getConversationIdForLogging } from './idForLogging.preload.ts';
+import { isStory } from '../state/selectors/message.preload.ts';
+import { queueUpdateMessage } from './messageBatcher.preload.ts';
+import { isMe } from './whatTypeOfConversation.dom.ts';
+import { drop } from './drop.std.ts';
+import { applyDeleteForEveryone } from './deleteForEveryone.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { MessageModel } from '../models/messages.preload.ts';
 
 const { isEqual } = lodash;
 
@@ -63,16 +63,7 @@ export async function onStoryRecipientUpdate(
         Set<string>
       >();
       data.storyMessageRecipients.forEach(item => {
-        const {
-          destinationServiceId: rawDestinationServiceId,
-          destinationServiceIdBinary,
-        } = item;
-
-        const recipientServiceId = fromServiceIdBinaryOrString(
-          destinationServiceIdBinary,
-          rawDestinationServiceId,
-          `${logId}.recipientServiceId`
-        );
+        const { destinationServiceId: recipientServiceId } = item;
 
         if (recipientServiceId == null) {
           return;
@@ -97,7 +88,7 @@ export async function onStoryRecipientUpdate(
             existing.add(convo.id);
           }
         }
-        isAllowedToReply.set(convo.id, item.isAllowedToReply !== false);
+        isAllowedToReply.set(convo.id, item.isAllowedToReply);
       });
 
       const ourConversationId =
@@ -199,12 +190,14 @@ export async function onStoryRecipientUpdate(
           // sent timestamp doesn't happen (it would return all copies of the
           // story, not just the one we want to delete).
           drop(
-            handleDeleteForEveryone(
+            applyDeleteForEveryone(
               message,
               {
-                fromId: ourConversationId,
-                serverTimestamp: Number(item.serverTimestamp),
+                isAdminDelete: false,
                 targetSentTimestamp: item.timestamp,
+                deleteServerTimestamp: Number(item.serverTimestamp),
+                deleteSentByAci: itemStorage.user.getCheckedAci(),
+                targetConversationId: ourConversationId,
               },
               { shouldPersist: true }
             )

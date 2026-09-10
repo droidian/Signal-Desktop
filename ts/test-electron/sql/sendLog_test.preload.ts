@@ -4,13 +4,13 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { constantTimeEqual, getRandomBytes } from '../../Crypto.node.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { constantTimeEqual, getRandomBytes } from '../../Crypto.node.ts';
 import {
   cleanupMessages,
   postSaveUpdates,
-} from '../../util/cleanup.preload.js';
+} from '../../util/cleanup.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const {
   _getAllSentProtoMessageIds,
@@ -56,12 +56,14 @@ describe('sql/sendLog', () => {
     assert.lengthOf(allProtos, 1);
     const actual = allProtos[0];
 
-    assert.strictEqual(actual.contentHint, proto.contentHint);
-    assert.isTrue(constantTimeEqual(actual.proto, proto.proto));
-    assert.strictEqual(actual.timestamp, proto.timestamp);
-    assert.strictEqual(actual.urgent, proto.urgent);
+    assert.strictEqual(actual?.contentHint, proto.contentHint);
+    assert.isTrue(
+      actual != null && constantTimeEqual(actual.proto, proto.proto)
+    );
+    assert.strictEqual(actual?.timestamp, proto.timestamp);
+    assert.strictEqual(actual?.urgent, proto.urgent);
     assert.strictEqual(
-      actual.hasPniSignatureMessage,
+      actual?.hasPniSignatureMessage,
       proto.hasPniSignatureMessage
     );
 
@@ -96,12 +98,14 @@ describe('sql/sendLog', () => {
     assert.lengthOf(allProtos, 1);
     const actual = allProtos[0];
 
-    assert.strictEqual(actual.contentHint, proto.contentHint);
-    assert.isTrue(constantTimeEqual(actual.proto, proto.proto));
-    assert.strictEqual(actual.timestamp, proto.timestamp);
-    assert.strictEqual(actual.urgent, proto.urgent);
+    assert.strictEqual(actual?.contentHint, proto.contentHint);
+    assert.isTrue(
+      actual != null && constantTimeEqual(actual.proto, proto.proto)
+    );
+    assert.strictEqual(actual?.timestamp, proto.timestamp);
+    assert.strictEqual(actual?.urgent, proto.urgent);
     assert.strictEqual(
-      actual.hasPniSignatureMessage,
+      actual?.hasPniSignatureMessage,
       proto.hasPniSignatureMessage
     );
 
@@ -153,7 +157,7 @@ describe('sql/sendLog', () => {
     assert.lengthOf(allProtos, 1);
     const actual = allProtos[0];
 
-    assert.strictEqual(actual.timestamp, proto.timestamp);
+    assert.strictEqual(actual?.timestamp, proto.timestamp);
 
     await removeMessageById(id, { cleanupMessages });
 
@@ -294,14 +298,18 @@ describe('sql/sendLog', () => {
       assert.lengthOf(allProtos, 2);
 
       const actual1 = allProtos[0];
-      assert.strictEqual(actual1.contentHint, proto1.contentHint);
-      assert.isTrue(constantTimeEqual(actual1.proto, proto1.proto));
-      assert.strictEqual(actual1.timestamp, proto1.timestamp);
+      assert.strictEqual(actual1?.contentHint, proto1.contentHint);
+      assert.isTrue(
+        actual1 != null && constantTimeEqual(actual1.proto, proto1.proto)
+      );
+      assert.strictEqual(actual1?.timestamp, proto1.timestamp);
 
       const actual2 = allProtos[1];
-      assert.strictEqual(actual2.contentHint, proto2.contentHint);
-      assert.isTrue(constantTimeEqual(actual2.proto, proto2.proto));
-      assert.strictEqual(actual2.timestamp, proto2.timestamp);
+      assert.strictEqual(actual2?.contentHint, proto2.contentHint);
+      assert.isTrue(
+        actual2 != null && constantTimeEqual(actual2.proto, proto2.proto)
+      );
+      assert.strictEqual(actual2?.timestamp, proto2.timestamp);
     });
   });
 

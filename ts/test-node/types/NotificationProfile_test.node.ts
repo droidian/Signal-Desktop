@@ -3,7 +3,7 @@
 
 import { assert } from 'chai';
 
-import { DAY, HOUR, MINUTE } from '../../util/durations/index.std.js';
+import { DAY, HOUR, MINUTE } from '../../util/durations/index.std.ts';
 
 import {
   DayOfWeek,
@@ -14,13 +14,14 @@ import {
   getStartTime,
   loopThroughWeek,
   sortProfiles,
-} from '../../types/NotificationProfile.std.js';
-import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.js';
+} from '../../types/NotificationProfile.std.ts';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.ts';
 
 import type {
   NextProfileEvent,
   NotificationProfileType,
-} from '../../types/NotificationProfile.std.js';
+} from '../../types/NotificationProfile.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 describe('NotificationProfile', () => {
   const startingTime = Date.now();
@@ -42,7 +43,7 @@ describe('NotificationProfile', () => {
     return {
       id: generateNotificationProfileId(),
       name: 'After Hours',
-      emoji: '💤 ',
+      emoji: Emoji.ZZZ,
       color: 0xff111111,
 
       createdAtMs: now,
@@ -1036,9 +1037,9 @@ describe('NotificationProfile', () => {
       const starting = [middle, old, newest];
       const actual = sortProfiles(starting);
 
-      assert.strictEqual(actual[0].name, 'newest');
-      assert.strictEqual(actual[1].name, 'middle');
-      assert.strictEqual(actual[2].name, 'old');
+      assert.strictEqual(actual[0]?.name, 'newest');
+      assert.strictEqual(actual[1]?.name, 'middle');
+      assert.strictEqual(actual[2]?.name, 'old');
     });
   });
 

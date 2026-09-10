@@ -1,17 +1,17 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type JSX } from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { sleep } from '../../util/sleep.std.js';
+import { sleep } from '../../util/sleep.std.ts';
 import {
   InstallScreenBackupStep,
   InstallScreenBackupError,
-} from '../../types/InstallScreen.std.js';
-import { DialogType } from '../../types/Dialogs.std.js';
-import type { PropsType } from './InstallScreenBackupImportStep.dom.js';
-import { InstallScreenBackupImportStep } from './InstallScreenBackupImportStep.dom.js';
+} from '../../types/InstallScreen.std.ts';
+import { DialogType } from '../../types/Dialogs.std.ts';
+import type { PropsType } from './InstallScreenBackupImportStep.dom.tsx';
+import { InstallScreenBackupImportStep } from './InstallScreenBackupImportStep.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -27,7 +27,6 @@ export default {
   title: 'Components/InstallScreenBackupImportStep',
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = (args: PropsType) => {
   const [updates, setUpdates] = useState(DEFAULT_UPDATES);
   const forceUpdate = useCallback(async () => {
@@ -71,7 +70,7 @@ const Template: StoryFn<PropsType> = (args: PropsType) => {
   );
 };
 
-export function FullFlow(): React.JSX.Element {
+export function FullFlow(): JSX.Element {
   const [backupStep, setBackupStep] = useState<InstallScreenBackupStep>(
     InstallScreenBackupStep.WaitForBackup
   );

@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { KeyboardEvent, ReactNode } from 'react';
-import React, { useCallback } from 'react';
+import type { KeyboardEvent, ReactNode, JSX } from 'react';
+import { useCallback } from 'react';
 import type { Placement } from 'react-aria';
 import { Dialog, Popover } from 'react-aria-components';
 import classNames from 'classnames';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { ThemeType } from '../../../types/Util.std.js';
+import { Tooltip } from 'radix-ui';
+import { ThemeType } from '../../../types/Util.std.ts';
 
 export type FunPopoverProps = Readonly<{
   placement?: Placement;
@@ -14,7 +14,7 @@ export type FunPopoverProps = Readonly<{
   children: ReactNode;
 }>;
 
-export function FunPopover(props: FunPopoverProps): React.JSX.Element {
+export function FunPopover(props: FunPopoverProps): JSX.Element {
   const shouldCloseOnInteractOutside = useCallback(
     (element: Element): boolean => {
       const match = element.closest(
@@ -40,7 +40,7 @@ export function FunPopover(props: FunPopoverProps): React.JSX.Element {
   return (
     <Tooltip.Provider>
       {/* Prevents keyboard events from bubbling up outside of the popover */}
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div onKeyDown={handleKeyDown}>
         <Popover
           data-fun-overlay

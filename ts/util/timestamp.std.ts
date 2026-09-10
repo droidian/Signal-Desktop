@@ -3,7 +3,7 @@
 
 import type { Moment } from 'moment';
 import moment from 'moment';
-import { DAY } from './durations/index.std.js';
+import { DAY } from './durations/index.std.ts';
 
 export type RawTimestamp = Readonly<number | Date | Moment>;
 
@@ -37,7 +37,7 @@ export const isYesterday = (rawTimestamp: RawTimestamp): boolean =>
   isSameDay(rawTimestamp, moment().subtract(1, 'day'));
 
 export const MAX_SAFE_DATE = 8640000000000000;
-export const MIN_SAFE_DATE = -8640000000000000;
+const MIN_SAFE_DATE = -8640000000000000;
 
 export function toBoundedDate(timestamp: number): Date {
   return new Date(Math.max(MIN_SAFE_DATE, Math.min(timestamp, MAX_SAFE_DATE)));
@@ -50,7 +50,7 @@ export function addLeadingZero(amount: number): string {
   return amount.toString();
 }
 
-export function getTimestampForFolder(): string {
-  const date = new Date();
-  return `${date.getFullYear()}-${addLeadingZero(date.getMonth() + 1)}-${addLeadingZero(date.getDate())}-${addLeadingZero(date.getHours())}-${addLeadingZero(date.getMinutes())}-${addLeadingZero(date.getSeconds())}`;
+export function getTimestampForFolder(timestamp?: number): string {
+  const date = timestamp != null ? new Date(timestamp) : new Date();
+  return `${date.getUTCFullYear()}-${addLeadingZero(date.getUTCMonth() + 1)}-${addLeadingZero(date.getUTCDate())}-${addLeadingZero(date.getUTCHours())}-${addLeadingZero(date.getUTCMinutes())}-${addLeadingZero(date.getUTCSeconds())}`;
 }

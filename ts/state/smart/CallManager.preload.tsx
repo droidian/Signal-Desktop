@@ -2,22 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import React, { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, type JSX } from 'react';
 import { useSelector } from 'react-redux';
 import type {
   DirectIncomingCall,
   GroupIncomingCall,
-} from '../../components/CallManager.dom.js';
-import { CallManager } from '../../components/CallManager.dom.js';
-import { isConversationTooBigToRing as getIsConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.dom.js';
-import { createLogger } from '../../logging/log.std.js';
-import { calling as callingService } from '../../services/calling.preload.js';
-import type { SetLocalPreviewContainerType } from '../../services/calling.preload.js';
+} from '../../components/CallManager.dom.tsx';
+import { CallManager } from '../../components/CallManager.dom.tsx';
+import { isConversationTooBigToRing as getIsConversationTooBigToRing } from '../../conversations/isConversationTooBigToRing.dom.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { calling as callingService } from '../../services/calling.preload.ts';
+import type { SetLocalPreviewContainerType } from '../../services/calling.preload.ts';
 import {
   bounceAppIconStart,
   bounceAppIconStop,
-} from '../../shims/bounceAppIcon.preload.js';
-import type { CallLinkType } from '../../types/CallLink.std.js';
+} from '../../shims/bounceAppIcon.preload.ts';
+import type { CallLinkType } from '../../types/CallLink.std.ts';
 import type {
   ActiveCallBaseType,
   ActiveCallType,
@@ -26,43 +26,53 @@ import type {
   CallingConversationType,
   ConversationsByDemuxIdType,
   GroupCallRemoteParticipantType,
-} from '../../types/Calling.std.js';
-import { CallState } from '../../types/Calling.std.js';
-import { CallMode } from '../../types/CallDisposition.std.js';
-import type { AciString } from '../../types/ServiceId.std.js';
-import { callLinkToConversation } from '../../util/callLinks.std.js';
-import { callingTones } from '../../util/callingTones.preload.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { useAudioPlayerActions } from '../ducks/audioPlayer.preload.js';
-import { getActiveCall, useCallingActions } from '../ducks/calling.preload.js';
-import type { ConversationType } from '../ducks/conversations.preload.js';
-import type { StateType } from '../reducer.preload.js';
-import { getHasInitialLoadCompleted } from '../selectors/app.std.js';
+} from '../../types/Calling.std.ts';
+import { CallState } from '../../types/Calling.std.ts';
+import { CallMode } from '../../types/CallDisposition.std.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { callLinkToConversation } from '../../util/callLinks.std.ts';
+import { callingTones } from '../../util/callingTones.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { useAudioPlayerActions } from '../ducks/audioPlayer.preload.ts';
+import { getActiveCall, useCallingActions } from '../ducks/calling.preload.ts';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import type { StateType } from '../reducer.preload.ts';
+import { getHasInitialLoadCompleted } from '../selectors/app.std.ts';
 import {
   getActiveCallState,
   getAvailableCameras,
   getCallLinkSelector,
   getRingingCall,
-} from '../selectors/calling.std.js';
+} from '../selectors/calling.std.ts';
 import {
   getConversationSelector,
   getMe,
-} from '../selectors/conversations.dom.js';
-import { getIntl, getUserACI } from '../selectors/user.std.js';
-import { SmartCallingDeviceSelection } from './CallingDeviceSelection.preload.js';
-import { renderReactionPicker } from './renderReactionPicker.dom.js';
-import { isSharingPhoneNumberWithEverybody as getIsSharingPhoneNumberWithEverybody } from '../../util/phoneNumberSharingMode.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { isLonelyGroup } from '../ducks/callingHelpers.std.js';
-import { getActiveProfile } from '../selectors/notificationProfiles.dom.js';
-import { isOnline as isWebAPIOnline } from '../../textsecure/WebAPI.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getIntl, getUserACI } from '../selectors/user.std.ts';
+import { SmartCallingDeviceSelection } from './CallingDeviceSelection.preload.tsx';
+import { renderReactionPicker } from './renderReactionPicker.dom.tsx';
+import { isSharingPhoneNumberWithEverybody as getIsSharingPhoneNumberWithEverybody } from '../../util/phoneNumberSharingMode.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { isLonelyGroup } from '../ducks/callingHelpers.std.ts';
+import { getActiveProfile } from '../selectors/notificationProfiles.dom.ts';
+import { isOnline as isWebAPIOnline } from '../../textsecure/WebAPI.preload.ts';
+import {
+  SmartCallingParticipantMenu,
+  type PropsType as SmartCallingParticipantMenuProps,
+} from './CallingParticipantMenu.preload.tsx';
 
 const { memoize } = lodash;
 
 const log = createLogger('CallManager');
 
-function renderDeviceSelection(): React.JSX.Element {
+function renderDeviceSelection(): JSX.Element {
   return <SmartCallingDeviceSelection />;
+}
+
+function renderCallingParticipantMenu(
+  props: SmartCallingParticipantMenuProps
+): JSX.Element {
+  return <SmartCallingParticipantMenu {...props} />;
 }
 
 const getGroupCallVideoFrameSource =
@@ -178,8 +188,8 @@ const mapStateToActiveCallProp = (
       const peekedParticipants: Array<ConversationType> = [];
       const pendingParticipants: Array<ConversationType> = [];
       const conversationsByDemuxId: ConversationsByDemuxIdType = new Map();
-      const { localDemuxId } = call;
-      const raisedHands: Set<number> = new Set(call.raisedHands ?? []);
+      const { localDemuxId, raisedHands: rawRaisedHands = [] } = call;
+      const raisedHandOrderByDemuxId = new Map<number, number>();
 
       const { memberships = [] } = conversation;
 
@@ -194,8 +204,8 @@ const mapStateToActiveCallProp = (
         },
       } = call;
 
-      for (let i = 0; i < memberships.length; i += 1) {
-        const { aci } = memberships[i];
+      for (const membership of memberships) {
+        const { aci } = membership;
 
         const member = conversationSelector(aci);
         if (!member) {
@@ -206,9 +216,7 @@ const mapStateToActiveCallProp = (
         groupMembers.push(member);
       }
 
-      for (let i = 0; i < call.remoteParticipants.length; i += 1) {
-        const remoteParticipant = call.remoteParticipants[i];
-
+      for (const remoteParticipant of call.remoteParticipants) {
         const remoteConversation = conversationSelectorByAci(
           remoteParticipant.aci
         );
@@ -217,20 +225,6 @@ const mapStateToActiveCallProp = (
           continue;
         }
 
-        remoteParticipants.push({
-          ...remoteConversation,
-          aci: remoteParticipant.aci,
-          addedTime: remoteParticipant.addedTime,
-          demuxId: remoteParticipant.demuxId,
-          hasRemoteAudio: remoteParticipant.hasRemoteAudio,
-          hasRemoteVideo: remoteParticipant.hasRemoteVideo,
-          isHandRaised: raisedHands.has(remoteParticipant.demuxId),
-          mediaKeysReceived: remoteParticipant.mediaKeysReceived,
-          presenting: remoteParticipant.presenting,
-          sharingScreen: remoteParticipant.sharingScreen,
-          speakerTime: remoteParticipant.speakerTime,
-          videoAspectRatio: remoteParticipant.videoAspectRatio,
-        });
         conversationsByDemuxId.set(
           remoteParticipant.demuxId,
           remoteConversation
@@ -242,15 +236,50 @@ const mapStateToActiveCallProp = (
       }
 
       // Filter raisedHands to ensure valid demuxIds.
-      raisedHands.forEach(demuxId => {
-        if (!conversationsByDemuxId.has(demuxId)) {
-          raisedHands.delete(demuxId);
+      let nextIndex = 0;
+      rawRaisedHands.forEach(demuxId => {
+        if (conversationsByDemuxId.has(demuxId)) {
+          raisedHandOrderByDemuxId.set(demuxId, nextIndex);
+          nextIndex += 1;
         }
       });
+      const raisedHands = new Set(raisedHandOrderByDemuxId.keys());
+      const isOnlyOneHandRaisedInCall = raisedHandOrderByDemuxId.size === 1;
 
-      for (let i = 0; i < peekInfo.acis.length; i += 1) {
-        const peekedParticipantAci = peekInfo.acis[i];
+      for (const remoteParticipant of call.remoteParticipants) {
+        const { demuxId } = remoteParticipant;
+        const remoteConversation = conversationsByDemuxId.get(
+          remoteParticipant.demuxId
+        );
+        if (!remoteConversation) {
+          log.error(
+            'Remote participant has no corresponding conversation in map'
+          );
+          continue;
+        }
 
+        const raisedHandOrder = raisedHandOrderByDemuxId.get(demuxId);
+        const isOnlyHandRaised =
+          raisedHandOrder !== undefined && isOnlyOneHandRaisedInCall;
+
+        remoteParticipants.push({
+          ...remoteConversation,
+          aci: remoteParticipant.aci,
+          addedTime: remoteParticipant.addedTime,
+          demuxId,
+          hasRemoteAudio: remoteParticipant.hasRemoteAudio,
+          hasRemoteVideo: remoteParticipant.hasRemoteVideo,
+          isOnlyHandRaised,
+          mediaKeysReceived: remoteParticipant.mediaKeysReceived,
+          presenting: remoteParticipant.presenting,
+          raisedHandOrder,
+          sharingScreen: remoteParticipant.sharingScreen,
+          speakerTime: remoteParticipant.speakerTime,
+          videoAspectRatio: remoteParticipant.videoAspectRatio,
+        });
+      }
+
+      for (const peekedParticipantAci of peekInfo.acis) {
         const peekedConversation =
           conversationSelectorByAci(peekedParticipantAci);
         if (!peekedConversation) {
@@ -261,9 +290,7 @@ const mapStateToActiveCallProp = (
         peekedParticipants.push(peekedConversation);
       }
 
-      for (let i = 0; i < peekInfo.pendingAcis.length; i += 1) {
-        const aci = peekInfo.pendingAcis[i];
-
+      for (const aci of peekInfo.pendingAcis) {
         // In call links, pending users may be unknown until they share profile keys.
         // conversationSelectorByAci should create conversations for new contacts.
         const pendingConversation = conversationSelectorByAci(aci);
@@ -426,8 +453,6 @@ export const SmartCallManager = memo(function SmartCallManager() {
     acceptCall,
     declineCall,
     openSystemPreferencesAction,
-    removeClient,
-    blockClient,
     cancelPresenting,
     sendGroupCallRaiseHand,
     sendGroupCallReaction,
@@ -435,7 +460,6 @@ export const SmartCallManager = memo(function SmartCallManager() {
     setGroupCallVideoRequest,
     setIsCallActive,
     setLocalAudio,
-    setLocalAudioRemoteMuted,
     setLocalVideo,
     setOutgoingRing,
     setRendererCanvas,
@@ -462,7 +486,6 @@ export const SmartCallManager = memo(function SmartCallManager() {
       approveUser={approveUser}
       availableCameras={availableCameras}
       batchUserAction={batchUserAction}
-      blockClient={blockClient}
       bounceAppIconStart={bounceAppIconStart}
       bounceAppIconStop={bounceAppIconStop}
       callLink={callLink}
@@ -486,9 +509,9 @@ export const SmartCallManager = memo(function SmartCallManager() {
       openSystemPreferencesAction={openSystemPreferencesAction}
       pauseVoiceNotePlayer={pauseVoiceNotePlayer}
       playRingtone={playRingtone}
-      removeClient={removeClient}
       renderDeviceSelection={renderDeviceSelection}
       renderReactionPicker={renderReactionPicker}
+      renderCallingParticipantMenu={renderCallingParticipantMenu}
       ringingCall={ringingCall}
       sendGroupCallRaiseHand={sendGroupCallRaiseHand}
       sendGroupCallReaction={sendGroupCallReaction}
@@ -496,7 +519,6 @@ export const SmartCallManager = memo(function SmartCallManager() {
       setGroupCallVideoRequest={setGroupCallVideoRequest}
       setIsCallActive={setIsCallActive}
       setLocalAudio={setLocalAudio}
-      setLocalAudioRemoteMuted={setLocalAudioRemoteMuted}
       setLocalPreviewContainer={setLocalPreviewContainer}
       setLocalVideo={setLocalVideo}
       setOutgoingRing={setOutgoingRing}

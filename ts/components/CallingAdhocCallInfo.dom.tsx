@@ -1,61 +1,37 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useCallback, useState, useMemo, type JSX, type Key } from 'react';
 import classNames from 'classnames';
-
 import lodash from 'lodash';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import { InContactsIcon } from './InContactsIcon.dom.js';
-import type { CallLinkType } from '../types/CallLink.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { sortByTitle } from '../util/sortByTitle.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { ModalHost } from './ModalHost.dom.js';
-import { isInSystemContacts } from '../util/isInSystemContacts.std.js';
-import type { RemoveClientType } from '../state/ducks/calling.preload.js';
-import { AVATAR_COLOR_COUNT, AvatarColors } from '../types/Colors.std.js';
-import { Button } from './Button.dom.js';
-import { Modal } from './Modal.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import type { CallLinkType } from '../types/CallLink.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { sortByTitle } from '../util/sortByTitle.std.ts';
+import { ModalHost } from './ModalHost.dom.tsx';
+import { AVATAR_COLOR_COUNT, AvatarColors } from '../types/Colors.std.ts';
+import { CallingParticipantListItem } from './CallingParticipantListItem.dom.tsx';
+import type {
+  CallingParticipantType,
+  PropsType as CallingParticipantsListPropsType,
+} from './CallingParticipantsList.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const { partition } = lodash;
 
 const MAX_UNKNOWN_AVATARS_COUNT = 3;
 
-type ParticipantType = ConversationType & {
-  hasRemoteAudio?: boolean;
-  hasRemoteVideo?: boolean;
-  isHandRaised?: boolean;
-  presenting?: boolean;
-  demuxId?: number;
-};
-
-export type PropsType = {
+export type PropsType = CallingParticipantsListPropsType & {
   readonly callLink: CallLinkType;
-  readonly i18n: LocalizerType;
-  readonly isCallLinkAdmin: boolean;
   readonly isUnknownContactDiscrete: boolean;
-  readonly ourServiceId: ServiceIdString | undefined;
-  readonly participants: Array<ParticipantType>;
-  readonly onClose: () => void;
   readonly onCopyCallLink: () => void;
   readonly onShareCallLinkViaSignal: () => void;
-  readonly removeClient: (payload: RemoveClientType) => void;
-  readonly blockClient: (payload: RemoveClientType) => void;
-  readonly showContactModal: (
-    contactId: string,
-    conversationId?: string
-  ) => void;
 };
 
 type UnknownContactsPropsType = {
   readonly i18n: LocalizerType;
   readonly isInAdditionToKnownContacts: boolean;
-  readonly participants: Array<ParticipantType>;
+  readonly participants: Array<CallingParticipantType>;
   readonly showUnknownContactDialog: () => void;
 };
 
@@ -64,15 +40,15 @@ function UnknownContacts({
   isInAdditionToKnownContacts,
   participants,
   showUnknownContactDialog,
-}: UnknownContactsPropsType): React.JSX.Element {
-  const renderUnknownAvatar = React.useCallback(
+}: UnknownContactsPropsType): JSX.Element {
+  const renderUnknownAvatar = useCallback(
     ({
       participant,
       key,
       size,
     }: {
-      participant: ParticipantType;
-      key: React.Key;
+      participant: CallingParticipantType;
+      key: Key;
       size: AvatarSize;
     }) => {
       const colorIndex = participant.serviceId
@@ -145,215 +121,71 @@ function UnknownContacts({
 
 export function CallingAdhocCallInfo({
   i18n,
-  isCallLinkAdmin,
   isUnknownContactDiscrete,
   ourServiceId,
   participants,
-  blockClient,
+  participantMenuDisabled,
   onClose,
   onCopyCallLink,
   onShareCallLinkViaSignal,
-  removeClient,
   showContactModal,
-}: PropsType): React.JSX.Element | null {
+  renderCallingParticipantMenu,
+}: PropsType): JSX.Element | null {
   const [isUnknownContactDialogVisible, setIsUnknownContactDialogVisible] =
-    React.useState(false);
-  const [removeClientDialogState, setRemoveClientDialogState] = React.useState<{
-    demuxId: number;
-    name: string;
-  } | null>(null);
+    useState(false);
 
-  const hideUnknownContactDialog = React.useCallback(
-    () => setIsUnknownContactDialogVisible(false),
-    [setIsUnknownContactDialogVisible]
-  );
-  const onClickShareCallLinkViaSignal = React.useCallback(() => {
+  const onClickShareCallLinkViaSignal = useCallback(() => {
     onClose();
     onShareCallLinkViaSignal();
   }, [onClose, onShareCallLinkViaSignal]);
 
-  const [visibleParticipants, unknownParticipants] = React.useMemo<
-    [Array<ParticipantType>, Array<ParticipantType>]
-  >(
-    () =>
-      partition(
-        participants,
-        (participant: ParticipantType) =>
-          isUnknownContactDiscrete || Boolean(participant.titleNoDefault)
-      ),
-    [isUnknownContactDiscrete, participants]
-  );
-  const sortedParticipants = React.useMemo<Array<ParticipantType>>(
+  const [visibleParticipants, unknownParticipants] = useMemo(() => {
+    return partition(participants, (participant: CallingParticipantType) => {
+      return isUnknownContactDiscrete || Boolean(participant.titleNoDefault);
+    });
+  }, [isUnknownContactDiscrete, participants]);
+
+  const sortedParticipants = useMemo<Array<CallingParticipantType>>(
     () => sortByTitle(visibleParticipants),
     [visibleParticipants]
   );
 
-  const renderParticipant = React.useCallback(
-    (participant: ParticipantType, key: React.Key) => (
-      <button
-        aria-label={i18n('icu:calling__ParticipantInfoButton')}
-        className="module-calling-participants-list__contact"
-        disabled={participant.isMe}
-        // It's tempting to use `participant.serviceId` as the `key`
-        //   here, but that can result in duplicate keys for
-        //   participants who have joined on multiple devices.
+  const renderParticipant = useCallback(
+    (participant: CallingParticipantType, key: Key) => (
+      <CallingParticipantListItem
+        callConversationId={undefined}
+        i18n={i18n}
         key={key}
-        onClick={() => {
-          if (participant.isMe) {
-            return;
-          }
-
-          onClose();
-          showContactModal(participant.id);
-        }}
-        type="button"
-      >
-        <div className="module-calling-participants-list__avatar-and-name">
-          <Avatar
-            avatarPlaceholderGradient={participant.avatarPlaceholderGradient}
-            avatarUrl={participant.avatarUrl}
-            badge={undefined}
-            color={participant.color}
-            conversationType="direct"
-            i18n={i18n}
-            profileName={participant.profileName}
-            title={participant.title}
-            size={AvatarSize.THIRTY_SIX}
-          />
-          {ourServiceId && participant.serviceId === ourServiceId ? (
-            <span className="module-calling-participants-list__name">
-              {i18n('icu:you')}
-            </span>
-          ) : (
-            <>
-              <ContactName
-                module="module-calling-participants-list__name"
-                title={participant.title}
-              />
-              {isInSystemContacts(participant) ? (
-                <span>
-                  {' '}
-                  <InContactsIcon
-                    className="module-calling-participants-list__contact-icon"
-                    i18n={i18n}
-                  />
-                </span>
-              ) : null}
-            </>
-          )}
-        </div>
-        <span
-          className={classNames(
-            'module-calling-participants-list__status-icon',
-            participant.isHandRaised &&
-              'module-calling-participants-list__hand-raised'
-          )}
-        />
-        <span
-          className={classNames(
-            'module-calling-participants-list__status-icon',
-            participant.presenting &&
-              'module-calling-participants-list__presenting',
-            !participant.hasRemoteVideo &&
-              'module-calling-participants-list__muted--video'
-          )}
-        />
-        <span
-          className={classNames(
-            'module-calling-participants-list__status-icon',
-            !participant.hasRemoteAudio &&
-              'module-calling-participants-list__muted--audio'
-          )}
-        />
-        {isCallLinkAdmin &&
-          (participant.demuxId &&
-          !(ourServiceId && participant.serviceId === ourServiceId) ? (
-            <button
-              aria-label={i18n('icu:CallingAdhocCallInfo__RemoveClient')}
-              className={classNames(
-                'CallingAdhocCallInfo__RemoveClient',
-                'module-calling-participants-list__status-icon',
-                'module-calling-participants-list__remove'
-              )}
-              onClick={event => {
-                if (!participant.demuxId) {
-                  return;
-                }
-
-                event.stopPropagation();
-                event.preventDefault();
-                setRemoveClientDialogState({
-                  demuxId: participant.demuxId,
-                  name: participant.title,
-                });
-              }}
-              type="button"
-            />
-          ) : (
-            <span className="module-calling-participants-list__status-icon" />
-          ))}
-      </button>
+        ourServiceId={ourServiceId}
+        participant={participant}
+        participantMenuDisabled={participantMenuDisabled}
+        showContactModal={showContactModal}
+        renderCallingParticipantMenu={renderCallingParticipantMenu}
+      />
     ),
     [
       i18n,
-      isCallLinkAdmin,
-      onClose,
       ourServiceId,
-      setRemoveClientDialogState,
+      renderCallingParticipantMenu,
+      participantMenuDisabled,
       showContactModal,
     ]
   );
 
   return (
     <>
-      {removeClientDialogState != null ? (
-        <ConfirmationDialog
-          dialogName="CallingAdhocCallInfo.removeClientDialog"
-          moduleClassName="CallingAdhocCallInfo__RemoveClientDialog"
-          actions={[
-            {
-              action: () =>
-                blockClient({ demuxId: removeClientDialogState.demuxId }),
-              style: 'negative',
-              text: i18n(
-                'icu:CallingAdhocCallInfo__RemoveClientDialogButton--block'
-              ),
-            },
-            {
-              action: () =>
-                removeClient({ demuxId: removeClientDialogState.demuxId }),
-              style: 'negative',
-              text: i18n(
-                'icu:CallingAdhocCallInfo__RemoveClientDialogButton--remove'
-              ),
-            },
-          ]}
-          cancelText={i18n('icu:cancel')}
-          i18n={i18n}
-          theme={Theme.Dark}
-          onClose={() => setRemoveClientDialogState(null)}
-        >
-          {i18n('icu:CallingAdhocCallInfo__RemoveClientDialogBody', {
-            name: removeClientDialogState.name,
-          })}
-        </ConfirmationDialog>
-      ) : null}
-      {isUnknownContactDialogVisible ? (
-        <Modal
-          modalName="CallingAdhocCallInfo.UnknownContactInfo"
-          moduleClassName="CallingAdhocCallInfo__UnknownContactInfoDialog"
-          i18n={i18n}
-          modalFooter={
-            <Button onClick={hideUnknownContactDialog}>
-              {i18n('icu:CallingAdhocCallInfo__UnknownContactInfoDialogOk')}
-            </Button>
-          }
-          onClose={hideUnknownContactDialog}
-          theme={Theme.Dark}
-        >
-          {i18n('icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody')}
-        </Modal>
-      ) : null}
+      <AxoConfirmDialog.Root
+        open={isUnknownContactDialogVisible}
+        onOpenChange={setIsUnknownContactDialogVisible}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n(
+          'icu:CallingAdhocCallInfo__UnknownContactInfoDialogBody'
+        )}
+      >
+        <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
+
       <ModalHost
         modalName="CallingAdhocCallInfo"
         moduleClassName="CallingAdhocCallInfo"

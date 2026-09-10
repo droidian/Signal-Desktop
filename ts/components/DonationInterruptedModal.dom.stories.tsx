@@ -1,13 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DonationInterruptedModal.dom.js';
-import { DonationInterruptedModal } from './DonationInterruptedModal.dom.js';
+import type { PropsType } from './DonationInterruptedModal.dom.tsx';
+import { DonationInterruptedModal } from './DonationInterruptedModal.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -21,6 +21,6 @@ const defaultProps = {
   onRetryDonation: action('onRetryDonation'),
 };
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <DonationInterruptedModal {...defaultProps} />;
 }

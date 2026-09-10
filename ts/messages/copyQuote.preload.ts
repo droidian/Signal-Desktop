@@ -3,23 +3,25 @@
 
 import lodash from 'lodash';
 
-import { createLogger } from '../logging/log.std.js';
+import { createLogger } from '../logging/log.std.ts';
 import type { QuotedMessageType } from '../model-types.d.ts';
-import { SignalService } from '../protobuf/index.std.js';
+import { SignalService } from '../protobuf/index.std.ts';
 import {
   isGiftBadge,
   isTapToView,
-} from '../state/selectors/message.preload.js';
+} from '../state/selectors/message.preload.ts';
 import type { ProcessedQuote } from '../textsecure/Types.d.ts';
-import { IMAGE_JPEG } from '../types/MIME.std.js';
-import { VERSION_NEEDED_FOR_DISPLAY } from '../types/Message2.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { getQuoteBodyText } from '../util/getQuoteBodyText.std.js';
-import { isQuoteAMatch } from './quotes.preload.js';
-import { messageHasPaymentEvent } from './payments.std.js';
-import * as Errors from '../types/errors.std.js';
-import type { MessageModel } from '../models/messages.preload.js';
-import { isDownloadable } from '../util/Attachment.std.js';
+import { IMAGE_JPEG } from '../types/MIME.std.ts';
+import { VERSION_NEEDED_FOR_DISPLAY } from '../types/Message2.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { getQuoteBodyText } from '../util/getQuoteBodyText.std.ts';
+import { isQuoteAMatch } from './quotes.preload.ts';
+import { messageHasPaymentEvent } from './payments.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import type { MessageModel } from '../models/messages.preload.ts';
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import { backupsService } from '../services/backups/index.preload.ts';
+import { isDownloadable } from '../util/Attachment.std.ts';
 
 const { omit } = lodash;
 
@@ -27,12 +29,15 @@ const log = createLogger('copyQuote');
 const { i18n } = window.SignalContext;
 
 export type MinimalMessageCache = Readonly<{
-  findBySentAt(
+  findBySentAt: (
     sentAt: number,
     predicate: (attributes: MessageModel) => boolean
-  ): Promise<MessageModel | undefined>;
-  upgradeSchema(message: MessageModel, minSchemaVersion: number): Promise<void>;
-  register(message: MessageModel): MessageModel;
+  ) => Promise<MessageModel | undefined>;
+  upgradeSchema: (
+    message: MessageModel,
+    minSchemaVersion: number
+  ) => Promise<void>;
+  register: (message: MessageModel) => MessageModel;
 }>;
 
 export type CopyQuoteOptionsType = Readonly<{
@@ -89,23 +94,27 @@ export const copyQuoteContentFromOriginal = async (
   const { attachments } = quote;
   const quoteAttachment = attachments ? attachments[0] : undefined;
 
-  if (messageHasPaymentEvent(message.attributes)) {
-    // eslint-disable-next-line no-param-reassign
-    quote.payment = message.get('payment');
-  }
-
-  if (isTapToView(message.attributes)) {
-    // eslint-disable-next-line no-param-reassign
+  if (isTapToView(message.attributes, true)) {
+    // oxlint-disable-next-line no-param-reassign
     quote.text = undefined;
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     quote.attachments = [
       {
         contentType: IMAGE_JPEG,
       },
     ];
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     quote.isViewOnce = true;
 
+    return;
+  }
+
+  // oxlint-disable-next-line no-param-reassign
+  quote.isViewOnce = false;
+
+  // We should copy things that contribute to the type of message,
+  // but not copy any of the contents of the message.
+  if (message.attributes.deletedForEveryone) {
     return;
   }
 
@@ -114,29 +123,31 @@ export const copyQuoteContentFromOriginal = async (
     log.warn(
       `copyQuoteContentFromOriginal: Quote.isGiftBadge: ${quote.isGiftBadge}, isGiftBadge(message): ${isMessageAGiftBadge}`
     );
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     quote.isGiftBadge = isMessageAGiftBadge;
   }
   if (isMessageAGiftBadge) {
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     quote.text = undefined;
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     quote.attachments = [];
 
     return;
   }
 
-  // eslint-disable-next-line no-param-reassign
-  quote.isViewOnce = false;
+  if (messageHasPaymentEvent(message.attributes)) {
+    // oxlint-disable-next-line no-param-reassign
+    quote.payment = message.get('payment');
+  }
 
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign
   quote.text = getQuoteBodyText({
     messageAttributes: message.attributes,
     id: quote.id,
     i18n,
   });
 
-  // eslint-disable-next-line no-param-reassign
+  // oxlint-disable-next-line no-param-reassign
   quote.bodyRanges = message.attributes.bodyRanges;
 
   if (!quoteAttachment || !quoteAttachment.contentType) {
@@ -160,15 +171,19 @@ export const copyQuoteContentFromOriginal = async (
   } = message.attributes;
 
   if (queryAttachments.length > 0) {
-    const queryFirst = queryAttachments[0];
+    const queryFirst = queryAttachments[0] as AttachmentType;
     const { thumbnail: quotedThumbnail } = queryFirst;
+    const hasMediaBackups = backupsService.hasMediaBackups();
 
     if (quotedThumbnail && quotedThumbnail.path) {
       quoteAttachment.thumbnail = {
         ...quotedThumbnail,
         copied: true,
       };
-    } else if (!quoteAttachment.thumbnail || !isDownloadable(queryFirst)) {
+    } else if (
+      !quoteAttachment.thumbnail ||
+      !isDownloadable(queryFirst, { hasMediaBackups })
+    ) {
       quoteAttachment.contentType = queryFirst.contentType;
       quoteAttachment.fileName = queryFirst.fileName;
       quoteAttachment.thumbnail = undefined;
@@ -179,7 +194,8 @@ export const copyQuoteContentFromOriginal = async (
   }
 
   if (queryPreview.length > 0) {
-    const { image: quotedPreviewImage } = queryPreview[0];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const { image: quotedPreviewImage } = queryPreview[0]!;
     if (quotedPreviewImage && quotedPreviewImage.path) {
       quoteAttachment.thumbnail = {
         ...quotedPreviewImage,

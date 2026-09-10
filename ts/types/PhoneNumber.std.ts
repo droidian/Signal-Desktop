@@ -5,11 +5,13 @@ import memoizee from 'memoizee';
 import {
   instance,
   PhoneNumberFormat,
-} from '../util/libphonenumberInstance.std.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from './errors.std.js';
+} from '../util/libphonenumberInstance.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from './errors.std.ts';
 
 const log = createLogger('PhoneNumber');
+
+export const COUNTRY_CODE_FALLBACK = 99999;
 
 function _format(
   phoneNumber: string,
@@ -37,7 +39,7 @@ export function getCountryCode(
 ): number | undefined {
   try {
     if (phoneNumber == null) {
-      return undefined;
+      return COUNTRY_CODE_FALLBACK;
     }
     if (!isValidNumber(phoneNumber)) {
       return undefined;

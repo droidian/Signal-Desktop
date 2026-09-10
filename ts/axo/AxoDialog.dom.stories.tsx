@@ -1,13 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useId, useMemo, useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { AxoDialog } from './AxoDialog.dom.js';
-import { AxoButton } from './AxoButton.dom.js';
-import { tw } from './tw.dom.js';
-import { AxoCheckbox } from './AxoCheckbox.dom.js';
+import { AxoDialog } from './AxoDialog.dom.tsx';
+import { AxoButton } from './AxoButton.dom.tsx';
+import { tw } from './tw.dom.tsx';
+import { AxoCheckbox } from './AxoCheckbox.dom.tsx';
 
 export default {
   title: 'Axo/AxoDialog',
@@ -28,7 +28,7 @@ function Box(props: { children: ReactNode }) {
   return (
     <div
       className={tw(
-        'flex items-center justify-center rounded-2xl bg-color-fill-primary p-10 type-title-large font-semibold text-label-primary-on-color'
+        'flex items-center justify-center rounded-2xl bg-accent p-10 type-title-large font-semibold text-primary-oncolor'
       )}
     >
       {props.children}
@@ -43,22 +43,20 @@ function Template(props: {
   iconAction?: boolean;
   footerContent?: ReactNode;
   children: ReactNode;
-}): React.JSX.Element {
+}): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <AxoDialog.Root open={open} onOpenChange={setOpen}>
       <AxoDialog.Trigger>
-        <AxoButton.Root variant="secondary" size="md">
+        <AxoButton.Root variant="strong-secondary" size="md">
           Open Dialog
         </AxoButton.Root>
       </AxoDialog.Trigger>
       <AxoDialog.Content size={props.contentSize} escape="cancel-is-noop">
         <AxoDialog.Header>
-          {props.back && (
-            <AxoDialog.Back aria-label="Back" onClick={action('onBack')} />
-          )}
+          {props.back && <AxoDialog.Back onClick={action('onBack')} />}
           <AxoDialog.Title>Title</AxoDialog.Title>
-          <AxoDialog.Close aria-label="Close" />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body padding={props.bodyPadding}>
           {props.children}
@@ -72,20 +70,23 @@ function Template(props: {
           <AxoDialog.Actions>
             {props.iconAction ? (
               <AxoDialog.IconAction
-                aria-label="Send"
-                variant="primary"
+                label="Send message"
+                variant="strong-primary"
                 symbol="send-fill"
                 onClick={action('onSend')}
               />
             ) : (
               <>
                 <AxoDialog.Action
-                  variant="secondary"
+                  variant="strong-secondary"
                   onClick={action('onCancel')}
                 >
                   Cancel
                 </AxoDialog.Action>
-                <AxoDialog.Action variant="primary" onClick={action('onSave')}>
+                <AxoDialog.Action
+                  variant="strong-primary"
+                  onClick={action('onSave')}
+                >
                   Save
                 </AxoDialog.Action>
               </>
@@ -97,7 +98,7 @@ function Template(props: {
   );
 }
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   return (
     <Template contentSize="md">
       <p>
@@ -110,23 +111,23 @@ export function Basic(): React.JSX.Element {
   );
 }
 
-export function Small(): React.JSX.Element {
+export function Small(): JSX.Element {
   return <Template contentSize="sm">{TEXT_LONG}</Template>;
 }
 
-export function Large(): React.JSX.Element {
+export function Large(): JSX.Element {
   return <Template contentSize="lg">{TEXT_LONG}</Template>;
 }
 
-export function IconAction(): React.JSX.Element {
+export function IconAction(): JSX.Element {
   return (
     <Template contentSize="sm" iconAction>
-      {TEXT_SHORT}
+      {TEXT_LONG}
     </Template>
   );
 }
 
-export function LongContent(): React.JSX.Element {
+export function LongContent(): JSX.Element {
   return (
     <Template contentSize="md">
       <div className={tw('flex flex-col gap-2')}>
@@ -138,7 +139,7 @@ export function LongContent(): React.JSX.Element {
   );
 }
 
-export function BackButton(): React.JSX.Element {
+export function BackButton(): JSX.Element {
   return (
     <Template contentSize="md" back>
       {TEXT_LONG}
@@ -146,7 +147,7 @@ export function BackButton(): React.JSX.Element {
   );
 }
 
-export function FooterContent(): React.JSX.Element {
+export function FooterContent(): JSX.Element {
   return (
     <Template contentSize="md" footerContent={TEXT_SHORT}>
       {TEXT_LONG}
@@ -154,7 +155,7 @@ export function FooterContent(): React.JSX.Element {
   );
 }
 
-export function FooterContentLong(): React.JSX.Element {
+export function FooterContentLong(): JSX.Element {
   return (
     <Template contentSize="md" footerContent={TEXT_LONG}>
       {TEXT_LONG}
@@ -162,7 +163,7 @@ export function FooterContentLong(): React.JSX.Element {
   );
 }
 
-export function FooterContentLongAndTight(): React.JSX.Element {
+export function FooterContentLongAndTight(): JSX.Element {
   return (
     <Template contentSize="sm" footerContent={TEXT_LONG}>
       {TEXT_LONG}
@@ -188,9 +189,9 @@ function TextInputField(props: { placeholder: string }) {
         placeholder={props.placeholder}
         className={tw(
           'w-full px-3 py-1.5',
-          'border-[0.5px] border-border-primary shadow-elevation-0',
-          'rounded-lg bg-fill-primary',
-          'placeholder:text-label-placeholder',
+          'border-[0.5px] border-primary shadow-elevation-0',
+          'rounded-lg bg-control',
+          'placeholder:text-placeholder',
           'forced-colors:border forced-colors:border-[ButtonBorder] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]'
         )}
       />
@@ -198,28 +199,28 @@ function TextInputField(props: { placeholder: string }) {
   );
 }
 
-export function ExampleNicknameAndNoteDialog(): React.JSX.Element {
+export function ExampleNicknameAndNoteDialog(): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <AxoDialog.Root open={open} onOpenChange={setOpen}>
       <AxoDialog.Trigger>
-        <AxoButton.Root variant="secondary" size="md">
+        <AxoButton.Root variant="strong-secondary" size="md">
           Open Dialog
         </AxoButton.Root>
       </AxoDialog.Trigger>
       <AxoDialog.Content size="sm" escape="cancel-is-destructive">
         <AxoDialog.Header>
           <AxoDialog.Title>Nickname</AxoDialog.Title>
-          <AxoDialog.Close aria-label="Close" />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body>
-          <p className={tw('mb-4 type-body-small text-label-secondary')}>
+          <p className={tw('mb-4 type-body-small text-secondary')}>
             Nicknames &amp; notes are stored with Signal and end-to-end
             encrypted. They are only visible to you.
           </p>
           <div
             className={tw(
-              'mx-auto size-20 rounded-full bg-color-fill-primary',
+              'mx-auto size-20 rounded-full bg-accent',
               'forced-colors:border'
             )}
           />
@@ -231,10 +232,16 @@ export function ExampleNicknameAndNoteDialog(): React.JSX.Element {
         </AxoDialog.Body>
         <AxoDialog.Footer>
           <AxoDialog.Actions>
-            <AxoDialog.Action variant="secondary" onClick={action('onCancel')}>
+            <AxoDialog.Action
+              variant="strong-secondary"
+              onClick={action('onCancel')}
+            >
               Cancel
             </AxoDialog.Action>
-            <AxoDialog.Action variant="primary" onClick={action('onSave')}>
+            <AxoDialog.Action
+              variant="strong-primary"
+              onClick={action('onSave')}
+            >
               Save
             </AxoDialog.Action>
           </AxoDialog.Actions>
@@ -258,7 +265,7 @@ function CheckboxField(props: { label: string }) {
       />
       <label
         htmlFor={id}
-        className={tw('truncate type-body-large text-label-primary')}
+        className={tw('truncate type-body-large text-primary')}
       >
         {props.label}
       </label>
@@ -266,19 +273,19 @@ function CheckboxField(props: { label: string }) {
   );
 }
 
-export function ExampleMuteNotificationsDialog(): React.JSX.Element {
+export function ExampleMuteNotificationsDialog(): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <AxoDialog.Root open={open} onOpenChange={setOpen}>
       <AxoDialog.Trigger>
-        <AxoButton.Root variant="secondary" size="md">
+        <AxoButton.Root variant="strong-secondary" size="md">
           Open Dialog
         </AxoButton.Root>
       </AxoDialog.Trigger>
       <AxoDialog.Content size="sm" escape="cancel-is-noop">
         <AxoDialog.Header>
           <AxoDialog.Title>Mute notifications</AxoDialog.Title>
-          <AxoDialog.Close aria-label="Close" />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body>
           <Spacer height={8} />
@@ -291,10 +298,16 @@ export function ExampleMuteNotificationsDialog(): React.JSX.Element {
         </AxoDialog.Body>
         <AxoDialog.Footer>
           <AxoDialog.Actions>
-            <AxoDialog.Action variant="secondary" onClick={action('onCancel')}>
+            <AxoDialog.Action
+              variant="strong-secondary"
+              onClick={action('onCancel')}
+            >
               Cancel
             </AxoDialog.Action>
-            <AxoDialog.Action variant="primary" onClick={action('onSave')}>
+            <AxoDialog.Action
+              variant="strong-primary"
+              onClick={action('onSave')}
+            >
               Save
             </AxoDialog.Action>
           </AxoDialog.Actions>
@@ -315,17 +328,14 @@ function ExampleItem(props: { label: string; description: string }) {
       aria-labelledby={labelId}
       aria-describedby={descriptionId}
       tabIndex={0}
-      className={tw('rounded-lg px-[13px] py-2.5 hover:bg-fill-secondary')}
+      className={tw('rounded-lg px-[13px] py-2.5 hover:bg-primary')}
     >
-      <div
-        id={labelId}
-        className={tw('truncate type-body-large text-label-primary')}
-      >
+      <div id={labelId} className={tw('truncate type-body-large text-primary')}>
         {props.label}
       </div>
       <div
         id={descriptionId}
-        className={tw('truncate type-body-small text-label-secondary')}
+        className={tw('truncate type-body-small text-secondary')}
       >
         {props.description}
       </div>
@@ -333,33 +343,32 @@ function ExampleItem(props: { label: string; description: string }) {
   );
 }
 
-export function ExampleLanguageDialog(): React.JSX.Element {
+export function ExampleLanguageDialog(): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <AxoDialog.Root open={open} onOpenChange={setOpen}>
       <AxoDialog.Trigger>
-        <AxoButton.Root variant="secondary" size="md">
+        <AxoButton.Root variant="strong-secondary" size="md">
           Open Dialog
         </AxoButton.Root>
       </AxoDialog.Trigger>
       <AxoDialog.Content size="sm" escape="cancel-is-noop">
         <AxoDialog.Header>
           <AxoDialog.Title>Language</AxoDialog.Title>
-          <AxoDialog.Close aria-label="Close" />
+          <AxoDialog.Close />
         </AxoDialog.Header>
-        <AxoDialog.ExperimentalSearch>
+        <AxoDialog.Search>
           <input
             type="search"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
             placeholder="Search languages"
             className={tw(
-              'w-full rounded-lg bg-fill-secondary px-3 py-[5px]',
+              'w-full rounded-lg bg-primary px-3 py-[5px]',
               'forced-colors:border forced-colors:border-[ButtonBorder] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]'
             )}
           />
-        </AxoDialog.ExperimentalSearch>
-        <AxoDialog.Body padding="only-scrollbar-gutter">
+        </AxoDialog.Search>
+        <AxoDialog.Body padding="sm">
           <div
             role="listbox"
             style={{
@@ -380,10 +389,16 @@ export function ExampleLanguageDialog(): React.JSX.Element {
         </AxoDialog.Body>
         <AxoDialog.Footer>
           <AxoDialog.Actions>
-            <AxoDialog.Action variant="secondary" onClick={action('onCancel')}>
+            <AxoDialog.Action
+              variant="strong-secondary"
+              onClick={action('onCancel')}
+            >
               Cancel
             </AxoDialog.Action>
-            <AxoDialog.Action variant="primary" onClick={action('onSet')}>
+            <AxoDialog.Action
+              variant="strong-primary"
+              onClick={action('onSet')}
+            >
               Set
             </AxoDialog.Action>
           </AxoDialog.Actions>

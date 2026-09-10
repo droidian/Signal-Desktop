@@ -9,11 +9,11 @@ button.ListTile {
 }
 
 .ListTile {
+  position: relative;
   display: flex;
   align-items: center;
   padding-block: 6px;
   padding-inline: 14px;
-  user-select: none;
 
   // use a transparent border to inset the background
   border: 2px solid transparent;
@@ -26,6 +26,20 @@ button.ListTile {
   color: inherit;
   box-sizing: border-box;
   text-align: inherit;
+
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      &::before {
+        content: '';
+        display: block;
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        @include mixins.axo-focus-ring-inset;
+      }
+    }
+  }
 
   &--variant-panelrow {
     padding-block: 8px;

@@ -1,16 +1,16 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupV1MigrationDialog.dom.js';
-import { GroupV1MigrationDialog } from './GroupV1MigrationDialog.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { ThemeType } from '../types/Util.std.js';
+import type { PropsType } from './GroupV1MigrationDialog.dom.tsx';
+import { GroupV1MigrationDialog } from './GroupV1MigrationDialog.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -50,11 +50,11 @@ export default {
   title: 'Components/GroupV1MigrationDialog',
 } satisfies Meta<PropsType>;
 
-export function NotYetMigratedBasic(): React.JSX.Element {
+export function NotYetMigratedBasic(): JSX.Element {
   return <GroupV1MigrationDialog {...createProps()} />;
 }
 
-export function MigratedBasic(): React.JSX.Element {
+export function MigratedBasic(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -64,7 +64,7 @@ export function MigratedBasic(): React.JSX.Element {
   );
 }
 
-export function MigratedYouAreInvited(): React.JSX.Element {
+export function MigratedYouAreInvited(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -75,7 +75,7 @@ export function MigratedYouAreInvited(): React.JSX.Element {
   );
 }
 
-export function MigratedMultipleDroppedAndInvitedMember(): React.JSX.Element {
+export function MigratedMultipleDroppedAndInvitedMember(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -89,7 +89,7 @@ export function MigratedMultipleDroppedAndInvitedMember(): React.JSX.Element {
   );
 }
 
-export function MigratedMultipleDroppedAndInvitedMembers(): React.JSX.Element {
+export function MigratedMultipleDroppedAndInvitedMembers(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -103,7 +103,7 @@ export function MigratedMultipleDroppedAndInvitedMembers(): React.JSX.Element {
   );
 }
 
-export function MigratedNoMembers(): React.JSX.Element {
+export function MigratedNoMembers(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -115,7 +115,7 @@ export function MigratedNoMembers(): React.JSX.Element {
   );
 }
 
-export function NotYetMigratedJustDroppedMember(): React.JSX.Element {
+export function NotYetMigratedJustDroppedMember(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -126,7 +126,7 @@ export function NotYetMigratedJustDroppedMember(): React.JSX.Element {
   );
 }
 
-export function NotYetMigratedJustDroppedMembers(): React.JSX.Element {
+export function NotYetMigratedJustDroppedMembers(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -137,7 +137,7 @@ export function NotYetMigratedJustDroppedMembers(): React.JSX.Element {
   );
 }
 
-export function NotYetMigratedDropped1(): React.JSX.Element {
+export function NotYetMigratedDropped1(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -148,7 +148,7 @@ export function NotYetMigratedDropped1(): React.JSX.Element {
   );
 }
 
-export function NotYetMigratedDropped2(): React.JSX.Element {
+export function NotYetMigratedDropped2(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -159,7 +159,7 @@ export function NotYetMigratedDropped2(): React.JSX.Element {
   );
 }
 
-export function MigratedJustCountIs1(): React.JSX.Element {
+export function MigratedJustCountIs1(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({
@@ -171,7 +171,7 @@ export function MigratedJustCountIs1(): React.JSX.Element {
   );
 }
 
-export function MigratedJustCountIs2(): React.JSX.Element {
+export function MigratedJustCountIs2(): JSX.Element {
   return (
     <GroupV1MigrationDialog
       {...createProps({

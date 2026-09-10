@@ -4,70 +4,73 @@
 import type { CallSummary } from '@signalapp/ringrtc';
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
-import OS from '../../util/os/osMain.node.js';
-import type { ExplodePromiseResultType } from '../../util/explodePromise.std.js';
+import OS from '../../util/os/osMain.node.ts';
+import type { ExplodePromiseResultType } from '../../util/explodePromise.std.ts';
 import type {
   GroupV2PendingMemberType,
   ReadonlyMessageAttributesType,
 } from '../../model-types.d.ts';
 import type {
-  ActionCreator,
   MessageChangedActionType,
   MessageDeletedActionType,
-  MessageExpiredActionType,
-} from './conversations.preload.js';
-import type { MessagePropsType } from '../selectors/message.preload.js';
-import type { RecipientsByConversation } from './stories.preload.js';
-import type { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import * as SingleServePromise from '../../services/singleServePromise.std.js';
-import { isKeyTransparencyAvailable } from '../../services/keyTransparency.preload.js';
-import * as Stickers from '../../types/Stickers.preload.js';
-import { UsernameOnboardingState } from '../../types/globalModals.std.js';
-import { createLogger } from '../../logging/log.std.js';
+} from './conversations.preload.ts';
+import type { MessagePropsType } from '../selectors/message.preload.ts';
+import type { RecipientsByConversation } from './stories.preload.ts';
+import type { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import * as SingleServePromise from '../../services/singleServePromise.std.ts';
+import { isKeyTransparencyAvailable } from '../../services/keyTransparency.preload.ts';
+import * as Stickers from '../../types/Stickers.preload.ts';
+import {
+  type ContactModalStateType,
+  PinReminderState,
+} from '../../types/globalModals.std.ts';
+import { UsernameOnboardingState } from '../../types/globalModals.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
 import {
   getMessagePropsSelector,
   getPropsForAttachment,
-} from '../selectors/message.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.dom.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import { isGroupV1 } from '../../util/whatTypeOfConversation.dom.js';
-import { sleep } from '../../util/sleep.std.js';
-import { SECOND } from '../../util/durations/index.std.js';
-import { getGroupMigrationMembers } from '../../groups.preload.js';
+} from '../selectors/message.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.dom.tsx';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { isGroupV1 } from '../../util/whatTypeOfConversation.dom.ts';
+import { sleep } from '../../util/sleep.std.ts';
+import { SECOND } from '../../util/durations/index.std.ts';
+import { getGroupMigrationMembers } from '../../groups.preload.ts';
 import {
   MESSAGE_CHANGED,
   MESSAGE_DELETED,
-  MESSAGE_EXPIRED,
   actions as conversationsActions,
-} from './conversations.preload.js';
-import { isDownloaded } from '../../util/Attachment.std.js';
-import { isPermanentlyUndownloadable } from '../../jobs/AttachmentDownloadManager.preload.js';
-import type { ButtonVariant } from '../../components/Button.dom.js';
-import type { MessageRequestState } from '../../components/conversation/MessageRequestActionsConfirmation.dom.js';
-import type { MessageForwardDraft } from '../../types/ForwardDraft.std.js';
-import { hydrateRanges } from '../../util/BodyRange.node.js';
+} from './conversations.preload.ts';
+import { isDownloaded } from '../../util/Attachment.std.ts';
+import type { MessageRequestState } from '../../components/conversation/MessageRequestActionsConfirmation.dom.tsx';
+import type { MessageForwardDraft } from '../../types/ForwardDraft.std.ts';
+import { hydrateRanges } from '../../util/BodyRange.node.ts';
 import {
   getConversationSelector,
   getHasMaxPinnedMessages,
   type GetConversationByIdType,
-} from '../selectors/conversations.dom.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { ForwardMessagesModalType } from '../../components/ForwardMessagesModal.dom.js';
-import type { CallLinkType } from '../../types/CallLink.std.js';
-import type { LocalizerType } from '../../types/I18N.std.js';
-import { linkCallRoute } from '../../util/signalRoutes.std.js';
-import type { StartCallData } from '../../components/ConfirmLeaveCallModal.dom.js';
-import type { CallQualitySurvey } from '../../types/CallQualitySurvey.std.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import type { DataPropsType as TapToViewNotAvailablePropsType } from '../../components/TapToViewNotAvailableModal.dom.js';
-import type { DataPropsType as BackfillFailureModalPropsType } from '../../components/BackfillFailureModal.dom.js';
-import type { SmartDraftGifMessageSendModalProps } from '../smart/DraftGifMessageSendModal.preload.js';
-import { onCriticalIdlePrimaryDeviceModalDismissed } from '../../util/handleServerAlerts.preload.js';
-import type { PinMessageDialogData } from '../smart/PinMessageDialog.preload.js';
-import type { StateThunk } from '../types.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { ForwardMessagesModalType } from '../../components/ForwardMessagesModal.dom.tsx';
+import type { CallLinkType } from '../../types/CallLink.std.ts';
+import type { LocalizerType } from '../../types/I18N.std.ts';
+import { linkCallRoute } from '../../util/signalRoutes.std.ts';
+import type { StartCallData } from '../../components/ConfirmLeaveCallModal.dom.tsx';
+import type { CallQualitySurvey } from '../../types/CallQualitySurvey.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import type { TapToViewNotAvailableModalData } from '../../components/TapToViewNotAvailableModal.dom.tsx';
+import type { BackfillFailureModalKind } from '../../components/BackfillFailureModal.dom.tsx';
+import type { SmartDraftGifMessageSendModalProps } from '../smart/DraftGifMessageSendModal.preload.tsx';
+import { onCriticalIdlePrimaryDeviceModalDismissed } from '../../util/handleServerAlerts.preload.ts';
+import type { PinMessageDialogData } from '../smart/PinMessageDialog.preload.tsx';
+import type { ActionCreator, StateThunk } from '../types.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { ErrorModalDataProps } from '../../components/ErrorModal.dom.tsx';
+import { isDownloadableOrBackfillable } from '../../util/downloadAttachment.preload.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
+import { getHasMediaBackups } from '../selectors/items.dom.ts';
 
 const log = createLogger('globalModals');
 
@@ -78,6 +81,10 @@ export type EditHistoryMessagesType = ReadonlyDeep<
 >;
 export type EditNicknameAndNoteModalPropsType = ReadonlyDeep<{
   conversationId: string;
+}>;
+export type DiscardDraftDialogPropsType = ReadonlyDeep<{
+  conversationId: string;
+  messageId: string;
 }>;
 export type DeleteMessagesPropsType = ReadonlyDeep<{
   conversationId: string;
@@ -122,7 +129,7 @@ export type GroupMemberLabelInfoPropsType = ReadonlyDeep<{
 export type GlobalModalsStateType = ReadonlyDeep<{
   addUserToAnotherGroupModalContactId?: string;
   aboutContactModalState?: ContactModalStateType;
-  backfillFailureModalProps: BackfillFailureModalPropsType | undefined;
+  backfillFailureModalKind: BackfillFailureModalKind | null;
   callLinkAddNameModalRoomId: string | null;
   callLinkEditModalRoomId: string | null;
   callLinkPendingParticipantContactId: string | undefined;
@@ -131,17 +138,14 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   contactModalState?: ContactModalStateType;
   criticalIdlePrimaryDeviceModal: boolean;
   deleteMessagesProps?: DeleteMessagesPropsType;
+  discardDraftDialogProps: DiscardDraftDialogPropsType | null;
   draftGifMessageSendModalProps: SmartDraftGifMessageSendModalProps | null;
   debugLogErrorModalProps?: {
     description?: string;
   };
   editHistoryMessages?: EditHistoryMessagesType;
   editNicknameAndNoteModalProps: EditNicknameAndNoteModalPropsType | null;
-  errorModalProps?: {
-    buttonVariant?: ButtonVariant;
-    description?: string;
-    title?: string | null;
-  };
+  errorModalProps: ErrorModalDataProps | null;
   forwardMessagesProps?: ForwardMessagesPropsType;
   gv2MigrationProps?: MigrateToGV2PropsType;
   groupMemberLabelInfoModalState?: GroupMemberLabelInfoPropsType;
@@ -160,6 +164,7 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   messageRequestActionsConfirmationProps: MessageRequestActionsConfirmationPropsType | null;
   notePreviewModalProps: NotePreviewModalPropsType | null;
   pinMessageDialogData: PinMessageDialogData | null;
+  pinReminderState: PinReminderState;
   usernameOnboardingState: UsernameOnboardingState;
   mediaPermissionsModalProps?: {
     mediaType: 'camera' | 'microphone';
@@ -169,7 +174,8 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   safetyNumberChangedBlockingData?: SafetyNumberChangedBlockingDataType;
   safetyNumberModalContactId?: string;
   stickerPackPreviewId?: string;
-  tapToViewNotAvailableModalProps?: TapToViewNotAvailablePropsType;
+  tapToViewNotAvailableModalData: TapToViewNotAvailableModalData | null;
+  terminateGroupFailedModal: { conversationId: string } | null;
   userNotFoundModalState?: UserNotFoundModalStateType;
 }>;
 
@@ -201,6 +207,8 @@ const SHOW_STORIES_SETTINGS = 'globalModals/SHOW_STORIES_SETTINGS';
 const HIDE_STORIES_SETTINGS = 'globalModals/HIDE_STORIES_SETTINGS';
 const TOGGLE_DELETE_MESSAGES_MODAL =
   'globalModals/TOGGLE_DELETE_MESSAGES_MODAL';
+export const TOGGLE_DISCARD_DRAFT_DIALOG =
+  'globalModals/TOGGLE_DISCARD_DRAFT_DIALOG';
 const TOGGLE_DRAFT_GIF_MESSAGE_SEND_MODAL =
   'globalModals/TOGGLE_DRAFT_GIF_MESSAGE_SEND_MODAL';
 const TOGGLE_FORWARD_MESSAGES_MODAL =
@@ -219,6 +227,7 @@ const TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL =
 export const SHOW_CALL_QUALITY_SURVEY = 'globalModals/SHOW_CALL_QUALITY_SURVEY';
 export const HIDE_CALL_QUALITY_SURVEY = 'globalModals/HIDE_CALL_QUALITY_SURVEY';
 const TOGGLE_ABOUT_MODAL = 'globalModals/TOGGLE_ABOUT_MODAL';
+const TOGGLE_PIN_REMINDER = 'globalModals/TOGGLE_PIN_REMINDER';
 const TOGGLE_SIGNAL_CONNECTIONS_MODAL =
   'globalModals/TOGGLE_SIGNAL_CONNECTIONS_MODAL';
 export const SHOW_SEND_ANYWAY_DIALOG = 'globalModals/SHOW_SEND_ANYWAY_DIALOG';
@@ -258,11 +267,10 @@ const SHOW_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL =
 const HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL =
   'globalModals/HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL';
 const TOGGLE_PIN_MESSAGE_DIALOG = 'globalModals/TOGGLE_PIN_MESSAGE_DIALOG';
-
-export type ContactModalStateType = ReadonlyDeep<{
-  contactId: string;
-  conversationId?: string;
-}>;
+export const SHOW_TERMINATE_GROUP_FAILED_MODAL =
+  'globalModals/SHOW_TERMINATE_GROUP_FAILED_MODAL';
+const HIDE_TERMINATE_GROUP_FAILED_MODAL =
+  'globalModals/HIDE_TERMINATE_GROUP_FAILED_MODAL';
 
 export type UserNotFoundModalStateType = ReadonlyDeep<
   | {
@@ -281,7 +289,7 @@ type HideTapToViewNotAvailableModalActionType = ReadonlyDeep<{
 
 type ShowTapToViewNotAvailableModalActionType = ReadonlyDeep<{
   type: typeof SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL;
-  payload: TapToViewNotAvailablePropsType;
+  payload: TapToViewNotAvailableModalData;
 }>;
 
 type HideBackfillFailureModalActionType = ReadonlyDeep<{
@@ -290,7 +298,7 @@ type HideBackfillFailureModalActionType = ReadonlyDeep<{
 
 type ShowBackfillFailureModalActionType = ReadonlyDeep<{
   type: typeof SHOW_BACKFILL_FAILURE_MODAL;
-  payload: BackfillFailureModalPropsType;
+  payload: BackfillFailureModalKind;
 }>;
 
 type HideContactModalActionType = ReadonlyDeep<{
@@ -338,6 +346,11 @@ export type ShowUserNotFoundModalActionType = ReadonlyDeep<{
 type ToggleDeleteMessagesModalActionType = ReadonlyDeep<{
   type: typeof TOGGLE_DELETE_MESSAGES_MODAL;
   payload: DeleteMessagesPropsType | undefined;
+}>;
+
+export type ToggleDiscardDraftDialogActionType = ReadonlyDeep<{
+  type: typeof TOGGLE_DISCARD_DRAFT_DIALOG;
+  payload: DiscardDraftDialogPropsType | null;
 }>;
 
 type ToggleDraftGifMessageSendModalActionType = ReadonlyDeep<{
@@ -462,11 +475,7 @@ type CloseErrorModalActionType = ReadonlyDeep<{
 
 export type ShowErrorModalActionType = ReadonlyDeep<{
   type: typeof SHOW_ERROR_MODAL;
-  payload: {
-    buttonVariant?: ButtonVariant;
-    description?: string;
-    title?: string | null;
-  };
+  payload: ErrorModalDataProps;
 }>;
 
 type CloseDebugLogErrorModalActionType = ReadonlyDeep<{
@@ -551,6 +560,23 @@ type TogglePinMessageDialogActionType = ReadonlyDeep<{
   payload: PinMessageDialogData | null;
 }>;
 
+// Not to be confused with pinned messages
+type TogglePinReminderActionType = ReadonlyDeep<{
+  type: typeof TOGGLE_PIN_REMINDER;
+  payload: PinReminderState;
+}>;
+
+export type ShowTerminateGroupFailedModalActionType = ReadonlyDeep<{
+  type: typeof SHOW_TERMINATE_GROUP_FAILED_MODAL;
+  payload: {
+    conversationId: string;
+  };
+}>;
+
+type HideTerminateGroupFailedModalActionType = ReadonlyDeep<{
+  type: typeof HIDE_TERMINATE_GROUP_FAILED_MODAL;
+}>;
+
 export type GlobalModalsActionType = ReadonlyDeep<
   | CloseEditHistoryModalActionType
   | CloseDebugLogErrorModalActionType
@@ -569,11 +595,11 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | HideSendAnywayDialogActiontype
   | HideStoriesSettingsActionType
   | HideTapToViewNotAvailableModalActionType
+  | HideTerminateGroupFailedModalActionType
   | HideUserNotFoundModalActionType
   | HideWhatsNewModalActionType
   | MessageChangedActionType
   | MessageDeletedActionType
-  | MessageExpiredActionType
   | ShowBackfillFailureModalActionType
   | ShowCallQualitySurveyActionType
   | ShowCriticalIdlePrimaryDeviceModalActionType
@@ -590,6 +616,7 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | ShowStickerPackPreviewActionType
   | ShowStoriesSettingsActionType
   | ShowTapToViewNotAvailableModalActionType
+  | ShowTerminateGroupFailedModalActionType
   | ShowUserNotFoundModalActionType
   | ShowWhatsNewModalActionType
   | StartMigrationToGV2ActionType
@@ -601,12 +628,14 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | ToggleConfirmationModalActionType
   | ToggleConfirmLeaveCallModalActionType
   | ToggleDeleteMessagesModalActionType
+  | ToggleDiscardDraftDialogActionType
   | ToggleDraftGifMessageSendModalActionType
   | ToggleEditNicknameAndNoteModalActionType
   | ToggleForwardMessagesModalActionType
   | ToggleGroupMemberLabelInfoModalActionType
   | ToggleMessageRequestActionsConfirmationActionType
   | ToggleNotePreviewModalActionType
+  | TogglePinReminderActionType
   | ToggleProfileNameWarningModalActionType
   | ToggleSafetyNumberModalActionType
   | ToggleSignalConnectionsModalActionType
@@ -636,8 +665,10 @@ export const actions = {
   hideLowDiskSpaceBackupImportModal,
   hideStoriesSettings,
   hideTapToViewNotAvailableModal,
+  hideTerminateGroupFailedModal,
   hideUserNotFoundModal,
   hideWhatsNewModal,
+  maybeShowPinReminder,
   showBackfillFailureModal,
   showBlockingSafetyNumberChangeDialog,
   showCallQualitySurvey,
@@ -655,6 +686,7 @@ export const actions = {
   showStickerPackPreview,
   showStoriesSettings,
   showTapToViewNotAvailableModal,
+  showTerminateGroupFailedModal,
   showUserNotFoundModal,
   showWhatsNewModal,
   toggleAboutContactModal,
@@ -665,12 +697,14 @@ export const actions = {
   toggleConfirmationModal,
   toggleConfirmLeaveCallModal,
   toggleDeleteMessagesModal,
+  toggleDiscardDraftDialog,
   toggleDraftGifMessageSendModal,
   toggleEditNicknameAndNoteModal,
   toggleForwardMessagesModal,
   toggleGroupMemberLabelInfoModal,
   toggleMessageRequestActionsConfirmation,
   toggleNotePreviewModal,
+  togglePinReminder,
   toggleProfileNameWarningModal,
   toggleSafetyNumberModal,
   toggleSignalConnectionsModal,
@@ -690,7 +724,7 @@ function hideTapToViewNotAvailableModal(): HideTapToViewNotAvailableModalActionT
 }
 
 function showTapToViewNotAvailableModal(
-  payload: TapToViewNotAvailablePropsType
+  payload: TapToViewNotAvailableModalData
 ): ShowTapToViewNotAvailableModalActionType {
   return {
     type: SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL,
@@ -699,7 +733,7 @@ function showTapToViewNotAvailableModal(
 }
 
 function showBackfillFailureModal(
-  payload: BackfillFailureModalPropsType
+  payload: BackfillFailureModalKind
 ): ShowBackfillFailureModalActionType {
   return {
     type: SHOW_BACKFILL_FAILURE_MODAL,
@@ -741,13 +775,19 @@ function hideContactModal(): HideContactModalActionType {
   };
 }
 
-function showContactModal(
-  contactId: string,
-  conversationId?: string
-): ShowContactModalActionType {
+function showContactModal({
+  activeCallDemuxId,
+  contactId,
+  conversationId,
+}: {
+  contactId: string;
+  conversationId?: string;
+  activeCallDemuxId?: number;
+}): ShowContactModalActionType {
   return {
     type: SHOW_CONTACT_MODAL,
     payload: {
+      activeCallDemuxId,
       contactId,
       conversationId,
     },
@@ -873,6 +913,15 @@ function toggleDeleteMessagesModal(
   };
 }
 
+function toggleDiscardDraftDialog(
+  props: DiscardDraftDialogPropsType | null
+): ToggleDiscardDraftDialogActionType {
+  return {
+    type: TOGGLE_DISCARD_DRAFT_DIALOG,
+    payload: props,
+  };
+}
+
 function toggleDraftGifMessageSendModal(
   props: SmartDraftGifMessageSendModalProps | null
 ): ToggleDraftGifMessageSendModalActionType {
@@ -903,7 +952,9 @@ export type ForwardMessagesPayload = ReadonlyDeep<
       messageIds: ReadonlyArray<string>;
     }
   | {
-      type: ForwardMessagesModalType.ShareCallLink;
+      type:
+        | ForwardMessagesModalType.ForwardAttachment
+        | ForwardMessagesModalType.ShareCallLink;
       draft: MessageForwardDraft;
     }
 >;
@@ -927,6 +978,7 @@ function toggleForwardMessagesModal(
     }
 
     let messageDrafts: ReadonlyArray<MessageForwardDraft>;
+    const hasMediaBackups = getHasMediaBackups(getState());
 
     if (payload.type === ForwardMessagesModalType.Forward) {
       messageDrafts = await Promise.all(
@@ -943,11 +995,12 @@ function toggleForwardMessagesModal(
             !attachments.every(
               attachment =>
                 isDownloaded(attachment) ||
-                isPermanentlyUndownloadable(
+                !isDownloadableOrBackfillable({
                   attachment,
-                  'attachment',
-                  message.attributes
-                )
+                  attachmentType: 'attachment',
+                  isStory: message.attributes.type === 'story',
+                  hasMediaBackups,
+                })
             )
           ) {
             dispatch(
@@ -963,13 +1016,13 @@ function toggleForwardMessagesModal(
           const messageDraft = toMessageForwardDraft(
             {
               ...messageProps,
-              attachments: (messageProps.attachments ?? []).filter(
-                attachment =>
-                  !isPermanentlyUndownloadable(
-                    attachment,
-                    'attachment',
-                    message.attributes
-                  )
+              attachments: (messageProps.attachments ?? []).filter(attachment =>
+                isDownloadableOrBackfillable({
+                  attachment,
+                  attachmentType: 'attachment',
+                  isStory: message.attributes.type === 'story',
+                  hasMediaBackups,
+                })
               ),
             },
             conversationSelector
@@ -978,10 +1031,13 @@ function toggleForwardMessagesModal(
           return messageDraft;
         })
       );
-    } else if (payload.type === ForwardMessagesModalType.ShareCallLink) {
+    } else if (
+      payload.type === ForwardMessagesModalType.ForwardAttachment ||
+      payload.type === ForwardMessagesModalType.ShareCallLink
+    ) {
       messageDrafts = [payload.draft];
     } else {
-      throw missingCaseError(payload);
+      throw missingCaseError(payload.type);
     }
 
     dispatch({
@@ -1004,7 +1060,6 @@ function showShareCallLinkViaSignal(
     const url = linkCallRoute
       .toWebUrl({
         key: callLink.rootKey,
-        epoch: callLink.epoch,
       })
       .toString();
     dispatch(
@@ -1143,6 +1198,35 @@ function toggleConfirmationModal(
   };
 }
 
+function maybeShowPinReminder(): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  TogglePinReminderActionType
+> {
+  return async (dispatch, getState) => {
+    // Ignore if pin reminder megaphone or dialog is visible
+    const existingState = getState().globalModals.pinReminderState;
+    if (existingState !== PinReminderState.None) {
+      return;
+    }
+
+    dispatch({
+      type: TOGGLE_PIN_REMINDER,
+      payload: PinReminderState.Megaphone,
+    });
+  };
+}
+
+function togglePinReminder(
+  payload: PinReminderState
+): TogglePinReminderActionType {
+  return {
+    type: TOGGLE_PIN_REMINDER,
+    payload,
+  };
+}
+
 function toggleUsernameOnboarding(): ToggleUsernameOnboardingActionType {
   return { type: TOGGLE_USERNAME_ONBOARDING };
 }
@@ -1211,22 +1295,12 @@ function closeErrorModal(): CloseErrorModalActionType {
   };
 }
 
-function showErrorModal({
-  buttonVariant,
-  description,
-  title,
-}: {
-  buttonVariant?: ButtonVariant;
-  description?: string;
-  title?: string;
-}): ShowErrorModalActionType {
+function showErrorModal(
+  payload: ErrorModalDataProps
+): ShowErrorModalActionType {
   return {
     type: SHOW_ERROR_MODAL,
-    payload: {
-      buttonVariant,
-      description,
-      title,
-    },
+    payload,
   };
 }
 
@@ -1257,7 +1331,7 @@ function closeMediaPermissionsModal(): CloseMediaPermissionsModalActionType {
 
 const MEDIA_PERMISSIONS_POLL_INTERVAL = SECOND;
 
-export function ensureSystemMediaPermissions(
+function ensureSystemMediaPermissions(
   mediaType: 'camera' | 'microphone',
   requestor: 'call' | 'voiceNote'
 ): ThunkAction<
@@ -1288,10 +1362,10 @@ export function ensureSystemMediaPermissions(
 
     const { signal } = abortController;
     while (!signal.aborted) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await sleep(MEDIA_PERMISSIONS_POLL_INTERVAL, signal);
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       const updatedStatus = await window.IPC.getMediaAccessStatus(mediaType);
       if (signal.aborted) {
         throw new Error('ensureSystemMediaPermissions: modal dismissed');
@@ -1352,6 +1426,23 @@ function showLowDiskSpaceBackupImportModal(
 function hideLowDiskSpaceBackupImportModal(): HideLowDiskSpaceBackupImportModalActionType {
   return {
     type: HIDE_LOW_DISK_SPACE_BACKUP_IMPORT_MODAL,
+  };
+}
+
+function showTerminateGroupFailedModal(
+  conversationId: string
+): ShowTerminateGroupFailedModalActionType {
+  return {
+    type: SHOW_TERMINATE_GROUP_FAILED_MODAL,
+    payload: {
+      conversationId,
+    },
+  };
+}
+
+function hideTerminateGroupFailedModal(): HideTerminateGroupFailedModalActionType {
+  return {
+    type: HIDE_TERMINATE_GROUP_FAILED_MODAL,
   };
 }
 
@@ -1457,6 +1548,7 @@ function copyOverMessageAttributesIntoForwardMessages(
   messageDrafts: ReadonlyArray<MessageForwardDraft>,
   attributes: ReadonlyDeep<ReadonlyMessageAttributesType>
 ): ReadonlyArray<MessageForwardDraft> {
+  const hasMediaBackups = backupsService.hasMediaBackups();
   return messageDrafts.map(messageDraft => {
     if (messageDraft.originalMessageId !== attributes.id) {
       return messageDraft;
@@ -1464,7 +1556,9 @@ function copyOverMessageAttributesIntoForwardMessages(
     return {
       ...messageDraft,
       attachments: attributes.attachments?.map(attachment =>
-        getPropsForAttachment(attachment, 'attachment', attributes)
+        getPropsForAttachment(attachment, 'attachment', attributes, {
+          hasMediaBackups,
+        })
       ),
     };
   });
@@ -1498,7 +1592,7 @@ function hidePinMessageDialog(): TogglePinMessageDialogActionType {
 
 export function getEmptyState(): GlobalModalsStateType {
   return {
-    backfillFailureModalProps: undefined,
+    backfillFailureModalKind: null,
     hasConfirmationModal: false,
     callLinkAddNameModalRoomId: null,
     callLinkEditModalRoomId: null,
@@ -1506,8 +1600,10 @@ export function getEmptyState(): GlobalModalsStateType {
     callQualitySurveyProps: null,
     confirmLeaveCallModalState: null,
     criticalIdlePrimaryDeviceModal: false,
+    discardDraftDialogProps: null,
     draftGifMessageSendModalProps: null,
     editNicknameAndNoteModalProps: null,
+    errorModalProps: null,
     isProfileNameWarningModalVisible: false,
     profileNameWarningModalConversationType: undefined,
     isShortcutGuideModalVisible: false,
@@ -1517,11 +1613,13 @@ export function getEmptyState(): GlobalModalsStateType {
     isKeyTransparencyErrorVisible: false,
     isKeyTransparencyOnboardingVisible: false,
     lowDiskSpaceBackupImportModal: null,
+    pinReminderState: PinReminderState.None,
     usernameOnboardingState: UsernameOnboardingState.NeverShown,
     messageRequestActionsConfirmationProps: null,
-    tapToViewNotAvailableModalProps: undefined,
+    tapToViewNotAvailableModalData: null,
     notePreviewModalProps: null,
     pinMessageDialogData: null,
+    terminateGroupFailedModal: null,
   };
 }
 
@@ -1636,28 +1734,28 @@ export function reducer(
   if (action.type === HIDE_TAP_TO_VIEW_NOT_AVAILABLE_MODAL) {
     return {
       ...state,
-      tapToViewNotAvailableModalProps: undefined,
+      tapToViewNotAvailableModalData: null,
     };
   }
 
   if (action.type === SHOW_TAP_TO_VIEW_NOT_AVAILABLE_MODAL) {
     return {
       ...state,
-      tapToViewNotAvailableModalProps: action.payload,
+      tapToViewNotAvailableModalData: action.payload,
     };
   }
 
   if (action.type === SHOW_BACKFILL_FAILURE_MODAL) {
     return {
       ...state,
-      backfillFailureModalProps: action.payload,
+      backfillFailureModalKind: action.payload,
     };
   }
 
   if (action.type === HIDE_BACKFILL_FAILURE_MODAL) {
     return {
       ...state,
-      backfillFailureModalProps: undefined,
+      backfillFailureModalKind: null,
     };
   }
 
@@ -1725,6 +1823,13 @@ export function reducer(
     };
   }
 
+  if (action.type === TOGGLE_DISCARD_DRAFT_DIALOG) {
+    return {
+      ...state,
+      discardDraftDialogProps: action.payload,
+    };
+  }
+
   if (action.type === TOGGLE_DRAFT_GIF_MESSAGE_SEND_MODAL) {
     return {
       ...state,
@@ -1750,6 +1855,13 @@ export function reducer(
     return {
       ...state,
       isStoriesSettingsVisible: true,
+    };
+  }
+
+  if (action.type === TOGGLE_PIN_REMINDER) {
+    return {
+      ...state,
+      pinReminderState: action.payload,
     };
   }
 
@@ -1813,7 +1925,7 @@ export function reducer(
   if (action.type === CLOSE_ERROR_MODAL) {
     return {
       ...state,
-      errorModalProps: undefined,
+      errorModalProps: null,
     };
   }
 
@@ -1911,12 +2023,8 @@ export function reducer(
   }
 
   if (state.editHistoryMessages != null) {
-    if (
-      action.type === MESSAGE_CHANGED ||
-      action.type === MESSAGE_DELETED ||
-      action.type === MESSAGE_EXPIRED
-    ) {
-      if (action.type === MESSAGE_DELETED || action.type === MESSAGE_EXPIRED) {
+    if (action.type === MESSAGE_CHANGED || action.type === MESSAGE_DELETED) {
+      if (action.type === MESSAGE_DELETED) {
         const hasMessageId = state.editHistoryMessages.some(
           edit => edit.id === action.payload.id
         );
@@ -1999,6 +2107,20 @@ export function reducer(
     return {
       ...state,
       lowDiskSpaceBackupImportModal: null,
+    };
+  }
+
+  if (action.type === SHOW_TERMINATE_GROUP_FAILED_MODAL) {
+    return {
+      ...state,
+      terminateGroupFailedModal: action.payload,
+    };
+  }
+
+  if (action.type === HIDE_TERMINATE_GROUP_FAILED_MODAL) {
+    return {
+      ...state,
+      terminateGroupFailedModal: null,
     };
   }
 

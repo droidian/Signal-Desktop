@@ -3,11 +3,12 @@
 
 import { z } from 'zod';
 import lodash from 'lodash';
-import { createLogger } from '../logging/log.std.js';
-import { aciSchema } from '../types/ServiceId.std.js';
-import { safeParseStrict } from '../util/schemas.std.js';
-import { HOUR } from '../util/durations/index.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import { aciSchema } from '../types/ServiceId.std.ts';
+import { safeParseStrict } from '../util/schemas.std.ts';
+import { HOUR } from '../util/durations/index.std.ts';
 import type { StorageInterface } from '../types/Storage.d.ts';
+import { ReceivedTimestampMs, SentTimestampMs } from '@signalapp/types';
 
 const { groupBy } = lodash;
 
@@ -16,8 +17,8 @@ const log = createLogger('retryPlaceholders');
 const retryItemSchema = z
   .object({
     conversationId: z.string(),
-    sentAt: z.number(),
-    receivedAt: z.number(),
+    sentAt: SentTimestampMs.Schema,
+    receivedAt: ReceivedTimestampMs.Schema,
     receivedAtCounter: z.number(),
     senderAci: aciSchema,
     wasOpened: z.boolean().optional(),
@@ -33,7 +34,7 @@ export type ByConversationLookupType = {
 };
 export type ByMessageLookupType = Map<string, RetryItemType>;
 
-export function getItemId(conversationId: string, sentAt: number): string {
+function getItemId(conversationId: string, sentAt: number): string {
   return `${conversationId}--${sentAt}`;
 }
 
@@ -48,7 +49,7 @@ export class RetryPlaceholders {
   #items = new Array<RetryItemType>();
   #byConversation: ByConversationLookupType = {};
   #byMessage: ByMessageLookupType = new Map();
-  #retryReceiptLifespan: number;
+  readonly #retryReceiptLifespan: number;
   #storage: Pick<StorageInterface, 'get' | 'put'> | undefined;
 
   constructor(options: { retryReceiptLifespan?: number } = {}) {
@@ -161,11 +162,9 @@ export class RetryPlaceholders {
       throw new Error('RetryPlaceholders: not started');
     }
     const expiration = getDeltaIntoPast(this.#retryReceiptLifespan);
-    const max = this.#items.length;
     const result: Array<RetryItemType> = [];
 
-    for (let i = 0; i < max; i += 1) {
-      const item = this.#items[i];
+    for (const item of this.#items) {
       if (item.receivedAt <= expiration) {
         result.push(item);
       } else {
@@ -191,7 +190,7 @@ export class RetryPlaceholders {
     (items || []).forEach(item => {
       if (!item.wasOpened) {
         changed += 1;
-        // eslint-disable-next-line no-param-reassign
+        // oxlint-disable-next-line no-param-reassign
         item.wasOpened = true;
       }
     });

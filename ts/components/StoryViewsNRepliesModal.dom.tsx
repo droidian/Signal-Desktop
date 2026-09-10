@@ -1,50 +1,46 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ReactNode, JSX, RefObject, MouseEvent } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import lodash from 'lodash';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { InputApi } from './CompositionInput.dom.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { ReplyType, StorySendStateType } from '../types/Stories.std.js';
-import { StoryViewTargetType } from '../types/Stories.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { CompositionInput } from './CompositionInput.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import { Emojify } from './conversation/Emojify.dom.js';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { InputApi } from './CompositionInput.dom.tsx';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { ReplyType, StorySendStateType } from '../types/Stories.std.ts';
+import { StoryViewTargetType } from '../types/Stories.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { CompositionInput } from './CompositionInput.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import { Emojify } from './conversation/Emojify.dom.tsx';
 import {
   Message,
   MessageInteractivity,
   TextDirection,
-} from './conversation/Message.dom.js';
-import { MessageTimestamp } from './conversation/MessageTimestamp.dom.js';
-import { Modal } from './Modal.dom.js';
-import { ReactionPicker } from './conversation/ReactionPicker.dom.js';
-import { Tabs } from './Tabs.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import { WidthBreakpoint } from './_util.std.js';
-import { getAvatarColor } from '../types/Colors.std.js';
-import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import type { EmojiSkinTone } from './fun/data/emojis.std.js';
-import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.js';
-import { FunEmojiPickerButton } from './fun/FunButton.dom.js';
-import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.js';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.js';
-import { AxoContextMenu } from '../axo/AxoContextMenu.dom.js';
-import type { AxoMenuBuilder } from '../axo/AxoMenuBuilder.dom.js';
-import { drop } from '../util/drop.std.js';
+} from './conversation/Message.dom.tsx';
+import { MessageTimestamp } from './conversation/MessageTimestamp.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
+import { ReactionPicker } from './conversation/ReactionPicker.dom.tsx';
+import { Tabs } from './Tabs.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import { WidthBreakpoint } from './_util.std.ts';
+import { getAvatarColor } from '../types/Colors.std.ts';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.ts';
+import { FunEmojiPicker } from './fun/FunEmojiPicker.dom.tsx';
+import { FunEmojiPickerButton } from './fun/FunButton.dom.tsx';
+import type { FunEmojiSelection } from './fun/panels/FunPanelEmojis.dom.tsx';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.tsx';
+import { AxoContextMenu } from '../axo/AxoContextMenu.dom.tsx';
+import type { AxoMenuBuilder } from '../axo/AxoMenuBuilder.dom.tsx';
+import { drop } from '../util/drop.std.ts';
+import type { ContactModalStateType } from '../types/globalModals.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
 
 const { noop, orderBy } = lodash;
 
@@ -53,6 +49,9 @@ const { noop, orderBy } = lodash;
 // text messages and reactions.
 const MESSAGE_DEFAULT_PROPS = {
   canDeleteForEveryone: false,
+  canRetryDeleteForEveryone: false,
+  canSendPollVote: false,
+  retryDeleteForEveryone: shouldNeverBeCalled,
   checkForAccount: shouldNeverBeCalled,
   clearTargetedMessage: shouldNeverBeCalled,
   containerWidthBreakpoint: WidthBreakpoint.Medium,
@@ -113,7 +112,7 @@ export type PropsType = {
   isInternalUser?: boolean;
   onChangeViewTarget: (target: StoryViewTargetType) => unknown;
   onClose: () => unknown;
-  onReact: (emoji: string) => unknown;
+  onReact: (emoji: Emoji.Variant) => unknown;
   onReply: (
     message: string,
     bodyRanges: DraftBodyRanges,
@@ -122,10 +121,10 @@ export type PropsType = {
   onTextTooLong: () => unknown;
   onSelectEmoji: (emojiSelection: FunEmojiSelection) => unknown;
   ourConversationId: string | undefined;
-  preferredReactionEmoji: ReadonlyArray<string>;
+  preferredReactionEmoji: ReadonlyArray<Emoji.Variant>;
   replies: ReadonlyArray<ReplyType>;
-  showContactModal: (contactId: string, conversationId?: string) => void;
-  emojiSkinToneDefault: EmojiSkinTone | null;
+  showContactModal: (payload: ContactModalStateType) => void;
+  emojiSkinToneDefault: Emoji.SkinTone | null;
   sortedGroupMembers?: ReadonlyArray<ConversationType>;
   views: ReadonlyArray<StorySendStateType>;
   viewTarget: StoryViewTargetType;
@@ -158,7 +157,7 @@ export function StoryViewsNRepliesModal({
   sortedGroupMembers,
   viewTarget,
   views,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const [deleteReplyId, setDeleteReplyId] = useState<string | undefined>(
     undefined
   );
@@ -175,7 +174,7 @@ export function StoryViewsNRepliesModal({
   >({});
 
   const containerElementRef = useRef<HTMLDivElement | null>(null);
-  const inputApiRef = useRef<InputApi | undefined>();
+  const inputApiRef = useRef<InputApi | null>(null);
   const shouldScrollToBottomRef = useRef(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [messageBodyText, setMessageBodyText] = useState('');
@@ -209,7 +208,7 @@ export function StoryViewsNRepliesModal({
     }
   }, []);
 
-  let composerElement: React.JSX.Element | undefined;
+  let composerElement: JSX.Element | undefined;
 
   useLayoutEffect(() => {
     if (
@@ -222,15 +221,20 @@ export function StoryViewsNRepliesModal({
     }
   }, [currentTab, replies.length]);
 
-  const tryClose = useRef<() => void | undefined>();
+  const tryClose = useRef<(() => void) | null>(null);
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'StoryViewsNRepliesModal',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
   const onTryClose = useCallback(() => {
     confirmDiscardIf(emojiPickerOpen || messageBodyText.length > 0, onClose);
   }, [confirmDiscardIf, emojiPickerOpen, messageBodyText, onClose]);
+  // oxlint-disable-next-line react/refs
   tryClose.current = onTryClose;
 
   if (group && group.left) {
@@ -264,6 +268,7 @@ export function StoryViewsNRepliesModal({
               isFormattingEnabled={isFormattingEnabled}
               moduleClassName="StoryViewsNRepliesModal__input"
               onCloseLinkPreview={noop}
+              showRecoveryKeyPasteWarning={false}
               onEditorStateChange={({ messageText }) => {
                 setMessageBodyText(messageText);
               }}
@@ -294,6 +299,9 @@ export function StoryViewsNRepliesModal({
               large={null}
               shouldHidePopovers={null}
               linkPreviewResult={null}
+              showViewOnceButton={false}
+              isViewOnceActive={false}
+              onToggleViewOnce={noop}
             >
               <FunEmojiPicker
                 open={emojiPickerOpen}
@@ -312,7 +320,7 @@ export function StoryViewsNRepliesModal({
     );
   }
 
-  let repliesElement: React.JSX.Element | undefined;
+  let repliesElement: JSX.Element | undefined;
 
   function shouldCollapse(reply: ReplyType, otherReply?: ReplyType) {
     // deleted reactions get rendered the same as deleted replies
@@ -376,7 +384,7 @@ export function StoryViewsNRepliesModal({
     );
   }
 
-  let viewsElement: React.JSX.Element | undefined;
+  let viewsElement: JSX.Element | undefined;
   if (hasViewsCapability && !hasViewReceiptSetting) {
     viewsElement = (
       <div className="StoryViewsNRepliesModal__read-receipts-off">
@@ -486,49 +494,50 @@ export function StoryViewsNRepliesModal({
           )}
         </div>
       </Modal>
-      {deleteReplyId && (
-        <ConfirmationDialog
-          i18n={i18n}
-          theme={Theme.Dark}
-          dialogName="confirmDialog"
-          actions={[
-            {
-              text: i18n('icu:delete'),
-              action: () => deleteGroupStoryReply(deleteReplyId),
-              style: 'negative',
-            },
-          ]}
-          title={i18n('icu:deleteWarning')}
-          onClose={() => setDeleteReplyId(undefined)}
-          onCancel={() => setDeleteReplyId(undefined)}
-        />
-      )}
-      {deleteForEveryoneReplyId && (
-        <ConfirmationDialog
-          i18n={i18n}
-          theme={Theme.Dark}
-          dialogName="confirmDialog"
-          actions={[
-            {
-              text: i18n('icu:delete'),
-              action: () =>
-                deleteGroupStoryReplyForEveryone(deleteForEveryoneReplyId),
-              style: 'negative',
-            },
-          ]}
-          title={i18n('icu:deleteWarning')}
-          onClose={() => setDeleteForEveryoneReplyId(undefined)}
-          onCancel={() => setDeleteForEveryoneReplyId(undefined)}
+      <AxoConfirmDialog.Root
+        open={deleteReplyId != null}
+        onOpenChange={() => setDeleteReplyId(undefined)}
+        title={i18n('icu:deleteWarning')}
+        // @ts-expect-error ConfirmationDialog migration: Needs description
+        description={null}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(deleteReplyId != null, 'Missing deleteReplyId');
+            deleteGroupStoryReply(deleteReplyId);
+          }}
         >
-          {i18n('icu:deleteForEveryoneWarning')}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+      <AxoConfirmDialog.Root
+        open={deleteForEveryoneReplyId != null}
+        onOpenChange={() => setDeleteForEveryoneReplyId(undefined)}
+        title={i18n('icu:deleteWarning')}
+        description={i18n('icu:deleteForEveryoneWarning')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              deleteForEveryoneReplyId != null,
+              'Missing deleteForEveryoneReplyId'
+            );
+            deleteGroupStoryReplyForEveryone(deleteForEveryoneReplyId);
+          }}
+        >
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     </>
   );
 }
 
 type ReplyOrReactionMessageProps = {
-  containerElementRef: React.RefObject<HTMLElement>;
+  containerElementRef: RefObject<HTMLElement | null>;
   deleteGroupStoryReply: (replyId: string) => void;
   deleteGroupStoryReplyForEveryone: (replyId: string) => void;
   displayLimit: number | undefined;
@@ -538,11 +547,11 @@ type ReplyOrReactionMessageProps = {
   id: string;
   isInternalUser?: boolean;
   isSpoilerExpanded: Record<number, boolean>;
-  onContextMenu?: (ev: React.MouseEvent) => void;
+  onContextMenu?: (ev: MouseEvent) => void;
   reply: ReplyType;
   shouldCollapseAbove: boolean;
   shouldCollapseBelow: boolean;
-  showContactModal: (contactId: string, conversationId?: string) => void;
+  showContactModal: (payload: ContactModalStateType) => void;
   messageExpanded: (messageId: string, displayLimit: number) => void;
   showSpoiler: (messageId: string, data: Record<number, boolean>) => void;
 };
@@ -679,6 +688,7 @@ function ReplyOrReactionMessage({
         interactivity={MessageInteractivity.Normal}
         interactionMode="mouse"
         isSpoilerExpanded={isSpoilerExpanded}
+        isSignalConversation={false}
         isVoiceMessagePlayed={false}
         messageExpanded={messageExpanded}
         readStatus={reply.readStatus}

@@ -4,7 +4,7 @@
 import { assert } from 'chai';
 import lodash from 'lodash';
 
-import { cleanDataForIpc } from '../../sql/cleanDataForIpc.std.js';
+import { cleanDataForIpc } from '../../sql/cleanDataForIpc.std.ts';
 
 const { noop } = lodash;
 
@@ -182,27 +182,6 @@ describe('cleanDataForIpc', () => {
     ]);
   });
 
-  it('calls `toNumber` when available', () => {
-    assert.deepEqual(
-      cleanDataForIpc([
-        {
-          toNumber() {
-            return 5;
-          },
-        },
-        {
-          toNumber() {
-            return Symbol('bogus');
-          },
-        },
-      ]),
-      {
-        cleaned: [5, undefined],
-        pathsChanged: ['root.1'],
-      }
-    );
-  });
-
   it('deeply cleans objects with a `null` prototype', () => {
     const value = Object.assign(Object.create(null), {
       'key 1': 'value',
@@ -235,12 +214,15 @@ describe('cleanDataForIpc', () => {
 
   it('deeply cleans class instances', () => {
     class Person {
+      public firstName: string;
+      public lastName: string;
+
       public toBeDiscarded = Symbol('to be discarded');
 
-      constructor(
-        public firstName: string,
-        public lastName: string
-      ) {}
+      constructor(firstName: string, lastName: string) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+      }
 
       get name() {
         return this.getName();

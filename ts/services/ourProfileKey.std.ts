@@ -1,56 +1,67 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { assertDev, strictAssert } from '../util/assert.std.js';
-import { createLogger } from '../logging/log.std.js';
+import { assertDev, strictAssert } from '../util/assert.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { SECOND } from '../util/durations/constants.std.ts';
 
 import type { StorageInterface } from '../types/Storage.d.ts';
 
 const log = createLogger('ourProfileKey');
 
 export class OurProfileKeyService {
-  private getPromise: undefined | Promise<undefined | Uint8Array>;
+  private getPromise: undefined | Promise<undefined | Uint8Array<ArrayBuffer>>;
 
   #promisesBlockingGet: Array<Promise<unknown>> = [];
   #storage?: StorageInterface;
 
   initialize(storage: StorageInterface): void {
-    log.info('Our profile key service: initializing');
+    log.info('initializing');
 
     const storageReadyPromise = new Promise<void>(resolve => {
       storage.onready(() => {
         resolve();
       });
     });
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.#promisesBlockingGet = [storageReadyPromise];
 
     this.#storage = storage;
   }
 
-  get(): Promise<undefined | Uint8Array> {
+  async get(): Promise<undefined | Uint8Array<ArrayBuffer>> {
     if (this.getPromise) {
-      log.info(
-        'Our profile key service: was already fetching. Piggybacking off of that'
-      );
-    } else {
-      log.info('Our profile key service: kicking off a new fetch');
-      this.getPromise = this.#doGet();
+      log.info('get: was already fetching. Piggybacking off of that');
+      return this.getPromise;
     }
-    return this.getPromise;
+
+    log.info('get: kicking off a new fetch');
+
+    const getPromise = this.#doGet();
+
+    this.getPromise = getPromise;
+    let result: undefined | Uint8Array<ArrayBuffer>;
+
+    try {
+      result = await getPromise;
+    } finally {
+      this.getPromise = undefined;
+    }
+
+    return result;
   }
 
-  async set(newValue: undefined | Uint8Array): Promise<void> {
+  async set(newValue: undefined | Uint8Array<ArrayBuffer>): Promise<void> {
     assertDev(this.#storage, 'OurProfileKeyService was not initialized');
     if (newValue != null) {
       strictAssert(
         newValue.byteLength > 0,
-        'Our profile key service: Profile key cannot be empty'
+        'ourProfileKey/set: Profile key cannot be empty'
       );
-      log.info('Our profile key service: updating profile key');
+      log.info('set: updating profile key');
       await this.#storage.put('profileKey', newValue);
     } else {
-      log.info('Our profile key service: removing profile key');
+      log.info('set: removing profile key');
       await this.#storage.remove('profileKey');
     }
   }
@@ -59,19 +70,27 @@ export class OurProfileKeyService {
     this.#promisesBlockingGet.push(promise);
   }
 
-  async #doGet(): Promise<undefined | Uint8Array> {
-    log.info(
-      `Our profile key service: waiting for ${this.#promisesBlockingGet.length} promises before fetching`
-    );
-
-    await Promise.allSettled(this.#promisesBlockingGet);
+  async #doGet(): Promise<undefined | Uint8Array<ArrayBuffer>> {
+    if (this.#promisesBlockingGet.length > 0) {
+      log.info(
+        `doGet: waiting for ${this.#promisesBlockingGet.length} promises before fetching`
+      );
+      await Promise.race([
+        Promise.allSettled(this.#promisesBlockingGet),
+        sleep(30 * SECOND),
+      ]);
+      log.info(
+        `doGet: done waiting for ${this.#promisesBlockingGet.length} promises`
+      );
+    }
     this.#promisesBlockingGet = [];
 
-    delete this.getPromise;
+    assertDev(
+      this.#storage,
+      'ourProfileKey/doGet: OurProfileKeyService was not initialized'
+    );
 
-    assertDev(this.#storage, 'OurProfileKeyService was not initialized');
-
-    log.info('Our profile key service: fetching profile key from storage');
+    log.info('doGet: fetching profile key from storage');
     const result = this.#storage.get('profileKey');
     if (result === undefined || result instanceof Uint8Array) {
       return result;
@@ -79,7 +98,7 @@ export class OurProfileKeyService {
 
     assertDev(
       false,
-      'Profile key in storage was defined, but not an Uint8Array. Returning undefined'
+      'ourProfileKey/doGet: Profile key in storage was defined, but not an Uint8Array. Returning undefined'
     );
     return undefined;
   }

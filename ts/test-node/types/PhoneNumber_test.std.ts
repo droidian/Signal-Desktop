@@ -3,7 +3,10 @@
 
 import { assert } from 'chai';
 
-import { getCountryCode } from '../../types/PhoneNumber.std.js';
+import {
+  getCountryCode,
+  COUNTRY_CODE_FALLBACK,
+} from '../../types/PhoneNumber.std.ts';
 
 describe('types/PhoneNumber', () => {
   describe('#getCountryCode', () => {
@@ -14,7 +17,7 @@ describe('types/PhoneNumber', () => {
     });
 
     it('returns undefined for missing phone number', () => {
-      assert.strictEqual(getCountryCode(undefined), undefined);
+      assert.strictEqual(getCountryCode(undefined), COUNTRY_CODE_FALLBACK);
     });
 
     it('returns undefined for invalid phone number', () => {

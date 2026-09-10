@@ -1,19 +1,20 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { AudioDevice } from '@signalapp/ringrtc';
 
-import type { Option } from './Select.dom.js';
-import { Modal } from './Modal.dom.js';
-import { Select } from './Select.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import type { Option } from './Select.dom.tsx';
+import { Modal } from './Modal.dom.tsx';
+import { Select } from './Select.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
 import type {
   ChangeIODevicePayloadType,
   MediaDeviceSettings,
-} from '../types/Calling.std.js';
-import { CallingDeviceType } from '../types/Calling.std.js';
-import { Theme } from '../util/theme.std.js';
+} from '../types/Calling.std.ts';
+import { CallingDeviceType } from '../types/Calling.std.ts';
+import { Theme } from '../util/theme.std.ts';
 
 export type Props = MediaDeviceSettings & {
   changeIODevice: (payload: ChangeIODevicePayloadType) => void;
@@ -80,7 +81,8 @@ function createAudioChangeHandler(
   return (value: string): void => {
     changeIODevice({
       type,
-      selectedDevice: devices[Number(value)],
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      selectedDevice: devices[Number(value)]!,
     });
   };
 }
@@ -106,7 +108,7 @@ export function CallingDeviceSelection({
   selectedMicrophone,
   selectedSpeaker,
   toggleSettings,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const selectedMicrophoneIndex = selectedMicrophone
     ? selectedMicrophone.index
     : undefined;

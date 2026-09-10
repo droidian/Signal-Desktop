@@ -1,25 +1,33 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { type ReactNode, type JSX } from 'react';
+import type { ReadonlyDeep } from 'type-fest';
 
 import {
   getAlt,
   getUrl,
   defaultBlurHash,
-} from '../../../util/Attachment.std.js';
-import type { LinkPreviewMediaItemType } from '../../../types/MediaItem.std.js';
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import { tw } from '../../../axo/tw.dom.js';
-import { AxoSymbol } from '../../../axo/AxoSymbol.dom.js';
-import type { AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.js';
-import { ImageOrBlurhash } from '../../ImageOrBlurhash.dom.js';
-import { ListItem } from './ListItem.dom.js';
+} from '../../../util/Attachment.std.ts';
+import type {
+  GenericMediaItemType,
+  LinkPreviewMediaItemType,
+} from '../../../types/MediaItem.std.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
+import type { AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.ts';
+import { ImageOrBlurhash } from '../../ImageOrBlurhash.dom.tsx';
+import { ListItem } from './ListItem.dom.tsx';
 
 export type DataProps = Readonly<{
   mediaItem: LinkPreviewMediaItemType;
   onClick: (status: AttachmentStatusType['state']) => void;
-  onShowMessage: () => void;
+  showMessage: () => void;
+  renderContextMenu: (
+    mediaItem: ReadonlyDeep<GenericMediaItemType>,
+    children: ReactNode
+  ) => JSX.Element;
 }>;
 
 // Provided by smart layer
@@ -36,12 +44,13 @@ export function LinkPreviewItem({
   mediaItem,
   authorTitle,
   onClick,
-  onShowMessage,
-}: Props): React.JSX.Element {
+  showMessage,
+  renderContextMenu,
+}: Props): JSX.Element {
   const { preview } = mediaItem;
 
   const url = preview.image == null ? undefined : getUrl(preview.image);
-  let imageOrPlaceholder: React.JSX.Element;
+  let imageOrPlaceholder: JSX.Element;
   if (preview.image != null && url != null) {
     const resolvedBlurHash = preview.image.blurHash || defaultBlurHash(theme);
 
@@ -65,7 +74,7 @@ export function LinkPreviewItem({
         className={tw(
           'flex size-9 items-center justify-center',
           'overflow-hidden rounded-sm',
-          'bg-elevated-background-tertiary text-label-secondary'
+          'bg-material-tertiary text-secondary'
         )}
       >
         <AxoSymbol.Icon symbol="link" size={20} label={null} />
@@ -76,7 +85,7 @@ export function LinkPreviewItem({
   const subtitle = (
     <>
       <a
-        className={tw('type-body-medium text-label-secondary underline')}
+        className={tw('type-body-medium text-secondary underline')}
         href={preview.url}
         rel="noreferrer"
         target="_blank"
@@ -97,7 +106,8 @@ export function LinkPreviewItem({
       subtitle={subtitle}
       readyLabel={i18n('icu:LinkPreviewItem__alt')}
       onClick={onClick}
-      onShowMessage={onShowMessage}
+      showMessage={showMessage}
+      renderContextMenu={renderContextMenu}
     />
   );
 }

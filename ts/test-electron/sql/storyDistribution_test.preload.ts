@@ -4,11 +4,11 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.ts';
 
-import type { StoryDistributionWithMembersType } from '../../sql/Interface.std.js';
+import type { StoryDistributionWithMembersType } from '../../sql/Interface.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const {
   _getAllStoryDistributionMembers,
@@ -233,6 +233,9 @@ describe('sql/storyDistribution', () => {
 
     const allHydratedLists = await getAllStoryDistributionsWithMembers();
     assert.lengthOf(allHydratedLists, 1);
-    assert.deepEqual(allHydratedLists[0].members, [SERVICE_ID_1, SERVICE_ID_2]);
+    assert.deepEqual(allHydratedLists[0]?.members, [
+      SERVICE_ID_1,
+      SERVICE_ID_2,
+    ]);
   });
 });

@@ -7,30 +7,29 @@ import { join } from 'node:path';
 import { createWriteStream } from 'node:fs';
 import fsExtra from 'fs-extra';
 
-import * as Bytes from '../../Bytes.std.js';
+import * as Bytes from '../../Bytes.std.ts';
 import {
   AttachmentBackupManager,
-  FILE_NOT_FOUND_ON_TRANSIT_TIER_STATUS,
   runAttachmentBackupJob,
-} from '../../jobs/AttachmentBackupManager.preload.js';
+} from '../../jobs/AttachmentBackupManager.preload.ts';
 import type {
   AttachmentBackupJobType,
   CoreAttachmentBackupJobType,
   StandardAttachmentBackupJobType,
   ThumbnailAttachmentBackupJobType,
-} from '../../types/AttachmentBackup.std.js';
-import { DataWriter } from '../../sql/Client.preload.js';
-import { getRandomBytes } from '../../Crypto.node.js';
-import { APPLICATION_OCTET_STREAM, VIDEO_MP4 } from '../../types/MIME.std.js';
-import { createName, getRelativePath } from '../../util/attachmentPath.node.js';
-import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.js';
+} from '../../types/AttachmentBackup.std.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import { getRandomBytes } from '../../Crypto.node.ts';
+import { APPLICATION_OCTET_STREAM, IMAGE_JPEG } from '../../types/MIME.std.ts';
+import { createName, getRelativePath } from '../../util/attachmentPath.node.ts';
+import { getAbsoluteAttachmentPath } from '../../util/migrations.preload.ts';
 import {
   encryptAttachmentV2,
   generateKeys,
-} from '../../AttachmentCrypto.node.js';
-import { SECOND } from '../../util/durations/index.std.js';
-import { HTTPError } from '../../types/HTTPError.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../AttachmentCrypto.node.ts';
+import { SECOND } from '../../util/durations/index.std.ts';
+import { HTTPError } from '../../types/HTTPError.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 const { ensureFile } = fsExtra;
 
@@ -40,13 +39,13 @@ const BACKUP_CDN = 3;
 
 const RELATIVE_ATTACHMENT_PATH = getRelativePath(createName());
 const LOCAL_ENCRYPTION_KEYS = Bytes.toBase64(generateKeys());
-const ATTACHMENT_SIZE = 188610;
+const ATTACHMENT_SIZE = 1476;
 
 describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(this: Mocha.Suite) {
   this.timeout(10 * SECOND);
   let backupManager: AttachmentBackupManager | undefined;
   let runJob: sinon.SinonSpy;
-  let backupMediaBatch: sinon.SinonStub;
+  let copyBackupMedia: sinon.SinonStub;
   let backupsService = {};
   let encryptAndUploadAttachment: sinon.SinonStub;
   let sandbox: sinon.SinonSandbox;
@@ -65,7 +64,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       receivedAt: index,
       data: {
         path: RELATIVE_ATTACHMENT_PATH,
-        contentType: VIDEO_MP4,
+        contentType: IMAGE_JPEG,
         keys: 'keys=',
         version: 2,
         localKey: LOCAL_ENCRYPTION_KEYS,
@@ -93,7 +92,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       data: {
         fullsizePath: RELATIVE_ATTACHMENT_PATH,
         fullsizeSize: ATTACHMENT_SIZE,
-        contentType: VIDEO_MP4,
+        contentType: IMAGE_JPEG,
         version: 2,
         localKey: LOCAL_ENCRYPTION_KEYS,
 
@@ -108,7 +107,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     await DataWriter.ensureFilePermissions();
     await encryptAttachmentV2({
       plaintext: {
-        absolutePath: join(__dirname, '../../../fixtures/cat-gif.mp4'),
+        absolutePath: join(__dirname, '../../../fixtures/kitten-1-64-64.jpg'),
       },
       keys: Bytes.fromBase64(LOCAL_ENCRYPTION_KEYS),
       needIncrementalMac: false,
@@ -126,13 +125,13 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     clock = sandbox.useFakeTimers();
     isInCall = sandbox.stub().returns(false);
 
-    backupMediaBatch = sandbox
+    copyBackupMedia = sandbox
       .stub()
-      .returns(Promise.resolve({ responses: [{ isSuccess: true, cdn: 3 }] }));
+      .returns(Promise.resolve([{ result: { cdn: BACKUP_CDN } }]));
 
     backupsService = {
       credentials: {
-        getHeadersForToday: () => Promise.resolve({}),
+        getForToday: () => Promise.resolve({ backupAuth: {} }),
       },
       getBackupCdnInfo: () => ({
         isInBackupTier: false,
@@ -153,7 +152,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
         {
           // @ts-expect-error incomplete stubbing
           backupsService,
-          backupMediaBatch,
+          copyBackupMedia,
           getAbsoluteAttachmentPath,
           encryptAndUploadAttachment,
           decryptAttachmentV2ToSink,
@@ -175,6 +174,15 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     await itemStorage.fetch();
   });
 
+  function assertAt<T>(array: Array<T>, index: number): T {
+    assert.ok(
+      index >= 0 && index < array.length,
+      `index out of bounds: ${index}`
+    );
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    return array[index]!;
+  }
+
   async function addJobs(
     num: number,
     overrides: Partial<StandardAttachmentBackupJobType['data']> = {}
@@ -183,7 +191,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       .fill(null)
       .map((_, idx) => composeJob(idx, overrides));
     for (const job of jobs) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await backupManager?.addJob(job);
     }
     return jobs;
@@ -197,7 +205,7 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       .fill(null)
       .map((_, idx) => composeThumbnailJob(idx, overrides));
     for (const job of jobs) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await backupManager?.addJob(job);
     }
     return jobs;
@@ -205,14 +213,14 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
 
   function waitForJobToBeStarted(
     job: CoreAttachmentBackupJobType,
-    attempts: number = 0
+    attempts = 0
   ) {
     return backupManager?.waitForJobToBeStarted({ ...job, attempts });
   }
 
   function waitForJobToBeCompleted(
     job: CoreAttachmentBackupJobType,
-    attempts: number = 0
+    attempts = 0
   ) {
     return backupManager?.waitForJobToBeCompleted({ ...job, attempts });
   }
@@ -222,6 +230,15 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       JSON.stringify(runJob.getCalls().map(call => call.args[0].mediaName)),
       JSON.stringify(jobs.map(job => job.mediaName))
     );
+  }
+
+  function assertCopiedFrom(
+    callIndex: number,
+    { sourceKey, cdn }: { sourceKey: string; cdn: number }
+  ) {
+    const item = copyBackupMedia.getCall(callIndex).args[0].items[0];
+    assert.strictEqual(item.sourceKey, sourceKey);
+    assert.strictEqual(item.sourceAttachmentCdn, cdn);
   }
 
   async function getAllSavedJobs(): Promise<Array<AttachmentBackupJobType>> {
@@ -235,92 +252,99 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     const jobs = await addJobs(5);
     const thumbnailJobs = await addThumbnailJobs(5);
 
+    const job0Started = waitForJobToBeStarted(assertAt(jobs, 0));
+    const job2Started = waitForJobToBeStarted(assertAt(jobs, 2));
+    const job0ThumbnailCompleted = waitForJobToBeCompleted(
+      assertAt(thumbnailJobs, 0)
+    );
+
     // Confirm they are saved to DB
     const allJobs = await getAllSavedJobs();
     assert.strictEqual(allJobs.length, 10, 'initial setup');
 
     await backupManager?.start();
-    await waitForJobToBeStarted(jobs[2]);
+    await job2Started;
 
     assert.strictEqual(runJob.callCount, 3);
-    assertRunJobCalledWith([jobs[4], jobs[3], jobs[2]]);
+    assertRunJobCalledWith([
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+    ]);
 
-    await waitForJobToBeStarted(jobs[0]);
+    await job0Started;
     assert.strictEqual(runJob.callCount, 5, 'first calls');
-    assertRunJobCalledWith([jobs[4], jobs[3], jobs[2], jobs[1], jobs[0]]);
+    assertRunJobCalledWith([
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
+    ]);
 
-    await waitForJobToBeCompleted(thumbnailJobs[0]);
+    await job0ThumbnailCompleted;
     assert.strictEqual(runJob.callCount, 10, 'all calls');
 
     assertRunJobCalledWith([
-      jobs[4],
-      jobs[3],
-      jobs[2],
-      jobs[1],
-      jobs[0],
-      thumbnailJobs[4],
-      thumbnailJobs[3],
-      thumbnailJobs[2],
-      thumbnailJobs[1],
-      thumbnailJobs[0],
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
+      assertAt(thumbnailJobs, 4),
+      assertAt(thumbnailJobs, 3),
+      assertAt(thumbnailJobs, 2),
+      assertAt(thumbnailJobs, 1),
+      assertAt(thumbnailJobs, 0),
     ]);
     assert.strictEqual((await getAllSavedJobs()).length, 0);
   });
 
   it('with transitCdnInfo, will copy to backup tier', async () => {
-    const [job] = await addJobs(1);
+    const jobs = await addJobs(1);
+    const jobCompleted = waitForJobToBeCompleted(assertAt(jobs, 0));
     await backupManager?.start();
-    await waitForJobToBeCompleted(job);
-    assert.strictEqual(backupMediaBatch.callCount, 1);
+    await jobCompleted;
+    assert.strictEqual(copyBackupMedia.callCount, 1);
     assert.strictEqual(encryptAndUploadAttachment.callCount, 0);
 
-    assert.deepStrictEqual(
-      backupMediaBatch.getCall(0).args[0].items[0].sourceAttachment,
-      { key: 'transitCdnKey', cdn: TRANSIT_CDN }
-    );
+    assertCopiedFrom(0, { sourceKey: 'transitCdnKey', cdn: TRANSIT_CDN });
   });
 
   it('with transitCdnInfo, will upload to attachment tier if copy operation returns FileNotFoundOnTransitTier', async () => {
-    backupMediaBatch.onFirstCall().returns(
-      Promise.resolve({
-        responses: [
-          { isSuccess: false, status: FILE_NOT_FOUND_ON_TRANSIT_TIER_STATUS },
-        ],
-      })
-    );
+    copyBackupMedia
+      .onFirstCall()
+      .returns(Promise.resolve([{ result: 'sourceNotFound' }]));
 
-    backupMediaBatch.onSecondCall().returns(
-      Promise.resolve({
-        responses: [{ isSuccess: true, cdn: BACKUP_CDN }],
-      })
-    );
+    copyBackupMedia
+      .onSecondCall()
+      .returns(Promise.resolve([{ result: { cdn: BACKUP_CDN } }]));
 
-    const [job] = await addJobs(1);
+    const jobs = await addJobs(1);
+    const jobCompleted = waitForJobToBeCompleted(assertAt(jobs, 0));
     await backupManager?.start();
-    await waitForJobToBeCompleted(job);
+    await jobCompleted;
     assert.strictEqual(encryptAndUploadAttachment.callCount, 1);
-    assert.strictEqual(backupMediaBatch.callCount, 2);
+    assert.strictEqual(copyBackupMedia.callCount, 2);
 
-    assert.deepStrictEqual(
-      backupMediaBatch.getCall(0).args[0].items[0].sourceAttachment,
-      { key: 'transitCdnKey', cdn: TRANSIT_CDN }
-    );
-    assert.deepStrictEqual(
-      backupMediaBatch.getCall(1).args[0].items[0].sourceAttachment,
-      { key: 'newKeyOnTransitTier', cdn: TRANSIT_CDN_FOR_NEW_UPLOAD }
-    );
+    assertCopiedFrom(0, { sourceKey: 'transitCdnKey', cdn: TRANSIT_CDN });
+    assertCopiedFrom(1, {
+      sourceKey: 'newKeyOnTransitTier',
+      cdn: TRANSIT_CDN_FOR_NEW_UPLOAD,
+    });
 
     const allRemainingJobs = await getAllSavedJobs();
     assert.strictEqual(allRemainingJobs.length, 0);
   });
 
   it('without transitCdnInfo, will upload then copy', async () => {
-    const [job] = await addJobs(1, { transitCdnInfo: undefined });
+    const jobs = await addJobs(1, { transitCdnInfo: undefined });
+    const jobCompleted = waitForJobToBeCompleted(assertAt(jobs, 0));
 
     await backupManager?.start();
-    await waitForJobToBeCompleted(job);
+    await jobCompleted;
 
-    assert.strictEqual(backupMediaBatch.callCount, 1);
+    assert.strictEqual(copyBackupMedia.callCount, 1);
     assert.strictEqual(encryptAndUploadAttachment.callCount, 1);
 
     // Job removed
@@ -329,15 +353,16 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
   });
 
   it('without transitCdnInfo, will permanently remove job if file not found at path', async () => {
-    const [job] = await addJobs(1, {
+    const jobs = await addJobs(1, {
       transitCdnInfo: undefined,
       path: 'nothing/here',
     });
+    const jobCompleted = waitForJobToBeCompleted(assertAt(jobs, 0));
 
     await backupManager?.start();
-    await waitForJobToBeCompleted(job);
+    await jobCompleted;
 
-    assert.strictEqual(backupMediaBatch.callCount, 0);
+    assert.strictEqual(copyBackupMedia.callCount, 0);
     assert.strictEqual(encryptAndUploadAttachment.callCount, 0);
 
     // Job removed
@@ -347,6 +372,8 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
 
   it('pauses if it receives a retryAfter', async () => {
     const jobs = await addJobs(5, { transitCdnInfo: undefined });
+    const job0Started = waitForJobToBeStarted(assertAt(jobs, 0));
+    const job2Started = waitForJobToBeStarted(assertAt(jobs, 2));
 
     encryptAndUploadAttachment.throws(
       new HTTPError('Rate limited', {
@@ -355,10 +382,14 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
       })
     );
     await backupManager?.start();
-    await waitForJobToBeStarted(jobs[2]);
+    await job2Started;
 
     assert.strictEqual(runJob.callCount, 3);
-    assertRunJobCalledWith([jobs[4], jobs[3], jobs[2]]);
+    assertRunJobCalledWith([
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+    ]);
 
     // no jobs have occurred
     await clock.tickAsync(50000);
@@ -370,17 +401,17 @@ describe('AttachmentBackupManager/JobManager', function attachmentBackupManager(
     });
 
     await clock.tickAsync(100000);
-    await waitForJobToBeStarted(jobs[0]);
+    await job0Started;
     assert.strictEqual(runJob.callCount, 8);
     assertRunJobCalledWith([
-      jobs[4],
-      jobs[3],
-      jobs[2],
-      jobs[4],
-      jobs[3],
-      jobs[2],
-      jobs[1],
-      jobs[0],
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 4),
+      assertAt(jobs, 3),
+      assertAt(jobs, 2),
+      assertAt(jobs, 1),
+      assertAt(jobs, 0),
     ]);
   });
 

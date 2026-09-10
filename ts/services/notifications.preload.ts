@@ -6,18 +6,19 @@ import lodash from 'lodash';
 import EventEmitter from 'node:events';
 import { v4 as getGuid } from 'uuid';
 
-import { Sound, SoundType } from '../util/Sound.std.js';
-import { shouldHideExpiringMessageBody } from '../types/Settings.std.js';
-import { itemStorage as fallbackStorage } from '../textsecure/Storage.preload.js';
-import OS from '../util/os/osMain.node.js';
-import { createLogger } from '../logging/log.std.js';
-import { makeEnumParser } from '../util/enum.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { toLogFormat } from '../types/errors.std.js';
+import { Sound, SoundType } from '../util/Sound.std.ts';
+import { shouldHideExpiringMessageBody } from '../types/Settings.std.ts';
+import { itemStorage as fallbackStorage } from '../textsecure/Storage.preload.ts';
+import OS from '../util/os/osMain.node.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { makeEnumParser } from '../util/enum.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
 import type { StorageInterface } from '../types/Storage.d.ts';
-import type { LocalizerType } from '../types/Util.std.js';
-import { NotificationType } from '../types/notifications.std.js';
-import { drop } from '../util/drop.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { NotificationType } from '../types/notifications.std.ts';
+import { drop } from '../util/drop.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 const { debounce } = lodash;
 
@@ -31,7 +32,7 @@ type NotificationDataType = Readonly<{
   notificationIconUrl?: undefined | string;
   notificationIconAbsolutePath?: undefined | string;
   reaction?: {
-    emoji: string;
+    emoji: Emoji.Variant;
     targetAuthorAci: string;
     targetTimestamp: number;
   };
@@ -53,6 +54,13 @@ export type NotificationClickData = Readonly<{
   messageId: string | undefined;
   storyId: string | undefined;
 }>;
+export type WindowsNotificationData = {
+  avatarPath?: string;
+  body: string;
+  heading: string;
+  token: string;
+  type: NotificationType;
+};
 
 // The keys and values don't match here. This is because the values correspond to old
 //   setting names. In the future, we may wish to migrate these to match.
@@ -91,7 +99,7 @@ class NotificationService extends EventEmitter {
   //   to manually close them. This introduces a minimum amount of time between calls,
   //   and batches up the quick successive update() calls we get from an incoming
   //   read sync, which might have a number of messages referenced inside of it.
-  #update: () => unknown;
+  readonly #update: () => unknown;
 
   constructor() {
     super();
@@ -223,9 +231,6 @@ class NotificationService extends EventEmitter {
           window.reduxActions?.calling?.cancelPresenting();
         } else if (type === NotificationType.IncomingCall) {
           window.IPC.showWindow();
-        } else if (type === NotificationType.MinimizedToTray) {
-          // Unused since the notification is shown by main process instead
-          window.IPC.showWindow();
         } else {
           throw missingCaseError(type);
         }
@@ -250,7 +255,7 @@ class NotificationService extends EventEmitter {
   public removeBy(
     options: Readonly<
       {
-        emoji?: string;
+        emoji?: Emoji.Variant;
         targetAuthorAci?: string;
         targetTimestamp?: number;
         onlyRemoveAssociatedPollVotes?: boolean;

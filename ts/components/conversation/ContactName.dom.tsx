@@ -1,31 +1,27 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import classNames from 'classnames';
 
-import type { ReactNode } from 'react';
+import type { ReactNode, JSX, MouseEvent } from 'react';
 
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
-import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation.dom.js';
-import {
-  getEmojiVariantByKey,
-  getEmojiVariantKeyByValue,
-  isEmojiVariantValue,
-} from '../fun/data/emojis.std.js';
-import { useFunEmojiLocalizer } from '../fun/useFunEmojiLocalizer.dom.js';
-import { FunStaticEmoji } from '../fun/FunEmoji.dom.js';
-import { missingEmojiPlaceholder } from '../../types/GroupMemberLabels.std.js';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
+import { isSignalConversation as getIsSignalConversation } from '../../util/isSignalConversation.dom.ts';
+import { FunStaticEmoji } from '../fun/FunEmoji.dom.tsx';
+import { missingEmojiPlaceholder } from '../../types/GroupMemberLabels.std.ts';
 
-import type { MemberLabelType } from '../../types/GroupMemberLabels.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { ContactNameColorType } from '../../types/Colors.std.js';
-import type { FunStaticEmojiSize } from '../fun/FunEmoji.dom.js';
-import { UserText } from '../UserText.dom.js';
+import type { MemberLabelType } from '../../types/GroupMemberLabels.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { ContactNameColorType } from '../../types/Colors.std.ts';
+import type { FunStaticEmojiSize } from '../fun/FunEmoji.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { OfficialChatInlineBadge } from './OfficialChatInlineBadge.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 export type ContactNameData = {
   contactNameColor?: ContactNameColorType;
-  contactLabel?: { labelString: string; labelEmoji: string | undefined };
+  contactLabel?: { labelString: string; labelEmoji: Emoji.Variant | undefined };
   firstName?: string;
   isSignalConversation?: boolean;
   isMe?: boolean;
@@ -58,7 +54,6 @@ export type PropsType = ContactNameData & {
   module?: string;
   preferFirstName?: boolean;
   onClick?: VoidFunction;
-  largeVerifiedBadge?: boolean;
 };
 
 export function ContactName({
@@ -71,8 +66,7 @@ export function ContactName({
   preferFirstName,
   title,
   onClick,
-  largeVerifiedBadge,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const getClassName = getClassNamesFor('module-contact-name', module);
 
   let text: string;
@@ -89,18 +83,23 @@ export function ContactName({
         contactNameColor ? getClassName(`--${contactNameColor}`) : null
       )}
       dir="auto"
-      onClick={onClick}
+      onClick={(event: MouseEvent<HTMLButtonElement>) => {
+        if (onClick) {
+          onClick();
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      }}
     >
       <UserText text={text} />
+
       {(isSignalConversation || isMe) && (
-        <span
-          className={
-            largeVerifiedBadge
-              ? 'ContactModal__official-badge__large'
-              : 'ContactModal__official-badge'
-          }
-        />
+        <>
+          &nbsp;
+          <OfficialChatInlineBadge />
+        </>
       )}
+
       {contactLabel && (
         <>
           {' '}
@@ -130,7 +129,6 @@ export function GroupMemberLabel({
   context: Context;
   module?: string;
 }): ReactNode {
-  const emojiLocalizer = useFunEmojiLocalizer();
   const getClassName = getClassNamesFor('module-contact-name', module);
 
   if (!contactLabel) {
@@ -140,10 +138,7 @@ export function GroupMemberLabel({
   const { labelEmoji, labelString } = contactLabel;
 
   let emojiElement;
-  if (labelEmoji && isEmojiVariantValue(labelEmoji)) {
-    const emojiKey = getEmojiVariantKeyByValue(labelEmoji);
-    const emojiData = getEmojiVariantByKey(emojiKey);
-
+  if (labelEmoji && Emoji.isEmoji(labelEmoji)) {
     emojiElement = (
       <span
         className={classNames(
@@ -153,9 +148,9 @@ export function GroupMemberLabel({
       >
         <FunStaticEmoji
           role="img"
-          aria-label={emojiLocalizer.getLocaleShortName(emojiData.key)}
+          aria-label={Emoji.getDisplayLabel(labelEmoji)}
           size={emojiSize}
-          emoji={emojiData}
+          emoji={Emoji.ignorePreferredSkinTone(labelEmoji)}
         />
       </span>
     );

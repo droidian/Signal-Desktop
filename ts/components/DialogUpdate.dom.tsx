@@ -1,35 +1,23 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useCallback } from 'react';
 
-import { isBeta } from '../util/version.std.js';
-import { DialogType } from '../types/Dialogs.std.js';
+import { isBeta } from '../util/version.std.ts';
+import { DialogType } from '../types/Dialogs.std.ts';
 import {
   PRODUCTION_DOWNLOAD_URL,
   BETA_DOWNLOAD_URL,
-} from '../types/support.std.js';
-import { I18n } from './I18n.dom.js';
-import { LeftPaneDialog } from './LeftPaneDialog.dom.js';
-import { formatFileSize } from '../util/formatFileSize.std.js';
+} from '../types/support.std.ts';
+import { I18n } from './I18n.dom.tsx';
+import { LeftPaneDialog } from './LeftPaneDialog.dom.tsx';
+import { formatFileSize } from '../util/formatFileSize.std.ts';
+import { ContactSupportLink } from '../util/contactSupport.dom.tsx';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import type { DismissOptions } from './LeftPaneDialog.dom.js';
-import type { WidthBreakpoint } from './_util.std.js';
-
-function contactSupportLink(parts: ReactNode): React.JSX.Element {
-  return (
-    <a
-      key="signal-support"
-      href="https://support.signal.org/hc/requests/new?desktop"
-      rel="noreferrer"
-      target="_blank"
-    >
-      {parts}
-    </a>
-  );
-}
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { DismissOptions } from './LeftPaneDialog.dom.tsx';
+import type { WidthBreakpoint } from './_util.std.ts';
 
 export type PropsType = {
   containerWidthBreakpoint: WidthBreakpoint;
@@ -57,9 +45,9 @@ export function DialogUpdate({
   startUpdate,
   version,
   currentVersion,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const retryUpdateButton = useCallback(
-    (parts: ReactNode): React.JSX.Element => {
+    (parts: ReactNode): JSX.Element => {
       return (
         <button
           className="LeftPaneDialog__retry"
@@ -98,7 +86,7 @@ export function DialogUpdate({
                   {url}
                 </a>
               ),
-              contactSupportLink,
+              contactSupportLink: ContactSupportLink,
             }}
             i18n={i18n}
             id="icu:cannotUpdateDetail-v2"
@@ -131,7 +119,7 @@ export function DialogUpdate({
                   {url}
                 </a>
               ),
-              contactSupportLink,
+              contactSupportLink: ContactSupportLink,
             }}
             i18n={i18n}
             id="icu:cannotUpdateRequireManualDetail-v2"
@@ -217,6 +205,8 @@ export function DialogUpdate({
     type = 'warning';
   } else if (dialogType === DialogType.DownloadedUpdate) {
     title = i18n('icu:DialogUpdate__downloaded');
+  } else if (dialogType === DialogType.MASUpdate) {
+    clickLabel = i18n('icu:DialogUpdate__upgrade-mas');
   }
 
   let dismissOptions: DismissOptions = {

@@ -1,22 +1,36 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { RefObject } from 'react';
+import type { RefObject, JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { strictAssert } from '../util/assert.std.js';
+import { strictAssert } from '../util/assert.std.ts';
 
-export type Size = Readonly<{
-  width: number;
-  height: number;
-}>;
+export type Size = Readonly<
+  { hidden: false; width: number; height: number } | { hidden: true }
+>;
 
 export type SizeChangeHandler = (size: Size) => void;
 
-export function isSameSize(a: Size, b: Size): boolean {
+function isSameSize(a: Size, b: Size): boolean {
+  if (a.hidden || b.hidden) {
+    if (a.hidden && b.hidden) {
+      return true;
+    }
+    return false;
+  }
   return a.width === b.width && a.height === b.height;
 }
 
+function getNextSize(borderBoxSize: ResizeObserverSize): Size {
+  const width = borderBoxSize.inlineSize;
+  const height = borderBoxSize.blockSize;
+  if (width === 0 && height === 0) {
+    return { hidden: true };
+  }
+  return { hidden: false, width, height };
+}
+
 export function useSizeObserver<T extends Element = Element>(
-  ref: RefObject<T>,
+  ref: RefObject<T | null>,
   /**
    * Note: If you provide `onSizeChange`, `useSizeObserver()` will always return `null`
    */
@@ -38,14 +52,13 @@ export function useSizeObserver<T extends Element = Element>(
       // We're only ever observing one element, and `ResizeObserver` for some
       // reason is an array of exactly one rect (I assume to support wrapped
       // inline elements in the future)
-      const borderBoxSize = entries[0].borderBoxSize[0];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const borderBoxSize = entries[0]!.borderBoxSize[0]!;
       // We are assuming a horizontal writing-mode here, we could call
       // `getBoundingClientRect()` here but MDN says not to. In the future if
       // we are adding support for a vertical locale we may need to change this
-      const next: Size = {
-        width: borderBoxSize.inlineSize,
-        height: borderBoxSize.blockSize,
-      };
+
+      const next = getNextSize(borderBoxSize);
       const prev = sizeRef.current;
       if (prev == null || !isSameSize(prev, next)) {
         sizeRef.current = next;
@@ -79,17 +92,18 @@ export type SizeObserverProps = Readonly<{
    * Note: If you provide `onSizeChange`, in `children()` the `size` will always be `null`
    */
   onSizeChange?: SizeChangeHandler;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  children(ref: RefObject<any>, size: Size | null): React.JSX.Element;
+  // oxlint-disable-next-line typescript/no-explicit-any
+  children: (ref: RefObject<any>, size: Size | null) => JSX.Element;
 }>;
 
 export function SizeObserver({
   onSizeChange,
   children,
-}: SizeObserverProps): React.JSX.Element {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ref = useRef<any>();
+}: SizeObserverProps): JSX.Element {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  const ref = useRef<any>(null);
   const size = useSizeObserver(ref, onSizeChange);
+  // oxlint-disable-next-line react/refs
   return children(ref, size);
 }
 
@@ -108,7 +122,7 @@ export type Scroll = Readonly<
 
 export type ScrollChangeHandler = (scroll: Scroll) => void;
 
-export function isSameScroll(a: Scroll, b: Scroll): boolean {
+function isSameScroll(a: Scroll, b: Scroll): boolean {
   return (
     a.scrollTop === b.scrollTop &&
     a.scrollHeight === b.scrollHeight &&
@@ -123,16 +137,8 @@ export function isScrollOverflowVertical(scroll: Scroll): boolean {
   return scroll.scrollHeight > scroll.clientHeight;
 }
 
-export function isScrollOverflowHorizontal(scroll: Scroll): boolean {
-  return scroll.scrollWidth > scroll.clientWidth;
-}
-
 export function isScrollAtTop(scroll: Scroll, threshold = 0): boolean {
   return scroll.scrollTop <= threshold;
-}
-
-export function isScrollAtLeft(scroll: Scroll, threshold = 0): boolean {
-  return scroll.scrollLeft <= threshold;
 }
 
 export function isScrollAtBottom(scroll: Scroll, threshold = 0): boolean {
@@ -140,24 +146,8 @@ export function isScrollAtBottom(scroll: Scroll, threshold = 0): boolean {
   return scroll.scrollTop >= maxScrollTop - threshold;
 }
 
-export function isScrollAtRight(scroll: Scroll, threshold = 0): boolean {
-  const maxScrollLeft = scroll.scrollWidth - scroll.clientWidth;
-  return scroll.scrollLeft >= maxScrollLeft - threshold;
-}
-
-export function getScrollTopDistance(scroll: Scroll, clamp: number): number {
-  return Math.min(scroll.scrollTop, clamp);
-}
-
 export function getScrollLeftDistance(scroll: Scroll, clamp: number): number {
   return Math.min(scroll.scrollLeft, clamp);
-}
-
-export function getScrollBottomDistance(scroll: Scroll, clamp: number): number {
-  return Math.min(
-    scroll.scrollHeight - scroll.clientHeight - scroll.scrollTop,
-    clamp
-  );
 }
 
 export function getScrollRightDistance(scroll: Scroll, clamp: number): number {
@@ -190,8 +180,8 @@ export function getScrollRightDistance(scroll: Scroll, clamp: number): number {
  * ```
  */
 export function useScrollObserver(
-  scrollerRef: RefObject<HTMLElement>,
-  scrollerInnerRef: RefObject<HTMLElement>,
+  scrollerRef: RefObject<HTMLElement | null>,
+  scrollerInnerRef: RefObject<HTMLElement | null>,
   onScrollChange: (scroll: Scroll) => void
 ): void {
   const scrollRef = useRef<Scroll | null>(null);

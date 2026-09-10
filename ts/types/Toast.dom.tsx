@@ -15,6 +15,7 @@ export enum ToastType {
   CallQualitySurveySuccess = 'CallQualitySurveySuccess',
   CaptchaFailed = 'CaptchaFailed',
   CaptchaSolved = 'CaptchaSolved',
+  CannotAddMemberLabel = 'CannotAddMemberLabel',
   CannotEditMessage = 'CannotEditMessage',
   CannotForwardEmptyMessage = 'CannotForwardEmptyMessage',
   CannotMixMultiAndNonMultiAttachments = 'CannotMixMultiAndNonMultiAttachments',
@@ -30,6 +31,7 @@ export enum ToastType {
   ConversationUnarchived = 'ConversationUnarchived',
   CopiedBackupKey = 'CopiedBackupKey',
   CopiedCallLink = 'CopiedCallLink',
+  CopiedStickerPackLink = 'CopiedStickerPackLink',
   CopiedUsername = 'CopiedUsername',
   CopiedUsernameLink = 'CopiedUsernameLink',
   DangerousFileType = 'DangerousFileType',
@@ -52,7 +54,6 @@ export enum ToastType {
   FailedToDeleteUsername = 'FailedToDeleteUsername',
   FailedToFetchPhoneNumber = 'FailedToFetchPhoneNumber',
   FailedToFetchUsername = 'FailedToFetchUsername',
-  FailedToSendWithEndorsements = 'FailedToSendWithEndorsements',
   FailedToImportBackup = 'FailedToImportBackup',
   FileSaved = 'FileSaved',
   FileSize = 'FileSize',
@@ -63,6 +64,7 @@ export enum ToastType {
   LinkCopied = 'LinkCopied',
   LoadingFullLogs = 'LoadingFullLogs',
   _InternalMainProcessLoggingError = '_InternalMainProcessLoggingError',
+  _InternalHeapSizeWarning = '_InternalHeapSizeWarning',
   MaxAttachments = 'MaxAttachments',
   MediaNoLongerAvailable = 'MediaNoLongerAvailable',
   MessageBodyTooLong = 'MessageBodyTooLong',
@@ -71,11 +73,13 @@ export enum ToastType {
   OriginalMessageNotFound = 'OriginalMessageNotFound',
   PinnedConversationsFull = 'PinnedConversationsFull',
   PinnedMessageNotFound = 'PinnedMessageNotFound',
+  PinReminderCompleted = 'PinReminderCompleted',
   PollNotFound = 'PollNotFound',
   ReactionFailed = 'ReactionFailed',
   ReceiptSaved = 'ReceiptSaved',
   ReceiptSaveFailed = 'ReceiptSaveFailed',
   ReportedSpam = 'ReportedSpam',
+  RemoteConfigChanged = 'RemoteConfigChanged',
   ReportedSpamAndBlocked = 'ReportedSpamAndBlocked',
   SQLError = 'SQLError',
   StickerPackInstallFailed = 'StickerPackInstallFailed',
@@ -95,6 +99,9 @@ export enum ToastType {
   UnsupportedOS = 'UnsupportedOS',
   UserAddedToGroup = 'UserAddedToGroup',
   UsernameRecovered = 'UsernameRecovered',
+  ViewOnceDisabled = 'ViewOnceDisabled',
+  ViewOnceEnabled = 'ViewOnceEnabled',
+  VideoFileSize = 'VideoFileSize',
   VoiceNoteLimit = 'VoiceNoteLimit',
   VoiceNoteMustBeTheOnlyAttachment = 'VoiceNoteMustBeTheOnlyAttachment',
   WhoCanFindMeReadOnly = 'WhoCanFindMeReadOnly',
@@ -124,6 +131,7 @@ export type AnyToast =
       parameters: { canRetry: boolean };
     }
   | { toastType: ToastType.CallQualitySurveySuccess }
+  | { toastType: ToastType.CannotAddMemberLabel }
   | { toastType: ToastType.CannotEditMessage }
   | { toastType: ToastType.CannotForwardEmptyMessage }
   | { toastType: ToastType.CannotMixMultiAndNonMultiAttachments }
@@ -153,6 +161,7 @@ export type AnyToast =
   | { toastType: ToastType.ConversationUnarchived }
   | { toastType: ToastType.CopiedBackupKey }
   | { toastType: ToastType.CopiedCallLink }
+  | { toastType: ToastType.CopiedStickerPackLink }
   | { toastType: ToastType.CopiedUsername }
   | { toastType: ToastType.CopiedUsernameLink }
   | { toastType: ToastType.DangerousFileType }
@@ -174,14 +183,13 @@ export type AnyToast =
   | { toastType: ToastType.FailedToDeleteUsername }
   | { toastType: ToastType.FailedToFetchPhoneNumber }
   | { toastType: ToastType.FailedToFetchUsername }
-  | { toastType: ToastType.FailedToSendWithEndorsements }
   | { toastType: ToastType.FailedToImportBackup }
   | {
       toastType: ToastType.FileSaved;
       parameters: { fullPath: string; countOfFiles?: number };
     }
   | {
-      toastType: ToastType.FileSize;
+      toastType: ToastType.FileSize | ToastType.VideoFileSize;
       parameters: { limit: number; units: string };
     }
   | { toastType: ToastType.GroupLinkCopied }
@@ -201,6 +209,7 @@ export type AnyToast =
       toastType: ToastType._InternalMainProcessLoggingError;
       parameters: { count: number; logLines: Array<string> };
     }
+  | { toastType: ToastType._InternalHeapSizeWarning }
   | { toastType: ToastType.MaxAttachments }
   | { toastType: ToastType.MediaNoLongerAvailable }
   | { toastType: ToastType.MessageBodyTooLong }
@@ -210,10 +219,22 @@ export type AnyToast =
       parameters: { enabled: boolean; name: string };
     }
   | { toastType: ToastType.OriginalMessageNotFound }
-  | { toastType: ToastType.PinnedConversationsFull }
+  | {
+      toastType: ToastType.PinnedConversationsFull;
+      maxPinnedConversations: number;
+    }
   | { toastType: ToastType.PinnedMessageNotFound }
+  | { toastType: ToastType.PinReminderCompleted }
   | { toastType: ToastType.PollNotFound }
   | { toastType: ToastType.ReactionFailed }
+  | {
+      toastType: ToastType.RemoteConfigChanged;
+      changes: ReadonlyArray<{
+        name: string;
+        from: string;
+        to: string;
+      }>;
+    }
   | {
       toastType: ToastType.ReceiptSaved;
       parameters: { fullPath: string };
@@ -248,6 +269,8 @@ export type AnyToast =
       toastType: ToastType.UsernameRecovered;
       parameters: { username: string };
     }
+  | { toastType: ToastType.ViewOnceDisabled }
+  | { toastType: ToastType.ViewOnceEnabled }
   | { toastType: ToastType.VoiceNoteLimit }
   | { toastType: ToastType.VoiceNoteMustBeTheOnlyAttachment }
   | { toastType: ToastType.WhoCanFindMeReadOnly };

@@ -8,18 +8,16 @@ import assert from 'node:assert';
 import * as readline from 'node:readline';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { promisify } from 'node:util';
+import { promisify, styleText } from 'node:util';
 import * as childProcess from 'node:child_process';
 import pMap from 'p-map';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import chalk from 'chalk';
+import micromatch from 'micromatch';
 
 const exec = promisify(childProcess.exec);
 
 const rootPath = path.join(__dirname, '..', '..', '..');
 
 const EXTENSIONS_TO_CHECK = new Set([
-  '.eslintignore',
   '.gitattributes',
   '.gitignore',
   '.nvmrc',
@@ -35,26 +33,18 @@ const EXTENSIONS_TO_CHECK = new Set([
   '.md',
   '.plist',
 ]);
-const FILES_TO_IGNORE = new Set(
-  [
-    '.github/ISSUE_TEMPLATE/bug_report.md',
-    '.github/PULL_REQUEST_TEMPLATE.md',
-    '.smartling-source.sh',
-    'packages/mute-state-change/dist/acknowledgments.md',
-    'components/mp3lameencoder/lib/Mp3LameEncoder.js',
-    'components/recorderjs/recorder.js',
-    'components/recorderjs/recorderWorker.js',
-    'components/webaudiorecorder/lib/WebAudioRecorder.js',
-    'components/webaudiorecorder/lib/WebAudioRecorderMp3.js',
-    'js/Mp3LameEncoder.min.js',
-    'js/WebAudioRecorderMp3.js',
-    'sticker-creator/src/util/protos.d.ts',
-    'sticker-creator/src/util/protos.js',
-  ].map(
-    // This makes sure the files are correct on Windows.
-    path.normalize
-  )
-);
+const FILES_TO_IGNORE = [
+  '.changeset/*.md',
+  'packages/*/CHANGELOG.md',
+  '.github/ISSUE_TEMPLATE/bug_report.md',
+  '.github/PULL_REQUEST_TEMPLATE.md',
+  '.smartling-source.sh',
+  'packages/mock-server/protos/README.md',
+  'packages/mute-state-change/dist/acknowledgments.md',
+  'packages/lame/dist/acknowledgments.md',
+  'sticker-creator/src/util/protos.d.ts',
+  'sticker-creator/src/util/protos.js',
+];
 
 // This is not technically the real extension.
 export function getExtension(file: string): string {
@@ -79,7 +69,8 @@ export async function forEachRelevantFile(
     gitFiles,
     async (file: string) => {
       const repoPath = path.relative(rootPath, file);
-      if (FILES_TO_IGNORE.has(repoPath)) {
+
+      if (micromatch.isMatch(repoPath, FILES_TO_IGNORE)) {
         return;
       }
 
@@ -162,6 +153,7 @@ async function getCommitFileWasAdded(
 
   const commitYear = new Date(dateString).getFullYear();
   assert(!Number.isNaN(commitYear), `Could not read commit year for ${file}`);
+  assert(commitHash, 'Missing commitHash');
   return { commitYear, commitHash };
 }
 
@@ -196,41 +188,52 @@ async function main() {
 
     const warnings = [];
 
-    if (!/Copyright \d{4} Signal Messenger, LLC/.test(firstLine)) {
+    if (
+      firstLine == null ||
+      !/Copyright \d{4} Signal Messenger, LLC/.test(firstLine)
+    ) {
       const commit = await getCommitFileWasAdded(file);
       warnings.push(
-        chalk.red('Missing/Incorrect copyright line'),
+        styleText('red', 'Missing/Incorrect copyright line'),
         indent(
-          chalk.green(
+          styleText(
+            'green',
             `Expected: "Copyright ${commit.commitYear} Signal Messenger, LLC"`
           )
         ),
-        indent(chalk.yellow(`Actual: "${firstLine}"`)),
+        // oxlint-disable-next-line typescript/restrict-template-expressions
+        indent(styleText('yellow', `Actual: "${firstLine}"`)),
         indent(
-          chalk.italic.dim(
+          styleText(
+            ['italic', 'dim'],
             `Tip: Looks like this file was added in ${commit.commitHash} in ${commit.commitYear}`
           )
         ),
         indent(
-          chalk.italic.dim(
+          styleText(
+            ['italic', 'dim'],
             `Tip: You can also use the current year (${currentYear})`
           )
         )
       );
     } else if (/\d{4}-\d{4}/.test(firstLine)) {
       warnings.push(
-        chalk.red('Copyright should not include end year'),
-        indent(chalk.yellow(`Actual: "${firstLine}"`))
+        styleText('red', 'Copyright should not include end year'),
+        indent(styleText('yellow', `Actual: "${firstLine}"`))
       );
     }
 
     if (!secondLine?.includes('SPDX-License-Identifier: AGPL-3.0-only')) {
       warnings.push(
-        chalk.red('Missing/incorrect license line'),
+        styleText('red', 'Missing/incorrect license line'),
         indent(
-          chalk.green('Expected: "SPDX-License-Identifier: AGPL-3.0-only"')
+          styleText(
+            'green',
+            'Expected: "SPDX-License-Identifier: AGPL-3.0-only"'
+          )
         ),
-        indent(chalk.yellow(`Actual: "${secondLine}"`))
+        // oxlint-disable-next-line typescript/restrict-template-expressions
+        indent(styleText('yellow', `Actual: "${secondLine}"`))
       );
     }
 
@@ -241,34 +244,35 @@ async function main() {
 
   const failed = failures.length > 0;
 
-  /* eslint-disable no-console */
   if (failed) {
     console.log();
     console.log(
-      chalk.magenta.bold(
+      styleText(
+        ['magenta', 'bold'],
         'Some files are missing/contain incorrect copyrights/licenses:'
       )
     );
     console.log();
     for (const failure of failures) {
-      console.log(chalk.bold(`${failure.file}:`));
+      console.log(styleText('bold', `${failure.file}:`));
       console.log(indent(failure.warnings.join('\n')));
       console.log();
     }
 
-    console.log(chalk.magenta.bold('`npm run lint-license-comments` failed'));
+    console.log(
+      styleText(['magenta', 'bold'], '`pnpm lint-license-comments` failed')
+    );
     console.log();
 
     process.exit(1);
   }
-  /* eslint-enable no-console */
 }
 
 // Note: this check will fail if we switch to ES modules. See
 //  <https://stackoverflow.com/a/60309682>.
 if (require.main === module) {
+  // oxlint-disable-next-line promise/prefer-await-to-then
   main().catch(err => {
-    // eslint-disable-next-line no-console
     console.error(err);
     process.exit(1);
   });

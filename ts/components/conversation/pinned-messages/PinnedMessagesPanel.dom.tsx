@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ForwardedRef, ReactNode } from 'react';
-import React, {
+import type { ForwardedRef, ReactNode, JSX } from 'react';
+import {
   forwardRef,
   Fragment,
   memo,
@@ -11,23 +11,23 @@ import React, {
   useState,
 } from 'react';
 import { useLayoutEffect } from '@react-aria/utils';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { PinnedMessage } from '../../../types/PinnedMessage.std.js';
-import type { SmartTimelineItemProps } from '../../../state/smart/TimelineItem.preload.js';
-import { WidthBreakpoint } from '../../_util.std.js';
-import { AxoScrollArea } from '../../../axo/AxoScrollArea.dom.js';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { PinnedMessage } from '../../../types/PinnedMessage.std.ts';
+import type { SmartTimelineItemProps } from '../../../state/smart/TimelineItem.preload.tsx';
+import { WidthBreakpoint } from '../../_util.std.ts';
+import { AxoScrollArea } from '../../../axo/AxoScrollArea.dom.tsx';
 import {
   createScrollerLock,
   ScrollerLockContext,
-} from '../../../hooks/useScrollLock.dom.js';
-import { getWidthBreakpoint } from '../../../util/timelineUtil.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { useSizeObserver } from '../../../hooks/useSizeObserver.dom.js';
-import { MessageInteractivity } from '../Message.dom.js';
-import { tw } from '../../../axo/tw.dom.js';
-import { AxoButton } from '../../../axo/AxoButton.dom.js';
-import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.js';
+} from '../../../hooks/useScrollLock.dom.tsx';
+import { getWidthBreakpoint } from '../../../util/timelineUtil.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { useSizeObserver } from '../../../hooks/useSizeObserver.dom.tsx';
+import { MessageInteractivity } from '../Message.dom.tsx';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AxoButton } from '../../../axo/AxoButton.dom.tsx';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
 
 export type PinnedMessagesPanelProps = Readonly<{
   i18n: LocalizerType;
@@ -35,7 +35,7 @@ export type PinnedMessagesPanelProps = Readonly<{
   pinnedMessages: ReadonlyArray<PinnedMessage>;
   canPinMessages: boolean;
   onPinnedMessageRemoveAll: () => void;
-  renderTimelineItem: (props: SmartTimelineItemProps) => React.JSX.Element;
+  renderTimelineItem: (props: SmartTimelineItemProps) => JSX.Element;
 }>;
 
 export const PinnedMessagesPanel = memo(function PinnedMessagesPanel(
@@ -61,6 +61,9 @@ export const PinnedMessagesPanel = memo(function PinnedMessagesPanel(
   }, []);
 
   useSizeObserver(containerElementRef, size => {
+    if (size.hidden) {
+      return;
+    }
     setContainerWidthBreakpoint(getWidthBreakpoint(size.width));
   });
 
@@ -80,9 +83,16 @@ export const PinnedMessagesPanel = memo(function PinnedMessagesPanel(
                 isBlocked: props.conversation.isBlocked ?? false,
                 isGroup: props.conversation.type === 'group',
                 isOldestTimelineItem: pinnedMessageIndex === 0,
-                messageId: pinnedMessage.messageId,
+                item: {
+                  type: 'none' as const,
+                  id: pinnedMessage.messageId,
+                  messages: undefined,
+                },
                 nextMessageId: next?.messageId,
                 previousMessageId: prev?.messageId,
+                renderItem: () => {
+                  throw new Error('not implemented');
+                },
                 unreadIndicatorPlacement: undefined,
               })}
             </Fragment>
@@ -92,7 +102,7 @@ export const PinnedMessagesPanel = memo(function PinnedMessagesPanel(
       {props.canPinMessages && (
         <div className={tw('flex items-center justify-center p-2.5')}>
           <AxoButton.Root
-            variant="borderless-primary"
+            variant="implied-primary"
             size="lg"
             onClick={handleClickUnpinAll}
           >
@@ -118,13 +128,9 @@ export const PinnedMessagesPanel = memo(function PinnedMessagesPanel(
             </AxoAlertDialog.Description>
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
-            <AxoAlertDialog.Cancel>
-              {i18n(
-                'icu:PinnedMessagesPanel__UnpinAllMessages__ConfirmDialog__Cancel'
-              )}
-            </AxoAlertDialog.Cancel>
+            <AxoAlertDialog.Cancel />
             <AxoAlertDialog.Action
-              variant="primary"
+              variant="strong-primary"
               onClick={props.onPinnedMessageRemoveAll}
             >
               {i18n(

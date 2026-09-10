@@ -1,21 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { reportMessage, isOnline } from '../textsecure/WebAPI.preload.js';
-import { drop } from '../util/drop.std.js';
-import { CallLinkFinalizeDeleteManager } from './CallLinkFinalizeDeleteManager.preload.js';
-import { chatFolderCleanupService } from '../services/expiring/chatFolderCleanupService.preload.js';
-import { pinnedMessagesCleanupService } from '../services/expiring/pinnedMessagesCleanupService.preload.js';
-import { callLinkRefreshJobQueue } from './callLinkRefreshJobQueue.preload.js';
-import { conversationJobQueue } from './conversationJobQueue.preload.js';
-import { deleteDownloadsJobQueue } from './deleteDownloadsJobQueue.preload.js';
-import { groupAvatarJobQueue } from './groupAvatarJobQueue.preload.js';
-import { readSyncJobQueue } from './readSyncJobQueue.preload.js';
-import { removeStorageKeyJobQueue } from './removeStorageKeyJobQueue.preload.js';
-import { reportSpamJobQueue } from './reportSpamJobQueue.preload.js';
-import { singleProtoJobQueue } from './singleProtoJobQueue.preload.js';
-import { viewOnceOpenJobQueue } from './viewOnceOpenJobQueue.preload.js';
-import { viewSyncJobQueue } from './viewSyncJobQueue.preload.js';
+import type { reportMessage, isOnline } from '../textsecure/WebAPI.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { conversationJobQueue } from './conversationJobQueue.preload.ts';
+import { groupAvatarJobQueue } from './groupAvatarJobQueue.preload.ts';
+import { singleProtoJobQueue } from './singleProtoJobQueue.preload.ts';
+import { readSyncJobQueue } from './readSyncJobQueue.preload.ts';
+import { viewSyncJobQueue } from './viewSyncJobQueue.preload.ts';
+import { viewOnceOpenJobQueue } from './viewOnceOpenJobQueue.preload.ts';
+import { deleteDownloadsJobQueue } from './deleteDownloadsJobQueue.preload.ts';
+import { registrationJobQueue } from './registrationJobQueue.preload.ts';
+import { removeStorageKeyJobQueue } from './removeStorageKeyJobQueue.preload.ts';
+import { reportSpamJobQueue } from './reportSpamJobQueue.preload.ts';
+import { callLinkRefreshJobQueue } from './callLinkRefreshJobQueue.preload.ts';
+import { callLinkCleanupService } from '../services/expiring/callLinkCleanupService.preload.ts';
+import { defunctCallLinkCleanupService } from '../services/expiring/defunctCallLinkCleanupService.preload.ts';
+import { chatFolderCleanupService } from '../services/expiring/chatFolderCleanupService.preload.ts';
+import { pinnedMessagesCleanupService } from '../services/expiring/pinnedMessagesCleanupService.preload.ts';
 
 type ServerType = {
   reportMessage: typeof reportMessage;
@@ -48,26 +50,31 @@ export function initializeAllJobQueues({
 
   // Other queues
   drop(deleteDownloadsJobQueue.streamJobs());
+  drop(registrationJobQueue.streamJobs());
   drop(removeStorageKeyJobQueue.streamJobs());
   drop(reportSpamJobQueue.streamJobs());
   drop(callLinkRefreshJobQueue.streamJobs());
-  drop(CallLinkFinalizeDeleteManager.start());
+  drop(callLinkCleanupService.start('initializeAllJobQueues'));
+  drop(defunctCallLinkCleanupService.start('initializeAllJobQueues'));
   drop(chatFolderCleanupService.start('initializeAllJobQueues'));
   drop(pinnedMessagesCleanupService.start('initializeAllJobQueues'));
 }
 
 export async function shutdownAllJobQueues(): Promise<void> {
   await Promise.allSettled([
-    callLinkRefreshJobQueue.shutdown(),
     conversationJobQueue.shutdown(),
     groupAvatarJobQueue.shutdown(),
     singleProtoJobQueue.shutdown(),
     readSyncJobQueue.shutdown(),
     viewSyncJobQueue.shutdown(),
     viewOnceOpenJobQueue.shutdown(),
+    deleteDownloadsJobQueue.shutdown(),
+    registrationJobQueue.shutdown(),
     removeStorageKeyJobQueue.shutdown(),
     reportSpamJobQueue.shutdown(),
-    CallLinkFinalizeDeleteManager.stop(),
+    callLinkRefreshJobQueue.shutdown(),
+    callLinkCleanupService.stop('shutdownAllJobQueues'),
+    defunctCallLinkCleanupService.stop('shutdownAllJobQueues'),
     chatFolderCleanupService.stop('shutdownAllJobQueues'),
     pinnedMessagesCleanupService.stop('shutdownAllJobQueues'),
   ]);

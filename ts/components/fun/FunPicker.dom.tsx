@@ -1,27 +1,34 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { memo, useCallback, useEffect } from 'react';
-import type { Placement } from 'react-aria';
+import { Dialog } from 'radix-ui';
+import type { ReactNode, JSX } from 'react';
+import { memo, useCallback, useEffect } from 'react';
+import { type Placement, VisuallyHidden } from 'react-aria';
 import { DialogTrigger } from 'react-aria-components';
 import { createKeybindingsHandler } from 'tinykeys';
-import { FunPickerTabKey } from './constants.dom.js';
-import { FunPopover } from './base/FunPopover.dom.js';
+import { FunPickerTabKey } from './constants.dom.tsx';
+import { FunPopover } from './base/FunPopover.dom.tsx';
 import {
   FunPickerTab,
   FunTabList,
   FunTabPanel,
   FunTabs,
-} from './base/FunTabs.dom.js';
-import type { FunEmojiSelection } from './panels/FunPanelEmojis.dom.js';
-import { FunPanelEmojis } from './panels/FunPanelEmojis.dom.js';
-import type { FunGifSelection } from './panels/FunPanelGifs.dom.js';
-import { FunPanelGifs } from './panels/FunPanelGifs.dom.js';
-import type { FunStickerSelection } from './panels/FunPanelStickers.dom.js';
-import { FunPanelStickers } from './panels/FunPanelStickers.dom.js';
-import { useFunContext } from './FunProvider.dom.js';
-import type { ThemeType } from '../../types/Util.std.js';
-import { FunErrorBoundary } from './base/FunErrorBoundary.dom.js';
+} from './base/FunTabs.dom.tsx';
+import type { FunEmojiSelection } from './panels/FunPanelEmojis.dom.tsx';
+import { FunPanelEmojis } from './panels/FunPanelEmojis.dom.tsx';
+import type { FunGifSelection } from './panels/FunPanelGifs.dom.tsx';
+import { FunPanelGifs } from './panels/FunPanelGifs.dom.tsx';
+import type { FunStickerSelection } from './panels/FunPanelStickers.dom.tsx';
+import { FunPanelStickers } from './panels/FunPanelStickers.dom.tsx';
+import { useFunContext } from './FunProvider.dom.tsx';
+import type { ThemeType } from '../../types/Util.std.ts';
+import { FunErrorBoundary } from './base/FunErrorBoundary.dom.tsx';
+import { strictAssert } from '../../util/assert.std.ts';
+import { FunSticker } from './FunSticker.dom.tsx';
+import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
+import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import type { LocalizerType } from '../../types/I18N.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
 
 /**
  * FunPicker
@@ -29,6 +36,7 @@ import { FunErrorBoundary } from './base/FunErrorBoundary.dom.js';
 
 export type FunPickerProps = Readonly<{
   open: boolean;
+  isReply: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectEmoji: (emojiSelection: FunEmojiSelection) => void;
   onSelectSticker: (stickerSelection: FunStickerSelection) => void;
@@ -41,10 +49,20 @@ export type FunPickerProps = Readonly<{
 
 export const FunPicker = memo(function FunPicker(
   props: FunPickerProps
-): React.JSX.Element {
-  const { onOpenChange } = props;
+): JSX.Element {
+  const { isReply, onOpenChange, onSelectSticker } = props;
   const fun = useFunContext();
-  const { i18n, onOpenChange: onFunOpenChange, onChangeTab } = fun;
+  const {
+    i18n,
+    isStickerReplySendEnabled,
+    stagedStickerReply,
+    onOpenChange: onFunOpenChange,
+    onSelectSticker: onFunSelectSticker,
+    onChangeTab,
+    onStageStickerReply,
+  } = fun;
+
+  const isReplyForFunPanel = isStickerReplySendEnabled && isReply;
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -58,18 +76,30 @@ export const FunPicker = memo(function FunPicker(
     handleOpenChange(false);
   }, [handleOpenChange]);
 
+  const handleCancelStickerReply = useCallback(() => {
+    onStageStickerReply(null);
+  }, [onStageStickerReply]);
+
+  const handleSendStickerReply = useCallback(() => {
+    strictAssert(stagedStickerReply, 'Staged sticker reply is required');
+
+    onFunSelectSticker(stagedStickerReply);
+    onSelectSticker(stagedStickerReply);
+    handleClose();
+  }, [stagedStickerReply, handleClose, onFunSelectSticker, onSelectSticker]);
+
   useEffect(() => {
     const onKeyDown = createKeybindingsHandler({
       '$mod+Shift+J': () => {
-        onChangeTab(FunPickerTabKey.Emoji);
+        onChangeTab(FunPickerTabKey.EmojisTab);
         handleOpenChange(true);
       },
       '$mod+Shift+O': () => {
-        onChangeTab(FunPickerTabKey.Stickers);
+        onChangeTab(FunPickerTabKey.StickersTab);
         handleOpenChange(true);
       },
       '$mod+Shift+G': () => {
-        onChangeTab(FunPickerTabKey.Gifs);
+        onChangeTab(FunPickerTabKey.GifsTab);
         handleOpenChange(true);
       },
     });
@@ -84,18 +114,24 @@ export const FunPicker = memo(function FunPicker(
       {props.children}
       <FunPopover placement={props.placement} theme={props.theme}>
         <FunTabs value={fun.tab} onChange={fun.onChangeTab}>
+          <StagedStickerReply
+            i18n={i18n}
+            selection={stagedStickerReply}
+            handleCancelStickerReply={handleCancelStickerReply}
+            handleSendStickerReply={handleSendStickerReply}
+          />
           <FunTabList>
-            <FunPickerTab id={FunPickerTabKey.Emoji}>
+            <FunPickerTab id={FunPickerTabKey.EmojisTab}>
               {i18n('icu:FunPicker__Tab--Emojis')}
             </FunPickerTab>
-            <FunPickerTab id={FunPickerTabKey.Stickers}>
+            <FunPickerTab id={FunPickerTabKey.StickersTab}>
               {i18n('icu:FunPicker__Tab--Stickers')}
             </FunPickerTab>
-            <FunPickerTab id={FunPickerTabKey.Gifs}>
+            <FunPickerTab id={FunPickerTabKey.GifsTab}>
               {i18n('icu:FunPicker__Tab--Gifs')}
             </FunPickerTab>
           </FunTabList>
-          <FunTabPanel id={FunPickerTabKey.Emoji}>
+          <FunTabPanel id={FunPickerTabKey.EmojisTab}>
             <FunErrorBoundary>
               <FunPanelEmojis
                 onSelectEmoji={props.onSelectEmoji}
@@ -105,9 +141,10 @@ export const FunPicker = memo(function FunPicker(
               />
             </FunErrorBoundary>
           </FunTabPanel>
-          <FunTabPanel id={FunPickerTabKey.Stickers}>
+          <FunTabPanel id={FunPickerTabKey.StickersTab}>
             <FunErrorBoundary>
               <FunPanelStickers
+                isReply={isReplyForFunPanel}
                 showTimeStickers={false}
                 onSelectSticker={props.onSelectSticker}
                 onAddStickerPack={props.onAddStickerPack}
@@ -115,7 +152,7 @@ export const FunPicker = memo(function FunPicker(
               />
             </FunErrorBoundary>
           </FunTabPanel>
-          <FunTabPanel id={FunPickerTabKey.Gifs}>
+          <FunTabPanel id={FunPickerTabKey.GifsTab}>
             <FunErrorBoundary>
               <FunPanelGifs
                 onSelectGif={props.onSelectGif}
@@ -126,5 +163,72 @@ export const FunPicker = memo(function FunPicker(
         </FunTabs>
       </FunPopover>
     </DialogTrigger>
+  );
+});
+
+const StagedStickerReply = memo(function StagedStickerReply(props: {
+  i18n: LocalizerType;
+  selection: FunStickerSelection | null;
+  handleCancelStickerReply: () => void;
+  handleSendStickerReply: () => void;
+}): JSX.Element | null {
+  const { i18n, selection, handleCancelStickerReply, handleSendStickerReply } =
+    props;
+  if (!selection) {
+    return null;
+  }
+
+  return (
+    <Dialog.Root modal={false} open onOpenChange={handleCancelStickerReply}>
+      <Dialog.Content onEscapeKeyDown={event => event.stopPropagation()}>
+        <div
+          className={tw(
+            'absolute legacy-z-index-above-above-base flex size-full items-center justify-center bg-material-primary backdrop-blur-thick'
+          )}
+        >
+          <div className={tw('size-50')}>
+            <FunSticker
+              role="img"
+              aria-label={i18n('icu:FunPicker__Label--Sticker')}
+              src={selection.stickerUrl}
+              size={200}
+              ignoreReducedMotion
+            />
+          </div>
+          <div className={tw('absolute bottom-0 flex w-full items-center p-4')}>
+            <AxoIconButton.Root
+              size="md"
+              variant="strong-secondary"
+              symbol="x"
+              label={i18n('icu:FunPicker__Label--CancelStickerReply')}
+              onClick={handleCancelStickerReply}
+              tooltip={false}
+            />
+            <span
+              className={tw(
+                'flex grow justify-center type-body-medium font-medium text-secondary'
+              )}
+            >
+              <AxoSymbol.InlineGlyph symbol="reply" label={null} />
+              &nbsp;
+              {i18n('icu:FunPicker__Label--StickerReply')}
+            </span>
+            <AxoIconButton.Root
+              size="md"
+              variant="strong-primary"
+              symbol="send-fill"
+              label={i18n('icu:FunPicker__Label--SendStickerReply')}
+              onClick={handleSendStickerReply}
+              tooltip={false}
+            />
+          </div>
+        </div>
+        <VisuallyHidden>
+          <Dialog.Title>
+            {i18n('icu:FunPicker__Label--StickerReply')}
+          </Dialog.Title>
+        </VisuallyHidden>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 });

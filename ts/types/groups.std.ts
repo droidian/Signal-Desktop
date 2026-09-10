@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ServiceIdString, AciString, PniString } from './ServiceId.std.js';
+import type { ServiceIdString, AciString, PniString } from './ServiceId.std.ts';
 
 export const ID_V1_LENGTH = 16;
 export const ID_LENGTH = 32;
@@ -19,6 +19,10 @@ type GroupV2AccessMembersChangeType = {
 };
 type GroupV2AccessInviteLinkChangeType = {
   type: 'access-invite-link';
+  newPrivilege: number;
+};
+type GroupV2AccessMemberLabelChangeType = {
+  type: 'access-member-label';
   newPrivilege: number;
 };
 type GroupV2AnnouncementsOnlyChangeType = {
@@ -122,11 +126,15 @@ export type GroupV2DescriptionChangeType = {
 export type GroupV2SummaryType = {
   type: 'summary';
 };
+type GroupV2TerminatedChangeType = {
+  type: 'terminated';
+};
 
 export type GroupV2ChangeDetailType =
   | GroupV2AccessAttributesChangeType
   | GroupV2AccessCreateChangeType
   | GroupV2AccessInviteLinkChangeType
+  | GroupV2AccessMemberLabelChangeType
   | GroupV2AccessMembersChangeType
   | GroupV2AdminApprovalAddOneChangeType
   | GroupV2AdminApprovalRemoveOneChangeType
@@ -148,6 +156,7 @@ export type GroupV2ChangeDetailType =
   | GroupV2PendingRemoveManyChangeType
   | GroupV2PendingRemoveOneChangeType
   | GroupV2SummaryType
+  | GroupV2TerminatedChangeType
   | GroupV2TitleChangeType;
 
 export type GroupV2ChangeType = {

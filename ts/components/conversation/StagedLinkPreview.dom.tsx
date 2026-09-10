@@ -1,21 +1,24 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
 import lodash from 'lodash';
 
-import { CurveType, Image } from './Image.dom.js';
-import { LinkPreviewDate } from './LinkPreviewDate.dom.js';
+import { CurveType, Image } from './Image.dom.tsx';
+import { LinkPreviewDate } from './LinkPreviewDate.dom.tsx';
 
-import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
-import { isImageAttachment } from '../../util/Attachment.std.js';
-import { isCallLink } from '../../types/LinkPreview.std.js';
-import { Avatar } from '../Avatar.dom.js';
-import { getColorForCallLink } from '../../util/getColorForCallLink.std.js';
-import { getKeyFromCallLink } from '../../util/callLinks.std.js';
+import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
+import { isImageAttachment } from '../../util/Attachment.std.ts';
+import { isCallLink } from '../../types/LinkPreview.std.ts';
+import { Avatar } from '../Avatar.dom.tsx';
+import { getColorForCallLink } from '../../util/getColorForCallLink.std.ts';
+import { getKeyFromCallLink } from '../../util/callLinks.std.ts';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
 
 const { unescape } = lodash;
 
@@ -26,9 +29,17 @@ export type Props = LinkPreviewForUIType & {
   onClose?: () => void;
 };
 
-export function StagedLinkPreview(props: Props): React.JSX.Element {
-  const { date, description, domain, i18n, moduleClassName, onClose, title } =
-    props;
+export function StagedLinkPreview(props: Props): JSX.Element {
+  const {
+    date,
+    description,
+    domain,
+    i18n,
+    isStickerPack,
+    moduleClassName,
+    onClose,
+    title,
+  } = props;
   const isLoaded = Boolean(domain);
 
   const getClassName = getClassNamesFor(
@@ -36,10 +47,28 @@ export function StagedLinkPreview(props: Props): React.JSX.Element {
     moduleClassName
   );
 
-  let maybeContent: React.JSX.Element | undefined;
+  let maybeContent: JSX.Element | undefined;
   if (isLoaded) {
-    // No title, no description - display only domain
-    if (!title && !description) {
+    if (isStickerPack) {
+      maybeContent = (
+        <div className={tw('ms-3 flex grow flex-col')}>
+          <div
+            className={tw(
+              'mbs-1 mbe-0.5 type-body-medium font-semibold text-primary'
+            )}
+          >
+            {title}
+          </div>
+          {description && (
+            <div className={tw('mbe-0.5 type-body-medium text-primary')}>
+              {unescape(description)}
+            </div>
+          )}
+          <div className={tw('type-body-small text-secondary')}>{domain}</div>
+        </div>
+      );
+    } else if (!title && !description) {
+      // No title, no description - display only domain
       maybeContent = (
         <div
           className={classNames(
@@ -68,6 +97,30 @@ export function StagedLinkPreview(props: Props): React.JSX.Element {
     }
   }
 
+  if (isStickerPack) {
+    return (
+      <div
+        dir="auto"
+        className={tw('m-1.5 flex rounded-xl bg-surface-primary py-2')}
+      >
+        <Thumbnail {...props} />
+        {maybeContent}
+        {onClose && (
+          <div className={tw('me-2 flex flex-col')}>
+            <AxoIconButton.Root
+              size="sm"
+              variant="strong-secondary"
+              symbol="x"
+              label={i18n('icu:close')}
+              tooltip={false}
+              onClick={onClose}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       dir="auto"
@@ -90,11 +143,12 @@ export function StagedLinkPreview(props: Props): React.JSX.Element {
   );
 }
 
-export function Thumbnail({
+function Thumbnail({
   domain,
   i18n,
   image,
   imageSize,
+  isStickerPack,
   moduleClassName,
   title,
   url,
@@ -104,10 +158,11 @@ export function Thumbnail({
   | 'i18n'
   | 'image'
   | 'imageSize'
+  | 'isStickerPack'
   | 'moduleClassName'
   | 'title'
   | 'url'
->): React.JSX.Element {
+>): JSX.Element {
   const isImage = isImageAttachment(image);
   const getClassName = getClassNamesFor(
     'module-staged-link-preview',
@@ -149,10 +204,10 @@ export function Thumbnail({
           curveBottomRight={CurveType.Tiny}
           curveTopLeft={CurveType.Tiny}
           curveTopRight={CurveType.Tiny}
-          height={imageSize || 72}
           i18n={i18n}
           url={image.url}
-          width={imageSize || 72}
+          width={isStickerPack ? 64 : imageSize || 72}
+          height={isStickerPack ? 64 : imageSize || 72}
         />
       </div>
     );

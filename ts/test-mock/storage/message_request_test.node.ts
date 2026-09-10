@@ -3,14 +3,14 @@
 
 import { assert } from 'chai';
 
-import * as durations from '../../util/durations/index.std.js';
-import type { App, Bootstrap } from './fixtures.node.js';
-import { initStorage, debug } from './fixtures.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import { initStorage, debug } from './fixtures.node.ts';
 import {
   acceptConversation,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers.node.js';
+} from '../helpers.node.ts';
 
 describe('storage service', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -64,7 +64,7 @@ describe('storage service', function (this: Mocha.Suite) {
       after: initialState,
     });
     {
-      assert.strictEqual(postMessageState.version, 2);
+      assert.strictEqual(postMessageState.version, 2n);
       assert.isFalse(postMessageState.getContact(stranger)?.whitelisted);
       assert.strictEqual(
         postMessageState.getContact(stranger)?.profileKey?.length,
@@ -85,7 +85,7 @@ describe('storage service', function (this: Mocha.Suite) {
       const nextState = await phone.waitForStorageState({
         after: postMessageState,
       });
-      assert.strictEqual(nextState.version, 3);
+      assert.strictEqual(nextState.version, 3n);
       assert.isTrue(nextState.getContact(stranger)?.whitelisted);
 
       // ContactRecord
@@ -128,6 +128,6 @@ describe('storage service', function (this: Mocha.Suite) {
 
     debug('Verifying the final manifest version');
     const finalState = await phone.expectStorageState('consistency check');
-    assert.strictEqual(finalState.version, 3);
+    assert.strictEqual(finalState.version, 3n);
   });
 });

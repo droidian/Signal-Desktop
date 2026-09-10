@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useEffect, useState, useId } from 'react';
+import { useEffect, useState, useId, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
 import { VisuallyHidden } from 'react-aria';
-import { FunGif, FunGifPreview } from './FunGif.dom.js';
-import { LoadingState } from '../../util/loadable.std.js';
+import { FunGif, FunGifPreview } from './FunGif.dom.tsx';
+import { LoadingState } from '../../util/loadable.std.ts';
 
 export default {
   title: 'Components/Fun/FunGif',
@@ -15,11 +15,10 @@ const MOCK_GIF_URL =
 const MOCK_GIF_WIDTH = 480;
 const MOCK_GIF_HEIGHT = 418;
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   const id = useId();
   return (
     <>
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <div tabIndex={0}>
         <FunGif
           src={MOCK_GIF_URL}
@@ -36,7 +35,7 @@ export function Basic(): React.JSX.Element {
   );
 }
 
-export function PreviewSizing(): React.JSX.Element {
+export function PreviewSizing(): JSX.Element {
   return (
     <>
       <FunGifPreview
@@ -71,7 +70,7 @@ export function PreviewSizing(): React.JSX.Element {
   );
 }
 
-export function PreviewLoading(): React.JSX.Element {
+export function PreviewLoading(): JSX.Element {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,7 +91,7 @@ export function PreviewLoading(): React.JSX.Element {
   );
 }
 
-export function PreviewError(): React.JSX.Element {
+export function PreviewError(): JSX.Element {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {

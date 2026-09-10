@@ -1,14 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useId } from 'react';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { getAccessControlOptions } from '../../../util/getAccessControlOptions.std.js';
-import { SignalService as Proto } from '../../../protobuf/index.std.js';
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { Select } from '../../Select.dom.js';
-import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.js';
+import { useId, useState, type JSX } from 'react';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { getAccessControlOptions } from '../../../util/getAccessControlOptions.std.ts';
+import { SignalService as Proto } from '../../../protobuf/index.std.ts';
+import { PanelRow } from './PanelRow.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
+import { Select } from '../../Select.dom.tsx';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
 
 export type PropsDataType = {
   conversation?: ConversationType;
@@ -18,6 +18,7 @@ export type PropsDataType = {
 type PropsActionType = {
   setAccessControlAttributesSetting: (id: string, value: number) => void;
   setAccessControlMembersSetting: (id: string, value: number) => void;
+  setAccessControlMemberLabelSetting: (id: string, value: number) => void;
   setAnnouncementsOnly: (id: string, value: boolean) => void;
 };
 
@@ -28,15 +29,17 @@ export function GroupV2Permissions({
   i18n,
   setAccessControlAttributesSetting,
   setAccessControlMembersSetting,
+  setAccessControlMemberLabelSetting,
   setAnnouncementsOnly,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const AccessControlEnum = Proto.AccessControl.AccessRequired;
 
   const [isWarningAboutClearingLabels, setIsWarningAboutClearingLabels] =
-    React.useState(false);
+    useState(false);
   const addMembersSelectId = useId();
   const groupInfoSelectId = useId();
   const announcementSelectId = useId();
+  const memberLabelSelectId = useId();
 
   if (conversation === undefined) {
     throw new Error('GroupV2Permissions rendered without a conversation');
@@ -45,13 +48,16 @@ export function GroupV2Permissions({
     membership => !membership.isAdmin && membership.labelString
   );
 
-  const updateAccessControlAttributes = (value: string) => {
+  const updateAccessControlMemberLabel = (value: string) => {
     const newValue = Number(value);
     if (newValue === AccessControlEnum.ADMINISTRATOR && nonAdminsHaveLabels) {
       setIsWarningAboutClearingLabels(true);
       return;
     }
 
+    setAccessControlMemberLabelSetting(conversation.id, Number(value));
+  };
+  const updateAccessControlAttributes = (value: string) => {
     setAccessControlAttributesSetting(conversation.id, Number(value));
   };
   const updateAccessControlMembers = (value: string) => {
@@ -126,6 +132,23 @@ export function GroupV2Permissions({
           }
         />
       )}
+      <PanelRow
+        label={
+          <label htmlFor={memberLabelSelectId}>
+            {i18n('icu:ConversationDetails--member-label--label')}
+          </label>
+        }
+        info={i18n('icu:ConversationDetails--member-label--info')}
+        right={
+          <Select
+            id={memberLabelSelectId}
+            onChange={updateAccessControlMemberLabel}
+            options={accessControlOptions}
+            value={String(conversation.accessControlMemberLabel)}
+          />
+        }
+      />
+
       <AxoAlertDialog.Root
         open={isWarningAboutClearingLabels}
         onOpenChange={value => {
@@ -147,8 +170,7 @@ export function GroupV2Permissions({
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
             <AxoAlertDialog.Action
-              variant="secondary"
-              arrow={false}
+              variant="strong-secondary"
               onClick={() => {
                 setIsWarningAboutClearingLabels(false);
               }}
@@ -156,10 +178,9 @@ export function GroupV2Permissions({
               {i18n('icu:cancel')}
             </AxoAlertDialog.Action>
             <AxoAlertDialog.Action
-              variant="primary"
-              arrow={false}
+              variant="strong-primary"
               onClick={() => {
-                setAccessControlAttributesSetting(
+                setAccessControlMemberLabelSetting(
                   conversation.id,
                   AccessControlEnum.ADMINISTRATOR
                 );

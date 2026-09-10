@@ -16,7 +16,6 @@
     0px 4px 12px rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: space-between;
-  user-select: none;
   overflow: hidden;
   width: fit-content;
   max-width: 280px;
@@ -62,7 +61,7 @@
     &:focus {
       outline: none;
       @include mixins.keyboard-mode {
-        box-shadow: inset 0px 0px 0px 2px variables.$color-ultramarine;
+        @include mixins.axo-focus-ring;
       }
     }
   }

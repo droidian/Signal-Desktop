@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode, ReactElement } from 'react';
-import React from 'react';
-import { ContactName } from './conversation/ContactName.dom.js';
+import { ContactName } from './conversation/ContactName.dom.tsx';
 
 export type Props = Readonly<{
   firstName?: string;

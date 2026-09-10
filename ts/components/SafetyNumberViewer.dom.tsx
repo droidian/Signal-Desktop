@@ -1,25 +1,25 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useCallback, type JSX, type MouseEvent } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 
-import { AxoSymbol } from '../axo/AxoSymbol.dom.js';
-import { AxoButton } from '../axo/AxoButton.dom.js';
-import { AxoDialog } from '../axo/AxoDialog.dom.js';
-import { QrCode } from './QrCode.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { I18n } from './I18n.dom.js';
-import { SpinnerV2 } from './SpinnerV2.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { SafetyNumberType } from '../types/safetyNumber.std.js';
+import { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
+import { QrCode } from './QrCode.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { I18n } from './I18n.dom.tsx';
+import { SpinnerV2 } from './SpinnerV2.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { SafetyNumberType } from '../types/safetyNumber.std.ts';
 import {
   SAFETY_NUMBER_URL,
   KEY_TRANSPARENCY_URL,
-} from '../types/support.std.js';
+} from '../types/support.std.ts';
 import type { KeyTransparencyStatusType } from '../types/KeyTransparency.d.ts';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { tw, type TailwindStyles } from '../axo/tw.dom.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { tw, type TailwindStyles } from '../axo/tw.dom.tsx';
 
 export type PropsType = {
   contact: ConversationType;
@@ -43,9 +43,9 @@ export function SafetyNumberViewer({
   keyTransparencyStatus,
   isKeyTransparencyEnabled,
   checkKeyTransparency,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const containerClassName = tw(
-    'flex flex-col items-center justify-center gap-4 pb-8'
+    'flex flex-col items-center justify-center gap-4'
   );
 
   if (!safetyNumber) {
@@ -53,7 +53,7 @@ export function SafetyNumberViewer({
       <div className={containerClassName}>
         <div>{i18n('icu:cannotGenerateSafetyNumber')}</div>
         <div className={tw('text-end')}>
-          <AxoButton.Root variant="primary" size="lg" onClick={onClose}>
+          <AxoButton.Root variant="strong-primary" size="lg" onClick={onClose}>
             {i18n('icu:ok')}
           </AxoButton.Root>
         </div>
@@ -71,18 +71,18 @@ export function SafetyNumberViewer({
   const safetyNumberCard = (
     <div
       className={tw(
-        'flex w-full flex-col items-center gap-4 rounded-[18px] bg-color-fill-primary px-5 pt-7.5 pb-5'
+        'flex w-full flex-col items-center gap-4 rounded-[18px] bg-accent px-5 pt-7.5 pb-5'
       )}
     >
       <QrCode
         className={tw(
           'size-30 rounded-[8px] p-2.5',
-          'bg-background-primary scheme-light'
+          'bg-surface-primary scheme-light'
         )}
         data={safetyNumber.qrData}
         alt={i18n('icu:Install__scan-this-code')}
       />
-      <div className={tw('w-50 font-mono text-label-primary-on-color')}>
+      <div className={tw('w-50 font-mono text-primary-oncolor')}>
         {numberBlocks}
       </div>
 
@@ -93,7 +93,7 @@ export function SafetyNumberViewer({
             toggleVerified(contact);
           }}
           size="lg"
-          variant="floating-secondary"
+          variant="elevated-secondary"
         >
           {verifyButtonText}
         </AxoButton.Root>
@@ -117,7 +117,7 @@ export function SafetyNumberViewer({
     <div className={containerClassName}>
       {safetyNumberCard}
 
-      <div className={tw('text-center type-body-small text-label-secondary')}>
+      <div className={tw('text-center type-body-small text-secondary')}>
         <I18n
           i18n={i18n}
           id="icu:SafetyNumberViewer__hint-v2"
@@ -128,7 +128,7 @@ export function SafetyNumberViewer({
           href={SAFETY_NUMBER_URL}
           rel="noreferrer"
           target="_blank"
-          className={tw('text-label-primary')}
+          className={tw('text-primary')}
         >
           <I18n i18n={i18n} id="icu:SafetyNumberViewer__learn_more" />
         </a>
@@ -159,7 +159,7 @@ function KeyTransparency({
   }, []);
 
   const onKeyTransparencyClick = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       e.preventDefault();
 
       switch (status) {
@@ -209,7 +209,7 @@ function KeyTransparency({
     case 'ok':
       arrow = true;
       buttonText = i18n('icu:SafetyNumberViewer__KeyTransparency__button--ok');
-      extraIconStyles = tw('text-color-label-affirmative');
+      extraIconStyles = tw('text-affirmative');
       icon = 'check-circle-fill';
       break;
     case 'unavailable':
@@ -236,11 +236,11 @@ function KeyTransparency({
         onClick={onKeyTransparencyClick}
         className={tw(
           'h-12 w-full rounded-full px-5 py-3.5',
-          'bg-fill-secondary text-label-primary',
-          'pressed:bg-fill-secondary-pressed'
+          'bg-primary text-primary',
+          'enabled:active:bg-primary-pressed'
         )}
       >
-        <AnimatePresence exitBeforeEnter initial={false}>
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             className={tw('flex h-5 items-center')}
             key={status}
@@ -285,14 +285,14 @@ function KeyTransparency({
         </AnimatePresence>
       </button>
 
-      <div className={tw('mt-4 type-body-small text-label-secondary')}>
+      <div className={tw('mt-4 type-body-small text-secondary')}>
         <I18n i18n={i18n} id="icu:SafetyNumberViewer__KeyTransparency__hint" />
         &ensp;
         <a
           href={KEY_TRANSPARENCY_URL}
           rel="noreferrer"
           target="_blank"
-          className={tw('text-label-primary')}
+          className={tw('text-primary')}
         >
           <I18n
             i18n={i18n}
@@ -329,15 +329,15 @@ function Popup({ i18n, contact, type, onClose }: PopupPropsType): JSX.Element {
     case 'ok':
       icon = 'check-circle';
       title = i18n('icu:SafetyNumberViewer__KeyTransparency__popup--ok__title');
-      body = i18n('icu:SafetyNumberViewer__KeyTransparency__popup--ok__body');
+      body = i18n('icu:SafetyNumberViewer__KeyTransparency__popup--ok__body-2');
       break;
     case 'fail':
       icon = 'info';
       title = i18n(
-        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__title'
+        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2'
       );
       body = i18n(
-        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__body',
+        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__body-2',
         {
           name: contact.title,
         }
@@ -347,7 +347,7 @@ function Popup({ i18n, contact, type, onClose }: PopupPropsType): JSX.Element {
       icon = 'info';
       // Intentionally the same as in 'fail'
       title = i18n(
-        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__title'
+        'icu:SafetyNumberViewer__KeyTransparency__popup--fail__title-2'
       );
       body = i18n(
         'icu:SafetyNumberViewer__KeyTransparency__popup--unavailable__body'
@@ -367,21 +367,21 @@ function Popup({ i18n, contact, type, onClose }: PopupPropsType): JSX.Element {
                 'inline-flex items-center justify-center',
                 'mt-6.5 mb-2.5 size-7 rounded-full',
                 'text-center align-middle text-[28px] leading-none font-light',
-                'bg-color-fill-primary-pressed/20 text-color-fill-primary-pressed'
+                'bg-accent-tint text-accent'
               )}
             >
               <AxoSymbol.InlineGlyph symbol={icon} label={null} />
             </div>
-            <h3 className={tw('mb-1.5 type-title-small text-label-primary')}>
+            <h3 className={tw('mb-1.5 type-title-small text-primary')}>
               {title}
             </h3>
-            <div className={tw('mb-2 type-body-medium text-label-secondary')}>
+            <div className={tw('mb-2 type-body-medium text-secondary')}>
               {body}
             </div>
           </div>
         </AxoDialog.Body>
         <AxoDialog.Footer>
-          <AxoDialog.Action variant="primary" onClick={onClose}>
+          <AxoDialog.Action variant="strong-primary" onClick={onClose}>
             {i18n('icu:SafetyNumberViewer__KeyTransparency__popup__okay')}
           </AxoDialog.Action>
         </AxoDialog.Footer>

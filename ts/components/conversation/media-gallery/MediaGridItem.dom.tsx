@@ -1,30 +1,30 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
-
+import { useCallback, type ReactNode, type JSX, type MouseEvent } from 'react';
 import type { ReadonlyDeep } from 'type-fest';
-import { formatFileSize } from '../../../util/formatFileSize.std.js';
-import { formatDuration } from '../../../util/formatDuration.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import type { MediaItemType } from '../../../types/MediaItem.std.js';
-import type { AttachmentForUIType } from '../../../types/Attachment.std.js';
+
+import { formatFileSize } from '../../../util/formatFileSize.std.ts';
+import { formatDuration } from '../../../util/formatDuration.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { MediaItemType } from '../../../types/MediaItem.std.ts';
+import type { AttachmentForUIType } from '../../../types/Attachment.std.ts';
 import {
   getAlt,
   getUrl,
   defaultBlurHash,
   isGIF,
   isVideoAttachment,
-} from '../../../util/Attachment.std.js';
-import { ImageOrBlurhash } from '../../ImageOrBlurhash.dom.js';
-import { SpinnerV2 } from '../../SpinnerV2.dom.js';
-import { tw } from '../../../axo/tw.dom.js';
-import { AxoSymbol } from '../../../axo/AxoSymbol.dom.js';
+} from '../../../util/Attachment.std.ts';
+import { ImageOrBlurhash } from '../../ImageOrBlurhash.dom.tsx';
+import { SpinnerV2 } from '../../SpinnerV2.dom.tsx';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
 import {
   useAttachmentStatus,
   type AttachmentStatusType,
-} from '../../../hooks/useAttachmentStatus.std.js';
+} from '../../../hooks/useAttachmentStatus.std.ts';
 
 export type Props = Readonly<{
   mediaItem: ReadonlyDeep<MediaItemType>;
@@ -32,15 +32,20 @@ export type Props = Readonly<{
   onClick?: (attachmentState: AttachmentStatusType['state']) => void;
   i18n: LocalizerType;
   theme?: ThemeType;
+  renderContextMenu: (
+    mediaItem: ReadonlyDeep<MediaItemType>,
+    children: ReactNode
+  ) => JSX.Element;
 }>;
 
-export function MediaGridItem(props: Props): React.JSX.Element {
+export function MediaGridItem(props: Props): JSX.Element {
   const {
     mediaItem: { attachment },
     showSize,
     i18n,
     theme,
     onClick,
+    renderContextMenu,
   } = props;
 
   const resolvedBlurHash = attachment.blurHash || defaultBlurHash(theme);
@@ -72,7 +77,7 @@ export function MediaGridItem(props: Props): React.JSX.Element {
   }
 
   const handleClick = useCallback(
-    (ev: React.MouseEvent) => {
+    (ev: MouseEvent) => {
       ev.preventDefault();
 
       onClick?.(status.state);
@@ -80,7 +85,8 @@ export function MediaGridItem(props: Props): React.JSX.Element {
     [onClick, status.state]
   );
 
-  return (
+  return renderContextMenu(
+    props.mediaItem,
     <button
       type="button"
       className={tw(
@@ -110,9 +116,7 @@ type SpinnerOverlayProps = Readonly<{
   status: AttachmentStatusType;
 }>;
 
-function SpinnerOverlay(
-  props: SpinnerOverlayProps
-): React.JSX.Element | undefined {
+function SpinnerOverlay(props: SpinnerOverlayProps): JSX.Element | undefined {
   const { status } = props;
 
   if (status.state === 'ReadyToShow') {
@@ -122,7 +126,7 @@ function SpinnerOverlay(
   return (
     <div
       className={tw(
-        'absolute size-12.5 rounded-full bg-fill-on-media',
+        'absolute size-12.5 rounded-full bg-(--axo-color-deprecated-fill-on-media)',
         'flex items-center justify-center'
       )}
     >
@@ -137,7 +141,7 @@ function SpinnerOverlay(
           value={status.totalDownloaded}
         />
       )}
-      <div className={tw('absolute text-label-primary-on-color')}>
+      <div className={tw('absolute text-primary-oncolor')}>
         <AxoSymbol.Icon
           symbol={status.state === 'Downloading' ? 'x' : 'arrow-down'}
           size={24}
@@ -155,9 +159,7 @@ type MetadataOverlayProps = Readonly<{
   showSize: boolean;
 }>;
 
-function MetadataOverlay(
-  props: MetadataOverlayProps
-): React.JSX.Element | undefined {
+function MetadataOverlay(props: MetadataOverlayProps): JSX.Element | undefined {
   const { i18n, status, attachment, showSize } = props;
 
   if (
@@ -185,17 +187,17 @@ function MetadataOverlay(
   return (
     <div
       className={tw(
-        'absolute end-0 bottom-0 h-11.5 w-full',
+        'absolute inset-e-0 bottom-0 h-11.5 w-full',
         // This is an overlay gradient to ensure that the text has contrast
         // against the image/blurhash.
-        // eslint-disable-next-line better-tailwindcss/no-restricted-classes
+        // oxlint-disable-next-line better-tailwindcss/no-restricted-classes
         'bg-linear-to-b from-transparent to-[rgba(0,0,0,0.6)]'
       )}
     >
       <span
         className={tw(
-          'absolute end-2 bottom-1.5',
-          'type-caption text-[12px] text-label-primary-on-color'
+          'absolute inset-e-2 bottom-1.5',
+          'type-caption text-[12px] text-primary-oncolor'
         )}
       >
         {text}

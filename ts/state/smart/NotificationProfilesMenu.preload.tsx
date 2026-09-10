@@ -1,22 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { useSelector } from 'react-redux';
 
-import { getIntl } from '../selectors/user.std.js';
-import { NotificationProfilesMenu } from '../../components/NotificationProfilesMenu.dom.js';
-import { useNotificationProfilesActions } from '../ducks/notificationProfiles.preload.js';
+import { getIntl } from '../selectors/user.std.ts';
+import { NotificationProfilesMenu } from '../../components/NotificationProfilesMenu.dom.tsx';
+import { useNotificationProfilesActions } from '../ducks/notificationProfiles.preload.ts';
 import {
   getActiveProfile,
   getLoading,
   getOverride,
   getProfiles,
-} from '../selectors/notificationProfiles.dom.js';
-import { useNavActions } from '../ducks/nav.std.js';
-import { NavTab, SettingsPage } from '../../types/Nav.std.js';
+} from '../selectors/notificationProfiles.dom.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
 
-export function SmartNotificationProfilesMenu(): React.JSX.Element {
+export function SmartNotificationProfilesMenu(): JSX.Element {
   const i18n = useSelector(getIntl);
 
   const allProfiles = useSelector(getProfiles);

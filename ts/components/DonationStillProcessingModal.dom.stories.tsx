@@ -1,13 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DonationStillProcessingModal.dom.js';
-import { DonationStillProcessingModal } from './DonationStillProcessingModal.dom.js';
+import type { PropsType } from './DonationStillProcessingModal.dom.tsx';
+import { DonationStillProcessingModal } from './DonationStillProcessingModal.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -20,6 +20,6 @@ const defaultProps = {
   onClose: action('onClose'),
 };
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <DonationStillProcessingModal {...defaultProps} />;
 }

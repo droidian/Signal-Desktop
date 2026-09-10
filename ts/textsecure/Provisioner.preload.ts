@@ -5,30 +5,30 @@ import pTimeout, { TimeoutError as PTimeoutError } from 'p-timeout';
 import type { LibSignalError } from '@signalapp/libsignal-client';
 import type { ProvisioningConnection } from '@signalapp/libsignal-client/dist/net/Chat.js';
 
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
-import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { drop } from '../util/drop.std.js';
-import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.preload.js';
-import { normalizeDeviceName } from '../util/normalizeDeviceName.std.js';
-import { linkDeviceRoute } from '../util/signalRoutes.std.js';
-import { sleep } from '../util/sleep.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { MAX_DEVICE_NAME_LENGTH } from '../types/InstallScreen.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { drop } from '../util/drop.std.ts';
+import { isLinkAndSyncEnabled } from '../util/isLinkAndSyncEnabled.preload.ts';
+import { normalizeDeviceName } from '../util/normalizeDeviceName.std.ts';
+import { linkDeviceRoute } from '../util/signalRoutes.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
 
 import {
   type CreateLinkedDeviceOptionsType,
   AccountType,
-} from './AccountManager.preload.js';
+} from './AccountManager.preload.ts';
 import ProvisioningCipher, {
   type ProvisionDecryptResult,
-} from './ProvisioningCipher.node.js';
-import { ConnectTimeoutError } from './Errors.std.js';
-import type { getProvisioningConnection } from './WebAPI.preload.js';
+} from './ProvisioningCipher.node.ts';
+import { ConnectTimeoutError } from './Errors.std.ts';
+import type { getProvisioningConnection } from './WebAPI.preload.ts';
 
 const log = createLogger('Provisioner');
 
@@ -76,7 +76,7 @@ export type EventType = Readonly<
 
 export type SubscribeNotifierType = (event: EventType) => void;
 
-export type UnsubscribeFunctionType = () => void;
+export type UnsubscribeFunctionType = () => Promise<void>;
 
 export type SubscriberType = Readonly<{
   notify: SubscribeNotifierType;
@@ -99,7 +99,12 @@ const MAX_ROTATIONS = 6;
 
 const TIMEOUT_ERROR = new PTimeoutError();
 
-const QR_CODE_TIMEOUTS = [10 * SECOND, 20 * SECOND, 30 * SECOND, 60 * SECOND];
+const QR_CODE_TIMEOUTS = [
+  10 * SECOND,
+  20 * SECOND,
+  30 * SECOND,
+  60 * SECOND,
+] as const;
 
 export class Provisioner {
   readonly #subscribers = new Set<SubscriberType>();
@@ -108,7 +113,7 @@ export class Provisioner {
   };
   readonly #retryBackOff = new BackOff(FIBONACCI_TIMEOUTS);
 
-  #sockets: Array<ProvisioningConnection> = [];
+  readonly #sockets: Array<ProvisioningConnection> = [];
   #abortController: AbortController | undefined;
   #attemptCount = 0;
   #isRunning = false;
@@ -125,7 +130,7 @@ export class Provisioner {
       this.#start();
     }
 
-    return () => {
+    return async () => {
       this.#subscribers.delete(subscriber);
       if (this.#subscribers.size === 0) {
         this.#stop('Cancel, no subscribers');
@@ -155,13 +160,12 @@ export class Provisioner {
       readReceipts,
       ephemeralBackupKey,
       accountEntropyPool,
+      authCredentialSalt,
       mediaRootBackupKey,
     } = envelope;
 
-    strictAssert(number, 'prepareLinkData: missing number');
     strictAssert(provisioningCode, 'prepareLinkData: missing provisioningCode');
     strictAssert(aciKeyPair, 'prepareLinkData: missing aciKeyPair');
-    strictAssert(pniKeyPair, 'prepareLinkData: missing pniKeyPair');
     strictAssert(
       Bytes.isNotEmpty(profileKey),
       'prepareLinkData: missing profileKey'
@@ -171,8 +175,37 @@ export class Provisioner {
       'prepareLinkData: missing masterKey or accountEntropyPool'
     );
 
+    if (ourPni == null) {
+      strictAssert(
+        authCredentialSalt != null,
+        'prepareLinkData: missing authCredentialSalt'
+      );
+      return {
+        type: AccountType.Linked,
+        hasE164: false,
+        verificationCode: provisioningCode,
+        aciKeyPair,
+        profileKey,
+        deviceName: normalizeDeviceName(deviceName).slice(
+          0,
+          MAX_DEVICE_NAME_LENGTH
+        ),
+        userAgent,
+        ourAci,
+        readReceipts: Boolean(readReceipts),
+        masterKey,
+        ephemeralBackupKey,
+        authCredentialSalt,
+        accountEntropyPool,
+        mediaRootBackupKey,
+      };
+    }
+
+    strictAssert(number != null, 'prepareLinkData: missing number');
+    strictAssert(pniKeyPair != null, 'prepareLinkData: missing pniKeyPair');
     return {
       type: AccountType.Linked,
+      hasE164: true,
       number,
       verificationCode: provisioningCode,
       aciKeyPair,
@@ -188,6 +221,7 @@ export class Provisioner {
       readReceipts: Boolean(readReceipts),
       masterKey,
       ephemeralBackupKey,
+      authCredentialSalt,
       accountEntropyPool,
       mediaRootBackupKey,
     };
@@ -216,11 +250,10 @@ export class Provisioner {
       return;
     }
     log.info(`stopping, reason=${reason}`);
+    this.#isRunning = false;
 
-    this.#sockets = [];
     this.#abortController?.abort();
     this.#abortController = undefined;
-    this.#isRunning = false;
   }
 
   async #loop(signal: AbortSignal): Promise<void> {
@@ -236,15 +269,17 @@ export class Provisioner {
         });
 
         this.#stop('Max rotations reached');
+
         break;
       }
 
       let delay: number;
 
       try {
-        const sleepMs = QR_CODE_TIMEOUTS[this.#attemptCount];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const sleepMs = QR_CODE_TIMEOUTS[this.#attemptCount]!;
 
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await this.#connect(signal, sleepMs);
 
         // Successful connect, sleep until rotation time
@@ -281,6 +316,7 @@ export class Provisioner {
           }
 
           this.#subscribers.clear();
+
           this.#stop('Only socket failed');
 
           break;
@@ -298,7 +334,7 @@ export class Provisioner {
       }
 
       try {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await sleep(delay, signal);
       } catch (error) {
         // New loop is running
@@ -381,17 +417,19 @@ export class Provisioner {
 
     // But only register it once we get the uuid from server back.
 
-    const uuid = await pTimeout(
-      uuidPromise.promise,
-      Math.max(0, timeoutAt - Date.now()),
-      TIMEOUT_ERROR
-    );
+    const uuid = await pTimeout(uuidPromise.promise, {
+      milliseconds: Math.max(0, timeoutAt - Date.now()),
+      message: TIMEOUT_ERROR,
+    });
 
     const url = linkDeviceRoute
       .toAppUrl({
         uuid,
         pubKey: Bytes.toBase64(cipher.getPublicKey().serialize()),
-        capabilities: isLinkAndSyncEnabled() ? ['backup4', 'backup5'] : [],
+        capabilities: [
+          'nopni', // e164-less linking
+          ...(isLinkAndSyncEnabled() ? ['backup5'] : []),
+        ],
       })
       .toString();
 

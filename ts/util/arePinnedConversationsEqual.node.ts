@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as Bytes from '../Bytes.std.js';
+import * as Bytes from '../Bytes.std.ts';
 
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { fromServiceIdBinaryOrString } from './ServiceId.node.js';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { fromServiceIdBinaryOrString } from './ServiceId.node.ts';
 
-import PinnedConversation = Proto.AccountRecord.IPinnedConversation;
+import PinnedConversation = Proto.AccountRecord.PinnedConversation.Params;
 
 export function arePinnedConversationsEqual(
   localValue: Array<PinnedConversation>,
@@ -17,10 +17,17 @@ export function arePinnedConversationsEqual(
   }
   return localValue.every(
     (localPinnedConversation: PinnedConversation, index: number) => {
-      const remotePinnedConversation = remoteValue[index];
+      const remotePinnedConversation = remoteValue[index]?.identifier;
+      if (!remotePinnedConversation) {
+        return false;
+      }
+
+      if (!localPinnedConversation.identifier) {
+        return false;
+      }
 
       const { contact, groupMasterKey, legacyGroupId } =
-        localPinnedConversation;
+        localPinnedConversation.identifier;
 
       if (contact) {
         const { contact: remoteContact } = remotePinnedConversation;

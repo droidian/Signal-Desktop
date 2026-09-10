@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './StoryListItem.dom.js';
-import { StoryListItem } from './StoryListItem.dom.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
+import type { PropsType } from './StoryListItem.dom.tsx';
+import { StoryListItem } from './StoryListItem.dom.tsx';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
 import {
   fakeAttachment,
   fakeThumbnail,
-} from '../test-helpers/fakeAttachment.std.js';
+} from '../test-helpers/fakeAttachment.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -36,7 +35,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => <StoryListItem {...args} />;
 
 export const SomeonesStory = Template.bind({});

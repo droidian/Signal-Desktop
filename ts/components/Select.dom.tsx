@@ -1,8 +1,8 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent } from 'react';
-import React, { useCallback } from 'react';
+import type { ChangeEvent, Ref, JSX } from 'react';
+import { useCallback, forwardRef } from 'react';
 import classNames from 'classnames';
 
 export type Option = Readonly<{
@@ -18,11 +18,11 @@ export type PropsType = Readonly<{
   moduleClassName?: string;
   name?: string;
   options: ReadonlyArray<Option>;
-  onChange(value: string): void;
+  onChange: (value: string) => void;
   value?: string | number;
 }>;
 
-export const Select = React.forwardRef(function SelectInner(
+export const Select = forwardRef(function SelectInner(
   {
     ariaLabel,
     disabled,
@@ -33,8 +33,8 @@ export const Select = React.forwardRef(function SelectInner(
     options,
     value,
   }: PropsType,
-  ref: React.Ref<HTMLSelectElement>
-): React.JSX.Element {
+  ref: Ref<HTMLSelectElement>
+): JSX.Element {
   const onSelectChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       onChange(event.target.value);

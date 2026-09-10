@@ -1,30 +1,31 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { DataReader } from '../../sql/Client.preload.js';
-import { useItemsActions } from '../ducks/items.preload.js';
+import { DataReader } from '../../sql/Client.preload.ts';
+import { useItemsActions } from '../ducks/items.preload.ts';
 import {
   getNavTabsCollapsed,
   getPreferredLeftPaneWidth,
-} from '../selectors/items.dom.js';
-import { getIntl, getRegionCode } from '../selectors/user.std.js';
-import { CallsTab } from '../../components/CallsTab.preload.js';
+} from '../selectors/items.dom.ts';
+import { getIntl, getRegionCode } from '../selectors/user.std.ts';
+import { CallsTab } from '../../components/CallsTab.dom.tsx';
 import {
   getAllConversations,
   getConversationSelector,
-} from '../selectors/conversations.dom.js';
-import { filterAndSortConversations } from '../../util/filterAndSortConversations.std.js';
+  getOtherTabsUnreadCount,
+} from '../selectors/conversations.dom.ts';
+import { filterAndSortConversations } from '../../util/filterAndSortConversations.std.ts';
 import type {
   CallHistoryFilter,
   CallHistoryFilterOptions,
   CallHistoryGroup,
   CallHistoryPagination,
-} from '../../types/CallDisposition.std.js';
-import type { ConversationType } from '../ducks/conversations.preload.js';
-import { SmartConversationDetails } from './ConversationDetails.preload.js';
-import { renderToastManagerWithoutMegaphone } from './ToastManager.preload.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
+} from '../../types/CallDisposition.std.ts';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import { SmartConversationDetails } from './ConversationDetails.preload.tsx';
+import { renderToastManagerWithoutMegaphone } from './ToastManager.preload.tsx';
+import { useCallingActions } from '../ducks/calling.preload.ts';
 import {
   getActiveCallState,
   getAdhocCallSelector,
@@ -32,16 +33,16 @@ import {
   getCallSelector,
   getCallLinkSelector,
   getHasAnyAdminCallLinks,
-} from '../selectors/calling.std.js';
-import { useCallHistoryActions } from '../ducks/callHistory.preload.js';
-import { getCallHistoryEdition } from '../selectors/callHistory.std.js';
-import { getHasPendingUpdate } from '../selectors/updates.std.js';
-import { getHasAnyFailedStorySends } from '../selectors/stories.preload.js';
-import { getOtherTabsUnreadStats } from '../selectors/nav.preload.js';
-import { SmartCallLinkDetails } from './CallLinkDetails.preload.js';
-import type { CallLinkType } from '../../types/CallLink.std.js';
-import { filterCallLinks } from '../../util/filterCallLinks.dom.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
+} from '../selectors/calling.std.ts';
+import { useCallHistoryActions } from '../ducks/callHistory.preload.ts';
+import { getCallHistoryEdition } from '../selectors/callHistory.std.ts';
+import { getHasPendingUpdate } from '../selectors/updates.std.ts';
+import { getHasAnyFailedStorySends } from '../selectors/stories.preload.ts';
+import { SmartCallLinkDetails } from './CallLinkDetails.preload.tsx';
+import type { CallLinkType } from '../../types/CallLink.std.ts';
+import { filterCallLinks } from '../../util/filterCallLinks.dom.ts';
+import { getCallIdFromEra } from '../../util/callDisposition.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
 
 function getCallHistoryFilter({
   allCallLinks,
@@ -108,7 +109,7 @@ function renderCallLinkDetails(
   roomId: string,
   callHistoryGroup: CallHistoryGroup,
   onClose: () => void
-): React.JSX.Element {
+): JSX.Element {
   return (
     <SmartCallLinkDetails
       roomId={roomId}
@@ -121,7 +122,7 @@ function renderCallLinkDetails(
 function renderConversationDetails(
   conversationId: string,
   callHistoryGroup: CallHistoryGroup | null
-): React.JSX.Element {
+): JSX.Element {
   return (
     <SmartConversationDetails
       conversationId={conversationId}
@@ -151,7 +152,7 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
 
   const hasPendingUpdate = useSelector(getHasPendingUpdate);
   const hasFailedStorySends = useSelector(getHasAnyFailedStorySends);
-  const otherTabsUnreadStats = useSelector(getOtherTabsUnreadStats);
+  const otherTabsUnreadCount = useSelector(getOtherTabsUnreadCount);
 
   const {
     createCallLink,
@@ -222,8 +223,9 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
     <CallsTab
       activeCall={activeCall}
       allConversations={allConversations}
-      otherTabsUnreadStats={otherTabsUnreadStats}
+      otherTabsUnreadCount={otherTabsUnreadCount}
       getConversation={getConversation}
+      getCallIdFromEra={getCallIdFromEra}
       getCallHistoryGroupsCount={getCallHistoryGroupsCount}
       getCallHistoryGroups={getCallHistoryGroups}
       getAdhocCall={getAdhocCall}

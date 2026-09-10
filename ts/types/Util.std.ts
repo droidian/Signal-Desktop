@@ -1,15 +1,17 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import type { IntlShape } from 'react-intl';
-import type { AciString } from './ServiceId.std.js';
-import type { LocaleDirection } from '../../app/locale.node.js';
+import type { AciString } from './ServiceId.std.ts';
+import type { LocaleDirection } from '../../app/locale.node.ts';
 import type {
   ICUJSXMessageParamsByKeyType,
   ICUStringMessageParamsByKeyType,
 } from '../../build/ICUMessageParams.d.ts';
 
-import type { HourCyclePreference, LocaleMessagesType } from './I18N.std.js';
+import type { HourCyclePreference, LocaleMessagesType } from './I18N.std.ts';
 
 export type StoryContextType = {
   authorAci?: AciString;
@@ -19,9 +21,9 @@ export type StoryContextType = {
 export type RenderTextCallbackType = (options: {
   text: string;
   key: number;
-}) => React.JSX.Element | string;
+}) => JSX.Element | string;
 
-export { ICUJSXMessageParamsByKeyType, ICUStringMessageParamsByKeyType };
+export type { ICUJSXMessageParamsByKeyType, ICUStringMessageParamsByKeyType };
 
 export type LocalizerOptions = {
   /**
@@ -43,15 +45,15 @@ export type LocalizerType = {
           options?: LocalizerOptions,
         ]
   ): string;
-  getIntl(): IntlShape;
-  getLocale(): string;
-  getLocaleMessages(): LocaleMessagesType;
-  getLocaleDirection(): LocaleDirection;
-  getHourCyclePreference(): HourCyclePreference;
+  getIntl: () => IntlShape;
+  getLocale: () => string;
+  getLocaleMessages: () => LocaleMessagesType;
+  getLocaleDirection: () => LocaleDirection;
+  getHourCyclePreference: () => HourCyclePreference;
 
   // Storybook
-  trackUsage(): void;
-  stopTrackingUsage(): Array<[string, string]>;
+  trackUsage: () => void;
+  stopTrackingUsage: () => Array<[string, string]>;
 };
 
 export enum SentMediaQualityType {
@@ -78,6 +80,7 @@ export enum ScrollBehavior {
 type InternalAssertProps<
   Result,
   Value,
+  // oxlint-disable-next-line no-shadow
   Missing = Omit<Result, keyof Value>,
 > = keyof Missing extends never
   ? Result
@@ -92,9 +95,10 @@ export type AssertProps<Result, Value> = InternalAssertProps<Result, Value>;
 
 export type UnwrapPromise<Value> = Value extends Promise<infer T> ? T : Value;
 
-export type BytesToStrings<Value> = Value extends Uint8Array
-  ? string
-  : { [Key in keyof Value]: BytesToStrings<Value[Key]> };
+export type BytesToStrings<Value> =
+  Value extends Uint8Array<ArrayBuffer>
+    ? string
+    : { [Key in keyof Value]: BytesToStrings<Value[Key]> };
 
 export type JSONWithUnknownFields<Value> =
   Value extends Record<string | symbol | number, unknown>

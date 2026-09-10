@@ -3,23 +3,23 @@
 
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import casual from 'casual';
 import { v4 as generateUuid } from 'uuid';
 
-import type { PropsType } from './ProfileEditor.dom.js';
+import type { PropsType } from './ProfileEditor.dom.tsx';
 
-import { ProfileEditorPage } from '../types/Nav.std.js';
-import { ProfileEditor } from './ProfileEditor.dom.js';
-import { UsernameEditor } from './UsernameEditor.dom.js';
+import { ProfileEditorPage } from '../types/Nav.std.ts';
+import { ProfileEditor } from './ProfileEditor.dom.tsx';
+import { UsernameEditor } from './UsernameEditor.dom.tsx';
 import {
   UsernameEditState,
   UsernameLinkState,
   UsernameReservationState,
-} from '../state/ducks/usernameEnums.std.js';
-import { getRandomColor } from '../test-helpers/getRandomColor.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
+} from '../state/ducks/usernameEnums.std.ts';
+import { getRandomColor } from '../test-helpers/getRandomColor.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -47,7 +47,7 @@ export default {
     },
   },
   args: {
-    aboutEmoji: '',
+    aboutEmoji: undefined,
     aboutText: casual.sentence,
     profileAvatarUrl: undefined,
     conversationId: generateUuid(),
@@ -63,7 +63,7 @@ export default {
     usernameEditState: UsernameEditState.Editing,
     usernameLinkState: UsernameLinkState.Ready,
 
-    emojiSkinToneDefault: EmojiSkinTone.None,
+    emojiSkinToneDefault: Emoji.SkinTone.None,
     userAvatarData: [],
     username: undefined,
 
@@ -83,9 +83,7 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-function renderUsernameEditor(props: {
-  onClose: () => void;
-}): React.JSX.Element {
+function renderUsernameEditor(props: { onClose: () => void }): JSX.Element {
   return (
     <UsernameEditor
       i18n={i18n}
@@ -105,7 +103,6 @@ function renderUsernameEditor(props: {
   );
 }
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => {
   const [editState, setEditState] = useState(args.editState);
 
@@ -121,7 +118,7 @@ const Template: StoryFn<PropsType> = args => {
 
 export const FullSet = Template.bind({});
 FullSet.args = {
-  aboutEmoji: '🙏',
+  aboutEmoji: Emoji.getDefaultVariant(Emoji.FOLDED_HANDS),
   aboutText: 'Live. Laugh. Love',
   familyName: casual.last_name,
   firstName: casual.first_name,
@@ -134,7 +131,7 @@ WithFullName.args = {
 };
 export const WithCustomAbout = Template.bind({});
 WithCustomAbout.args = {
-  aboutEmoji: '🙏',
+  aboutEmoji: Emoji.getDefaultVariant(Emoji.FOLDED_HANDS),
   aboutText: 'Live. Laugh. Love',
 };
 

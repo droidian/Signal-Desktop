@@ -1,39 +1,40 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import type { ReadonlyDeep } from 'type-fest';
 import type {
   LocalizerType,
   ICUStringMessageParamsByKeyType,
   ICUJSXMessageParamsByKeyType,
-} from './types/Util.std.js';
+} from './types/Util.std.ts';
 import type {
   ServiceIdString,
   AciString,
   PniString,
-} from './types/ServiceId.std.js';
-import { missingCaseError } from './util/missingCaseError.std.js';
+} from './types/ServiceId.std.ts';
+import { missingCaseError } from './util/missingCaseError.std.ts';
 
 import type {
   GroupV2ChangeDetailType,
   GroupV2ChangeType,
-} from './types/groups.std.js';
-import { SignalService as Proto } from './protobuf/index.std.js';
-import { createLogger } from './logging/log.std.js';
+} from './types/groups.std.ts';
+import { SignalService as Proto } from './protobuf/index.std.ts';
+import { createLogger } from './logging/log.std.ts';
 
 const log = createLogger('groupChange');
 
-type SelectParamsByKeyType<T extends string | React.JSX.Element> =
-  T extends string
-    ? ICUStringMessageParamsByKeyType
-    : ICUJSXMessageParamsByKeyType;
+type SelectParamsByKeyType<T extends string | JSX.Element> = T extends string
+  ? ICUStringMessageParamsByKeyType
+  : ICUJSXMessageParamsByKeyType;
 
-export type SmartContactRendererType<T extends string | React.JSX.Element> = (
-  serviceId: ServiceIdString
-) => T extends string ? string : React.JSX.Element;
+export type SmartContactRendererType<T extends string | JSX.Element> = (
+  serviceId: string
+) => T extends string ? string : JSX.Element;
 
 type StringRendererType<
-  T extends string | React.JSX.Element,
+  T extends string | JSX.Element,
   ParamsByKeyType extends SelectParamsByKeyType<T> = SelectParamsByKeyType<T>,
 > = <Key extends keyof ParamsByKeyType>(
   id: Key,
@@ -41,7 +42,7 @@ type StringRendererType<
   components: ParamsByKeyType[Key]
 ) => T;
 
-export type RenderOptionsType<T extends string | React.JSX.Element> = {
+export type RenderOptionsType<T extends string | JSX.Element> = {
   // `from` will be a PNI when the change is "declining a PNI invite".
   from?: ServiceIdString;
   i18n: LocalizerType;
@@ -54,11 +55,11 @@ export type RenderOptionsType<T extends string | React.JSX.Element> = {
 const AccessControlEnum = Proto.AccessControl.AccessRequired;
 const RoleEnum = Proto.Member.Role;
 
-export type RenderChangeResultType<T extends string | React.JSX.Element> =
+export type RenderChangeResultType<T extends string | JSX.Element> =
   ReadonlyArray<
     Readonly<{
       detail: GroupV2ChangeDetailType;
-      text: T extends string ? string : React.JSX.Element;
+      text: T extends string ? string : JSX.Element;
 
       // Used to differentiate between the multiple texts produced by
       // 'admin-approval-bounce'
@@ -66,7 +67,7 @@ export type RenderChangeResultType<T extends string | React.JSX.Element> =
     }>
   >;
 
-export function renderChange<T extends string | React.JSX.Element>(
+export function renderChange<T extends string | JSX.Element>(
   change: ReadonlyDeep<GroupV2ChangeType>,
   options: RenderOptionsType<T>
 ): RenderChangeResultType<T> {
@@ -89,7 +90,7 @@ export function renderChange<T extends string | React.JSX.Element>(
   });
 }
 
-function renderChangeDetail<T extends string | React.JSX.Element>(
+function renderChangeDetail<T extends string | JSX.Element>(
   detail: ReadonlyDeep<GroupV2ChangeDetailType>,
   options: RenderOptionsType<T>
 ): string | T | ReadonlyArray<string | T> {
@@ -273,6 +274,36 @@ function renderChangeDetail<T extends string | React.JSX.Element>(
     }
     log.warn(
       `access-invite-link change type, privilege ${newPrivilege} is unknown`
+    );
+    return '';
+  }
+  if (detail.type === 'access-member-label') {
+    const { newPrivilege } = detail;
+
+    if (newPrivilege === AccessControlEnum.ADMINISTRATOR) {
+      if (fromYou) {
+        return i18n('icu:GroupV2--access-member-label--admins--you');
+      }
+      if (from) {
+        return i18n('icu:GroupV2--access-member-label--admins--other', {
+          adminName: renderContact(from),
+        });
+      }
+      return i18n('icu:GroupV2--access-member-label--admins--unknown');
+    }
+    if (newPrivilege === AccessControlEnum.MEMBER) {
+      if (fromYou) {
+        return i18n('icu:GroupV2--access-member-label--all--you');
+      }
+      if (from) {
+        return i18n('icu:GroupV2--access-member-label--all--other', {
+          adminName: renderContact(from),
+        });
+      }
+      return i18n('icu:GroupV2--access-member-label--all--unknown');
+    }
+    log.warn(
+      `access-member-label change type, privilege ${newPrivilege} is unknown`
     );
     return '';
   }
@@ -881,6 +912,17 @@ function renderChangeDetail<T extends string | React.JSX.Element>(
       });
     }
     return i18n('icu:GroupV2--announcements--member--unknown');
+  }
+  if (detail.type === 'terminated') {
+    if (fromYou) {
+      return i18n('icu:GroupV2--terminated--you');
+    }
+    if (from) {
+      return i18n('icu:GroupV2--terminated--other', {
+        memberName: renderContact(from),
+      });
+    }
+    return i18n('icu:GroupV2--terminated--unknown');
   }
   if (detail.type === 'summary') {
     return i18n('icu:GroupV2--summary');

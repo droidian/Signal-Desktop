@@ -9,16 +9,16 @@ import {
   isMegaphoneCtaIdValid,
   isMegaphoneDeletable,
   isMegaphoneShowable,
-} from '../../services/megaphone.preload.js';
-import { DAY } from '../../util/durations/index.std.js';
+} from '../../services/megaphone.preload.ts';
+import { DAY } from '../../util/durations/index.std.ts';
 import type {
   RemoteMegaphoneId,
   RemoteMegaphoneType,
-} from '../../types/Megaphone.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import type { ConversationController } from '../../ConversationController.preload.js';
-import type { ConversationModel } from '../../models/conversations.preload.js';
+} from '../../types/Megaphone.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { ConversationController } from '../../ConversationController.preload.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const FAKE_MEGAPHONE: RemoteMegaphoneType = {
   id: uuid() as RemoteMegaphoneId,
@@ -35,7 +35,7 @@ const FAKE_MEGAPHONE: RemoteMegaphoneType = {
   localeFetched: 'en',
   title: 'megaphone',
   body: 'cats',
-  imagePath: '../../../fixtures/donate-heart.png',
+  imagePath: '../../../images/donate-heart.png',
   primaryCtaText: 'donate',
   secondaryCtaText: 'snooze',
   snoozeCount: 0,
@@ -107,6 +107,13 @@ describe('megaphone service', () => {
         snoozedAt: Date.now() - 7 * DAY,
       });
       assert.strictEqual(isMegaphoneShowable(megaphone), true);
+    });
+
+    it('handles megaphone with dontShowBeforeEpochMs in the future', () => {
+      const megaphone = getMegaphone({
+        dontShowBeforeEpochMs: Date.now() + 1 * DAY,
+      });
+      assert.strictEqual(isMegaphoneShowable(megaphone), false);
     });
 
     it('handles megaphone expired past dontShowAfterEpochMs', () => {

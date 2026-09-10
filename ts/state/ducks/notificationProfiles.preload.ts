@@ -6,39 +6,39 @@ import { debounce, difference } from 'lodash';
 import type { ReadonlyDeep } from 'type-fest';
 import type { ThunkAction } from 'redux-thunk';
 
-import { createLogger } from '../../logging/log.std.js';
+import { createLogger } from '../../logging/log.std.ts';
 import {
   update as updateProfileService,
   fastUpdate as fastUpdateProfileService,
-} from '../../services/notificationProfilesService.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
+} from '../../services/notificationProfilesService.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
 import {
   type BoundActionCreatorsMapObject,
   useBoundActions,
-} from '../../hooks/useBoundActions.std.js';
-import { DataWriter } from '../../sql/Client.preload.js';
+} from '../../hooks/useBoundActions.std.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
 import {
   redactNotificationProfileId,
   sortProfiles,
-} from '../../types/NotificationProfile.std.js';
-import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.js';
-import { getOverride } from '../selectors/notificationProfiles.dom.js';
-import { getItems } from '../selectors/items.dom.js';
+} from '../../types/NotificationProfile.std.ts';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.ts';
+import { getOverride } from '../selectors/notificationProfiles.dom.ts';
+import { getItems } from '../selectors/items.dom.ts';
 import {
   prepareForDisabledNotificationProfileSync,
   prepareForEnabledNotificationProfileSync,
-} from '../../services/storageRecordOps.preload.js';
-import { storageServiceUploadJob } from '../../services/storage.preload.js';
-import { SECOND } from '../../util/durations/constants.std.js';
+} from '../../services/storageRecordOps.preload.ts';
+import { runStorageServiceUploadJob } from '../../services/storage.preload.ts';
+import { SECOND } from '../../util/durations/constants.std.ts';
 
 import type {
   NextProfileEvent,
   NotificationProfileIdString,
   NotificationProfileOverride,
   NotificationProfileType,
-} from '../../types/NotificationProfile.std.js';
-import type { StateType } from '../reducer.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../types/NotificationProfile.std.ts';
+import type { StateType } from '../reducer.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 const log = createLogger('ducks/notificationProfiles');
 
@@ -156,7 +156,7 @@ const updateStorageService = debounce(
       return;
     }
 
-    storageServiceUploadJob({
+    runStorageServiceUploadJob({
       reason,
     });
   },
@@ -210,7 +210,7 @@ function markProfileDeleted(
 // If called based on a local change, this function is run before the storage service
 // upload. If called based on a storage service update, it is called at the end of
 // processing, as the AccountRecord is processed. All profiles have been processed at
-// that point, and the override from AccountRecord has been processed as well.
+// that point, and the override from AccountRecord is just about to be processed.
 function setIsSyncEnabled(
   enabled: boolean,
   { fromStorageService }: { fromStorageService: boolean }
@@ -237,9 +237,7 @@ function setIsSyncEnabled(
       await itemStorage.put('notificationProfileSyncDisabled', disabled);
       if (disabled) {
         if (!fromStorageService) {
-          const globalOverride = await itemStorage.get(
-            'notificationProfileOverride'
-          );
+          const globalOverride = itemStorage.get('notificationProfileOverride');
 
           await itemStorage.put(
             'notificationProfileOverrideFromPrimary',
@@ -318,8 +316,15 @@ function setProfileOverride(
     const state = getState();
     const currentOverride = getOverride(state);
 
+    const isNotificationProfileSyncEnabled = !itemStorage.get(
+      'notificationProfileSyncDisabled',
+      false
+    );
+
     const me = window.ConversationController.getOurConversationOrThrow();
-    me.captureChange(logId);
+    if (isNotificationProfileSyncEnabled) {
+      me.captureChange(logId);
+    }
 
     if (enabled) {
       if (
@@ -346,7 +351,9 @@ function setProfileOverride(
         payload: newOverride,
       });
       fastUpdateProfileService();
-      updateStorageService(logId);
+      if (isNotificationProfileSyncEnabled) {
+        updateStorageService(logId);
+      }
 
       return;
     }
@@ -361,7 +368,9 @@ function setProfileOverride(
       payload: newOverride,
     });
     fastUpdateProfileService();
-    updateStorageService(logId);
+    if (isNotificationProfileSyncEnabled) {
+      updateStorageService(logId);
+    }
   };
 }
 
@@ -394,6 +403,7 @@ function updateOverride(
     const enabled = payload?.enabled;
     await itemStorage.put('notificationProfileOverride', payload);
 
+    // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions
     const logId = `updateOverride/${id ? redactNotificationProfileId(id) : 'undefined'}/enabled=${enabled}`;
 
     dispatch({
@@ -401,7 +411,12 @@ function updateOverride(
       payload,
     });
 
-    if (!fromStorageService) {
+    const isNotificationProfileSyncEnabled = !itemStorage.get(
+      'notificationProfileSyncDisabled',
+      false
+    );
+
+    if (!fromStorageService && isNotificationProfileSyncEnabled) {
       const me = window.ConversationController.getOurConversationOrThrow();
       me.captureChange(logId);
       updateStorageService(logId);

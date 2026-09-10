@@ -1,7 +1,12 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import {
+  useCallback,
+  type JSX,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 import classNames from 'classnames';
 
 import type { ReadonlyDeep } from 'type-fest';
@@ -9,21 +14,21 @@ import type { ReadonlyDeep } from 'type-fest';
 import {
   AddressType,
   ContactFormType,
-} from '../../types/EmbeddedContact.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
+} from '../../types/EmbeddedContact.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
 import {
   renderAvatar,
   renderContactShorthand,
   renderName,
-} from './contactUtil.dom.js';
+} from './contactUtil.dom.tsx';
 
 import type {
   EmbeddedContactForUIType,
   Email,
   Phone,
   PostalAddress,
-} from '../../types/EmbeddedContact.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+} from '../../types/EmbeddedContact.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
 
 export type Props = {
   cancelAttachmentDownload: (options: { messageId: string }) => void;
@@ -89,10 +94,10 @@ export function ContactDetail({
   kickOffAttachmentDownload,
   messageId,
   onSendMessage,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   // We don't want the overall click handler for this element to fire, so we stop
   //   propagation before handing control to the caller's callback.
-  const onClick = (e: React.MouseEvent<HTMLButtonElement>): void => {
+  const onClick = (e: MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation();
     onSendMessage();
   };
@@ -130,12 +135,12 @@ export function ContactDetail({
           isClickable ? 'module-contact-detail__avatar--clickable' : undefined
         )}
         type="button"
-        onClick={(event: React.MouseEvent) => {
+        onClick={(event: MouseEvent) => {
           event?.stopPropagation();
           event.preventDefault();
           maybeDownload();
         }}
-        onKeyDown={(event: React.KeyboardEvent) => {
+        onKeyDown={(event: KeyboardEvent) => {
           if (event.key !== 'Enter' && event.key !== ' ') {
             return;
           }
@@ -193,7 +198,7 @@ export function ContactDetail({
       {contact.address?.map((address: PostalAddress, index: number) => {
         return (
           <div
-            // eslint-disable-next-line react/no-array-index-key
+            // oxlint-disable-next-line react/no-array-index-key
             key={index}
             className="module-contact-detail__additional-contact"
           >

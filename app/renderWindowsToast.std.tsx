@@ -1,20 +1,19 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import {
-  type WindowsNotificationData,
-  NotificationType,
-} from '../ts/types/notifications.std.js';
-import { missingCaseError } from '../ts/util/missingCaseError.std.js';
+import type { WindowsNotificationData } from '../ts/services/notifications.preload.ts';
+
+import { NotificationType } from '../ts/types/notifications.std.ts';
+import { missingCaseError } from '../ts/util/missingCaseError.std.ts';
 import {
   cancelPresentingRoute,
   showConversationRoute,
   showWindowRoute,
   startCallLobbyRoute,
-} from '../ts/util/signalRoutes.std.js';
+} from '../ts/util/signalRoutes.std.ts';
 
 function pathToUri(path: string) {
   return `file:///${encodeURI(path.replace(/\\/g, '/'))}`;
@@ -24,24 +23,24 @@ function Toast(props: {
   launch: string;
   // Note: though React doesn't like it, Windows seems to require that this be camelcase
   activationType: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  return React.createElement('toast', props);
+  return createElement('toast', props);
 }
-function Visual(props: { children: React.ReactNode }) {
-  return React.createElement('visual', props);
+function Visual(props: { children: ReactNode }) {
+  return createElement('visual', props);
 }
-function Binding(props: { template: string; children: React.ReactNode }) {
-  return React.createElement('binding', props);
+function Binding(props: { template: string; children: ReactNode }) {
+  return createElement('binding', props);
 }
-function Text(props: { id: string; children: React.ReactNode }) {
-  return React.createElement('text', props);
+function Text(props: { id: string; children: ReactNode }) {
+  return createElement('text', props);
 }
 function Image(props: { id: string; src: string; 'hint-crop': string }) {
-  return React.createElement('image', props);
+  return createElement('image', props);
 }
 function Audio(props: { src: string }) {
-  return React.createElement('audio', props);
+  return createElement('audio', props);
 }
 
 export function renderWindowsToast({
@@ -61,7 +60,7 @@ export function renderWindowsToast({
   const template = avatarPath ? 'ToastImageAndText02' : 'ToastText02';
   let launch: URL;
 
-  let audio: React.ReactNode | undefined;
+  let audio: ReactNode | undefined;
 
   // Note:
   //   1) this maps to the notify() function in services/notifications.ts
@@ -79,8 +78,6 @@ export function renderWindowsToast({
     launch = showWindowRoute.toAppUrl({});
   } else if (type === NotificationType.IsPresenting) {
     launch = cancelPresentingRoute.toAppUrl({});
-  } else if (type === NotificationType.MinimizedToTray) {
-    launch = showWindowRoute.toAppUrl({});
   } else {
     throw missingCaseError(type);
   }

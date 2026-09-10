@@ -4,54 +4,59 @@
 import lodash from 'lodash';
 import PQueue from 'p-queue';
 import { v4 as generateUuid } from 'uuid';
+import { MuteExpiration } from '@signalapp/types';
 
-import { DataReader, DataWriter } from './sql/Client.preload.js';
-import { createLogger } from './logging/log.std.js';
-import * as Errors from './types/errors.std.js';
-import { getAuthorId } from './messages/sources.preload.js';
-import { maybeDeriveGroupV2Id } from './groups.preload.js';
-import { assertDev, strictAssert } from './util/assert.std.js';
-import { drop } from './util/drop.std.js';
+import { DataReader, DataWriter } from './sql/Client.preload.ts';
+import { createLogger } from './logging/log.std.ts';
+import * as Errors from './types/errors.std.ts';
+import { getAuthorId } from './messages/sources.preload.ts';
+import { maybeDeriveGroupV2Id } from './groups.preload.ts';
+import { assertDev, strictAssert } from './util/assert.std.ts';
+import { drop } from './util/drop.std.ts';
 import {
   isDirectConversation,
   isGroup,
   isGroupV1,
   isGroupV2,
-} from './util/whatTypeOfConversation.dom.js';
+} from './util/whatTypeOfConversation.dom.ts';
 import {
   doesAttachmentExist,
   maybeDeleteAttachmentFile,
-} from './util/migrations.preload.js';
+} from './util/migrations.preload.ts';
 import {
   isServiceIdString,
   normalizePni,
   normalizeServiceId,
-} from './types/ServiceId.std.js';
-import { normalizeAci } from './util/normalizeAci.std.js';
-import { sleep } from './util/sleep.std.js';
-import { isNotNil } from './util/isNotNil.std.js';
-import { MINUTE, SECOND } from './util/durations/index.std.js';
-import { getServiceIdsForE164s } from './util/getServiceIdsForE164s.dom.js';
+} from './types/ServiceId.std.ts';
+import { normalizeAci } from './util/normalizeAci.std.ts';
+import { sleep } from './util/sleep.std.ts';
+import { isNotNil } from './util/isNotNil.std.ts';
+import { MINUTE, SECOND } from './util/durations/index.std.ts';
+import { getServiceIdsForE164s } from './util/getServiceIdsForE164s.dom.ts';
 import {
   SIGNAL_ACI,
   SIGNAL_AVATAR_PATH,
-} from './types/SignalConversation.std.js';
-import { getTitleNoDefault } from './util/getTitle.preload.js';
-import * as StorageService from './services/storage.preload.js';
-import textsecureUtils from './textsecure/Helpers.std.js';
-import { cdsLookup } from './textsecure/WebAPI.preload.js';
-import type { ConversationPropsForUnreadStats } from './util/countUnreadStats.std.js';
-import { countAllConversationsUnreadStats } from './util/countUnreadStats.std.js';
-import { isTestOrMockEnvironment } from './environment.std.js';
-import { isConversationAccepted } from './util/isConversationAccepted.preload.js';
-import { areWePending } from './util/groupMembershipUtils.preload.js';
-import { conversationJobQueue } from './jobs/conversationJobQueue.preload.js';
-import { createBatcher } from './util/batcher.std.js';
-import { validateConversation } from './util/validateConversation.dom.js';
-import { ConversationModel } from './models/conversations.preload.js';
-import { INITIAL_EXPIRE_TIMER_VERSION } from './util/expirationTimer.std.js';
-import { missingCaseError } from './util/missingCaseError.std.js';
-import { signalProtocolStore } from './SignalProtocolStore.preload.js';
+} from './types/SignalConversation.std.ts';
+import { getTitleNoDefault } from './util/getTitle.preload.ts';
+import * as StorageService from './services/storage.preload.ts';
+import { cdsLookup } from './textsecure/WebAPI.preload.ts';
+import type { ConversationPropsForUnreadStats } from './util/countUnreadStats.std.ts';
+import {
+  countAllConversationsUnreadStats,
+  getUnreadCountForBadge,
+} from './util/countUnreadStats.std.ts';
+import { STORAGE_KEY_DEFAULTS } from './types/StorageKeys.std.ts';
+import { isTestOrMockEnvironment } from './environment.std.ts';
+import { isConversationAccepted } from './util/isConversationAccepted.preload.ts';
+import { areWePending } from './util/groupMembershipUtils.preload.ts';
+import { conversationJobQueue } from './jobs/conversationJobQueue.preload.ts';
+import { createBatcher } from './util/batcher.std.ts';
+import { validateConversation } from './util/validateConversation.dom.ts';
+import { ConversationModel } from './models/conversations.preload.ts';
+import { INITIAL_EXPIRE_TIMER_VERSION } from './util/expirationTimer.std.ts';
+import { missingCaseError } from './util/missingCaseError.std.ts';
+import { removeConversation } from './util/Conversation.preload.ts';
+import { signalProtocolStore } from './SignalProtocolStore.preload.ts';
 
 import type {
   ConversationAttributesType,
@@ -63,8 +68,10 @@ import type {
   ServiceIdString,
   AciString,
   PniString,
-} from './types/ServiceId.std.js';
-import { itemStorage } from './textsecure/Storage.preload.js';
+} from './types/ServiceId.std.ts';
+import { itemStorage } from './textsecure/Storage.preload.ts';
+import { getSelectedConversationId } from './state/selectors/nav.std.ts';
+import { unencodeNumber } from './util/unencodeNumber.std.ts';
 
 const { debounce, pick, uniq, without } = lodash;
 
@@ -154,11 +161,10 @@ async function safeCombineConversations(
 
 const MAX_MESSAGE_BODY_LENGTH = 64 * 1024;
 
-const { getAllConversations, getMessagesBySentAt } = DataReader;
+const { getAllConversations } = DataReader;
 
 const {
   migrateConversationMessages,
-  removeConversation,
   saveConversation,
   updateConversation,
   updateConversations,
@@ -171,9 +177,9 @@ export class ConversationController {
   #_initialPromise: undefined | Promise<void>;
 
   #_conversations: Array<ConversationModel> = [];
-  #_conversationOpenStart = new Map<string, number>();
+  readonly #_conversationOpenStart = new Map<string, number>();
   #_hasQueueEmptied = false;
-  #_combineConversationsQueue = new PQueue({ concurrency: 1 });
+  readonly #_combineConversationsQueue = new PQueue({ concurrency: 1 });
   #_signalConversationId: undefined | string;
 
   #delayBeforeUpdatingRedux: (() => number) | undefined;
@@ -186,7 +192,7 @@ export class ConversationController {
   #_byGroupId: Record<string, ConversationModel> = Object.create(null);
   #_byId: Record<string, ConversationModel> = Object.create(null);
 
-  #debouncedUpdateUnreadCount = debounce(
+  readonly #debouncedUpdateUnreadCount = debounce(
     this.updateUnreadCount.bind(this),
     SECOND,
     {
@@ -196,7 +202,7 @@ export class ConversationController {
     }
   );
 
-  #convoUpdateBatcher = createBatcher<
+  readonly #convoUpdateBatcher = createBatcher<
     | { type: 'change' | 'add'; conversation: ConversationModel }
     | { type: 'remove'; id: string }
   >({
@@ -277,7 +283,7 @@ export class ConversationController {
       return;
     }
 
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     conversation.cachedProps = undefined;
 
     const hasAttributeChanged = (name: keyof ConversationAttributesType) => {
@@ -369,6 +375,7 @@ export class ConversationController {
       conversationsUpdated([conversation.format()]);
     }
   }
+
   #removeConversation(conversation: ConversationModel): void {
     this.#_conversations = without(this.#_conversations, conversation);
     this.#removeFromLookup(conversation);
@@ -387,6 +394,9 @@ export class ConversationController {
 
     const badgeCountMutedConversationsSetting =
       itemStorage.get('badge-count-muted-conversations') || false;
+    const unreadCountBadgeType =
+      itemStorage.get('unreadCountBadgeType') ??
+      STORAGE_KEY_DEFAULTS.unreadCountBadgeType;
     const { activeProfile } = window.reduxStore.getState().notificationProfiles;
 
     const unreadStats = countAllConversationsUnreadStats(
@@ -417,22 +427,12 @@ export class ConversationController {
 
     drop(itemStorage.put('unreadCount', unreadStats.unreadCount));
 
-    if (unreadStats.unreadCount > 0) {
-      const total =
-        unreadStats.unreadCount + unreadStats.readChatsMarkedUnreadCount;
-      window.IPC.setBadge(total);
-      window.IPC.updateTrayIcon(total);
-      window.document.title = `${window.getTitle()} (${total})`;
-    } else if (unreadStats.readChatsMarkedUnreadCount > 0) {
-      const total = unreadStats.readChatsMarkedUnreadCount;
-      window.IPC.setBadge(total);
-      window.IPC.updateTrayIcon(total);
-      window.document.title = `${window.getTitle()} (${total})`;
-    } else {
-      window.IPC.setBadge(0);
-      window.IPC.updateTrayIcon(0);
-      window.document.title = window.getTitle();
-    }
+    const total = getUnreadCountForBadge(unreadStats, unreadCountBadgeType);
+
+    window.IPC.setBadgeCount(total);
+    window.IPC.updateTrayIcon(total);
+    window.document.title =
+      total > 0 ? `${window.getTitle()} (${total})` : window.getTitle();
   }
 
   onEmpty(): void {
@@ -586,7 +586,7 @@ export class ConversationController {
         // own (that we create on link), it might need to be uploaded to storage
         // service.
         if (conversation.attributes.storageID == null) {
-          StorageService.storageServiceUploadJob({
+          StorageService.runStorageServiceUploadJob({
             reason: 'new conversation',
           });
         }
@@ -632,7 +632,7 @@ export class ConversationController {
       return null;
     }
 
-    const [id] = textsecureUtils.unencodeNumber(address);
+    const [id] = unencodeNumber(address);
     const conv = this.get(id);
 
     if (conv) {
@@ -643,9 +643,9 @@ export class ConversationController {
   }
 
   getOurConversationId(): string | undefined {
-    const e164 = itemStorage.user.getNumber();
+    const e164 = itemStorage.user.getOptionalNumber();
     const aci = itemStorage.user.getAci();
-    const pni = itemStorage.user.getPni();
+    const pni = itemStorage.user.getOptionalPni();
 
     if (!e164 && !aci && !pni) {
       return undefined;
@@ -689,7 +689,7 @@ export class ConversationController {
 
   async getOrCreateSignalConversation(): Promise<ConversationModel> {
     const conversation = await this.getOrCreateAndWait(SIGNAL_ACI, 'private', {
-      muteExpiresAt: Number.MAX_SAFE_INTEGER,
+      muteExpiresAt: MuteExpiration.ALWAYS,
       profileAvatar: { path: SIGNAL_AVATAR_PATH },
       profileName: 'Signal',
       profileSharing: true,
@@ -720,6 +720,10 @@ export class ConversationController {
     const ourDeviceId = itemStorage.user.getDeviceId();
 
     return ourDeviceId === 1;
+  }
+
+  doWeHaveOtherDevices(): boolean {
+    return !this.areWePrimaryDevice();
   }
 
   // Note: If you don't know what kind of serviceId it is, put it in the 'aci' param.
@@ -953,8 +957,7 @@ export class ConversationController {
       } else if (targetConversation && !targetConversation?.get(key)) {
         // This is mostly for the situation where PNI was erased when updating e164
         log.debug(
-          `${logId}: Re-adding ${key} on target conversation - ` +
-            `${targetConversation.idForLogging()}`
+          `${logId}: Re-adding ${key} on target conversation - ${targetConversation.idForLogging()}`
         );
         applyChangeToConversation(targetConversation, pniSignatureVerified, {
           [key]: value,
@@ -1128,7 +1131,7 @@ export class ConversationController {
           // Keep the newer one if it has an e164, otherwise keep existing
           if (conversation.get('e164')) {
             // Keep new one
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: conversation,
               obsolete: existing,
@@ -1136,7 +1139,7 @@ export class ConversationController {
             byServiceId[serviceId] = conversation;
           } else {
             // Keep existing - note that this applies if neither had an e164
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: existing,
               obsolete: conversation,
@@ -1162,7 +1165,7 @@ export class ConversationController {
           // Keep the newer one if it has additional data, otherwise keep existing
           if (conversation.get('e164') || conversation.getPni()) {
             // Keep new one
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: conversation,
               obsolete: existing,
@@ -1170,7 +1173,7 @@ export class ConversationController {
             byServiceId[pni] = conversation;
           } else {
             // Keep existing - note that this applies if neither had an e164
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: existing,
               obsolete: conversation,
@@ -1208,7 +1211,7 @@ export class ConversationController {
           // Keep the newer one if it has a service id, otherwise keep existing
           if (conversation.getServiceId()) {
             // Keep new one
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: conversation,
               obsolete: existing,
@@ -1216,7 +1219,7 @@ export class ConversationController {
             byE164[e164] = conversation;
           } else {
             // Keep existing - note that this applies if neither had a service id
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: existing,
               obsolete: conversation,
@@ -1254,14 +1257,14 @@ export class ConversationController {
             isGroupV2(conversation.attributes) &&
             !isGroupV2(existing.attributes)
           ) {
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: conversation,
               obsolete: existing,
             });
             byGroupV2Id[groupV2Id] = conversation;
           } else {
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.#doCombineConversations({
               current: existing,
               obsolete: conversation,
@@ -1326,6 +1329,22 @@ export class ConversationController {
         current.get('expireTimerVersion') ?? 1
       ),
     });
+
+    if (obsolete.isBlocked()) {
+      const e164 = obsolete.get('e164');
+      const e164Block = e164
+        ? itemStorage.blocked.getBlockedNumbers().get(e164)
+        : undefined;
+
+      const serviceId = obsolete.get('serviceId');
+      const serviceIdBlock = serviceId
+        ? itemStorage.blocked.getBlockedServiceIds().get(serviceId)
+        : undefined;
+
+      const timestamp = serviceIdBlock?.blockedAt ?? e164Block?.blockedAt;
+
+      current.block({ viaStorageServiceSync: false, timestamp });
+    }
 
     const obsoleteExpireTimer = obsolete.get('expireTimer');
     const currentExpireTimer = current.get('expireTimer');
@@ -1411,8 +1430,7 @@ export class ConversationController {
       log.warn(
         `${logId}: Ensure that all V1 groups have new conversationId instead of old`
       );
-      const groups =
-        await this.getAllGroupsInvolvingServiceId(obsoleteServiceId);
+      const groups = this.getAllGroupsInvolvingServiceId(obsoleteServiceId);
       groups.forEach(group => {
         const members = group.get('members');
         const withoutObsolete = without(members, obsoleteId);
@@ -1455,8 +1473,7 @@ export class ConversationController {
     await migrateConversationMessages(obsoleteId, currentId);
 
     if (
-      window.reduxStore.getState().conversations.selectedConversationId ===
-      obsoleteId
+      getSelectedConversationId(window.reduxStore.getState()) === obsoleteId
     ) {
       log.warn(`${logId}: opening new conversation`);
       window.reduxActions.conversations.showConversation({
@@ -1473,8 +1490,7 @@ export class ConversationController {
     drop(current.updateLastMessage());
 
     if (
-      window.reduxStore.getState().conversations.selectedConversationId ===
-      current.id
+      getSelectedConversationId(window.reduxStore.getState()) === current.id
     ) {
       // TODO: DESKTOP-4807
       drop(current.loadNewestMessages(undefined, undefined));
@@ -1517,11 +1533,13 @@ export class ConversationController {
     targetFromId: string,
     targetTimestamp: number
   ): Promise<ConversationModel | null | undefined> {
-    const messages = await getMessagesBySentAt(targetTimestamp);
-    const targetMessage = messages.find(m => getAuthorId(m) === targetFromId);
+    const targetMessage = await window.MessageCache.findBySentAt(
+      targetTimestamp,
+      m => getAuthorId(m.attributes) === targetFromId
+    );
 
     if (targetMessage) {
-      return this.get(targetMessage.conversationId);
+      return this.get(targetMessage.get('conversationId'));
     }
 
     return null;
@@ -1575,22 +1593,21 @@ export class ConversationController {
     return this.#_initialPromise;
   }
 
-  // A number of things outside conversation.attributes affect conversation re-rendering.
-  //   If it's scoped to a given conversation, it's easy to trigger('change'). There are
-  //   important values in storage and the storage service which change rendering pretty
-  //   radically, so this function is necessary to force regeneration of props.
-  async forceRerender(identifiers?: Array<string>): Promise<void> {
+  // When the user changes their avatar preferences (address book vs. signal profile), we
+  // need to regenerate all cached conversation props. But only if that contact had an
+  // avatar taken from the address book.
+  async rerenderAfterAvatarChange(): Promise<void> {
     let count = 0;
-    const conversations = identifiers
-      ? identifiers.map(identifier => this.get(identifier)).filter(isNotNil)
-      : this.#_conversations.slice();
+    const conversations = this.#_conversations.filter(
+      conversation =>
+        conversation.get('avatar') &&
+        isDirectConversation(conversation.attributes)
+    );
     log.info(
-      `forceRerender: Starting to loop through ${conversations.length} conversations`
+      `rerenderAfterAvatarChange: Starting to loop through ${conversations.length} conversations`
     );
 
-    for (let i = 0, max = conversations.length; i < max; i += 1) {
-      const conversation = conversations[i];
-
+    for (const conversation of conversations) {
       if (conversation.cachedProps) {
         conversation.oldCachedProps = conversation.cachedProps;
         conversation.cachedProps = null;
@@ -1600,11 +1617,11 @@ export class ConversationController {
       }
 
       if (count % 10 === 0) {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         await sleep(300);
       }
     }
-    log.info(`forceRerender: Updated ${count} conversations`);
+    log.info(`rerenderAfterAvatarChange: Updated ${count} conversations`);
   }
 
   onConvoOpenStart(conversationId: string): void {
@@ -1721,7 +1738,7 @@ export class ConversationController {
         continue;
       }
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await removeConversation(convo.id);
       this.#removeConversation(convo);
     }
@@ -1750,7 +1767,6 @@ export class ConversationController {
       const queue = new PQueue({
         concurrency: 3,
         timeout: MINUTE * 30,
-        throwOnTimeout: true,
       });
       drop(
         queue.addAll(

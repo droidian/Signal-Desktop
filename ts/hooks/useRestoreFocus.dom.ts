@@ -1,41 +1,43 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { useRef, useCallback, useEffect } from 'react';
+import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary.std.ts';
 
 type CallbackType = (toFocus: HTMLElement | null | undefined) => void;
 
 // Restore focus on teardown
-export const useRestoreFocus = (): Array<CallbackType> => {
-  const toFocusRef = React.useRef<HTMLElement | null>(null);
-  const lastFocusedRef = React.useRef<HTMLElement | null>(null);
+export const useRestoreFocus = (): [CallbackType] => {
+  const toFocusRef = useRef<HTMLElement | null>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const focusLastElementTimeoutRef =
+    useRef<ReturnType<typeof setTimeout>>(null);
 
   // We need to use a callback here because refs aren't necessarily populated on first
   //   render. For example, ModalHost makes a top-level parent div first, and then renders
   //   into it. And the children you pass it don't have access to that root div.
-  const setFocusRef = React.useCallback(
-    (toFocus: HTMLElement | null | undefined) => {
-      if (!toFocus) {
-        return;
-      }
+  const setFocusRef = useCallback((toFocus: HTMLElement | null | undefined) => {
+    clearTimeoutIfNecessary(focusLastElementTimeoutRef.current);
 
-      // We only want to do this once.
-      if (toFocusRef.current) {
-        return;
-      }
-      toFocusRef.current = toFocus;
+    if (!toFocus) {
+      return;
+    }
 
-      // Remember last-focused element, focus this new target element.
-      lastFocusedRef.current = document.activeElement as HTMLElement;
-      toFocus.focus();
-    },
-    []
-  );
+    // We only want to do this once.
+    if (toFocusRef.current) {
+      return;
+    }
+    toFocusRef.current = toFocus;
 
-  React.useEffect(() => {
+    // Remember last-focused element, focus this new target element.
+    lastFocusedRef.current = document.activeElement as HTMLElement;
+    toFocus.focus();
+  }, []);
+
+  useEffect(() => {
     return () => {
       // On unmount, returned focus to element focused before we set the focus
-      setTimeout(() => {
+      focusLastElementTimeoutRef.current = setTimeout(() => {
         if (lastFocusedRef.current && lastFocusedRef.current.focus) {
           lastFocusedRef.current.focus();
         }
@@ -50,37 +52,34 @@ export const useRestoreFocus = (): Array<CallbackType> => {
 //   delay our attempts to set focus.
 // Just like the above hook, but with a debounce.
 export const useDelayedRestoreFocus = (): Array<CallbackType> => {
-  const toFocusRef = React.useRef<HTMLElement | null>(null);
-  const lastFocusedRef = React.useRef<HTMLElement | null>(null);
+  const toFocusRef = useRef<HTMLElement | null>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  const setFocusRef = React.useCallback(
-    (toFocus: HTMLElement | null | undefined) => {
-      function setFocus() {
-        if (!toFocus) {
-          return;
-        }
-
-        // We only want to do this once.
-        if (toFocusRef.current) {
-          return;
-        }
-        toFocusRef.current = toFocus;
-
-        // Remember last-focused element, focus this new target element.
-        lastFocusedRef.current = document.activeElement as HTMLElement;
-        toFocus.focus();
+  const setFocusRef = useCallback((toFocus: HTMLElement | null | undefined) => {
+    function setFocus() {
+      if (!toFocus) {
+        return;
       }
 
-      const timeout = setTimeout(setFocus, 250);
+      // We only want to do this once.
+      if (toFocusRef.current) {
+        return;
+      }
+      toFocusRef.current = toFocus;
 
-      return () => {
-        clearTimeout(timeout);
-      };
-    },
-    []
-  );
+      // Remember last-focused element, focus this new target element.
+      lastFocusedRef.current = document.activeElement as HTMLElement;
+      toFocus.focus();
+    }
 
-  React.useEffect(() => {
+    const timeout = setTimeout(setFocus, 250);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       // On unmount, returned focus to element focused before we set the focus
       setTimeout(() => {

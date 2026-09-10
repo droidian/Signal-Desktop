@@ -2,23 +2,31 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { MessageModel } from '../models/messages.preload.js';
+import type { MessageModel } from '../models/messages.preload.ts';
 import {
   ReadStatus,
   maxReadStatus,
-} from '../messages/MessageReadStatus.std.js';
-import { notificationService } from './notifications.preload.js';
-import { SeenStatus } from '../MessageSeenStatus.std.js';
-import { queueUpdateMessage } from '../util/messageBatcher.preload.js';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { isValidTapToView } from '../util/isValidTapToView.std.js';
-import { getMessageIdForLogging } from '../util/idForLogging.preload.js';
-import { eraseMessageContents } from '../util/cleanup.preload.js';
-import { getSource, getSourceServiceId } from '../messages/sources.preload.js';
-import { isAciString } from '../util/isAciString.std.js';
-import { viewOnceOpenJobQueue } from '../jobs/viewOnceOpenJobQueue.preload.js';
-import { drop } from '../util/drop.std.js';
+} from '../messages/MessageReadStatus.std.ts';
+import { notificationService } from './notifications.preload.ts';
+import { SeenStatus } from '../MessageSeenStatus.std.ts';
+import { queueUpdateMessage } from '../util/messageBatcher.preload.ts';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { isValidTapToView } from '../util/isValidTapToView.std.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.ts';
+import { eraseMessageContents } from '../util/cleanup.preload.ts';
+import { getSource, getSourceServiceId } from '../messages/sources.preload.ts';
+import { isAciString } from '../util/isAciString.std.ts';
+import { viewOnceOpenJobQueue } from '../jobs/viewOnceOpenJobQueue.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { isIncoming } from '../messages/helpers.std.ts';
+import {
+  conversationJobQueue,
+  conversationQueueJobEnum,
+} from '../jobs/conversationJobQueue.preload.ts';
+import { ReceiptType } from '../types/Receipt.std.ts';
+import { isDirectConversation } from '../util/whatTypeOfConversation.dom.ts';
 
 const log = createLogger('MessageUpdater');
 
@@ -99,15 +107,42 @@ export async function markViewOnceMessageViewed(
   if (!fromSync) {
     const senderE164 = getSource(message.attributes);
     const senderAci = getSourceServiceId(message.attributes);
-    const timestamp = message.get('sent_at');
+    const timestamp = getMessageSentTimestamp(message.attributes, { log });
 
     if (senderAci === undefined || !isAciString(senderAci)) {
       throw new Error('markViewOnceMessageViewed: senderAci is undefined');
     }
 
-    if (window.ConversationController.areWePrimaryDevice()) {
-      log.warn(
-        'markViewOnceMessageViewed: We are primary device; not sending view once open sync'
+    // Send viewed receipt to sender for incoming view-once messages
+    if (isIncoming(message.attributes)) {
+      const conversationId = message.get('conversationId');
+      const conversation = window.ConversationController.get(conversationId);
+      const isDirectConversationValue = conversation
+        ? isDirectConversation(conversation.attributes)
+        : true;
+
+      drop(
+        conversationJobQueue.add({
+          type: conversationQueueJobEnum.enum.Receipts,
+          conversationId,
+          receiptsType: ReceiptType.Viewed,
+          receipts: [
+            {
+              messageId: message.id,
+              conversationId,
+              senderE164,
+              senderAci,
+              timestamp,
+              isDirectConversation: isDirectConversationValue,
+            },
+          ],
+        })
+      );
+    }
+
+    if (!window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(
+        'markViewOnceMessageViewed: We have no other devices; not sending view once open sync'
       );
       return;
     }

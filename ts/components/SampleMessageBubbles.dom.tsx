@@ -1,11 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CSSProperties } from 'react';
-import React from 'react';
-import type { ConversationColorType } from '../types/Colors.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { formatTime } from '../util/formatTimestamp.dom.js';
+import type { CSSProperties, JSX } from 'react';
+import type { ConversationColorType } from '../types/Colors.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { formatTime } from '../util/formatTimestamp.dom.ts';
 
 export type PropsType = {
   backgroundStyle?: CSSProperties;
@@ -32,7 +31,7 @@ function SampleMessage({
   timestampDeltaFromNow: number;
   status: 'delivered' | 'read' | 'sent';
   style?: CSSProperties;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <div className={`module-message module-message--${direction}`}>
       <div className="module-message__container-outer">
@@ -52,6 +51,7 @@ function SampleMessage({
             <span
               className={`module-message__metadata__date module-message__metadata__date--${direction}`}
             >
+              {/* oxlint-disable-next-line react/purity */}
               {formatTime(i18n, Date.now() - timestampDeltaFromNow, Date.now())}
             </span>
             {direction === 'outgoing' && (
@@ -71,7 +71,7 @@ export function SampleMessageBubbles({
   color,
   i18n,
   includeAnotherBubble = false,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const firstBubbleStyle = includeAnotherBubble ? backgroundStyle : undefined;
   return (
     <>

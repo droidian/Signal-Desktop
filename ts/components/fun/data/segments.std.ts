@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import { strictAssert } from '../../../util/assert.std.js';
-import type { fetchBytesViaProxy } from '../../../textsecure/WebAPI.preload.js';
+import { strictAssert } from '../../../util/assert.std.ts';
+import type { fetchBytesViaProxy } from '../../../textsecure/WebAPI.preload.ts';
 
 /** @internal Exported for testing */
 export const _SEGMENT_SIZE_BUCKETS: ReadonlyArray<number> = [
@@ -14,7 +14,7 @@ export const _SEGMENT_SIZE_BUCKETS: ReadonlyArray<number> = [
   1024 * 1, // 1 KiB
 ];
 
-/** @internal Exported for testing */
+/** Exported for testing */
 export type _SegmentRange = Readonly<{
   startIndex: number;
   endIndexInclusive: number;
@@ -84,6 +84,7 @@ export function _getSegmentRanges(
 function assertExpected<T>(actual: T, expected: T, message: string) {
   strictAssert(
     Object.is(actual, expected),
+    // oxlint-disable-next-line typescript/restrict-template-expressions
     `${message}: ${actual} (expected: ${expected})`
   );
 }
@@ -94,7 +95,7 @@ async function fetchSegment(
   contentLength: number,
   doFetchBytesViaProxy: typeof fetchBytesViaProxy,
   signal?: AbortSignal
-): Promise<ArrayBufferView> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const { data, response } = await doFetchBytesViaProxy({
     method: 'GET',
     url,
@@ -122,7 +123,7 @@ async function fetchSegment(
     'Unexpected response buffer byte length'
   );
 
-  let slice: ArrayBufferView;
+  let slice: Uint8Array<ArrayBuffer>;
   // Trim duplicate bytes from start of last segment
   if (segmentRange.sliceStart > 0) {
     slice = data.subarray(segmentRange.sliceStart);

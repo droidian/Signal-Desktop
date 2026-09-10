@@ -1,8 +1,8 @@
 diff --git a/out/asar/asarUtil.js b/out/asar/asarUtil.js
-index bea8a3b1b2ab56d99ea3679eb88aaf0b4b646803..622e362315642a7144021bbb885e571e9e948e07 100644
+index ffb85dea810257c8ddbed2f857c25787c9e5b694..fdcc65fb94bcf95adbb4cf97b7d4c85a8fce5883 100644
 --- a/out/asar/asarUtil.js
 +++ b/out/asar/asarUtil.js
-@@ -149,15 +149,24 @@ class AsarPackager {
+@@ -212,15 +212,24 @@ class AsarPackager {
              if (a === b) {
                  return 0;
              }
@@ -31,8 +31,55 @@ index bea8a3b1b2ab56d99ea3679eb88aaf0b4b646803..622e362315642a7144021bbb885e571e
              // Otherwise order by name
              return a < b ? -1 : 1;
          });
+diff --git a/out/macPackager.js b/out/macPackager.js
+index d67dc0583d1bc98d2c60f5f4ff5c22a1fcd6ff44..1364f12a2791a4319ad741bef79fc4fb81f92516 100644
+--- a/out/macPackager.js
++++ b/out/macPackager.js
+@@ -330,22 +330,30 @@ class MacPackager extends platformPackager_1.PlatformPackager {
+         await this.doSign(signOptions, customSignOptions, identity);
+         // https://github.com/electron-userland/electron-builder/issues/1196#issuecomment-312310209
+         if (masOptions != null && !isDevelopment) {
++          const customSignInstaller = await (0, resolve_1.resolveFunction)(this.appInfo.type, customSignOptions.signInstaller, "signInstaller");
++          const artifactName = this.expandArtifactNamePattern(masOptions, "pkg", arch);
++          const artifactPath = path.join(outDir, artifactName);
++
++          let masInstallerIdentity;
++          if (customSignInstaller == null) {
+             const certType = isDevelopment ? "Mac Developer" : "3rd Party Mac Developer Installer";
+-            const masInstallerIdentity = await (0, macCodeSign_1.findIdentity)(certType, masOptions.identity, keychainFile);
++            masInstallerIdentity = await (0, macCodeSign_1.findIdentity)(certType, masOptions.identity, keychainFile);
+             if (masInstallerIdentity == null) {
+                 throw new builder_util_1.InvalidConfigurationError(`Cannot find valid "${certType}" identity to sign MAS installer, please see https://electron.build/code-signing`);
+             }
+-            // mas uploaded to AppStore, so, use "-" instead of space for name
+-            const artifactName = this.expandArtifactNamePattern(masOptions, "pkg", arch);
+-            const artifactPath = path.join(outDir, artifactName);
+-            await this.doFlat(appPath, artifactPath, masInstallerIdentity, keychainFile);
+-            await this.info.emitArtifactBuildCompleted({
+-                file: artifactPath,
+-                target: null,
+-                arch: builder_util_1.Arch.x64,
+-                safeArtifactName: this.computeSafeArtifactName(artifactName, "pkg", arch, true, this.platformSpecificBuildOptions.defaultArch),
+-                packager: this,
+-            });
++          }
++          // mas uploaded to AppStore, so, use "-" instead of space for name
++          await this.doFlat(appPath, artifactPath, masInstallerIdentity, keychainFile);
++          if (customSignInstaller != null) {
++            await customSignInstaller(artifactPath, this);
++          }
++          await this.info.emitArtifactBuildCompleted({
++              file: artifactPath,
++              target: null,
++              arch: builder_util_1.Arch.x64,
++              safeArtifactName: this.computeSafeArtifactName(artifactName, "pkg", arch, true, this.platformSpecificBuildOptions.defaultArch),
++              packager: this,
++          });
+         }
+         if (!isMas) {
+             await this.notarizeIfProvided(appPath);
 diff --git a/out/targets/FpmTarget.js b/out/targets/FpmTarget.js
-index 47e6f48fcbed88b6ac07cff15c888c1b8b59721f..76dd6cc7265054222f2d70c76aa8456d550f29d1 100644
+index f10f8148a237fae6c7af44818a127dfc881d884f..3bc2a9d1895d4f00133c82240ec2eba8c87d605a 100644
 --- a/out/targets/FpmTarget.js
 +++ b/out/targets/FpmTarget.js
 @@ -30,6 +30,7 @@ class FpmTarget extends core_1.Target {
@@ -43,8 +90,70 @@ index 47e6f48fcbed88b6ac07cff15c888c1b8b59721f..76dd6cc7265054222f2d70c76aa8456d
              sanitizedProductName: packager.appInfo.sanitizedProductName,
              productFilename: packager.appInfo.productFilename,
              ...packager.platformSpecificBuildOptions,
+diff --git a/out/targets/nsis/NsisTarget.js b/out/targets/nsis/NsisTarget.js
+index 32afb5e2f16e18a4c054d48b47b649e60fab1131..bd7c75f95d1ee15a59d705632136f66f681745e9 100644
+--- a/out/targets/nsis/NsisTarget.js
++++ b/out/targets/nsis/NsisTarget.js
+@@ -175,11 +175,6 @@ class NsisTarget extends core_1.Target {
+         if (uninstallAppKey !== guid) {
+             defines.UNINSTALL_REGISTRY_KEY_2 = `Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${guid}`;
+         }
+-        const { homepage } = this.packager.info.metadata;
+-        (0, builder_util_1.use)(options.uninstallUrlHelp || homepage, it => (defines.UNINSTALL_URL_HELP = it));
+-        (0, builder_util_1.use)(options.uninstallUrlInfoAbout || homepage, it => (defines.UNINSTALL_URL_INFO_ABOUT = it));
+-        (0, builder_util_1.use)(options.uninstallUrlUpdateInfo || homepage, it => (defines.UNINSTALL_URL_UPDATE_INFO = it));
+-        (0, builder_util_1.use)(options.uninstallUrlReadme || homepage, it => (defines.UNINSTALL_URL_README = it));
+         const commands = {
+             OutFile: `"${installerPath}"`,
+             VIProductVersion: appInfo.getVersionInWeirdWindowsForm(),
+diff --git a/scheme.json b/scheme.json
+index f4ea4fbbc5f19a5b6cad17f0c8d3cc8e7776fead..4ea9b0808db815b2c3c006a7a3fbe64876b92a35 100644
+--- a/scheme.json
++++ b/scheme.json
+@@ -3073,6 +3073,20 @@
+           ],
+           "description": "The custom function (or path to file or module id) to sign an app bundle."
+         },
++        "signInstaller": {
++          "anyOf": [
++            {
++              "typeof": "function"
++            },
++            {
++              "type": [
++                "null",
++                "string"
++              ]
++            }
++          ],
++          "description": "The custom function (or path to file or module id) to sign an app package."
++        },
+         "signIgnore": {
+           "anyOf": [
+             {
+@@ -3711,6 +3725,20 @@
+           ],
+           "description": "The custom function (or path to file or module id) to sign an app bundle."
+         },
++        "signInstaller": {
++          "anyOf": [
++            {
++              "typeof": "function"
++            },
++            {
++              "type": [
++                "null",
++                "string"
++              ]
++            }
++          ],
++          "description": "The custom function (or path to file or module id) to sign an app package."
++        },
+         "signIgnore": {
+           "anyOf": [
+             {
 diff --git a/templates/linux/after-install.tpl b/templates/linux/after-install.tpl
-index 6cf860bd2847bae35ca8885cb680dd6c8c516e39..a3cb08a6dc7970ab2b32c731f41ea6e471204a19 100644
+index 2bb3d32d9df96a4bf0245670613f20459b32fb46..6dda2f3798ec0b13366f1b8d4adb9cd61696fd28 100644
 --- a/templates/linux/after-install.tpl
 +++ b/templates/linux/after-install.tpl
 @@ -55,3 +55,26 @@ if apparmor_status --enabled > /dev/null 2>&1; then
@@ -75,7 +184,7 @@ index 6cf860bd2847bae35ca8885cb680dd6c8c516e39..a3cb08a6dc7970ab2b32c731f41ea6e4
 +
 +# SIGNAL CHANGES END
 diff --git a/templates/linux/after-remove.tpl b/templates/linux/after-remove.tpl
-index 19b3decabe18a816f9ed5440fa9124ebfd6e3907..b5011d1b8cdb741ba6453f942a3c0660b66d41a0 100644
+index 19b3decabe18a816f9ed5440fa9124ebfd6e3907..fa1ecd2d991977c53a5082b2efb3120c53211f13 100644
 --- a/templates/linux/after-remove.tpl
 +++ b/templates/linux/after-remove.tpl
 @@ -13,3 +13,12 @@ APPARMOR_PROFILE_DEST='/etc/apparmor.d/${executable}'
@@ -87,13 +196,12 @@ index 19b3decabe18a816f9ed5440fa9124ebfd6e3907..b5011d1b8cdb741ba6453f942a3c0660
 +
 +POLKIT_TARGET_PATH='/usr/share/polkit-1/actions'
 +if [ -d "$POLKIT_TARGET_PATH" ]; then
-+  rm -f $POLKIT_TARGET_PATH/org.signalapp.${sanitizedName}.*.policy
++ rm -f $POLKIT_TARGET_PATH/org.signalapp.${sanitizedName}.*.policy
 +fi
 +
 +# SIGNAL CHANGES END
-\ No newline at end of file
 diff --git a/templates/nsis/include/installer.nsh b/templates/nsis/include/installer.nsh
-index 34e91dfe82fdbb2e929820f2e8deb771b7f7893c..73bfffc6c227a018cbbeb690d6d7b882ed142fc8 100644
+index 300ef3dd699d0f5a081b1934fcc22dbe12025bdb..e1fc5bc630d2c3697bb1b51ddedf830a8f6418a5 100644
 --- a/templates/nsis/include/installer.nsh
 +++ b/templates/nsis/include/installer.nsh
 @@ -90,7 +90,13 @@
@@ -112,10 +220,10 @@ index 34e91dfe82fdbb2e929820f2e8deb771b7f7893c..73bfffc6c227a018cbbeb690d6d7b882
          SetShellVarContext all
        ${endif}
 diff --git a/templates/nsis/installSection.nsh b/templates/nsis/installSection.nsh
-index 053772f55ca6ece52f0a34c4fa0f05c9a5f07bd2..a58ea8c19116f8ec3fb7515ec4104282f635ecc8 100644
+index 053772f55ca6ece52f0a34c4fa0f05c9a5f07bd2..051bdafdb4aef45b0787fb3de1415d4a17c92ebf 100644
 --- a/templates/nsis/installSection.nsh
 +++ b/templates/nsis/installSection.nsh
-@@ -22,11 +22,37 @@ StrCpy $appExe "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+@@ -22,10 +22,37 @@ StrCpy $appExe "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
        SpiderBanner::Show /MODERN
      !endif
  
@@ -124,7 +232,7 @@ index 053772f55ca6ece52f0a34c4fa0f05c9a5f07bd2..a58ea8c19116f8ec3fb7515ec4104282
      FindWindow $0 "#32770" "" $hwndparent $0
 -    GetDlgItem $0 $0 1000
 -    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(installing)"
- 
++
 +    GetDlgItem $1 $0 1000
 +    SendMessage $1 ${WM_SETTEXT} 0 "STR:$(installing)"
 +
@@ -152,6 +260,6 @@ index 053772f55ca6ece52f0a34c4fa0f05c9a5f07bd2..a58ea8c19116f8ec3fb7515ec4104282
 +      GetDlgItem $1 $0 1025
 +      SendMessage $1 ${STM_SETIMAGE} ${IMAGE_ICON} $2
 +    !endif
+ 
      StrCpy $1 $hwndparent
  		System::Call 'user32::ShutdownBlockReasonCreate(${SYSTYPE_PTR}r1, w "$(installing)")'
-   ${endif}

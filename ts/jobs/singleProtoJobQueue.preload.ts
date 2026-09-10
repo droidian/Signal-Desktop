@@ -4,30 +4,29 @@
 import PQueue from 'p-queue';
 import lodash from 'lodash';
 
-import * as Bytes from '../Bytes.std.js';
-import type { LoggerType } from '../types/Logging.std.js';
-import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.std.js';
-import type { ParsedJob } from './types.std.js';
-import type { JOB_STATUS } from './JobQueue.std.js';
-import { JobQueue } from './JobQueue.std.js';
-import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.preload.js';
-import { DAY } from '../util/durations/index.std.js';
-import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.preload.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { handleMessageSend } from '../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../util/getSendOptions.preload.js';
-import type { SingleProtoJobData } from '../textsecure/SendMessage.preload.js';
+import * as Bytes from '../Bytes.std.ts';
+import type { LoggerType } from '../types/Logging.std.ts';
+import { exponentialBackoffMaxAttempts } from '../util/exponentialBackoff.std.ts';
+import type { ParsedJob } from './types.std.ts';
+import type { JOB_STATUS } from './JobQueue.std.ts';
+import { JobQueue } from './JobQueue.std.ts';
+import { jobQueueDatabaseStore } from './JobQueueDatabaseStore.preload.ts';
+import { DAY } from '../util/durations/index.std.ts';
+import { commonShouldJobContinue } from './helpers/commonShouldJobContinue.preload.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { handleMessageSend } from '../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../util/getSendOptions.preload.ts';
+import type { SingleProtoJobData } from '../textsecure/SendMessage.preload.ts';
 import {
   singleProtoJobDataSchema,
   messageSender,
-} from '../textsecure/SendMessage.preload.js';
+} from '../textsecure/SendMessage.preload.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './helpers/handleMultipleSendErrors.std.js';
-import { isConversationUnregistered } from '../util/isConversationUnregistered.dom.js';
-import { isConversationAccepted } from '../util/isConversationAccepted.preload.js';
-import { parseUnknown } from '../util/schemas.std.js';
+} from './helpers/handleMultipleSendErrors.std.ts';
+import { parseUnknown } from '../util/schemas.std.ts';
+import { shouldSendToDirectConversation } from './helpers/shouldSendToConversation.preload.ts';
 
 const { isBoolean } = lodash;
 
@@ -35,8 +34,8 @@ const MAX_RETRY_TIME = DAY;
 const MAX_PARALLEL_JOBS = 5;
 const MAX_ATTEMPTS = exponentialBackoffMaxAttempts(MAX_RETRY_TIME);
 
-export class SingleProtoJobQueue extends JobQueue<SingleProtoJobData> {
-  #parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
+class SingleProtoJobQueue extends JobQueue<SingleProtoJobData> {
+  readonly #parallelQueue = new PQueue({ concurrency: MAX_PARALLEL_JOBS });
 
   protected override getQueues(): ReadonlySet<PQueue> {
     return new Set([this.#parallelQueue]);
@@ -90,53 +89,42 @@ export class SingleProtoJobQueue extends JobQueue<SingleProtoJobData> {
       throw new Error(`Failed to get conversation for serviceId ${serviceId}`);
     }
 
-    if (!isConversationAccepted(conversation.attributes)) {
-      log.info(
-        `conversation ${conversation.idForLogging()} is not accepted; refusing to send`
-      );
-      return undefined;
-    }
-    if (isConversationUnregistered(conversation.attributes)) {
-      log.info(
-        `conversation ${conversation.idForLogging()} is unregistered; refusing to send`
-      );
-      return undefined;
-    }
-    if (conversation.isBlocked()) {
-      log.info(
-        `conversation ${conversation.idForLogging()} is blocked; refusing to send`
-      );
+    const [ok, refusal] = shouldSendToDirectConversation(conversation);
+    if (!ok) {
+      log.info(refusal.logLine);
       return undefined;
     }
 
-    const proto = Proto.Content.decode(Bytes.fromBase64(protoBase64));
-    const options = await getSendOptions(conversation.attributes, {
-      syncMessage: isSyncMessage,
-    });
-
-    try {
-      await handleMessageSend(
-        messageSender.sendIndividualProto({
-          contentHint,
-          serviceId,
-          options,
-          proto,
-          timestamp,
-          urgent: isBoolean(urgent) ? urgent : true,
-        }),
-        { messageIds, sendType: type }
-      );
-    } catch (error: unknown) {
-      await handleMultipleSendErrors({
-        errors: maybeExpandErrors(error),
-        isFinalAttempt,
-        log,
-        timeRemaining,
-        toThrow: error,
+    return conversation.queueJob('singleProtoJobQueue.run', async () => {
+      const proto = Proto.Content.decode(Bytes.fromBase64(protoBase64));
+      const options = await getSendOptions(conversation.attributes, {
+        syncMessage: isSyncMessage,
       });
-    }
 
-    return undefined;
+      try {
+        await handleMessageSend(
+          messageSender.sendIndividualProto({
+            contentHint,
+            serviceId,
+            options,
+            proto,
+            timestamp,
+            urgent: isBoolean(urgent) ? urgent : true,
+          }),
+          { messageIds, sendType: type }
+        );
+      } catch (error: unknown) {
+        await handleMultipleSendErrors({
+          errors: maybeExpandErrors(error),
+          isFinalAttempt,
+          log,
+          timeRemaining,
+          toThrow: error,
+        });
+      }
+
+      return undefined;
+    });
   }
 }
 

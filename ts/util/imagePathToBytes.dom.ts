@@ -1,9 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { canvasToBytes } from './canvasToBytes.std.js';
+import { canvasToBytes } from './canvasToBytes.std.ts';
 
-export async function imagePathToBytes(src: string): Promise<Uint8Array> {
+export async function imagePathToBytes(
+  src: string
+): Promise<Uint8Array<ArrayBuffer>> {
   const image = new Image();
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -13,6 +15,7 @@ export async function imagePathToBytes(src: string): Promise<Uint8Array> {
     );
   }
 
+  image.crossOrigin = 'anonymous';
   image.src = src;
   await image.decode();
 

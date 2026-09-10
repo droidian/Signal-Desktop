@@ -1,0 +1,21 @@
+A Signal egy olyan üzenetküldő alkalmazás, amelynek középpontjában az adatvédelem áll. Ingyenes és könnyen használható, erős végpontok közötti titkosítással, amely gondoskodik róla, hogy a csevegések és a hívások teljesen privátak legyenek. A Signal nem tudja elolvasni az üzeneteidet vagy lehallgatni a hívásaidat, és senki más sem. 
+
+• A MacOS-en futó Signal összekapcsolódik a telefonodon futó Signal alkalmazással. 
+
+• Küldj ingyenesen végponttól végpontig titkosított szöveges üzeneteket, hangüzeneteket, fényképeket, videókat, GIF-eket és fájlokat. 
+
+• Kapcsolódj akár 1000 fős csoportos csevegésekkel. Adminisztrátori jogosultságokkal szabályozhatod, hogy kik posztolhatnak és kezelhetik a csoporttagokat.
+
+• Hívd a barátaidat kristálytiszta, végponttól végpontig titkosított hang- és videohívásokkal. A csoportos hívások akár 75 főt is támogatnak.
+
+• A Signal az adataid védelmére épült. Semmit sem tudunk rólad, vagy arról, hogy kivel beszélsz. Nyílt forráskódú Signal Protokollunk azt jelenti, hogy nem tudjuk elolvasni az üzeneteidet, és nem tudjuk meghallgatni a hívásaidat. Más sem tudja. Nincsenek kiskapuk, nincs adatgyűjtés, nincsenek kompromisszumok. 
+
+• Ossz meg fotó-, szöveg- és videótörténeteket, amelyek 24 óra elteltével eltűnnek. Az adatvédelmi beállításoknak hála te határozhatod meg, hogy pontosan ki láthatja az egyes Történeteket.
+
+• A Signal független és nem a nyereség a célja; másfajta technológia egy másfajta szervezettől. Nonprofit szervezetként az adományaid, nem pedig a hirdetők vagy a befektetők támogatnak minket. 
+
+• Támogatásért, kérdésekkel vagy további információért látogass el a https://support.signal.org/ oldalra.
+
+Forráskódunk megtekintéséhez látogass el a https://github.com/signalapp oldalra 
+
+Kövess minket az X-en mint @signalapp és az Instagramon mint @signal_app

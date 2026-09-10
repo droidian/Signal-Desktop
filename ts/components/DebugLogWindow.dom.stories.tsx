@@ -1,13 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DebugLogWindow.dom.js';
-import { DebugLogWindow } from './DebugLogWindow.dom.js';
-import { sleep } from '../util/sleep.std.js';
+import type { PropsType } from './DebugLogWindow.dom.tsx';
+import { DebugLogWindow } from './DebugLogWindow.dom.tsx';
+import { sleep } from '../util/sleep.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -30,6 +31,6 @@ export default {
   title: 'Components/DebugLogWindow',
 } satisfies Meta<PropsType>;
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   return <DebugLogWindow {...createProps()} />;
 }

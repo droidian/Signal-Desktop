@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: variables.$color-black-alpha-60;
+  background: var(--axo-color-fill-overlay);
   pointer-events: none;
   transition: all ease-out 400ms;
 }

@@ -1,12 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './DebugLogErrorModal.dom.js';
-import { DebugLogErrorModal } from './DebugLogErrorModal.dom.js';
+import type { PropsType } from './DebugLogErrorModal.dom.tsx';
+import { DebugLogErrorModal } from './DebugLogErrorModal.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -23,11 +24,11 @@ export default {
   args: {},
 } satisfies Meta<PropsType>;
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <DebugLogErrorModal {...createProps()} />;
 }
 
-export function Donations(): React.JSX.Element {
+export function Donations(): JSX.Element {
   return (
     <DebugLogErrorModal
       {...createProps({

@@ -1,19 +1,25 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import { noop } from 'lodash';
-import type { Transition } from 'framer-motion';
-import { motion } from 'framer-motion';
+import { type ReactNode, type JSX } from 'react';
+import lodash from 'lodash';
+import type { Transition } from 'motion/react';
+import { motion } from 'motion/react';
+import type { ReadonlyDeep } from 'type-fest';
 
-import { tw } from '../../../axo/tw.dom.js';
-import { formatFileSize } from '../../../util/formatFileSize.std.js';
-import { durationToPlaybackText } from '../../../util/durationToPlaybackText.std.js';
-import type { MediaItemType } from '../../../types/MediaItem.std.js';
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import { type AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.js';
-import { useComputePeaks } from '../../../hooks/useComputePeaks.dom.js';
-import { ListItem } from './ListItem.dom.js';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { formatFileSize } from '../../../util/formatFileSize.std.ts';
+import { durationToPlaybackText } from '../../../util/durationToPlaybackText.std.ts';
+import type {
+  GenericMediaItemType,
+  MediaItemType,
+} from '../../../types/MediaItem.std.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import { type AttachmentStatusType } from '../../../hooks/useAttachmentStatus.std.ts';
+import { useComputePeaks } from '../../../hooks/useComputePeaks.dom.ts';
+import { ListItem } from './ListItem.dom.tsx';
+
+const { noop } = lodash;
 
 const BAR_COUNT = 7;
 const MAX_PEAK_HEIGHT = 22;
@@ -29,7 +35,11 @@ const DOT_TRANSITION: Transition = {
 export type DataProps = Readonly<{
   mediaItem: MediaItemType;
   onClick: (status: AttachmentStatusType['state']) => void;
-  onShowMessage: () => void;
+  showMessage: () => void;
+  renderContextMenu: (
+    mediaItem: ReadonlyDeep<GenericMediaItemType>,
+    children: ReactNode
+  ) => JSX.Element;
 }>;
 
 // Provided by smart layer
@@ -47,8 +57,9 @@ export function AudioListItem({
   authorTitle,
   isPlayed,
   onClick,
-  onShowMessage,
-}: Props): React.JSX.Element {
+  showMessage,
+  renderContextMenu,
+}: Props): JSX.Element {
   const { attachment } = mediaItem;
 
   const { fileName, size: fileSize, url } = attachment;
@@ -78,14 +89,14 @@ export function AudioListItem({
     <div
       className={tw(
         'flex items-center justify-center gap-0.5',
-        'bg-elevated-background-tertiary',
+        'bg-material-tertiary',
         'size-9 rounded-sm'
       )}
     >
-      {peaks.map((peak, index) => {
+      {peaks.map(peak => {
         let height: number;
         if (hasPeaks) {
-          height = Math.max(MIN_PEAK_HEIGHT, peak * MAX_PEAK_HEIGHT);
+          height = Math.max(MIN_PEAK_HEIGHT, peak.value * MAX_PEAK_HEIGHT);
         } else {
           // Intentionally zero when processing or not downloaded
           height = 0;
@@ -93,10 +104,9 @@ export function AudioListItem({
 
         return (
           <div
-            // eslint-disable-next-line react/no-array-index-key
-            key={index}
+            key={peak.index}
             className={tw(
-              'rounded bg-label-placeholder p-px',
+              'rounded-sm bg-(--axo-color-label-placeholder) p-px',
               'transition-[height] duration-250'
             )}
             style={{ height: `${height}px` }}
@@ -108,7 +118,9 @@ export function AudioListItem({
 
   const dot = (
     <motion.div
-      className={tw('size-1.5 shrink-0 rounded bg-label-secondary')}
+      className={tw(
+        'size-1.5 shrink-0 rounded-sm bg-(--axo-color-label-secondary)'
+      )}
       initial={false}
       animate={{ scale: isPlayed ? 0 : 1 }}
       transition={DOT_TRANSITION}
@@ -131,7 +143,8 @@ export function AudioListItem({
       }
       readyLabel={i18n('icu:startDownload')}
       onClick={onClick}
-      onShowMessage={onShowMessage}
+      showMessage={showMessage}
+      renderContextMenu={renderContextMenu}
     />
   );
 }

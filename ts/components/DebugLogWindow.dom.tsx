@@ -1,21 +1,20 @@
 // Copyright 2015 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { MouseEvent } from 'react';
-import React, { useEffect, useState } from 'react';
-import copyText from 'copy-text-to-clipboard';
-import type { LocalizerType } from '../types/Util.std.js';
-import * as Errors from '../types/errors.std.js';
-import type { AnyToast } from '../types/Toast.dom.js';
-import { ToastType } from '../types/Toast.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Spinner } from './Spinner.dom.js';
-import { ToastManager } from './ToastManager.dom.js';
-import { createSupportUrl } from '../util/createSupportUrl.std.js';
-import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.js';
-import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.js';
-import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.js';
+import type { MouseEvent, JSX } from 'react';
+import { useEffect, useState } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import type { AnyToast } from '../types/Toast.dom.tsx';
+import { ToastType } from '../types/Toast.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
+import { ToastManager } from './ToastManager.dom.tsx';
+import { createSupportUrl } from '../util/createSupportUrl.std.ts';
+import { shouldNeverBeCalled } from '../util/shouldNeverBeCalled.std.ts';
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
 
 const log = createLogger('DebugLogWindow');
 
@@ -42,7 +41,7 @@ export function DebugLogWindow({
   fetchLogs,
   uploadLogs,
   mode = 'submit',
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [loadState, setLoadState] = useState<LoadState>(LoadState.NotStarted);
   const [logText, setLogText] = useState<string | undefined>();
   const [publicLogURL, setPublicLogURL] = useState<string | undefined>();
@@ -54,6 +53,7 @@ export function DebugLogWindow({
   useEscapeHandling(closeWindow);
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
     setLoadState(LoadState.Started);
 
     let shouldCancel = false;
@@ -111,9 +111,9 @@ export function DebugLogWindow({
   }
 
   if (publicLogURL) {
-    const copyLog = (ev: MouseEvent) => {
+    const copyLog = async (ev: MouseEvent) => {
       ev.preventDefault();
-      copyText(publicLogURL);
+      await navigator.clipboard.writeText(publicLogURL);
       setToast({ toastType: ToastType.LinkCopied });
     };
 
@@ -161,6 +161,7 @@ export function DebugLogWindow({
           onUndoArchive={shouldNeverBeCalled}
           retryCallQualitySurvey={shouldNeverBeCalled}
           openFileInFolder={shouldNeverBeCalled}
+          saveHeapSnapshot={shouldNeverBeCalled}
           setDidResumeDonation={shouldNeverBeCalled}
           toast={toast}
           containerWidthBreakpoint={null}
@@ -228,6 +229,7 @@ export function DebugLogWindow({
         onUndoArchive={shouldNeverBeCalled}
         retryCallQualitySurvey={shouldNeverBeCalled}
         openFileInFolder={shouldNeverBeCalled}
+        saveHeapSnapshot={shouldNeverBeCalled}
         setDidResumeDonation={shouldNeverBeCalled}
         toast={toast}
         containerWidthBreakpoint={null}

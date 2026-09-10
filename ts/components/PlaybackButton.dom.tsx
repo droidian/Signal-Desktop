@@ -3,10 +3,16 @@
 
 import { animated, useSpring } from '@react-spring/web';
 import classNames from 'classnames';
-import React, { useCallback } from 'react';
-import { useReducedMotion } from '../hooks/useReducedMotion.dom.js';
-import type { AttachmentForUIType } from '../types/Attachment.std.js';
-import { SpinnerV2 } from './SpinnerV2.dom.js';
+import {
+  useCallback,
+  forwardRef,
+  type MouseEvent,
+  type KeyboardEvent,
+  type JSX,
+} from 'react';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
+import type { AttachmentForUIType } from '../types/Attachment.std.ts';
+import { SpinnerV2 } from './SpinnerV2.dom.tsx';
 
 const SPRING_CONFIG = {
   mass: 0.5,
@@ -27,8 +33,10 @@ export type ButtonProps = {
   onMouseUp?: () => void;
 };
 
+type PlaybackButtonRef = HTMLButtonElement | null;
+
 /** Handles animations, key events, and stopping event propagation */
-export const PlaybackButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
+export const PlaybackButton = forwardRef<PlaybackButtonRef, ButtonProps>(
   function ButtonInner(props, ref) {
     const {
       context,
@@ -47,7 +55,7 @@ export const PlaybackButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     const reducedMotion = useReducedMotion();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
     const [animProps] = useSpring(
       {
         immediate: reducedMotion,
@@ -59,7 +67,7 @@ export const PlaybackButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Clicking button toggle playback
     const onButtonClick = useCallback(
-      (event: React.MouseEvent) => {
+      (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
 
@@ -70,7 +78,7 @@ export const PlaybackButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Keyboard playback toggle
     const onButtonKeyDown = useCallback(
-      (event: React.KeyboardEvent) => {
+      (event: KeyboardEvent) => {
         if (event.key !== 'Enter' && event.key !== 'Space') {
           return;
         }
@@ -82,7 +90,7 @@ export const PlaybackButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
       [onClick]
     );
 
-    let content: React.JSX.Element | null = null;
+    let content: JSX.Element | null = null;
     const strokeWidth = variant === 'message' ? 2 : 1;
     if (mod === 'computing' || mod === 'downloading') {
       content = (

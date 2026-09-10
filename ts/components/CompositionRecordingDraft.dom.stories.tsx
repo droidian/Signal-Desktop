@@ -1,11 +1,11 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, useMemo, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './CompositionRecordingDraft.dom.js';
-import { CompositionRecordingDraft } from './CompositionRecordingDraft.dom.js';
+import type { Props } from './CompositionRecordingDraft.dom.tsx';
+import { CompositionRecordingDraft } from './CompositionRecordingDraft.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -14,12 +14,12 @@ export default {
   component: CompositionRecordingDraft,
 } satisfies Meta<Props>;
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = React.useState<number>(0);
-  const [duration, setDuration] = React.useState<number | undefined>(undefined);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number | undefined>(undefined);
 
-  const audio = React.useMemo(() => {
+  const audio = useMemo(() => {
     const a = new Audio();
 
     a.addEventListener('loadedmetadata', () => {
@@ -42,7 +42,7 @@ export function Default(): React.JSX.Element {
     });
 
     return a;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePlay = (positionAsRatio?: number) => {

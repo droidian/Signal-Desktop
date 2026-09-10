@@ -1,20 +1,21 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import { memo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
+import { noop } from 'lodash';
 
-import { ConversationDetailsMembershipList } from '../../components/conversation/conversation-details/ConversationDetailsMembershipList.dom.js';
-import { assertDev } from '../../util/assert.std.js';
-import { getGroupMemberships } from '../../util/getGroupMemberships.dom.js';
+import { ConversationDetailsMembershipList } from '../../components/conversation/conversation-details/ConversationDetailsMembershipList.dom.tsx';
+import { assertDev } from '../../util/assert.std.ts';
+import { getGroupMemberships } from '../../util/getGroupMemberships.dom.ts';
 import {
   getCachedConversationMemberColorsSelector,
   getConversationByIdSelector,
   getConversationByServiceIdSelector,
-} from '../selectors/conversations.dom.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
 
 export type PropsType = {
   conversationId: string;
@@ -22,7 +23,7 @@ export type PropsType = {
 
 export const SmartGV1Members = memo(function SmartGV1Members({
   conversationId,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const getPreferredBadge = useSelector(getPreferredBadgeSelector);
   const i18n = useSelector(getIntl);
   const theme = useSelector(getTheme);
@@ -50,14 +51,20 @@ export const SmartGV1Members = memo(function SmartGV1Members({
 
   return (
     <ConversationDetailsMembershipList
+      canAddLabel={false}
       canAddNewMembers={false}
+      canInviteViaGroupLink={false}
+      groupLink={null}
       conversationId={conversationId}
       i18n={i18n}
+      isEditMemberLabelEnabled={false}
+      isTerminated={false}
       getPreferredBadge={getPreferredBadge}
       maxShownMemberCount={32}
       memberColors={memberColors}
       memberships={memberships}
       showContactModal={showContactModal}
+      showLabelEditor={noop}
       theme={theme}
     />
   );

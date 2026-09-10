@@ -4,40 +4,43 @@
 import { ContentHint } from '@signalapp/libsignal-client';
 import lodash from 'lodash';
 
-import * as Errors from '../../types/errors.std.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
+import * as Errors from '../../types/errors.std.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
 import {
   isDirectConversation,
   isGroupV2,
   isMe,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
-import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.js';
+} from './handleMultipleSendErrors.std.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   DeleteForEveryoneJobData,
-} from '../conversationJobQueue.preload.js';
-import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { isConversationAccepted } from '../../util/isConversationAccepted.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
+} from '../conversationJobQueue.preload.ts';
+import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
 import type { CallbackResultType } from '../../textsecure/Types.d.ts';
-import type { MessageModel } from '../../models/messages.preload.js';
-import { SendMessageProtoError } from '../../textsecure/Errors.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import { isStory } from '../../messages/helpers.std.js';
-import { sendToGroup } from '../../util/sendToGroup.preload.js';
+import type { MessageModel } from '../../models/messages.preload.ts';
+import { SendMessageProtoError } from '../../textsecure/Errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { isStory } from '../../messages/helpers.std.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp.std.ts';
+import { getSourceServiceId } from '../../messages/sources.preload.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import type { SendDeleteForEveryoneType } from '../../textsecure/SendMessage.preload.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
 
 const { isNumber } = lodash;
 
@@ -54,19 +57,21 @@ export async function sendDeleteForEveryone(
   data: DeleteForEveryoneJobData
 ): Promise<void> {
   const {
-    messageId,
+    isAdminDelete,
+    targetMessageId,
     recipients: recipientsFromJob,
     revision,
-    targetTimestamp,
   } = data;
 
-  const logId = `sendDeleteForEveryone(${conversation.idForLogging()}, ${messageId})`;
+  const logId = `sendDeleteForEveryone(${conversation.idForLogging()}, ${targetMessageId}, isAdminDelete=${isAdminDelete})`;
 
-  const message = await getMessageById(messageId);
+  const message = await getMessageById(targetMessageId);
   if (!message) {
     log.error(`${logId}: Failed to fetch message. Failing job.`);
     return;
   }
+
+  const targetTimestamp = getMessageSentTimestamp(message.attributes, { log });
 
   const story = isStory(message.attributes);
   if (story && !isGroupV2(conversation.attributes)) {
@@ -86,7 +91,7 @@ export async function sendDeleteForEveryone(
 
   const sendType = 'deleteForEveryone';
   const contentHint = ContentHint.Resendable;
-  const messageIds = [messageId];
+  const messageIds = [targetMessageId];
 
   const deletedForEveryoneSendStatus = message.get(
     'deletedForEveryoneSendStatus'
@@ -110,15 +115,28 @@ export async function sendDeleteForEveryone(
     );
   }
 
+  // Build the delete for everyone options
+  const targetAuthorServiceId = getSourceServiceId(message.attributes);
+  strictAssert(
+    targetAuthorServiceId != null && isAciString(targetAuthorServiceId),
+    `${logId}: Could not get target author ACI`
+  );
+
+  const deleteForEveryone: SendDeleteForEveryoneType = {
+    isAdminDelete,
+    targetSentTimestamp: targetTimestamp,
+    targetAuthorAci: targetAuthorServiceId,
+  };
+
   await conversation.queueJob(
     'conversationQueue/sendDeleteForEveryone',
     async abortSignal => {
       log.info(
         `${logId}: Sending deleteForEveryone with timestamp ${timestamp}` +
-          `for message ${targetTimestamp}, isStory=${story}`
+          ` for message ${targetTimestamp}, isStory=${story}`
       );
 
-      let profileKey: Uint8Array | undefined;
+      let profileKey: Uint8Array<ArrayBuffer> | undefined;
       if (conversation.get('profileSharing')) {
         profileKey = await ourProfileKeyService.get();
       }
@@ -129,23 +147,28 @@ export async function sendDeleteForEveryone(
 
       try {
         if (isMe(conversation.attributes)) {
+          if (!window.ConversationController.doWeHaveOtherDevices()) {
+            log.info(`${logId}: We have no other devices; not sending sync`);
+            return;
+          }
+
           const proto = await messaging.getContentMessage({
-            deletedForEveryoneTimestamp: targetTimestamp,
+            deleteForEveryone,
             profileKey,
             recipients: conversation.getRecipients(),
             timestamp,
             expireTimerVersion: undefined,
           });
           strictAssert(
-            proto.dataMessage,
+            proto.content?.dataMessage,
             'ContentMessage must have dataMessage'
           );
 
           await handleMessageSend(
             messaging.sendSyncMessage({
               encodedDataMessage: Proto.DataMessage.encode(
-                proto.dataMessage
-              ).finish(),
+                proto.content.dataMessage
+              ),
               destinationE164: conversation.get('e164'),
               destinationServiceId: conversation.getServiceId(),
               expirationStartTimestamp: null,
@@ -157,37 +180,10 @@ export async function sendDeleteForEveryone(
           );
           await updateMessageWithSuccessfulSends(message);
         } else if (isDirectConversation(conversation.attributes)) {
-          if (!isConversationAccepted(conversation.attributes)) {
-            log.info(
-              `conversation ${conversation.idForLogging()} is not accepted; refusing to send`
-            );
-            void updateMessageWithFailure(
-              message,
-              [new Error('Message request was not accepted')],
-              log
-            );
-            return;
-          }
-          if (isConversationUnregistered(conversation.attributes)) {
-            log.info(
-              `conversation ${conversation.idForLogging()} is unregistered; refusing to send`
-            );
-            void updateMessageWithFailure(
-              message,
-              [new Error('Contact no longer has a Signal account')],
-              log
-            );
-            return;
-          }
-          if (conversation.isBlocked()) {
-            log.info(
-              `conversation ${conversation.idForLogging()} is blocked; refusing to send`
-            );
-            void updateMessageWithFailure(
-              message,
-              [new Error('Contact is blocked')],
-              log
-            );
+          const [ok, refusal] = shouldSendToDirectConversation(conversation);
+          if (!ok) {
+            log.info(refusal.logLine);
+            void updateMessageWithFailure(message, [refusal.error], log);
             return;
           }
 
@@ -197,10 +193,10 @@ export async function sendDeleteForEveryone(
             messageIds,
             send: async sender =>
               sender.sendMessageToServiceId({
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                // oxlint-disable-next-line typescript/no-non-null-assertion
                 serviceId: conversation.getSendTarget()!,
                 messageOptions: {
-                  deletedForEveryoneTimestamp: targetTimestamp,
+                  deleteForEveryone,
                   timestamp,
                   profileKey,
                 },
@@ -240,11 +236,11 @@ export async function sendDeleteForEveryone(
                 contentHint,
                 groupSendOptions: {
                   groupV2: groupV2Info,
-                  deletedForEveryoneTimestamp: targetTimestamp,
+                  deleteForEveryone,
                   timestamp,
                   profileKey,
                 },
-                messageId,
+                messageId: targetMessageId,
                 sendOptions,
                 sendTarget: conversation.toSenderKeyTarget(),
                 sendType: 'deleteForEveryone',

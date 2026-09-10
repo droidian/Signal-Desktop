@@ -1,16 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import { useCallback, type JSX } from 'react';
 
-import { SPINNER_CLASS_NAME } from './BaseConversationListItem.dom.js';
-import { ListTile } from '../ListTile.dom.js';
-import { Avatar, AvatarSize } from '../Avatar.dom.js';
-import { Spinner } from '../Spinner.dom.js';
+import { SPINNER_CLASS_NAME } from './BaseConversationListItem.dom.tsx';
+import { ListTile } from '../ListTile.dom.tsx';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { Spinner } from '../Spinner.dom.tsx';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.js';
-import type { ShowConversationType } from '../../state/ducks/conversations.preload.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
 
 type PropsData = {
   username: string;
@@ -32,7 +32,7 @@ export function UsernameSearchResultListItem({
   showUserNotFoundModal,
   setIsFetchingUUID,
   showConversation,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const boundOnClick = useCallback(async () => {
     if (isFetchingUsername) {
       return;

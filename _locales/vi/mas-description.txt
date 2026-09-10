@@ -1,0 +1,21 @@
+Signal là một ứng dụng nhắn tin được xây dựng trên nền tảng quyền riêng tư. Ứng dụng miễn phí và dễ sử dụng, với khả năng mã hoá đầu cuối giúp đảm bảo sự riêng tư tuyệt đối cho các cuộc trò chuyện và cuộc gọi của bạn. Signal không thể đọc tin nhắn của bạn hoặc nghe cuộc gọi của bạn và cũng không ai khác có thể. 
+
+• Signal trên MacOS liên kết với Signal trên điện thoại của bạn. 
+
+• Gửi miễn phí tin nhắn văn bản, tin nhắn thoại, ảnh, video, GIF và tập tin được mã hóa đầu cuối. 
+
+• Giữ kết nối với các nhóm trò chuyện với lên đến 1.000 người. Kiểm soát người có thể đăng nội dung và quản lý thành viên nhóm với cài đặt quyền quản lý.
+
+• Gọi cho bạn bè qua các cuộc gọi thoại và video được mã hóa đầu cuối, chất lượng. Cuộc gọi nhóm hỗ trợ đến 75 người.
+
+• Signal được xây dựng hướng đến quyền riêng tư. Chúng tôi không biết gì về bạn hoặc người bạn trò chuyện cùng. Giao thức mã nguồn mở Signal Protocol của chúng tôi đồng nghĩa với việc chúng tôi không thể đọc tin nhắn hoặc nghe cuộc gọi của bạn. Và cũng không ai khác có thể làm điều đó. Không lỗ hổng, không thu thập dữ liệu, không theo dõi. 
+
+• Chia sẻ Story ảnh, văn bản và video biến mất sau 24 giờ. Cài đặt Quyền riêng tư cho phép bạn kiểm soát người có thể xem Story.
+
+• Signal hoạt động độc lập và không vì lợi nhuận; một công nghệ khác biệt đến từ một tổ chức khác biệt. Là một tổ chức phi lợi nhuận 501c3 chúng tôi được hỗ trợ bởi các khoản ủng hộ của các bạn, không phải từ nguồn tài chính của các nhà quảng cáo hay nhà đầu tư. 
+
+• Để được hỗ trợ, trả lời câu hỏi, hoặc tìm hiểu thêm, vui lòng truy cập https://support.signal.org/
+
+Để xem mã nguồn của chúng tôi, truy cập https://github.com/signalapp 
+
+Theo dõi chúng tôi trên X @signalapp và Instagram @signal_app

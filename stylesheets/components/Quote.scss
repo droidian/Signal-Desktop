@@ -28,9 +28,10 @@
     overflow: hidden;
   }
 
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -71,9 +72,10 @@
   }
 
   // To preserve contrast
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow: 0px 0px 0px 2px variables.$color-white;
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -182,6 +184,7 @@
   border-width: 0 0 0 4px;
 
   max-width: 100%;
+  min-width: 0;
 }
 
 .module-quote__primary__author {
@@ -210,10 +213,6 @@
   }
 }
 
-.module-quote__primary__author--with-label {
-  margin-top: -3px;
-}
-
 .module-quote__primary__text {
   @include mixins.font-body-1;
 
@@ -234,8 +233,7 @@
 
   & {
     overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-word;
+    word-break: auto-phrase;
     white-space: pre-wrap;
 
     overflow: hidden;

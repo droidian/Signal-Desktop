@@ -1,19 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { useSelector } from 'react-redux';
 
-import { GroupMemberLabelInfoModal } from '../../components/GroupMemberLabelInfoModal.dom.js';
-import { getIntl, getUser, getVersion } from '../selectors/user.std.js';
-import { getGroupMemberLabelInfoModalState } from '../selectors/globalModals.std.js';
-import { getConversationSelector } from '../selectors/conversations.dom.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getItems } from '../selectors/items.dom.js';
-import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.js';
-import { getCanAddLabel } from '../../types/GroupMemberLabels.std.js';
-import { createLogger } from '../../logging/log.std.js';
-
-const log = createLogger('SmartGroupMemberLabelInfoModal');
+import { GroupMemberLabelInfoModal } from '../../components/GroupMemberLabelInfoModal.dom.tsx';
+import { getIntl, getUser, getVersion } from '../selectors/user.std.ts';
+import { getGroupMemberLabelInfoModalState } from '../selectors/globalModals.std.ts';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getItems } from '../selectors/items.dom.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
+import { getCanAddLabel } from '../../types/GroupMemberLabels.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab } from '../../types/Nav.std.ts';
+import { PanelType } from '../../types/Panels.std.ts';
+import { getSelectedLocation } from '../selectors/nav.std.ts';
+import { getLeafPanelOnly } from '../../components/conversation/conversation-details/GroupMemberLabelEditor.dom.tsx';
 
 export const SmartGroupMemberLabelInfoModal = memo(
   function SmartGroupMemberLabelInfoModal() {
@@ -25,18 +27,19 @@ export const SmartGroupMemberLabelInfoModal = memo(
       useSelector(getGroupMemberLabelInfoModalState) ?? {};
     const getConversation = useSelector(getConversationSelector);
 
+    const { changeLocation } = useNavActions();
+
     const isEditMemberLabelEnabled = isFeaturedEnabledSelector({
       betaKey: 'desktop.groupMemberLabels.edit.beta',
       currentVersion: version,
       remoteConfig: items.remoteConfig,
       prodKey: 'desktop.groupMemberLabels.edit.prod',
     });
-    // TODO: DESKTOP-9711
-    log.info(
-      `Not using feature flag of ${isEditMemberLabelEnabled}; hardcoding to false`
-    );
 
     const conversation = getConversation(conversationId);
+
+    const selectedLocation = useSelector(getSelectedLocation);
+    const leafPanelOnly = getLeafPanelOnly(selectedLocation, conversationId);
 
     const contactMembership = conversation.memberships?.find(
       membership => user.ourAci && membership.aci === user.ourAci
@@ -44,18 +47,36 @@ export const SmartGroupMemberLabelInfoModal = memo(
     const hasLabel = Boolean(contactMembership?.labelString);
     const canAddLabel = getCanAddLabel(conversation, contactMembership);
 
-    const { toggleGroupMemberLabelInfoModal } = useGlobalModalActions();
+    const { toggleGroupMemberLabelInfoModal, hideContactModal } =
+      useGlobalModalActions();
 
     return (
       <GroupMemberLabelInfoModal
         i18n={i18n}
         canAddLabel={canAddLabel}
         hasLabel={hasLabel}
-        isEditMemberLabelEnabled={false}
+        isEditMemberLabelEnabled={isEditMemberLabelEnabled}
         onClose={() => toggleGroupMemberLabelInfoModal(undefined)}
         showEditMemberLabelScreen={() => {
-          // TODO: DESKTOP-9711
-          throw new Error('Not yet implemented');
+          changeLocation({
+            tab: NavTab.Chats,
+            details: {
+              conversationId,
+              panels: {
+                direction: 'push' as const,
+                isAnimating: false,
+                leafPanelOnly,
+                stack: [
+                  { type: PanelType.ConversationDetails },
+                  { type: PanelType.GroupMemberLabelEditor },
+                ],
+                wasAnimated: false,
+                watermark: 1,
+              },
+            },
+          });
+          toggleGroupMemberLabelInfoModal(undefined);
+          hideContactModal();
         }}
       />
     );

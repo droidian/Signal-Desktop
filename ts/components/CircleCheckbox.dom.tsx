@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback } from 'react';
+import { useCallback, type JSX, type ChangeEvent } from 'react';
 import classNames from 'classnames';
 
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 
 export enum Variant {
   Normal = 'Normal',
@@ -41,7 +41,7 @@ export function CircleCheckbox({
   name,
   onChange,
   onClick,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const getClassName = getClassNamesFor('CircleCheckbox', moduleClassName);
 
   let variantModifier: string;
@@ -54,7 +54,7 @@ export function CircleCheckbox({
   }
 
   const onChangeWrapped = useCallback(
-    (ev: React.ChangeEvent<HTMLInputElement>) => {
+    (ev: ChangeEvent<HTMLInputElement>) => {
       onChange?.(ev.target.checked);
     },
     [onChange]

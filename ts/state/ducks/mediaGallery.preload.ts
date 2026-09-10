@@ -6,28 +6,26 @@ import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
 
 import type { ReadonlyMessageAttributesType } from '../../model-types.d.ts';
-import { createLogger } from '../../logging/log.std.js';
-import { DataReader } from '../../sql/Client.preload.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { DataReader } from '../../sql/Client.preload.ts';
 import type {
   MediaItemDBType,
   NonAttachmentMediaItemDBType,
   ContactMediaItemDBType,
-} from '../../sql/Interface.std.js';
+} from '../../sql/Interface.std.ts';
 import {
   CONVERSATION_UNLOADED,
   MESSAGE_CHANGED,
   MESSAGE_DELETED,
-  MESSAGE_EXPIRED,
-} from './conversations.preload.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+} from './conversations.preload.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
 import type {
   ConversationUnloadedActionType,
   MessageChangedActionType,
   MessageDeletedActionType,
-  MessageExpiredActionType,
-} from './conversations.preload.js';
+} from './conversations.preload.ts';
 import type {
   MediaTabType,
   MediaSortOrderType,
@@ -36,18 +34,20 @@ import type {
   LinkPreviewMediaItemType,
   ContactMediaItemType,
   GenericMediaItemType,
-} from '../../types/MediaItem.std.js';
-import type { AttachmentForUIType } from '../../types/Attachment.std.js';
+} from '../../types/MediaItem.std.ts';
+import type { AttachmentForUIType } from '../../types/Attachment.std.ts';
 import {
   isFile,
   isVisualMedia,
   isVoiceMessage,
   isAudio,
-} from '../../util/Attachment.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { getPropsForAttachment } from '../selectors/message.preload.js';
+} from '../../util/Attachment.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { getPropsForAttachment } from '../selectors/message.preload.ts';
+import { getHasMediaBackups } from '../selectors/items.dom.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
 
 const { orderBy } = lodash;
 
@@ -121,7 +121,6 @@ type MediaGalleryActionType = ReadonlyDeep<
   | LoadMoreActionType
   | MessageChangedActionType
   | MessageDeletedActionType
-  | MessageExpiredActionType
   | SetLoadingActionType
   | SetTabActionType
   | SetSortOrderActionType
@@ -240,7 +239,7 @@ function _cleanMessage(
     receivedAtMs: message.received_at_ms,
     sentAt: message.sent_at,
     isErased: !!message.isErased,
-    errors: message.errors,
+    errors: message.errors ?? undefined,
     readStatus: message.readStatus,
     sendStateByConversationId: message.sendStateByConversationId,
   };
@@ -248,24 +247,33 @@ function _cleanMessage(
 
 function _cleanAttachment(
   type: 'media' | 'audio' | 'documents',
-  { message, index, attachment }: MediaItemDBType
+  { message, index, attachment }: MediaItemDBType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): MediaItemType {
   return {
     type: type === 'documents' ? 'document' : type,
     index,
-    attachment: getPropsForAttachment(attachment, 'attachment', message),
+    attachment: getPropsForAttachment(attachment, 'attachment', message, {
+      hasMediaBackups,
+    }),
     message,
   };
 }
 
 function _cleanAttachments(
   type: 'media' | 'audio' | 'documents',
-  rawMedia: ReadonlyArray<MediaItemDBType>
+  rawMedia: ReadonlyArray<MediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): ReadonlyArray<MediaItemType> {
-  return rawMedia.map(media => _cleanAttachment(type, media));
+  return rawMedia.map(media =>
+    _cleanAttachment(type, media, { hasMediaBackups })
+  );
 }
 
-function _cleanContact(raw: ContactMediaItemDBType): ContactMediaItemType {
+function _cleanContact(
+  raw: ContactMediaItemDBType,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
+): ContactMediaItemType {
   const { message, contact } = raw;
   return {
     type: 'contact',
@@ -279,7 +287,8 @@ function _cleanContact(raw: ContactMediaItemDBType): ContactMediaItemType {
               avatar: getPropsForAttachment(
                 contact.avatar.avatar,
                 'contact',
-                message
+                message,
+                { hasMediaBackups }
               ),
             },
     },
@@ -288,23 +297,25 @@ function _cleanContact(raw: ContactMediaItemDBType): ContactMediaItemType {
 }
 
 function _cleanDocuments(
-  rawDocuments: ReadonlyArray<MediaItemDBType | ContactMediaItemDBType>
+  rawDocuments: ReadonlyArray<MediaItemDBType | ContactMediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): ReadonlyArray<MediaItemType | ContactMediaItemType> {
   return rawDocuments.map(rawDocument => {
     if (rawDocument.type === 'mediaItem') {
-      return _cleanAttachment('documents', rawDocument);
+      return _cleanAttachment('documents', rawDocument, { hasMediaBackups });
     }
 
     strictAssert(
       rawDocument.type === 'contact',
       `Unexpected documen type ${rawDocument.type}`
     );
-    return _cleanContact(rawDocument);
+    return _cleanContact(rawDocument, { hasMediaBackups });
   });
 }
 
 function _cleanLinkPreviews(
-  rawPreviews: ReadonlyArray<NonAttachmentMediaItemDBType>
+  rawPreviews: ReadonlyArray<NonAttachmentMediaItemDBType>,
+  { hasMediaBackups }: { hasMediaBackups: boolean }
 ): ReadonlyArray<LinkPreviewMediaItemType> {
   return rawPreviews.map(raw => {
     strictAssert(raw.type === 'link', 'Expected link preview');
@@ -317,7 +328,9 @@ function _cleanLinkPreviews(
         image:
           preview.image == null
             ? undefined
-            : getPropsForAttachment(preview.image, 'preview', message),
+            : getPropsForAttachment(preview.image, 'preview', message, {
+                hasMediaBackups,
+              }),
       },
       message,
     };
@@ -382,10 +395,11 @@ function initialLoad(
         }),
       ]);
 
-    const media = _cleanAttachments('media', rawMedia);
-    const audio = _cleanAttachments('audio', rawAudio);
-    const documents = _cleanDocuments(rawDocuments);
-    const links = _cleanLinkPreviews(rawLinkPreviews);
+    const hasMediaBackups = getHasMediaBackups(getState());
+    const media = _cleanAttachments('media', rawMedia, { hasMediaBackups });
+    const audio = _cleanAttachments('audio', rawAudio, { hasMediaBackups });
+    const documents = _cleanDocuments(rawDocuments, { hasMediaBackups });
+    const links = _cleanLinkPreviews(rawLinkPreviews, { hasMediaBackups });
 
     dispatch({
       type: INITIAL_LOAD,
@@ -462,6 +476,7 @@ function loadMore(
     let audio: ReadonlyArray<MediaItemType> = [];
     let documents: ReadonlyArray<MediaItemType | ContactMediaItemType> = [];
     let links: ReadonlyArray<LinkPreviewMediaItemType> = [];
+    const hasMediaBackups = getHasMediaBackups(getState());
     if (type === 'media' || type === 'audio') {
       strictAssert(oldestLoadedItem.type === type, 'must be a media item');
 
@@ -470,7 +485,7 @@ function loadMore(
         type,
       });
 
-      const result = _cleanAttachments(type, rawMedia);
+      const result = _cleanAttachments(type, rawMedia, { hasMediaBackups });
       if (type === 'media') {
         media = result;
       } else if (type === 'audio') {
@@ -482,13 +497,13 @@ function loadMore(
       // Note: `getSortedDocuments` mixes in contacts
       const rawDocuments = await DataReader.getSortedDocuments(sharedOptions);
 
-      documents = _cleanDocuments(rawDocuments);
+      documents = _cleanDocuments(rawDocuments, { hasMediaBackups });
     } else if (type === 'links') {
       const rawPreviews = await DataReader.getSortedNonAttachmentMedia({
         ...sharedOptions,
         type,
       });
-      links = _cleanLinkPreviews(rawPreviews);
+      links = _cleanLinkPreviews(rawPreviews, { hasMediaBackups });
     } else {
       throw missingCaseError(type);
     }
@@ -648,39 +663,49 @@ export function reducer(
       };
     });
 
+    const hasMediaBackups = backupsService.hasMediaBackups();
     const newMedia = _cleanAttachments(
       'media',
-      messageMediaItems.filter(({ attachment }) => isVisualMedia(attachment))
+      messageMediaItems.filter(({ attachment }) => isVisualMedia(attachment)),
+      { hasMediaBackups }
     );
     const newAudio = _cleanAttachments(
       'audio',
       messageMediaItems.filter(
         ({ attachment }) => isVoiceMessage(attachment) || isAudio([attachment])
-      )
+      ),
+      { hasMediaBackups }
     );
     const newLinks = _cleanLinkPreviews(
       message.preview != null && message.preview.length > 0
         ? [
             {
               type: 'link',
-              preview: message.preview[0],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              preview: message.preview[0]!,
               message: _cleanMessage(message),
             },
           ]
-        : []
+        : [],
+      { hasMediaBackups }
     );
     let newDocuments: ReadonlyArray<MediaItemType | ContactMediaItemType> =
       _cleanAttachments(
         'documents',
-        messageMediaItems.filter(({ attachment }) => isFile(attachment))
+        messageMediaItems.filter(({ attachment }) => isFile(attachment)),
+        { hasMediaBackups }
       );
     if (message.contact != null && message.contact.length > 0) {
       newDocuments = newDocuments.concat(
-        _cleanContact({
-          type: 'contact',
-          contact: message.contact[0],
-          message: _cleanMessage(message),
-        })
+        _cleanContact(
+          {
+            type: 'contact',
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            contact: message.contact[0]!,
+            message: _cleanMessage(message),
+          },
+          { hasMediaBackups }
+        )
       );
     }
 
@@ -741,7 +766,7 @@ export function reducer(
     return state;
   }
 
-  if (action.type === MESSAGE_DELETED || action.type === MESSAGE_EXPIRED) {
+  if (action.type === MESSAGE_DELETED) {
     return {
       ...state,
       media: state.media.filter(item => item.message.id !== action.payload.id),

@@ -4,17 +4,18 @@
 import { z } from 'zod';
 import lodash from 'lodash';
 import type { CallbackResultType } from '../textsecure/Types.d.ts';
-import { DataWriter } from '../sql/Client.preload.js';
-import { createLogger } from '../logging/log.std.js';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
 import {
   OutgoingMessageError,
   SendMessageNetworkError,
   SendMessageProtoError,
+  UnauthorizedMessageSendError,
   UnregisteredUserError,
-} from '../textsecure/Errors.std.js';
-import { SEALED_SENDER } from '../types/SealedSender.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { drop } from './drop.std.js';
+} from '../textsecure/Errors.std.ts';
+import { SEALED_SENDER } from '../types/SealedSender.std.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { drop } from './drop.std.ts';
 
 const { isBoolean, isNumber } = lodash;
 
@@ -80,6 +81,7 @@ export const sendTypesEnum = z.enum([
   'deviceNameChangeSync',
   'attachmentBackfillRequestSync',
   'attachmentBackfillResponseSync',
+  'usernameChangeSync',
 
   // No longer used, all non-urgent
   'legacyGroupChange',
@@ -131,6 +133,19 @@ function processError(error: unknown): void {
         `Got 404 for ${conversation.idForLogging()}, marking unregistered.`
       );
       conversation.setUnregistered();
+    }
+  }
+  if (error instanceof UnauthorizedMessageSendError) {
+    const conversation = window.ConversationController.getOrCreate(
+      error.serviceId,
+      'private'
+    );
+    if (conversation.get('sealedSender') !== SEALED_SENDER.DISABLED) {
+      log.warn(
+        `Got 401/403 for ${conversation.idForLogging()}, setting sealedSender = DISABLED`
+      );
+      conversation.set({ sealedSender: SEALED_SENDER.DISABLED });
+      drop(updateConversation(conversation.attributes));
     }
   }
   if (error instanceof UnregisteredUserError) {

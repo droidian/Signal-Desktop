@@ -4,8 +4,9 @@
 import type {
   ConversationType,
   MembershipType,
-} from '../state/ducks/conversations.preload.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
+} from '../state/ducks/conversations.preload.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 export const missingEmojiPlaceholder = '⍰';
 
@@ -19,7 +20,7 @@ export const SERVER_EMOJI_BYTE_LIMIT = 64;
 
 export type MemberLabelType = {
   labelString: string;
-  labelEmoji: string | undefined;
+  labelEmoji: Emoji.Variant | undefined;
 };
 
 export function getCanAddLabel(
@@ -29,8 +30,9 @@ export function getCanAddLabel(
   return Boolean(
     membership &&
     conversation.type === 'group' &&
+    !conversation.terminated &&
     (membership.isAdmin ||
-      conversation.accessControlAttributes ===
+      conversation.accessControlMemberLabel ===
         Proto.AccessControl.AccessRequired.MEMBER)
   );
 }

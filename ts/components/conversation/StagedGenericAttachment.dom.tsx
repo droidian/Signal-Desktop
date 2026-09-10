@@ -1,11 +1,11 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { FileThumbnail } from '../FileThumbnail.dom.js';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { FileThumbnail } from '../FileThumbnail.dom.tsx';
 
 export type Props = {
   attachment: AttachmentType;
@@ -17,7 +17,7 @@ export function StagedGenericAttachment({
   attachment,
   i18n,
   onClose,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const { fileName } = attachment;
 
   return (

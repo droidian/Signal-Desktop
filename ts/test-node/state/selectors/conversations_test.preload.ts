@@ -8,12 +8,12 @@ import {
   ComposerStep,
   ConversationVerificationState,
   OneTimeModalState,
-} from '../../../state/ducks/conversationsEnums.std.js';
+} from '../../../state/ducks/conversationsEnums.std.ts';
 import type {
   ConversationLookupType,
   ConversationType,
-} from '../../../state/ducks/conversations.preload.js';
-import { getEmptyState } from '../../../state/ducks/conversations.preload.js';
+} from '../../../state/ducks/conversations.preload.ts';
+import { getEmptyState } from '../../../state/ducks/conversations.preload.ts';
 import {
   _getConversationComparator,
   _getLeftPaneLists,
@@ -39,33 +39,38 @@ import {
   getMaximumGroupSizeModalState,
   getPlaceholderContact,
   getRecommendedGroupSizeModalState,
-  getSelectedConversationId,
   hasGroupCreationError,
   isCreatingGroup,
-} from '../../../state/selectors/conversations.dom.js';
-import { noopAction } from '../../../state/ducks/noop.std.js';
-import type { StateType } from '../../../state/reducer.preload.js';
-import { reducer as rootReducer } from '../../../state/reducer.preload.js';
-import i18n from '../../util/i18n.node.js';
-import type { ServiceIdString } from '../../../types/ServiceId.std.js';
-import { generateAci, getAciFromPrefix } from '../../../types/ServiceId.std.js';
+} from '../../../state/selectors/conversations.dom.ts';
+import { noopAction } from '../../../state/ducks/noop.std.ts';
+import type { StateType } from '../../../state/reducer.preload.ts';
+import { reducer as rootReducer } from '../../../state/reducer.preload.ts';
+import i18n from '../../util/i18n.node.ts';
+import type {
+  AciString,
+  ServiceIdString,
+} from '../../../types/ServiceId.std.ts';
 import {
   getDefaultConversation,
   getDefaultGroup,
   getDefaultConversationWithServiceId,
-} from '../../../test-helpers/getDefaultConversation.std.js';
+} from '../../../test-helpers/getDefaultConversation.std.ts';
 import {
   defaultStartDirectConversationComposerState,
   defaultChooseGroupMembersComposerState,
   defaultSetGroupMetadataComposerState,
-} from '../../../test-helpers/defaultComposerStates.std.js';
+} from '../../../test-helpers/defaultComposerStates.std.ts';
+import {
+  generateAci,
+  getAciFromPrefix,
+} from '../../../test-helpers/serviceIdUtils.std.ts';
 
 describe('both/state/selectors/conversations-extra', () => {
   const SERVICE_ID_1 = generateAci();
   const SERVICE_ID_2 = generateAci();
 
   const getEmptyRootState = (): StateType => {
-    return rootReducer(undefined, noopAction());
+    return rootReducer(undefined, noopAction('getEmptyRootState'));
   };
 
   function makeConversation(id: string): ConversationType {
@@ -1267,11 +1272,11 @@ describe('both/state/selectors/conversations-extra', () => {
           stableSelectedConversationIdInChatFolder: null,
         });
 
-      assert.strictEqual(conversations[0].name, 'First!');
-      assert.strictEqual(conversations[1].name, 'Á');
-      assert.strictEqual(conversations[2].name, 'B');
-      assert.strictEqual(conversations[3].name, 'C');
-      assert.strictEqual(conversations[4].name, 'No timestamp');
+      assert.strictEqual(conversations[0]?.name, 'First!');
+      assert.strictEqual(conversations[1]?.name, 'Á');
+      assert.strictEqual(conversations[2]?.name, 'B');
+      assert.strictEqual(conversations[3]?.name, 'C');
+      assert.strictEqual(conversations[4]?.name, 'No timestamp');
       assert.strictEqual(conversations.length, 5);
 
       assert.strictEqual(archivedConversations.length, 0);
@@ -1362,9 +1367,9 @@ describe('both/state/selectors/conversations-extra', () => {
             stableSelectedConversationIdInChatFolder: null,
           });
 
-        assert.strictEqual(pinnedConversations[0].name, 'Pin One');
-        assert.strictEqual(pinnedConversations[1].name, 'Pin Two');
-        assert.strictEqual(pinnedConversations[2].name, 'Pin Three');
+        assert.strictEqual(pinnedConversations[0]?.name, 'Pin One');
+        assert.strictEqual(pinnedConversations[1]?.name, 'Pin Two');
+        assert.strictEqual(pinnedConversations[2]?.name, 'Pin Three');
 
         assert.strictEqual(archivedConversations.length, 0);
 
@@ -1493,12 +1498,12 @@ describe('both/state/selectors/conversations-extra', () => {
             stableSelectedConversationIdInChatFolder: null,
           });
 
-        assert.strictEqual(pinnedConversations[0].name, 'Pin One');
-        assert.strictEqual(pinnedConversations[1].name, 'Pin Two');
-        assert.strictEqual(pinnedConversations[2].name, 'Pin Three');
+        assert.strictEqual(pinnedConversations[0]?.name, 'Pin One');
+        assert.strictEqual(pinnedConversations[1]?.name, 'Pin Two');
+        assert.strictEqual(pinnedConversations[2]?.name, 'Pin Three');
         assert.strictEqual(pinnedConversations.length, 3);
 
-        assert.strictEqual(archivedConversations[0].name, 'Pin Four');
+        assert.strictEqual(archivedConversations[0]?.name, 'Pin Four');
         assert.strictEqual(archivedConversations.length, 1);
 
         assert.strictEqual(conversations.length, 0);
@@ -1649,48 +1654,44 @@ describe('both/state/selectors/conversations-extra', () => {
     });
   });
 
-  describe('#getSelectedConversationId', () => {
-    it('returns undefined if no conversation is selected', () => {
-      const state = {
-        ...getEmptyRootState(),
-        conversations: {
-          ...getEmptyState(),
-          conversationLookup: {
-            abc123: makeConversation('abc123'),
-          },
-        },
-      };
-      assert.isUndefined(getSelectedConversationId(state));
-    });
-
-    it('returns the selected conversation ID', () => {
-      const state = {
-        ...getEmptyRootState(),
-        conversations: {
-          ...getEmptyState(),
-          conversationLookup: {
-            abc123: makeConversation('abc123'),
-          },
-          selectedConversationId: 'abc123',
-        },
-      };
-      assert.strictEqual(getSelectedConversationId(state), 'abc123');
-    });
-  });
-
   describe('#getContactNameColorSelector', () => {
     it('returns the right color order sorted by UUID ASC', () => {
+      const membersV2 = [
+        { aci: 'fff' as AciString, role: 0, joinedAtVersion: 0 },
+        {
+          aci: 'f00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+        {
+          aci: 'e00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+        {
+          aci: 'd00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+        {
+          aci: 'c00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+        {
+          aci: 'b00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+        {
+          aci: 'a00' as AciString,
+          role: 0,
+          joinedAtVersion: 0,
+        },
+      ] as const;
       const group: ConversationType = {
         ...makeGroup('group'),
-        sortedGroupMembers: [
-          makeConversationWithServiceId('fff'),
-          makeConversationWithServiceId('f00'),
-          makeConversationWithServiceId('e00'),
-          makeConversationWithServiceId('d00'),
-          makeConversationWithServiceId('c00'),
-          makeConversationWithServiceId('b00'),
-          makeConversationWithServiceId('a00'),
-        ],
+        membersV2,
       };
       const state = {
         ...getEmptyRootState(),
@@ -1699,18 +1700,27 @@ describe('both/state/selectors/conversations-extra', () => {
           conversationLookup: {
             group,
           },
+          conversationsByServiceId: {
+            [membersV2[0].aci]: makeConversation('c0'),
+            [membersV2[1].aci]: makeConversation('c1'),
+            [membersV2[2].aci]: makeConversation('c2'),
+            [membersV2[3].aci]: makeConversation('c3'),
+            [membersV2[4].aci]: makeConversation('c4'),
+            [membersV2[5].aci]: makeConversation('c5'),
+            [membersV2[6].aci]: makeConversation('c6'),
+          },
         },
       };
 
       const contactNameColorSelector = getContactNameColorSelector(state);
 
-      assert.equal(contactNameColorSelector('group', 'a00'), '200');
-      assert.equal(contactNameColorSelector('group', 'b00'), '120');
-      assert.equal(contactNameColorSelector('group', 'c00'), '300');
-      assert.equal(contactNameColorSelector('group', 'd00'), '010');
-      assert.equal(contactNameColorSelector('group', 'e00'), '210');
-      assert.equal(contactNameColorSelector('group', 'f00'), '330');
-      assert.equal(contactNameColorSelector('group', 'fff'), '230');
+      assert.equal(contactNameColorSelector('group', 'c6'), '200', 'slot 1');
+      assert.equal(contactNameColorSelector('group', 'c5'), '120', 'slot 2');
+      assert.equal(contactNameColorSelector('group', 'c4'), '300', 'slot 3');
+      assert.equal(contactNameColorSelector('group', 'c3'), '010', 'slot 4');
+      assert.equal(contactNameColorSelector('group', 'c2'), '210', 'slot 5');
+      assert.equal(contactNameColorSelector('group', 'c1'), '330', 'slot 6');
+      assert.equal(contactNameColorSelector('group', 'c0'), '230', 'slot 7');
     });
 
     it('returns the right colors for direct conversation', () => {

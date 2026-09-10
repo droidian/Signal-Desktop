@@ -5,25 +5,25 @@ import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
 import {
   APPLICATION_OCTET_STREAM,
   stringToMIMEType,
-} from '../../../types/MIME.std.js';
-import type { AttachmentType } from '../../../types/Attachment.std.js';
-import { doesAttachmentExist } from '../../../util/migrations.preload.js';
+} from '../../../types/MIME.std.ts';
+import type { AttachmentType } from '../../../types/Attachment.std.ts';
+import { doesAttachmentExist } from '../../../util/migrations.preload.ts';
 import {
   hasRequiredInformationForLocalBackup,
   hasRequiredInformationForRemoteBackup,
-  hasRequiredInformationToDownloadFromTransitTier,
-} from '../../../util/Attachment.std.js';
-import { Backups, SignalService } from '../../../protobuf/index.std.js';
-import * as Bytes from '../../../Bytes.std.js';
+  isDownloadableFromTransitTier,
+} from '../../../util/Attachment.std.ts';
+import { Backups, SignalService } from '../../../protobuf/index.std.ts';
+import * as Bytes from '../../../Bytes.std.ts';
 import {
   getSafeLongFromTimestamp,
   getTimestampFromLong,
-} from '../../../util/timestampLongUtils.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
+} from '../../../util/timestampLongUtils.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
 import type {
   CoreAttachmentBackupJobType,
   CoreAttachmentLocalBackupJobType,
-} from '../../../types/AttachmentBackup.std.js';
+} from '../../../types/AttachmentBackup.std.ts';
 import {
   type GetBackupCdnInfoType,
   getMediaIdFromMediaName,
@@ -32,19 +32,21 @@ import {
   type BackupCdnInfoType,
   getLocalBackupFileNameForAttachment,
   getLocalBackupFileName,
-} from './mediaId.preload.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { bytesToUuid } from '../../../util/uuidToBytes.std.js';
-import { createName } from '../../../util/attachmentPath.node.js';
-import { generateAttachmentKeys } from '../../../AttachmentCrypto.node.js';
-import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup.node.js';
+} from './mediaId.preload.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { bytesToUuid } from '../../../util/uuidToBytes.std.ts';
+import { createName } from '../../../util/attachmentPath.node.ts';
+import { generateAttachmentKeys } from '../../../AttachmentCrypto.node.ts';
+import { getAttachmentLocalBackupPathFromSnapshotDir } from './localBackup.node.ts';
 import {
   isValidAttachmentKey,
   isValidDigest,
   isValidPlaintextHash,
-} from '../../../types/Crypto.std.js';
-import type { BackupExportOptions, BackupImportOptions } from '../types.std.js';
-import { isTestOrMockEnvironment } from '../../../environment.std.js';
+} from '../../../types/Crypto.std.ts';
+import type { BackupExportOptions, BackupImportOptions } from '../types.std.ts';
+import { isTestOrMockEnvironment } from '../../../environment.std.ts';
+import { toNumber } from '../../../util/toNumber.std.ts';
+import { isKnownProtoEnumMember } from '../../../util/isKnownProtoEnumMember.std.ts';
 
 export function convertFilePointerToAttachment(
   filePointer: Backups.FilePointer,
@@ -95,8 +97,7 @@ export function convertFilePointerToAttachment(
   const {
     key,
     localKey,
-    plaintextHash,
-    encryptedDigest,
+    integrityCheck,
     size,
     transitCdnKey,
     transitCdnNumber,
@@ -113,11 +114,14 @@ export function convertFilePointerToAttachment(
   }
 
   let mediaName: string | undefined;
-  if (Bytes.isNotEmpty(plaintextHash) && Bytes.isNotEmpty(key)) {
+  if (
+    Bytes.isNotEmpty(integrityCheck?.plaintextHash) &&
+    Bytes.isNotEmpty(key)
+  ) {
     mediaName =
       getMediaName({
         key,
-        plaintextHash,
+        plaintextHash: integrityCheck.plaintextHash,
       }) ?? undefined;
   }
 
@@ -125,9 +129,12 @@ export function convertFilePointerToAttachment(
   if (
     options.type === 'local-encrypted' &&
     Bytes.isNotEmpty(localKey) &&
-    Bytes.isNotEmpty(plaintextHash)
+    Bytes.isNotEmpty(integrityCheck?.plaintextHash)
   ) {
-    const localMediaName = getLocalBackupFileName({ plaintextHash, localKey });
+    const localMediaName = getLocalBackupFileName({
+      plaintextHash: integrityCheck.plaintextHash,
+      localKey,
+    });
     localBackupPath = getAttachmentLocalBackupPathFromSnapshotDir(
       localMediaName,
       options.localBackupSnapshotDir
@@ -137,8 +144,8 @@ export function convertFilePointerToAttachment(
   return {
     ...commonProps,
     key: Bytes.toBase64(key),
-    digest: Bytes.isNotEmpty(encryptedDigest)
-      ? Bytes.toBase64(encryptedDigest)
+    digest: Bytes.isNotEmpty(integrityCheck?.encryptedDigest)
+      ? Bytes.toBase64(integrityCheck.encryptedDigest)
       : undefined,
     size: size ?? 0,
     cdnKey: transitCdnKey ?? undefined,
@@ -146,8 +153,8 @@ export function convertFilePointerToAttachment(
     uploadTimestamp: transitTierUploadTimestamp
       ? getTimestampFromLong(transitTierUploadTimestamp)
       : undefined,
-    plaintextHash: Bytes.isNotEmpty(plaintextHash)
-      ? Bytes.toHex(plaintextHash)
+    plaintextHash: Bytes.isNotEmpty(integrityCheck?.plaintextHash)
+      ? Bytes.toHex(integrityCheck.plaintextHash)
       : undefined,
     localBackupPath,
     // TODO: DESKTOP-8883
@@ -161,7 +168,7 @@ export function convertFilePointerToAttachment(
 }
 
 export function convertBackupMessageAttachmentToAttachment(
-  messageAttachment: Backups.IMessageAttachment,
+  messageAttachment: Backups.MessageAttachment,
   options: BackupImportOptions
 ): AttachmentType | null {
   const { clientUuid } = messageAttachment;
@@ -174,7 +181,12 @@ export function convertBackupMessageAttachmentToAttachment(
     clientUuid: clientUuid ? bytesToUuid(clientUuid) : undefined,
   };
 
-  switch (messageAttachment.flag) {
+  let { flag } = messageAttachment;
+  if (!isKnownProtoEnumMember(Backups.MessageAttachment.Flag, flag)) {
+    flag = Backups.MessageAttachment.Flag.NONE;
+  }
+
+  switch (flag) {
     case Backups.MessageAttachment.Flag.VOICE_MESSAGE:
       result.flags = SignalService.AttachmentPointer.Flags.VOICE_MESSAGE;
       break;
@@ -185,12 +197,10 @@ export function convertBackupMessageAttachmentToAttachment(
       result.flags = SignalService.AttachmentPointer.Flags.GIF;
       break;
     case Backups.MessageAttachment.Flag.NONE:
-    case null:
-    case undefined:
       result.flags = undefined;
       break;
     default:
-      throw missingCaseError(messageAttachment.flag);
+      throw missingCaseError(flag);
   }
 
   return result;
@@ -207,19 +217,22 @@ export async function getFilePointerForAttachment({
   backupOptions: BackupExportOptions;
   messageReceivedAt: number;
 }): Promise<{
-  filePointer: Backups.FilePointer;
+  filePointer: Backups.FilePointer.Params;
   backupJob?: CoreAttachmentBackupJobType | CoreAttachmentLocalBackupJobType;
 }> {
   const attachment = maybeFixupAttachment(rawAttachment);
 
-  const filePointer = new Backups.FilePointer({
+  const filePointer: Backups.FilePointer.Params = {
     contentType: attachment.contentType,
-    fileName: attachment.fileName,
-    width: attachment.width,
-    height: attachment.height,
-    caption: attachment.caption,
-    blurHash: attachment.blurHash,
-  });
+    fileName: attachment.fileName ?? null,
+    width: attachment.width ?? null,
+    height: attachment.height ?? null,
+    caption: attachment.caption ?? null,
+    blurHash: attachment.blurHash ?? null,
+    incrementalMac: null,
+    incrementalMacChunkSize: null,
+    locatorInfo: null,
+  };
 
   // TODO: DESKTOP-9112
   if (isTestOrMockEnvironment()) {
@@ -325,7 +338,8 @@ export async function getFilePointerForAttachment({
             ? {
                 cdnKey: transitCdnKey,
                 cdnNumber: transitCdnNumber,
-                uploadTimestamp: transitTierUploadTimestamp?.toNumber(),
+                uploadTimestamp:
+                  toNumber(transitTierUploadTimestamp) ?? undefined,
               }
             : undefined,
       },
@@ -366,9 +380,7 @@ function getLocatorInfoForAttachment({
   backupOptions: BackupExportOptions;
   isOnDisk: boolean;
   backupTierInfo: BackupCdnInfoType;
-}): Backups.FilePointer.LocatorInfo {
-  const locatorInfo = new Backups.FilePointer.LocatorInfo();
-
+}): Backups.FilePointer.LocatorInfo.Params {
   const isLocalBackup =
     backupOptions.type === 'local-encrypted' ||
     backupOptions.type === 'plaintext-export';
@@ -378,46 +390,71 @@ function getLocatorInfoForAttachment({
     isOnDisk &&
     hasRequiredInformationForLocalBackup(attachment);
 
-  const isDownloadableFromTransitTier =
-    hasRequiredInformationToDownloadFromTransitTier(attachment);
+  const canDownloadFromTransitTier = isDownloadableFromTransitTier(attachment);
 
   if (
     !shouldBeLocallyBackedUp &&
-    !isDownloadableFromTransitTier &&
+    !canDownloadFromTransitTier &&
     !hasRequiredInformationForRemoteBackup(attachment)
   ) {
-    return locatorInfo;
+    return {
+      size: null,
+      key: null,
+      integrityCheck: null,
+      transitCdnKey: null,
+      transitCdnNumber: null,
+      transitTierUploadTimestamp: null,
+      localKey: null,
+      mediaTierCdnNumber: null,
+    };
   }
 
-  locatorInfo.size = attachment.size;
-
-  if (isValidAttachmentKey(attachment.key)) {
-    locatorInfo.key = Bytes.fromBase64(attachment.key);
-  }
-
+  let integrityCheck: Backups.FilePointer.LocatorInfo.Params['integrityCheck'];
   if (isValidPlaintextHash(attachment.plaintextHash)) {
-    locatorInfo.plaintextHash = Bytes.fromHex(attachment.plaintextHash);
+    integrityCheck = {
+      plaintextHash: Bytes.fromHex(attachment.plaintextHash),
+    };
   } else if (isValidDigest(attachment.digest)) {
-    locatorInfo.encryptedDigest = Bytes.fromBase64(attachment.digest);
+    integrityCheck = {
+      encryptedDigest: Bytes.fromBase64(attachment.digest),
+    };
+  } else {
+    integrityCheck = null;
   }
 
-  if (isDownloadableFromTransitTier) {
-    locatorInfo.transitCdnKey = attachment.cdnKey;
-    locatorInfo.transitCdnNumber = attachment.cdnNumber;
-    locatorInfo.transitTierUploadTimestamp = getSafeLongFromTimestamp(
-      attachment.uploadTimestamp
-    );
-  }
-
-  if (shouldBeLocallyBackedUp) {
-    locatorInfo.localKey = Bytes.fromBase64(attachment.localKey);
-  }
+  let mediaTierCdnNumber: Backups.FilePointer.LocatorInfo.Params['mediaTierCdnNumber'];
 
   if (backupTierInfo.isInBackupTier && backupTierInfo.cdnNumber != null) {
-    locatorInfo.mediaTierCdnNumber = backupTierInfo.cdnNumber;
+    mediaTierCdnNumber = backupTierInfo.cdnNumber;
   } else if (backupOptions.type === 'cross-client-integration-test') {
-    locatorInfo.mediaTierCdnNumber = attachment.backupCdnNumber;
+    mediaTierCdnNumber = attachment.backupCdnNumber ?? null;
+  } else {
+    mediaTierCdnNumber = null;
   }
 
-  return locatorInfo;
+  return {
+    size: attachment.size,
+    key: isValidAttachmentKey(attachment.key)
+      ? Bytes.fromBase64(attachment.key)
+      : null,
+    integrityCheck,
+
+    ...(canDownloadFromTransitTier
+      ? {
+          transitCdnKey: attachment.cdnKey,
+          transitCdnNumber: attachment.cdnNumber,
+          transitTierUploadTimestamp: getSafeLongFromTimestamp(
+            attachment.uploadTimestamp
+          ),
+        }
+      : {
+          transitCdnKey: null,
+          transitCdnNumber: null,
+          transitTierUploadTimestamp: null,
+        }),
+    localKey: shouldBeLocallyBackedUp
+      ? Bytes.fromBase64(attachment.localKey)
+      : null,
+    mediaTierCdnNumber,
+  };
 }

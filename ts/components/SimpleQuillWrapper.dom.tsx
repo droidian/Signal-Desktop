@@ -1,7 +1,7 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { createRef } from 'react';
+import { createRef, Component, type JSX } from 'react';
 import Quill from '@signalapp/quill-cjs';
 import Emitter from '@signalapp/quill-cjs/core/emitter.js';
 import type { Delta } from '@signalapp/quill-cjs';
@@ -11,12 +11,13 @@ export type Props = {
   defaultValue: Delta | undefined;
   formats: Array<string>;
   modules: Record<string, unknown>;
-  onChange?(): void;
+  onChange?: () => void;
   placeholder: string;
   readOnly: boolean | undefined;
 };
 
-export class SimpleQuillWrapper extends React.Component<Props> {
+// oxlint-disable-next-line react/prefer-function-component
+export class SimpleQuillWrapper extends Component<Props> {
   quill: Quill | undefined;
   quillElement = createRef<HTMLDivElement>();
 
@@ -66,12 +67,11 @@ export class SimpleQuillWrapper extends React.Component<Props> {
     });
   }
 
-  // eslint-disable-next-line react/no-unused-class-component-methods
   public getQuill(): Quill | undefined {
     return this.quill;
   }
 
-  override render(): React.JSX.Element {
+  override render(): JSX.Element {
     return (
       <div className={`quill ${this.props.className}`}>
         <div ref={this.quillElement} />

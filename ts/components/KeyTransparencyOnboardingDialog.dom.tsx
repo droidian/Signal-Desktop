@@ -1,11 +1,12 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
-import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.js';
-import { KEY_TRANSPARENCY_URL } from '../types/support.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { AxoDialog } from '../axo/AxoDialog.dom.js';
-import { tw } from '../axo/tw.dom.js';
+import type { JSX } from 'react';
+
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
+import { KEY_TRANSPARENCY_URL } from '../types/support.std.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type KeyTransparencyOnboardingDialogProps = Readonly<{
   i18n: LocalizerType;
@@ -20,18 +21,14 @@ function openKeyTransparencyUrl() {
 
 export function KeyTransparencyOnboardingDialog(
   props: KeyTransparencyOnboardingDialogProps
-): React.JSX.Element {
+): JSX.Element {
   const { i18n, open, onOpenChange, onContinue } = props;
 
   return (
     <AxoDialog.Root open={open} onOpenChange={onOpenChange}>
       <AxoDialog.Content escape="cancel-is-noop" size="sm">
         <AxoDialog.Header>
-          <AxoDialog.Close
-            aria-label={i18n(
-              'icu:KeyTransparencyOnboardingDialog__CloseButton__AccessibilityLabel'
-            )}
-          />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body>
           <div className={tw('mt-1.5 mb-3 flex items-center justify-center')}>
@@ -54,7 +51,7 @@ export function KeyTransparencyOnboardingDialog(
             {i18n('icu:KeyTransparencyOnboardingDialog__Title')}
           </h3>
           <AxoDialog.Description>
-            <div className={tw('mb-5 type-body-large text-label-secondary')}>
+            <div className={tw('mb-5 type-body-large text-secondary')}>
               {i18n('icu:KeyTransparencyOnboardingDialog__Description')}
             </div>
           </AxoDialog.Description>
@@ -62,12 +59,12 @@ export function KeyTransparencyOnboardingDialog(
         <AxoDialog.Footer>
           <AxoDialog.Actions>
             <AxoDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={openKeyTransparencyUrl}
             >
               {i18n('icu:KeyTransparencyOnboardingDialog__LearnMore')}
             </AxoDialog.Action>
-            <AxoDialog.Action variant="primary" onClick={onContinue}>
+            <AxoDialog.Action variant="strong-primary" onClick={onContinue}>
               {i18n('icu:KeyTransparencyOnboardingDialog__Continue')}
             </AxoDialog.Action>
           </AxoDialog.Actions>

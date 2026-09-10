@@ -1,0 +1,21 @@
+Signal ir saziņas lietotne, kuras pamatā ir privātums. Tā ir bezmaksas, viegli lietojama un ietver pilnīgu šifrēšanu, kas padara jūsu sarakstes un zvanus pilnīgi privātus. Signal nevar lasīt jūsu ziņas vai noklausīties jūsu zvanus, un to nevar izdarīt neviens cits. 
+
+• Signal MacOS ierīcēs ir sasaistīts ar Signal jūsu tālrunī. 
+
+• Bez maksas sūtiet pilnībā šifrētas teksta ziņas, balss ziņas, fotoattēlus, video, GIF un failus. 
+
+• Uzturiet sakarus ar līdz pat 1000 personu grupu sarunām. Kontrolējiet, kas var publicēt saturu un pārvaldīt grupas dalībniekus, izmantojot administratora atļauju iestatījumus.
+
+• Zvaniet draugiem, izmantojot pilnībā šifrētus balss un video zvanus ar nevainojamu kvalitāti. Grupas zvanā var piedalīties līdz 75 cilvēkiem.
+
+• Lietotne Signal ir radīta jūsu privātumam. Mēs neko nezinām par jums vai ar ko jūs runājat. Mūsu atvērtā pirmkoda Signal Protocol nozīmē, ka mēs nevaram lasīt jūsu ziņas vai noklausīties jūsu zvanus. Arī neviens cits to nevar. Bez aizmuguriskas pieejas, bez datu vākšanas, bez kompromisiem. 
+
+• Kopīgojiet fotoattēlus, teksta ziņas un video stāstus, kas izgaist pēc 24 stundām. Privātuma iestatījumi ļauj jums precīzi noteikt, kurš var redzēt katru stāstu.
+
+• Signal ir neatkarīga bezpeļņas organizācija — citāda tehnoloģija no citādas organizācijas. Kā 501c3 bezpeļņas organizāciju mūs atbalsta jūsu ziedojumi, nevis reklāmdevēji vai investori. 
+
+• Lai saņemtu atbalstu, uzdotu jautājumus vai iegūtu papildinformāciju, apmeklējiet vietni https://support.signal.org/
+
+Lai skatītu mūsu pirmkodu, apmeklējiet vietni https://github.com/signalapp 
+
+Sekojiet mums platformās X @signalapp un Instagram @signal_app

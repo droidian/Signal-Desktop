@@ -27,5 +27,6 @@ export function getInitials(name?: string): string | undefined {
 
   return partsLen === 1
     ? parts[0].charAt(0)
-    : parts[0].charAt(0) + parts[partsLen - 1].charAt(0);
+    : // oxlint-disable-next-line typescript/no-non-null-assertion
+      parts[0].charAt(0) + parts[partsLen - 1]!.charAt(0);
 }

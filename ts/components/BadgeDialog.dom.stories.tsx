@@ -1,19 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentProps } from 'react';
-import React from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
 import {
   getFakeBadge,
   getFakeBadges,
-} from '../test-helpers/getFakeBadge.std.js';
-import { repeat, zipObject } from '../util/iterables.std.js';
-import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.js';
-import type { PropsType } from './BadgeDialog.dom.js';
-import { BadgeDialog } from './BadgeDialog.dom.js';
+} from '../test-helpers/getFakeBadge.std.ts';
+import { repeat, zipObject } from '../util/iterables.std.ts';
+import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.ts';
+import type { PropsType } from './BadgeDialog.dom.tsx';
+import { BadgeDialog } from './BadgeDialog.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -27,18 +26,19 @@ const defaultProps: ComponentProps<typeof BadgeDialog> = {
   firstName: 'Alice',
   i18n,
   onClose: action('onClose'),
+  onDonate: action('onDonate'),
   title: 'Alice Levine',
 };
 
-export function NoBadgesClosedImmediately(): React.JSX.Element {
+export function NoBadgesClosedImmediately(): JSX.Element {
   return <BadgeDialog {...defaultProps} badges={[]} />;
 }
 
-export function OneBadge(): React.JSX.Element {
+export function OneBadge(): JSX.Element {
   return <BadgeDialog {...defaultProps} badges={getFakeBadges(1)} />;
 }
 
-export function BadgeWithNoImageShouldBeImpossible(): React.JSX.Element {
+export function BadgeWithNoImageShouldBeImpossible(): JSX.Element {
   return (
     <BadgeDialog
       {...defaultProps}
@@ -52,7 +52,7 @@ export function BadgeWithNoImageShouldBeImpossible(): React.JSX.Element {
   );
 }
 
-export function BadgeWithPendingImage(): React.JSX.Element {
+export function BadgeWithPendingImage(): JSX.Element {
   return (
     <BadgeDialog
       {...defaultProps}
@@ -71,7 +71,7 @@ export function BadgeWithPendingImage(): React.JSX.Element {
   );
 }
 
-export function BadgeWithOnlyOneLowDetailImage(): React.JSX.Element {
+export function BadgeWithOnlyOneLowDetailImage(): JSX.Element {
   return (
     <BadgeDialog
       {...defaultProps}
@@ -99,15 +99,15 @@ export function BadgeWithOnlyOneLowDetailImage(): React.JSX.Element {
   );
 }
 
-export function FiveBadges(): React.JSX.Element {
+export function FiveBadges(): JSX.Element {
   return <BadgeDialog {...defaultProps} badges={getFakeBadges(5)} />;
 }
 
-export function ManyBadges(): React.JSX.Element {
+export function ManyBadges(): JSX.Element {
   return <BadgeDialog {...defaultProps} badges={getFakeBadges(50)} />;
 }
 
-export function ManyBadgesUserIsASubscriber(): React.JSX.Element {
+export function ManyBadgesUserIsASubscriber(): JSX.Element {
   return (
     <BadgeDialog
       {...defaultProps}

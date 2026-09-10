@@ -19,14 +19,13 @@
 
   &:hover,
   &:focus {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
+    background: var(--axo-color-fill-primary);
   }
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 }
@@ -37,12 +36,12 @@
 
   @include mixins.color-svg(
     '../images/icons/v3/settings/settings-compact.svg',
-    light-dark(variables.$color-gray-75, variables.$color-gray-15)
+    var(--axo-color-label-primary)
   );
 }
 
 .FunPanelEmojis__CellPopover {
-  filter: drop-shadow(0 7px 18px variables.$color-black-alpha-30);
+  box-shadow: 0 7px 18px variables.$color-black-alpha-30;
 
   &[data-placement='bottom'] {
     .FunPanelEmojis__CellPopoverOverlayArrow svg {
@@ -67,13 +66,12 @@
   padding: 8px;
   border-radius: 8px;
   background: FunConstants.$Fun__BgColor;
-  user-select: none;
+  backdrop-filter: FunConstants.$Fun__BgFilter;
 
   &:focus {
     outline: none;
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 }
@@ -81,4 +79,5 @@
 .FunPanelEmojis__CellPopoverOverlayArrow svg {
   display: block;
   fill: FunConstants.$Fun__BgColor;
+  backdrop-filter: FunConstants.$Fun__BgFilter;
 }

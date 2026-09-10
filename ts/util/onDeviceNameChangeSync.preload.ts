@@ -2,23 +2,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import type { DeviceNameChangeSyncEvent } from '../textsecure/messageReceiverEvents.std.js';
-import { getDevices } from '../textsecure/WebAPI.preload.js';
-import { MINUTE } from './durations/index.std.js';
-import { strictAssert } from './assert.std.js';
-import { parseIntOrThrow } from './parseIntOrThrow.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { toLogFormat } from '../types/errors.std.js';
-import { drop } from './drop.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
-import { accountManager } from '../textsecure/AccountManager.preload.js';
+import { Base64 } from '@signalapp/types';
+import type { DeviceNameChangeSyncEvent } from '../textsecure/messageReceiverEvents.std.ts';
+import { getDevices } from '../textsecure/WebAPI.preload.ts';
+import { MINUTE } from './durations/index.std.ts';
+import { strictAssert } from './assert.std.ts';
+import { parseIntOrThrow } from './parseIntOrThrow.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import { drop } from './drop.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { accountManager } from '../textsecure/AccountManager.preload.ts';
 
 const log = createLogger('onDeviceNameChangeSync');
 
 const deviceNameFetchQueue = new PQueue({
   concurrency: 1,
   timeout: 5 * MINUTE,
-  throwOnTimeout: true,
 });
 
 export async function onDeviceNameChangeSync(
@@ -35,8 +35,16 @@ export async function onDeviceNameChangeSync(
 }
 
 export async function maybeQueueDeviceInfoFetch(): Promise<void> {
+  if (window.ConversationController.areWePrimaryDevice()) {
+    log.info(
+      'maybeQueueDeviceInfoFetch: We are primary device; no need to fetch device name'
+    );
+    return;
+  }
+
   if (deviceNameFetchQueue.size >= 1) {
     log.info('maybeQueueDeviceInfoFetch: skipping; fetch already queued');
+    return;
   }
 
   try {
@@ -50,7 +58,7 @@ export async function maybeQueueDeviceInfoFetch(): Promise<void> {
 }
 
 async function fetchAndUpdateDeviceInfo() {
-  const { devices } = await getDevices();
+  const devices = await getDevices();
   const localDeviceId = parseIntOrThrow(
     itemStorage.user.getDeviceId(),
     'fetchAndUpdateDeviceInfo: localDeviceId'
@@ -63,15 +71,16 @@ async function fetchAndUpdateDeviceInfo() {
     localDeviceId
   );
 
-  const newNameEncrypted = ourDevice.name;
-  if (!newNameEncrypted) {
+  if (ourDevice.encryptedName.length === 0) {
     log.error('fetchAndUpdateDeviceInfo: device had empty name');
     return;
   }
 
   let newName: string;
   try {
-    newName = await accountManager.decryptDeviceName(newNameEncrypted);
+    newName = await accountManager.decryptDeviceName(
+      Base64.fromBytes(ourDevice.encryptedName)
+    );
   } catch (e) {
     const deviceNameWasEncrypted = itemStorage.user.getDeviceNameEncrypted();
     log.error(
@@ -94,7 +103,7 @@ async function fetchAndUpdateDeviceInfo() {
 }
 
 async function maybeUpdateDeviceCreatedAt(
-  createdAtCiphertext: string,
+  createdAtCiphertext: Uint8Array<ArrayBuffer>,
   deviceId: number
 ): Promise<void> {
   const existingCreatedAt = itemStorage.user.getDeviceCreatedAt();
@@ -102,11 +111,10 @@ async function maybeUpdateDeviceCreatedAt(
     return;
   }
 
-  const createdAtEncrypted = createdAtCiphertext;
   let createdAt: number | undefined;
   try {
     createdAt = await accountManager.decryptDeviceCreatedAt(
-      createdAtEncrypted,
+      Base64.fromBytes(createdAtCiphertext),
       deviceId
     );
   } catch (e) {

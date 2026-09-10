@@ -1,26 +1,24 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 
 import type { RenderingContextType } from '../../types/RenderingContext.d.ts';
-import { MessageAudio } from '../../components/conversation/MessageAudio.dom.js';
-import type { OwnProps as MessageAudioOwnProps } from '../../components/conversation/MessageAudio.dom.js';
-import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.js';
+import { MessageAudio } from '../../components/conversation/MessageAudio.dom.tsx';
+import type { OwnProps as MessageAudioOwnProps } from '../../components/conversation/MessageAudio.dom.tsx';
+import type { ActiveAudioPlayerStateType } from '../ducks/audioPlayer.preload.ts';
 import {
   AudioPlayerContent,
   useAudioPlayerActions,
-} from '../ducks/audioPlayer.preload.js';
+} from '../ducks/audioPlayer.preload.ts';
 import {
   selectAudioPlayerActive,
   selectVoiceNoteAndConsecutive,
-} from '../selectors/audioPlayer.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import {
-  getConversationByIdSelector,
-  getSelectedConversationId,
-} from '../selectors/conversations.dom.js';
+} from '../selectors/audioPlayer.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { getConversationByIdSelector } from '../selectors/conversations.dom.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
 
 const log = createLogger('MessageAudio');
 
@@ -35,7 +33,7 @@ export const SmartMessageAudio = memo(function SmartMessageAudio({
   const active = useSelector(selectAudioPlayerActive);
   const { loadVoiceNoteAudio, setIsPlaying, setPlaybackRate, setPosition } =
     useAudioPlayerActions();
-  const { pushPanelForConversation } = useConversationsActions();
+  const { pushPanelForConversation } = useNavActions();
 
   const getVoiceNoteData = useSelector(selectVoiceNoteAndConsecutive);
   const getConversationById = useSelector(getConversationByIdSelector);

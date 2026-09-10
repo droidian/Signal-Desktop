@@ -1,44 +1,44 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useCallback } from 'react';
 import type { ListRowRenderer } from 'react-virtualized';
 import classNames from 'classnames';
 import lodash from 'lodash';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { assertDev } from '../util/assert.std.js';
-import type { ParsedE164Type } from '../util/libphonenumberInstance.std.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import { ScrollBehavior } from '../types/Util.std.js';
-import { getNavSidebarWidthBreakpoint } from './_util.std.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId.preload.js';
-import type { ShowConversationType } from '../state/ducks/conversations.preload.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { assertDev } from '../util/assert.std.ts';
+import type { ParsedE164Type } from '../util/libphonenumberInstance.std.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import { ScrollBehavior } from '../types/Util.std.ts';
+import { getNavSidebarWidthBreakpoint } from './_util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../util/lookupConversationWithoutServiceId.preload.ts';
+import type { ShowConversationType } from '../state/ducks/conversations.preload.ts';
 
-import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.js';
-import type { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.js';
-import type { ContactListItemConversationType as ContactListItemPropsType } from './conversationList/ContactListItem.dom.js';
-import type { GroupListItemConversationType } from './conversationList/GroupListItem.dom.js';
-import { ConversationListItem } from './conversationList/ConversationListItem.dom.js';
-import { ContactListItem } from './conversationList/ContactListItem.dom.js';
-import { ContactCheckbox as ContactCheckboxComponent } from './conversationList/ContactCheckbox.dom.js';
-import { PhoneNumberCheckbox as PhoneNumberCheckboxComponent } from './conversationList/PhoneNumberCheckbox.dom.js';
-import { UsernameCheckbox as UsernameCheckboxComponent } from './conversationList/UsernameCheckbox.dom.js';
+import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.tsx';
+import type { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.tsx';
+import type { ContactListItemConversationType as ContactListItemPropsType } from './conversationList/ContactListItem.dom.tsx';
+import type { GroupListItemConversationType } from './conversationList/GroupListItem.dom.tsx';
+import { ConversationListItem } from './conversationList/ConversationListItem.dom.tsx';
+import { ContactListItem } from './conversationList/ContactListItem.dom.tsx';
+import { ContactCheckbox as ContactCheckboxComponent } from './conversationList/ContactCheckbox.dom.tsx';
+import { PhoneNumberCheckbox as PhoneNumberCheckboxComponent } from './conversationList/PhoneNumberCheckbox.dom.tsx';
+import { UsernameCheckbox as UsernameCheckboxComponent } from './conversationList/UsernameCheckbox.dom.tsx';
 import {
   ComposeStepButton,
   Icon as ComposeStepButtonIcon,
-} from './conversationList/ComposeStepButton.dom.js';
-import { StartNewConversation as StartNewConversationComponent } from './conversationList/StartNewConversation.dom.js';
-import { SearchResultsLoadingFakeHeader as SearchResultsLoadingFakeHeaderComponent } from './conversationList/SearchResultsLoadingFakeHeader.dom.js';
-import { SearchResultsLoadingFakeRow as SearchResultsLoadingFakeRowComponent } from './conversationList/SearchResultsLoadingFakeRow.dom.js';
-import { UsernameSearchResultListItem } from './conversationList/UsernameSearchResultListItem.dom.js';
-import { GroupListItem } from './conversationList/GroupListItem.dom.js';
-import { ListView } from './ListView.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { ListTile } from './ListTile.dom.js';
-import type { RenderConversationListItemContextMenuProps } from './conversationList/BaseConversationListItem.dom.js';
+} from './conversationList/ComposeStepButton.dom.tsx';
+import { StartNewConversation as StartNewConversationComponent } from './conversationList/StartNewConversation.dom.tsx';
+import { SearchResultsLoadingFakeHeader as SearchResultsLoadingFakeHeaderComponent } from './conversationList/SearchResultsLoadingFakeHeader.dom.tsx';
+import { SearchResultsLoadingFakeRow as SearchResultsLoadingFakeRowComponent } from './conversationList/SearchResultsLoadingFakeRow.dom.tsx';
+import { UsernameSearchResultListItem } from './conversationList/UsernameSearchResultListItem.dom.tsx';
+import { GroupListItem } from './conversationList/GroupListItem.dom.tsx';
+import { ListView } from './ListView.dom.tsx';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { ListTile } from './ListTile.dom.tsx';
+import type { RenderConversationListItemContextMenuProps } from './conversationList/BaseConversationListItem.dom.tsx';
 
 const { get, pick } = lodash;
 
@@ -146,7 +146,7 @@ type HeaderRowType = {
   getHeaderText: (i18n: LocalizerType) => string;
 };
 
-// Exported for tests across multiple files
+/** @testexport */
 export function _testHeaderText(row: Row | void): string | null {
   if (row?.type === RowType.Header) {
     return row.getHeaderText(((key: string) => key) as LocalizerType);
@@ -219,6 +219,7 @@ export type PropsType = {
   scrollBehavior?: ScrollBehavior;
   scrollToRowIndex?: number;
   shouldRecomputeRowHeights: boolean;
+  resetShouldRecomputeRowHeights: () => void;
   scrollable?: boolean;
   hasDialogPadding?: boolean;
 
@@ -238,10 +239,10 @@ export type PropsType = {
   onOutgoingAudioCallInConversation: (conversationId: string) => void;
   onOutgoingVideoCallInConversation: (conversationId: string) => void;
   removeConversation: (conversationId: string) => void;
-  renderMessageSearchResult?: (id: string) => React.JSX.Element;
+  renderMessageSearchResult?: (id: string) => JSX.Element;
   renderConversationListItemContextMenu?: (
     props: RenderConversationListItemContextMenuProps
-  ) => React.JSX.Element;
+  ) => JSX.Element;
   showChooseGroupMembers: () => void;
   showFindByUsername: () => void;
   showFindByPhoneNumber: () => void;
@@ -269,6 +270,7 @@ export function ConversationList({
   removeConversation,
   renderMessageSearchResult,
   renderConversationListItemContextMenu,
+  resetShouldRecomputeRowHeights,
   rowCount,
   scrollBehavior = ScrollBehavior.Default,
   scrollToRowIndex,
@@ -283,7 +285,7 @@ export function ConversationList({
   setIsFetchingUUID,
   showConversation,
   theme,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const calculateRowHeight = useCallback(
     (index: number): number => {
       const row = getRow(index);
@@ -605,6 +607,7 @@ export function ConversationList({
               showConversation={showConversation}
             />
           );
+          // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions
           key = `start-new-conversation:${row.phoneNumber}`;
           break;
         case RowType.UsernameSearchResult:
@@ -689,6 +692,7 @@ export function ConversationList({
       rowRenderer={renderRow}
       scrollToIndex={scrollToRowIndex}
       shouldRecomputeRowHeights={shouldRecomputeRowHeights}
+      resetShouldRecomputeRowHeights={resetShouldRecomputeRowHeights}
       scrollable={scrollable}
       scrollBehavior={scrollBehavior}
     />

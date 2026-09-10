@@ -3,13 +3,14 @@
 
 import { useEffect, useState } from 'react';
 
-import { MINUTE } from '../util/durations/index.std.js';
+import { MINUTE } from '../util/durations/index.std.ts';
 
 const listeners = new Set<() => void>();
 
 let timer: ReturnType<typeof setInterval> | undefined;
 
 export function useNowThatUpdatesEveryMinute(): number {
+  // oxlint-disable-next-line react/purity
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {

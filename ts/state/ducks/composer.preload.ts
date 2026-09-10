@@ -10,46 +10,47 @@ import type { ReadonlyDeep } from 'type-fest';
 import type {
   AddLinkPreviewActionType,
   RemoveLinkPreviewActionType,
-} from './linkPreviews.preload.js';
+} from './linkPreviews.preload.ts';
 import type {
   AttachmentType,
   AttachmentDraftType,
   InMemoryAttachmentDraftType,
-} from '../../types/Attachment.std.js';
+} from '../../types/Attachment.std.ts';
 import {
-  isVideoAttachment,
   isImageAttachment,
-} from '../../util/Attachment.std.js';
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import type { DraftBodyRanges } from '../../types/BodyRange.std.js';
-import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.std.js';
+  isVideoAttachment,
+} from '../../util/Attachment.std.ts';
+import { isViewOnceEligible } from '../../util/viewOnceEligibility.std.ts';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import type { DraftBodyRanges } from '../../types/BodyRange.std.ts';
+import type { LinkPreviewForUIType } from '../../types/message/LinkPreviews.std.ts';
 import type {
   PinMessageData,
   ReadonlyMessageAttributesType,
 } from '../../model-types.d.ts';
-import type { NoopActionType } from './noop.std.js';
-import type { ShowToastActionType } from './toast.preload.js';
-import type { StateType as RootStateType } from '../reducer.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import * as Errors from '../../types/errors.std.js';
-import type { PollCreateType } from '../../types/Polls.dom.js';
-import { enqueuePollCreateForSend } from '../../util/enqueuePollCreateForSend.dom.js';
+import { noopAction, type NoopActionType } from './noop.std.ts';
+import type { ShowToastActionType } from './toast.preload.ts';
+import type { StateType as RootStateType } from '../reducer.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import type { PollCreateType } from '../../types/Polls.dom.ts';
+import { enqueuePollCreateForSend } from '../../util/enqueuePollCreateForSend.dom.ts';
 import {
   ADD_PREVIEW as ADD_LINK_PREVIEW,
   REMOVE_PREVIEW as REMOVE_LINK_PREVIEW,
-} from './linkPreviews.preload.js';
-import { LinkPreviewSourceType } from '../../types/LinkPreview.std.js';
-import type { AciString } from '../../types/ServiceId.std.js';
-import { completeRecording, getIsRecording } from './audioRecorder.preload.js';
-import { SHOW_TOAST, showToast } from './toast.preload.js';
-import type { AnyToast } from '../../types/Toast.dom.js';
-import { ToastType } from '../../types/Toast.dom.js';
-import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.js';
-import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation.std.js';
-import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified.dom.js';
-import { clearConversationDraftAttachments } from '../../util/clearConversationDraftAttachments.preload.js';
-import { deleteDraftAttachment } from '../../util/deleteDraftAttachment.preload.js';
+} from './linkPreviews.preload.ts';
+import { LinkPreviewSourceType } from '../../types/LinkPreview.std.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { completeRecording, getIsRecording } from './audioRecorder.preload.ts';
+import { SHOW_TOAST, showToast } from './toast.preload.ts';
+import type { AnyToast } from '../../types/Toast.dom.tsx';
+import { ToastType } from '../../types/Toast.dom.tsx';
+import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.ts';
+import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation.std.ts';
+import { blockSendUntilConversationsAreVerified } from '../../util/blockSendUntilConversationsAreVerified.dom.ts';
+import { clearConversationDraftAttachments } from '../../util/clearConversationDraftAttachments.preload.ts';
+import { deleteDraftAttachment } from '../../util/deleteDraftAttachment.preload.ts';
 import {
   getLinkPreviewForSend,
   hasLinkPreviewLoaded,
@@ -57,70 +58,73 @@ import {
   removeLinkPreview,
   resetLinkPreview,
   suspendLinkPreviews,
-} from '../../services/LinkPreview.preload.js';
+} from '../../services/LinkPreview.preload.ts';
 import {
-  getMaximumOutgoingAttachmentSizeInKb,
+  getAttachmentSizeLimit,
   getRenderDetailsForLimit,
-  KIBIBYTE,
-} from '../../types/AttachmentSize.std.js';
-import { getValue as getRemoteConfigValue } from '../../RemoteConfig.dom.js';
-import { getRecipientsByConversation } from '../../util/getRecipientsByConversation.dom.js';
-import { processAttachment } from '../../util/processAttachment.preload.js';
-import { hasDraftAttachments } from '../../util/hasDraftAttachments.std.js';
-import { isFileDangerous } from '../../util/isFileDangerous.std.js';
-import { stringToMIMEType } from '../../types/MIME.std.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
-import { replaceIndex } from '../../util/replaceIndex.std.js';
-import { resolveAttachmentDraftData } from '../../util/resolveAttachmentDraftData.preload.js';
-import { resolveDraftAttachmentOnDisk } from '../../util/resolveDraftAttachmentOnDisk.preload.js';
-import { shouldShowInvalidMessageToast } from '../../util/shouldShowInvalidMessageToast.preload.js';
-import { writeDraftAttachment } from '../../util/writeDraftAttachment.preload.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { canReply, isNormalBubble } from '../selectors/message.preload.js';
-import { getAuthorId } from '../../messages/sources.preload.js';
-import {
-  getActivePanel,
-  getConversationSelector,
-  getSelectedConversationId,
-} from '../selectors/conversations.dom.js';
-import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend.preload.js';
-import { enqueuePollTerminateForSend } from '../../polls/enqueuePollTerminateForSend.preload.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+  isAttachmentTooLargeToSend,
+} from '../../types/AttachmentSize.std.ts';
+import { getValue as getRemoteConfigValue } from '../../RemoteConfig.dom.ts';
+import { getRecipientsByConversation } from '../../util/getRecipientsByConversation.dom.ts';
+import { processAttachment } from '../../util/processAttachment.preload.ts';
+import { hasDraftAttachments } from '../../util/hasDraftAttachments.std.ts';
+import { isFileDangerous } from '../../util/isFileDangerous.std.ts';
+import { stringToMIMEType } from '../../types/MIME.std.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
+import { replaceIndex } from '../../util/replaceIndex.std.ts';
+import { resolveAttachmentDraftData } from '../../util/resolveAttachmentDraftData.preload.ts';
+import { resolveDraftAttachmentOnDisk } from '../../util/resolveDraftAttachmentOnDisk.preload.ts';
+import { shouldShowInvalidMessageToast } from '../../util/shouldShowInvalidMessageToast.preload.ts';
+import { writeDraftAttachment } from '../../util/writeDraftAttachment.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { canReply, isNormalBubble } from '../selectors/message.preload.ts';
+import { getAuthorId } from '../../messages/sources.preload.ts';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
+import { enqueueReactionForSend } from '../../reactions/enqueueReactionForSend.preload.ts';
+import { enqueuePollTerminateForSend } from '../../polls/enqueuePollTerminateForSend.preload.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
 import {
   CONVERSATION_UNLOADED,
-  TARGETED_CONVERSATION_CHANGED,
   scrollToMessage,
-} from './conversations.preload.js';
+} from './conversations.preload.ts';
 import type {
   ConversationUnloadedActionType,
   TargetedConversationChangedActionType,
   ScrollToMessageActionType,
-} from './conversations.preload.js';
-import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.dom.js';
-import { drop } from '../../util/drop.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { makeQuote } from '../../util/makeQuote.preload.js';
-import { sendEditedMessage as doSendEditedMessage } from '../../util/sendEditedMessage.preload.js';
-import { Sound, SoundType } from '../../util/Sound.std.js';
+} from './conversations.preload.ts';
+import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.dom.tsx';
+import { drop } from '../../util/drop.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { makeQuote } from '../../util/makeQuote.preload.ts';
+import { sendEditedMessage as doSendEditedMessage } from '../../util/sendEditedMessage.preload.ts';
+import { Sound, SoundType } from '../../util/Sound.std.ts';
 import {
   isImageTypeSupported,
   isVideoTypeSupported,
-} from '../../util/GoogleChrome.std.js';
-import type { StateThunk } from '../types.std.js';
+} from '../../util/GoogleChrome.std.ts';
+import type { StateThunk } from '../types.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import {
+  getActivePanel,
+  getSelectedConversationId,
+} from '../selectors/nav.std.ts';
+import { isPoll } from '../../messages/helpers.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
+import { isFeaturedEnabledNoRedux } from '../../util/isFeatureEnabled.dom.ts';
 
 const { debounce, isEqual } = lodash;
 
 const log = createLogger('composer');
 
 // State
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 type ComposerStateByConversationType = {
   attachments: ReadonlyArray<AttachmentDraftType>;
   focusCounter: number;
   disabledCounter: number;
+  isViewOnce: boolean;
   linkPreviewLoading: boolean;
   linkPreviewResult?: LinkPreviewForUIType;
-  messageCompositionId: string;
   quotedMessage?: QuotedMessageForComposerType;
   sendCounter: number;
   shouldSendHighQualityAttachments?: boolean;
@@ -133,7 +137,7 @@ export type QuotedMessageForComposerType = ReadonlyDeep<{
   };
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 export type ComposerStateType = {
   conversations: Record<string, ComposerStateByConversationType>;
 };
@@ -143,8 +147,8 @@ function getEmptyComposerState(): ComposerStateByConversationType {
     attachments: [],
     focusCounter: 0,
     disabledCounter: 0,
+    isViewOnce: false,
     linkPreviewLoading: false,
-    messageCompositionId: generateUuid(),
     sendCounter: 0,
   };
 }
@@ -165,6 +169,7 @@ const RESET_COMPOSER = 'composer/RESET_COMPOSER';
 export const SET_FOCUS = 'composer/SET_FOCUS';
 const SET_HIGH_QUALITY_SETTING = 'composer/SET_HIGH_QUALITY_SETTING';
 const SET_QUOTED_MESSAGE = 'composer/SET_QUOTED_MESSAGE';
+const SET_VIEW_ONCE = 'composer/SET_VIEW_ONCE';
 const UPDATE_COMPOSER_DISABLED = 'composer/UPDATE_COMPOSER_DISABLED';
 
 type AddPendingAttachmentActionType = ReadonlyDeep<{
@@ -182,7 +187,7 @@ export type IncrementSendActionType = ReadonlyDeep<{
   };
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 export type ReplaceAttachmentsActionType = {
   type: typeof REPLACE_ATTACHMENTS;
   payload: {
@@ -221,7 +226,7 @@ type SetHighQualitySettingActionType = ReadonlyDeep<{
   };
 }>;
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 export type SetQuotedMessageActionType = {
   type: typeof SET_QUOTED_MESSAGE;
   payload: {
@@ -230,7 +235,15 @@ export type SetQuotedMessageActionType = {
   };
 };
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+export type SetViewOnceActionType = ReadonlyDeep<{
+  type: typeof SET_VIEW_ONCE;
+  payload: {
+    conversationId: string;
+    value: boolean;
+  };
+}>;
+
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 type ComposerActionType =
   | AddLinkPreviewActionType
   | AddPendingAttachmentActionType
@@ -243,7 +256,8 @@ type ComposerActionType =
   | UpdateComposerDisabledActionType
   | SetFocusActionType
   | SetHighQualitySettingActionType
-  | SetQuotedMessageActionType;
+  | SetQuotedMessageActionType
+  | SetViewOnceActionType;
 
 // Action Creators
 
@@ -253,6 +267,7 @@ export const actions = {
   cancelJoinRequest,
   endPoll,
   incrementSendCounter,
+  onClearDraft,
   onClearAttachments,
   onCloseLinkPreview,
   onEditorStateChange,
@@ -274,6 +289,7 @@ export const actions = {
   setMediaQualitySetting,
   setQuoteByMessageId,
   setQuotedMessage,
+  setViewOnce,
   updateComposerDisabled,
 };
 
@@ -290,6 +306,23 @@ export const useComposerActions = (): BoundActionCreatorsMapObject<
   typeof actions
 > => useBoundActions(actions);
 
+function onClearDraft(conversationId: string): StateThunk<NoopActionType> {
+  return dispatch => {
+    const conversation = window.ConversationController.get(conversationId);
+    if (!conversation) {
+      throw new Error('onClearDraft: No conversation found');
+    }
+
+    conversation.set({
+      draft: '',
+      draftBodyRanges: [],
+      quotedMessageId: null,
+    });
+
+    dispatch(onClearAttachments(conversation.id));
+  };
+}
+
 function onClearAttachments(conversationId: string): NoopActionType {
   const conversation = window.ConversationController.get(conversationId);
   if (!conversation) {
@@ -301,10 +334,7 @@ function onClearAttachments(conversationId: string): NoopActionType {
     conversation.get('draftAttachments')
   );
 
-  return {
-    type: 'NOOP',
-    payload: null,
-  };
+  return noopAction('onClearAttachments');
 }
 
 function cancelJoinRequest(conversationId: string): NoopActionType {
@@ -319,20 +349,14 @@ function cancelJoinRequest(conversationId: string): NoopActionType {
     task: async () => conversation.cancelJoinRequest(),
   });
 
-  return {
-    type: 'NOOP',
-    payload: null,
-  };
+  return noopAction('cancelJoinRequest');
 }
 
 function onCloseLinkPreview(conversationId: string): NoopActionType {
   suspendLinkPreviews();
   removeLinkPreview(conversationId);
 
-  return {
-    type: 'NOOP',
-    payload: null,
-  };
+  return noopAction('onCloseLinkPreview');
 }
 
 function onTextTooLong(): ShowToastActionType {
@@ -378,7 +402,7 @@ function scrollToQuotedMessage({
       return;
     }
 
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
@@ -390,7 +414,10 @@ function scrollToPinnedMessage(
   pinMessage: PinMessageData
 ): StateThunk<ShowToastActionType | ScrollToMessageActionType> {
   return async (dispatch, getState) => {
+    const ourAci = itemStorage.user.getCheckedAci();
+
     const pinnedMessage = await DataReader.getMessageByAuthorAciAndSentAt(
+      ourAci,
       pinMessage.targetAuthorAci,
       pinMessage.targetSentTimestamp,
       { includeEdits: true }
@@ -416,7 +443,8 @@ function scrollToPinnedMessage(
 }
 
 function scrollToPollMessage(
-  pollMessageId: string,
+  pollAuthorAci: AciString,
+  pollTimestamp: number,
   conversationId: string
 ): ThunkAction<
   void,
@@ -425,9 +453,16 @@ function scrollToPollMessage(
   ShowToastActionType | ScrollToMessageActionType
 > {
   return async (dispatch, getState) => {
-    const pollMessage = await getMessageById(pollMessageId);
+    const ourAci = itemStorage.user.getCheckedAci();
 
-    if (!pollMessage) {
+    const pollMessage = await DataReader.getMessageByAuthorAciAndSentAt(
+      ourAci,
+      pollAuthorAci,
+      pollTimestamp,
+      { includeEdits: true }
+    );
+
+    if (!pollMessage || !isPoll(pollMessage)) {
       dispatch({
         type: SHOW_TOAST,
         payload: {
@@ -437,11 +472,11 @@ function scrollToPollMessage(
       return;
     }
 
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
-    scrollToMessage(conversationId, pollMessageId)(
+    scrollToMessage(conversationId, pollMessage.id)(
       dispatch,
       getState,
       undefined
@@ -449,17 +484,13 @@ function scrollToPollMessage(
   };
 }
 
-export function saveDraftRecordingIfNeeded(): ThunkAction<
-  void,
-  RootStateType,
-  unknown,
-  never
-> {
+export function saveDraftRecordingIfNeeded(
+  conversationId: string
+): ThunkAction<void, RootStateType, unknown, never> {
   return (dispatch, getState) => {
-    const { conversations, audioRecorder } = getState();
-    const { selectedConversationId: conversationId } = conversations;
+    const state = getState();
 
-    if (!getIsRecording(audioRecorder) || !conversationId) {
+    if (!getIsRecording(state.audioRecorder) || !conversationId) {
       return;
     }
 
@@ -481,7 +512,7 @@ export function saveDraftRecordingIfNeeded(): ThunkAction<
   };
 }
 
-// eslint-disable-next-line local-rules/type-alias-readonlydeep
+// oxlint-disable-next-line signal-desktop/enforce-type-alias-readonlydeep
 type WithPreSendChecksOptions = Readonly<{
   message?: string;
   voiceNoteAttachment?: InMemoryAttachmentDraftType;
@@ -573,7 +604,9 @@ function sendEditedMessage(
   void,
   RootStateType,
   unknown,
-  UpdateComposerDisabledActionType | ShowToastActionType
+  | UpdateComposerDisabledActionType
+  | ShowToastActionType
+  | IncrementSendActionType
 > {
   return async dispatch => {
     const conversation = window.ConversationController.get(conversationId);
@@ -599,6 +632,7 @@ function sendEditedMessage(
           quoteSentAt,
           targetMessageId,
         });
+        dispatch(incrementSendCounter(conversationId));
       } catch (error) {
         log.error('sendEditedMessage', Errors.toLogFormat(error));
         if (error.toastType) {
@@ -641,12 +675,12 @@ function sendMultiMediaMessage(
 
     const {
       draftAttachments,
-      bodyRanges,
       isViewOnce,
-      message = '',
       timestamp = Date.now(),
       voiceNoteAttachment,
     } = options;
+
+    const { message = '', bodyRanges } = isViewOnce ? {} : options;
 
     const state = getState();
 
@@ -732,9 +766,12 @@ function sendStickerMessage(
   void,
   RootStateType,
   unknown,
-  NoopActionType | ShowToastActionType
+  | NoopActionType
+  | ShowToastActionType
+  | IncrementSendActionType
+  | SetQuotedMessageActionType
 > {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
       throw new Error('sendStickerMessage: No conversation found');
@@ -762,16 +799,54 @@ function sendStickerMessage(
         return;
       }
 
+      const isStickerReplySendEnabled = isFeaturedEnabledNoRedux({
+        betaKey: 'desktop.stickerReply.send.beta',
+        prodKey: 'desktop.stickerReply.send.prod',
+      });
+
+      let sendStickerMessageOptions;
+      if (isStickerReplySendEnabled) {
+        const state = getState();
+        const conversationComposerState = getComposerStateForConversation(
+          state.composer,
+          conversationId
+        );
+        const quote = conversationComposerState.quotedMessage?.quote;
+
+        const draft = conversation.get('draft');
+        const isDraftPresent =
+          (draft != null && draft.length > 0) ||
+          conversationComposerState.attachments.length > 0;
+
+        sendStickerMessageOptions = {
+          quote,
+          extraReduxActions: isDraftPresent
+            ? undefined
+            : () => {
+                setQuoteByMessageId(conversationId, undefined)(
+                  dispatch,
+                  getState,
+                  undefined
+                );
+              },
+        };
+      } else {
+        sendStickerMessageOptions = undefined;
+      }
+
       const { packId, stickerId } = options;
-      void conversation.sendStickerMessage(packId, stickerId);
+      drop(
+        conversation.sendStickerMessage(
+          packId,
+          stickerId,
+          sendStickerMessageOptions
+        )
+      );
     } catch (error) {
       log.error('clickSend error:', Errors.toLogFormat(error));
     }
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('sendStickerMessage'));
   };
 }
 
@@ -817,10 +892,7 @@ function sendPoll(
       log.error('sendPoll error:', Errors.toLogFormat(error));
     }
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('sendPoll'));
   };
 }
 
@@ -911,7 +983,7 @@ export function setQuoteByMessageId(
     const quote = await makeQuote(message.attributes);
 
     // In case the conversation changed while we were about to set the quote
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
@@ -921,6 +993,7 @@ export function setQuoteByMessageId(
         quote,
       })
     );
+    dispatch(disableViewOnceIfIneligible(conversationId));
 
     dispatch(setComposerFocus(conversation.id));
   };
@@ -939,7 +1012,7 @@ function addAttachment(
     const state = getState();
 
     const isSelectedConversation =
-      state.conversations.selectedConversationId === conversationId;
+      getSelectedConversationId(state) === conversationId;
 
     const conversationComposerState = getComposerStateForConversation(
       state.composer,
@@ -1013,7 +1086,7 @@ function addPendingAttachment(
     const state = getState();
 
     const isSelectedConversation =
-      state.conversations.selectedConversationId === conversationId;
+      getSelectedConversationId(state) === conversationId;
 
     const conversationComposerState = getComposerStateForConversation(
       state.composer,
@@ -1049,7 +1122,7 @@ export function setComposerFocus(
   conversationId: string
 ): ThunkAction<void, RootStateType, unknown, SetFocusActionType> {
   return async (dispatch, getState) => {
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
@@ -1117,10 +1190,7 @@ function onEditorStateChange({
       conversationId,
     });
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('onEditorStateChange'));
   };
 }
 
@@ -1145,7 +1215,7 @@ function processAttachments({
 
     // If the call came from a conversation we are no longer in we do not
     // update the state.
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
@@ -1161,8 +1231,12 @@ function processAttachments({
 
     const { audioRecorder } = getState();
 
-    if (hasLinkPreviewLoaded() || getIsRecording(audioRecorder)) {
+    if (getIsRecording(audioRecorder)) {
       return;
+    }
+
+    if (hasLinkPreviewLoaded()) {
+      removeLinkPreview(conversationId);
     }
 
     let toastToShow: AnyToast | undefined;
@@ -1174,8 +1248,7 @@ function processAttachments({
       file: File;
       pendingAttachment: AttachmentDraftType;
     }> = [];
-    for (let i = 0; i < files.length; i += 1) {
-      const file = files[i];
+    for (const file of files) {
       const processingResult = preProcessAttachment(file, nextDraftAttachments);
       if (processingResult != null) {
         toastToShow = processingResult;
@@ -1245,10 +1318,7 @@ function processAttachments({
       return;
     }
 
-    dispatch({
-      type: 'NOOP',
-      payload: null,
-    });
+    dispatch(noopAction('processAttachments'));
   };
 }
 
@@ -1289,11 +1359,19 @@ function preProcessAttachment(
 
   // Putting this after everything else because the other checks are more
   // important to show to the user.
-  const limitKb = getMaximumOutgoingAttachmentSizeInKb(getRemoteConfigValue);
-  if (file.size / KIBIBYTE > limitKb) {
+  const sizeLimit = getAttachmentSizeLimit({
+    contentType: fileType,
+    getRemoteConfigValue,
+  });
+
+  if (
+    isAttachmentTooLargeToSend({ plaintextSize: file.size, limit: sizeLimit })
+  ) {
     return {
-      toastType: ToastType.FileSize,
-      parameters: getRenderDetailsForLimit(limitKb),
+      toastType: isVideoAttachment({ contentType: fileType })
+        ? ToastType.VideoFileSize
+        : ToastType.FileSize,
+      parameters: getRenderDetailsForLimit(sizeLimit),
     };
   }
 
@@ -1342,6 +1420,8 @@ function removeAttachment(
     }
 
     const targetAttachment = attachments[targetAttachmentIndex];
+    strictAssert(targetAttachment, 'Missing targetAttachment');
+
     const nextAttachments = attachments
       .slice(0, targetAttachmentIndex)
       .concat(attachments.slice(targetAttachmentIndex + 1));
@@ -1373,11 +1453,16 @@ function removeAttachment(
 export function replaceAttachments(
   conversationId: string,
   attachments: ReadonlyArray<AttachmentDraftType>
-): ThunkAction<void, RootStateType, unknown, ReplaceAttachmentsActionType> {
+): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  ReplaceAttachmentsActionType | SetViewOnceActionType | ShowToastActionType
+> {
   return (dispatch, getState) => {
     // If the call came from a conversation we are no longer in we do not
     // update the state.
-    if (getState().conversations.selectedConversationId !== conversationId) {
+    if (getSelectedConversationId(getState()) !== conversationId) {
       return;
     }
 
@@ -1393,12 +1478,13 @@ export function replaceAttachments(
       },
     });
     dispatch(setComposerFocus(conversationId));
+    dispatch(disableViewOnceIfIneligible(conversationId));
   };
 }
 
 function reactToMessage(
   messageId: string,
-  reaction: { emoji: string; remove: boolean }
+  reaction: { emoji: Emoji.Variant; remove: boolean }
 ): ThunkAction<
   void,
   RootStateType,
@@ -1413,10 +1499,7 @@ function reactToMessage(
         emoji,
         remove,
       });
-      dispatch({
-        type: 'NOOP',
-        payload: null,
-      });
+      dispatch(noopAction('reactToMessage'));
     } catch (error) {
       log.error(
         'reactToMessage: Error sending reaction',
@@ -1445,10 +1528,7 @@ function endPoll(
   return async dispatch => {
     try {
       await enqueuePollTerminateForSend({ messageId });
-      dispatch({
-        type: 'NOOP',
-        payload: null,
-      });
+      dispatch(noopAction('endPoll'));
     } catch (error) {
       log.error('endPoll: Error sending poll terminate', error, messageId);
       dispatch({
@@ -1561,6 +1641,95 @@ function setQuotedMessage(
   };
 }
 
+export function setViewOnce({
+  conversationId,
+  value,
+  toastNotify,
+}: {
+  conversationId: string;
+  value: boolean;
+  toastNotify: boolean;
+}): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  SetViewOnceActionType | ShowToastActionType
+> {
+  return async (dispatch, getState) => {
+    const composerState = getComposerStateForConversation(
+      getState().composer,
+      conversationId
+    );
+    const nextValue =
+      value &&
+      isViewOnceEligible(
+        composerState.attachments,
+        Boolean(composerState.quotedMessage)
+      );
+
+    if (composerState.isViewOnce !== nextValue) {
+      dispatch({
+        type: SET_VIEW_ONCE,
+        payload: {
+          conversationId,
+          value: nextValue,
+        },
+      });
+
+      if (toastNotify) {
+        dispatch(
+          showToast({
+            toastType: nextValue
+              ? ToastType.ViewOnceEnabled
+              : ToastType.ViewOnceDisabled,
+          })
+        );
+      }
+    }
+
+    const conversation = window.ConversationController.get(conversationId);
+    if (conversation && conversation.get('draftIsViewOnce') !== nextValue) {
+      conversation.set({
+        draftIsViewOnce: nextValue,
+        draftChanged: true,
+      });
+      await DataWriter.updateConversation(conversation.attributes);
+    }
+  };
+}
+
+function disableViewOnceIfIneligible(
+  conversationId: string,
+  toastNotify = true
+): ThunkAction<
+  void,
+  RootStateType,
+  unknown,
+  SetViewOnceActionType | ShowToastActionType
+> {
+  return (dispatch, getState) => {
+    const composerState = getComposerStateForConversation(
+      getState().composer,
+      conversationId
+    );
+    if (
+      composerState.isViewOnce &&
+      !isViewOnceEligible(
+        composerState.attachments,
+        Boolean(composerState.quotedMessage)
+      )
+    ) {
+      dispatch(
+        setViewOnce({
+          conversationId,
+          value: false,
+          toastNotify,
+        })
+      );
+    }
+  };
+}
+
 // Reducer
 
 export function getEmptyState(): ComposerStateType {
@@ -1607,31 +1776,16 @@ export function reducer(
   if (action.type === CONVERSATION_UNLOADED) {
     const nextConversations: Record<string, ComposerStateByConversationType> =
       {};
-    Object.keys(state.conversations).forEach(conversationId => {
-      if (conversationId === action.payload.conversationId) {
-        return;
-      }
-
-      nextConversations[conversationId] = state.conversations[conversationId];
-    });
+    for (const [conversationId, conversation] of Object.entries(
+      state.conversations
+    )) {
+      nextConversations[conversationId] = conversation;
+    }
 
     return {
       ...state,
       conversations: nextConversations,
     };
-  }
-
-  if (action.type === TARGETED_CONVERSATION_CHANGED) {
-    if (action.payload.conversationId) {
-      return {
-        ...state,
-        conversations: {
-          [action.payload.conversationId]: getEmptyComposerState(),
-        },
-      };
-    }
-
-    return getEmptyState();
   }
 
   if (action.type === RESET_COMPOSER) {
@@ -1695,6 +1849,12 @@ export function reducer(
   if (action.type === ADD_PENDING_ATTACHMENT) {
     return updateComposerState(state, action, prevState => ({
       attachments: [...prevState.attachments, action.payload.attachment],
+    }));
+  }
+
+  if (action.type === SET_VIEW_ONCE) {
+    return updateComposerState(state, action, () => ({
+      isViewOnce: action.payload.value,
     }));
   }
 

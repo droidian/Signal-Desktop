@@ -2,23 +2,32 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ConversationAttributesType } from '../model-types.d.ts';
-import { isAciString } from './isAciString.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import { isAciString } from './isAciString.std.ts';
+import { isSignalServiceId } from '../types/SignalConversation.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 export function isBlocked(
   attributes: Pick<ConversationAttributesType, 'e164' | 'groupId' | 'serviceId'>
 ): boolean {
   const { e164, groupId, serviceId } = attributes;
-  if (isAciString(serviceId)) {
-    return itemStorage.blocked.isServiceIdBlocked(serviceId);
+
+  if (serviceId != null && isSignalServiceId(serviceId)) {
+    return itemStorage.blocked.isReleaseNotesChatBlocked();
   }
 
-  if (e164) {
-    return itemStorage.blocked.isBlocked(e164);
+  if (
+    isAciString(serviceId) &&
+    itemStorage.blocked.isServiceIdBlocked(serviceId)
+  ) {
+    return true;
   }
 
-  if (groupId) {
-    return itemStorage.blocked.isGroupBlocked(groupId);
+  if (e164 && itemStorage.blocked.isBlocked(e164)) {
+    return true;
+  }
+
+  if (groupId && itemStorage.blocked.isGroupBlocked(groupId)) {
+    return true;
   }
 
   return false;

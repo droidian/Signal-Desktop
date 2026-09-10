@@ -1,15 +1,15 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import type { BadgeType } from '../badges/types.std.js';
-import { Modal } from './Modal.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Checkbox } from './Checkbox.dom.js';
-import { BadgeImage } from './BadgeImage.dom.js';
-import { Spinner } from './Spinner.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { BadgeType } from '../badges/types.std.ts';
+import { Modal } from './Modal.dom.tsx';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Checkbox } from './Checkbox.dom.tsx';
+import { BadgeImage } from './BadgeImage.dom.tsx';
+import { Spinner } from './Spinner.dom.tsx';
 
 export type PropsType = {
   i18n: LocalizerType;
@@ -27,7 +27,7 @@ export function DonationThanksModal({
   onClose,
   badge,
   applyDonationBadge,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [applyBadgeIsChecked, setApplyBadgeIsChecked] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -97,13 +97,10 @@ export function DonationThanksModal({
         <div className="DonationThanksModal__toggle-section">
           <Checkbox
             checked={applyBadgeIsChecked}
-            label=""
+            label={i18n('icu:Donations__badge-modal--display-on-profile')}
             name="donation-badge-display"
             onChange={handleToggleBadge}
           />
-          <span className="DonationThanksModal__toggle-text">
-            {i18n('icu:Donations__badge-modal--display-on-profile')}
-          </span>
         </div>
 
         <div className="DonationThanksModal__help-text">

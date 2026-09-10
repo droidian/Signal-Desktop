@@ -2,10 +2,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import classNames from 'classnames';
-import React, { useCallback, useState } from 'react';
+import {
+  useCallback,
+  useState,
+  type JSX,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 import { animated, useSpring } from '@react-spring/web';
-import type { LocalizerType } from '../types/Util.std.js';
-import { useReducedMotion } from '../hooks/useReducedMotion.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
 
 const SPRING_CONFIG = {
   mass: 0.5,
@@ -29,11 +35,11 @@ export function PlaybackRateButton({
   visible = true,
   i18n,
   onClick,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const [isDown, setIsDown] = useState(false);
   const reducedMotion = useReducedMotion();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [animProps] = useSpring(
     {
       immediate: reducedMotion,
@@ -45,7 +51,7 @@ export function PlaybackRateButton({
 
   // Clicking button toggle playback
   const onButtonClick = useCallback(
-    (event: React.MouseEvent) => {
+    (event: MouseEvent) => {
       event.stopPropagation();
       event.preventDefault();
 
@@ -56,7 +62,7 @@ export function PlaybackRateButton({
 
   // Keyboard playback toggle
   const onButtonKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
+    (event: KeyboardEvent) => {
       if (event.key !== 'Enter' && event.key !== 'Space') {
         return;
       }
@@ -76,7 +82,7 @@ export function PlaybackRateButton({
   };
 
   const label = playbackRate
-    ? playbackRateLabels[playbackRate].toString()
+    ? playbackRateLabels[playbackRate]?.toString()
     : undefined;
 
   return (
@@ -105,7 +111,8 @@ const playbackRates = [1, 1.5, 2, 0.5];
 
 PlaybackRateButton.nextPlaybackRate = (currentRate: number): number => {
   // cycle through the rates
+  // oxlint-disable-next-line typescript/no-non-null-assertion
   return playbackRates[
     (playbackRates.indexOf(currentRate) + 1) % playbackRates.length
-  ];
+  ]!;
 };

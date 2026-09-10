@@ -2,29 +2,27 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode, ChangeEvent } from 'react';
-import React from 'react';
-
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import { ContactCheckboxDisabledReason } from '../conversationList/ContactCheckbox.dom.js';
-import { ContactPills } from '../ContactPills.dom.js';
-import { ContactPill } from '../ContactPill.dom.js';
-import { SearchInput } from '../SearchInput.dom.js';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { ContactCheckboxDisabledReason } from '../conversationList/ContactCheckbox.dom.tsx';
+import { ContactPills } from '../ContactPills.dom.tsx';
+import { ContactPill } from '../ContactPill.dom.tsx';
+import { SearchInput } from '../SearchInput.dom.tsx';
 import {
-  AddGroupMemberErrorDialog,
-  AddGroupMemberErrorDialogMode,
-} from '../AddGroupMemberErrorDialog.dom.js';
-import { Button } from '../Button.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.js';
-import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.js';
-import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.js';
+  AddGroupMemberMaximumGroupSizeErrorDialog,
+  AddGroupMemberRecommendedMaximumGroupSizeErrorDialog,
+} from '../AddGroupMemberErrorDialog.dom.tsx';
+import { Button } from '../Button.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { ParsedE164Type } from '../../util/libphonenumberInstance.std.ts';
+import { parseAndFormatPhoneNumber } from '../../util/libphonenumberInstance.std.ts';
+import type { UUIDFetchStateType } from '../../util/uuidFetchState.std.ts';
 import {
   isFetchingByUsername,
   isFetchingByE164,
-} from '../../util/uuidFetchState.std.js';
+} from '../../util/uuidFetchState.std.ts';
 
 export type LeftPaneChooseGroupMembersPropsType = {
   uuidFetchState: UUIDFetchStateType;
@@ -41,6 +39,7 @@ export type LeftPaneChooseGroupMembersPropsType = {
   selectedContacts: Array<ConversationType>;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneChooseGroupMembersHelper extends LeftPaneHelper<LeftPaneChooseGroupMembersPropsType> {
   readonly #candidateContacts: ReadonlyArray<ConversationType>;
   readonly #isPhoneNumberChecked: boolean;
@@ -190,19 +189,17 @@ export class LeftPaneChooseGroupMembersHelper extends LeftPaneHelper<LeftPaneCho
     let modalNode: undefined | ReactNode;
     if (this.#isShowingMaximumGroupSizeModal) {
       modalNode = (
-        <AddGroupMemberErrorDialog
+        <AddGroupMemberMaximumGroupSizeErrorDialog
           i18n={i18n}
           maximumNumberOfContacts={this.#groupSizeHardLimit}
-          mode={AddGroupMemberErrorDialogMode.MaximumGroupSize}
           onClose={closeMaximumGroupSizeModal}
         />
       );
     } else if (this.#isShowingRecommendedGroupSizeModal) {
       modalNode = (
-        <AddGroupMemberErrorDialog
+        <AddGroupMemberRecommendedMaximumGroupSizeErrorDialog
           i18n={i18n}
           recommendedMaximumNumberOfContacts={this.#groupSizeRecommendedLimit}
-          mode={AddGroupMemberErrorDialogMode.RecommendedMaximumGroupSize}
           onClose={closeRecommendedGroupSizeModal}
         />
       );
@@ -315,7 +312,8 @@ export class LeftPaneChooseGroupMembersHelper extends LeftPaneHelper<LeftPaneCho
       }
 
       if (virtualRowIndex <= this.#candidateContacts.length) {
-        const contact = this.#candidateContacts[virtualRowIndex - 1];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const contact = this.#candidateContacts[virtualRowIndex - 1]!;
 
         const isChecked = this.#selectedConversationIdsSet.has(contact.id);
         const disabledReason =

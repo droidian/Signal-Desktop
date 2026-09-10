@@ -1,11 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
-import { ConfirmDiscardDialog } from './ConfirmDiscardDialog.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { AxoButton } from '../axo/AxoButton.dom.js';
+import { useState, type JSX } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type PropsType = {
   hasChanges: boolean;
@@ -19,15 +20,15 @@ export function AvatarModalButtons({
   i18n,
   onCancel,
   onSave,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [confirmDiscardAction, setConfirmDiscardAction] = useState<
-    (() => unknown) | undefined
+    (() => void) | undefined
   >(undefined);
 
   return (
-    <Modal.ButtonFooter>
+    <div className={tw('flex w-full justify-end-safe gap-2 py-2.5')}>
       <AxoButton.Root
-        variant="secondary"
+        variant="strong-secondary"
         size="lg"
         onClick={() => {
           if (hasChanges) {
@@ -40,20 +41,34 @@ export function AvatarModalButtons({
         {i18n('icu:cancel')}
       </AxoButton.Root>
       <AxoButton.Root
-        variant="primary"
+        variant="strong-primary"
         size="lg"
         disabled={!hasChanges}
         onClick={onSave}
       >
         {i18n('icu:save')}
       </AxoButton.Root>
-      {confirmDiscardAction && (
-        <ConfirmDiscardDialog
-          i18n={i18n}
-          onDiscard={confirmDiscardAction}
-          onClose={() => setConfirmDiscardAction(undefined)}
-        />
-      )}
-    </Modal.ButtonFooter>
+      <AxoConfirmDialog.Root
+        open={confirmDiscardAction != null}
+        onOpenChange={() => setConfirmDiscardAction(undefined)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:ConfirmDiscardDialog--discard')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmDiscardAction != null,
+              'Missing confirmDiscardAction'
+            );
+            confirmDiscardAction();
+          }}
+        >
+          {i18n('icu:discard')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+    </div>
   );
 }

@@ -1,209 +1,138 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { MessageAttributesType } from '../model-types.js';
-import { strictAssert } from '../util/assert.std.js';
-import type { DurationInSeconds } from '../util/durations/index.std.js';
-import type { AttachmentType } from './Attachment.std.js';
-import type { EmbeddedContactType } from './EmbeddedContact.std.js';
-import type { ErrorIfOverlapping, ExactKeys } from './Util.std.js';
+import type { MessageAttributesType } from '../model-types.d.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+
+export type EraseMessageReasonType =
+  | 'view-once-viewed'
+  | 'view-once-invalid'
+  | 'view-once-expired'
+  | 'view-once-sent'
+  | 'unsupported-message'
+  | 'delete-for-everyone';
 
 export function getMentionsRegex(): RegExp {
   return /\uFFFC/g;
 }
 
-export type Message = (
-  | VerifiedChangeMessage
-  | ProfileChangeNotificationMessage
-) & { deletedForEveryone?: boolean };
+const VIEW_ONCE_REASONS = new Set<EraseMessageReasonType>([
+  'view-once-expired',
+  'view-once-invalid',
+  'view-once-sent',
+  'view-once-viewed',
+]);
 
-export type IncomingMessage = Readonly<
-  {
-    type: 'incoming';
-    // Required
-    attachments: Array<AttachmentType>;
-    id: string;
-    received_at: number;
+const messageAttributesEraseBehavior: Record<
+  keyof MessageAttributesType,
+  | 'preserve'
+  | 'erase'
+  | ((eraseReason: EraseMessageReasonType) => 'preserve' | 'erase')
+> = {
+  id: 'preserve',
+  timestamp: 'preserve',
+  conversationId: 'preserve',
+  type: 'preserve',
+  sent_at: 'preserve',
+  received_at: 'preserve',
 
-    // Optional
-    body?: string;
-    decrypted_at?: number;
-    errors?: Array<Error>;
-    expireTimer?: DurationInSeconds;
-    messageTimer?: number; // deprecated
-    isViewOnce?: number;
-    flags?: number;
-    source?: string;
-    sourceDevice?: number;
-  } & SharedMessageProperties &
-    MessageSchemaVersion6 &
-    ExpirationTimerUpdate
->;
+  canReplyToStory: 'preserve',
+  deletedForEveryone: 'preserve',
+  deletedForEveryoneByAdminAci: 'preserve',
+  deletedForEveryoneFailed: 'preserve',
+  deletedForEveryoneSendStatus: 'preserve',
+  deletedForEveryoneTimestamp: 'preserve',
+  editMessageReceivedAt: 'preserve',
+  editMessageReceivedAtMs: 'preserve',
+  editMessageTimestamp: 'preserve',
+  errors: 'preserve',
+  expirationStartTimestamp: 'preserve',
+  expireTimer: 'preserve',
+  isErased: 'preserve',
+  isTapToViewInvalid: 'preserve',
+  isViewOnce: 'preserve',
+  readAt: 'preserve',
+  readStatus: 'preserve',
+  received_at_ms: 'preserve',
+  requiredProtocolVersion: 'preserve',
+  schemaMigrationAttempts: 'preserve',
+  schemaVersion: 'preserve',
+  seenStatus: 'preserve',
+  sendStateByConversationId: 'preserve',
+  serverGuid: 'preserve',
+  serverTimestamp: 'preserve',
+  source: 'preserve',
+  sourceDevice: 'preserve',
+  sourceServiceId: 'preserve',
+  storyId: 'preserve',
+  synced: 'preserve',
+  unidentifiedDeliveries: 'preserve',
 
-export type OutgoingMessage = Readonly<
-  {
-    type: 'outgoing';
+  attachments: 'erase',
+  body: 'erase',
+  bodyAttachment: 'erase',
+  bodyRanges: 'erase',
+  callId: 'erase',
+  changedId: 'erase',
+  contact: 'erase',
+  conversationMerge: 'erase',
+  dataMessage: 'erase',
+  decrypted_at: 'erase',
+  droppedGV2MemberIds: 'erase',
+  editHistory: 'erase',
+  expirationTimerUpdate: 'erase',
+  flags: 'erase',
+  giftBadge: 'erase',
+  group_update: 'erase',
+  groupMigration: 'erase',
+  groupV2Change: 'erase',
+  hasUnreadPollVotes: 'erase',
+  invitedGV2Members: 'erase',
+  unidentifiedDeliveryReceived: 'erase',
+  key_changed: 'erase',
+  local: 'erase',
+  logger: 'erase',
+  mentionsMe: 'erase',
+  message: 'erase',
+  messageRequestResponseEvent: 'erase',
+  messageTimer: 'erase',
+  payment: 'erase',
+  phoneNumberDiscovery: 'erase',
+  pinMessage: 'erase',
+  poll: 'erase',
+  pollTerminateNotification: 'erase',
+  preview: 'erase',
+  profileChange: 'erase',
+  quote: 'erase',
+  sendHQImages: 'erase',
+  sms: 'erase',
+  sticker: 'erase',
+  storyDistributionListId: 'erase',
+  storyReaction: 'erase',
+  storyRecipientsVersion: 'erase',
+  storyReplyContext: 'erase',
+  supportedVersionAtReceive: 'erase',
+  titleTransition: 'erase',
+  verified: 'erase',
+  verifiedChanged: 'erase',
 
-    // Required
-    attachments: Array<AttachmentType>;
-    expirationStartTimestamp: number;
-    id: string;
-    received_at: number;
+  reactions: reason => (VIEW_ONCE_REASONS.has(reason) ? 'preserve' : 'erase'),
+};
 
-    // Optional
-    body?: string;
-    expireTimer?: DurationInSeconds;
-    messageTimer?: number; // deprecated
-    isViewOnce?: number;
-    synced: boolean;
-  } & SharedMessageProperties &
-    ExpirationTimerUpdate
->;
-
-export type VerifiedChangeMessage = Readonly<
-  {
-    type: 'verified-change';
-  } & SharedMessageProperties &
-    ExpirationTimerUpdate
->;
-
-export type ProfileChangeNotificationMessage = Readonly<
-  {
-    type: 'profile-change';
-  } & SharedMessageProperties &
-    ExpirationTimerUpdate
->;
-
-export type SharedMessageProperties = Readonly<{
-  conversationId: string;
-  sent_at: number;
-  timestamp: number;
-}>;
-
-export type ExpirationTimerUpdate = Partial<
-  Readonly<{
-    expirationTimerUpdate: Readonly<{
-      expireTimer: DurationInSeconds;
-      fromSync: boolean;
-      source: string; // PhoneNumber
-    }>;
-  }>
->;
-
-export type MessageSchemaVersion6 = Partial<
-  Readonly<{
-    contact: Array<EmbeddedContactType>;
-  }>
->;
-
-// NB: see `eraseMessageContents` for all scenarios in which message content can be erased
-export const messageAttrsToPreserveAfterErase = [
-  // TS required fields
-  'id',
-  'timestamp',
-  'conversationId',
-  'type',
-  'sent_at',
-  'received_at',
-
-  // all other, non-TS-required fields to preserve
-  'canReplyToStory',
-  'deletedForEveryone',
-  'deletedForEveryoneFailed',
-  'deletedForEveryoneSendStatus',
-  'deletedForEveryoneTimestamp',
-  'editMessageReceivedAt',
-  'editMessageReceivedAtMs',
-  'editMessageTimestamp',
-  'errors',
-  'expirationStartTimestamp',
-  'expireTimer',
-  'isErased',
-  'isTapToViewInvalid',
-  'isViewOnce',
-  'readAt',
-  'readStatus',
-  'received_at_ms',
-  'requiredProtocolVersion',
-  'schemaMigrationAttempts',
-  'schemaVersion',
-  'seenStatus',
-  'sendStateByConversationId',
-  'serverGuid',
-  'serverTimestamp',
-  'source',
-  'sourceDevice',
-  'sourceServiceId',
-  'storyId',
-  'synced',
-  'unidentifiedDeliveries',
-] as const;
-
-const messageAttrsToErase = [
-  'attachments',
-  'body',
-  'bodyAttachment',
-  'bodyRanges',
-  'callId',
-  'changedId',
-  'contact',
-  'conversationMerge',
-  'dataMessage',
-  'decrypted_at',
-  'droppedGV2MemberIds',
-  'editHistory',
-  'expirationTimerUpdate',
-  'flags',
-  'giftBadge',
-  'group_update',
-  'groupMigration',
-  'groupV2Change',
-  'hasUnreadPollVotes',
-  'invitedGV2Members',
-  'unidentifiedDeliveryReceived',
-  'key_changed',
-  'local',
-  'logger',
-  'mentionsMe',
-  'message',
-  'messageRequestResponseEvent',
-  'messageTimer',
-  'payment',
-  'phoneNumberDiscovery',
-  'pinMessage',
-  'poll',
-  'pollTerminateNotification',
-  'preview',
-  'profileChange',
-  'quote',
-  'reactions',
-  'sendHQImages',
-  'sms',
-  'sticker',
-  'storyDistributionListId',
-  'storyReaction',
-  'storyRecipientsVersion',
-  'storyReplyContext',
-  'supportedVersionAtReceive',
-  'titleTransition',
-  'verified',
-  'verifiedChanged',
-] as const;
-
-const allKeys = [
-  ...messageAttrsToPreserveAfterErase,
-  ...messageAttrsToErase,
-] as const;
-
-// Note: if this errors, it's likely that the keys of MessageAttributesType have changed
-// and you need to update messageAttrsToPreserveAfterErase or
-// messageAttributesToEraseIfMessageContentsAreErased as needed
-const _enforceTypeCheck: ExactKeys<MessageAttributesType, typeof allKeys> =
-  {} as MessageAttributesType;
-strictAssert(_enforceTypeCheck != null, 'type check');
-
-const _checkKeys: ErrorIfOverlapping<
-  typeof messageAttrsToPreserveAfterErase,
-  typeof messageAttrsToErase
-> = undefined;
-strictAssert(_checkKeys === undefined, 'type check');
+export const getMessageAttrsToPreserveAfterErase = (
+  reason: EraseMessageReasonType
+): Array<keyof MessageAttributesType> => {
+  return (
+    Object.keys(messageAttributesEraseBehavior) as Array<
+      keyof MessageAttributesType
+    >
+  )
+    .filter(name => {
+      const valueOrFn = messageAttributesEraseBehavior[name];
+      return (
+        valueOrFn === 'preserve' ||
+        (typeof valueOrFn === 'function' && valueOrFn(reason) === 'preserve')
+      );
+    })
+    .filter(isNotNil);
+};

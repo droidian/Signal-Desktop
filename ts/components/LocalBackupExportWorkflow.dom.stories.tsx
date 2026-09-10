@@ -1,16 +1,17 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
-import { LocalBackupExportWorkflow } from './LocalBackupExportWorkflow.dom.js';
+import { LocalBackupExportWorkflow } from './LocalBackupExportWorkflow.dom.tsx';
 import {
   LocalExportErrors,
   LocalBackupExportSteps,
-} from '../types/LocalExport.std.js';
+} from '../types/LocalExport.std.ts';
 
-import type { PropsType } from './LocalBackupExportWorkflow.dom.js';
-import type { ComponentMeta } from '../storybook/types.std.js';
+import type { PropsType } from './LocalBackupExportWorkflow.dom.tsx';
+import type { ComponentMeta } from '../storybook/types.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -31,7 +32,7 @@ export default {
   },
 } satisfies ComponentMeta<PropsType>;
 
-export function ExportingMessages(args: PropsType): React.JSX.Element {
+export function ExportingMessages(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -44,7 +45,7 @@ export function ExportingMessages(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ExportingAttachments(args: PropsType): React.JSX.Element {
+export function ExportingAttachments(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -61,7 +62,7 @@ export function ExportingAttachments(args: PropsType): React.JSX.Element {
   );
 }
 
-export function CompleteMac(args: PropsType): React.JSX.Element {
+export function CompleteMac(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -74,7 +75,7 @@ export function CompleteMac(args: PropsType): React.JSX.Element {
   );
 }
 
-export function CompleteLinux(args: PropsType): React.JSX.Element {
+export function CompleteLinux(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -87,7 +88,7 @@ export function CompleteLinux(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ErrorGeneric(args: PropsType): React.JSX.Element {
+export function ErrorGeneric(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -101,7 +102,7 @@ export function ErrorGeneric(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ErrorNotEnoughStorage(args: PropsType): React.JSX.Element {
+export function ErrorNotEnoughStorage(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -116,7 +117,7 @@ export function ErrorNotEnoughStorage(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ErrorRanOutOfStorage(args: PropsType): React.JSX.Element {
+export function ErrorRanOutOfStorage(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}
@@ -131,7 +132,7 @@ export function ErrorRanOutOfStorage(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ErrorStoragePermissions(args: PropsType): React.JSX.Element {
+export function ErrorStoragePermissions(args: PropsType): JSX.Element {
   return (
     <LocalBackupExportWorkflow
       {...args}

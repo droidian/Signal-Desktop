@@ -1,12 +1,13 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
+import type { JSX } from 'react';
+
 import {
   CallLinkRestrictions,
   toCallLinkRestrictions,
-} from '../types/CallLink.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { Select } from './Select.dom.js';
+} from '../types/CallLink.std.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { Select } from './Select.dom.tsx';
 
 export type CallLinkRestrictionsSelectProps = Readonly<{
   disabled?: boolean;
@@ -22,7 +23,7 @@ export function CallLinkRestrictionsSelect({
   id,
   value,
   onChange,
-}: CallLinkRestrictionsSelectProps): React.JSX.Element {
+}: CallLinkRestrictionsSelectProps): JSX.Element {
   return (
     <Select
       disabled={disabled}

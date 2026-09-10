@@ -1,18 +1,16 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import lodash from 'lodash';
-
-import { SearchInput } from './SearchInput.dom.js';
-import { filterAndSortConversations } from '../util/filterAndSortConversations.std.js';
-
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { ConversationWithStoriesType } from '../state/selectors/conversations.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { PropsType as StoriesSettingsModalPropsType } from './StoriesSettingsModal.dom.js';
+import { SearchInput } from './SearchInput.dom.tsx';
+import { filterAndSortConversations } from '../util/filterAndSortConversations.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { ConversationWithStoriesType } from '../state/selectors/conversations.dom.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { PropsType as StoriesSettingsModalPropsType } from './StoriesSettingsModal.dom.tsx';
 import {
   getI18nForMyStory,
   getListViewers,
@@ -20,35 +18,34 @@ import {
   EditDistributionListModal,
   EditMyStoryPrivacy,
   Page as StoriesSettingsPage,
-} from './StoriesSettingsModal.dom.js';
-import type { StoryDistributionListWithMembersDataType } from '../types/Stories.std.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { Alert } from './Alert.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { Button, ButtonSize, ButtonVariant } from './Button.dom.js';
-import { Checkbox } from './Checkbox.dom.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { ContextMenu } from './ContextMenu.dom.js';
-
+} from './StoriesSettingsModal.dom.tsx';
+import type { StoryDistributionListWithMembersDataType } from '../types/Stories.std.ts';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { Button, ButtonSize, ButtonVariant } from './Button.dom.tsx';
+import { Checkbox } from './Checkbox.dom.tsx';
+import { ContextMenu } from './ContextMenu.dom.tsx';
 import {
   MY_STORY_ID,
   getStoryDistributionListName,
-} from '../types/Stories.std.js';
-import type { RenderModalPage, ModalPropsType } from './Modal.dom.js';
-import { PagedModal, ModalPage } from './Modal.dom.js';
-import { StoryDistributionListName } from './StoryDistributionListName.dom.js';
-import { isNotNil } from '../util/isNotNil.std.js';
-import { StoryImage } from './StoryImage.dom.js';
-import type { AttachmentType } from '../types/Attachment.std.js';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.js';
-import { getStoryBackground } from '../util/getStoryBackground.std.js';
+} from '../types/Stories.std.ts';
+import type { RenderModalPage, ModalPropsType } from './Modal.dom.tsx';
+import { PagedModal, ModalPage } from './Modal.dom.tsx';
+import { StoryDistributionListName } from './StoryDistributionListName.dom.tsx';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { StoryImage } from './StoryImage.dom.tsx';
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.tsx';
+import { getStoryBackground } from '../util/getStoryBackground.std.ts';
 import {
   makeObjectUrl,
   revokeObjectUrl,
-} from '../types/VisualAttachment.dom.js';
-import { UserText } from './UserText.dom.js';
-import { Theme } from '../util/theme.std.js';
+} from '../types/VisualAttachment.dom.ts';
+import { UserText } from './UserText.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const { noop, sortBy } = lodash;
 
@@ -156,12 +153,16 @@ export function SendStoryModal({
   mostRecentActiveStoryTimestampByGroupOrDistributionList,
   toggleSignalConnectionsModal,
   onMediaPlaybackStart,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [page, setPage] = useState<PageType>(Page.SendStory);
 
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'SendStoryModal',
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
 
   const [selectedListIds, setSelectedListIds] = useState<
@@ -181,6 +182,11 @@ export function SendStoryModal({
             .map(group => group.title)
         ),
     [distributionLists, groupStories, selectedGroupIds, selectedListIds, i18n]
+  );
+
+  const nonTerminatedGroupStories = useMemo(
+    () => groupStories.filter(group => !group.terminated),
+    [groupStories]
   );
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -235,6 +241,7 @@ export function SendStoryModal({
 
   useEffect(() => {
     if (listIdToEdit) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setPage(Page.EditingDistributionList);
     } else {
       setPage(Page.SendStory);
@@ -284,6 +291,7 @@ export function SendStoryModal({
     let url: undefined | string;
 
     if (draftAttachment.url) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setObjectUrl(draftAttachment.url);
     } else if (draftAttachment.data) {
       url = makeObjectUrl(draftAttachment.data, draftAttachment.contentType);
@@ -629,7 +637,7 @@ export function SendStoryModal({
 
     // my stories always first, the rest sorted by recency
     const fullList = sortBy(
-      [...groupStories, ...distributionLists],
+      [...nonTerminatedGroupStories, ...distributionLists],
       listOrGroup => {
         if (listOrGroup.id === MY_STORY_ID) {
           return Number.NEGATIVE_INFINITY;
@@ -644,7 +652,7 @@ export function SendStoryModal({
 
     const renderDistributionList = (
       list: StoryDistributionListWithMembersDataType
-    ): React.JSX.Element => {
+    ): JSX.Element => {
       return (
         <Checkbox
           checked={selectedListIds.has(list.id)}
@@ -789,6 +797,11 @@ export function SendStoryModal({
               setHasAnnouncementsOnlyAlert(true);
               return;
             }
+
+            strictAssert(
+              !group.terminated,
+              "Can't send story to terminated group"
+            );
 
             setSelectedGroupIds(groupIds => {
               if (value) {
@@ -967,60 +980,62 @@ export function SendStoryModal({
           {modal}
         </PagedModal>
       )}
-      {hasAnnouncementsOnlyAlert && (
-        <Alert
-          body={i18n('icu:SendStoryModal__announcements-only')}
-          i18n={i18n}
-          onClose={() => setHasAnnouncementsOnlyAlert(false)}
-          theme={theme === ThemeType.dark ? Theme.Dark : Theme.Light}
-        />
-      )}
-      {confirmRemoveGroupId && (
-        <ConfirmationDialog
-          dialogName="SendStoryModal.confirmRemoveGroupId"
-          actions={[
-            {
-              action: () => {
-                void toggleGroupsForStorySend([confirmRemoveGroupId]);
-                setConfirmRemoveGroupId(undefined);
-              },
-              style: 'negative',
-              text: i18n('icu:delete'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
+
+      <AxoConfirmDialog.Root
+        open={hasAnnouncementsOnlyAlert}
+        onOpenChange={setHasAnnouncementsOnlyAlert}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:SendStoryModal__announcements-only')}
+      >
+        <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+      </AxoConfirmDialog.Root>
+
+      <AxoConfirmDialog.Root
+        open={confirmRemoveGroupId != null}
+        onOpenChange={() => setConfirmRemoveGroupId(undefined)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:SendStoryModal__confirm-remove-group')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmRemoveGroupId != null,
+              'Missing confirmRemoveGroupId'
+            );
+            void toggleGroupsForStorySend([confirmRemoveGroupId]);
             setConfirmRemoveGroupId(undefined);
           }}
-          theme={theme === ThemeType.dark ? Theme.Dark : Theme.Light}
         >
-          {i18n('icu:SendStoryModal__confirm-remove-group')}
-        </ConfirmationDialog>
-      )}
-      {confirmDeleteList && (
-        <ConfirmationDialog
-          dialogName="SendStoryModal.confirmDeleteList"
-          actions={[
-            {
-              action: () => {
-                onDeleteList(confirmDeleteList.id);
-                setConfirmDeleteList(undefined);
-              },
-              style: 'negative',
-              text: i18n('icu:delete'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+      <AxoConfirmDialog.Root
+        open={confirmDeleteList != null}
+        onOpenChange={() => setConfirmDeleteList(undefined)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:StoriesSettings__delete-list--confirm', {
+          name: confirmDeleteList?.name ?? '',
+        })}
+      >
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmDeleteList != null,
+              'Missing confirmDeleteList'
+            );
+            onDeleteList(confirmDeleteList.id);
             setConfirmDeleteList(undefined);
           }}
-          theme={theme === ThemeType.dark ? Theme.Dark : Theme.Light}
         >
-          {i18n('icu:StoriesSettings__delete-list--confirm', {
-            name: confirmDeleteList.name,
-          })}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
       {confirmDiscardModal}
     </>
   );

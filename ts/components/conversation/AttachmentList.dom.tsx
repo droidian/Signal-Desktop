@@ -1,22 +1,22 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 
-import { CurveType, Image } from './Image.dom.js';
-import { StagedGenericAttachment } from './StagedGenericAttachment.dom.js';
-import { StagedPlaceholderAttachment } from './StagedPlaceholderAttachment.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+import { CurveType, Image } from './Image.dom.tsx';
+import { StagedGenericAttachment } from './StagedGenericAttachment.dom.tsx';
+import { StagedPlaceholderAttachment } from './StagedPlaceholderAttachment.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   AttachmentForUIType,
   AttachmentDraftType,
-} from '../../types/Attachment.std.js';
+} from '../../types/Attachment.std.ts';
 import {
   areAllAttachmentsVisual,
   canDisplayImage,
   isImageAttachment,
   isVideoAttachment,
-} from '../../util/Attachment.std.js';
+} from '../../util/Attachment.std.ts';
 
 export type Props<T extends AttachmentForUIType | AttachmentDraftType> =
   Readonly<{
@@ -60,7 +60,7 @@ export function AttachmentList<
   onClickAttachment,
   onCloseAttachment,
   onClose,
-}: Props<T>): React.JSX.Element | null {
+}: Props<T>): JSX.Element | null {
   const attachmentsForUI = useMemo(() => {
     return attachments.map((attachment: T): AttachmentForUIType => {
       // Already ForUI attachment
@@ -97,7 +97,8 @@ export function AttachmentList<
       <div className="module-attachments__rail">
         {attachments.map((attachment, index) => {
           const url = getUrl(attachment);
-          const forUI = attachmentsForUI[index];
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          const forUI = attachmentsForUI[index]!;
 
           const key =
             attachment.clientUuid ||

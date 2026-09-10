@@ -2,20 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import { ToastManager } from './ToastManager.dom.js';
-import type { AnyToast } from '../types/Toast.dom.js';
-import { ToastType } from '../types/Toast.dom.js';
+import { ToastManager } from './ToastManager.dom.tsx';
+import type { AnyToast } from '../types/Toast.dom.tsx';
+import { ToastType } from '../types/Toast.dom.tsx';
 import type {
   AnyActionableMegaphone,
   MegaphoneCtaId,
   RemoteMegaphoneId,
-} from '../types/Megaphone.std.js';
-import { MegaphoneType } from '../types/Megaphone.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import type { PropsType } from './ToastManager.dom.js';
+} from '../types/Megaphone.std.ts';
+import { MegaphoneType } from '../types/Megaphone.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import type { PropsType } from './ToastManager.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -56,6 +55,8 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.CallQualitySurveySuccess:
       return { toastType: ToastType.CallQualitySurveySuccess };
+    case ToastType.CannotAddMemberLabel:
+      return { toastType: ToastType.CannotAddMemberLabel };
     case ToastType.CannotEditMessage:
       return { toastType: ToastType.CannotEditMessage };
     case ToastType.CannotForwardEmptyMessage:
@@ -108,6 +109,8 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.CopiedBackupKey };
     case ToastType.CopiedCallLink:
       return { toastType: ToastType.CopiedCallLink };
+    case ToastType.CopiedStickerPackLink:
+      return { toastType: ToastType.CopiedStickerPackLink };
     case ToastType.CopiedUsername:
       return { toastType: ToastType.CopiedUsername };
     case ToastType.CopiedUsernameLink:
@@ -158,8 +161,6 @@ function getToast(toastType: ToastType): AnyToast {
       return { toastType: ToastType.FailedToFetchPhoneNumber };
     case ToastType.FailedToFetchUsername:
       return { toastType: ToastType.FailedToFetchUsername };
-    case ToastType.FailedToSendWithEndorsements:
-      return { toastType: ToastType.FailedToSendWithEndorsements };
     case ToastType.FailedToImportBackup:
       return { toastType: ToastType.FailedToImportBackup };
     case ToastType.FileSaved:
@@ -189,6 +190,10 @@ function getToast(toastType: ToastType): AnyToast {
         toastType: ToastType._InternalMainProcessLoggingError,
         parameters: { logLines: ['error1', 'error2'], count: 2 },
       };
+    case ToastType._InternalHeapSizeWarning:
+      return {
+        toastType: ToastType._InternalHeapSizeWarning,
+      };
     case ToastType.MaxAttachments:
       return { toastType: ToastType.MaxAttachments };
     case ToastType.MediaNoLongerAvailable:
@@ -205,9 +210,14 @@ function getToast(toastType: ToastType): AnyToast {
     case ToastType.OriginalMessageNotFound:
       return { toastType: ToastType.OriginalMessageNotFound };
     case ToastType.PinnedConversationsFull:
-      return { toastType: ToastType.PinnedConversationsFull };
+      return {
+        toastType: ToastType.PinnedConversationsFull,
+        maxPinnedConversations: 4,
+      };
     case ToastType.PinnedMessageNotFound:
       return { toastType: ToastType.PinnedMessageNotFound };
+    case ToastType.PinReminderCompleted:
+      return { toastType: ToastType.PinReminderCompleted };
     case ToastType.PollNotFound:
       return { toastType: ToastType.PollNotFound };
     case ToastType.ReactionFailed:
@@ -219,6 +229,13 @@ function getToast(toastType: ToastType): AnyToast {
       };
     case ToastType.ReceiptSaveFailed:
       return { toastType: ToastType.ReceiptSaveFailed };
+    case ToastType.RemoteConfigChanged:
+      return {
+        toastType: ToastType.RemoteConfigChanged,
+        changes: [
+          { name: 'desktop.example.value', from: '1.0.0', to: '2.0.0' },
+        ],
+      };
     case ToastType.ReportedSpam:
       return { toastType: ToastType.ReportedSpam };
     case ToastType.ReportedSpamAndBlocked:
@@ -273,6 +290,15 @@ function getToast(toastType: ToastType): AnyToast {
           group: 'Hike Group 🏔',
         },
       };
+    case ToastType.VideoFileSize:
+      return {
+        toastType: ToastType.VideoFileSize,
+        parameters: { limit: 100, units: 'MB' },
+      };
+    case ToastType.ViewOnceDisabled:
+      return { toastType: ToastType.ViewOnceDisabled };
+    case ToastType.ViewOnceEnabled:
+      return { toastType: ToastType.ViewOnceEnabled };
     case ToastType.VoiceNoteLimit:
       return { toastType: ToastType.VoiceNoteLimit };
     case ToastType.VoiceNoteMustBeTheOnlyAttachment:
@@ -290,6 +316,12 @@ function getMegaphone(megaphoneType: MegaphoneType): AnyActionableMegaphone {
       return {
         type: megaphoneType,
         onLearnMore: action('onLearnMore'),
+        onDismiss: action('onDismiss'),
+      };
+    case MegaphoneType.PinReminder:
+      return {
+        type: megaphoneType,
+        onShowModal: action('onShowModal'),
         onDismiss: action('onDismiss'),
       };
     case MegaphoneType.Remote:
@@ -332,6 +364,7 @@ export default {
     changeLocation: action('changeLocation'),
     hideToast: action('hideToast'),
     openFileInFolder: action('openFileInFolder'),
+    saveHeapSnapshot: action('saveHeapSnapshot'),
     onShowDebugLog: action('onShowDebugLog'),
     onUndoArchive: action('onUndoArchive'),
     retryCallQualitySurvey: action('retryCallQualitySurvey'),
@@ -343,7 +376,6 @@ export default {
   },
 } satisfies Meta<Args>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<Args> = args => {
   const { toastType, megaphoneType, ...rest } = args;
   return (

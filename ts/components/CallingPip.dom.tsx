@@ -1,35 +1,44 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+  type RefObject,
+  type JSX,
+} from 'react';
 import classNames from 'classnames';
 import lodash, { clamp } from 'lodash';
 
 import type { VideoFrameSource } from '@signalapp/ringrtc';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.js';
-import { useActivateSpeakerViewOnPresenting } from '../hooks/useActivateSpeakerViewOnPresenting.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import { TooltipPlacement } from './Tooltip.dom.js';
-import { CallingButton, CallingButtonType } from './CallingButton.dom.js';
-import { CallingPipRemoteVideo } from './CallingPipRemoteVideo.dom.js';
-import { CallBackgroundBlur } from './CallBackgroundBlur.dom.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.ts';
+import { useActivateSpeakerViewOnPresenting } from '../hooks/useActivateSpeakerViewOnPresenting.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import { TooltipPlacement } from './Tooltip.dom.tsx';
+import { CallingButton, CallingButtonType } from './CallingButton.dom.tsx';
+import { CallingPipRemoteVideo } from './CallingPipRemoteVideo.dom.tsx';
+import { CallBackgroundBlur } from './CallBackgroundBlur.dom.tsx';
 
-import type { LocalizerType } from '../types/Util.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
 import type {
   ActiveCallType,
   GroupCallVideoRequest,
-} from '../types/Calling.std.js';
-import type { SetRendererCanvasType } from '../state/ducks/calling.preload.js';
-import type { CallingImageDataCache } from './CallManager.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import type { SetLocalPreviewContainerType } from '../services/calling.preload.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import type { SizeCallbackType } from '../calling/VideoSupport.preload.js';
-import { MAX_FRAME_HEIGHT } from '../calling/constants.std.js';
+} from '../types/Calling.std.ts';
+import type { SetRendererCanvasType } from '../state/ducks/calling.preload.ts';
+import type { CallingImageDataCache } from './CallManager.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { SetLocalPreviewContainerType } from '../services/calling.preload.ts';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import type { SizeCallbackType } from '../calling/VideoSupport.preload.ts';
+import { MAX_FRAME_HEIGHT } from '../calling/constants.std.ts';
 
 const { minBy, debounce, noop } = lodash;
 
@@ -72,7 +81,7 @@ export type PropsType = {
   getGroupCallVideoFrameSource: (demuxId: number) => VideoFrameSource;
   hangUpActiveCall: (reason: string) => void;
   i18n: LocalizerType;
-  imageDataCache: React.RefObject<CallingImageDataCache>;
+  imageDataCache: RefObject<CallingImageDataCache>;
   me: Readonly<
     Pick<
       ConversationType,
@@ -135,29 +144,29 @@ export function CallingPip({
   toggleAudio,
   togglePip,
   toggleVideo,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const isRTL = i18n.getLocaleDirection() === 'rtl';
 
-  const videoContainerRef = React.useRef<null | HTMLDivElement>(null);
+  const videoContainerRef = useRef<null | HTMLDivElement>(null);
 
-  const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
-  const [windowHeight, setWindowHeight] = React.useState(window.innerHeight);
-  const [positionState, setPositionState] = React.useState<PositionState>({
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const [positionState, setPositionState] = useState<PositionState>({
     mode: PositionMode.SnapToRight,
     offsetY: PIP_TOP_MARGIN,
   });
 
   const isWindowLarge = windowWidth >= LARGE_THRESHOLD;
-  const [height, setHeight] = React.useState(
+  const [height, setHeight] = useState(
     isWindowLarge ? PIP_STARTING_HEIGHT_LARGE : PIP_STARTING_HEIGHT_NORMAL
   );
-  const [width, setWidth] = React.useState(
+  const [width, setWidth] = useState(
     isWindowLarge ? PIP_WIDTH_LARGE : PIP_WIDTH_NORMAL
   );
-  const [localVideoWidth, setLocalVideoWidth] = React.useState(
+  const [localVideoWidth, setLocalVideoWidth] = useState(
     isWindowLarge ? LOCAL_VIDEO_LARGE_WIDTH : LOCAL_VIDEO_NORMAL_WIDTH
   );
-  const [localVideoHeight, setLocalVideoHeight] = React.useState(
+  const [localVideoHeight, setLocalVideoHeight] = useState(
     isWindowLarge ? LOCAL_VIDEO_LARGE_HEIGHT : LOCAL_VIDEO_NORMAL_HEIGHT
   );
 
@@ -167,11 +176,11 @@ export function CallingPip({
     switchFromPresentationView,
   });
 
-  const hangUp = React.useCallback(() => {
+  const hangUp = useCallback(() => {
     hangUpActiveCall('pip button click');
   }, [hangUpActiveCall]);
 
-  const handleMouseMove = React.useCallback(
+  const handleMouseMove = useCallback(
     (ev: MouseEvent) => {
       if (positionState.mode === PositionMode.BeingDragged) {
         setPositionState(oldState => ({
@@ -186,7 +195,7 @@ export function CallingPip({
     [positionState]
   );
 
-  const handleMouseUp = React.useCallback(() => {
+  const handleMouseUp = useCallback(() => {
     if (positionState.mode === PositionMode.BeingDragged) {
       const { mouseX, mouseY, dragOffsetX, dragOffsetY } = positionState;
       const { innerHeight, innerWidth } = window;
@@ -204,7 +213,7 @@ export function CallingPip({
         distanceToRightEdge = innerWidth - (offsetX + width);
       }
 
-      const snapCandidates: Array<SnapCandidate> = [
+      const snapCandidates = [
         {
           mode: PositionMode.SnapToLeft,
           distanceToEdge: distanceToLeftEdge,
@@ -221,7 +230,7 @@ export function CallingPip({
           mode: PositionMode.SnapToBottom,
           distanceToEdge: innerHeight - (offsetY + height),
         },
-      ];
+      ] as const satisfies Array<SnapCandidate>;
 
       // This fallback is mostly for TypeScript, because `minBy` says it can return
       //   `undefined`.
@@ -245,12 +254,12 @@ export function CallingPip({
           });
           break;
         default:
-          throw missingCaseError(snapTo.mode);
+          throw missingCaseError(snapTo);
       }
     }
   }, [height, isRTL, positionState, setPositionState, width]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (positionState.mode === PositionMode.BeingDragged) {
       document.addEventListener('mousemove', handleMouseMove, false);
       document.addEventListener('mouseup', handleMouseUp, false);
@@ -263,7 +272,7 @@ export function CallingPip({
     return noop;
   }, [positionState.mode, handleMouseMove, handleMouseUp]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleWindowResize = debounce(
       () => {
         setWindowWidth(window.innerWidth);
@@ -281,15 +290,19 @@ export function CallingPip({
     };
   }, []);
 
-  const previousIsWindowLarge = usePrevious(isWindowLarge, isWindowLarge);
+  const previousIsWindowLarge = usePreviousDeprecated(
+    isWindowLarge,
+    isWindowLarge
+  );
   // This only runs when isWindowLarge changes, so we aggressively change height + width
-  React.useEffect(() => {
+  useEffect(() => {
     if (previousIsWindowLarge === isWindowLarge) {
       return;
     }
     const existingPortraitAspectRatio = height / width;
 
     if (isWindowLarge) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setWidth(PIP_WIDTH_LARGE);
       setHeight(PIP_WIDTH_LARGE * existingPortraitAspectRatio);
     } else {
@@ -313,6 +326,7 @@ export function CallingPip({
     height,
     isWindowLarge,
     localVideoHeight,
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
     localVideoWidth,
     previousIsWindowLarge,
     setHeight,
@@ -322,7 +336,7 @@ export function CallingPip({
     width,
   ]);
 
-  const [translateX, translateY] = React.useMemo<[number, number]>(() => {
+  const [translateX, translateY] = useMemo<[number, number]>(() => {
     const topMin = PIP_TOP_MARGIN;
     const bottomMax = windowHeight - PIP_PADDING - height;
 
@@ -368,24 +382,24 @@ export function CallingPip({
   }, [height, isRTL, width, windowWidth, windowHeight, positionState]);
   const localizedTranslateX = isRTL ? -translateX : translateX;
 
-  const [showControls, setShowControls] = React.useState(false);
-  const onMouseEnter = React.useCallback(() => {
+  const [showControls, setShowControls] = useState(false);
+  const onMouseEnter = useCallback(() => {
     setShowControls(true);
   }, [setShowControls]);
-  const onMouseMove = React.useCallback(() => {
+  const onMouseMove = useCallback(() => {
     setShowControls(true);
   }, [setShowControls]);
 
-  const [controlsHover, setControlsHover] = React.useState(false);
-  const onControlsMouseEnter = React.useCallback(() => {
+  const [controlsHover, setControlsHover] = useState(false);
+  const onControlsMouseEnter = useCallback(() => {
     setControlsHover(true);
   }, [setControlsHover]);
 
-  const onControlsMouseLeave = React.useCallback(() => {
+  const onControlsMouseLeave = useCallback(() => {
     setControlsHover(false);
   }, [setControlsHover]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!showControls) {
       return;
     }
@@ -426,7 +440,7 @@ export function CallingPip({
       ? CallingButtonType.HANGUP_DIRECT
       : CallingButtonType.HANGUP_GROUP;
 
-  let remoteVideoNode: React.JSX.Element;
+  let remoteVideoNode: JSX.Element;
   const isLonelyInCall = !activeCall.remoteParticipants.length;
   const isSendingVideo =
     activeCall.hasLocalVideo || activeCall.presentingSource;
@@ -434,10 +448,10 @@ export function CallingPip({
     ? AvatarSize.NINETY_SIX
     : AvatarSize.SIXTY_FOUR;
 
-  const lonelyCallPreviewRef = React.useRef<HTMLDivElement | null>(null);
-  const localPreviewRef = React.useRef<HTMLDivElement | null>(null);
+  const lonelyCallPreviewRef = useRef<HTMLDivElement | null>(null);
+  const localPreviewRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSize = React.useCallback(
+  const handleSize = useCallback(
     (size: Parameters<SizeCallbackType>[0]) => {
       const portraitRatio = size.height / size.width;
 
@@ -478,7 +492,7 @@ export function CallingPip({
     ]
   );
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!isSendingVideo) {
       return;
     }
@@ -559,7 +573,7 @@ export function CallingPip({
   }
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       className="module-calling-pip"
       onMouseEnter={onMouseEnter}

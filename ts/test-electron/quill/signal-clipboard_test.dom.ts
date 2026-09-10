@@ -5,8 +5,8 @@ import { assert } from 'chai';
 import { Delta } from '@signalapp/quill-cjs';
 import type Quill from '@signalapp/quill-cjs';
 
-import { SignalClipboard } from '../../quill/signal-clipboard/index.dom.js';
-import { QuillFormattingStyle } from '../../quill/formatting/menu.dom.js';
+import { SignalClipboard } from '../../quill/signal-clipboard/index.dom.ts';
+import { QuillFormattingStyle } from '../../quill/formatting/menu.dom.tsx';
 
 class MockQuill {
   public root: HTMLElement;
@@ -67,28 +67,19 @@ function createMockClipboardEvent(
   textData: string | null = null,
   signalData: string | null = null
 ): ClipboardEvent {
-  const event = new Event('paste') as ClipboardEvent;
-  Object.defineProperty(event, 'clipboardData', {
-    value: {
-      getData: (format: string) => {
-        if (format === 'text/plain') {
-          return textData || '';
-        }
-        if (format === 'text/signal') {
-          return signalData || '';
-        }
-        return '';
-      },
-      files: null,
-    } as unknown as DataTransfer,
-    writable: false,
-  });
+  const clipboardData = new DataTransfer();
+
+  clipboardData.setData('text/plain', textData ?? '');
+  clipboardData.setData('text/signal', signalData ?? '');
+
+  const event = new ClipboardEvent('paste', { clipboardData });
+
   return event;
 }
 
 function createMockQuillWithContent(
   content: string,
-  hasStrike: boolean = false
+  hasStrike = false
 ): MockQuill {
   const mockQuill = new MockQuill();
 

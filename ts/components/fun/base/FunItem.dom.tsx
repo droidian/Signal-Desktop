@@ -5,10 +5,11 @@ import type {
   ReactNode,
   DOMAttributes,
   PointerEvent,
+  JSX,
 } from 'react';
-import React, { forwardRef, useCallback, useEffect, useMemo } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo } from 'react';
 import { mergeProps } from '@react-aria/utils';
-import { strictAssert } from '../../../util/assert.std.js';
+import { strictAssert } from '../../../util/assert.std.ts';
 
 /**
  * Button
@@ -38,7 +39,7 @@ export type FunItemButtonProps = Readonly<
 export const FunItemButton = forwardRef(function FunItemButton(
   props: FunItemButtonProps,
   ref: ForwardedRef<HTMLButtonElement>
-): React.JSX.Element {
+): JSX.Element {
   const {
     'aria-label': ariaLabel,
     excludeFromTabOrder,
@@ -62,12 +63,12 @@ export const FunItemButton = forwardRef(function FunItemButton(
   );
 
   return (
-    // eslint-disable-next-line jsx-a11y/role-supports-aria-props
     <button
       ref={ref}
       type="button"
       className="FunItem__Button"
       aria-label={ariaLabel}
+      // oxlint-disable-next-line jsx-a11y/role-supports-aria-props
       aria-description={longPressAccessibilityDescription}
       tabIndex={excludeFromTabOrder ? -1 : undefined}
       {...mergeProps(

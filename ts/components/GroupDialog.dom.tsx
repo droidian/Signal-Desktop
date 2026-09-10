@@ -1,16 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import { ModalHost } from './ModalHost.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import { ModalHost } from './ModalHost.dom.tsx';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
 
 type PropsType = {
   children: ReactNode;
@@ -19,18 +18,12 @@ type PropsType = {
   onClose: () => void;
   primaryButtonText: string;
   title: string;
-} & (
-  | // We use this empty type for an "all or nothing" setup.
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  {}
-  | {
-      onClickSecondaryButton: () => void;
-      secondaryButtonText: string;
-    }
-);
+  secondaryButtonText?: string;
+  onClickSecondaryButton?: () => void;
+};
 
 // TODO: This should use <Modal>. See DESKTOP-1038.
-export function GroupDialog(props: Readonly<PropsType>): React.JSX.Element {
+export function GroupDialog(props: Readonly<PropsType>): JSX.Element {
   const {
     children,
     i18n,
@@ -38,11 +31,12 @@ export function GroupDialog(props: Readonly<PropsType>): React.JSX.Element {
     onClose,
     primaryButtonText,
     title,
+    onClickSecondaryButton,
+    secondaryButtonText,
   } = props;
 
   let secondaryButton: undefined | ReactNode;
-  if ('secondaryButtonText' in props) {
-    const { onClickSecondaryButton, secondaryButtonText } = props;
+  if (secondaryButtonText != null && onClickSecondaryButton != null) {
     secondaryButton = (
       <Button
         onClick={onClickSecondaryButton}
@@ -85,9 +79,7 @@ type ParagraphPropsType = {
   children: ReactNode;
 };
 
-function Paragraph({
-  children,
-}: Readonly<ParagraphPropsType>): React.JSX.Element {
+function Paragraph({ children }: Readonly<ParagraphPropsType>): JSX.Element {
   return <p className="module-GroupDialog__paragraph">{children}</p>;
 }
 
@@ -105,7 +97,7 @@ function Contacts({
   getPreferredBadge,
   i18n,
   theme,
-}: Readonly<ContactsPropsType>): React.JSX.Element {
+}: Readonly<ContactsPropsType>): JSX.Element {
   return (
     <ul className="module-GroupDialog__contacts">
       {contacts.map(contact => (

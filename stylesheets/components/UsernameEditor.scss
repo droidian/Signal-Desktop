@@ -114,33 +114,15 @@
     }
   }
 
-  &__learn-more {
-    &__title.module-Modal__title {
-      display: flex;
-      align-items: center;
-    }
+  &__input__container.Input__container {
+    /**
+     * Discriminator should always be to the right of the nickname.
+     * This overrides the default direction of the page.
+     */
+    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+    direction: ltr;
 
-    &__hashtag {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      margin-inline-end: 12px;
-
-      -webkit-mask-size: 100%;
-      content: '';
-
-      @include mixins.light-theme {
-        background-color: variables.$color-gray-75;
-      }
-
-      @include mixins.dark-theme {
-        background-color: variables.$color-gray-15;
-      }
-
-      & {
-        -webkit-mask: url(../images/icons/v2/hashtag-24.svg) no-repeat center;
-      }
-    }
+    margin-block-end: 8px;
   }
 
   &__button-footer {
@@ -154,16 +136,5 @@
     .module-Button:not(:first-child) {
       margin-inline-start: 4px;
     }
-  }
-
-  &__input__container.Input__container {
-    /**
-     * Discriminator should always be to the right of the nickname.
-     * This overrides the default direction of the page.
-     */
-    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-    direction: ltr;
-
-    margin-block-end: 8px;
   }
 }

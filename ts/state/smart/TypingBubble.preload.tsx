@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import React, { memo } from 'react';
+import { memo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { TypingBubble } from '../../components/conversation/TypingBubble.dom.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
-import { useTimelineItem } from '../selectors/timeline.preload.js';
+import { TypingBubble } from '../../components/conversation/TypingBubble.dom.tsx';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
+import { useTimelineItem } from '../selectors/timeline.preload.ts';
 import {
   getConversationSelector,
   getConversationMessagesSelector,
-} from '../selectors/conversations.dom.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
 
 const { last } = lodash;
 
@@ -22,7 +22,7 @@ type ExternalProps = {
 
 export const SmartTypingBubble = memo(function SmartTypingBubble({
   conversationId,
-}: ExternalProps): React.JSX.Element {
+}: ExternalProps): JSX.Element {
   const i18n = useSelector(getIntl);
   const theme = useSelector(getTheme);
   const getConversation = useSelector(getConversationSelector);

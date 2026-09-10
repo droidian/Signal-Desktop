@@ -1,14 +1,14 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { assert } from 'chai';
-import type { ParsedSignalRoute } from '../../util/signalRoutes.std.js';
+import type { ParsedSignalRoute } from '../../util/signalRoutes.std.ts';
 import {
   isSignalRoute,
   parseSignalRoute,
   toSignalRouteAppUrl,
   toSignalRouteUrl,
   toSignalRouteWebUrl,
-} from '../../util/signalRoutes.std.js';
+} from '../../util/signalRoutes.std.ts';
 
 describe('signalRoutes', () => {
   type CheckConfig = {
@@ -38,7 +38,6 @@ describe('signalRoutes', () => {
 
   const foo = 'FoO.bAr-BaZ_123/456';
   const fooNoSlash = 'FoO.bAr-BaZ_123';
-  const bar = '.bAr';
 
   it('nonsense', () => {
     const check = createCheck({
@@ -158,25 +157,13 @@ describe('signalRoutes', () => {
   it('linkCall', () => {
     const result: ParsedSignalRoute = {
       key: 'linkCall',
-      args: { key: foo, epoch: null },
+      args: { key: foo },
     };
     const check = createCheck();
     check(`https://signal.link/call/#key=${foo}`, result);
     check(`https://signal.link/call#key=${foo}`, result);
     check(`sgnl://signal.link/call/#key=${foo}`, result);
     check(`sgnl://signal.link/call#key=${foo}`, result);
-  });
-
-  it('linkCallWithEpoch', () => {
-    const result: ParsedSignalRoute = {
-      key: 'linkCall',
-      args: { key: foo, epoch: bar },
-    };
-    const check = createCheck();
-    check(`https://signal.link/call/#key=${foo}&epoch=${bar}`, result);
-    check(`https://signal.link/call#key=${foo}&epoch=${bar}`, result);
-    check(`sgnl://signal.link/call/#key=${foo}&epoch=${bar}`, result);
-    check(`sgnl://signal.link/call#key=${foo}&epoch=${bar}`, result);
   });
 
   it('artAddStickers', () => {

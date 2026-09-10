@@ -1,34 +1,26 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
-
-import type { ReactNode } from 'react';
-
+import { memo, useCallback } from 'react';
+import type { ReactNode, JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { NavTabs } from '../../components/NavTabs.dom.js';
-import { getIntl, getTheme, getIsNightly } from '../selectors/user.std.js';
-import {
-  getAllConversationsUnreadStats,
-  getMe,
-} from '../selectors/conversations.dom.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
+import { NavTabs } from '../../components/NavTabs.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import { getAllConversationsUnreadStats } from '../selectors/conversations.dom.ts';
 import {
   getHasAnyFailedStorySends,
   getStoriesNotificationCount,
-} from '../selectors/stories.preload.js';
+} from '../selectors/stories.preload.ts';
 import {
-  getProfileMovedModalNeeded,
   getStoriesEnabled,
-} from '../selectors/items.dom.js';
-import { getSelectedNavTab } from '../selectors/nav.preload.js';
-import { useNavActions } from '../ducks/nav.std.js';
-import { getHasPendingUpdate } from '../selectors/updates.std.js';
-import { getCallHistoryUnreadCount } from '../selectors/callHistory.std.js';
-import { Environment } from '../../environment.std.js';
-import { useItemsActions } from '../ducks/items.preload.js';
+  getUnreadCountBadgeType,
+} from '../selectors/items.dom.ts';
+import { getSelectedNavTab } from '../selectors/nav.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { getHasPendingUpdate } from '../selectors/updates.std.ts';
+import { getCallHistoryUnreadCount } from '../selectors/callHistory.std.ts';
 
-import type { Location } from '../../types/Nav.std.js';
+import type { Location } from '../../types/Nav.std.ts';
 
 export type SmartNavTabsProps = Readonly<{
   navTabsCollapsed: boolean;
@@ -46,32 +38,18 @@ export const SmartNavTabs = memo(function SmartNavTabs({
   renderChatsTab,
   renderStoriesTab,
   renderSettingsTab,
-}: SmartNavTabsProps): React.JSX.Element {
+}: SmartNavTabsProps): JSX.Element {
   const i18n = useSelector(getIntl);
   const selectedNavTab = useSelector(getSelectedNavTab);
-  const me = useSelector(getMe);
-  const badge = useSelector(getPreferredBadgeSelector)(me.badges);
-  const theme = useSelector(getTheme);
+  const unreadCountBadgeType = useSelector(getUnreadCountBadgeType);
   const storiesEnabled = useSelector(getStoriesEnabled);
   const unreadConversationsStats = useSelector(getAllConversationsUnreadStats);
   const unreadStoriesCount = useSelector(getStoriesNotificationCount);
   const unreadCallsCount = useSelector(getCallHistoryUnreadCount);
   const hasFailedStorySends = useSelector(getHasAnyFailedStorySends);
   const hasPendingUpdate = useSelector(getHasPendingUpdate);
-  const profileMovedModalNeeded = useSelector(getProfileMovedModalNeeded);
-  const isNightly = useSelector(getIsNightly);
 
   const { changeLocation } = useNavActions();
-  const { putItem } = useItemsActions();
-
-  const shouldShowProfileIcon =
-    profileMovedModalNeeded ||
-    isNightly ||
-    window.SignalContext.getEnvironment() !== Environment.PackagedApp;
-
-  const onDismissProfileMovedModal = useCallback(() => {
-    putItem('needProfileMovedModal', false);
-  }, [putItem]);
 
   const onChangeLocation = useCallback(
     (location: Location) => {
@@ -86,24 +64,19 @@ export const SmartNavTabs = memo(function SmartNavTabs({
 
   return (
     <NavTabs
-      badge={badge}
+      unreadCountBadgeType={unreadCountBadgeType}
       hasFailedStorySends={hasFailedStorySends}
       hasPendingUpdate={hasPendingUpdate}
       i18n={i18n}
-      me={me}
       navTabsCollapsed={navTabsCollapsed}
       onChangeLocation={onChangeLocation}
       onToggleNavTabsCollapse={onToggleNavTabsCollapse}
-      profileMovedModalNeeded={profileMovedModalNeeded}
-      onDismissProfileMovedModal={onDismissProfileMovedModal}
       renderCallsTab={renderCallsTab}
       renderChatsTab={renderChatsTab}
       renderStoriesTab={renderStoriesTab}
       renderSettingsTab={renderSettingsTab}
       selectedNavTab={selectedNavTab}
-      shouldShowProfileIcon={shouldShowProfileIcon}
       storiesEnabled={storiesEnabled}
-      theme={theme}
       unreadCallsCount={unreadCallsCount}
       unreadConversationsStats={unreadConversationsStats}
       unreadStoriesCount={unreadStoriesCount}

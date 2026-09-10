@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import * as React from 'react';
+import { createRef, type JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
-import { ConversationColors } from '../../types/Colors.std.js';
-import { pngUrl } from '../../storybook/Fixtures.std.js';
-import type { Props as TimelineMessagesProps } from './TimelineMessage.dom.js';
-import { TimelineMessage } from './TimelineMessage.dom.js';
-import { MessageInteractivity, TextDirection } from './Message.dom.js';
+import { ConversationColors } from '../../types/Colors.std.ts';
+import { pngUrl } from '../../storybook/Fixtures.std.ts';
+import type { Props as TimelineMessagesProps } from './TimelineMessage.dom.tsx';
+import { TimelineMessage } from './TimelineMessage.dom.tsx';
+import { MessageInteractivity, TextDirection } from './Message.dom.tsx';
 import {
   AUDIO_MP3,
   IMAGE_PNG,
@@ -18,14 +18,15 @@ import {
   LONG_MESSAGE,
   VIDEO_MP4,
   stringToMIMEType,
-} from '../../types/MIME.std.js';
-import type { Props } from './Quote.dom.js';
-import { Quote } from './Quote.dom.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
-import { WidthBreakpoint } from '../_util.std.js';
-import { ThemeType } from '../../types/Util.std.js';
-import { PaymentEventKind } from '../../types/Payment.std.js';
+} from '../../types/MIME.std.ts';
+import type { Props } from './Quote.dom.tsx';
+import { Quote } from './Quote.dom.tsx';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import { WidthBreakpoint } from '../_util.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { PaymentEventKind } from '../../types/Payment.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -82,11 +83,12 @@ const defaultMessageProps: TimelineMessagesProps = {
   canReply: true,
   canRetry: true,
   canRetryDeleteForEveryone: true,
+  canSendPollVote: true,
   canDeleteForEveryone: true,
   canDownload: true,
   checkForAccount: action('checkForAccount'),
   clearTargetedMessage: action('default--clearTargetedMessage'),
-  containerElementRef: React.createRef<HTMLElement>(),
+  containerElementRef: createRef<HTMLElement | null>(),
   containerWidthBreakpoint: WidthBreakpoint.Wide,
   conversationColor: 'crimson',
   conversationId: 'conversationId',
@@ -109,9 +111,11 @@ const defaultMessageProps: TimelineMessagesProps = {
   isPinned: false,
   isSelected: false,
   isSelectMode: false,
+  isSignalConversation: false,
   isSMS: false,
   isSpoilerExpanded: {},
   isVoiceMessagePlayed: false,
+  handleDebugMessage: action('debugMessage'),
   toggleSelectMessage: action('toggleSelectMessage'),
   cancelAttachmentDownload: action('default--cancelAttachmentDownload'),
   kickOffAttachmentDownload: action('default--kickOffAttachmentDownload'),
@@ -205,7 +209,6 @@ const renderInMessage = ({
   );
 };
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<Props> = args => <Quote {...args} />;
 const TemplateInMessage: StoryFn<Props> = args => renderInMessage(args);
 
@@ -230,7 +233,7 @@ IncomingByAnotherWithLabel.args = {
   authorTitle: getDefaultConversation().title,
   isIncoming: true,
   authorLabel: {
-    labelEmoji: '1️⃣',
+    labelEmoji: Emoji.ONE,
     labelString: 'First',
   },
 };
@@ -241,7 +244,7 @@ IncomingByMe.args = {
   isIncoming: true,
 };
 
-export function IncomingOutgoingColors(args: Props): React.JSX.Element {
+export function IncomingOutgoingColors(args: Props): JSX.Element {
   return (
     <>
       {ConversationColors.map(color =>
@@ -249,7 +252,7 @@ export function IncomingOutgoingColors(args: Props): React.JSX.Element {
           ...args,
           conversationColor: color,
           authorLabel: {
-            labelEmoji: '1️⃣',
+            labelEmoji: Emoji.ONE,
             labelString: 'First',
           },
         })
@@ -279,6 +282,31 @@ ImageOnly.args = {
 
 export const ImageAttachment = Template.bind({});
 ImageAttachment.args = {
+  rawAttachment: {
+    contentType: IMAGE_PNG,
+    fileName: 'sax.png',
+    isVoiceMessage: false,
+    thumbnail: {
+      contentType: IMAGE_PNG,
+      height: 100,
+      width: 100,
+      size: 100,
+      path: pngUrl,
+      url: pngUrl,
+    },
+  },
+};
+
+const LONG_UNBREAKABLE_TEXT = 'thisisthewordthatneverends'.repeat(10);
+
+export const LongUnbreakableWord = Template.bind({});
+LongUnbreakableWord.args = {
+  text: LONG_UNBREAKABLE_TEXT,
+};
+
+export const LongUnbreakableWordWithImageAttachment = Template.bind({});
+LongUnbreakableWordWithImageAttachment.args = {
+  text: LONG_UNBREAKABLE_TEXT,
   rawAttachment: {
     contentType: IMAGE_PNG,
     fileName: 'sax.png',
@@ -568,7 +596,7 @@ MentionIncomingMe.args = {
   text: '@Tony Stark sure',
 };
 
-export function CustomColor(args: Props): React.JSX.Element {
+export function CustomColor(args: Props): JSX.Element {
   return (
     <>
       <Quote
@@ -628,7 +656,7 @@ IsStoryReplyEmoji.args = {
       url: pngUrl,
     },
   },
-  reactionEmoji: '🏋️',
+  reactionEmoji: Emoji.getDefaultVariant(Emoji.WEIGHT_LIFTER),
 };
 
 export const Payment = Template.bind({});

@@ -1,10 +1,15 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useState, type ReactNode } from 'react';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { useLayoutEffect } from '@react-aria/utils';
-import { strictAssert } from '../../../util/assert.std.js';
+import {
+  useRef,
+  useState,
+  useLayoutEffect,
+  type ReactNode,
+  type JSX,
+} from 'react';
+import { Tooltip } from 'radix-ui';
+import { strictAssert } from '../../../util/assert.std.ts';
 
 export type FunTooltipProps = Readonly<{
   open?: boolean;
@@ -18,7 +23,7 @@ export type FunTooltipProps = Readonly<{
   children: ReactNode;
 }>;
 
-export function FunTooltip(props: FunTooltipProps): React.JSX.Element {
+export function FunTooltip(props: FunTooltipProps): JSX.Element {
   const ref = useRef<HTMLButtonElement>(null);
   const [collisionBoundary, setCollisionBoundary] = useState<Element | null>(
     null

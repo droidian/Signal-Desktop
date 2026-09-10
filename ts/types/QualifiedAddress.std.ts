@@ -1,13 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { strictAssert } from '../util/assert.std.js';
+import { strictAssert } from '../util/assert.std.ts';
 
-import type { ServiceIdString } from './ServiceId.std.js';
-import { isServiceIdString } from './ServiceId.std.js';
-import type { AddressStringType } from './Address.std.js';
-import { Address } from './Address.std.js';
+import type { ServiceIdString } from './ServiceId.std.ts';
+import { isServiceIdString } from './ServiceId.std.ts';
+import type { AddressStringType } from './Address.std.ts';
+import { Address } from './Address.std.ts';
 
+type QualifiedAddressMatch = RegExpMatchArray & {
+  1: string;
+  2: string;
+  3: string;
+};
 const QUALIFIED_ADDRESS_REGEXP =
   /^((?:PNI:)?[:0-9a-f-]+):((?:PNI:)?[:0-9a-f-]+).(\d+)$/i;
 
@@ -21,10 +26,13 @@ export type QualifiedAddressStringType =
   `${ServiceIdString}:${AddressStringType}`;
 
 export class QualifiedAddress {
-  constructor(
-    public readonly ourServiceId: ServiceIdString,
-    public readonly address: Address
-  ) {}
+  public readonly ourServiceId: ServiceIdString;
+  public readonly address: Address;
+
+  constructor(ourServiceId: ServiceIdString, address: Address) {
+    this.ourServiceId = ourServiceId;
+    this.address = address;
+  }
 
   public get serviceId(): ServiceIdString {
     return this.address.serviceId;
@@ -41,7 +49,8 @@ export class QualifiedAddress {
   public static parse(value: string): QualifiedAddress {
     const match = value.match(QUALIFIED_ADDRESS_REGEXP);
     strictAssert(match != null, `Invalid QualifiedAddress: ${value}`);
-    const [whole, ourServiceId, serviceId, deviceId] = match;
+    const [whole, ourServiceId, serviceId, deviceId] =
+      match as QualifiedAddressMatch;
     strictAssert(whole === value, 'Integrity check');
     strictAssert(
       isServiceIdString(ourServiceId),

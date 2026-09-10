@@ -11,10 +11,10 @@ import {
 } from '@signalapp/libsignal-client';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { generatePni } from '../../types/ServiceId.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
+import { generatePni } from '../../test-helpers/serviceIdUtils.std.ts';
 
 export const debug = createDebug('mock:test:pni-unlink');
 
@@ -23,6 +23,12 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
 
   let bootstrap: Bootstrap;
   let app: App | undefined;
+
+  before(function () {
+    if (Bootstrap.WITHOUT_E164) {
+      this.skip();
+    }
+  });
 
   beforeEach(async () => {
     bootstrap = new Bootstrap({
@@ -74,10 +80,10 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
 
     const pniChangeNumber = {
       identityKeyPair: badIdentity.serialize(),
-      registrationId: desktop.getRegistrationId(ServiceIdKind.PNI),
+      registrationId: desktop.getCheckedRegistrationId(ServiceIdKind.PNI),
       signedPreKey: signedPreKeyRecord.serialize(),
       lastResortKyberPreKey: kyberPreKeyRecord.serialize(),
-      newE164: desktop.number,
+      newE164: desktop.checkedNumber,
     };
 
     // The goal of these two sync messages is to update Desktop's PNI identity
@@ -87,9 +93,19 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
       phone.sendRaw(
         desktop,
         {
-          syncMessage: {
-            pniChangeNumber,
+          content: {
+            syncMessage: {
+              content: {
+                pniChangeNumber,
+              },
+              read: null,
+              stickerPackOperation: null,
+              viewed: null,
+              padding: null,
+            },
           },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
         },
         {
           timestamp: bootstrap.getTimestamp(),
@@ -101,9 +117,19 @@ describe('pnp/PNI DecryptionError unlink', function (this: Mocha.Suite) {
       phone.sendRaw(
         desktop,
         {
-          syncMessage: {
-            pniChangeNumber,
+          content: {
+            syncMessage: {
+              content: {
+                pniChangeNumber,
+              },
+              read: null,
+              stickerPackOperation: null,
+              viewed: null,
+              padding: null,
+            },
           },
+          pniSignatureMessage: null,
+          senderKeyDistributionMessage: null,
         },
         {
           timestamp: bootstrap.getTimestamp(),

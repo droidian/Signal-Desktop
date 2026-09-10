@@ -1,29 +1,35 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 
-import { AboutContactModal } from '../../components/conversation/AboutContactModal.dom.js';
-import { isSignalConnection } from '../../util/getSignalConnections.preload.js';
-import { getIntl, getVersion } from '../selectors/user.std.js';
-import { getAboutContactModalState } from '../selectors/globalModals.std.js';
+import { AboutContactModal } from '../../components/conversation/AboutContactModal.dom.tsx';
+import { isSignalConnection } from '../../util/getSignalConnections.preload.ts';
+import { getIntl, getVersion } from '../selectors/user.std.ts';
+import { getAboutContactModalState } from '../selectors/globalModals.std.ts';
 import {
   getCachedConversationMemberColorsSelector,
   getConversationSelector,
   getPendingAvatarDownloadSelector,
-} from '../selectors/conversations.dom.js';
-import { useSharedGroupNamesOnMount } from '../../util/sharedGroupNames.dom.js';
-import type { ConversationType } from '../ducks/conversations.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.preload.js';
-import { getItems } from '../selectors/items.dom.js';
-import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.js';
-import { getCanAddLabel } from '../../types/GroupMemberLabels.std.js';
-import { createLogger } from '../../logging/log.std.js';
-
-const log = createLogger('SmartAboutContactModal');
+} from '../selectors/conversations.dom.ts';
+import { useSharedGroupNamesOnMount } from '../../util/sharedGroupNames.dom.ts';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { getAddedByForGroup } from '../../util/getAddedByForGroup.preload.ts';
+import { getItems } from '../selectors/items.dom.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
+import { getCanAddLabel } from '../../types/GroupMemberLabels.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { PanelType } from '../../types/Panels.std.ts';
+import {
+  NavTab,
+  ProfileEditorPage,
+  SettingsPage,
+} from '../../types/Nav.std.ts';
+import { getSelectedLocation } from '../selectors/nav.std.ts';
+import { getLeafPanelOnly } from '../../components/conversation/conversation-details/GroupMemberLabelEditor.dom.tsx';
 
 function isFromOrAddedByTrustedContact(
   conversation: ConversationType
@@ -32,7 +38,7 @@ function isFromOrAddedByTrustedContact(
     return Boolean(conversation.name) || Boolean(conversation.profileSharing);
   }
 
-  const addedByConv = getAddedByForOurPendingInvitation(conversation);
+  const addedByConv = getAddedByForGroup(conversation);
   if (!addedByConv) {
     return false;
   }
@@ -57,10 +63,6 @@ export const SmartAboutContactModal = memo(function SmartAboutContactModal() {
     remoteConfig: items.remoteConfig,
     prodKey: 'desktop.groupMemberLabels.edit.prod',
   });
-  // TODO: DESKTOP-9711
-  log.info(
-    `Not using feature flag of ${isEditMemberLabelEnabled}; hardcoding to false`
-  );
 
   const sharedGroupNames = useSharedGroupNamesOnMount(contactId ?? '');
 
@@ -88,6 +90,10 @@ export const SmartAboutContactModal = memo(function SmartAboutContactModal() {
     toggleNotePreviewModal,
     toggleProfileNameWarningModal,
   } = useGlobalModalActions();
+  const { changeLocation } = useNavActions();
+
+  const selectedLocation = useSelector(getSelectedLocation);
+  const leafPanelOnly = getLeafPanelOnly(selectedLocation, conversationId);
 
   const handleOpenNotePreviewModal = useCallback(() => {
     strictAssert(contactId != null, 'contactId is required');
@@ -107,7 +113,7 @@ export const SmartAboutContactModal = memo(function SmartAboutContactModal() {
       contactLabelString={contactLabelString}
       contactNameColor={contactNameColor}
       fromOrAddedByTrustedContact={isFromOrAddedByTrustedContact(contact)}
-      isEditMemberLabelEnabled={false}
+      isEditMemberLabelEnabled={isEditMemberLabelEnabled}
       isSignalConnection={isSignalConnection(contact)}
       onClose={toggleAboutContactModal}
       onOpenNotePreviewModal={handleOpenNotePreviewModal}
@@ -115,6 +121,46 @@ export const SmartAboutContactModal = memo(function SmartAboutContactModal() {
         conversationId ? isPendingAvatarDownload(conversationId) : false
       }
       sharedGroupNames={sharedGroupNames}
+      showProfileEditor={() => {
+        changeLocation({
+          tab: NavTab.Settings,
+          details: {
+            page: SettingsPage.Profile,
+            state: ProfileEditorPage.ProfileName,
+          },
+        });
+        toggleAboutContactModal(undefined);
+      }}
+      showQRCodeScreen={() => {
+        changeLocation({
+          tab: NavTab.Settings,
+          details: {
+            page: SettingsPage.Profile,
+            state: ProfileEditorPage.UsernameLink,
+          },
+        });
+        toggleAboutContactModal(undefined);
+      }}
+      showEditMemberLabelScreen={() => {
+        changeLocation({
+          tab: NavTab.Chats,
+          details: {
+            conversationId,
+            panels: {
+              direction: 'push' as const,
+              isAnimating: false,
+              leafPanelOnly,
+              stack: [
+                { type: PanelType.ConversationDetails },
+                { type: PanelType.GroupMemberLabelEditor },
+              ],
+              wasAnimated: false,
+              watermark: 1,
+            },
+          },
+        });
+        toggleAboutContactModal(undefined);
+      }}
       startAvatarDownload={
         conversationId ? () => startAvatarDownload(conversationId) : undefined
       }

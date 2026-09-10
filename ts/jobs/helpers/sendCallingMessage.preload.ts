@@ -3,32 +3,32 @@
 
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
 import {
   isDirectConversation,
   isGroup,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
+} from './handleMultipleSendErrors.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   CallingMessageJobData,
-} from '../conversationJobQueue.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
+} from '../conversationJobQueue.preload.ts';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
 import {
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.js';
-import { sendContentMessageToGroup } from '../../util/sendToGroup.preload.js';
-import * as Bytes from '../../Bytes.std.js';
-import { getValidRecipients } from './getValidRecipients.dom.js';
+} from '../../textsecure/Errors.std.ts';
+import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.ts';
+import { sendContentMessageToGroup } from '../../util/sendToGroup.preload.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { getValidRecipients } from './getValidRecipients.dom.ts';
 
 export async function sendCallingMessage(
   conversation: ConversationModel,
@@ -87,64 +87,70 @@ export async function sendCallingMessage(
     return;
   }
 
-  const sendType = 'callingMessage';
-  const sendOptions = await getSendOptions(conversation.attributes, {
-    groupId,
-  });
+  await conversation.queueJob('sendCallingMessage', async () => {
+    const sendType = 'callingMessage';
+    const sendOptions = await getSendOptions(conversation.attributes, {
+      groupId,
+    });
 
-  const callMessage = Proto.CallMessage.decode(Bytes.fromBase64(protoBase64));
+    const callMessage = Proto.CallMessage.decode(Bytes.fromBase64(protoBase64));
 
-  try {
-    if (isGroup(conversation.attributes)) {
-      await handleMessageSend(
-        sendContentMessageToGroup({
-          contentHint: ContentHint.Default,
-          contentMessage: new Proto.Content({ callMessage }),
-          isPartialSend,
-          messageId: undefined,
-          recipients,
-          sendOptions,
-          sendTarget: conversation.toSenderKeyTarget(),
-          sendType,
-          timestamp,
-          urgent,
-        }),
-        { messageIds: [], sendType }
-      );
-    } else {
-      const sendTarget = conversation.getSendTarget();
-      if (!sendTarget) {
-        log.error(`${logId}: Direct conversation send target is falsy`);
+    try {
+      if (isGroup(conversation.attributes)) {
+        await handleMessageSend(
+          sendContentMessageToGroup({
+            contentHint: ContentHint.Default,
+            contentMessage: {
+              content: { callMessage },
+              senderKeyDistributionMessage: null,
+              pniSignatureMessage: null,
+            },
+            isPartialSend,
+            messageId: undefined,
+            recipients,
+            sendOptions,
+            sendTarget: conversation.toSenderKeyTarget(),
+            sendType,
+            timestamp,
+            urgent,
+          }),
+          { messageIds: [], sendType }
+        );
+      } else {
+        const sendTarget = conversation.getSendTarget();
+        if (!sendTarget) {
+          log.error(`${logId}: Direct conversation send target is falsy`);
+          return;
+        }
+        await handleMessageSend(
+          messaging.sendCallingMessage(
+            sendTarget,
+            callMessage,
+            timestamp,
+            urgent,
+            sendOptions
+          ),
+          { messageIds: [], sendType }
+        );
+      }
+    } catch (error: unknown) {
+      if (
+        error instanceof OutgoingIdentityKeyError ||
+        error instanceof UnregisteredUserError
+      ) {
+        log.info(
+          `${logId}: Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.`
+        );
         return;
       }
-      await handleMessageSend(
-        messaging.sendCallingMessage(
-          sendTarget,
-          callMessage,
-          timestamp,
-          urgent,
-          sendOptions
-        ),
-        { messageIds: [], sendType }
-      );
-    }
-  } catch (error: unknown) {
-    if (
-      error instanceof OutgoingIdentityKeyError ||
-      error instanceof UnregisteredUserError
-    ) {
-      log.info(
-        `${logId}: Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.`
-      );
-      return;
-    }
 
-    await handleMultipleSendErrors({
-      errors: maybeExpandErrors(error),
-      isFinalAttempt,
-      log,
-      timeRemaining,
-      toThrow: error,
-    });
-  }
+      await handleMultipleSendErrors({
+        errors: maybeExpandErrors(error),
+        isFinalAttempt,
+        log,
+        timeRemaining,
+        toThrow: error,
+      });
+    }
+  });
 }

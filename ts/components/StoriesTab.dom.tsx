@@ -1,36 +1,35 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../state/ducks/conversations.preload.js';
+} from '../state/ducks/conversations.preload.ts';
 import type {
   ConversationStoryType,
   MyStoryType,
   StoryViewType,
-} from '../types/Stories.std.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { ShowToastAction } from '../state/ducks/toast.preload.js';
+} from '../types/Stories.std.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { ShowToastAction } from '../state/ducks/toast.preload.ts';
 import type {
   AddStoryData,
   ViewUserStoriesActionCreatorType,
   ViewStoryActionCreatorType,
-} from '../state/ducks/stories.preload.js';
-import { MyStories } from './MyStories.dom.js';
-import { StoriesPane } from './StoriesPane.dom.js';
-import { NavSidebar, NavSidebarActionButton } from './NavSidebar.dom.js';
-import { StoriesAddStoryButton } from './StoriesAddStoryButton.dom.js';
-import { I18n } from './I18n.dom.js';
-import type { WidthBreakpoint } from './_util.std.js';
-import type { UnreadStats } from '../util/countUnreadStats.std.js';
-import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.js';
+} from '../state/ducks/stories.preload.ts';
+import { MyStories } from './MyStories.dom.tsx';
+import { StoriesPane } from './StoriesPane.dom.tsx';
+import { NavSidebar, NavSidebarActionButton } from './NavSidebar.dom.tsx';
+import { StoriesAddStoryButton } from './StoriesAddStoryButton.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import type { WidthBreakpoint } from './_util.std.ts';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.tsx';
 
 export type PropsType = {
   addStoryData: AddStoryData;
-  otherTabsUnreadStats: UnreadStats;
+  otherTabsUnreadCount: number;
   deleteStoryForEveryone: (story: StoryViewType) => unknown;
   getPreferredBadge: PreferredBadgeSelectorType;
   hasFailedStorySends: boolean;
@@ -40,7 +39,7 @@ export type PropsType = {
   i18n: LocalizerType;
   isStoriesSettingsVisible: boolean;
   isViewingStory: boolean;
-  maxAttachmentSizeInKb: number;
+  maxAttachmentVideoSize: number;
   me: ConversationType;
   myStories: Array<MyStoryType>;
   navTabsCollapsed: boolean;
@@ -51,10 +50,10 @@ export type PropsType = {
   preferredLeftPaneWidth: number;
   preferredWidthFromStorage: number;
   queueStoryDownload: (storyId: string) => unknown;
-  renderStoryCreator: () => React.JSX.Element;
+  renderStoryCreator: () => JSX.Element;
   renderToastManager: (_: {
     containerWidthBreakpoint: WidthBreakpoint;
-  }) => React.JSX.Element;
+  }) => JSX.Element;
   retryMessageSend: (messageId: string) => unknown;
   savePreferredLeftPaneWidth: (preferredLeftPaneWidth: number) => void;
   setAddStoryData: (data: AddStoryData) => unknown;
@@ -70,7 +69,7 @@ export type PropsType = {
 
 export function StoriesTab({
   addStoryData,
-  otherTabsUnreadStats,
+  otherTabsUnreadCount,
   deleteStoryForEveryone,
   getPreferredBadge,
   hasFailedStorySends,
@@ -78,7 +77,7 @@ export function StoriesTab({
   hasViewReceiptSetting,
   hiddenStories,
   i18n,
-  maxAttachmentSizeInKb,
+  maxAttachmentVideoSize,
   me,
   myStories,
   navTabsCollapsed,
@@ -101,7 +100,7 @@ export function StoriesTab({
   toggleHideStories,
   viewStory,
   viewUserStories,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [isMyStories, setIsMyStories] = useState(false);
 
   function onAddStory(file?: File) {
@@ -117,7 +116,7 @@ export function StoriesTab({
       {addStoryData && renderStoryCreator()}
       {isMyStories && myStories.length ? (
         <MyStories
-          otherTabsUnreadStats={otherTabsUnreadStats}
+          otherTabsUnreadCount={otherTabsUnreadCount}
           hasFailedStorySends={hasFailedStorySends}
           hasPendingUpdate={hasPendingUpdate}
           hasViewReceiptSetting={hasViewReceiptSetting}
@@ -149,13 +148,13 @@ export function StoriesTab({
           preferredLeftPaneWidth={preferredLeftPaneWidth}
           requiresFullWidth
           savePreferredLeftPaneWidth={savePreferredLeftPaneWidth}
-          otherTabsUnreadStats={otherTabsUnreadStats}
+          otherTabsUnreadCount={otherTabsUnreadCount}
           renderToastManager={renderToastManager}
           actions={
             <>
               <StoriesAddStoryButton
                 i18n={i18n}
-                maxAttachmentSizeInKb={maxAttachmentSizeInKb}
+                maxAttachmentVideoSize={maxAttachmentVideoSize}
                 moduleClassName="Stories__pane__add-story"
                 onAddStory={onAddStory}
                 showToast={showToast}
@@ -183,7 +182,7 @@ export function StoriesTab({
             getPreferredBadge={getPreferredBadge}
             hiddenStories={hiddenStories}
             i18n={i18n}
-            maxAttachmentSizeInKb={maxAttachmentSizeInKb}
+            maxAttachmentVideoSize={maxAttachmentVideoSize}
             me={me}
             myStories={myStories}
             onAddStory={onAddStory}
@@ -216,7 +215,6 @@ export function StoriesTab({
               i18n={i18n}
               id="icu:Stories__placeholder-with-icon--text-2"
               components={{
-                // eslint-disable-next-line react/no-unstable-nested-components
                 newStoryButtonIcon: () => {
                   return (
                     <span

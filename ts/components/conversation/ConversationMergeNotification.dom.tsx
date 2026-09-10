@@ -1,15 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, useCallback, type JSX } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import { getStringForConversationMerge } from '../../util/getStringForConversationMerge.std.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
-import { SystemMessage } from './SystemMessage.dom.js';
-import { Emojify } from './Emojify.dom.js';
-import { Modal } from '../Modal.dom.js';
-import { I18n } from '../I18n.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { getStringForConversationMerge } from '../../util/getStringForConversationMerge.std.ts';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { Emojify } from './Emojify.dom.tsx';
+import { Modal } from '../Modal.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
 
 export type PropsDataType = {
   conversationTitle: string;
@@ -20,9 +20,7 @@ export type PropsType = PropsDataType & {
   i18n: LocalizerType;
 };
 
-export function ConversationMergeNotification(
-  props: PropsType
-): React.JSX.Element {
+export function ConversationMergeNotification(props: PropsType): JSX.Element {
   const {
     conversationTitle,
     obsoleteConversationTitle,
@@ -36,13 +34,13 @@ export function ConversationMergeNotification(
     i18n,
   });
 
-  const [showingDialog, setShowingDialog] = React.useState(false);
+  const [showingDialog, setShowingDialog] = useState(false);
 
-  const showDialog = React.useCallback(() => {
+  const showDialog = useCallback(() => {
     setShowingDialog(true);
   }, [setShowingDialog]);
 
-  const dismissDialog = React.useCallback(() => {
+  const dismissDialog = useCallback(() => {
     setShowingDialog(false);
   }, [setShowingDialog]);
 

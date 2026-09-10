@@ -1,35 +1,35 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from '../types/Attachment.std.js';
-import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.std.js';
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import type { LinkPreviewWithHydratedData } from '../types/message/LinkPreviews.std.ts';
 import type { QuotedMessageType } from '../model-types.d.ts';
-import { createLogger } from '../logging/log.std.js';
-import { SafetyNumberChangeSource } from '../types/SafetyNumberChangeSource.std.js';
-import { blockSendUntilConversationsAreVerified } from './blockSendUntilConversationsAreVerified.dom.js';
+import { createLogger } from '../logging/log.std.ts';
+import { SafetyNumberChangeSource } from '../types/SafetyNumberChangeSource.std.ts';
+import { blockSendUntilConversationsAreVerified } from './blockSendUntilConversationsAreVerified.dom.ts';
 import {
   getMessageIdForLogging,
   getConversationIdForLogging,
-} from './idForLogging.preload.js';
-import { isNotNil } from './isNotNil.std.js';
-import { resetLinkPreview } from '../services/LinkPreview.preload.js';
-import { getRecipientsByConversation } from './getRecipientsByConversation.dom.js';
-import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.std.js';
-import type { DraftBodyRanges } from '../types/BodyRange.std.js';
-import type { StickerWithHydratedData } from '../types/Stickers.preload.js';
-import { drop } from './drop.std.js';
+} from './idForLogging.preload.ts';
+import { isNotNil } from './isNotNil.std.ts';
+import { resetLinkPreview } from '../services/LinkPreview.preload.ts';
+import { getRecipientsByConversation } from './getRecipientsByConversation.dom.ts';
+import type { EmbeddedContactWithHydratedAvatar } from '../types/EmbeddedContact.std.ts';
+import type { DraftBodyRanges } from '../types/BodyRange.std.ts';
+import type { StickerWithHydratedData } from '../types/Stickers.preload.ts';
+import { DataReader } from '../sql/Client.preload.ts';
 import {
   loadAttachmentData,
   loadContactData,
   loadPreviewData,
   loadStickerData,
-} from './migrations.preload.js';
-import { toLogFormat } from '../types/errors.std.js';
+} from './migrations.preload.ts';
+import { toLogFormat } from '../types/errors.std.ts';
 import {
   sortByMessageOrder,
   type ForwardMessageData,
-} from '../types/ForwardDraft.std.js';
-import { canForward } from '../state/selectors/message.preload.js';
+} from '../types/ForwardDraft.std.ts';
+import { canForward } from '../state/selectors/message.preload.ts';
 
 const log = createLogger('maybeForwardMessages');
 
@@ -57,7 +57,8 @@ export async function maybeForwardMessages(
 
   const cannotSend = conversations.some(
     conversation =>
-      conversation?.get('announcementsOnly') && !conversation.areWeAdmin()
+      conversation?.get('terminated') ||
+      (conversation?.get('announcementsOnly') && !conversation.areWeAdmin())
   );
   if (cannotSend) {
     throw new Error('Cannot send to group');
@@ -126,6 +127,7 @@ export async function maybeForwardMessages(
               data: {
                 ...stickerWithData.data,
                 path: undefined,
+                reuseToken: undefined,
               },
             }
           : undefined;
@@ -151,6 +153,7 @@ export async function maybeForwardMessages(
             thumbnail: undefined,
             thumbnailFromBackup: undefined,
             screenshot: undefined,
+            reuseToken: undefined,
           }))
         );
         const attachmentsToSend = attachmentsWithData.filter(
@@ -178,23 +181,39 @@ export async function maybeForwardMessages(
   );
 
   // Actually send the messages
-  conversations.forEach(conversation => {
-    if (conversation == null) {
-      return;
-    }
+  await Promise.all(
+    conversations.map(async conversation => {
+      if (conversation == null) {
+        return;
+      }
 
-    sortedMessages.forEach(entry => {
-      const timestamp = baseTimestamp + timestampOffset;
-      timestampOffset += 1;
+      const stats = await DataReader.getConversationMessageStats({
+        conversationId: conversation.id,
+        // Not used for computing `hasUserInitiatedMessages`
+        includeStoryReplies: false,
+      });
+      // Post a universal disappearing timer notification in case we will
+      // need to set the timer.
+      await conversation.queueJob('maybeSetPendingUniversalTimer', async () =>
+        conversation.maybeSetPendingUniversalTimer(
+          stats.hasUserInitiatedMessages
+        )
+      );
 
-      const { enqueuedMessage, originalMessage } = entry;
-      drop(
-        conversation
-          .enqueueMessageForSend(enqueuedMessage, {
-            ...sendMessageOptions,
-            timestamp,
-          })
-          .catch(error => {
+      await Promise.all(
+        sortedMessages.map(async entry => {
+          // Note: there should be no awaits between here...
+          const timestamp = baseTimestamp + timestampOffset;
+          timestampOffset += 1;
+
+          const { enqueuedMessage, originalMessage } = entry;
+          try {
+            // ...and here to ensure that messgaes are sent in the right order.
+            await conversation.enqueueMessageForSend(enqueuedMessage, {
+              ...sendMessageOptions,
+              timestamp,
+            });
+          } catch (error) {
             log.error(
               'maybeForwardMessage: message send error',
               getConversationIdForLogging(conversation.attributes),
@@ -203,10 +222,11 @@ export async function maybeForwardMessages(
                 : '(new message)',
               toLogFormat(error)
             );
-          })
+          }
+        })
       );
-    });
-  });
+    })
+  );
 
   // Cancel any link still pending, even if it didn't make it into the message
   resetLinkPreview();

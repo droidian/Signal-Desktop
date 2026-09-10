@@ -12,4 +12,5 @@ export enum DialogType {
   FullDownloadReady = 'FullDownloadReady',
   Downloading = 'Downloading',
   DownloadedUpdate = 'DownloadedUpdate',
+  MASUpdate = 'MASUpdate',
 }

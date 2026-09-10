@@ -1,14 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import { SystemMessage } from './SystemMessage.dom.js';
-import { Emojify } from './Emojify.dom.js';
-import type { AnyPaymentEvent } from '../../types/Payment.std.js';
-import { getPaymentEventDescription } from '../../messages/payments.std.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { Emojify } from './Emojify.dom.tsx';
+import type { AnyPaymentEvent } from '../../types/Payment.std.ts';
+import { getPaymentEventDescription } from '../../messages/payments.std.ts';
 
 export type PropsType = {
   event: AnyPaymentEvent;
@@ -17,7 +17,7 @@ export type PropsType = {
   i18n: LocalizerType;
 };
 
-export function PaymentEventNotification(props: PropsType): React.JSX.Element {
+export function PaymentEventNotification(props: PropsType): JSX.Element {
   const { event, sender, conversation, i18n } = props;
   const message = getPaymentEventDescription(
     event,

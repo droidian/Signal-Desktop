@@ -1,17 +1,16 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import 'urlpattern-polyfill';
 // This file gets imported into renderer that does not have access to Node.js
 // builtins, use an `npm` package.
 // We need to use the Node.js version of `URL` because chromium's `URL` doesn't
 // support custom protocols correctly.
-// eslint-disable-next-line import/enforce-node-protocol-usage
+// oxlint-disable-next-line unicorn/prefer-node-protocol
 import { URL as NodeURL } from 'url';
 import { z } from 'zod';
-import { strictAssert } from './assert.std.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Errors from '../types/errors.std.js';
-import { parsePartial, parseUnknown, safeParseUnknown } from './schemas.std.js';
+import { strictAssert } from './assert.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { parsePartial, parseUnknown, safeParseUnknown } from './schemas.std.ts';
 
 const log = createLogger('signalRoutes');
 
@@ -20,7 +19,7 @@ function toUrl(input: URL | string): URL | null {
     return input;
   }
   try {
-    return new NodeURL(input) as URL;
+    return new NodeURL(input);
   } catch {
     return null;
   }
@@ -57,11 +56,18 @@ type AllHostnamePatterns =
   | 'start-call-lobby'
   | 'show-window'
   | 'cancel-presenting'
-  | 'donation-paypal-approved'
-  | 'donation-paypal-canceled'
   | 'donation-validation-complete'
+  | 'paypal'
   | ':captchaId(.+)'
   | '';
+
+/**
+ * Valid actions for sgnl://paypal
+ */
+enum PaypalAction {
+  Approve = 'approve',
+  Cancel = 'cancel',
+}
 
 /**
  * Uses the `URLPattern` syntax to match URLs.
@@ -122,16 +128,16 @@ type PartialNullable<T> = {
 type RouteConfig<Args extends object> = {
   patterns: Array<URLMatcher>;
   schema: z.ZodType<Args>;
-  parse(result: URLPatternResult, url: URL): PartialNullable<Args>;
-  toWebUrl?(args: Args): URL;
-  toAppUrl?(args: Args): URL;
+  parse: (result: URLPatternResult, url: URL) => PartialNullable<Args>;
+  toWebUrl?: (args: Args) => URL;
+  toAppUrl?: (args: Args) => URL;
 };
 
 type SignalRoute<Key extends string, Args extends object> = {
-  isMatch(input: URL | string): boolean;
-  fromUrl(input: URL | string): RouteResult<Key, Args> | null;
-  toWebUrl(args: Args): URL;
-  toAppUrl(args: Args): URL;
+  isMatch: (input: URL | string) => boolean;
+  fromUrl: (input: URL | string) => RouteResult<Key, Args> | null;
+  toWebUrl: (args: Args) => URL;
+  toAppUrl: (args: Args) => URL;
 };
 
 type RouteResult<Key extends string, Args extends object> = {
@@ -210,7 +216,6 @@ function _route<Key extends string, Args extends object>(
 }
 
 const paramSchema = z.string().min(1);
-const paramEpoch = z.nullable(z.string().min(1));
 
 /**
  * signal.me by phone number
@@ -222,7 +227,7 @@ const paramEpoch = z.nullable(z.string().min(1));
  * // URL { "https://signal.me/#p/+1234567890" }
  * ```
  */
-export const contactByPhoneNumberRoute = _route('contactByPhoneNumber', {
+const contactByPhoneNumberRoute = _route('contactByPhoneNumber', {
   patterns: [
     _pattern('https:', 'signal.me', '{/}?', { hash: 'p/:phoneNumber' }),
     _pattern('sgnl:', 'signal.me', '{/}?', { hash: 'p/:phoneNumber' }),
@@ -362,7 +367,7 @@ export const linkDeviceRoute = _route('linkDevice', {
  * // URL { "signalcaptcha://123" }
  * ```
  */
-export const captchaRoute = _route('captcha', {
+const captchaRoute = _route('captcha', {
   // needs `(.+)` to capture `.` in hostname
   patterns: [_pattern('signalcaptcha:', ':captchaId(.+)', '{/}?', {})],
   schema: z.object({
@@ -394,25 +399,19 @@ export const linkCallRoute = _route('linkCall', {
   ],
   schema: z.object({
     key: paramSchema, // ConsonantBase16
-    epoch: paramEpoch, // ConsonantBase16
   }),
   parse(result) {
     const params = new URLSearchParams(result.hash.groups.params);
     return {
       key: params.get('key'),
-      epoch: params.get('epoch'),
     };
   },
   toWebUrl(args) {
-    const params = new URLSearchParams(
-      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
-    );
+    const params = new URLSearchParams({ key: args.key });
     return new URL(`https://signal.link/call/#${params.toString()}`);
   },
   toAppUrl(args) {
-    const params = new URLSearchParams(
-      args.epoch ? { key: args.key, epoch: args.epoch } : { key: args.key }
-    );
+    const params = new URLSearchParams({ key: args.key });
     return new URL(`sgnl://signal.link/call/#${params.toString()}`);
   },
 });
@@ -600,13 +599,13 @@ export const donationValidationCompleteRoute = _route(
  * donationPaypalApprovedRoute.toWebURL({
  *   returnToken: "123",
  * })
- * // URL { "sgnl://donation-paypal-approved?returnToken=123" }
+ * // URL { "sgnl://paypal?action=approve&returnToken=123" }
  * ```
  */
 export const donationPaypalApprovedRoute = _route('donationPaypalApproved', {
   patterns: [
-    _pattern('sgnl:', 'donation-paypal-approved', '{/}?', {
-      search: ':params',
+    _pattern('sgnl:', 'paypal', '{/}?', {
+      search: `action=${PaypalAction.Approve}:params*`,
     }),
   ],
   schema: z.object({
@@ -616,6 +615,7 @@ export const donationPaypalApprovedRoute = _route('donationPaypalApproved', {
   }),
   parse(result) {
     const params = new URLSearchParams(result.search.groups.params);
+    // additional params from PayPal
     return {
       payerId: params.get('PayerID'),
       paymentToken: params.get('token'),
@@ -623,9 +623,13 @@ export const donationPaypalApprovedRoute = _route('donationPaypalApproved', {
     };
   },
   toWebUrl(args) {
-    const params = new URLSearchParams({ returnToken: args.returnToken });
+    const params = new URLSearchParams({
+      action: PaypalAction.Approve,
+      returnToken: args.returnToken,
+    });
+    // Redirects to sgnl://paypal?{params}
     return new URL(
-      `https://signaldonations.org/redirect/donation-paypal-approved?${params.toString()}`
+      `https://signaldonations.org/desktop/paypal?${params.toString()}`
     );
   },
 });
@@ -637,13 +641,13 @@ export const donationPaypalApprovedRoute = _route('donationPaypalApproved', {
  * donationPaypalCanceledRoute.toAppUrl({
  *   returnToken: "123",
  * })
- * // URL { "sgnl://donation-paypal-canceled?returnToken=123" }
+ * // URL { "sgnl://paypal?action=cancel&returnToken=123" }
  * ```
  */
 export const donationPaypalCanceledRoute = _route('donationPaypalCanceled', {
   patterns: [
-    _pattern('sgnl:', 'donation-paypal-canceled', '{/}?', {
-      search: ':params',
+    _pattern('sgnl:', 'paypal', '{/}?', {
+      search: `action=${PaypalAction.Cancel}:params*`,
     }),
   ],
   schema: z.object({
@@ -656,9 +660,13 @@ export const donationPaypalCanceledRoute = _route('donationPaypalCanceled', {
     };
   },
   toWebUrl(args) {
-    const params = new URLSearchParams({ returnToken: args.returnToken });
+    const params = new URLSearchParams({
+      action: PaypalAction.Cancel,
+      returnToken: args.returnToken,
+    });
+    // Redirects to sgnl://paypal?{params}
     return new URL(
-      `https://signaldonations.org/redirect/donation-paypal-canceled?${params.toString()}`
+      `https://signaldonations.org/desktop/paypal?${params.toString()}`
     );
   },
 });
@@ -706,7 +714,8 @@ export type ParsedSignalRoute = NonNullable<
 
 /** @internal */
 type MatchedSignalRoute = {
-  route: SignalRoute<string, object>;
+  // oxlint-disable-next-line typescript/no-explicit-any
+  route: SignalRoute<string, any>;
   parsed: ParsedSignalRoute;
 };
 
@@ -786,6 +795,7 @@ export function parseSignalRoute(
  * toSignalRouteUrl(new URL("https://example.com"))
  * // null
  * ```
+ * @testexport
  */
 export function toSignalRouteUrl(input: URL | string): URL | null {
   const normalizedUrl = _normalizeUrl(input);
@@ -805,6 +815,7 @@ export function toSignalRouteUrl(input: URL | string): URL | null {
  * toSignalRouteAppUrl(new URL("https://example.com"))
  * // null
  * ```
+ * @testexport
  */
 export function toSignalRouteAppUrl(input: URL | string): URL | null {
   const normalizedUrl = _normalizeUrl(input);
@@ -829,6 +840,7 @@ export function toSignalRouteAppUrl(input: URL | string): URL | null {
  * toSignalRouteWebUrl(new URL("https://example.com"))
  * // null
  * ```
+ * @testexport
  */
 export function toSignalRouteWebUrl(input: URL | string): URL | null {
   const normalizedUrl = _normalizeUrl(input);

@@ -1,54 +1,95 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../logging/log.std.js';
+import { createLogger } from '../logging/log.std.ts';
 
-import { isOutgoing } from './helpers.std.js';
-import { getAuthor } from './sources.preload.js';
+import { isOutgoing } from './helpers.std.ts';
+import { getAuthor } from './sources.preload.ts';
 
-import type { ConversationModel } from '../models/conversations.preload.js';
-import { getActiveProfile } from '../state/selectors/notificationProfiles.dom.js';
-import { shouldNotify as shouldNotifyDuringNotificationProfile } from '../types/NotificationProfile.std.js';
-import { NotificationType } from '../types/notifications.std.js';
-import { isMessageUnread } from '../util/isMessageUnread.std.js';
-import { isDirectConversation } from '../util/whatTypeOfConversation.dom.js';
-import { isExpiringMessage } from '../types/Message2.preload.js';
-import { notificationService } from '../services/notifications.preload.js';
-import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.preload.js';
+import type { ConversationModel } from '../models/conversations.preload.ts';
+import { getActiveProfile } from '../state/selectors/notificationProfiles.dom.ts';
+import { shouldNotify as shouldNotifyDuringNotificationProfile } from '../types/NotificationProfile.std.ts';
+import { NotificationType } from '../types/notifications.std.ts';
+import { isMessageUnread } from '../util/isMessageUnread.std.ts';
+import { getNotifyWhileMutedForConversation } from '../util/notifyWhileMuted.preload.ts';
+import { isDirectConversation } from '../util/whatTypeOfConversation.dom.ts';
+import { isExpiringMessage } from '../types/Message2.preload.ts';
+import { notificationService } from '../services/notifications.preload.ts';
+import { getNotificationTextForMessage } from '../util/getNotificationTextForMessage.preload.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { ReactionAttributesType } from '../messageModifiers/Reactions.preload.js';
+import type { ReactionAttributesType } from '../messageModifiers/Reactions.preload.ts';
 import {
   type PollVoteAttributesType,
   PollSource,
-} from '../messageModifiers/Polls.preload.js';
-import { shouldStoryReplyNotifyUser } from '../util/shouldStoryReplyNotifyUser.preload.js';
-import { ReactionSource } from '../reactions/ReactionSource.std.js';
+} from '../messageModifiers/Polls.preload.ts';
+import { shouldStoryReplyNotifyUser } from '../util/shouldStoryReplyNotifyUser.preload.ts';
+import { ReactionSource } from '../reactions/ReactionSource.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 
 const log = createLogger('maybeNotify');
 
+type ReactionNotifyData = Readonly<{
+  kind: 'reaction';
+  reaction: Readonly<ReactionAttributesType>;
+  targetMessage: Readonly<MessageAttributesType>;
+}>;
+
+type PollVoteNotifyData = Readonly<{
+  kind: 'pollVote';
+  pollVote: Readonly<PollVoteAttributesType>;
+  targetMessage: Readonly<MessageAttributesType>;
+}>;
+
+type PollTerminateNotifyData = Readonly<{
+  kind: 'pollTerminate';
+  pollSource: PollSource;
+  pollTerminatorId: string;
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type DeliveryIssueNotifyData = Readonly<{
+  kind: 'deliveryIssue';
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type NormalMessageNotifyData = Readonly<{
+  kind: 'normalMessage';
+  message: Readonly<MessageAttributesType>;
+}>;
+
+type NotifyData =
+  | ReactionNotifyData
+  | PollVoteNotifyData
+  | PollTerminateNotifyData
+  | DeliveryIssueNotifyData
+  | NormalMessageNotifyData;
+
 type MaybeNotifyArgs = {
   conversation: ConversationModel;
-} & (
-  | {
-      reaction: Readonly<ReactionAttributesType>;
-      targetMessage: Readonly<MessageAttributesType>;
-    }
-  | {
-      pollVote: Readonly<PollVoteAttributesType>;
-      targetMessage: Readonly<MessageAttributesType>;
-    }
-  | {
-      message: Readonly<MessageAttributesType>;
-      reaction?: never;
-      pollVote?: never;
-    }
-);
+} & NotifyData;
 
 function isMention(args: MaybeNotifyArgs): boolean {
-  if ('reaction' in args || 'pollVote' in args) {
+  if (args.kind !== 'normalMessage') {
     return false;
   }
+
   return Boolean(args.message.mentionsMe);
+}
+
+function isReplyToMe(args: MaybeNotifyArgs): boolean {
+  if (args.kind !== 'normalMessage') {
+    return false;
+  }
+
+  const quoteAuthorAci = args.message.quote?.authorAci;
+  return Boolean(
+    quoteAuthorAci && itemStorage.user.isOurServiceId(quoteAuthorAci)
+  );
+}
+
+function isMentionOrReply(args: MaybeNotifyArgs): boolean {
+  return isMention(args) || isReplyToMe(args);
 }
 
 export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
@@ -59,25 +100,34 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
   const { i18n } = window.SignalContext;
 
   const { conversation } = args;
-  const reaction = 'reaction' in args ? args.reaction : undefined;
-  const pollVote = 'pollVote' in args ? args.pollVote : undefined;
 
   let warrantsNotification: boolean;
-  if ('reaction' in args && 'targetMessage' in args) {
+  if (args.kind === 'reaction') {
     warrantsNotification = doesReactionWarrantNotification({
       reaction: args.reaction,
       targetMessage: args.targetMessage,
     });
-  } else if ('pollVote' in args && 'targetMessage' in args) {
+  } else if (args.kind === 'pollVote') {
     warrantsNotification = doesPollVoteWarrantNotification({
       pollVote: args.pollVote,
       targetMessage: args.targetMessage,
     });
-  } else {
+  } else if (args.kind === 'pollTerminate') {
+    warrantsNotification = doesPollTerminateWarrantNotification({
+      pollSource: args.pollSource,
+    });
+  } else if (args.kind === 'deliveryIssue') {
     warrantsNotification = await doesMessageWarrantNotification({
       message: args.message,
       conversation,
     });
+  } else if (args.kind === 'normalMessage') {
+    warrantsNotification = await doesMessageWarrantNotification({
+      message: args.message,
+      conversation,
+    });
+  } else {
+    throw missingCaseError(args);
   }
 
   if (!warrantsNotification) {
@@ -95,7 +145,7 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
       activeProfile,
       conversationId: conversation.id,
       isCall: false,
-      isMention: isMention(args),
+      isMentionOrReply: isMentionOrReply(args),
     })
   ) {
     log.info('Would notify for message, but notification profile prevented it');
@@ -103,20 +153,35 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
   }
 
   const conversationId = conversation.get('id');
-  const messageForNotification =
-    'targetMessage' in args ? args.targetMessage : args.message;
+
   const isMessageInDirectConversation = isDirectConversation(
     conversation.attributes
   );
 
   let sender: ConversationModel | undefined;
-  if (reaction) {
-    sender = window.ConversationController.get(reaction.fromId);
-  } else if (pollVote) {
-    sender = window.ConversationController.get(pollVote.fromConversationId);
-  } else if ('message' in args) {
+  let messageForNotification: MessageAttributesType | undefined;
+
+  if (args.kind === 'reaction') {
+    sender = window.ConversationController.get(args.reaction.fromId);
+    messageForNotification = args.targetMessage;
+  } else if (args.kind === 'pollVote') {
+    sender = window.ConversationController.get(
+      args.pollVote.fromConversationId
+    );
+    messageForNotification = args.targetMessage;
+  } else if (args.kind === 'pollTerminate') {
+    sender = window.ConversationController.get(args.pollTerminatorId);
+    messageForNotification = args.message;
+  } else if (args.kind === 'deliveryIssue') {
     sender = getAuthor(args.message);
+    messageForNotification = args.message;
+  } else if (args.kind === 'normalMessage') {
+    sender = getAuthor(args.message);
+    messageForNotification = args.message;
+  } else {
+    throw missingCaseError(args);
   }
+
   const senderName = sender ? sender.getTitle() : i18n('icu:unknownContact');
   const senderTitle = isMessageInDirectConversation
     ? senderName
@@ -140,22 +205,27 @@ export async function maybeNotify(args: MaybeNotifyArgs): Promise<void> {
     isExpiringMessage: isExpiringMessage(messageForNotification),
     message: getNotificationTextForMessage(messageForNotification),
     messageId,
-    reaction: reaction
-      ? {
-          emoji: reaction.emoji,
-          targetAuthorAci: reaction.targetAuthorAci,
-          targetTimestamp: reaction.targetTimestamp,
-        }
-      : undefined,
-    pollVote: pollVote
-      ? {
-          voterConversationId: pollVote.fromConversationId,
-          targetAuthorAci: pollVote.targetAuthorAci,
-          targetTimestamp: pollVote.targetTimestamp,
-        }
-      : undefined,
+    reaction:
+      args.kind === 'reaction'
+        ? {
+            emoji: args.reaction.emoji,
+            targetAuthorAci: args.reaction.targetAuthorAci,
+            targetTimestamp: args.reaction.targetTimestamp,
+          }
+        : undefined,
+    pollVote:
+      args.kind === 'pollVote'
+        ? {
+            voterConversationId: args.pollVote.fromConversationId,
+            targetAuthorAci: args.pollVote.targetAuthorAci,
+            targetTimestamp: args.pollVote.targetTimestamp,
+          }
+        : undefined,
     sentAt: messageForNotification.timestamp,
-    type: reaction ? NotificationType.Reaction : NotificationType.Message,
+    type:
+      args.kind === 'reaction'
+        ? NotificationType.Reaction
+        : NotificationType.Message,
   });
 }
 
@@ -167,6 +237,7 @@ function doesReactionWarrantNotification({
   reaction: ReactionAttributesType;
 }): boolean {
   return (
+    itemStorage.get('reaction-notification', true) &&
     reaction.source === ReactionSource.FromSomeoneElse &&
     isOutgoing(targetMessage)
   );
@@ -184,6 +255,14 @@ function doesPollVoteWarrantNotification({
   );
 }
 
+function doesPollTerminateWarrantNotification({
+  pollSource,
+}: {
+  pollSource: Readonly<PollSource>;
+}): boolean {
+  return pollSource === PollSource.FromSomeoneElse;
+}
+
 async function doesMessageWarrantNotification({
   message,
   conversation,
@@ -191,7 +270,7 @@ async function doesMessageWarrantNotification({
   message: MessageAttributesType;
   conversation: ConversationModel;
 }): Promise<boolean> {
-  if (!(message.type === 'incoming' || message.type === 'poll-terminate')) {
+  if (message.type !== 'incoming') {
     return false;
   }
 
@@ -216,9 +295,21 @@ function isAllowedByConversation(args: MaybeNotifyArgs): boolean {
     return true;
   }
 
-  if (conversation.get('dontNotifyForMentionsIfMuted')) {
+  if (isDirectConversation(conversation.attributes)) {
     return false;
   }
 
-  return isMention(args);
+  const notifyWhileMuted = getNotifyWhileMutedForConversation(
+    conversation.attributes
+  );
+
+  if (notifyWhileMuted.mentions && isMention(args)) {
+    return true;
+  }
+
+  if (notifyWhileMuted.replies && isReplyToMe(args)) {
+    return true;
+  }
+
+  return false;
 }

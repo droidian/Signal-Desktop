@@ -1,36 +1,27 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import type { FC, ReactNode } from 'react';
 import { computeAccessibleName } from 'dom-accessibility-api';
-import { AxoSymbol } from './AxoSymbol.dom.js';
-import { AxoBaseMenu } from './_internal/AxoBaseMenu.dom.js';
-import { tw } from './tw.dom.js';
-import {
-  AriaLabellingProvider,
-  useAriaLabellingContext,
-  useCreateAriaLabellingContext,
-} from './_internal/AriaLabellingContext.dom.js';
-import { assert } from './_internal/assert.dom.js';
+import { AxoSymbol } from './AxoSymbol.dom.tsx';
+import { AxoBaseMenu } from './_internal/AxoBaseMenu.dom.tsx';
+import { tw } from './tw.dom.tsx';
+import { assert } from './_internal/assert.std.tsx';
 import {
   getElementAriaRole,
   isAriaWidgetRole,
-} from './_internal/ariaRoles.dom.js';
+} from './_internal/ariaRoles.dom.tsx';
 import {
   createStrictContext,
   useStrictContext,
-} from './_internal/StrictContext.dom.js';
+} from './_internal/StrictContext.dom.tsx';
+import { isTestOrMockEnvironment } from '../environment.std.ts';
+import { AxoDragRegion } from './AxoDragRegion.dom.tsx';
+import { AxoTheme } from './AxoTheme.dom.tsx';
+import { AriaLabelled } from './aria/AriaLabelled.dom.tsx';
 
-const Namespace = 'AxoDropdownMenu';
+const { useDisableDragRegions } = AxoDragRegion;
 
 /**
  * Displays a menu to the user—such as a set of actions or functions—triggered
@@ -41,63 +32,85 @@ const Namespace = 'AxoDropdownMenu';
  *
  * @example Anatomy
  * ```tsx
- * import { AxoDropdownMenu } from "./axo/DropdownMenu/AxoDropdownMenu.tsx";
- *
- * export default () => (
- *   <AxoDropdownMenu.Root>
- *     <AxoDropdownMenu.Trigger>
- *       <button>Click Me</button>
- *     </AxoDropdownMenu.Trigger>
- *
- *     <AxoDropdownMenu.Content>
- *       <AxoDropdownMenu.Label />
- *       <AxoDropdownMenu.Item />
- *
- *       <AxoDropdownMenu.Group>
- *         <AxoDropdownMenu.Item />
- *       </AxoDropdownMenu.Group>
- *
- *       <AxoDropdownMenu.CheckboxItem/>
- *
- *       <AxoDropdownMenu.RadioGroup>
- *         <AxoDropdownMenu.RadioItem/>
- *       </AxoDropdownMenu.RadioGroup>
- *
- *       <AxoDropdownMenu.Sub>
- *         <AxoDropdownMenu.SubTrigger />
- *         <AxoDropdownMenu.SubContent />
- *       </AxoDropdownMenu.Sub>
- *
- *       <AxoDropdownMenu.Separator />
- *     </AxoDropdownMenu.Content>
- *   </AxoDropdownMenu.Root>
- * )
+ * <AxoDropdownMenu.Root>
+ *   <AxoDropdownMenu.Trigger>
+ *     <AxoIconButton.Root variant="secondary" size="sm" symbol="more" label="More options" />
+ *   </AxoDropdownMenu.Trigger>
+ *   <AxoDropdownMenu.Content>
+ *     <AxoDropdownMenu.Header label="Conversation" />
+ *     <AxoDropdownMenu.Item symbol="bell-slash" onSelect={onMute}>Mute notifications</AxoDropdownMenu.Item>
+ *     <AxoDropdownMenu.Separator />
+ *     <AxoDropdownMenu.Item symbol="trash" onSelect={onDelete}>Delete</AxoDropdownMenu.Item>
+ *   </AxoDropdownMenu.Content>
+ * </AxoDropdownMenu.Root>
  * ```
+ *
+ * @see {@link https://www.radix-ui.com/primitives/docs/components/dropdown-menu | Dropdown Menu - Radix Docs}
+ * @see {@link https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/ | Menu Button Pattern - ARIA Authoring Practices Guide}
+ * @see {@link https://w3c.github.io/aria/#button | `button` role - WAI-ARIA 1.3}
+ * @see {@link https://w3c.github.io/aria/#menu | `menu` role - WAI-ARIA 1.3}
  */
 export namespace AxoDropdownMenu {
+  /**
+   * <AxoDropdownMenu.Root>
+   * --------------------------------------------------------------------------
+   */
+
+  /**
+   * The preferred alignment against the trigger.
+   * May change when collisions occur.
+   */
+  export type Align = AxoBaseMenu.Align;
+
+  /**
+   * The preferred side of the trigger to render against when open.
+   * Will be reversed when collisions occur.
+   */
+  export type Side = AxoBaseMenu.Side;
+
+  /** @internal */
   type RootContextType = Readonly<{
     open: boolean;
   }>;
 
+  /** @internal */
   const RootContext = createStrictContext<RootContextType>(
-    `${Namespace}.RootContext`
+    'AxoDropdownMenu.RootContext'
   );
-
-  /**
-   * Component: <AxoDropdownMenu.Root>
-   * ---------------------------------
-   */
 
   export type RootProps = AxoBaseMenu.MenuRootProps &
     Readonly<{
+      /**
+       * The modality of the dropdown menu. When set to `true`, interaction
+       * with outside elements will be disabled and only menu content will be
+       * visible to screen readers.
+       * Defaults to `true`.
+       */
+      modal?: boolean;
+      /**
+       * The controlled open state of the dropdown menu.
+       * Must be used in conjunction with `onOpenChange`.
+       */
       open?: boolean;
     }>;
 
   /**
    * Contains all the parts of a dropdown menu.
+   *
+   * @example Controlled open state
+   * ```tsx
+   * <AxoDropdownMenu.Root open={open} onOpenChange={setOpen}>
+   *   <AxoDropdownMenu.Trigger>
+   *     <AxoIconButton.Root variant="secondary" size="sm" symbol="more" label="More options" />
+   *   </AxoDropdownMenu.Trigger>
+   *   <AxoDropdownMenu.Content>
+   *     <AxoDropdownMenu.Item symbol="bell-slash" onSelect={onMute}>Mute notifications</AxoDropdownMenu.Item>
+   *   </AxoDropdownMenu.Content>
+   * </AxoDropdownMenu.Root>
+   * ```
    */
   export const Root: FC<RootProps> = memo(props => {
-    const { onOpenChange } = props;
+    const { modal, onOpenChange } = props;
     const [open, setOpen] = useState(false);
 
     if (typeof props.open === 'boolean' && open !== props.open) {
@@ -116,25 +129,29 @@ export namespace AxoDropdownMenu {
       return { open };
     }, [open]);
 
+    useDisableDragRegions(open);
+
     return (
       <RootContext.Provider value={context}>
-        <DropdownMenu.Root open={open} onOpenChange={handleOpenChange}>
+        <DropdownMenu.Root
+          modal={modal}
+          open={open}
+          onOpenChange={handleOpenChange}
+        >
           {props.children}
         </DropdownMenu.Root>
       </RootContext.Provider>
     );
   });
 
-  Root.displayName = `${Namespace}.Root`;
+  Root.displayName = 'AxoDropdownMenu.Root';
 
   /**
-   * Component: <AxoDropdownMenu.Trigger>
-   * ------------------------------------
+   * <AxoDropdownMenu.Trigger>
+   * --------------------------------------------------------------------------
    */
 
   export type TriggerProps = AxoBaseMenu.MenuTriggerProps;
-
-  const triggerDisplayName = `${Namespace}.Trigger`;
 
   /**
    * The button that toggles the dropdown menu.
@@ -146,18 +163,18 @@ export namespace AxoDropdownMenu {
     const ref = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-      if (process.env.NODE_ENV === 'development') {
+      if (isTestOrMockEnvironment()) {
         assert(
           ref.current instanceof HTMLElement,
-          `${triggerDisplayName} child must forward ref`
+          '<AxoDropdownMenu.Trigger> child must forward ref'
         );
         assert(
           isAriaWidgetRole(getElementAriaRole(ref.current)),
-          `${triggerDisplayName} child must have a widget role like 'button'`
+          "<AxoDropdownMenu.Trigger> child must have a widget role like 'button'"
         );
         assert(
           computeAccessibleName(ref.current) !== '',
-          `${triggerDisplayName} child must have an accessible name`
+          '<AxoDropdownMenu.Trigger> child must have an accessible name'
         );
       }
     });
@@ -175,11 +192,11 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  Trigger.displayName = triggerDisplayName;
+  Trigger.displayName = 'AxoDropdownMenu.Trigger';
 
   /**
-   * Component: <AxoDropdownMenu.Content>
-   * ------------------------------------
+   * <AxoDropdownMenu.Content>
+   * --------------------------------------------------------------------------
    */
 
   export type ContentProps = AxoBaseMenu.MenuContentProps;
@@ -189,34 +206,33 @@ export namespace AxoDropdownMenu {
    * Uses a portal to render the content part into the `body`.
    */
   export const Content: FC<ContentProps> = memo(props => {
-    const { context, labelId, descriptionId } = useCreateAriaLabellingContext();
     const { open } = useStrictContext(RootContext);
     return (
-      <AriaLabellingProvider value={context}>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            sideOffset={4}
-            align="start"
-            collisionPadding={6}
-            className={AxoBaseMenu.menuContentStyles}
-            aria-labelledby={labelId}
-            aria-describedby={descriptionId}
-            onCloseAutoFocus={props.onCloseAutoFocus}
-            // @ts-expect-error -- React/TS doesn't know about inert
-            inert={open ? undefined : 'true'}
-          >
-            {props.children}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </AriaLabellingProvider>
+      <DropdownMenu.Portal>
+        <AxoTheme.Inherit>
+          <AriaLabelled.Root asChild>
+            <DropdownMenu.Content
+              sideOffset={4}
+              align={props.align}
+              side={props.side}
+              collisionPadding={6}
+              className={AxoBaseMenu.menuContentStyles}
+              onCloseAutoFocus={props.onCloseAutoFocus}
+              inert={!open}
+            >
+              {props.children}
+            </DropdownMenu.Content>
+          </AriaLabelled.Root>
+        </AxoTheme.Inherit>
+      </DropdownMenu.Portal>
     );
   });
 
-  Content.displayName = `${Namespace}.Content`;
+  Content.displayName = 'AxoDropdownMenu.Content';
 
   /**
-   * Component: <AxoDropdownMenu.CustomItem>
-   * -------------------------------------
+   * <AxoDropdownMenu.CustomItem>
+   * --------------------------------------------------------------------------
    */
 
   export type CustomItemProps = Pick<
@@ -224,13 +240,27 @@ export namespace AxoDropdownMenu {
     'disabled' | 'textValue' | 'keyboardShortcut' | 'onSelect'
   > &
     Readonly<{
+      /**
+       * Content of the "leading" slot, will be used to align with other
+       * leading items.
+       */
       leading?: ReactNode;
-      // trailing?: ReactNode;
+      /** The primary label text of the item. */
       text: ReactNode;
-      // prefix?: ReactNode;
+      /**
+       * Content appended after the label in the content slot
+       * (e.g. a count badge or status indicator).
+       */
       suffix?: ReactNode;
+
+      // TODO(jamie): trailing?: ReactNode;
+      // TODO(jamie): prefix?: ReactNode;
     }>;
 
+  /**
+   * A menu item with a fully customizable leading slot and content slot.
+   * Use when the built-in `Item` doesn't cover your layout needs.
+   */
   export const CustomItem: FC<CustomItemProps> = memo(props => {
     return (
       <DropdownMenu.Item
@@ -252,23 +282,17 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  CustomItem.displayName = `${Namespace}.CustomItem`;
+  CustomItem.displayName = 'AxoDropdownMenu.CustomItem';
 
   /**
-   * Component: <AxoDropdownMenu.Item>
-   * ---------------------------------
+   * <AxoDropdownMenu.Item>
+   * --------------------------------------------------------------------------
    */
 
   export type ItemProps = AxoBaseMenu.MenuItemProps;
 
   /**
-   * The component that contains the dropdown menu items.
-   * @example
-   * ```tsx
-   * <AxoDropdownMenu.Item icon={<svg/>}>
-   *   {i18n("myContextMenuText")}
-   * </AxoContentMenu.Item>
-   * ````
+   * A single selectable row in the dropdown menu.
    */
   export const Item: FC<ItemProps> = memo(props => {
     return (
@@ -295,17 +319,17 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  Item.displayName = `${Namespace}.Item`;
+  Item.displayName = 'AxoDropdownMenu.Item';
 
   /**
-   * Component: <AxoDropdownMenu.Group>
-   * ----------------------------------
+   * <AxoDropdownMenu.Group>
+   * --------------------------------------------------------------------------
    */
 
   export type GroupProps = AxoBaseMenu.MenuGroupProps;
 
   /**
-   * Used to group multiple {@link AxoDropdownMenu.Item}'s.
+   * Group multiple {@link AxoDropdownMenu.Item}'s.
    */
   export const Group: FC<GroupProps> = memo(props => {
     return (
@@ -315,17 +339,17 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  Group.displayName = `${Namespace}.Group`;
+  Group.displayName = 'AxoDropdownMenu.Group';
 
   /**
-   * Component: <AxoDropdownMenu.Label>
-   * ----------------------------------
+   * <AxoDropdownMenu.Label>
+   * --------------------------------------------------------------------------
    */
 
   export type LabelProps = AxoBaseMenu.MenuLabelProps;
 
   /**
-   * Used to render a label. It won't be focusable using arrow keys.
+   * Render a label. It won't be focusable using arrow keys.
    */
   export const Label: FC<LabelProps> = memo(props => {
     return (
@@ -337,53 +361,49 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  Label.displayName = `${Namespace}.Label`;
+  Label.displayName = 'AxoDropdownMenu.Label';
 
   /**
-   * Component: <AxoDropdownMenu.Header>
-   * -----------------------------------
+   * <AxoDropdownMenu.Header>
+   * --------------------------------------------------------------------------
    */
 
   export type HeaderProps = Readonly<{
+    /** The primary title shown at the top of the content panel. */
     label: ReactNode;
+    /** Optional secondary text below the title. */
     description?: ReactNode;
   }>;
 
+  /**
+   * A non-interactive header at the top of a `Content` or `SubContent` panel.
+   * Automatically registers itself as the accessible label and description
+   * for the containing menu.
+   */
   export const Header: FC<HeaderProps> = memo(props => {
-    const labelId = useId();
-    const descriptionId = useId();
-
-    const { labelRef, descriptionRef } = useAriaLabellingContext(
-      `${Namespace}.Content/SubContent`
-    );
-
     return (
       <span aria-hidden="true" className={AxoBaseMenu.menuHeaderStyles}>
-        <span
-          ref={labelRef}
-          id={labelId}
-          className={AxoBaseMenu.menuHeaderLabelStyles}
-        >
-          {props.label}
-        </span>
-        {props.description && (
-          <span
-            ref={descriptionRef}
-            id={descriptionId}
-            className={AxoBaseMenu.menuHeaderDescriptionStyles}
-          >
-            {props.description}
+        <AriaLabelled.Label asChild>
+          <span className={AxoBaseMenu.menuHeaderLabelStyles}>
+            {props.label}
           </span>
+        </AriaLabelled.Label>
+        {props.description && (
+          <AriaLabelled.Description asChild>
+            <span className={AxoBaseMenu.menuHeaderDescriptionStyles}>
+              {props.description}
+            </span>
+          </AriaLabelled.Description>
         )}
       </span>
     );
   });
 
-  Header.displayName = `${Namespace}.Header`;
+  Header.displayName = 'AxoDropdownMenu.Header';
 
   /**
-   * Component: <AxoDropdownMenu.CheckboxItem>
-   * -----------------------------------------
+   * <AxoDropdownMenu.CheckboxItem>
+   * --------------------------------------------------------------------------
    */
 
   export type CheckboxItemProps = AxoBaseMenu.MenuCheckboxItemProps;
@@ -403,14 +423,16 @@ export namespace AxoDropdownMenu {
       >
         <AxoBaseMenu.ItemLeadingSlot>
           <AxoBaseMenu.ItemCheckPlaceholder>
-            <DropdownMenu.ItemIndicator>
+            <DropdownMenu.ItemIndicator
+              className={tw('inline-flex items-center')}
+            >
               <AxoBaseMenu.ItemCheck />
             </DropdownMenu.ItemIndicator>
           </AxoBaseMenu.ItemCheckPlaceholder>
         </AxoBaseMenu.ItemLeadingSlot>
         <AxoBaseMenu.ItemContentSlot>
           {props.symbol && (
-            <span className={tw('me-2')}>
+            <span className={tw('me-2 inline-flex items-center')}>
               <AxoBaseMenu.ItemSymbol symbol={props.symbol} />
             </span>
           )}
@@ -425,17 +447,17 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  CheckboxItem.displayName = `${Namespace}.CheckboxItem`;
+  CheckboxItem.displayName = 'AxoDropdownMenu.CheckboxItem';
 
   /**
-   * Component: <AxoDropdownMenu.RadioGroup>
-   * ---------------------------------------
+   * <AxoDropdownMenu.RadioGroup>
+   * --------------------------------------------------------------------------
    */
 
   export type RadioGroupProps = AxoBaseMenu.MenuRadioGroupProps;
 
   /**
-   * Used to group multiple {@link AxoDropdownMenu.RadioItem}'s.
+   * Group multiple {@link AxoDropdownMenu.RadioItem}'s.
    */
   export const RadioGroup: FC<RadioGroupProps> = memo(props => {
     return (
@@ -449,11 +471,11 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  RadioGroup.displayName = `${Namespace}.RadioGroup`;
+  RadioGroup.displayName = 'AxoDropdownMenu.RadioGroup';
 
   /**
-   * Component: <AxoDropdownMenu.RadioItem>
-   * --------------------------------------
+   * <AxoDropdownMenu.RadioItem>
+   * --------------------------------------------------------------------------
    */
 
   export type RadioItemProps = AxoBaseMenu.MenuRadioItemProps;
@@ -472,14 +494,16 @@ export namespace AxoDropdownMenu {
       >
         <AxoBaseMenu.ItemLeadingSlot>
           <AxoBaseMenu.ItemCheckPlaceholder>
-            <DropdownMenu.ItemIndicator>
+            <DropdownMenu.ItemIndicator
+              className={tw('inline-flex items-center')}
+            >
               <AxoBaseMenu.ItemCheck />
             </DropdownMenu.ItemIndicator>
           </AxoBaseMenu.ItemCheckPlaceholder>
         </AxoBaseMenu.ItemLeadingSlot>
         <AxoBaseMenu.ItemContentSlot>
           {props.symbol && (
-            <span className={tw('me-2')}>
+            <span className={tw('me-2 inline-flex items-center')}>
               <AxoBaseMenu.ItemSymbol symbol={props.symbol} />
             </span>
           )}
@@ -494,31 +518,34 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  RadioItem.displayName = `${Namespace}.RadioItem`;
+  RadioItem.displayName = 'AxoDropdownMenu.RadioItem';
 
   /**
-   * Component: <AxoDropdownMenu.Separator>
-   * --------------------------------------
+   * <AxoDropdownMenu.Separator>
+   * --------------------------------------------------------------------------
    */
-
-  export type SeparatorProps = AxoBaseMenu.MenuSeparatorProps;
 
   /**
-   * Used to visually separate items in the dropdown menu.
+   * Visually separate items in the dropdown menu.
    */
-  export const Separator: FC<SeparatorProps> = memo(() => {
+  export const Separator: FC = memo(() => {
     return (
       <DropdownMenu.Separator className={AxoBaseMenu.menuSeparatorStyles} />
     );
   });
 
-  Separator.displayName = `${Namespace}.Separator`;
+  Separator.displayName = 'AxoDropdownMenu.Separator';
 
   /**
-   * Component: <AxoDropdownMenu.ContentSeparator>
+   * <AxoDropdownMenu.ContentSeparator>
+   * --------------------------------------------------------------------------
    */
 
-  export const ContentSeparator: FC<SeparatorProps> = memo(() => {
+  /**
+   * Like `Separator`, but spans only the content column rather than the full
+   * row.
+   */
+  export const ContentSeparator: FC = memo(() => {
     return (
       <DropdownMenu.Separator
         className={AxoBaseMenu.menuContentSeparatorStyles}
@@ -526,11 +553,11 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  ContentSeparator.displayName = `${Namespace}.ContentSeparator`;
+  ContentSeparator.displayName = 'AxoDropdownMenu.ContentSeparator';
 
   /**
-   * Component: <AxoDropdownMenu.Sub>
-   * -------------------------------
+   * <AxoDropdownMenu.Sub>
+   * --------------------------------------------------------------------------
    */
 
   export type SubProps = AxoBaseMenu.MenuSubProps;
@@ -542,18 +569,17 @@ export namespace AxoDropdownMenu {
     return <DropdownMenu.Sub>{props.children}</DropdownMenu.Sub>;
   });
 
-  Sub.displayName = `${Namespace}.Sub`;
+  Sub.displayName = 'AxoDropdownMenu.Sub';
 
   /**
-   * Component: <AxoDropdownMenu.SubTrigger>
-   * ---------------------------------------
+   * <AxoDropdownMenu.SubTrigger>
+   * --------------------------------------------------------------------------
    */
 
   export type SubTriggerProps = AxoBaseMenu.MenuSubTriggerProps;
 
   /**
-   * An item that opens a submenu. Must be rendered inside
-   * {@link ContextMenu.Sub}.
+   * An item that opens a submenu. Must be rendered inside {@link AxoDropdownMenu.Sub}.
    */
   export const SubTrigger: FC<SubTriggerProps> = memo(props => {
     return (
@@ -569,7 +595,7 @@ export namespace AxoDropdownMenu {
         )}
         <AxoBaseMenu.ItemContentSlot>
           <AxoBaseMenu.ItemText>{props.children}</AxoBaseMenu.ItemText>
-          <span className={tw('ms-auto')}>
+          <span className={tw('ms-auto inline-flex items-center')}>
             <AxoSymbol.Icon size={14} symbol="chevron-[end]" label={null} />
           </span>
         </AxoBaseMenu.ItemContentSlot>
@@ -577,11 +603,11 @@ export namespace AxoDropdownMenu {
     );
   });
 
-  SubTrigger.displayName = `${Namespace}.SubTrigger`;
+  SubTrigger.displayName = 'AxoDropdownMenu.SubTrigger';
 
   /**
-   * Component: <AxoDropdownMenu.SubContent>
-   * ---------------------------------------
+   * <AxoDropdownMenu.SubContent>
+   * --------------------------------------------------------------------------
    */
 
   export type SubContentProps = AxoBaseMenu.MenuSubContentProps;
@@ -591,21 +617,20 @@ export namespace AxoDropdownMenu {
    * inside {@link AxoDropdownMenu.Sub}.
    */
   export const SubContent: FC<SubContentProps> = memo(props => {
-    const { context, labelId, descriptionId } = useCreateAriaLabellingContext();
     return (
-      <AriaLabellingProvider value={context}>
-        <DropdownMenu.SubContent
-          alignOffset={-6}
-          collisionPadding={6}
-          className={AxoBaseMenu.menuSubContentStyles}
-          aria-labelledby={labelId}
-          aria-describedby={descriptionId}
-        >
-          {props.children}
-        </DropdownMenu.SubContent>
-      </AriaLabellingProvider>
+      <DropdownMenu.Portal>
+        <AriaLabelled.Root asChild>
+          <DropdownMenu.SubContent
+            alignOffset={-6}
+            collisionPadding={6}
+            className={AxoBaseMenu.menuSubContentStyles}
+          >
+            {props.children}
+          </DropdownMenu.SubContent>
+        </AriaLabelled.Root>
+      </DropdownMenu.Portal>
     );
   });
 
-  SubContent.displayName = `${Namespace}.SubContent`;
+  SubContent.displayName = 'AxoDropdownMenu.SubContent';
 }

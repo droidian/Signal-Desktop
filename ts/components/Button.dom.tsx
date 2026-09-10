@@ -7,12 +7,12 @@ import type {
   MouseEventHandler,
   ReactNode,
 } from 'react';
-import React from 'react';
+import { forwardRef } from 'react';
 import classNames from 'classnames';
 
-import type { Theme } from '../util/theme.std.js';
-import { assertDev } from '../util/assert.std.js';
-import { themeClassName } from '../util/theme.std.js';
+import type { Theme } from '../util/theme.std.ts';
+import { assertDev } from '../util/assert.std.ts';
+import { themeClassName } from '../util/theme.std.ts';
 
 export enum ButtonSize {
   Large,
@@ -23,7 +23,6 @@ export enum ButtonSize {
 export enum ButtonVariant {
   Calling = 'Calling',
   Destructive = 'Destructive',
-  Details = 'Details',
   Primary = 'Primary',
   Secondary = 'Secondary',
   SecondaryAffirmative = 'SecondaryAffirmative',
@@ -31,20 +30,10 @@ export enum ButtonVariant {
   SystemMessage = 'SystemMessage',
 }
 
-export enum ButtonIconType {
-  audio = 'audio',
-  message = 'message',
-  muted = 'muted',
-  search = 'search',
-  unmuted = 'unmuted',
-  video = 'video',
-}
-
 export type PropsType = {
   className?: string;
   disabled?: boolean;
   discouraged?: boolean;
-  icon?: ButtonIconType;
   size?: ButtonSize;
   style?: CSSProperties;
   tabIndex?: number;
@@ -98,25 +87,21 @@ const VARIANT_CLASS_NAMES = new Map<ButtonVariant, string>([
   [ButtonVariant.Destructive, 'module-Button--destructive'],
   [ButtonVariant.Calling, 'module-Button--calling'],
   [ButtonVariant.SystemMessage, 'module-Button--system-message'],
-  [ButtonVariant.Details, 'module-Button--details'],
 ]);
 
-export const Button = React.forwardRef<HTMLButtonElement, PropsType>(
+export const Button = forwardRef<HTMLButtonElement, PropsType>(
   function ButtonInner(props, ref) {
     const {
       children,
       className,
       disabled = false,
       discouraged = false,
-      icon,
       style,
       tabIndex,
       testId,
       theme,
       variant = ButtonVariant.Primary,
-      size = variant === ButtonVariant.Details
-        ? ButtonSize.Small
-        : ButtonSize.Medium,
+      size = ButtonSize.Medium,
     } = props;
     const ariaLabel = props['aria-label'];
     const ariaDisabled = props['aria-disabled'];
@@ -148,7 +133,6 @@ export const Button = React.forwardRef<HTMLButtonElement, PropsType>(
           sizeClassName,
           variantClassName,
           discouraged ? `${variantClassName}--discouraged` : undefined,
-          icon && `module-Button--icon--${icon}`,
           className,
           className && discouraged ? `${className}--discouraged` : undefined
         )}
@@ -160,7 +144,7 @@ export const Button = React.forwardRef<HTMLButtonElement, PropsType>(
         style={style}
         tabIndex={tabIndex}
         // The `type` should either be "button" or "submit", which is effectively static.
-        // eslint-disable-next-line react/button-has-type
+        // oxlint-disable-next-line react/button-has-type
         type={type}
       >
         {children}

@@ -1,12 +1,12 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import { AxoDialog } from '../axo/AxoDialog.dom.js';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { tw } from '../axo/tw.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type PropsType = {
   canAddLabel: boolean;
@@ -40,9 +40,9 @@ export function GroupMemberLabelInfoModal(props: PropsType): JSX.Element {
             />
             <img
               src="images/tag_dark.svg"
-              className={tw('mx-auto hidden dark:inline')}
+              className={tw('mx-auto hidden dark:block')}
               height="32"
-              width="110"
+              width="32"
               alt=""
             />
           </div>
@@ -52,7 +52,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): JSX.Element {
             </div>
           </AxoDialog.Title>
           <AxoDialog.Description>
-            <div className={tw('mb-1.5 type-body-medium text-label-secondary')}>
+            <div className={tw('mb-1.5 type-body-medium text-secondary')}>
               {i18n('icu:GroupMemberLabelInfoModal--description')}
             </div>
           </AxoDialog.Description>
@@ -60,8 +60,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): JSX.Element {
         <AxoDialog.Footer>
           {isEditMemberLabelEnabled && canAddLabel && (
             <AxoDialog.Action
-              variant="secondary"
-              arrow={false}
+              variant="strong-secondary"
               onClick={() => {
                 showEditMemberLabelScreen();
                 onClose();
@@ -73,8 +72,7 @@ export function GroupMemberLabelInfoModal(props: PropsType): JSX.Element {
             </AxoDialog.Action>
           )}
           <AxoDialog.Action
-            variant="primary"
-            arrow={false}
+            variant="strong-primary"
             onClick={() => {
               onClose();
             }}

@@ -1,14 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { MouseEvent } from 'react';
-import React, { useEffect, useState } from 'react';
+import type { MouseEvent, JSX } from 'react';
+import { useEffect, useState } from 'react';
 import lodash from 'lodash';
-import type { AvatarDataType } from '../types/Avatar.std.js';
-import { BetterAvatarBubble } from './BetterAvatarBubble.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Spinner } from './Spinner.dom.js';
-import { avatarDataToBytes } from '../util/avatarDataToBytes.dom.js';
+import type { AvatarDataType } from '../types/Avatar.std.ts';
+import { BetterAvatarBubble } from './BetterAvatarBubble.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Spinner } from './Spinner.dom.tsx';
+import { avatarDataToBytes } from '../util/avatarDataToBytes.dom.ts';
 
 const { noop } = lodash;
 
@@ -18,7 +18,7 @@ export type PropsType = {
   avatarData: AvatarDataType;
   i18n: LocalizerType;
   isSelected?: boolean;
-  onClick: (avatarBuffer: Uint8Array | undefined) => unknown;
+  onClick: (avatarBuffer: Uint8Array<ArrayBuffer> | undefined) => unknown;
   onDelete: () => unknown;
   size?: AvatarSize;
 };
@@ -30,10 +30,10 @@ export function BetterAvatar({
   onClick,
   onDelete,
   size = 48,
-}: PropsType): React.JSX.Element {
-  const [avatarBuffer, setAvatarBuffer] = useState<Uint8Array | undefined>(
-    avatarData.buffer
-  );
+}: PropsType): JSX.Element {
+  const [avatarBuffer, setAvatarBuffer] = useState<
+    Uint8Array<ArrayBuffer> | undefined
+  >(avatarData.buffer);
   const [avatarURL, setAvatarURL] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -64,6 +64,7 @@ export function BetterAvatar({
     if (avatarBuffer) {
       const url = URL.createObjectURL(new Blob([avatarBuffer]));
 
+      // oxlint-disable-next-line react/set-state-in-effect
       setAvatarURL(url);
     }
   }, [avatarBuffer]);

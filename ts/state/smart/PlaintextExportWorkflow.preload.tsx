@@ -1,19 +1,19 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { useSelector } from 'react-redux';
 
-import { createLogger } from '../../logging/log.std.js';
-import { getIntl, getUser } from '../selectors/user.std.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { getIntl, getUser } from '../selectors/user.std.ts';
 import {
   getBackups,
   getPlaintextWorkflow,
   shouldShowPlaintextWorkflow,
-} from '../selectors/backups.std.js';
-import { useBackupActions } from '../ducks/backups.preload.js';
-import { PlaintextExportWorkflow } from '../../components/PlaintextExportWorkflow.dom.js';
-import { useToastActions } from '../ducks/toast.preload.js';
+} from '../selectors/backups.std.ts';
+import { useBackupActions } from '../ducks/backups.preload.ts';
+import { PlaintextExportWorkflow } from '../../components/PlaintextExportWorkflow.dom.tsx';
+import { useToastActions } from '../ducks/toast.preload.ts';
 
 const log = createLogger('smart/PlaintextExportWorkflow');
 

@@ -1,19 +1,20 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, {
+import {
   Fragment,
   useEffect,
   useRef,
   useCallback,
   useState,
   useMemo,
+  type JSX,
 } from 'react';
 
 import moment from 'moment';
 
-import type { ItemClickEvent } from './types/ItemClickEvent.std.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
+import type { ItemClickEvent } from './types/ItemClickEvent.std.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
 import type {
   MediaTabType,
   MediaSortOrderType,
@@ -21,20 +22,20 @@ import type {
   ContactMediaItemType,
   MediaItemType,
   GenericMediaItemType,
-} from '../../../types/MediaItem.std.js';
+} from '../../../types/MediaItem.std.ts';
 import type {
   SaveAttachmentActionCreatorType,
   PushPanelForConversationActionType,
-} from '../../../state/ducks/conversations.preload.js';
-import { AttachmentSection } from './AttachmentSection.dom.js';
-import { EmptyState } from './EmptyState.dom.js';
-import { groupMediaItemsByDate } from './groupMediaItemsByDate.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.js';
-import { useIntersectionObserver } from '../../../hooks/useIntersectionObserver.std.js';
-import type { AttachmentForUIType } from '../../../types/Attachment.std.js';
-import { PanelType } from '../../../types/Panels.std.js';
-import { tw } from '../../../axo/tw.dom.js';
+} from '../../../state/ducks/conversations.preload.ts';
+import { AttachmentSection } from './AttachmentSection.dom.tsx';
+import { EmptyState } from './EmptyState.dom.tsx';
+import { groupMediaItemsByDate } from './groupMediaItemsByDate.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { openLinkInWebBrowser } from '../../../util/openLinkInWebBrowser.dom.ts';
+import { useIntersectionObserver } from '../../../hooks/useIntersectionObserver.std.ts';
+import type { AttachmentForUIType } from '../../../types/Attachment.std.ts';
+import { PanelType } from '../../../types/Panels.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
 
 export type Props = {
   conversationId: string;
@@ -65,7 +66,7 @@ export type Props = {
   renderMediaItem: (props: {
     onItemClick: (event: ItemClickEvent) => unknown;
     mediaItem: GenericMediaItemType;
-  }) => React.JSX.Element;
+  }) => JSX.Element;
 };
 
 const MONTH_FORMAT = 'MMMM YYYY';
@@ -98,7 +99,7 @@ function MediaSection({
   tab: MediaTabType;
   sortOrder: MediaSortOrderType;
   mediaItems: ReadonlyArray<GenericMediaItemType>;
-}): React.JSX.Element {
+}): JSX.Element {
   const onItemClick = useCallback(
     (event: ItemClickEvent) => {
       const { state, mediaItem } = event;
@@ -159,6 +160,7 @@ function MediaSection({
     return <EmptyState i18n={i18n} tab={tab} />;
   }
 
+  // oxlint-disable-next-line react/purity
   const now = Date.now();
   const groupedItems = groupMediaItemsByDate(now, mediaItems);
 
@@ -180,7 +182,8 @@ function MediaSection({
 
   const sections = groupedItems.map((section, index) => {
     const isLast = index === groupedItems.length - 1;
-    const first = section.mediaItems[0];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const first = section.mediaItems[0]!;
     const { message } = first;
     const date = moment(message.receivedAtMs || message.receivedAt);
 
@@ -212,9 +215,7 @@ function MediaSection({
           renderMediaItem={renderMediaItem}
         />
         {!isGrid && !isLast && (
-          <hr
-            className={tw('mx-4 my-3 border-[0.5px] border-border-primary')}
-          />
+          <hr className={tw('mx-4 my-3 border-[0.5px] border-primary')} />
         )}
       </Fragment>
     );
@@ -250,13 +251,14 @@ export function MediaGallery({
   playAudio,
   showLightbox,
   renderMediaItem,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const focusRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(reduxLoading);
 
   // Reset local state when redux finishes loading
   useEffect(() => {
-    if (reduxLoading === false) {
+    if (!reduxLoading) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setLoading(false);
     }
   }, [reduxLoading]);
@@ -290,6 +292,7 @@ export function MediaGallery({
     audio.length,
     links.length,
     documents.length,
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
     sortOrder,
   ]);
 
@@ -326,6 +329,7 @@ export function MediaGallery({
     } else {
       throw missingCaseError(tab);
     }
+    // oxlint-disable-next-line react/set-state-in-effect
     setLoading(true);
   }, [
     observerEntry,

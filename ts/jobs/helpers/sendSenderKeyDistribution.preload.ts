@@ -1,26 +1,26 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.js';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
+} from './handleMultipleSendErrors.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   SenderKeyDistributionJobData,
-} from '../conversationJobQueue.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
+} from '../conversationJobQueue.preload.ts';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
 import {
   NoSenderKeyError,
   OutgoingIdentityKeyError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import { shouldSendToConversation } from './shouldSendToConversation.preload.js';
+} from '../../textsecure/Errors.std.ts';
+import { shouldSendToConversation } from './shouldSendToConversation.preload.ts';
 
 // Note: in regular scenarios, sender keys are sent as part of a group send. This job type
 //   is only used in decryption error recovery scenarios.
@@ -54,7 +54,7 @@ export async function sendSenderKeyDistribution(
     return;
   }
 
-  if (!shouldSendToConversation(conversation, log)) {
+  if (!shouldSendToConversation(conversation, { log })) {
     return;
   }
 
@@ -65,7 +65,6 @@ export async function sendSenderKeyDistribution(
     return;
   }
 
-  const sendOptions = await getSendOptions(conversation.attributes);
   const { groupId } = data;
   const group = window.ConversationController.get(groupId);
   const distributionId = group?.get('senderKeyInfo')?.distributionId;
@@ -86,19 +85,24 @@ export async function sendSenderKeyDistribution(
   }
 
   try {
-    await handleMessageSend(
-      messaging.sendSenderKeyDistributionMessage(
-        {
-          distributionId,
-          groupId,
-          serviceIds: [serviceId],
-          throwIfNotInDatabase: true,
-          urgent: false,
-        },
-        sendOptions
-      ),
-      { messageIds: [], sendType: 'senderKeyDistributionMessage' }
-    );
+    await conversation.queueJob('sendSenderKeyDistribution', async () => {
+      const sendOptions = await getSendOptions(conversation.attributes, {
+        groupId,
+      });
+      await handleMessageSend(
+        messaging.sendSenderKeyDistributionMessage(
+          {
+            distributionId,
+            groupId,
+            serviceIds: [serviceId],
+            throwIfNotInDatabase: true,
+            urgent: false,
+          },
+          sendOptions
+        ),
+        { messageIds: [], sendType: 'senderKeyDistributionMessage' }
+      );
+    });
   } catch (error: unknown) {
     if (
       error instanceof NoSenderKeyError ||

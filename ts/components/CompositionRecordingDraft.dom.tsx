@@ -1,15 +1,15 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useCallback, useRef } from 'react';
-import { useComputePeaks } from '../hooks/useComputePeaks.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { WaveformScrubber } from './conversation/WaveformScrubber.dom.js';
-import { PlaybackButton } from './PlaybackButton.dom.js';
-import { RecordingComposer } from './RecordingComposer.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import type { Size } from '../hooks/useSizeObserver.dom.js';
-import { SizeObserver } from '../hooks/useSizeObserver.dom.js';
+import { useState, useCallback, useRef, type JSX } from 'react';
+import { useComputePeaks } from '../hooks/useComputePeaks.dom.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { WaveformScrubber } from './conversation/WaveformScrubber.dom.tsx';
+import { PlaybackButton } from './PlaybackButton.dom.tsx';
+import { RecordingComposer } from './RecordingComposer.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
+import type { Size } from '../hooks/useSizeObserver.dom.tsx';
+import { SizeObserver } from '../hooks/useSizeObserver.dom.tsx';
 
 const log = createLogger('CompositionRecordingDraft');
 
@@ -39,16 +39,19 @@ export function CompositionRecordingDraft({
   onPlay,
   onPause,
   onScrub,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const [state, setState] = useState<{
     calculatingWidth: boolean;
     width: undefined | number;
   }>({ calculatingWidth: false, width: undefined });
 
-  const timeout = useRef<undefined | NodeJS.Timeout>(undefined);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleResize = useCallback(
     (size: Size) => {
+      if (size.hidden) {
+        return;
+      }
       if (size.width === state.width) {
         return;
       }
@@ -57,8 +60,9 @@ export function CompositionRecordingDraft({
         setState({ ...state, calculatingWidth: true });
       }
 
-      if (timeout.current) {
-        clearTimeout(timeout.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
 
       const newWidth = size.width;
@@ -68,7 +72,8 @@ export function CompositionRecordingDraft({
       if (state.width === undefined) {
         setState({ calculatingWidth: false, width: newWidth });
       } else {
-        timeout.current = setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
+          timeoutRef.current = null;
           setState({ calculatingWidth: false, width: newWidth });
         }, 500);
       }

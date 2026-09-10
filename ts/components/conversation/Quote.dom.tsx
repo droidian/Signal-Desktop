@@ -1,38 +1,39 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import lodash from 'lodash';
 import classNames from 'classnames';
 
-import type { ReactNode } from 'react';
+import type { ReactNode, JSX, KeyboardEvent, MouseEvent } from 'react';
 
-import * as MIME from '../../types/MIME.std.js';
-import * as GoogleChrome from '../../util/GoogleChrome.std.js';
-import { MessageBody } from './MessageBody.dom.js';
-import { ContactName, GroupMemberLabel } from './ContactName.dom.js';
-import { Emojify } from './Emojify.dom.js';
-import { TextAttachment } from '../TextAttachment.dom.js';
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
-import { getCustomColorStyle } from '../../util/getCustomColorStyle.dom.js';
-import { PaymentEventKind } from '../../types/Payment.std.js';
-import { getPaymentEventNotificationText } from '../../messages/payments.std.js';
-import { shouldTryToCopyFromQuotedMessage } from '../../messages/helpers.std.js';
-import { RenderLocation } from './MessageTextRenderer.dom.js';
+import * as MIME from '../../types/MIME.std.ts';
+import * as GoogleChrome from '../../util/GoogleChrome.std.ts';
+import { MessageBody } from './MessageBody.dom.tsx';
+import { ContactName, GroupMemberLabel } from './ContactName.dom.tsx';
+import { Emojify } from './Emojify.dom.tsx';
+import { TextAttachment } from '../TextAttachment.dom.tsx';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
+import { getCustomColorStyle } from '../../util/getCustomColorStyle.dom.ts';
+import { PaymentEventKind } from '../../types/Payment.std.ts';
+import { getPaymentEventNotificationText } from '../../messages/payments.std.ts';
+import { shouldTryToCopyFromQuotedMessage } from '../../messages/helpers.std.ts';
+import { RenderLocation } from './MessageTextRenderer.dom.tsx';
 
 import type {
   AttachmentType,
   ThumbnailType,
-} from '../../types/Attachment.std.js';
-import type { HydratedBodyRangesType } from '../../types/BodyRange.std.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+} from '../../types/Attachment.std.ts';
+import type { HydratedBodyRangesType } from '../../types/BodyRange.std.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   ConversationColorType,
   CustomColorType,
-} from '../../types/Colors.std.js';
-import type { AnyPaymentEvent } from '../../types/Payment.std.js';
+} from '../../types/Colors.std.ts';
+import type { AnyPaymentEvent } from '../../types/Payment.std.ts';
 import type { QuotedAttachmentType } from '../../model-types.d.ts';
-import type { MemberLabelType } from '../../types/GroupMemberLabels.std.js';
+import type { MemberLabelType } from '../../types/GroupMemberLabels.std.ts';
+import type { Emoji } from '../../axo/emoji.std.ts';
 
 const { noop } = lodash;
 
@@ -64,7 +65,7 @@ export type Props = {
   payment?: AnyPaymentEvent;
   isGiftBadge: boolean;
   isViewOnce: boolean;
-  reactionEmoji?: string;
+  reactionEmoji?: Emoji.Variant;
   referencedMessageNotFound: boolean;
   doubleCheckMissingQuoteReference?: () => unknown;
 };
@@ -151,7 +152,7 @@ function getTypeLabel({
   return MIME.isAudio(contentType) ? i18n('icu:audio') : undefined;
 }
 
-export function Quote(props: Props): React.JSX.Element | null {
+export function Quote(props: Props): JSX.Element | null {
   const {
     conversationColor,
     customColor,
@@ -195,7 +196,7 @@ export function Quote(props: Props): React.JSX.Element | null {
     doubleCheckMissingQuoteReference,
   ]);
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     // This is important to ensure that using this quote to navigate to the referenced
     //   message doesn't also trigger its parent message's keydown.
     if (onClick && (event.key === 'Enter' || event.key === ' ')) {
@@ -205,7 +206,7 @@ export function Quote(props: Props): React.JSX.Element | null {
     }
   }
 
-  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+  function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (onClick) {
       event.preventDefault();
       event.stopPropagation();
@@ -224,7 +225,7 @@ export function Quote(props: Props): React.JSX.Element | null {
     url: string,
     icon: string | undefined,
     asGiftBadge?: boolean
-  ): React.JSX.Element {
+  ): JSX.Element {
     const iconElement = icon ? (
       <div className={getClassName('__icon-container__inner')}>
         <div className={getClassName('__icon-container__circle-background')}>
@@ -433,13 +434,13 @@ export function Quote(props: Props): React.JSX.Element | null {
       return null;
     }
 
-    const clickHandler = (e: React.MouseEvent): void => {
+    const clickHandler = (e: MouseEvent): void => {
       e.stopPropagation();
       e.preventDefault();
 
       onClose();
     };
-    const keyDownHandler = (e: React.KeyboardEvent): void => {
+    const keyDownHandler = (e: KeyboardEvent): void => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.stopPropagation();
         e.preventDefault();
@@ -477,7 +478,7 @@ export function Quote(props: Props): React.JSX.Element | null {
     ) : (
       <>
         {title}
-        {authorLabel && !isFromMe ? (
+        {authorLabel ? (
           <>
             {' '}
             <GroupMemberLabel context="quote" contactLabel={authorLabel} />
@@ -491,8 +492,7 @@ export function Quote(props: Props): React.JSX.Element | null {
         dir="auto"
         className={classNames(
           getClassName('__primary__author'),
-          isIncoming ? getClassName('__primary__author--incoming') : null,
-          authorLabel ? getClassName('__primary__author--with-label') : null
+          isIncoming ? getClassName('__primary__author--incoming') : null
         )}
       >
         {author}
@@ -617,7 +617,7 @@ function ThumbnailImage({
   src: string;
   onError: () => void;
   children: ReactNode;
-}>): React.JSX.Element {
+}>): JSX.Element {
   const imageRef = useRef(new Image());
   const [loadedSrc, setLoadedSrc] = useState<null | string>(null);
 
@@ -634,8 +634,12 @@ function ThumbnailImage({
   }, [src]);
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
     setLoadedSrc(null);
-  }, [src]);
+  }, [
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+    src,
+  ]);
 
   useEffect(() => {
     const image = imageRef.current;

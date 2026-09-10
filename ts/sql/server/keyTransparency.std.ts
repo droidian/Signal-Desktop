@@ -1,8 +1,8 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { AciString } from '../../types/ServiceId.std.js';
-import type { ReadableDB, WritableDB } from '../Interface.std.js';
-import { sql } from '../util.std.js';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import type { ReadableDB, WritableDB } from '../Interface.std.ts';
+import { sql } from '../util.std.ts';
 
 export function getAllKTAcis(db: ReadableDB): Array<AciString> {
   const [query, params] = sql`
@@ -15,19 +15,21 @@ export function getAllKTAcis(db: ReadableDB): Array<AciString> {
 export function getKTAccountData(
   db: ReadableDB,
   aci: AciString
-): Uint8Array | undefined {
+): Uint8Array<ArrayBuffer> | undefined {
   const [query, params] = sql`
     SELECT data
     FROM key_transparency_account_data
     WHERE aci IS ${aci}
   `;
-  return db.prepare(query, { pluck: true }).get<Uint8Array>(params);
+  return db
+    .prepare(query, { pluck: true })
+    .get<Uint8Array<ArrayBuffer>>(params);
 }
 
 export function setKTAccountData(
   db: WritableDB,
   aci: AciString,
-  data: Uint8Array
+  data: Uint8Array<ArrayBuffer>
 ): void {
   const [query, params] = sql`
     INSERT OR REPLACE INTO key_transparency_account_data

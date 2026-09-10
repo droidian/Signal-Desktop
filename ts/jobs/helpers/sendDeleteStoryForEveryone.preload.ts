@@ -3,35 +3,36 @@
 
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import * as Errors from '../../types/errors.std.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
+import * as Errors from '../../types/errors.std.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
 import {
   isDirectConversation,
   isMe,
-} from '../../util/whatTypeOfConversation.dom.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
+} from './handleMultipleSendErrors.std.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   DeleteStoryForEveryoneJobData,
-} from '../conversationJobQueue.preload.js';
-import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { isConversationAccepted } from '../../util/isConversationAccepted.preload.js';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import { isNotNil } from '../../util/isNotNil.std.js';
+} from '../conversationJobQueue.preload.ts';
+import { getUntrustedConversationServiceIds } from './getUntrustedConversationServiceIds.dom.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import { isNotNil } from '../../util/isNotNil.std.ts';
 import type { CallbackResultType } from '../../textsecure/Types.d.ts';
-import type { MessageModel } from '../../models/messages.preload.js';
-import { SendMessageProtoError } from '../../textsecure/Errors.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { isStory } from '../../messages/helpers.std.js';
+import type { MessageModel } from '../../models/messages.preload.ts';
+import { SendMessageProtoError } from '../../textsecure/Errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import { normalizeStoryDistributionId } from '../../types/StoryDistributionId.std.ts';
+import { isStory } from '../../messages/helpers.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
 
 export async function sendDeleteStoryForEveryone(
   ourConversation: ConversationModel,
@@ -109,40 +110,10 @@ export async function sendDeleteStoryForEveryone(
         return undefined;
       }
 
-      if (!isConversationAccepted(conversation.attributes)) {
-        log.info(
-          `${logId}: conversation ${conversation.idForLogging()} ` +
-            'is not accepted; refusing to send'
-        );
-        void updateMessageWithFailure(
-          message,
-          [new Error('Message request was not accepted')],
-          log
-        );
-        return undefined;
-      }
-      if (isConversationUnregistered(conversation.attributes)) {
-        log.info(
-          `${logId}: conversation ${conversation.idForLogging()} ` +
-            'is unregistered; refusing to send'
-        );
-        void updateMessageWithFailure(
-          message,
-          [new Error('Contact no longer has a Signal account')],
-          log
-        );
-        return undefined;
-      }
-      if (conversation.isBlocked()) {
-        log.info(
-          `${logId}: conversation ${conversation.idForLogging()} ` +
-            'is blocked; refusing to send'
-        );
-        void updateMessageWithFailure(
-          message,
-          [new Error('Contact is blocked')],
-          log
-        );
+      const [ok, refusal] = shouldSendToDirectConversation(conversation);
+      if (!ok) {
+        log.info(`${logId}: ${refusal.logLine}`);
+        void updateMessageWithFailure(message, [refusal.error], log);
         return undefined;
       }
 
@@ -177,11 +148,17 @@ export async function sendDeleteStoryForEveryone(
             const serviceId = conversation.getSendTarget();
             strictAssert(serviceId, 'conversation has no service id');
 
+            const ourAci = itemStorage.user.getCheckedAci();
+
             await handleMessageSend(
               messaging.sendMessageToServiceId({
                 serviceId,
                 messageOptions: {
-                  deletedForEveryoneTimestamp: targetTimestamp,
+                  deleteForEveryone: {
+                    isAdminDelete: false,
+                    targetSentTimestamp: targetTimestamp,
+                    targetAuthorAci: ourAci,
+                  },
                   timestamp,
                   profileKey: conversation.get('profileSharing')
                     ? profileKey
@@ -226,11 +203,18 @@ export async function sendDeleteStoryForEveryone(
     })
   );
 
+  if (!window.ConversationController.doWeHaveOtherDevices()) {
+    log.info(`${logId}: We have no other devices; not sending sync`);
+    return;
+  }
+
   // Send sync message exactly once per job. If any of the sends are successful
   // and we didn't send the DOE itself before - it is a good time to send the
   // sync message.
   if (!hadSuccessfulSends && didSuccessfullySendOne) {
     log.info(`${logId}: Sending sync message`);
+
+    // Okay to call outside of queue, since it's for our own conversation
     const options = await getSendOptions(ourConversation.attributes, {
       syncMessage: true,
     });
@@ -245,10 +229,21 @@ export async function sendDeleteStoryForEveryone(
         destinationE164: undefined,
         destinationServiceId,
         storyMessageRecipients: updatedStoryRecipients?.map(
-          ({ destinationServiceId: legacyDestinationUuid, ...rest }) => {
+          ({
+            destinationServiceId: legacyDestinationUuid,
+            distributionListIds,
+            ...rest
+          }) => {
             return {
               // The field was renamed.
               legacyDestinationUuid,
+              distributionListIds: distributionListIds?.map(id => {
+                return normalizeStoryDistributionId(
+                  id,
+                  'sendDeleteStoryForEveryone',
+                  log
+                );
+              }),
               ...rest,
             };
           }
@@ -267,7 +262,7 @@ export async function sendDeleteStoryForEveryone(
 function doesMessageHaveSuccessfulSends(message: MessageModel): boolean {
   const map = message.get('deletedForEveryoneSendStatus') ?? {};
 
-  return Object.values(map).some(value => value === true);
+  return Object.values(map).includes(true);
 }
 
 async function updateMessageWithSuccessfulSends(

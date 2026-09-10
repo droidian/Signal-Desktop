@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import { getEnvironment, isTestEnvironment } from '../../environment.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import * as Errors from '../../types/errors.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { longTimeoutAsync } from '../../util/timeout.std.js';
+import { getEnvironment, isTestEnvironment } from '../../environment.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { longTimeoutAsync } from '../../util/timeout.std.ts';
 
 const parentLog = createLogger('ExpiringEntityCleanupService');
 
@@ -157,7 +157,7 @@ export function createExpiringEntityCleanupService(
       log.info('scheduled timer fired, running');
     } catch (error: unknown) {
       log.warn(
-        'scheduled timer was cancelled, not running',
+        'scheduled timer was canceled, not running',
         Errors.toLogFormat(error)
       );
       return true;
@@ -172,7 +172,7 @@ export function createExpiringEntityCleanupService(
   async function scheduleRunsUntilDrained() {
     let shouldStop = false;
     while (!shouldStop) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       shouldStop = await scheduleNextRun();
     }
   }

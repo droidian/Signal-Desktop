@@ -1,33 +1,31 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { LocalizerType } from '../types/I18N.std.js';
-import type { NavTabPanelProps } from './NavTabs.dom.js';
-import { WhatsNewLink } from './WhatsNewLink.dom.js';
-import type { UnreadStats } from '../util/countUnreadStats.std.js';
-import type { SmartConversationViewProps } from '../state/smart/ConversationView.preload.js';
-import { tw } from '../axo/tw.dom.js';
+import type { JSX } from 'react';
+
+import type { LocalizerType } from '../types/I18N.std.ts';
+import type { NavTabPanelProps } from './NavTabs.dom.tsx';
+import { WhatsNewLink } from './WhatsNewLink.dom.tsx';
+import type { SmartConversationViewProps } from '../state/smart/ConversationView.preload.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type ChatsTabProps = Readonly<{
-  otherTabsUnreadStats: UnreadStats;
+  otherTabsUnreadCount: number;
   i18n: LocalizerType;
   isStaging: boolean;
   hasPendingUpdate: boolean;
   hasFailedStorySends: boolean;
   navTabsCollapsed: boolean;
   onToggleNavTabsCollapse: (navTabsCollapsed: boolean) => void;
-  renderConversationView: (
-    props: SmartConversationViewProps
-  ) => React.JSX.Element;
-  renderLeftPane: (props: NavTabPanelProps) => React.JSX.Element;
-  renderMiniPlayer: (options: { shouldFlow: boolean }) => React.JSX.Element;
+  renderConversationView: (props: SmartConversationViewProps) => JSX.Element;
+  renderLeftPane: (props: NavTabPanelProps) => JSX.Element;
+  renderMiniPlayer: (options: { shouldFlow: boolean }) => JSX.Element;
   selectedConversationId: string | undefined;
   showWhatsNewModal: () => unknown;
 }>;
 
 export function ChatsTab({
-  otherTabsUnreadStats,
+  otherTabsUnreadCount,
   i18n,
   isStaging,
   hasPendingUpdate,
@@ -39,12 +37,12 @@ export function ChatsTab({
   renderMiniPlayer,
   selectedConversationId,
   showWhatsNewModal,
-}: ChatsTabProps): React.JSX.Element {
+}: ChatsTabProps): JSX.Element {
   return (
     <>
       <div id="LeftPane">
         {renderLeftPane({
-          otherTabsUnreadStats,
+          otherTabsUnreadCount,
           collapsed: navTabsCollapsed,
           hasPendingUpdate,
           hasFailedStorySends,
@@ -75,7 +73,7 @@ export function ChatsTab({
               <WhatsNewLink i18n={i18n} showWhatsNewModal={showWhatsNewModal} />
             </p>
             <div className="Inbox__padding" />
-            <div className={tw('absolute bottom-0 p-5 text-label-secondary')}>
+            <div className={tw('absolute bottom-0 p-5 text-secondary')}>
               {i18n('icu:signalNonProfit')}
             </div>
           </div>

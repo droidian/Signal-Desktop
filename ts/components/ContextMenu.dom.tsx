@@ -1,19 +1,22 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode, MouseEvent, Ref, JSX } from 'react';
 import type { Options, VirtualElement } from '@popperjs/core';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 import { usePopper } from 'react-popper';
 import lodash from 'lodash';
 
-import type { Theme } from '../util/theme.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
-import { themeClassName } from '../util/theme.std.js';
-import { handleOutsideClick } from '../util/handleOutsideClick.dom.js';
+import type { Theme } from '../util/theme.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
+import { themeClassName } from '../util/theme.std.ts';
+import { handleOutsideClick } from '../util/handleOutsideClick.dom.ts';
+import { AxoDragRegion } from '../axo/AxoDragRegion.dom.tsx';
+
+const { useDisableDragRegions } = AxoDragRegion;
 
 const { noop } = lodash;
 
@@ -27,22 +30,22 @@ export type ContextMenuOptionType<T> = Readonly<{
 }>;
 
 type RenderButtonProps = Readonly<{
-  onClick: (ev: React.MouseEvent) => void;
+  onClick: (ev: MouseEvent) => void;
   onKeyDown: (ev: KeyboardEvent) => void;
   isMenuShowing: boolean;
-  ref: React.Ref<HTMLButtonElement> | null;
+  ref: Ref<HTMLButtonElement> | null;
   menuNode: ReactNode;
 }>;
 
 export type PropsType<T> = Readonly<{
   ariaLabel?: string;
   // contents of the button OR a function that will render the whole button
-  children?: ReactNode | ((props: RenderButtonProps) => React.JSX.Element);
+  children?: ReactNode | ((props: RenderButtonProps) => JSX.Element);
   i18n: LocalizerType;
   menuOptions: ReadonlyArray<ContextMenuOptionType<T>>;
   moduleClassName?: string;
-  button?: () => React.JSX.Element;
-  onClick?: (ev: React.MouseEvent) => unknown;
+  button?: () => JSX.Element;
+  onClick?: (ev: MouseEvent) => unknown;
   onMenuShowingChanged?: (value: boolean) => unknown;
   popperOptions?: Pick<Options, 'placement' | 'strategy'>;
   portalToRoot?: boolean;
@@ -75,7 +78,7 @@ export function ContextMenu<T>({
   theme,
   title,
   value,
-}: PropsType<T>): React.JSX.Element {
+}: PropsType<T>): JSX.Element {
   const [isMenuShowing, setIsMenuShowing] = useState<boolean>(false);
   const [focusedIndex, setFocusedIndex] = useState<number | undefined>(
     undefined
@@ -90,6 +93,7 @@ export function ContextMenu<T>({
     useState<HTMLButtonElement | null>(null);
 
   const { styles, attributes } = usePopper(
+    // oxlint-disable-next-line react/refs
     virtualElement.current,
     popperElement,
     {
@@ -99,21 +103,7 @@ export function ContextMenu<T>({
     }
   );
 
-  // In Electron v23+, new elements added to the DOM may not trigger a recalculation of
-  // draggable regions, so if a ContextMenu is shown on top of a draggable region, its
-  // buttons may be unclickable. We add a class so that we can disable those draggable
-  // regions while the context menu is shown. It has the added benefit of ensuring that
-  // click events outside of the context menu onto an otherwise draggable region are
-  // propagated and trigger the menu to close.
-  useEffect(() => {
-    document.body.classList.toggle('context-menu-open', isMenuShowing);
-  }, [isMenuShowing]);
-
-  useEffect(() => {
-    // Remove it on unmount in case the component is unmounted when the menu is open
-    return () => document.body.classList.remove('context-menu-open');
-  }, []);
-
+  useDisableDragRegions(isMenuShowing);
   useEffect(() => {
     if (onMenuShowingChanged) {
       onMenuShowingChanged(isMenuShowing);
@@ -138,7 +128,7 @@ export function ContextMenu<T>({
     );
   }, [isMenuShowing, referenceElement, popperElement]);
 
-  const [portalNode, setPortalNode] = React.useState<HTMLElement | null>(null);
+  const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
   useEffect(() => {
     if (!portalToRoot || !isMenuShowing) {
       return noop;
@@ -146,6 +136,7 @@ export function ContextMenu<T>({
 
     const div = document.createElement('div');
     document.body.appendChild(div);
+    // oxlint-disable-next-line react/set-state-in-effect
     setPortalNode(div);
 
     return () => {
@@ -156,6 +147,7 @@ export function ContextMenu<T>({
   const handleKeyDown = (ev: KeyboardEvent) => {
     if ((ev.key === 'Enter' || ev.key === 'Space') && !isMenuShowing) {
       closeCurrentOpenContextMenu?.();
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = () => setIsMenuShowing(false);
       if (referenceElement) {
         const box = referenceElement.getBoundingClientRect();
@@ -191,10 +183,12 @@ export function ContextMenu<T>({
 
     if (ev.key === 'Enter') {
       if (focusedIndex !== undefined) {
-        const focusedOption = menuOptions[focusedIndex];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const focusedOption = menuOptions[focusedIndex]!;
         focusedOption.onClick(focusedOption.value);
       }
       setIsMenuShowing(false);
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = undefined;
       ev.stopPropagation();
       ev.preventDefault();
@@ -202,18 +196,21 @@ export function ContextMenu<T>({
 
     if (ev.key === 'Escape') {
       setIsMenuShowing(false);
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = undefined;
       ev.stopPropagation();
       ev.preventDefault();
     }
   };
 
-  const handleClick = (ev: React.MouseEvent) => {
+  const handleClick = (ev: MouseEvent) => {
     if (isMenuShowing && ev.type !== 'contextmenu') {
       setIsMenuShowing(false);
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = undefined;
     } else {
       closeCurrentOpenContextMenu?.();
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = () => setIsMenuShowing(false);
       virtualElement.current = generateVirtualElement(ev.clientX, ev.clientY);
       setIsMenuShowing(true);
@@ -224,7 +221,7 @@ export function ContextMenu<T>({
 
   const getClassName = getClassNamesFor('ContextMenu', moduleClassName);
 
-  const optionElements = new Array<React.JSX.Element>();
+  const optionElements = new Array<JSX.Element>();
   const isAnyOptionSelected = typeof value !== 'undefined';
 
   for (const [index, option] of menuOptions.entries()) {
@@ -241,14 +238,15 @@ export function ContextMenu<T>({
       );
     }
 
-    // eslint-disable-next-line no-loop-func
-    const onElementClick = (ev: React.MouseEvent): void => {
+    // oxlint-disable-next-line no-loop-func
+    const onElementClick = (ev: MouseEvent): void => {
       ev.preventDefault();
       ev.stopPropagation();
 
       option.onClick(option.value);
       setIsMenuShowing(false);
 
+      // oxlint-disable-next-line react/globals
       closeCurrentOpenContextMenu = undefined;
     };
 
@@ -317,12 +315,13 @@ export function ContextMenu<T>({
     </div>
   ) : undefined;
 
-  let buttonNode: React.JSX.Element;
+  let buttonNode: JSX.Element;
 
   if (typeof children === 'function') {
     buttonNode = (
       <>
-        {(children as (props: RenderButtonProps) => React.JSX.Element)({
+        {/* oxlint-disable-next-line react/refs */}
+        {children({
           onClick: onClick || handleClick,
           onKeyDown: handleKeyDown,
           isMenuShowing,

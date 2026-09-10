@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './CaptchaDialog.dom.js';
-import { CaptchaDialog } from './CaptchaDialog.dom.js';
-import { Button } from './Button.dom.js';
+import type { PropsType } from './CaptchaDialog.dom.tsx';
+import { CaptchaDialog } from './CaptchaDialog.dom.tsx';
+import { Button } from './Button.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -22,7 +22,7 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-export function Basic(args: PropsType): React.JSX.Element {
+export function Basic(args: PropsType): JSX.Element {
   const [isSkipped, setIsSkipped] = useState(false);
 
   if (isSkipped) {

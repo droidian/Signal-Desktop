@@ -7,24 +7,24 @@ import { v4 as generateUuid } from 'uuid';
 import { readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { DataWriter } from '../sql/Client.preload.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 import {
   getAbsoluteAttachmentPath,
   getAbsoluteDownloadsPath,
   getAbsoluteDraftPath,
   getAbsoluteMegaphoneImageFilePath,
-} from '../util/migrations.preload.js';
+} from '../util/migrations.preload.ts';
 import {
   getDownloadsPath,
   getDraftPath,
   getAttachmentsPath,
-} from '../windows/main/attachments.preload.js';
-
-import { generateAci } from '../types/ServiceId.std.js';
-import { IMAGE_JPEG, LONG_MESSAGE } from '../types/MIME.std.js';
+  getMegaphonesPath,
+} from '../../app/attachments.node.ts';
+import { IMAGE_JPEG, LONG_MESSAGE } from '../types/MIME.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { RemoteMegaphoneId } from '../types/Megaphone.std.js';
+import type { RemoteMegaphoneId } from '../types/Megaphone.std.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const { emptyDir, ensureFile } = fsExtra;
 
@@ -51,7 +51,7 @@ async function writeFile(path: string, type: TestAttachmentTypes) {
 
 async function writeFiles(num: number, type: TestAttachmentTypes) {
   for (let i = 0; i < num; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await writeFile(`${type}${i}`, type);
   }
 }
@@ -75,6 +75,7 @@ describe('cleanupOrphanedAttachments', () => {
     );
     await emptyDir(getDownloadsPath(window.SignalContext.config.userDataPath));
     await emptyDir(getDraftPath(window.SignalContext.config.userDataPath));
+    await emptyDir(getMegaphonesPath(window.SignalContext.config.userDataPath));
   });
 
   afterEach(async () => {
@@ -83,6 +84,7 @@ describe('cleanupOrphanedAttachments', () => {
     );
     await emptyDir(getDownloadsPath(window.SignalContext.config.userDataPath));
     await emptyDir(getDraftPath(window.SignalContext.config.userDataPath));
+    await emptyDir(getMegaphonesPath(window.SignalContext.config.userDataPath));
   });
 
   function getAttachmentFilePath() {
@@ -144,6 +146,24 @@ describe('cleanupOrphanedAttachments', () => {
     assert.sameDeepMembers(listFiles('attachment'), []);
     assert.sameDeepMembers(listFiles('draft'), []);
     assert.sameDeepMembers(listFiles('download'), []);
+  });
+
+  it('does not delete conversation draft attachments', async () => {
+    await writeFiles(2, 'draft');
+    await writeFiles(2, 'attachment');
+
+    await DataWriter.saveConversation({
+      id: generateUuid(),
+      type: 'private',
+      version: 2,
+      expireTimerVersion: 2,
+      draftAttachments: [{ path: 'draft0' }, { path: 'draft1' }],
+    });
+
+    await DataWriter.cleanupOrphanedAttachments({ _block: true });
+
+    assert.sameDeepMembers(listFiles('draft'), ['draft0', 'draft1']);
+    assert.sameDeepMembers(listFiles('attachment'), []);
   });
 
   it('does not delete conversation avatar and profileAvatar paths', async () => {
@@ -273,9 +293,9 @@ describe('cleanupOrphanedAttachments', () => {
         postSaveUpdates: () => Promise.resolve(),
       });
 
-      await DataWriter._protectAttachmentPathFromDeletion(
-        `attachment${attachmentIndex + 1}`
-      );
+      await DataWriter._protectAttachmentPathFromDeletion({
+        path: `attachment${attachmentIndex + 1}`,
+      });
       await DataWriter.cleanupOrphanedAttachments({ _block: true });
 
       assert.strictEqual(attachmentIndex, NUM_ATTACHMENT_FILES_IN_MESSAGE);
@@ -334,30 +354,8 @@ describe('cleanupOrphanedAttachments', () => {
       );
     });
 
-    it('will NOT delete copied quote attachments if there is at least one strong reference', async () => {
+    it('treats copied quote thumbnails as strong references', async () => {
       await writeFiles(10, 'attachment');
-
-      const quotedMessage = {
-        id: generateUuid(),
-        type: 'outgoing',
-        sent_at: Date.now(),
-        timestamp: Date.now(),
-        received_at: Date.now(),
-        conversationId: generateUuid(),
-        attachments: [
-          {
-            contentType: IMAGE_JPEG,
-            size: 128,
-            path: 'attachment1',
-            thumbnail: {
-              contentType: IMAGE_JPEG,
-              size: 42,
-              // strong reference
-              path: 'attachment2',
-            },
-          },
-        ],
-      } as const;
 
       const quotingMessage = {
         id: generateUuid(),
@@ -367,7 +365,7 @@ describe('cleanupOrphanedAttachments', () => {
         received_at: Date.now(),
         conversationId: generateUuid(),
         quote: {
-          id: quotedMessage.sent_at,
+          id: Date.now() - 10,
           isViewOnce: false,
           referencedMessageNotFound: false,
           attachments: [
@@ -376,7 +374,6 @@ describe('cleanupOrphanedAttachments', () => {
               thumbnail: {
                 contentType: IMAGE_JPEG,
                 size: 42,
-                // weak (copied) reference
                 path: 'attachment2',
                 copied: true,
               },
@@ -385,14 +382,7 @@ describe('cleanupOrphanedAttachments', () => {
         },
       } as const;
 
-      // Make sure we constructed the test correctly: both attachments reference the same
-      // path on disk
-      assert.strictEqual(
-        quotedMessage.attachments[0].thumbnail.path,
-        quotingMessage.quote.attachments[0].thumbnail.path
-      );
-
-      await DataWriter.saveMessages([quotedMessage, quotingMessage], {
+      await DataWriter.saveMessages([quotingMessage], {
         ourAci: generateAci(),
         forceSave: true,
         postSaveUpdates: () => Promise.resolve(),
@@ -402,87 +392,43 @@ describe('cleanupOrphanedAttachments', () => {
 
       const attachmentFilesLeftOnDisk = listFiles('attachment');
 
-      assert.strictEqual(attachmentFilesLeftOnDisk.length, 2);
+      assert.strictEqual(attachmentFilesLeftOnDisk.length, 1);
 
-      assert.sameDeepMembers(attachmentFilesLeftOnDisk, [
-        'attachment1',
-        'attachment2',
-      ]);
+      assert.sameDeepMembers(attachmentFilesLeftOnDisk, ['attachment2']);
     });
 
-    it('will delete quote attachments if there are only weak references', async () => {
-      await writeFiles(10, 'attachment');
+    it('does not delete megaphone image paths', async () => {
+      // Write 2 files so 1 is orphaned
+      await writeFiles(2, 'megaphone');
 
-      const quotingMessage = {
-        id: generateUuid(),
-        type: 'outgoing',
-        sent_at: Date.now(),
-        timestamp: Date.now(),
-        received_at: Date.now(),
-        conversationId: generateUuid(),
-        quote: {
-          id: Date.now(),
-          isViewOnce: false,
-          referencedMessageNotFound: false,
-          attachments: [
-            {
-              contentType: IMAGE_JPEG,
-              thumbnail: {
-                contentType: IMAGE_JPEG,
-                size: 42,
-                path: 'attachment1',
-                copied: true,
-              },
-            },
-          ],
-        },
-      } as const;
-
-      await DataWriter.saveMessage(quotingMessage, {
-        ourAci: generateAci(),
-        forceSave: true,
-        postSaveUpdates: () => Promise.resolve(),
+      await DataWriter.createMegaphone({
+        id: generateUuid() as RemoteMegaphoneId,
+        desktopMinVersion: '1.0.0',
+        priority: 1,
+        dontShowBeforeEpochMs: 0,
+        dontShowAfterEpochMs: Date.now() + 9001,
+        showForNumberOfDays: 7,
+        primaryCtaId: null,
+        secondaryCtaId: null,
+        primaryCtaData: null,
+        secondaryCtaData: null,
+        conditionalId: null,
+        title: 'a',
+        body: 'b',
+        primaryCtaText: null,
+        secondaryCtaText: null,
+        imagePath: 'megaphone0',
+        localeFetched: 'en',
+        shownAt: null,
+        snoozedAt: null,
+        snoozeCount: 0,
+        isFinished: false,
       });
 
       await DataWriter.cleanupOrphanedAttachments({ _block: true });
 
-      const attachmentFilesLeftOnDisk = listFiles('attachment');
-
-      assert.strictEqual(attachmentFilesLeftOnDisk.length, 0);
+      // Only the file associated with the megaphone is retained
+      assert.sameDeepMembers(listFiles('megaphone'), ['megaphone0']);
     });
-  });
-
-  it('does not delete megaphone image paths', async () => {
-    // Write 2 files so 1 is orphaned
-    await writeFiles(2, 'megaphone');
-
-    await DataWriter.createMegaphone({
-      id: generateUuid() as RemoteMegaphoneId,
-      desktopMinVersion: '1.0.0',
-      priority: 1,
-      dontShowBeforeEpochMs: 0,
-      dontShowAfterEpochMs: Date.now() + 9001,
-      showForNumberOfDays: 7,
-      primaryCtaId: null,
-      secondaryCtaId: null,
-      primaryCtaData: null,
-      secondaryCtaData: null,
-      conditionalId: null,
-      title: 'a',
-      body: 'b',
-      primaryCtaText: null,
-      secondaryCtaText: null,
-      imagePath: 'megaphone0',
-      localeFetched: 'en',
-      shownAt: null,
-      snoozedAt: null,
-      snoozeCount: 0,
-      isFinished: false,
-    });
-
-    await DataWriter.cleanupOrphanedAttachments({ _block: true });
-
-    // Only the file associated with the megaphone is retained
-    assert.sameDeepMembers(listFiles('megaphone'), ['megaphone0']);
   });
 });

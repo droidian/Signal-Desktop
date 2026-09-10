@@ -5,16 +5,23 @@ import casual from 'casual';
 import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
 
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { generateAci } from '../types/ServiceId.std.js';
-import type { GroupListItemConversationType } from '../components/conversationList/GroupListItem.dom.js';
-import { getRandomColor } from './getRandomColor.std.js';
-import { ConversationColors } from '../types/Colors.std.js';
-import { StorySendMode } from '../types/Stories.std.js';
-import { getAvatarPlaceholderGradient } from '../utils/getAvatarPlaceholderGradient.std.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import type { GroupListItemConversationType } from '../components/conversationList/GroupListItem.dom.tsx';
+import { toBase64 } from '../Bytes.std.ts';
+import { getRandomColor } from './getRandomColor.std.ts';
+import { ConversationColors } from '../types/Colors.std.ts';
+import { StorySendMode } from '../types/Stories.std.ts';
+import { getAvatarPlaceholderGradient } from '../utils/getAvatarPlaceholderGradient.std.ts';
+import { generateAci } from './serviceIdUtils.std.ts';
 
 const { sample } = lodash;
+
+export function generateGroupId(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return toBase64(bytes);
+}
 
 export const getAvatarPath = (): string =>
   sample([
@@ -83,7 +90,7 @@ export function getDefaultGroup(
     color: getRandomColor(),
     conversationColor: ConversationColors[0],
     groupDescription: casual.sentence,
-    groupId: generateUuid(),
+    groupId: generateGroupId(),
     groupLink: casual.url,
     groupVersion: 2,
     id: generateUuid(),
@@ -92,6 +99,7 @@ export function getDefaultGroup(
     markedUnread: Boolean(overrideProps.markedUnread),
     membersCount: memberships.length,
     memberships,
+    terminated: false,
     title: casual.title,
     serviceId: generateAci(),
     acknowledgedGroupNameCollisions: {},

@@ -1,16 +1,17 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import {
   ServerAlert,
   type ServerAlertsType,
-} from '../types/ServerAlert.std.js';
-import type { WidthBreakpoint } from './_util.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { CriticalIdlePrimaryDeviceDialog } from './CriticalIdlePrimaryDeviceDialog.dom.js';
-import { strictAssert } from '../util/assert.std.js';
-import { WarningIdlePrimaryDeviceDialog } from './WarningIdlePrimaryDeviceDialog.dom.js';
+} from '../types/ServerAlert.std.ts';
+import type { WidthBreakpoint } from './_util.std.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { CriticalIdlePrimaryDeviceDialog } from './CriticalIdlePrimaryDeviceDialog.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
+import { WarningIdlePrimaryDeviceDialog } from './WarningIdlePrimaryDeviceDialog.dom.tsx';
 
 export function getServerAlertDialog(
   alerts: ServerAlertsType | undefined,
@@ -20,7 +21,7 @@ export function getServerAlertDialog(
     containerWidthBreakpoint: WidthBreakpoint;
     i18n: LocalizerType;
   }
-): React.JSX.Element | null {
+): JSX.Element | null {
   if (!alerts) {
     return null;
   }

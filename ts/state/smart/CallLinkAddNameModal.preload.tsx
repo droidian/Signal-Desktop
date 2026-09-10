@@ -1,21 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { getCallLinkSelector } from '../selectors/calling.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { getIntl } from '../selectors/user.std.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getCallLinkAddNameModalRoomId } from '../selectors/globalModals.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { isCallLinkAdmin } from '../../types/CallLink.std.js';
-import { CallLinkAddNameModal } from '../../components/CallLinkAddNameModal.dom.js';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { getCallLinkSelector } from '../selectors/calling.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getCallLinkAddNameModalRoomId } from '../selectors/globalModals.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { isCallLinkAdmin } from '../../types/CallLink.std.ts';
+import { CallLinkAddNameModal } from '../../components/CallLinkAddNameModal.dom.tsx';
 
 const log = createLogger('CallLinkAddNameModal');
 
 export const SmartCallLinkAddNameModal = memo(
-  function SmartCallLinkAddNameModal(): React.JSX.Element | null {
+  function SmartCallLinkAddNameModal(): JSX.Element | null {
     const roomId = useSelector(getCallLinkAddNameModalRoomId);
     strictAssert(roomId, 'Expected roomId to be set');
 

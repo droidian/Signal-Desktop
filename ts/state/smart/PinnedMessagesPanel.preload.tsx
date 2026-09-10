@@ -1,19 +1,20 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { getIntl } from '../selectors/user.std.js';
+import { getIntl } from '../selectors/user.std.ts';
 import {
   getConversationByIdSelector,
   getPinnedMessages,
-} from '../selectors/conversations.dom.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { PinnedMessagesPanel } from '../../components/conversation/pinned-messages/PinnedMessagesPanel.dom.js';
-import type { SmartTimelineItemProps } from './TimelineItem.preload.js';
-import { SmartTimelineItem } from './TimelineItem.preload.js';
-import { canPinMessages as getCanPinMessages } from '../selectors/message.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { PinnedMessagesPanel } from '../../components/conversation/pinned-messages/PinnedMessagesPanel.dom.tsx';
+import type { SmartTimelineItemProps } from './TimelineItem.preload.tsx';
+import { SmartTimelineItem } from './TimelineItem.preload.tsx';
+import { canPinMessages as getCanPinMessages } from '../selectors/message.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
 
 export type SmartPinnedMessagesPanelProps = Readonly<{
   conversationId: string;
@@ -29,8 +30,8 @@ export const SmartPinnedMessagesPanel = memo(function SmartPinnedMessagesPanel(
   const i18n = useSelector(getIntl);
   const conversationSelector = useSelector(getConversationByIdSelector);
   const conversation = conversationSelector(props.conversationId);
-  const { onPinnedMessageRemove, popPanelForConversation } =
-    useConversationsActions();
+  const { onPinnedMessageRemove } = useConversationsActions();
+  const { popPanelForConversation } = useNavActions();
 
   strictAssert(
     conversation,

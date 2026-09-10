@@ -1,13 +1,13 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import { I18n } from '../I18n.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { I18n } from '../I18n.dom.tsx';
 
-import { SystemMessage } from './SystemMessage.dom.js';
-import { UserText } from '../UserText.dom.js';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
 
 export type PropsData = {
   oldTitle: string;
@@ -19,7 +19,7 @@ export type PropsHousekeeping = {
 
 export type Props = PropsData & PropsHousekeeping;
 
-export function TitleTransitionNotification(props: Props): React.JSX.Element {
+export function TitleTransitionNotification(props: Props): JSX.Element {
   const { i18n, oldTitle } = props;
 
   return (

@@ -1,11 +1,12 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './LeftPaneDialog.dom.js';
-import { LeftPaneDialog } from './LeftPaneDialog.dom.js';
-import { WidthBreakpoint } from './_util.std.js';
+import type { PropsType } from './LeftPaneDialog.dom.tsx';
+import { LeftPaneDialog } from './LeftPaneDialog.dom.tsx';
+import { WidthBreakpoint } from './_util.std.ts';
 
 const widths = {
   [WidthBreakpoint.Wide]: '400px',
@@ -13,8 +14,8 @@ const widths = {
   [WidthBreakpoint.Narrow]: '100px',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function WidthDecorator(Story: any, context: any): React.JSX.Element {
+// oxlint-disable-next-line typescript/no-explicit-any
+function WidthDecorator(Story: any, context: any): JSX.Element {
   return (
     <div
       style={{

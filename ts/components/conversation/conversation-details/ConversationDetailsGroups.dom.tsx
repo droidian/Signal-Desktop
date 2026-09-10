@@ -1,19 +1,19 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, type JSX } from 'react';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { Avatar, AvatarSize } from '../../Avatar.dom.js';
+} from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
 import {
   ConversationDetailsIcon,
   IconType,
-} from './ConversationDetailsIcon.dom.js';
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
+} from './ConversationDetailsIcon.dom.tsx';
+import { PanelRow } from './PanelRow.dom.tsx';
+import { PanelSection } from './PanelSection.dom.tsx';
 
 type Props = {
   contactId: string;
@@ -29,8 +29,8 @@ export function ConversationDetailsGroups({
   groupsInCommon,
   toggleAddUserToAnotherGroupModal,
   showConversation,
-}: Props): React.JSX.Element {
-  const [showAllGroups, setShowAllGroups] = React.useState(false);
+}: Props): JSX.Element {
+  const [showAllGroups, setShowAllGroups] = useState(false);
 
   const maxShownGroupCount = 5;
   const isMoreThanMaxShown = groupsInCommon.length - maxShownGroupCount > 1;

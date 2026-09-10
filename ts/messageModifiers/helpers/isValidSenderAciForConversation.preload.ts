@@ -1,9 +1,9 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AciString } from '@signalapp/mock-server/src/types';
-import type { ConversationModel } from '../../models/conversations.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
 
 export function isValidSenderAciForConversation(
   conversation: ConversationModel,

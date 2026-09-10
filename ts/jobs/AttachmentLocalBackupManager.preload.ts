@@ -9,36 +9,34 @@ import {
   mkdir,
   rename,
 } from 'node:fs/promises';
+import { exists } from 'fs-extra';
 
-import { createLogger } from '../logging/log.std.js';
+import { getAbsoluteAttachmentPath as doGetAbsoluteAttachmentPath } from '../util/migrations.preload.ts';
 import {
-  getAbsoluteAttachmentPath as doGetAbsoluteAttachmentPath,
-  getAbsoluteTempPath as doGetAbsoluteTempPath,
-} from '../util/migrations.preload.js';
-import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.node.js';
+  decryptAttachmentV2ToSink,
+  safeUnlink,
+} from '../AttachmentCrypto.node.ts';
 import {
   getLocalBackupDirectoryForMediaName,
   getLocalBackupPathForMediaName,
-} from '../services/backups/util/localBackup.node.js';
-import { createName } from '../util/attachmentPath.node.js';
-import { redactGenericText } from '../util/privacy.node.js';
+} from '../services/backups/util/localBackup.node.ts';
+import { redactGenericText } from '../util/privacy.node.ts';
+import { getRandomBytes } from '../Crypto.node.ts';
+import * as Bytes from '../Bytes.std.ts';
 
-import type { CoreAttachmentLocalBackupJobType } from '../types/AttachmentBackup.std.js';
-
-const log = createLogger('AttachmentLocalBackupManager');
+import type { CoreAttachmentLocalBackupJobType } from '../types/AttachmentBackup.std.ts';
 
 export class AttachmentPermanentlyMissingError extends Error {}
 
 type RunAttachmentBackupJobDependenciesType = {
   getAbsoluteAttachmentPath: typeof doGetAbsoluteAttachmentPath;
-  getAbsoluteTempPath: typeof doGetAbsoluteAttachmentPath;
   decryptAttachmentV2ToSink: typeof decryptAttachmentV2ToSink;
 };
 
 export function getJobIdForLogging(
   job: CoreAttachmentLocalBackupJobType
 ): string {
-  return `${redactGenericText(job.mediaName)}`;
+  return redactGenericText(job.mediaName);
 }
 
 export async function runAttachmentBackupJob(
@@ -46,15 +44,9 @@ export async function runAttachmentBackupJob(
   backupsBaseDir: string,
   dependencies: RunAttachmentBackupJobDependenciesType = {
     getAbsoluteAttachmentPath: doGetAbsoluteAttachmentPath,
-    getAbsoluteTempPath: doGetAbsoluteTempPath,
     decryptAttachmentV2ToSink,
   }
 ): Promise<void> {
-  const jobIdForLogging = getJobIdForLogging(job);
-  const logId = `AttachmentLocalBackupManager.runAttachmentBackupJob(${jobIdForLogging})`;
-
-  log.info(`${logId}: starting...`);
-
   const { isPlaintextExport, mediaName } = job;
   const { contentType, fileName, localKey, path, size } = job.data;
 
@@ -97,33 +89,41 @@ export async function runAttachmentBackupJob(
       outFileStream
     );
   } else {
-    // File is already encrypted with localKey, so we just copy it to the backup dir
-    const tempPath = dependencies.getAbsoluteTempPath(createName());
+    if (await exists(destinationLocalBackupFilePath)) {
+      // File already backed up
+      return;
+    }
 
-    // A unique constraint on the DB table should enforce that only one job is writing to
-    // the same mediaName at a time, but just to be safe, we copy to temp file and rename
-    // to ensure the atomicity of the copy operation
+    // File is already encrypted with localKey, so we just copy it to the backup dir.
+    // The temp file must be a sibling of the destination so that rename stays on the
+    // same filesystem — the backup dir may be on a different partition than the app's
+    // temp dir, and rename only works within a single filesystem.
+    const tempPath = `${destinationLocalBackupFilePath}.tmp-${Bytes.toHex(getRandomBytes(8))}`;
 
-    // Set COPYFILE_FICLONE for Copy on Write (OS dependent, graceful fallback to copy)
-    await copyFile(
-      sourceAttachmentPath,
-      tempPath,
-      FS_CONSTANTS.COPYFILE_FICLONE
-    );
-    await rename(tempPath, destinationLocalBackupFilePath);
+    try {
+      // Set COPYFILE_FICLONE for Copy on Write (OS dependent, graceful fallback to copy)
+      await copyFile(
+        sourceAttachmentPath,
+        tempPath,
+        FS_CONSTANTS.COPYFILE_FICLONE
+      );
+      await rename(tempPath, destinationLocalBackupFilePath);
+    } catch (error) {
+      await safeUnlink(tempPath);
+      throw error;
+    }
   }
-
-  log.info(`${logId}: complete!`);
 }
 
-function getExtension(
+/** @testexport */
+export function getExtension(
   contentType: string | undefined,
   fileName: string | undefined
 ): string | undefined {
   if (fileName) {
     const extension = extname(fileName).replace(/^./, '');
 
-    if (extension) {
+    if (isValidExtension(extension)) {
       return extension;
     }
   }
@@ -133,31 +133,41 @@ function getExtension(
   }
 
   if (contentType.startsWith('application/x-')) {
-    return contentType.replace('application/x-', '');
+    return normalizeExtension(contentType.replace('application/x-', ''));
   }
 
   if (contentType.startsWith('application/')) {
-    return contentType.replace('application/', '');
+    return normalizeExtension(contentType.replace('application/', ''));
   }
 
   if (contentType.startsWith('audio/')) {
-    return contentType.replace('audio/', '');
+    return normalizeExtension(contentType.replace('audio/', ''));
   }
 
   if (contentType.startsWith('image/')) {
-    return contentType.replace('image/', '');
+    return normalizeExtension(contentType.replace('image/', ''));
   }
 
   if (contentType === 'text/x-signal-plain') {
     return 'txt';
   }
   if (contentType.startsWith('text/x-')) {
-    return contentType.replace('text/x-', '');
+    return normalizeExtension(contentType.replace('text/x-', ''));
   }
 
   if (contentType.startsWith('video/')) {
-    return contentType.replace('video/', '');
+    return normalizeExtension(contentType.replace('video/', ''));
   }
 
   return undefined;
+}
+
+const VALID_EXTENSION_REGEXP = /^[A-Za-z\d](?:[\w+.-]{0,30}[A-Za-z\d])?$/;
+
+function isValidExtension(extension: string): boolean {
+  return VALID_EXTENSION_REGEXP.test(extension);
+}
+
+function normalizeExtension(extension: string): string | undefined {
+  return isValidExtension(extension) ? extension : undefined;
 }

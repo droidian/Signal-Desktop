@@ -1,19 +1,21 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { DataReader } from '../../../sql/Client.preload.js';
-import * as Bytes from '../../../Bytes.std.js';
-import { getBackupMediaRootKey } from '../crypto.preload.js';
+import { DataReader } from '../../../sql/Client.preload.ts';
+import * as Bytes from '../../../Bytes.std.ts';
+import { getBackupMediaRootKey } from '../crypto.preload.ts';
 import type {
   BackupableAttachmentType,
   AttachmentReadyForLocalBackup,
-} from '../../../types/Attachment.std.js';
-import { sha256 } from '../../../Crypto.node.js';
+} from '../../../types/Attachment.std.ts';
+import { sha256 } from '../../../Crypto.node.ts';
 
-export function getMediaIdFromMediaName(mediaName: string): {
+export type MediaIdType = Readonly<{
   string: string;
-  bytes: Uint8Array;
-} {
+  bytes: Uint8Array<ArrayBuffer>;
+}>;
+
+export function getMediaIdFromMediaName(mediaName: string): MediaIdType {
   const mediaIdBytes = getBackupMediaRootKey().deriveMediaId(mediaName);
   return {
     string: Bytes.toBase64url(mediaIdBytes),
@@ -21,20 +23,16 @@ export function getMediaIdFromMediaName(mediaName: string): {
   };
 }
 
-export function getMediaIdForAttachment(attachment: BackupableAttachmentType): {
-  string: string;
-  bytes: Uint8Array;
-} {
+export function getMediaIdForAttachment(
+  attachment: BackupableAttachmentType
+): MediaIdType {
   const mediaName = getMediaNameForAttachment(attachment);
   return getMediaIdFromMediaName(mediaName);
 }
 
 export function getMediaIdForAttachmentThumbnail(
   attachment: BackupableAttachmentType
-): {
-  string: string;
-  bytes: Uint8Array;
-} {
+): MediaIdType {
   const mediaName = getMediaNameForAttachmentThumbnail(
     getMediaNameForAttachment(attachment)
   );
@@ -54,8 +52,8 @@ export function getMediaName({
   plaintextHash,
   key,
 }: {
-  plaintextHash: Uint8Array;
-  key: Uint8Array;
+  plaintextHash: Uint8Array<ArrayBuffer>;
+  key: Uint8Array<ArrayBuffer>;
 }): string {
   return Bytes.toHex(Bytes.concatenate([plaintextHash, key]));
 }
@@ -73,8 +71,8 @@ export function getLocalBackupFileName({
   plaintextHash,
   localKey,
 }: {
-  plaintextHash: Uint8Array;
-  localKey: Uint8Array;
+  plaintextHash: Uint8Array<ArrayBuffer>;
+  localKey: Uint8Array<ArrayBuffer>;
 }): string {
   return Bytes.toHex(sha256(Bytes.concatenate([plaintextHash, localKey])));
 }
@@ -83,10 +81,6 @@ export function getMediaNameForAttachmentThumbnail(
   fullsizeMediaName: string
 ): `${string}_thumbnail` {
   return `${fullsizeMediaName}_thumbnail`;
-}
-
-export function getBytesFromMediaIdString(mediaId: string): Uint8Array {
-  return Bytes.fromBase64url(mediaId);
 }
 
 export type BackupCdnInfoType =

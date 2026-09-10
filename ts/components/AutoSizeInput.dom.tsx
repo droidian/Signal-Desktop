@@ -1,12 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent, KeyboardEvent } from 'react';
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import type { ChangeEvent, KeyboardEvent, JSX } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
 
 export type PropsType = Readonly<{
   disableSpellcheck?: boolean;
@@ -28,7 +28,7 @@ export function AutoSizeInput({
   placeholder,
   value = '',
   maxLength,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const hiddenRef = useRef<HTMLSpanElement | null>(null);
 
@@ -55,6 +55,7 @@ export function AutoSizeInput({
     const elem = document.createElement('div');
     document.body.appendChild(elem);
 
+    // oxlint-disable-next-line react/set-state-in-effect
     setRoot(elem);
 
     return () => {
@@ -64,7 +65,11 @@ export function AutoSizeInput({
 
   useEffect(() => {
     setWidth(hiddenRef.current?.clientWidth || undefined);
-  }, [value, root]);
+  }, [
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+    value,
+    root,
+  ]);
 
   return (
     <div className={getClassName('__container')}>

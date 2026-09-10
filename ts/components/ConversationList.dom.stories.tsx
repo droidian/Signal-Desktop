@@ -1,21 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useContext } from 'react';
+import { useContext, useState, type JSX } from 'react';
 import lodash from 'lodash';
 import { v4 as generateUuid } from 'uuid';
+import { MuteExpiration } from '@signalapp/types';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Row, PropsType } from './ConversationList.dom.js';
-import { ConversationList, RowType } from './ConversationList.dom.js';
-import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.js';
-import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.js';
-import { MessageStatuses } from '../types/message/MessageStatus.std.js';
-import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { ThemeType } from '../types/Util.std.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
-import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId.std.js';
+import type { Row, PropsType } from './ConversationList.dom.tsx';
+import { ConversationList, RowType } from './ConversationList.dom.tsx';
+import { MessageSearchResult } from './conversationList/MessageSearchResult.dom.tsx';
+import type { PropsData as ConversationListItemPropsType } from './conversationList/ConversationListItem.dom.tsx';
+import { MessageStatuses } from '../types/message/MessageStatus.std.ts';
+import { ContactCheckboxDisabledReason } from './conversationList/ContactCheckbox.dom.tsx';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { ThemeType } from '../types/Util.std.ts';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
+import { makeFakeLookupConversationWithoutServiceId } from '../test-helpers/fakeLookupConversationWithoutServiceId.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { times, omit } = lodash;
 
@@ -27,7 +29,7 @@ export default {
   args: {},
 } satisfies Meta<PropsType>;
 
-const defaultConversations: Array<ConversationListItemPropsType> = [
+const defaultConversations = [
   getDefaultConversation({
     id: 'fred-convo',
     title: 'Fred Willard',
@@ -48,7 +50,7 @@ const defaultConversations: Array<ConversationListItemPropsType> = [
       'Pablo Diego José Francisco de Paula Juan Nepomuceno María de los Remedios Cipriano de la Santísima Trinidad Ruiz y Picasso',
   }),
   getDefaultConversation(),
-];
+] as const satisfies Array<ConversationListItemPropsType>;
 
 function Wrapper({
   rows,
@@ -66,6 +68,7 @@ function Wrapper({
       getPreferredBadge={() => undefined}
       getRow={(index: number) => rows[index]}
       shouldRecomputeRowHeights={false}
+      resetShouldRecomputeRowHeights={action('resetShouldRecomputeRowHeights')}
       i18n={i18n}
       blockConversation={action('blockConversation')}
       onPreloadConversation={action('onPreloadConversation')}
@@ -109,7 +112,7 @@ function Wrapper({
   );
 }
 
-export function ArchiveButton(): React.JSX.Element {
+export function ArchiveButton(): JSX.Element {
   return (
     <Wrapper
       rows={[{ type: RowType.ArchiveButton, archivedConversationsCount: 123 }]}
@@ -117,7 +120,7 @@ export function ArchiveButton(): React.JSX.Element {
   );
 }
 
-export function ContactNoteToSelf(): React.JSX.Element {
+export function ContactNoteToSelf(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -134,7 +137,7 @@ export function ContactNoteToSelf(): React.JSX.Element {
   );
 }
 
-export function ContactDirect(): React.JSX.Element {
+export function ContactDirect(): JSX.Element {
   return (
     <Wrapper
       rows={[{ type: RowType.Contact, contact: defaultConversations[0] }]}
@@ -142,7 +145,7 @@ export function ContactDirect(): React.JSX.Element {
   );
 }
 
-export function ContactInSystemContacts(): React.JSX.Element {
+export function ContactInSystemContacts(): JSX.Element {
   const contact = defaultConversations[0];
   return (
     <Wrapper
@@ -156,7 +159,7 @@ export function ContactInSystemContacts(): React.JSX.Element {
   );
 }
 
-export function ContactDirectWithContextMenu(): React.JSX.Element {
+export function ContactDirectWithContextMenu(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -170,7 +173,7 @@ export function ContactDirectWithContextMenu(): React.JSX.Element {
   );
 }
 
-export function ContactDirectWithShortAbout(): React.JSX.Element {
+export function ContactDirectWithShortAbout(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -183,7 +186,7 @@ export function ContactDirectWithShortAbout(): React.JSX.Element {
   );
 }
 
-export function ContactDirectWithLongAbout(): React.JSX.Element {
+export function ContactDirectWithLongAbout(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -200,7 +203,7 @@ export function ContactDirectWithLongAbout(): React.JSX.Element {
   );
 }
 
-export function ContactGroup(): React.JSX.Element {
+export function ContactGroup(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -213,7 +216,7 @@ export function ContactGroup(): React.JSX.Element {
   );
 }
 
-export function ContactCheckboxes(): React.JSX.Element {
+export function ContactCheckboxes(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -240,7 +243,7 @@ export function ContactCheckboxes(): React.JSX.Element {
   );
 }
 
-export function ContactCheckboxesDisabled(): React.JSX.Element {
+export function ContactCheckboxesDisabled(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -305,14 +308,14 @@ const renderConversation = (
   />
 );
 
-export const ConversationName = (): React.JSX.Element => renderConversation();
+export const ConversationName = (): JSX.Element => renderConversation();
 
-export const ConversationNameAndAvatar = (): React.JSX.Element =>
+export const ConversationNameAndAvatar = (): JSX.Element =>
   renderConversation({
     avatarUrl: '/fixtures/kitten-1-64-64.jpg',
   });
 
-export const ConversationWithYourself = (): React.JSX.Element =>
+export const ConversationWithYourself = (): JSX.Element =>
   renderConversation({
     lastMessage: {
       text: 'Just a second',
@@ -324,7 +327,7 @@ export const ConversationWithYourself = (): React.JSX.Element =>
     isMe: true,
   });
 
-export function ConversationsMessageStatuses(): React.JSX.Element {
+export function ConversationsMessageStatuses(): JSX.Element {
   return (
     <Wrapper
       rows={MessageStatuses.map(status => ({
@@ -337,29 +340,29 @@ export function ConversationsMessageStatuses(): React.JSX.Element {
   );
 }
 
-export const ConversationTypingStatus = (): React.JSX.Element =>
+export const ConversationTypingStatus = (): JSX.Element =>
   renderConversation({
     typingContactIdTimestamps: {
       [generateUuid()]: Date.now(),
     },
   });
 
-export const ConversationWithDraft = (): React.JSX.Element =>
+export const ConversationWithDraft = (): JSX.Element =>
   renderConversation({
     shouldShowDraft: true,
     draftPreview: {
       text: "I'm in the middle of typing this...",
-      prefix: '🎤',
+      prefix: Emoji.MICROPHONE,
       bodyRanges: [],
     },
   });
 
-export const ConversationDeletedForEveryone = (): React.JSX.Element =>
+export const ConversationDeletedForEveryone = (): JSX.Element =>
   renderConversation({
     lastMessage: { deletedForEveryone: true },
   });
 
-export const ConversationMessageRequest = (): React.JSX.Element =>
+export const ConversationMessageRequest = (): JSX.Element =>
   renderConversation({
     acceptedMessageRequest: false,
     lastMessage: {
@@ -369,7 +372,7 @@ export const ConversationMessageRequest = (): React.JSX.Element =>
     },
   });
 
-export function ConversationsUnreadCount(): React.JSX.Element {
+export function ConversationsUnreadCount(): JSX.Element {
   return (
     <Wrapper
       rows={[4, 10, 34, 250, 2048, Number.MAX_SAFE_INTEGER].map(
@@ -389,10 +392,10 @@ export function ConversationsUnreadCount(): React.JSX.Element {
   );
 }
 
-export const ConversationMarkedUnread = (): React.JSX.Element =>
+export const ConversationMarkedUnread = (): JSX.Element =>
   renderConversation({ markedUnread: true });
 
-export const ConversationSelected = (): React.JSX.Element =>
+export const ConversationSelected = (): JSX.Element =>
   renderConversation({
     lastMessage: {
       text: 'Hey there!',
@@ -402,7 +405,7 @@ export const ConversationSelected = (): React.JSX.Element =>
     isSelected: true,
   });
 
-export const ConversationEmojiInMessage = (): React.JSX.Element =>
+export const ConversationEmojiInMessage = (): JSX.Element =>
   renderConversation({
     lastMessage: {
       text: '🔥',
@@ -411,7 +414,7 @@ export const ConversationEmojiInMessage = (): React.JSX.Element =>
     },
   });
 
-export const ConversationLinkInMessage = (): React.JSX.Element =>
+export const ConversationLinkInMessage = (): JSX.Element =>
   renderConversation({
     lastMessage: {
       text: 'Download at http://signal.org',
@@ -420,7 +423,7 @@ export const ConversationLinkInMessage = (): React.JSX.Element =>
     },
   });
 
-export const ConversationLongName = (): React.JSX.Element => {
+export const ConversationLongName = (): JSX.Element => {
   const name =
     'Long contact name. Esquire. The third. And stuff. And more! And more!';
 
@@ -429,7 +432,7 @@ export const ConversationLongName = (): React.JSX.Element => {
   });
 };
 
-export function ConversationLongMessage(): React.JSX.Element {
+export function ConversationLongMessage(): JSX.Element {
   const messages = [
     "Long line. This is a really really really long line. Really really long. Because that's just how it is",
     `Many lines. This is a many-line message.
@@ -454,13 +457,15 @@ Line 4, well.`,
   );
 }
 
-export function ConversationsVariousTimes(): React.JSX.Element {
-  const pairs: Array<[number, string]> = [
-    [Date.now() - 5 * 60 * 60 * 1000, 'Five hours ago'],
-    [Date.now() - 24 * 60 * 60 * 1000, 'One day ago'],
-    [Date.now() - 7 * 24 * 60 * 60 * 1000, 'One week ago'],
-    [Date.now() - 365 * 24 * 60 * 60 * 1000, 'One year ago'],
-  ];
+export function ConversationsVariousTimes(): JSX.Element {
+  const [pairs] = useState((): Array<[number, string]> => {
+    return [
+      [Date.now() - 5 * 60 * 60 * 1000, 'Five hours ago'],
+      [Date.now() - 24 * 60 * 60 * 1000, 'One day ago'],
+      [Date.now() - 7 * 24 * 60 * 60 * 1000, 'One week ago'],
+      [Date.now() - 365 * 24 * 60 * 60 * 1000, 'One year ago'],
+    ];
+  });
 
   return (
     <Wrapper
@@ -479,7 +484,7 @@ export function ConversationsVariousTimes(): React.JSX.Element {
   );
 }
 
-export function ConversationMissingDate(): React.JSX.Element {
+export function ConversationMissingDate(): JSX.Element {
   const row = {
     type: RowType.Conversation as const,
     conversation: omit(createConversation(), 'lastUpdated'),
@@ -488,7 +493,7 @@ export function ConversationMissingDate(): React.JSX.Element {
   return <Wrapper rows={[row]} />;
 }
 
-export function ConversationMissingMessage(): React.JSX.Element {
+export function ConversationMissingMessage(): JSX.Element {
   const row = {
     type: RowType.Conversation as const,
     conversation: omit(createConversation(), 'lastMessage'),
@@ -497,7 +502,7 @@ export function ConversationMissingMessage(): React.JSX.Element {
   return <Wrapper rows={[row]} />;
 }
 
-export const ConversationMissingText = (): React.JSX.Element =>
+export const ConversationMissingText = (): JSX.Element =>
   renderConversation({
     lastMessage: {
       text: '',
@@ -506,12 +511,12 @@ export const ConversationMissingText = (): React.JSX.Element =>
     },
   });
 
-export const ConversationMutedConversation = (): React.JSX.Element =>
+export const ConversationMutedConversation = (): JSX.Element =>
   renderConversation({
-    muteExpiresAt: Date.now() + 1000 * 60 * 60,
+    muteExpiresAt: MuteExpiration.fromNumber(Date.now() + 1000 * 60 * 60),
   });
 
-export const ConversationAtMention = (): React.JSX.Element =>
+export const ConversationAtMention = (): JSX.Element =>
   renderConversation({
     title: 'The Rebellion',
     type: 'group',
@@ -522,28 +527,28 @@ export const ConversationAtMention = (): React.JSX.Element =>
     },
   });
 
-export function Headers(): React.JSX.Element {
+export function Headers(): JSX.Element {
   return (
     <Wrapper
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:conversationsHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:messagesHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByPhoneNumberHeader'),
         },
       ]}
@@ -551,13 +556,13 @@ export function Headers(): React.JSX.Element {
   );
 }
 
-export function FindByPhoneNumber(): React.JSX.Element {
+export function FindByPhoneNumber(): JSX.Element {
   return (
     <Wrapper
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByPhoneNumberHeader'),
         },
         {
@@ -592,13 +597,13 @@ export function FindByPhoneNumber(): React.JSX.Element {
   );
 }
 
-export function FindByUsername(): React.JSX.Element {
+export function FindByUsername(): JSX.Element {
   return (
     <Wrapper
       rows={[
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {
@@ -616,7 +621,7 @@ export function FindByUsername(): React.JSX.Element {
   );
 }
 
-export function SearchResultsLoadingSkeleton(): React.JSX.Element {
+export function SearchResultsLoadingSkeleton(): JSX.Element {
   return (
     <Wrapper
       scrollable={false}
@@ -630,7 +635,7 @@ export function SearchResultsLoadingSkeleton(): React.JSX.Element {
   );
 }
 
-export function KitchenSink(): React.JSX.Element {
+export function KitchenSink(): JSX.Element {
   return (
     <Wrapper
       rows={[
@@ -663,7 +668,7 @@ export function KitchenSink(): React.JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:contactsHeader'),
         },
         {
@@ -672,7 +677,7 @@ export function KitchenSink(): React.JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:messagesHeader'),
         },
         {
@@ -685,7 +690,7 @@ export function KitchenSink(): React.JSX.Element {
         },
         {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         },
         {

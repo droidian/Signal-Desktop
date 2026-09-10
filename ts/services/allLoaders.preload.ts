@@ -2,49 +2,51 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // loader services
-import { getBadgesForRedux, loadBadges } from './badgeLoader.preload.js';
+import { getBadgesForRedux, loadBadges } from './badgeLoader.preload.ts';
 import {
   getCallsHistoryForRedux,
   getCallsHistoryUnreadCountForRedux,
   loadCallHistory,
-} from './callHistoryLoader.preload.js';
+} from './callHistoryLoader.preload.ts';
 import {
   getCallLinksForRedux,
   loadCallLinks,
-} from './callLinksLoader.preload.js';
+} from './callLinksLoader.preload.ts';
 import {
   getDistributionListsForRedux,
   loadDistributionLists,
-} from './distributionListLoader.preload.js';
+} from './distributionListLoader.preload.ts';
 import {
   getDonationsForRedux,
   loadDonationReceipts,
-} from './donationsLoader.preload.js';
-import { getStoriesForRedux, loadStories } from './storyLoader.preload.js';
-import { getUserDataForRedux, loadUserData } from './userLoader.dom.js';
+} from './donationsLoader.preload.ts';
+import { loadLocalizedEmojiList } from './localizedEmojiListLoader.dom.ts';
+import { getStoriesForRedux, loadStories } from './storyLoader.preload.ts';
+import { getUserDataForRedux, loadUserData } from './userLoader.dom.ts';
 import {
   loadCachedProfiles as loadNotificationProfiles,
   getCachedProfiles as getNotificationProfiles,
-} from './notificationProfilesService.preload.js';
+} from './notificationProfilesService.preload.ts';
+import {
+  getRecentEmojisForRedux,
+  loadRecentEmojis,
+} from './recentEmojisLoader.preload.ts';
 
 // old-style loaders
-import {
-  getEmojiReducerState,
-  loadRecentEmojis,
-} from '../util/loadRecentEmojis.preload.js';
+
 import {
   load as loadStickers,
   getInitialState as getStickersReduxState,
-} from '../types/Stickers.preload.js';
+} from '../types/Stickers.preload.ts';
 
-import { type ReduxInitData } from '../state/initializeRedux.preload.js';
-import { reinitializeRedux } from '../state/reinitializeRedux.preload.js';
-import { getGifsStateForRedux, loadGifsState } from './gifsLoader.preload.js';
+import { type ReduxInitData } from '../state/initializeRedux.preload.ts';
+import { reinitializeRedux } from '../state/reinitializeRedux.preload.ts';
+import { getGifsStateForRedux, loadGifsState } from './gifsLoader.preload.ts';
 import {
   getChatFoldersForRedux,
   loadChatFolders,
-} from './chatFoldersLoader.preload.js';
-import { getInitialMegaphonesState } from '../state/ducks/megaphones.preload.js';
+} from './chatFoldersLoader.preload.ts';
+import { getInitialMegaphonesState } from '../state/ducks/megaphones.preload.ts';
 
 export async function loadAll(): Promise<void> {
   await Promise.all([
@@ -55,6 +57,7 @@ export async function loadAll(): Promise<void> {
     loadDistributionLists(),
     loadDonationReceipts(),
     loadGifsState(),
+    loadLocalizedEmojiList(),
     loadNotificationProfiles(),
     loadRecentEmojis(),
     loadStickers(),
@@ -78,12 +81,12 @@ export function getParametersForRedux(): ReduxInitData {
     callLinks: getCallLinksForRedux(),
     chatFolders: getChatFoldersForRedux(),
     donations: getDonationsForRedux(),
+    emojis: getRecentEmojisForRedux(),
     gifs: getGifsStateForRedux(),
     mainWindowStats,
     menuOptions,
     megaphones: getInitialMegaphonesState(),
     notificationProfiles: getNotificationProfiles(),
-    recentEmoji: getEmojiReducerState(),
     stickers: getStickersReduxState(),
     stories: getStoriesForRedux(),
     storyDistributionLists: getDistributionListsForRedux(),

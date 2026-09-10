@@ -1,14 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupLinkManagement.dom.js';
-import { GroupLinkManagement } from './GroupLinkManagement.dom.js';
-import { SignalService as Proto } from '../../../protobuf/index.std.js';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
+import type { PropsType } from './GroupLinkManagement.dom.tsx';
+import { GroupLinkManagement } from './GroupLinkManagement.dom.tsx';
+import { SignalService as Proto } from '../../../protobuf/index.std.ts';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -51,13 +52,13 @@ const createProps = (
   ),
 });
 
-export function OffAdmin(): React.JSX.Element {
+export function OffAdmin(): JSX.Element {
   const props = createProps(undefined, true);
 
   return <GroupLinkManagement {...props} />;
 }
 
-export function OnAdmin(): React.JSX.Element {
+export function OnAdmin(): JSX.Element {
   const props = createProps(
     getConversation('https://signal.group/1', AccessControlEnum.ANY),
     true
@@ -66,7 +67,7 @@ export function OnAdmin(): React.JSX.Element {
   return <GroupLinkManagement {...props} />;
 }
 
-export function OnAdminAdminApprovalNeeded(): React.JSX.Element {
+export function OnAdminAdminApprovalNeeded(): JSX.Element {
   const props = createProps(
     getConversation('https://signal.group/1', AccessControlEnum.ADMINISTRATOR),
     true
@@ -75,7 +76,7 @@ export function OnAdminAdminApprovalNeeded(): React.JSX.Element {
   return <GroupLinkManagement {...props} />;
 }
 
-export function OnNonAdmin(): React.JSX.Element {
+export function OnNonAdmin(): JSX.Element {
   const props = createProps(
     getConversation('https://signal.group/1', AccessControlEnum.ANY)
   );
@@ -83,7 +84,7 @@ export function OnNonAdmin(): React.JSX.Element {
   return <GroupLinkManagement {...props} />;
 }
 
-export function OffNonAdminUserCannotGetHere(): React.JSX.Element {
+export function OffNonAdminUserCannotGetHere(): JSX.Element {
   const props = createProps(undefined, false);
 
   return <GroupLinkManagement {...props} />;

@@ -1,75 +1,80 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode, RefObject } from 'react';
-import React, { memo } from 'react';
+import type { ReactNode, RefObject, JSX } from 'react';
+import { memo } from 'react';
 
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { GetSharedGroupNamesType } from '../../util/sharedGroupNames.dom.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { GetSharedGroupNamesType } from '../../util/sharedGroupNames.dom.ts';
 
-import type { InteractionModeType } from '../../state/ducks/conversations.preload.js';
-import { TimelineDateHeader } from './TimelineDateHeader.dom.js';
+import type { InteractionModeType } from '../../state/ducks/conversations.preload.ts';
+import { TimelineDateHeader } from './TimelineDateHeader.dom.tsx';
 import type {
   Props as AllMessageProps,
   PropsData as TimelineMessageProps,
   PropsActions as MessageActionsType,
-} from './TimelineMessage.dom.js';
-import type { PropsActionsType as CallingNotificationActionsType } from './CallingNotification.dom.js';
-import { CallingNotification } from './CallingNotification.dom.js';
-import { ChatSessionRefreshedNotification } from './ChatSessionRefreshedNotification.dom.js';
-import type { PropsDataType as DeliveryIssueProps } from './DeliveryIssueNotification.dom.js';
-import { DeliveryIssueNotification } from './DeliveryIssueNotification.dom.js';
-import type { PropsData as ChangeNumberNotificationProps } from './ChangeNumberNotification.dom.js';
-import { ChangeNumberNotification } from './ChangeNumberNotification.dom.js';
-import type { PropsData as JoinedSignalNotificationProps } from './JoinedSignalNotification.dom.js';
-import { JoinedSignalNotification } from './JoinedSignalNotification.dom.js';
-import type { PropsData as TitleTransitionNotificationProps } from './TitleTransitionNotification.dom.js';
-import { TitleTransitionNotification } from './TitleTransitionNotification.dom.js';
-import type { CallingNotificationType } from '../../util/callingNotification.std.js';
-import { InlineNotificationWrapper } from './InlineNotificationWrapper.dom.js';
-import type { PropsData as UnsupportedMessageProps } from './UnsupportedMessage.dom.js';
-import { UnsupportedMessage } from './UnsupportedMessage.dom.js';
-import type { PropsData as TimerNotificationProps } from './TimerNotification.dom.js';
-import { TimerNotification } from './TimerNotification.dom.js';
+} from './TimelineMessage.dom.tsx';
+import type { PropsActionsType as CallingNotificationActionsType } from './CallingNotification.dom.tsx';
+import { CallingNotification } from './CallingNotification.dom.tsx';
+import { ChatSessionRefreshedNotification } from './ChatSessionRefreshedNotification.dom.tsx';
+import type { PropsDataType as DeliveryIssueProps } from './DeliveryIssueNotification.dom.tsx';
+import { DeliveryIssueNotification } from './DeliveryIssueNotification.dom.tsx';
+import type { PropsData as ChangeNumberNotificationProps } from './ChangeNumberNotification.dom.tsx';
+import { ChangeNumberNotification } from './ChangeNumberNotification.dom.tsx';
+import type { PropsData as JoinedSignalNotificationProps } from './JoinedSignalNotification.dom.tsx';
+import { JoinedSignalNotification } from './JoinedSignalNotification.dom.tsx';
+import type { PropsData as TitleTransitionNotificationProps } from './TitleTransitionNotification.dom.tsx';
+import { TitleTransitionNotification } from './TitleTransitionNotification.dom.tsx';
+import type { CallingNotificationType } from '../../util/callingNotification.std.ts';
+import { InlineNotificationWrapper } from './InlineNotificationWrapper.dom.tsx';
+import type { PropsData as UnsupportedMessageProps } from './UnsupportedMessage.dom.tsx';
+import { UnsupportedMessage } from './UnsupportedMessage.dom.tsx';
+import type { PropsData as TimerNotificationProps } from './TimerNotification.dom.tsx';
+import { TimerNotification } from './TimerNotification.dom.tsx';
 import type {
   PropsActions as SafetyNumberActionsType,
   PropsData as SafetyNumberNotificationProps,
-} from './SafetyNumberNotification.dom.js';
-import { SafetyNumberNotification } from './SafetyNumberNotification.dom.js';
-import type { PropsData as VerificationNotificationProps } from './VerificationNotification.dom.js';
-import { VerificationNotification } from './VerificationNotification.dom.js';
-import type { PropsData as GroupNotificationProps } from './GroupNotification.dom.js';
-import { GroupNotification } from './GroupNotification.dom.js';
+} from './SafetyNumberNotification.dom.tsx';
+import { SafetyNumberNotification } from './SafetyNumberNotification.dom.tsx';
+import type { PropsData as VerificationNotificationProps } from './VerificationNotification.dom.tsx';
+import { VerificationNotification } from './VerificationNotification.dom.tsx';
+import type { PropsData as GroupNotificationProps } from './GroupNotification.dom.tsx';
+import { GroupNotification } from './GroupNotification.dom.tsx';
 import type {
   PropsDataType as GroupV2ChangeProps,
   PropsActionsType as GroupV2ChangeActionsType,
-} from './GroupV2Change.dom.js';
-import { GroupV2Change } from './GroupV2Change.dom.js';
-import type { PropsDataType as GroupV1MigrationProps } from './GroupV1Migration.dom.js';
-import { GroupV1Migration } from './GroupV1Migration.dom.js';
-import type { SmartContactRendererType } from '../../groupChange.std.js';
-import { ResetSessionNotification } from './ResetSessionNotification.dom.js';
-import type { PropsType as ProfileChangeNotificationPropsType } from './ProfileChangeNotification.dom.js';
-import { ProfileChangeNotification } from './ProfileChangeNotification.dom.js';
-import type { PropsType as PaymentEventNotificationPropsType } from './PaymentEventNotification.dom.js';
-import { PaymentEventNotification } from './PaymentEventNotification.dom.js';
-import type { PropsType as PollTerminateNotificationPropsType } from './PollTerminateNotification.dom.js';
-import { PollTerminateNotification } from './PollTerminateNotification.dom.js';
-import type { PropsDataType as ConversationMergeNotificationPropsType } from './ConversationMergeNotification.dom.js';
-import { ConversationMergeNotification } from './ConversationMergeNotification.dom.js';
-import type { PropsDataType as PhoneNumberDiscoveryNotificationPropsType } from './PhoneNumberDiscoveryNotification.dom.js';
-import { PhoneNumberDiscoveryNotification } from './PhoneNumberDiscoveryNotification.dom.js';
-import type { PinnedMessageNotificationData } from './pinned-messages/PinnedMessageNotification.dom.js';
-import { PinnedMessageNotification } from './pinned-messages/PinnedMessageNotification.dom.js';
-import { SystemMessage } from './SystemMessage.dom.js';
-import { TimelineMessage } from './TimelineMessage.dom.js';
+} from './GroupV2Change.dom.tsx';
+import { GroupV2Change } from './GroupV2Change.dom.tsx';
+import type { PropsDataType as GroupV1MigrationProps } from './GroupV1Migration.dom.tsx';
+import { GroupV1Migration } from './GroupV1Migration.dom.tsx';
+import type { SmartContactRendererType } from '../../groupChange.std.ts';
+import { ResetSessionNotification } from './ResetSessionNotification.dom.tsx';
+import type { PropsType as ProfileChangeNotificationPropsType } from './ProfileChangeNotification.dom.tsx';
+import { ProfileChangeNotification } from './ProfileChangeNotification.dom.tsx';
+import type { PropsType as PaymentEventNotificationPropsType } from './PaymentEventNotification.dom.tsx';
+import { PaymentEventNotification } from './PaymentEventNotification.dom.tsx';
+import type { PollTerminateNotificationDataType } from './PollTerminateNotification.dom.tsx';
+import { PollTerminateNotification } from './PollTerminateNotification.dom.tsx';
+import type { PropsDataType as ConversationMergeNotificationPropsType } from './ConversationMergeNotification.dom.tsx';
+import { ConversationMergeNotification } from './ConversationMergeNotification.dom.tsx';
+import type { PropsDataType as PhoneNumberDiscoveryNotificationPropsType } from './PhoneNumberDiscoveryNotification.dom.tsx';
+import { PhoneNumberDiscoveryNotification } from './PhoneNumberDiscoveryNotification.dom.tsx';
+import type { PinnedMessageNotificationData } from './pinned-messages/PinnedMessageNotification.dom.tsx';
+import { PinnedMessageNotification } from './pinned-messages/PinnedMessageNotification.dom.tsx';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { TimelineMessage } from './TimelineMessage.dom.tsx';
 import {
   MessageRequestResponseNotification,
   type MessageRequestResponseNotificationData,
-} from './MessageRequestResponseNotification.dom.js';
-import type { MessageRequestState } from './MessageRequestActionsConfirmation.dom.js';
-import type { MessageInteractivity } from './Message.dom.js';
-import type { PinMessageData } from '../../model-types.js';
+} from './MessageRequestResponseNotification.dom.tsx';
+import type { MessageRequestState } from './MessageRequestActionsConfirmation.dom.tsx';
+import type { MessageInteractivity } from './Message.dom.tsx';
+import type { PinMessageData } from '../../model-types.d.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import type { RenderItemProps } from '../../state/smart/TimelineItem.preload.tsx';
+import type { CollapseSet } from '../../util/CollapseSet.std.ts';
+import { CollapseSetViewer } from './CollapseSet.dom.tsx';
+import type { TargetedMessageType } from '../../state/selectors/conversations.dom.ts';
 
 type CallHistoryType = {
   type: 'callHistory';
@@ -78,6 +83,10 @@ type CallHistoryType = {
 type ChatSessionRefreshedType = {
   type: 'chatSessionRefreshed';
   data: null;
+};
+type CollapseSetType = {
+  type: 'collapseSet';
+  data: CollapseSet;
 };
 type DeliveryIssueType = {
   type: 'deliveryIssue';
@@ -165,16 +174,14 @@ type MessageRequestResponseNotificationType = {
 };
 type PollTerminateNotificationType = {
   type: 'pollTerminate';
-  data: Omit<
-    PollTerminateNotificationPropsType,
-    'i18n' | 'scrollToPollMessage'
-  >;
+  data: PollTerminateNotificationDataType;
 };
 
 export type TimelineItemType = (
   | CallHistoryType
   | ChangeNumberNotificationType
   | ChatSessionRefreshedType
+  | CollapseSetType
   | ConversationMergeNotificationType
   | DeliveryIssueType
   | GroupNotificationType
@@ -199,7 +206,7 @@ export type TimelineItemType = (
 ) & { timestamp: number };
 
 type PropsLocalType = {
-  containerElementRef: RefObject<HTMLElement>;
+  containerElementRef: RefObject<HTMLElement | null>;
   conversationId: string;
   getSharedGroupNames: GetSharedGroupNamesType;
   item?: TimelineItemType;
@@ -208,18 +215,33 @@ type PropsLocalType = {
   isBlocked: boolean;
   isGroup: boolean;
   isNextItemCallingNotification: boolean;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  isSignalConversation: boolean;
   isTargeted: boolean;
   scrollToPinnedMessage: (pinMessage: PinMessageData) => void;
-  scrollToPollMessage: (messageId: string, conversationId: string) => unknown;
+  scrollToPollMessage: (
+    pollAuthorAci: AciString,
+    pollTimestamp: number,
+    conversationId: string
+  ) => unknown;
   targetMessage: (messageId: string, conversationId: string) => unknown;
+  toggleSelectMessage: (
+    conversationId: string,
+    messageId: string,
+    shift: boolean,
+    selected: boolean
+  ) => void;
   shouldRenderDateHeader: boolean;
   onOpenEditNicknameAndNoteModal: (contactId: string) => void;
   onOpenMessageRequestActionsConfirmation: (state: MessageRequestState) => void;
   platform: string;
-  renderContact: SmartContactRendererType<React.JSX.Element>;
-  renderUniversalTimerNotification: () => React.JSX.Element;
+  renderContact: SmartContactRendererType<JSX.Element>;
+  renderUniversalTimerNotification: () => JSX.Element;
+  renderItem: (props: RenderItemProps) => JSX.Element;
   i18n: LocalizerType;
   interactionMode: InteractionModeType;
+  targetedMessage: TargetedMessageType | undefined;
   theme: ThemeType;
 };
 
@@ -252,6 +274,9 @@ export const TimelineItem = memo(function TimelineItem({
   isBlocked,
   isGroup,
   isNextItemCallingNotification,
+  isSelectMode,
+  isSelected,
+  isSignalConversation,
   isTargeted,
   item,
   onOpenEditNicknameAndNoteModal,
@@ -261,6 +286,8 @@ export const TimelineItem = memo(function TimelineItem({
   platform,
   renderUniversalTimerNotification,
   returnToActiveCall,
+  renderContact,
+  renderItem,
   scrollToPinnedMessage,
   scrollToPollMessage,
   targetMessage,
@@ -269,9 +296,11 @@ export const TimelineItem = memo(function TimelineItem({
   shouldCollapseBelow,
   shouldHideMetadata,
   shouldRenderDateHeader,
+  targetedMessage,
   theme,
+  toggleSelectMessage,
   ...reducedProps
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   if (!item) {
     // This can happen under normal conditions.
     //
@@ -300,6 +329,25 @@ export const TimelineItem = memo(function TimelineItem({
         platform={platform}
         i18n={i18n}
         theme={theme}
+        toggleSelectMessage={toggleSelectMessage}
+      />
+    );
+  } else if (item.type === 'collapseSet') {
+    itemContents = (
+      <CollapseSetViewer
+        {...item.data}
+        containerElementRef={containerElementRef}
+        containerWidthBreakpoint={reducedProps.containerWidthBreakpoint}
+        conversationId={conversationId}
+        isBlocked={isBlocked}
+        isGroup={isGroup}
+        isSelectMode={isSelectMode}
+        isSelected={isSelected}
+        renderItem={renderItem}
+        targetedMessage={targetedMessage}
+        toggleDeleteMessagesModal={reducedProps.toggleDeleteMessagesModal}
+        toggleSelectMessage={toggleSelectMessage}
+        i18n={i18n}
       />
     );
   } else {
@@ -394,7 +442,12 @@ export const TimelineItem = memo(function TimelineItem({
       );
     } else if (item.type === 'groupV2Change') {
       notification = (
-        <GroupV2Change {...reducedProps} {...item.data} i18n={i18n} />
+        <GroupV2Change
+          {...reducedProps}
+          {...item.data}
+          i18n={i18n}
+          renderContact={renderContact}
+        />
       );
     } else if (item.type === 'groupV1Migration') {
       notification = (
@@ -469,6 +522,7 @@ export const TimelineItem = memo(function TimelineItem({
           onOpenMessageRequestActionsConfirmation={
             onOpenMessageRequestActionsConfirmation
           }
+          renderedContact={isGroup ? null : renderContact(conversationId)}
         />
       );
     } else {
@@ -485,7 +539,10 @@ export const TimelineItem = memo(function TimelineItem({
         id={id}
         conversationId={conversationId}
         isTargeted={isTargeted}
+        isSelectMode={isSelectMode}
+        isSelected={isSelected}
         targetMessage={targetMessage}
+        toggleSelectMessage={toggleSelectMessage}
       >
         {notification}
       </InlineNotificationWrapper>
@@ -495,7 +552,11 @@ export const TimelineItem = memo(function TimelineItem({
   if (shouldRenderDateHeader) {
     return (
       <>
-        <TimelineDateHeader i18n={i18n} timestamp={item.timestamp} />
+        <TimelineDateHeader
+          i18n={i18n}
+          timestamp={item.timestamp}
+          isSignalConversation={isSignalConversation}
+        />
         {itemContents}
       </>
     );

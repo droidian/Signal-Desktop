@@ -144,7 +144,9 @@ message ContactRecord {
   optional AvatarColor avatarColor = 24;
   bytes aciBinary = 25; // 16-byte UUID
   bytes pniBinary = 26; // 16-byte UUID
-  // Next ID: 27
+  uint64 blockedAtTimestamp = 27; // if `blocked` is true, 0 means unknown block time
+  OptionalBool notifyForCallsIfMuted = 28; // If unset, use the default settings
+  // Next ID: 30
 }
 
 message GroupV1Record {
@@ -169,11 +171,16 @@ message GroupV2Record {
   bool archived = 4;
   bool markedUnread = 5;
   uint64 mutedUntilTimestamp = 6;
-  bool dontNotifyForMentionsIfMuted = 7;
+  bool dontNotifyForMentionsIfMuted = 7; // will be deprecated in favor of [notifyForMentionsIfMuted]
   bool hideStory = 8;
   reserved 9;
   StorySendMode storySendMode = 10;
   optional AvatarColor avatarColor = 11;
+  bytes verifiedNameHash = 12; // SHA-256 of UTF-8 encoded decrypted group title that was last verified
+  uint64 blockedAtTimestamp = 13; // if `blocked` is true, 0 means unknown block time
+  OptionalBool notifyForCallsIfMuted = 14; // If unset, use the default settings
+  OptionalBool notifyForMentionsIfMuted = 15; // If unset, use the default settings. If [dontNotifyForMentionsIfMuted] is true, this should be initialized to false.
+  OptionalBool notifyForRepliesIfMuted = 16; // If unset, use the default settings
 }
 
 message Payments {
@@ -182,6 +189,11 @@ message Payments {
 }
 
 message AccountRecord {
+  enum UnreadBadgeType {
+    UNKNOWN_BADGE_TYPE = 0; // Interpret as "Unread messages"
+    UNREAD_MESSAGES = 1;
+    UNREAD_CHATS = 2;
+  }
 
   enum PhoneNumberSharingMode {
     UNKNOWN = 0;
@@ -196,10 +208,13 @@ message AccountRecord {
       bytes serviceIdBinary = 3; // service ID binary (i.e. 16 byte UUID for ACI, 1 byte prefix + 16 byte UUID for PNI)
     }
 
+    message ReleaseNotes {}
+
     oneof identifier {
       Contact contact = 1;
       bytes legacyGroupId = 3;
       bytes groupMasterKey = 4;
+      ReleaseNotes releaseNotes = 5;
     }
   }
 
@@ -232,12 +247,6 @@ message AccountRecord {
     }
   }
 
-  message BackupTierHistory {
-    // See zkgroup for integer particular values. Unset if backups are not enabled.
-    optional uint64 backupTier = 1;
-    optional uint64 endedAtTimestamp = 2;
-  }
-
   message NotificationProfileManualOverride {
     message ManuallyEnabled {
       bytes id = 1;
@@ -267,6 +276,7 @@ message AccountRecord {
   bool unlistedPhoneNumber = 13;
   repeated PinnedConversation pinnedConversations = 14;
   bool preferContactAvatars = 15;
+  Payments payments = 16;
   uint32 universalExpireTimer = 17;
   reserved 18; // primarySendsSms
   reserved 19; // deprecatedE164
@@ -293,15 +303,27 @@ message AccountRecord {
   reserved /*backupsSubscriberId*/ 36;
   reserved /*backupsSubscriberCurrencyCode*/ 37;
   reserved /*backupsSubscriptionManuallyCancelled*/ 38;
-  // Set to true after backups are enabled and one is uploaded.
-  optional bool hasBackup = 39;
+  reserved /*hasBackup*/ 39;
   // See zkgroup for integer particular values. Unset if backups are not enabled.
   optional uint64 backupTier = 40;
   IAPSubscriberData backupSubscriberData = 41;
   optional AvatarColor avatarColor = 42;
+  reserved 43; // backupTierHistory
   NotificationProfileManualOverride notificationProfileManualOverride = 44;
   bool notificationProfileSyncDisabled = 45;
   bool automaticKeyVerificationDisabled = 46;
+  bool hasSeenAdminDeleteEducationDialog = 47;
+  optional bool releaseNotesChatArchived = 48;
+  optional uint64 releaseNotesChatMutedUntilTimestamp = 49;
+  optional bool releaseNotesChatBlocked = 50;
+  optional bool releaseNotesChatMarkedUnread = 51;
+  optional uint64 releaseNotesChatBlockedAt = 52; // only set if known (>0)
+  UnreadBadgeType unreadBadgeType = 53;
+  OptionalBool includeMutedChatsInBadge = 54; // If unset, consider this off
+  OptionalBool reactionNotifications = 55; // If unset, consider this on
+  OptionalBool notifyForCallsIfMuted = 56; // If unset, consider this off
+  OptionalBool notifyForMentionsIfMuted = 57; // If unset, consider this on
+  OptionalBool notifyForRepliesIfMuted = 58; // If unset, consider this on
 }
 
 message StoryDistributionListRecord {
@@ -323,7 +345,7 @@ message StickerPackRecord {
                      //   info = "Sticker Pack"
                      // )
   uint32 position = 3; // When displayed sticker packs should be first sorted
-                       // in descending order by zero-based `position` and
+                       // in ascending order by zero-based `position` and
                        // then by ascending `packId` (lexicographically,
                        // packId can be treated as a hex string).
                        // When installing a sticker pack the client should find
@@ -338,9 +360,8 @@ message StickerPackRecord {
 message CallLinkRecord {
   bytes rootKey = 1; // 16 bytes
   bytes adminPasskey = 2; // Non-empty when the current user is an admin
-  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey`
-                                   // should be cleared
-  optional bytes epoch = 4;
+  uint64 deletedAtTimestampMs = 3; // When present and non-zero, `adminPasskey` should be cleared
+  reserved /*epoch*/ 4;
 }
 
 message Recipient {

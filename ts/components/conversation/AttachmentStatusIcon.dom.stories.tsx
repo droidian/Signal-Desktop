@@ -1,11 +1,11 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './AttachmentStatusIcon.dom.js';
-import { AttachmentStatusIcon } from './AttachmentStatusIcon.dom.js';
-import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.js';
+import type { PropsType } from './AttachmentStatusIcon.dom.tsx';
+import { AttachmentStatusIcon } from './AttachmentStatusIcon.dom.tsx';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.ts';
 
 export default {
   title: 'Components/Conversation/AttachmentStatusIcon',
@@ -18,7 +18,7 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-export function Default(args: PropsType): React.JSX.Element {
+export function Default(args: PropsType): JSX.Element {
   return (
     <div style={{ backgroundColor: 'gray' }}>
       <AttachmentStatusIcon {...args}>🔥🔥</AttachmentStatusIcon>
@@ -26,7 +26,7 @@ export function Default(args: PropsType): React.JSX.Element {
   );
 }
 
-export function NeedsDownload(args: PropsType): React.JSX.Element {
+export function NeedsDownload(args: PropsType): JSX.Element {
   return (
     <div style={{ backgroundColor: 'gray' }}>
       <AttachmentStatusIcon
@@ -39,7 +39,7 @@ export function NeedsDownload(args: PropsType): React.JSX.Element {
   );
 }
 
-export function Downloading(args: PropsType): React.JSX.Element {
+export function Downloading(args: PropsType): JSX.Element {
   return (
     <div style={{ backgroundColor: 'gray' }}>
       <AttachmentStatusIcon
@@ -57,19 +57,19 @@ export function Downloading(args: PropsType): React.JSX.Element {
   );
 }
 
-export function Interactive(args: PropsType): React.JSX.Element {
+export function Interactive(args: PropsType): JSX.Element {
   const size = 10000000;
   const [attachment, setAttachment] = useState(
     fakeAttachment({ path: undefined, size })
   );
-  const intervalRef = useRef<NodeJS.Timeout | undefined>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const cancelAttachmentDownload = useCallback(() => {
     const newAttachment = { ...attachment, pending: false };
     setAttachment(newAttachment);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
-      intervalRef.current = undefined;
+      intervalRef.current = null;
     }
   }, [attachment, setAttachment]);
   const kickOffAttachmentDownload = useCallback(() => {
@@ -86,7 +86,7 @@ export function Interactive(args: PropsType): React.JSX.Element {
       if (totalDownloaded >= size && intervalRef.current) {
         setAttachment({ ...newAttachment, pending: false, path: 'something ' });
         clearInterval(intervalRef.current);
-        intervalRef.current = undefined;
+        intervalRef.current = null;
       }
     }, 300);
   }, [attachment, setAttachment]);

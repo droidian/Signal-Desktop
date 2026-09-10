@@ -1,8 +1,9 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ComponentProps } from 'react';
-import React, { useContext } from 'react';
+import type { ComponentProps, JSX } from 'react';
+import { useContext } from 'react';
+import { MuteExpiration } from '@signalapp/types';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
 import { times } from 'lodash';
@@ -10,19 +11,22 @@ import { v4 as generateUuid } from 'uuid';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../../test-helpers/getDefaultConversation.std.js';
-import { getRandomColor } from '../../test-helpers/getRandomColor.std.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.js';
-import type { PropsType } from './ConversationHeader.dom.js';
+} from '../../test-helpers/getDefaultConversation.std.ts';
+import { getRandomColor } from '../../test-helpers/getRandomColor.std.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { StorybookThemeContext } from '../../../.storybook/StorybookThemeContext.std.ts';
+import {
+  CannotLeaveGroupBecauseYouAreLastAdminAlert,
+  type PropsType,
+} from './ConversationHeader.dom.tsx';
 import {
   ConversationHeader,
   OutgoingCallButtonStyle,
-} from './ConversationHeader.dom.js';
-import { gifUrl } from '../../storybook/Fixtures.std.js';
-import { ThemeType } from '../../types/Util.std.js';
-import { ContactSpoofingType } from '../../util/contactSpoofing.std.js';
-import { CollidingAvatars } from '../CollidingAvatars.dom.js';
+} from './ConversationHeader.dom.tsx';
+import { gifUrl } from '../../storybook/Fixtures.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { ContactSpoofingType } from '../../util/contactSpoofing.std.ts';
+import { CollidingAvatars } from '../CollidingAvatars.dom.tsx';
 
 export default {
   title: 'Components/Conversation/ConversationHeader',
@@ -62,9 +66,6 @@ const commonProps: PropsType = {
   isSelectMode: false,
 
   i18n,
-
-  localDeleteWarningShown: true,
-  setLocalDeleteWarningShown: action('setLocalDeleteWarningShown'),
 
   onConversationAccept: action('onConversationAccept'),
   onConversationArchive: action('onConversationArchive'),
@@ -106,7 +107,7 @@ const commonProps: PropsType = {
   renderPinnedMessagesBar,
 };
 
-export function PrivateConvo(): React.JSX.Element {
+export function PrivateConvo(): JSX.Element {
   const items: ItemsType = [
     {
       title: 'With name and profile, verified',
@@ -230,7 +231,9 @@ export function PrivateConvo(): React.JSX.Element {
           type: 'direct',
           id: '9',
           acceptedMessageRequest: true,
-          muteExpiresAt: new Date('3000-10-18T11:11:11Z').valueOf(),
+          muteExpiresAt: MuteExpiration.fromNumber(
+            new Date('3000-10-18T11:11:11Z').valueOf()
+          ),
         }),
       },
     },
@@ -267,7 +270,7 @@ export function PrivateConvo(): React.JSX.Element {
   );
 }
 
-export function Group(): React.JSX.Element {
+export function Group(): JSX.Element {
   const items: ItemsType = [
     {
       title: 'Basic',
@@ -336,7 +339,7 @@ export function Group(): React.JSX.Element {
           expireTimer: DurationInSeconds.fromSeconds(10),
           acceptedMessageRequest: true,
 
-          muteExpiresAt: Infinity,
+          muteExpiresAt: MuteExpiration.ALWAYS,
         }),
       },
     },
@@ -358,7 +361,7 @@ export function Group(): React.JSX.Element {
   );
 }
 
-export function NoteToSelf(): React.JSX.Element {
+export function NoteToSelf(): JSX.Element {
   const items: ItemsType = [
     {
       title: 'In chat with yourself',
@@ -394,7 +397,7 @@ export function NoteToSelf(): React.JSX.Element {
   );
 }
 
-export function Unaccepted(): React.JSX.Element {
+export function Unaccepted(): JSX.Element {
   const items: ItemsType = [
     {
       title: '1:1 conversation',
@@ -430,7 +433,7 @@ export function Unaccepted(): React.JSX.Element {
   );
 }
 
-export function Blocked(): React.JSX.Element {
+export function Blocked(): JSX.Element {
   const items: ItemsType = [
     {
       title: 'Unaccepted & Blocked',
@@ -484,20 +487,7 @@ export function Blocked(): React.JSX.Element {
   );
 }
 
-export function NeedsDeleteConfirmation(): React.JSX.Element {
-  const [localDeleteWarningShown, setLocalDeleteWarningShown] =
-    React.useState(false);
-  const props = {
-    ...commonProps,
-    localDeleteWarningShown,
-    setLocalDeleteWarningShown: () => setLocalDeleteWarningShown(true),
-  };
-  const theme = useContext(StorybookThemeContext);
-
-  return <ConversationHeader {...props} theme={theme} />;
-}
-
-export function DirectConversationInAnotherCall(): React.JSX.Element {
+export function DirectConversationInAnotherCall(): JSX.Element {
   const props = {
     ...commonProps,
     hasActiveCall: true,
@@ -507,7 +497,7 @@ export function DirectConversationInAnotherCall(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function DirectConversationInCurrentCall(): React.JSX.Element {
+export function DirectConversationInCurrentCall(): JSX.Element {
   const props = {
     ...commonProps,
     hasActiveCall: true,
@@ -518,7 +508,7 @@ export function DirectConversationInCurrentCall(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function GroupConversationInAnotherCall(): React.JSX.Element {
+export function GroupConversationInAnotherCall(): JSX.Element {
   const props = {
     ...commonProps,
     conversation: getDefaultGroup(),
@@ -530,7 +520,7 @@ export function GroupConversationInAnotherCall(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function GroupConversationInCurrentCall(): React.JSX.Element {
+export function GroupConversationInCurrentCall(): JSX.Element {
   const props = {
     ...commonProps,
     conversation: getDefaultGroup(),
@@ -542,7 +532,7 @@ export function GroupConversationInCurrentCall(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithSameNameInDirectConversationWarning(): React.JSX.Element {
+export function WithSameNameInDirectConversationWarning(): JSX.Element {
   const props: PropsType = {
     ...commonProps,
     contactSpoofingWarning: {
@@ -555,7 +545,7 @@ export function WithSameNameInDirectConversationWarning(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithSameNameInGroupConversationWarning(): React.JSX.Element {
+export function WithSameNameInGroupConversationWarning(): JSX.Element {
   const props: PropsType = {
     ...commonProps,
     contactSpoofingWarning: {
@@ -571,7 +561,7 @@ export function WithSameNameInGroupConversationWarning(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithSameNamesInGroupConversationWarning(): React.JSX.Element {
+export function WithSameNamesInGroupConversationWarning(): JSX.Element {
   const props: PropsType = {
     ...commonProps,
     contactSpoofingWarning: {
@@ -588,7 +578,7 @@ export function WithSameNamesInGroupConversationWarning(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithJustMiniPlayer(): React.JSX.Element {
+export function WithJustMiniPlayer(): JSX.Element {
   const props: PropsType = {
     ...commonProps,
     shouldShowMiniPlayer: true,
@@ -598,14 +588,14 @@ export function WithJustMiniPlayer(): React.JSX.Element {
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithJustPinnedMessagesBar(): React.JSX.Element {
+export function WithJustPinnedMessagesBar(): JSX.Element {
   const props: PropsType = commonProps;
   const theme = useContext(StorybookThemeContext);
 
   return <ConversationHeader {...props} theme={theme} />;
 }
 
-export function WithMinPlayerAndPinnedMessagesBar(): React.JSX.Element {
+export function WithMinPlayerAndPinnedMessagesBar(): JSX.Element {
   const props: PropsType = {
     ...commonProps,
     shouldShowMiniPlayer: true,
@@ -613,4 +603,13 @@ export function WithMinPlayerAndPinnedMessagesBar(): React.JSX.Element {
   const theme = useContext(StorybookThemeContext);
 
   return <ConversationHeader {...props} theme={theme} />;
+}
+
+export function LastAdminAlert(): JSX.Element {
+  return (
+    <CannotLeaveGroupBecauseYouAreLastAdminAlert
+      i18n={i18n}
+      onClose={action('onClose')}
+    />
+  );
 }

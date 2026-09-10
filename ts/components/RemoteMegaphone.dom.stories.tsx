@@ -1,15 +1,16 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './RemoteMegaphone.dom.js';
-import { RemoteMegaphone } from './RemoteMegaphone.dom.js';
-import { type ComponentMeta } from '../storybook/types.std.js';
+import type { PropsType } from './RemoteMegaphone.dom.tsx';
+import { RemoteMegaphone } from './RemoteMegaphone.dom.tsx';
+import { type ComponentMeta } from '../storybook/types.std.ts';
 import type {
   MegaphoneCtaId,
   RemoteMegaphoneId,
-} from '../types/Megaphone.std.js';
+} from '../types/Megaphone.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -26,18 +27,18 @@ export default {
     secondaryCtaText: 'Not now',
     title: 'Donate to Signal',
     body: 'Signal is powered by people like you. Show your support today!',
-    imagePath: '/fixtures/donate-heart.png',
+    imagePath: 'images/donate-heart.png',
     isFullSize: true,
     onClickNarrowMegaphone: action('onClickNarrowMegaphone'),
     onInteractWithMegaphone: action('onInteractWithMegaphone'),
   },
 } satisfies ComponentMeta<PropsType>;
 
-export function Defaults(args: PropsType): React.JSX.Element {
+export function Defaults(args: PropsType): JSX.Element {
   return <RemoteMegaphone {...args} />;
 }
 
-export function AlternateText(args: PropsType): React.JSX.Element {
+export function AlternateText(args: PropsType): JSX.Element {
   return (
     <RemoteMegaphone
       {...args}
@@ -47,11 +48,11 @@ export function AlternateText(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ShortText(args: PropsType): React.JSX.Element {
+export function ShortText(args: PropsType): JSX.Element {
   return <RemoteMegaphone {...args} title="Donate Today" body="Pls halp" />;
 }
 
-export function LongText(args: PropsType): React.JSX.Element {
+export function LongText(args: PropsType): JSX.Element {
   return (
     <RemoteMegaphone
       {...args}
@@ -61,6 +62,18 @@ export function LongText(args: PropsType): React.JSX.Element {
   );
 }
 
-export function NarrowSidebar(args: PropsType): React.JSX.Element {
+export function LongButtons(args: PropsType): JSX.Element {
+  return (
+    <RemoteMegaphone
+      {...args}
+      title="Donate Today"
+      body="As a nonprofit, Signal needs your support. As a nonprofit, Signal needs your support. As a nonprofit, Signal needs your support. As a nonprofit, Signal needs your support."
+      primaryCtaText="Donate Donate Donate Donate"
+      secondaryCtaText="Remind me later Remind me later"
+    />
+  );
+}
+
+export function NarrowSidebar(args: PropsType): JSX.Element {
   return <RemoteMegaphone {...args} isFullSize={false} />;
 }
