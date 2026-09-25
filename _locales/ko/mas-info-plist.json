@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal은 영상 통화를 위해 카메라를 사용합니다."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal은 음성 통화를 하고 음성 메시지를 녹음하기 위해 마이크 접근 권한이 필요합니다."
+  }
+}

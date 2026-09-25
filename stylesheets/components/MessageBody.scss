@@ -17,9 +17,9 @@
     }
 
     &:focus {
+      outline: none;
       @include mixins.keyboard-mode {
-        border: 1px solid variables.$color-black;
-        outline: none;
+        @include mixins.axo-focus-ring;
       }
     }
   }

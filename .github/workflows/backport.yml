@@ -14,14 +14,8 @@ jobs:
     if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-        with:
-          token: ${{ secrets.AUTOMATED_GITHUB_PAT }}
-          repository: signalapp/Signal-Backport-Action-Private
-          path: ./.github/actions/backport
-      - name: Run action
-        uses: ./.github/actions/backport
+      - name: Apply labels and open backport pull requests
+        uses: signalapp/Signal-Backport-Action-Private@main
         with:
           token: ${{ secrets.AUTOMATED_GITHUB_PAT }}
           git-email: backport-bot@signal.org

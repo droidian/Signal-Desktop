@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal përdor kamerën për thirrjet me video."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal ka nevojë për qasje në mikrofon për të kryer dhe marrë thirrje, si dhe për të regjistruar mesazhe zanore."
+  }
+}

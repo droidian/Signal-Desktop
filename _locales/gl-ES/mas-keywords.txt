@@ -1,0 +1,1 @@
+signal,mensaxe,chamada,voz,encriptación,privada,seguridade,privacidade,grupo,vídeo,chat,historias

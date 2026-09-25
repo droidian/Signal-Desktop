@@ -10,13 +10,4 @@
   // TitleBar support
   display: flex;
   flex-direction: column;
-
-  &.light-theme {
-    background-color: variables.$color-white;
-    color: variables.$color-gray-90;
-  }
-  &.dark-theme {
-    background-color: variables.$color-gray-95;
-    color: variables.$color-gray-05;
-  }
 }

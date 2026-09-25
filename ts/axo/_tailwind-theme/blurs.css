@@ -1,0 +1,12 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+@theme {
+  /* filter/backdrop-filter: blur() */
+  --blur-*: initial; /* reset defaults */
+  --blur-thin: 8px; /* Tooltips, TimelineFloatingHeader */
+  --blur-regular: 12px; /* Menus, Popovers */
+  --blur-thick: 24px; /* Dialogs */
+}

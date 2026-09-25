@@ -5,51 +5,32 @@
 @use '../variables';
 
 .ConversationView {
-  display: flex;
-  flex-direction: column;
-  overflow: initial;
-
   &__pane {
     display: flex;
+    position: relative;
+    flex: 1;
     flex-direction: column;
-    height: calc(
-      100% - #{variables.$header-height} - var(--title-bar-drag-area-height)
-    );
-    inset-inline-start: 0;
-    overflow-y: overlay;
-    position: absolute;
-    top: calc(#{variables.$header-height} + var(--title-bar-drag-area-height));
-    width: 100%;
+    overflow-y: auto;
     z-index: variables.$z-index-base;
-
-    @include mixins.light-theme() {
-      background-color: variables.$color-white;
-    }
-
-    @include mixins.dark-theme() {
-      background-color: variables.$color-gray-95;
-    }
   }
 
   &__timeline {
     &--container {
+      display: flex;
       flex-grow: 1;
       margin: 0;
-      max-width: 100%;
-      position: relative;
       z-index: 0;
+      min-height: 0;
     }
 
     & {
-      -webkit-padding-start: 0px;
-      height: 100%;
+      position: relative;
+      flex-grow: 1;
+      min-height: 0;
       margin: 0;
       overflow-x: hidden;
       overflow-y: auto;
       padding: 0;
-      position: absolute;
-      top: 0;
-      width: 100%;
     }
   }
 
@@ -68,5 +49,6 @@
   }
 
   &__header {
+    z-index: variables.$z-index-above-base;
   }
 }

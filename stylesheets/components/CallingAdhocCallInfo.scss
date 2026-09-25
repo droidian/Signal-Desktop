@@ -6,7 +6,7 @@
 
 .CallingAdhocCallInfo {
   flex-shrink: 0;
-  width: 360px;
+  width: 320px;
   height: auto;
   margin-block-end: auto;
   padding-block-end: 16px;
@@ -71,6 +71,13 @@
   justify-content: center;
 }
 
+.CallingAdhocCallInfo__MenuItem:focus {
+  outline: none;
+  @include mixins.keyboard-mode {
+    @include mixins.axo-focus-ring;
+  }
+}
+
 .CallingAdhocCallInfo__MenuItemIcon:before {
   content: '';
   display: inline-block;
@@ -115,28 +122,31 @@
 
 .CallingAdhocCallInfo__UnknownContactInfoButton {
   @include mixins.button-reset;
-  @include mixins.color-svg(
-    '../images/icons/v3/info/info.svg',
-    variables.$color-white
-  );
+
   & {
     display: flex;
     flex: none;
+    margin-inline: 8px;
+    border-radius: 9999px;
+  }
+
+  &::before {
+    content: '';
+    display: block;
     width: 16px;
     height: 16px;
-    margin-inline: 8px;
+    @include mixins.color-svg(
+      '../images/icons/v3/info/info.svg',
+      variables.$color-white
+    );
   }
 }
 
 .CallingAdhocCallInfo__UnknownContactInfoButton:focus {
+  outline: none;
   @include mixins.keyboard-mode {
-    background: variables.$color-ultramarine;
+    @include mixins.axo-focus-ring;
   }
-}
-
-.CallingAdhocCallInfo__UnknownContactInfoDialog__body {
-  padding-block-start: 22px;
-  padding-block-end: 8px;
 }
 
 .CallingAdhocCallInfo__UnknownContactAvatarSet {
@@ -160,8 +170,4 @@
   .module-Avatar__contents {
   // Should match background of .module-calling-participants-list__contact:hover
   outline-color: variables.$color-gray-62;
-}
-
-.CallingAdhocCallInfo__RemoveClientDialog {
-  width: 440px;
 }

@@ -1,0 +1,54 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { Meta, StoryFn } from '@storybook/react';
+
+import { action } from '@storybook/addon-actions';
+import { ThemeType } from '../../types/Util.std.ts';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+
+import type { PropsType } from './ContactSpoofingReviewDialogPerson.dom.tsx';
+import { ContactSpoofingReviewDialogPerson } from './ContactSpoofingReviewDialogPerson.dom.tsx';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  component: ContactSpoofingReviewDialogPerson,
+  title: 'Components/Conversation/ContactSpoofingReviewDialogPerson',
+  argTypes: {
+    oldName: { control: { type: 'text' } },
+    isSignalConnection: { control: { type: 'boolean' } },
+  },
+  args: {
+    i18n,
+    onClick: action('onClick'),
+    toggleSignalConnectionsModal: action('toggleSignalConnectionsModal'),
+    sharedGroupNames: [],
+    getPreferredBadge: () => undefined,
+    conversation: getDefaultConversation(),
+    theme: ThemeType.light,
+    oldName: undefined,
+    isSignalConnection: false,
+  },
+} satisfies Meta<PropsType>;
+
+const Template: StoryFn<PropsType> = args => {
+  return <ContactSpoofingReviewDialogPerson {...args} />;
+};
+
+export const Normal = Template.bind({});
+
+export const SignalConnection = Template.bind({});
+SignalConnection.args = {
+  isSignalConnection: true,
+};
+
+export const ProfileNameChanged = Template.bind({});
+ProfileNameChanged.args = {
+  oldName: 'Imposter',
+};
+
+export const WithSharedGroups = Template.bind({});
+WithSharedGroups.args = {
+  sharedGroupNames: ['A', 'B', 'C'],
+};

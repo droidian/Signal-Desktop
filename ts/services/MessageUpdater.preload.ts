@@ -1,0 +1,167 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { MessageAttributesType } from '../model-types.d.ts';
+import type { MessageModel } from '../models/messages.preload.ts';
+import {
+  ReadStatus,
+  maxReadStatus,
+} from '../messages/MessageReadStatus.std.ts';
+import { notificationService } from './notifications.preload.ts';
+import { SeenStatus } from '../MessageSeenStatus.std.ts';
+import { queueUpdateMessage } from '../util/messageBatcher.preload.ts';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { isValidTapToView } from '../util/isValidTapToView.std.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { getMessageSentTimestamp } from '../util/getMessageSentTimestamp.std.ts';
+import { eraseMessageContents } from '../util/cleanup.preload.ts';
+import { getSource, getSourceServiceId } from '../messages/sources.preload.ts';
+import { isAciString } from '../util/isAciString.std.ts';
+import { viewOnceOpenJobQueue } from '../jobs/viewOnceOpenJobQueue.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { isIncoming } from '../messages/helpers.std.ts';
+import {
+  conversationJobQueue,
+  conversationQueueJobEnum,
+} from '../jobs/conversationJobQueue.preload.ts';
+import { ReceiptType } from '../types/Receipt.std.ts';
+import { isDirectConversation } from '../util/whatTypeOfConversation.dom.ts';
+
+const log = createLogger('MessageUpdater');
+
+function markReadOrViewed(
+  messageAttrs: Readonly<MessageAttributesType>,
+  readStatus: ReadStatus.Read | ReadStatus.Viewed,
+  timestamp: undefined | number,
+  skipSave: boolean
+): MessageAttributesType {
+  const oldReadStatus = messageAttrs.readStatus ?? ReadStatus.Read;
+  const newReadStatus = maxReadStatus(oldReadStatus, readStatus);
+
+  const nextMessageAttributes: MessageAttributesType = {
+    ...messageAttrs,
+    readAt: timestamp,
+    readStatus: newReadStatus,
+    seenStatus: SeenStatus.Seen,
+  };
+
+  const { id: messageId, expireTimer, expirationStartTimestamp } = messageAttrs;
+
+  if (expireTimer && !expirationStartTimestamp) {
+    nextMessageAttributes.expirationStartTimestamp = Math.min(
+      Date.now(),
+      timestamp || Date.now()
+    );
+  }
+
+  notificationService.removeBy({ messageId });
+
+  if (!skipSave) {
+    drop(queueUpdateMessage(nextMessageAttributes));
+  }
+
+  return nextMessageAttributes;
+}
+
+export const markRead = (
+  messageAttrs: Readonly<MessageAttributesType>,
+  readAt?: number,
+  { skipSave = false } = {}
+): MessageAttributesType =>
+  markReadOrViewed(messageAttrs, ReadStatus.Read, readAt, skipSave);
+
+export const markViewed = (
+  messageAttrs: Readonly<MessageAttributesType>,
+  viewedAt?: number,
+  { skipSave = false } = {}
+): MessageAttributesType =>
+  markReadOrViewed(messageAttrs, ReadStatus.Viewed, viewedAt, skipSave);
+
+export async function markViewOnceMessageViewed(
+  message: MessageModel,
+  options?: {
+    fromSync?: boolean;
+  }
+): Promise<void> {
+  const { fromSync } = options || {};
+
+  if (message.attributes.isErased) {
+    log.warn(
+      `markViewOnceMessageViewed: Message ${getMessageIdForLogging(message.attributes)} is already erased!`
+    );
+    return;
+  }
+  if (!isValidTapToView(message.attributes)) {
+    log.warn(
+      `markViewOnceMessageViewed: Message ${getMessageIdForLogging(message.attributes)} is not a valid tap to view message!`
+    );
+  }
+
+  if (message.get('readStatus') !== ReadStatus.Viewed) {
+    message.set(markViewed(message.attributes));
+  }
+
+  await eraseMessageContents(message, 'view-once-viewed');
+
+  if (!fromSync) {
+    const senderE164 = getSource(message.attributes);
+    const senderAci = getSourceServiceId(message.attributes);
+    const timestamp = getMessageSentTimestamp(message.attributes, { log });
+
+    if (senderAci === undefined || !isAciString(senderAci)) {
+      throw new Error('markViewOnceMessageViewed: senderAci is undefined');
+    }
+
+    // Send viewed receipt to sender for incoming view-once messages
+    if (isIncoming(message.attributes)) {
+      const conversationId = message.get('conversationId');
+      const conversation = window.ConversationController.get(conversationId);
+      const isDirectConversationValue = conversation
+        ? isDirectConversation(conversation.attributes)
+        : true;
+
+      drop(
+        conversationJobQueue.add({
+          type: conversationQueueJobEnum.enum.Receipts,
+          conversationId,
+          receiptsType: ReceiptType.Viewed,
+          receipts: [
+            {
+              messageId: message.id,
+              conversationId,
+              senderE164,
+              senderAci,
+              timestamp,
+              isDirectConversation: isDirectConversationValue,
+            },
+          ],
+        })
+      );
+    }
+
+    if (!window.ConversationController.doWeHaveOtherDevices()) {
+      log.info(
+        'markViewOnceMessageViewed: We have no other devices; not sending view once open sync'
+      );
+      return;
+    }
+
+    try {
+      await viewOnceOpenJobQueue.add({
+        viewOnceOpens: [
+          {
+            senderE164,
+            senderAci,
+            timestamp,
+          },
+        ],
+      });
+    } catch (error) {
+      log.error(
+        'markViewOnceMessageViewed: Failed to queue view once open sync',
+        Errors.toLogFormat(error)
+      );
+    }
+  }
+}

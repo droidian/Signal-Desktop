@@ -1,0 +1,21 @@
+Signal je aplikacija za razmjenu poruka čiji je ključ privatnost. Besplatna je i jednostavna za korištenje, sa snažnim sveobuhvatnim šifriranjem koje čuva vaše razgovore i pozive potpuno privatnima. Ne možemo čitati vaše poruke niti slušati vaše pozive, a ne može ni niko drugi. 
+
+• Signal na MacOS-u se povezuje sa Signalom na vašem telefonu. 
+
+• Besplatno šaljite tekstualne poruke, glasovne poruke, fotografije, videozapise, GIF-ove i datoteke, sve sveobuhvatno šifrirano. 
+
+• Ostanite povezani uz grupne razgovore i do 1000 ljudi. Kontrolirajte ko može objavljivati i upravljati članovima grupe pomoću postavki administratorskih dozvola.
+
+• Pozovite svoje prijatelje kristalno čistim glasovnim i video pozivima, sve sveobhvatno šifrirano. Grupni pozivi podržavaju do 75 osoba.
+
+• Signal je kreiran za vašu privatnost. Ne znamo ništa o vama niti s kim razgovarate. Naš Signal protokol otvorenog koda podrazumijeva da ne možemo čitati vaše poruke niti slušati vaše pozive. A to ne može ni niko drugi. Nema skrivenih motiva, prikupljanja podataka niti kompromisa. 
+
+• Dijelite fotografije, tekstualne i video priče koje nestaju nakon 24 sata. S postavkama privatnosti kontrolirate ko tačno može vidjeti svaku vašu priču.
+
+• Signal je nezavisan i neprofitan; drugačija vrsta tehnologije od drugačije vrste organizacije. Kao neprofitna organizacija, podržavaju nas vaše donacije, a ne oglašivači ili investitori. 
+
+• Za podršku, pitanja ili više informacija posjetite https://support.signal.org/
+
+Da provjerite naš izvorni kȏd, posjetite https://github.com/signalapp 
+
+Pratite nas na X @signalapp i Instagramu @signal_app

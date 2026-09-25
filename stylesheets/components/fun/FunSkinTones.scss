@@ -25,17 +25,16 @@
 
   .FunSkinTones__ListBoxItem:hover &,
   .FunSkinTones__ListBoxItem:focus & {
-    background: light-dark(variables.$color-gray-02, variables.$color-gray-78);
+    background: var(--axo-color-fill-primary);
   }
 
   .FunSkinTones__ListBoxItem:focus & {
     @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: -2px;
+      @include mixins.axo-focus-ring-inset;
     }
   }
 
   .FunSkinTones__ListBoxItem[data-selected='true'] & {
-    background: light-dark(variables.$color-gray-05, variables.$color-gray-60);
+    background: var(--axo-color-fill-primary-pressed);
   }
 }

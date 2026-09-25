@@ -1,0 +1,170 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { usernames } from '@signalapp/libsignal-client';
+
+import type { UserNotFoundModalStateType } from '../state/ducks/globalModals.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { ToastType } from '../types/Toast.dom.tsx';
+import { strictAssert } from './assert.std.ts';
+import type { UUIDFetchStateKeyType } from './uuidFetchState.std.ts';
+import { getServiceIdsForE164s } from './getServiceIdsForE164s.dom.ts';
+import {
+  getAccountForUsername,
+  cdsLookup,
+} from '../textsecure/WebAPI.preload.ts';
+
+const log = createLogger('lookupConversationWithoutServiceId');
+
+export type LookupConversationWithoutServiceIdActionsType = Readonly<{
+  lookupConversationWithoutServiceId: typeof lookupConversationWithoutServiceId;
+  showUserNotFoundModal: (state: UserNotFoundModalStateType) => void;
+  setIsFetchingUUID: (
+    identifier: UUIDFetchStateKeyType,
+    isFetching: boolean
+  ) => void;
+}>;
+
+export type LookupConversationWithoutServiceIdOptionsType = Omit<
+  LookupConversationWithoutServiceIdActionsType,
+  'lookupConversationWithoutServiceId'
+> &
+  Readonly<
+    | {
+        type: 'e164';
+        e164: string;
+        phoneNumber: string;
+      }
+    | {
+        type: 'username';
+        username: string;
+      }
+  >;
+
+type FoundUsernameType = {
+  aci: AciString;
+  username: string;
+};
+
+export async function lookupConversationWithoutServiceId(
+  options: LookupConversationWithoutServiceIdOptionsType
+): Promise<string | undefined> {
+  if (options.type === 'username') {
+    const knownConversation = window.ConversationController.get(
+      options.username
+    );
+    if (knownConversation && knownConversation.getServiceId()) {
+      return knownConversation.id;
+    }
+  }
+
+  const identifier: UUIDFetchStateKeyType =
+    options.type === 'e164'
+      ? `e164:${options.e164}`
+      : `username:${options.username}`;
+
+  const { showUserNotFoundModal, setIsFetchingUUID } = options;
+  setIsFetchingUUID(identifier, true);
+
+  try {
+    let conversationId: string | undefined;
+    if (options.type === 'e164') {
+      const { entries: serverLookup, transformedE164s } =
+        await getServiceIdsForE164s(cdsLookup, [options.e164]);
+      const e164ToUse = transformedE164s.get(options.e164) ?? options.e164;
+
+      const maybePair = serverLookup.get(e164ToUse);
+
+      if (maybePair) {
+        const { conversation } =
+          window.ConversationController.maybeMergeContacts({
+            aci: maybePair.aci,
+            pni: maybePair.pni,
+            e164: e164ToUse,
+            reason: 'startNewConversationWithoutUuid(e164)',
+          });
+        conversationId = conversation?.id;
+      }
+    } else {
+      const foundUsername = await checkForUsername(options.username);
+      if (foundUsername) {
+        const convo = window.ConversationController.lookupOrCreate({
+          serviceId: foundUsername.aci,
+          reason: 'lookupConversationWithoutServiceId',
+        });
+
+        strictAssert(convo, 'We just ensured conversation existence');
+
+        conversationId = convo.id;
+
+        await convo.updateUsername(foundUsername.username);
+      }
+    }
+
+    if (!conversationId) {
+      showUserNotFoundModal(
+        options.type === 'username'
+          ? options
+          : {
+              type: 'phoneNumber',
+              phoneNumber: options.phoneNumber,
+            }
+      );
+      return undefined;
+    }
+
+    return conversationId;
+  } catch (error) {
+    log.error(
+      'startNewConversationWithoutUuid: Something went wrong fetching:',
+      Errors.toLogFormat(error)
+    );
+
+    if (options.type === 'e164') {
+      window.reduxActions.toast.showToast({
+        toastType: ToastType.FailedToFetchPhoneNumber,
+      });
+    } else {
+      window.reduxActions.toast.showToast({
+        toastType: ToastType.FailedToFetchUsername,
+      });
+    }
+
+    return undefined;
+  } finally {
+    setIsFetchingUUID(identifier, false);
+  }
+}
+
+async function checkForUsername(
+  username: string
+): Promise<FoundUsernameType | undefined> {
+  let hash: Uint8Array<ArrayBuffer>;
+  let fixedUsername = username;
+  if (fixedUsername.startsWith('@')) {
+    fixedUsername = fixedUsername.slice(1);
+  }
+
+  try {
+    hash = usernames.hash(fixedUsername);
+  } catch (error) {
+    log.error('checkForUsername: invalid username', Errors.toLogFormat(error));
+    return undefined;
+  }
+
+  const accountAci = await getAccountForUsername({
+    hash,
+  });
+
+  if (!accountAci) {
+    log.error("checkForUsername: Returned account didn't include a uuid");
+    return;
+  }
+
+  return {
+    aci: accountAci,
+    username: fixedUsername,
+  };
+}

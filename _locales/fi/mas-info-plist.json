@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal käyttää kameraasi videopuheluihin."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal tarvitsee mikrofonin käyttöoikeuden puheluihin ja ääniviesteihin."
+  }
+}

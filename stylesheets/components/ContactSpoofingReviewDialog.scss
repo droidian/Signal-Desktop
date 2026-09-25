@@ -5,8 +5,6 @@
 @use '../variables';
 
 .module-ContactSpoofingReviewDialog {
-  user-select: none;
-
   p {
     @include mixins.font-body-2;
 

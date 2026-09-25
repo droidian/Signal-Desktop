@@ -1,0 +1,86 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, type JSX } from 'react';
+
+import { SPINNER_CLASS_NAME } from './BaseConversationListItem.dom.tsx';
+import { ListTile } from '../ListTile.dom.tsx';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { Spinner } from '../Spinner.dom.tsx';
+
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../util/lookupConversationWithoutServiceId.preload.ts';
+import type { ShowConversationType } from '../../state/ducks/conversations.preload.ts';
+
+type PropsData = {
+  username: string;
+  isFetchingUsername: boolean;
+};
+
+type PropsHousekeeping = {
+  i18n: LocalizerType;
+  showConversation: ShowConversationType;
+} & LookupConversationWithoutServiceIdActionsType;
+
+export type Props = PropsData & PropsHousekeeping;
+
+export function UsernameSearchResultListItem({
+  i18n,
+  isFetchingUsername,
+  lookupConversationWithoutServiceId,
+  username,
+  showUserNotFoundModal,
+  setIsFetchingUUID,
+  showConversation,
+}: Props): JSX.Element {
+  const boundOnClick = useCallback(async () => {
+    if (isFetchingUsername) {
+      return;
+    }
+    const conversationId = await lookupConversationWithoutServiceId({
+      showUserNotFoundModal,
+      setIsFetchingUUID,
+
+      type: 'username',
+      username,
+    });
+
+    if (conversationId !== undefined) {
+      showConversation({ conversationId });
+    }
+  }, [
+    isFetchingUsername,
+    lookupConversationWithoutServiceId,
+    setIsFetchingUUID,
+    showConversation,
+    showUserNotFoundModal,
+    username,
+  ]);
+
+  return (
+    <ListTile
+      leading={
+        <Avatar
+          conversationType="direct"
+          searchResult
+          i18n={i18n}
+          title={username}
+          size={AvatarSize.THIRTY_TWO}
+          badge={undefined}
+        />
+      }
+      title={username}
+      onClick={boundOnClick}
+      trailing={
+        isFetchingUsername ? (
+          <Spinner
+            size="20px"
+            svgSize="small"
+            moduleClassName={SPINNER_CLASS_NAME}
+            direction="on-progress-dialog"
+          />
+        ) : undefined
+      }
+    />
+  );
+}

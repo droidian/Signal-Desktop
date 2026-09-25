@@ -160,7 +160,7 @@
 
     &--missing {
       @include mixins.color-svg(
-        '../images/full-screen-flow/alert-outline.svg',
+        '../images/alert-outline.svg',
         variables.$color-gray-25
       );
     }
@@ -333,7 +333,10 @@
     }
 
     &:focus {
-      outline: 4px solid variables.$color-ultramarine;
+      outline: none;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
+      }
     }
 
     &:disabled {

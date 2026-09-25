@@ -1,0 +1,404 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { ContentHint } from '@signalapp/libsignal-client';
+import * as Errors from '../../types/errors.std.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { sendContentMessageToGroup } from '../../util/sendToGroup.preload.ts';
+import { MessageModel } from '../../models/messages.preload.ts';
+import { generateMessageId } from '../../util/generateMessageId.node.ts';
+import { incrementMessageCounter } from '../../util/incrementMessageCounter.preload.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { send, sendSyncMessageOnly } from '../../messages/send.preload.ts';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import {
+  isSent,
+  SendStatus,
+  type SendStateByConversationId,
+} from '../../messages/MessageSendState.std.ts';
+import type { MessagePollVoteType } from '../../types/Polls.dom.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import type {
+  ConversationQueueJobBundle,
+  PollVoteJobData,
+} from '../conversationJobQueue.preload.ts';
+import * as pollVoteUtil from '../../polls/util.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { getSendRecipientLists } from './getSendRecipientLists.dom.ts';
+import { isDirectConversation } from '../../util/whatTypeOfConversation.dom.ts';
+import type { CallbackResultType } from '../../textsecure/Types.d.ts';
+import { addPniSignatureMessageToProto } from '../../textsecure/SendMessage.preload.ts';
+import {
+  shouldSendToConversation,
+  shouldSendToDirectConversation,
+} from './shouldSendToConversation.preload.ts';
+
+export async function sendPollVote(
+  conversation: ConversationModel,
+  {
+    isFinalAttempt,
+    messaging,
+    shouldContinue,
+    timeRemaining,
+    log: jobLog,
+  }: ConversationQueueJobBundle,
+  data: PollVoteJobData
+): Promise<void> {
+  const { pollMessageId, revision } = data;
+
+  await window.ConversationController.load();
+
+  const pollMessage = await getMessageById(pollMessageId);
+  if (!pollMessage) {
+    jobLog.info(
+      `poll message ${pollMessageId} was not found, maybe because it was deleted. Giving up on sending poll vote`
+    );
+    return;
+  }
+
+  let sendErrors: Array<Error> = [];
+  const saveErrors = (errors: Array<Error>): void => {
+    sendErrors = errors;
+  };
+
+  let originalError: Error | undefined;
+  let pendingVote: MessagePollVoteType | undefined;
+
+  try {
+    const pollMessageConversation = window.ConversationController.get(
+      pollMessage.get('conversationId')
+    );
+    if (pollMessageConversation !== conversation) {
+      jobLog.error(
+        `poll message conversation '${pollMessageConversation?.idForLogging()}' does not match job conversation ${conversation.idForLogging()}`
+      );
+      return;
+    }
+
+    // Find our pending vote
+    const ourConversationId =
+      window.ConversationController.getOurConversationIdOrThrow();
+    const pollDataOnMessage = pollMessage.get('poll');
+    if (!pollDataOnMessage) {
+      jobLog.error('sendPollVote: poll message has no poll data');
+      return;
+    }
+
+    pendingVote = pollDataOnMessage.votes?.find(
+      vote =>
+        vote.fromConversationId === ourConversationId &&
+        vote.sendStateByConversationId != null
+    );
+
+    if (!pendingVote) {
+      jobLog.info('sendPollVote: no pending vote found, nothing to send');
+      return;
+    }
+
+    const currentPendingVote = pendingVote;
+
+    if (!shouldContinue) {
+      jobLog.info('sendPollVote: ran out of time; giving up');
+      setMessagePollVoteFailed(pollMessage, currentPendingVote);
+      await window.MessageCache.saveMessage(pollMessage.attributes);
+      return;
+    }
+
+    // Use current vote data, not stale job data
+    const currentVoteCount = currentPendingVote.voteCount;
+    const currentOptionIndexes = [...currentPendingVote.optionIndexes];
+    const currentTimestamp = currentPendingVote.timestamp;
+
+    const unsentConversationIds = Array.from(
+      pollVoteUtil.getUnsentConversationIds(currentPendingVote)
+    );
+    const { recipientServiceIdsWithoutMe, untrustedServiceIds } =
+      getSendRecipientLists({
+        log: jobLog,
+        conversationIds: unsentConversationIds,
+        conversation,
+      });
+
+    if (untrustedServiceIds.length) {
+      window.reduxActions.conversations.conversationStoppedByMissingVerification(
+        {
+          conversationId: conversation.id,
+          untrustedServiceIds,
+        }
+      );
+      throw new Error(
+        `Poll vote for message ${pollMessageId} sending blocked because ${untrustedServiceIds.length} conversation(s) were untrusted. Failing this attempt.`
+      );
+    }
+
+    const expireTimer = pollMessageConversation.get('expireTimer');
+    const profileKey = conversation.get('profileSharing')
+      ? await ourProfileKeyService.get()
+      : undefined;
+
+    const ephemeral = new MessageModel({
+      ...generateMessageId(incrementMessageCounter()),
+      type: 'outgoing',
+      conversationId: conversation.id,
+      sent_at: currentTimestamp,
+      received_at_ms: currentTimestamp,
+      timestamp: currentTimestamp,
+      sendStateByConversationId: Object.fromEntries(
+        unsentConversationIds.map(id => [
+          id,
+          {
+            status: SendStatus.Pending,
+            updatedAt: Date.now(),
+          },
+        ])
+      ),
+    });
+    ephemeral.doNotSave = true;
+    window.MessageCache.register(ephemeral);
+
+    let didFullySend: boolean;
+    let ephemeralSendStateByConversationId: SendStateByConversationId = {};
+
+    if (recipientServiceIdsWithoutMe.length === 0) {
+      if (!window.ConversationController.doWeHaveOtherDevices()) {
+        jobLog.info(
+          'sendPollVote: We have no other devices; not sending sync message'
+        );
+        return;
+      }
+
+      jobLog.info('sending sync poll vote message only');
+
+      const groupV2Info = isDirectConversation(conversation.attributes)
+        ? undefined
+        : conversation.getGroupV2Info({
+            members: recipientServiceIdsWithoutMe,
+          });
+
+      if (!groupV2Info && !isDirectConversation(conversation.attributes)) {
+        jobLog.error(
+          'sendPollVote: Missing groupV2Info for group conversation'
+        );
+        return;
+      }
+
+      const dataMessage = await messaging.getPollVoteDataMessage({
+        expireTimer,
+        expireTimerVersion: conversation.getExpireTimerVersion(),
+        groupV2: groupV2Info,
+        profileKey,
+        pollVote: {
+          targetAuthorAci: data.targetAuthorAci,
+          targetTimestamp: data.targetTimestamp,
+          optionIndexes: currentOptionIndexes,
+          voteCount: currentVoteCount,
+        },
+        timestamp: currentTimestamp,
+      });
+
+      await sendSyncMessageOnly(ephemeral, {
+        dataMessage,
+        saveErrors,
+        targetTimestamp: currentTimestamp,
+      });
+
+      didFullySend = true;
+    } else {
+      let promise: Promise<CallbackResultType>;
+
+      if (isDirectConversation(conversation.attributes)) {
+        const [ok, refusal] = shouldSendToDirectConversation(conversation);
+        if (!ok) {
+          jobLog.info(refusal.logLine);
+          return;
+        }
+
+        jobLog.info('sending direct poll vote message');
+        promise = conversation.queueJob('sendPollVote/direct', async () => {
+          const contentMessage = await messaging.getPollVoteContentMessage({
+            groupV2: undefined,
+            timestamp: currentTimestamp,
+            profileKey,
+            expireTimer,
+            expireTimerVersion: conversation.getExpireTimerVersion(),
+            pollVote: {
+              targetAuthorAci: data.targetAuthorAci,
+              targetTimestamp: data.targetTimestamp,
+              optionIndexes: currentOptionIndexes,
+              voteCount: currentVoteCount,
+            },
+          });
+
+          addPniSignatureMessageToProto({
+            conversation,
+            proto: contentMessage,
+            reason: `sendPollVote(${currentTimestamp})`,
+          });
+
+          const sendOptions = await getSendOptions(conversation.attributes);
+          return messaging.sendMessageProtoAndWait({
+            timestamp: currentTimestamp,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            recipients: [recipientServiceIdsWithoutMe[0]!],
+            proto: contentMessage,
+            contentHint: ContentHint.Resendable,
+            groupId: undefined,
+            options: sendOptions,
+            urgent: true,
+          });
+        });
+      } else {
+        const shouldSend = shouldSendToConversation(conversation, {
+          log: jobLog,
+        });
+        if (!shouldSend) {
+          setMessagePollVoteFailed(pollMessage, currentPendingVote);
+          await window.MessageCache.saveMessage(pollMessage.attributes);
+          return;
+        }
+
+        jobLog.info('sending group poll vote message');
+        promise = conversation.queueJob(
+          'conversationQueue/sendPollVote',
+          async abortSignal => {
+            const groupV2Info = conversation.getGroupV2Info({
+              members: recipientServiceIdsWithoutMe,
+            });
+            strictAssert(
+              groupV2Info,
+              'could not get group info from conversation'
+            );
+
+            if (revision != null) {
+              groupV2Info.revision = revision;
+            }
+
+            const contentMessage = await messaging.getPollVoteContentMessage({
+              groupV2: groupV2Info,
+              timestamp: currentTimestamp,
+              profileKey,
+              expireTimer,
+              expireTimerVersion: conversation.getExpireTimerVersion(),
+              pollVote: {
+                targetAuthorAci: data.targetAuthorAci,
+                targetTimestamp: data.targetTimestamp,
+                optionIndexes: currentOptionIndexes,
+                voteCount: currentVoteCount,
+              },
+            });
+
+            if (abortSignal?.aborted) {
+              throw new Error('sendPollVote was aborted');
+            }
+
+            const sendOptions = await getSendOptions(conversation.attributes);
+            return sendContentMessageToGroup({
+              contentHint: ContentHint.Resendable,
+              contentMessage,
+              messageId: pollMessageId,
+              recipients: recipientServiceIdsWithoutMe,
+              sendOptions,
+              sendTarget: conversation.toSenderKeyTarget(),
+              sendType: 'pollVote',
+              timestamp: currentTimestamp,
+              urgent: true,
+            });
+          }
+        );
+      }
+
+      const messageSendPromise = send(ephemeral, {
+        promise: handleMessageSend(promise, {
+          messageIds: [pollMessageId],
+          sendType: 'pollVote',
+        }),
+        saveErrors,
+        targetTimestamp: currentTimestamp,
+      });
+
+      // Because message.send swallows and processes errors, we'll await the inner promise
+      //   to get the SendMessageProtoError, which gives us information upstream
+      //   processors need to detect certain kinds of situations.
+      try {
+        await promise;
+      } catch (error) {
+        if (error instanceof Error) {
+          originalError = error;
+        } else {
+          jobLog.error(
+            `promise threw something other than an error: ${Errors.toLogFormat(
+              error
+            )}`
+          );
+        }
+      }
+
+      await messageSendPromise;
+
+      // Check if the send fully succeeded
+      ephemeralSendStateByConversationId =
+        ephemeral.get('sendStateByConversationId') || {};
+
+      didFullySend = Object.values(ephemeralSendStateByConversationId).every(
+        sendState => isSent(sendState.status)
+      );
+    }
+
+    // Sync the ephemeral's send states back to the poll vote
+    const updatedPoll = pollMessage.get('poll');
+    if (updatedPoll?.votes) {
+      const updatedVotes = pollVoteUtil.markOutgoingPollVoteSent(
+        updatedPoll.votes,
+        currentPendingVote,
+        ephemeralSendStateByConversationId
+      );
+      pollMessage.set({
+        poll: {
+          ...updatedPoll,
+          votes: updatedVotes,
+        },
+      });
+    }
+
+    if (!didFullySend) {
+      throw new Error('poll vote did not fully send');
+    }
+  } catch (thrownError: unknown) {
+    await handleMultipleSendErrors({
+      errors: [thrownError, ...sendErrors],
+      isFinalAttempt,
+      log: jobLog,
+      markFailed: () => {
+        jobLog.info('poll vote send failed');
+        setMessagePollVoteFailed(pollMessage, pendingVote);
+      },
+      timeRemaining,
+      toThrow: originalError || thrownError,
+    });
+  } finally {
+    await window.MessageCache.saveMessage(pollMessage.attributes);
+  }
+}
+
+function setMessagePollVoteFailed(
+  message: MessageModel,
+  pendingVote: MessagePollVoteType | undefined
+): void {
+  const poll = message.get('poll');
+  if (!poll?.votes || pendingVote == null) {
+    return;
+  }
+
+  const updatedVotes = pollVoteUtil.markOutgoingPollVoteFailed(
+    poll.votes,
+    pendingVote
+  );
+  message.set({
+    poll: {
+      ...poll,
+      votes: updatedVotes,
+    },
+  });
+}

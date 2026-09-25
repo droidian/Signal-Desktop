@@ -1,0 +1,96 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import { Readable } from 'node:stream';
+import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
+import {
+  ComparableBackup,
+  Purpose,
+} from '@signalapp/libsignal-client/dist/MessageBackup.js';
+import assert from 'node:assert/strict';
+
+import { clearData } from './helpers.preload.ts';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.ts';
+import { backupsService } from '../../services/backups/index.preload.ts';
+import { initialize as initializeExpiringMessageService } from '../../services/expiringMessagesDeletion.preload.ts';
+import { MemoryStream } from '../../util/MemoryStream.node.ts';
+
+const { BACKUP_INTEGRATION_DIR } = process.env;
+
+describe('backup/integration', () => {
+  before(async () => {
+    initializeExpiringMessageService();
+  });
+
+  beforeEach(async () => {
+    await clearData();
+    await loadAllAndReinitializeRedux();
+  });
+
+  afterEach(async () => {
+    await clearData();
+  });
+
+  if (!BACKUP_INTEGRATION_DIR) {
+    return;
+  }
+
+  const files = readdirSync(BACKUP_INTEGRATION_DIR)
+    .filter(file => file.endsWith('.binproto'))
+    .map(file => join(BACKUP_INTEGRATION_DIR, file));
+
+  if (files.length === 0) {
+    it('no backup tests', () => {
+      throw new Error('No backup integration tests');
+    });
+  }
+
+  for (const fullPath of files) {
+    it(basename(fullPath), async () => {
+      const expectedBuffer = await readFile(fullPath);
+
+      await backupsService.importBackup(() => Readable.from([expectedBuffer]), {
+        type: 'cross-client-integration-test',
+      });
+
+      const { data: exported } = await backupsService.exportBackupData({
+        type: 'cross-client-integration-test',
+        level: BackupLevel.Paid,
+        abortSignal: new AbortController().signal,
+      });
+
+      const actualStream = new MemoryStream(Buffer.from(exported));
+      const expectedStream = new MemoryStream(expectedBuffer);
+
+      const actual = await ComparableBackup.fromUnencrypted(
+        Purpose.RemoteBackup,
+        actualStream,
+        BigInt(exported.byteLength)
+      );
+      const expected = await ComparableBackup.fromUnencrypted(
+        Purpose.RemoteBackup,
+        expectedStream,
+        BigInt(expectedBuffer.byteLength)
+      );
+
+      const actualString = actual.comparableString();
+      const expectedString = expected.comparableString();
+
+      if (expectedString.includes('ReleaseChannelDonationRequest')) {
+        // Skip the unsupported tests
+        return;
+      }
+
+      if (actualString !== expectedString) {
+        const actualJson = JSON.parse(actualString);
+        const expectedJson = JSON.parse(expectedString);
+
+        // parsing as json produces a more detailed diff
+        assert.deepEqual(actualJson, expectedJson);
+      }
+    });
+  }
+});

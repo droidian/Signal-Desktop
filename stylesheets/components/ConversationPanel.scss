@@ -5,30 +5,32 @@
 @use '../variables';
 
 .ConversationPanel {
+  display: flex;
+  flex-direction: column;
+
   height: 100%;
   inset-inline-start: 0;
-  overflow-y: overlay;
   position: absolute;
   top: 0;
   width: 100%;
   z-index: variables.$z-index-above-base;
 
-  @include mixins.light-theme() {
-    background-color: variables.$color-white;
-  }
-
-  @include mixins.dark-theme() {
-    background-color: variables.$color-gray-95;
-  }
+  background: var(--axo-color-surface-primary);
 
   &__body {
-    margin-top: calc(
-      #{variables.$header-height} + var(--title-bar-drag-area-height)
-    );
-    padding-inline: 24px;
+    // Used for centering EmptyState in All Media view
+    position: relative;
+
+    overflow-y: auto;
+    flex-grow: 1;
+
+    &--padding {
+      padding-inline: 24px;
+    }
   }
 
   &__header {
+    flex-shrink: 0;
     align-items: center;
     display: flex;
     flex-direction: row;
@@ -36,18 +38,11 @@
       #{variables.$header-height} + var(--title-bar-drag-area-height)
     );
     padding-top: var(--title-bar-drag-area-height);
-    position: fixed;
     width: 100%;
     z-index: variables.$z-index-base;
 
-    @include mixins.light-theme {
-      color: variables.$color-gray-90;
-      background-color: variables.$color-white;
-    }
-    @include mixins.dark-theme {
-      color: variables.$color-gray-02;
-      background-color: variables.$color-gray-95;
-    }
+    color: var(--axo-color-label-primary);
+    background: var(--axo-color-surface-primary);
 
     &__info {
       display: flex;
@@ -62,7 +57,6 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        user-select: none;
 
         &__in-contacts-icon {
           margin-inline-start: 4px;

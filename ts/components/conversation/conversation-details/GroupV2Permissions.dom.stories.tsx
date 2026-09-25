@@ -1,0 +1,141 @@
+// Copyright 2020 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { JSX } from 'react';
+
+import { action } from '@storybook/addon-actions';
+import type { Meta } from '@storybook/react';
+import type { PropsType } from './GroupV2Permissions.dom.tsx';
+import { GroupV2Permissions } from './GroupV2Permissions.dom.tsx';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
+import { generateAci } from '../../../test-helpers/serviceIdUtils.std.ts';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  title: 'Components/Conversation/ConversationDetails/GroupV2Permissions',
+} satisfies Meta<PropsType>;
+
+const defaultConversation: ConversationType = getDefaultConversation({
+  id: '',
+  lastUpdated: 0,
+  title: 'Some Conversation',
+  type: 'group',
+  announcementsOnlyReady: true,
+  areWeAdmin: true,
+});
+
+const createProps = (): PropsType => ({
+  conversation: defaultConversation,
+  i18n,
+  setAccessControlAttributesSetting: action(
+    'setAccessControlAttributesSetting'
+  ),
+  setAccessControlMembersSetting: action('setAccessControlMembersSetting'),
+  setAccessControlMemberLabelSetting: action(
+    'setAccessControlMemberLabelSetting'
+  ),
+  setAnnouncementsOnly: action('setAnnouncementsOnly'),
+});
+
+export function Basic(): JSX.Element {
+  const props = createProps();
+
+  return <GroupV2Permissions {...props} />;
+}
+
+export function BasicWithLabels(): JSX.Element {
+  const props = createProps();
+  const conversation = {
+    ...defaultConversation,
+    memberships: [
+      {
+        aci: generateAci(),
+        isAdmin: true,
+        labelString: undefined,
+        labelEmoji: undefined,
+      },
+      {
+        aci: generateAci(),
+        isAdmin: true,
+        labelString: 'First',
+        labelEmoji: undefined,
+      },
+      {
+        aci: generateAci(),
+        isAdmin: false,
+        labelString: 'Second',
+        labelEmoji: undefined,
+      },
+    ],
+  };
+
+  return <GroupV2Permissions {...props} conversation={conversation} />;
+}
+
+export function BasicWithNonAdminLabels(): JSX.Element {
+  const props = createProps();
+  const conversation = {
+    ...defaultConversation,
+    memberships: [
+      {
+        aci: generateAci(),
+        isAdmin: true,
+        labelString: undefined,
+        labelEmoji: undefined,
+      },
+      {
+        aci: generateAci(),
+        isAdmin: true,
+        labelString: 'First',
+        labelEmoji: undefined,
+      },
+      {
+        aci: generateAci(),
+        isAdmin: false,
+        labelString: 'Second',
+        labelEmoji: undefined,
+      },
+    ],
+  };
+
+  return <GroupV2Permissions {...props} conversation={conversation} />;
+}
+
+export function NotAdmin(): JSX.Element {
+  return (
+    <GroupV2Permissions
+      {...createProps()}
+      conversation={getDefaultConversation({
+        announcementsOnly: true,
+        areWeAdmin: false,
+      })}
+    />
+  );
+}
+
+export function AdminButNotAnnouncementReady(): JSX.Element {
+  return (
+    <GroupV2Permissions
+      {...createProps()}
+      conversation={getDefaultConversation({
+        announcementsOnlyReady: false,
+        areWeAdmin: true,
+      })}
+    />
+  );
+}
+
+export function AdminNotAnnouncementReadyButItWasOn(): JSX.Element {
+  return (
+    <GroupV2Permissions
+      {...createProps()}
+      conversation={getDefaultConversation({
+        announcementsOnly: true,
+        announcementsOnlyReady: false,
+        areWeAdmin: true,
+      })}
+    />
+  );
+}

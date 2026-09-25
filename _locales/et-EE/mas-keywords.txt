@@ -1,0 +1,1 @@
+signal,sõnum,sõnumiäpp,kõned,hääl,krüptitud,privaatne,turvaline,privaatsus,grupp,video,vestlus,lood

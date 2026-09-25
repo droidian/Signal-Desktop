@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal आपके कैमरे का इस्तेमाल वीडियो कॉल करने के लिए करता है।"
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "कॉल करने और कॉल रिसीव करने या फिर वॉइस मैसेज रिकॉर्ड करने के लिए Signal को आपके माइक्रोफ़ोन का ऐक्सेस चाहिए।"
+  }
+}

@@ -45,7 +45,28 @@
 
     border-radius: 18px;
     overflow: hidden;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: auto-phrase;
+
+    background: var(--axo-color-surface-message-incoming);
+    color: var(--axo-color-label-primary);
+
+    &--with-view-once {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    &--view-once-active {
+      .ql-editor {
+        visibility: hidden;
+      }
+
+      .module-composition-input__input__scroller {
+        height: 32px;
+        overflow: hidden;
+      }
+    }
 
     // Override Quill styles
     .ql-container {
@@ -64,35 +85,17 @@
       }
     }
 
-    @include mixins.light-theme() {
-      // Same as background color
-      background-color: variables.$color-gray-05;
-      color: variables.$color-gray-90;
-    }
-
-    @include mixins.dark-theme() {
-      // Same as background color
-      background-color: variables.$color-gray-75;
-      color: variables.$color-gray-05;
-    }
-
     &__scroller {
       $padding-top: 6px;
+      position: relative;
       padding-block: $padding-top;
       padding-inline: 0;
+      flex: 1;
+      min-width: 0;
 
       min-height: calc(32px - 2 * $border-size);
       max-height: calc(72px - 2 * $border-size);
       overflow: auto;
-
-      &::-webkit-scrollbar-thumb {
-        @include mixins.light-theme {
-          border: 2px solid variables.$color-gray-05;
-        }
-        @include mixins.dark-theme {
-          border: 2px solid variables.$color-gray-75;
-        }
-      }
 
       &--large {
         $largeHeight: calc(212px - 2 * $border-size);
@@ -105,6 +108,11 @@
 
         .DraftEditor-root {
           height: $largeHeightContentBox;
+        }
+
+        .ql-editor {
+          margin-inline-end: calc(-1 * variables.$scrollbar_width);
+          padding-inline-end: variables.$scrollbar_width;
         }
       }
 
@@ -423,7 +431,6 @@
   &__editing-message {
     @include mixins.font-body-2-bold;
     margin-top: 10px;
-    user-select: none;
 
     &::before {
       content: '';
@@ -455,6 +462,24 @@
       top: 8px;
       width: 18px;
     }
+  }
+
+  &__view-once-button {
+    flex-shrink: 0;
+    align-self: center;
+    margin-inline-end: 8px;
+    margin-inline-start: 4px;
+  }
+
+  &__view-once-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    color: light-dark(variables.$color-gray-45, variables.$color-gray-25);
   }
 }
 
@@ -494,8 +519,8 @@ button.CompositionInput__link-preview__close-button {
   -webkit-mask: none;
   @include mixins.rounded-corners;
   align-items: center;
-  backdrop-filter: blur(32px);
-  background: variables.$color-white-alpha-80;
+  backdrop-filter: blur(12px);
+  background: rgba(variables.$color-gray-05, 0.8);
   display: flex;
   height: 20px;
   justify-content: center;
@@ -503,19 +528,25 @@ button.CompositionInput__link-preview__close-button {
   top: 6px;
   width: 20px;
 
+  @include mixins.dark-theme {
+    background-color: rgba(variables.$color-gray-75, 0.8);
+    -webkit-mask: none;
+  }
+
   &::before {
     @include mixins.color-svg(
       '../images/icons/v3/x/x.svg',
-      variables.$color-gray-75
+      variables.$color-black-alpha-50
     );
+
+    @include mixins.dark-theme {
+      background-color: variables.$color-white-alpha-55;
+    }
+
     & {
       content: '';
       height: 16px;
       width: 16px;
-    }
-
-    @include mixins.dark-theme {
-      background-color: variables.$color-gray-05;
     }
   }
 }

@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal-ek kamera darabil bideodeiak egiteko."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal-ek zure mikrofonoa atzitu behar du telefono-deiak egin eta jasotzeko, eta ahots-mezuak grabatzeko."
+  }
+}

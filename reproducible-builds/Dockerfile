@@ -1,4 +1,4 @@
-FROM ubuntu:focal-20240530@sha256:fa17826afb526a9fc7250e0fbcbfd18d03fe7a54849472f86879d8bf562c629e
+FROM ubuntu:jammy-20250714@sha256:1ec65b2719518e27d4d25f104d93f9fac60dc437f81452302406825c46fcc9cb
 
 # Allows package builders like FPM (used for creating the .deb package
 # on linux) to make their build timestamps determistic. Otherwise, a fresh
@@ -10,6 +10,7 @@ ENV SOURCE_DATE_EPOCH=1
 # Due to some issues with NVM reading .nvmrc, we define the version
 # as an environment variable and use that instead.
 ARG NODE_VERSION
+ARG PNPM_VERSION
 
 ENV SIGNAL_ENV=production
 
@@ -30,11 +31,8 @@ RUN apt install -oAcquire::https::Verify-Peer=false -y ca-certificates
 
 # Back to normal, verification back on
 RUN apt update
-RUN apt install -y git curl g++ g++-10 gcc gcc-10 make python3 tar
+RUN apt install -y git curl g++ g++-10 gcc gcc-10 make python3 tar xz-utils
 
-# On Ubuntu 20 GCC 9 is the default but we need 10 to build
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-10
 # ---
 
 # Install nvm
@@ -50,9 +48,10 @@ RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/insta
 
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+ENV CI=true
 
 # Install pnpm
-RUN npm install -g pnpm@10.3.0
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 RUN git config --global --add safe.directory /project
 

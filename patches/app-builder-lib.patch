@@ -1,0 +1,265 @@
+diff --git a/out/asar/asarUtil.js b/out/asar/asarUtil.js
+index ffb85dea810257c8ddbed2f857c25787c9e5b694..fdcc65fb94bcf95adbb4cf97b7d4c85a8fce5883 100644
+--- a/out/asar/asarUtil.js
++++ b/out/asar/asarUtil.js
+@@ -212,15 +212,24 @@ class AsarPackager {
+             if (a === b) {
+                 return 0;
+             }
++            // SIGNAL CHANGE START
+             // Place addons last because their signature changes per build
+-            const isAAddon = a.endsWith(".node");
+-            const isBAddon = b.endsWith(".node");
+-            if (isAAddon && !isBAddon) {
++            function isFickle(name) {
++              return name.endsWith(".node") ||
++                name.endsWith(path.sep + "local-production.json") ||
++                name.endsWith(path.sep + "preload.bundle.js") ||
++                name.endsWith(path.sep + "preload.bundle.cache") ||
++                name.endsWith(path.sep + "package.json");
++            }
++            const isAFickle = isFickle(a);
++            const isBFickle = isFickle(b);
++            if (isAFickle && !isBFickle) {
+                 return 1;
+             }
+-            if (isBAddon && !isAAddon) {
++            if (isBFickle && !isAFickle) {
+                 return -1;
+             }
++            // SIGNAL CHANGE END
+             // Otherwise order by name
+             return a < b ? -1 : 1;
+         });
+diff --git a/out/macPackager.js b/out/macPackager.js
+index d67dc0583d1bc98d2c60f5f4ff5c22a1fcd6ff44..1364f12a2791a4319ad741bef79fc4fb81f92516 100644
+--- a/out/macPackager.js
++++ b/out/macPackager.js
+@@ -330,22 +330,30 @@ class MacPackager extends platformPackager_1.PlatformPackager {
+         await this.doSign(signOptions, customSignOptions, identity);
+         // https://github.com/electron-userland/electron-builder/issues/1196#issuecomment-312310209
+         if (masOptions != null && !isDevelopment) {
++          const customSignInstaller = await (0, resolve_1.resolveFunction)(this.appInfo.type, customSignOptions.signInstaller, "signInstaller");
++          const artifactName = this.expandArtifactNamePattern(masOptions, "pkg", arch);
++          const artifactPath = path.join(outDir, artifactName);
++
++          let masInstallerIdentity;
++          if (customSignInstaller == null) {
+             const certType = isDevelopment ? "Mac Developer" : "3rd Party Mac Developer Installer";
+-            const masInstallerIdentity = await (0, macCodeSign_1.findIdentity)(certType, masOptions.identity, keychainFile);
++            masInstallerIdentity = await (0, macCodeSign_1.findIdentity)(certType, masOptions.identity, keychainFile);
+             if (masInstallerIdentity == null) {
+                 throw new builder_util_1.InvalidConfigurationError(`Cannot find valid "${certType}" identity to sign MAS installer, please see https://electron.build/code-signing`);
+             }
+-            // mas uploaded to AppStore, so, use "-" instead of space for name
+-            const artifactName = this.expandArtifactNamePattern(masOptions, "pkg", arch);
+-            const artifactPath = path.join(outDir, artifactName);
+-            await this.doFlat(appPath, artifactPath, masInstallerIdentity, keychainFile);
+-            await this.info.emitArtifactBuildCompleted({
+-                file: artifactPath,
+-                target: null,
+-                arch: builder_util_1.Arch.x64,
+-                safeArtifactName: this.computeSafeArtifactName(artifactName, "pkg", arch, true, this.platformSpecificBuildOptions.defaultArch),
+-                packager: this,
+-            });
++          }
++          // mas uploaded to AppStore, so, use "-" instead of space for name
++          await this.doFlat(appPath, artifactPath, masInstallerIdentity, keychainFile);
++          if (customSignInstaller != null) {
++            await customSignInstaller(artifactPath, this);
++          }
++          await this.info.emitArtifactBuildCompleted({
++              file: artifactPath,
++              target: null,
++              arch: builder_util_1.Arch.x64,
++              safeArtifactName: this.computeSafeArtifactName(artifactName, "pkg", arch, true, this.platformSpecificBuildOptions.defaultArch),
++              packager: this,
++          });
+         }
+         if (!isMas) {
+             await this.notarizeIfProvided(appPath);
+diff --git a/out/targets/FpmTarget.js b/out/targets/FpmTarget.js
+index f10f8148a237fae6c7af44818a127dfc881d884f..3bc2a9d1895d4f00133c82240ec2eba8c87d605a 100644
+--- a/out/targets/FpmTarget.js
++++ b/out/targets/FpmTarget.js
+@@ -30,6 +30,7 @@ class FpmTarget extends core_1.Target {
+         const templateOptions = {
+             // old API compatibility
+             executable: packager.executableName,
++            sanitizedName: packager.appInfo.sanitizedName,
+             sanitizedProductName: packager.appInfo.sanitizedProductName,
+             productFilename: packager.appInfo.productFilename,
+             ...packager.platformSpecificBuildOptions,
+diff --git a/out/targets/nsis/NsisTarget.js b/out/targets/nsis/NsisTarget.js
+index 32afb5e2f16e18a4c054d48b47b649e60fab1131..bd7c75f95d1ee15a59d705632136f66f681745e9 100644
+--- a/out/targets/nsis/NsisTarget.js
++++ b/out/targets/nsis/NsisTarget.js
+@@ -175,11 +175,6 @@ class NsisTarget extends core_1.Target {
+         if (uninstallAppKey !== guid) {
+             defines.UNINSTALL_REGISTRY_KEY_2 = `Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${guid}`;
+         }
+-        const { homepage } = this.packager.info.metadata;
+-        (0, builder_util_1.use)(options.uninstallUrlHelp || homepage, it => (defines.UNINSTALL_URL_HELP = it));
+-        (0, builder_util_1.use)(options.uninstallUrlInfoAbout || homepage, it => (defines.UNINSTALL_URL_INFO_ABOUT = it));
+-        (0, builder_util_1.use)(options.uninstallUrlUpdateInfo || homepage, it => (defines.UNINSTALL_URL_UPDATE_INFO = it));
+-        (0, builder_util_1.use)(options.uninstallUrlReadme || homepage, it => (defines.UNINSTALL_URL_README = it));
+         const commands = {
+             OutFile: `"${installerPath}"`,
+             VIProductVersion: appInfo.getVersionInWeirdWindowsForm(),
+diff --git a/scheme.json b/scheme.json
+index f4ea4fbbc5f19a5b6cad17f0c8d3cc8e7776fead..4ea9b0808db815b2c3c006a7a3fbe64876b92a35 100644
+--- a/scheme.json
++++ b/scheme.json
+@@ -3073,6 +3073,20 @@
+           ],
+           "description": "The custom function (or path to file or module id) to sign an app bundle."
+         },
++        "signInstaller": {
++          "anyOf": [
++            {
++              "typeof": "function"
++            },
++            {
++              "type": [
++                "null",
++                "string"
++              ]
++            }
++          ],
++          "description": "The custom function (or path to file or module id) to sign an app package."
++        },
+         "signIgnore": {
+           "anyOf": [
+             {
+@@ -3711,6 +3725,20 @@
+           ],
+           "description": "The custom function (or path to file or module id) to sign an app bundle."
+         },
++        "signInstaller": {
++          "anyOf": [
++            {
++              "typeof": "function"
++            },
++            {
++              "type": [
++                "null",
++                "string"
++              ]
++            }
++          ],
++          "description": "The custom function (or path to file or module id) to sign an app package."
++        },
+         "signIgnore": {
+           "anyOf": [
+             {
+diff --git a/templates/linux/after-install.tpl b/templates/linux/after-install.tpl
+index 2bb3d32d9df96a4bf0245670613f20459b32fb46..6dda2f3798ec0b13366f1b8d4adb9cd61696fd28 100644
+--- a/templates/linux/after-install.tpl
++++ b/templates/linux/after-install.tpl
+@@ -55,3 +55,26 @@ if apparmor_status --enabled > /dev/null 2>&1; then
+     echo "Skipping the installation of the AppArmor profile as this version of AppArmor does not seem to support the bundled profile"
+   fi
+ fi
++
++# SIGNAL CHANGES BEGIN
++
++if command -v pkcheck >/dev/null 2>&1; then
++  POLICY_SOURCE_PATH='/opt/${sanitizedProductName}/resources'
++  POLICY_TARGET_PATH='/usr/share/polkit-1/actions'
++  POLICY_ORG='org.signalapp'
++  POLICY_ENABLE_BACKUPS='enable-backups.policy'
++  POLICY_VIEW_AEP='view-aep.policy'
++  POLICY_EXPORT='plaintext-export.policy'
++  mkdir -p "$POLICY_TARGET_PATH";
++  # Separate policies for staging and production builds
++  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_ENABLE_BACKUPS" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_ENABLE_BACKUPS"
++  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_VIEW_AEP" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_VIEW_AEP"
++  cp -f "$POLICY_SOURCE_PATH/$POLICY_ORG.$POLICY_EXPORT" "$POLICY_TARGET_PATH/$POLICY_ORG.${sanitizedName}.$POLICY_EXPORT"
++else
++  echo "Skipping installation of policies as polkit does not seem to be installed. This may affect the availability of some features.";
++fi
++
++# Notify updater that the update was fully installed
++touch '/opt/${sanitizedProductName}/.signal-postinst'
++
++# SIGNAL CHANGES END
+diff --git a/templates/linux/after-remove.tpl b/templates/linux/after-remove.tpl
+index 19b3decabe18a816f9ed5440fa9124ebfd6e3907..fa1ecd2d991977c53a5082b2efb3120c53211f13 100644
+--- a/templates/linux/after-remove.tpl
++++ b/templates/linux/after-remove.tpl
+@@ -13,3 +13,12 @@ APPARMOR_PROFILE_DEST='/etc/apparmor.d/${executable}'
+ if [ -f "$APPARMOR_PROFILE_DEST" ]; then
+   rm -f "$APPARMOR_PROFILE_DEST"
+ fi
++
++# SIGNAL CHANGES BEGIN
++
++POLKIT_TARGET_PATH='/usr/share/polkit-1/actions'
++if [ -d "$POLKIT_TARGET_PATH" ]; then
++ rm -f $POLKIT_TARGET_PATH/org.signalapp.${sanitizedName}.*.policy
++fi
++
++# SIGNAL CHANGES END
+diff --git a/templates/nsis/include/installer.nsh b/templates/nsis/include/installer.nsh
+index 300ef3dd699d0f5a081b1934fcc22dbe12025bdb..e1fc5bc630d2c3697bb1b51ddedf830a8f6418a5 100644
+--- a/templates/nsis/include/installer.nsh
++++ b/templates/nsis/include/installer.nsh
+@@ -90,7 +90,13 @@
+       ${if} $installMode == "all"
+         SetShellVarContext current
+       ${endif}
+-      !insertmacro copyFile "$EXEPATH" "$LOCALAPPDATA\${APP_INSTALLER_STORE_FILE}"
++      # SIGNAL CHANGE START
++      # This file is needed for electron-builder's native incremental updates,
++      # but we have our own system so no need to place it. Clean it up instead.
++      #
++      # !insertmacro copyFile "$EXEPATH" "$LOCALAPPDATA\${APP_INSTALLER_STORE_FILE}"
++      RMDir /r /REBOOTOK "$LOCALAPPDATA\signal-desktop-updater"
++      # SIGNAL CHANGE END
+       ${if} $installMode == "all"
+         SetShellVarContext all
+       ${endif}
+diff --git a/templates/nsis/installSection.nsh b/templates/nsis/installSection.nsh
+index 053772f55ca6ece52f0a34c4fa0f05c9a5f07bd2..051bdafdb4aef45b0787fb3de1415d4a17c92ebf 100644
+--- a/templates/nsis/installSection.nsh
++++ b/templates/nsis/installSection.nsh
+@@ -22,10 +22,37 @@ StrCpy $appExe "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+       SpiderBanner::Show /MODERN
+     !endif
+ 
++    # Set text (1000 is the id of text element of SpiderBanner)
+     FindWindow $0 "#32770" "" $hwndparent
+     FindWindow $0 "#32770" "" $hwndparent $0
+-    GetDlgItem $0 $0 1000
+-    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(installing)"
++
++    GetDlgItem $1 $0 1000
++    SendMessage $1 ${WM_SETTEXT} 0 "STR:$(installing)"
++
++    # Set header image compatible with "ManifestDPIAware" mode.
++    !ifdef HEADER_ICO
++      # Convert 24 Dialog Units to pixels:
++      # See https://github.com/mozilla/gecko-dev/blob/8de0e699002872d969aebf1bc8407e5c839a4472/toolkit/mozapps/installer/windows/nsis/common.nsh#L8801
++
++      # rect = LPRect { .left = 0, .top = 0, .right = 24, .bottom = 0 }
++      # See https://nsis.sourceforge.io/Docs/System/System.html#faq
++      System::Call "*(i 0, i 0, i 24, i 0) p.r1"
++
++      # Call `MapDialogRect(window, &rect)`
++      System::Call `user32::MapDialogRect(p $0, p r1)`
++
++      # rect.right now contains the converted value (24du => ?px).
++      # Place `rect.right` into `r2`
++      System::Call "*$1(i, i, i.r2, i)"
++      System::Free $1
++
++      # Load image and pass `r2` as both width and height, get the image handle
++      # back to `r2` register.
++      System::Call `user32::LoadImage(i 0, t "$PLUGINSDIR\installerHeaderico.ico", i ${IMAGE_ICON}, i r2, i r2, i ${LR_LOADFROMFILE}) i.r2`
++      # 1025 is the id of the icon of SpiderBanner.
++      GetDlgItem $1 $0 1025
++      SendMessage $1 ${STM_SETIMAGE} ${IMAGE_ICON} $2
++    !endif
+ 
+     StrCpy $1 $hwndparent
+ 		System::Call 'user32::ShutdownBlockReasonCreate(${SYSTYPE_PTR}r1, w "$(installing)")'

@@ -1,0 +1,133 @@
+# Copyright 2026 Signal Messenger, LLC
+# SPDX-License-Identifier: AGPL-3.0-only
+
+name: Setup
+description: Reusable composite steps for other CI workflows
+
+inputs:
+  apt-packages:
+    required: false
+    default: ''
+  install-electron:
+    required: false
+    default: 'false'
+  cache-electron-builder:
+    required: false
+    default: 'false'
+  install-playwright:
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup apt packages
+      if: ${{ inputs.apt-packages != '' && runner.os == 'Linux' }}
+      uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+      with:
+        packages: ${{ inputs.apt-packages }}
+        version: 1.0
+
+    - name: Setup node and pnpm
+      uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+      with:
+        cache: true
+        install: false # skip install to run `pnpm ci` instead
+
+    - name: Setup electron native modules cache
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ~/.electron-gyp
+        key: electron-gyp-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - name: Setup sccache
+      uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+
+    - name: Install dependencies (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      run: pnpm install --frozen-lockfile
+      working-directory: .
+      shell: bash
+      env:
+        CC: sccache gcc
+        CXX: sccache g++
+        SCCACHE_GHA_ENABLED: true
+        NPM_CONFIG_LOGLEVEL: verbose
+        # We rebuild in `electron:install-app-deps` that doesn't look at this
+        # environment variable
+        NPM_CONFIG_NODE_GYP: echo
+
+    - name: Install dependencies (macOS)
+      if: ${{ runner.os == 'macOS' }}
+      run: pnpm install --frozen-lockfile
+      working-directory: .
+      shell: bash
+      env:
+        CC: sccache clang
+        CXX: sccache clang++
+        SCCACHE_GHA_ENABLED: true
+        NPM_CONFIG_LOGLEVEL: verbose
+        # We rebuild in `electron:install-app-deps` that doesn't look at this
+        # environment variable
+        NPM_CONFIG_NODE_GYP: echo
+
+    - name: Install dependencies (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        touch noop.js
+        pnpm install --frozen-lockfile
+        rm noop.js
+      working-directory: .
+      shell: bash
+      env:
+        NPM_CONFIG_LOGLEVEL: verbose
+        NPM_CONFIG_NODE_GYP: ${{ github.workspace }}\noop.js
+
+    - name: Setup electron binary download cache
+      if: ${{ inputs.install-electron == 'true' }}
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: |
+          ~/.cache/electron
+          ~/Library/Caches/electron
+          ~/AppData/Local/electron/Cache
+        key: electron-bin-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - name: Install electron
+      if: ${{ inputs.install-electron == 'true' }}
+      run: |
+        ./node_modules/.bin/install-electron
+        sudo chown root node_modules/.pnpm/electron@*/node_modules/electron/dist/chrome-sandbox
+        sudo chmod 4755 node_modules/.pnpm/electron@*/node_modules/electron/dist/chrome-sandbox
+      working-directory: .
+      shell: bash
+
+    - name: Setup electron-builder cache
+      if: ${{ inputs.cache-electron-builder == 'true' }}
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: |
+          ~/.cache/electron-builder
+          ~/Library/Caches/electron-builder
+          ~/AppData/Local/electron-builder/Cache
+        key: electron-builder-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - id: playwright-cache
+      name: Setup playwright chromium cache
+      if: ${{ inputs.install-playwright == 'true' }}
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+    - name: Install playwright chromium browser
+      if: ${{ inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+      run: pnpm exec playwright install chromium
+      working-directory: .
+      shell: bash
+
+    - name: Install playwright OS dependencies
+      if: ${{ inputs.install-playwright == 'true' }}
+      run: pnpm exec playwright install-deps chromium
+      working-directory: .
+      shell: bash

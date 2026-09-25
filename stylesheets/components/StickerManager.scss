@@ -10,112 +10,31 @@
   outline: none;
 }
 
-.module-sticker-manager__text {
-  height: 18px;
-
-  letter-spacing: 0px;
-  line-height: 18px;
-  padding-inline-start: 8px;
-
-  @include mixins.light-theme() {
-    color: variables.$color-gray-60;
-  }
-
-  @include mixins.dark-theme() {
-    color: variables.$color-gray-25;
-  }
-
-  &--heading {
-    @include mixins.font-body-1-bold;
-
-    @include mixins.light-theme() {
-      color: variables.$color-gray-90;
-    }
-
-    @include mixins.dark-theme() {
-      color: variables.$color-gray-05;
-    }
-  }
-}
-
-.module-sticker-manager__empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 64px;
-  border-radius: 8px;
-
-  @include mixins.light-theme {
-    background: variables.$color-gray-02;
-    color: variables.$color-gray-60;
-  }
-
-  @include mixins.dark-theme {
-    background: variables.$color-gray-90;
-    color: variables.$color-gray-25;
-  }
-}
-
-%blessed-sticker-pack-icon {
-  height: 14px;
-  width: 14px;
-  border-radius: 8px;
-  background-color: variables.$color-white;
-  display: inline-block;
-  vertical-align: middle;
-  margin-inline-start: 5px;
-  margin-bottom: 2px;
-  position: relative;
-
-  &::before {
-    content: '';
-    display: block;
-    width: 16px;
-    height: 16px;
-    position: absolute;
-    top: -1px;
-    inset-inline-start: -1px;
-
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/check/check-circle-fill.svg',
-        variables.$color-accent-blue
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/check/check-circle-fill.svg',
-        variables.$color-accent-blue
-      );
-    }
-  }
-}
-
 .module-sticker-manager__pack-row {
   @include mixins.button-reset;
 
   & {
     display: flex;
     flex-direction: row;
-    padding: 16px;
+    padding: 10px;
     padding-inline-start: 8px;
   }
 
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
+  &:focus {
+    outline: none;
+    @include mixins.keyboard-mode {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__cover {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     object-fit: contain;
   }
   &__cover-placeholder {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     background: variables.$color-gray-05;
   }
 
@@ -127,26 +46,6 @@
     &:not(:first-child) {
       padding-block: 0;
       padding-inline: 12px;
-    }
-
-    &__title {
-      flex: 1;
-    }
-
-    &__author {
-      flex: 1;
-
-      @include mixins.light-theme() {
-        color: variables.$color-gray-45;
-      }
-
-      @include mixins.dark-theme() {
-        color: variables.$color-gray-25;
-      }
-    }
-
-    &__blessed-icon {
-      @extend %blessed-sticker-pack-icon;
     }
   }
 
@@ -179,150 +78,6 @@
           }
         }
       }
-    }
-  }
-}
-
-.module-sticker-manager__install-button {
-  background: none;
-  border: 0;
-  color: variables.$color-gray-90;
-
-  @include mixins.font-body-1-bold;
-
-  height: 24px;
-  background: variables.$color-gray-05;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-block: 0;
-  padding-inline: 12px;
-
-  @include mixins.dark-theme {
-    color: variables.$color-gray-05;
-    background: variables.$color-gray-75;
-  }
-
-  @include mixins.mouse-mode {
-    outline: none;
-  }
-
-  &--blue {
-    @include mixins.light-theme {
-      background: variables.$color-ultramarine;
-      color: variables.$color-white;
-    }
-    @include mixins.dark-theme {
-      background: variables.$color-ultramarine-light;
-      color: variables.$color-white;
-    }
-  }
-}
-
-.module-sticker-manager__preview-modal {
-  &__modal.module-Modal {
-    width: fit-content;
-  }
-  &__error {
-    color: variables.$color-accent-red;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-    padding-block: 0 30px;
-    padding-inline: 80px;
-
-    @include mixins.font-body-1-bold;
-  }
-
-  &__sticker-grid {
-    width: 100%;
-    display: grid;
-    grid-gap: 8px;
-    grid-template-columns: repeat(4, 1fr);
-
-    &__cell {
-      width: 96px;
-      height: 96px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      &__image {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-
-      &--placeholder {
-        border-radius: 4px;
-
-        @include mixins.light-theme() {
-          background: variables.$color-gray-05;
-        }
-
-        @include mixins.dark-theme() {
-          background: variables.$color-gray-60;
-        }
-      }
-    }
-  }
-
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-
-    &--info {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      flex-shrink: 1;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    &--title {
-      margin: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-
-      @include mixins.font-body-1-bold;
-
-      @include mixins.light-theme {
-        color: variables.$color-gray-90;
-      }
-
-      @include mixins.dark-theme {
-        color: variables.$color-gray-05;
-      }
-    }
-
-    &--author {
-      margin: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-
-      @include mixins.light-theme {
-        color: variables.$color-gray-45;
-      }
-
-      @include mixins.dark-theme {
-        color: variables.$color-gray-25;
-      }
-    }
-
-    &--blessed-icon {
-      @extend %blessed-sticker-pack-icon;
-    }
-
-    &--install {
-      flex-shrink: 0;
-      overflow: hidden;
     }
   }
 }

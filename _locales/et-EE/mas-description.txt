@@ -1,0 +1,21 @@
+Signal on sõnumirakendus, mille keskmes on privaatsus. See on tasuta, seda on lihtne kasutada ning tugev otspunktkrüptimine hoiab kogu sinu suhtluse täiesti privaatsena. Signal ega keegi teine ei saa sinu sõnumeid lugeda ega kõnesid kuulata. 
+
+• MacOS Signali äpp ühendub sinu telefoni Signali äpiga. 
+
+• Saada tasuta otspunktktüptitud tekstsõnumeid, häälsõnumeid, fotosid, videoid, GIFe ja faile. 
+
+• Suhtle grupivestlustes kuni 1000 inimesega. Kontrolli administraatori sätete abil, kes saavad postitada ja grupiliikmeid hallata.
+
+• Tee oma sõpradega kristallselge kvaliteediga otspunktkrüptitud hääl- ja videokõnesid. Grupikõnede funktsioon on toetatud kuni 75 inimese puhul.
+
+• Signal on loodud sinu privaatsuse jaoks. Me ei tea mitte midagi ei sinust ega sellest, kellega sa räägid. Meie avatud lähtekoodiga Signali protokoll tähendab, et me ei saa sinu sõnumeid lugeda ega sinu kõnesid pealt kuulata. Seda ei saa teha ka keegi teine. Ei mingeid trikke, ei mingit andmekogumist, ei mingeid järeleandmisi. 
+
+• Jaga pildi, teksti ja video kujul lugusid, mis kaovad 24 tunni möödudes. Privaatsussätete abil saad täpselt valida, kes iga lugu näevad.
+
+• Signal on sõltumatu ja mittetulunduslik ettevõte – teistmoodi tehnoloogia teistmoodi organisatsioonilt. USA 501c3-tüüpi mittetulundusühinguna on kasutajate annetused meie ainus sissetulekuallikas. Meil ei ole ei reklaame ega investoreid. 
+
+• Kui vajad abi, täiendavat infot, või soovid esitada küsimuse, külasta veebilehte https://support.signal.org/
+
+Meie lähtekoodi vaatamiseks külasta veebilehte https://github.com/signalapp 
+
+Jälgi meid X-is @signalapp ja Instagramis @signal_app

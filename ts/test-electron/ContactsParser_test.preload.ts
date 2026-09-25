@@ -1,0 +1,281 @@
+// Copyright 2015 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { assert } from 'chai';
+import {
+  createReadStream,
+  unlinkSync,
+  writeFileSync,
+  mkdtempSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { v4 as generateGuid } from 'uuid';
+import { join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Transform } from 'node:stream';
+import fse from 'fs-extra';
+
+import { createLogger } from '../logging/log.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import {
+  getAbsoluteAttachmentPath,
+  maybeDeleteAttachmentFile,
+  readAttachmentData,
+} from '../util/migrations.preload.ts';
+import { APPLICATION_OCTET_STREAM } from '../types/MIME.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import {
+  ParseContactsTransform,
+  parseContactsV2,
+} from '../textsecure/ContactsParser.preload.ts';
+import type { ContactDetailsWithAvatar } from '../textsecure/ContactsParser.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { encodeDelimited } from '../util/encodeDelimited.std.ts';
+import { toAciObject } from '../util/ServiceId.node.ts';
+import {
+  generateKeys,
+  encryptAttachmentV2ToDisk,
+} from '../AttachmentCrypto.node.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
+
+const log = createLogger('ContactsParser_test');
+
+const DEFAULT_ACI = generateAci();
+
+describe('ContactsParser', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'Signal'));
+  });
+  afterEach(async () => {
+    await fse.remove(tempDir);
+  });
+
+  describe('parseContactsV2', () => {
+    it('parses an array buffer of contacts', async () => {
+      let path: string | undefined;
+
+      try {
+        const data = getTestBuffer();
+        const keys = generateKeys();
+
+        ({ path } = await encryptAttachmentV2ToDisk({
+          keys,
+          getAbsoluteAttachmentPath,
+          needIncrementalMac: false,
+          plaintext: { data },
+        }));
+
+        const contacts = await parseContactsV2({
+          version: 2,
+          localKey: Buffer.from(keys).toString('base64'),
+          path,
+          size: data.byteLength,
+          contentType: APPLICATION_OCTET_STREAM,
+        });
+
+        assert.strictEqual(contacts.length, 3);
+
+        await Promise.all(contacts.map(contact => verifyContact(contact)));
+      } finally {
+        if (path) {
+          await maybeDeleteAttachmentFile(path);
+        }
+      }
+    });
+
+    it('parses an array buffer of contacts with small chunk size', async () => {
+      let absolutePath: string | undefined;
+
+      try {
+        const bytes = getTestBuffer();
+        const fileName = generateGuid();
+        absolutePath = join(tempDir, fileName);
+        writeFileSync(absolutePath, bytes);
+
+        const contacts = await parseContactsWithSmallChunkSize({
+          absolutePath,
+        });
+        assert.strictEqual(contacts.length, 3);
+
+        await Promise.all(contacts.map(contact => verifyContact(contact)));
+      } finally {
+        if (absolutePath) {
+          unlinkSync(absolutePath);
+        }
+      }
+    });
+
+    it('parses an array buffer of contacts where one contact has no avatar', async () => {
+      let absolutePath: string | undefined;
+
+      try {
+        const bytes = Bytes.concatenate([
+          ...generatePrefixedContact(undefined),
+          getTestBuffer(),
+        ]);
+
+        const fileName = generateGuid();
+        absolutePath = join(tempDir, fileName);
+        writeFileSync(absolutePath, bytes);
+
+        const contacts = await parseContactsWithSmallChunkSize({
+          absolutePath,
+        });
+        assert.strictEqual(contacts.length, 4);
+
+        await Promise.all(
+          contacts.map((contact, index) => {
+            const avatarIsMissing = index === 0;
+            return verifyContact(contact, avatarIsMissing);
+          })
+        );
+      } finally {
+        if (absolutePath) {
+          unlinkSync(absolutePath);
+        }
+      }
+    });
+  });
+});
+
+class SmallChunksTransform extends Transform {
+  readonly #chunkSize: number;
+
+  constructor(chunkSize: number) {
+    super();
+    this.#chunkSize = chunkSize;
+  }
+
+  override _transform(
+    incomingChunk: Buffer<ArrayBuffer> | undefined,
+    _encoding: string,
+    done: (error?: Error) => void
+  ) {
+    if (!incomingChunk || incomingChunk.byteLength === 0) {
+      done();
+      return;
+    }
+
+    try {
+      const totalSize = incomingChunk.byteLength;
+
+      const chunkCount = Math.floor(totalSize / this.#chunkSize);
+      const remainder = totalSize % this.#chunkSize;
+
+      for (let i = 0; i < chunkCount; i += 1) {
+        const start = i * this.#chunkSize;
+        const end = start + this.#chunkSize;
+        this.push(incomingChunk.subarray(start, end));
+      }
+      if (remainder > 0) {
+        this.push(incomingChunk.subarray(chunkCount * this.#chunkSize));
+      }
+    } catch (error) {
+      done(error);
+      return;
+    }
+
+    done();
+  }
+}
+
+function generateAvatar(): Uint8Array<ArrayBuffer> {
+  const result = new Uint8Array(255);
+  for (let i = 0; i < result.length; i += 1) {
+    result[i] = i;
+  }
+  return result;
+}
+
+function getTestBuffer(): Uint8Array<ArrayBuffer> {
+  const avatarBuffer = generateAvatar();
+  const prefixedContact = generatePrefixedContact(avatarBuffer);
+
+  const chunks: Array<Uint8Array<ArrayBuffer>> = [];
+  for (let i = 0; i < 3; i += 1) {
+    chunks.push(...prefixedContact);
+    chunks.push(avatarBuffer);
+  }
+
+  return Bytes.concatenate(chunks);
+}
+
+function generatePrefixedContact(
+  avatarBuffer: Uint8Array<ArrayBuffer> | undefined,
+  aci: AciString | null = DEFAULT_ACI
+): [Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>] {
+  const contactInfoBuffer = Proto.ContactDetails.encode({
+    name: 'Zero Cool',
+    number: '+10000000000',
+    aci: null,
+    aciBinary: aci == null ? null : toAciObject(aci).getRawUuidBytes(),
+    avatar: avatarBuffer
+      ? { contentType: 'image/jpeg', length: avatarBuffer.length }
+      : null,
+    expireTimer: null,
+    expireTimerVersion: null,
+    inboxPosition: null,
+  });
+
+  return encodeDelimited(contactInfoBuffer);
+}
+
+async function verifyContact(
+  contact: ContactDetailsWithAvatar,
+  avatarIsMissing?: boolean
+): Promise<void> {
+  assert.strictEqual(contact.name, 'Zero Cool');
+  assert.strictEqual(contact.number, '+10000000000');
+  assert.strictEqual(contact.aci, DEFAULT_ACI);
+
+  if (avatarIsMissing) {
+    return;
+  }
+
+  strictAssert(contact.avatar?.path, 'Avatar needs path');
+
+  const avatarBytes = await readAttachmentData(contact.avatar);
+  await maybeDeleteAttachmentFile(contact.avatar.path);
+
+  for (let j = 0; j < 255; j += 1) {
+    assert.strictEqual(avatarBytes[j], j);
+  }
+}
+
+async function parseContactsWithSmallChunkSize({
+  absolutePath,
+}: {
+  absolutePath: string;
+}): Promise<ReadonlyArray<ContactDetailsWithAvatar>> {
+  const logId = 'parseContactsWithSmallChunkSize';
+
+  const readStream = createReadStream(absolutePath);
+  const smallChunksTransform = new SmallChunksTransform(32);
+  const parseContactsTransform = new ParseContactsTransform();
+
+  const contacts = new Array<ContactDetailsWithAvatar>();
+  parseContactsTransform.on('data', contact => contacts.push(contact));
+
+  try {
+    await pipeline(readStream, smallChunksTransform, parseContactsTransform);
+  } catch (error) {
+    try {
+      readStream.close();
+    } catch (cleanupError) {
+      log.error(
+        `${logId}: Failed to clean up after error`,
+        Errors.toLogFormat(cleanupError)
+      );
+    }
+
+    throw error;
+  }
+
+  readStream.close();
+
+  return contacts;
+}

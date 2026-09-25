@@ -1,0 +1,221 @@
+// Copyright 2020 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { Meta, StoryFn } from '@storybook/react';
+import casual from 'casual';
+import { action } from '@storybook/addon-actions';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PropsType } from './ContactModal.dom.tsx';
+import { ContactModal } from './ContactModal.dom.tsx';
+import { HasStories } from '../../types/Stories.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import { getFakeBadges } from '../../test-helpers/getFakeBadge.std.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
+
+const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
+
+const { i18n } = window.SignalContext;
+
+const defaultContact: ConversationType = getDefaultConversation({
+  about: '👍 Free to chat',
+});
+
+const defaultGroup: ConversationType = getDefaultConversation({
+  areWeAdmin: true,
+  groupLink: casual.url,
+  title: casual.title,
+  type: 'group',
+});
+
+export default {
+  title: 'Components/Conversation/ContactModal',
+  component: ContactModal,
+  argTypes: {
+    hasActiveCall: { control: { type: 'boolean' } },
+  },
+  args: {
+    i18n,
+    activeCallDemuxId: undefined,
+    areWeASubscriber: false,
+    areWeAdmin: false,
+    badges: [],
+    blockClientFromCall: action('blockClientFromCall'),
+    blockConversation: action('blockConversation'),
+    contact: defaultContact,
+    contactLabelEmoji: undefined,
+    contactLabelString: undefined,
+    contactNameColor: undefined,
+    conversation: defaultGroup,
+    hasActiveCall: false,
+    hasStories: undefined,
+    hideContactModal: action('hideContactModal'),
+    isAdmin: false,
+    isMember: true,
+    isMuted: false,
+    isRemoteMuteVisible: false,
+    isRemoveFromCallVisible: false,
+    onOutgoingAudioCallInConversation: action(
+      'onOutgoingAudioCallInConversation'
+    ),
+    onOutgoingVideoCallInConversation: action(
+      'onOutgoingVideoCallInConversation'
+    ),
+    removeClientFromCall: action('removeClientFromCall'),
+    removeMemberFromGroup: action('removeMemberFromGroup'),
+    sendRemoteMute: action('sendRemoteMute'),
+    showConversation: action('showConversation'),
+    startAvatarDownload: action('startAvatarDownload'),
+    theme: ThemeType.light,
+    toggleAboutContactModal: action('AboutContactModal'),
+    toggleAdmin: action('toggleAdmin'),
+    toggleGroupMemberLabelInfoModal: action('toggleGroupMemberLabelInfoModal'),
+    toggleSafetyNumberModal: action('toggleSafetyNumberModal'),
+    viewUserStories: action('viewUserStories'),
+  },
+} satisfies Meta<PropsType>;
+
+const Template: StoryFn<PropsType> = args => <ContactModal {...args} />;
+
+export const AsNonAdmin = Template.bind({});
+AsNonAdmin.args = {
+  areWeAdmin: false,
+};
+
+export const WithLabel = Template.bind({});
+WithLabel.args = {
+  areWeAdmin: false,
+  contactLabelEmoji: Emoji.getVariant(Emoji.MUSCLE, Emoji.SkinTone.Type2),
+  contactLabelString: 'Strong',
+  contactNameColor: '180',
+};
+
+export const WithLabelNoEmoji = Template.bind({});
+WithLabelNoEmoji.args = {
+  areWeAdmin: false,
+  contactLabelString: 'Strong',
+  contactNameColor: '220',
+};
+
+export const WithLabelInvalidEmoji = Template.bind({});
+WithLabelInvalidEmoji.args = {
+  areWeAdmin: false,
+  contactLabelEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant('%'),
+  contactLabelString: 'Strong',
+  contactNameColor: '220',
+};
+
+export const LongLabel = Template.bind({});
+LongLabel.args = {
+  contactLabelEmoji: Emoji.BEE,
+  contactLabelString: '𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫',
+  contactNameColor: '270',
+};
+
+export const LongLabel2 = Template.bind({});
+LongLabel2.args = {
+  contactLabelEmoji: Emoji.BEE,
+  contactLabelString: '﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽',
+  contactNameColor: '270',
+};
+
+export const LongLabelAllEmoji = Template.bind({});
+LongLabelAllEmoji.args = {
+  contactLabelEmoji: Emoji.BEE,
+  contactLabelString: '🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝',
+  contactNameColor: '270',
+};
+
+export const AsAdmin = Template.bind({});
+AsAdmin.args = {
+  areWeAdmin: true,
+};
+
+export const AsAdminViewingAdmin = Template.bind({});
+AsAdminViewingAdmin.args = {
+  areWeAdmin: true,
+  isAdmin: true,
+};
+
+export const AsAdminViewingAdminWithLabel = Template.bind({});
+AsAdminViewingAdminWithLabel.args = {
+  areWeAdmin: true,
+  isAdmin: true,
+  conversation: {
+    ...defaultGroup,
+    accessControlAttributes: ACCESS_ENUM.ADMINISTRATOR,
+  },
+  contactLabelString: 'Contact Label',
+};
+
+export const AsAdminWithNoGroupLink = Template.bind({});
+AsAdminWithNoGroupLink.args = {
+  areWeAdmin: true,
+  conversation: {
+    ...defaultGroup,
+    groupLink: undefined,
+  },
+};
+
+export const AsAdminViewingNonMemberOfGroup = Template.bind({});
+AsAdminViewingNonMemberOfGroup.args = {
+  isMember: false,
+};
+
+export const WithoutPhoneNumber = Template.bind({});
+WithoutPhoneNumber.args = {
+  contact: {
+    ...defaultContact,
+    phoneNumber: undefined,
+  },
+};
+
+export const WithBadges = Template.bind({});
+WithBadges.args = {
+  badges: getFakeBadges(2),
+};
+
+export const WithUnreadStories = Template.bind({});
+WithUnreadStories.args = {
+  hasStories: HasStories.Unread,
+};
+WithUnreadStories.storyName = 'Unread Stories';
+
+export const InSystemContacts = Template.bind({});
+InSystemContacts.args = {
+  contact: {
+    ...defaultContact,
+    systemGivenName: defaultContact.title,
+  },
+};
+
+export const InAnotherCall = Template.bind({});
+InAnotherCall.args = {
+  hasActiveCall: true,
+};
+
+export const InCallTogether = Template.bind({});
+InCallTogether.args = {
+  activeCallDemuxId: 123,
+  hasActiveCall: true,
+  isMuted: false,
+  isRemoteMuteVisible: true,
+};
+
+export const InCallTogetherMuted = Template.bind({});
+InCallTogetherMuted.args = {
+  activeCallDemuxId: 123,
+  hasActiveCall: true,
+  isMuted: true,
+  isRemoteMuteVisible: true,
+};
+
+export const InCallLinkTogetherAsAdmin = Template.bind({});
+InCallLinkTogetherAsAdmin.args = {
+  activeCallDemuxId: 123,
+  hasActiveCall: true,
+  isMuted: true,
+  isRemoteMuteVisible: true,
+  isRemoveFromCallVisible: true,
+};

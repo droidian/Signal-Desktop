@@ -18,25 +18,12 @@
       width: 100%;
     }
 
-    &:focus {
-      @include mixins.keyboard-mode {
-        background: variables.$color-gray-15;
-      }
-      @include mixins.dark-keyboard-mode {
-        background: variables.$color-gray-65;
-      }
-    }
-
     // highlighted on hover and when it has triggered a context menu
     // that has not been closed yet (active)
     &:hover,
+    &:focus,
     &--active {
-      @include mixins.light-theme {
-        background: variables.$color-gray-15;
-      }
-      @include mixins.dark-theme {
-        background: variables.$color-gray-65;
-      }
+      background: var(--axo-color-fill-primary);
     }
   }
 
@@ -55,11 +42,8 @@
 
     &:focus {
       outline: none;
-    }
-
-    @include mixins.keyboard-mode {
-      &:focus {
-        outline: 1px solid variables.$color-ultramarine;
+      @include mixins.keyboard-mode {
+        @include mixins.axo-focus-ring;
       }
     }
   }
@@ -75,24 +59,14 @@
       @include mixins.font-body-1-bold;
       display: flex;
       align-items: center;
-      @include mixins.light-theme {
-        color: variables.$color-black;
-      }
-      @include mixins.dark-theme {
-        color: variables.$color-gray-05;
-      }
+      color: var(--axo-color-label-primary);
     }
 
     &--timestamp,
     &--sending,
     &--send_failed {
       @include mixins.font-body-2;
-      @include mixins.light-theme {
-        color: variables.$color-gray-60;
-      }
-      @include mixins.dark-theme {
-        color: variables.$color-gray-25;
-      }
+      color: var(--axo-color-label-secondary);
     }
 
     &--send_failed {
@@ -107,7 +81,7 @@
         margin-inline-end: 8px;
         @include mixins.color-svg(
           '../images/icons/v3/error/error-circle.svg',
-          variables.$color-accent-red
+          var(--axo-color-label-destructive)
         );
       }
     }
@@ -116,7 +90,7 @@
       &--others {
         @include mixins.color-svg(
           '../images/icons/v3/thread/thread-fill-compact.svg',
-          variables.$color-gray-25
+          var(--axo-color-label-secondary)
         );
         & {
           height: 16px;
@@ -127,7 +101,7 @@
       &--self {
         @include mixins.color-svg(
           '../images/icons/v3/reply/reply-fill-compact.svg',
-          variables.$color-gray-25
+          var(--axo-color-label-secondary)
         );
         & {
           height: 16px;

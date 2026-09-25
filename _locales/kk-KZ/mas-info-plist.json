@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Бейнеқоңырау шалу үшін Signal сіздің камераңызды қолданады."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Телефон қоңырауларын қабылдау және дауыстық хабарларды жазу үшін Signal микрофоныңызды пайдалануы керек."
+  }
+}

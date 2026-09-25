@@ -1,0 +1,1 @@
+signal,messagerie,appel,vocal,chiffré,crypté,privé,sécurisé,confidentialité,groupe,vidéo,gratuit

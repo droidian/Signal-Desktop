@@ -42,3 +42,7 @@
   @include mixins.font-body-1-bold;
   margin: 0;
 }
+
+.About__Body {
+  user-select: text;
+}

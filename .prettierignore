@@ -2,21 +2,19 @@
 # supports `.gitignore`: https://github.com/prettier/prettier/issues/2294
 
 # Generated files
+build/**/*.js
+build/**/*.json
 app/**/*.js
 config/local-*.json
 config/local.json
 dist/**
-js/components.js
-js/util_worker.js
 libtextsecure/components.js
-libtextsecure/test/test.js
 stylesheets/*.css
-test/test.js
 ts/**/*.js
-!ts/**/.eslintrc.js
 ts/protobuf/*.d.ts
 ts/protobuf/*.js
 stylesheets/manifest.css
+stylesheets/tailwind.css
 ts/util/lint/exceptions.json
 storybook-static
 build/locale-display-names.json
@@ -27,13 +25,19 @@ pnpm-lock.yaml
 
 # Third-party files
 node_modules/**
+packages/*/node_modules/**
+packages/lame/wrapper.mjs
+packages/lame/lame-*/
+packages/windows-ucv/dist/**
+packages/mock-server/src/**/*.js
+packages/mock-server/src/**/*.d.ts
+packages/mock-server/test/**/*.js
+packages/mock-server/protos/*.d.ts
+packages/mock-server/protos/*.js
 danger/node_modules/**
 sticker-creator/node_modules/**
 components/**
-js/curve/**
-js/Mp3LameEncoder.min.js
-js/WebAudioRecorderMp3.js
-js/calling-tools/**
+scripts/emoji-datasource/emoji-datasource.json
 
 # Assets
 /images/
@@ -48,9 +52,6 @@ js/calling-tools/**
 # Managed by package manager (`bower` and `yarn`/`npm`):
 /bower.json
 /package.json
-
-# Symlink into third-party `components`:
-stylesheets/_intlTelInput.scss
 
 preload.bundle.*
 preload.wrapper.js

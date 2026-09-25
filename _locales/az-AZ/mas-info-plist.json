@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal video zənglər üçün cihazınızın kamerasından istifadə edir."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Telefon zəngləri etmək və səsli mesajlar göndərmək üçün Signal cihazın mikrofonuna giriş tələb edir."
+  }
+}

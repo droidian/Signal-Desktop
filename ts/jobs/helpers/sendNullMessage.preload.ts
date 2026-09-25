@@ -1,0 +1,177 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { ContentHint } from '@signalapp/libsignal-client';
+
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import {
+  isDirectConversation,
+  isMe,
+} from '../../util/whatTypeOfConversation.dom.ts';
+import {
+  handleMultipleSendErrors,
+  maybeExpandErrors,
+} from './handleMultipleSendErrors.std.ts';
+
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import type {
+  ConversationQueueJobBundle,
+  NullMessageJobData,
+} from '../conversationJobQueue.preload.ts';
+import type { SessionResetsType } from '../../textsecure/Types.d.ts';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
+import {
+  OutgoingIdentityKeyError,
+  UnregisteredUserError,
+} from '../../textsecure/Errors.std.ts';
+import { MessageSender } from '../../textsecure/SendMessage.preload.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+
+async function clearResetsTracking(idForTracking: string | undefined) {
+  if (!idForTracking) {
+    return;
+  }
+
+  const sessionResets = itemStorage.get(
+    'sessionResets',
+    {} as SessionResetsType
+  );
+  delete sessionResets[idForTracking];
+  await itemStorage.put('sessionResets', sessionResets);
+}
+
+export async function sendNullMessage(
+  conversation: ConversationModel,
+  {
+    isFinalAttempt,
+    messaging,
+    shouldContinue,
+    timestamp,
+    timeRemaining,
+    log,
+  }: ConversationQueueJobBundle,
+  data: NullMessageJobData
+): Promise<void> {
+  const { idForTracking } = data;
+
+  if (!shouldContinue) {
+    log.info('Ran out of time. Giving up on sending null message');
+    await clearResetsTracking(idForTracking);
+    return;
+  }
+
+  log.info(
+    `starting null message send to ${conversation.idForLogging()} with timestamp ${timestamp}`
+  );
+
+  const contentHint = ContentHint.Resendable;
+  const sendType = 'nullMessage';
+
+  // Note: we will send to blocked users, to those still in message request state, etc.
+  //   Any needed blocking should still apply once the decryption error is fixed.
+
+  try {
+    const proto = MessageSender.getNullMessage();
+    if (isDirectConversation(conversation.attributes)) {
+      if (isConversationUnregistered(conversation.attributes)) {
+        await clearResetsTracking(idForTracking);
+        log.info(
+          `conversation ${conversation.idForLogging()} is unregistered; refusing to send null message`
+        );
+        return;
+      }
+      if (
+        isMe(conversation.attributes) &&
+        !window.ConversationController.doWeHaveOtherDevices()
+      ) {
+        log.info(`We have no other devices; not sending to ourselves`);
+        return;
+      }
+
+      await conversation.queueJob(
+        'conversationQueue/sendNullMessage/direct',
+        async _abortSignal => {
+          const sendOptions = await getSendOptions(conversation.attributes);
+
+          return handleMessageSend(
+            messaging.sendIndividualProto({
+              contentHint,
+              serviceId: conversation.getSendTarget(),
+              options: sendOptions,
+              proto,
+              timestamp,
+              urgent: false,
+            }),
+            {
+              messageIds: [],
+              sendType,
+            }
+          );
+        }
+      );
+    } else {
+      const groupV2Info = conversation.getGroupV2Info();
+      strictAssert(groupV2Info, 'Missing groupV2Info');
+      groupV2Info.revision = 0;
+
+      await conversation.queueJob(
+        'conversationQueue/sendNullMessage/group',
+        async abortSignal => {
+          const sendOptions = await getSendOptions(conversation.attributes);
+          return sendToGroup({
+            abortSignal,
+            contentHint: ContentHint.Resendable,
+            groupSendOptions: {
+              attachments: [],
+              bodyRanges: [],
+              contact: [],
+              deleteForEveryone: undefined,
+              expireTimer: undefined,
+              groupV2: groupV2Info,
+              body: undefined,
+              preview: [],
+              profileKey: undefined,
+              quote: undefined,
+              sticker: undefined,
+              storyContext: undefined,
+              reaction: undefined,
+              targetTimestampForEdit: undefined,
+              timestamp,
+            },
+            messageId: undefined,
+            sendOptions,
+            sendTarget: conversation.toSenderKeyTarget(),
+            sendType,
+            story: false,
+            urgent: true,
+          });
+        }
+      );
+    }
+  } catch (error: unknown) {
+    if (
+      error instanceof OutgoingIdentityKeyError ||
+      error instanceof UnregisteredUserError
+    ) {
+      log.info(
+        'Send failure was OutgoingIdentityKeyError or UnregisteredUserError. Canceling job.'
+      );
+      return;
+    }
+
+    if (isFinalAttempt) {
+      await clearResetsTracking(idForTracking);
+    }
+
+    await handleMultipleSendErrors({
+      errors: maybeExpandErrors(error),
+      isFinalAttempt,
+      log,
+      timeRemaining,
+      toThrow: error,
+    });
+  }
+}

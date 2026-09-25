@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Net } from '@signalapp/libsignal-client';
-import type { AciString, PniString } from '../../types/ServiceId';
+import type { AciString, PniString } from '../../types/ServiceId.std.ts';
 
 export type CDSAuthType = Net.ServiceAuth;
 export type CDSResponseEntryType = Net.CDSResponseEntryType<
@@ -16,5 +16,4 @@ export type CDSRequestOptionsType = Readonly<{
   acisAndAccessKeys: ReadonlyArray<{ aci: AciString; accessKey: string }>;
   returnAcisWithoutUaks?: boolean;
   timeout?: number;
-  useLibsignal?: boolean;
 }>;

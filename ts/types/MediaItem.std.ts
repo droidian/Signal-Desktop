@@ -1,0 +1,53 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { MessageAttributesType, CustomError } from '../model-types.d.ts';
+import type { SendStateByConversationId } from '../messages/MessageSendState.std.ts';
+import type { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import type { AttachmentForUIType } from './Attachment.std.ts';
+import type { LinkPreviewForUIType } from './message/LinkPreviews.std.ts';
+import type { ServiceIdString } from './ServiceId.std.ts';
+import type { EmbeddedContactForUIType } from './EmbeddedContact.std.ts';
+
+export type MediaTabType = 'media' | 'audio' | 'links' | 'documents';
+
+export type MediaSortOrderType = 'date' | 'size';
+
+export type MediaItemMessageType = Readonly<{
+  id: string;
+  type: MessageAttributesType['type'];
+  conversationId: string;
+  receivedAt: number;
+  receivedAtMs: number | undefined;
+  sentAt: number;
+  source: string | undefined;
+  sourceServiceId: ServiceIdString | undefined;
+  isErased: boolean;
+  sendStateByConversationId: SendStateByConversationId | undefined;
+  readStatus: ReadStatus | undefined;
+  errors: ReadonlyArray<CustomError> | undefined;
+}>;
+
+export type MediaItemType = {
+  type: 'media' | 'audio' | 'document';
+  attachment: AttachmentForUIType;
+  index: number;
+  message: MediaItemMessageType;
+};
+
+export type LinkPreviewMediaItemType = Readonly<{
+  type: 'link';
+  preview: LinkPreviewForUIType;
+  message: MediaItemMessageType;
+}>;
+
+export type ContactMediaItemType = Readonly<{
+  type: 'contact';
+  contact: EmbeddedContactForUIType;
+  message: MediaItemMessageType;
+}>;
+
+export type GenericMediaItemType =
+  | MediaItemType
+  | LinkPreviewMediaItemType
+  | ContactMediaItemType;

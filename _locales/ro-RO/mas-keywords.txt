@@ -1,0 +1,1 @@
+signal,mesaj,apel,voce,criptat,privat,securizat,confidențialitate,grup,video,chat,povești

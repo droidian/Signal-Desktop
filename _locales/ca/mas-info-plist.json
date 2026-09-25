@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal fa servir la teva càmera per a fer videotrucades."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "El Signal necessita accés al micròfon per a fer i rebre trucades i enregistrar missatges de veu."
+  }
+}

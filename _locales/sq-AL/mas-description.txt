@@ -1,0 +1,21 @@
+Signal është një aplikacion mesazhesh me në thelb privatësinë. Është falas dhe i lehtë për t’u përdorur, me kodim të fortë nga skaji në skaj që i mban bisedat dhe thirrjet krejtësisht private. Signal nuk mund t'i lexojë mesazhet apo t'i dëgjojë thirrjet, si dhe askush tjetër nuk mundet. 
+
+• Signal në MacOS lidhet me Signal në telefonin tënd. 
+
+• Dërgo falas mesazhe me tekst, mesazhe zanore, foto, video, GIF dhe skedarë të koduar nga skaji në skaj. 
+
+• Qëndro i lidhur me biseda në grup deri në 1000 persona. Kontrollo se kush mund të postojë dhe menaxhojë anëtarët e grupit me parametrat e lejes së administratorit.
+
+• Telefono miqtë me thirrje zanore dhe video të koduara nga skaji në skaj, me qartësi kristalore. Thirrjet në grup mbështesin deri në 75 persona.
+
+• Signal është ndërtuar për privatësinë tënde. Nuk dimë asgjë për ty apo se me kë flet. Protokolli i Signal me burim të hapur do të thotë që ne nuk mund t'i lexojmë mesazhet apo t'i dëgjojmë thirrjet. As dikush tjetër nuk mundet. Pa hile, pa mbledhje të të dhënave, pa kompromise. 
+
+• Ndaj postime të përkohshme me imazhe, tekst dhe video që zhduken pas 24 orësh. Parametrat e privatësisë të japin kontroll se kush saktësisht mund ta shikojë çdo postim të përkohshëm.
+
+• Signal është i pavarur dhe jo fitimprurës; një lloj tjetër teknologjie nga një lloj tjetër organizate. Si një organizatë jofitimprurëse 501c3 ne mbështetemi nga dhurimet, jo nga reklamuesit ose investitorët. 
+
+•Për asistencë, pyetje ose informacione të tjera, të lutem, vizito: https://support.signal.org/
+
+Për të kontrolluar kodin burimor, vizito https://github.com/signalapp 
+
+Na ndiqni në X @signalapp dhe Instagram @signal_app

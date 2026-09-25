@@ -1,8 +1,6 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import b64 from 'base64-js';
-
 import type {
   Manifest,
   AnnotatedImage,
@@ -28,8 +26,6 @@ const PACK_KEY_STICKER_INFO = encoder.encode('Sticker Pack');
 const PACK_KEY_AES_KEY_SIZE = 32;
 const PACK_KEY_MAC_KEY_SIZE = 32;
 const IV_SIZE = 16;
-const MAC_SIZE = 32;
-const RANDOM_STRING_SIZE = 32;
 
 const BITS_PER_BYTE = 8;
 
@@ -39,17 +35,17 @@ export type EncryptAttachmentKeys = Readonly<{
 }>;
 
 export type EncryptResult = Readonly<{
-  encryptedManifest: Uint8Array;
-  encryptedImages: ReadonlyArray<Uint8Array>;
+  encryptedManifest: Uint8Array<ArrayBuffer>;
+  encryptedImages: ReadonlyArray<Uint8Array<ArrayBuffer>>;
   key: string;
 }>;
 
 export type DeriveKeysOptions = Readonly<{
-  info: Uint8Array;
-  secret: Uint8Array;
+  info: Uint8Array<ArrayBuffer>;
+  secret: Uint8Array<ArrayBuffer>;
 }>;
 
-export async function deriveKeys({
+async function deriveKeys({
   info,
   secret,
 }: DeriveKeysOptions): Promise<EncryptAttachmentKeys> {
@@ -101,7 +97,7 @@ export async function deriveKeys({
   return { aesKey, macKey };
 }
 
-function toHex(bytes: Uint8Array): string {
+function toHex(bytes: Uint8Array<ArrayBuffer>): string {
   let str = '';
   for (const b of bytes) {
     let t = b.toString(16);
@@ -128,7 +124,7 @@ export async function encrypt({
 
   const keys = await deriveKeys({ info, secret: packKey });
 
-  const imagesToUpload = new Array<Uint8Array>();
+  const imagesToUpload = new Array<Uint8Array<ArrayBuffer>>();
   const idByImage = new Map<string, number>();
   const emojiByImage = new Map<string, EmojiData>();
   for (const { emoji, buffer } of images) {
@@ -156,15 +152,15 @@ export async function encrypt({
     author: manifest.author,
     stickers: images.map(({ emoji }, id) => {
       return {
-        emoji: emoji.emoji,
+        emoji: emoji.emoji ?? null,
         id,
       };
     }),
     cover: {
       id: coverId,
-      emoji: coverEmoji?.emoji,
+      emoji: coverEmoji?.emoji ?? null,
     },
-  }).finish();
+  });
 
   const encryptedManifest = await encryptAttachment(manifestProto, keys);
   const encryptedImages = await Promise.all(
@@ -180,10 +176,10 @@ export async function encrypt({
   };
 }
 
-export async function encryptAttachment(
-  plaintext: Uint8Array,
+async function encryptAttachment(
+  plaintext: Uint8Array<ArrayBuffer>,
   { aesKey, macKey }: EncryptAttachmentKeys
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const iv = new Uint8Array(IV_SIZE);
   crypto.getRandomValues(iv);
 
@@ -211,51 +207,4 @@ export async function encryptAttachment(
   );
 
   return new Uint8Array([...ivAndCiphertext, ...mac]);
-}
-
-export async function decryptAttachment(
-  data: Uint8Array,
-  { aesKey, macKey }: EncryptAttachmentKeys
-): Promise<Uint8Array> {
-  if (data.length < IV_SIZE + MAC_SIZE) {
-    throw new Error('Attachment is too small');
-  }
-
-  const ivAndCipherText = data.slice(0, -MAC_SIZE);
-  const mac = data.slice(-MAC_SIZE);
-
-  const isValid = await crypto.subtle.verify(
-    {
-      name: 'HMAC',
-    },
-    macKey,
-    mac,
-    ivAndCipherText
-  );
-
-  if (!isValid) {
-    throw new Error('Invalid mac');
-  }
-
-  const iv = ivAndCipherText.slice(0, IV_SIZE);
-  const ciphertext = ivAndCipherText.slice(IV_SIZE);
-
-  const plaintext = new Uint8Array(
-    await crypto.subtle.decrypt(
-      {
-        name: 'AES-CBC',
-        iv,
-      },
-      aesKey,
-      ciphertext
-    )
-  );
-
-  return plaintext;
-}
-
-export function getRandomString(): string {
-  const source = new Uint8Array(RANDOM_STRING_SIZE);
-  crypto.getRandomValues(source);
-  return b64.fromByteArray(source);
 }
