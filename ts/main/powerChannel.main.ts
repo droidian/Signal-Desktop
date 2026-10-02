@@ -4,17 +4,17 @@
 import { powerMonitor } from 'electron';
 
 export type InitializeOptions = {
-  send(event: string): void;
+  send: (event: string) => void;
 };
 
-export class PowerChannel {
-  private static isInitialized = false;
+export namespace PowerChannel {
+  let isInitialized = false;
 
-  static initialize({ send }: InitializeOptions): void {
-    if (PowerChannel.isInitialized) {
+  export function initialize({ send }: InitializeOptions): void {
+    if (isInitialized) {
       throw new Error('PowerChannel already initialized');
     }
-    PowerChannel.isInitialized = true;
+    isInitialized = true;
 
     powerMonitor.on('suspend', () => {
       send('power-channel:suspend');

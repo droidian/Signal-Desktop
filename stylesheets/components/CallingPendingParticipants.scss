@@ -17,7 +17,6 @@
   width: 364px;
   padding-inline: 0;
   padding-block-start: 0;
-  outline: 0;
 }
 
 .CallingPendingParticipants--Expandable {
@@ -32,8 +31,11 @@
   display: flex;
   padding-block: 12px;
   padding-inline: 12px;
-  outline: none;
   align-items: center;
+
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
+  }
 }
 
 .CallingPendingParticipants__CompactParticipantNameColumn {
@@ -44,10 +46,9 @@
   @include mixins.button-reset();
 }
 
-.CallingPendingParticipants__ParticipantButton:focus {
-  @include mixins.keyboard-mode {
-    outline: 3px solid variables.$color-ultramarine;
-    outline-offset: 1px;
+.CallingPendingParticipants__ParticipantButton {
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 }
 
@@ -153,14 +154,12 @@
     color: variables.$color-white-alpha-90;
     background: variables.$color-gray-65;
     border-radius: 46px;
-    outline: none;
   }
 }
 
-.CallingPendingParticipants__ShowAllRequestsButton:focus {
-  @include mixins.keyboard-mode {
-    outline: 3px solid variables.$color-ultramarine;
-    outline-offset: 1px;
+.CallingPendingParticipants__ShowAllRequestsButton {
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 }
 

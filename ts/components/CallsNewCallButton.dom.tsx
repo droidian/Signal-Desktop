@@ -1,29 +1,26 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ChangeEvent } from 'react';
-import React, { useCallback, useMemo, useState } from 'react';
+import type { ChangeEvent, JSX, ReactNode } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import lodash from 'lodash';
 import type { ListRowProps } from 'react-virtualized';
 import { List } from 'react-virtualized';
 import classNames from 'classnames';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { SearchInput } from './SearchInput.dom.js';
-import { filterAndSortConversations } from '../util/filterAndSortConversations.std.js';
-import { NavSidebarSearchHeader } from './NavSidebar.dom.js';
-import { ListTile } from './ListTile.dom.js';
-import { strictAssert } from '../util/assert.std.js';
-import { UserText } from './UserText.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { I18n } from './I18n.dom.js';
-import { SizeObserver } from '../hooks/useSizeObserver.dom.js';
-import { CallType } from '../types/CallDisposition.std.js';
-import type { CallsTabSelectedView } from './CallsTab.preload.js';
-import {
-  InAnotherCallTooltip,
-  getTooltipContent,
-} from './conversation/InAnotherCallTooltip.dom.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { SearchInput } from './SearchInput.dom.tsx';
+import { filterAndSortConversations } from '../util/filterAndSortConversations.std.ts';
+import { NavSidebarSearchHeader } from './NavSidebar.dom.tsx';
+import { ListTile } from './ListTile.dom.tsx';
+import { strictAssert } from '../util/assert.std.ts';
+import { UserText } from './UserText.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import { SizeObserver } from '../hooks/useSizeObserver.dom.tsx';
+import { CallType } from '../types/CallDisposition.std.ts';
+import type { CallsTabSelectedView } from './CallsTab.dom.tsx';
+import { InAnotherCallTooltip } from './conversation/InAnotherCallTooltip.dom.tsx';
 
 const { partition } = lodash;
 
@@ -55,12 +52,9 @@ export function CallsNewCallButton({
   isInCall: boolean;
   i18n: LocalizerType;
   onClick: () => void;
-}): React.JSX.Element {
-  let innerContent: React.ReactNode | string;
-  let inAnotherCallTooltipContent = '';
-  if (!isEnabled) {
-    inAnotherCallTooltipContent = getTooltipContent(i18n);
-  }
+}): JSX.Element {
+  let innerContent: ReactNode | string;
+  let ariaLabel: string | undefined;
   // Note: isActive is only set for groups and adhoc calls
   if (isActive) {
     innerContent = isInCall
@@ -70,10 +64,12 @@ export function CallsNewCallButton({
     innerContent = (
       <span className="CallsNewCall__ItemIcon CallsNewCall__ItemIcon--Phone" />
     );
+    ariaLabel = i18n('icu:makeOutgoingCall');
   } else {
     innerContent = (
       <span className="CallsNewCall__ItemIcon CallsNewCall__ItemIcon--Video" />
     );
+    ariaLabel = i18n('icu:makeOutgoingVideoCall');
   }
 
   const buttonContent = (
@@ -86,7 +82,7 @@ export function CallsNewCallButton({
           ? undefined
           : 'CallsNewCall__ItemActionButton--join-call-disabled'
       )}
-      aria-label={inAnotherCallTooltipContent}
+      aria-label={ariaLabel}
       onClick={event => {
         event.stopPropagation();
         onClick();
@@ -96,10 +92,10 @@ export function CallsNewCallButton({
     </button>
   );
 
-  return inAnotherCallTooltipContent === '' ? (
-    buttonContent
-  ) : (
-    <InAnotherCallTooltip i18n={i18n}>{buttonContent}</InAnotherCallTooltip>
+  return (
+    <InAnotherCallTooltip inAnotherCall={!isEnabled} i18n={i18n}>
+      {buttonContent}
+    </InAnotherCallTooltip>
   );
 }
 
@@ -111,7 +107,7 @@ export function CallsNewCall({
   onOutgoingAudioCallInConversation,
   onOutgoingVideoCallInConversation,
   regionCode,
-}: CallsNewCallProps): React.JSX.Element {
+}: CallsNewCallProps): JSX.Element {
   const [queryInput, setQueryInput] = useState('');
 
   const query = useMemo(() => {
@@ -314,7 +310,7 @@ export function CallsNewCall({
           {(ref, size) => {
             return (
               <div ref={ref} className="CallsNewCall__ListContainer">
-                {size != null && (
+                {size != null && !size.hidden && (
                   <List
                     className="CallsNewCall__List"
                     width={size.width}

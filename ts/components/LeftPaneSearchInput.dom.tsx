@@ -1,18 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, type JSX } from 'react';
 import classNames from 'classnames';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { SearchInput } from './SearchInput.dom.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import { Tooltip, TooltipPlacement } from './Tooltip.dom.js';
-import { Theme } from '../util/theme.std.js';
+} from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { SearchInput } from './SearchInput.dom.tsx';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import { Tooltip, TooltipPlacement } from './Tooltip.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
 
 type BasePropsType = {
   clearConversationSearch: () => void;
@@ -64,15 +64,21 @@ export function LeftPaneSearchInput({
   filterButtonEnabled = false,
   filterPressed = false,
   onFilterClick,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const inputRef = useRef<null | HTMLInputElement>(null);
 
-  const prevSearchConversationId = usePrevious(
+  const prevSearchConversationId = usePreviousDeprecated(
     undefined,
     searchConversation?.id
   );
-  const prevSearchCounter = usePrevious(startSearchCounter, startSearchCounter);
-  const wasSearchingGlobally = usePrevious(false, isSearchingGlobally);
+  const prevSearchCounter = usePreviousDeprecated(
+    startSearchCounter,
+    startSearchCounter
+  );
+  const wasSearchingGlobally = usePreviousDeprecated(
+    false,
+    isSearchingGlobally
+  );
 
   useEffect(() => {
     // When user chooses to search in a given conversation we focus the field for them
@@ -163,8 +169,7 @@ export function LeftPaneSearchInput({
           // Clicking the non-X part of the pill should focus the input but have a normal
           //   cursor. This effectively simulates `pointer-events: none` while still
           //   letting us change the cursor.
-          // eslint-disable-next-line max-len
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+          // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
           <div
             className="LeftPaneSearchInput__in-conversation-pill"
             onClick={() => {

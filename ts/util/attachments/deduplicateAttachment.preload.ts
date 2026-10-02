@@ -1,15 +1,15 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../../logging/log.std.js';
-import { DataWriter } from '../../sql/Client.preload.js';
-import { doesAttachmentExist } from '../migrations.preload.js';
+import { createLogger } from '../../logging/log.std.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import { doesAttachmentExist } from '../migrations.preload.ts';
 
-import { type MIMEType, stringToMIMEType } from '../../types/MIME.std.js';
-import { strictAssert } from '../assert.std.js';
-import { type WithRequiredProperties } from '../../types/Util.std.js';
-import { type AttachmentType } from '../../types/Attachment.std.js';
-import { CURRENT_ATTACHMENT_VERSION } from '../../../app/attachments.node.js';
+import { type MIMEType, stringToMIMEType } from '../../types/MIME.std.ts';
+import { strictAssert } from '../assert.std.ts';
+import { type WithRequiredProperties } from '../../types/Util.std.ts';
+import { type AttachmentType } from '../../types/Attachment.std.ts';
+import { CURRENT_ATTACHMENT_VERSION } from '../../../app/attachments.node.ts';
 
 const log = createLogger('deduplicateAttachment');
 
@@ -23,19 +23,18 @@ type AttachmentDataToBeReused = WithRequiredProperties<
     | 'screenshot'
     | 'width'
     | 'height'
+    | 'reuseToken'
   >,
-  'path' | 'localKey' | 'version'
+  'path' | 'localKey' | 'version' | 'reuseToken'
 >;
 
 export async function getExistingAttachmentDataForReuse({
   plaintextHash,
   contentType,
-  messageId,
   logId,
 }: {
   plaintextHash: string;
   contentType: MIMEType;
-  messageId: string;
   logId?: string;
 }): Promise<AttachmentDataToBeReused | null> {
   const existingAttachmentData =
@@ -43,7 +42,6 @@ export async function getExistingAttachmentDataForReuse({
       plaintextHash,
       version: CURRENT_ATTACHMENT_VERSION,
       contentType,
-      messageId,
     });
 
   if (!existingAttachmentData) {
@@ -72,6 +70,7 @@ export async function getExistingAttachmentDataForReuse({
     version: existingAttachmentData.version,
     width: existingAttachmentData.width ?? undefined,
     height: existingAttachmentData.height ?? undefined,
+    reuseToken: existingAttachmentData.reuseToken,
   };
   const { thumbnailPath, thumbnailSize, thumbnailContentType } =
     existingAttachmentData;

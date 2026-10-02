@@ -1,15 +1,16 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { Props } from './MandatoryProfileSharingActions.dom.js';
-import { MandatoryProfileSharingActions } from './MandatoryProfileSharingActions.dom.js';
+import type { Props } from './MandatoryProfileSharingActions.dom.tsx';
+import { MandatoryProfileSharingActions } from './MandatoryProfileSharingActions.dom.tsx';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../../test-helpers/getDefaultConversation.std.js';
+} from '../../test-helpers/getDefaultConversation.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -59,10 +60,10 @@ function Example(args: Args) {
   );
 }
 
-export function Direct(args: Props): React.JSX.Element {
+export function Direct(args: Props): JSX.Element {
   return <Example {...args} conversationType="direct" />;
 }
 
-export function Group(args: Props): React.JSX.Element {
+export function Group(args: Props): JSX.Element {
   return <Example {...args} conversationType="group" />;
 }

@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import PQueue from 'p-queue';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
 
 const log = createLogger('StartupQueue');
 
 type EntryType = Readonly<{
   value: number;
-  callback(): Promise<void>;
+  callback: () => Promise<void>;
 }>;
 
 let startupProcessingQueue: StartupQueue | undefined;
@@ -41,7 +41,7 @@ export class StartupQueue {
     for (const { callback } of values) {
       void this.#running.add(async () => {
         try {
-          return callback();
+          return await callback();
         } catch (error) {
           log.error(
             'Failed to process item due to error',

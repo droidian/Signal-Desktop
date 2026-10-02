@@ -3,15 +3,15 @@
 
 import type { CallLinkRootKey } from '@signalapp/ringrtc';
 import { Aci } from '@signalapp/libsignal-client';
-import { getCheckedCallLinkAuthCredentialsForToday } from '../../services/groupCredentialFetcher.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import type { CallLinkAuthCredentialPresentation } from '../zkgroup.node.js';
-import * as durations from '../durations/index.std.js';
+import { getCheckedCallLinkAuthCredentialsForToday } from '../../services/groupCredentialFetcher.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import type { CallLinkAuthCredentialPresentation } from '../zkgroup.node.ts';
+import * as durations from '../durations/index.std.ts';
 import {
   CallLinkAuthCredential,
   CallLinkSecretParams,
   GenericServerPublicParams,
-} from '../zkgroup.node.js';
+} from '../zkgroup.node.ts';
 
 export async function getCallLinkAuthCredentialPresentation(
   callLinkRootKey: CallLinkRootKey
@@ -35,9 +35,10 @@ export async function getCallLinkAuthCredentialPresentation(
   }
   const userId = Aci.fromUuid(ourAci);
 
-  const callLinkSecretParams = CallLinkSecretParams.deriveFromRootKey(
-    callLinkRootKey.bytes
-  );
+  const rootKeyBytes: Uint8Array<ArrayBuffer> = callLinkRootKey.bytes;
+
+  const callLinkSecretParams =
+    CallLinkSecretParams.deriveFromRootKey(rootKeyBytes);
   const presentation = credential.present(
     userId,
     credentials.today.redemptionTime / durations.SECOND,

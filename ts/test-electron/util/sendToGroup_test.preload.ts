@@ -7,14 +7,11 @@ import { LibSignalErrorBase } from '@signalapp/libsignal-client';
 import {
   _analyzeSenderKeyDevices,
   _shouldFailSend,
-} from '../../util/sendToGroup.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-
+} from '../../util/sendToGroup.preload.ts';
 import type { DeviceType } from '../../textsecure/Types.d.ts';
 import {
   ConnectTimeoutError,
   IncorrectSenderKeyAuthError,
-  MessageError,
   OutgoingIdentityKeyError,
   OutgoingMessageError,
   SendMessageChallengeError,
@@ -22,8 +19,9 @@ import {
   SendMessageProtoError,
   UnknownRecipientError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import { HTTPError } from '../../types/HTTPError.std.js';
+} from '../../textsecure/Errors.std.ts';
+import { HTTPError } from '../../types/HTTPError.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 describe('sendToGroup', () => {
   const serviceIdOne = generateAci();
@@ -198,7 +196,7 @@ describe('sendToGroup', () => {
     });
 
     it('returns false for unspecified error codes', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       const error: any = new Error('generic');
 
       error.code = 422;
@@ -219,7 +217,7 @@ describe('sendToGroup', () => {
     });
 
     it('returns true for a specified error codes', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       const error: any = new Error('generic');
       error.code = 428;
 
@@ -237,8 +235,6 @@ describe('sendToGroup', () => {
         _shouldFailSend(
           new OutgoingMessageError(
             'something',
-            null,
-            null,
             new HTTPError('something', {
               code: 413,
               headers: {},
@@ -251,8 +247,6 @@ describe('sendToGroup', () => {
         _shouldFailSend(
           new OutgoingMessageError(
             'something',
-            null,
-            null,
             new HTTPError('something', {
               code: 429,
               headers: {},
@@ -265,7 +259,6 @@ describe('sendToGroup', () => {
         _shouldFailSend(
           new SendMessageNetworkError(
             'something',
-            null,
             new HTTPError('something', {
               code: 428,
               headers: {},
@@ -286,18 +279,6 @@ describe('sendToGroup', () => {
           'testing SendMessageChallengeError'
         )
       );
-      assert.isTrue(
-        _shouldFailSend(
-          new MessageError(
-            'something',
-            new HTTPError('something', {
-              code: 508,
-              headers: {},
-            })
-          ),
-          'testing MessageError'
-        )
-      );
     });
     it('returns true for errors inside of SendMessageProtoError', () => {
       assert.isTrue(
@@ -310,7 +291,7 @@ describe('sendToGroup', () => {
         )
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       const error: any = new Error('generic');
       error.code = 428;
 

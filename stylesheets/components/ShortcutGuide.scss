@@ -60,14 +60,14 @@
     );
   }
 
-  &:focus {
-    @include mixins.keyboard-mode {
+  &:focus-visible {
+    @include mixins.light-theme {
       @include mixins.color-svg(
         '../images/icons/v3/x/x.svg',
         variables.$color-ultramarine
       );
     }
-    @include mixins.dark-keyboard-mode {
+    @include mixins.dark-theme {
       @include mixins.color-svg(
         '../images/icons/v3/x/x.svg',
         variables.$color-ultramarine-light
@@ -83,7 +83,6 @@
 }
 
 .module-shortcut-guide__scroll-container {
-  outline: none;
   overflow-y: scroll;
 }
 
@@ -101,13 +100,13 @@
 
   padding-inline-start: 4px;
   min-height: 40px;
-  outline: none;
 
-  &:focus {
-    @include mixins.keyboard-mode {
+  &:focus-visible {
+    outline: none;
+    @include mixins.light-theme {
       background-color: variables.$color-gray-05;
     }
-    @include mixins.dark-keyboard-mode {
+    @include mixins.dark-theme {
       background-color: variables.$color-gray-90;
     }
   }

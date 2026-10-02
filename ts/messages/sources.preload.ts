@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
-import { createLogger } from '../logging/log.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
-import type { ConversationModel } from '../models/conversations.preload.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { isIncoming, isOutgoing, isStory } from './helpers.std.js';
+import { createLogger } from '../logging/log.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import type { ConversationModel } from '../models/conversations.preload.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { isIncoming, isOutgoing, isStory } from './helpers.std.ts';
 
 const log = createLogger('messages/sources');
 
@@ -20,7 +20,7 @@ export function getSource(
     log.warn('Message.getSource: Called for non-incoming/non-outgoing message');
   }
 
-  return itemStorage.user.getNumber();
+  return itemStorage.user.getOptionalNumber();
 }
 
 export function getSourceDevice(

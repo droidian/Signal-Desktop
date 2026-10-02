@@ -1,11 +1,12 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
-import type { ComponentMeta } from '../storybook/types.std.js';
-import type { ChatsTabProps } from './ChatsTab.dom.js';
-import { ChatsTab } from './ChatsTab.dom.js';
+import type { ComponentMeta } from '../storybook/types.std.ts';
+import type { ChatsTabProps } from './ChatsTab.dom.tsx';
+import { ChatsTab } from './ChatsTab.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -17,11 +18,7 @@ export default {
   },
   args: {
     i18n,
-    otherTabsUnreadStats: {
-      unreadCount: 0,
-      unreadMentionsCount: 0,
-      readChatsMarkedUnreadCount: 0,
-    },
+    otherTabsUnreadCount: 0,
     isStaging: false,
     hasPendingUpdate: false,
     hasFailedStorySends: false,
@@ -35,7 +32,7 @@ export default {
   },
 } satisfies ComponentMeta<ChatsTabProps>;
 
-export function Basic(args: ChatsTabProps): React.JSX.Element {
+export function Basic(args: ChatsTabProps): JSX.Element {
   return (
     <div style={{ height: '100vh' }}>
       <ChatsTab {...args} />

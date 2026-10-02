@@ -1,13 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 
-import { SpinnerV2 } from './SpinnerV2.dom.js';
-import { tw } from '../axo/tw.dom.js';
+import { SpinnerV2 } from './SpinnerV2.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
-import type { ComponentMeta } from '../storybook/types.std.js';
-import type { Props } from './SpinnerV2.dom.js';
+import type { ComponentMeta } from '../storybook/types.std.ts';
+import type { Props } from './SpinnerV2.dom.tsx';
 
 export default {
   title: 'Components/SpinnerV2',
@@ -34,47 +34,47 @@ export default {
   },
 } satisfies ComponentMeta<Props>;
 
-export function Default(args: Props): React.JSX.Element {
+export function Default(args: Props): JSX.Element {
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} />
     </div>
   );
 }
 
-export function Thin(args: Props): React.JSX.Element {
+export function Thin(args: Props): JSX.Element {
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} strokeWidth={1} />
     </div>
   );
 }
 
-export function Thick(args: Props): React.JSX.Element {
+export function Thick(args: Props): JSX.Element {
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} strokeWidth={6} />
     </div>
   );
 }
 
-export function NoMargin(args: Props): React.JSX.Element {
+export function NoMargin(args: Props): JSX.Element {
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} marginRatio={1} strokeWidth={6} />
     </div>
   );
 }
 
-export function BigMargin(args: Props): React.JSX.Element {
+export function BigMargin(args: Props): JSX.Element {
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} marginRatio={0.5} strokeWidth={6} />
     </div>
   );
 }
 
-export function SpinnerToProgress(args: Props): React.JSX.Element {
+export function SpinnerToProgress(args: Props): JSX.Element {
   const [value, setValue] = useState<number | undefined>();
   useEffect(() => {
     const timer = setInterval(() => {
@@ -90,7 +90,7 @@ export function SpinnerToProgress(args: Props): React.JSX.Element {
     };
   });
   return (
-    <div className={tw('bg-background-overlay')}>
+    <div className={tw('bg-overlay')}>
       <SpinnerV2 {...args} value={value} />
     </div>
   );

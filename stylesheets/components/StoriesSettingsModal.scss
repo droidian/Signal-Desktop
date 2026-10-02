@@ -36,13 +36,14 @@
       position: absolute;
       width: 0;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          &::before {
-            border-color: variables.$color-ultramarine;
-          }
-          outline: none;
+      &:focus {
+        &::before {
+          border-color: variables.$color-ultramarine;
         }
+      }
+
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
       }
 
       &::before {

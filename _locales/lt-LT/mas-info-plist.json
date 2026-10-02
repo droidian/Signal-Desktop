@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Vaizdo skambučiams „Signal“ naudoja jūsų fotoaparatą."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Tam, kad būtų galima skambinti ir gauti skambučius bei įrašyti balso žinutes, „Signal“ reikalinga prieiga prie jūsų mikrofono."
+  }
+}

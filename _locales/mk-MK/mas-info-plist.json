@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal ја користи вашата камера за видео повици."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "На Signal му треба пристап до вашиот микрофон за телефонски повици и за снимање на гласовни пораки."
+  }
+}

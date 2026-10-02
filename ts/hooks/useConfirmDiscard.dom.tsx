@@ -1,55 +1,59 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject, type JSX } from 'react';
 
-import { ConfirmDiscardDialog } from '../components/ConfirmDiscardDialog.dom.js';
+import { ConfirmDiscardDialog } from '../components/ConfirmDiscardDialog.dom.tsx';
 import {
   BeforeNavigateResponse,
   beforeNavigateService,
-} from '../services/BeforeNavigate.std.js';
+} from '../services/BeforeNavigate.std.ts';
 import {
   explodePromise,
   type ExplodePromiseResultType,
-} from '../util/explodePromise.std.js';
+} from '../util/explodePromise.std.ts';
 
-import type { ConfirmDialogProps } from '../components/ConfirmDiscardDialog.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import type { ConfirmDialogProps } from '../components/ConfirmDiscardDialog.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
 
+/** @deprecated */
 export function useConfirmDiscard({
   i18n,
-  bodyText,
-  cancelText,
-  discardText,
+  title,
+  description,
+  cancelLabel,
+  discardLabel,
   name,
   tryClose,
 }: {
   i18n: LocalizerType;
-  bodyText?: string;
-  cancelText?: string;
-  discardText?: string;
+  title: string;
+  description: string;
+  cancelLabel?: string;
+  discardLabel?: string;
   name: string;
-  tryClose?: React.MutableRefObject<(() => void) | undefined>;
+  tryClose?: RefObject<(() => void) | null>;
 }): [
-  React.JSX.Element | null,
+  JSX.Element | null,
   (condition: boolean, discardChanges: () => void, cancel?: () => void) => void,
 ] {
   const [props, setProps] = useState<Omit<
     ConfirmDialogProps,
-    'i18n' | 'bodyText' | 'cancelText' | 'discardText'
+    'i18n' | 'title' | 'description' | 'cancelLabel' | 'discardLabel'
   > | null>(null);
   const confirmElement = props ? (
     <ConfirmDiscardDialog
       i18n={i18n}
-      bodyText={bodyText}
-      cancelText={cancelText}
-      discardText={discardText}
+      title={title}
+      description={description}
+      cancelLabel={cancelLabel}
+      discardLabel={discardLabel}
       {...props}
     />
   ) : null;
   const confirmDiscardPromise = useRef<
     ExplodePromiseResultType<BeforeNavigateResponse> | undefined
-  >();
+  >(undefined);
 
   useEffect(() => {
     if (!tryClose) {

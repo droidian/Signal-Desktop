@@ -25,7 +25,7 @@
   z-index: variables.$z-index-above-base;
 
   @include mixins.font-caption;
-  color: var(--color-label-primary-on-color);
+  color: var(--axo-color-label-primary-oncolor);
 
   transition: width 400ms ease-out;
 }
@@ -57,7 +57,7 @@
   width: 12px;
   @include mixins.color-svg(
     '../images/icons/v3/stop/stop-fill.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }
 .AttachmentDetailPill__download-icon {
@@ -67,6 +67,6 @@
   width: 16px;
   @include mixins.color-svg(
     '../images/icons/v3/arrow/arrow-down.svg',
-    var(--color-label-primary-on-color)
+    var(--axo-color-label-primary-oncolor)
   );
 }

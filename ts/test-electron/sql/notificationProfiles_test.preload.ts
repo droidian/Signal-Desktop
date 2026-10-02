@@ -3,12 +3,13 @@
 
 import { assert } from 'chai';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 
-import { DayOfWeek } from '../../types/NotificationProfile.std.js';
-import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.js';
+import { DayOfWeek } from '../../types/NotificationProfile.std.ts';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.ts';
 
-import type { NotificationProfileType } from '../../types/NotificationProfile.std.js';
+import type { NotificationProfileType } from '../../types/NotificationProfile.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { getAllNotificationProfiles } = DataReader;
 const {
@@ -32,7 +33,7 @@ describe('sql/notificationProfiles', () => {
     const profile1: NotificationProfileType = {
       id: generateNotificationProfileId(),
       name: 'After Hours',
-      emoji: '💤 ',
+      emoji: Emoji.ZZZ,
       color: 0xff111111,
 
       createdAtMs: now,
@@ -108,7 +109,7 @@ describe('sql/notificationProfiles', () => {
     const profile1: NotificationProfileType = {
       id: generateNotificationProfileId(),
       name: 'After Hours',
-      emoji: '💤 ',
+      emoji: Emoji.ZZZ,
       color: 0xff111111,
 
       createdAtMs: now,
@@ -170,7 +171,7 @@ describe('sql/notificationProfiles', () => {
 
     const twoProfiles = await getAllNotificationProfiles();
     assert.lengthOf(twoProfiles, 2);
-    assert.strictEqual(twoProfiles[1].deletedAtTimestampMs, timestamp);
+    assert.strictEqual(twoProfiles[1]?.deletedAtTimestampMs, timestamp);
   });
 
   it('can update a profile', async () => {
@@ -180,7 +181,7 @@ describe('sql/notificationProfiles', () => {
     const profile: NotificationProfileType = {
       id,
       name: 'After Hours',
-      emoji: '💤 ',
+      emoji: Emoji.ZZZ,
       color: 0xff111111,
 
       createdAtMs: now,
@@ -212,7 +213,7 @@ describe('sql/notificationProfiles', () => {
     const update: NotificationProfileType = {
       id,
       name: 'Holiday',
-      emoji: '📆 ',
+      emoji: Emoji.CALENDAR,
       color: 0xff222222,
 
       createdAtMs: now + 1,

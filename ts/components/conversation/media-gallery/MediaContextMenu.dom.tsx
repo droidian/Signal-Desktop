@@ -1,12 +1,12 @@
 // Copyright 2026 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { AxoContextMenu } from '../../../axo/AxoContextMenu.dom.js';
-import { DeleteAttachmentConfirmationDialog } from '../../DeleteAttachmentConfirmationDialog.dom.js';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { AxoContextMenu } from '../../../axo/AxoContextMenu.dom.tsx';
+import { DeleteAttachmentConfirmationDialog } from '../../DeleteAttachmentConfirmationDialog.dom.tsx';
 
 export type PropsType = Readonly<{
   i18n: LocalizerType;
@@ -21,7 +21,7 @@ export type PropsType = Readonly<{
   messageContact?: () => void;
 }>;
 
-export function MediaContextMenu(props: PropsType): React.JSX.Element {
+export function MediaContextMenu(props: PropsType): JSX.Element {
   const {
     i18n,
     children,

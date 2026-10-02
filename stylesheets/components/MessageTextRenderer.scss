@@ -42,13 +42,8 @@
       // make child text invisible
       color: transparent;
 
-      // fix outline
-      outline: none;
-
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0 0 0px 1px variables.$color-ultramarine;
-        }
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
       }
     }
 

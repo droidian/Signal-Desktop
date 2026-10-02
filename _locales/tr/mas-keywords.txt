@@ -1,0 +1,1 @@
+signal,mesaj,messenger,arama,sesli,şifreli,özel,güvenli,gizlilik,grup,video,sohbet,hikayeler

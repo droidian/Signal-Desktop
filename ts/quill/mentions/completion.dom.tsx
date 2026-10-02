@@ -1,37 +1,39 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { createRef } from 'react';
 import _ from 'lodash';
 import { Delta } from '@signalapp/quill-cjs';
 import Emitter from '@signalapp/quill-cjs/core/emitter.js';
 import type Quill from '@signalapp/quill-cjs';
-import type { RefObject } from 'react';
+import type { RefObject, JSX } from 'react';
 import { Popper } from 'react-popper';
 import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 
-import { Avatar, AvatarSize } from '../../components/Avatar.dom.js';
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { MemberType, MemberRepository } from '../memberRepository.std.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { matchBlotTextPartitions } from '../util.dom.js';
-import type { MentionBlotValue } from '../util.dom.js';
-import { handleOutsideClick } from '../../util/handleOutsideClick.dom.js';
-import { sameWidthModifier } from '../../util/popperUtil.std.js';
-import { UserText } from '../../components/UserText.dom.js';
+import { Avatar, AvatarSize } from '../../components/Avatar.dom.tsx';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { MemberType, MemberRepository } from '../memberRepository.std.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { matchBlotTextPartitions } from '../util.dom.ts';
+import type { MentionBlotValue } from '../util.dom.ts';
+import { handleOutsideClick } from '../../util/handleOutsideClick.dom.ts';
+import { sameWidthModifier } from '../../util/popperUtil.std.ts';
+import { UserText } from '../../components/UserText.dom.tsx';
 
 export type MentionCompletionOptions = {
   getPreferredBadge: PreferredBadgeSelectorType;
   i18n: LocalizerType;
   memberRepositoryRef: RefObject<MemberRepository>;
-  setMentionPickerElement: (element: React.JSX.Element | null) => void;
+  setMentionPickerElement: (element: JSX.Element | null) => void;
   ourConversationId: string | undefined;
   theme: ThemeType;
 };
 
 const MENTION_REGEX = /(?:^|\W)@([-+\p{L}\p{M}\p{N}]*)$/u;
+type MentionRegexMatch = RegExpMatchArray & { 1: string };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class MentionCompletion {
   results: ReadonlyArray<MemberType>;
 
@@ -43,7 +45,7 @@ export class MentionCompletion {
 
   options: MentionCompletionOptions;
 
-  suggestionListRef: RefObject<HTMLDivElement>;
+  suggestionListRef: RefObject<HTMLDivElement | null>;
 
   outsideClickDestructor?: () => void;
 
@@ -53,7 +55,7 @@ export class MentionCompletion {
     this.options = options;
     this.root = document.body.appendChild(document.createElement('div'));
     this.quill = quill;
-    this.suggestionListRef = React.createRef<HTMLDivElement>();
+    this.suggestionListRef = createRef<HTMLDivElement>();
 
     const clearResults = () => {
       if (this.results.length) {
@@ -126,7 +128,7 @@ export class MentionCompletion {
       );
 
       if (leftTokenTextMatch) {
-        const [, leftTokenText] = leftTokenTextMatch;
+        const [, leftTokenText] = leftTokenTextMatch as MentionRegexMatch;
 
         let results: ReadonlyArray<MemberType> = [];
 
@@ -175,6 +177,9 @@ export class MentionCompletion {
     }
 
     const member = this.results[resultIndex];
+    if (member == null) {
+      return;
+    }
 
     const [blot, index] = this.quill.getLeaf(range.index);
 
@@ -185,7 +190,7 @@ export class MentionCompletion {
     );
 
     if (leftTokenTextMatch) {
-      const [, leftTokenText] = leftTokenTextMatch;
+      const [, leftTokenText] = leftTokenTextMatch as MentionRegexMatch;
 
       this.insertMention(
         member,
@@ -199,9 +204,9 @@ export class MentionCompletion {
   getAttributesForInsert(index: number): Record<string, unknown> {
     const character = index > 0 ? index - 1 : 0;
     const contents = this.quill.getContents(character, 1);
-    return contents.ops.reduce(
-      (acc, op) => ({ acc, ...op.attributes }),
-      {} as Record<string, unknown>
+    return contents.ops.reduce<Record<string, unknown>>(
+      (acc, op) => ({ ...acc, ...op.attributes }),
+      {}
     );
   }
 
@@ -267,7 +272,9 @@ export class MentionCompletion {
             role="listbox"
             aria-expanded
             aria-activedescendant={`mention-result--${
-              memberResults.length ? memberResults[memberResultsIndex].name : ''
+              memberResults.length
+                ? (memberResults[memberResultsIndex]?.name ?? '')
+                : ''
             }`}
             tabIndex={0}
           >

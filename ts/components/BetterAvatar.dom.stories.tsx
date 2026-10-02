@@ -1,16 +1,16 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import { AvatarColors } from '../types/Colors.std.js';
-import { GroupAvatarIcons, PersonalAvatarIcons } from '../types/Avatar.std.js';
-import type { PropsType } from './BetterAvatar.dom.js';
-import { BetterAvatar } from './BetterAvatar.dom.js';
-import { createAvatarData } from '../util/createAvatarData.std.js';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { GroupAvatarIcons, PersonalAvatarIcons } from '../types/Avatar.std.ts';
+import type { PropsType } from './BetterAvatar.dom.tsx';
+import { BetterAvatar } from './BetterAvatar.dom.tsx';
+import { createAvatarData } from '../util/createAvatarData.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -29,7 +29,7 @@ export default {
   title: 'Components/BetterAvatar',
 } satisfies Meta<PropsType>;
 
-export function Text(): React.JSX.Element {
+export function Text(): JSX.Element {
   return (
     <BetterAvatar
       {...createProps({
@@ -42,7 +42,7 @@ export function Text(): React.JSX.Element {
   );
 }
 
-export function PersonalIcon(): React.JSX.Element {
+export function PersonalIcon(): JSX.Element {
   return (
     <BetterAvatar
       {...createProps({
@@ -55,7 +55,7 @@ export function PersonalIcon(): React.JSX.Element {
   );
 }
 
-export function GroupIcon(): React.JSX.Element {
+export function GroupIcon(): JSX.Element {
   return (
     <BetterAvatar
       {...createProps({

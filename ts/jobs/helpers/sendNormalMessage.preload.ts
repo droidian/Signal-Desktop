@@ -5,81 +5,81 @@ import lodash from 'lodash';
 import PQueue from 'p-queue';
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import * as Errors from '../../types/errors.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { MessageModel } from '../../models/messages.preload.js';
-import { getMessageById } from '../../messages/getMessageById.preload.js';
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import * as Errors from '../../types/errors.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { MessageModel } from '../../models/messages.preload.ts';
+import { getMessageById } from '../../messages/getMessageById.preload.ts';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import {
   isGroup,
   isGroupV2,
   isMe,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { findAndFormatContact } from '../../util/findAndFormatContact.preload.js';
-import { uploadAttachment } from '../../util/uploadAttachment.preload.js';
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { findAndFormatContact } from '../../util/findAndFormatContact.preload.ts';
+import { uploadAttachment } from '../../util/uploadAttachment.preload.ts';
 import {
   loadAttachmentData,
   loadQuoteData,
   loadPreviewData,
   loadStickerData,
   loadContactData,
-} from '../../util/migrations.preload.js';
+} from '../../util/migrations.preload.ts';
 import type { CallbackResultType } from '../../textsecure/Types.d.ts';
-import { isSent } from '../../messages/MessageSendState.std.js';
-import { isOutgoing, canReact } from '../../state/selectors/message.preload.js';
+import { isSent } from '../../messages/MessageSendState.std.ts';
+import { isOutgoing, canReact } from '../../state/selectors/message.preload.ts';
 import type {
   ReactionType,
   OutgoingQuoteType,
   OutgoingQuoteAttachmentType,
   OutgoingLinkPreviewType,
   OutgoingStickerType,
-} from '../../textsecure/SendMessage.preload.js';
+} from '../../textsecure/SendMessage.preload.ts';
 import type {
   AttachmentType,
   UploadedAttachmentType,
-} from '../../types/Attachment.std.js';
-import { copyCdnFields } from '../../util/attachments.preload.js';
-import type { RawBodyRange } from '../../types/BodyRange.std.js';
-import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact.std.js';
-import type { StoryContextType } from '../../types/Util.std.js';
-import type { PollCreateType } from '../../types/Polls.dom.js';
-import type { LoggerType } from '../../types/Logging.std.js';
-import { GROUP } from '../../types/Message2.preload.js';
+} from '../../types/Attachment.std.ts';
+import { copyCdnFields } from '../../util/attachments.preload.ts';
+import type { RawBodyRange } from '../../types/BodyRange.std.ts';
+import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact.std.ts';
+import type { StoryContextType } from '../../types/Util.std.ts';
+import type { PollCreateType } from '../../types/Polls.dom.ts';
+import type { LoggerType } from '../../types/Logging.std.ts';
+import { GROUP } from '../../types/Message2.preload.ts';
 import type {
   ConversationQueueJobBundle,
   NormalMessageSendJobData,
-} from '../conversationJobQueue.preload.js';
+} from '../conversationJobQueue.preload.ts';
 import type { QuotedMessageType } from '../../model-types.d.ts';
 
-import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
-import { sendToGroup } from '../../util/sendToGroup.preload.js';
-import type { DurationInSeconds } from '../../util/durations/index.std.js';
-import type { ServiceIdString } from '../../types/ServiceId.std.js';
-import { normalizeAci } from '../../util/normalizeAci.std.js';
+import { handleMultipleSendErrors } from './handleMultipleSendErrors.std.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
+import type { ServiceIdString } from '../../types/ServiceId.std.ts';
+import { normalizeAci } from '../../util/normalizeAci.std.ts';
 import {
   getPropForTimestamp,
   getTargetOfThisEditTimestamp,
   getChangesForPropAtTimestamp,
-} from '../../util/editHelpers.std.js';
-import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp.std.js';
-import { isSignalConversation } from '../../util/isSignalConversation.dom.js';
+} from '../../util/editHelpers.std.ts';
+import { getMessageSentTimestamp } from '../../util/getMessageSentTimestamp.std.ts';
+import { isSignalConversation } from '../../util/isSignalConversation.dom.ts';
 import {
   isBodyTooLong,
   MAX_BODY_ATTACHMENT_BYTE_LENGTH,
   trimBody,
-} from '../../util/longAttachment.std.js';
+} from '../../util/longAttachment.std.ts';
 import {
   markFailed,
   saveErrorsOnMessage,
-} from '../../test-node/util/messageFailures.preload.js';
-import { getMessageIdForLogging } from '../../util/idForLogging.preload.js';
-import { send, sendSyncMessageOnly } from '../../messages/send.preload.js';
-import type { SignalService } from '../../protobuf/index.std.js';
-import { eraseMessageContents } from '../../util/cleanup.preload.js';
-import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.js';
+} from '../../test-node/util/messageFailures.preload.ts';
+import { getMessageIdForLogging } from '../../util/idForLogging.preload.ts';
+import { send, sendSyncMessageOnly } from '../../messages/send.preload.ts';
+import type { SignalService } from '../../protobuf/index.std.ts';
+import { eraseMessageContents } from '../../util/cleanup.preload.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
 
 const { isNumber } = lodash;
 
@@ -180,7 +180,7 @@ export async function sendNormalMessage(
     return;
   }
 
-  let profileKey: Uint8Array | undefined;
+  let profileKey: Uint8Array<ArrayBuffer> | undefined;
   if (conversation.get('profileSharing')) {
     profileKey = await ourProfileKeyService.get();
   }
@@ -291,6 +291,10 @@ export async function sendNormalMessage(
         });
         return;
       }
+      if (!window.ConversationController.doWeHaveOtherDevices()) {
+        log.info('We have no other devices; not sending sync message');
+        return;
+      }
 
       // We're sending to Note to Self or a 'lonely group' with just us in it
       // or sending a story to a group where all other users don't have the stories
@@ -326,7 +330,6 @@ export async function sendNormalMessage(
       });
     } else {
       const conversationType = conversation.get('type');
-      const sendOptions = await getSendOptions(conversation.attributes);
 
       let innerPromise: Promise<CallbackResultType>;
       if (conversationType === GROUP) {
@@ -345,9 +348,10 @@ export async function sendNormalMessage(
 
         log.info('sending group message');
         innerPromise = conversation.queueJob(
-          'conversationQueue/sendNormalMessage',
-          abortSignal =>
-            sendToGroup({
+          'conversationQueue/sendNormalMessage/group',
+          async abortSignal => {
+            const sendOptions = await getSendOptions(conversation.attributes);
+            return sendToGroup({
               abortSignal,
               contentHint: ContentHint.Resendable,
               groupSendOptions: {
@@ -376,7 +380,8 @@ export async function sendNormalMessage(
               sendType: 'message',
               story: Boolean(storyContext),
               urgent: true,
-            })
+            });
+          }
         );
       } else {
         const [ok, refusal] = shouldSendToDirectConversation(conversation);
@@ -391,35 +396,43 @@ export async function sendNormalMessage(
         }
 
         log.info('sending direct message');
-        innerPromise = messaging.sendMessageToServiceId({
-          serviceId: recipientServiceIdsWithoutMe[0],
-          messageOptions: {
-            attachments,
-            body,
-            bodyRanges,
-            contact,
-            expireTimer,
-            expireTimerVersion: conversation.getExpireTimerVersion(),
-            isViewOnce,
-            preview,
-            profileKey,
-            quote,
-            sticker,
-            storyContext,
-            reaction,
-            targetTimestampForEdit: editedMessageTimestamp
-              ? targetOfThisEditTimestamp
-              : undefined,
-            pollCreate: poll,
-            timestamp: targetTimestamp,
-          },
-          contentHint: ContentHint.Resendable,
-          groupId: undefined,
-          options: sendOptions,
-          // Note: 1:1 story replies should not set story=true -   they aren't group sends
-          urgent: true,
-          includePniSignatureMessage: true,
-        });
+
+        innerPromise = conversation.queueJob(
+          'conversationQueue/sendNormalMessage/direct',
+          async () => {
+            const sendOptions = await getSendOptions(conversation.attributes);
+            return messaging.sendMessageToServiceId({
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              serviceId: recipientServiceIdsWithoutMe[0]!,
+              messageOptions: {
+                attachments,
+                body,
+                bodyRanges,
+                contact,
+                expireTimer,
+                expireTimerVersion: conversation.getExpireTimerVersion(),
+                isViewOnce,
+                preview,
+                profileKey,
+                quote,
+                sticker,
+                storyContext,
+                reaction,
+                targetTimestampForEdit: editedMessageTimestamp
+                  ? targetOfThisEditTimestamp
+                  : undefined,
+                pollCreate: poll,
+                timestamp: targetTimestamp,
+              },
+              contentHint: ContentHint.Resendable,
+              groupId: undefined,
+              options: sendOptions,
+              // Note: 1:1 story replies should not set story=true -   they aren't group sends
+              urgent: true,
+              includePniSignatureMessage: true,
+            });
+          }
+        );
       }
 
       messageSendPromise = send(message, {
@@ -951,7 +964,8 @@ async function uploadMessageQuote({
       );
 
       const attachmentAfterThumbnailUpload =
-        attachmentsAfterThumbnailUpload[index];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        attachmentsAfterThumbnailUpload[index]!;
       return {
         ...attachment,
         thumbnail: {
@@ -1239,7 +1253,8 @@ function didSendToEveryone({
     }) || {};
   const ourConversationId =
     window.ConversationController.getOurConversationIdOrThrow();
-  const areWePrimaryDevice = window.ConversationController.areWePrimaryDevice();
+  const weHaveOtherDevices =
+    window.ConversationController.doWeHaveOtherDevices();
 
   return Object.entries(sendStateByConversationId).every(
     ([conversationId, sendState]) => {
@@ -1253,7 +1268,7 @@ function didSendToEveryone({
         }
       }
 
-      if (conversationId === ourConversationId && areWePrimaryDevice) {
+      if (conversationId === ourConversationId && !weHaveOtherDevices) {
         return true;
       }
 

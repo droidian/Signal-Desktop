@@ -1,28 +1,29 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { AvatarColors } from '../types/Colors.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { PropsType } from './CallingPip.dom.js';
-import { CallingPip } from './CallingPip.dom.js';
-import type { ActiveDirectCallType } from '../types/Calling.std.js';
+import { AvatarColors } from '../types/Colors.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { PropsType } from './CallingPip.dom.tsx';
+import { CallingPip } from './CallingPip.dom.tsx';
+import type { ActiveDirectCallType } from '../types/Calling.std.ts';
 import {
   CallViewMode,
   CallState,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../types/Calling.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.js';
-import { MINUTE } from '../util/durations/index.std.js';
-import type { SetRendererCanvasType } from '../state/ducks/calling.preload.js';
-import { createCallParticipant } from '../test-helpers/createCallParticipant.std.js';
-import type { SetLocalPreviewContainerType } from '../services/calling.preload.js';
+} from '../types/Calling.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { fakeGetGroupCallVideoFrameSource } from '../test-helpers/fakeGetGroupCallVideoFrameSource.std.ts';
+import { MINUTE } from '../util/durations/index.std.ts';
+import type { SetRendererCanvasType } from '../state/ducks/calling.preload.ts';
+import { createCallParticipant } from '../test-helpers/createCallParticipant.std.ts';
+import type { SetLocalPreviewContainerType } from '../services/calling.preload.ts';
 
 const { times } = lodash;
 
@@ -69,7 +70,7 @@ const getCommonActiveCallData = (overrides: Overrides) => ({
 const getDefaultCall = (overrides: Overrides): ActiveDirectCallType => {
   return {
     ...getCommonActiveCallData(overrides),
-    callMode: CallMode.Direct as CallMode.Direct,
+    callMode: CallMode.Direct,
     callState: CallState.Accepted,
     peekedParticipants: [],
     hasRemoteAudio: true,
@@ -107,12 +108,12 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-export function Default(args: PropsType): React.JSX.Element {
+export function Default(args: PropsType): JSX.Element {
   return <CallingPip {...args} />;
 }
 
 // Note: should NOT show speaking indicators
-export function DefaultBothSpeaking(args: PropsType): React.JSX.Element {
+export function DefaultBothSpeaking(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -126,7 +127,7 @@ export function DefaultBothSpeaking(args: PropsType): React.JSX.Element {
 }
 
 // Note: should NOT show mute indicator for remote party
-export function RemoteMuted(args: PropsType): React.JSX.Element {
+export function RemoteMuted(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -139,7 +140,7 @@ export function RemoteMuted(args: PropsType): React.JSX.Element {
 }
 
 // Note: should NOT show show mute indicator in self preview
-export function NoLocalAudio(args: PropsType): React.JSX.Element {
+export function NoLocalAudio(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -152,7 +153,7 @@ export function NoLocalAudio(args: PropsType): React.JSX.Element {
   );
 }
 
-export function NoLocalVideo(args: PropsType): React.JSX.Element {
+export function NoLocalVideo(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -165,9 +166,7 @@ export function NoLocalVideo(args: PropsType): React.JSX.Element {
   );
 }
 
-export function ContactWithAvatarAndNoVideo(
-  args: PropsType
-): React.JSX.Element {
+export function ContactWithAvatarAndNoVideo(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -185,7 +184,7 @@ export function ContactWithAvatarAndNoVideo(
   );
 }
 
-export function ContactNoColor(args: PropsType): React.JSX.Element {
+export function ContactNoColor(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -200,7 +199,7 @@ export function ContactNoColor(args: PropsType): React.JSX.Element {
   );
 }
 
-export function LonelyInGroupCall(args: PropsType): React.JSX.Element {
+export function LonelyInGroupCall(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -226,9 +225,7 @@ export function LonelyInGroupCall(args: PropsType): React.JSX.Element {
   );
 }
 
-export function LonelyInGroupCallVideoDisabled(
-  args: PropsType
-): React.JSX.Element {
+export function LonelyInGroupCallVideoDisabled(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -256,7 +253,7 @@ export function LonelyInGroupCallVideoDisabled(
   );
 }
 
-export function GroupCall(args: PropsType): React.JSX.Element {
+export function GroupCall(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -285,7 +282,7 @@ export function GroupCall(args: PropsType): React.JSX.Element {
   );
 }
 
-export function GroupCallWithRaisedHands(args: PropsType): React.JSX.Element {
+export function GroupCallWithRaisedHands(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -314,9 +311,7 @@ export function GroupCallWithRaisedHands(args: PropsType): React.JSX.Element {
   );
 }
 
-export function GroupCallWithPendingParticipants(
-  args: PropsType
-): React.JSX.Element {
+export function GroupCallWithPendingParticipants(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -348,9 +343,7 @@ export function GroupCallWithPendingParticipants(
   );
 }
 
-export function GroupCallWithPendingAndRaised(
-  args: PropsType
-): React.JSX.Element {
+export function GroupCallWithPendingAndRaised(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -383,7 +376,7 @@ export function GroupCallWithPendingAndRaised(
 }
 
 // Note: should NOT show muted indicator for remote party
-export function GroupCallRemoteMuted(args: PropsType): React.JSX.Element {
+export function GroupCallRemoteMuted(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}
@@ -421,7 +414,7 @@ export function GroupCallRemoteMuted(args: PropsType): React.JSX.Element {
 }
 
 // Note: should NOT show speaking indicator
-export function GroupCallRemoteSpeaking(args: PropsType): React.JSX.Element {
+export function GroupCallRemoteSpeaking(args: PropsType): JSX.Element {
   return (
     <CallingPip
       {...args}

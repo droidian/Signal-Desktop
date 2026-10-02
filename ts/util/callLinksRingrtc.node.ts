@@ -12,7 +12,7 @@ import {
   callLinkRecordSchema,
   defunctCallLinkRecordSchema,
   toCallLinkRestrictions,
-} from '../types/CallLink.std.js';
+} from '../types/CallLink.std.ts';
 import type {
   CallLinkRecord,
   CallLinkRestrictions,
@@ -20,15 +20,15 @@ import type {
   DefunctCallLinkRecord,
   DefunctCallLinkType,
   CallLinkStateType,
-} from '../types/CallLink.std.js';
-import { unicodeSlice } from './unicodeSlice.std.js';
+} from '../types/CallLink.std.ts';
+import { unicodeSlice } from './unicodeSlice.std.ts';
 import {
   fromAdminKeyBytes,
   getKeyFromCallLink,
   toAdminKeyBytes,
-} from './callLinks.std.js';
-import { parseStrict } from './schemas.std.js';
-import * as Bytes from '../Bytes.std.js';
+} from './callLinks.std.ts';
+import { parseStrict } from './schemas.std.ts';
+import * as Bytes from '../Bytes.std.ts';
 
 /**
  * RingRTC conversions
@@ -56,17 +56,14 @@ export function callLinkRestrictionsToRingRTC(
 }
 
 export function getRoomIdFromRootKey(rootKey: CallLinkRootKey): string {
-  return Bytes.toHex(rootKey.deriveRoomId());
+  const roomId = rootKey.deriveRoomId();
+  const roomIdBytes: Uint8Array<ArrayBuffer> = roomId;
+  return Bytes.toHex(roomIdBytes);
 }
 
 export function getRoomIdFromRootKeyString(rootKeyString: string): string {
   const callLinkRootKey = CallLinkRootKey.parse(rootKeyString);
   return getRoomIdFromRootKey(callLinkRootKey);
-}
-
-export function getCallLinkRootKeyFromUrlKey(key: string): Uint8Array {
-  // Returns `Buffer` which inherits from `Uint8Array`
-  return CallLinkRootKey.parse(key).bytes;
 }
 
 export function getRoomIdFromCallLink(url: string): string {
@@ -75,12 +72,14 @@ export function getRoomIdFromCallLink(url: string): string {
   return getRoomIdFromRootKey(key);
 }
 
-export function toRootKeyBytes(rootKey: string): Uint8Array {
-  return CallLinkRootKey.parse(rootKey).bytes;
+export function toRootKeyBytes(rootKey: string): Uint8Array<ArrayBuffer> {
+  const rootKeyBytes = CallLinkRootKey.parse(rootKey).bytes;
+  const result: Uint8Array<ArrayBuffer> = rootKeyBytes;
+  return result;
 }
 
-export function fromRootKeyBytes(rootKey: Uint8Array): string {
-  return CallLinkRootKey.fromBytes(rootKey as Buffer).toString();
+export function fromRootKeyBytes(rootKey: Uint8Array<ArrayBuffer>): string {
+  return CallLinkRootKey.fromBytes(rootKey).toUnredactedString();
 }
 
 /**
@@ -147,6 +146,7 @@ export function defunctCallLinkFromRecord(
     roomId: record.roomId,
     rootKey,
     adminKey,
+    addedAt: record.addedAt,
     storageID: record.storageID || undefined,
     storageVersion: record.storageVersion || undefined,
     storageUnknownFields: record.storageUnknownFields || undefined,
@@ -169,6 +169,7 @@ export function defunctCallLinkToRecord(
     roomId: defunctCallLink.roomId,
     rootKey,
     adminKey,
+    addedAt: defunctCallLink.addedAt,
     storageID: defunctCallLink.storageID || null,
     storageVersion: defunctCallLink.storageVersion || null,
     storageUnknownFields: defunctCallLink.storageUnknownFields || null,

@@ -1,19 +1,14 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, type JSX } from 'react';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { Avatar, AvatarSize } from '../../Avatar.dom.js';
-import {
-  ConversationDetailsIcon,
-  IconType,
-} from './ConversationDetailsIcon.dom.js';
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
+} from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
+import { AxoContactList } from '../../../axo/items/AxoContactList.dom.tsx';
 
 type Props = {
   contactId: string;
@@ -29,8 +24,8 @@ export function ConversationDetailsGroups({
   groupsInCommon,
   toggleAddUserToAnotherGroupModal,
   showConversation,
-}: Props): React.JSX.Element {
-  const [showAllGroups, setShowAllGroups] = React.useState(false);
+}: Props): JSX.Element {
+  const [showAllGroups, setShowAllGroups] = useState(false);
 
   const maxShownGroupCount = 5;
   const isMoreThanMaxShown = groupsInCommon.length - maxShownGroupCount > 1;
@@ -39,7 +34,7 @@ export function ConversationDetailsGroups({
     : maxShownGroupCount;
 
   return (
-    <PanelSection
+    <AxoContactList.Root
       title={
         groupsInCommon.length > 0
           ? i18n('icu:ConversationDetailsGroups--title', {
@@ -50,13 +45,13 @@ export function ConversationDetailsGroups({
             )
       }
     >
-      <PanelRow
-        icon={<div className="ConversationDetails-groups__add-to-group-icon" />}
-        label={i18n('icu:ConversationDetailsGroups--add-to-group')}
+      <AxoContactList.ActionItem
+        symbol="plus"
+        title={i18n('icu:ConversationDetailsGroups--add-to-group')}
         onClick={() => toggleAddUserToAnotherGroupModal(contactId)}
       />
       {groupsInCommon.slice(0, groupsToShow).map(group => (
-        <PanelRow
+        <AxoContactList.Item
           key={group.id}
           onClick={() =>
             showConversation({
@@ -64,7 +59,7 @@ export function ConversationDetailsGroups({
               switchToAssociatedView: true,
             })
           }
-          icon={
+          avatar={
             <Avatar
               conversationType="group"
               badge={undefined}
@@ -73,21 +68,16 @@ export function ConversationDetailsGroups({
               {...group}
             />
           }
-          label={group.title}
+          title={group.title}
         />
       ))}
       {!showAllGroups && isMoreThanMaxShown && (
-        <PanelRow
-          icon={
-            <ConversationDetailsIcon
-              ariaLabel={i18n('icu:ConversationDetailsGroups--show-all')}
-              icon={IconType.down}
-            />
-          }
+        <AxoContactList.ActionItem
+          symbol="chevron-down"
+          title={i18n('icu:ConversationDetailsGroups--show-all')}
           onClick={() => setShowAllGroups(true)}
-          label={i18n('icu:ConversationDetailsGroups--show-all')}
         />
       )}
-    </PanelSection>
+    </AxoContactList.Root>
   );
 }

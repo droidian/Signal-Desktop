@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import lodash from 'lodash';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import type { ContextType } from '../../types/Message2.preload.js';
-import type { MessageAttributesType } from '../../model-types.js';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import type { ContextType } from '../../types/Message2.preload.ts';
 
 const { isFunction, isTypedArray, isUndefined, omit } = lodash;
 
@@ -21,8 +20,7 @@ export async function migrateDataToFileSystem(
     | 'getExistingAttachmentDataForReuse'
     | 'getPlaintextHashForInMemoryAttachment'
     | 'logger'
-  >,
-  message: Pick<MessageAttributesType, 'id'>
+  >
 ): Promise<AttachmentType> {
   if (!isFunction(writeNewAttachmentData)) {
     throw new TypeError("'writeNewAttachmentData' must be a function");
@@ -48,7 +46,6 @@ export async function migrateDataToFileSystem(
 
   const existingData = await getExistingAttachmentDataForReuse({
     plaintextHash,
-    messageId: message.id,
     contentType: attachment.contentType,
     logId: 'migrateDataToFileSystem',
   });

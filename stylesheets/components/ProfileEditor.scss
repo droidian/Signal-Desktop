@@ -115,14 +115,7 @@
   &__divider {
     border-style: solid;
     border-bottom: none;
-
-    @include mixins.light-theme {
-      border-color: variables.$color-gray-15;
-    }
-
-    @include mixins.dark-theme {
-      border-color: variables.$color-gray-75;
-    }
+    border-color: var(--axo-color-border-primary);
   }
 
   hr {
@@ -151,64 +144,31 @@
     &__button {
       width: 20px;
       height: 20px;
-
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/chevron/chevron-down.svg',
-          variables.$color-white
-        );
-      }
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/chevron/chevron-down.svg',
-          variables.$color-black
-        );
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/chevron/chevron-down.svg',
+        var(--axo-color-label-primary)
+      );
     }
 
     &__copy-icon {
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/copy/copy.svg',
-          variables.$color-white
-        );
-      }
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/copy/copy.svg',
-          variables.$color-black
-        );
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/copy/copy.svg',
+        var(--axo-color-label-primary)
+      );
     }
 
     &__copy-link-icon {
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/link/link.svg',
-          variables.$color-white
-        );
-      }
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/link/link.svg',
-          variables.$color-black
-        );
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/link/link.svg',
+        var(--axo-color-label-primary)
+      );
     }
 
     &__trash-icon {
-      @include mixins.dark-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/trash/trash.svg',
-          variables.$color-white
-        );
-      }
-      @include mixins.light-theme {
-        @include mixins.color-svg(
-          '../images/icons/v3/trash/trash.svg',
-          variables.$color-black
-        );
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/trash/trash.svg',
+        var(--axo-color-label-primary)
+      );
     }
   }
 
@@ -218,19 +178,10 @@
     height: 20px;
     width: 20px;
 
-    @include mixins.light-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/error/error-circle.svg',
-        variables.$color-accent-red
-      );
-    }
-
-    @include mixins.dark-theme {
-      @include mixins.color-svg(
-        '../images/icons/v3/error/error-circle.svg',
-        variables.$color-accent-red
-      );
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/error/error-circle.svg',
+      var(--axo-color-label-destructive)
+    );
   }
 
   &__username-link {

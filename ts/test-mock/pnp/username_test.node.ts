@@ -7,17 +7,17 @@ import type { PrimaryDevice } from '@signalapp/mock-server';
 import { usernames } from '@signalapp/libsignal-client';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 import {
   bufferToUuid,
   typeIntoInput,
   waitForEnabledComposer,
-} from '../helpers.node.js';
-import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.std.js';
+} from '../helpers.node.ts';
+import { contactByEncryptedUsernameRoute } from '../../util/signalRoutes.std.ts';
 
 export const debug = createDebug('mock:test:username');
 
@@ -85,7 +85,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
   });
 
   for (const type of ['profile', 'system']) {
-    // eslint-disable-next-line no-loop-func
+    // oxlint-disable-next-line no-loop-func
     it(`drops username when contact's ${type} name becomes known`, async () => {
       const { phone } = bootstrap;
 
@@ -147,14 +147,14 @@ describe('pnp/username', function (this: Mocha.Suite) {
           'only one record must be removed'
         );
 
-        assert.ok(added[0].contact != null);
+        assert.ok(added[0]?.contact != null);
         assert.deepEqual(
           added[0].contact.aciBinary,
           usernameContact.device.aciRawUuid
         );
         assert.strictEqual(added[0].contact.username, '');
 
-        assert.ok(removed[0].contact != null);
+        assert.ok(removed[0]?.contact != null);
         assert.deepEqual(
           removed[0].contact.aciBinary,
           usernameContact.device.aciRawUuid
@@ -180,7 +180,7 @@ describe('pnp/username', function (this: Mocha.Suite) {
           'notification count'
         );
 
-        const first = await notifications.first();
+        const first = notifications.first();
         assert.strictEqual(
           await first.innerText(),
           `You started this chat with ${USERNAME}`
@@ -199,7 +199,9 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('opening username editor');
     const profileEditor = window.locator('.ProfileEditor');
-    await profileEditor.getByRole('button', { name: 'Username' }).click();
+    await profileEditor
+      .getByRole('button', { name: 'Username', exact: true })
+      .click();
 
     debug('entering new username');
     const usernameField = profileEditor.locator('.Input__input');
@@ -266,13 +268,26 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('deleting username');
     await profileEditor
-      .locator('button[aria-label="Copy or delete username"]')
+      .getByRole('button', { name: 'Copy or delete username' })
       .click();
-    await profileEditor.locator('button[aria-label="Delete"]').click();
+    await window.getByRole('menuitem', { name: 'Delete' }).click();
     await window
-      .locator('.module-Modal .module-Modal__button-footer button >> "Delete"')
+      .getByRole('alertdialog')
+      .filter({
+        has: window.getByText(
+          `This will remove your username and disable your QR code and link. “${username}” will be available for others to claim. Are you sure?`
+        ),
+      })
+      .getByRole('button', { name: 'Delete' })
       .click();
-    await profileEditor.getByRole('button', { name: 'Username' }).waitFor();
+    await profileEditor
+      .getByRole('button', { name: 'Username', exact: true })
+      .waitFor();
+
+    // Make sure we get a sync message
+    await phone.waitForSyncMessage(entry => {
+      return entry.syncMessage.content?.usernameChange != null;
+    });
 
     debug('confirming username deletion');
     {
@@ -356,10 +371,9 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     const linkUrl = contactByEncryptedUsernameRoute
       .toWebUrl({
-        encryptedUsername: Buffer.concat([
-          entropy,
-          uuidToBytes(serverId),
-        ]).toString('base64url'),
+        encryptedUsername: Buffer.concat([entropy, serverId]).toString(
+          'base64url'
+        ),
       })
       .toString();
 
@@ -381,7 +395,8 @@ describe('pnp/username', function (this: Mocha.Suite) {
 
     debug('waiting for conversation to open');
     await window
-      .locator(`.module-conversation-hero >> "${CARL_USERNAME}"`)
+      .getByTestId('conversation-hero')
+      .getByText(CARL_USERNAME)
       .waitFor();
 
     debug('sending a message');

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { z } from 'zod';
 import type { Simplify } from 'type-fest';
-import { safeParsePartial } from '../util/schemas.std.js';
-import { DAY } from '../util/durations/index.std.js';
+import { safeParsePartial } from '../util/schemas.std.ts';
+import { DAY } from '../util/durations/index.std.ts';
 
 const SNOOZE_DEFAULT_DURATION_DAYS = 3;
 const SNOOZE_DEFAULT_CTA_DATA: RemoteMegaphoneSnoozeCtaType = {
@@ -13,6 +13,7 @@ export const SNOOZE_DEFAULT_DURATION = SNOOZE_DEFAULT_DURATION_DAYS * DAY;
 
 export enum MegaphoneType {
   UsernameOnboarding = 'UsernameOnboarding',
+  PinReminder = 'PinReminder',
   Remote = 'Remote',
 }
 
@@ -25,6 +26,15 @@ export type UsernameOnboardingActionableMegaphoneType =
     onLearnMore: () => void;
     onDismiss: () => void;
   };
+
+export type PinReminderMegaphoneType = {
+  type: MegaphoneType.PinReminder;
+};
+
+export type PinReminderActionableMegaphoneType = PinReminderMegaphoneType & {
+  onShowModal: () => void;
+  onDismiss: () => void;
+};
 
 export type VisibleRemoteMegaphoneType = Simplify<
   Omit<RemoteMegaphoneType, 'primaryCtaId' | 'secondaryCtaId'> & {
@@ -60,6 +70,7 @@ export type RemoteActionableMegaphoneType = RemoteMegaphoneDisplayType & {
 
 export type AnyActionableMegaphone =
   | UsernameOnboardingActionableMegaphoneType
+  | PinReminderActionableMegaphoneType
   | RemoteActionableMegaphoneType;
 
 export type RemoteMegaphoneId = string & { RemoteMegaphoneId: never }; // uuid
@@ -78,10 +89,7 @@ export type RemoteMegaphoneSnoozeCtaType = z.infer<
   typeof RemoteMegaphoneSnoozeCtaSchema
 >;
 
-export const RemoteMegaphoneUnknownCtaDataSchema = z.record(
-  z.string(),
-  z.any()
-);
+const RemoteMegaphoneUnknownCtaDataSchema = z.record(z.string(), z.any());
 
 export const RemoteMegaphoneCtaDataSchema = z.union([
   RemoteMegaphoneSnoozeCtaSchema,
@@ -117,7 +125,7 @@ export const RemoteMegaphoneSchema = z.object({
 
 export type RemoteMegaphoneType = z.infer<typeof RemoteMegaphoneSchema>;
 
-export function getMegaphoneSnoozeConfig(
+function getMegaphoneSnoozeConfig(
   megaphone: RemoteMegaphoneType
 ): RemoteMegaphoneSnoozeCtaType {
   let parseableCtaData;
@@ -143,5 +151,6 @@ export function getMegaphoneLastSnoozeDurationMs(
   const { snoozeDurationDays } = getMegaphoneSnoozeConfig(megaphone);
   const lastSnoozeCount = Math.max(megaphone.snoozeCount - 1, 0);
   const snoozeIndex = Math.min(lastSnoozeCount, snoozeDurationDays.length - 1);
-  return snoozeDurationDays[snoozeIndex] * DAY;
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return snoozeDurationDays[snoozeIndex]! * DAY;
 }

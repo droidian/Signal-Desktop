@@ -1,0 +1,1 @@
+signal,žinutė,skambutis,balsas,užšifruota,saugus,privatumas,grupė,vaizdas,pokalbis,istorijos

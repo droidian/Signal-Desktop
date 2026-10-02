@@ -3,12 +3,13 @@
 
 import { assert } from 'chai';
 import createDebug from 'debug';
+import type { PrimaryDevice } from '@signalapp/mock-server';
 import { EnvelopeType, StorageState } from '@signalapp/mock-server';
 
-import type { App } from '../playwright.node.js';
-import * as durations from '../../util/durations/index.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import { sleep } from '../../util/sleep.std.js';
+import type { App } from '../playwright.node.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import { sleep } from '../../util/sleep.std.ts';
 
 export const debug = createDebug('mock:test:retries');
 
@@ -24,7 +25,7 @@ describe('retries', function (this: Mocha.Suite) {
     app = await bootstrap.link();
 
     const { contacts, phone } = bootstrap;
-    const [first] = contacts;
+    const [first] = contacts as [PrimaryDevice];
 
     let state = StorageState.getEmpty();
 
@@ -50,7 +51,7 @@ describe('retries', function (this: Mocha.Suite) {
 
   it('sends a retry request on a missing sender key error', async () => {
     const { desktop, contacts } = bootstrap;
-    const [first] = contacts;
+    const [first] = contacts as [PrimaryDevice];
 
     debug('send a sender key message without sending skdm first');
     const distributionId = await first.sendSenderKey(desktop, {
@@ -75,7 +76,7 @@ describe('retries', function (this: Mocha.Suite) {
 
   it('does not send a retry request if message succeeded later', async () => {
     const { desktop, contacts } = bootstrap;
-    const [first] = contacts;
+    const [first] = contacts as [PrimaryDevice];
 
     await app.close();
 
@@ -126,13 +127,13 @@ describe('retries', function (this: Mocha.Suite) {
       .waitFor();
 
     debug('verify that no resend request was sent');
-    const count = await first.getDecryptionErrorQueueSize();
+    const count = first.getDecryptionErrorQueueSize();
     assert.equal(count, 0);
   });
 
   it('sends only one retry request if many failures with same timestamp', async () => {
     const { desktop, contacts } = bootstrap;
-    const [first] = contacts;
+    const [first] = contacts as [PrimaryDevice];
 
     debug('send a sender key message without sending skdm first');
     const firstDistributionId = await first.sendSenderKey(desktop, {
@@ -175,7 +176,7 @@ describe('retries', function (this: Mocha.Suite) {
     await sleep(500);
 
     debug('verify that no other resend requests were sent');
-    const count = await first.getDecryptionErrorQueueSize();
+    const count = first.getDecryptionErrorQueueSize();
     assert.equal(count, 0);
   });
 });

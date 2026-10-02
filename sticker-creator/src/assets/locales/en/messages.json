@@ -308,6 +308,10 @@
     "message": "Link copied",
     "description": "Text for the toast when a link for sharing is copied from the Sticker Creator"
   },
+  "StickerCreator--Toasts--unsupportedFormat": {
+    "message": "Can’t add this image because the format is not supported",
+    "description": "Text for the toast when an image cannot be processed because it uses an unsupported file format"
+  },
   "StickerCreator--StickerPreview--light": {
     "message": "My sticker in light theme",
     "description": "Text for the sticker preview for the light theme"

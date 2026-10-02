@@ -1,49 +1,51 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, {
+import {
   useEffect,
   useMemo,
   useState,
   useRef,
   useCallback,
+  type JSX,
 } from 'react';
 import lodash from 'lodash';
 import type { ListRowProps } from 'react-virtualized';
 
-import type { LocalizerType, ThemeType } from '../../../../types/Util.std.js';
-import { strictAssert, assertDev } from '../../../../util/assert.std.js';
-import { refMerger } from '../../../../util/refMerger.std.js';
-import { useRestoreFocus } from '../../../../hooks/useRestoreFocus.dom.js';
-import { missingCaseError } from '../../../../util/missingCaseError.std.js';
-import type { LookupConversationWithoutServiceIdActionsType } from '../../../../util/lookupConversationWithoutServiceId.preload.js';
-import { parseAndFormatPhoneNumber } from '../../../../util/libphonenumberInstance.std.js';
-import type { ParsedE164Type } from '../../../../util/libphonenumberInstance.std.js';
-import { filterAndSortConversations } from '../../../../util/filterAndSortConversations.std.js';
-import type { ConversationType } from '../../../../state/ducks/conversations.preload.js';
+import type { LocalizerType, ThemeType } from '../../../../types/Util.std.ts';
+import { strictAssert, assertDev } from '../../../../util/assert.std.ts';
+import { refMerger } from '../../../../util/refMerger.std.ts';
+import { shouldNeverBeCalled } from '../../../../util/shouldNeverBeCalled.std.ts';
+import { useRestoreFocus } from '../../../../hooks/useRestoreFocus.dom.ts';
+import { missingCaseError } from '../../../../util/missingCaseError.std.ts';
+import type { LookupConversationWithoutServiceIdActionsType } from '../../../../util/lookupConversationWithoutServiceId.preload.ts';
+import { parseAndFormatPhoneNumber } from '../../../../util/libphonenumberInstance.std.ts';
+import type { ParsedE164Type } from '../../../../util/libphonenumberInstance.std.ts';
+import { filterAndSortConversations } from '../../../../util/filterAndSortConversations.std.ts';
+import type { ConversationType } from '../../../../state/ducks/conversations.preload.ts';
 import type {
   UUIDFetchStateKeyType,
   UUIDFetchStateType,
-} from '../../../../util/uuidFetchState.std.js';
+} from '../../../../util/uuidFetchState.std.ts';
 import {
   isFetchingByE164,
   isFetchingByUsername,
-} from '../../../../util/uuidFetchState.std.js';
-import { ModalHost } from '../../../ModalHost.dom.js';
-import { ContactPills } from '../../../ContactPills.dom.js';
-import { ContactPill } from '../../../ContactPill.dom.js';
-import type { Row } from '../../../ConversationList.dom.js';
-import { RowType } from '../../../ConversationList.dom.js';
+} from '../../../../util/uuidFetchState.std.ts';
+import { ModalHost } from '../../../ModalHost.dom.tsx';
+import { ContactPills } from '../../../ContactPills.dom.tsx';
+import { ContactPill } from '../../../ContactPill.dom.tsx';
+import type { Row } from '../../../ConversationList.dom.tsx';
+import { RowType } from '../../../ConversationList.dom.tsx';
 import {
   ContactCheckbox,
   ContactCheckboxDisabledReason,
-} from '../../../conversationList/ContactCheckbox.dom.js';
-import { Button, ButtonVariant } from '../../../Button.dom.js';
-import { SearchInput } from '../../../SearchInput.dom.js';
-import { ListView } from '../../../ListView.dom.js';
-import { UsernameCheckbox } from '../../../conversationList/UsernameCheckbox.dom.js';
-import { PhoneNumberCheckbox } from '../../../conversationList/PhoneNumberCheckbox.dom.js';
-import { SizeObserver } from '../../../../hooks/useSizeObserver.dom.js';
+} from '../../../conversationList/ContactCheckbox.dom.tsx';
+import { Button, ButtonVariant } from '../../../Button.dom.tsx';
+import { SearchInput } from '../../../SearchInput.dom.tsx';
+import { ListView } from '../../../ListView.dom.tsx';
+import { UsernameCheckbox } from '../../../conversationList/UsernameCheckbox.dom.tsx';
+import { PhoneNumberCheckbox } from '../../../conversationList/PhoneNumberCheckbox.dom.tsx';
+import { SizeObserver } from '../../../../hooks/useSizeObserver.dom.tsx';
 
 const { omit } = lodash;
 
@@ -97,7 +99,7 @@ export function ChooseGroupMembersModal({
   lookupConversationWithoutServiceId,
   showUserNotFoundModal,
   username,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [focusRef] = useRestoreFocus();
 
   const isUsernameChecked = selectedContacts.some(
@@ -206,7 +208,7 @@ export function ChooseGroupMembersModal({
       if (virtualIndex === 0) {
         return {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:contactsHeader'),
         };
       }
@@ -216,6 +218,7 @@ export function ChooseGroupMembersModal({
 
     if (virtualIndex < filteredContacts.length) {
       const contact = filteredContacts[virtualIndex];
+      strictAssert(contact, 'Missing contact');
 
       const isSelected = selectedConversationIdsSet.has(contact.id);
       const isAlreadyInGroup = conversationIdsAlreadyInGroup.has(contact.id);
@@ -245,7 +248,7 @@ export function ChooseGroupMembersModal({
       if (virtualIndex === 0) {
         return {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByPhoneNumberHeader'),
         };
       }
@@ -264,7 +267,7 @@ export function ChooseGroupMembersModal({
       if (virtualIndex === 0) {
         return {
           type: RowType.Header,
-          // eslint-disable-next-line @typescript-eslint/no-shadow
+          // oxlint-disable-next-line typescript/no-shadow
           getHeaderText: i18n => i18n('icu:findByUsernameHeader'),
         };
       }
@@ -438,8 +441,8 @@ export function ChooseGroupMembersModal({
               //   event. See [this note in the jsx-a11y docs][0].
               //
               // [0]: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/c275964f52c35775208bd00cb612c6f82e42e34f/docs/rules/no-static-element-interactions.md#case-the-event-handler-is-only-being-used-to-capture-bubbled-events
-              /* eslint-disable jsx-a11y/no-static-element-interactions */
               return (
+                // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
                 <div
                   className="module-AddGroupMembersModal__list-wrapper"
                   ref={ref}
@@ -449,11 +452,13 @@ export function ChooseGroupMembersModal({
                     }
                   }}
                 >
-                  {size != null && (
+                  {size != null && !size.hidden && (
                     <ListView
                       width={size.width}
                       height={size.height}
                       rowCount={rowCount}
+                      shouldRecomputeRowHeights={false}
+                      resetShouldRecomputeRowHeights={shouldNeverBeCalled}
                       calculateRowHeight={index => {
                         const row = getRow(index);
                         if (!row) {
@@ -473,7 +478,6 @@ export function ChooseGroupMembersModal({
                   )}
                 </div>
               );
-              /* eslint-enable jsx-a11y/no-static-element-interactions */
             }}
           </SizeObserver>
         ) : (

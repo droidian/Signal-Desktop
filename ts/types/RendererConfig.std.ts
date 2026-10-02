@@ -3,10 +3,10 @@
 
 import { z } from 'zod';
 
-import { Environment } from '../environment.std.js';
-import { themeSettingSchema } from './StorageUIKeys.std.js';
-import { HourCyclePreferenceSchema } from './I18N.std.js';
-import { DNSFallbackSchema } from './DNSFallback.std.js';
+import { Environment } from '../environment.std.ts';
+import { HourCyclePreferenceSchema } from './I18N.std.ts';
+import { DNSFallbackSchema } from './DNSFallback.std.ts';
+import { themeSettingSchema } from '../util/theme.std.ts';
 
 const environmentSchema = z.nativeEnum(Environment);
 
@@ -19,13 +19,6 @@ const configOptionalStringSchema = configRequiredStringSchema.or(z.undefined());
 export type configOptionalStringType = z.infer<
   typeof configOptionalStringSchema
 >;
-
-export const directoryConfigSchema = z.object({
-  directoryUrl: configRequiredStringSchema,
-  directoryMRENCLAVE: configRequiredStringSchema,
-});
-
-export type DirectoryConfigType = z.infer<typeof directoryConfigSchema>;
 
 export const rendererConfigSchema = z.object({
   appInstance: configOptionalStringSchema,
@@ -76,7 +69,6 @@ export const rendererConfigSchema = z.object({
   resourcesUrl: configRequiredStringSchema,
   userDataPath: configRequiredStringSchema,
   version: configRequiredStringSchema,
-  directoryConfig: directoryConfigSchema,
 
   // Only used by main window
   isMainWindowFullScreen: z.boolean(),

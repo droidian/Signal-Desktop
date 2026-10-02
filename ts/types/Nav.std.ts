@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReadonlyDeep } from 'type-fest';
-import type { ChatFolderId, ChatFolderParams } from './ChatFolder.std.js';
-import type { PanelArgsType } from './Panels.std.js';
+import type { ChatFolderId, ChatFolderParams } from './ChatFolder.std.ts';
+import type { PanelArgsType } from './Panels.std.ts';
 
 export type Location = ReadonlyDeep<
   | {
@@ -67,6 +67,7 @@ export enum NavTab {
 export enum SettingsPage {
   // Accessible through left nav
   Profile = 'Profile',
+  Account = 'Account',
   General = 'General',
   Donations = 'Donations',
   Appearance = 'Appearance',
@@ -79,6 +80,8 @@ export enum SettingsPage {
   Internal = 'Internal',
 
   // Sub pages
+  AccountKeys = 'AccountKeys',
+  Blocked = 'Blocked',
   ChatColor = 'ChatColor',
   ChatFolders = 'ChatFolders',
   DonationsDonateFlow = 'DonationsDonateFlow',
@@ -86,6 +89,7 @@ export enum SettingsPage {
   EditChatFolder = 'EditChatFolder',
   NotificationProfilesHome = 'NotificationProfilesHome',
   NotificationProfilesCreateFlow = 'NotificationProfilesCreateFlow',
+  WhileMuted = 'WhileMuted',
   PNP = 'PNP',
   BackupsDetails = 'BackupsDetails',
   LocalBackups = 'LocalBackups',

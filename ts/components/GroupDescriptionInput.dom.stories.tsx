@@ -1,10 +1,10 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './GroupDescriptionInput.dom.js';
-import { GroupDescriptionInput } from './GroupDescriptionInput.dom.js';
+import type { PropsType } from './GroupDescriptionInput.dom.tsx';
+import { GroupDescriptionInput } from './GroupDescriptionInput.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -31,11 +31,11 @@ function Wrapper({
   );
 }
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <Wrapper />;
 }
 
-export function Disabled(): React.JSX.Element {
+export function Disabled(): JSX.Element {
   return (
     <>
       <Wrapper disabled />

@@ -1,95 +1,31 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
-import type { ShowConversationType } from '../state/ducks/conversations.preload.js';
-import { I18n } from './I18n.dom.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { GroupMemberLabel } from './conversation/ContactName.dom.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import { tw } from '../axo/tw.dom.js';
-import type { AdminMembershipType } from '../state/selectors/conversations.dom.js';
-import { UserText } from './UserText.dom.js';
+import { useState, type JSX } from 'react';
+import type { ShowConversationType } from '../state/ducks/conversations.preload.ts';
+import { I18n } from './I18n.dom.tsx';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { AdminMembershipType } from '../state/selectors/conversations.dom.ts';
+import type { ContactNameColorType } from '../types/Colors.std.ts';
+import { AnnouncementsOnlyGroupBannerAdminsDialog } from './AnnouncementsOnlyGroupBannerAdminsDialog.dom.tsx';
 
-type PropsType = {
+type AnnouncementsOnlyGroupBannerProps = Readonly<{
   getPreferredBadge: PreferredBadgeSelectorType;
   groupAdmins: Array<AdminMembershipType>;
-  memberColors: Map<string, string>;
+  memberColors: Map<string, ContactNameColorType>;
   i18n: LocalizerType;
   showConversation: ShowConversationType;
   theme: ThemeType;
-};
+}>;
 
-export function AnnouncementsOnlyGroupBanner({
-  getPreferredBadge,
-  groupAdmins,
-  i18n,
-  memberColors,
-  showConversation,
-  theme,
-}: PropsType): React.JSX.Element {
+export function AnnouncementsOnlyGroupBanner(
+  props: AnnouncementsOnlyGroupBannerProps
+): JSX.Element {
+  const { i18n } = props;
   const [isShowingAdmins, setIsShowingAdmins] = useState(false);
-
   return (
     <>
-      {isShowingAdmins && (
-        <Modal
-          i18n={i18n}
-          hasXButton
-          modalName="AnnouncmentsOnlyGroupBanner"
-          onClose={() => setIsShowingAdmins(false)}
-          title={i18n('icu:AnnouncementsOnlyGroupBanner--modal')}
-        >
-          {groupAdmins.map(admin => {
-            const { member, labelEmoji, labelString } = admin;
-            const contactNameColor = memberColors.get(member.id);
-
-            return (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    showConversation({ conversationId: member.id });
-                  }}
-                  className={tw('flex flex-row items-center p-2')}
-                >
-                  <div className={tw('pe-3')}>
-                    <Avatar
-                      conversationType="direct"
-                      badge={getPreferredBadge(member.badges)}
-                      i18n={i18n}
-                      size={AvatarSize.THIRTY_SIX}
-                      theme={theme}
-                      {...member}
-                    />
-                  </div>
-                  <div className={tw('flex flex-col items-start')}>
-                    <div>
-                      <UserText
-                        text={member.isMe ? i18n('icu:you') : member.title}
-                      />
-                    </div>
-                    {labelString && contactNameColor && (
-                      <div className={tw('type-body-small')}>
-                        <GroupMemberLabel
-                          contactNameColor={contactNameColor}
-                          contactLabel={{
-                            labelEmoji,
-                            labelString,
-                          }}
-                          context="list"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </button>
-              </div>
-            );
-          })}
-        </Modal>
-      )}
       <div className="AnnouncementsOnlyGroupBanner__banner">
         <I18n
           i18n={i18n}
@@ -107,6 +43,16 @@ export function AnnouncementsOnlyGroupBanner({
           }}
         />
       </div>
+      <AnnouncementsOnlyGroupBannerAdminsDialog
+        i18n={i18n}
+        open={isShowingAdmins}
+        onOpenChange={setIsShowingAdmins}
+        groupAdmins={props.groupAdmins}
+        memberColors={props.memberColors}
+        getPreferredBadge={props.getPreferredBadge}
+        showConversation={props.showConversation}
+        theme={props.theme}
+      />
     </>
   );
 }

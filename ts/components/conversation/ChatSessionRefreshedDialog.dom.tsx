@@ -1,14 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { ReactElement } from 'react';
 
-import { Modal } from '../Modal.dom.js';
+import { Modal } from '../Modal.dom.tsx';
 
-import { useRestoreFocus } from '../../hooks/useRestoreFocus.dom.js';
+import { useRestoreFocus } from '../../hooks/useRestoreFocus.dom.ts';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
 
 export type PropsType = {
   i18n: LocalizerType;
@@ -16,9 +16,7 @@ export type PropsType = {
   onClose: () => unknown;
 };
 
-export function ChatSessionRefreshedDialog(
-  props: PropsType
-): React.ReactElement {
+export function ChatSessionRefreshedDialog(props: PropsType): ReactElement {
   const { i18n, contactSupport, onClose } = props;
 
   // Focus first button after initial render, restore focus on teardown

@@ -1,15 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { I18n } from '../I18n.dom.js';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { I18n } from '../I18n.dom.tsx';
 
-import { SystemMessage } from './SystemMessage.dom.js';
-import { MessageTimestamp } from './MessageTimestamp.dom.js';
-import { UserText } from '../UserText.dom.js';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
 
 export type PropsData = {
   sender: ConversationType;
@@ -22,7 +22,7 @@ export type PropsHousekeeping = {
 
 export type Props = PropsData & PropsHousekeeping;
 
-export function ChangeNumberNotification(props: Props): React.JSX.Element {
+export function ChangeNumberNotification(props: Props): JSX.Element {
   const { i18n, sender, timestamp } = props;
 
   return (

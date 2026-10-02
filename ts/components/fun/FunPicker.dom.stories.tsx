@@ -1,18 +1,18 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 import { Button } from 'react-aria-components';
 import { action } from '@storybook/addon-actions';
-import { type ComponentMeta } from '../../storybook/types.std.js';
-import { packs, recentStickers } from '../stickers/mocks.std.js';
-import type { FunPickerProps } from './FunPicker.dom.js';
-import { FunPicker } from './FunPicker.dom.js';
-import { FunProvider } from './FunProvider.dom.js';
+import { type ComponentMeta } from '../../storybook/types.std.ts';
+import { packs, recentStickers } from '../../test-helpers/stickersMocks.std.ts';
+import type { FunPickerProps } from './FunPicker.dom.tsx';
+import { FunPicker } from './FunPicker.dom.tsx';
+import { FunProvider } from './FunProvider.dom.tsx';
 import {
   MOCK_GIFS_PAGINATED_ONE_PAGE,
   MOCK_RECENT_EMOJIS,
-} from './mocks.dom.js';
-import { EmojiSkinTone } from './data/emojis.std.js';
+} from '../../test-helpers/funPickerMocks.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -33,11 +33,12 @@ function Template(props: TemplateProps) {
       recentStickers={recentStickers}
       recentGifs={[]}
       // Emojis
-      emojiSkinToneDefault={EmojiSkinTone.None}
+      emojiSkinToneDefault={Emoji.SkinTone.None}
       onEmojiSkinToneDefaultChange={() => null}
       onOpenCustomizePreferredReactionsModal={() => null}
       onSelectEmoji={() => null}
       // Stickers
+      isStickerReplySendEnabled
       installedStickerPacks={packs}
       showStickerPickerHint={false}
       onClearStickerPickerHint={() => null}
@@ -60,6 +61,7 @@ export default {
   title: 'Components/Fun/FunPicker',
   component: Template,
   args: {
+    isReply: false,
     placement: 'bottom',
     theme: undefined,
     onSelectEmoji: action('onSelectEmoji'),
@@ -69,6 +71,6 @@ export default {
   },
 } satisfies ComponentMeta<TemplateProps>;
 
-export function Default(props: TemplateProps): React.JSX.Element {
+export function Default(props: TemplateProps): JSX.Element {
   return <Template {...props} />;
 }

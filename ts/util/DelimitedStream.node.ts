@@ -3,7 +3,7 @@
 
 import { Transform } from 'node:stream';
 
-import { missingCaseError } from './missingCaseError.std.js';
+import { missingCaseError } from './missingCaseError.std.ts';
 
 type State =
   | {
@@ -14,13 +14,13 @@ type State =
   | {
       kind: 'frame';
       remaining: number;
-      parts: Array<Buffer>;
+      parts: Array<Buffer<ArrayBuffer>>;
     }
   | {
       kind: 'trailer';
-      frame: Buffer;
+      frame: Buffer<ArrayBuffer>;
       remaining: number;
-      parts: Array<Buffer>;
+      parts: Array<Buffer<ArrayBuffer>>;
     };
 
 const EMPTY_TRAILER = Buffer.alloc(0);
@@ -33,23 +33,24 @@ export class DelimitedStream extends Transform {
   }
 
   override async _transform(
-    chunk: Buffer,
+    chunk: Buffer<ArrayBuffer>,
     _encoding: BufferEncoding,
     done: (error?: Error) => void
   ): Promise<void> {
     let offset = 0;
     while (offset < chunk.length) {
       if (this.#state.kind === 'prefix') {
-        const b = chunk[offset];
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const b = chunk[offset]!;
         offset += 1;
 
         // See: https://protobuf.dev/programming-guides/encoding/
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         const isLast = (b & 0x80) === 0;
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         const value = b & 0x7f;
 
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         this.#state.value |= value << (7 * this.#state.size);
         this.#state.size += 1;
 
@@ -93,7 +94,7 @@ export class DelimitedStream extends Transform {
               value: 0,
             };
 
-            // eslint-disable-next-line no-await-in-loop
+            // oxlint-disable-next-line no-await-in-loop
             await this.pushFrame(frame, EMPTY_TRAILER);
           } else {
             this.#state = {
@@ -113,7 +114,7 @@ export class DelimitedStream extends Transform {
             value: 0,
           };
 
-          // eslint-disable-next-line no-await-in-loop
+          // oxlint-disable-next-line no-await-in-loop
           await this.pushFrame(oldState.frame, trailer);
         } else {
           throw missingCaseError(this.#state);
@@ -146,11 +147,14 @@ export class DelimitedStream extends Transform {
     done();
   }
 
-  protected getTrailerSize(_frame: Buffer): number {
+  protected getTrailerSize(_frame: Buffer<ArrayBuffer>): number {
     return 0;
   }
 
-  protected async pushFrame(frame: Buffer, _trailer: Buffer): Promise<void> {
+  protected async pushFrame(
+    frame: Buffer<ArrayBuffer>,
+    _trailer: Buffer<ArrayBuffer>
+  ): Promise<void> {
     this.push(frame);
   }
 }

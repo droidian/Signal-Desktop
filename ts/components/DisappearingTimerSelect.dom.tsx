@@ -1,24 +1,25 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback, useState, useMemo } from 'react';
-import type { LocalizerType } from '../types/Util.std.js';
-import * as expirationTimer from '../util/expirationTimer.std.js';
-import { DurationInSeconds } from '../util/durations/index.std.js';
-import { DisappearingTimeDialog } from './DisappearingTimeDialog.dom.js';
-import { AxoSelect } from '../axo/AxoSelect.dom.js';
-import { tw } from '../axo/tw.dom.js';
+import type { ReactNode, JSX } from 'react';
+import { useCallback, useState, useMemo } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import * as expirationTimer from '../util/expirationTimer.std.ts';
+import { DurationInSeconds } from '../util/durations/index.std.ts';
+import { DisappearingTimeDialog } from './DisappearingTimeDialog.dom.tsx';
+import { AxoSelect } from '../axo/AxoSelect.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type Props = {
   i18n: LocalizerType;
 
+  disabled?: boolean;
   value?: DurationInSeconds;
-  onChange(value: DurationInSeconds): void;
+  onChange: (value: DurationInSeconds) => void;
 };
 
-export function DisappearingTimerSelect(props: Props): React.JSX.Element {
-  const { i18n, value = DurationInSeconds.ZERO, onChange } = props;
+export function DisappearingTimerSelect(props: Props): JSX.Element {
+  const { i18n, disabled, value = DurationInSeconds.ZERO, onChange } = props;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -85,20 +86,16 @@ export function DisappearingTimerSelect(props: Props): React.JSX.Element {
   let info: ReactNode;
   if (isCustomTimeSelected) {
     info = (
-      <div
-        className={tw(
-          'absolute mt-1 ps-3.5',
-          'type-body-small text-label-secondary'
-        )}
-      >
+      <div className={tw('mt-1 ps-3.5', 'type-body-small text-secondary')}>
         {expirationTimer.format(i18n, value)}
       </div>
     );
   }
 
   return (
-    <div className={tw('relative')}>
+    <div className={tw('inline-flex flex-col')}>
       <AxoSelect.Root
+        disabled={disabled}
         value={String(isCustomTimeSelected ? -1 : value)}
         onValueChange={onSelectChange}
       >

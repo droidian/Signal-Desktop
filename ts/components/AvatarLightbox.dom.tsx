@@ -1,13 +1,14 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 
-import type { AvatarColorType } from '../types/Colors.std.js';
-import { AvatarPreview } from './AvatarPreview.dom.js';
-import { Lightbox } from './Lightbox.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import type { AvatarColorType } from '../types/Colors.std.ts';
+import { AvatarPreview } from './AvatarPreview.dom.tsx';
+import { Lightbox } from './Lightbox.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 const { noop } = lodash;
 
@@ -33,7 +34,7 @@ export function AvatarLightbox({
   isGroup,
   noteToSelf,
   onClose,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   return (
     <Lightbox
       closeLightbox={onClose}
@@ -63,7 +64,7 @@ export function AvatarLightbox({
           width: 'auto',
           minHeight: '64px',
           height: '100%',
-          maxHeight: `min(${512}px, 100%)`,
+          maxHeight: `min(512px, 100%)`,
           aspectRatio: '1 / 1',
         }}
       />

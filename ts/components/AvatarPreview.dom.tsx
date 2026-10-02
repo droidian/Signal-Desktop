@@ -1,18 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { CSSProperties } from 'react';
-import React, { useEffect, useState } from 'react';
+import type { CSSProperties, JSX, KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import lodash from 'lodash';
 
-import { createLogger } from '../logging/log.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Spinner } from './Spinner.dom.js';
-import type { AvatarColorType } from '../types/Colors.std.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { getInitials } from '../util/getInitials.std.js';
-import { imagePathToBytes } from '../util/imagePathToBytes.dom.js';
-import { type ConversationType } from '../state/ducks/conversations.preload.js';
+import { createLogger } from '../logging/log.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Spinner } from './Spinner.dom.tsx';
+import type { AvatarColorType } from '../types/Colors.std.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { getInitials } from '../util/getInitials.std.ts';
+import { imagePathToBytes } from '../util/imagePathToBytes.dom.ts';
+import { type ConversationType } from '../state/ducks/conversations.preload.ts';
 
 const { noop } = lodash;
 
@@ -21,13 +21,13 @@ const log = createLogger('AvatarPreview');
 export type PropsType = {
   avatarColor?: AvatarColorType;
   avatarUrl?: string;
-  avatarValue?: Uint8Array;
+  avatarValue?: Uint8Array<ArrayBuffer>;
   conversationTitle?: string;
   i18n: LocalizerType;
   isEditable?: boolean;
   isGroup?: boolean;
   noteToSelf?: boolean;
-  onAvatarLoaded?: (avatarBuffer: Uint8Array) => unknown;
+  onAvatarLoaded?: (avatarBuffer: Uint8Array<ArrayBuffer>) => unknown;
   onClear?: () => unknown;
   onClick?: () => unknown;
   showUploadButton?: boolean;
@@ -57,8 +57,10 @@ export function AvatarPreview({
   onClick,
   showUploadButton,
   style = {},
-}: PropsType): React.JSX.Element {
-  const [avatarPreview, setAvatarPreview] = useState<Uint8Array | undefined>();
+}: PropsType): JSX.Element {
+  const [avatarPreview, setAvatarPreview] = useState<
+    Uint8Array<ArrayBuffer> | undefined
+  >();
 
   // Loads the initial avatarUrl if one is provided, but only if we're in editable mode.
   //   If we're not editable, we assume that we either have an avatarUrl or we show a
@@ -102,6 +104,7 @@ export function AvatarPreview({
   // Ensures that when avatarValue changes we generate new URLs
   useEffect(() => {
     if (avatarValue) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setAvatarPreview(avatarValue);
     } else {
       setAvatarPreview(undefined);
@@ -113,6 +116,7 @@ export function AvatarPreview({
 
   useEffect(() => {
     if (!avatarPreview) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setObjectUrl(undefined);
       return noop;
     }
@@ -150,7 +154,7 @@ export function AvatarPreview({
         role: 'button',
         onClick,
         tabIndex: 0,
-        onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === 'Enter' || event.key === ' ') {
             onClick();
           }
@@ -165,7 +169,8 @@ export function AvatarPreview({
   }
 
   if (imageStatus === ImageStatus.Nothing) {
-    let content: React.JSX.Element | string | undefined;
+    let content: JSX.Element | string | undefined;
+    const initials = getInitials(conversationTitle);
     if (isGroup) {
       content = (
         <div
@@ -178,8 +183,14 @@ export function AvatarPreview({
           className={`BetterAvatarBubble--${avatarColor}--icon AvatarPreview__note_to_self`}
         />
       );
+    } else if (initials) {
+      content = initials;
     } else {
-      content = getInitials(conversationTitle);
+      content = (
+        <div
+          className={`BetterAvatarBubble--${avatarColor}--icon AvatarPreview__contact`}
+        />
+      );
     }
 
     return (
@@ -234,7 +245,6 @@ export function AvatarPreview({
             aria-label={i18n('icu:delete')}
             className="AvatarPreview__clear"
             onClick={onClear}
-            tabIndex={-1}
             type="button"
           />
         )}

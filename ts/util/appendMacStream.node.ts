@@ -5,15 +5,17 @@ import { createHmac } from 'node:crypto';
 import { Transform } from 'node:stream';
 import type { Duplex } from 'node:stream';
 
-import { HashType } from '../types/Crypto.std.js';
+import { HashType } from '../types/Crypto.std.ts';
 
+/** @testexport */
 export const MAC_KEY_SIZE = 32;
 
+/** @testexport */
 export const MAC_SIZE = 32;
 
 export function appendMacStream(
-  macKey: Uint8Array,
-  onMac?: (mac: Uint8Array) => undefined
+  macKey: Uint8Array<ArrayBuffer>,
+  onMac?: (mac: Uint8Array<ArrayBuffer>) => undefined
 ): Duplex {
   if (macKey.byteLength !== MAC_KEY_SIZE) {
     throw new Error('appendMacStream: invalid macKey length');

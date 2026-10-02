@@ -50,7 +50,6 @@
     display: flex;
     min-height: 40px;
     justify-content: space-between;
-    user-select: none;
   }
 
   &__top-bar-title {
@@ -159,7 +158,6 @@
       justify-content: space-between;
       padding-block: 8px;
       padding-inline: 0;
-      user-select: none;
     }
 
     &__info {
@@ -195,12 +193,10 @@
       position: absolute;
       width: 0;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          &::before {
-            border-color: variables.$color-ultramarine;
-          }
-          outline: none;
+      &:focus-visible {
+        outline: none;
+        &::before {
+          border-color: variables.$color-ultramarine;
         }
       }
 
@@ -241,7 +237,6 @@
     @include mixins.font-body-2;
     color: variables.$color-gray-15;
     padding-inline-end: 16px;
-    user-select: none;
     flex: 1;
     display: flex;
     align-items: center;

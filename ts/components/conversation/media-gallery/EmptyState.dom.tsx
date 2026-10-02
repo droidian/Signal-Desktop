@@ -1,19 +1,19 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../../../types/Util.std.js';
-import type { MediaTabType } from '../../../types/MediaItem.std.js';
-import { tw } from '../../../axo/tw.dom.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import type { MediaTabType } from '../../../types/MediaItem.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
 
 export type Props = {
   i18n: LocalizerType;
   tab: MediaTabType;
 };
 
-export function EmptyState({ i18n, tab }: Props): React.JSX.Element {
+export function EmptyState({ i18n, tab }: Props): JSX.Element {
   let title: string;
   let description: string;
 

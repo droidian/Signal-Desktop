@@ -1,14 +1,14 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useId } from 'react';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { getAccessControlOptions } from '../../../util/getAccessControlOptions.std.js';
-import { SignalService as Proto } from '../../../protobuf/index.std.js';
-import { PanelRow } from './PanelRow.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { Select } from '../../Select.dom.js';
-import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.js';
+import { useMemo, useState, type JSX } from 'react';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { SignalService as Proto } from '../../../protobuf/index.std.ts';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
+import { AxoList } from '../../../axo/items/AxoList.dom.tsx';
+import { AxoSelectItem } from '../../../axo/items/AxoSelectItem.dom.tsx';
+import { AxoItem } from '../../../axo/items/AxoItem.dom.tsx';
+import { AxoContainer } from '../../../axo/AxoContainer.dom.tsx';
 
 export type PropsDataType = {
   conversation?: ConversationType;
@@ -24,6 +24,8 @@ type PropsActionType = {
 
 export type PropsType = PropsDataType & PropsActionType;
 
+const AccessControlEnum = Proto.AccessControl.AccessRequired;
+
 export function GroupV2Permissions({
   conversation,
   i18n,
@@ -31,15 +33,9 @@ export function GroupV2Permissions({
   setAccessControlMembersSetting,
   setAccessControlMemberLabelSetting,
   setAnnouncementsOnly,
-}: PropsType): React.JSX.Element {
-  const AccessControlEnum = Proto.AccessControl.AccessRequired;
-
+}: PropsType): JSX.Element {
   const [isWarningAboutClearingLabels, setIsWarningAboutClearingLabels] =
-    React.useState(false);
-  const addMembersSelectId = useId();
-  const groupInfoSelectId = useId();
-  const announcementSelectId = useId();
-  const memberLabelSelectId = useId();
+    useState(false);
 
   if (conversation === undefined) {
     throw new Error('GroupV2Permissions rendered without a conversation');
@@ -69,7 +65,20 @@ export function GroupV2Permissions({
       Number(value) === AccessControlEnum.ADMINISTRATOR
     );
   };
-  const accessControlOptions = getAccessControlOptions(i18n);
+
+  const accessControlOptions = useMemo(() => {
+    return [
+      {
+        label: i18n('icu:GroupV2--all-members'),
+        value: String(AccessControlEnum.MEMBER),
+      },
+      {
+        label: i18n('icu:GroupV2--only-admins'),
+        value: String(AccessControlEnum.ADMINISTRATOR),
+      },
+    ];
+  }, [i18n]);
+
   const announcementsOnlyValue = String(
     conversation.announcementsOnly
       ? AccessControlEnum.ADMINISTRATOR
@@ -81,73 +90,57 @@ export function GroupV2Permissions({
     (conversation.announcementsOnly || conversation.announcementsOnlyReady);
 
   return (
-    <PanelSection>
-      <PanelRow
-        label={
-          <label htmlFor={addMembersSelectId}>
-            {i18n('icu:ConversationDetails--add-members-label')}
-          </label>
-        }
-        info={i18n('icu:ConversationDetails--add-members-info')}
-        right={
-          <Select
-            id={addMembersSelectId}
-            onChange={updateAccessControlMembers}
-            options={accessControlOptions}
-            value={String(conversation.accessControlMembers)}
-          />
-        }
-      />
-      <PanelRow
-        label={
-          <label htmlFor={groupInfoSelectId}>
-            {i18n('icu:ConversationDetails--group-info-label')}
-          </label>
-        }
-        info={i18n('icu:ConversationDetails--group-info-info-v2')}
-        right={
-          <Select
-            id={groupInfoSelectId}
-            onChange={updateAccessControlAttributes}
-            options={accessControlOptions}
-            value={String(conversation.accessControlAttributes)}
-          />
-        }
-      />
-      {showAnnouncementsOnlyPermission && (
-        <PanelRow
-          label={
-            <label htmlFor={announcementSelectId}>
-              {i18n('icu:ConversationDetails--announcement-label')}
-            </label>
-          }
-          info={i18n('icu:ConversationDetails--announcement-info')}
-          right={
-            <Select
-              id={announcementSelectId}
-              onChange={updateAnnouncementsOnly}
+    <AxoContainer.Root>
+      <AxoList.Root>
+        <AxoList.Body>
+          <AxoItem.Group>
+            <AxoSelectItem.Root
+              label={i18n('icu:ConversationDetails--add-members-label')}
+              description={i18n('icu:ConversationDetails--add-members-info')}
+              placeholder=""
+              value={String(
+                conversation.accessControlMembers ?? AccessControlEnum.MEMBER
+              )}
+              onValueChange={updateAccessControlMembers}
               options={accessControlOptions}
-              value={announcementsOnlyValue}
             />
-          }
-        />
-      )}
-      <PanelRow
-        label={
-          <label htmlFor={memberLabelSelectId}>
-            {i18n('icu:ConversationDetails--member-label--label')}
-          </label>
-        }
-        info={i18n('icu:ConversationDetails--member-label--info')}
-        right={
-          <Select
-            id={memberLabelSelectId}
-            onChange={updateAccessControlMemberLabel}
-            options={accessControlOptions}
-            value={String(conversation.accessControlMemberLabel)}
-          />
-        }
-      />
+
+            <AxoSelectItem.Root
+              label={i18n('icu:ConversationDetails--group-info-label')}
+              description={i18n('icu:ConversationDetails--group-info-info-v2')}
+              placeholder=""
+              value={String(
+                conversation.accessControlAttributes ?? AccessControlEnum.MEMBER
+              )}
+              onValueChange={updateAccessControlAttributes}
+              options={accessControlOptions}
+            />
+
+            {showAnnouncementsOnlyPermission && (
+              <AxoSelectItem.Root
+                label={i18n('icu:ConversationDetails--announcement-label')}
+                description={i18n('icu:ConversationDetails--announcement-info')}
+                placeholder=""
+                value={announcementsOnlyValue}
+                onValueChange={updateAnnouncementsOnly}
+                options={accessControlOptions}
+              />
+            )}
+
+            <AxoSelectItem.Root
+              label={i18n('icu:ConversationDetails--member-label--label')}
+              description={i18n('icu:ConversationDetails--member-label--info')}
+              placeholder=""
+              value={String(
+                conversation.accessControlMemberLabel ??
+                  AccessControlEnum.MEMBER
+              )}
+              onValueChange={updateAccessControlMemberLabel}
+              options={accessControlOptions}
+            />
+          </AxoItem.Group>
+        </AxoList.Body>
+      </AxoList.Root>
 
       <AxoAlertDialog.Root
         open={isWarningAboutClearingLabels}
@@ -170,8 +163,7 @@ export function GroupV2Permissions({
           </AxoAlertDialog.Body>
           <AxoAlertDialog.Footer>
             <AxoAlertDialog.Action
-              variant="secondary"
-              arrow={false}
+              variant="strong-secondary"
               onClick={() => {
                 setIsWarningAboutClearingLabels(false);
               }}
@@ -179,8 +171,7 @@ export function GroupV2Permissions({
               {i18n('icu:cancel')}
             </AxoAlertDialog.Action>
             <AxoAlertDialog.Action
-              variant="primary"
-              arrow={false}
+              variant="strong-primary"
               onClick={() => {
                 setAccessControlMemberLabelSetting(
                   conversation.id,
@@ -194,6 +185,6 @@ export function GroupV2Permissions({
           </AxoAlertDialog.Footer>
         </AxoAlertDialog.Content>
       </AxoAlertDialog.Root>
-    </PanelSection>
+    </AxoContainer.Root>
   );
 }

@@ -4,9 +4,8 @@
 import type { Moment } from 'moment';
 import type { ReactElement, TimeHTMLAttributes } from 'react';
 import moment from 'moment';
-import React from 'react';
 
-import { toBoundedDate } from '../util/timestamp.std.js';
+import { toBoundedDate } from '../util/timestamp.std.ts';
 
 export function Time({
   children,

@@ -6,22 +6,23 @@ import {
   AuthCredentialWithPniResponse,
   CallLinkAuthCredentialResponse,
   GenericServerPublicParams,
+  type AuthCredentialWithPni,
 } from '@signalapp/libsignal-client/zkgroup.js';
 
-import { getClientZkAuthOperations } from '../util/zkgroup.node.js';
+import { getClientZkAuthOperations } from '../util/zkgroup.node.ts';
 
-import type { GroupCredentialType } from '../textsecure/WebAPI.preload.js';
-import { getGroupCredentials } from '../textsecure/WebAPI.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import * as durations from '../util/durations/index.std.js';
-import { BackOff } from '../util/BackOff.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { toDayMillis } from '../util/timestamp.std.js';
-import { toTaggedPni } from '../types/ServiceId.std.js';
-import { toPniObject, toAciObject } from '../util/ServiceId.node.js';
-import { createLogger } from '../logging/log.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import type { GroupCredentialType } from '../textsecure/WebAPI.preload.ts';
+import { getGroupCredentials } from '../textsecure/WebAPI.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import * as durations from '../util/durations/index.std.ts';
+import { BackOff } from '../util/BackOff.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { toDayMillis } from '../util/timestamp.std.ts';
+import { toTaggedPni, type PniString } from '../types/ServiceId.std.ts';
+import { toPniObject, toAciObject } from '../util/ServiceId.node.ts';
+import { createLogger } from '../logging/log.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 const { first, last, sortBy } = lodash;
 
@@ -85,16 +86,16 @@ const BACKOFF_TIMEOUTS = [
   5 * durations.MINUTE,
 ];
 
-export async function runWithRetry(
+async function runWithRetry(
   fn: () => Promise<void>,
   options: { scheduleAnother?: number } = {}
 ): Promise<void> {
   const backOff = new BackOff(BACKOFF_TIMEOUTS);
 
-  // eslint-disable-next-line no-constant-condition
+  // oxlint-disable-next-line no-constant-condition
   while (true) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await fn();
       return;
     } catch (error) {
@@ -102,15 +103,16 @@ export async function runWithRetry(
       log.info(
         `runWithRetry: ${fn.name} failed. Waiting ${wait}ms for retry. Error: ${error.stack}`
       );
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await sleep(wait);
     }
   }
 
   // It's important to schedule our next run here instead of the level above; otherwise we
   //   could end up with multiple endlessly-retrying runs.
-  // eslint-disable-next-line no-unreachable -- Why is this here, its unreachable
+  // oxlint-disable-next-line no-unreachable -- Why is this here, its unreachable
   const duration = options.scheduleAnother;
+  // oxlint-disable-next-line no-unreachable
   if (duration) {
     log.info(
       `runWithRetry: scheduling another run with a setTimeout duration of ${duration}ms`
@@ -135,8 +137,10 @@ function getCredentialsForToday(
   }
 
   return {
-    today: credentials[todayIndex],
-    tomorrow: credentials[todayIndex + 1],
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    today: credentials[todayIndex]!,
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    tomorrow: credentials[todayIndex + 1]!,
   };
 }
 
@@ -203,25 +207,40 @@ export async function maybeFetchNewCredentials(): Promise<void> {
     credentials: rawCredentials,
     callLinkAuthCredentials,
   } = await getGroupCredentials({ startDayInMs, endDayInMs });
-  strictAssert(
-    untaggedPni,
-    'Server must give pni along with group credentials'
-  );
-  const pni = toTaggedPni(untaggedPni);
 
-  const localPni = itemStorage.user.getPni();
-  if (pni !== localPni) {
-    log.error(`${logId}: local PNI ${localPni}, does not match remote ${pni}`);
+  let pni: PniString | undefined;
+  if (untaggedPni != null) {
+    pni = toTaggedPni(untaggedPni);
+
+    const localPni = itemStorage.user.getOptionalPni();
+    if (pni !== localPni) {
+      log.error(
+        `${logId}: local PNI ${localPni}, does not match remote ${pni}`
+      );
+    }
   }
 
   function formatCredential(item: GroupCredentialType): GroupCredentialType {
-    const authCredential =
-      clientZKAuthOperations.receiveAuthCredentialWithPniAsServiceId(
+    let authCredential: AuthCredentialWithPni;
+    if (pni != null) {
+      authCredential =
+        clientZKAuthOperations.receiveAuthCredentialWithPniAsServiceId(
+          toAciObject(aci),
+          toPniObject(pni),
+          item.redemptionTime,
+          new AuthCredentialWithPniResponse(Bytes.fromBase64(item.credential))
+        );
+    } else {
+      const salt = itemStorage.get('authCredentialSalt');
+      strictAssert(salt != null, 'Missing auth credential salt');
+
+      authCredential = clientZKAuthOperations.receiveAuthCredentialWithoutPni(
         toAciObject(aci),
-        toPniObject(pni),
+        salt,
         item.redemptionTime,
         new AuthCredentialWithPniResponse(Bytes.fromBase64(item.credential))
       );
+    }
     const credential = Bytes.toBase64(authCredential.serialize());
 
     return {
@@ -314,7 +333,7 @@ function haveToday(
   return data?.some(({ redemptionTime }) => redemptionTime === today);
 }
 
-export function getDatesForRequest(
+function getDatesForRequest(
   data: CredentialsDataType
 ): RequestDatesType | undefined {
   const today = toDayMillis(Date.now());
@@ -342,8 +361,6 @@ export function getDatesForRequest(
   };
 }
 
-export function sortCredentials(
-  data: CredentialsDataType
-): CredentialsDataType {
+function sortCredentials(data: CredentialsDataType): CredentialsDataType {
   return sortBy(data, (item: GroupCredentialType) => item.redemptionTime);
 }

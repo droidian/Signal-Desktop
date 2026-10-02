@@ -1,26 +1,34 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SyntheticEvent,
+  type JSX,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 import classNames from 'classnames';
 import { Blurhash } from 'react-blurhash';
 
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
 
-import type { AttachmentForUIType } from '../../types/Attachment.std.js';
+import type { AttachmentForUIType } from '../../types/Attachment.std.ts';
 import {
   hasNotResolved,
   getImageDimensionsForTimeline,
   defaultBlurHash,
-  isDownloadable,
-} from '../../util/Attachment.std.js';
-import * as Errors from '../../types/errors.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { useReducedMotion } from '../../hooks/useReducedMotion.dom.js';
-import { AttachmentDetailPill } from './AttachmentDetailPill.dom.js';
-import { getSpinner } from './Image.dom.js';
-import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler.dom.js';
-import { isAbortError } from '../../util/isAbortError.std.js';
+} from '../../util/Attachment.std.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { useReducedMotion } from '../../hooks/useReducedMotion.dom.ts';
+import { AttachmentDetailPill } from './AttachmentDetailPill.dom.tsx';
+import { getSpinner } from './Image.dom.tsx';
+import { useUndownloadableMediaHandler } from '../../hooks/useUndownloadableMediaHandler.dom.tsx';
+import { isAbortError } from '../../util/isAbortError.std.ts';
 
 const log = createLogger('GIF');
 
@@ -30,27 +38,25 @@ const MAX_GIF_TIME = 8;
 export type Props = {
   readonly attachment: AttachmentForUIType;
   readonly size?: number;
-  readonly tabIndex: number;
   // test-only, to force reduced motion experience
   readonly _forceTapToPlay?: boolean;
 
   readonly i18n: LocalizerType;
   readonly theme?: ThemeType;
 
-  onError(): void;
+  onError: () => void;
   showMediaNoLongerAvailableToast?: () => void;
-  showVisualAttachment(): void;
-  startDownload(): void;
-  cancelDownload(): void;
+  showVisualAttachment: () => void;
+  startDownload: () => void;
+  cancelDownload: () => void;
 };
 
-type MediaEvent = React.SyntheticEvent<HTMLVideoElement, Event>;
+type MediaEvent = SyntheticEvent<HTMLVideoElement>;
 
-export function GIF(props: Props): React.JSX.Element {
+export function GIF(props: Props): JSX.Element {
   const {
     attachment,
     size,
-    tabIndex,
     _forceTapToPlay,
 
     i18n,
@@ -96,6 +102,7 @@ export function GIF(props: Props): React.JSX.Element {
     }
 
     if (isPlaying) {
+      // oxlint-disable-next-line promise/prefer-await-to-then
       video.play().catch(error => {
         if (!isAbortError(error)) {
           log.error(
@@ -107,7 +114,11 @@ export function GIF(props: Props): React.JSX.Element {
     } else {
       video.pause();
     }
-  }, [isPlaying, repeatCount]);
+  }, [
+    isPlaying,
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+    repeatCount,
+  ]);
 
   //
   // Change `isPlaying` in response to focus, play time, and repeat count
@@ -156,7 +167,7 @@ export function GIF(props: Props): React.JSX.Element {
     }
   };
 
-  const onOverlayClick = (event: React.MouseEvent): void => {
+  const onOverlayClick = (event: MouseEvent): void => {
     event.preventDefault();
     event.stopPropagation();
 
@@ -169,7 +180,7 @@ export function GIF(props: Props): React.JSX.Element {
     }
   };
 
-  const onOverlayKeyDown = (event: React.KeyboardEvent): void => {
+  const onOverlayKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Enter' && event.key !== 'Space') {
       return;
     }
@@ -188,9 +199,9 @@ export function GIF(props: Props): React.JSX.Element {
 
   const isPending = Boolean(attachment.pending);
   const isNotResolved = hasNotResolved(attachment) && !isPending;
-  const isMediaDownloadable = isDownloadable(attachment);
+  const isMediaDownloadable = !attachment.isPermanentlyUndownloadable;
 
-  let gif: React.JSX.Element | undefined;
+  let gif: JSX.Element | undefined;
   if (isNotResolved || isPending || !isMediaDownloadable) {
     gif = (
       <Blurhash
@@ -207,7 +218,7 @@ export function GIF(props: Props): React.JSX.Element {
         onTimeUpdate={onTimeUpdate}
         onEnded={onEnded}
         onError={onError}
-        onClick={(event: React.MouseEvent): void => {
+        onClick={(event: MouseEvent): void => {
           event.preventDefault();
           event.stopPropagation();
 
@@ -226,7 +237,7 @@ export function GIF(props: Props): React.JSX.Element {
   }
 
   const cancelDownloadClick = useCallback(
-    (event: React.MouseEvent) => {
+    (event: MouseEvent) => {
       if (cancelDownload) {
         event.preventDefault();
         event.stopPropagation();
@@ -236,7 +247,7 @@ export function GIF(props: Props): React.JSX.Element {
     [cancelDownload]
   );
   const cancelDownloadKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    (event: KeyboardEvent<HTMLButtonElement>) => {
       if (cancelDownload && (event.key === 'Enter' || event.key === 'Space')) {
         event.preventDefault();
         event.stopPropagation();
@@ -251,10 +262,9 @@ export function GIF(props: Props): React.JSX.Element {
     i18n,
     cancelDownloadClick,
     cancelDownloadKeyDown,
-    tabIndex,
   });
 
-  let overlay: React.JSX.Element | undefined;
+  let overlay: JSX.Element | undefined;
   if ((tapToPlay && !isPlaying) || (isNotResolved && isMediaDownloadable)) {
     const className = classNames([
       'module-image__border-overlay',
@@ -272,7 +282,6 @@ export function GIF(props: Props): React.JSX.Element {
         aria-label={i18n('icu:GIF--download')}
         onClick={onOverlayClick}
         onKeyDown={onOverlayKeyDown}
-        tabIndex={tabIndex}
       >
         <span />
       </button>
@@ -284,7 +293,6 @@ export function GIF(props: Props): React.JSX.Element {
         className="module-image__overlay-circle module-image__overlay-circle--undownloadable"
         aria-label={i18n('icu:mediaNotAvailable')}
         onClick={undownloadableClick}
-        tabIndex={tabIndex}
       >
         <div className="module-image__undownloadable-icon" />
       </button>

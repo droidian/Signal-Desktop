@@ -12,14 +12,8 @@ jobs:
     if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          token: ${{ secrets.AUTOMATED_GITHUB_PAT }}
-          repository: signalapp/Signal-Notes-Action-Private
-          path: ./.github/actions/note
-      - name: Run action
-        uses: ./.github/actions/note
+      - name: Add notes to merge commits
+        uses: signalapp/Signal-Notes-Action-Private@main
         with:
           token: ${{ secrets.AUTOMATED_GITHUB_PAT }}
           git-email: note-bot@signal.org

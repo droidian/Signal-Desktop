@@ -1,32 +1,34 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { ContactModal } from '../../components/conversation/ContactModal.dom.js';
-import { getAreWeASubscriber, getItems } from '../selectors/items.dom.js';
-import { getIntl, getTheme, getVersion } from '../selectors/user.std.js';
-import { getBadgesSelector } from '../selectors/badges.preload.js';
+import { ContactModal } from '../../components/conversation/ContactModal.dom.tsx';
+import { getAreWeASubscriber, getItems } from '../selectors/items.dom.ts';
+import { getIntl, getTheme, getVersion } from '../selectors/user.std.ts';
+import { getBadgesSelector } from '../selectors/badges.preload.ts';
 import {
   getCachedConversationMemberColorsSelector,
   getConversationSelector,
-} from '../selectors/conversations.dom.js';
-import { getHasStoriesSelector } from '../selectors/stories2.dom.js';
+} from '../selectors/conversations.dom.ts';
+import { getHasStoriesSelector } from '../selectors/stories2.dom.ts';
 import {
   getActiveCallState,
   getCallLinkSelector,
-  isInFullScreenCall as getIsInFullScreenCall,
   getParticipantInActiveCall,
-} from '../selectors/calling.std.js';
-import { useStoriesActions } from '../ducks/stories.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { getContactModalState } from '../selectors/globalModals.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { CallMode } from '../../types/CallDisposition.std.js';
-import { isCallLinkAdmin } from '../../types/CallLink.std.js';
-import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.js';
+} from '../selectors/calling.std.ts';
+import { useStoriesActions } from '../ducks/stories.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { getContactModalState } from '../selectors/globalModals.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { CallMode } from '../../types/CallDisposition.std.ts';
+import { isCallLinkAdmin } from '../../types/CallLink.std.ts';
+import { isFeaturedEnabledSelector } from '../../util/isFeatureEnabled.dom.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
+import { NavTab, SettingsPage } from '../../types/Nav.std.ts';
+import { getIsInFullScreenCall } from '../selectors/isInFullScreenCall.std.ts';
 
 export const SmartContactModal = memo(function SmartContactModal() {
   const i18n = useSelector(getIntl);
@@ -105,6 +107,7 @@ export const SmartContactModal = memo(function SmartContactModal() {
     toggleGroupMemberLabelInfoModal,
     toggleSafetyNumberModal,
   } = useGlobalModalActions();
+  const { changeLocation } = useNavActions();
   const {
     blockClient: blockClientFromCall,
     onOutgoingVideoCallInConversation,
@@ -118,6 +121,16 @@ export const SmartContactModal = memo(function SmartContactModal() {
     strictAssert(contactId != null, 'Expected conversationId to be set');
     toggleEditNicknameAndNoteModal({ conversationId: contactId });
   }, [toggleEditNicknameAndNoteModal, contactId]);
+
+  const onNavigateToDonate = useCallback(() => {
+    hideContactModal();
+    changeLocation({
+      tab: NavTab.Settings,
+      details: {
+        page: SettingsPage.DonationsDonateFlow,
+      },
+    });
+  }, [hideContactModal, changeLocation]);
 
   return (
     <ContactModal
@@ -142,6 +155,7 @@ export const SmartContactModal = memo(function SmartContactModal() {
       isRemoteMuteVisible={isRemoteMuteVisible}
       isRemoveFromCallVisible={isRemoveFromCallVisible}
       activeCallDemuxId={activeCallDemuxId}
+      onNavigateToDonate={onNavigateToDonate}
       onOpenEditNicknameAndNoteModal={handleOpenEditNicknameAndNoteModal}
       onOutgoingAudioCallInConversation={onOutgoingAudioCallInConversation}
       onOutgoingVideoCallInConversation={onOutgoingVideoCallInConversation}

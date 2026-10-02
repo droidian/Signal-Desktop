@@ -12,24 +12,19 @@ import {
 } from '@signalapp/mock-server';
 import createDebug from 'debug';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { toNumber } from '../../util/toNumber.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { App } from '../bootstrap.node.js';
-import {
-  DELETE_SENT_PROTO_BATCHER_WAIT_MS,
-  RECEIPT_BATCHER_WAIT_MS,
-} from '../../types/Receipt.std.js';
-import { sleep } from '../../util/sleep.std.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { toNumber } from '../../util/toNumber.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { App } from '../bootstrap.node.ts';
 import {
   acceptConversation,
   expectSystemMessages,
   typeIntoInput,
   waitForNonProfileKeyUpdateMessage,
   waitForEnabledComposer,
-} from '../helpers.node.js';
+} from '../helpers.node.ts';
 
 export const debug = createDebug('mock:test:pni-signature');
 
@@ -79,8 +74,13 @@ describe('pnp/PNI Signature', function (this: Mocha.Suite) {
     await bootstrap.teardown();
   });
 
-  it('should be sent by Desktop until encrypted delivery receipt', async () => {
+  it('should be sent by Desktop until encrypted delivery receipt', async function () {
     const { server, desktop } = bootstrap;
+
+    if (!desktop.pni) {
+      this.skip();
+      return;
+    }
 
     const ourPniKey = await desktop.getIdentityKey(ServiceIdKind.PNI);
     const ourAciKey = await desktop.getIdentityKey(ServiceIdKind.ACI);
@@ -209,10 +209,7 @@ describe('pnp/PNI Signature', function (this: Mocha.Suite) {
         ],
         timestamp: receiptTimestamp,
       });
-      // Wait for receipts to be batched and processed (+ buffer)
-      await sleep(
-        RECEIPT_BATCHER_WAIT_MS + DELETE_SENT_PROTO_BATCHER_WAIT_MS + 20
-      );
+      await app.waitForPhoneNumberSharedWith(stranger.device.aci);
     }
 
     debug('Enter third message text');
@@ -244,7 +241,9 @@ describe('pnp/PNI Signature', function (this: Mocha.Suite) {
       const messages = window.locator('.module-message__text');
       assert.strictEqual(await messages.count(), 4, 'message count');
 
-      await expectSystemMessages(window, ['You accepted the message request']);
+      await expectSystemMessages(window, [
+        "You accepted Mysterious Stranger's message request",
+      ]);
     }
   });
 
@@ -266,8 +265,8 @@ describe('pnp/PNI Signature', function (this: Mocha.Suite) {
 
     debug('Send a PNI sync message');
     const timestamp = bootstrap.getTimestamp();
-    const destinationServiceIdBinary = stranger.device.pniBinary;
-    const destinationE164 = stranger.device.number;
+    const destinationServiceIdBinary = stranger.device.checkedPniBinary;
+    const destinationE164 = stranger.device.checkedNumber;
     const destinationPniIdentityKey = await stranger.device.getIdentityKey(
       ServiceIdKind.PNI
     );

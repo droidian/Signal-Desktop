@@ -3,22 +3,29 @@
 
 import type * as client from '@signalapp/libsignal-client';
 
-import type { SignalService as Proto } from '../protobuf/index.std.js';
-import type { IncomingWebSocketRequest } from './WebsocketResources.preload.js';
+import type { SignalService as Proto } from '../protobuf/index.std.ts';
+import type { IncomingWebSocketRequest } from './WebsocketResources.preload.ts';
 import type {
   ServiceIdString,
   AciString,
   PniString,
-} from '../types/ServiceId.std.js';
-import type { TextAttachmentType } from '../types/Attachment.std.js';
-import type { GiftBadgeStates } from '../types/GiftBadgeStates.std.js';
-import type { MIMEType } from '../types/MIME.std.js';
-import type { DurationInSeconds } from '../util/durations/index.std.js';
-import type { AnyPaymentEvent } from '../types/Payment.std.js';
-import type { RawBodyRange } from '../types/BodyRange.std.js';
-import type { StoryMessageRecipientsType } from '../types/Stories.std.js';
+} from '../types/ServiceId.std.ts';
+import type { TextAttachmentType } from '../types/Attachment.std.ts';
+import type { GiftBadgeStates } from '../types/GiftBadgeStates.std.ts';
+import type { MIMEType } from '../types/MIME.std.ts';
+import type { DurationInSeconds } from '../util/durations/index.std.ts';
+import type { AnyPaymentEvent } from '../types/Payment.std.ts';
+import type { RawBodyRange } from '../types/BodyRange.std.ts';
+import type { StoryMessageRecipientsType } from '../types/Stories.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
+import type {
+  DurationSecs,
+  ReceivedTimestampMs,
+  SentTimestampMs,
+  ServerTimestampMs,
+} from '@signalapp/types';
 
-export {
+export type {
   IdentityKeyType,
   IdentityKeyIdType,
   KyberPreKeyType,
@@ -31,7 +38,7 @@ export {
   SignedPreKeyIdType,
   SignedPreKeyType,
   UnprocessedType,
-} from '../sql/Interface.std.js';
+} from '../sql/Interface.std.ts';
 
 export type StorageServiceCallOptionsType = {
   credentials?: StorageServiceCredentials;
@@ -59,7 +66,7 @@ export type DeviceType = {
 export type CompatSignedPreKeyType = {
   keyId: number;
   keyPair: KeyPairType;
-  signature: Uint8Array;
+  signature: Uint8Array<ArrayBuffer>;
 };
 
 export type CompatPreKeyType = {
@@ -76,8 +83,8 @@ export type OuterSignedPrekeyType = {
 
   created_at: number;
   keyId: number;
-  privKey: Uint8Array;
-  pubKey: Uint8Array;
+  privKey: Uint8Array<ArrayBuffer>;
+  pubKey: Uint8Array<ArrayBuffer>;
 };
 
 export type SessionResetsType = Record<string, number>;
@@ -85,24 +92,24 @@ export type SessionResetsType = Record<string, number>;
 export type ProcessedEnvelope = Readonly<{
   id: string;
   receivedAtCounter: number;
-  receivedAtDate: number;
+  receivedAtDate: ReceivedTimestampMs;
   messageAgeSec: number;
 
   // Mostly from Proto.Envelope except for null/undefined
   type: Proto.Envelope.Type;
   source: string | undefined;
   sourceServiceId: ServiceIdString | undefined;
-  sourceDevice: number | Undefined;
+  sourceDevice: number | undefined;
   destinationServiceId: ServiceIdString;
   updatedPni: PniString | undefined;
-  timestamp: number;
-  content: Uint8Array;
+  timestamp: SentTimestampMs;
+  content: Uint8Array<ArrayBuffer>;
   serverGuid: string;
-  serverTimestamp: number;
+  serverTimestamp: ServerTimestampMs;
   groupId: string | undefined;
   urgent: boolean;
   story: boolean;
-  reportingToken: Uint8Array | undefined;
+  reportingToken: Uint8Array<ArrayBuffer> | undefined;
   groupId: string | undefined;
 }>;
 
@@ -175,12 +182,12 @@ export type ProcessedSticker = {
   packId?: string;
   packKey?: string;
   stickerId?: number;
-  emoji?: string;
+  emoji?: Emoji.Variant;
   data?: ProcessedAttachment;
 };
 
 export type ProcessedReaction = {
-  emoji?: string;
+  emoji?: Emoji.Variant;
   remove: boolean;
   targetAuthorAci?: AciString;
   targetTimestamp?: number;
@@ -188,8 +195,8 @@ export type ProcessedReaction = {
 
 export type ProcessedPinMessage = Readonly<{
   targetAuthorAci: AciString;
-  targetSentTimestamp: number;
-  pinDuration: DurationInSeconds | null;
+  targetSentTimestamp: SentTimestampMs;
+  pinDuration: DurationSecs | null;
 }>;
 
 export type ProcessedPollCreate = {
@@ -277,7 +284,7 @@ export type ProcessedDataMessage = {
 export type ProcessedUnidentifiedDeliveryStatus = Readonly<{
   destinationServiceId?: ServiceIdString;
   isAllowedToReplyToStory?: boolean;
-  destinationPniIdentityKey?: Uint8Array;
+  destinationPniIdentityKey?: Uint8Array<ArrayBuffer>;
   unidentified?: boolean;
 }>;
 
@@ -306,8 +313,8 @@ export type CallbackResultType = {
   failoverServiceIds?: Array<ServiceIdString>;
   errors?: Array<CustomError>;
   unidentifiedDeliveries?: Array<ServiceIdString>;
-  dataMessage: Uint8Array | undefined;
-  editMessage: Uint8Array | undefined;
+  dataMessage: Uint8Array<ArrayBuffer> | undefined;
+  editMessage: Uint8Array<ArrayBuffer> | undefined;
 
   // If this send is not the final step in a multi-step send, we shouldn't treat its
   //   results we would treat a one-step send.
@@ -315,26 +322,26 @@ export type CallbackResultType = {
 
   // Fields necessary for send log save
   contentHint?: number;
-  contentProto?: Uint8Array;
+  contentProto?: Uint8Array<ArrayBuffer>;
   timestamp?: number;
-  recipients?: Record<ServiceIdString, Array<number>>;
+  recipients?: Record<ServiceIdString, ReadonlyArray<number>>;
   urgent?: boolean;
   hasPniSignatureMessage?: boolean;
 };
 
 export type IRequestHandler = {
-  handleRequest(request: IncomingWebSocketRequest): void;
-  handleDisconnect(): void;
+  handleRequest: (request: IncomingWebSocketRequest) => void;
+  handleDisconnect: () => void;
 };
 
 export type PniKeyMaterialType = Readonly<{
-  identityKeyPair: Uint8Array;
-  signedPreKey: Uint8Array;
-  lastResortKyberPreKey?: Uint8Array;
+  identityKeyPair: Uint8Array<ArrayBuffer>;
+  signedPreKey: Uint8Array<ArrayBuffer>;
+  lastResortKyberPreKey?: Uint8Array<ArrayBuffer>;
   registrationId: number;
 }>;
 
 export type PniSignatureMessageType = Readonly<{
   pni: PniString;
-  signature: Uint8Array;
+  signature: Uint8Array<ArrayBuffer>;
 }>;

@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import * as React from 'react';
 import casual from 'casual';
 import { action } from '@storybook/addon-actions';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { PropsType } from './ContactModal.dom.js';
-import { ContactModal } from './ContactModal.dom.js';
-import { HasStories } from '../../types/Stories.std.js';
-import { ThemeType } from '../../types/Util.std.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
-import { getFakeBadges } from '../../test-helpers/getFakeBadge.std.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PropsType } from './ContactModal.dom.tsx';
+import { ContactModal } from './ContactModal.dom.tsx';
+import { HasStories } from '../../types/Stories.std.ts';
+import { ThemeType } from '../../types/Util.std.ts';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
+import { getFakeBadges } from '../../test-helpers/getFakeBadge.std.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const ACCESS_ENUM = Proto.AccessControl.AccessRequired;
 
@@ -76,7 +76,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => <ContactModal {...args} />;
 
 export const AsNonAdmin = Template.bind({});
@@ -87,7 +86,7 @@ AsNonAdmin.args = {
 export const WithLabel = Template.bind({});
 WithLabel.args = {
   areWeAdmin: false,
-  contactLabelEmoji: '💪🏼',
+  contactLabelEmoji: Emoji.getVariant(Emoji.MUSCLE, Emoji.SkinTone.Type2),
   contactLabelString: 'Strong',
   contactNameColor: '180',
 };
@@ -102,28 +101,28 @@ WithLabelNoEmoji.args = {
 export const WithLabelInvalidEmoji = Template.bind({});
 WithLabelInvalidEmoji.args = {
   areWeAdmin: false,
-  contactLabelEmoji: '%',
+  contactLabelEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant('%'),
   contactLabelString: 'Strong',
   contactNameColor: '220',
 };
 
 export const LongLabel = Template.bind({});
 LongLabel.args = {
-  contactLabelEmoji: '🐝',
+  contactLabelEmoji: Emoji.BEE,
   contactLabelString: '𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫𒐫',
   contactNameColor: '270',
 };
 
 export const LongLabel2 = Template.bind({});
 LongLabel2.args = {
-  contactLabelEmoji: '🐝',
+  contactLabelEmoji: Emoji.BEE,
   contactLabelString: '﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽﷽',
   contactNameColor: '270',
 };
 
 export const LongLabelAllEmoji = Template.bind({});
 LongLabelAllEmoji.args = {
-  contactLabelEmoji: '🐝',
+  contactLabelEmoji: Emoji.BEE,
   contactLabelString: '🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝🐝',
   contactNameColor: '270',
 };

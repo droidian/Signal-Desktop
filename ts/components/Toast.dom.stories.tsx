@@ -1,11 +1,12 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './Toast.dom.js';
-import { Toast } from './Toast.dom.js';
-import { type ComponentMeta, argPresets } from '../storybook/types.std.js';
+import type { PropsType } from './Toast.dom.tsx';
+import { Toast } from './Toast.dom.tsx';
+import { type ComponentMeta, argPresets } from '../storybook/types.std.ts';
 
 export default {
   title: 'Components/Toast',
@@ -36,11 +37,11 @@ export default {
   },
 } satisfies ComponentMeta<PropsType>;
 
-export function Defaults(args: PropsType): React.JSX.Element {
+export function Defaults(args: PropsType): JSX.Element {
   return <Toast {...args} />;
 }
 
-export function Long(args: PropsType): React.JSX.Element {
+export function Long(args: PropsType): JSX.Element {
   return (
     <Toast {...args}>
       Lorem ipsum dolor sit amet, consectetur adipisicing elit. Debitis deserunt

@@ -14,13 +14,13 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import lodash from 'lodash';
 import { CallLinkRootKey } from '@signalapp/ringrtc';
-import { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import type { BootstrapOptions } from '../bootstrap.node.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { artAddStickersRoute } from '../../util/signalRoutes.std.js';
-import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.node.js';
+import { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import type { BootstrapOptions } from '../bootstrap.node.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { artAddStickersRoute } from '../../util/signalRoutes.std.ts';
+import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc.node.ts';
 
 const { range } = lodash;
 
@@ -61,7 +61,7 @@ export async function initStorage(
     // Populate storage service
     const { contacts, phone } = bootstrap;
 
-    const [firstContact] = contacts;
+    const [firstContact] = contacts as [PrimaryDevice];
 
     const members = [...contacts].slice(0, GROUP_SIZE);
 
@@ -137,12 +137,12 @@ export async function initStorage(
     const { desktop } = bootstrap;
 
     // Send a message to the group and the first contact
-    const contactSend = contacts[0].sendText(desktop, 'hello from contact', {
+    const contactSend = contacts[0]?.sendText(desktop, 'hello from contact', {
       timestamp: bootstrap.getTimestamp(),
       sealed: true,
     });
 
-    const groupSend = members[0].sendText(desktop, 'hello in group', {
+    const groupSend = members[0]?.sendText(desktop, 'hello in group', {
       timestamp: bootstrap.getTimestamp(),
       sealed: true,
       group,
@@ -162,12 +162,12 @@ export const FIXTURES = path.join(__dirname, '..', '..', '..', 'fixtures');
 export const EMPTY = new Uint8Array(0);
 
 export type StickerPackType = Readonly<{
-  id: Buffer;
-  key: Buffer;
+  id: Buffer<ArrayBuffer>;
+  key: Buffer<ArrayBuffer>;
   stickerCount: number;
 }>;
 
-export const STICKER_PACKS: ReadonlyArray<StickerPackType> = [
+export const STICKER_PACKS = [
   {
     id: Buffer.from('c40ed069cdc2b91eccfccf25e6bcddfc', 'hex'),
     key: Buffer.from(
@@ -184,7 +184,7 @@ export const STICKER_PACKS: ReadonlyArray<StickerPackType> = [
     ),
     stickerCount: 1,
   },
-];
+] as const satisfies ReadonlyArray<StickerPackType>;
 
 export function getStickerPackLink(pack: StickerPackType): string {
   return artAddStickersRoute

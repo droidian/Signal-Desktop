@@ -5,12 +5,12 @@ import { assert } from 'chai';
 import type { RefObject } from 'react';
 import { Delta } from '@signalapp/quill-cjs';
 
-import type { AciString } from '../../../types/ServiceId.std.js';
-import { generateAci } from '../../../types/ServiceId.std.js';
-import { matchMention } from '../../../quill/mentions/matchers.std.js';
-import { MemberRepository } from '../../../quill/memberRepository.std.js';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import { getDefaultConversationWithServiceId } from '../../../test-helpers/getDefaultConversation.std.js';
+import type { AciString } from '../../../types/ServiceId.std.ts';
+import { matchMention } from '../../../quill/mentions/matchers.std.ts';
+import { MemberRepository } from '../../../quill/memberRepository.std.ts';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import { getDefaultConversationWithServiceId } from '../../../test-helpers/getDefaultConversation.std.ts';
+import { generateAci } from '../../../test-helpers/serviceIdUtils.std.ts';
 
 const ACI_1 = generateAci();
 
@@ -109,6 +109,7 @@ describe('matchMention', () => {
     assert.isNotEmpty(ops);
 
     const [op] = ops;
+    assert.exists(op);
     const { insert, attributes } = op;
 
     if (isMention(insert)) {
@@ -138,6 +139,7 @@ describe('matchMention', () => {
     assert.isNotEmpty(ops);
 
     const [op] = ops;
+    assert.exists(op);
     const { insert } = op;
 
     if (isMention(insert)) {
@@ -165,6 +167,7 @@ describe('matchMention', () => {
     assert.isNotEmpty(ops);
 
     const [op] = ops;
+    assert.exists(op);
     const { insert } = op;
 
     if (isMention(insert)) {
@@ -189,6 +192,7 @@ describe('matchMention', () => {
     assert.isNotEmpty(ops);
 
     const [op] = ops;
+    assert.exists(op);
     const { insert } = op;
 
     if (isMention(insert)) {

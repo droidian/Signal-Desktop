@@ -1,10 +1,10 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect } from 'playwright/test';
-import * as durations from '../../util/durations/index.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
-import { createCallLink } from '../helpers.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
+import { createCallLink } from '../helpers.node.ts';
 
 describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
   this.timeout(durations.MINUTE);
@@ -35,9 +35,7 @@ describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
       const name = 'New Name';
       await createCallLink(window, { name });
 
-      const title = await window
-        .locator('.CallsList__ItemTile')
-        .getByText(name);
+      const title = window.locator('.CallsList__ItemTile').getByText(name);
 
       await expect(title).toContainText(name);
     }
@@ -49,7 +47,7 @@ describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
         isAdminApprovalRequired: false,
       });
 
-      const callLinkItem = await window.getByText(name);
+      const callLinkItem = window.getByText(name);
       await callLinkItem.click();
 
       const callLinkDetails = window.locator(
@@ -57,10 +55,11 @@ describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
       );
       await callLinkDetails.waitFor();
 
-      const restrictionsSelect = await window.locator(
-        '.CallLinkRestrictionsSelect select'
-      );
-      await expect(restrictionsSelect).toHaveJSProperty('value', '0');
+      const restrictions = window.getByRole('switch', {
+        name: 'Require admin approval',
+      });
+
+      await expect(restrictions).toBeChecked({ checked: false });
     }
 
     {
@@ -70,7 +69,7 @@ describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
         isAdminApprovalRequired: true,
       });
 
-      const callLinkItem = await window.getByText(name);
+      const callLinkItem = window.getByText(name);
       await callLinkItem.click();
 
       const callLinkDetails = window.locator(
@@ -78,10 +77,11 @@ describe('calling/callLinkAdmin', function (this: Mocha.Suite) {
       );
       await callLinkDetails.waitFor();
 
-      const restrictionsSelect = await window.locator(
-        '.CallLinkRestrictionsSelect select'
-      );
-      await expect(restrictionsSelect).toHaveJSProperty('value', '1');
+      const restrictions = window.getByRole('switch', {
+        name: 'Require admin approval',
+      });
+
+      await expect(restrictions).toBeChecked();
     }
   });
 });

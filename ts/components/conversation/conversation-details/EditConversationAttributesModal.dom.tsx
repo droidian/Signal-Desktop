@@ -1,26 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { FormEventHandler } from 'react';
-import React, { useCallback, useRef, useState } from 'react';
-
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { Modal } from '../../Modal.dom.js';
-import { AvatarEditor } from '../../AvatarEditor.dom.js';
-import { AvatarPreview } from '../../AvatarPreview.dom.js';
-import { Button, ButtonVariant } from '../../Button.dom.js';
-import { Spinner } from '../../Spinner.dom.js';
-import { GroupDescriptionInput } from '../../GroupDescriptionInput.dom.js';
-import { GroupTitleInput } from '../../GroupTitleInput.dom.js';
-import { RequestState } from './util.std.js';
+import type { JSX, SubmitEvent } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { AvatarEditor } from '../../AvatarEditor.dom.tsx';
+import { AvatarPreview } from '../../AvatarPreview.dom.tsx';
+import { GroupDescriptionInput } from '../../GroupDescriptionInput.dom.tsx';
+import { GroupTitleInput } from '../../GroupTitleInput.dom.tsx';
+import { RequestState } from './util.std.ts';
 import type {
   AvatarDataType,
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../../../types/Avatar.std.js';
-import type { AvatarColorType } from '../../../types/Colors.std.js';
-import { useConfirmDiscard } from '../../../hooks/useConfirmDiscard.dom.js';
+} from '../../../types/Avatar.std.ts';
+import type { AvatarColorType } from '../../../types/Colors.std.ts';
+import { useConfirmDiscard } from '../../../hooks/useConfirmDiscard.dom.tsx';
+import { AxoDialog } from '../../../axo/AxoDialog.dom.tsx';
 
 type PropsType = {
   avatarColor?: AvatarColorType;
@@ -31,7 +28,7 @@ type PropsType = {
   initiallyFocusDescription: boolean;
   makeRequest: (
     _: Readonly<{
-      avatar?: undefined | Uint8Array;
+      avatar?: undefined | Uint8Array<ArrayBuffer>;
       description?: string;
       title?: undefined | string;
     }>
@@ -60,17 +57,19 @@ export function EditConversationAttributesModal({
   replaceAvatar,
   saveAvatarToDisk,
   userAvatarData,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
+  const formRef = useRef<HTMLFormElement>(null);
   const focusDescriptionRef = useRef<undefined | boolean>(
     initiallyFocusDescription
   );
+  // oxlint-disable-next-line react/refs
   const focusDescription = focusDescriptionRef.current;
 
   const startingTitleRef = useRef<string>(externalTitle);
   const startingAvatarUrlRef = useRef<undefined | string>(externalAvatarUrl);
 
   const [editingAvatar, setEditingAvatar] = useState(false);
-  const [avatar, setAvatar] = useState<undefined | Uint8Array>();
+  const [avatar, setAvatar] = useState<undefined | Uint8Array<ArrayBuffer>>();
   const [rawTitle, setRawTitle] = useState(externalTitle);
   const [rawGroupDescription, setRawGroupDescription] = useState(
     externalGroupDescription
@@ -80,11 +79,15 @@ export function EditConversationAttributesModal({
   const trimmedTitle = rawTitle.trim();
   const trimmedDescription = rawGroupDescription.trim();
 
-  const tryClose = useRef<() => void | undefined>();
+  const tryClose = useRef<(() => void) | null>(null);
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'EditConversationAttributesModal',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
 
   const focusRef = (el: null | HTMLElement) => {
@@ -95,7 +98,9 @@ export function EditConversationAttributesModal({
   };
 
   const hasChangedExternally =
+    // oxlint-disable-next-line react/refs
     startingAvatarUrlRef.current !== externalAvatarUrl ||
+    // oxlint-disable-next-line react/refs
     startingTitleRef.current !== externalTitle;
   const hasTitleChanged = trimmedTitle !== externalTitle.trim();
   const hasGroupDescriptionChanged =
@@ -129,13 +134,18 @@ export function EditConversationAttributesModal({
     hasTitleChanged,
     onClose,
   ]);
+  // oxlint-disable-next-line react/refs
   tryClose.current = onTryClose;
 
-  const onSubmit: FormEventHandler<HTMLFormElement> = event => {
+  function onRequestSubmit() {
+    formRef.current?.requestSubmit();
+  }
+
+  function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const request: {
-      avatar?: undefined | Uint8Array;
+      avatar?: undefined | Uint8Array<ArrayBuffer>;
       description?: string;
       title?: string;
     } = {};
@@ -149,11 +159,11 @@ export function EditConversationAttributesModal({
       request.description = trimmedDescription;
     }
     makeRequest(request);
-  };
+  }
 
   const avatarUrlForPreview = hasAvatarChanged ? undefined : externalAvatarUrl;
 
-  let content: React.JSX.Element;
+  let content: JSX.Element;
   if (editingAvatar) {
     content = (
       <AvatarEditor
@@ -163,6 +173,7 @@ export function EditConversationAttributesModal({
         conversationId={conversationId}
         deleteAvatarFromDisk={deleteAvatarFromDisk}
         i18n={i18n}
+        isDisplayedAsPanel={false}
         isGroup
         onCancel={() => {
           setHasAvatarChanged(false);
@@ -181,7 +192,7 @@ export function EditConversationAttributesModal({
   } else {
     content = (
       <form
-        id="edit-conversation-form"
+        ref={formRef}
         onSubmit={onSubmit}
         className="module-EditConversationAttributesModal"
       >
@@ -231,46 +242,46 @@ export function EditConversationAttributesModal({
     );
   }
 
-  // AvatarEditor brings its own footer with it so no need to duplicate it.
-  const modalFooter = editingAvatar ? undefined : (
-    <>
-      <Button
-        disabled={isRequestActive}
-        onClick={onClose}
-        variant={ButtonVariant.Secondary}
-      >
-        {i18n('icu:cancel')}
-      </Button>
-
-      <Button
-        type="submit"
-        form="edit-conversation-form"
-        variant={ButtonVariant.Primary}
-        disabled={!canSubmit}
-      >
-        {isRequestActive ? (
-          <Spinner size="20px" svgSize="small" direction="on-avatar" />
-        ) : (
-          i18n('icu:save')
-        )}
-      </Button>
-    </>
-  );
-
   if (confirmDiscardModal) {
     return confirmDiscardModal;
   }
 
   return (
-    <Modal
-      modalName="EditConversationAttributesModal"
-      hasXButton
-      i18n={i18n}
-      onClose={onTryClose}
-      title={i18n('icu:updateGroupAttributes__title')}
-      modalFooter={modalFooter}
-    >
-      {content}
-    </Modal>
+    <AxoDialog.Root open onOpenChange={onTryClose}>
+      <AxoDialog.Content size="md" escape="cancel-is-destructive">
+        <AxoDialog.Header>
+          <AxoDialog.Title>
+            {i18n('icu:updateGroupAttributes__title')}
+          </AxoDialog.Title>
+        </AxoDialog.Header>
+        {/* AvatarEditor brings its own Body and Footer; no need to duplicate. */}
+        {editingAvatar ? (
+          content
+        ) : (
+          <>
+            <AxoDialog.Body>{content}</AxoDialog.Body>
+            <AxoDialog.Footer>
+              <AxoDialog.Actions>
+                <AxoDialog.Action
+                  variant="strong-secondary"
+                  onClick={onClose}
+                  disabled={isRequestActive}
+                >
+                  {i18n('icu:cancel')}
+                </AxoDialog.Action>
+                <AxoDialog.Action
+                  variant="strong-primary"
+                  onClick={onRequestSubmit}
+                  disabled={!canSubmit}
+                  pending={isRequestActive}
+                >
+                  {i18n('icu:save')}
+                </AxoDialog.Action>
+              </AxoDialog.Actions>
+            </AxoDialog.Footer>
+          </>
+        )}
+      </AxoDialog.Content>
+    </AxoDialog.Root>
   );
 }

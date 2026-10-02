@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signalはビデオ通話にカメラを使用します。"
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signalは音声通話と音声メッセージの録音にマイクを利用します。"
+  }
+}

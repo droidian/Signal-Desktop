@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './Input.dom.js';
-import { Input } from './Input.dom.js';
+import type { PropsType } from './Input.dom.tsx';
+import { Input } from './Input.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -25,22 +25,23 @@ const createProps = (overrideProps: Partial<PropsType> = {}): PropsType => ({
   maxLengthCount: overrideProps.maxLengthCount,
   onChange: action('onChange'),
   placeholder: overrideProps.placeholder ?? 'Enter some text here',
+  shouldShowClearButton: overrideProps.shouldShowClearButton ?? false,
   value: overrideProps.value ?? '',
   whenToShowRemainingCount: overrideProps.whenToShowRemainingCount,
 });
 
-function Controller(props: PropsType): React.JSX.Element {
+function Controller(props: PropsType): JSX.Element {
   const { value: initialValue } = props;
   const [value, setValue] = useState(initialValue);
 
   return <Input {...props} onChange={setValue} value={value} />;
 }
 
-export function Simple(): React.JSX.Element {
+export function Simple(): JSX.Element {
   return <Controller {...createProps()} />;
 }
 
-export function HasClearButton(): React.JSX.Element {
+export function HasClearButton(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -50,7 +51,18 @@ export function HasClearButton(): React.JSX.Element {
   );
 }
 
-export function CharacterCount(): React.JSX.Element {
+export function ClearButtonForcedWithNoData(): JSX.Element {
+  return (
+    <Controller
+      {...createProps({
+        hasClearButton: true,
+        shouldShowClearButton: true,
+      })}
+    />
+  );
+}
+
+export function CharacterCount(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -60,7 +72,7 @@ export function CharacterCount(): React.JSX.Element {
   );
 }
 
-export function CharacterCountCustomizableShow(): React.JSX.Element {
+export function CharacterCountCustomizableShow(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -71,7 +83,7 @@ export function CharacterCountCustomizableShow(): React.JSX.Element {
   );
 }
 
-export function Expandable(): React.JSX.Element {
+export function Expandable(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -81,7 +93,7 @@ export function Expandable(): React.JSX.Element {
   );
 }
 
-export function ExpandableWCount(): React.JSX.Element {
+export function ExpandableWCount(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -94,7 +106,7 @@ export function ExpandableWCount(): React.JSX.Element {
   );
 }
 
-export function Disabled(): React.JSX.Element {
+export function Disabled(): JSX.Element {
   return (
     <Controller
       {...createProps({
@@ -104,7 +116,7 @@ export function Disabled(): React.JSX.Element {
   );
 }
 
-export function SpellcheckDisabled(): React.JSX.Element {
+export function SpellcheckDisabled(): JSX.Element {
   return (
     <Controller
       {...createProps({

@@ -1,22 +1,22 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { RefObject, JSX } from 'react';
+
 import classNames from 'classnames';
 
-import { Tooltip } from './Tooltip.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import { Tooltip } from './Tooltip.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 export type PropsType = {
   className?: string;
-  tooltipContainerRef?: React.RefObject<HTMLElement>;
+  tooltipContainerRef?: RefObject<HTMLElement | null>;
   i18n: LocalizerType;
 };
 
-export function InContactsIcon(props: PropsType): React.JSX.Element {
+export function InContactsIcon(props: PropsType): JSX.Element {
   const { className, i18n, tooltipContainerRef } = props;
 
-  /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
   return (
     <Tooltip
       content={i18n('icu:contactInAddressBook')}
@@ -24,6 +24,7 @@ export function InContactsIcon(props: PropsType): React.JSX.Element {
         {
           name: 'preventOverflow',
           options: {
+            // oxlint-disable-next-line react/refs
             boundary: tooltipContainerRef?.current || undefined,
           },
         },
@@ -37,5 +38,4 @@ export function InContactsIcon(props: PropsType): React.JSX.Element {
       />
     </Tooltip>
   );
-  /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
 }

@@ -1,0 +1,21 @@
+Signal je aplikace pro zasílání zpráv, pro kterou je ochrana soukromí na prvním místě. Je bezplatná, snadno se používá a má silné koncové šifrování, díky kterému jsou vaše chaty a hovory zcela soukromé. Signál nemůže číst vaše zprávy ani poslouchat vaše hovory, a nemůže to dělat ani nikdo jiný. 
+
+• Aplikace Signal v systému MacOS se propojí s aplikací Signal ve vašem telefonu. 
+
+• Posílejte zdarma koncové šifrované textové a hlasové zprávy, fotky, videa, GIFy a soubory. 
+
+• Zůstaňte ve spojení díky skupinovým chatům až pro 1 000 lidí. Nastavte, kdo může posílat příspěvky, a spravujte členy skupiny pomocí nastavení s oprávněním správce.
+
+• Volejte svým přátelům a užívejte si koncově šifrované hlasové hovory a videohovory s dokonale čistým zvukem. Podpora skupinových hovorů až pro 75 osob.
+
+• Služba Signal je vytvořena s ohledem na vaše soukromí. Nemáme žádné informace o vás ani o tom, s kým komunikujete. Náš otevřený protokol Signal znamená, že nemůžeme číst vaše zprávy ani poslouchat vaše hovory. A nemůže je číst a poslouchat ani nikdo jiný. Nemáme žádná zadní vrátka, neshromažďujeme žádné údaje ani se neuchylujeme ke kompromisům. 
+
+• Sdílejte fotky, texty a videa ve formě Příběhů, které po 24 hodinách zmizí. Nastavení soukromí vám umožní přesně určit, kdo může jednotlivé Příběhy vidět.
+
+• Signal je nezávislý a neziskový projekt. Tak trochu jiná technologie od tak trochu jiné organizace. Jako nezisková organizace jsme jsme financováni z vašich příspěvků, nikoli inzerenty nebo investory. 
+
+• Podporu, odpovědi na vaše otázky a další informace najdete na adrese: https://support.signal.org/
+
+Náš zdrojový kód si můžete prohlédnout na adrese: https://github.com/signalapp 
+
+Sledujte nás na X @signalapp a Instagramu @signal_app

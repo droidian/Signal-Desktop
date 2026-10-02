@@ -4,12 +4,12 @@
 import type { LoadImageResult } from 'blueimp-load-image';
 import loadImage from 'blueimp-load-image';
 
-import type { MIMEType } from '../types/MIME.std.js';
-import { IMAGE_JPEG } from '../types/MIME.std.js';
-import { canvasToBlob } from './canvasToBlob.std.js';
-import { getValue } from '../RemoteConfig.dom.js';
-import { parseNumber } from './libphonenumberUtil.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
+import type { MIMEType } from '../types/MIME.std.ts';
+import { IMAGE_JPEG } from '../types/MIME.std.ts';
+import { getCountryCode } from '../types/PhoneNumber.std.ts';
+import { canvasToBlob } from './canvasToBlob.std.ts';
+import { getValue } from '../RemoteConfig.dom.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
 
 enum MediaQualityLevels {
   One = 1,
@@ -71,20 +71,13 @@ function getMediaQualityLevel(): MediaQualityLevels {
     return DEFAULT_LEVEL;
   }
 
-  const e164 = itemStorage.user.getNumber();
-  if (!e164) {
-    return DEFAULT_LEVEL;
-  }
-
-  const parsedPhoneNumber = parseNumber(e164);
-  if (!parsedPhoneNumber.isValidNumber) {
-    return DEFAULT_LEVEL;
-  }
+  const e164 = itemStorage.user.getOptionalNumber();
 
   const countryValues = parseCountryValues(values);
+  const countryCode = getCountryCode(e164);
 
-  const level = parsedPhoneNumber.countryCode
-    ? countryValues.get(parsedPhoneNumber.countryCode)
+  const level = countryCode
+    ? countryValues.get(String(countryCode))
     : undefined;
   if (level) {
     return level;
@@ -156,14 +149,13 @@ export async function scaleImageToLevel({
     };
   }
 
-  for (let i = 0; i < SCALABLE_DIMENSIONS.length; i += 1) {
-    const scalableDimensions = SCALABLE_DIMENSIONS[i];
+  for (const scalableDimensions of SCALABLE_DIMENSIONS) {
     if (maxDimensions < scalableDimensions) {
       continue;
     }
 
     // We need these operations to be in serial
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const blob = await getCanvasBlobAsJPEG(
       data.image,
       scalableDimensions,

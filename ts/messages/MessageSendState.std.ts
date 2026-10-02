@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import memoizee from 'memoizee';
-import { makeEnumParser } from '../util/enum.std.js';
+import type { MessageAttributesType } from '../model-types.d.ts';
 
 /**
  * `SendStatus` represents the send status of a message to a single recipient. For
@@ -35,11 +35,6 @@ export enum SendStatus {
   Viewed = 'Viewed',
   Skipped = 'Skipped',
 }
-
-export const parseMessageSendStatus = makeEnumParser(
-  SendStatus,
-  SendStatus.Pending
-);
 
 export const UNDELIVERED_SEND_STATUSES = [
   SendStatus.Pending,
@@ -79,8 +74,6 @@ export const isSent = (status: SendStatus): boolean =>
   STATUS_NUMBERS[status] >= STATUS_NUMBERS[SendStatus.Sent];
 export const isFailed = (status: SendStatus): boolean =>
   status === SendStatus.Failed;
-export const isSkipped = (status: SendStatus): boolean =>
-  status === SendStatus.Skipped;
 
 /**
  * `SendState` combines `SendStatus` and a timestamp. You can use it to show things to the
@@ -189,6 +182,18 @@ export const someRecipientSendStatus = (
   ).some(predicate);
 };
 
+export const isNoteToSelf = ({
+  message,
+  ourConversationId,
+}: {
+  message: Pick<MessageAttributesType, 'conversationId'>;
+  ourConversationId: string | undefined;
+}): boolean => {
+  return ourConversationId
+    ? message.conversationId === ourConversationId
+    : false;
+};
+
 export const isMessageJustForMe = (
   sendStateByConversationId: SendStateByConversationId,
   ourConversationId: string | undefined
@@ -249,12 +254,11 @@ const summarizeMessageSendStatuses = memoizee(
     statusesWithOnlyOneConversationId: Map<SendStatus, string>;
     length: number;
   } => {
-    const statuses: Set<SendStatus> = new Set();
+    const statuses = new Set<SendStatus>();
 
     // We keep track of statuses with only one conversationId associated with it
     // so that we can ignore a status if it is only for ourConversationId, as needed
-    const statusesWithOnlyOneConversationId: Map<SendStatus, string> =
-      new Map();
+    const statusesWithOnlyOneConversationId = new Map<SendStatus, string>();
 
     const entries = Object.entries(sendStateByConversationId);
 

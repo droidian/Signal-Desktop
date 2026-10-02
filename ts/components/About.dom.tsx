@@ -1,11 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.js';
-import { tw } from '../axo/tw.dom.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { useEscapeHandling } from '../hooks/useEscapeHandling.dom.ts';
+import { tw } from '../axo/tw.dom.tsx';
 
 export type AboutProps = Readonly<{
   closeAbout: () => unknown;
@@ -23,7 +23,7 @@ export function About({
   platform,
   i18n,
   version,
-}: AboutProps): React.JSX.Element {
+}: AboutProps): JSX.Element {
   useEscapeHandling(closeAbout);
 
   let env: string;
@@ -44,8 +44,8 @@ export function About({
         <div className="module-splash-screen__logo module-splash-screen__logo--128" />
 
         <h1 className="About__Title">{i18n('icu:signalDesktop')}</h1>
-        <div className="version">{version}</div>
-        <div className="environment">{env}</div>
+        <div className="About__Body version">{version}</div>
+        <div className="About__Body environment">{env}</div>
         <br />
         <div>
           <a href="https://signal.org">signal.org</a>
@@ -64,7 +64,7 @@ export function About({
             {i18n('icu:privacyPolicy')}
           </a>
         </div>
-        <div className={tw('text-label-secondary')}>
+        <div className={tw('text-secondary')}>
           {i18n('icu:signalNonProfit')}
         </div>
       </div>

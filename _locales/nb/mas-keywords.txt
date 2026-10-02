@@ -1,0 +1,1 @@
+signal,meldingsapp,melding,kryptert,privat,sikker,personvern,gruppe,gratis,samtale,video,anrop,tale

@@ -11,7 +11,6 @@
   justify-content: center;
   margin-top: 4px;
   margin-bottom: 24px;
-  padding-inline: 24px;
 
   &__name {
     @include mixins.button-reset();
@@ -117,12 +116,12 @@
       }
     }
 
-    &:focus {
-      @include mixins.keyboard-mode {
+    &:focus-visible {
+      @include mixins.light-theme {
         background-color: variables.$color-gray-02;
       }
 
-      @include mixins.dark-keyboard-mode {
+      @include mixins.dark-theme {
         background-color: variables.$color-gray-80;
       }
     }
@@ -339,11 +338,6 @@
   }
 
   &__quick-actions {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 16px;
-
     margin-block: 16px;
   }
 

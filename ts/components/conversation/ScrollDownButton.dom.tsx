@@ -1,11 +1,12 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import classNames from 'classnames';
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import { getClassNamesFor } from '../../util/getClassNamesFor.std.js';
+import classNames from 'classnames';
+
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { getClassNamesFor } from '../../util/getClassNamesFor.std.ts';
 
 export enum ScrollDownButtonVariant {
   UNREAD_MESSAGES = 'unread-messages',
@@ -24,7 +25,7 @@ export function ScrollDownButton({
   count,
   onClick,
   i18n,
-}: ScrollDownButtonPropsType): React.JSX.Element {
+}: ScrollDownButtonPropsType): JSX.Element {
   const getClassName = getClassNamesFor('ScrollDownButton');
 
   let badgeText: string | undefined;

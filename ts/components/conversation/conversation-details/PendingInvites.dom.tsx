@@ -1,24 +1,19 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import _ from 'lodash';
-
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { LocalizerType, ThemeType } from '../../../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.js';
-import type { AciString } from '../../../types/ServiceId.std.js';
-import { Avatar, AvatarSize } from '../../Avatar.dom.js';
-import { ConfirmationDialog } from '../../ConfirmationDialog.dom.js';
-import { PanelSection } from './PanelSection.dom.js';
-import { PanelRow } from './PanelRow.dom.js';
-import {
-  ConversationDetailsIcon,
-  IconType,
-} from './ConversationDetailsIcon.dom.js';
-import { isAccessControlEnabled } from '../../../groups/util.std.js';
-import { Tabs } from '../../Tabs.dom.js';
-import { assertDev } from '../../../util/assert.std.js';
+import { type ReactNode, useState, type JSX } from 'react';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { AciString } from '../../../types/ServiceId.std.ts';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
+import { isAccessControlEnabled } from '../../../groups/util.std.ts';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
+import { AxoList } from '../../../axo/items/AxoList.dom.tsx';
+import { AxoItem } from '../../../axo/items/AxoItem.dom.tsx';
+import { AxoTabs } from '../../../axo/AxoTabs.dom.tsx';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AxoContainer } from '../../../axo/AxoContainer.dom.tsx';
 
 export type PropsDataType = {
   readonly conversation?: ConversationType;
@@ -80,62 +75,58 @@ export function PendingInvites({
   pendingApprovalMemberships,
   revokePendingMembershipsFromGroupV2,
   theme,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   if (!conversation || !ourAci) {
     throw new Error('PendingInvites rendered without a conversation or ourAci');
   }
 
+  const [tab, setTab] = useState<string>(Tab.Requests);
+
   const [stagedMemberships, setStagedMemberships] =
-    React.useState<Array<StagedMembershipType> | null>(null);
+    useState<Array<StagedMembershipType> | null>(null);
 
   return (
-    <div className="conversation-details-panel">
-      <Tabs
-        moduleClassName="ConversationDetails__tabs"
-        initialSelectedTab={Tab.Requests}
-        tabs={[
-          {
-            id: Tab.Requests,
-            label: i18n('icu:PendingInvites--tab-requests', {
+    <AxoContainer.Root>
+      <AxoTabs.Root value={tab} onValueChange={setTab}>
+        <AxoTabs.List>
+          <AxoTabs.Trigger value={Tab.Requests}>
+            {i18n('icu:PendingInvites--tab-requests', {
               count: pendingApprovalMemberships.length,
-            }),
-          },
-          {
-            id: Tab.Pending,
-            label: i18n('icu:PendingInvites--tab-invites', {
+            })}
+          </AxoTabs.Trigger>
+          <AxoTabs.Trigger value={Tab.Pending}>
+            {i18n('icu:PendingInvites--tab-invites', {
               count: pendingMemberships.length,
-            }),
-          },
-        ]}
-      >
-        {({ selectedTab }) => (
-          <>
-            {selectedTab === Tab.Requests ? (
-              <MembersPendingAdminApproval
-                conversation={conversation}
-                getPreferredBadge={getPreferredBadge}
-                i18n={i18n}
-                memberships={pendingApprovalMemberships}
-                setStagedMemberships={setStagedMemberships}
-                theme={theme}
-              />
-            ) : null}
-            {selectedTab === Tab.Pending ? (
-              <MembersPendingProfileKey
-                conversation={conversation}
-                getPreferredBadge={getPreferredBadge}
-                i18n={i18n}
-                members={conversation.sortedGroupMembers || []}
-                memberships={pendingMemberships}
-                ourAci={ourAci}
-                setStagedMemberships={setStagedMemberships}
-                theme={theme}
-              />
-            ) : null}
-          </>
-        )}
-      </Tabs>
-
+            })}
+          </AxoTabs.Trigger>
+        </AxoTabs.List>
+        <AxoTabs.Content value={Tab.Requests}>
+          <div className={tw('pt-3.5')}>
+            <MembersPendingAdminApproval
+              conversation={conversation}
+              getPreferredBadge={getPreferredBadge}
+              i18n={i18n}
+              memberships={pendingApprovalMemberships}
+              setStagedMemberships={setStagedMemberships}
+              theme={theme}
+            />
+          </div>
+        </AxoTabs.Content>
+        <AxoTabs.Content value={Tab.Pending}>
+          <div className={tw('pt-1.5')}>
+            <MembersPendingProfileKey
+              conversation={conversation}
+              getPreferredBadge={getPreferredBadge}
+              i18n={i18n}
+              members={conversation.sortedGroupMembers || []}
+              memberships={pendingMemberships}
+              ourAci={ourAci}
+              setStagedMemberships={setStagedMemberships}
+              theme={theme}
+            />
+          </div>
+        </AxoTabs.Content>
+      </AxoTabs.Root>
       {stagedMemberships && stagedMemberships.length && (
         <MembershipActionConfirmation
           approvePendingMembershipFromGroupV2={
@@ -152,7 +143,7 @@ export function PendingInvites({
           stagedMemberships={stagedMemberships}
         />
       )}
-    </div>
+    </AxoContainer.Root>
   );
 }
 
@@ -197,11 +188,13 @@ function MembershipActionConfirmation({
     }
     approvePendingMembershipFromGroupV2(
       conversation.id,
-      stagedMemberships[0].membership.member.id
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      stagedMemberships[0]!.membership.member.id
     );
   };
 
-  const membershipType = stagedMemberships[0].type;
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  const membershipType = stagedMemberships[0]!.type;
 
   const modalAction =
     membershipType === StageType.APPROVE_REQUEST
@@ -219,26 +212,24 @@ function MembershipActionConfirmation({
   }
 
   return (
-    <ConfirmationDialog
-      dialogName="PendingInvites.actionConfirmation"
-      actions={[
-        {
-          action: modalAction,
-          style: 'affirmative',
-          text: modalActionText,
-        },
-      ]}
-      i18n={i18n}
-      onClose={onClose}
-    >
-      {getConfirmationMessage({
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={onClose}
+      // @ts-expect-error ConfirmationDialog migration: Needs title
+      title={null}
+      description={getConfirmationMessage({
         conversation,
         i18n,
         members,
         ourAci,
         stagedMemberships,
       })}
-    </ConfirmationDialog>
+    >
+      <AxoConfirmDialog.Cancel />
+      <AxoConfirmDialog.Action variant="strong-primary" onClick={modalAction}>
+        {modalActionText}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }
 
@@ -255,12 +246,13 @@ function getConfirmationMessage({
   ourAci: AciString;
   stagedMemberships: ReadonlyArray<StagedMembershipType>;
 }>): string {
-  if (!stagedMemberships || !stagedMemberships.length) {
+  const [stagedMembership] = stagedMemberships;
+  if (stagedMembership == null) {
     return '';
   }
 
-  const membershipType = stagedMemberships[0].type;
-  const firstMembership = stagedMemberships[0].membership;
+  const membershipType = stagedMembership.type;
+  const firstMembership = stagedMembership.membership;
 
   // Requesting a membership since they weren't added by anyone
   if (membershipType === StageType.DENY_REQUEST) {
@@ -327,68 +319,65 @@ function MembersPendingAdminApproval({
   theme: ThemeType;
 }>) {
   return (
-    <PanelSection>
-      {memberships.map(membership => (
-        <PanelRow
-          alwaysShowActions
-          key={membership.member.id}
-          icon={
-            <Avatar
-              badge={getPreferredBadge(membership.member.badges)}
-              conversationType="direct"
-              size={AvatarSize.THIRTY_TWO}
-              i18n={i18n}
-              theme={theme}
-              {...membership.member}
-            />
-          }
-          label={
-            <span className="ConversationDetails__MemberName">
-              {membership.member.title}
-            </span>
-          }
-          actions={
-            conversation.areWeAdmin ? (
-              <>
-                <button
-                  type="button"
-                  className="module-button__small ConversationDetails__action-button"
-                  onClick={() => {
-                    setStagedMemberships([
-                      {
-                        type: StageType.DENY_REQUEST,
-                        membership,
-                      },
-                    ]);
-                  }}
-                >
-                  {i18n('icu:delete')}
-                </button>
-                <button
-                  type="button"
-                  className="module-button__small ConversationDetails__action-button"
-                  onClick={() => {
-                    setStagedMemberships([
-                      {
-                        type: StageType.APPROVE_REQUEST,
-                        membership,
-                      },
-                    ]);
-                  }}
-                >
-                  {i18n('icu:accept')}
-                </button>
-              </>
-            ) : null
-          }
-        />
-      ))}
-      <div className="ConversationDetails__pending--info">
-        {i18n('icu:PendingRequests--info', {
-          name: conversation.title,
-        })}
-      </div>
-    </PanelSection>
+    <AxoList.Group>
+      {memberships.length > 0 && (
+        <List
+          footerDescription={i18n('icu:PendingRequests--info', {
+            name: conversation.title,
+          })}
+        >
+          {memberships.map(membership => {
+            return (
+              <AxoItem.Root key={membership.member.id}>
+                <AxoItem.Leading>
+                  <Avatar
+                    badge={getPreferredBadge(membership.member.badges)}
+                    conversationType="direct"
+                    size={AvatarSize.THIRTY_TWO}
+                    i18n={i18n}
+                    theme={theme}
+                    {...membership.member}
+                  />
+                </AxoItem.Leading>
+                <AxoItem.Content>
+                  <AxoItem.Body>
+                    <AxoItem.Label>{membership.member.title}</AxoItem.Label>
+                  </AxoItem.Body>
+                  <AxoItem.Trailing>
+                    <AxoItem.IconAction
+                      symbol="x"
+                      variant="subtle-destructive"
+                      label={i18n('icu:delete')}
+                      onClick={() => {
+                        setStagedMemberships([
+                          {
+                            type: StageType.DENY_REQUEST,
+                            membership,
+                          },
+                        ]);
+                      }}
+                    />
+                    <AxoItem.IconAction
+                      symbol="check"
+                      variant="subtle-affirmative"
+                      label={i18n('icu:accept')}
+                      onClick={() => {
+                        setStagedMemberships([
+                          {
+                            type: StageType.APPROVE_REQUEST,
+                            membership,
+                          },
+                        ]);
+                      }}
+                    />
+                  </AxoItem.Trailing>
+                </AxoItem.Content>
+              </AxoItem.Root>
+            );
+          })}
+        </List>
+      )}
+    </AxoList.Group>
   );
 }
 
@@ -411,112 +400,156 @@ function MembersPendingProfileKey({
   setStagedMemberships: (stagedMembership: Array<StagedMembershipType>) => void;
   theme: ThemeType;
 }>) {
-  const groupedPendingMemberships = _.groupBy(
-    memberships,
-    membership => membership.metadata.addedByUserId
-  );
+  const invitedByUs: Array<GroupV2PendingMembership> = [];
+  const invitedByOthers = new Map<
+    ConversationType,
+    Array<GroupV2PendingMembership>
+  >();
 
-  const { [ourAci]: ourPendingMemberships, ...otherPendingMembershipGroups } =
-    groupedPendingMemberships;
+  for (const membership of memberships) {
+    const inviterAci = membership.metadata.addedByUserId;
+    if (inviterAci == null) {
+      continue;
+    }
 
-  const otherPendingMemberships = Object.keys(otherPendingMembershipGroups)
-    .map(id => members.find(member => member.serviceId === id))
-    .filter((member): member is ConversationType => member !== undefined)
-    .map(member => {
-      assertDev(
-        member.serviceId,
-        'We just verified that member has serviceId above'
-      );
-      return {
-        member,
-        pendingMemberships: otherPendingMembershipGroups[member.serviceId],
-      };
-    });
+    if (inviterAci === ourAci) {
+      invitedByUs.push(membership);
+      continue;
+    }
+
+    const inviterMember = members.find(m => m.serviceId === inviterAci);
+    if (inviterMember == null) {
+      continue;
+    }
+
+    // Group pending invited members by who invited them
+    invitedByOthers.getOrInsert(inviterMember, []).push(membership);
+  }
 
   return (
-    <PanelSection>
-      {ourPendingMemberships && (
-        <PanelSection title={i18n('icu:PendingInvites--invited-by-you')}>
-          {ourPendingMemberships.map(membership => (
-            <PanelRow
-              key={membership.member.id}
-              icon={
-                <Avatar
-                  badge={getPreferredBadge(membership.member.badges)}
-                  conversationType="direct"
-                  size={AvatarSize.THIRTY_TWO}
-                  i18n={i18n}
-                  theme={theme}
-                  {...membership.member}
-                />
-              }
-              label={
-                <span className="ConversationDetails__MemberName">
-                  {membership.member.title}
-                </span>
-              }
-              actions={
-                conversation.areWeAdmin ? (
-                  <ConversationDetailsIcon
-                    ariaLabel={i18n('icu:PendingInvites--revoke-for-label')}
-                    icon={IconType.trash}
-                    onClick={() => {
-                      setStagedMemberships([
-                        {
-                          type: StageType.REVOKE_INVITE,
-                          membership,
-                        },
-                      ]);
-                    }}
+    <AxoList.Group>
+      {invitedByUs.length > 0 && (
+        <List label={i18n('icu:PendingInvites--invited-by-you')}>
+          {invitedByUs.map(membership => {
+            return (
+              <AxoItem.Root key={membership.member.id}>
+                <AxoItem.Leading>
+                  <Avatar
+                    badge={getPreferredBadge(membership.member.badges)}
+                    conversationType="direct"
+                    size={AvatarSize.THIRTY_TWO}
+                    i18n={i18n}
+                    theme={theme}
+                    {...membership.member}
                   />
-                ) : null
-              }
-            />
-          ))}
-        </PanelSection>
+                </AxoItem.Leading>
+                <AxoItem.Content>
+                  <AxoItem.Body>
+                    <AxoItem.Label>{membership.member.title}</AxoItem.Label>
+                  </AxoItem.Body>
+                  {conversation.areWeAdmin && (
+                    <AxoItem.Trailing>
+                      <AxoItem.IconAction
+                        symbol="trash"
+                        variant="subtle-destructive"
+                        label={i18n('icu:PendingInvites--revoke-for-label')}
+                        onClick={() => {
+                          setStagedMemberships([
+                            {
+                              type: StageType.REVOKE_INVITE,
+                              membership,
+                            },
+                          ]);
+                        }}
+                      />
+                    </AxoItem.Trailing>
+                  )}
+                </AxoItem.Content>
+              </AxoItem.Root>
+            );
+          })}
+        </List>
       )}
-      {otherPendingMemberships.length > 0 && (
-        <PanelSection title={i18n('icu:PendingInvites--invited-by-others')}>
-          {otherPendingMemberships.map(({ member, pendingMemberships }) => (
-            <PanelRow
-              key={member.id}
-              icon={
-                <Avatar
-                  badge={getPreferredBadge(member.badges)}
-                  conversationType="direct"
-                  size={AvatarSize.THIRTY_TWO}
-                  i18n={i18n}
-                  theme={theme}
-                  {...member}
-                />
-              }
-              label={member.title}
-              right={i18n('icu:PendingInvites--invited-count', {
-                number: pendingMemberships.length,
-              })}
-              actions={
-                conversation.areWeAdmin ? (
-                  <ConversationDetailsIcon
-                    ariaLabel={i18n('icu:PendingInvites--revoke-for-label')}
-                    icon={IconType.trash}
-                    onClick={() => {
-                      setStagedMemberships(
-                        pendingMemberships.map(membership => ({
-                          type: StageType.REVOKE_INVITE,
-                          membership,
-                        }))
-                      );
-                    }}
+      {invitedByOthers.size > 0 && (
+        <List
+          label={i18n('icu:PendingInvites--invited-by-others')}
+          footerDescription={i18n('icu:PendingInvites--info')}
+        >
+          {invitedByOthers.entries().map(([member, otherMemberships]) => {
+            return (
+              <AxoItem.Root key={member.id}>
+                <AxoItem.Leading>
+                  <Avatar
+                    badge={getPreferredBadge(member.badges)}
+                    conversationType="direct"
+                    size={AvatarSize.THIRTY_TWO}
+                    i18n={i18n}
+                    theme={theme}
+                    {...member}
                   />
-                ) : null
-              }
-            />
-          ))}
-        </PanelSection>
+                </AxoItem.Leading>
+                <AxoItem.Content>
+                  <AxoItem.Body>
+                    <AxoItem.Label>{member.title}</AxoItem.Label>
+                    <AxoItem.Value>
+                      {i18n('icu:PendingInvites--invited-count', {
+                        number: otherMemberships.length,
+                      })}
+                    </AxoItem.Value>
+                  </AxoItem.Body>
+                  {conversation.areWeAdmin && (
+                    <AxoItem.Trailing>
+                      <AxoItem.IconAction
+                        symbol="trash"
+                        variant="subtle-destructive"
+                        label={i18n('icu:PendingInvites--revoke-for-label')}
+                        onClick={() => {
+                          setStagedMemberships(
+                            otherMemberships.map(membership => {
+                              return {
+                                type: StageType.REVOKE_INVITE,
+                                membership,
+                              };
+                            })
+                          );
+                        }}
+                      />
+                    </AxoItem.Trailing>
+                  )}
+                </AxoItem.Content>
+              </AxoItem.Root>
+            );
+          })}
+        </List>
       )}
-      <div className="ConversationDetails__pending--info">
-        {i18n('icu:PendingInvites--info')}
-      </div>
-    </PanelSection>
+    </AxoList.Group>
+  );
+}
+
+type ListProps = Readonly<{
+  label?: string;
+  footerDescription?: string;
+  children: ReactNode;
+}>;
+
+function List(props: ListProps): ReactNode {
+  return (
+    <AxoList.Root>
+      {props.label != null && (
+        <AxoList.Header>
+          <AxoList.Label>{props.label}</AxoList.Label>
+        </AxoList.Header>
+      )}
+      <AxoList.Body>
+        <AxoItem.Group>{props.children}</AxoItem.Group>
+      </AxoList.Body>
+      {props.footerDescription != null && (
+        <AxoList.Footer>
+          <AxoList.FooterDescription>
+            {props.footerDescription}
+          </AxoList.FooterDescription>
+        </AxoList.Footer>
+      )}
+    </AxoList.Root>
   );
 }

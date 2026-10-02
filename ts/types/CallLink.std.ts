@@ -2,21 +2,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ReadonlyDeep } from 'type-fest';
 import { z } from 'zod';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { safeParseInteger } from '../util/numbers.std.js';
-import { byteLength } from '../Bytes.std.js';
-import type { StorageServiceFieldsType } from '../sql/Interface.std.js';
-import { parsePartial } from '../util/schemas.std.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { safeParseInteger } from '../util/numbers.std.ts';
+import { byteLength } from '../Bytes.std.ts';
+import type { StorageServiceFieldsType } from '../sql/Interface.std.ts';
+import { parsePartial } from '../util/schemas.std.ts';
 
 export enum CallLinkUpdateSyncType {
   Update = 'Update',
   Delete = 'Delete',
 }
-
-export type CallLinkUpdateData = Readonly<{
-  rootKey: Uint8Array;
-  adminKey: Uint8Array | undefined;
-}>;
 
 /**
  * Names
@@ -25,7 +20,7 @@ export type CallLinkUpdateData = Readonly<{
 export const CallLinkNameMaxByteLength = 120;
 export const CallLinkNameMaxLength = 32;
 
-export const callLinkNameSchema = z.string().refine(input => {
+const callLinkNameSchema = z.string().refine(input => {
   return byteLength(input) <= 120;
 });
 
@@ -95,16 +90,18 @@ export type DefunctCallLinkType = Readonly<{
   roomId: string;
   rootKey: string;
   adminKey: string | null;
+  addedAt: number;
 }> &
   StorageServiceFieldsType;
 
 export type DefunctCallLinkRecord = Readonly<{
   roomId: string;
-  rootKey: Uint8Array;
-  adminKey: Uint8Array | null;
+  rootKey: Uint8Array<ArrayBuffer>;
+  adminKey: Uint8Array<ArrayBuffer> | null;
+  addedAt: number;
   storageID: string | null;
   storageVersion: number | null;
-  storageUnknownFields: Uint8Array | null;
+  storageUnknownFields: Uint8Array<ArrayBuffer> | null;
   storageNeedsSync: 1 | 0;
 }>;
 
@@ -112,6 +109,7 @@ export const defunctCallLinkRecordSchema = z.object({
   roomId: z.string(),
   rootKey: z.instanceof(Uint8Array),
   adminKey: z.instanceof(Uint8Array).nullable(),
+  addedAt: z.number(),
   storageID: z.string().nullable(),
   storageVersion: z.number().int().nullable(),
   storageUnknownFields: z.instanceof(Uint8Array).nullable(),
@@ -121,8 +119,8 @@ export const defunctCallLinkRecordSchema = z.object({
 // DB Record
 export type CallLinkRecord = Readonly<{
   roomId: string;
-  rootKey: Uint8Array | null;
-  adminKey: Uint8Array | null;
+  rootKey: Uint8Array<ArrayBuffer> | null;
+  adminKey: Uint8Array<ArrayBuffer> | null;
   name: string;
   restrictions: number;
   expiration: number | null;
@@ -131,7 +129,7 @@ export type CallLinkRecord = Readonly<{
   deletedAt?: number | null;
   storageID: string | null;
   storageVersion: number | null;
-  storageUnknownFields: Uint8Array | null;
+  storageUnknownFields: Uint8Array<ArrayBuffer> | null;
   storageNeedsSync: 1 | 0;
 }>;
 

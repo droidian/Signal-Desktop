@@ -24,6 +24,9 @@
       & {
         color: variables.$color-ultramarine;
       }
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
+      }
     }
   }
 }

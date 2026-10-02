@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useSelector } from 'react-redux';
-import React, { memo } from 'react';
-import { AddUserToAnotherGroupModal } from '../../components/AddUserToAnotherGroupModal.dom.js';
+import { memo } from 'react';
+import { AddUserToAnotherGroupModal } from '../../components/AddUserToAnotherGroupModal.dom.tsx';
 import {
   getAllGroupsWithInviteAccess,
   getContactSelector,
-} from '../selectors/conversations.dom.js';
-import { getIntl, getRegionCode } from '../selectors/user.std.js';
-import { useToastActions } from '../ducks/toast.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getIntl, getRegionCode } from '../selectors/user.std.ts';
+import { useToastActions } from '../ducks/toast.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 
 export type SmartAddUserToAnotherGroupModalProps = Readonly<{
   contactID: string;

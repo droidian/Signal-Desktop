@@ -7,7 +7,6 @@
 .module-ContactPill {
   align-items: center;
   display: inline-flex;
-  user-select: none;
   overflow: hidden;
   padding-block: 4px;
   padding-inline: 8px;
@@ -22,17 +21,17 @@
     color: variables.$color-gray-05;
   }
 
-  @include mixins.keyboard-mode {
-    &:focus-within {
-      @include mixins.light-theme {
-        background: variables.$color-gray-45;
-        color: variables.$color-white;
-      }
+  @include mixins.focus-visible-within {
+    @include mixins.axo-focus-ring;
 
-      @include mixins.dark-theme {
-        background: variables.$color-gray-25;
-        color: variables.$color-gray-90;
-      }
+    @include mixins.light-theme {
+      background: variables.$color-gray-45;
+      color: variables.$color-white;
+    }
+
+    @include mixins.dark-theme {
+      background: variables.$color-gray-25;
+      color: variables.$color-gray-90;
     }
   }
 
@@ -73,15 +72,14 @@
       }
     }
 
-    @include mixins.keyboard-mode {
-      &:focus {
+    &:focus-visible {
+      outline: none;
+      @include mixins.light-theme {
         &::before {
           @include mixins.color-svg($icon, variables.$color-white);
         }
       }
-    }
-    @include mixins.dark-keyboard-mode {
-      &:focus {
+      @include mixins.dark-theme {
         &::before {
           @include mixins.color-svg($icon, variables.$color-gray-90);
         }

@@ -1,22 +1,23 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useContext, useState } from 'react';
+import { type JSX, useContext } from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { IMAGE_JPEG } from '../types/MIME.std.js';
-import type { Props } from './CompositionArea.dom.js';
-import { CompositionArea } from './CompositionArea.dom.js';
-import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.js';
+import { IMAGE_JPEG } from '../types/MIME.std.ts';
+import type { Props } from './CompositionArea.dom.tsx';
+import { CompositionArea } from './CompositionArea.dom.tsx';
+import { StorybookThemeContext } from '../../.storybook/StorybookThemeContext.std.ts';
 
-import { fakeDraftAttachment } from '../test-helpers/fakeAttachment.std.js';
-import { landscapeGreenUrl } from '../storybook/Fixtures.std.js';
-import { RecordingState } from '../types/AudioRecorder.std.js';
-import { ContactNameColors, ConversationColors } from '../types/Colors.std.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
-import { PaymentEventKind } from '../types/Payment.std.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
-import { isNotNil } from '../util/isNotNil.std.js';
+import { fakeDraftAttachment } from '../test-helpers/fakeAttachment.std.ts';
+import { landscapeGreenUrl } from '../storybook/Fixtures.std.ts';
+import { RecordingState } from '../types/AudioRecorder.std.ts';
+import type { ContactNameColorType } from '../types/Colors.std.ts';
+import { ContactNameColors, ConversationColors } from '../types/Colors.std.ts';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
+import { PaymentEventKind } from '../types/Payment.std.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -28,12 +29,12 @@ const groupAdmins = [
   },
   {
     member: getDefaultConversation(),
-    labelEmoji: '✅',
+    labelEmoji: Emoji.CHECKMARK,
     labelString: 'Planner',
   },
   {
     member: getDefaultConversation(),
-    labelEmoji: '#',
+    labelEmoji: Emoji.unsafeCastMaybeInvalidStringToVariant('#'),
     labelString: 'Invalid Emoji',
   },
   {
@@ -44,11 +45,15 @@ const groupAdmins = [
 ];
 const memberColors = new Map(
   groupAdmins
-    .map((admin, i): [string, string] | null => {
+    .map((admin, i): [string, ContactNameColorType] | null => {
       if (!admin.member.id) {
         return null;
       }
-      return [admin.member.id?.toString(), ContactNameColors[i]];
+      return [
+        admin.member.id,
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        ContactNameColors[i % ContactNameColors.length]!,
+      ];
     })
     .filter(isNotNil)
 );
@@ -67,6 +72,7 @@ export default {
     },
     announcementsOnly: { control: { type: 'boolean' } },
     areWePendingApproval: { control: { type: 'boolean' } },
+    terminated: { control: { type: 'boolean' } },
   },
   args: {
     acceptedMessageRequest: true,
@@ -80,7 +86,6 @@ export default {
     isDisabled: false,
     isFormattingEnabled: true,
     isPollSend1to1Enabled: true,
-    messageCompositionId: '456',
     sendEditedMessage: action('sendEditedMessage'),
     sendMultiMediaMessage: action('sendMultiMediaMessage'),
     platform: 'darwin',
@@ -100,6 +105,7 @@ export default {
     errorRecording: action('errorRecording'),
     recordingState: RecordingState.Idle,
     startRecording: action('startRecording'),
+    warmupRecording: action('warmupRecording'),
     // StagedLinkPreview
     linkPreviewLoading: false,
     linkPreviewResult: undefined,
@@ -123,7 +129,7 @@ export default {
     sortedGroupMembers: [],
     // FunPicker
     onSelectEmoji: action('onSelectEmoji'),
-    emojiSkinToneDefault: EmojiSkinTone.Type1,
+    emojiSkinToneDefault: Emoji.SkinTone.Type1,
     pushPanelForConversation: action('pushPanelForConversation'),
     sendStickerMessage: action('sendStickerMessage'),
     // Message Requests
@@ -140,11 +146,13 @@ export default {
     announcementsOnly: false,
     areWeAdmin: false,
     areWePendingApproval: false,
+    terminated: false,
     groupAdmins,
     memberColors,
     cancelJoinRequest: action('cancelJoinRequest'),
     showConversation: action('showConversation'),
     isSmsOnlyOrUnregistered: false,
+    isSignalConversation: false,
     isFetchingUUID: false,
     renderSmartCompositionRecording: () => <div>RECORDING</div>,
     renderSmartCompositionRecordingDraft: _ => <div>RECORDING DRAFT</div>,
@@ -152,19 +160,15 @@ export default {
     selectedMessageIds: undefined,
     toggleSelectMode: action('toggleSelectMode'),
     toggleForwardMessagesModal: action('toggleForwardMessagesModal'),
-    // Signal Conversation
-    isSignalConversation: false,
-    isMuted: false,
-    setMuteExpiration: action('setMuteExpiration'),
   },
 } satisfies Meta<Props>;
 
-export function Default(args: Props): React.JSX.Element {
+export function Default(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return <CompositionArea {...args} theme={theme} />;
 }
 
-export function StartingText(args: Props): React.JSX.Element {
+export function StartingText(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -175,19 +179,19 @@ export function StartingText(args: Props): React.JSX.Element {
   );
 }
 
-export function StickerButton(args: Props): React.JSX.Element {
+export function StickerButton(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return <CompositionArea {...args} theme={theme} />;
 }
 
-export function MessageRequest(args: Props): React.JSX.Element {
+export function MessageRequest(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea {...args} theme={theme} acceptedMessageRequest={false} />
   );
 }
 
-export function SmsOnlyFetchingUuid(args: Props): React.JSX.Element {
+export function SmsOnlyFetchingUuid(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -199,12 +203,12 @@ export function SmsOnlyFetchingUuid(args: Props): React.JSX.Element {
   );
 }
 
-export function SmsOnly(args: Props): React.JSX.Element {
+export function SmsOnly(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return <CompositionArea {...args} theme={theme} isSmsOnlyOrUnregistered />;
 }
 
-export function Attachments(args: Props): React.JSX.Element {
+export function Attachments(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -220,7 +224,7 @@ export function Attachments(args: Props): React.JSX.Element {
   );
 }
 
-export function ViewOnceEnabled(args: Props): React.JSX.Element {
+export function ViewOnceEnabled(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -237,12 +241,12 @@ export function ViewOnceEnabled(args: Props): React.JSX.Element {
   );
 }
 
-export function PendingApproval(args: Props): React.JSX.Element {
+export function PendingApproval(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return <CompositionArea {...args} theme={theme} areWePendingApproval />;
 }
 
-export function AnnouncementsOnlyGroup(args: Props): React.JSX.Element {
+export function AnnouncementsOnlyGroup(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -254,7 +258,14 @@ export function AnnouncementsOnlyGroup(args: Props): React.JSX.Element {
   );
 }
 
-export function Quote(args: Props): React.JSX.Element {
+export function TerminatedGroup(args: Props): JSX.Element {
+  const theme = useContext(StorybookThemeContext);
+  return (
+    <CompositionArea {...args} theme={theme} terminated areWeAdmin={false} />
+  );
+}
+
+export function Quote(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -274,7 +285,7 @@ export function Quote(args: Props): React.JSX.Element {
   );
 }
 
-export function QuoteWithPayment(args: Props): React.JSX.Element {
+export function QuoteWithPayment(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea
@@ -298,27 +309,9 @@ export function QuoteWithPayment(args: Props): React.JSX.Element {
   );
 }
 
-export function NoFormattingMenu(args: Props): React.JSX.Element {
+export function NoFormattingMenu(args: Props): JSX.Element {
   const theme = useContext(StorybookThemeContext);
   return (
     <CompositionArea {...args} theme={theme} isFormattingEnabled={false} />
-  );
-}
-
-export function SignalConversationMuteToggle(args: Props): React.JSX.Element {
-  const theme = useContext(StorybookThemeContext);
-  const [isMuted, setIsMuted] = useState(true);
-
-  function setIsMutedByTime(_: string, muteExpiresAt: number) {
-    setIsMuted(muteExpiresAt > Date.now());
-  }
-  return (
-    <CompositionArea
-      {...args}
-      theme={theme}
-      isSignalConversation
-      isMuted={isMuted}
-      setMuteExpiration={setIsMutedByTime}
-    />
   );
 }

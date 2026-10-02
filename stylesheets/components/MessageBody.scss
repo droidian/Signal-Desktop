@@ -16,11 +16,8 @@
       font-weight: bold;
     }
 
-    &:focus {
-      @include mixins.keyboard-mode {
-        border: 1px solid variables.$color-black;
-        outline: none;
-      }
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -45,6 +42,9 @@
 
     &:focus {
       border: 1px solid variables.$color-black;
+    }
+
+    &:focus-visible {
       outline: none;
     }
 

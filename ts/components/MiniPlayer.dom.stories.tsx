@@ -1,10 +1,10 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { Props } from './MiniPlayer.dom.js';
-import { MiniPlayer, PlayerState } from './MiniPlayer.dom.js';
+import type { Props } from './MiniPlayer.dom.tsx';
+import { MiniPlayer, PlayerState } from './MiniPlayer.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -16,7 +16,7 @@ export default {
   component: MiniPlayer,
 } satisfies Meta<Props>;
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   const [active, setActive] = useState(false);
 
   const [playerState, setPlayerState] = useState(PlayerState.loading);
@@ -52,6 +52,7 @@ export function Default(): React.JSX.Element {
       audio.removeEventListener('timeupdate', handleUpdateTime);
       audio.removeEventListener('ended', handleEnded);
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [setCurrentTime]);
 
   const playAction = () => {

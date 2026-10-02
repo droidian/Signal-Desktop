@@ -1,18 +1,18 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { Fragment } from 'react';
+import { Fragment, type JSX } from 'react';
 
-import type { ItemClickEvent } from './types/ItemClickEvent.std.js';
+import type { ItemClickEvent } from './types/ItemClickEvent.std.ts';
 import type {
   GenericMediaItemType,
   MediaItemType,
   LinkPreviewMediaItemType,
   ContactMediaItemType,
-} from '../../../types/MediaItem.std.js';
-import { missingCaseError } from '../../../util/missingCaseError.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { tw } from '../../../axo/tw.dom.js';
+} from '../../../types/MediaItem.std.ts';
+import { missingCaseError } from '../../../util/missingCaseError.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
 
 export type Props = {
   header?: string;
@@ -22,7 +22,7 @@ export type Props = {
   renderMediaItem: (props: {
     onItemClick: (event: ItemClickEvent) => unknown;
     mediaItem: GenericMediaItemType;
-  }) => React.JSX.Element;
+  }) => JSX.Element;
 };
 
 function getMediaItemKey(mediaItem: GenericMediaItemType): string {
@@ -82,7 +82,7 @@ export function AttachmentSection({
   onItemClick,
 
   renderMediaItem,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const verified = verifyMediaItems(mediaItems);
   switch (verified.type) {
     case 'media':
@@ -96,9 +96,9 @@ export function AttachmentSection({
           <div
             className={tw(
               'grid gap-1',
-              '@min-[560px]:grid-cols-[repeat(5,_minmax(100px,_120px))]',
-              '@min-[455px]:grid-cols-[repeat(4,_minmax(100px,_120px))]',
-              'grid-cols-[repeat(3,_minmax(100px,_120px))]',
+              '@min-[560px]:grid-cols-[repeat(5,minmax(100px,120px))]',
+              '@min-[455px]:grid-cols-[repeat(4,minmax(100px,120px))]',
+              'grid-cols-[repeat(3,minmax(100px,120px))]',
               'pb-1'
             )}
           >

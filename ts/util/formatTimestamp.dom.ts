@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import moment from 'moment';
-import { HourCyclePreference } from '../types/I18N.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { assertDev } from './assert.std.js';
-import { isYesterday, isToday, type RawTimestamp } from './timestamp.std.js';
-import { HOUR, MINUTE, MONTH, WEEK } from './durations/index.std.js';
+import { HourCyclePreference } from '../types/I18N.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { assertDev } from './assert.std.ts';
+import { isYesterday, isToday, type RawTimestamp } from './timestamp.std.ts';
+import { HOUR, MINUTE, MONTH, WEEK } from './durations/index.std.ts';
 
 function getOptionsWithPreferences(
   options: Intl.DateTimeFormatOptions
@@ -61,7 +61,7 @@ function getCacheKey(
 ) {
   return `${locales.join(',')}:${Object.keys(options)
     .sort()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     .map(key => `${key}=${(options as any)[key]}`)
     .join(',')}`;
 }
@@ -103,11 +103,11 @@ export function formatTimestamp(
 
 export function formatDateTimeShort(
   i18n: LocalizerType,
-  rawTimestamp: RawTimestamp
+  rawTimestamp: RawTimestamp,
+  now = Date.now()
 ): string {
   const timestamp = rawTimestamp.valueOf();
 
-  const now = Date.now();
   const diff = now - timestamp;
 
   if (diff < HOUR || isToday(timestamp)) {
@@ -120,7 +120,7 @@ export function formatDateTimeShort(
     return formatTimestamp(timestamp, { weekday: 'short' });
   }
 
-  if (Math.abs(m.diff(Date.now())) < 6 * MONTH) {
+  if (Math.abs(m.diff(now)) < 6 * MONTH) {
     return formatTimestamp(timestamp, {
       day: 'numeric',
       month: 'short',

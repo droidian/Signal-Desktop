@@ -1,27 +1,27 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.js';
-import * as SingleServePromise from '../../services/singleServePromise.std.js';
-import type { SafetyNumberProps } from '../../components/SafetyNumberChangeDialog.dom.js';
-import { SafetyNumberChangeDialog } from '../../components/SafetyNumberChangeDialog.dom.js';
-import { SmartSafetyNumberViewer } from './SafetyNumberViewer.preload.js';
-import { getByDistributionListConversationsStoppingSend } from '../selectors/conversations-extra.preload.js';
-import { getIntl, getTheme } from '../selectors/user.std.js';
-import { getPreferredBadgeSelector } from '../selectors/badges.preload.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { useStoryDistributionListsActions } from '../ducks/storyDistributionLists.preload.js';
-import { getSafetyNumberChangedBlockingData } from '../selectors/globalModals.std.js';
+import { SafetyNumberChangeSource } from '../../types/SafetyNumberChangeSource.std.ts';
+import * as SingleServePromise from '../../services/singleServePromise.std.ts';
+import type { SafetyNumberProps } from '../../components/SafetyNumberChangeDialog.dom.tsx';
+import { SafetyNumberChangeDialog } from '../../components/SafetyNumberChangeDialog.dom.tsx';
+import { SmartSafetyNumberViewer } from './SafetyNumberViewer.preload.tsx';
+import { getByDistributionListConversationsStoppingSend } from '../selectors/conversations-extra.preload.ts';
+import { getIntl, getTheme } from '../selectors/user.std.ts';
+import { getPreferredBadgeSelector } from '../selectors/badges.preload.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { useStoryDistributionListsActions } from '../ducks/storyDistributionLists.preload.ts';
+import { getSafetyNumberChangedBlockingData } from '../selectors/globalModals.std.ts';
 
 function renderSafetyNumber({ contactID, onClose }: SafetyNumberProps) {
   return <SmartSafetyNumberViewer contactID={contactID} onClose={onClose} />;
 }
 
 export const SmartSendAnywayDialog = memo(
-  function SmartSendAnywayDialog(): React.JSX.Element {
+  function SmartSendAnywayDialog(): JSX.Element {
     const { hideBlockingSafetyNumberChangeDialog } = useGlobalModalActions();
     const { removeMembersFromDistributionList } =
       useStoryDistributionListsActions();

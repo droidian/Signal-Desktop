@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
 import casual from 'casual';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './StoryDetailsModal.dom.js';
-import { SendStatus } from '../messages/MessageSendState.std.js';
-import { StoryDetailsModal } from './StoryDetailsModal.dom.js';
-import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.js';
+import type { PropsType } from './StoryDetailsModal.dom.tsx';
+import { SendStatus } from '../messages/MessageSendState.std.ts';
+import { StoryDetailsModal } from './StoryDetailsModal.dom.tsx';
+import { getDefaultConversation } from '../test-helpers/getDefaultConversation.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -26,7 +25,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => <StoryDetailsModal {...args} />;
 
 export const MyStory = Template.bind({});

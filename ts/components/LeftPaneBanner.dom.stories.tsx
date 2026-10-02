@@ -1,10 +1,11 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { LeftPaneBanner, type PropsType } from './LeftPaneBanner.dom.js';
+import { LeftPaneBanner, type PropsType } from './LeftPaneBanner.dom.tsx';
 
 export default {
   title: 'Components/LeftPaneBanner',
@@ -20,6 +21,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-export function Defaults(args: PropsType): React.JSX.Element {
+export function Defaults(args: PropsType): JSX.Element {
   return <LeftPaneBanner {...args} />;
 }

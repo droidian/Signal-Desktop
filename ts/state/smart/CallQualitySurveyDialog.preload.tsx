@@ -1,22 +1,22 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback, type JSX } from 'react';
 import { useSelector } from 'react-redux';
-import { CallQualitySurveyDialog } from '../../components/CallQualitySurveyDialog.dom.js';
-import { useCallingActions } from '../ducks/calling.preload.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
-import { getCallQualitySurveyProps } from '../selectors/globalModals.std.js';
-import { getIntl } from '../selectors/user.std.js';
-import type { CallQualitySurvey } from '../../types/CallQualitySurvey.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { StateType } from '../reducer.preload.js';
+import { CallQualitySurveyDialog } from '../../components/CallQualitySurveyDialog.dom.tsx';
+import { useCallingActions } from '../ducks/calling.preload.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
+import { getCallQualitySurveyProps } from '../selectors/globalModals.std.ts';
+import { getIntl } from '../selectors/user.std.ts';
+import type { CallQualitySurvey } from '../../types/CallQualitySurvey.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { StateType } from '../reducer.preload.ts';
 
 const getCallQualitySurveySubmission = (state: StateType) =>
   state.calling.callQualitySurveySubmission;
 
 export const SmartCallQualitySurveyDialog = memo(
-  function SmartCallQualitySurveyDialog(): React.JSX.Element | null {
+  function SmartCallQualitySurveyDialog(): JSX.Element | null {
     const i18n = useSelector(getIntl);
     const props = useSelector(getCallQualitySurveyProps);
     strictAssert(props, 'Expected callQualitySurveyProps to be set');

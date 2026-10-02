@@ -1,19 +1,19 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
 import loadImage from 'blueimp-load-image';
 import { renderToString } from 'react-dom/server';
-import type { AvatarColorType } from '../types/Colors.std.js';
-import { AvatarColorMap } from '../types/Colors.std.js';
+import type { AvatarColorType } from '../types/Colors.std.ts';
+import { AvatarColorMap } from '../types/Colors.std.ts';
 import {
   IdenticonSVGForCallLink,
   IdenticonSVGForContact,
   IdenticonSVGForGroup,
-  // eslint-disable-next-line import/no-restricted-paths
-} from '../components/IdenticonSVG.dom.js';
-import { missingCaseError } from './missingCaseError.std.js';
-import { writeNewPlaintextTempData } from './migrations.preload.js';
+  // oxlint-disable-next-line signal-desktop/no-restricted-paths
+} from '../components/IdenticonSVG.dom.tsx';
+import { missingCaseError } from './missingCaseError.std.ts';
+import { writeNewPlaintextTempData } from './migrations.preload.ts';
+import { strictAssert } from './assert.std.ts';
 
 const TARGET_MIME = 'image/png';
 
@@ -35,6 +35,7 @@ export function createIdenticon(
   { saveToDisk }: { saveToDisk?: boolean } = {}
 ): Promise<{ url: string; path?: string }> {
   const [defaultColorValue] = Array.from(AvatarColorMap.values());
+  strictAssert(defaultColorValue, 'Missing defaultColorValue');
   const avatarColor = AvatarColorMap.get(color);
   let html: string;
 

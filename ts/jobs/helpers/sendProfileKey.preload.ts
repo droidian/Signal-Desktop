@@ -4,42 +4,44 @@
 import lodash from 'lodash';
 import { ContentHint } from '@signalapp/libsignal-client';
 
-import { handleMessageSend } from '../../util/handleMessageSend.preload.js';
-import { getSendOptions } from '../../util/getSendOptions.preload.js';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
 import {
   isDirectConversation,
   isGroup,
   isGroupV2,
-} from '../../util/whatTypeOfConversation.dom.js';
-import { SignalService as Proto } from '../../protobuf/index.std.js';
+  isMe,
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
 import {
   handleMultipleSendErrors,
   maybeExpandErrors,
-} from './handleMultipleSendErrors.std.js';
-import { ourProfileKeyService } from '../../services/ourProfileKey.std.js';
+} from './handleMultipleSendErrors.std.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
 import type {
   ConversationQueueJobBundle,
   ProfileKeyJobData,
-} from '../conversationJobQueue.preload.js';
+} from '../conversationJobQueue.preload.ts';
 import type { CallbackResultType } from '../../textsecure/Types.d.ts';
-import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.js';
+import { isConversationUnregistered } from '../../util/isConversationUnregistered.dom.ts';
 import type { ConversationAttributesType } from '../../model-types.d.ts';
 import {
   OutgoingIdentityKeyError,
   SendMessageChallengeError,
   SendMessageProtoError,
   UnregisteredUserError,
-} from '../../textsecure/Errors.std.js';
-import { shouldSendToConversation } from './shouldSendToConversation.preload.js';
-import { sendToGroup } from '../../util/sendToGroup.preload.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
+} from '../../textsecure/Errors.std.ts';
+import { shouldSendToConversation } from './shouldSendToConversation.preload.ts';
+import { sendToGroup } from '../../util/sendToGroup.preload.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { isTrustedContact } from '../../util/isConversationAccepted.preload.ts';
 
 const { isNumber } = lodash;
 
-export function canAllErrorsBeIgnored(
+function canAllErrorsBeIgnored(
   conversation: ConversationAttributesType,
   error: unknown
 ): boolean {
@@ -83,8 +85,19 @@ export async function sendProfileKey(
     return;
   }
 
-  if (!data?.isOneTimeSend && !conversation.get('profileSharing')) {
-    log.info('No longer sharing profile. Canceling job.');
+  if (data?.isOneTimeSend) {
+    log.info('isOneTimeSend=true; ignoring conversation state');
+  } else if (
+    isDirectConversation(conversation.attributes) &&
+    !isTrustedContact(conversation.attributes)
+  ) {
+    log.error('Not a trusted contact:', conversation.idForLogging());
+    return;
+  } else if (
+    isGroup(conversation.attributes) &&
+    !conversation.get('profileSharing')
+  ) {
+    log.error('Not a trusted group:', conversation.idForLogging());
     return;
   }
 
@@ -99,7 +112,6 @@ export async function sendProfileKey(
   );
 
   const { revision } = data;
-  const sendOptions = await getSendOptions(conversation.attributes);
   const contentHint = ContentHint.Resendable;
   const sendType = 'profileKeyUpdate';
 
@@ -107,7 +119,7 @@ export async function sendProfileKey(
 
   // Note: flags and the profileKey itself are all that matter in the proto.
 
-  if (!shouldSendToConversation(conversation, log)) {
+  if (!shouldSendToConversation(conversation, { log })) {
     return;
   }
 
@@ -118,22 +130,35 @@ export async function sendProfileKey(
       );
       return;
     }
+    if (
+      isMe(conversation.attributes) &&
+      !window.ConversationController.doWeHaveOtherDevices()
+    ) {
+      log.info(
+        'sendProfileKey: We have no other devices; not sending sync message'
+      );
+      return;
+    }
 
-    const proto = await messaging.getContentMessage({
-      flags: Proto.DataMessage.Flags.PROFILE_KEY_UPDATE,
-      profileKey,
-      recipients: conversation.getRecipients(),
-      expireTimerVersion: undefined,
-      timestamp,
-      includePniSignatureMessage: true,
-    });
-    sendPromise = messaging.sendIndividualProto({
-      contentHint,
-      serviceId: conversation.getSendTarget(),
-      options: sendOptions,
-      proto,
-      timestamp,
-      urgent: false,
+    sendPromise = conversation.queueJob('sendProfileKey/direct', async () => {
+      const proto = await messaging.getContentMessage({
+        flags: Proto.DataMessage.Flags.PROFILE_KEY_UPDATE,
+        profileKey,
+        recipients: conversation.getRecipients(),
+        expireTimerVersion: undefined,
+        timestamp,
+        includePniSignatureMessage: true,
+      });
+
+      const sendOptions = await getSendOptions(conversation.attributes);
+      return messaging.sendIndividualProto({
+        contentHint,
+        serviceId: conversation.getSendTarget(),
+        options: sendOptions,
+        proto,
+        timestamp,
+        urgent: false,
+      });
     });
   } else {
     if (isGroupV2(conversation.attributes) && !isNumber(revision)) {
@@ -148,25 +173,28 @@ export async function sendProfileKey(
       return;
     }
 
-    const groupV2Info = conversation.getGroupV2Info();
-    strictAssert(groupV2Info, 'Missing groupV2Info');
-    if (isNumber(revision)) {
-      groupV2Info.revision = revision;
-    }
+    sendPromise = conversation.queueJob('sendProfileKey/group', async () => {
+      const groupV2Info = conversation.getGroupV2Info();
+      strictAssert(groupV2Info, 'Missing groupV2Info');
+      if (isNumber(revision)) {
+        groupV2Info.revision = revision;
+      }
 
-    sendPromise = sendToGroup({
-      contentHint,
-      groupSendOptions: {
-        flags: Proto.DataMessage.Flags.PROFILE_KEY_UPDATE,
-        groupV2: groupV2Info,
-        profileKey,
-        timestamp,
-      },
-      messageId: undefined,
-      sendOptions,
-      sendTarget: conversation.toSenderKeyTarget(),
-      sendType,
-      urgent: false,
+      const sendOptions = await getSendOptions(conversation.attributes);
+      return sendToGroup({
+        contentHint,
+        groupSendOptions: {
+          flags: Proto.DataMessage.Flags.PROFILE_KEY_UPDATE,
+          groupV2: groupV2Info,
+          profileKey,
+          timestamp,
+        },
+        messageId: undefined,
+        sendOptions,
+        sendTarget: conversation.toSenderKeyTarget(),
+        sendType,
+        urgent: false,
+      });
     });
   }
 

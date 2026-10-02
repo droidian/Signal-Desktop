@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal video zvaniem izmanto kameru."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Lai veiktu un saņemtu tālruņa zvanus un ierakstītu balss ziņas, Signal ir nepieciešama piekļuve jūsu mikrofonam."
+  }
+}

@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactElement } from 'react';
-import React from 'react';
-import { VoiceNotesPlaybackContext } from '../../components/VoiceNotesPlaybackContext.dom.js';
-import type { Props as MessageAudioProps } from './MessageAudio.preload.js';
-import { SmartMessageAudio } from './MessageAudio.preload.js';
+import { VoiceNotesPlaybackContext } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import type { Props as MessageAudioProps } from './MessageAudio.preload.tsx';
+import { SmartMessageAudio } from './MessageAudio.preload.tsx';
 
 export type RenderAudioAttachmentProps = Omit<
   MessageAudioProps,

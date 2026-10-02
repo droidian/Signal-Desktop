@@ -1,14 +1,14 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useMemo } from 'react';
-import type { ReactNode } from 'react';
+import { useMemo } from 'react';
+import type { ReactNode, JSX } from 'react';
 import lodash from 'lodash';
 
-import { I18n } from './I18n.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { UserText } from './UserText.dom.js';
-import type { GroupV2Membership } from './conversation/conversation-details/ConversationDetailsMembershipList.dom.js';
+import { I18n } from './I18n.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { UserText } from './UserText.dom.tsx';
+import type { GroupV2Membership } from './conversation/conversation-details/ConversationDetailsMembershipList.dom.tsx';
 
 const { take } = lodash;
 
@@ -24,10 +24,9 @@ type PropsType = {
 function renderClickableButton(
   parts: ReactNode,
   onOtherMembersClick?: () => void
-): React.JSX.Element {
+): JSX.Element {
   return (
     <button
-      className="module-conversation-hero__members-count__button"
       type="button"
       onClick={ev => {
         ev.preventDefault();
@@ -49,38 +48,40 @@ function MemberList({
   onOtherMembersClick,
 }: {
   otherMemberNames: ReadonlyArray<string | undefined>;
-  firstThreeMemberNames: Array<React.JSX.Element>;
+  firstThreeMemberNames: Array<JSX.Element>;
   areWeInGroup: boolean;
   i18n: LocalizerType;
   onOtherMembersClick?: () => void;
-}): React.JSX.Element {
+}): JSX.Element {
+  const [member1, member2, member3] = firstThreeMemberNames;
+
   if (areWeInGroup) {
-    if (otherMemberNames.length === 0) {
+    if (member1 == null) {
       return (
         <I18n i18n={i18n} id="icu:ConversationHero--group-members-only-you" />
       );
     }
 
-    if (otherMemberNames.length === 1) {
+    if (member2 == null) {
       return (
         <I18n
           i18n={i18n}
           id="icu:ConversationHero--group-members-one-and-you"
           components={{
-            member: firstThreeMemberNames[0],
+            member: member1,
           }}
         />
       );
     }
 
-    if (otherMemberNames.length === 2) {
+    if (member3 == null) {
       return (
         <I18n
           i18n={i18n}
           id="icu:ConversationHero--group-members-two-and-you"
           components={{
-            member1: firstThreeMemberNames[0],
-            member2: firstThreeMemberNames[1],
+            member1,
+            member2,
           }}
         />
       );
@@ -93,9 +94,9 @@ function MemberList({
         i18n={i18n}
         id="icu:ConversationHero--group-members-other-and-you"
         components={{
-          member1: firstThreeMemberNames[0],
-          member2: firstThreeMemberNames[1],
-          member3: firstThreeMemberNames[2],
+          member1,
+          member2,
+          member3,
           clickable: (parts: ReactNode) =>
             renderClickableButton(parts, onOtherMembersClick),
           remainingCount,
@@ -106,30 +107,30 @@ function MemberList({
 
   // When the user is not in the group
 
-  if (otherMemberNames.length === 0) {
+  if (member1 == null) {
     return <I18n i18n={i18n} id="icu:ConversationHero--group-members-zero" />;
   }
 
-  if (otherMemberNames.length === 1) {
+  if (member2 == null) {
     return (
       <I18n
         i18n={i18n}
         id="icu:ConversationHero--group-members-one"
         components={{
-          member: firstThreeMemberNames[0],
+          member: member1,
         }}
       />
     );
   }
 
-  if (otherMemberNames.length === 2) {
+  if (member3 == null) {
     return (
       <I18n
         i18n={i18n}
         id="icu:ConversationHero--group-members-two"
         components={{
-          member1: firstThreeMemberNames[0],
-          member2: firstThreeMemberNames[1],
+          member1,
+          member2,
         }}
       />
     );
@@ -141,9 +142,9 @@ function MemberList({
         i18n={i18n}
         id="icu:ConversationHero--group-members-three"
         components={{
-          member1: firstThreeMemberNames[0],
-          member2: firstThreeMemberNames[1],
-          member3: firstThreeMemberNames[2],
+          member1,
+          member2,
+          member3,
         }}
       />
     );
@@ -156,9 +157,9 @@ function MemberList({
       i18n={i18n}
       id="icu:ConversationHero--group-members-other"
       components={{
-        member1: firstThreeMemberNames[0],
-        member2: firstThreeMemberNames[1],
-        member3: firstThreeMemberNames[2],
+        member1,
+        member2,
+        member3,
         clickable: (parts: ReactNode) =>
           renderClickableButton(parts, onOtherMembersClick),
         remainingCount,
@@ -173,7 +174,7 @@ export function GroupMembersNames({
   memberships,
   invitesCount,
   onOtherMembersClick,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const areWeInGroup = useMemo(() => {
     return memberships.some(({ member }) => member.isMe);
   }, [memberships]);
@@ -201,10 +202,10 @@ export function GroupMembersNames({
       3
     ).map((name, i) => (
       // We cannot guarantee uniqueness of member names
-      // eslint-disable-next-line react/no-array-index-key
-      <strong key={i} className={nameClassName}>
+      // oxlint-disable-next-line react/no-array-index-key
+      <span key={i} className={nameClassName}>
         <UserText text={name ?? i18n('icu:unknownContactShort')} />
-      </strong>
+      </span>
     ));
   }, [otherMemberNames, nameClassName, i18n]);
 

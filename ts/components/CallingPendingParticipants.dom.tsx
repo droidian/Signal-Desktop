@@ -1,29 +1,26 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable react/no-array-index-key */
-
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import lodash from 'lodash';
 import classNames from 'classnames';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import { InContactsIcon } from './InContactsIcon.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import { isInSystemContacts } from '../util/isInSystemContacts.std.js';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import { InContactsIcon } from './InContactsIcon.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { isInSystemContacts } from '../util/isInSystemContacts.std.ts';
 import type {
   BatchUserActionPayloadType,
   PendingUserActionPayloadType,
-} from '../state/ducks/calling.preload.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import { handleOutsideClick } from '../util/handleOutsideClick.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { useReducedMotion } from '../hooks/useReducedMotion.dom.js';
+} from '../state/ducks/calling.preload.ts';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import { handleOutsideClick } from '../util/handleOutsideClick.dom.ts';
+import { useReducedMotion } from '../hooks/useReducedMotion.dom.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const { noop } = lodash;
 
@@ -54,7 +51,7 @@ export function CallingPendingParticipants({
   batchUserAction,
   denyUser,
   toggleCallLinkPendingParticipantModal,
-}: PropsType): React.JSX.Element | null {
+}: PropsType): JSX.Element | null {
   const reducedMotion = useReducedMotion();
 
   const participantCount = participants.length;
@@ -130,7 +127,7 @@ export function CallingPendingParticipants({
   }, [serviceIdsStagedForAction, batchUserAction, hideConfirmDialog]);
 
   const renderApprovalButtons = useCallback(
-    (participant: ConversationType, isEnabled: boolean = true) => {
+    (participant: ConversationType, isEnabled = true) => {
       if (participant.serviceId == null) {
         return null;
       }
@@ -177,55 +174,53 @@ export function CallingPendingParticipants({
 
   if (confirmDialogState === ConfirmDialogState.ApproveAll) {
     return (
-      <ConfirmationDialog
-        dialogName="CallingPendingParticipants.confirmDialog"
-        actions={[
-          {
-            action: handleApproveAll,
-            style: 'affirmative',
-            text: i18n('icu:CallingPendingParticipants__ApproveAll'),
-          },
-        ]}
-        cancelText={i18n('icu:cancel')}
-        i18n={i18n}
-        theme={Theme.Dark}
+      <AxoConfirmDialog.Root
+        open
+        onOpenChange={hideConfirmDialog}
         title={i18n(
           'icu:CallingPendingParticipants__ConfirmDialogTitle--ApproveAll',
           { count: serviceIdsStagedForAction.length }
         )}
-        onClose={hideConfirmDialog}
+        description={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogBody--ApproveAll',
+          { count: serviceIdsStagedForAction.length }
+        )}
       >
-        {i18n('icu:CallingPendingParticipants__ConfirmDialogBody--ApproveAll', {
-          count: serviceIdsStagedForAction.length,
-        })}
-      </ConfirmationDialog>
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-primary"
+          onClick={handleApproveAll}
+        >
+          {i18n('icu:CallingPendingParticipants__ApproveAll')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     );
   }
 
   if (confirmDialogState === ConfirmDialogState.DenyAll) {
     return (
-      <ConfirmationDialog
-        dialogName="CallingPendingParticipants.confirmDialog"
-        actions={[
-          {
-            action: handleDenyAll,
-            style: 'affirmative',
-            text: i18n('icu:CallingPendingParticipants__DenyAll'),
-          },
-        ]}
-        cancelText={i18n('icu:cancel')}
-        i18n={i18n}
-        theme={Theme.Dark}
+      <AxoConfirmDialog.Root
+        open
+        onOpenChange={hideConfirmDialog}
         title={i18n(
           'icu:CallingPendingParticipants__ConfirmDialogTitle--DenyAll',
           { count: serviceIdsStagedForAction.length }
         )}
-        onClose={hideConfirmDialog}
+        description={i18n(
+          'icu:CallingPendingParticipants__ConfirmDialogBody--DenyAll',
+          {
+            count: serviceIdsStagedForAction.length,
+          }
+        )}
       >
-        {i18n('icu:CallingPendingParticipants__ConfirmDialogBody--DenyAll', {
-          count: serviceIdsStagedForAction.length,
-        })}
-      </ConfirmationDialog>
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={handleDenyAll}
+        >
+          {i18n('icu:CallingPendingParticipants__DenyAll')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     );
   }
 
@@ -253,6 +248,7 @@ export function CallingPendingParticipants({
           {participants.map((participant: ConversationType, index: number) => (
             <li
               className="module-calling-participants-list__contact"
+              // oxlint-disable-next-line react/no-array-index-key
               key={index}
             >
               <button

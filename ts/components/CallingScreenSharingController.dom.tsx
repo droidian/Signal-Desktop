@@ -1,10 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import { Button, ButtonVariant } from './Button.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { ScreenShareStatus } from '../types/Calling.std.js';
+import { useCallback, type JSX } from 'react';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { ScreenShareStatus } from '../types/Calling.std.ts';
+import { AxoDragRegion } from '../axo/AxoDragRegion.dom.tsx';
 
 export type PropsType = {
   i18n: LocalizerType;
@@ -20,7 +21,7 @@ export function CallingScreenSharingController({
   onStopSharing,
   status,
   presentedSourceName,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   let text: string;
 
   if (status === ScreenShareStatus.Reconnecting) {
@@ -33,24 +34,32 @@ export function CallingScreenSharingController({
     text = i18n('icu:calling__presenting--info--unknown');
   }
 
+  const handleClick = useCallback(() => {
+    onStopSharing();
+  }, [onStopSharing]);
+
   return (
-    <div className="module-CallingScreenSharingController">
-      <div className="module-CallingScreenSharingController__text">{text}</div>
-      <div className="module-CallingScreenSharingController__buttons">
-        <Button
-          className="module-CallingScreenSharingController__button"
-          onClick={onStopSharing}
-          variant={ButtonVariant.Destructive}
-        >
-          {i18n('icu:calling__presenting--stop')}
-        </Button>
-        <button
-          aria-label={i18n('icu:close')}
-          className="module-CallingScreenSharingController__close"
-          onClick={onCloseController}
-          type="button"
-        />
+    <AxoDragRegion.Root>
+      <div className="module-CallingScreenSharingController">
+        <div className="module-CallingScreenSharingController__text">
+          {text}
+        </div>
+        <div className="module-CallingScreenSharingController__buttons">
+          <Button
+            className="module-CallingScreenSharingController__button"
+            onClick={handleClick}
+            variant={ButtonVariant.Destructive}
+          >
+            {i18n('icu:calling__presenting--stop')}
+          </Button>
+          <button
+            aria-label={i18n('icu:close')}
+            className="module-CallingScreenSharingController__close"
+            onClick={onCloseController}
+            type="button"
+          />
+        </div>
       </div>
-    </div>
+    </AxoDragRegion.Root>
   );
 }

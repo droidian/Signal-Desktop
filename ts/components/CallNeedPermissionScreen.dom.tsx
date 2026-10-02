@@ -1,13 +1,13 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useEffect } from 'react';
-import type { LocalizerType } from '../types/Util.std.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { I18n } from './I18n.dom.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
+import { useRef, useEffect, type JSX } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
 
 export type Props = {
   conversation: Pick<
@@ -33,9 +33,10 @@ export function CallNeedPermissionScreen({
   conversation,
   i18n,
   close,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const title = conversation.title || i18n('icu:unknownContact');
 
+  // oxlint-disable-next-line react/purity
   const autoCloseAtRef = useRef<number>(Date.now() + AUTO_CLOSE_MS);
   useEffect(() => {
     const timeout = setTimeout(close, autoCloseAtRef.current - Date.now());

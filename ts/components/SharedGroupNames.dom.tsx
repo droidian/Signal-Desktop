@@ -1,12 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import lodash from 'lodash';
 
-import { I18n } from './I18n.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { UserText } from './UserText.dom.js';
+import { I18n } from './I18n.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { UserText } from './UserText.dom.tsx';
 
 const { take } = lodash;
 
@@ -20,10 +21,10 @@ export function SharedGroupNames({
   i18n,
   nameClassName,
   sharedGroupNames,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const firstThreeGroups = take(sharedGroupNames, 3).map((group, i) => (
     // We cannot guarantee uniqueness of group names
-    // eslint-disable-next-line react/no-array-index-key
+    // oxlint-disable-next-line react/no-array-index-key
     <strong key={i} className={nameClassName}>
       <UserText text={group} />
     </strong>
@@ -36,9 +37,12 @@ export function SharedGroupNames({
         i18n={i18n}
         id="icu:member-of-more-than-3-groups--multiple-more"
         components={{
-          group1: firstThreeGroups[0],
-          group2: firstThreeGroups[1],
-          group3: firstThreeGroups[2],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group1: firstThreeGroups[0]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group2: firstThreeGroups[1]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group3: firstThreeGroups[2]!,
           remainingCount,
         }}
       />
@@ -50,9 +54,12 @@ export function SharedGroupNames({
         i18n={i18n}
         id="icu:member-of-more-than-3-groups--one-more"
         components={{
-          group1: firstThreeGroups[0],
-          group2: firstThreeGroups[1],
-          group3: firstThreeGroups[2],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group1: firstThreeGroups[0]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group2: firstThreeGroups[1]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group3: firstThreeGroups[2]!,
         }}
       />
     );
@@ -63,9 +70,12 @@ export function SharedGroupNames({
         i18n={i18n}
         id="icu:member-of-3-groups"
         components={{
-          group1: firstThreeGroups[0],
-          group2: firstThreeGroups[1],
-          group3: firstThreeGroups[2],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group1: firstThreeGroups[0]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group2: firstThreeGroups[1]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group3: firstThreeGroups[2]!,
         }}
       />
     );
@@ -76,8 +86,10 @@ export function SharedGroupNames({
         i18n={i18n}
         id="icu:member-of-2-groups"
         components={{
-          group1: firstThreeGroups[0],
-          group2: firstThreeGroups[1],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group1: firstThreeGroups[0]!,
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group2: firstThreeGroups[1]!,
         }}
       />
     );
@@ -88,7 +100,8 @@ export function SharedGroupNames({
         i18n={i18n}
         id="icu:member-of-1-group"
         components={{
-          group: firstThreeGroups[0],
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          group: firstThreeGroups[0]!,
         }}
       />
     );

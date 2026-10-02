@@ -1,0 +1,21 @@
+„Signal“ yra pokalbių programėlė, sukurta užtikrinti privatumą. Ji nemokama ir ją paprasta naudoti, o ištisinis šifravimas jums leidžia siųsti žinutes ir skambinti visiškai privačiai. Nei „Signal“, nei niekas kitas negali skaityti jūsų žinučių ar klausytis skambučių. 
+
+• „Signal“ sistemoje „MacOS“ susiejama su „Signal“ jūsų telefone. 
+
+• Siųskite ištisiniu būdu užšifruotas teksto ir balso žinutes, nuotraukas, vaizdo įrašus, GIF vaizdus ir failus nemokamai. 
+
+• Palaikyk ryšį – grupių pokalbiai iki 1000 žmonių. Kontroliuok, kas gali skelbti įrašus ir būti grupės nariais per administratoriaus leidimo nustatymus.
+
+• Skambinkite draugams – ištisiniu būdu užšifruotų balso ir vaizdo skambučių kokybė nepriekaištinga. Grupių skambučiai leidžia prijungti iki 75 žmonių.
+
+• „Signal“ sukurta tavo privatumui užtikrinti. Mes nieko nežinome apie tave ar su kuo tu kalbi. Atvirojo kodo „Signal“ protokolas reiškia tai, kad negalime skaityti tavo žinučių ar klausytis skambučių. Kaip ir niekas kitas. Jokių spragų, duomenų rinkimo ir kompromisų. 
+
+• Bendrinkite nuotraukų, tekstų ir vaizdo įrašų Istorijas, kurios dingsta po 24 valandų. Privatumo nustatymai leidžia pasirinkti, kas gali matyti kiekvieną Istoriją.
+
+• „Signal“ yra nepriklausoma ir nesiekia pelno – tai kitokia technologija, sukurta kitokios organizacijos. Esame ne pelno organizacija pagal 501c3 skyrių, išlaikoma jūsų paramos, o ne reklamuotojų ar investuotojų. 
+
+• Jei reikia pagalbos, atsakymų ar daugiau informacijos, apsilankyk https://support.signal.org/
+
+Jei domina pirminis programos tekstas, apsilankyk https://github.com/signalapp 
+
+Stebėkite mus per „X“ @signalapp ir „Instagram“ @signal_app

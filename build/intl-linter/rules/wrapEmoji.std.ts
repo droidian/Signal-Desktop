@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import getEmojiRegex from 'emoji-regex';
+import getEmojiRegex from 'emoji-regex-xs';
 import type {
   MessageFormatElement,
   TagElement,
@@ -10,7 +10,7 @@ import {
   isTagElement,
   isLiteralElement,
 } from '@formatjs/icu-messageformat-parser';
-import { rule } from '../utils/rule.std.js';
+import { rule } from '../utils/rule.std.ts';
 
 function isEmojifyTag(
   element: MessageFormatElement | null
@@ -37,7 +37,8 @@ export default rule('wrapEmoji', context => {
         return;
       }
 
-      const child = element.children[0];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const child = element.children[0]!;
       if (!isLiteralElement(child)) {
         // non-literal
         context.report(

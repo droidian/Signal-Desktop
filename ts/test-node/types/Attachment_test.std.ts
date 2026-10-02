@@ -4,19 +4,19 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import * as Attachment from '../../util/Attachment.std.js';
+import * as Attachment from '../../util/Attachment.std.ts';
 import type {
   LocalAttachmentV2Type,
   AttachmentType,
-} from '../../types/Attachment.std.js';
-import * as MIME from '../../types/MIME.std.js';
-import { SignalService } from '../../protobuf/index.std.js';
-import * as Bytes from '../../Bytes.std.js';
-import { createLogger } from '../../logging/log.std.js';
+} from '../../types/Attachment.std.ts';
+import * as MIME from '../../types/MIME.std.ts';
+import { SignalService } from '../../protobuf/index.std.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
 
-import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.js';
-import { DAY } from '../../util/durations/index.std.js';
-import { migrateDataToFileSystem } from '../../util/attachments/migrateDataToFilesystem.std.js';
+import { fakeAttachment } from '../../test-helpers/fakeAttachment.std.ts';
+import { DAY } from '../../util/durations/index.std.ts';
+import { migrateDataToFileSystem } from '../../util/attachments/migrateDataToFilesystem.std.ts';
 
 const logger = createLogger('Attachment_test');
 
@@ -80,7 +80,7 @@ describe('Attachment', () => {
           attachment,
           timestamp,
         });
-        const expected = 'signal-1970-01-02-000000.mov';
+        const expected = 'signal-1970-01-02-00-00-00-000.mov';
         assert.strictEqual(actual, expected);
       });
     });
@@ -151,7 +151,7 @@ describe('Attachment', () => {
           timestamp,
           index: 3,
         });
-        const expected = 'signal-1970-01-02-000000_003.mov';
+        const expected = 'signal-1970-01-02-00-00-00-000_003.mov';
         assert.strictEqual(actual, expected);
       });
 
@@ -168,7 +168,7 @@ describe('Attachment', () => {
           timestamp,
           index: 1,
         });
-        const expected = 'signal-1970-01-02-000000.mov';
+        const expected = 'signal-1970-01-02-00-00-00-000.mov';
         assert.strictEqual(actual, expected);
       });
     });
@@ -446,21 +446,19 @@ describe('Attachment', () => {
       };
 
       const expectedAttachmentData = Bytes.fromString('Above us only sky');
-      const writeNewAttachmentData = async (attachmentData: Uint8Array) => {
+      const writeNewAttachmentData = async (
+        attachmentData: Uint8Array<ArrayBuffer>
+      ) => {
         assert.deepEqual(attachmentData, expectedAttachmentData);
         return FAKE_LOCAL_ATTACHMENT;
       };
 
-      const actual = await migrateDataToFileSystem(
-        input,
-        {
-          writeNewAttachmentData,
-          getExistingAttachmentDataForReuse: async () => null,
-          getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
-          logger,
-        },
-        { id: 'messageId' }
-      );
+      const actual = await migrateDataToFileSystem(input, {
+        writeNewAttachmentData,
+        getExistingAttachmentDataForReuse: async () => null,
+        getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
+        logger,
+      });
       assert.deepEqual(actual, expected);
     });
 
@@ -479,23 +477,19 @@ describe('Attachment', () => {
 
       const writeNewAttachmentData = async () => FAKE_LOCAL_ATTACHMENT;
 
-      const actual = await migrateDataToFileSystem(
-        input,
-        {
-          writeNewAttachmentData,
-          getExistingAttachmentDataForReuse: async () => null,
-          getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
-          logger,
-        },
-        { id: 'messageId' }
-      );
+      const actual = await migrateDataToFileSystem(input, {
+        writeNewAttachmentData,
+        getExistingAttachmentDataForReuse: async () => null,
+        getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
+        logger,
+      });
       assert.deepEqual(actual, expected);
     });
 
     it('should clear `data` field if it is not a typed array', async () => {
       const input = {
         contentType: MIME.IMAGE_JPEG,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         data: 123 as any,
         fileName: 'foo.jpg',
         size: 1111,
@@ -503,16 +497,12 @@ describe('Attachment', () => {
 
       const writeNewAttachmentData = async () => FAKE_LOCAL_ATTACHMENT;
 
-      const actual = await migrateDataToFileSystem(
-        input,
-        {
-          writeNewAttachmentData,
-          getExistingAttachmentDataForReuse: async () => null,
-          getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
-          logger,
-        },
-        { id: 'messageId' }
-      );
+      const actual = await migrateDataToFileSystem(input, {
+        writeNewAttachmentData,
+        getExistingAttachmentDataForReuse: async () => null,
+        getPlaintextHashForInMemoryAttachment: () => 'fakeplaintextHash',
+        logger,
+      });
 
       assert.isUndefined(actual.data);
     });
@@ -526,27 +516,24 @@ describe('Attachment', () => {
 
       const writeNewAttachmentData = sandbox.stub();
 
-      const actual = await migrateDataToFileSystem(
-        input,
-        {
-          writeNewAttachmentData,
-          getExistingAttachmentDataForReuse: async ({
-            plaintextHash,
-            contentType,
-          }) => {
-            assert.strictEqual(plaintextHash, 'somePlaintextHash');
-            assert.strictEqual(contentType, MIME.IMAGE_JPEG);
-            return {
-              path: 'new-path',
-              version: 2,
-              localKey: 'new-local-key',
-            };
-          },
-          getPlaintextHashForInMemoryAttachment: () => 'somePlaintextHash',
-          logger,
+      const actual = await migrateDataToFileSystem(input, {
+        writeNewAttachmentData,
+        getExistingAttachmentDataForReuse: async ({
+          plaintextHash,
+          contentType,
+        }) => {
+          assert.strictEqual(plaintextHash, 'somePlaintextHash');
+          assert.strictEqual(contentType, MIME.IMAGE_JPEG);
+          return {
+            path: 'new-path',
+            version: 2,
+            localKey: 'new-local-key',
+            reuseToken: 'reuse-token',
+          };
         },
-        { id: 'messageId' }
-      );
+        getPlaintextHashForInMemoryAttachment: () => 'somePlaintextHash',
+        logger,
+      });
       assert.strictEqual(writeNewAttachmentData.callCount, 0);
       assert.deepEqual(actual, {
         version: 2,
@@ -556,6 +543,7 @@ describe('Attachment', () => {
         path: 'new-path',
         localKey: 'new-local-key',
         fileName: 'foo.jpg',
+        reuseToken: 'reuse-token',
       });
     });
   });

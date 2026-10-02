@@ -13,13 +13,14 @@ import {
 import { assert } from 'chai';
 import type { Locator, Page } from 'playwright';
 import { expect } from 'playwright/test';
-import { strictAssert } from '../util/assert.std.js';
-import { SECOND } from '../util/durations/constants.std.js';
-import { toNumber } from '../util/toNumber.std.js';
+import { strictAssert } from '../util/assert.std.ts';
+import { SECOND } from '../util/durations/constants.std.ts';
+import { toNumber } from '../util/toNumber.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 const debug = createDebug('mock:test:helpers');
 
-export function bufferToUuid(buffer: Buffer): string {
+export function bufferToUuid(buffer: Buffer<ArrayBuffer>): string {
   const hex = buffer.toString('hex');
 
   return [
@@ -35,7 +36,7 @@ function isProfileKeyUpdate(flags: number | null | undefined): boolean {
   if (flags == null) {
     return false;
   }
-  // eslint-disable-next-line no-bitwise
+  // oxlint-disable-next-line no-bitwise
   return (flags & Proto.DataMessage.Flags.PROFILE_KEY_UPDATE) !== 0;
 }
 
@@ -44,7 +45,7 @@ export async function waitForNonProfileKeyUpdateMessage(
   { maxAttempts = 5 }: { maxAttempts?: number } = {}
 ): Promise<Awaited<ReturnType<PrimaryDevice['waitForMessage']>>> {
   for (let i = 0; i < maxAttempts; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const message = await device.waitForMessage();
     if (isProfileKeyUpdate(message.dataMessage.flags)) {
       debug('Skipping profile key update');
@@ -95,9 +96,9 @@ export async function expectItemsWithText(
   // Wait for each message to appear in case they're not all there yet
   for (const [index, message] of expected.entries()) {
     const nth = items.nth(index);
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await nth.waitFor();
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     const text = await nth.innerText();
     const log = `Expect item at index ${index} to match`;
     if (typeof message === 'string') {
@@ -252,7 +253,7 @@ export function sendReaction({
   to,
   targetAuthor,
   targetMessageTimestamp,
-  emoji = '👍',
+  emoji,
   reactionTimestamp = Date.now(),
   desktop,
 }: {
@@ -260,7 +261,7 @@ export function sendReaction({
   to: PrimaryDevice | Device;
   targetAuthor: PrimaryDevice | Device;
   targetMessageTimestamp: number;
-  emoji: string;
+  emoji: Emoji.Variant;
   reactionTimestamp?: number;
   desktop: Device;
 }): Promise<void> {
@@ -356,7 +357,7 @@ export async function acceptConversation(page: Page): Promise<void> {
     .click();
 
   const confirmationButton = page
-    .locator('.MessageRequestActionsConfirmation')
+    .getByRole('alertdialog', { name: 'Accept request?' })
     .getByRole('button', { name: 'Accept' });
 
   await confirmationButton.waitFor({
@@ -450,9 +451,9 @@ export async function sendMessageWithAttachments(
 
   return pTimeout(
     (async () => {
-      // eslint-disable-next-line no-constant-condition
+      // oxlint-disable-next-line no-constant-condition
       while (true) {
-        // eslint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop
         const receivedMessage = await receiver.waitForMessage();
         const attachments = receivedMessage.dataMessage.attachments ?? [];
         if (
@@ -470,8 +471,10 @@ export async function sendMessageWithAttachments(
         }
       }
     })(),
-    10 * SECOND,
-    'Timed out waiting to detect message send with attached files'
+    {
+      milliseconds: 10 * SECOND,
+      message: 'Timed out waiting to detect message send with attached files',
+    }
   );
 }
 
@@ -491,7 +494,7 @@ export async function createCallLink(
   page: Page,
   {
     name,
-    isAdminApprovalRequired = undefined,
+    isAdminApprovalRequired,
   }: { name: string; isAdminApprovalRequired?: boolean | undefined }
 ): Promise<string | undefined> {
   await page.locator('[data-testid="NavTabsItem--Calls"]').click();
@@ -502,21 +505,23 @@ export async function createCallLink(
     .getByText('Create a Call Link')
     .click();
 
-  const editModal = page.locator('.CallLinkEditModal');
+  const editModal = page.getByRole('dialog', { name: 'Call link details' });
   await editModal.waitFor();
 
   if (isAdminApprovalRequired !== undefined) {
-    const restrictionsInput = editModal.getByLabel('Require admin approval');
+    const restrictions = editModal.getByRole('switch', {
+      name: 'Require admin approval',
+    });
     if (isAdminApprovalRequired) {
-      await expect(restrictionsInput).toHaveJSProperty('value', '0');
-      await restrictionsInput.selectOption({ label: 'On' });
-      await expect(restrictionsInput).toHaveJSProperty('value', '1');
+      await expect(restrictions).toBeChecked({ checked: false });
+      await restrictions.click();
+      await expect(restrictions).toBeChecked();
     } else {
-      await expect(restrictionsInput).toHaveJSProperty('value', '0');
+      await expect(restrictions).toBeChecked({ checked: false });
     }
   }
 
-  await editModal.locator('button', { hasText: 'Add call name' }).click();
+  await editModal.getByRole('button', { name: 'Add call name' }).click();
 
   const addNameModal = page.locator('.CallLinkAddNameModal');
   await addNameModal.waitFor();
@@ -532,11 +537,9 @@ export async function createCallLink(
   const doneBtn = editModal.getByText('Done');
   await doneBtn.click();
 
-  const callLinkTitle = await page
-    .locator('.CallsList__ItemTile')
-    .getByText(name);
+  const callLinkTitle = page.locator('.CallsList__ItemTile').getByText(name);
 
-  const callLinkItem = await page.locator('.CallsList__Item', {
+  const callLinkItem = page.locator('.CallsList__Item', {
     has: callLinkTitle,
   });
   const testId = await callLinkItem.getAttribute('data-testid');

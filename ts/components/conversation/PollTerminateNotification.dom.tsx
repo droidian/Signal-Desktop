@@ -1,33 +1,53 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import { SystemMessage } from './SystemMessage.dom.js';
-import { Button, ButtonVariant, ButtonSize } from '../Button.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { I18n } from '../I18n.dom.js';
+import type { JSX } from 'react';
 
-export type PropsType = {
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { Button, ButtonVariant, ButtonSize } from '../Button.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { isAciString } from '../../util/isAciString.std.ts';
+import type { DurationInSeconds } from '../../util/durations/duration-in-seconds.std.ts';
+
+export type PollTerminateNotificationDataType = {
   sender: ConversationType;
   pollQuestion: string;
-  pollMessageId: string;
+  pollTimestamp: number;
   conversationId: string;
-  i18n: LocalizerType;
-  scrollToPollMessage: (messageId: string, conversationId: string) => unknown;
+  expireTimer: DurationInSeconds | null;
+  expirationStartTimestamp: number | null;
 };
+export type PollTerminateNotificationPropsType =
+  PollTerminateNotificationDataType & {
+    i18n: LocalizerType;
+    scrollToPollMessage: (
+      pollAuthorAci: AciString,
+      pollTimestamp: number,
+      conversationId: string
+    ) => unknown;
+  };
 
 export function PollTerminateNotification({
   sender,
   pollQuestion,
-  pollMessageId,
+  pollTimestamp,
   conversationId,
   i18n,
   scrollToPollMessage,
-}: PropsType): React.JSX.Element {
+  expireTimer,
+  expirationStartTimestamp,
+}: PollTerminateNotificationPropsType): JSX.Element {
   const handleViewPoll = () => {
-    scrollToPollMessage(pollMessageId, conversationId);
+    strictAssert(
+      isAciString(sender.serviceId),
+      'poll sender serviceId must be ACI'
+    );
+    scrollToPollMessage(sender.serviceId, pollTimestamp, conversationId);
   };
 
   const message = sender.isMe ? (
@@ -53,6 +73,8 @@ export function PollTerminateNotification({
     <SystemMessage
       symbol="poll"
       contents={message}
+      expireTimer={expireTimer}
+      expirationStartTimestamp={expirationStartTimestamp}
       button={
         <Button
           onClick={handleViewPoll}

@@ -1,19 +1,19 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Modal } from './Modal.dom.js';
-import { SpinnerV2 } from './SpinnerV2.dom.js';
-import { SECOND } from '../util/durations/index.std.js';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Modal } from './Modal.dom.tsx';
+import { SpinnerV2 } from './SpinnerV2.dom.tsx';
+import { SECOND } from '../util/durations/index.std.ts';
 
 export type PropsType = {
   i18n: LocalizerType;
   onWaitedTooLong: () => void;
 };
 
-export function DonationProgressModal(props: PropsType): React.JSX.Element {
+export function DonationProgressModal(props: PropsType): JSX.Element {
   const { i18n, onWaitedTooLong } = props;
 
   useEffect(() => {

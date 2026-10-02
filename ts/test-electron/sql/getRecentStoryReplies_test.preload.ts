@@ -4,11 +4,10 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const { _getAllMessages, getRecentStoryReplies } = DataReader;
 const { removeAll, saveMessages } = DataWriter;
@@ -102,8 +101,8 @@ describe('sql/getRecentStoryReplies', () => {
       limit: 2,
     });
     assert.lengthOf(searchResultsPage1, 2, 'page 1');
-    assert.strictEqual(searchResultsPage1[0].body, message3.body);
-    assert.strictEqual(searchResultsPage1[1].body, message2.body);
+    assert.strictEqual(searchResultsPage1[0]?.body, message3.body);
+    assert.strictEqual(searchResultsPage1[1]?.body, message2.body);
 
     const searchResultsPage2 = await getRecentStoryReplies(storyId, {
       messageId: message2.id,
@@ -111,6 +110,6 @@ describe('sql/getRecentStoryReplies', () => {
       limit: 2,
     });
     assert.lengthOf(searchResultsPage2, 1, 'page 2');
-    assert.strictEqual(searchResultsPage2[0].body, message1.body);
+    assert.strictEqual(searchResultsPage2[0]?.body, message1.body);
   });
 });

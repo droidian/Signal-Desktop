@@ -52,11 +52,8 @@
   line-height: 18px;
   overflow: hidden;
 
-  @include mixins.keyboard-mode {
-    &:focus-within {
-      outline: 2px solid variables.$color-ultramarine;
-      outline-offset: 2px;
-    }
+  @include mixins.focus-visible-within {
+    @include mixins.axo-focus-ring;
   }
 }
 
@@ -77,6 +74,10 @@
       '../images/icons/v3/chevron/chevron-right.svg',
       variables.$color-gray-20
     );
+  }
+
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 }
 
@@ -100,12 +101,8 @@
   padding-inline: 16px;
   border-radius: 40px;
 
-  @include mixins.keyboard-mode {
-    &:focus {
-      box-shadow:
-        0 0 0 1px variables.$color-gray-80,
-        0 0 0 3px variables.$color-ultramarine !important;
-    }
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 }
 

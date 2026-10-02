@@ -8,7 +8,6 @@
   border-bottom: 1px solid variables.$color-gray-15;
   display: flex;
   justify-content: space-around;
-  user-select: none;
 
   &__tab {
     @include mixins.font-body-1;
@@ -18,11 +17,11 @@
     border-bottom: 4px solid transparent;
 
     &:focus {
-      outline: none;
+      border-bottom-color: variables.$color-ultramarine;
+    }
 
-      @include mixins.keyboard-mode {
-        border-bottom-color: variables.$color-ultramarine;
-      }
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
 
     &--selected {

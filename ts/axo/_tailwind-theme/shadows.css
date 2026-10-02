@@ -1,0 +1,94 @@
+/**
+ * Copyright 2026 Signal Messenger, LLC
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+/**
+ * Colors
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  --axo-shadow-color-elevation-1: light-dark(--alpha(#000 / 08%), --alpha(#000 / 16%));
+  --axo-shadow-color-elevation-2: light-dark(--alpha(#000 / 08%), --alpha(#000 / 16%));
+  --axo-shadow-color-elevation-3: light-dark(--alpha(#000 / 10%), --alpha(#000 / 20%));
+  --axo-shadow-color-elevation-4: light-dark(--alpha(#000 / 12%), --alpha(#000 / 24%));
+  --axo-shadow-color-elevation-5: light-dark(--alpha(#000 / 20%), --alpha(#000 / 40%));
+  --axo-shadow-color-outline:     light-dark(--alpha(#000 / 12%), transparent);
+  --axo-shadow-color-highlight:   light-dark(transparent, --alpha(#fff / 08%));
+}
+
+/* prettier-ignore */
+@layer theme {
+  @media (prefers-contrast: more) {
+    :root {
+      --axo-shadow-color-outline:   light-dark(--alpha(#000 / 32%), transparent);
+      --axo-shadow-color-highlight: light-dark(transparent, --alpha(#fff / 32%));
+    }
+  }
+}
+
+/**
+ * Presets
+ * ----------------------------------------------------------------------------
+ */
+
+/* prettier-ignore */
+@theme {
+  /* shared shadow styles */
+
+  --base-shadow-outline:
+    inset 0 0 0 0.5px var(--axo-shadow-color-highlight),
+    0 0 0 0.5px var(--axo-shadow-color-outline);
+  --base-shadow-elevation-0: 0  1px  2px 0 var(--axo-shadow-color-elevation-1);
+  --base-shadow-elevation-1: 0  2px  8px 0 var(--axo-shadow-color-elevation-2);
+  --base-shadow-elevation-2: 0  4px 12px 0 var(--axo-shadow-color-elevation-3);
+  --base-shadow-elevation-3: 0  6px 16px 0 var(--axo-shadow-color-elevation-4);
+  --base-shadow-elevation-4: 0 12px 56px 0 var(--axo-shadow-color-elevation-5);
+
+  /* box-shadow */
+  --shadow-*: initial; /* reset defaults */
+  /* Note: Use 'shadow-no-outline' to remove the outline/highlight shadows */
+  --shadow-elevation-0: var(--axo-shadow-no-outline, var(--base-shadow-outline)), var(--base-shadow-elevation-0);
+  --shadow-elevation-1: var(--axo-shadow-no-outline, var(--base-shadow-outline)), var(--base-shadow-elevation-1);
+  --shadow-elevation-2: var(--axo-shadow-no-outline, var(--base-shadow-outline)), var(--base-shadow-elevation-2);
+  --shadow-elevation-3: var(--axo-shadow-no-outline, var(--base-shadow-outline)), var(--base-shadow-elevation-3);
+  --shadow-elevation-4: var(--axo-shadow-no-outline, var(--base-shadow-outline)), var(--base-shadow-elevation-4);
+
+  /* box-shadow: inset */
+  --inset-shadow-*: initial; /* reset defaults */
+  --inset-shadow-on-color:
+    inset 0 0.5px 1px 0 --alpha(#000 / 12%);
+
+  /* filter: drop-shadow() */
+  --drop-shadow-*: initial; /* reset defaults */
+  /* Note: Use 'drop-shadow-no-outline' to remove the outline/highlight shadows */
+  --drop-shadow-elevation-0: var(--axo-drop-shadow-no-outline, var(--base-shadow-outline)), var(--shadow-elevation-0);
+  --drop-shadow-elevation-1: var(--axo-drop-shadow-no-outline, var(--base-shadow-outline)), var(--shadow-elevation-1);
+  --drop-shadow-elevation-2: var(--axo-drop-shadow-no-outline, var(--base-shadow-outline)), var(--shadow-elevation-2);
+  --drop-shadow-elevation-3: var(--axo-drop-shadow-no-outline, var(--base-shadow-outline)), var(--shadow-elevation-3);
+  --drop-shadow-elevation-4: var(--axo-drop-shadow-no-outline, var(--base-shadow-outline)), var(--shadow-elevation-4);
+}
+
+/**
+ * Utils
+ * ----------------------------------------------------------------------------
+ */
+
+@property --axo-shadow-no-outline {
+  syntax: '*';
+  inherits: false;
+}
+@property --axo-drop-shadow-no-outline {
+  syntax: '*';
+  inherits: false;
+}
+
+@utility shadow-no-outline {
+  --axo-shadow-no-outline: 0 0 #0000; /* invisible shadow */
+}
+
+@utility drop-shadow-no-outline {
+  --axo-drop-shadow-outline: 0 0 #0000; /* invisible shadow */
+}

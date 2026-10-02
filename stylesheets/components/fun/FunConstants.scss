@@ -3,7 +3,8 @@
 
 @use '../../variables';
 
-$Fun__BgColor: light-dark(variables.$color-white, variables.$color-gray-75);
+$Fun__BgColor: var(--axo-color-material-dialog);
+$Fun__BgFilter: blur(12px);
 
 $Fun__DialogHeight: 524px;
 $Fun__DialogWidth: 352px;

@@ -1,20 +1,23 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
-import type { WritableDB } from '../../../sql/Interface.std.js';
-import { setupTests } from '../../../sql/Server.node.js';
+import { cwd } from 'node:process';
+
+import type { WritableDB } from '../../../sql/Interface.std.ts';
+import { setupTests } from '../../../sql/Server.node.ts';
 import type { AppendPinnedMessageResult } from '../../../sql/server/pinnedMessages.std.ts';
 import {
   appendPinnedMessage,
   deletePinnedMessageByMessageId,
   getNextExpiringPinnedMessageAcrossConversations,
   deleteAllExpiredPinnedMessagesBefore,
-} from '../../../sql/server/pinnedMessages.std.js';
-import { createDB, insertData } from '../helpers.node.js';
+} from '../../../sql/server/pinnedMessages.std.ts';
+import { createDB, insertData } from '../helpers.node.ts';
 import type {
   PinnedMessage,
   PinnedMessageParams,
-} from '../../../types/PinnedMessage.std.js';
+} from '../../../types/PinnedMessage.std.ts';
+import { TimestampMs } from '@signalapp/types';
 
 function setupData(db: WritableDB) {
   insertData(db, 'conversations', [{ id: 'c1' }, { id: 'c2' }]);
@@ -39,8 +42,8 @@ function getParams(
   return {
     messageId,
     conversationId,
-    pinnedAt,
-    expiresAt,
+    pinnedAt: TimestampMs.fromNumber(pinnedAt),
+    expiresAt: expiresAt != null ? TimestampMs.fromNumber(expiresAt) : null,
   };
 }
 
@@ -49,7 +52,7 @@ describe('sql/server/pinnedMessages', () => {
 
   beforeEach(() => {
     db = createDB();
-    setupTests(db);
+    setupTests(db, { userDataPath: cwd() });
     setupData(db);
   });
 
@@ -131,7 +134,7 @@ describe('sql/server/pinnedMessages', () => {
       const pin1 = getParams('c1', 'c1-m1', 1);
       const pin2 = getParams('c1', 'c1-m2', 2);
       const pin3 = getParams('c1', 'c1-m3', 3);
-      const updated = { ...pin3, pinnedAt: 4 };
+      const updated = { ...pin3, pinnedAt: TimestampMs.fromNumber(4) };
 
       const row1 = expectInserted(appendPinnedMessage(db, 3, pin1));
       const row2 = expectInserted(appendPinnedMessage(db, 3, pin2));

@@ -53,13 +53,19 @@
   &__container {
     flex-grow: 1;
     overflow: hidden;
-    outline: none;
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
+    }
   }
 
   &__story {
     max-height: 100%;
-    outline: none;
     width: auto;
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
+    }
 
     &__image {
       object-fit: contain;
@@ -119,7 +125,6 @@
     &__playback-bar {
       display: flex;
       justify-content: space-between;
-      user-select: none;
 
       &__container {
         align-items: center;
@@ -188,10 +193,9 @@
     & {
       color: variables.$color-gray-05;
     }
-    @include mixins.keyboard-mode {
-      &:focus {
-        color: variables.$color-ultramarine;
-      }
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
 
     &__arrow {
@@ -237,74 +241,78 @@
     width: 24px;
 
     &::after {
+      content: '';
+      display: block;
+      height: 20px;
+      width: 20px;
       @include mixins.color-svg(
         '../images/icons/v3/more/more.svg',
         variables.$color-white
       );
-      & {
-        content: '';
-        height: 20px;
-        width: 20px;
-      }
+    }
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          background-color: variables.$color-black;
-        }
-      }
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__mute {
     @include mixins.button-reset;
     & {
-      height: 20px;
       margin-block: 0;
       margin-inline: 24px;
-      width: 20px;
     }
-    @include mixins.color-svg(
-      '../images/icons/v3/speaker/speaker.svg',
-      variables.$color-white
-    );
-    @include mixins.keyboard-mode {
-      &:focus {
-        background-color: variables.$color-white-alpha-80;
-      }
+
+    &::before {
+      content: '';
+      display: block;
+      height: 20px;
+      width: 20px;
+
+      @include mixins.color-svg(
+        '../images/icons/v3/speaker/speaker.svg',
+        variables.$color-white
+      );
+    }
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__pause {
     @include mixins.button-reset;
-    & {
+    &::before {
+      content: '';
+      display: block;
       height: 20px;
       width: 20px;
+      @include mixins.color-svg(
+        '../images/icons/v3/pause/pause.svg',
+        variables.$color-white
+      );
     }
-    @include mixins.color-svg(
-      '../images/icons/v3/pause/pause.svg',
-      variables.$color-white
-    );
-    @include mixins.keyboard-mode {
-      &:focus {
-        background-color: variables.$color-white-alpha-80;
-      }
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__play {
     @include mixins.button-reset;
-    & {
+    &::before {
+      content: '';
+      display: block;
       height: 20px;
       width: 20px;
+      @include mixins.color-svg(
+        '../images/icons/v3/play/play-fill.svg',
+        variables.$color-white
+      );
     }
-    @include mixins.color-svg(
-      '../images/icons/v3/play/play-fill.svg',
-      variables.$color-white
-    );
-    @include mixins.keyboard-mode {
-      &:focus {
-        background-color: variables.$color-white-alpha-80;
-      }
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
@@ -320,10 +328,9 @@
       '../images/icons/v3/speaker/speaker-slash.svg',
       variables.$color-white
     );
-    @include mixins.keyboard-mode {
-      &:focus {
-        background-color: variables.$color-white-alpha-80;
-      }
+
+    &:focus-visible {
+      background-color: variables.$color-white-alpha-80;
     }
   }
 
@@ -339,10 +346,9 @@
       '../images/icons/v3/speaker/speaker-x.svg',
       variables.$color-white
     );
-    @include mixins.keyboard-mode {
-      &:focus {
-        background-color: variables.$color-white-alpha-80;
-      }
+
+    &:focus-visible {
+      background-color: variables.$color-white-alpha-80;
     }
   }
 
@@ -377,6 +383,10 @@
       opacity: 0;
       width: 28px;
       transition: opacity 200ms ease-in-out;
+    }
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
 
     &--left {

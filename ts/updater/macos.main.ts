@@ -2,14 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { pathToFileURL } from 'node:url';
-import { autoUpdater } from 'electron';
+import { app, autoUpdater, shell } from 'electron';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { Updater, createTempDir, deleteTempDir } from './common.main.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import * as Errors from '../types/errors.std.js';
-import { DialogType } from '../types/Dialogs.std.js';
+import { Updater, createTempDir, deleteTempDir } from './common.main.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { isProduction } from '../util/version.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { DialogType } from '../types/Dialogs.std.ts';
+
+import type { CheckType } from './common.main.ts';
+
+const APP_ID = '1230208093';
 
 export class MacOSUpdater extends Updater {
   protected async deletePreviousInstallers(): Promise<void> {
@@ -17,7 +22,9 @@ export class MacOSUpdater extends Updater {
   }
 
   protected async installUpdate(
-    updateFilePath: string
+    updateFilePath: string,
+    _isSilent: boolean,
+    checkType: CheckType
   ): Promise<() => Promise<void>> {
     const { logger } = this;
 
@@ -29,6 +36,7 @@ export class MacOSUpdater extends Updater {
       const message: string = error.message || '';
       this.markCannotUpdate(
         error,
+        checkType,
         message.includes(readOnly)
           ? DialogType.MacOS_Read_Only
           : DialogType.Cannot_Update
@@ -45,6 +53,43 @@ export class MacOSUpdater extends Updater {
       this.markRestarting();
       autoUpdater.quitAndInstall();
     };
+  }
+
+  protected handleUpdateFromThirdParty(version: string): boolean {
+    if (!process.mas) {
+      return false;
+    }
+
+    const { logger } = this;
+
+    this.setUpdateListener(async () => {
+      logger.info('handleUpdateFromThirdParty: clicked');
+
+      if (isProduction(app.getVersion())) {
+        // App Store
+        await shell.openExternal(
+          `itms-apps://itunes.apple.com/app/apple-store/${APP_ID}`
+        );
+      } else {
+        // Test Flight
+        await shell.openExternal(
+          `itms-beta://beta.itunes.apple.com/v1/app/${APP_ID}`
+        );
+      }
+    });
+
+    const mainWindow = this.getMainWindow();
+    if (!mainWindow) {
+      logger.warn(
+        'handleUpdateFromThirdParty: no mainWindow, cannot show update dialog'
+      );
+      return true;
+    }
+
+    logger.info(`handleUpdateFromThirdParty: offering update to ${version}`);
+    mainWindow.webContents.send('show-update-dialog', DialogType.MASUpdate);
+
+    return true;
   }
 
   async #handToAutoUpdate(filePath: string): Promise<void> {

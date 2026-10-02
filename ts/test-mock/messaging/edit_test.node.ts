@@ -1,8 +1,6 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-// `window` use below is actually executed in the browser.
-// eslint-disable-next-line local-rules/file-suffix
+import type { PrimaryDevice } from '@signalapp/mock-server';
 import { Proto, EMPTY_DATA_MESSAGE } from '@signalapp/mock-server';
 import { Aci } from '@signalapp/libsignal-client';
 import { assert } from 'chai';
@@ -10,22 +8,23 @@ import createDebug from 'debug';
 import type { Page } from 'playwright';
 import type { RequireExactlyOne } from 'type-fest';
 
-import type { App } from '../playwright.node.js';
-import * as durations from '../../util/durations/index.std.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import type { App } from '../playwright.node.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 import {
   RECEIPT_BATCHER_WAIT_MS,
   ReceiptType,
-} from '../../types/Receipt.std.js';
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import { drop } from '../../util/drop.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { toNumber } from '../../util/toNumber.std.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-import { IMAGE_GIF } from '../../types/MIME.std.js';
-import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.js';
+} from '../../types/Receipt.std.ts';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { toNumber } from '../../util/toNumber.std.ts';
+import { IMAGE_GIF } from '../../types/MIME.std.ts';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { sleep } from '../../util/sleep.std.js';
+import { sleep } from '../../util/sleep.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { expect } from 'playwright/test';
 
 export const debug = createDebug('mock:test:edit');
 
@@ -171,7 +170,7 @@ describe('editing', function (this: Mocha.Suite) {
     await bootstrap.teardown();
   });
 
-  describe('online', function (this: Mocha.Suite) {
+  describe('online', () => {
     beforeEach(async () => {
       app = await bootstrap.link();
     });
@@ -203,7 +202,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window
@@ -250,7 +249,7 @@ describe('editing', function (this: Mocha.Suite) {
 
       const window = await app.getWindow();
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       const initialMessageBody = 'hey yhere';
       const originalMessage = createMessage(initialMessageBody);
@@ -274,7 +273,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window
@@ -341,7 +340,7 @@ describe('editing', function (this: Mocha.Suite) {
 
       const window = await app.getWindow();
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       debug('incoming message');
       await friend.sendText(desktop, 'hello', {
@@ -354,7 +353,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for message');
       await window.locator('.module-message__text >> "hello"').waitFor();
@@ -424,9 +423,10 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-message__metadata__edited')
         .click();
 
-      const history = await window.locator(
-        '.EditHistoryMessagesModal .module-message'
-      );
+      const history = window
+        .getByRole('dialog', { name: 'Edit History' })
+        .locator('.module-message');
+
       assert.strictEqual(await history.count(), 3);
 
       assert.isTrue(await history.locator('"edit message 1"').isVisible());
@@ -496,7 +496,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v5"').waitFor();
@@ -542,7 +542,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v2"').waitFor();
@@ -558,18 +558,20 @@ describe('editing', function (this: Mocha.Suite) {
       ): Promise<MessageAttributesType> {
         await sleep(RECEIPT_BATCHER_WAIT_MS + 20);
         const messages = await page.evaluate(
+          // FIXME
+          // oxlint-disable-next-line no-undef
           timestamp => window.SignalCI?.getMessagesBySentAt(timestamp),
           originalMessageTimestamp
         );
         strictAssert(messages, 'messages does not exist');
-        strictAssert(messages.length === 1, 'message does not exist');
+        strictAssert(messages[0], 'message does not exist');
 
         return messages[0];
       }
 
       const { contacts, desktop } = bootstrap;
 
-      const [friend] = contacts;
+      const [friend] = contacts as [PrimaryDevice];
 
       const page = await app.getWindow();
 
@@ -584,7 +586,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await page.locator('.module-conversation-hero').waitFor();
+      await page.getByTestId('conversation-hero').waitFor();
 
       const { dataMessage: profileKeyMsg } = await friend.waitForMessage();
       assert(profileKeyMsg.profileKey != null, 'Profile key message');
@@ -616,6 +618,8 @@ describe('editing', function (this: Mocha.Suite) {
 
       debug("getting friend's conversationId");
       const conversationId = await page.evaluate(
+        // FIXME
+        // oxlint-disable-next-line no-undef
         serviceId => window.SignalCI?.getConversationId(serviceId),
         friend.device.aci
       );
@@ -660,7 +664,7 @@ describe('editing', function (this: Mocha.Suite) {
           'sendStateByConversationId'
         );
         assert.strictEqual(
-          message.sendStateByConversationId[conversationId].status,
+          message.sendStateByConversationId[conversationId]?.status,
           SendStatus.Delivered,
           'send state is delivered for main message'
         );
@@ -673,6 +677,13 @@ describe('editing', function (this: Mocha.Suite) {
 
       debug('sending edit message v2 desktop -> friend');
       await sendEditedMessage(page, originalMessageTimestamp, '2', '1');
+
+      debug("waiting for message on friend's device (original)");
+      const { editMessage: editMessageV2 } = await friend.waitForEditMessage();
+      assert.strictEqual(editMessageV2.dataMessage?.body, editMessageV2Text);
+      debug('v2 message', {
+        timestamp: toNumber(editMessageV2.dataMessage?.timestamp),
+      });
 
       {
         const readReceiptTimestamp = bootstrap.getTimestamp();
@@ -700,29 +711,22 @@ describe('editing', function (this: Mocha.Suite) {
       }
 
       debug("testing message's send state (current(v2) and original (v1))");
-      {
+      await expect(async () => {
         const message = await getMessageFromApp(originalMessageTimestamp);
         strictAssert(message.editHistory, 'edit history exists');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // oxlint-disable-next-line typescript/no-unused-vars
         const [_v2, v1] = message.editHistory;
         assert.strictEqual(
-          message.sendStateByConversationId?.[conversationId].status,
+          message.sendStateByConversationId?.[conversationId]?.status,
           SendStatus.Sent,
           'send state is reverted back to sent for main message'
         );
         assert.strictEqual(
-          v1.sendStateByConversationId?.[conversationId].status,
+          v1?.sendStateByConversationId?.[conversationId]?.status,
           SendStatus.Read,
           'original message is marked read'
         );
-      }
-
-      debug("waiting for message on friend's device (original)");
-      const { editMessage: editMessageV2 } = await friend.waitForEditMessage();
-      assert.strictEqual(editMessageV2.dataMessage?.body, editMessageV2Text);
-      debug('v2 message', {
-        timestamp: toNumber(editMessageV2.dataMessage?.timestamp),
-      });
+      }).toPass();
 
       // Sending a v3 edited message targetting v2
       // v3 will be read after we receive v4
@@ -797,8 +801,8 @@ describe('editing', function (this: Mocha.Suite) {
       }
 
       debug("testing v4's send state");
-      {
-        debug('getting edited message from app (v4)');
+      // We allow retries here to wait for the read sync to be processed
+      await expect(async () => {
         const message = await getMessageFromApp(originalMessageTimestamp);
 
         strictAssert(
@@ -806,7 +810,7 @@ describe('editing', function (this: Mocha.Suite) {
           'sendStateByConversationId'
         );
         assert.strictEqual(
-          message.sendStateByConversationId[conversationId].status,
+          message.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'original message send state is sent (v4)'
         );
@@ -814,30 +818,30 @@ describe('editing', function (this: Mocha.Suite) {
         strictAssert(message.editHistory, 'edit history exists');
         const [v4, v3, v2, v1] = message.editHistory;
 
-        strictAssert(v1.sendStateByConversationId, 'v1 has send state');
+        strictAssert(v1?.sendStateByConversationId, 'v1 has send state');
         assert.strictEqual(
-          v1.sendStateByConversationId[conversationId].status,
+          v1.sendStateByConversationId[conversationId]?.status,
           SendStatus.Read,
           'send state for first message is read'
         );
 
-        strictAssert(v2.sendStateByConversationId, 'v2 has send state');
+        strictAssert(v2?.sendStateByConversationId, 'v2 has send state');
         assert.strictEqual(
-          v2.sendStateByConversationId[conversationId].status,
+          v2.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'send state for v2 message is sent'
         );
 
-        strictAssert(v3.sendStateByConversationId, 'v3 has send state');
+        strictAssert(v3?.sendStateByConversationId, 'v3 has send state');
         assert.strictEqual(
-          v3.sendStateByConversationId[conversationId].status,
+          v3.sendStateByConversationId[conversationId]?.status,
           SendStatus.Read,
           'send state for v3 message is read'
         );
 
-        strictAssert(v4.sendStateByConversationId, 'v4 has send state');
+        strictAssert(v4?.sendStateByConversationId, 'v4 has send state');
         assert.strictEqual(
-          v4.sendStateByConversationId[conversationId].status,
+          v4.sendStateByConversationId[conversationId]?.status,
           SendStatus.Sent,
           'send state for v4 message is sent'
         );
@@ -847,11 +851,11 @@ describe('editing', function (this: Mocha.Suite) {
           message.body,
           'body is same for v4 and main message'
         );
-      }
+      }).toPass();
     });
   });
 
-  describe('offline', function (this: Mocha.Suite) {
+  describe('offline', () => {
     beforeEach(async () => {
       await bootstrap.linkAndClose();
     });
@@ -894,7 +898,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v2"').waitFor();
@@ -966,7 +970,7 @@ describe('editing', function (this: Mocha.Suite) {
         .locator('.module-conversation-list__item--contact-or-conversation')
         .first()
         .click();
-      await window.locator('.module-conversation-hero').waitFor();
+      await window.getByTestId('conversation-hero').waitFor();
 
       debug('checking for latest message');
       await window.locator('.module-message__text >> "v5"').waitFor();

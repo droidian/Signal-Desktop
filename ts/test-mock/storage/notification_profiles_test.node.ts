@@ -5,16 +5,16 @@ import assert from 'node:assert';
 import { Proto, StorageState } from '@signalapp/mock-server';
 import { expect } from 'playwright/test';
 
-import * as Bytes from '../../Bytes.std.js';
-import * as durations from '../../util/durations/index.std.js';
-import { dropNull } from '../../util/dropNull.std.js';
-import { constantTimeEqual } from '../../Crypto.node.js';
-import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.js';
-import { Bootstrap, debug } from './fixtures.node.js';
-import { typeIntoInput } from '../helpers.node.js';
+import * as Bytes from '../../Bytes.std.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { dropNull } from '../../util/dropNull.std.ts';
+import { constantTimeEqual } from '../../Crypto.node.ts';
+import { generateNotificationProfileId } from '../../types/NotificationProfile-node.node.ts';
+import { Bootstrap, debug } from './fixtures.node.ts';
+import { typeIntoInput } from '../helpers.node.ts';
 
-import type { App } from './fixtures.node.js';
-import { DayOfWeek } from '../../types/NotificationProfile.std.js';
+import type { App } from './fixtures.node.ts';
+import { DayOfWeek } from '../../types/NotificationProfile.std.ts';
 
 const IdentifierType = Proto.ManifestRecord.Identifier.Type;
 
@@ -71,7 +71,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
 
     const profileName = 'NewProfile';
     debug('Starting Notification Profiles onboarding');
-    await window.getByRole('button', { name: 'Set up' }).click();
+    await window.getByRole('button', { name: 'Notification profiles' }).click();
 
     debug('Dismiss onboarding dialog');
     await window.getByRole('button', { name: 'Continue' }).click();
@@ -104,7 +104,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
       after: secondState,
     });
 
-    let profileId: Uint8Array | undefined;
+    let profileId: Uint8Array<ArrayBuffer> | undefined;
     const profilewasAdded = thirdState.hasRecord(record => {
       if (record.record.notificationProfile == null) {
         return false;
@@ -222,7 +222,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
     await window.getByRole('button', { name: 'Notifications' }).click();
 
     debug('Open Notification Profiles list page');
-    await window.getByRole('button', { name: 'Set up' }).click();
+    await window.getByRole('button', { name: 'Notification profiles' }).click();
 
     debug('Dismiss onboarding dialog');
     await window.getByRole('button', { name: 'Continue' }).click();
@@ -264,6 +264,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
       deletedAtTimestampMs: null,
     };
 
+    let uploadedState: StorageState;
     {
       let newState = firstState.addRecord({
         type: IdentifierType.NOTIFICATION_PROFILE,
@@ -303,14 +304,14 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
         },
       });
 
-      await phone.setStorageState(newState);
+      uploadedState = await phone.setStorageState(newState);
     }
 
     debug('Waiting for desktop to process storage service updates');
     await phone.sendFetchStorage({
       timestamp: bootstrap.getTimestamp(),
     });
-    await app.waitForManifestVersion(firstState.version + 1n);
+    await app.waitForManifestVersion(uploadedState.version);
 
     debug('Now we should be on the Notification Profiles list page');
     await expect(
@@ -484,7 +485,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
         notificationProfileSyncDisabled: false,
       });
 
-      await phone.setStorageState(newState);
+      uploadedState = await phone.setStorageState(newState);
     }
 
     // now desktop will see the off->on flip for sync, and reconcile profiles:
@@ -496,7 +497,7 @@ describe('storage service/notification profiles', function (this: Mocha.Suite) {
     await phone.sendFetchStorage({
       timestamp: bootstrap.getTimestamp(),
     });
-    await app.waitForManifestVersion(secondState.version + 1n);
+    await app.waitForManifestVersion(uploadedState.version);
 
     debug('Check what is on the list page now');
     await expect(

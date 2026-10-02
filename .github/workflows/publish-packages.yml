@@ -1,0 +1,44 @@
+# Copyright 2026 Signal Messenger, LLC
+# SPDX-License-Identifier: AGPL-3.0-only
+
+name: Publish Packages
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  publish:
+    if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      id-token: write # Required for OIDC
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Publish packages
+        id: changesets
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          commit-message: Publish Packages
+          pr-title: Publish Packages
+          version-script: pnpm changeset:version
+          publish-script: pnpm changeset:publish
+          create-github-releases: false
+          push-git-tags: true
+          push-with-git-cli: false
+          github-token: ${{ secrets.AUTOMATED_GITHUB_PAT }}

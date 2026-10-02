@@ -6,13 +6,13 @@ import { BackupLevel } from '@signalapp/libsignal-client/zkgroup.js';
 import lodash from 'lodash';
 import { assert } from 'chai';
 
-import type { ConversationModel } from '../../models/conversations.preload.js';
-import * as Bytes from '../../Bytes.std.js';
-import { DataWriter } from '../../sql/Client.preload.js';
-import { type AciString, generateAci } from '../../types/ServiceId.std.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
-import { setupBasics, asymmetricRoundtripHarness } from './helpers.preload.js';
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import * as Bytes from '../../Bytes.std.ts';
+import { DataWriter } from '../../sql/Client.preload.ts';
+import type { AciString } from '../../types/ServiceId.std.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
+import { setupBasics, asymmetricRoundtripHarness } from './helpers.preload.ts';
 import {
   AUDIO_MP3,
   IMAGE_JPEG,
@@ -20,7 +20,7 @@ import {
   IMAGE_WEBP,
   LONG_MESSAGE,
   VIDEO_MP4,
-} from '../../types/MIME.std.js';
+} from '../../types/MIME.std.ts';
 import type {
   MessageAttributesType,
   QuotedMessageType,
@@ -28,19 +28,21 @@ import type {
 import {
   hasRequiredInformationForRemoteBackup,
   isVoiceMessage,
-} from '../../util/Attachment.std.js';
-import type { AttachmentType } from '../../types/Attachment.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { SignalService } from '../../protobuf/index.std.js';
-import { getRandomBytes } from '../../Crypto.node.js';
-import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.js';
+} from '../../util/Attachment.std.ts';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { SignalService } from '../../protobuf/index.std.ts';
+import { getRandomBytes } from '../../Crypto.node.ts';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders.preload.ts';
 import {
   generateAttachmentKeys,
   generateKeys,
   getPlaintextHashForInMemoryAttachment,
-} from '../../AttachmentCrypto.node.js';
-import { KIBIBYTE } from '../../types/AttachmentSize.std.js';
-import { itemStorage } from '../../textsecure/Storage.preload.js';
+} from '../../AttachmentCrypto.node.ts';
+import { KIBIBYTE } from '../../types/AttachmentSize.std.ts';
+import { itemStorage } from '../../textsecure/Storage.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { omit } = lodash;
 
@@ -393,7 +395,7 @@ describe('backup/attachments', () => {
         key: attachment1.key,
         size: attachment1.size,
       };
-
+      let roundtrippedAttachment: AttachmentType | undefined;
       await asymmetricRoundtripHarness(
         [
           composeMessage(1, {
@@ -408,19 +410,31 @@ describe('backup/attachments', () => {
             attachments: [expectedRoundtrippedFields(attachment1)],
           }),
           composeMessage(2, {
-            attachments: [
-              expectedRoundtrippedFields({
-                ...attachment2,
-                cdnKey: attachment1.cdnKey,
-                cdnNumber: attachment1.cdnNumber,
-                uploadTimestamp: attachment1.uploadTimestamp,
-                incrementalMac: attachment1.incrementalMac,
-                chunkSize: attachment1.chunkSize,
-              }),
-            ],
+            attachments: [expectedRoundtrippedFields(attachment2)],
           }),
         ],
-        { backupLevel: BackupLevel.Paid }
+        {
+          backupLevel: BackupLevel.Paid,
+          comparator: (before, after) => {
+            assert.deepEqual(
+              omit(before, 'attachments'),
+              omit(after, 'attachments')
+            );
+            if (!roundtrippedAttachment) {
+              roundtrippedAttachment = after?.attachments?.[0];
+            } else {
+              assert.equal(
+                roundtrippedAttachment.cdnKey,
+                // oxlint-disable-next-line typescript/no-non-null-assertion
+                after.attachments?.[0]!.cdnKey
+              );
+            }
+          },
+        }
+      );
+      strictAssert(
+        roundtrippedAttachment != null,
+        'attachment was roundtripped'
       );
     });
     it('roundtrips voice message attachments', async () => {
@@ -598,7 +612,7 @@ describe('backup/attachments', () => {
   describe('quotes', () => {
     it('BackupLevel.Free, roundtrips quote attachments', async () => {
       const attachment = composeAttachment(1, { clientUuid: undefined });
-      const authorAci = generateAci();
+      const authorAci = CONTACT_A;
       const quotedMessage: QuotedMessageType = {
         authorAci,
         isViewOnce: false,
@@ -636,7 +650,7 @@ describe('backup/attachments', () => {
     it('BackupLevel.Paid, roundtrips quote attachments', async () => {
       const attachment = composeAttachment(1, { clientUuid: undefined });
       strictAssert(attachment.digest, 'digest exists');
-      const authorAci = generateAci();
+      const authorAci = CONTACT_A;
       const quotedMessage: QuotedMessageType = {
         authorAci,
         isViewOnce: false,
@@ -812,12 +826,13 @@ describe('backup/attachments', () => {
 
     describe('when copied over from sticker pack (i.e. missing encryption info)', () => {
       // TODO: DESKTOP-8896
+      // oxlint-disable-next-line signal-desktop/no-disabled-tests
       it.skip('BackupLevel.Paid, generates new encryption info', async () => {
         await asymmetricRoundtripHarness(
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,
@@ -834,7 +849,7 @@ describe('backup/attachments', () => {
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,
@@ -881,7 +896,7 @@ describe('backup/attachments', () => {
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,
@@ -898,7 +913,7 @@ describe('backup/attachments', () => {
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,
@@ -926,7 +941,7 @@ describe('backup/attachments', () => {
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,
@@ -937,7 +952,7 @@ describe('backup/attachments', () => {
           [
             composeMessage(1, {
               sticker: {
-                emoji: '🐒',
+                emoji: Emoji.MONKEY,
                 packId,
                 packKey,
                 stickerId: 0,

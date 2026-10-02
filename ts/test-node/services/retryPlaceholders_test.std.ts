@@ -4,13 +4,14 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { generateAci } from '../../types/ServiceId.std.js';
-import type { RetryItemType } from '../../services/retryPlaceholders.std.js';
+import type { RetryItemType } from '../../services/retryPlaceholders.std.ts';
 import {
   getDeltaIntoPast,
   RetryPlaceholders,
   STORAGE_KEY,
-} from '../../services/retryPlaceholders.std.js';
+} from '../../services/retryPlaceholders.std.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
+import { ReceivedTimestampMs, SentTimestampMs } from '@signalapp/types';
 
 describe('RetryPlaceholders', () => {
   const NOW = 1_000_000;
@@ -40,8 +41,8 @@ describe('RetryPlaceholders', () => {
   function getDefaultItem(): RetryItemType {
     return {
       conversationId: 'conversation-id',
-      sentAt: NOW - 10,
-      receivedAt: NOW - 5,
+      sentAt: SentTimestampMs.fromNumber(NOW - 10),
+      receivedAt: ReceivedTimestampMs.fromNumber(NOW - 5),
       receivedAtCounter: 4,
       senderAci: generateAci(),
     };
@@ -113,11 +114,11 @@ describe('RetryPlaceholders', () => {
     it('returns soonest expiration given a list, and after add', async () => {
       const older = {
         ...getDefaultItem(),
-        receivedAt: NOW,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW),
       };
       const newer = {
         ...getDefaultItem(),
-        receivedAt: NOW + 10,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 10),
       };
       const items: Array<RetryItemType> = [older, newer];
       await storage.put(STORAGE_KEY, items);
@@ -129,7 +130,7 @@ describe('RetryPlaceholders', () => {
 
       const oldest = {
         ...getDefaultItem(),
-        receivedAt: NOW - 5,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW - 5),
       };
 
       await placeholders.add(oldest);
@@ -142,11 +143,11 @@ describe('RetryPlaceholders', () => {
     it('does nothing if no item expired', async () => {
       const older = {
         ...getDefaultItem(),
-        receivedAt: NOW + 10,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 10),
       };
       const newer = {
         ...getDefaultItem(),
-        receivedAt: NOW + 15,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 15),
       };
       const items: Array<RetryItemType> = [older, newer];
       await storage.put(STORAGE_KEY, items);
@@ -160,11 +161,11 @@ describe('RetryPlaceholders', () => {
     it('removes just one if expired', async () => {
       const older = {
         ...getDefaultItem(),
-        receivedAt: getDeltaIntoPast() - 1000,
+        receivedAt: ReceivedTimestampMs.fromNumber(getDeltaIntoPast() - 1000),
       };
       const newer = {
         ...getDefaultItem(),
-        receivedAt: NOW + 15,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 15),
       };
       const items: Array<RetryItemType> = [older, newer];
       await storage.put(STORAGE_KEY, items);
@@ -179,11 +180,11 @@ describe('RetryPlaceholders', () => {
     it('removes all if expired', async () => {
       const older = {
         ...getDefaultItem(),
-        receivedAt: getDeltaIntoPast() - 1000,
+        receivedAt: ReceivedTimestampMs.fromNumber(getDeltaIntoPast() - 1000),
       };
       const newer = {
         ...getDefaultItem(),
-        receivedAt: getDeltaIntoPast() - 900,
+        receivedAt: ReceivedTimestampMs.fromNumber(getDeltaIntoPast() - 900),
       };
       const items: Array<RetryItemType> = [older, newer];
       await storage.put(STORAGE_KEY, items);
@@ -225,17 +226,17 @@ describe('RetryPlaceholders', () => {
       const convo1a = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-1',
-        receivedAt: NOW - 5,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW - 5),
       };
       const convo1b = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-1',
-        receivedAt: NOW - 4,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW - 4),
       };
       const convo2a = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-2',
-        receivedAt: NOW + 15,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 15),
       };
       const items: Array<RetryItemType> = [convo1a, convo1b, convo2a];
       await storage.put(STORAGE_KEY, items);
@@ -265,7 +266,7 @@ describe('RetryPlaceholders', () => {
       const convo2b = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-2',
-        receivedAt: NOW + 16,
+        receivedAt: ReceivedTimestampMs.fromNumber(NOW + 16),
       };
 
       await placeholders.add(convo2b);
@@ -300,17 +301,17 @@ describe('RetryPlaceholders', () => {
 
   describe('#findByMessageAndRemove', () => {
     it('does nothing if no item matching message found', async () => {
-      const sentAt = NOW - 20;
+      const sentAt = SentTimestampMs.fromNumber(NOW - 20);
 
       const older = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-1',
-        sentAt: NOW - 10,
+        sentAt: SentTimestampMs.fromNumber(NOW - 10),
       };
       const newer = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-1',
-        sentAt: NOW - 11,
+        sentAt: SentTimestampMs.fromNumber(NOW - 11),
       };
       const items: Array<RetryItemType> = [older, newer];
       await storage.put(STORAGE_KEY, items);
@@ -324,12 +325,12 @@ describe('RetryPlaceholders', () => {
       assert.strictEqual(2, placeholders.getCount());
     });
     it('removes the item matching message', async () => {
-      const sentAt = NOW - 20;
+      const sentAt = SentTimestampMs.fromNumber(NOW - 20);
 
       const older = {
         ...getDefaultItem(),
         conversationId: 'conversation-id-1',
-        sentAt: NOW - 10,
+        sentAt: SentTimestampMs.fromNumber(NOW - 10),
       };
       const newer = {
         ...getDefaultItem(),

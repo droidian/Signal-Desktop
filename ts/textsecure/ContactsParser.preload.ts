@@ -1,25 +1,25 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { createLogger } from '../logging/log.std.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { DurationInSeconds } from '../util/durations/index.std.js';
-import { DelimitedStream } from '../util/DelimitedStream.node.js';
+import { createLogger } from '../logging/log.std.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { DurationInSeconds } from '../util/durations/index.std.ts';
+import { DelimitedStream } from '../util/DelimitedStream.node.ts';
 import {
   getAbsoluteAttachmentPath,
   writeNewAttachmentData,
-} from '../util/migrations.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import type { ContactAvatarType } from '../types/Avatar.std.js';
-import type { AttachmentType } from '../types/Attachment.std.js';
-import type { AciString } from '../types/ServiceId.std.js';
-import { computeHash } from '../Crypto.node.js';
-import { fromAciUuidBytesOrString } from '../util/ServiceId.node.js';
-import * as Bytes from '../Bytes.std.js';
-import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.node.js';
+} from '../util/migrations.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import type { ContactAvatarType } from '../types/Avatar.std.ts';
+import type { AttachmentType } from '../types/Attachment.std.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { computeHash } from '../Crypto.node.ts';
+import { fromAciUuidBytesOrString } from '../util/ServiceId.node.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { decryptAttachmentV2ToSink } from '../AttachmentCrypto.node.ts';
 
 import Avatar = Proto.ContactDetails.Avatar.Params;
-import { stringToMIMEType } from '../types/MIME.std.js';
+import { stringToMIMEType } from '../types/MIME.std.ts';
 
 const log = createLogger('ContactsParser');
 
@@ -81,14 +81,14 @@ export async function parseContactsV2(
 //   while we wait for more chunks to get to the expected avatar size.
 // Note: exported only for testing
 export class ParseContactsTransform extends DelimitedStream {
-  protected override getTrailerSize(frame: Buffer): number {
+  protected override getTrailerSize(frame: Buffer<ArrayBuffer>): number {
     const contact = Proto.ContactDetails.decode(frame);
     return contact.avatar?.length ?? 0;
   }
 
   protected override async pushFrame(
-    frame: Buffer,
-    avatarData: Buffer
+    frame: Buffer<ArrayBuffer>,
+    avatarData: Buffer<ArrayBuffer>
   ): Promise<void> {
     const contact = Proto.ContactDetails.decode(frame);
 
@@ -98,7 +98,7 @@ export class ParseContactsTransform extends DelimitedStream {
 
 async function prepareContact(
   { aci: rawAci, aciBinary, ...proto }: Proto.ContactDetails,
-  avatarData: Uint8Array
+  avatarData: Uint8Array<ArrayBuffer>
 ): Promise<ContactDetailsWithAvatar | undefined> {
   const expireTimer =
     proto.expireTimer != null

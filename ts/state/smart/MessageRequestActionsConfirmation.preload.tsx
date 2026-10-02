@@ -1,20 +1,20 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { getIntl } from '../selectors/user.std.js';
-import { getGlobalModalsState } from '../selectors/globalModals.std.js';
-import { getConversationSelector } from '../selectors/conversations.dom.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+import { getIntl } from '../selectors/user.std.ts';
+import { getGlobalModalsState } from '../selectors/globalModals.std.ts';
+import { getConversationSelector } from '../selectors/conversations.dom.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 import {
   MessageRequestActionsConfirmation,
   MessageRequestState,
-} from '../../components/conversation/MessageRequestActionsConfirmation.dom.js';
-import { useContactNameData } from '../../components/conversation/ContactName.dom.js';
-import { getAddedByForOurPendingInvitation } from '../../util/getAddedByForOurPendingInvitation.preload.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { useGlobalModalActions } from '../ducks/globalModals.preload.js';
+} from '../../components/conversation/MessageRequestActionsConfirmation.dom.tsx';
+import { useContactNameData } from '../../components/conversation/ContactName.dom.tsx';
+import { getAddedByForGroup } from '../../util/getAddedByForGroup.preload.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { useGlobalModalActions } from '../ducks/globalModals.preload.ts';
 
 export const SmartMessageRequestActionsConfirmation = memo(
   function SmartMessageRequestActionsConfirmation() {
@@ -31,7 +31,7 @@ export const SmartMessageRequestActionsConfirmation = memo(
     const conversation = getConversation(conversationId);
     const addedBy = useMemo(() => {
       if (conversation.type === 'group') {
-        return getAddedByForOurPendingInvitation(conversation);
+        return getAddedByForGroup(conversation);
       }
       return null;
     }, [conversation]);

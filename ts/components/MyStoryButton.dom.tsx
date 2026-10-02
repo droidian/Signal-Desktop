@@ -1,23 +1,23 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 import classNames from 'classnames';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import type { MyStoryType, StoryViewType } from '../types/Stories.std.js';
-import type { ShowToastAction } from '../state/ducks/toast.preload.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { HasStories, ResolvedSendStatus } from '../types/Stories.std.js';
-import { MessageTimestamp } from './conversation/MessageTimestamp.dom.js';
-import { StoriesAddStoryButton } from './StoriesAddStoryButton.dom.js';
-import { StoryImage } from './StoryImage.dom.js';
-import { getAvatarColor } from '../types/Colors.std.js';
-import { reduceStorySendStatus } from '../util/resolveStorySendStatus.std.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { MyStoryType, StoryViewType } from '../types/Stories.std.ts';
+import type { ShowToastAction } from '../state/ducks/toast.preload.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { HasStories, ResolvedSendStatus } from '../types/Stories.std.ts';
+import { MessageTimestamp } from './conversation/MessageTimestamp.dom.tsx';
+import { StoriesAddStoryButton } from './StoriesAddStoryButton.dom.tsx';
+import { StoryImage } from './StoryImage.dom.tsx';
+import { getAvatarColor } from '../types/Colors.std.ts';
+import { reduceStorySendStatus } from '../util/resolveStorySendStatus.std.ts';
 
 export type PropsType = {
   i18n: LocalizerType;
-  maxAttachmentSizeInKb: number;
+  maxAttachmentVideoSize: number;
   me: ConversationType;
   myStories: Array<MyStoryType>;
   onAddStory: () => unknown;
@@ -28,12 +28,13 @@ export type PropsType = {
 };
 
 function getNewestMyStory(story: MyStoryType): StoryViewType {
-  return story.stories[0];
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return story.stories[0]!;
 }
 
 export function MyStoryButton({
   i18n,
-  maxAttachmentSizeInKb,
+  maxAttachmentVideoSize,
   me,
   myStories,
   onAddStory,
@@ -41,11 +42,12 @@ export function MyStoryButton({
   onMediaPlaybackStart,
   queueStoryDownload,
   showToast,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const [active, setActive] = useState(false);
 
   const newestStory = myStories.length
-    ? getNewestMyStory(myStories[0])
+    ? // oxlint-disable-next-line typescript/no-non-null-assertion
+      getNewestMyStory(myStories[0]!)
     : undefined;
 
   const { avatarUrl, color, profileName, title } = me;
@@ -54,7 +56,7 @@ export function MyStoryButton({
     return (
       <StoriesAddStoryButton
         i18n={i18n}
-        maxAttachmentSizeInKb={maxAttachmentSizeInKb}
+        maxAttachmentVideoSize={maxAttachmentVideoSize}
         moduleClassName="StoryListItem StoryListItem--active-opactiy"
         onAddStory={onAddStory}
         showToast={showToast}
@@ -85,7 +87,8 @@ export function MyStoryButton({
   }
 
   const hasMultiple = myStories.length
-    ? myStories[0].stories.length > 1
+    ? // oxlint-disable-next-line typescript/no-non-null-assertion
+      myStories[0]!.stories.length > 1
     : false;
 
   const reducedSendStatus: ResolvedSendStatus = myStories.reduce(
@@ -104,7 +107,7 @@ export function MyStoryButton({
       <div className="MyStories__avatar-container">
         <StoriesAddStoryButton
           i18n={i18n}
-          maxAttachmentSizeInKb={maxAttachmentSizeInKb}
+          maxAttachmentVideoSize={maxAttachmentVideoSize}
           moduleClassName="StoryListItem--active-opacity"
           onAddStory={onAddStory}
           showToast={showToast}

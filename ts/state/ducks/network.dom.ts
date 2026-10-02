@@ -1,16 +1,20 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { SocketStatus } from '../../types/SocketStatus.std.ts';
+import { trigger } from '../../shims/events.dom.ts';
+import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import { noopAction } from './noop.std.ts';
+
 import type { ReadonlyDeep } from 'type-fest';
-import { SocketStatus } from '../../types/SocketStatus.std.js';
-import { trigger } from '../../shims/events.dom.js';
-import { assignWithNoUnnecessaryAllocation } from '../../util/assignWithNoUnnecessaryAllocation.std.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import type { NoopActionType } from './noop.std.ts';
 
 // State
 
 export type NetworkStateType = ReadonlyDeep<{
+  hasClockSkew: boolean;
   isOnline: boolean;
   isOutage: boolean;
   socketStatus: SocketStatus;
@@ -20,8 +24,8 @@ export type NetworkStateType = ReadonlyDeep<{
 // Actions
 
 const SET_NETWORK_STATUS = 'network/SET_NETWORK_STATUS';
-const RELINK_DEVICE = 'network/RELINK_DEVICE';
 const SET_CHALLENGE_STATUS = 'network/SET_CHALLENGE_STATUS';
+const SET_CLOCK_SKEW = 'network/SET_CLOCK_SKEW';
 const SET_OUTAGE = 'network/SET_OUTAGE';
 
 export type SetNetworkStatusPayloadType = ReadonlyDeep<{
@@ -45,6 +49,13 @@ type SetChallengeStatusActionType = ReadonlyDeep<{
   };
 }>;
 
+type SetClockSkewAction = ReadonlyDeep<{
+  type: 'network/SET_CLOCK_SKEW';
+  payload: {
+    hasClockSkew: boolean;
+  };
+}>;
+
 type SetOutageActionType = ReadonlyDeep<{
   type: 'network/SET_OUTAGE';
   payload: {
@@ -53,6 +64,7 @@ type SetOutageActionType = ReadonlyDeep<{
 }>;
 
 export type NetworkActionType = ReadonlyDeep<
+  | SetClockSkewAction
   | SetNetworkStatusAction
   | RelinkDeviceActionType
   | SetChallengeStatusActionType
@@ -70,12 +82,16 @@ function setNetworkStatus(
   };
 }
 
-function relinkDevice(): RelinkDeviceActionType {
+function relinkDevice(): NoopActionType {
   trigger('setupAsNewDevice');
 
-  return {
-    type: RELINK_DEVICE,
-  };
+  return noopAction('relinkDevice');
+}
+
+function reregister(): NoopActionType {
+  trigger('setupAsStandalone');
+
+  return noopAction('reregister');
 }
 
 function setChallengeStatus(
@@ -90,6 +106,13 @@ function setChallengeStatus(
   };
 }
 
+function setClockSkew(hasClockSkew: boolean): SetClockSkewAction {
+  return {
+    type: SET_CLOCK_SKEW,
+    payload: { hasClockSkew },
+  };
+}
+
 function setOutage(isOutage: boolean): SetOutageActionType {
   return {
     type: SET_OUTAGE,
@@ -100,7 +123,9 @@ function setOutage(isOutage: boolean): SetOutageActionType {
 export const actions = {
   setNetworkStatus,
   relinkDevice,
+  reregister,
   setChallengeStatus,
+  setClockSkew,
   setOutage,
 };
 
@@ -112,6 +137,7 @@ export const useNetworkActions = (): BoundActionCreatorsMapObject<
 
 export function getEmptyState(): NetworkStateType {
   return {
+    hasClockSkew: false,
     isOnline: true,
     isOutage: false,
     socketStatus: SocketStatus.OPEN,
@@ -138,6 +164,13 @@ export function reducer(
     return {
       ...state,
       challengeStatus: action.payload.challengeStatus,
+    };
+  }
+
+  if (action.type === SET_CLOCK_SKEW) {
+    return {
+      ...state,
+      hasClockSkew: action.payload.hasClockSkew,
     };
   }
 

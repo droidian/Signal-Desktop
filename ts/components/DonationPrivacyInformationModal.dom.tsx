@@ -1,12 +1,13 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { LocalizerType } from '../types/Util.std.js';
-import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.js';
-import { AxoDialog } from '../axo/AxoDialog.dom.js';
-import { tw } from '../axo/tw.dom.js';
-import { AxoSymbol } from '../axo/AxoSymbol.dom.js';
+import type { JSX } from 'react';
+
+import type { LocalizerType } from '../types/Util.std.ts';
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
+import { AxoDialog } from '../axo/AxoDialog.dom.tsx';
+import { tw } from '../axo/tw.dom.tsx';
+import { AxoSymbol } from '../axo/AxoSymbol.dom.tsx';
 
 export type DonationPrivacyInformationModalProps = {
   i18n: LocalizerType;
@@ -16,7 +17,7 @@ export type DonationPrivacyInformationModalProps = {
 export function DonationPrivacyInformationModal({
   i18n,
   onClose,
-}: DonationPrivacyInformationModalProps): React.JSX.Element {
+}: DonationPrivacyInformationModalProps): JSX.Element {
   const handleDonationFAQsClick = () => {
     openLinkInWebBrowser(
       'https://support.signal.org/hc/articles/360031949872-Donor-FAQs'
@@ -41,7 +42,7 @@ export function DonationPrivacyInformationModal({
           <AxoDialog.Title screenReaderOnly>
             {i18n('icu:PreferencesDonations__privacy-modal-title')}
           </AxoDialog.Title>
-          <AxoDialog.Close aria-label={i18n('icu:PinMessageDialog__Close')} />
+          <AxoDialog.Close />
         </AxoDialog.Header>
         <AxoDialog.Body>
           <img
@@ -86,12 +87,12 @@ export function DonationPrivacyInformationModal({
         <AxoDialog.Footer>
           <AxoDialog.Actions>
             <AxoDialog.Action
-              variant="secondary"
+              variant="strong-secondary"
               onClick={handleDonationFAQsClick}
             >
               {i18n('icu:PreferencesDonations__faqs')}
             </AxoDialog.Action>
-            <AxoDialog.Action variant="primary" onClick={onClose}>
+            <AxoDialog.Action variant="strong-primary" onClick={onClose}>
               {i18n('icu:PreferencesDonations__privacy-modal-ok')}
             </AxoDialog.Action>
           </AxoDialog.Actions>

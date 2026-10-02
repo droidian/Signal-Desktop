@@ -4,13 +4,13 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import type { StorageAccessType } from '../types/Storage.d.ts';
-import { toLogFormat } from '../types/errors.std.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
-import { createLogger } from '../logging/log.std.js';
-import { LongTimeout } from './timeout.std.js';
-import { drop } from './drop.std.js';
-import { strictAssert } from './assert.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from './BackOff.std.js';
+import { toLogFormat } from '../types/errors.std.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { LongTimeout } from './timeout.std.ts';
+import { drop } from './drop.std.ts';
+import { strictAssert } from './assert.std.ts';
+import { BackOff, EXTENDED_FIBONACCI_TIMEOUTS } from './BackOff.std.ts';
 
 const log = createLogger('CheckScheduler');
 
@@ -23,8 +23,8 @@ export type CheckSchedulerOptionsType = Readonly<{
 }>;
 
 export class CheckScheduler {
-  #options: CheckSchedulerOptionsType;
-  #log: ReturnType<typeof createLogger>;
+  readonly #options: CheckSchedulerOptionsType;
+  readonly #log: ReturnType<typeof createLogger>;
   #timer: LongTimeout | undefined;
   #isRunning = false;
 
@@ -83,7 +83,10 @@ export class CheckScheduler {
       // Gracefully rollout when polling initially
       now - this.#options.interval * Math.random()
     );
-    const targetTimestamp = lastCheckTimestamp + this.#options.interval;
+    // Schedule check out by the interval +-5% jitter
+    const targetTimestamp =
+      lastCheckTimestamp +
+      this.#options.interval * (1 + (Math.random() * 0.1 - 0.05));
     const delay = Math.max(0, targetTimestamp - now);
     if (this.#timer != null) {
       this.#timer.clear();
@@ -111,7 +114,9 @@ export class CheckScheduler {
   }
 
   async #safeCheck(
-    backOff = new BackOff(this.#options.backOffTimeouts ?? FIBONACCI_TIMEOUTS)
+    backOff = new BackOff(
+      this.#options.backOffTimeouts ?? EXTENDED_FIBONACCI_TIMEOUTS
+    )
   ): Promise<void> {
     try {
       const oldTimestamp = itemStorage.get(this.#options.storageKey);
@@ -126,7 +131,7 @@ export class CheckScheduler {
     } catch (error) {
       this.#log.error('check failed with error', toLogFormat(error));
       this.#timer = new LongTimeout(
-        () => drop(this.#safeCheck()),
+        () => drop(this.#safeCheck(backOff)),
         backOff.getAndIncrement()
       );
     }

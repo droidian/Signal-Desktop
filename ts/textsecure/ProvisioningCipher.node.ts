@@ -1,25 +1,24 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-
-/* eslint-disable max-classes-per-file */
+// oxlint-disable max-classes-per-file
 
 import { PublicKey, Aci, Pni } from '@signalapp/libsignal-client';
 import type { KeyPairType } from './Types.d.ts';
-import * as Bytes from '../Bytes.std.js';
+import * as Bytes from '../Bytes.std.ts';
 import {
   decryptAes256CbcPkcsPadding,
   deriveSecrets,
   verifyHmacSha256,
-} from '../Crypto.node.js';
+} from '../Crypto.node.ts';
 import {
   calculateAgreement,
   createKeyPair,
   generateKeyPair,
-} from '../Curve.node.js';
-import { SignalService as Proto } from '../protobuf/index.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { dropNull } from '../util/dropNull.std.js';
-import { normalizeAci } from '../util/normalizeAci.std.js';
+} from '../Curve.node.ts';
+import { SignalService as Proto } from '../protobuf/index.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { dropNull } from '../util/dropNull.std.ts';
+import { normalizeAci } from '../util/normalizeAci.std.ts';
 import {
   type AciString,
   type PniString,
@@ -28,22 +27,23 @@ import {
   isUntaggedPniString,
   fromAciObject,
   fromPniObject,
-} from '../types/ServiceId.std.js';
+} from '../types/ServiceId.std.ts';
 
 export type ProvisionDecryptResult = Readonly<{
   aciKeyPair: KeyPairType;
   pniKeyPair?: KeyPairType;
   number?: string;
   aci: AciString;
-  pni: PniString;
+  pni?: PniString;
   provisioningCode?: string;
   userAgent?: string;
   readReceipts?: boolean;
-  profileKey?: Uint8Array;
-  masterKey?: Uint8Array;
+  profileKey?: Uint8Array<ArrayBuffer>;
+  masterKey?: Uint8Array<ArrayBuffer>;
   accountEntropyPool: string | undefined;
-  mediaRootBackupKey: Uint8Array | undefined;
-  ephemeralBackupKey: Uint8Array | undefined;
+  mediaRootBackupKey: Uint8Array<ArrayBuffer> | undefined;
+  ephemeralBackupKey: Uint8Array<ArrayBuffer> | undefined;
+  authCredentialSalt: Uint8Array<ArrayBuffer> | undefined;
 }>;
 
 class ProvisioningCipherInner {
@@ -100,20 +100,30 @@ class ProvisioningCipherInner {
     } = provisionMessage;
 
     let aci: AciString;
-    let pni: PniString;
-    if (Bytes.isNotEmpty(aciBinary) && Bytes.isNotEmpty(pniBinary)) {
+    if (Bytes.isNotEmpty(aciBinary)) {
       aci = fromAciObject(Aci.fromUuidBytes(aciBinary));
+    } else if (rawAci) {
+      aci = normalizeAci(rawAci, 'provisionMessage.aci');
+    } else {
+      throw new Error('Missing aci in provisioning message');
+    }
+
+    let pni: PniString | undefined;
+    if (Bytes.isNotEmpty(pniBinary)) {
       pni = fromPniObject(Pni.fromUuidBytes(pniBinary));
-    } else if (rawAci && rawUntaggedPni) {
+    } else if (rawUntaggedPni) {
       strictAssert(
         isUntaggedPniString(rawUntaggedPni),
         'ProvisioningCipher: invalid untaggedPni'
       );
 
-      aci = normalizeAci(rawAci, 'provisionMessage.aci');
       pni = normalizePni(toTaggedPni(rawUntaggedPni), 'provisionMessage.pni');
+    }
+
+    if (pni == null) {
+      strictAssert(pniKeyPair == null, 'pni keypair without pni');
     } else {
-      throw new Error('Missing aci/pni in provisioning message');
+      strictAssert(pniKeyPair != null, 'pni without pni keypair');
     }
 
     return {
@@ -133,6 +143,9 @@ class ProvisioningCipherInner {
         : undefined,
       ephemeralBackupKey: Bytes.isNotEmpty(provisionMessage.ephemeralBackupKey)
         ? provisionMessage.ephemeralBackupKey
+        : undefined,
+      authCredentialSalt: Bytes.isNotEmpty(provisionMessage.authCredentialSalt)
+        ? provisionMessage.authCredentialSalt
         : undefined,
       mediaRootBackupKey: Bytes.isNotEmpty(provisionMessage.mediaRootBackupKey)
         ? provisionMessage.mediaRootBackupKey

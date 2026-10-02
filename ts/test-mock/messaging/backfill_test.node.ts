@@ -9,15 +9,15 @@ import createDebug from 'debug';
 import type { Page } from 'playwright';
 import assert from 'node:assert';
 
-import { LONG_MESSAGE, IMAGE_JPEG } from '../../types/MIME.std.js';
-import * as durations from '../../util/durations/index.std.js';
-import { toNumber } from '../../util/toNumber.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import { LONG_MESSAGE, IMAGE_JPEG } from '../../types/MIME.std.ts';
+import * as durations from '../../util/durations/index.std.ts';
+import { toNumber } from '../../util/toNumber.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 import {
   sendTextMessage,
   getTimelineMessageWithText,
-} from '../helpers.node.js';
+} from '../helpers.node.ts';
 
 export const debug = createDebug('mock:test:backfill');
 
@@ -66,7 +66,7 @@ describe('attachment backfill', function (this: Mocha.Suite) {
     page = await app.getWindow();
 
     const { unknownContacts } = bootstrap;
-    [unknownContact] = unknownContacts;
+    [unknownContact] = unknownContacts as [PrimaryDevice];
 
     textAttachment = await bootstrap.encryptAndStoreAttachmentOnCDN(
       Buffer.from('look at this pic, it is gorgeous!'),
@@ -318,7 +318,9 @@ describe('attachment backfill', function (this: Mocha.Suite) {
     await startDownload.click();
 
     debug('waiting for modal');
-    const modal = page.getByTestId('BackfillFailureModal');
+    const modal = page.getByRole('alertdialog', {
+      name: 'Can’t download media',
+    });
     await modal.waitFor();
     await modal.locator('text=/internet connection/').waitFor();
   });
@@ -400,7 +402,9 @@ describe('attachment backfill', function (this: Mocha.Suite) {
     );
 
     debug('waiting for modal');
-    const modal = page.getByTestId('BackfillFailureModal');
+    const modal = page.getByRole('alertdialog', {
+      name: 'Can’t download media',
+    });
     await modal.waitFor();
     await modal.locator('text=/no longer available/').waitFor();
   });

@@ -13,7 +13,7 @@ import {
   LTR_OVERRIDE,
   RTL_EMBEDDING,
   RTL_OVERRIDE,
-} from '../../util/unicodeBidi.std.js';
+} from '../../util/unicodeBidi.std.ts';
 
 function debugUnicode(text: string) {
   return text
@@ -37,9 +37,24 @@ describe('_bidiIsolate', () => {
     assertEqual(actual, `${FSI}Hello${PSI}`);
   });
 
+  it('does not let unopened pop isolates cancel out later isolates', () => {
+    const actual = _bidiIsolate(`${PSI}${FSI}Hello`);
+    assertEqual(actual, `${FSI}${FSI}Hello${PSI}${PSI}`);
+  });
+
   it('strips unopened pop formatting characters', () => {
     const actual = _bidiIsolate(`${POP_DIRECTIONAL_FORMATTING}Hello`);
     assertEqual(actual, `${FSI}Hello${PSI}`);
+  });
+
+  it('does not let unopened pop formattings cancel out later opens', () => {
+    const actual = _bidiIsolate(
+      `${POP_DIRECTIONAL_FORMATTING}${RTL_OVERRIDE}Hello`
+    );
+    assertEqual(
+      actual,
+      `${FSI}${RTL_OVERRIDE}Hello${POP_DIRECTIONAL_FORMATTING}${PSI}`
+    );
   });
 
   it('closes isolates that were left open', () => {

@@ -1,15 +1,15 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useMemo, type JSX } from 'react';
 import lodash from 'lodash';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { CallingConversationType } from '../types/Calling.std.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { getParticipantName } from '../util/callingGetParticipantName.std.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { UserText } from './UserText.dom.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { CallingConversationType } from '../types/Calling.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { getParticipantName } from '../util/callingGetParticipantName.std.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { UserText } from './UserText.dom.tsx';
 
 const { partition } = lodash;
 
@@ -50,7 +50,7 @@ export type PropsType = {
   ringMode: RingMode;
 
   // The following should only be set for group conversations.
-  groupMembers?: Array<
+  groupMembers?: ReadonlyArray<
     Pick<
       ConversationType,
       'id' | 'firstName' | 'systemGivenName' | 'systemNickname' | 'title'
@@ -58,7 +58,7 @@ export type PropsType = {
   >;
   isCallFull?: boolean;
   isConnecting?: boolean;
-  peekedParticipants?: Array<PeekedParticipantType>;
+  peekedParticipants?: ReadonlyArray<PeekedParticipantType>;
 };
 
 export function CallingPreCallInfo({
@@ -70,8 +70,8 @@ export function CallingPreCallInfo({
   me,
   peekedParticipants = [],
   ringMode,
-}: PropsType): React.JSX.Element {
-  const [visibleParticipants, unknownParticipants] = React.useMemo<
+}: PropsType): JSX.Element {
+  const [visibleParticipants, unknownParticipants] = useMemo<
     [Array<PeekedParticipantType>, Array<PeekedParticipantType>]
   >(
     () =>
@@ -105,6 +105,7 @@ export function CallingPreCallInfo({
       let hasYou = false;
       const participantNames = visibleParticipants.map(participant => {
         if (participant.serviceId === me.serviceId) {
+          // oxlint-disable-next-line react/immutability
           hasYou = true;
           return i18n('icu:you');
         }
@@ -115,26 +116,34 @@ export function CallingPreCallInfo({
           subtitle = hasYou
             ? i18n('icu:calling__pre-call-info--another-device-in-call')
             : i18n('icu:calling__pre-call-info--1-person-in-call', {
-                first: participantNames[0],
+                // oxlint-disable-next-line typescript/no-non-null-assertion
+                first: participantNames[0]!,
               });
           break;
         case 2:
           subtitle = i18n('icu:calling__pre-call-info--2-people-in-call', {
-            first: participantNames[0],
-            second: participantNames[1],
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: participantNames[0]!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: participantNames[1]!,
           });
           break;
         case 3:
           subtitle = i18n('icu:calling__pre-call-info--3-people-in-call', {
-            first: participantNames[0],
-            second: participantNames[1],
-            third: participantNames[2],
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: participantNames[0]!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: participantNames[1]!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            third: participantNames[2]!,
           });
           break;
         default:
           subtitle = i18n('icu:calling__pre-call-info--many-people-in-call', {
-            first: participantNames[0],
-            second: participantNames[1],
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: participantNames[0]!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: participantNames[1]!,
             others: participantNames.length - 2,
           });
           break;
@@ -165,49 +174,65 @@ export function CallingPreCallInfo({
       case 1: {
         subtitle = ring
           ? i18n('icu:calling__pre-call-info--will-ring-1', {
-              person: memberNames[0],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              person: memberNames[0]!,
             })
           : i18n('icu:calling__pre-call-info--will-notify-1', {
-              person: memberNames[0],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              person: memberNames[0]!,
             });
         break;
       }
       case 2: {
         subtitle = ring
           ? i18n('icu:calling__pre-call-info--will-ring-2', {
-              first: memberNames[0],
-              second: memberNames[1],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
             })
           : i18n('icu:calling__pre-call-info--will-notify-2', {
-              first: memberNames[0],
-              second: memberNames[1],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
             });
         break;
       }
       case 3: {
         subtitle = ring
           ? i18n('icu:calling__pre-call-info--will-ring-3', {
-              first: memberNames[0],
-              second: memberNames[1],
-              third: memberNames[2],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              third: memberNames[2]!,
             })
           : i18n('icu:calling__pre-call-info--will-notify-3', {
-              first: memberNames[0],
-              second: memberNames[1],
-              third: memberNames[2],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              third: memberNames[2]!,
             });
         break;
       }
       default: {
         subtitle = ring
           ? i18n('icu:calling__pre-call-info--will-ring-many', {
-              first: memberNames[0],
-              second: memberNames[1],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
               others: memberNames.length - 2,
             })
           : i18n('icu:calling__pre-call-info--will-notify-many', {
-              first: memberNames[0],
-              second: memberNames[1],
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              first: memberNames[0]!,
+              // oxlint-disable-next-line typescript/no-non-null-assertion
+              second: memberNames[1]!,
               others: memberNames.length - 2,
             });
         break;

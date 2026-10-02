@@ -1,11 +1,11 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { KeyboardEvent } from 'react';
-import React, { useState } from 'react';
+import type { KeyboardEvent, JSX } from 'react';
+import { useState } from 'react';
 import classNames from 'classnames';
-import { assertDev } from '../util/assert.std.js';
-import { getClassNamesFor } from '../util/getClassNamesFor.std.js';
+import { assertDev } from '../util/assert.std.ts';
+import { getClassNamesFor } from '../util/getClassNamesFor.std.ts';
 
 type Tab = {
   id: string;
@@ -33,7 +33,7 @@ export type TabsOptionsType =
 
 type TabsProps = {
   selectedTab: string;
-  tabsHeaderElement: React.JSX.Element;
+  tabsHeaderElement: JSX.Element;
 };
 
 export function useTabs(options: TabsOptionsType): TabsProps {
@@ -50,9 +50,10 @@ export function useTabs(options: TabsOptionsType): TabsProps {
   } else {
     // useTabs should always be either controlled or uncontrolled.
     // This is enforced by the type system.
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // oxlint-disable-next-line react-hooks/rules-of-hooks
     const [tabState, setTabState] = useState<string>(
-      options.initialSelectedTab || options.tabs[0].id
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      options.initialSelectedTab || options.tabs[0]!.id
     );
 
     selectedTab = tabState;

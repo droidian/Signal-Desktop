@@ -1,0 +1,21 @@
+Signal adalah aplikasi perpesanan yang mengutamakan privasi. Aplikasi ini gratis dan mudah digunakan, dengan enkripsi E2E yang memastikan chat dan panggilan Anda benar-benar privat. Tidak seorang pun bisa membaca pesan atau mendengarkan panggilan Anda, termasuk Signal sendiri. 
+
+• Signal di MacOS terhubung dengan Signal di ponsel Anda. 
+
+• Kirim pesan teks, pesan suara, foto, video, GIF, dan file yang terenkripsi E2E secara gratis. 
+
+• Tetap terhubung dengan obrolan grup dengan anggota maksimal 1.000 orang. Kontrol siapa yang dapat memposting dan mengelola anggota grup dengan pengaturan izin admin.
+
+• Hubungi teman lewat panggilan suara dan video call terenkripsi E2E dengan kualitas yang jernih. Jumlah peserta panggilan grup maksimal 75 orang.
+
+• Signal dirancang untuk privasi Anda. Kami tidak tahu apa pun tentang Anda atau dengan siapa Anda berbicara. Protokol Signal sumber terbuka kami berarti bahwa kami tidak dapat membaca pesan atau mendengarkan panggilan Anda. Begitu pun orang lain. Tidak ada penyadapan tersembunyi, tidak ada pengumpulan data, tidak ada peretasan. 
+
+• Bagikan Story berupa foto, teks, dan video yang otomatis hilang setelah 24 jam. Pengaturan privasi memungkinkan Anda mengontrol siapa saja yang bisa melihat setiap Story.
+
+• Signal bersifat independen dan tidak mencari untung; teknologi unik dari organisasi yang sama uniknya. Sebagai organisasi nirlaba, kami berjalan berkat donasi Anda, bukan karena pemasang iklan atau investor. 
+
+• Untuk dukungan, pertanyaan, atau informasi lebih lanjut, silakan kunjungi https://support.signal.org/
+
+Untuk melihat kode sumber kami, kunjungi https://github.com/signalapp 
+
+Ikuti kami di X/twitter @signalapp dan Instagram @signal_app

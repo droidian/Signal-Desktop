@@ -1,52 +1,46 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import lodash from 'lodash';
 
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { ConversationWithStoriesType } from '../state/selectors/conversations.dom.js';
-import type { LocalizerType, ThemeType } from '../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { Row } from './ConversationList.dom.js';
-import type { StoryDistributionListWithMembersDataType } from '../types/Stories.std.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
-import type { ServiceIdString } from '../types/ServiceId.std.js';
-import type { RenderModalPage, ModalPropsType } from './Modal.dom.js';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Checkbox } from './Checkbox.dom.js';
-import { ConfirmationDialog } from './ConfirmationDialog.dom.js';
-import { ContactPills } from './ContactPills.dom.js';
-import { ContactPill } from './ContactPill.dom.js';
-import { ConversationList, RowType } from './ConversationList.dom.js';
-import { Input } from './Input.dom.js';
-import { I18n } from './I18n.dom.js';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { ConversationWithStoriesType } from '../state/selectors/conversations.dom.ts';
+import type { LocalizerType, ThemeType } from '../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { Row } from './ConversationList.dom.tsx';
+import type { StoryDistributionListWithMembersDataType } from '../types/Stories.std.ts';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
+import type { ServiceIdString } from '../types/ServiceId.std.ts';
+import type { RenderModalPage, ModalPropsType } from './Modal.dom.tsx';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { Button, ButtonVariant } from './Button.dom.tsx';
+import { Checkbox } from './Checkbox.dom.tsx';
+import { ContactPills } from './ContactPills.dom.tsx';
+import { ContactPill } from './ContactPill.dom.tsx';
+import { ConversationList, RowType } from './ConversationList.dom.tsx';
+import { Input } from './Input.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
 import {
   MY_STORY_ID,
   getStoryDistributionListName,
-} from '../types/Stories.std.js';
-import { PagedModal, ModalPage } from './Modal.dom.js';
-import { SearchInput } from './SearchInput.dom.js';
-import { StoryDistributionListName } from './StoryDistributionListName.dom.js';
-import { filterAndSortConversations } from '../util/filterAndSortConversations.std.js';
-import { isNotNil } from '../util/isNotNil.std.js';
+} from '../types/Stories.std.ts';
+import { PagedModal, ModalPage } from './Modal.dom.tsx';
+import { SearchInput } from './SearchInput.dom.tsx';
+import { StoryDistributionListName } from './StoryDistributionListName.dom.tsx';
+import { filterAndSortConversations } from '../util/filterAndSortConversations.std.ts';
+import { isNotNil } from '../util/isNotNil.std.ts';
 import {
   shouldNeverBeCalled,
   asyncShouldNeverBeCalled,
-} from '../util/shouldNeverBeCalled.std.js';
-import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.js';
-import { getGroupMemberships } from '../util/getGroupMemberships.dom.js';
-import { strictAssert } from '../util/assert.std.js';
-import { UserText } from './UserText.dom.js';
-import { SizeObserver } from '../hooks/useSizeObserver.dom.js';
+} from '../util/shouldNeverBeCalled.std.ts';
+import { useConfirmDiscard } from '../hooks/useConfirmDiscard.dom.tsx';
+import { getGroupMemberships } from '../util/getGroupMemberships.dom.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { UserText } from './UserText.dom.tsx';
+import { SizeObserver } from '../hooks/useSizeObserver.dom.tsx';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
 const { noop } = lodash;
 
@@ -74,6 +68,7 @@ export type PropsType = {
     listId: string,
     allowsReplies: boolean
   ) => unknown;
+  onStoryViewReceiptsChange: (value: boolean) => unknown;
   onViewersUpdated: (
     listId: string,
     viewerServiceIds: Array<ServiceIdString>
@@ -149,7 +144,7 @@ type DistributionListItemProps = {
   distributionList: StoryDistributionListWithMembersDataType;
   me: ConversationType;
   signalConnections: Array<ConversationType>;
-  onSelectItemToEdit(id: StoryDistributionIdString): void;
+  onSelectItemToEdit: (id: StoryDistributionIdString) => void;
 };
 
 function DistributionListItem({
@@ -205,7 +200,7 @@ function DistributionListItem({
 type GroupStoryItemProps = {
   i18n: LocalizerType;
   groupStory: ConversationType;
-  onSelectGroupToView(id: string): void;
+  onSelectGroupToView: (id: string) => void;
 };
 
 function GroupStoryItem({
@@ -262,6 +257,7 @@ export function StoriesSettingsModal({
   onHideMyStoriesFrom,
   onRemoveMembers,
   onRepliesNReactionsChanged,
+  onStoryViewReceiptsChange,
   onViewersUpdated,
   setMyStoriesToAllSignalConnections,
   storyViewReceiptsEnabled,
@@ -269,12 +265,16 @@ export function StoriesSettingsModal({
   theme,
   setStoriesDisabled,
   getConversationByServiceId,
-}: PropsType): React.JSX.Element {
-  const tryClose = useRef<() => void | undefined>();
+}: PropsType): JSX.Element {
+  const tryClose = useRef<(() => void) | null>(null);
   const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
     i18n,
     name: 'StoriesSettingsModal',
     tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
   });
 
   const [listToEditId, setListToEditId] = useState<string | undefined>(
@@ -301,6 +301,7 @@ export function StoriesSettingsModal({
   const onTryClose = useCallback(() => {
     confirmDiscardIf(selectedContacts.length > 0, hideStoriesSettings);
   }, [confirmDiscardIf, selectedContacts, hideStoriesSettings]);
+  // oxlint-disable-next-line react/refs
   tryClose.current = onTryClose;
 
   const resetChooseViewersScreen = useCallback(() => {
@@ -466,13 +467,14 @@ export function StoriesSettingsModal({
         <hr className="StoriesSettingsModal__divider" />
 
         <Checkbox
-          disabled
           checked={storyViewReceiptsEnabled}
-          description={i18n('icu:StoriesSettings__view-receipts--description')}
+          description={i18n(
+            'icu:StoriesSettings__view-receipts--new-description'
+          )}
           label={i18n('icu:StoriesSettings__view-receipts--label')}
           moduleClassName="StoriesSettingsModal__checkbox"
           name="view-receipts"
-          onChange={noop}
+          onChange={onStoryViewReceiptsChange}
         />
 
         <div className="StoriesSettingsModal__stories-off-container">
@@ -505,53 +507,57 @@ export function StoriesSettingsModal({
           {modal}
         </PagedModal>
       )}
-      {confirmDeleteList && (
-        <ConfirmationDialog
-          dialogName="StoriesSettings.deleteList"
-          actions={[
-            {
-              action: () => {
-                onDeleteList(confirmDeleteList.id);
-                setListToEditId(undefined);
-              },
-              style: 'negative',
-              text: i18n('icu:delete'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmDeleteList(undefined);
+
+      <AxoConfirmDialog.Root
+        open={confirmDeleteList != null}
+        onOpenChange={() => setConfirmDeleteList(undefined)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:StoriesSettings__delete-list--confirm', {
+          name: confirmDeleteList?.name ?? '',
+        })}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmDeleteList != null,
+              'Missing confirmDeleteList'
+            );
+            onDeleteList(confirmDeleteList.id);
+            setListToEditId(undefined);
           }}
         >
-          {i18n('icu:StoriesSettings__delete-list--confirm', {
-            name: confirmDeleteList.name,
-          })}
-        </ConfirmationDialog>
-      )}
-      {confirmRemoveGroup != null && (
-        <ConfirmationDialog
-          dialogName="StoriesSettings.removeGroupStory"
-          actions={[
-            {
-              action: () => {
-                toggleGroupsForStorySend([confirmRemoveGroup.id]);
-                setConfirmRemoveGroup(null);
-                setGroupToViewId(null);
-              },
-              style: 'negative',
-              text: i18n('icu:delete'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
+
+      <AxoConfirmDialog.Root
+        open={confirmRemoveGroup != null}
+        onOpenChange={() => setConfirmRemoveGroup(null)}
+        // @ts-expect-error ConfirmationDialog migration: Needs title
+        title={null}
+        description={i18n('icu:StoriesSettings__remove_group--confirm', {
+          groupTitle: confirmRemoveGroup?.title ?? '',
+        })}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmRemoveGroup != null,
+              'Missing confirmRemoveGroup'
+            );
+            toggleGroupsForStorySend([confirmRemoveGroup.id]);
             setConfirmRemoveGroup(null);
+            setGroupToViewId(null);
           }}
         >
-          {i18n('icu:StoriesSettings__remove_group--confirm', {
-            groupTitle: confirmRemoveGroup.title,
-          })}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:delete')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
       {confirmDiscardModal}
     </>
   );
@@ -594,7 +600,7 @@ export function DistributionListSettingsModal({
   theme,
   toggleSignalConnectionsModal,
   signalConnectionsCount,
-}: DistributionListSettingsModalPropsType): React.JSX.Element {
+}: DistributionListSettingsModalPropsType): JSX.Element {
   const [confirmRemoveMember, setConfirmRemoveMember] = useState<
     | undefined
     | {
@@ -758,30 +764,30 @@ export function DistributionListSettingsModal({
         </>
       )}
 
-      {confirmRemoveMember && (
-        <ConfirmationDialog
-          dialogName="StoriesSettings.confirmRemoveMember"
-          actions={[
-            {
-              action: () =>
-                onRemoveMembers(confirmRemoveMember.listId, [
-                  confirmRemoveMember.serviceId,
-                ]),
-              style: 'negative',
-              text: i18n('icu:StoriesSettings__remove--action'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmRemoveMember(undefined);
+      <AxoConfirmDialog.Root
+        open={confirmRemoveMember != null}
+        onOpenChange={() => setConfirmRemoveMember(undefined)}
+        title={i18n('icu:StoriesSettings__remove--title', {
+          title: confirmRemoveMember?.title ?? '',
+        })}
+        description={i18n('icu:StoriesSettings__remove--body')}
+      >
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={() => {
+            strictAssert(
+              confirmRemoveMember != null,
+              'Missing confirmRemoveMember'
+            );
+            onRemoveMembers(confirmRemoveMember.listId, [
+              confirmRemoveMember.serviceId,
+            ]);
           }}
-          title={i18n('icu:StoriesSettings__remove--title', {
-            title: confirmRemoveMember.title,
-          })}
         >
-          {i18n('icu:StoriesSettings__remove--body')}
-        </ConfirmationDialog>
-      )}
+          {i18n('icu:StoriesSettings__remove--action')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     </ModalPage>
   );
 }
@@ -835,8 +841,8 @@ export function EditMyStoryPrivacy({
   setMyStoriesToAllSignalConnections,
   toggleSignalConnectionsModal,
   signalConnectionsCount,
-}: EditMyStoryPrivacyPropsType): React.JSX.Element {
-  const learnMoreLink = (parts: Array<React.JSX.Element | string>) => (
+}: EditMyStoryPrivacyPropsType): JSX.Element {
+  const learnMoreLink = (parts: Array<JSX.Element | string>) => (
     <button
       className="StoriesSettingsModal__disclaimer__learn-more"
       onClick={toggleSignalConnectionsModal}
@@ -997,7 +1003,7 @@ export function EditDistributionListModal({
   setSelectedContacts,
   theme,
   onBackButtonClick,
-}: EditDistributionListModalPropsType): React.JSX.Element {
+}: EditDistributionListModalPropsType): JSX.Element {
   const [storyName, setStoryName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -1142,7 +1148,7 @@ export function EditDistributionListModal({
     };
   };
 
-  let footer: React.JSX.Element | undefined;
+  let footer: JSX.Element | undefined;
   if (isChoosingViewers) {
     footer = (
       <Button
@@ -1220,7 +1226,7 @@ export function EditDistributionListModal({
           {(ref, size) => (
             <div className="StoriesSettingsModal__conversation-list" ref={ref}>
               <ConversationList
-                dimensions={size ?? undefined}
+                dimensions={size?.hidden === false ? size : undefined}
                 getPreferredBadge={getPreferredBadge}
                 getRow={getRow}
                 i18n={i18n}
@@ -1238,11 +1244,11 @@ export function EditDistributionListModal({
                 onOutgoingVideoCallInConversation={shouldNeverBeCalled}
                 renderMessageSearchResult={() => {
                   shouldNeverBeCalled();
-                  return <div />;
                 }}
                 rowCount={rowCount}
                 setIsFetchingUUID={shouldNeverBeCalled}
                 shouldRecomputeRowHeights={false}
+                resetShouldRecomputeRowHeights={shouldNeverBeCalled}
                 showChooseGroupMembers={shouldNeverBeCalled}
                 showFindByUsername={shouldNeverBeCalled}
                 showFindByPhoneNumber={shouldNeverBeCalled}
@@ -1265,22 +1271,22 @@ export function EditDistributionListModal({
 type GroupStorySettingsModalProps = {
   i18n: LocalizerType;
   group: ConversationType;
-  onClose(): void;
-  onBackButtonClick(): void;
-  getConversationByServiceId(
+  onClose: () => void;
+  onBackButtonClick: () => void;
+  getConversationByServiceId: (
     serviceId: ServiceIdString
-  ): ConversationType | undefined;
-  onRemoveGroup(group: ConversationType): void;
+  ) => ConversationType | undefined;
+  onRemoveGroup: (group: ConversationType) => void;
 };
 
-export function GroupStorySettingsModal({
+function GroupStorySettingsModal({
   i18n,
   group,
   onClose,
   onBackButtonClick,
   getConversationByServiceId,
   onRemoveGroup,
-}: GroupStorySettingsModalProps): React.JSX.Element {
+}: GroupStorySettingsModalProps): JSX.Element {
   const groupMemberships = getGroupMemberships(
     group,
     getConversationByServiceId

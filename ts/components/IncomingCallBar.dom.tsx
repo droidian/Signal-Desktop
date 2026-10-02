@@ -1,28 +1,31 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { Avatar, AvatarSize } from './Avatar.dom.js';
-import { Tooltip } from './Tooltip.dom.js';
-import { I18n } from './I18n.dom.js';
-import { Theme } from '../util/theme.std.js';
-import { getParticipantName } from '../util/callingGetParticipantName.std.js';
-import { ContactName } from './conversation/ContactName.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { AvatarColors } from '../types/Colors.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
+import type { ReactNode, JSX } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { Avatar, AvatarSize } from './Avatar.dom.tsx';
+import { Tooltip } from './Tooltip.dom.tsx';
+import { I18n } from './I18n.dom.tsx';
+import { Theme } from '../util/theme.std.ts';
+import { getParticipantName } from '../util/callingGetParticipantName.std.ts';
+import { ContactName } from './conversation/ContactName.dom.tsx';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AvatarColors } from '../types/Colors.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
 import type {
   AcceptCallType,
   DeclineCallType,
-} from '../state/ducks/calling.preload.js';
-import { missingCaseError } from '../util/missingCaseError.std.js';
+} from '../state/ducks/calling.preload.ts';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 import {
   useIncomingCallShortcuts,
   useKeyboardShortcuts,
-} from '../hooks/useKeyboardShortcuts.dom.js';
-import { UserText } from './UserText.dom.js';
+} from '../hooks/useKeyboardShortcuts.dom.tsx';
+import { UserText } from './UserText.dom.tsx';
+import { AxoDragRegion } from '../axo/AxoDragRegion.dom.tsx';
+
+const { useDisableDragRegions } = AxoDragRegion;
 
 export type PropsType = {
   acceptCall: (_: AcceptCallType) => void;
@@ -41,13 +44,13 @@ export type PropsType = {
     | 'title'
     | 'type'
   >;
-  bounceAppIconStart(): unknown;
-  bounceAppIconStop(): unknown;
-  notifyForCall(
+  bounceAppIconStart: () => unknown;
+  bounceAppIconStop: () => unknown;
+  notifyForCall: (
     conversationId: string,
     conversationTitle: string,
     isVideoCall: boolean
-  ): unknown;
+  ) => unknown;
 } & (
   | {
       callMode: CallMode.Direct;
@@ -80,7 +83,7 @@ function CallButton({
   onClick,
   tabIndex,
   tooltipContent,
-}: CallButtonProps): React.JSX.Element {
+}: CallButtonProps): JSX.Element {
   return (
     <Tooltip
       content={tooltipContent}
@@ -116,7 +119,7 @@ function GroupCallMessage({
     ConversationType,
     'firstName' | 'systemGivenName' | 'systemNickname' | 'title'
   >;
-}>): React.JSX.Element {
+}>): JSX.Element {
   // As an optimization, we only process the first two names.
   const [first, second] = otherMembersRung
     .slice(0, 2)
@@ -139,7 +142,9 @@ function GroupCallMessage({
           i18n={i18n}
           components={{
             ringer: ringerNode,
-            otherMember: first,
+
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            otherMember: first!,
           }}
         />
       );
@@ -150,8 +155,10 @@ function GroupCallMessage({
           i18n={i18n}
           components={{
             ringer: ringerNode,
-            first,
-            second,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: first!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: second!,
           }}
         />
       );
@@ -162,8 +169,10 @@ function GroupCallMessage({
           i18n={i18n}
           components={{
             ringer: ringerNode,
-            first,
-            second,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: first!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: second!,
           }}
         />
       );
@@ -174,8 +183,10 @@ function GroupCallMessage({
           i18n={i18n}
           components={{
             ringer: ringerNode,
-            first,
-            second,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            first: first!,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            second: second!,
             remaining: otherMembersRung.length - 2,
           }}
         />
@@ -183,7 +194,7 @@ function GroupCallMessage({
   }
 }
 
-export function IncomingCallBar(props: PropsType): React.JSX.Element | null {
+export function IncomingCallBar(props: PropsType): JSX.Element | null {
   const {
     acceptCall,
     bounceAppIconStart,
@@ -245,6 +256,8 @@ export function IncomingCallBar(props: PropsType): React.JSX.Element | null {
       bounceAppIconStop();
     };
   }, [bounceAppIconStart, bounceAppIconStop]);
+
+  useDisableDragRegions(true);
 
   const acceptVideoCall = useCallback(() => {
     if (isVideoCall) {

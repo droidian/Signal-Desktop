@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "سیگنال از دوربین شما برای تماس تصویری استفاده می‌کند."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "سیگنال برای برقراری و دریافت تماس تلفنی و ضبط پیام‌های صوتی نیاز به دسترسی به میکروفون شما دارد."
+  }
+}

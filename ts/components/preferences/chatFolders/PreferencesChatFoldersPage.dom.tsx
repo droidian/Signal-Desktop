@@ -1,35 +1,35 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { MutableRefObject, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { MutableRefObject, ReactNode, JSX } from 'react';
 import { ListBox, ListBoxItem, useDragAndDrop } from 'react-aria-components';
 import { isEqual, partition } from 'lodash';
 import classNames from 'classnames';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import { PreferencesContent } from '../../Preferences.dom.js';
-import { SettingsRow } from '../../PreferencesUtil.dom.js';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import { PreferencesContent } from '../../Preferences.dom.tsx';
+import { SettingsRow } from '../../PreferencesUtil.dom.tsx';
 import {
   CHAT_FOLDER_PRESETS,
   matchesChatFolderPreset,
   ChatFolderType,
-} from '../../../types/ChatFolder.std.js';
+} from '../../../types/ChatFolder.std.ts';
 import type {
   ChatFolderId,
   ChatFolderParams,
   ChatFolderPreset,
   ChatFolder,
-} from '../../../types/ChatFolder.std.js';
-import { AxoContextMenu } from '../../../axo/AxoContextMenu.dom.js';
-import { DeleteChatFolderDialog } from './DeleteChatFolderDialog.dom.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { tw } from '../../../axo/tw.dom.js';
-import { UserText } from '../../UserText.dom.js';
-import { I18n } from '../../I18n.dom.js';
-import { NavTab, SettingsPage, type Location } from '../../../types/Nav.std.js';
-import { AxoButton } from '../../../axo/AxoButton.dom.js';
-import type { CurrentChatFolder } from '../../../types/CurrentChatFolders.std.js';
-import { CurrentChatFolders } from '../../../types/CurrentChatFolders.std.js';
+} from '../../../types/ChatFolder.std.ts';
+import { AxoContextMenu } from '../../../axo/AxoContextMenu.dom.tsx';
+import { DeleteChatFolderDialog } from './DeleteChatFolderDialog.dom.tsx';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { UserText } from '../../UserText.dom.tsx';
+import { I18n } from '../../I18n.dom.tsx';
+import { NavTab, SettingsPage, type Location } from '../../../types/Nav.std.ts';
+import { AxoButton } from '../../../axo/AxoButton.dom.tsx';
+import type { CurrentChatFolder } from '../../../types/CurrentChatFolders.std.ts';
+import { CurrentChatFolders } from '../../../types/CurrentChatFolders.std.ts';
 import {
   ItemAvatar,
   ItemBody,
@@ -41,8 +41,8 @@ import {
   ItemDragHandle,
   itemListItemClassName,
   ItemTitle,
-} from './PreferencesChatFolderItems.dom.js';
-import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.js';
+} from './PreferencesChatFolderItems.dom.tsx';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
 
 function moveChatFolders(
   chatFolders: ReadonlyArray<CurrentChatFolder>,
@@ -95,7 +95,7 @@ export type PreferencesChatFoldersPageProps = Readonly<{
 
 export function PreferencesChatFoldersPage(
   props: PreferencesChatFoldersPageProps
-): React.JSX.Element {
+): JSX.Element {
   const {
     i18n,
     onOpenEditChatFoldersPage,
@@ -151,6 +151,7 @@ export function PreferencesChatFoldersPage(
     useState(sortedChatFolders);
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect react/no-deriving-state-in-effects
     setChatFoldersReordered(sortedChatFolders);
   }, [sortedChatFolders]);
 
@@ -192,9 +193,7 @@ export function PreferencesChatFoldersPage(
       });
     },
     renderDropIndicator: () => {
-      return (
-        <div className={tw('-my-px h-0.5 rounded-full bg-fill-inverted')} />
-      );
+      return <div className={tw('-my-px h-0.5 rounded-full bg-inverted')} />;
     },
   });
 
@@ -345,9 +344,6 @@ export function PreferencesChatFoldersPage(
           deleteText={i18n(
             'icu:Preferences__ChatsPage__DeleteChatFolderDialog__DeleteButton'
           )}
-          cancelText={i18n(
-            'icu:Preferences__ChatsPage__DeleteChatFolderDialog__CancelButton'
-          )}
           onConfirm={handleChatFolderDeleteConfirm}
         />
       </AxoAlertDialog.Root>
@@ -394,7 +390,7 @@ function ChatFolderPresetItem(props: ChatFolderPresetItemProps) {
         </ItemBody>
         <AxoButton.Root
           size="md"
-          variant="secondary"
+          variant="subtle-secondary"
           onClick={handleCreateChatFolder}
         >
           {i18n(
@@ -411,7 +407,7 @@ function ChatFolderListItem(props: {
   chatFolder: ChatFolder;
   onChatFolderEdit: (chatFolder: ChatFolder) => void;
   onChatFolderDelete: (chatFolder: ChatFolder) => void;
-}): React.JSX.Element {
+}): JSX.Element {
   const { i18n, chatFolder, onChatFolderEdit } = props;
 
   const handleClickChatFolder = useCallback(() => {

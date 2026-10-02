@@ -1,21 +1,20 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import type {
   ActiveCallType,
   ObservedRemoteMuteType,
-} from '../types/Calling.std.js';
-import { CallMode } from '../types/CallDisposition.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
-import { CallingToastProvider, useCallingToasts } from './CallingToast.dom.js';
-import { usePrevious } from '../hooks/usePrevious.std.js';
-import { difference as setDifference } from '../util/setUtil.std.js';
-import { isMoreRecentThan } from '../util/timestamp.std.js';
-import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.js';
-import { SECOND } from '../util/durations/index.std.js';
-import type { SetMutedByType } from '../state/ducks/calling.preload.js';
+} from '../types/Calling.std.ts';
+import { CallMode } from '../types/CallDisposition.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { CallingToastProvider, useCallingToasts } from './CallingToast.dom.tsx';
+import { usePreviousDeprecated } from '../hooks/usePrevious.std.ts';
+import { difference as setDifference } from '../util/setUtil.std.ts';
+import { isMoreRecentThan } from '../util/timestamp.std.ts';
+import { isGroupOrAdhocActiveCall } from '../util/isGroupOrAdhocCall.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
 
 type PropsType = {
   activeCall: ActiveCallType;
@@ -59,7 +58,10 @@ export function useScreenSharingStoppedToast({
     () => getCurrentPresenter(activeCall),
     [activeCall]
   );
-  const previousPresenter = usePrevious(currentPresenter, currentPresenter);
+  const previousPresenter = usePreviousDeprecated(
+    currentPresenter,
+    currentPresenter
+  );
 
   useEffect(() => {
     if (previousPresenter && !currentPresenter) {
@@ -76,6 +78,7 @@ export function useScreenSharingStoppedToast({
       });
     }
   }, [
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
     activeCall,
     hideToast,
     currentPresenter,
@@ -94,7 +97,10 @@ function useMutedToast({
   mutedBy: number | undefined;
   i18n: LocalizerType;
 }): void {
-  const previousHasLocalAudio = usePrevious(hasLocalAudio, hasLocalAudio);
+  const previousHasLocalAudio = usePreviousDeprecated(
+    hasLocalAudio,
+    hasLocalAudio
+  );
   const { showToast, hideToast } = useCallingToasts();
   const MUTED_TOAST_KEY = 'muted';
 
@@ -132,10 +138,13 @@ function useOutgoingRingToast({
   i18n: LocalizerType;
 }): void {
   const { showToast, hideToast } = useCallingToasts();
-  const previousOutgoingRing = usePrevious(outgoingRing, outgoingRing);
+  const previousOutgoingRing = usePreviousDeprecated(
+    outgoingRing,
+    outgoingRing
+  );
   const RINGING_TOAST_KEY = 'ringing';
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (outgoingRing === undefined) {
       return;
     }
@@ -164,7 +173,7 @@ function useRaisedHandsToast({
   raisedHands?: Set<number>;
   renderRaisedHandsToast?: (
     hands: Array<number>
-  ) => React.JSX.Element | string | undefined;
+  ) => JSX.Element | string | undefined;
 }): void {
   const RAISED_HANDS_TOAST_KEY = 'raised-hands';
   const RAISED_HANDS_TOAST_LIFETIME = 4000;
@@ -175,15 +184,15 @@ function useRaisedHandsToast({
   // Hand state is updated after a delay upon joining a call, so it can appear that
   // hands were raised immediately when you join a call. To avoid spurious toasts, add
   // an initial delay before showing toasts.
-  const [isLoaded, setIsLoaded] = React.useState<boolean>(false);
-  React.useEffect(() => {
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  useEffect(() => {
     const timeout = setTimeout(() => {
       setIsLoaded(true);
     }, LOAD_DELAY);
     return () => clearTimeout(timeout);
   }, []);
 
-  const previousRaisedHands = usePrevious(raisedHands, raisedHands);
+  const previousRaisedHands = usePreviousDeprecated(raisedHands, raisedHands);
   const [newHands, loweredHands]: [Set<number>, Set<number>] = isLoaded
     ? [
         setDifference(
@@ -200,7 +209,7 @@ function useRaisedHandsToast({
   const toastLastShownAt = useRef<number>(0);
   const handsForLastShownToast = useRef<Set<number>>(new Set());
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (raisedHands?.size === 0) {
       hideToast(RAISED_HANDS_TOAST_KEY);
     }
@@ -256,6 +265,7 @@ function useRaisedHandsToast({
     toastLastShownAt.current = Date.now();
   }, [
     raisedHands,
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
     previousRaisedHands,
     newHands,
     handsForLastShownToast,
@@ -277,7 +287,7 @@ function useLowerHandSuggestionToast({
   handleLowerHand: (() => void) | undefined;
   isHandRaised: boolean | undefined;
 }): void {
-  const previousSuggestLowerHand = usePrevious(
+  const previousSuggestLowerHand = usePreviousDeprecated(
     suggestLowerHand,
     suggestLowerHand
   );
@@ -337,24 +347,19 @@ function useLowerHandSuggestionToast({
 
 function useMutedByToast({
   mutedBy,
-  setLocalAudioRemoteMuted,
   conversationsByDemuxId,
   i18n,
 }: {
   mutedBy: number | undefined;
-  setLocalAudioRemoteMuted?: SetMutedByType;
   conversationsByDemuxId?: Map<number, ConversationType>;
   i18n: LocalizerType;
 }): void {
-  const previousMutedBy = usePrevious(mutedBy, mutedBy);
+  const previousMutedBy = usePreviousDeprecated(mutedBy, mutedBy);
 
   const { showToast, hideToast } = useCallingToasts();
   const MUTED_BY_TOAST_KEY = 'MUTED_BY_TOAST_KEY';
 
   useEffect(() => {
-    if (setLocalAudioRemoteMuted === undefined) {
-      return;
-    }
     if (
       mutedBy === undefined ||
       // if it's undefined, likely we just received a remote mute request
@@ -369,7 +374,6 @@ function useMutedByToast({
     if (title === undefined) {
       return;
     }
-    setLocalAudioRemoteMuted({ mutedBy });
     let content;
     if (otherConversation?.isMe) {
       content = i18n('icu:CallControls__YouMutedYourselfToast');
@@ -394,7 +398,6 @@ function useMutedByToast({
     showToast,
     hideToast,
     MUTED_BY_TOAST_KEY,
-    setLocalAudioRemoteMuted,
   ]);
 }
 
@@ -409,7 +412,7 @@ function useObservedRemoteMuteToast({
 }): void {
   const { showToast, hideToast } = useCallingToasts();
   const OBSERVED_REMOTE_MUTE_TOAST_KEY = 'OBSERVED_REMOTE_MUTE_TOAST_KEY';
-  const previousObservedRemoteMute = usePrevious(
+  const previousObservedRemoteMute = usePreviousDeprecated(
     observedRemoteMute,
     observedRemoteMute
   );
@@ -478,7 +481,7 @@ type CallingButtonToastsType = {
   raisedHands?: Set<number>;
   renderRaisedHandsToast?: (
     hands: Array<number>
-  ) => React.JSX.Element | string | undefined;
+  ) => JSX.Element | string | undefined;
   suggestLowerHand?: boolean;
   isHandRaised?: boolean;
   handleLowerHand?: () => void;
@@ -486,12 +489,11 @@ type CallingButtonToastsType = {
   observedRemoteMute?: ObservedRemoteMuteType;
   conversationsByDemuxId?: Map<number, ConversationType>;
   i18n: LocalizerType;
-  setLocalAudioRemoteMuted?: SetMutedByType;
 };
 
 export function CallingButtonToastsContainer(
   props: CallingButtonToastsType
-): React.JSX.Element {
+): JSX.Element {
   const toastRegionRef = useRef<HTMLDivElement>(null);
   return (
     <CallingToastProvider
@@ -519,7 +521,6 @@ function CallingButtonToasts({
   mutedBy,
   observedRemoteMute,
   conversationsByDemuxId,
-  setLocalAudioRemoteMuted,
 }: CallingButtonToastsType) {
   useMutedToast({ hasLocalAudio, mutedBy, i18n });
   useOutgoingRingToast({ outgoingRing, i18n });
@@ -532,7 +533,6 @@ function CallingButtonToasts({
   });
   useMutedByToast({
     mutedBy,
-    setLocalAudioRemoteMuted,
     conversationsByDemuxId,
     i18n,
   });

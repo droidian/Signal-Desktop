@@ -1,12 +1,12 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import type { Meta } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { AxoMenuBuilder } from './AxoMenuBuilder.dom.js';
-import { AxoButton } from './AxoButton.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoMenuBuilder } from './AxoMenuBuilder.dom.tsx';
+import { AxoButton } from './AxoButton.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoMenuBuilder',
@@ -96,18 +96,16 @@ function Template(props: {
   );
 }
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   return (
     <div className={tw('flex h-96 w-full items-center justify-center gap-8')}>
       <Template renderer="AxoDropdownMenu">
-        <AxoButton.Root variant="secondary" size="md">
+        <AxoButton.Root variant="strong-secondary" size="md">
           Open Dropdown Menu
         </AxoButton.Root>
       </Template>
       <Template renderer="AxoContextMenu">
-        <div className={tw('bg-fill-secondary p-12 text-color-label-primary')}>
-          Right-Click
-        </div>
+        <div className={tw('bg-primary p-12 text-accent')}>Right-Click</div>
       </Template>
     </div>
   );

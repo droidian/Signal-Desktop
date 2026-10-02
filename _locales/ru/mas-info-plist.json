@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal использует вашу камеру для видеозвонков."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal необходим доступ к микрофону для совершения и приема телефонных звонков и записи голосовых сообщений."
+  }
+}

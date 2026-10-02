@@ -2,15 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { parentPort } from 'node:worker_threads';
+import { serialize, deserialize } from 'node:v8';
 
 import type {
   WrappedWorkerRequest,
   WrappedWorkerResponse,
-} from './main.main.js';
-import type { WritableDB } from './Interface.std.js';
-import { initialize, DataReader, DataWriter, removeDB } from './Server.node.js';
-import { SqliteErrorKind, parseSqliteError } from './errors.std.js';
-import { sqlLogger as logger } from './sqlLogger.node.js';
+} from './main.main.ts';
+import type { WritableDB } from './Interface.std.ts';
+import { initialize, DataReader, DataWriter, removeDB } from './Server.node.ts';
+import { SqliteErrorKind, parseSqliteError } from './errors.std.ts';
+import { sqlLogger as logger } from './sqlLogger.node.ts';
+import { WalCheckpoints } from './WalCheckpoints.std.ts';
 
 if (!parentPort) {
   throw new Error('Must run as a worker thread');
@@ -18,7 +20,7 @@ if (!parentPort) {
 
 const port = parentPort;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 function respond(seq: number, response?: any) {
   const wrappedResponse: WrappedWorkerResponse = {
     type: 'response',
@@ -42,6 +44,17 @@ const onMessage = (
     if (request.type === 'init') {
       isPrimary = request.isPrimary;
       isRemoved = false;
+
+      if (isPrimary) {
+        WalCheckpoints.setOnCheckpointNeeded(reason => {
+          const message: WrappedWorkerResponse = {
+            type: 'walCheckpointNeeded',
+            reason,
+          };
+          port.postMessage(message);
+        });
+      }
+
       db = initialize({
         ...request.options,
         isPrimary,
@@ -100,20 +113,34 @@ const onMessage = (
       return;
     }
 
+    if (request.type === 'walCheckpoint') {
+      if (db != null) {
+        WalCheckpoints.runImmediately(db, logger, request.reason);
+      }
+      respond(seq, undefined);
+      return;
+    }
+
     if (request.type === 'sqlCall:read' || request.type === 'sqlCall:write') {
       const DataInterface =
         request.type === 'sqlCall:read' ? DataReader : DataWriter;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       const method = (DataInterface as any)[request.method];
       if (typeof method !== 'function') {
         throw new Error(`Invalid sql method: ${request.method} ${method}`);
       }
 
-      const start = performance.now();
-      const result = method(db, ...request.args);
-      const end = performance.now();
+      const args =
+        request.encoding === 'js' ? request.args : deserialize(request.data);
 
-      respond(seq, { result, duration: end - start });
+      const start = performance.now();
+      const result = method(db, ...args);
+      const duration = performance.now() - start;
+
+      respond(seq, {
+        result: request.encoding === 'js' ? result : serialize(result),
+        duration,
+      });
     } else {
       throw new Error('Unexpected request type');
     }

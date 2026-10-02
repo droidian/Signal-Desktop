@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './SignalConnectionsModal.dom.js';
-import { SignalConnectionsModal } from './SignalConnectionsModal.dom.js';
+import type { PropsType } from './SignalConnectionsModal.dom.tsx';
+import { SignalConnectionsModal } from './SignalConnectionsModal.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -19,7 +18,6 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => (
   <SignalConnectionsModal {...args} />
 );

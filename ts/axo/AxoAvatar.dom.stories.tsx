@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta } from '@storybook/react';
 import type { JSX, ReactNode } from 'react';
-import React from 'react';
 import { action } from '@storybook/addon-actions';
-import { AxoAvatar } from './AxoAvatar.dom.js';
-import { tw } from './tw.dom.js';
-import { BADGES_FIXTURE } from './_internal/storybook-fixtures.std.js';
-import { _getAllAxoSymbolIconNames } from './_internal/AxoSymbolDefs.generated.std.js';
-import { AxoTokens } from './AxoTokens.std.js';
+import { AxoAvatar } from './AxoAvatar.dom.tsx';
+import { tw } from './tw.dom.tsx';
+import { BADGES_FIXTURE } from '../test-helpers/axoStorybookFixtures.std.tsx';
+import { _getAllAxoSymbolNames } from './_internal/AxoSymbolDefs.generated.std.ts';
+import { AxoTokens } from './AxoTokens.std.ts';
 
 export default {
   title: 'Axo/AxoAvatar',
@@ -28,7 +27,7 @@ function Cell(props: { children: ReactNode; label: ReactNode }) {
   return (
     <div className={tw('flex flex-col items-center gap-2')}>
       {props.children}
-      <span className={tw('font-mono type-caption text-label-secondary')}>
+      <span className={tw('font-mono type-caption text-secondary')}>
         {props.label}
       </span>
     </div>
@@ -179,13 +178,14 @@ export function Initials(): JSX.Element {
 }
 
 export function Icons(): JSX.Element {
-  const icons = _getAllAxoSymbolIconNames();
+  const icons = _getAllAxoSymbolNames();
   return (
     <SizesTemplate>
       {size => (
         <AxoAvatar.Root size={size}>
           <AxoAvatar.Content label={null}>
-            <AxoAvatar.Icon symbol={icons[size % icons.length]} />
+            {/* oxlint-disable-next-line typescript/no-non-null-assertion */}
+            <AxoAvatar.Icon symbol={icons[size % icons.length]!} />
           </AxoAvatar.Content>
         </AxoAvatar.Root>
       )}

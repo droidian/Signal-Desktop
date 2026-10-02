@@ -5,6 +5,7 @@ coverage/*
 build/curve25519_compiled.js
 build/compact-locales
 build/*.policy
+build/emoji-data.json
 stylesheets/*.css.map
 /dist
 .DS_Store
@@ -17,14 +18,11 @@ release/
 
 /sql/
 /start.sh
-.eslintcache
 .stylelintcache
 tsconfig.tsbuildinfo
 .smartling-source.sh
 
 # generated files
-js/components.js
-js/util_worker.js
 libtextsecure/components.js
 stylesheets/*.css
 !stylesheets/tailwind-config.css
@@ -39,6 +37,7 @@ build/ICUMessageParams.d.ts
 build/**/*.js
 app/*.js
 ts/**/*.js
+!ts/windows/main/tsx.js
 ts/protobuf/*.d.ts
 
 # CSS Modules

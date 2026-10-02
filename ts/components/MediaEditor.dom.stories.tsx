@@ -2,12 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { Meta, StoryFn } from '@storybook/react';
-import React from 'react';
-
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './MediaEditor.dom.js';
-import { MediaEditor } from './MediaEditor.dom.js';
-import { EmojiSkinTone } from './fun/data/emojis.std.js';
+import type { PropsType } from './MediaEditor.dom.tsx';
+import { MediaEditor } from './MediaEditor.dom.tsx';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 const IMAGE_1 = '/fixtures/nathan-anderson-316188-unsplash.jpg';
@@ -22,6 +20,7 @@ export default {
     getPreferredBadge: () => undefined,
     isHighQuality: false,
     i18n,
+    // oxlint-disable-next-line typescript/no-base-to-string
     imageToBlurHash: input => Promise.resolve(input.toString()),
     imageSrc: IMAGE_2,
     isFormattingEnabled: true,
@@ -31,12 +30,11 @@ export default {
     onSelectEmoji: action('onSelectEmoji'),
     onTextTooLong: action('onTextTooLong'),
     platform: 'darwin',
-    emojiSkinToneDefault: EmojiSkinTone.None,
+    emojiSkinToneDefault: Emoji.SkinTone.None,
     convertDraftBodyRangesIntoHydrated: () => undefined,
   },
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = args => <MediaEditor {...args} />;
 
 export const ExtraLarge = Template.bind({});

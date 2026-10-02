@@ -5,41 +5,40 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import lodash from 'lodash';
 import * as LocaleMatcher from '@formatjs/intl-localematcher';
-import { z } from 'zod';
-import { setupI18n } from '../ts/util/setupI18nMain.std.js';
-import { shouldNeverBeCalled } from '../ts/util/shouldNeverBeCalled.std.js';
+import { setupI18n } from '../ts/util/setupI18nMain.std.ts';
+import { shouldNeverBeCalled } from '../ts/util/shouldNeverBeCalled.std.ts';
 
-import type { LoggerType } from '../ts/types/Logging.std.js';
+import type { LoggerType } from '../ts/types/Logging.std.ts';
 import type {
   HourCyclePreference,
   LocaleMessagesType,
-} from '../ts/types/I18N.std.js';
-import type { LocalizerType } from '../ts/types/Util.std.js';
-import * as Errors from '../ts/types/errors.std.js';
-import { parseUnknown } from '../ts/util/schemas.std.js';
+} from '../ts/types/I18N.std.ts';
+import type { LocalizerType } from '../ts/types/Util.std.ts';
 
 const { merge } = lodash;
 
 type CompactLocaleMessagesType = ReadonlyArray<string | null>;
 type CompactLocaleKeysType = ReadonlyArray<string>;
 
-const TextInfoSchema = z.object({
-  direction: z.enum(['ltr', 'rtl']),
-});
-
-function getLocaleMessages(locale: string): LocaleMessagesType {
-  const targetFile = join(__dirname, '..', '_locales', locale, 'messages.json');
+function getLocaleMessages(
+  rootDir: string,
+  locale: string
+): LocaleMessagesType {
+  const targetFile = join(rootDir, '_locales', locale, 'messages.json');
 
   return JSON.parse(readFileSync(targetFile, 'utf-8'));
 }
 
-function getCompactLocaleKeys(): CompactLocaleKeysType {
-  const targetFile = join(__dirname, '..', '_locales', 'keys.json');
+function getCompactLocaleKeys(rootDir: string): CompactLocaleKeysType {
+  const targetFile = join(rootDir, '_locales', 'keys.json');
   return JSON.parse(readFileSync(targetFile, 'utf-8'));
 }
 
-function getCompactLocaleValues(locale: string): CompactLocaleMessagesType {
-  const targetFile = join(__dirname, '..', '_locales', locale, 'values.json');
+function getCompactLocaleValues(
+  rootDir: string,
+  locale: string
+): CompactLocaleMessagesType {
+  const targetFile = join(rootDir, '_locales', locale, 'values.json');
 
   return JSON.parse(readFileSync(targetFile, 'utf-8'));
 }
@@ -47,23 +46,13 @@ function getCompactLocaleValues(locale: string): CompactLocaleMessagesType {
 export type LocaleDisplayNames = Record<string, Record<string, string>>;
 export type CountryDisplayNames = Record<string, Record<string, string>>;
 
-function getLocaleDisplayNames(): LocaleDisplayNames {
-  const targetFile = join(
-    __dirname,
-    '..',
-    'build',
-    'locale-display-names.json'
-  );
+function getLocaleDisplayNames(rootDir: string): LocaleDisplayNames {
+  const targetFile = join(rootDir, 'build', 'locale-display-names.json');
   return JSON.parse(readFileSync(targetFile, 'utf-8'));
 }
 
-function getCountryDisplayNames(): CountryDisplayNames {
-  const targetFile = join(
-    __dirname,
-    '..',
-    'build',
-    'country-display-names.json'
-  );
+function getCountryDisplayNames(rootDir: string): CountryDisplayNames {
+  const targetFile = join(rootDir, 'build', 'country-display-names.json');
   return JSON.parse(readFileSync(targetFile, 'utf-8'));
 }
 
@@ -80,49 +69,18 @@ export type LocaleType = {
   countryDisplayNames: CountryDisplayNames;
 };
 
-function getLocaleDirection(
-  localeName: string,
-  logger: LoggerType
-): LocaleDirection {
-  const locale = new Intl.Locale(localeName);
-  // TC39 proposal is now `locale.getTextInfo()` but in browsers its currently
-  // `locale.textInfo`
-  try {
-    // @ts-expect-error -- TS doesn't know about this method
-    if (typeof locale.getTextInfo === 'function') {
-      return parseUnknown(
-        TextInfoSchema,
-        // @ts-expect-error -- TS doesn't know about this method
-        locale.getTextInfo() as unknown
-      ).direction;
-    }
-    // @ts-expect-error -- TS doesn't know about this property
-    if (typeof locale.textInfo === 'object') {
-      return parseUnknown(
-        TextInfoSchema,
-        // @ts-expect-error -- TS doesn't know about this property
-        locale.textInfo as unknown
-      ).direction;
-    }
-  } catch (error) {
-    logger.error(
-      'locale: Error getting text info for locale',
-      Errors.toLogFormat(error)
-    );
-  }
-  return 'ltr';
+function getLocaleDirection(localeName: string): LocaleDirection {
+  return new Intl.Locale(localeName).getTextInfo().direction ?? 'ltr';
 }
 
-export function _getAvailableLocales(): Array<string> {
+export function _getAvailableLocales(rootDir: string): Array<string> {
   return JSON.parse(
-    readFileSync(
-      join(__dirname, '..', 'build', 'available-locales.json'),
-      'utf-8'
-    )
+    readFileSync(join(rootDir, 'build', 'available-locales.json'), 'utf-8')
   ) as Array<string>;
 }
 
 export function load({
+  rootDir,
   hourCyclePreference,
   isPackaged,
   localeDirectionTestingOverride,
@@ -130,6 +88,7 @@ export function load({
   logger,
   preferredSystemLocales,
 }: {
+  rootDir: string;
   hourCyclePreference: HourCyclePreference;
   isPackaged: boolean;
   localeDirectionTestingOverride: LocaleDirection | null;
@@ -145,7 +104,7 @@ export function load({
     logger.warn('locale: `preferredSystemLocales` was empty');
   }
 
-  const availableLocales = _getAvailableLocales();
+  const availableLocales = _getAvailableLocales(rootDir);
 
   logger.info('locale: Supported locales:', availableLocales.join(', '));
   logger.info('locale: Preferred locales:', preferredSystemLocales.join(', '));
@@ -160,14 +119,17 @@ export function load({
 
   logger.info(`locale: Matched locale: ${matchedLocale}`);
 
-  const localeDisplayNames = getLocaleDisplayNames();
-  const countryDisplayNames = getCountryDisplayNames();
+  const localeDisplayNames = getLocaleDisplayNames(rootDir);
+  const countryDisplayNames = getCountryDisplayNames(rootDir);
 
   let finalMessages: LocaleMessagesType;
   if (isPackaged) {
-    const matchedLocaleMessages = getCompactLocaleValues(matchedLocale);
-    const englishMessages = getCompactLocaleValues('en');
-    const keys = getCompactLocaleKeys();
+    const matchedLocaleMessages = getCompactLocaleValues(
+      rootDir,
+      matchedLocale
+    );
+    const englishMessages = getCompactLocaleValues(rootDir, 'en');
+    const keys = getCompactLocaleKeys(rootDir);
     if (matchedLocaleMessages.length !== keys.length) {
       throw new Error(
         `Invalid "${matchedLocale}" entry count, ` +
@@ -189,8 +151,8 @@ export function load({
       };
     }
   } else {
-    const matchedLocaleMessages = getLocaleMessages(matchedLocale);
-    const englishMessages = getLocaleMessages('en');
+    const matchedLocaleMessages = getLocaleMessages(rootDir, matchedLocale);
+    const englishMessages = getLocaleMessages(rootDir, 'en');
 
     // We start with english, then overwrite that with anything present in locale
     finalMessages = merge(englishMessages, matchedLocaleMessages);
@@ -202,7 +164,7 @@ export function load({
     getHourCyclePreference: shouldNeverBeCalled,
   });
   const direction =
-    localeDirectionTestingOverride ?? getLocaleDirection(matchedLocale, logger);
+    localeDirectionTestingOverride ?? getLocaleDirection(matchedLocale);
   logger.info(`locale: Text info direction for ${matchedLocale}: ${direction}`);
 
   return {

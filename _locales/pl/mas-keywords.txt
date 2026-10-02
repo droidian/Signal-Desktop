@@ -1,0 +1,1 @@
+signal,komunikator,darmowy,szyfrowany,bezpieczny,prywatny,czaty,grupy,połączenia,wideo,relacje

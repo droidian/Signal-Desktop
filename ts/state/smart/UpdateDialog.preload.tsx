@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useSelector } from 'react-redux';
-import React, { memo } from 'react';
-import { DialogUpdate } from '../../components/DialogUpdate.dom.js';
-import { getIntl } from '../selectors/user.std.js';
-import type { WidthBreakpoint } from '../../components/_util.std.js';
-import { useUpdatesActions } from '../ducks/updates.preload.js';
+import { memo } from 'react';
+import { DialogUpdate } from '../../components/DialogUpdate.dom.tsx';
+import { getIntl } from '../selectors/user.std.ts';
+import type { WidthBreakpoint } from '../../components/_util.std.ts';
+import { useUpdatesActions } from '../ducks/updates.preload.ts';
 import {
   getUpdateDialogType,
   getUpdateDownloadSize,
   getUpdateDownloadedSize,
   getUpdateVersion,
-} from '../selectors/updates.std.js';
-import { DialogType } from '../../types/Dialogs.std.js';
+} from '../selectors/updates.std.ts';
+import { DialogType } from '../../types/Dialogs.std.ts';
 
 type SmartUpdateDialogProps = Readonly<{
   containerWidthBreakpoint: WidthBreakpoint;

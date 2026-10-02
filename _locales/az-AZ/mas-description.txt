@@ -1,0 +1,21 @@
+Signal məxfiliyə əsaslanan bir mesajlaşma tətbiqidir. Çatlar və zənglərinizin məxfiliyini tamamilə qoruyan güclü tam şifrələmə xüsusiyyəti ilə ondan istifadə pulsuz və asandır. Signal mesajlarınızı oxuya və ya zənglərinizi dinləyə bilmir, digərlərinə də bunu etməyə icazə vermir. 
+
+• MacOS ilə işləyən Signal telefonunuzdakı Signal tətbiqi ilə əlaqələndirilir. 
+
+• Tam şifrələnmiş mətnləri, səsli mesajları, fotoları, videoları, GIF və faylları pulsuz göndərin. 
+
+• 1000 nəfərə qədər iştirakçını dəstəkləyən qrup çatlarına qoşulun. Admin icazəsi parametrləri ilə kimin qrup üzvləri ilə yazı paylaşacağına və onları idarə edəcəyinə nəzarət edin.
+
+• Dostlarınıza tam şifrələnmiş yüksək səs keyfiyyətinə malik audio və video zənglər edin. Qrup zəngləri 75 nəfərə qədər insanın qoşulmasını dəstəkləyir.
+
+• Signal məxfiliyinizi qorumaq üçün yaradılıb. Siz və ya söhbət etdiyiniz şəxslər haqqında heç nə bilmirik. Açıq mənbəli Signal Protokolumuz mesajlarınızı oxuya və zənglərinizi dinləyə bilməyəcəyimizi nəzərdə tutur. Bunu nə biz, nə də başqası edə bilməz. Arxa qapılar, verilənlərin toplanması və kompromislər yoxdur. 
+
+• 24 saat sonra yox olacaq foto, mətn və video Hekayələri paylaşın. Məxfilik parametrləri sayəsində hər bir Hekayəni kimin görə biləcəyini dəqiqliklə seçirsiniz.
+
+• Signal müstəqildir və mənfəət məqsədi güdmür, o, fərqli bir təşkilatın fərq yaradan bir texnologiyasıdır. Bir 501c3 qeyri-kommersiya təşkilatı kimi biz, reklamçı və investorların deyil, sizin ianələrinizlə dəstəklənirik. 
+
+• Dəstək, sual və əlavə məlumat üçün https://support.signal.org/ keçidinə daxil olun
+
+Mənbə kodumuzu yoxlamaq üçün https://github.com/signalapp keçidinə daxil olun 
+
+Bizi X-də @signalapp, Instagram-da isə @signal_app istifadəçi profilləri ilə izləyin

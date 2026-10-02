@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { BrowserWindow } from 'electron';
-import { Menu, clipboard, nativeImage } from 'electron';
+import { ClipboardItem, Menu, clipboard } from 'electron';
 import * as LocaleMatcher from '@formatjs/intl-localematcher';
 
-import { maybeParseUrl } from '../ts/util/url.std.js';
+import { maybeParseUrl } from '../ts/util/url.std.ts';
 
-import type { MenuListType } from '../ts/types/menu.std.js';
-import type { LocalizerType } from '../ts/types/Util.std.js';
-import { strictAssert } from '../ts/util/assert.std.js';
-import type { LoggerType } from '../ts/types/Logging.std.js';
-import { createLogger } from '../ts/logging/log.std.js';
-import { handleAttachmentRequest } from './attachment_channel.main.js';
+import type { MenuListType } from '../ts/types/menu.std.ts';
+import type { LocalizerType } from '../ts/types/Util.std.ts';
+import { APPLICATION_OCTET_STREAM } from '../ts/types/MIME.std.ts';
+import { strictAssert } from '../ts/util/assert.std.ts';
+import { drop } from '../ts/util/drop.std.ts';
+import type { LoggerType } from '../ts/types/Logging.std.ts';
+import { createLogger } from '../ts/logging/log.std.ts';
+import { handleAttachmentRequest } from './attachment_channel.main.ts';
 
 const log = createLogger('spell_check');
 
@@ -151,7 +153,7 @@ export const setup = (
 
         if (isLink) {
           click = () => {
-            clipboard.writeText(params.linkURL);
+            drop(clipboard.writeText(params.linkURL));
           };
           label = i18n('icu:contextMenuCopyLink');
         } else if (isImage) {
@@ -177,10 +179,16 @@ export const setup = (
                 return;
               }
 
-              const image = nativeImage.createFromBuffer(
-                Buffer.from(await res.arrayBuffer())
-              );
-              clipboard.writeImage(image);
+              const contentType =
+                res.headers.get('content-type') || APPLICATION_OCTET_STREAM;
+
+              await clipboard.write([
+                new ClipboardItem({
+                  [contentType]: new Blob([await res.arrayBuffer()], {
+                    type: contentType,
+                  }),
+                }),
+              ]);
             } catch (error) {
               logger.error('Failed to load image', error);
             }

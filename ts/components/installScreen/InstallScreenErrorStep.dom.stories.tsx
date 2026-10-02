@@ -1,12 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import { InstallScreenError } from '../../types/InstallScreen.std.js';
-import type { Props } from './InstallScreenErrorStep.dom.js';
-import { InstallScreenErrorStep } from './InstallScreenErrorStep.dom.js';
+import { InstallScreenError } from '../../types/InstallScreen.std.ts';
+import type { Props } from './InstallScreenErrorStep.dom.tsx';
+import { InstallScreenErrorStep } from './InstallScreenErrorStep.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -20,22 +21,22 @@ const defaultProps = {
   tryAgain: action('tryAgain'),
 };
 
-export const _TooManyDevices = (): React.JSX.Element => (
+export const _TooManyDevices = (): JSX.Element => (
   <InstallScreenErrorStep
     {...defaultProps}
     error={InstallScreenError.TooManyDevices}
   />
 );
 
-export const _TooOld = (): React.JSX.Element => (
+export const _TooOld = (): JSX.Element => (
   <InstallScreenErrorStep {...defaultProps} error={InstallScreenError.TooOld} />
 );
 
-export const __TooOld = (): React.JSX.Element => (
+export const __TooOld = (): JSX.Element => (
   <InstallScreenErrorStep {...defaultProps} error={InstallScreenError.TooOld} />
 );
 
-export const _ConnectionFailed = (): React.JSX.Element => (
+export const _ConnectionFailed = (): JSX.Element => (
   <InstallScreenErrorStep
     {...defaultProps}
     error={InstallScreenError.ConnectionFailed}

@@ -2,32 +2,30 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React from 'react';
-
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { ContactListItemConversationType } from '../conversationList/ContactListItem.dom.js';
-import { DisappearingTimerSelect } from '../DisappearingTimerSelect.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { DurationInSeconds } from '../../util/durations/index.std.js';
-import { Alert } from '../Alert.dom.js';
-import { AvatarEditor } from '../AvatarEditor.dom.js';
-import { AvatarPreview } from '../AvatarPreview.dom.js';
-import { Spinner } from '../Spinner.dom.js';
-import { Button } from '../Button.dom.js';
-import { Modal } from '../Modal.dom.js';
-import { GroupTitleInput } from '../GroupTitleInput.dom.js';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { ContactListItemConversationType } from '../conversationList/ContactListItem.dom.tsx';
+import { DisappearingTimerSelect } from '../DisappearingTimerSelect.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { AvatarEditor } from '../AvatarEditor.dom.tsx';
+import { AvatarPreview } from '../AvatarPreview.dom.tsx';
+import { Spinner } from '../Spinner.dom.tsx';
+import { Button } from '../Button.dom.tsx';
+import { GroupTitleInput } from '../GroupTitleInput.dom.tsx';
 import type {
   AvatarDataType,
   DeleteAvatarFromDiskActionType,
   ReplaceAvatarActionType,
   SaveAvatarToDiskActionType,
-} from '../../types/Avatar.std.js';
-import { AvatarColors } from '../../types/Colors.std.js';
+} from '../../types/Avatar.std.ts';
+import { AvatarColors } from '../../types/Colors.std.ts';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
+import { AxoDialog } from '../../axo/AxoDialog.dom.tsx';
 
 export type LeftPaneSetGroupMetadataPropsType = {
-  groupAvatar: undefined | Uint8Array;
+  groupAvatar: undefined | Uint8Array<ArrayBuffer>;
   groupName: string;
   groupExpireTimer: DurationInSeconds;
   hasError: boolean;
@@ -37,8 +35,9 @@ export type LeftPaneSetGroupMetadataPropsType = {
   userAvatarData: ReadonlyArray<AvatarDataType>;
 };
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneSetGroupMetadataHelper extends LeftPaneHelper<LeftPaneSetGroupMetadataPropsType> {
-  readonly #groupAvatar: undefined | Uint8Array;
+  readonly #groupAvatar: undefined | Uint8Array<ArrayBuffer>;
   readonly #groupName: string;
   readonly #groupExpireTimer: DurationInSeconds;
   readonly #hasError: boolean;
@@ -121,7 +120,7 @@ export class LeftPaneSetGroupMetadataHelper extends LeftPaneHelper<LeftPaneSetGr
     composeSaveAvatarToDisk: SaveAvatarToDiskActionType;
     createGroup: () => unknown;
     i18n: LocalizerType;
-    setComposeGroupAvatar: (_: undefined | Uint8Array) => unknown;
+    setComposeGroupAvatar: (_: undefined | Uint8Array<ArrayBuffer>) => unknown;
     setComposeGroupExpireTimer: (_: DurationInSeconds) => void;
     setComposeGroupName: (_: string) => unknown;
     toggleComposeEditingAvatar: () => unknown;
@@ -144,31 +143,36 @@ export class LeftPaneSetGroupMetadataHelper extends LeftPaneHelper<LeftPaneSetGr
         }}
       >
         {this.#isEditingAvatar && (
-          <Modal
-            modalName="LeftPaneSetGroupMetadataHelper.AvatarEditor"
-            hasXButton
-            i18n={i18n}
-            onClose={toggleComposeEditingAvatar}
-            title={i18n(
-              'icu:LeftPaneSetGroupMetadataHelper__avatar-modal-title'
-            )}
-          >
-            <AvatarEditor
-              avatarColor={avatarColor}
-              avatarValue={this.#groupAvatar}
-              deleteAvatarFromDisk={composeDeleteAvatarFromDisk}
-              i18n={i18n}
-              isGroup
-              onCancel={toggleComposeEditingAvatar}
-              onSave={newAvatar => {
-                setComposeGroupAvatar(newAvatar);
-                toggleComposeEditingAvatar();
-              }}
-              userAvatarData={this.#userAvatarData}
-              replaceAvatar={composeReplaceAvatar}
-              saveAvatarToDisk={composeSaveAvatarToDisk}
-            />
-          </Modal>
+          <AxoDialog.Root open onOpenChange={toggleComposeEditingAvatar}>
+            <AxoDialog.Content size="md" escape="cancel-is-noop">
+              <AxoDialog.Header>
+                <AxoDialog.Title>
+                  {i18n(
+                    'icu:LeftPaneSetGroupMetadataHelper__avatar-modal-title'
+                  )}
+                </AxoDialog.Title>
+                <AxoDialog.Close />
+              </AxoDialog.Header>
+              <AxoDialog.Body maxHeight={600}>
+                <AvatarEditor
+                  avatarColor={avatarColor}
+                  avatarValue={this.#groupAvatar}
+                  deleteAvatarFromDisk={composeDeleteAvatarFromDisk}
+                  i18n={i18n}
+                  isDisplayedAsPanel={false}
+                  isGroup
+                  onCancel={toggleComposeEditingAvatar}
+                  onSave={newAvatar => {
+                    setComposeGroupAvatar(newAvatar);
+                    toggleComposeEditingAvatar();
+                  }}
+                  userAvatarData={this.#userAvatarData}
+                  replaceAvatar={composeReplaceAvatar}
+                  saveAvatarToDisk={composeSaveAvatarToDisk}
+                />
+              </AxoDialog.Body>
+            </AxoDialog.Content>
+          </AxoDialog.Root>
         )}
         <AvatarPreview
           avatarColor={avatarColor}
@@ -205,13 +209,15 @@ export class LeftPaneSetGroupMetadataHelper extends LeftPaneHelper<LeftPaneSetGr
           />
         </section>
 
-        {this.#hasError && (
-          <Alert
-            body={i18n('icu:setGroupMetadata__error-message')}
-            i18n={i18n}
-            onClose={clearGroupCreationError}
-          />
-        )}
+        <AxoConfirmDialog.Root
+          open={this.#hasError}
+          onOpenChange={clearGroupCreationError}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={i18n('icu:setGroupMetadata__error-message')}
+        >
+          <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+        </AxoConfirmDialog.Root>
       </form>
     );
   }

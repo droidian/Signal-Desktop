@@ -1,26 +1,28 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as RemoteConfig from '../RemoteConfig.dom.js';
-import { isTestOrMockEnvironment } from '../environment.std.js';
-import { isStagingServer } from './isStagingServer.dom.js';
-import { isNightly } from './version.std.js';
+import type { ReadonlyDeep } from 'type-fest';
+import { type ConfigMapType } from '../RemoteConfig.dom.ts';
+import {
+  isFeaturedEnabledNoRedux,
+  isFeaturedEnabledSelector,
+} from './isFeatureEnabled.dom.ts';
 
-export function isLocalBackupsEnabled(
-  reduxConfig?: RemoteConfig.ConfigMapType
-): boolean {
-  if (isStagingServer() || isTestOrMockEnvironment()) {
-    return true;
+export function isLocalBackupsEnabled(reduxArgs?: {
+  currentVersion: string;
+  remoteConfig: ReadonlyDeep<ConfigMapType> | undefined;
+}): boolean {
+  if (reduxArgs) {
+    return isFeaturedEnabledSelector({
+      currentVersion: reduxArgs.currentVersion,
+      remoteConfig: reduxArgs.remoteConfig,
+      betaKey: 'desktop.localBackups.beta',
+      prodKey: 'desktop.localBackups.prod',
+    });
   }
 
-  if (RemoteConfig.isEnabled('desktop.internalUser', reduxConfig)) {
-    return true;
-  }
-
-  const version = window.getVersion?.();
-  if (version != null) {
-    return isNightly(version);
-  }
-
-  return false;
+  return isFeaturedEnabledNoRedux({
+    betaKey: 'desktop.localBackups.beta',
+    prodKey: 'desktop.localBackups.prod',
+  });
 }

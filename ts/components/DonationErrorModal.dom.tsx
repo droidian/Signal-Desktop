@@ -1,84 +1,73 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
-import type { ReactNode } from 'react';
+import type { JSX } from 'react';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { donationErrorTypeSchema } from '../types/Donations.std.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
+import type { DonationErrorType } from '../types/Donations.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { donationErrorTypeSchema } from '../types/Donations.std.js';
-
-import type { LocalizerType } from '../types/Util.std.js';
-import type { DonationErrorType } from '../types/Donations.std.js';
-import { Button } from './Button.dom.js';
-import { Modal } from './Modal.dom.js';
-
-export type PropsType = {
+export type PropsType = Readonly<{
   i18n: LocalizerType;
   onClose: () => void;
   errorType: DonationErrorType;
-};
+}>;
 
-export function DonationErrorModal(props: PropsType): React.JSX.Element {
-  const { i18n, onClose } = props;
+export function DonationErrorModal(props: PropsType): JSX.Element {
+  const { i18n } = props;
 
   let title: string;
-  let body: ReactNode;
+  let body: string;
 
   switch (props.errorType) {
-    case donationErrorTypeSchema.Enum.Failed3dsValidation: {
+    case donationErrorTypeSchema.enum.Failed3dsValidation: {
       title = i18n('icu:Donations__Failed3dsValidation');
       body = i18n('icu:Donations__Failed3dsValidation__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.GeneralError: {
+    case donationErrorTypeSchema.enum.GeneralError: {
       title = i18n('icu:Donations__GenericError');
       body = i18n('icu:Donations__GenericError__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.PaymentDeclined: {
+    case donationErrorTypeSchema.enum.PaymentDeclined: {
       title = i18n('icu:Donations__PaymentMethodDeclined');
       body = i18n('icu:Donations__PaymentMethodDeclined__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.PaypalCanceled: {
+    case donationErrorTypeSchema.enum.PaypalCanceled: {
       title = i18n('icu:Donations__PaypalCanceled');
       body = i18n('icu:Donations__PaypalCanceled__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.PaypalError: {
+    case donationErrorTypeSchema.enum.PaypalError: {
       title = i18n('icu:Donations__PaypalError');
       body = i18n('icu:Donations__PaypalError__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.TimedOut: {
+    case donationErrorTypeSchema.enum.TimedOut: {
       title = i18n('icu:Donations__TimedOut');
       body = i18n('icu:Donations__TimedOut__Description');
       break;
     }
-    case donationErrorTypeSchema.Enum.BadgeApplicationFailed: {
+    case donationErrorTypeSchema.enum.BadgeApplicationFailed: {
       title = i18n('icu:Donations__BadgeApplicationFailed__Title');
       body = i18n('icu:Donations__BadgeApplicationFailed__Description');
       break;
     }
-
     default:
       throw missingCaseError(props.errorType);
   }
 
   return (
-    <Modal
-      hasXButton
-      i18n={i18n}
-      modalFooter={
-        <Button onClick={onClose}>{i18n('icu:Confirmation--confirm')}</Button>
-      }
-      moduleClassName="DonationErrorModal"
-      modalName="DonationErrorModal"
-      noMouseClose
-      onClose={onClose}
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={props.onClose}
       title={title}
+      description={body}
     >
-      {body}
-    </Modal>
+      <AxoConfirmDialog.Cancel>{i18n('icu:ok')}</AxoConfirmDialog.Cancel>
+    </AxoConfirmDialog.Root>
   );
 }

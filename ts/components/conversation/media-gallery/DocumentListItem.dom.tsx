@@ -1,22 +1,22 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { type ReactNode } from 'react';
+import { type ReactNode, type JSX } from 'react';
 import type { ReadonlyDeep } from 'type-fest';
 
-import { formatFileSize } from '../../../util/formatFileSize.std.js';
+import { formatFileSize } from '../../../util/formatFileSize.std.ts';
 import type {
   GenericMediaItemType,
   MediaItemType,
-} from '../../../types/MediaItem.std.js';
-import type { LocalizerType } from '../../../types/Util.std.js';
-import { AxoSymbol } from '../../../axo/AxoSymbol.dom.js';
-import { FileThumbnail } from '../../FileThumbnail.dom.js';
+} from '../../../types/MediaItem.std.ts';
+import type { LocalizerType } from '../../../types/Util.std.ts';
+import { AxoSymbol } from '../../../axo/AxoSymbol.dom.tsx';
+import { FileThumbnail } from '../../FileThumbnail.dom.tsx';
 import {
   useAttachmentStatus,
   type AttachmentStatusType,
-} from '../../../hooks/useAttachmentStatus.std.js';
-import { ListItem } from './ListItem.dom.js';
+} from '../../../hooks/useAttachmentStatus.std.ts';
+import { ListItem } from './ListItem.dom.tsx';
 
 export type Props = {
   i18n: LocalizerType;
@@ -37,14 +37,14 @@ export function DocumentListItem({
   onClick,
   showMessage,
   renderContextMenu,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   const { attachment } = mediaItem;
 
   const { fileName, size: fileSize } = attachment;
 
   const status = useAttachmentStatus(attachment);
 
-  let glyph: React.JSX.Element | undefined;
+  let glyph: JSX.Element | undefined;
   if (status.state !== 'ReadyToShow') {
     glyph = (
       <>

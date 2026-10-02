@@ -102,24 +102,18 @@ $audio-attachment-button-margin-small: 4px;
   display: flex;
   align-items: center;
   cursor: pointer;
-
-  outline: 0;
 }
 
 .PlaybackButton,
 .PlaybackRateButton,
 .module-message__audio-attachment__waveform {
-  &:focus {
-    @include mixins.keyboard-mode {
-      outline: 2px solid variables.$color-ultramarine;
-    }
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 
   .module-message__audio-attachment--outgoing & {
-    &:focus {
-      @include mixins.keyboard-mode {
-        outline: 2px solid variables.$color-white-alpha-60;
-      }
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 }
@@ -139,7 +133,6 @@ $audio-attachment-button-margin-small: 4px;
 .module-message__audio-attachment__countdown {
   @include mixins.font-caption;
   width: $audio-attachment-button-size;
-  user-select: none;
   text-align: center;
   white-space: nowrap;
   margin-inline-end: 12px;

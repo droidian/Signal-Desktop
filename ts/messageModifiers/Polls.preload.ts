@@ -1,29 +1,30 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AciString } from '../types/ServiceId.std.js';
+import type { AciString } from '../types/ServiceId.std.ts';
 import type {
   MessageAttributesType,
   ReadonlyMessageAttributesType,
 } from '../model-types.d.ts';
-import type { MessagePollVoteType } from '../types/Polls.dom.js';
-import { PollTerminateSendStatus } from '../types/Polls.dom.js';
-import { MessageModel } from '../models/messages.preload.js';
-import { DataReader } from '../sql/Client.preload.js';
-import * as Errors from '../types/errors.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { isIncoming, isOutgoing } from '../messages/helpers.std.js';
-import { getAuthor } from '../messages/sources.preload.js';
+import type { MessagePollVoteType } from '../types/Polls.dom.ts';
+import { PollTerminateSendStatus } from '../types/Polls.dom.ts';
+import { MessageModel } from '../models/messages.preload.ts';
+import { DataReader } from '../sql/Client.preload.ts';
+import * as Errors from '../types/errors.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { isIncoming, isOutgoing } from '../messages/helpers.std.ts';
+import { getAuthor } from '../messages/sources.preload.ts';
 
-import { isSent, SendStatus } from '../messages/MessageSendState.std.js';
-import { getPropForTimestamp } from '../util/editHelpers.std.js';
-import { isMe } from '../util/whatTypeOfConversation.dom.js';
+import { isSent, SendStatus } from '../messages/MessageSendState.std.ts';
+import { getPropForTimestamp } from '../util/editHelpers.std.ts';
+import { isMe } from '../util/whatTypeOfConversation.dom.ts';
 
-import { strictAssert } from '../util/assert.std.js';
-import { getMessageIdForLogging } from '../util/idForLogging.preload.js';
-import { drop } from '../util/drop.std.js';
-import { maybeNotify } from '../messages/maybeNotify.preload.js';
-import type { DurationInSeconds } from '../util/durations/duration-in-seconds.std.js';
+import { strictAssert } from '../util/assert.std.ts';
+import { getMessageIdForLogging } from '../util/idForLogging.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { maybeNotify } from '../messages/maybeNotify.preload.ts';
+import type { DurationInSeconds } from '../util/durations/duration-in-seconds.std.ts';
+import { isValidSenderAciForConversation } from './helpers/isValidSenderAciForConversation.preload.ts';
 
 const log = createLogger('Polls');
 
@@ -115,6 +116,26 @@ function doesVoteModifierMatchMessage({
     return true;
   }
 
+  const messageConversation = window.ConversationController.get(
+    message.conversationId
+  );
+  if (!messageConversation) {
+    return false;
+  }
+
+  if (messageConversation.isBlocked() || voteSenderConversation.isBlocked()) {
+    return false;
+  }
+
+  const voteSenderAci = voteSenderConversation.getAci();
+  if (!voteSenderAci) {
+    return false;
+  }
+
+  if (!isValidSenderAciForConversation(messageConversation, voteSenderAci)) {
+    return false;
+  }
+
   if (isOutgoing(message)) {
     const sendStateByConversationId = getPropForTimestamp({
       log,
@@ -127,22 +148,7 @@ function doesVoteModifierMatchMessage({
     return !!sendState && isSent(sendState.status);
   }
 
-  if (isIncoming(message)) {
-    const messageConversation = window.ConversationController.get(
-      message.conversationId
-    );
-    if (!messageConversation) {
-      return false;
-    }
-
-    const voteSenderServiceId = voteSenderConversation.getServiceId();
-    return (
-      voteSenderServiceId != null &&
-      messageConversation.hasMember(voteSenderServiceId)
-    );
-  }
-
-  return false;
+  return isIncoming(message);
 }
 
 async function findPollMessage({
@@ -365,6 +371,12 @@ export async function handlePollVote(
     log.warn('handlePollVote: Invalid option indexes found, dropping');
     return;
   }
+  const hasDupeIndexes =
+    new Set(vote.optionIndexes).size !== vote.optionIndexes.length;
+  if (hasDupeIndexes) {
+    log.warn('handlePollVote: Duplicate optionIndexes detected, dropping');
+    return;
+  }
 
   // Check multiple choice constraint
   if (!poll.allowMultiple && vote.optionIndexes.length > 1) {
@@ -436,7 +448,8 @@ export async function handlePollVote(
     );
 
     if (existingVoteIndex !== -1) {
-      const existingVote = currentVotes[existingVoteIndex];
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const existingVote = currentVotes[existingVoteIndex]!;
 
       if (newVote.voteCount > existingVote.voteCount) {
         updatedVotes = [...currentVotes];
@@ -483,6 +496,7 @@ export async function handlePollVote(
   if (shouldMarkAsUnread) {
     drop(
       maybeNotify({
+        kind: 'pollVote',
         pollVote: vote,
         targetMessage: message.attributes,
         conversation: conversationContainingThisPoll,
@@ -572,19 +586,19 @@ export async function handlePollTerminate(
     `Poll ${getMessageIdForLogging(message.attributes)} terminated at ${terminate.timestamp}`
   );
 
+  await conversation.addPollTerminateNotification({
+    pollQuestion: poll.question,
+    pollTimestamp: message.attributes.timestamp,
+    pollSource: terminate.source,
+    terminatorId: terminate.fromConversationId,
+    timestamp: terminate.timestamp,
+    isMeTerminating: isMe(author.attributes),
+    expireTimer: terminate.expireTimer,
+    expirationStartTimestamp: terminate.expirationStartTimestamp,
+  });
+
   if (shouldPersist) {
     await window.MessageCache.saveMessage(message.attributes);
-
-    await conversation.addPollTerminateNotification({
-      pollQuestion: poll.question,
-      pollMessageId: message.id,
-      terminatorId: terminate.fromConversationId,
-      timestamp: terminate.timestamp,
-      isMeTerminating: isMe(author.attributes),
-      expireTimer: terminate.expireTimer,
-      expirationStartTimestamp: terminate.expirationStartTimestamp,
-    });
-
     window.reduxActions.conversations.markOpenConversationRead(conversation.id);
   }
 }

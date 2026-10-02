@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import { type Hmac } from 'node:crypto';
 import { Transform } from 'node:stream';
 
-import { MAC_LENGTH } from '../types/Crypto.std.js';
+import { MAC_LENGTH } from '../types/Crypto.std.ts';
 
 /**
  * Updates an hmac with the stream except for the last MAC_LENGTH
@@ -13,7 +13,7 @@ import { MAC_LENGTH } from '../types/Crypto.std.js';
  */
 export function getMacAndUpdateHmac(
   hmac: Hmac,
-  onTheirMac: (theirMac: Uint8Array) => void
+  onTheirMac: (theirMac: Uint8Array<ArrayBuffer>) => void
 ): Transform {
   // Because we don't have a view of the entire stream, we don't know when we're
   // at the end. We need to omit the last MAC_LENGTH bytes from

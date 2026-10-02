@@ -1,13 +1,13 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState } from 'react';
+import { useState, type JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './Slider.dom.js';
-import { Slider } from './Slider.dom.js';
+import type { PropsType } from './Slider.dom.tsx';
+import { Slider } from './Slider.dom.tsx';
 
 export default {
   title: 'Components/Slider',
@@ -19,16 +19,16 @@ const createProps = (): PropsType => ({
   value: 30,
 });
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <Slider {...createProps()} />;
 }
 
-function StatefulSliderController(props: PropsType): React.JSX.Element {
+function StatefulSliderController(props: PropsType): JSX.Element {
   const [value, setValue] = useState(30);
 
   return <Slider {...props} onChange={setValue} value={value} />;
 }
 
-export function DraggableTest(): React.JSX.Element {
+export function DraggableTest(): JSX.Element {
   return <StatefulSliderController {...createProps()} />;
 }

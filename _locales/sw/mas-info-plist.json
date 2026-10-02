@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal inatumia kamera yako kwa upigaji simu wa video."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal inahitaji idhini ya kuifikia maikrofoni yako ili kupiga na kupokea simu na kurekodi jumbe za sauti."
+  }
+}

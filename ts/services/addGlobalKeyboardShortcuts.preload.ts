@@ -1,16 +1,17 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as KeyboardLayout from './keyboardLayout.dom.js';
-import { createLogger } from '../logging/log.std.js';
-import { PanelType } from '../types/Panels.std.js';
-import { clearConversationDraftAttachments } from '../util/clearConversationDraftAttachments.preload.js';
-import { drop } from '../util/drop.std.js';
-import { matchOrQueryFocusable } from '../util/focusableSelectors.std.js';
-import { getQuotedMessageSelector } from '../state/selectors/composer.preload.js';
-import { removeLinkPreview } from './LinkPreview.preload.js';
-import { ForwardMessagesModalType } from '../components/ForwardMessagesModal.dom.js';
-import { getSelectedConversationId } from '../state/selectors/nav.std.js';
+import * as KeyboardLayout from './keyboardLayout.dom.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { PanelType } from '../types/Panels.std.ts';
+import { clearConversationDraftAttachments } from '../util/clearConversationDraftAttachments.preload.ts';
+import { drop } from '../util/drop.std.ts';
+import { matchOrQueryFocusable } from '../util/focusableSelectors.std.ts';
+import { getQuotedMessageSelector } from '../state/selectors/composer.preload.ts';
+import { removeLinkPreview } from './LinkPreview.preload.ts';
+import { ForwardMessagesModalType } from '../components/ForwardMessagesModal.dom.tsx';
+import { getSelectedConversationId } from '../state/selectors/nav.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
 const log = createLogger('addGlobalKeyboardShortcuts');
 
@@ -50,7 +51,6 @@ export function addGlobalKeyboardShortcuts(): void {
       (commandOrCtrl && key === 'F6') ||
       (commandOrCtrl && !shiftKey && (key === 't' || key === 'T'))
     ) {
-      window.enterKeyboardMode();
       const focusedElement = document.activeElement;
       const targets = Array.from(
         document.querySelectorAll<HTMLElement>('[data-supertab="true"]')
@@ -96,6 +96,7 @@ export function addGlobalKeyboardShortcuts(): void {
       }
 
       const node = targets[index];
+      strictAssert(node, 'Missing node');
       const firstFocusableElement = matchOrQueryFocusable(node);
 
       if (firstFocusableElement) {
@@ -107,7 +108,6 @@ export function addGlobalKeyboardShortcuts(): void {
         log.warn(
           `supertab: could not find focus for DOM node ${node.nodeName}<${nodeInfo}>`
         );
-        window.enterMouseMode();
         const { activeElement } = document;
         if (
           activeElement &&
@@ -137,7 +137,7 @@ export function addGlobalKeyboardShortcuts(): void {
       const target = document.activeElement;
 
       // We might want to use NamedNodeMap.getNamedItem('class')
-      /* eslint-disable @typescript-eslint/no-explicit-any */
+      /* oxlint-disable @typescript-eslint/no-explicit-any */
       if (
         target &&
         target.attributes &&
@@ -145,7 +145,7 @@ export function addGlobalKeyboardShortcuts(): void {
         (target.attributes as any).class.value
       ) {
         const className = (target.attributes as any).class.value;
-        /* eslint-enable @typescript-eslint/no-explicit-any */
+        /* oxlint-enable @typescript-eslint/no-explicit-any */
 
         // Search box wants to handle events internally
         if (className.includes('LeftPaneSearchInput__input')) {
@@ -233,12 +233,13 @@ export function addGlobalKeyboardShortcuts(): void {
       const { x, y, width, height } = button.getBoundingClientRect();
       const mouseEvent = document.createEvent('MouseEvents');
       // Types do not match signature
-      /* eslint-disable @typescript-eslint/no-explicit-any */
       mouseEvent.initMouseEvent(
         'click',
         true, // bubbles
         false, // cancelable
+        // oxlint-disable-next-line typescript/no-explicit-any
         null as any, // view
+        // oxlint-disable-next-line typescript/no-explicit-any
         null as any, // detail
         0, // screenX,
         0, // screenY,
@@ -248,10 +249,10 @@ export function addGlobalKeyboardShortcuts(): void {
         false, // altKey,
         false, // shiftKey,
         false, // metaKey,
+        // oxlint-disable-next-line typescript/no-explicit-any
         false as any, // button,
         document.body
       );
-      /* eslint-enable @typescript-eslint/no-explicit-any */
 
       button.dispatchEvent(mouseEvent);
 
@@ -279,7 +280,6 @@ export function addGlobalKeyboardShortcuts(): void {
       !shiftKey &&
       (key === 'j' || key === 'J')
     ) {
-      window.enterKeyboardMode();
       const item: HTMLElement | null =
         document.querySelector(
           '.module-last-seen-indicator ~ div .module-message'
@@ -421,7 +421,7 @@ export function addGlobalKeyboardShortcuts(): void {
 
       window.reduxActions.composer.setQuoteByMessageId(
         conversation.id,
-        quote ? undefined : targetedMessage
+        quote ? undefined : (targetedMessage ?? undefined)
       );
 
       return;

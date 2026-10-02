@@ -1,11 +1,11 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode, ErrorInfo } from 'react';
-import React, { Component, useCallback } from 'react';
-import { createLogger } from '../../../logging/log.std.js';
-import * as Errors from '../../../types/errors.std.js';
-import { ToastType } from '../../../types/Toast.dom.js';
-import { isProduction } from '../../../util/version.std.js';
+import type { ReactNode, ErrorInfo, JSX } from 'react';
+import { Component, useCallback } from 'react';
+import { createLogger } from '../../../logging/log.std.ts';
+import * as Errors from '../../../types/errors.std.ts';
+import { ToastType } from '../../../types/Toast.dom.tsx';
+import { isProduction } from '../../../util/version.std.ts';
 
 const log = createLogger('FunErrorBoundary');
 
@@ -20,7 +20,7 @@ type ErrorBoundaryState = {
 };
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // eslint-disable-next-line react/state-in-constructor
+  // oxlint-disable-next-line react/state-in-constructor
   override state: ErrorBoundaryState = {};
 
   static getDerivedStateFromError(error: unknown) {
@@ -44,9 +44,7 @@ export type FunErrorBoundaryProps = Readonly<{
   children: ReactNode;
 }>;
 
-export function FunErrorBoundary(
-  props: FunErrorBoundaryProps
-): React.JSX.Element {
+export function FunErrorBoundary(props: FunErrorBoundaryProps): JSX.Element {
   const fallback = useCallback(() => {
     return <div className="FunErrorBoundary" />;
   }, []);

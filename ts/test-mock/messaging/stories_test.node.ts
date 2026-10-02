@@ -7,14 +7,14 @@ import {
   StorageState,
   EMPTY_DATA_MESSAGE,
 } from '@signalapp/mock-server';
-import type { Group } from '@signalapp/mock-server';
+import type { Group, PrimaryDevice } from '@signalapp/mock-server';
 
-import * as durations from '../../util/durations/index.std.js';
-import { uuidToBytes } from '../../util/uuidToBytes.std.js';
-import { MY_STORY_ID } from '../../types/Stories.std.js';
-import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.js';
-import type { App } from '../playwright.node.js';
-import { Bootstrap } from '../bootstrap.node.js';
+import * as durations from '../../util/durations/index.std.ts';
+import { uuidToBytes } from '../../util/uuidToBytes.std.ts';
+import { MY_STORY_ID } from '../../types/Stories.std.ts';
+import { generateStoryDistributionId } from '../../types/StoryDistributionId.std.ts';
+import type { App } from '../playwright.node.ts';
+import { Bootstrap } from '../bootstrap.node.ts';
 
 export const debug = createDebug('mock:test:stories');
 
@@ -35,7 +35,7 @@ describe('story/messaging', function (this: Mocha.Suite) {
     await bootstrap.init();
 
     const { phone, contacts } = bootstrap;
-    const [first, second] = contacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     let state = StorageState.getEmpty();
 
@@ -130,7 +130,7 @@ describe('story/messaging', function (this: Mocha.Suite) {
 
   it('allows replies on multiple distribution lists', async () => {
     const { phone, desktop, contacts } = bootstrap;
-    const [first, second] = contacts;
+    const [first, second] = contacts as [PrimaryDevice, PrimaryDevice];
 
     const window = await app.getWindow();
     const sentAt = Date.now();
@@ -254,6 +254,7 @@ describe('story/messaging', function (this: Mocha.Suite) {
 
   it('allows replies to groups', async () => {
     const { desktop, contacts } = bootstrap;
+    const [first] = contacts as [PrimaryDevice];
 
     const window = await app.getWindow();
 
@@ -286,7 +287,7 @@ describe('story/messaging', function (this: Mocha.Suite) {
       story: sentAt,
       reply: sentAt + 1,
     });
-    await contacts[0].sendRaw(
+    await first.sendRaw(
       desktop,
       {
         content: {

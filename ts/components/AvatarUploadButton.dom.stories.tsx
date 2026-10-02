@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import { action } from '@storybook/addon-actions';
 import type { Meta } from '@storybook/react';
-import type { PropsType } from './AvatarUploadButton.dom.js';
-import { AvatarUploadButton } from './AvatarUploadButton.dom.js';
+import type { PropsType } from './AvatarUploadButton.dom.tsx';
+import { AvatarUploadButton } from './AvatarUploadButton.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
@@ -20,6 +20,6 @@ export default {
   title: 'Components/AvatarUploadButton',
 } satisfies Meta<PropsType>;
 
-export function Default(): React.JSX.Element {
+export function Default(): JSX.Element {
   return <AvatarUploadButton {...createProps()} />;
 }

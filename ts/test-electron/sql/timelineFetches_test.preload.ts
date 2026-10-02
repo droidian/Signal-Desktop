@@ -4,12 +4,11 @@
 import { assert } from 'chai';
 import { v4 as generateUuid } from 'uuid';
 
-import { DataReader, DataWriter } from '../../sql/Client.preload.js';
-import { generateAci } from '../../types/ServiceId.std.js';
-
+import { DataReader, DataWriter } from '../../sql/Client.preload.ts';
 import type { MessageAttributesType } from '../../model-types.d.ts';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { postSaveUpdates } from '../../util/cleanup.preload.js';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { postSaveUpdates } from '../../util/cleanup.preload.ts';
+import { generateAci } from '../../test-helpers/serviceIdUtils.std.ts';
 
 const {
   _getAllMessages,
@@ -101,8 +100,8 @@ describe('sql/timelineFetches', () => {
       assert.lengthOf(messages, 3);
 
       // Fetched with DESC query, but with reverse() call afterwards
-      assert.strictEqual(messages[0].id, message1.id);
-      assert.strictEqual(messages[1].id, message2.id);
+      assert.strictEqual(messages[0]?.id, message1.id);
+      assert.strictEqual(messages[1]?.id, message2.id);
     });
 
     it('returns N most recent messages for a given story', async () => {
@@ -158,7 +157,7 @@ describe('sql/timelineFetches', () => {
         storyId,
       });
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message2.id);
+      assert.strictEqual(messages[0]?.id, message2.id);
     });
 
     it('returns N most recent messages excluding group story replies', async () => {
@@ -214,7 +213,7 @@ describe('sql/timelineFetches', () => {
         storyId: undefined,
       });
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message3.id);
+      assert.strictEqual(messages[0]?.id, message3.id);
     });
 
     it('returns N messages older than provided received_at', async () => {
@@ -269,7 +268,7 @@ describe('sql/timelineFetches', () => {
         storyId: undefined,
       });
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message1.id);
+      assert.strictEqual(messages[0]?.id, message1.id);
     });
 
     it('returns N older messages with received_at, lesser sent_at', async () => {
@@ -327,8 +326,8 @@ describe('sql/timelineFetches', () => {
       assert.lengthOf(messages, 2);
 
       // Fetched with DESC query, but with reverse() call afterwards
-      assert.strictEqual(messages[0].id, message1.id, 'checking message 1');
-      assert.strictEqual(messages[1].id, message2.id, 'checking message 2');
+      assert.strictEqual(messages[0]?.id, message1.id, 'checking message 1');
+      assert.strictEqual(messages[1]?.id, message2.id, 'checking message 2');
     });
 
     it('returns N older messages, same received_at/sent_at but excludes messageId', async () => {
@@ -385,7 +384,7 @@ describe('sql/timelineFetches', () => {
       });
 
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message1.id);
+      assert.strictEqual(messages[0]?.id, message1.id);
     });
   });
 
@@ -462,8 +461,8 @@ describe('sql/timelineFetches', () => {
       });
 
       assert.lengthOf(messages, 3);
-      assert.strictEqual(messages[0].id, message3.id, 'checking message 3');
-      assert.strictEqual(messages[1].id, message4.id, 'checking message 4');
+      assert.strictEqual(messages[0]?.id, message3.id, 'checking message 3');
+      assert.strictEqual(messages[1]?.id, message4.id, 'checking message 4');
     });
 
     it('returns N oldest messages for a given story with no parameters', async () => {
@@ -520,7 +519,7 @@ describe('sql/timelineFetches', () => {
       });
 
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message2.id);
+      assert.strictEqual(messages[0]?.id, message2.id);
     });
 
     it('returns N messages newer than provided received_at', async () => {
@@ -575,7 +574,7 @@ describe('sql/timelineFetches', () => {
         storyId: undefined,
       });
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message3.id);
+      assert.strictEqual(messages[0]?.id, message3.id);
     });
 
     it('returns N messages excluding group story replies', async () => {
@@ -632,7 +631,7 @@ describe('sql/timelineFetches', () => {
         sentAt: target,
       });
       assert.lengthOf(messages, 1);
-      assert.strictEqual(messages[0].id, message2.id);
+      assert.strictEqual(messages[0]?.id, message2.id);
     });
 
     it('returns N newer messages with same received_at, greater sent_at', async () => {
@@ -689,8 +688,8 @@ describe('sql/timelineFetches', () => {
 
       assert.lengthOf(messages, 2);
       // They are not in DESC order because MessageCollection is sorting them
-      assert.strictEqual(messages[0].id, message2.id);
-      assert.strictEqual(messages[1].id, message3.id);
+      assert.strictEqual(messages[0]?.id, message2.id);
+      assert.strictEqual(messages[1]?.id, message3.id);
     });
   });
 

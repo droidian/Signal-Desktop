@@ -1,9 +1,9 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AvatarColorType } from './Colors.std.js';
-import type { AddressableAttachmentType } from './Attachment.std.js';
-import { strictAssert } from '../util/assert.std.js';
+import type { AvatarColorType } from './Colors.std.ts';
+import type { AddressableAttachmentType } from './Attachment.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
 
 export const PersonalAvatarIcons = [
   'abstract_01',
@@ -57,7 +57,7 @@ export type AvatarIconType = GroupAvatarIconType | PersonalAvatarIconType;
 
 export type AvatarDataType = {
   id: number | string;
-  buffer?: Uint8Array;
+  buffer?: Uint8Array<ArrayBuffer>;
   color?: AvatarColorType;
   icon?: AvatarIconType;
   text?: string;
@@ -86,8 +86,8 @@ export type SaveAvatarToDiskActionType = (
 ) => unknown;
 
 export type AvatarUpdateType = Readonly<{
-  oldAvatar: Uint8Array | undefined;
-  newAvatar: Uint8Array | undefined;
+  oldAvatar: Uint8Array<ArrayBuffer> | undefined;
+  newAvatar: Uint8Array<ArrayBuffer> | undefined;
 }>;
 
 export type AvatarUpdateOptionsType = Readonly<

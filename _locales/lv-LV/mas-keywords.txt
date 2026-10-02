@@ -1,0 +1,1 @@
+signal,ziņa,ziņapmaiņa,zvans,balss,šifrēts,privāts,drošs,privātums,grupa,video,saruna,stāsti

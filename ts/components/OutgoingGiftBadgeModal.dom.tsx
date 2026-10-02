@@ -1,15 +1,16 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
 
-import { getBadgeImageFileLocalPath } from '../badges/getBadgeImageFileLocalPath.std.js';
-import { Modal } from './Modal.dom.js';
-import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.js';
+import { getBadgeImageFileLocalPath } from '../badges/getBadgeImageFileLocalPath.std.ts';
+import { Modal } from './Modal.dom.tsx';
+import { BadgeImageTheme } from '../badges/BadgeImageTheme.std.ts';
 
-import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import type { PreferredBadgeSelectorType } from '../state/selectors/badges.preload.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 const CLASS_NAME = 'OutgoingGiftBadgeModal';
 
@@ -27,7 +28,7 @@ export function OutgoingGiftBadgeModal({
   badgeId,
   hideOutgoingGiftBadgeModal,
   getPreferredBadge,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   const badge = getPreferredBadge([{ id: badgeId }]);
   const badgeSize = 140;
   const badgeImagePath = getBadgeImageFileLocalPath(

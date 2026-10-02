@@ -1,13 +1,15 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { cwd } from 'node:process';
+
 import lodash from 'lodash';
 import SQL from '@signalapp/sqlcipher';
 
-import type { ReadableDB, WritableDB } from '../../sql/Interface.std.js';
-import type { QueryTemplate } from '../../sql/util.std.js';
-import { SCHEMA_VERSIONS } from '../../sql/migrations/index.node.js';
-import { consoleLogger } from '../../util/consoleLogger.std.js';
+import type { ReadableDB, WritableDB } from '../../sql/Interface.std.ts';
+import type { QueryTemplate } from '../../sql/util.std.ts';
+import { SCHEMA_VERSIONS } from '../../sql/migrations/index.node.ts';
+import { consoleLogger } from '../../util/consoleLogger.std.ts';
 
 const { noop } = lodash;
 
@@ -17,7 +19,11 @@ export function createDB(): WritableDB {
   return db;
 }
 
-export function updateToVersion(db: WritableDB, version: number): void {
+export function updateToVersion(
+  db: WritableDB,
+  version: number,
+  data: { userDataPath: string } = { userDataPath: cwd() }
+): void {
   const startVersion = db.pragma('user_version', { simple: true }) as number;
   if (startVersion === version) {
     return;
@@ -34,7 +40,7 @@ export function updateToVersion(db: WritableDB, version: number): void {
     }
 
     db.transaction(() => {
-      update(db, silentLogger, startVersion);
+      update(db, silentLogger, startVersion, data);
       db.pragma(`user_version = ${version}`);
     })();
 
@@ -46,8 +52,11 @@ export function updateToVersion(db: WritableDB, version: number): void {
   throw new Error(`Migration to ${version} not found`);
 }
 
-type TableRows = ReadonlyArray<
-  Record<string, string | number | Buffer | null | Record<string, unknown>>
+export type TableRows = ReadonlyArray<
+  Record<
+    string,
+    string | number | Buffer<ArrayBuffer> | null | Record<string, unknown>
+  >
 >;
 
 export function insertData(

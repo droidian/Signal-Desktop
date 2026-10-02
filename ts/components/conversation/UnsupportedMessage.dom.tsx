@@ -1,14 +1,14 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import { SystemMessage } from './SystemMessage.dom.js';
-import { Button, ButtonSize, ButtonVariant } from '../Button.dom.js';
-import { ContactName } from './ContactName.dom.js';
-import { I18n } from '../I18n.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
-import { openLinkInWebBrowser } from '../../util/openLinkInWebBrowser.dom.js';
+import { SystemMessage } from './SystemMessage.dom.tsx';
+import { Button, ButtonSize, ButtonVariant } from '../Button.dom.tsx';
+import { ContactName } from './ContactName.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import { openLinkInWebBrowser } from '../../util/openLinkInWebBrowser.dom.ts';
 
 export type ContactType = {
   id: string;
@@ -75,7 +75,7 @@ export function UnsupportedMessage({
   canProcessNow,
   contact,
   i18n,
-}: Props): React.JSX.Element {
+}: Props): JSX.Element {
   return (
     <SystemMessage
       icon={canProcessNow ? 'unsupported--can-process' : 'unsupported'}

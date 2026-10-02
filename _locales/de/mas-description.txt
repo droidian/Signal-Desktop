@@ -1,0 +1,21 @@
+Signal ist eine Messaging-App, bei der Datenschutz und Privatsphäre im Mittelpunkt stehen. Sie ist kostenlos und einfach zu benutzen, mit einer starken Ende-zu-Ende-Verschlüsselung, die deine Chats und Anrufe absolut vertraulich macht. Weder Signal noch irgendjemand sonst kann deine Nachrichten lesen oder deine Anrufe mithören. 
+
+• Signal auf MacOS verbindet sich mit Signal auf deinem Telefon. 
+
+• Versende kostenlos Ende-zu-Ende-verschlüsselte Text- und Sprachnachrichten, Fotos, Videos, GIFs und sonstige Dateien. 
+
+• Bleibe in Verbindung durch Gruppen-Chats mit bis zu 1.000 Personen. Lege fest, wer posten darf, und verwalte die Gruppenmitglieder mit Admin-Berechtigungseinstellungen.
+
+• Kommuniziere mit kristallklaren Ende-zu-Ende-verschlüsselten Sprach- und Videoanrufen. Gruppenanrufe sind für bis zu 75 Personen möglich.
+
+• Signal ist für deine Privatsphäre gemacht. Wir wissen nichts über dich oder mit wem du sprichst. Unser offenes Signal Protokoll stellt sicher, dass wir deine Nachrichten nicht lesen und deine Anrufe nicht mithören können. Ebenso wenig wie alle anderen. Keine Hintertüren, keine Datensammlung, keine Kompromisse. 
+
+• Teile Bild-, Text- und Video-Storys, die nach 24 Stunden wieder verschwinden. Mit den Datenschutz-Einstellungen kannst du genau festlegen, wer jede Story sehen kann.
+
+• Signal ist unabhängig und nicht auf Gewinn ausgerichtet – eine andere Art von Technologie von einer anderen Art von Organisation. Als gemeinnützige Non-Profit-Organisation werden wir durch deine Spenden unterstützt, nicht durch Werbekunden oder Investoren. 
+
+• Für Support, Fragen oder weitere Informationen besuche bitte https://support.signal.org/
+
+Um unseren Quellcode zu sehen, besuche https://github.com/signalapp 
+
+Folge uns auf X unter @signalapp und auf Instagram unter @signal_app

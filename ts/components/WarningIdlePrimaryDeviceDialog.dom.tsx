@@ -1,16 +1,16 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
 import {
   LeftPaneDialog,
   LeftPaneDialogIcon,
   LeftPaneDialogIconBackground,
-} from './LeftPaneDialog.dom.js';
-import { WidthBreakpoint } from './_util.std.js';
-import type { LocalizerType } from '../types/I18N.std.js';
-import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.js';
+} from './LeftPaneDialog.dom.tsx';
+import { WidthBreakpoint } from './_util.std.ts';
+import type { LocalizerType } from '../types/I18N.std.ts';
+import { openLinkInWebBrowser } from '../util/openLinkInWebBrowser.dom.ts';
 
 export type Props = {
   containerWidthBreakpoint: WidthBreakpoint;
@@ -24,7 +24,7 @@ export function WarningIdlePrimaryDeviceDialog({
   containerWidthBreakpoint,
   i18n,
   handleClose,
-}: Props & { handleClose?: VoidFunction }): React.JSX.Element {
+}: Props & { handleClose?: VoidFunction }): JSX.Element {
   return (
     <LeftPaneDialog
       containerWidthBreakpoint={containerWidthBreakpoint}

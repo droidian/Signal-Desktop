@@ -7,33 +7,33 @@ import { v4 as generateUuid } from 'uuid';
 import { readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
 import {
   getDownloadsPath,
   getAttachmentsPath,
-} from '../windows/main/attachments.preload.js';
+} from '../../app/attachments.node.ts';
 
-import { IMAGE_JPEG, LONG_MESSAGE } from '../types/MIME.std.js';
+import { IMAGE_JPEG, LONG_MESSAGE } from '../types/MIME.std.ts';
 import type { MessageAttributesType } from '../model-types.d.ts';
-import type { AttachmentType } from '../types/Attachment.std.js';
+import type { AttachmentType } from '../types/Attachment.std.ts';
 import {
   getAbsoluteAttachmentPath,
   getAbsoluteDownloadsPath,
   getAbsoluteDraftPath,
   maybeDeleteAttachmentFile,
-} from '../util/migrations.preload.js';
-import { strictAssert } from '../util/assert.std.js';
+} from '../util/migrations.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
 import {
   cleanupAllMessageAttachmentFiles,
   cleanupAttachmentFiles,
-} from '../types/Message2.preload.js';
-import { DataReader, DataWriter } from '../sql/Client.preload.js';
-import { generateAci } from '../types/ServiceId.std.js';
+  cleanupMessages,
+} from '../util/cleanup.preload.ts';
+import { DataReader, DataWriter } from '../sql/Client.preload.ts';
 import {
   testAttachmentLocalKey,
   testPlaintextHash,
-} from '../test-helpers/attachments.node.js';
-import { cleanupMessages } from '../util/cleanup.preload.js';
+} from '../test-helpers/attachments.node.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const { emptyDir, ensureFile } = fsExtra;
 
@@ -65,7 +65,7 @@ async function writeFiles(
   type: 'attachment' | 'download' | 'draft'
 ) {
   for (let i = 0; i < num; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     await writeFile(`${type}${i}`, type);
   }
 }
@@ -82,7 +82,7 @@ describe('deleteMessageAttachments', () => {
     attachmentIndex = 0;
     downloadIndex = 0;
     await DataWriter.removeAll();
-    await window.ConversationController.reset();
+    window.ConversationController.reset();
     await window.ConversationController.load();
     await emptyDir(
       getAttachmentsPath(window.SignalContext.config.userDataPath)
@@ -92,7 +92,7 @@ describe('deleteMessageAttachments', () => {
 
   afterEach(async () => {
     await DataWriter.removeAll();
-    await window.ConversationController.reset();
+    window.ConversationController.reset();
     await emptyDir(
       getAttachmentsPath(window.SignalContext.config.userDataPath)
     );
@@ -304,7 +304,6 @@ describe('deleteMessageAttachments', () => {
     it('is not safe to delete if the file is protected, even if no references', async () => {
       await DataWriter._protectAttachmentPathFromDeletion({
         path: 'attachment0',
-        messageId: 'messageId',
       });
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment0'));
@@ -333,9 +332,6 @@ describe('deleteMessageAttachments', () => {
         conversationId: 'convoId',
         attachments: [attachment1],
       };
-      const message2 = { ...message1, id: generateUuid() };
-      const message3 = { ...message1, id: generateUuid() };
-
       assert.isTrue(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
       await DataWriter.saveMessage(message1, {
@@ -345,20 +341,43 @@ describe('deleteMessageAttachments', () => {
       });
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
-      // Protect it twice
-      await DataWriter.getAndProtectExistingAttachmentPath({
-        plaintextHash: attachment1.plaintextHash,
-        version: 2,
-        contentType: IMAGE_JPEG,
-        messageId: message2.id,
-      });
+      // Protect it twice, once for each message that will reuse the file
+      const existingDataForMessage2 =
+        await DataWriter.getAndProtectExistingAttachmentPath({
+          plaintextHash: attachment1.plaintextHash,
+          version: 2,
+          contentType: IMAGE_JPEG,
+        });
+      strictAssert(existingDataForMessage2, 'existing attachment data exists');
 
-      await DataWriter.getAndProtectExistingAttachmentPath({
-        plaintextHash: attachment1.plaintextHash,
-        version: 2,
-        contentType: IMAGE_JPEG,
-        messageId: message3.id,
-      });
+      const existingDataForMessage3 =
+        await DataWriter.getAndProtectExistingAttachmentPath({
+          plaintextHash: attachment1.plaintextHash,
+          version: 2,
+          contentType: IMAGE_JPEG,
+        });
+      strictAssert(existingDataForMessage3, 'existing attachment data exists');
+
+      const message2: MessageAttributesType = {
+        ...message1,
+        id: generateUuid(),
+        attachments: [
+          {
+            ...attachment1,
+            ...existingDataForMessage2,
+          },
+        ],
+      };
+      const message3: MessageAttributesType = {
+        ...message1,
+        id: generateUuid(),
+        attachments: [
+          {
+            ...attachment1,
+            ...existingDataForMessage3,
+          },
+        ],
+      };
 
       // Delete the original message
       await DataWriter.removeMessageById(message1.id, {
@@ -366,7 +385,7 @@ describe('deleteMessageAttachments', () => {
       });
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
-      // Save message2
+      // Save message2; this releases message2's dedupe protection
       await DataWriter.saveMessage(message2, {
         forceSave: true,
         ourAci: generateAci(),
@@ -380,7 +399,7 @@ describe('deleteMessageAttachments', () => {
 
       assert.isFalse(await DataReader.isAttachmentSafeToDelete('attachment1'));
 
-      // Save message3
+      // Save message3; this releases message3's dedupe protection
       await DataWriter.saveMessage(message3, {
         forceSave: true,
         ourAci: generateAci(),
@@ -494,7 +513,6 @@ describe('deleteMessageAttachments', () => {
           plaintextHash: attachment1.plaintextHash,
           version: attachment1.version,
           contentType: attachment1.contentType,
-          messageId: 'newmessage',
         });
 
       assert.strictEqual(existingAttachment?.path, attachment1.path);
@@ -604,39 +622,10 @@ describe('deleteMessageAttachments', () => {
 
       await DataWriter._protectAttachmentPathFromDeletion({
         path: 'attachment0',
-        messageId: 'messageId',
       });
       await cleanupAttachmentFiles(attachment);
       assert.sameDeepMembers(listFiles('attachment'), [
         'attachment0',
-        'attachment4',
-      ]);
-    });
-    it('does not delete copied quote thumbnails', async () => {
-      const attachment: AttachmentType = {
-        size: 1,
-        contentType: IMAGE_JPEG,
-        path: 'attachment0',
-        version: 2,
-        copied: true,
-      };
-
-      await cleanupAttachmentFiles(attachment);
-      // not cleaned up
-      assert.sameDeepMembers(listFiles('attachment'), [
-        'attachment0',
-        'attachment1',
-        'attachment2',
-        'attachment3',
-        'attachment4',
-      ]);
-
-      // sanity check: if not copied, gets cleaned up
-      await cleanupAttachmentFiles({ ...attachment, copied: false });
-      assert.sameDeepMembers(listFiles('attachment'), [
-        'attachment1',
-        'attachment2',
-        'attachment3',
         'attachment4',
       ]);
     });

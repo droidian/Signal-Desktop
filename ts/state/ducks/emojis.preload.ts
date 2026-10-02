@@ -1,42 +1,35 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import lodash from 'lodash';
 import type { ThunkAction } from 'redux-thunk';
 import type { ReadonlyDeep } from 'type-fest';
-import { DataWriter } from '../../sql/Client.preload.js';
-import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.js';
-import { useBoundActions } from '../../hooks/useBoundActions.std.js';
-import type { FunEmojiSelection } from '../../components/fun/panels/FunPanelEmojis.dom.js';
-import {
-  getEmojiParentByKey,
-  getEmojiParentKeyByVariantKey,
-} from '../../components/fun/data/emojis.std.js';
-
-const { take, uniq } = lodash;
+import { DataWriter } from '../../sql/Client.preload.ts';
+import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions.std.ts';
+import { useBoundActions } from '../../hooks/useBoundActions.std.ts';
+import type { FunEmojiSelection } from '../../components/fun/panels/FunPanelEmojis.dom.tsx';
+import { Emoji } from '../../axo/emoji.std.ts';
 
 const { updateEmojiUsage } = DataWriter;
 
 // State
 
 export type EmojisStateType = ReadonlyDeep<{
-  recents: Array<string>;
+  recentEmojis: Array<Emoji.Parent>;
 }>;
 
 // Actions
 
-type UseEmojiAction = ReadonlyDeep<{
-  type: 'emojis/USE_EMOJI';
-  payload: string;
+type EmojiUsedAction = ReadonlyDeep<{
+  type: 'emojis/EMOJI_USED';
+  payload: Emoji.Parent;
 }>;
 
-type EmojisActionType = ReadonlyDeep<UseEmojiAction>;
+type EmojisActionType = ReadonlyDeep<EmojiUsedAction>;
 
 // Action Creators
 
 export const actions = {
   onUseEmoji,
-  useEmoji,
 };
 
 export const useEmojisActions = (): BoundActionCreatorsMapObject<
@@ -45,25 +38,21 @@ export const useEmojisActions = (): BoundActionCreatorsMapObject<
 
 function onUseEmoji(
   emojiSelection: FunEmojiSelection
-): ThunkAction<void, unknown, unknown, UseEmojiAction> {
+): ThunkAction<void, unknown, unknown, EmojiUsedAction> {
   return async dispatch => {
     try {
-      const emojiParentKey = getEmojiParentKeyByVariantKey(
-        emojiSelection.variantKey
-      );
-      const emojiParent = getEmojiParentByKey(emojiParentKey);
-      const shortName = emojiParent.englishShortNameDefault;
-      await updateEmojiUsage(shortName);
-      dispatch(useEmoji(shortName));
+      const parent = Emoji.getParent(emojiSelection.emoji);
+      await updateEmojiUsage(parent, Date.now());
+      dispatch(emojiUsed(parent));
     } catch (err) {
       // Errors are ignored.
     }
   };
 }
 
-function useEmoji(payload: string): UseEmojiAction {
+function emojiUsed(payload: Emoji.Parent): EmojiUsedAction {
   return {
-    type: 'emojis/USE_EMOJI',
+    type: 'emojis/EMOJI_USED',
     payload,
   };
 }
@@ -72,7 +61,7 @@ function useEmoji(payload: string): UseEmojiAction {
 
 export function getEmptyState(): EmojisStateType {
   return {
-    recents: [],
+    recentEmojis: [],
   };
 }
 
@@ -80,12 +69,17 @@ export function reducer(
   state: EmojisStateType = getEmptyState(),
   action: EmojisActionType
 ): EmojisStateType {
-  if (action.type === 'emojis/USE_EMOJI') {
+  if (action.type === 'emojis/EMOJI_USED') {
     const { payload } = action;
 
     return {
       ...state,
-      recents: take(uniq([payload, ...state.recents]), 32),
+      recentEmojis: [
+        payload,
+        ...state.recentEmojis.filter(emoji => {
+          return emoji !== payload;
+        }),
+      ].slice(0, 32),
     };
   }
 

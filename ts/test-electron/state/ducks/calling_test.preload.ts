@@ -8,9 +8,9 @@ import type { PeekInfo } from '@signalapp/ringrtc';
 import type {
   StateType as RootStateType,
   StateType,
-} from '../../../state/reducer.preload.js';
-import { reducer as rootReducer } from '../../../state/reducer.preload.js';
-import { noopAction } from '../../../state/ducks/noop.std.js';
+} from '../../../state/reducer.preload.ts';
+import { reducer as rootReducer } from '../../../state/reducer.preload.ts';
+import { noopAction } from '../../../state/ducks/noop.std.ts';
 import type {
   ActiveCallStateType,
   CallingActionType,
@@ -22,35 +22,36 @@ import type {
   HandleCallLinkUpdateType,
   SendGroupCallReactionActionType,
   StartCallLinkLobbyType,
-} from '../../../state/ducks/calling.preload.js';
+} from '../../../state/ducks/calling.preload.ts';
 import {
   actions,
   getActiveCall,
   getEmptyState,
   reducer,
-} from '../../../state/ducks/calling.preload.js';
-import { isAnybodyElseInGroupCall } from '../../../state/ducks/callingHelpers.std.js';
-import { truncateAudioLevel } from '../../../calling/truncateAudioLevel.std.js';
-import { calling as callingService } from '../../../services/calling.preload.js';
+} from '../../../state/ducks/calling.preload.ts';
+import { isAnybodyElseInGroupCall } from '../../../state/ducks/callingHelpers.std.ts';
+import { truncateAudioLevel } from '../../../calling/truncateAudioLevel.std.ts';
+import { calling as callingService } from '../../../services/calling.preload.ts';
 import {
   CallState,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallJoinState,
-} from '../../../types/Calling.std.js';
-import { CallMode } from '../../../types/CallDisposition.std.js';
-import { generateAci } from '../../../types/ServiceId.std.js';
-import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.js';
-import type { UnwrapPromise } from '../../../types/Util.std.js';
+} from '../../../types/Calling.std.ts';
+import { CallMode } from '../../../types/CallDisposition.std.ts';
+import { getDefaultConversation } from '../../../test-helpers/getDefaultConversation.std.ts';
+import type { UnwrapPromise } from '../../../types/Util.std.ts';
 import {
   FAKE_CALL_LINK,
   FAKE_CALL_LINK_WITH_ADMIN_KEY,
   getCallLinkState,
-} from '../../../test-helpers/fakeCallLink.std.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { callLinkRefreshJobQueue } from '../../../jobs/callLinkRefreshJobQueue.preload.js';
-import { CALL_LINK_DEFAULT_STATE } from '../../../util/callLinks.std.js';
-import { DataWriter } from '../../../sql/Client.preload.js';
+} from '../../../test-helpers/fakeCallLink.std.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { callLinkRefreshJobQueue } from '../../../jobs/callLinkRefreshJobQueue.preload.ts';
+import { CALL_LINK_DEFAULT_STATE } from '../../../util/callLinks.std.ts';
+import { DataWriter } from '../../../sql/Client.preload.ts';
+import { generateAci } from '../../../test-helpers/serviceIdUtils.std.ts';
+import { Emoji } from '../../../axo/emoji.std.ts';
 
 const { cloneDeep, noop } = lodash;
 
@@ -117,7 +118,7 @@ describe('calling duck', () => {
   const remoteAci = generateAci();
   const ringerAci = generateAci();
 
-  const stateWithGroupCall: CallingStateType = {
+  const stateWithGroupCall = {
     ...getEmptyState(),
     callsByConversation: {
       'fake-group-call-conversation-id': {
@@ -148,9 +149,9 @@ describe('calling duck', () => {
         ],
       } satisfies GroupCallStateType,
     },
-  };
+  } as const satisfies CallingStateType;
 
-  const stateWithNotJoinedGroupCall: CallingStateType = {
+  const stateWithNotJoinedGroupCall = {
     ...getEmptyState(),
     callsByConversation: {
       'fake-group-call-conversation-id': {
@@ -170,9 +171,9 @@ describe('calling duck', () => {
         remoteParticipants: [],
       } satisfies GroupCallStateType,
     },
-  };
+  } as const satisfies CallingStateType;
 
-  const stateWithIncomingGroupCall: CallingStateType = {
+  const stateWithIncomingGroupCall = {
     ...stateWithGroupCall,
     callsByConversation: {
       ...stateWithGroupCall.callsByConversation,
@@ -184,7 +185,7 @@ describe('calling duck', () => {
         ringerAci: generateAci(),
       },
     },
-  };
+  } as const satisfies CallingStateType;
 
   const groupCallActiveCallState: ActiveCallStateType = {
     state: 'Active',
@@ -202,15 +203,15 @@ describe('calling duck', () => {
     joinedAt: null,
   };
 
-  const stateWithActiveGroupCall: CallingStateTypeWithActiveCall = {
+  const stateWithActiveGroupCall = {
     ...stateWithGroupCall,
     activeCallState: groupCallActiveCallState,
-  };
+  } as const satisfies CallingStateTypeWithActiveCall;
 
   const ourAci = generateAci();
 
   const getEmptyRootState = (): StateType => {
-    const rootState = rootReducer(undefined, noopAction());
+    const rootState = rootReducer(undefined, noopAction('getEmptyRootState'));
     return {
       ...rootState,
       user: {
@@ -1591,7 +1592,7 @@ describe('calling duck', () => {
         return { dispatch };
       };
 
-      it('reads the link and dispatches START_CALL_LINK_LOBBY', async function (this: Mocha.Context) {
+      it('reads the link and dispatches START_CALL_LINK_LOBBY', async () => {
         const { roomId, rootKey } = FAKE_CALL_LINK;
         const { dispatch } = await doAction({ rootKey });
 
@@ -1649,7 +1650,7 @@ describe('calling duck', () => {
         return { dispatch };
       };
 
-      it('fails', async function (this: Mocha.Context) {
+      it('fails', async () => {
         const { roomId, rootKey } = FAKE_CALL_LINK;
         const { dispatch } = await doAction({ rootKey });
 
@@ -1886,7 +1887,7 @@ describe('calling duck', () => {
           {
             timestamp: NOW.getTime(),
             demuxId: 123,
-            value: '❤️',
+            value: Emoji.HEART,
           },
         ]);
 
@@ -1899,7 +1900,7 @@ describe('calling duck', () => {
           reactions: [
             {
               demuxId: 456,
-              value: '🎉',
+              value: Emoji.TADA,
             },
           ],
         });
@@ -1913,12 +1914,12 @@ describe('calling duck', () => {
           {
             timestamp: NOW.getTime(),
             demuxId: 123,
-            value: '❤️',
+            value: Emoji.HEART,
           },
           {
             timestamp: secondDate.getTime(),
             demuxId: 456,
-            value: '🎉',
+            value: Emoji.TADA,
           },
         ]);
       });
@@ -1930,11 +1931,11 @@ describe('calling duck', () => {
           reactions: [
             {
               demuxId: 123,
-              value: '❤️',
+              value: Emoji.HEART,
             },
             {
               demuxId: 456,
-              value: '🎉',
+              value: Emoji.TADA,
             },
           ],
         });
@@ -1948,12 +1949,12 @@ describe('calling duck', () => {
           {
             timestamp: NOW.getTime(),
             demuxId: 123,
-            value: '❤️',
+            value: Emoji.HEART,
           },
           {
             timestamp: NOW.getTime(),
             demuxId: 456,
-            value: '🎉',
+            value: Emoji.TADA,
           },
         ]);
       });
@@ -1992,7 +1993,7 @@ describe('calling duck', () => {
         const action = getAction({
           callMode: CallMode.Group,
           conversationId: 'fake-group-call-conversation-id',
-          value: '❤️',
+          value: Emoji.HEART,
         });
         const result = reducer(getState().calling, action);
 
@@ -2004,7 +2005,7 @@ describe('calling duck', () => {
           {
             timestamp: NOW.getTime(),
             demuxId: 1,
-            value: '❤️',
+            value: Emoji.HEART,
           },
         ]);
       });

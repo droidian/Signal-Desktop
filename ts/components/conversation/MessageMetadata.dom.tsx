@@ -1,26 +1,26 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React, { forwardRef, useCallback, useState } from 'react';
+import type { ReactNode, MouseEvent, JSX } from 'react';
+import { forwardRef, useCallback, useState } from 'react';
 import classNames from 'classnames';
 
-import type { LocalizerType } from '../../types/Util.std.js';
-import type { MessageStatusType } from '../../types/message/MessageStatus.std.js';
-import type { DirectionType } from './Message.dom.js';
-import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.js';
-import { missingCaseError } from '../../util/missingCaseError.std.js';
-import { ExpireTimer } from './ExpireTimer.dom.js';
-import { MessageTimestamp } from './MessageTimestamp.dom.js';
-import { PanelType } from '../../types/Panels.std.js';
-import { Spinner } from '../Spinner.dom.js';
-import { AxoAlertDialog } from '../../axo/AxoAlertDialog.dom.js';
-import { ConfirmationDialog } from '../ConfirmationDialog.dom.js';
-import { refMerger } from '../../util/refMerger.std.js';
-import type { Size } from '../../hooks/useSizeObserver.dom.js';
-import { SizeObserver } from '../../hooks/useSizeObserver.dom.js';
-import { AxoSymbol } from '../../axo/AxoSymbol.dom.js';
-import { tw } from '../../axo/tw.dom.js';
+import type { LocalizerType } from '../../types/Util.std.ts';
+import type { MessageStatusType } from '../../types/message/MessageStatus.std.ts';
+import type { DirectionType } from './Message.dom.tsx';
+import type { PushPanelForConversationActionType } from '../../state/ducks/conversations.preload.ts';
+import { missingCaseError } from '../../util/missingCaseError.std.ts';
+import { ExpireTimer } from './ExpireTimer.dom.tsx';
+import { MessageTimestamp } from './MessageTimestamp.dom.tsx';
+import { PanelType } from '../../types/Panels.std.ts';
+import { Spinner } from '../Spinner.dom.tsx';
+import { AxoAlertDialog } from '../../axo/AxoAlertDialog.dom.tsx';
+import { refMerger } from '../../util/refMerger.std.ts';
+import type { Size } from '../../hooks/useSizeObserver.dom.tsx';
+import { SizeObserver } from '../../hooks/useSizeObserver.dom.tsx';
+import { AxoSymbol } from '../../axo/AxoSymbol.dom.tsx';
+import { tw } from '../../axo/tw.dom.tsx';
+import { AxoConfirmDialog } from '../../axo/AxoConfirmDialog.dom.tsx';
 
 type PropsType = {
   canRetryDeleteForEveryone: boolean;
@@ -38,6 +38,7 @@ type PropsType = {
   isOutlineOnlyBubble?: boolean;
   isShowingImage: boolean;
   isSticker?: boolean;
+  isStickerReply?: boolean;
   onWidthMeasured?: (width: number) => unknown;
   pushPanelForConversation: PushPanelForConversationActionType;
   retryDeleteForEveryone: (messageId: string) => unknown;
@@ -71,6 +72,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       isInline,
       isShowingImage,
       isSticker,
+      isStickerReply,
       onWidthMeasured,
       pushPanelForConversation,
       retryDeleteForEveryone,
@@ -85,9 +87,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
     const [confirmationType, setConfirmationType] = useState<
       ConfirmationType | undefined
     >();
-    const withImageNoCaption = Boolean(
-      !isSticker && !hasText && isShowingImage
-    );
+    const withImageNoCaption = !isSticker && !hasText && isShowingImage;
     const metadataDirection = isSticker ? undefined : direction;
 
     let timestampNode: ReactNode;
@@ -100,14 +100,14 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       const isPaused = status === 'paused';
 
       if (isError || isPartiallySent || isPaused) {
-        let statusInfo: React.ReactNode;
+        let statusInfo: ReactNode;
         if (isError) {
           if (deletedForEveryone && canRetryDeleteForEveryone) {
             statusInfo = (
               <button
                 type="button"
                 className="module-message__metadata__tapable"
-                onClick={(event: React.MouseEvent) => {
+                onClick={(event: MouseEvent) => {
                   event.stopPropagation();
                   event.preventDefault();
 
@@ -124,7 +124,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
               <button
                 type="button"
                 className="module-message__metadata__tapable"
-                onClick={(event: React.MouseEvent) => {
+                onClick={(event: MouseEvent) => {
                   event.stopPropagation();
                   event.preventDefault();
 
@@ -144,7 +144,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
             <button
               type="button"
               className="module-message__metadata__tapable"
-              onClick={(event: React.MouseEvent) => {
+              onClick={(event: MouseEvent) => {
                 event.stopPropagation();
                 event.preventDefault();
 
@@ -179,30 +179,29 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       }
     }
 
-    let confirmation: React.JSX.Element | undefined;
+    let confirmation: JSX.Element | undefined;
     if (confirmationType === undefined) {
       // no-op
     } else if (confirmationType === ConfirmationType.EditError) {
       confirmation = (
-        <ConfirmationDialog
-          dialogName="MessageMetadata.confirmEditResend"
-          actions={[
-            {
-              action: () => {
-                retryMessageSend(id);
-                setConfirmationType(undefined);
-              },
-              style: 'negative',
-              text: i18n('icu:ResendMessageEdit__button'),
-            },
-          ]}
-          i18n={i18n}
-          onClose={() => {
-            setConfirmationType(undefined);
-          }}
+        <AxoConfirmDialog.Root
+          open
+          onOpenChange={() => setConfirmationType(undefined)}
+          // @ts-expect-error ConfirmationDialog migration: Needs title
+          title={null}
+          description={i18n('icu:ResendMessageEdit__body')}
         >
-          {i18n('icu:ResendMessageEdit__body')}
-        </ConfirmationDialog>
+          <AxoConfirmDialog.Cancel />
+          <AxoConfirmDialog.Action
+            variant="strong-destructive"
+            onClick={() => {
+              retryMessageSend(id);
+              setConfirmationType(undefined);
+            }}
+          >
+            {i18n('icu:ResendMessageEdit__button')}
+          </AxoConfirmDialog.Action>
+        </AxoConfirmDialog.Root>
       );
     } else if (confirmationType === ConfirmationType.DeleteError) {
       confirmation = (
@@ -220,11 +219,9 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
               </AxoAlertDialog.Description>
             </AxoAlertDialog.Body>
             <AxoAlertDialog.Footer>
-              <AxoAlertDialog.Cancel>
-                {i18n('icu:cancel')}
-              </AxoAlertDialog.Cancel>
+              <AxoAlertDialog.Cancel />
               <AxoAlertDialog.Action
-                variant="primary"
+                variant="strong-primary"
                 onClick={() => {
                   retryDeleteForEveryone(id);
                   setConfirmationType(undefined);
@@ -246,7 +243,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       isInline && 'module-message__metadata--inline',
       withImageNoCaption && 'module-message__metadata--with-image-no-caption',
       isOutlineOnlyBubble && 'module-message__metadata--outline-only-bubble',
-      isSticker && 'module-message__metadata--sticker'
+      isSticker && !isStickerReply && 'module-message__metadata--sticker'
     );
     const children = (
       <>
@@ -302,6 +299,9 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
 
     const onResize = useCallback(
       (size: Size) => {
+        if (size.hidden) {
+          return;
+        }
         onWidthMeasured?.(size.width);
       },
       [onWidthMeasured]
@@ -311,7 +311,11 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
       return (
         <SizeObserver onSizeChange={onResize}>
           {measureRef => (
-            <div className={className} ref={refMerger(measureRef, ref)}>
+            <div
+              className={className}
+              ref={refMerger(measureRef, ref)}
+              aria-live="off"
+            >
               {children}
             </div>
           )}
@@ -320,7 +324,7 @@ export const MessageMetadata = forwardRef<HTMLDivElement, Readonly<PropsType>>(
     }
 
     return (
-      <div className={className} ref={ref}>
+      <div className={className} ref={ref} aria-live="off">
         {children}
       </div>
     );

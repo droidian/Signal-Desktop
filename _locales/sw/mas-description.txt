@@ -1,0 +1,21 @@
+Signal ni programu ya utumaji ujumbe yenye msingi wa faragha. Ni ya bure na rahisi kutumia, ikiwa na usimbaji fiche imara wa mwanzo hadi mwisho unaofanya magumzo na simu zako ziwe za faragha. Signal haiwezi kusoma jumbe zako au kusikiliza simu zako, na hakuna mwingine anayeweza pia. 
+
+• Signal kwenye MacOS huunganisha na Signal kwenye simu yako. 
+
+• Tuma jumbe za maandishi, za sauti, picha, video, GIFs, zilizosimbwa fiche na faili bila malipo. 
+
+• Kaa katika muunganiko wa magumzo ya makundi ya hadi watu 1,000. Thibiti nani anayechapisha na kusimamia wanachama wa kikundi kwa mipangilio ya ridhaa ya admin.
+
+• Wapigie marafiki zako kwa simu za sauti na simu za video safi zilizosimbwa fiche mwanzo hadi mwisho. Simu za kikundi zinaweza kuhudumia hadi watu 75.
+
+•Signal imetengenezwa kwa ajili ya faragha yako. Hatujui chochote kuhusu wewe au unayezungumza naye. Protokali yetu ya wazi ya Signal inamaanisha kuwa hatuwezi kusoma jumbe zako au kusikiliza simu zako. Vile vile hakuna mtu mwingine yeyote anayeweza. Hakuna milango ya nyuma, ukusanyaji data wala majadiliano. 
+
+• Tuma picha, ujumbe wa maandishi na stori za video zinazotoweka baada ya saa 24. Mipangilio ya faragha hukupa udhibiti wa nani hasa anayeweza kuona kila Stori.
+
+•Signal inajitegemea na si ya kibiashara; ni kampuni ya kiteknolojia tofauti inayotoka shirika la kitofauti. Kama shirika lisilo la faida la 501c3 tunaungwa mkono na michango yako, si watangazaji biashara au wawekezaji. 
+
+• Kwa msaada, maswali na taarifa zaidi tafadhali tembelea https://support.signal.org/
+
+Ili kuangalia kodi yetu ya chanzo, tembelea https://github.com/signalapp 
+
+Tufuate kwenye X @signalapp na Instagram @signal_app

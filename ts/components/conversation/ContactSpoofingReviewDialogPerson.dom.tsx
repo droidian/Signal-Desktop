@@ -1,19 +1,18 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { ReactNode, JSX } from 'react';
 
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { assertDev } from '../../util/assert.std.js';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { assertDev } from '../../util/assert.std.ts';
 
-import { Avatar, AvatarSize } from '../Avatar.dom.js';
-import { ContactName } from './ContactName.dom.js';
-import { SharedGroupNames } from '../SharedGroupNames.dom.js';
-import { UserText } from '../UserText.dom.js';
-import { I18n } from '../I18n.dom.js';
+import { Avatar, AvatarSize } from '../Avatar.dom.tsx';
+import { ContactName } from './ContactName.dom.tsx';
+import { SharedGroupNames } from '../SharedGroupNames.dom.tsx';
+import { UserText } from '../UserText.dom.tsx';
+import { I18n } from '../I18n.dom.tsx';
 
 export type PropsType = Readonly<{
   children?: ReactNode;
@@ -39,7 +38,7 @@ export function ContactSpoofingReviewDialogPerson({
   theme,
   oldName,
   isSignalConnection,
-}: PropsType): React.JSX.Element {
+}: PropsType): JSX.Element {
   assertDev(
     conversation.type === 'direct',
     '<ContactSpoofingReviewDialogPerson> expected a direct conversation'
@@ -47,7 +46,7 @@ export function ContactSpoofingReviewDialogPerson({
 
   const newName = conversation.profileName || conversation.title;
 
-  let callout: React.JSX.Element | undefined;
+  let callout: JSX.Element | undefined;
   if (oldName && oldName !== newName) {
     callout = (
       <div className="module-ContactSpoofingReviewDialogPerson__info__property">

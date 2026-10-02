@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { RefObject } from 'react';
-import { createLogger } from '../logging/log.std.js';
+import { createLogger } from '../logging/log.std.ts';
 
 const log = createLogger('handleOutsideClick');
 
@@ -12,7 +12,11 @@ export type HandlersType = {
   handleClick: HandlerType;
   handlePointerDown: HandlerType;
 };
-export type ContainerElementType = Node | RefObject<Node> | null | undefined;
+export type ContainerElementType =
+  | Node
+  | RefObject<Node | null>
+  | null
+  | undefined;
 
 // TODO(indutny): DESKTOP-4177
 // A stack of handlers. Handlers are executed from the top to the bottom

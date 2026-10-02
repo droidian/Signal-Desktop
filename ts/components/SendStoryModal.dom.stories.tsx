@@ -1,22 +1,23 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import React from 'react';
 
 import { action } from '@storybook/addon-actions';
-import type { PropsType } from './SendStoryModal.dom.js';
-import { SendStoryModal } from './SendStoryModal.dom.js';
+import type { PropsType } from './SendStoryModal.dom.tsx';
+import { SendStoryModal } from './SendStoryModal.dom.tsx';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-helpers/getDefaultConversation.std.js';
+} from '../test-helpers/getDefaultConversation.std.ts';
 import {
   getMyStories,
   getFakeDistributionListsWithMembers,
-} from '../test-helpers/getFakeDistributionLists.std.js';
-import { VIDEO_MP4 } from '../types/MIME.std.js';
-import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.js';
+} from '../test-helpers/getFakeDistributionLists.std.ts';
+import { VIDEO_MP4 } from '../types/MIME.std.ts';
+import type { StoryDistributionIdString } from '../types/StoryDistributionId.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -63,7 +64,7 @@ export default {
   },
 } satisfies Meta<PropsType>;
 
-export function Modal(args: PropsType): React.JSX.Element {
+export function Modal(args: PropsType): JSX.Element {
   return (
     <SendStoryModal
       {...args}
@@ -72,7 +73,7 @@ export function Modal(args: PropsType): React.JSX.Element {
   );
 }
 
-export function BlockList(args: PropsType): React.JSX.Element {
+export function BlockList(args: PropsType): JSX.Element {
   return (
     <SendStoryModal
       {...args}
@@ -84,7 +85,7 @@ export function BlockList(args: PropsType): React.JSX.Element {
   );
 }
 
-export function AllowList(args: PropsType): React.JSX.Element {
+export function AllowList(args: PropsType): JSX.Element {
   return (
     <SendStoryModal
       {...args}
@@ -100,7 +101,7 @@ export function AllowList(args: PropsType): React.JSX.Element {
   );
 }
 
-export function FirstTime(args: PropsType): React.JSX.Element {
+export function FirstTime(args: PropsType): JSX.Element {
   return (
     <SendStoryModal
       {...args}
@@ -113,7 +114,7 @@ export function FirstTime(args: PropsType): React.JSX.Element {
 
 export function FirstTimeAlreadyConfiguredOnMobile(
   args: PropsType
-): React.JSX.Element {
+): JSX.Element {
   return (
     <SendStoryModal
       {...args}
@@ -126,6 +127,20 @@ export function FirstTimeAlreadyConfiguredOnMobile(
       ]}
       groupStories={[]}
       hasFirstStoryPostExperience
+    />
+  );
+}
+
+export function AnnouncementsOnly(args: PropsType): JSX.Element {
+  return (
+    <SendStoryModal
+      {...args}
+      distributionLists={[]}
+      groupStories={[]}
+      candidateConversations={[]}
+      groupConversations={[
+        getDefaultGroup({ announcementsOnly: true, areWeAdmin: false }),
+      ]}
     />
   );
 }

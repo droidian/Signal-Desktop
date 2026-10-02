@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useRef, useState } from 'react';
-import { createLogger } from '../logging/log.std.js';
+import { createLogger } from '../logging/log.std.ts';
 
 const log = createLogger('useIntersectionObserver');
 
@@ -43,6 +43,8 @@ export function useIntersectionObserver(): [
       return;
     }
 
+    // FIXME
+    // oxlint-disable-next-line no-undef
     const observer = new IntersectionObserver(entries => {
       if (entries.length !== 1) {
         log.error(

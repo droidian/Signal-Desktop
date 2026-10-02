@@ -3,29 +3,24 @@
 
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
-import { app } from 'electron';
+import { getAppRootDir } from '../util/appRootDir.main.ts';
 
 export type WrappedWorkerRequest = {
   readonly uuid: string;
-  readonly data: Uint8Array;
+  readonly data: Uint8Array<ArrayBuffer>;
 };
 
 export type WrappedWorkerResponse = {
   readonly uuid: string;
   readonly error: string | undefined;
-  readonly response?: Buffer;
+  readonly response?: Buffer<ArrayBuffer>;
 };
 
 export function getHeicConverter(): (
   uuid: string,
-  data: Uint8Array
+  data: Uint8Array<ArrayBuffer>
 ) => Promise<WrappedWorkerResponse> {
-  const scriptDir = join(
-    app.getAppPath(),
-    'ts',
-    'workers',
-    'heicConverterWorker.node.js'
-  );
+  const scriptDir = join(getAppRootDir(), 'bundles', 'workers', 'heic.js');
   const worker = new Worker(scriptDir);
 
   const ResponseMap = new Map<

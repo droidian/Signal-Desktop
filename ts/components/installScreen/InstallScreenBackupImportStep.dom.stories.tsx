@@ -1,61 +1,31 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { sleep } from '../../util/sleep.std.js';
 import {
   InstallScreenBackupStep,
   InstallScreenBackupError,
-} from '../../types/InstallScreen.std.js';
-import { DialogType } from '../../types/Dialogs.std.js';
-import type { PropsType } from './InstallScreenBackupImportStep.dom.js';
-import { InstallScreenBackupImportStep } from './InstallScreenBackupImportStep.dom.js';
+} from '../../types/InstallScreen.std.ts';
+import { DialogType } from '../../types/Dialogs.std.ts';
+import type { PropsType } from './InstallScreenBackupImportStep.dom.tsx';
+import { InstallScreenBackupImportStep } from './InstallScreenBackupImportStep.dom.tsx';
 
 const { i18n } = window.SignalContext;
 
-const DEFAULT_UPDATES = {
+const updates = {
   dialogType: DialogType.None,
   didSnooze: false,
   isCheckingForUpdates: false,
   showEventsCount: 0,
-  downloadSize: 42 * 1024 * 1024,
 };
 
 export default {
-  title: 'Components/InstallScreenBackupImportStep',
+  title: 'Components/InstallScreen/InstallScreenBackupImportStep',
 } satisfies Meta<PropsType>;
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<PropsType> = (args: PropsType) => {
-  const [updates, setUpdates] = useState(DEFAULT_UPDATES);
-  const forceUpdate = useCallback(async () => {
-    setUpdates(state => ({
-      ...state,
-      isCheckingForUpdates: true,
-    }));
-    await sleep(500);
-    setUpdates(state => ({
-      ...state,
-      isCheckingForUpdates: false,
-      dialogType: DialogType.Downloading,
-      downloadSize: 100,
-      downloadedSize: 0,
-      version: 'v7.7.7',
-    }));
-    await sleep(500);
-    setUpdates(state => ({
-      ...state,
-      downloadedSize: 50,
-    }));
-    await sleep(500);
-    setUpdates(state => ({
-      ...state,
-      downloadedSize: 100,
-    }));
-  }, [setUpdates]);
-
   return (
     <InstallScreenBackupImportStep
       {...args}
@@ -64,14 +34,14 @@ const Template: StoryFn<PropsType> = (args: PropsType) => {
       currentVersion="v6.0.0"
       OS="macOS"
       startUpdate={action('startUpdate')}
-      forceUpdate={forceUpdate}
+      forceCheck={action('forceCheck')}
       onCancel={action('onCancel')}
       onRetry={action('onRetry')}
     />
   );
 };
 
-export function FullFlow(): React.JSX.Element {
+export function FullFlow(): JSX.Element {
   const [backupStep, setBackupStep] = useState<InstallScreenBackupStep>(
     InstallScreenBackupStep.WaitForBackup
   );
@@ -95,11 +65,11 @@ export function FullFlow(): React.JSX.Element {
   return (
     <InstallScreenBackupImportStep
       i18n={i18n}
-      updates={DEFAULT_UPDATES}
+      updates={updates}
       currentVersion="v6.0.0"
       OS="macOS"
       startUpdate={action('startUpdate')}
-      forceUpdate={action('forceUpdate')}
+      forceCheck={action('forceCheck')}
       onCancel={action('onCancel')}
       onRetry={action('onRetry')}
       currentBytes={currentBytes}

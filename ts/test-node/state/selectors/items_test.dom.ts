@@ -8,13 +8,10 @@ import {
   getPinnedConversationIds,
   getPreferredLeftPaneWidth,
   getPreferredReactionEmoji,
-} from '../../../state/selectors/items.dom.js';
-import type { StateType } from '../../../state/reducer.preload.js';
-import type { ItemsStateType } from '../../../state/ducks/items.preload.js';
-import {
-  EMOJI_SKIN_TONE_ORDER,
-  EmojiSkinTone,
-} from '../../../components/fun/data/emojis.std.js';
+} from '../../../state/selectors/items.dom.ts';
+import type { StateType } from '../../../state/reducer.preload.ts';
+import type { ItemsStateType } from '../../../state/ducks/items.preload.ts';
+import { Emoji } from '../../../axo/emoji.std.ts';
 
 describe('both/state/selectors/items', () => {
   // Note: we would like to use the full reducer here, to get a real empty state object
@@ -22,7 +19,7 @@ describe('both/state/selectors/items', () => {
   function getRootState(items: ItemsStateType): StateType {
     return {
       items,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
     } as any;
   }
 
@@ -42,30 +39,8 @@ describe('both/state/selectors/items', () => {
   });
 
   describe('#getEmojiSkinTone', () => {
-    it('returns null if passed anything invalid', () => {
-      [
-        // Invalid types
-        undefined,
-        null,
-        '2',
-        [2],
-        // Numbers out of range
-        -1,
-        6,
-        Infinity,
-        // Invalid numbers
-        0.1,
-        1.2,
-        NaN,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- for testing
-      ].forEach((emojiSkinToneDefault: any) => {
-        const state = getRootState({ emojiSkinToneDefault });
-        assert.strictEqual(getEmojiSkinToneDefault(state), null);
-      });
-    });
-
     it('returns all valid skin tones', () => {
-      EMOJI_SKIN_TONE_ORDER.forEach(skinTone => {
+      Emoji.SKIN_TONE_ORDER.forEach(skinTone => {
         const state = getRootState({ emojiSkinToneDefault: skinTone });
         assert.strictEqual(getEmojiSkinToneDefault(state), skinTone);
       });
@@ -82,7 +57,7 @@ describe('both/state/selectors/items', () => {
       [undefined, null, '250', [250], 250.123].forEach(
         preferredLeftPaneWidth => {
           const state = getRootState({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // oxlint-disable-next-line typescript/no-explicit-any
             preferredLeftPaneWidth: preferredLeftPaneWidth as any,
           });
           assert.strictEqual(getPreferredLeftPaneWidth(state), 320);
@@ -125,7 +100,7 @@ describe('both/state/selectors/items', () => {
 
     it('returns the default set if no value is stored', () => {
       const state = getRootState({
-        emojiSkinToneDefault: EmojiSkinTone.Type5,
+        emojiSkinToneDefault: Emoji.SkinTone.Type5,
       });
       const actual = getPreferredReactionEmoji(state);
 
@@ -134,8 +109,10 @@ describe('both/state/selectors/items', () => {
 
     it('returns the default set if the stored value is invalid', () => {
       const state = getRootState({
-        emojiSkinToneDefault: EmojiSkinTone.Type5,
-        preferredReactionEmoji: ['garbage!!'],
+        emojiSkinToneDefault: Emoji.SkinTone.Type5,
+        preferredReactionEmoji: [
+          'garbage!!',
+        ] as unknown as Array<Emoji.Variant>,
       });
       const actual = getPreferredReactionEmoji(state);
 
@@ -143,9 +120,16 @@ describe('both/state/selectors/items', () => {
     });
 
     it('returns a custom set of emoji', () => {
-      const preferredReactionEmoji = ['✨', '❇️', '🤙🏻', '🦈', '💖', '🅿️'];
+      const preferredReactionEmoji = [
+        Emoji.SPARKLES,
+        Emoji.SPARKLE,
+        Emoji.getVariant(Emoji.CALL_ME_HAND, Emoji.SkinTone.Type1),
+        Emoji.SHARK,
+        Emoji.SPARKLES,
+        Emoji.PARKING,
+      ];
       const state = getRootState({
-        emojiSkinToneDefault: EmojiSkinTone.Type5,
+        emojiSkinToneDefault: Emoji.SkinTone.Type5,
         preferredReactionEmoji,
       });
       const actual = getPreferredReactionEmoji(state);

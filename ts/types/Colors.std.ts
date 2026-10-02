@@ -1,7 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { AxoTokens } from '../axo/AxoTokens.std.js';
+import { AxoTokens } from '../axo/AxoTokens.std.ts';
 
 export const AvatarColorMap = new Map(
   AxoTokens.Avatar.getAllColorNames().map(colorName => {
@@ -75,7 +75,7 @@ export const ContactNameColors = [
   '190',
   '310',
   '110',
-];
+] as const;
 
 export type ContactNameColorType = (typeof ContactNameColors)[number];
 
@@ -112,5 +112,6 @@ export type CustomColorsItemType = {
 };
 
 export function getAvatarColor(color?: AvatarColorType): AvatarColorType {
-  return color || AvatarColors[0];
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  return color || AvatarColors[0]!;
 }

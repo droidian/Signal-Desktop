@@ -1,12 +1,12 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import { createContext, type ReactNode, type JSX } from 'react';
 import PQueue from 'p-queue';
 import { LRUCache } from 'lru-cache';
 
-import type { WaveformCache } from '../types/Audio.dom.js';
-import { createLogger } from '../logging/log.std.js';
+import type { WaveformCache } from '../types/Audio.dom.tsx';
+import { createLogger } from '../logging/log.std.ts';
 
 const log = createLogger('VoiceNotesPlaybackContext');
 
@@ -16,11 +16,11 @@ const MAX_AUDIO_DURATION = 15 * 60; // 15 minutes
 
 export type ComputePeaksResult = {
   duration: number;
-  peaks: ReadonlyArray<number>; // 0 < peak < 1
+  peaks: ReadonlyArray<{ value: number; index: number }>; // 0 < peak < 1
 };
 
 export type Contents = {
-  computePeaks(url: string, barCount: number): Promise<ComputePeaksResult>;
+  computePeaks: (url: string, barCount: number) => Promise<ComputePeaksResult>;
 };
 
 // This context's value is effectively global. This is not ideal but is necessary because
@@ -39,7 +39,7 @@ const computeQueue = new PQueue({
   concurrency: MAX_PARALLEL_COMPUTE,
 });
 
-export async function getAudioDuration(buffer: ArrayBuffer): Promise<number> {
+async function getAudioDuration(buffer: ArrayBuffer): Promise<number> {
   const blob = new Blob([buffer]);
   const blobURL = URL.createObjectURL(blob);
   const audio = new Audio();
@@ -96,7 +96,13 @@ async function doComputePeaks(
 
   const duration = await getAudioDuration(raw);
 
-  const peaks = new Array(barCount).fill(0);
+  const peaks = [];
+  for (let i = 0; i < barCount; i += 1) {
+    peaks.push({
+      value: 0,
+      index: i,
+    });
+  }
   if (duration > MAX_AUDIO_DURATION) {
     log.info(`${logId}: duration ${duration}s is too long`);
     const emptyResult = { peaks, duration };
@@ -122,23 +128,27 @@ async function doComputePeaks(
   ) {
     const channel = data.getChannelData(channelNum);
 
-    for (let sample = 0; sample < channel.length; sample += 1) {
+    for (const [sample, sampleData] of channel.entries()) {
       const i = Math.floor(sample / samplesPerPeak);
-      peaks[i] += channel[sample] ** 2;
+      const peak = peaks[i];
+      if (peak == null) {
+        throw new Error('Missing peak');
+      }
+      peak.value += sampleData ** 2;
       norms[i] += 1;
     }
   }
 
   // Average
   let max = 1e-23;
-  for (let i = 0; i < peaks.length; i += 1) {
-    peaks[i] = Math.sqrt(peaks[i] / Math.max(1, norms[i]));
-    max = Math.max(max, peaks[i]);
+  for (const [i, peak] of peaks.entries()) {
+    peak.value = Math.sqrt(peak.value / Math.max(1, norms[i]));
+    max = Math.max(max, peak.value);
   }
 
   // Normalize
-  for (let i = 0; i < peaks.length; i += 1) {
-    peaks[i] /= max;
+  for (const peak of peaks) {
+    peak.value /= max;
   }
 
   const result = { peaks, duration };
@@ -175,10 +185,10 @@ const globalContents: Contents = {
 };
 
 export const VoiceNotesPlaybackContext =
-  React.createContext<Contents>(globalContents);
+  createContext<Contents>(globalContents);
 
 export type VoiceNotesPlaybackProps = {
-  children?: React.ReactNode;
+  children?: ReactNode;
 };
 
 /**
@@ -187,7 +197,7 @@ export type VoiceNotesPlaybackProps = {
  */
 export function VoiceNotesPlaybackProvider({
   children,
-}: VoiceNotesPlaybackProps): React.JSX.Element {
+}: VoiceNotesPlaybackProps): JSX.Element {
   return (
     <VoiceNotesPlaybackContext.Provider value={globalContents}>
       {children}

@@ -9,7 +9,7 @@ import type {
   Server,
   OutgoingHttpHeaders,
 } from 'node:http';
-import { strictAssert } from '../../../util/assert.std.js';
+import { strictAssert } from '../../../util/assert.std.ts';
 
 export type NextResponse = Readonly<{
   status: number;
@@ -20,13 +20,14 @@ export type LastRequestData = Readonly<{
   method?: string;
   url?: string;
   headers: OutgoingHttpHeaders;
-  body: Buffer;
+  body: Buffer<ArrayBuffer>;
 }>;
 
 export class TestServer extends EventEmitter {
-  #server: Server;
+  readonly #server: Server;
   #nextResponse: NextResponse = { status: 200, headers: {} };
-  #lastRequest: { request: IncomingMessage; body: Buffer } | null = null;
+  #lastRequest: { request: IncomingMessage; body: Buffer<ArrayBuffer> } | null =
+    null;
 
   constructor() {
     super();
@@ -85,7 +86,10 @@ export class TestServer extends EventEmitter {
     };
   }
 
-  #onRequest = (request: IncomingMessage, response: ServerResponse) => {
+  readonly #onRequest = (
+    request: IncomingMessage,
+    response: ServerResponse
+  ) => {
     this.emit('request');
     const nextResponse = this.#nextResponse;
     const lastRequest = { request, body: Buffer.alloc(0) };
@@ -107,7 +111,7 @@ export class TestServer extends EventEmitter {
 
 export function body(
   server: TestServer,
-  steps: () => AsyncIterator<Uint8Array, void, number>
+  steps: () => AsyncIterator<Uint8Array<ArrayBuffer>, void, number>
 ): Readable {
   const iter = steps();
   let first = true;

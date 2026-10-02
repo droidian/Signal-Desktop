@@ -54,7 +54,6 @@
   justify-content: center;
   flex-direction: column;
   padding-block: 78px 28px;
-  user-select: none;
 }
 
 .CallsTab__EmptyStateIcon {
@@ -113,9 +112,7 @@
   overflow: auto;
   width: 100%;
   height: 100%;
-  padding-block: 80px;
-  padding-inline: 24px;
-  user-select: none;
+  padding-top: 80px;
 }
 
 .CallsList__Header {
@@ -134,7 +131,6 @@
   }
   padding-inline-start: 24px;
   text-overflow: ellipsis;
-  user-select: none;
   white-space: nowrap;
 }
 
@@ -159,13 +155,8 @@
     }
   }
 
-  &:focus {
-    outline: none;
-    @include mixins.keyboard-mode {
-      box-shadow:
-        0 0 0 2px variables.$color-white,
-        0 0 0 4px variables.$color-ultramarine;
-    }
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 
   &::before {
@@ -294,10 +285,6 @@
   width: 60%;
 }
 
-.CallsList__ItemTitle {
-  font-weight: bold;
-}
-
 // Override .ListTile__subtitle so ellipsis is correct color
 .CallsList__Item--missed .ListTile__subtitle,
 .CallsList__Item--declined .ListTile__subtitle {
@@ -382,11 +369,8 @@
       background: variables.$color-gray-62;
     }
   }
-  &:focus {
-    outline: none;
-    @include mixins.keyboard-mode {
-      box-shadow: 0 0 0 2px variables.$color-ultramarine;
-    }
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
   &:disabled,
   &[aria-disabled='true'] {

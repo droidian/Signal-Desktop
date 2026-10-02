@@ -4,9 +4,9 @@
 import { createSelector } from 'reselect';
 import lodash from 'lodash';
 
-import type { GetConversationByIdType } from './conversations.dom.js';
-import type { ConversationType } from '../ducks/conversations.preload.js';
-import type { AttachmentType } from '../../types/Attachment.std.js';
+import type { GetConversationByIdType } from './conversations.dom.ts';
+import type { ConversationType } from '../ducks/conversations.preload.ts';
+import type { AttachmentType } from '../../types/Attachment.std.ts';
 import type {
   ConversationStoryType,
   MyStoryType,
@@ -14,17 +14,17 @@ import type {
   StoryDistributionListWithMembersDataType,
   StorySendStateType,
   StoryViewType,
-} from '../../types/Stories.std.js';
+} from '../../types/Stories.std.ts';
 import type {
   SelectedStoryDataType,
   StoryDataType,
   StoriesStateType,
   AddStoryData,
-} from '../ducks/stories.preload.js';
-import { MY_STORY_ID, ResolvedSendStatus } from '../../types/Stories.std.js';
-import { ReadStatus } from '../../messages/MessageReadStatus.std.js';
-import { SendStatus } from '../../messages/MessageSendState.std.js';
-import { canReply } from './message.preload.js';
+} from '../ducks/stories.preload.ts';
+import { MY_STORY_ID, ResolvedSendStatus } from '../../types/Stories.std.ts';
+import { ReadStatus } from '../../messages/MessageReadStatus.std.ts';
+import { SendStatus } from '../../messages/MessageSendState.std.ts';
+import { canReply } from './message.preload.ts';
 import {
   getContactNameColorSelector,
   getConversationSelector,
@@ -32,20 +32,20 @@ import {
   getMe,
   PLACEHOLDER_CONTACT_ID,
   getStoriesState,
-} from './conversations.dom.js';
-import { getStoriesEnabled } from './items.dom.js';
-import { getUserConversationId } from './user.std.js';
-import { getDistributionListSelector } from './storyDistributionLists.dom.js';
-import { calculateExpirationTimestamp } from '../../util/expirationTimer.std.js';
-import { getMessageIdForLogging } from '../../util/idForLogging.preload.js';
-import { createLogger } from '../../logging/log.std.js';
-import { SIGNAL_ACI } from '../../types/SignalConversation.std.js';
+} from './conversations.dom.ts';
+import { getStoriesEnabled } from './items.dom.ts';
+import { getUserConversationId } from './user.std.ts';
+import { getDistributionListSelector } from './storyDistributionLists.dom.ts';
+import { calculateExpirationTimestamp } from '../../util/expirationTimer.std.ts';
+import { getMessageIdForLogging } from '../../util/idForLogging.preload.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { SIGNAL_ACI } from '../../types/SignalConversation.std.ts';
 import {
   reduceStorySendStatus,
   resolveStorySendStatus,
-} from '../../util/resolveStorySendStatus.std.js';
-import { BodyRange } from '../../types/BodyRange.std.js';
-import { hydrateRanges } from '../../util/BodyRange.node.js';
+} from '../../util/resolveStorySendStatus.std.ts';
+import { BodyRange } from '../../types/BodyRange.std.ts';
+import { hydrateRanges } from '../../util/BodyRange.node.ts';
 
 const { pick } = lodash;
 
@@ -113,15 +113,18 @@ function sortMyStories(storyA: MyStoryType, storyB: MyStoryType): number {
     return 1;
   }
 
-  if (!storyA.stories.length) {
+  const a = storyA.stories[0];
+  const b = storyB.stories[0];
+
+  if (a == null) {
     return 1;
   }
 
-  if (!storyB.stories.length) {
+  if (b == null) {
     return -1;
   }
 
-  return storyA.stories[0].timestamp > storyB.stories[0].timestamp ? -1 : 1;
+  return b.timestamp - a.timestamp;
 }
 
 function getAvatarData(
@@ -158,7 +161,7 @@ export function getStoryDownloadableAttachment({
   return attachment?.textAttachment?.preview?.image ?? attachment;
 }
 
-export function getStoryView(
+function getStoryView(
   conversationSelector: GetConversationByIdType,
   ourConversationId: string | undefined,
   story: StoryDataType
@@ -257,7 +260,7 @@ export function getStoryView(
   };
 }
 
-export function getConversationStory(
+function getConversationStory(
   conversationSelector: GetConversationByIdType,
   ourConversationId: string | undefined,
   story: StoryDataType
@@ -278,6 +281,7 @@ export function getConversationStory(
     'sortedGroupMembers',
     'title',
     'left',
+    'terminated',
   ]);
 
   const storyView = getStoryView(

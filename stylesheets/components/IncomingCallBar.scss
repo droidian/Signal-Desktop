@@ -10,7 +10,6 @@
     animation: IncomingCallBar--animation 0.2s forwards ease-out;
     position: fixed;
     top: 22px;
-    user-select: none;
     width: 100%;
     z-index: variables.$z-index-calling;
     padding-inline: 1rem;
@@ -27,7 +26,6 @@
     margin-block: 0;
     margin-inline: auto;
     max-width: 600px;
-    user-select: none;
     width: 100%;
   }
 
@@ -82,8 +80,11 @@
     display: flex;
     height: 40px;
     justify-content: center;
-    outline: none;
     width: 40px;
+
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
+    }
 
     &__container {
       border-radius: 40px;
@@ -95,16 +96,8 @@
     &--accept-video-as-audio {
       background-color: variables.$color-gray-45;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
-        }
-      }
-
-      @include mixins.mouse-mode {
-        &:hover {
-          box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-        }
+      &:hover {
+        box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
       }
 
       div {
@@ -122,16 +115,8 @@
     &--accept-video {
       background-color: variables.$color-accent-green;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
-        }
-      }
-
-      @include mixins.mouse-mode {
-        &:hover {
-          box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-        }
+      &:hover {
+        box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
       }
 
       div {
@@ -149,16 +134,8 @@
     &--accept-audio {
       background-color: variables.$color-accent-green;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
-        }
-      }
-
-      @include mixins.mouse-mode {
-        &:hover {
-          box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-        }
+      &:hover {
+        box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
       }
 
       div {
@@ -176,16 +153,8 @@
     &--decline {
       background-color: variables.$color-accent-red;
 
-      @include mixins.keyboard-mode {
-        &:focus {
-          box-shadow: 0px 0px 0px 4px variables.$color-ultramarine;
-        }
-      }
-
-      @include mixins.mouse-mode {
-        &:hover {
-          box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
-        }
+      &:hover {
+        box-shadow: 0px 0px 0px 2px variables.$color-ultramarine;
       }
 
       div {

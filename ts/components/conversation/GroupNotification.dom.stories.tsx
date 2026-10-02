@@ -1,11 +1,12 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import type { Meta } from '@storybook/react';
-import type { Props } from './GroupNotification.dom.js';
-import { GroupNotification } from './GroupNotification.dom.js';
-import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.js';
+import type { Props } from './GroupNotification.dom.tsx';
+import { GroupNotification } from './GroupNotification.dom.tsx';
+import { getDefaultConversation } from '../../test-helpers/getDefaultConversation.std.ts';
 
 export default {
   title: 'Components/Conversation',
@@ -378,7 +379,7 @@ const stories: Array<GroupNotificationStory> = [
   ],
 ];
 
-export const _GroupNotification = (): React.JSX.Element => (
+export const _GroupNotification = (): JSX.Element => (
   <>
     {stories.map(([title, propsArray]) => (
       <>

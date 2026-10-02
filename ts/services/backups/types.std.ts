@@ -1,12 +1,12 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AciString, PniString } from '../../types/ServiceId.std.js';
-import type { ConversationColorType } from '../../types/Colors.std.js';
+import type { AciString, PniString } from '../../types/ServiceId.std.ts';
+import type { ConversationColorType } from '../../types/Colors.std.ts';
 import type {
   CoreAttachmentBackupJobType,
   CoreAttachmentLocalBackupJobType,
-} from '../../types/AttachmentBackup.std.js';
+} from '../../types/AttachmentBackup.std.ts';
 
 // Duplicated here to allow loading it in a non-node environment
 export enum BackupLevel {
@@ -50,12 +50,12 @@ export type BackupImportOptions = (
       localBackupSnapshotDir: string;
     }
 ) & {
-  ephemeralKey?: Uint8Array;
+  ephemeralKey?: Uint8Array<ArrayBuffer>;
   onProgress?: OnProgressCallback;
 };
 
 export type LocalChatStyle = Readonly<{
-  wallpaperPhotoPointer: Uint8Array | undefined;
+  wallpaperPhotoPointer: Uint8Array<ArrayBuffer> | undefined;
   wallpaperPreset: number | undefined;
   color: ConversationColorType | undefined;
   customColorId: string | undefined;
@@ -70,11 +70,13 @@ export type StatsType = {
   chatFolders: number;
   chats: number;
   distributionLists: number;
+  fixedDirectMessages: number;
   messages: number;
   notificationProfiles: number;
+  skippedConversations: number;
   skippedMessages: number;
   stickerPacks: number;
-  fixedDirectMessages: number;
+  unknownConversationReferences: Record<string, number>;
 };
 
 export type ExportResultType = Readonly<{

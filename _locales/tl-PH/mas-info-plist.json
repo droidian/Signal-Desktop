@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Ginagamit ng Signal ang camera mo sa pag-video call."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Kailangan ng access ng Signal sa microphone mo para makagawa at makatanggap ng phone calls at mag-record ng voice messages."
+  }
+}

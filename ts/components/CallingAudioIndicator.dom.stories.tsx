@@ -1,15 +1,15 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import type { Meta } from '@storybook/react';
-import type { Props } from './CallingAudioIndicator.dom.js';
+import type { Props } from './CallingAudioIndicator.dom.tsx';
 import {
   CallingAudioIndicator,
   SPEAKING_LINGER_MS,
-} from './CallingAudioIndicator.dom.js';
-import { AUDIO_LEVEL_INTERVAL_MS } from '../calling/constants.std.js';
-import { useValueAtFixedRate } from '../hooks/useValueAtFixedRate.std.js';
+} from './CallingAudioIndicator.dom.tsx';
+import { AUDIO_LEVEL_INTERVAL_MS } from '../calling/constants.std.ts';
+import { useValueAtFixedRate } from '../hooks/useValueAtFixedRate.std.ts';
 
 export default {
   title: 'Components/CallingAudioIndicator',
@@ -24,7 +24,7 @@ export default {
   },
 } satisfies Meta<Props>;
 
-export function Extreme(args: Props): React.JSX.Element {
+export function Extreme(args: Props): JSX.Element {
   const [audioLevel, setAudioLevel] = useState(1);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export function Extreme(args: Props): React.JSX.Element {
   );
 }
 
-export function Random(args: Props): React.JSX.Element {
+export function Random(args: Props): JSX.Element {
   const [audioLevel, setAudioLevel] = useState(1);
 
   useEffect(() => {
@@ -59,7 +59,11 @@ export function Random(args: Props): React.JSX.Element {
     return () => {
       clearTimeout(timer);
     };
-  }, [audioLevel, setAudioLevel]);
+  }, [
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+    audioLevel,
+    setAudioLevel,
+  ]);
 
   const isSpeaking = useValueAtFixedRate(audioLevel > 0, SPEAKING_LINGER_MS);
 

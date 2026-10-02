@@ -1,7 +1,7 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
@@ -11,7 +11,13 @@ import { useStickerDropzone } from '../../util/useStickerDropzone';
 import { H2, Text } from '../../elements/Typography';
 import { LabeledInput } from '../../elements/LabeledInput';
 import { ConfirmModal } from '../../components/ConfirmModal';
-import { setCover, removeImage, setTitle, setAuthor } from '../../slices/art';
+import {
+  setCover,
+  removeImage,
+  setTitle,
+  setAuthor,
+  addToast,
+} from '../../slices/art';
 import {
   useArtType,
   useAllDataValid,
@@ -23,7 +29,7 @@ import { useI18n } from '../../contexts/I18n';
 import styles from './MetaStage.module.scss';
 import { AppStage } from './AppStage';
 
-export function MetaStage(): React.JSX.Element {
+export function MetaStage(): JSX.Element {
   const i18n = useI18n();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -33,9 +39,9 @@ export function MetaStage(): React.JSX.Element {
   const cover = useCover();
   const title = useTitle();
   const author = useAuthor();
-  const [confirming, setConfirming] = React.useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  const onDrop = React.useCallback(
+  const onDrop = useCallback(
     async ([file]: Array<File>) => {
       try {
         const stickerImage = await processImage(file, artType);
@@ -47,18 +53,24 @@ export function MetaStage(): React.JSX.Element {
     [dispatch, artType]
   );
 
-  const { getRootProps, getInputProps, isDragActive } =
-    useStickerDropzone(onDrop);
+  const onDropRejected = useCallback(() => {
+    dispatch(addToast({ key: 'StickerCreator--Toasts--errorProcessing' }));
+  }, [dispatch]);
 
-  const onNext = React.useCallback(() => {
+  const { getRootProps, getInputProps, isDragActive } = useStickerDropzone(
+    onDrop,
+    onDropRejected
+  );
+
+  const onNext = useCallback(() => {
     setConfirming(true);
   }, []);
 
-  const onCancel = React.useCallback(() => {
+  const onCancel = useCallback(() => {
     setConfirming(false);
   }, []);
 
-  const onConfirm = React.useCallback(() => {
+  const onConfirm = useCallback(() => {
     navigate('/art/upload');
   }, [navigate]);
 

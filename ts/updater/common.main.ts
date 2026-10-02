@@ -1,7 +1,6 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-/* eslint-disable no-console */
 import { createWriteStream } from 'node:fs';
 import fsExtra from 'fs-extra';
 import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
@@ -10,8 +9,6 @@ import { release as osRelease, tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 
 import config from 'config';
-import type { ParserConfiguration } from 'dashdash';
-import { createParser } from 'dashdash';
 import { FAILSAFE_SCHEMA, load as loadYaml } from 'js-yaml';
 import { gt, gte, lt } from 'semver';
 import got from 'got';
@@ -19,49 +16,49 @@ import { v4 as getGuid } from 'uuid';
 import type { BrowserWindow } from 'electron';
 import { app, ipcMain } from 'electron';
 
-import { missingCaseError } from '../util/missingCaseError.std.js';
-import { getTempPath, getUpdateCachePath } from '../../app/attachments.node.js';
+import { missingCaseError } from '../util/missingCaseError.std.ts';
+import { getTempPath, getUpdateCachePath } from '../../app/attachments.node.ts';
 import {
   markShouldNotQuit,
   markShouldQuit,
-} from '../../app/window_state.std.js';
-import { DialogType } from '../types/Dialogs.std.js';
-import * as Errors from '../types/errors.std.js';
-import { strictAssert } from '../util/assert.std.js';
-import { drop } from '../util/drop.std.js';
-import * as durations from '../util/durations/index.std.js';
+} from '../../app/window_state.std.ts';
+import { DialogType } from '../types/Dialogs.std.ts';
+import * as Errors from '../types/errors.std.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { drop } from '../util/drop.std.ts';
+import * as durations from '../util/durations/index.std.ts';
 import {
   isAlpha,
   isAxolotl,
   isBeta,
   isNotUpdatable,
   isStaging,
-} from '../util/version.std.js';
-import { isPathInside } from '../util/isPathInside.node.js';
+} from '../util/version.std.ts';
+import { isPathInside } from '../util/isPathInside.node.ts';
 
-import { version as packageVersion } from '../util/packageJson.node.js';
+import { packageJson } from '../util/packageJson.main.ts';
 
 import {
   getSignatureFileName,
   hexToBinary,
   verifySignature,
-} from './signature.node.js';
+} from './signature.node.ts';
 import {
   download as downloadDifferentialData,
   getBlockMapFileName,
   isValidPreparedData as isValidDifferentialData,
   prepareDownload as prepareDifferentialDownload,
-} from './differential.node.js';
-import { getGotOptions } from './got.node.js';
-import { checkIntegrity, isTimeToUpdate } from './util.node.js';
+} from './differential.main.ts';
+import { getGotOptions } from './got.main.ts';
+import { checkIntegrity, isTimeToUpdate } from './util.node.ts';
 import {
   gracefulRename,
   gracefulRmRecursive,
-} from '../util/gracefulFs.node.js';
+} from '../util/gracefulFs.node.ts';
 
-import type { LoggerType } from '../types/Logging.std.js';
-import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential.node.js';
-import type { MainSQL } from '../sql/main.main.js';
+import type { LoggerType } from '../types/Logging.std.ts';
+import type { PrepareDownloadResultType as DifferentialDownloadDataType } from './differential.main.ts';
+import type { MainSQL } from '../sql/main.main.ts';
 
 const { pathExists } = fsExtra;
 
@@ -113,7 +110,7 @@ enum DownloadMode {
 
 type DownloadUpdateResultType = Readonly<{
   updateFilePath: string;
-  signature: Buffer;
+  signature: Buffer<ArrayBuffer>;
 }>;
 
 export type UpdaterOptionsType = Readonly<{
@@ -123,9 +120,10 @@ export type UpdaterOptionsType = Readonly<{
   sql: MainSQL;
 }>;
 
-enum CheckType {
+export enum CheckType {
   Normal = 'Normal',
   AllowSameVersion = 'AllowSameVersion',
+  ForceCheck = 'ForceCheck',
   ForceDownload = 'ForceDownload',
 }
 
@@ -146,7 +144,7 @@ export abstract class Updater {
 
   protected readonly getMainWindow: () => BrowserWindow | undefined;
 
-  #throttledSendDownloadingUpdate: ((
+  readonly #throttledSendDownloadingUpdate: ((
     downloadedSize: number,
     downloadSize: number
   ) => void) & {
@@ -162,7 +160,7 @@ export abstract class Updater {
 
   // Just a stable randomness that is used for determining the update time. The
   // value does not have to be consistent across restarts.
-  #pollId = getGuid();
+  readonly #pollId = getGuid();
 
   constructor({
     canRunSilently,
@@ -187,7 +185,7 @@ export abstract class Updater {
       50
     );
 
-    ipcMain.handle('updater/force-update', () => this.force());
+    ipcMain.handle('updater/force-check', () => this.forceCheck());
   }
 
   //
@@ -197,6 +195,11 @@ export abstract class Updater {
   public async force(): Promise<void> {
     this.#markedCannotUpdate = false;
     return this.#checkForUpdatesMaybeInstall(CheckType.ForceDownload);
+  }
+
+  public async forceCheck(): Promise<void> {
+    this.#markedCannotUpdate = false;
+    await this.#checkForUpdatesMaybeInstall(CheckType.ForceCheck);
   }
 
   // If the updater was about to restart the app but the user canceled it, show dialog
@@ -231,8 +234,12 @@ export abstract class Updater {
 
   protected abstract installUpdate(
     updateFilePath: string,
-    isSilent: boolean
+    isSilent: boolean,
+    checkType: CheckType
   ): Promise<() => Promise<void>>;
+
+  // For Mac App Store
+  protected abstract handleUpdateFromThirdParty(version: string): boolean;
 
   //
   // Protected methods
@@ -245,11 +252,15 @@ export abstract class Updater {
     ipcMain.handleOnce('start-update', performUpdateCallback);
   }
 
-  protected checkSystemRequirements(vendor: JSONVendorSchema): boolean {
+  protected checkSystemRequirements(
+    vendor: JSONVendorSchema,
+    checkType: CheckType
+  ): boolean {
     if (vendor.requireManualUpdate === 'true') {
       this.logger.warn('checkSystemRequirements: manual update required');
       this.markCannotUpdate(
         new Error('yaml file has requireManualUpdate flag'),
+        checkType,
         DialogType.Cannot_Update_Require_Manual
       );
       return false;
@@ -262,6 +273,7 @@ export abstract class Updater {
       );
       this.markCannotUpdate(
         new Error('yaml file has unsatisfied minOSVersion value'),
+        checkType,
         DialogType.UnsupportedOS
       );
       return false;
@@ -272,6 +284,7 @@ export abstract class Updater {
 
   protected markCannotUpdate(
     error: Error,
+    checkType: CheckType,
     dialogType = DialogType.Cannot_Update
   ): void {
     if (this.#markedCannotUpdate) {
@@ -296,7 +309,7 @@ export abstract class Updater {
       this.logger.info('markCannotUpdate: retrying after user action');
 
       this.#markedCannotUpdate = false;
-      await this.#checkForUpdatesMaybeInstall(CheckType.Normal);
+      await this.#checkForUpdatesMaybeInstall(checkType);
     });
   }
 
@@ -308,7 +321,7 @@ export abstract class Updater {
     markShouldQuit();
   }
 
-  protected getUpdatesPublicKey(): Buffer {
+  protected getUpdatesPublicKey(): Buffer<ArrayBuffer> {
     return hexToBinary(config.get('updatesPublicKey'));
   }
 
@@ -350,14 +363,19 @@ export abstract class Updater {
 
   async #downloadAndInstall(
     updateInfo: UpdateInformationType,
-    mode: DownloadMode
+    mode: DownloadMode,
+    checkType: CheckType
   ): Promise<boolean> {
     if (this.#activeDownload) {
       return this.#activeDownload;
     }
 
     try {
-      this.#activeDownload = this.#doDownloadAndInstall(updateInfo, mode);
+      this.#activeDownload = this.#doDownloadAndInstall(
+        updateInfo,
+        mode,
+        checkType
+      );
 
       return await this.#activeDownload;
     } finally {
@@ -367,7 +385,8 @@ export abstract class Updater {
 
   async #doDownloadAndInstall(
     updateInfo: UpdateInformationType,
-    mode: DownloadMode
+    mode: DownloadMode,
+    checkType: CheckType
   ): Promise<boolean> {
     const { logger } = this;
 
@@ -439,7 +458,11 @@ export abstract class Updater {
         updateInfo.vendor?.requireUserConfirmation !== 'true' &&
         this.#canRunSilently();
 
-      const handler = await this.installUpdate(updateFilePath, isSilent);
+      const handler = await this.installUpdate(
+        updateFilePath,
+        isSilent,
+        checkType
+      );
       if (isSilent || mode === DownloadMode.ForceUpdate) {
         await handler();
       } else {
@@ -471,15 +494,16 @@ export abstract class Updater {
       logger.error(
         `downloadAndInstall: fatal error ${Errors.toLogFormat(error)}`
       );
-      this.markCannotUpdate(error);
+      this.markCannotUpdate(error, checkType);
       throw error;
     }
   }
 
   async #checkForUpdatesMaybeInstall(checkType: CheckType): Promise<void> {
+    const logId = `checkForUpdatesMaybeInstall/${checkType}`;
     const { logger } = this;
 
-    logger.info('checkForUpdatesMaybeInstall: checking for update...');
+    logger.info(`${logId}: checking for update...`);
     const updateInfo = await this.#checkForUpdates(checkType);
     if (!updateInfo) {
       return;
@@ -488,11 +512,15 @@ export abstract class Updater {
     const { version: newVersion } = updateInfo;
 
     if (checkType === CheckType.ForceDownload) {
-      await this.#downloadAndInstall(updateInfo, DownloadMode.ForceUpdate);
+      await this.#downloadAndInstall(
+        updateInfo,
+        DownloadMode.ForceUpdate,
+        checkType
+      );
       return;
     }
 
-    if (checkType === CheckType.Normal) {
+    if (checkType === CheckType.Normal || checkType === CheckType.ForceCheck) {
       // Verify that the downloaded version is greater than downloaded
       if (this.version && !gt(newVersion, this.version)) {
         return;
@@ -507,8 +535,12 @@ export abstract class Updater {
     }
 
     const autoDownloadUpdates = await this.#getAutoDownloadUpdateSetting();
-    if (autoDownloadUpdates) {
-      await this.#downloadAndInstall(updateInfo, DownloadMode.Automatic);
+    if (autoDownloadUpdates && checkType !== CheckType.ForceCheck) {
+      await this.#downloadAndInstall(
+        updateInfo,
+        DownloadMode.Automatic,
+        checkType
+      );
       return;
     }
 
@@ -517,20 +549,25 @@ export abstract class Updater {
       mode = DownloadMode.DifferentialOnly;
     }
 
-    await this.#offerUpdate(updateInfo, mode, 0);
+    await this.#offerUpdate(updateInfo, mode, 0, checkType);
   }
 
   async #offerUpdate(
     updateInfo: UpdateInformationType,
     mode: DownloadMode,
-    attempt: number
+    attempt: number,
+    checkType: CheckType
   ): Promise<void> {
     const { logger } = this;
 
     this.setUpdateListener(async () => {
       logger.info('offerUpdate: have not downloaded update, going to download');
 
-      const didDownload = await this.#downloadAndInstall(updateInfo, mode);
+      const didDownload = await this.#downloadAndInstall(
+        updateInfo,
+        mode,
+        checkType
+      );
       if (!didDownload && mode === DownloadMode.DifferentialOnly) {
         this.logger.warn(
           'offerUpdate: Failed to download differential update, offering full'
@@ -539,7 +576,8 @@ export abstract class Updater {
         return this.#offerUpdate(
           updateInfo,
           DownloadMode.FullOnly,
-          attempt + 1
+          attempt + 1,
+          checkType
         );
       }
 
@@ -578,10 +616,14 @@ export abstract class Updater {
   async #checkForUpdates(
     checkType: CheckType
   ): Promise<UpdateInformationType | undefined> {
-    if (isNotUpdatable(packageVersion)) {
+    const logId = `checkForUpdates/${checkType}`;
+    if (isNotUpdatable(packageJson.version)) {
       this.logger.info(
-        'checkForUpdates: not checking for updates, this is not an updatable build'
+        `${logId}: not checking for updates, this is not an updatable build`
       );
+      if (checkType === CheckType.ForceCheck) {
+        throw new Error(`${logId}: Not an updatabale build!`);
+      }
       return;
     }
 
@@ -589,26 +631,40 @@ export abstract class Updater {
     const parsedYaml = parseYaml(yaml);
 
     const { vendor } = parsedYaml;
-    if (vendor && !this.checkSystemRequirements(vendor)) {
+    if (vendor && !this.checkSystemRequirements(vendor, checkType)) {
       return;
     }
 
     const version = getVersion(parsedYaml);
 
     if (!version) {
-      this.logger.warn(
-        'checkForUpdates: no version extracted from downloaded yaml'
-      );
+      this.logger.warn(`${logId}: no version extracted from downloaded yaml`);
+      if (checkType === CheckType.ForceCheck) {
+        throw new Error(`${logId}: No version extracted!`);
+      }
 
       return;
     }
 
-    if (checkType === CheckType.Normal && !isVersionNewer(version)) {
+    if (
+      (checkType === CheckType.Normal || checkType === CheckType.ForceCheck) &&
+      !isVersionNewer(version)
+    ) {
       this.logger.info(
-        `checkForUpdates: ${version} is not newer than ${packageVersion}; ` +
+        `${logId}: ${version} is not newer than ${packageJson.version}; ` +
           'no new update available'
       );
+      if (checkType === CheckType.ForceCheck) {
+        throw new Error(`${logId}: No newer version available!`);
+      }
 
+      return;
+    }
+
+    if (
+      (checkType === CheckType.Normal || checkType === CheckType.ForceCheck) &&
+      this.handleUpdateFromThirdParty(version)
+    ) {
       return;
     }
 
@@ -632,10 +688,7 @@ export abstract class Updater {
       }
     }
 
-    this.logger.info(
-      `checkForUpdates: found newer version ${version} ` +
-        `checkType=${checkType}`
-    );
+    this.logger.info(`${logId}: found newer version ${version}`);
 
     const fileName = getUpdateFileName(
       parsedYaml,
@@ -652,9 +705,7 @@ export abstract class Updater {
 
     let differentialData: DifferentialDownloadDataType | undefined;
     if (latestInstaller) {
-      this.logger.info(
-        `checkForUpdates: Found local installer ${latestInstaller}`
-      );
+      this.logger.info(`${logId}: Found local installer ${latestInstaller}`);
 
       const diffOptions = {
         oldFile: latestInstaller,
@@ -666,7 +717,7 @@ export abstract class Updater {
         this.cachedDifferentialData &&
         isValidDifferentialData(this.cachedDifferentialData, diffOptions)
       ) {
-        this.logger.info('checkForUpdates: using cached differential data');
+        this.logger.info(`${logId}: using cached differential data`);
 
         differentialData = this.cachedDifferentialData;
       } else {
@@ -676,12 +727,12 @@ export abstract class Updater {
           this.cachedDifferentialData = differentialData;
 
           this.logger.info(
-            'checkForUpdates: differential download size',
+            `${logId}: differential download size`,
             differentialData.downloadSize
           );
         } catch (error) {
           this.logger.error(
-            'checkForUpdates: Failed to prepare differential update',
+            `${logId}: Failed to prepare differential update`,
             Errors.toLogFormat(error)
           );
           this.cachedDifferentialData = undefined;
@@ -943,7 +994,7 @@ export abstract class Updater {
         'getItemById',
         'auto-download-update'
       );
-      return result?.value ?? true;
+      return typeof result?.value === 'boolean' ? result.value : true;
     } catch (error) {
       this.logger.warn(
         'getAutoDownloadUpdateSetting: Failed to fetch, returning false',
@@ -984,22 +1035,30 @@ export function validatePath(basePath: string, targetPath: string): void {
 
 // Helper functions
 
-export function getUpdateCheckUrl(): string {
+function getUpdateCheckUrl(): string {
   return `${getUpdatesBase()}/${getUpdatesFileName()}`;
 }
 
-export function getUpdatesBase(): string {
+function getUpdatesBase(): string {
   return config.get('updatesUrl');
 }
 
-export function getUpdatesFileName(): string {
+function getUpdatesFileName(): string {
   const prefix = getChannel();
 
   if (process.platform === 'darwin') {
+    if (process.mas) {
+      return `${prefix}-mas.yml`;
+    }
+
     return `${prefix}-mac.yml`;
   }
 
   if (process.platform === 'linux') {
+    if (process.arch === 'arm64') {
+      return `${prefix}-linux-arm64.yml`;
+    }
+
     return `${prefix}-linux.yml`;
   }
 
@@ -1007,27 +1066,27 @@ export function getUpdatesFileName(): string {
 }
 
 function getChannel(): string {
-  if (isNotUpdatable(packageVersion)) {
+  if (isNotUpdatable(packageJson.version)) {
     // we don't want ad hoc versions to update
-    return packageVersion;
+    return packageJson.version;
   }
-  if (isStaging(packageVersion)) {
+  if (isStaging(packageJson.version)) {
     return 'staging';
   }
-  if (isAlpha(packageVersion)) {
+  if (isAlpha(packageJson.version)) {
     return 'alpha';
   }
-  if (isAxolotl(packageVersion)) {
+  if (isAxolotl(packageJson.version)) {
     return 'axolotl';
   }
-  if (isBeta(packageVersion)) {
+  if (isBeta(packageJson.version)) {
     return 'beta';
   }
   return 'latest';
 }
 
 function isVersionNewer(newVersion: string): boolean {
-  return gt(newVersion, packageVersion);
+  return gt(newVersion, packageJson.version);
 }
 
 export function getVersion(info: JSONUpdateSchema): string | null {
@@ -1065,11 +1124,12 @@ export function getUpdateFileName(
     const candidates = files.filter(fileFilter);
 
     if (candidates.length === 1) {
-      path = candidates[0].url;
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      path = candidates[0]!.url;
     }
   }
 
-  path = path ?? info.path;
+  path ??= info.path;
 
   if (!isUpdateFileNameValid(path)) {
     throw new Error(
@@ -1104,7 +1164,7 @@ function getSize(info: JSONUpdateSchema, fileName: string): number {
 }
 
 export function parseYaml(yaml: string): JSONUpdateSchema {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   return loadYaml(yaml, { schema: FAILSAFE_SCHEMA, json: true }) as any;
 }
 
@@ -1177,17 +1237,4 @@ export async function deleteTempDir(
   }
 
   await gracefulRmRecursive(logger, targetDir);
-}
-
-export function getCliOptions<T>(options: ParserConfiguration['options']): T {
-  const parser = createParser({ options });
-  const cliOptions = parser.parse(process.argv);
-
-  if (cliOptions.help) {
-    const help = parser.help().trimRight();
-    console.log(help);
-    process.exit(0);
-  }
-
-  return cliOptions as unknown as T;
 }

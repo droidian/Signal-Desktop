@@ -7,12 +7,12 @@ import {
   CHAT_FOLDER_DELETED_POSITION,
   ChatFolderType,
   ALL_CHATS_FOLDER_REQUIRED_PARAMS,
-} from '../../types/ChatFolder.std.js';
-import type { ReadableDB, WritableDB } from '../Interface.std.js';
-import { sql } from '../util.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.js';
-import { isCurrentChatFolder } from '../../types/CurrentChatFolders.std.js';
+} from '../../types/ChatFolder.std.ts';
+import type { ReadableDB, WritableDB } from '../Interface.std.ts';
+import { sql } from '../util.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import type { CurrentChatFolder } from '../../types/CurrentChatFolders.std.ts';
+import { isCurrentChatFolder } from '../../types/CurrentChatFolders.std.ts';
 
 export type ChatFolderRow = Readonly<
   Omit<
@@ -386,4 +386,13 @@ export function deleteExpiredChatFolders(
     RETURNING id
   `;
   return db.prepare(query, { pluck: true }).all<ChatFolderId>(params);
+}
+
+// Note: this should only be used in unusual situations; usually we want to mark deleted
+export function deleteChatFolderById(db: WritableDB, id: ChatFolderId): void {
+  const [query, params] = sql`
+    DELETE FROM chatFolders
+    WHERE id = ${id}
+  `;
+  db.prepare(query).run(params);
 }

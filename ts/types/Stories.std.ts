@@ -1,16 +1,17 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { AttachmentType } from './Attachment.std.js';
-import type { HydratedBodyRangesType } from './BodyRange.std.js';
-import type { LocalizerType } from './Util.std.js';
-import type { ContactNameColorType } from './Colors.std.js';
-import type { ConversationType } from '../state/ducks/conversations.preload.js';
-import type { ReadStatus } from '../messages/MessageReadStatus.std.js';
-import type { SendStatus } from '../messages/MessageSendState.std.js';
-import type { StoryDistributionListDataType } from '../state/ducks/storyDistributionLists.preload.js';
-import type { ServiceIdString } from './ServiceId.std.js';
-import type { StoryDistributionIdString } from './StoryDistributionId.std.js';
+import type { AttachmentType } from './Attachment.std.ts';
+import type { HydratedBodyRangesType } from './BodyRange.std.ts';
+import type { LocalizerType } from './Util.std.ts';
+import type { ContactNameColorType } from './Colors.std.ts';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import type { ReadStatus } from '../messages/MessageReadStatus.std.ts';
+import type { SendStatus } from '../messages/MessageSendState.std.ts';
+import type { StoryDistributionListDataType } from '../state/ducks/storyDistributionLists.preload.ts';
+import type { ServiceIdString } from './ServiceId.std.ts';
+import type { StoryDistributionIdString } from './StoryDistributionId.std.ts';
+import type { Emoji } from '../axo/emoji.std.ts';
 
 export type ReplyType = {
   author: Pick<
@@ -31,7 +32,7 @@ export type ReplyType = {
   conversationId: string;
   deletedForEveryone?: boolean;
   id: string;
-  reactionEmoji?: string;
+  reactionEmoji?: Emoji.Variant;
   readStatus?: ReadStatus;
   timestamp: number;
 };
@@ -56,6 +57,7 @@ export type ConversationStoryType = {
     | 'sortedGroupMembers'
     | 'title'
     | 'left'
+    | 'terminated'
   >;
   isHidden?: boolean;
   searchNames?: string; // This is just here to satisfy Fuse's types

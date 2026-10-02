@@ -1,8 +1,8 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-@import '../mixins.scss';
-@import '../colors.scss';
+@use '../mixins.scss';
+@use '../colors.scss';
 
 .base {
   width: 380px;
@@ -12,14 +12,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 13px 3px rgba(0, 0, 0, 0.3);
   position: relative;
-
-  @include light-theme() {
-    background: $color-white;
-  }
-
-  @include dark-theme() {
-    background: $color-gray-75;
-  }
+  background: light-dark(colors.$color-white, colors.$color-gray-75);
 }
 
 .frame {
@@ -30,13 +23,13 @@
 
 .frame-light {
   composes: frame;
-  background: $color-white;
+  background: colors.$color-white;
   border-radius: 6px 0 0 6px;
 }
 
 .frame-dark {
   composes: frame;
-  background: $color-black;
+  background: colors.$color-black;
   border-radius: 0 6px 6px 0;
 }
 
@@ -51,54 +44,32 @@
   composes: arrow;
   border-width: 0 8px 8px 8px;
   top: -8px;
-
-  @include light-theme() {
-    border-color: transparent transparent $color-white transparent;
-  }
-
-  @include dark-theme() {
-    border-color: transparent transparent $color-gray-75 transparent;
-  }
+  border-color: transparent;
+  border-bottom-color: light-dark(colors.$color-white, colors.$color-gray-75);
 }
 
 .arrow-bottom {
   composes: arrow;
   border-width: 8px 8px 0 8px;
   bottom: -8px;
-
-  @include light-theme() {
-    border-color: $color-white transparent transparent transparent;
-  }
-
-  @include dark-theme() {
-    border-color: $color-gray-75 transparent transparent transparent;
-  }
+  border-color: transparent;
+  border-top-color: light-dark(colors.$color-white, colors.$color-gray-75);
 }
 
 .arrow-left {
   composes: arrow;
   border-width: 8px 8px 8px 0;
   inset-inline-start: -8px;
-
-  @include light-theme() {
-    border-color: transparent $color-white transparent transparent;
-  }
-
-  @include dark-theme() {
-    border-color: transparent $color-gray-75 transparent transparent;
-  }
+  border-color: transparent;
+  /* stylelint-disable-next-line liberty/use-logical-spec */
+  border-right-color: light-dark(colors.$color-white, colors.$color-gray-75);
 }
 
 .arrow-right {
   composes: arrow;
   border-width: 8px 0 8px 8px;
   inset-inline-end: -8px;
-
-  @include light-theme() {
-    border-color: transparent transparent transparent $color-white;
-  }
-
-  @include dark-theme() {
-    border-color: transparent transparent transparent $color-gray-75;
-  }
+  border-color: transparent;
+  /* stylelint-disable-next-line liberty/use-logical-spec */
+  border-left-color: light-dark(colors.$color-white, colors.$color-gray-75);
 }

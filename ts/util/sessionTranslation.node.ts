@@ -4,8 +4,8 @@
 import lodash from 'lodash';
 
 import { signal } from '../protobuf/compiled.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { deriveSecrets } from '../Crypto.node.js';
+import * as Bytes from '../Bytes.std.ts';
+import { deriveSecrets } from '../Crypto.node.ts';
 
 const { get, isFinite, isInteger, isString } = lodash;
 
@@ -70,13 +70,13 @@ type SessionRecordType = {
 };
 
 export type LocalUserDataType = {
-  identityKeyPublic: Uint8Array;
+  identityKeyPublic: Uint8Array<ArrayBuffer>;
   registrationId: number;
 };
 
 export function sessionStructureToBytes(
   recordStructure: signal.proto.storage.RecordStructure.Params
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   return signal.proto.storage.RecordStructure.encode(recordStructure);
 }
 
@@ -134,7 +134,7 @@ function toProtobufSession(
   if (!senderBaseKey) {
     throw new Error('toProtobufSession: No sender base key!');
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   const senderChain = (session as any)[senderBaseKey] as ChainType | undefined;
   if (!senderChain) {
     throw new Error(
@@ -169,7 +169,7 @@ function toProtobufSession(
     throw new Error('toProtobufSession: No receiver base key!');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   const firstReceiverChain = (session as any)[firstReceiverChainBaseKey] as
     | ChainType
     | undefined;
@@ -207,7 +207,7 @@ function toProtobufSession(
       throw new Error('toProtobufSession: No base key for old receiver chain!');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     const chain = (session as any)[baseKey] as ChainType | undefined;
     if (!chain) {
       throw new Error(
@@ -247,6 +247,9 @@ function toProtobufSession(
     remoteRegistrationId: getInteger(session, 'registrationId'),
     rootKey: binaryToUint8Array(session, 'currentRatchet.rootKey', 32),
     sessionVersion: 3,
+
+    // Legacy sessions predate the post-quantum ratchet
+    pqRatchetState: null,
 
     // Note: currently unused
     needsRefresh: null,
@@ -308,7 +311,7 @@ function toProtobufChain(
 
 const WHISPER_MESSAGE_KEYS = 'WhisperMessageKeys';
 
-function translateMessageKey(key: Uint8Array) {
+function translateMessageKey(key: Uint8Array<ArrayBuffer>) {
   const input = key;
   const salt = new Uint8Array(32);
   const info = Bytes.fromString(WHISPER_MESSAGE_KEYS);
@@ -323,11 +326,11 @@ function translateMessageKey(key: Uint8Array) {
 }
 
 function binaryToUint8Array(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   object: any,
   path: string,
   length: number
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const target = get(object, path);
   if (target == null) {
     throw new Error(`binaryToUint8Array: Falsey path ${path}`);
@@ -347,7 +350,7 @@ function binaryToUint8Array(
   return buffer;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 function getInteger(object: any, path: string): number {
   const target = get(object, path);
   if (target == null) {

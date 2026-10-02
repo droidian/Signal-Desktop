@@ -1,43 +1,41 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { MutableRefObject } from 'react';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import type { MutableRefObject, JSX } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.js';
-import type { LocalizerType } from '../../../types/I18N.std.js';
-import type { ThemeType } from '../../../types/Util.std.js';
-import { Input } from '../../Input.dom.js';
-import { ConfirmationDialog } from '../../ConfirmationDialog.dom.js';
-import type { ChatFolderSelection } from '../PreferencesSelectChatsDialog.dom.js';
-import { SettingsControl, SettingsRow } from '../../PreferencesUtil.dom.js';
-import { PreferencesSelectChatsDialog } from '../PreferencesSelectChatsDialog.dom.js';
-import { Avatar, AvatarSize } from '../../Avatar.dom.js';
-import { PreferencesContent } from '../../Preferences.dom.js';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { LocalizerType } from '../../../types/I18N.std.ts';
+import type { ThemeType } from '../../../types/Util.std.ts';
+import { Input } from '../../Input.dom.tsx';
+import type { ChatFolderSelection } from '../PreferencesSelectChatsDialog.dom.tsx';
+import { SettingsControl, SettingsRow } from '../../PreferencesUtil.dom.tsx';
+import { PreferencesSelectChatsDialog } from '../PreferencesSelectChatsDialog.dom.tsx';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
+import { PreferencesContent } from '../../Preferences.dom.tsx';
 import {
   CHAT_FOLDER_NAME_MAX_CHAR_LENGTH,
   ChatFolderParamsSchema,
   isSameChatFolderParams,
   validateChatFolderParams,
-} from '../../../types/ChatFolder.std.js';
+} from '../../../types/ChatFolder.std.ts';
 import type {
   ChatFolderId,
   ChatFolderParams,
-} from '../../../types/ChatFolder.std.js';
-import type { GetConversationByIdType } from '../../../state/selectors/conversations.dom.js';
-import { strictAssert } from '../../../util/assert.std.js';
-import { parseStrict } from '../../../util/schemas.std.js';
-import { BeforeNavigateResponse } from '../../../services/BeforeNavigate.std.js';
-import { NavTab, SettingsPage } from '../../../types/Nav.std.js';
-import type { Location } from '../../../types/Nav.std.js';
-import { useNavBlocker } from '../../../hooks/useNavBlocker.std.js';
-import { DeleteChatFolderDialog } from './DeleteChatFolderDialog.dom.js';
-import { UserText } from '../../UserText.dom.js';
-import { AxoSwitch } from '../../../axo/AxoSwitch.dom.js';
-import { FunEmojiPickerButton } from '../../fun/FunButton.dom.js';
-import { FunEmojiPicker } from '../../fun/FunEmojiPicker.dom.js';
-import type { FunEmojiSelection } from '../../fun/panels/FunPanelEmojis.dom.js';
-import { getEmojiVariantByKey } from '../../fun/data/emojis.std.js';
+} from '../../../types/ChatFolder.std.ts';
+import type { GetConversationByIdType } from '../../../state/selectors/conversations.dom.ts';
+import { strictAssert } from '../../../util/assert.std.ts';
+import { parseStrict } from '../../../util/schemas.std.ts';
+import { BeforeNavigateResponse } from '../../../services/BeforeNavigate.std.ts';
+import { NavTab, SettingsPage } from '../../../types/Nav.std.ts';
+import type { Location } from '../../../types/Nav.std.ts';
+import { useNavBlocker } from '../../../hooks/useNavBlocker.std.ts';
+import { DeleteChatFolderDialog } from './DeleteChatFolderDialog.dom.tsx';
+import { UserText } from '../../UserText.dom.tsx';
+import { AxoSwitch } from '../../../axo/AxoSwitch.dom.tsx';
+import { FunEmojiPickerButton } from '../../fun/FunButton.dom.tsx';
+import { FunEmojiPicker } from '../../fun/FunEmojiPicker.dom.tsx';
+import type { FunEmojiSelection } from '../../fun/panels/FunPanelEmojis.dom.tsx';
 import {
   ItemAvatar,
   ItemBody,
@@ -45,9 +43,10 @@ import {
   itemClassName,
   ItemContent,
   ItemTitle,
-} from './PreferencesChatFolderItems.dom.js';
-import { AxoButton } from '../../../axo/AxoButton.dom.js';
-import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.js';
+} from './PreferencesChatFolderItems.dom.tsx';
+import { AxoButton } from '../../../axo/AxoButton.dom.tsx';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
+import { AxoConfirmDialog } from '../../../axo/AxoConfirmDialog.dom.tsx';
 
 export type PreferencesEditChatFolderPageProps = Readonly<{
   i18n: LocalizerType;
@@ -73,7 +72,7 @@ export type PreferencesEditChatFolderPageProps = Readonly<{
 
 export function PreferencesEditChatFolderPage(
   props: PreferencesEditChatFolderPageProps
-): React.JSX.Element {
+): JSX.Element {
   const {
     i18n,
     previousLocation,
@@ -127,9 +126,7 @@ export function PreferencesEditChatFolderPage(
       strictAssert(inputRef.current, 'Missing input ref');
       const input = inputRef.current;
       const { selectionStart, selectionEnd } = input;
-
-      const variant = getEmojiVariantByKey(emojiSelection.variantKey);
-      const emoji = variant.value;
+      const emoji = emojiSelection.emoji;
 
       let newName: string;
       if (selectionStart == null || selectionEnd == null) {
@@ -477,9 +474,6 @@ export function PreferencesEditChatFolderPage(
                     description={i18n(
                       'icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__Description'
                     )}
-                    cancelText={i18n(
-                      'icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__CancelButton'
-                    )}
                     deleteText={i18n(
                       'icu:Preferences__EditChatFolderPage__DeleteChatFolderDialog__DeleteButton'
                     )}
@@ -551,14 +545,14 @@ export function PreferencesEditChatFolderPage(
         <>
           <AxoButton.Root
             size="lg"
-            variant="secondary"
+            variant="strong-secondary"
             onClick={handleDiscardAndBack}
           >
             {i18n('icu:Preferences__EditChatFolderPage__CancelButton')}
           </AxoButton.Root>
           <AxoButton.Root
             size="lg"
-            variant="primary"
+            variant="strong-primary"
             onClick={handleSaveChangesAndBack}
             disabled={!(isChanged && isValid)}
           >
@@ -577,32 +571,30 @@ function SaveChangesFolderDialog(props: {
   onClose: () => void;
 }) {
   const { i18n } = props;
-
   return (
-    <ConfirmationDialog
-      i18n={i18n}
-      dialogName="Preferences__EditChatFolderPage__SaveChangesFolderDialog"
+    <AxoConfirmDialog.Root
+      open
+      onOpenChange={props.onClose}
       title={i18n(
         'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Title'
       )}
-      cancelText={i18n(
-        'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton'
-      )}
-      actions={[
-        {
-          text: i18n(
-            'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton'
-          ),
-          style: 'affirmative',
-          action: props.onSave,
-        },
-      ]}
-      onCancel={props.onDiscard}
-      onClose={props.onClose}
-    >
-      {i18n(
+      description={i18n(
         'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__Description'
       )}
-    </ConfirmationDialog>
+    >
+      <AxoConfirmDialog.Action
+        variant="strong-secondary"
+        onClick={props.onDiscard}
+      >
+        {i18n(
+          'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__DiscardButton'
+        )}
+      </AxoConfirmDialog.Action>
+      <AxoConfirmDialog.Action variant="strong-primary" onClick={props.onSave}>
+        {i18n(
+          'icu:Preferences__EditChatFolderPage__SaveChangesFolderDialog__SaveButton'
+        )}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }

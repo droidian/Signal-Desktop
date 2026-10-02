@@ -1,112 +1,73 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { useRef, useState } from 'react';
+import { useCallback, useState, type JSX, type MouseEvent } from 'react';
+import type { LocalizerType } from '../types/Util.std.ts';
+import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 
-import type { LocalizerType } from '../types/Util.std.js';
-import { Button, ButtonVariant } from './Button.dom.js';
-import { Modal } from './Modal.dom.js';
-import { Spinner } from './Spinner.dom.js';
-
-export type PropsType = Readonly<{
+export type CaptchaDialogProps = Readonly<{
   i18n: LocalizerType;
-  isPending: boolean;
-
+  pending: boolean;
   onContinue: () => void;
   onSkip: () => void;
 }>;
 
-export function CaptchaDialog({
-  i18n,
-  isPending,
-  onSkip,
-  onContinue,
-}: PropsType): React.JSX.Element {
-  const [isClosing, setIsClosing] = useState(false);
+export function CaptchaDialog(props: CaptchaDialogProps): JSX.Element {
+  const { i18n, onContinue } = props;
+  const [closing, setClosing] = useState(false);
 
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const handleContinue = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+      onContinue();
+    },
+    [onContinue]
+  );
 
-  const onCancelClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    setIsClosing(false);
-  };
-
-  const onSkipClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    onSkip();
-  };
-
-  if (isClosing && !isPending) {
-    const footer = (
-      <>
-        <Button onClick={onCancelClick} variant={ButtonVariant.Secondary}>
-          {i18n('icu:cancel')}
-        </Button>
-        <Button onClick={onSkipClick} variant={ButtonVariant.Destructive}>
-          {i18n('icu:CaptchaDialog--can_close__skip-verification')}
-        </Button>
-      </>
-    );
+  if (closing) {
     return (
-      <Modal
-        modalName="CaptchaDialog"
-        moduleClassName="module-Modal"
-        i18n={i18n}
+      <AxoConfirmDialog.Root
         title={i18n('icu:CaptchaDialog--can-close__title')}
-        onClose={() => setIsClosing(false)}
+        description={<p>{i18n('icu:CaptchaDialog--can-close__body')}</p>}
+        open
+        onOpenChange={() => setClosing(false)}
         key="skip"
-        modalFooter={footer}
       >
-        <section>
-          <p>{i18n('icu:CaptchaDialog--can-close__body')}</p>
-        </section>
-      </Modal>
+        <AxoConfirmDialog.Cancel />
+        <AxoConfirmDialog.Action
+          variant="strong-destructive"
+          onClick={props.onSkip}
+        >
+          {i18n('icu:CaptchaDialog--can_close__skip-verification')}
+        </AxoConfirmDialog.Action>
+      </AxoConfirmDialog.Root>
     );
   }
 
-  const onContinueClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-
-    onContinue();
-  };
-
-  const updateButtonRef = (button: HTMLButtonElement): void => {
-    buttonRef.current = button;
-    if (button) {
-      button.focus();
-    }
-  };
-
-  const footer = (
-    <Button
-      disabled={isPending}
-      onClick={onContinueClick}
-      ref={updateButtonRef}
-      variant={ButtonVariant.Primary}
-    >
-      {isPending ? (
-        <Spinner size="22px" svgSize="small" direction="on-primary-button" />
-      ) : (
-        'Continue'
-      )}
-    </Button>
-  );
-
   return (
-    <Modal
-      modalName="CaptchaDialog.pending"
-      moduleClassName="module-Modal--important"
-      i18n={i18n}
+    <AxoConfirmDialog.Root
       title={i18n('icu:CaptchaDialog__title')}
-      hasXButton
-      onClose={() => setIsClosing(true)}
-      key="primary"
-      modalFooter={footer}
+      description={
+        <>
+          <p>{i18n('icu:CaptchaDialog__first-paragraph')}</p>
+          <p>{i18n('icu:CaptchaDialog__second-paragraph')}</p>
+        </>
+      }
+      open
+      onOpenChange={() => setClosing(true)}
+      escape="cancel-is-noop"
     >
-      <section>
-        <p>{i18n('icu:CaptchaDialog__first-paragraph')}</p>
-        <p>{i18n('icu:CaptchaDialog__second-paragraph')}</p>
-      </section>
-    </Modal>
+      <AxoConfirmDialog.Cancel>
+        {i18n('icu:CaptchaDialog--can_close__skip-verification')}
+      </AxoConfirmDialog.Cancel>
+      <AxoConfirmDialog.Action
+        variant="strong-primary"
+        pending={props.pending}
+        onClick={handleContinue}
+        autoFocus
+      >
+        {i18n('icu:CaptchaDialog__continue')}
+      </AxoConfirmDialog.Action>
+    </AxoConfirmDialog.Root>
   );
 }

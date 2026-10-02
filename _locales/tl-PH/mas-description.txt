@@ -1,0 +1,21 @@
+Ang Signal ay isang messaging app na palaging inuuna ang privacy. Ito ay libre at madaling gamitin, at mayroong malakas na end-to-end encryption para mapanatiling private ang iyong chats at mga tawag. Hindi mababasa ng Signal ang iyong messages o mapakikinggan ang mga tawag mo, at hindi rin ito magagawa ng iba. 
+
+• Ang Signal sa MacOS ay naka-link sa Signal sa phone mo. 
+
+• Libreng mag-send ng end-to-end encrypted texts, voice messages, photos, videos, GIFs, at files. 
+
+• Manatiling konektado gamit ang group chats kung saan pwede ang hanggang 1,000 tao. Kontrolin kung sinong pwedeng mag-post at i-manage ang group members sa pamamagitan ng admin permission settings.
+
+• Tawagan ang friends mo gamit ang malinaw na clear end-to-end encrypted voice and video calls. Kayang suportahan ng group calls ang hanggang 75 tao.
+
+• Ang Signal ay ginawa para sa privacy mo. Wala kaming alam tungkol sa 'yo o sa taong kausap mo. Ang aming open source Signal Protocol ay nangangahulugan na hindi namin pwedeng basahin ang messages mo o makinig sa mga tawag mo. At hindi rin ito pwedeng gawin ng kahit sino. Walang back door, walang data collection, walang compromise. 
+
+• Mag-share ng photo, text, at video Stories na nawawala makalipas ang 24 oras. Ang Privacy settings ay makatutulong para mapili mo kung sino ang pwedeng makakita ng bawat Story.
+
+• Ang Signal ay independent at hindi binuo para kumita; ito'y ibang klase ng tech mula sa ibang klaseng organisasyon. Bilang isang 501c3 nonprofit, kami'y suportado ng inyong mga donasyon, hindi ng advertisers o investors. 
+
+• Para sa karagdagang suporta, katanungan, at iba pang impormasyon, bisitahin ang https://support.signal.org/
+
+Para makita ang aming source code, bisitahin ang https://github.com/signalapp 
+
+I-follow kami sa X @signalapp at sa Instagram @signal_app

@@ -1,22 +1,23 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
 import { shuffle } from 'lodash';
 import type { Meta, StoryFn } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 
-import { NotificationProfilesMenu } from './NotificationProfilesMenu.dom.js';
-import type { Props } from './NotificationProfilesMenu.dom.js';
+import { NotificationProfilesMenu } from './NotificationProfilesMenu.dom.tsx';
+import type { Props } from './NotificationProfilesMenu.dom.tsx';
 import {
   getDefaultConversation,
   getDefaultGroup,
-} from '../test-helpers/getDefaultConversation.std.js';
-import { DayOfWeek } from '../types/NotificationProfile.std.js';
-import type { NotificationProfileIdString } from '../types/NotificationProfile.std.js';
-import { HOUR } from '../util/durations/index.std.js';
-import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.js';
-import { AxoButton } from '../axo/AxoButton.dom.js';
+} from '../test-helpers/getDefaultConversation.std.ts';
+import { DayOfWeek } from '../types/NotificationProfile.std.ts';
+import type { NotificationProfileIdString } from '../types/NotificationProfile.std.ts';
+import { HOUR } from '../util/durations/index.std.ts';
+import { AxoDropdownMenu } from '../axo/AxoDropdownMenu.dom.tsx';
+import { AxoButton } from '../axo/AxoButton.dom.tsx';
+import type { ConversationType } from '../state/ducks/conversations.preload.ts';
+import { Emoji } from '../axo/emoji.std.ts';
 
 const { i18n } = window.SignalContext;
 
@@ -25,11 +26,16 @@ const conversations = shuffle([
   ...Array.from(Array(20), getDefaultConversation),
 ]);
 
+const [conversation1, conversation2] = conversations as [
+  ConversationType,
+  ConversationType,
+];
+
 const threeProfiles = [
   {
     id: 'Weekday' as NotificationProfileIdString,
     name: 'Weekday',
-    emoji: '😬',
+    emoji: Emoji.GRIMACING,
     color: 0xffe3e3fe,
 
     createdAtMs: Date.now(),
@@ -37,7 +43,7 @@ const threeProfiles = [
     allowAllCalls: true,
     allowAllMentions: true,
 
-    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    allowedMembers: new Set([conversation1.id, conversation2.id]),
     scheduleEnabled: true,
 
     scheduleStartTime: 1800,
@@ -58,7 +64,7 @@ const threeProfiles = [
   {
     id: 'Weekend' as NotificationProfileIdString,
     name: 'Weekend',
-    emoji: '❤️‍🔥',
+    emoji: Emoji.HEART_ON_FIRE,
     color: 0xffd7d7d9,
 
     createdAtMs: Date.now(),
@@ -66,7 +72,7 @@ const threeProfiles = [
     allowAllCalls: true,
     allowAllMentions: true,
 
-    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    allowedMembers: new Set([conversation1.id, conversation2.id]),
     scheduleEnabled: true,
 
     scheduleStartTime: 1800,
@@ -95,7 +101,7 @@ const threeProfiles = [
     allowAllCalls: true,
     allowAllMentions: true,
 
-    allowedMembers: new Set([conversations[0].id, conversations[1].id]),
+    allowedMembers: new Set([conversation1.id, conversation2.id]),
     scheduleEnabled: true,
 
     scheduleStartTime: 1800,
@@ -113,7 +119,7 @@ const threeProfiles = [
     deletedAtTimestampMs: undefined,
     storageNeedsSync: true,
   },
-];
+] as const;
 
 export default {
   title: 'Components/NotificationProfilesMenu',
@@ -140,12 +146,11 @@ function createProps(args: Partial<Props>) {
   };
 }
 
-// eslint-disable-next-line react/function-component-definition
 const Template: StoryFn<Props> = args => {
   return (
     <AxoDropdownMenu.Root>
       <AxoDropdownMenu.Trigger>
-        <AxoButton.Root size="md" variant="secondary">
+        <AxoButton.Root size="md" variant="strong-secondary">
           Open
         </AxoButton.Root>
       </AxoDropdownMenu.Trigger>

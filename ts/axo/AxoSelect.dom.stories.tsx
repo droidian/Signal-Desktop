@@ -1,10 +1,10 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import type { ReactNode, JSX } from 'react';
+import { useState } from 'react';
 import type { Meta } from '@storybook/react';
-import { AxoSelect } from './AxoSelect.dom.js';
-import { tw } from './tw.dom.js';
+import { AxoSelect } from './AxoSelect.dom.tsx';
+import { tw } from './tw.dom.tsx';
 
 export default {
   title: 'Axo/AxoSelect',
@@ -14,7 +14,7 @@ function TemplateItem(props: {
   value: string;
   disabled?: boolean;
   children: ReactNode;
-}): React.JSX.Element {
+}): JSX.Element {
   return (
     <AxoSelect.Item value={props.value} disabled={props.disabled}>
       <AxoSelect.ItemText>{props.children}</AxoSelect.ItemText>
@@ -26,6 +26,7 @@ function Template(props: {
   disabled?: boolean;
   triggerWidth?: AxoSelect.TriggerWidth;
   triggerVariant: AxoSelect.TriggerVariant;
+  triggerChevron?: AxoSelect.TriggerChevron;
 }) {
   const [value, setValue] = useState<string | null>(null);
   return (
@@ -37,6 +38,7 @@ function Template(props: {
       <AxoSelect.Trigger
         variant={props.triggerVariant}
         width={props.triggerWidth}
+        chevron={props.triggerChevron}
         placeholder="Select an item..."
       />
       <AxoSelect.Content>
@@ -71,7 +73,7 @@ function Template(props: {
   );
 }
 
-export function Basic(): React.JSX.Element {
+export function Basic(): JSX.Element {
   return (
     <div
       className={tw(
@@ -83,12 +85,12 @@ export function Basic(): React.JSX.Element {
         <Template triggerVariant="default" disabled />
       </div>
       <div className={tw('flex w-full gap-2')}>
-        <Template triggerVariant="floating" />
-        <Template triggerVariant="floating" disabled />
+        <Template triggerVariant="elevated" />
+        <Template triggerVariant="elevated" disabled />
       </div>
       <div className={tw('flex w-full gap-2')}>
-        <Template triggerVariant="borderless" />
-        <Template triggerVariant="borderless" disabled />
+        <Template triggerVariant="implied" />
+        <Template triggerVariant="implied" disabled />
       </div>
 
       <div className={tw('flex w-full gap-2')}>
@@ -96,12 +98,69 @@ export function Basic(): React.JSX.Element {
         <Template triggerWidth="full" triggerVariant="default" disabled />
       </div>
       <div className={tw('flex w-full gap-2')}>
-        <Template triggerWidth="full" triggerVariant="floating" />
-        <Template triggerWidth="full" triggerVariant="floating" disabled />
+        <Template triggerWidth="full" triggerVariant="elevated" />
+        <Template triggerWidth="full" triggerVariant="elevated" disabled />
       </div>
       <div className={tw('flex w-full gap-2')}>
-        <Template triggerWidth="full" triggerVariant="borderless" />
-        <Template triggerWidth="full" triggerVariant="borderless" disabled />
+        <Template triggerWidth="full" triggerVariant="implied" />
+        <Template triggerWidth="full" triggerVariant="implied" disabled />
+      </div>
+
+      <div className={tw('flex w-full gap-2')}>
+        <Template triggerChevron="on-hover" triggerVariant="default" />
+        <Template triggerChevron="on-hover" triggerVariant="default" disabled />
+      </div>
+      <div className={tw('flex w-full gap-2')}>
+        <Template triggerChevron="on-hover" triggerVariant="elevated" />
+        <Template
+          triggerChevron="on-hover"
+          triggerVariant="elevated"
+          disabled
+        />
+      </div>
+      <div className={tw('flex w-full gap-2')}>
+        <Template triggerChevron="on-hover" triggerVariant="implied" />
+        <Template triggerChevron="on-hover" triggerVariant="implied" disabled />
+      </div>
+
+      <div className={tw('flex w-full gap-2')}>
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="default"
+        />
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="default"
+          disabled
+        />
+      </div>
+      <div className={tw('flex w-full gap-2')}>
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="elevated"
+        />
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="elevated"
+          disabled
+        />
+      </div>
+      <div className={tw('flex w-full gap-2')}>
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="implied"
+        />
+        <Template
+          triggerWidth="full"
+          triggerChevron="on-hover"
+          triggerVariant="implied"
+          disabled
+        />
       </div>
     </div>
   );

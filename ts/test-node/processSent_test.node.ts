@@ -3,10 +3,10 @@
 
 import { assert } from 'chai';
 import lodash from 'lodash';
-import { generateAci } from '../types/ServiceId.std.js';
 import { signalservice as Proto } from '../protobuf/compiled.std.js';
 
-import { processSent } from '../textsecure/processSyncMessage.node.js';
+import { processSent } from '../textsecure/processSyncMessage.node.ts';
+import { generateAci } from '../test-helpers/serviceIdUtils.std.ts';
 
 const { omit } = lodash;
 
@@ -41,6 +41,7 @@ describe('processSent', () => {
 
     const out = processSent(input);
 
+    // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
     assert.deepStrictEqual(out, {
       ...omit(input, 'destinationServiceIdBinary', '$unknown'),
       destinationServiceId,

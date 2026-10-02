@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assert } from 'chai';
 import * as moment from 'moment';
-import { setupI18n } from '../../util/setupI18n.dom.js';
-import { DurationInSeconds } from '../../util/durations/index.std.js';
-import type { LocaleMessagesType } from '../../types/I18N.std.js';
+import { setupI18n } from '../../util/setupI18n.dom.tsx';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import type { LocaleMessagesType } from '../../types/I18N.std.ts';
 
-import * as expirationTimer from '../../util/expirationTimer.std.js';
+import * as expirationTimer from '../../util/expirationTimer.std.ts';
 
 function loadMessages(locale: string): LocaleMessagesType {
   const localePath = join(
@@ -115,6 +115,23 @@ describe('expiration timer utilities', async () => {
           );
         }
       );
+    });
+
+    it('uses Western numerals in Arabic', () => {
+      const arMessages = loadMessages('ar');
+      const arI18n = setupI18n('ar', arMessages);
+      const formatted = format(
+        arI18n,
+        DurationInSeconds.fromSeconds(
+          moment
+            .duration(4, 'days')
+            .add(moment.duration(20, 'hours'))
+            .asSeconds()
+        ),
+        { largest: 2 }
+      );
+      assert.include(formatted, '4');
+      assert.include(formatted, '20');
     });
 
     it('falls back to English if the locale is not supported', () => {

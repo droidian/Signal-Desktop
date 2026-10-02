@@ -7,36 +7,35 @@ import {
   PublicKey,
   usernames,
 } from '@signalapp/libsignal-client';
-import type {
-  Request,
-  E164Info,
+import {
+  type Request,
+  type E164Info,
+  resetField,
+  AccountDataField,
 } from '@signalapp/libsignal-client/dist/net/KeyTransparency.js';
-import { MonitorMode } from '@signalapp/libsignal-client/dist/net/KeyTransparency.js';
 import pTimeout from 'p-timeout';
 
-import {
-  keyTransparencySearch,
-  keyTransparencyMonitor,
-} from '../textsecure/WebAPI.preload.js';
-import { signalProtocolStore } from '../SignalProtocolStore.preload.js';
-import { itemStorage } from '../textsecure/Storage.preload.js';
-import { fromAciObject } from '../types/ServiceId.std.js';
-import { toLogFormat } from '../types/errors.std.js';
-import { toAciObject } from '../util/ServiceId.node.js';
-import { TaskDeduplicator } from '../util/TaskDeduplicator.std.js';
-import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.js';
-import { sleep } from '../util/sleep.std.js';
-import { SECOND, MINUTE, DAY, WEEK } from '../util/durations/constants.std.js';
-import { CheckScheduler } from '../util/CheckScheduler.preload.js';
-import { strictAssert } from '../util/assert.std.js';
-import { isFeaturedEnabledNoRedux } from '../util/isFeatureEnabled.dom.js';
-import { explodePromise } from '../util/explodePromise.std.js';
-import { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.std.js';
-import * as Bytes from '../Bytes.std.js';
-import { createLogger } from '../logging/log.std.js';
-import { isEnabled } from '../RemoteConfig.dom.js';
-import { DataWriter } from '../sql/Client.preload.js';
-import { runStorageServiceSyncJob } from './storage.preload.js';
+import { keyTransparencyCheck } from '../textsecure/WebAPI.preload.ts';
+import { signalProtocolStore } from '../SignalProtocolStore.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import { toLogFormat } from '../types/errors.std.ts';
+import { toAciObject } from '../util/ServiceId.node.ts';
+import { TaskDeduplicator } from '../util/TaskDeduplicator.std.ts';
+import { BackOff, FIBONACCI_TIMEOUTS } from '../util/BackOff.std.ts';
+import { sleep } from '../util/sleep.std.ts';
+import { SECOND, MINUTE, DAY, WEEK } from '../util/durations/constants.std.ts';
+import { CheckScheduler } from '../util/CheckScheduler.preload.ts';
+import { strictAssert } from '../util/assert.std.ts';
+import { isFeaturedEnabledNoRedux } from '../util/isFeatureEnabled.dom.ts';
+import { explodePromise } from '../util/explodePromise.std.ts';
+import { PhoneNumberDiscoverability } from '../util/phoneNumberDiscoverability.std.ts';
+import * as Bytes from '../Bytes.std.ts';
+import { createLogger } from '../logging/log.std.ts';
+import { isEnabled } from '../RemoteConfig.dom.ts';
+import { DataWriter } from '../sql/Client.preload.ts';
+import { runStorageServiceSyncJob } from './storage.preload.ts';
+import { hasUsernameChangeSyncCapability } from './username.preload.ts';
+import { KeyTransparencyStore } from '../LibSignalStores.node.ts';
 
 const log = createLogger('KeyTransparency');
 
@@ -59,9 +58,9 @@ export function isKeyTransparencyAvailable(): boolean {
   });
 }
 
-export class KeyTransparency {
+class KeyTransparency {
   #isRunning = false;
-  #scheduler = new CheckScheduler({
+  readonly #scheduler = new CheckScheduler({
     name: 'KeyTransparency',
     interval: WEEK,
     storageKey: 'lastKeyTransparencySelfCheck',
@@ -76,7 +75,7 @@ export class KeyTransparency {
     },
   });
 
-  #selfCheckDedup = new TaskDeduplicator(
+  readonly #selfCheckDedup = new TaskDeduplicator(
     'KeyTransparency.selfCheck',
     abortSignal => this.#selfCheck(abortSignal)
   );
@@ -97,7 +96,15 @@ export class KeyTransparency {
     this.#scheduler.start();
   }
 
-  public async onKnownIdentifierChange(): Promise<void> {
+  public async onKnownIdentifierChange(
+    field: 'e164' | 'username' | 'accessKey' | 'phoneNumberDiscoverability'
+  ): Promise<void> {
+    if (field === 'e164') {
+      await this.#resetSelfIdentifier(AccountDataField.E164);
+    } else if (field === 'username') {
+      await this.#resetSelfIdentifier(AccountDataField.UsernameHash);
+    }
+
     await this.#scheduler.delayBy(KNOWN_IDENTIFIER_CHANGE_DELAY);
   }
 
@@ -142,8 +149,9 @@ export class KeyTransparency {
       };
     }
 
-    await this.#verify(
+    await this.#check(
       {
+        mode: 'contact',
         aciInfo: {
           aci: toAciObject(aci),
           identityKey: PublicKey.deserialize(identityKey),
@@ -195,29 +203,23 @@ export class KeyTransparency {
 
     const me = window.ConversationController.getOurConversationOrThrow();
 
-    let e164Info: E164Info | undefined;
-    if (
+    const isE164Discoverable =
       itemStorage.get('phoneNumberDiscoverability') ===
-      PhoneNumberDiscoverability.Discoverable
-    ) {
-      const ourE164 = itemStorage.user.getNumber();
-      strictAssert(ourE164 != null, 'missing our e164');
+      PhoneNumberDiscoverability.Discoverable;
 
-      me.deriveAccessKeyIfNeeded();
-      const ourAccessKey = me.get('accessKey');
-      strictAssert(ourAccessKey != null, 'missing our access key');
+    const ourE164 = itemStorage.user.getOptionalNumber();
 
-      e164Info = {
-        e164: ourE164,
-        unidentifiedAccessKey: Bytes.fromBase64(ourAccessKey),
-      };
-    }
+    me.deriveAccessKeyIfNeeded();
+    const ourAccessKey = me.get('accessKey');
+    strictAssert(ourAccessKey != null, 'missing our access key');
 
-    let usernameHash: Uint8Array | undefined;
+    let usernameHash: Uint8Array<ArrayBuffer> | undefined;
 
-    const username = me.get('username');
-    if (username != null && !itemStorage.get('usernameCorrupted')) {
-      usernameHash = usernames.hash(username);
+    if (hasUsernameChangeSyncCapability()) {
+      const username = me.get('username');
+      if (username != null && !itemStorage.get('usernameCorrupted')) {
+        usernameHash = usernames.hash(username);
+      }
     }
 
     if (itemStorage.get('keyTransparencySelfHealth') === 'intermittent') {
@@ -231,17 +233,25 @@ export class KeyTransparency {
         resolve()
       );
 
-      await pTimeout(once, STORAGE_SERVICE_TIMEOUT);
+      await pTimeout(once, { milliseconds: STORAGE_SERVICE_TIMEOUT });
     }
 
     try {
-      await this.#verify(
+      await this.#check(
         {
+          mode: 'self',
+          isE164Discoverable,
           aciInfo: {
             aci: toAciObject(ourAci),
             identityKey: keyPair.publicKey,
           },
-          e164Info,
+          e164Info:
+            ourE164 != null
+              ? {
+                  e164: ourE164,
+                  unidentifiedAccessKey: Bytes.fromBase64(ourAccessKey),
+                }
+              : undefined,
           usernameHash,
         },
         abortSignal
@@ -312,29 +322,16 @@ export class KeyTransparency {
     }
   }
 
-  async #verify(
+  async #check(
     request: Request,
     abortSignal?: AbortSignal,
     backOff = new BackOff(KEY_TRANSPARENCY_TIMEOUTS)
   ): Promise<void> {
     try {
-      const existing = await signalProtocolStore.getKTAccountData(
-        request.aciInfo.aci
-      );
       if (abortSignal?.aborted) {
         throw new Error('Aborted');
       }
-      const aciString = fromAciObject(request.aciInfo.aci);
-      if (existing == null) {
-        log.info('search', aciString);
-        await keyTransparencySearch(request, abortSignal);
-      } else {
-        const mode = itemStorage.user.isOurServiceId(aciString)
-          ? MonitorMode.Self
-          : MonitorMode.Other;
-        log.info('monitor', aciString);
-        await keyTransparencyMonitor(request, mode, abortSignal);
-      }
+      await keyTransparencyCheck(request, abortSignal);
     } catch (error) {
       if (abortSignal?.aborted) {
         throw new Error('Aborted');
@@ -368,7 +365,20 @@ export class KeyTransparency {
         throw new Error('Aborted');
       }
 
-      return this.#verify(request, abortSignal, backOff);
+      return this.#check(request, abortSignal, backOff);
+    }
+  }
+
+  async #resetSelfIdentifier(field: AccountDataField): Promise<void> {
+    try {
+      const ourAci = itemStorage.user.getCheckedAci();
+      const store = new KeyTransparencyStore(signalProtocolStore);
+      await resetField(toAciObject(ourAci), field, store);
+    } catch (error) {
+      log.error(
+        `resetSelfIdentifier(${AccountDataField[field]}): failed`,
+        toLogFormat(error)
+      );
     }
   }
 }

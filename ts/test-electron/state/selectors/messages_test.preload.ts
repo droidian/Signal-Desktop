@@ -4,17 +4,17 @@
 import { assert } from 'chai';
 import * as moment from 'moment';
 import { v4 as uuid } from 'uuid';
-import { SendStatus } from '../../../messages/MessageSendState.std.js';
+import { SendStatus } from '../../../messages/MessageSendState.std.ts';
 import type {
   MessageAttributesType,
   ShallowChallengeError,
 } from '../../../model-types.d.ts';
-import type { ConversationType } from '../../../state/ducks/conversations.preload.js';
+import type { ConversationType } from '../../../state/ducks/conversations.preload.ts';
 import {
   generateGroupId,
   getDefaultConversation,
   getDefaultGroup,
-} from '../../../test-helpers/getDefaultConversation.std.js';
+} from '../../../test-helpers/getDefaultConversation.std.ts';
 
 import {
   canReact,
@@ -25,15 +25,15 @@ import {
   isGroupUpdate,
   isIncoming,
   isOutgoing,
-} from '../../../state/selectors/message.preload.js';
+} from '../../../state/selectors/message.preload.ts';
 import type {
   DeleteForEveryoneConversation,
   DeleteForEveryoneMessage,
-} from '../../../util/canDeleteForEveryone.preload.js';
-import { canSendDeleteForEveryone } from '../../../util/canDeleteForEveryone.preload.js';
-import type { AciString } from '../../../types/ServiceId.std.js';
-import { SIGNAL_ACI } from '../../../types/SignalConversation.std.js';
-import { OUR_ACI, setupBasics } from '../../backup/helpers.preload.js';
+} from '../../../util/canDeleteForEveryone.preload.ts';
+import { canSendDeleteForEveryone } from '../../../util/canDeleteForEveryone.preload.ts';
+import type { AciString } from '../../../types/ServiceId.std.ts';
+import { SIGNAL_ACI } from '../../../types/SignalConversation.std.ts';
+import { OUR_ACI, setupBasics } from '../../backup/helpers.preload.ts';
 
 describe('state/selectors/messages', () => {
   let ourConversationId: string;
@@ -453,6 +453,7 @@ describe('state/selectors/messages', () => {
   describe('getMessagePropStatus', () => {
     const createMessage = (overrides: Partial<MessageAttributesType>) => ({
       type: 'outgoing' as const,
+      conversationId: 'convoId',
       ...overrides,
     });
 
@@ -541,8 +542,9 @@ describe('state/selectors/messages', () => {
       );
     });
 
-    it('returns "viewed" if the message is just for you and has been sent', () => {
+    it('returns "viewed" if the message is for note-to-self and has been sent', () => {
       const message = createMessage({
+        conversationId: ourConversationId,
         sendStateByConversationId: {
           [ourConversationId]: {
             status: SendStatus.Sent,
@@ -554,6 +556,22 @@ describe('state/selectors/messages', () => {
       assert.strictEqual(
         getMessagePropStatus(message, ourConversationId),
         'viewed'
+      );
+    });
+
+    it('returns "sent" if the message is lonely-in-group and has been sent', () => {
+      const message = createMessage({
+        sendStateByConversationId: {
+          [ourConversationId]: {
+            status: SendStatus.Sent,
+            updatedAt: Date.now(),
+          },
+        },
+      });
+
+      assert.strictEqual(
+        getMessagePropStatus(message, ourConversationId),
+        'sent'
       );
     });
 

@@ -1,9 +1,9 @@
 // Copyright 2018 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import type { JSX } from 'react';
 
-import type { RenderTextCallbackType } from '../../types/Util.std.js';
+import type { RenderTextCallbackType } from '../../types/Util.std.ts';
 
 export type Props = {
   text: string;
@@ -16,8 +16,8 @@ const defaultRenderNonNewLine: RenderTextCallbackType = ({ text }) => text;
 export function AddNewLines({
   text,
   renderNonNewLine = defaultRenderNonNewLine,
-}: Props): React.JSX.Element {
-  const results: Array<React.JSX.Element | string> = [];
+}: Props): JSX.Element {
+  const results: Array<JSX.Element | string> = [];
   const FIND_NEWLINES = /\n/g;
 
   let match = FIND_NEWLINES.exec(text);

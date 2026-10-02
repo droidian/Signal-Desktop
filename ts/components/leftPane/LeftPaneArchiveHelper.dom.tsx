@@ -2,24 +2,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactNode } from 'react';
-import React from 'react';
 import lodash from 'lodash';
 
-import type { ToFindType } from './LeftPaneHelper.dom.js';
-import { LeftPaneHelper } from './LeftPaneHelper.dom.js';
-import { getConversationInDirection } from './getConversationInDirection.dom.js';
-import type { Row } from '../ConversationList.dom.js';
-import { RowType } from '../ConversationList.dom.js';
-import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.js';
-import type { LocalizerType } from '../../types/Util.std.js';
+import type { ToFindType } from './LeftPaneHelper.dom.tsx';
+import { LeftPaneHelper } from './LeftPaneHelper.dom.tsx';
+import { getConversationInDirection } from './getConversationInDirection.dom.ts';
+import type { Row } from '../ConversationList.dom.tsx';
+import { RowType } from '../ConversationList.dom.tsx';
+import type { PropsData as ConversationListItemPropsType } from '../conversationList/ConversationListItem.dom.tsx';
+import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   ConversationType,
   ShowConversationType,
-} from '../../state/ducks/conversations.preload.js';
-import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.js';
-import type { LeftPaneSearchPropsType } from './LeftPaneSearchHelper.dom.js';
-import { LeftPaneSearchHelper } from './LeftPaneSearchHelper.dom.js';
-import * as KeyboardLayout from '../../services/keyboardLayout.dom.js';
+} from '../../state/ducks/conversations.preload.ts';
+import { LeftPaneSearchInput } from '../LeftPaneSearchInput.dom.tsx';
+import type { LeftPaneSearchPropsType } from './LeftPaneSearchHelper.dom.tsx';
+import { LeftPaneSearchHelper } from './LeftPaneSearchHelper.dom.tsx';
+import * as KeyboardLayout from '../../services/keyboardLayout.dom.ts';
 
 const { last } = lodash;
 
@@ -35,6 +34,7 @@ export type LeftPaneArchivePropsType =
   | LeftPaneArchiveBasePropsType
   | (LeftPaneArchiveBasePropsType & LeftPaneSearchPropsType);
 
+// oxlint-disable-next-line react/prefer-function-component
 export class LeftPaneArchiveHelper extends LeftPaneHelper<LeftPaneArchivePropsType> {
   readonly #archivedConversations: ReadonlyArray<ConversationListItemPropsType>;
   readonly #isSearchingGlobally: boolean;

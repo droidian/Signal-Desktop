@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ReactElement } from 'react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import classNames from 'classnames';
 import { animated, useSpring } from '@react-spring/web';
 
-import { TypingAnimation } from './TypingAnimation.dom.js';
-import { Avatar } from '../Avatar.dom.js';
+import { TypingAnimation } from './TypingAnimation.dom.tsx';
+import { Avatar } from '../Avatar.dom.tsx';
 
-import type { LocalizerType, ThemeType } from '../../types/Util.std.js';
-import type { ConversationType } from '../../state/ducks/conversations.preload.js';
-import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.js';
-import { drop } from '../../util/drop.std.js';
-import { useReducedMotion } from '../../hooks/useReducedMotion.dom.js';
-import type { ContactModalStateType } from '../../types/globalModals.std.js';
+import type { LocalizerType, ThemeType } from '../../types/Util.std.ts';
+import type { ConversationType } from '../../state/ducks/conversations.preload.ts';
+import type { PreferredBadgeSelectorType } from '../../state/selectors/badges.preload.ts';
+import { drop } from '../../util/drop.std.ts';
+import { useReducedMotion } from '../../hooks/useReducedMotion.dom.ts';
+import type { ContactModalStateType } from '../../types/globalModals.std.ts';
 
 const MAX_AVATARS_COUNT = 3;
 
@@ -89,7 +89,7 @@ function TypingBubbleAvatar({
   theme: ThemeType;
 }): ReactElement | null {
   const reducedMotion = useReducedMotion();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [springProps, springApi] = useSpring(
     {
       immediate: reducedMotion,
@@ -189,6 +189,7 @@ function TypingBubbleGroupAvatars({
   }, [typingContactIds]);
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
     setAllContactsById(prevMap => {
       const map = new Map([...prevMap]);
       for (const id of typingContactIds) {
@@ -277,15 +278,15 @@ export function TypingBubble({
     [typingContactIdTimestamps]
   );
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const prevTypingContactIds = React.useRef<
-    ReadonlyArray<string> | undefined
-  >();
+  const prevTypingContactIds = useRef<ReadonlyArray<string> | undefined>(
+    undefined
+  );
   const isSomeoneTyping = useMemo(
     () => typingContactIds.length > 0,
     [typingContactIds]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [outerDivStyle, outerDivSpringApi] = useSpring(
     {
       to: OUTER_DIV_ANIMATION_PROPS[isSomeoneTyping ? 'visible' : 'hidden'],
@@ -293,7 +294,7 @@ export function TypingBubble({
     },
     [isSomeoneTyping]
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- FIXME
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- FIXME
   const [typingAnimationStyle, typingAnimationSpringApi] = useSpring(
     {
       to: BUBBLE_ANIMATION_PROPS[isSomeoneTyping ? 'visible' : 'hidden'],
@@ -341,8 +342,10 @@ export function TypingBubble({
       return;
     }
 
-    const lastTypingContactId = typingContactIds[0];
-    const lastTypingTimestamp = typingContactIdTimestamps[lastTypingContactId];
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const lastTypingContactId = typingContactIds[0]!;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const lastTypingTimestamp = typingContactIdTimestamps[lastTypingContactId]!;
     if (
       lastItemAuthorId === lastTypingContactId &&
       lastItemTimestamp > lastTypingTimestamp

@@ -1,10 +1,11 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import * as React from 'react';
+import type { JSX } from 'react';
+
 import classNames from 'classnames';
-import { useRestoreFocus } from '../hooks/useRestoreFocus.dom.js';
-import type { LocalizerType } from '../types/Util.std.js';
+import { useRestoreFocus } from '../hooks/useRestoreFocus.dom.ts';
+import type { LocalizerType } from '../types/Util.std.ts';
 
 export type Props = {
   platform: string;
@@ -34,6 +35,7 @@ type KeyType =
   | 'E'
   | 'F'
   | 'G'
+  | 'H'
   | 'I'
   | 'J'
   | 'K'
@@ -329,6 +331,11 @@ function getCallingShortcuts(i18n: LocalizerType): Array<ShortcutType> {
       keys: [['shift', 'P']],
     },
     {
+      id: 'Keyboard--toggle-raise-hand',
+      description: i18n('icu:Keyboard--toggle-raise-hand'),
+      keys: [['shift', 'H']],
+    },
+    {
       id: 'Keyboard--accept-video-call',
       description: i18n('icu:Keyboard--accept-video-call'),
       keys: [['ctrlOrAlt', 'shift', 'V']],
@@ -361,7 +368,7 @@ function getCallingShortcuts(i18n: LocalizerType): Array<ShortcutType> {
   ];
 }
 
-export function ShortcutGuide(props: Props): React.JSX.Element {
+export function ShortcutGuide(props: Props): JSX.Element {
   const { i18n, close, platform } = props;
   const isMacOS = platform === 'darwin';
 

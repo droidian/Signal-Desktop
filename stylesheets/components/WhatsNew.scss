@@ -7,6 +7,10 @@
 .WhatsNew {
   @include mixins.button-reset;
   & {
-    color: variables.$color-ultramarine;
+    color: var(--axo-color-label-accent);
+  }
+
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 }

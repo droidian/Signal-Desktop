@@ -32,6 +32,9 @@
 
   &__button {
     @include mixins.button-reset();
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
+    }
   }
 
   &__option {
@@ -108,12 +111,9 @@
       }
     }
 
-    &--focused,
-    &:focus,
-    &:active {
-      @include mixins.keyboard-mode {
-        box-shadow: 0 0 1px 1px variables.$color-ultramarine;
-        outline: none;
+    &--focused {
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
       }
     }
   }

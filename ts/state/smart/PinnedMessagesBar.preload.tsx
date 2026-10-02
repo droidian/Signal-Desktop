@@ -1,26 +1,19 @@
 // Copyright 2025 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 import { orderBy } from 'lodash';
-import { getIntl } from '../selectors/user.std.js';
+import { getIntl } from '../selectors/user.std.ts';
 import {
   getConversationSelector,
   getPinnedMessages,
   getMessages,
   getConversationIsReady,
-} from '../selectors/conversations.dom.js';
-import { getSelectedConversationId } from '../selectors/nav.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { useConversationsActions } from '../ducks/conversations.preload.js';
+} from '../selectors/conversations.dom.ts';
+import { getSelectedConversationId } from '../selectors/nav.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { useConversationsActions } from '../ducks/conversations.preload.ts';
 import type {
   Pin,
   PinMessage,
@@ -29,20 +22,20 @@ import type {
   PinMessagePoll,
   PinMessageText,
   PinSender,
-} from '../../components/conversation/pinned-messages/PinnedMessagesBar.dom.js';
-import { PinnedMessagesBar } from '../../components/conversation/pinned-messages/PinnedMessagesBar.dom.js';
-import { PanelType } from '../../types/Panels.std.js';
-import type { PinnedMessageId } from '../../types/PinnedMessage.std.js';
+} from '../../components/conversation/pinned-messages/PinnedMessagesBar.dom.tsx';
+import { PinnedMessagesBar } from '../../components/conversation/pinned-messages/PinnedMessagesBar.dom.tsx';
+import { PanelType } from '../../types/Panels.std.ts';
+import type { PinnedMessageId } from '../../types/PinnedMessage.std.ts';
 import {
   canPinMessages as getCanPinMessages,
   getMessagePropsSelector,
   type MessagePropsType,
-} from '../selectors/message.preload.js';
-import * as Attachment from '../../util/Attachment.std.js';
-import * as MIME from '../../types/MIME.std.js';
-import * as EmbeddedContact from '../../types/EmbeddedContact.std.js';
-import type { StateSelector } from '../types.std.js';
-import { useNavActions } from '../ducks/nav.std.js';
+} from '../selectors/message.preload.ts';
+import * as Attachment from '../../util/Attachment.std.ts';
+import * as MIME from '../../types/MIME.std.ts';
+import * as EmbeddedContact from '../../types/EmbeddedContact.std.ts';
+import type { StateSelector } from '../types.std.ts';
+import { useNavActions } from '../ducks/nav.std.ts';
 
 function getPinMessageAttachment(
   props: MessagePropsType
@@ -52,7 +45,7 @@ function getPinMessageAttachment(
     return null;
   }
   const { contentType } = attachment;
-  if (contentType === MIME.IMAGE_GIF || Attachment.isGIF([attachment])) {
+  if (contentType === MIME.IMAGE_GIF || Attachment.isGIF(attachment)) {
     return { type: 'gif' };
   }
   if (Attachment.isImage([attachment])) {

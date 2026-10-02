@@ -89,7 +89,8 @@
     &__button.ContextMenu__button {
       opacity: 0;
 
-      .ContactListItem:hover & {
+      .ContactListItem:hover &,
+      .ContactListItem:focus-within & {
         opacity: 1;
       }
 
@@ -101,6 +102,10 @@
         @include mixins.dark-theme {
           background-color: variables.$color-gray-80;
         }
+      }
+
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
       }
 
       width: 28px;

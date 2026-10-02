@@ -1,25 +1,25 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React, { memo, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import type { VoiceNotesPlaybackProps } from '../../components/VoiceNotesPlaybackContext.dom.js';
-import { VoiceNotesPlaybackProvider } from '../../components/VoiceNotesPlaybackContext.dom.js';
-import { selectAudioPlayerActive } from '../selectors/audioPlayer.preload.js';
+import type { VoiceNotesPlaybackProps } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import { VoiceNotesPlaybackProvider } from '../../components/VoiceNotesPlaybackContext.dom.tsx';
+import { selectAudioPlayerActive } from '../selectors/audioPlayer.preload.ts';
 import {
   AudioPlayerContent,
   useAudioPlayerActions,
-} from '../ducks/audioPlayer.preload.js';
-import { globalMessageAudio } from '../../services/globalMessageAudio.std.js';
-import { strictAssert } from '../../util/assert.std.js';
-import { drop } from '../../util/drop.std.js';
-import { createLogger } from '../../logging/log.std.js';
-import { Sound, SoundType } from '../../util/Sound.std.js';
-import { getConversations } from '../selectors/conversations.dom.js';
-import { SeenStatus } from '../../MessageSeenStatus.std.js';
-import { markViewed } from '../ducks/conversations.preload.js';
-import * as Errors from '../../types/errors.std.js';
-import { usePrevious } from '../../hooks/usePrevious.std.js';
+} from '../ducks/audioPlayer.preload.ts';
+import { globalMessageAudio } from '../../services/globalMessageAudio.std.ts';
+import { strictAssert } from '../../util/assert.std.ts';
+import { drop } from '../../util/drop.std.ts';
+import { createLogger } from '../../logging/log.std.ts';
+import { Sound, SoundType } from '../../util/Sound.std.ts';
+import { getConversations } from '../selectors/conversations.dom.ts';
+import { SeenStatus } from '../../MessageSeenStatus.std.ts';
+import { markViewed } from '../ducks/conversations.preload.ts';
+import * as Errors from '../../types/errors.std.ts';
+import { usePreviousDeprecated } from '../../hooks/usePrevious.std.ts';
 
 const log = createLogger('VoiceNotesPlaybackProvider');
 
@@ -35,7 +35,10 @@ export const SmartVoiceNotesPlaybackProvider = memo(
     const active = useSelector(selectAudioPlayerActive);
     const conversations = useSelector(getConversations);
 
-    const previousStartPosition = usePrevious(undefined, active?.startPosition);
+    const previousStartPosition = usePreviousDeprecated(
+      undefined,
+      active?.startPosition
+    );
 
     const content = active?.content;
     let url: undefined | string;
