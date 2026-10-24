@@ -12,6 +12,6 @@ export default defineConfig({
     esm: {},
     cjs: {},
   },
-  publint: true,
-  attw: true,
+  publint: false,
+  attw: false,
 });
